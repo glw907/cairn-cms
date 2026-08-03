@@ -125,7 +125,7 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
 ## Appendix: Media actions
 
 The Media Library's orphan scan, purge, and bulk delete
-(`src/lib/sveltekit/content-routes-media.ts`: `mediaOrphanScanAction`, `mediaPurgeOrphansAction`,
+(`src/lib/sveltekit/content-routes-media.ts`: `mediaOrphanScanAction`, `mediaOrphanPurgeAction`,
 `mediaBulkDeleteAction`) are SvelteKit form actions mounted on `/admin/media`, not plain GET
 pages, so smoking them needs the CSRF double-submit pairing on top of the session cookie minted
 above. Run these against throwaway assets: a raw R2 object seeded directly (bypassing the app)
@@ -197,12 +197,12 @@ delete. Never point the purge at a real asset.
    '
    ```
 
-5. **Purge the orphan** (`?/mediaPurge`), **irreversible.** Raw R2 bytes have no git history to
+5. **Purge the orphan** (`?/mediaOrphanPurge`), **irreversible.** Raw R2 bytes have no git history to
    revert. Select each key (the repeated `key` field, from the scan's `orphanedBytes`) and type
-   the exact selected count as `confirm`; `mediaPurgeOrphansAction` refuses and deletes nothing
+   the exact selected count as `confirm`; `mediaOrphanPurgeAction` refuses and deletes nothing
    on any mismatch or empty selection (`confirm !== String(keys.length)`):
    ```bash
-   curl -s -X POST "http://localhost:8787/admin/media?/mediaPurge" \
+   curl -s -X POST "http://localhost:8787/admin/media?/mediaOrphanPurge" \
      -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" \
      -F "key=media/de/deadbeef00000001.bin" \
      -F "confirm=1"

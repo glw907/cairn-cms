@@ -1145,7 +1145,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // could feed an unrecoverable purge.
   type OrphanPhase = 'idle' | 'scanning' | 'result' | 'blocked';
   const ORPHAN_SCAN_URL = '?/mediaOrphanScan';
-  const ORPHAN_PURGE_URL = '?/mediaPurge';
+  const ORPHAN_PURGE_URL = '?/mediaOrphanPurge';
 
   let orphanDialog = $state<HTMLDialogElement | null>(null);
   // The "Find orphaned files" entry control, so focus restores to it on close.
@@ -1284,7 +1284,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     orphanPurgeError = '';
   }
 
-  // The purge: POST ?/mediaPurge with each selected key as a repeated `key` field plus `confirm` set to
+  // The purge: POST ?/mediaOrphanPurge with each selected key as a repeated `key` field plus `confirm` set to
   // the typed count. The server re-derives fresh and skips any key claimed since the scan, so the
   // selection here is advisory. The CSRF token rides the X-Cairn-CSRF header; the ActionResult envelope
   // is read through deserialize. A success carries the MediaOrphanPurgeResult; a fail or a network throw

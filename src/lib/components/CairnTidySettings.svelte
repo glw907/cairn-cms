@@ -398,7 +398,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       </div>
     </div>
 
-    <form method="POST" action="?/saveSettings">
+    <form method="POST" action="?/settingsSave">
       <CsrfField />
       <input type="hidden" name="conventions" value={conventionsJson} />
 

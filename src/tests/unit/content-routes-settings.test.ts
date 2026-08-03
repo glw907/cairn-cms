@@ -67,7 +67,7 @@ const SEED_YAML = [
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('settingsSave', () => {
+describe('settingsSaveAction', () => {
   it('commits the conventions block to the committed YAML, preserving the developer-tier facts', async () => {
     // The settings save is a head-guarded atomic commit (Git Data API), so the stateful double
     // seeds main with the YAML and answers the ref read, the head-guarded commit, and the write.
@@ -75,7 +75,7 @@ describe('settingsSave', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     const conventions = JSON.stringify({ fixes: true, oxfordComma: 'always', timeFormat: '5 PM' });
-    const { location } = await expectRedirect(() => routes.settingsSave(saveEvent(conventions) as never));
+    const { location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent(conventions) as never));
     expect(location).toBe('/admin/settings?saved=1');
     // The commit names the session editor as author.
     const commitPost = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))!;
@@ -103,7 +103,7 @@ describe('settingsSave', () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime({ tidy: { enabled: false } }));
-    await expect(routes.settingsSave(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
+    await expect(routes.settingsSaveAction(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -112,16 +112,16 @@ describe('settingsSave', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime());
     // oxfordComma carries a value outside its allowed set.
-    const { status, location } = await expectRedirect(() => routes.settingsSave(saveEvent('{"oxfordComma":"sometimes"}') as never));
+    const { status, location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"oxfordComma":"sometimes"}') as never));
     expect(status).toBe(303);
     expect(location).toMatch(/\/admin\/settings\?error=/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('reports a head-moved conflict as a reload prompt without overwriting', async () => {
-    // The save is now head-guarded: settingsSave reads the head, then commit(expectedHead) re-reads
+    // The save is now head-guarded: settingsSaveAction reads the head, then commit(expectedHead) re-reads
     // it. Return a different head on the second ref read so the fail-closed commit raises
-    // CommitConflictError, which settingsSave maps to the reload prompt. The raw read serves the YAML.
+    // CommitConflictError, which settingsSaveAction maps to the reload prompt. The raw read serves the YAML.
     let refReads = 0;
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
       const method = (init?.method ?? 'GET').toUpperCase();
@@ -134,14 +134,14 @@ describe('settingsSave', () => {
       return new Response('{}', { status: 200 });
     }));
     const routes = createContentRoutes(runtime());
-    const { location } = await expectRedirect(() => routes.settingsSave(saveEvent('{"fixes":true}') as never));
+    const { location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"fixes":true}') as never));
     expect(location).toMatch(/error=.*changed%20since/i);
   });
 
   it('404s when the config file is gone at save time', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
-    await expect(routes.settingsSave(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
+    await expect(routes.settingsSaveAction(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
   });
 
   it('redirects with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
@@ -152,7 +152,7 @@ describe('settingsSave', () => {
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n' } });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const { status, location } = await expectRedirect(() => routes.settingsSave(saveEvent('{"fixes":true}') as never));
+    const { status, location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"fixes":true}') as never));
     expect(status).toBe(303);
     expect(location).toMatch(/\/admin\/settings\?error=/);
     expect(decodeURIComponent(location)).toMatch(/unrecognized key "weird"/);

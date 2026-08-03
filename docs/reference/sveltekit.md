@@ -152,7 +152,7 @@ params the wrapped action reads, and delegates:
 | `rename` | edit | the entry rename |
 | `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
 | `publishAll` | list, edit, editors, nav | the site-wide publish |
-| `addEditor`, `removeEditor`, `setRole` | editors | the owner-gated editor management |
+| `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
 ```ts
 // src/lib/cairn.server.ts
@@ -727,9 +727,9 @@ Stability tier: Unstable API.
 ```ts
 declare function createEditorRoutes(opts?: { roles?: RolesDeclaration }): {
   editorsLoad: (event: CairnEvent<CairnEnv>) => Promise<{ editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] }>;
-  addEditorAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
-  removeEditorAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
-  setRoleAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
+  editorAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
+  editorRemoveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
+  editorSetRoleAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
 };
 ```
 
@@ -751,9 +751,9 @@ const editors = createEditorRoutes({ roles });
 
 export const load = editors.editorsLoad;
 export const actions = {
-  addEditor: editors.addEditorAction,
-  removeEditor: editors.removeEditorAction,
-  setRole: editors.setRoleAction,
+  editorAdd: editors.editorAddAction,
+  editorRemove: editors.editorRemoveAction,
+  editorSetRole: editors.editorSetRoleAction,
 };
 ```
 
@@ -763,15 +763,15 @@ Stability tier: Unstable API.
 
 ```ts
 declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesDeps): {
-  shellPayload: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }>;
+  shellLoad: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }>;
   helpLoad: (event: CairnEvent<CairnEnv>) => Promise<HelpData>;
-  indexRedirect: (event: CairnEvent<CairnEnv>) => { view: "welcome"; page: WelcomeData };
+  indexLoad: (event: CairnEvent<CairnEnv>) => { view: "welcome"; page: WelcomeData };
   listLoad: (event: CairnEvent<CairnEnv>) => Promise<ListData>;
   mediaLibraryLoad: (event: CairnEvent<CairnEnv>) => Promise<MediaLibraryData>;
   settingsLoad: (event: CairnEvent<CairnEnv>) => Promise<SettingsData>;
-  settingsSave: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
   vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyLoadData>;
-  vocabularySave: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
   createAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
   editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>;
   saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
@@ -786,22 +786,22 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   mediaDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   mediaBulkDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>;
   mediaOrphanScanAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | OrphanScan>;
-  mediaPurgeOrphansAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>;
+  mediaOrphanPurgeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>;
   mediaUpdateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   mediaReplacePreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>;
-  mediaReplaceApplyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  mediaReplaceAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   mediaAltPreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaAltPreviewPlan>;
-  mediaAltApplyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  addDictionaryWordAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | DictionaryAddResult>;
+  mediaAltPropagateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  dictionaryAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | DictionaryAddResult>;
   tidyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | TidyResult>;
 };
 ```
 
 The core of the admin surface. It takes the composed runtime and returns the loads and actions for
-the authed admin shell, the concept list, and the entry editor. `shellPayload` backs the shared admin
+the authed admin shell, the concept list, and the entry editor. `shellLoad` backs the shared admin
 shell (the `/admin/+layout` load wires it through `createCairnAdmin`'s `shellLoad`): it returns the
 lean `{ shell: AdminShellData }` chrome payload, bare for a public path and the streamed authed nav
-otherwise. Its caller awaits it: `shellPayload` calls [`resolveNavLayout`](#resolvenavlayout) up
+otherwise. Its caller awaits it: `shellLoad` calls [`resolveNavLayout`](#resolvenavlayout) up
 front to arrange and gate the whole sidebar, a declared `navLayout` or, absent one, today's
 default arrangement synthesized through the same resolver, then applies the site's
 `deps.navFilter`, if configured, to the arranged `items` alone (see [the navLayout
@@ -827,7 +827,7 @@ with `MediaUpdateFailure`. The replace-in-place pair swaps one asset for another
 corpus. `mediaReplacePreviewAction` is a display-only fetch endpoint (the upload's `X-Cairn-CSRF` header
 transport): it plans the rewrite of every entry that references the old asset and returns a
 `MediaReplacePreviewPlan` (the affected entries with their per-reference diff, the affected count, and
-a report-only cross-branch delta), committing nothing. `mediaReplaceApplyAction` re-derives that plan from a
+a report-only cross-branch delta), committing nothing. `mediaReplaceAction` re-derives that plan from a
 fresh read, gates every replace behind a typed-slug confirm (`MediaReplaceFailure` on a wrong or
 missing confirm), and rewrites every referencing entry plus the new `media.json` row in one commit;
 it performs no R2 write, since the new bytes are already stored and the old asset's row is kept. Both
@@ -835,10 +835,10 @@ fail closed on an unverifiable usage read. The alt-propagation pair pushes an as
 across the same corpus. `mediaAltPreviewAction` plans the fill over that header transport and returns a
 `MediaAltPreviewPlan` that sorts each placement into a will-fill bucket (an empty alt), a customized
 bucket (a hand-written alt kept unless the editor opts in), or a decorative-hero bucket (left alone).
-`mediaAltApplyAction` re-derives the plan from a fresh read, fills the empty alts (and the customized ones
+`mediaAltPropagateAction` re-derives the plan from a fresh read, fills the empty alts (and the customized ones
 when the `overwrite` opt-in is set), and commits only the entries it changes in one commit. It never
 writes `media.json`, never gates on a typed slug, and never touches a decorative hero. The destructive
-trio (`mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaPurgeOrphansAction`) clears assets and stored bytes in
+trio (`mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`) clears assets and stored bytes in
 bulk. `mediaBulkDeleteAction` is the single safe-delete gate applied per item over a selection: it builds
 one strict cross-branch usage index for the whole batch, deletes the assets nothing references, and
 skips any still in use, reporting them in the returned `MediaBulkDeleteResult` (its `deleted`,
@@ -848,15 +848,15 @@ single safe-delete uses. `mediaOrphanScanAction` runs a storage reconcile plus a
 returns the `OrphanScan` projection: `orphanedBytes` (stored keys with no manifest row and no
 reference anywhere across `main` and every open branch) and the broken-reference rows (manifest hashes
 whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since the branch
-that uploaded them references them. `mediaPurgeOrphansAction` is the one irreversible media action: it
+that uploaded them references them. `mediaOrphanPurgeAction` is the one irreversible media action: it
 deletes the raw R2 bytes, which carry no git history, so it gates on a typed-count confirm (the number
 of files). At action time it re-derives the orphan set fresh and re-checks the strict usage index, so
 a key that gained a manifest row or a new branch reference since the scan is skipped, never purged; the
 `MediaOrphanPurgeResult` reports `purged`, `skippedClaimed`, and `failed`. All three fail closed: an
 unverifiable cross-branch usage read refuses the whole batch (503) and commits nothing. The
-single-mount composer registers the trio under `mediaBulkDelete`, `mediaOrphanScan`, and `mediaPurge`
-(the purge action's shorter composer name), each gated to the media view, so the Media Library posts
-`?/mediaBulkDelete`, `?/mediaOrphanScan`, and `?/mediaPurge`. The showcase runs in dev without a real
+single-mount composer registers the trio under `mediaBulkDelete`, `mediaOrphanScan`, and `mediaOrphanPurge`,
+each gated to the media view, so the Media Library posts
+`?/mediaBulkDelete`, `?/mediaOrphanScan`, and `?/mediaOrphanPurge`. The showcase runs in dev without a real
 key because its fake GitHub backend rides `event.locals.cairnBackend` from a fenced dev handle, so no GitHub
 App token mint runs.
 
@@ -873,7 +873,7 @@ deletes the pending branch, returning to the edit page for a published entry (`?
 to the list for an entry that never published. `renameAction` refuses with a 409 while a pending
 branch exists, and a delete cascades to the pending branch after its own commit lands.
 
-`settingsLoad` and `settingsSave` back the tidy settings screen. `settingsLoad` actively probes a
+`settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
 `'valid'` / `'unknown'`) alongside the presence-only `keyConfigured`, so a revoked key closes the
 `enabled` gate distinctly from a never-configured one; the probe result also feeds the same
@@ -883,23 +883,23 @@ the probe, so a hung Anthropic connection resolves to `'unknown'` rather than st
 on the SDK's own multi-minute timeout. The key-health cache holds the probe's verdict for the
 same ten-minute window as its mark, so a run of settings navigations spends at most one live
 round trip. `vocabularyLoad` and
-`vocabularySave` back the tag-vocabulary screen at `/admin/vocabulary`. `vocabularyLoad` returns the
+`vocabularySaveAction` back the tag-vocabulary screen at `/admin/vocabulary`. `vocabularyLoad` returns the
 `VocabularyLoadData` the screen renders: the committed `{ value, label }` vocabulary in config order
 (`vocabulary`), each value's cross-branch in-use count (`usage`, keyed by value over the default
 branch unioned with every open `cairn/*` branch), and the in-use-but-unlisted tags with their counts
 (`unlisted`, the seed candidates). The usage overlay is best-effort: a failed read degrades `usage` to
 `{}` and `unlisted` to `[]` while the committed `vocabulary` stays visible, since the strict gate lives
-on the save, not the load. `vocabularySave` validates the posted vocabulary JSON, gates a delete on
+on the save, not the load. `vocabularySaveAction` validates the posted vocabulary JSON, gates a delete on
 that strict cross-branch usage (an in-use value cannot be removed, failing closed), then
 read-modify-commits the `vocabulary` key into the same committed `src/lib/site.config.yaml` the tidy
 settings write, head-guarded and bouncing a stale-head conflict back to the screen.
 
-The editor copy-edit adds two more actions, both fetch-style on the upload transport. `addDictionaryWordAction`
+The editor copy-edit adds two more actions, both fetch-style on the upload transport. `dictionaryAddAction`
 commits an editor's personal-dictionary additions, and `tidyAction` runs the language-model tidy.
 Neither is a form submit; both follow the [admin fetch action](#writing-an-admin-fetch-action) contract
 below. Their request shapes and `fail` payloads:
 
-- **`addDictionaryWordAction`.** A `text/plain` POST carrying JSON `{ word }` or `{ words: string[] }`, the
+- **`dictionaryAddAction`.** A `text/plain` POST carrying JSON `{ word }` or `{ words: string[] }`, the
   CSRF token in `X-Cairn-CSRF`. It validates CSRF first, then the session, validates each word against
   the one-line dictionary grammar (no whitespace or control bytes, length-bounded, batch-capped),
   reads `src/content/.cairn/dictionary.txt` from the default branch, inserts the new words in sorted
@@ -999,16 +999,16 @@ Stability tier: Unstable API.
 ```ts
 declare function createNavRoutes(runtime: CairnRuntime): {
   navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>;
-  navSave: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
 };
 ```
 
 Build the load and save for the navigation editor at `/admin/nav`. `navLoad` reads the current menu
-tree and the page options for the URL picker, and `navSave` commits an edited tree to the
+tree and the page options for the URL picker, and `navSaveAction` commits an edited tree to the
 git-committed site-config file. Like the content routes, a handler resolves its backend from
 `event.locals.cairnBackend`, falling back to the runtime's connected backend. A production caller
 passes no second argument. The `NavTree` component posts the named `?/save` action, so a
-hand-mounted route registers `navSave` under `save`.
+hand-mounted route registers `navSaveAction` under `save`.
 
 ```ts
 // src/routes/admin/(app)/nav/+page.server.ts (per-route mounting)
@@ -1019,7 +1019,7 @@ import { cairn, siteConfig } from '$lib/cairn.config.js';
 const nav = createNavRoutes(composeRuntime({ adapter: cairn, siteConfig }));
 
 export const load = nav.navLoad;
-export const actions = { save: nav.navSave };
+export const actions = { save: nav.navSaveAction };
 ```
 
 The public read-model loaders live at [`@glw907/cairn-cms/delivery`](./delivery.md), where the
@@ -1445,7 +1445,7 @@ which folds in the capability floor (`none` reaches nothing, `editors` additiona
 capability), a configured nav menu for `nav`, and the site's own access-map narrowing; a site
 entry additionally gates on `ownerOnly`, its declarative `roles`, and, when its href carries a
 matching map rule, `canReach` too; a section gates all its children at once by its own `roles` and
-disappears once its children resolve empty. `shellPayload` calls this on every request; a site does
+disappears once its children resolve empty. `shellLoad` calls this on every request; a site does
 not normally call it directly unless it renders its own nav outside `CairnAdminShell`.
 
 ---
@@ -1618,7 +1618,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `AdminActionDeps` | Extension API | `interface AdminActionDeps { isDev?: boolean }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. |
 | `AdminActionError` | Extension API | `class AdminActionError extends Error { status: number }` | Thrown by `adminAction` for exactly one case: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `adminAction`'s own authorization refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
 | `UploadResult` | Unstable API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
-| `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }> }` | The shared admin shell's payload, produced by `shellPayload` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` or `adminNav` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. |
+| `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }> }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` or `adminNav` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. |
 | `NavConcept` | Extension API | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |
 | `EntrySummary` | Extension API | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean; status: 'published' \| 'edited' \| 'new'; summary: string \| null }` | One row in a concept's list view. `status` derives from the ref set: live as-is, live with held edits, or pending-branch only. `summary` is the row's one-line excerpt (the manifest's indexed summary for a published row, the branch frontmatter or body excerpt for a pending one, null when neither yields text). |
 | `ListData` | Extension API | `interface ListData { conceptId; label; singular; dated; routable: boolean; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. `singular` is the create-affordance noun ("New post"), from the descriptor (defaulted to `label`). `routable` mirrors the concept's `routing.routable`, so the create form asks a non-routable concept (Fragments) for a name rather than an address. |
@@ -1630,7 +1630,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's support contact, composed to cairn's hosted help when the adapter sets none, and left empty when the adapter sets it to an explicit empty string. |
 | `SettingsData` | Extension API | `interface SettingsData { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: TidyKeyProbeResult \| 'missing'; model: string; modelLabel: string; conventions: TidyConventions; saved: boolean; error: string \| null }` | The tidy settings view's data: the truthful two-tier gate (`enabled` is true only when tidy is on, the key is present, and the active probe has not confirmed it invalid), the developer-tier facts (`tidyEnabled`, `keyConfigured`, `keyStatus`, `model`, `modelLabel`), the editor-tier `conventions` the save writes back, and the status flags. |
 | `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[]; error: string \| null }` | The tag-vocabulary view's data: the committed vocabulary in config order, a per-value cross-branch usage count, and the in-use-but-unlisted seed candidates. The usage overlay is best-effort and degrades to empty on a read failure, keeping the committed vocabulary visible. |
-| <a id="contentroutesdeps"></a>`ContentRoutesDeps` | Unstable API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]> }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellPayload` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. |
+| <a id="contentroutesdeps"></a>`ContentRoutesDeps` | Unstable API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]> }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellLoad` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. |
 | `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; inboundKind?: 'link' \| 'include'; id: string }` | A refused delete: the one-line summary, the entries that still link to (or include) the refused one, and its id so a list marks the right row. `inboundKind` names which gate refused, `'include'` for a blocked fragment delete and `'link'` (the default when absent) otherwise, so the refusal copy names the real blocker. |
 | `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
@@ -1642,7 +1642,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
-| <a id="cairnadmindeps"></a>`CairnAdminDeps` | Extension API | `interface CairnAdminDeps { auth?: { branding?: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }; tidy?: ContentRoutesDeps['tidy']; navFilter?: ContentRoutesDeps['navFilter']; attention?: ContentRoutesDeps['attention'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth.branding` defaults from the runtime's `siteName` and `sender`; `auth.send` is the same seam the underlying auth factory takes; `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, and `attention` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellPayload` calls, and `attention` is the per-session pending-work seam (see `ContentRoutesDeps` below and [the attention seam](#the-attention-seam)), so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
+| <a id="cairnadmindeps"></a>`CairnAdminDeps` | Extension API | `interface CairnAdminDeps { auth?: { branding?: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }; tidy?: ContentRoutesDeps['tidy']; navFilter?: ContentRoutesDeps['navFilter']; attention?: ContentRoutesDeps['attention'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth.branding` defaults from the runtime's `siteName` and `sender`; `auth.send` is the same seam the underlying auth factory takes; `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, and `attention` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellLoad` calls, and `attention` is the per-session pending-work seam (see `ContentRoutesDeps` below and [the attention seam](#the-attention-seam)), so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `WelcomeData` | Extension API | `interface WelcomeData { displayName: string; siteName: string }` | The `'welcome'` view's data: the calm, minimal admin-root landing a none-capability role with no declared `home` gets. [`CairnAdmin`](./components.md#cairnadmin) switches it to a bare internal view inside the shell, so any site-granted nav stays visible. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |

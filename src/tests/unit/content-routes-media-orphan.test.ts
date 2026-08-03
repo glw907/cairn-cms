@@ -204,7 +204,7 @@ describe('mediaPurgeOrphans', () => {
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     const claimedKey = r2Key(HASH_REFERENCED, 'jpg');
     // Two selected, so the typed confirm is the count "2".
-    const result = (await routes.mediaPurgeOrphansAction(
+    const result = (await routes.mediaOrphanPurgeAction(
       purgeEvent([orphanKey, claimedKey], '2', bucket) as never,
     )) as MediaOrphanPurgeResult;
 
@@ -233,7 +233,7 @@ describe('mediaPurgeOrphans', () => {
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected but confirm is empty: the count gate fails.
-    const result = await routes.mediaPurgeOrphansAction(purgeEvent([orphanKey], '', bucket) as never);
+    const result = await routes.mediaOrphanPurgeAction(purgeEvent([orphanKey], '', bucket) as never);
 
     expect(result).toMatchObject({ status: 400 });
     expect(bucket.delete).not.toHaveBeenCalled();
@@ -262,7 +262,7 @@ describe('mediaPurgeOrphans', () => {
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One selected, so the typed confirm is the count "1".
-    const result = (await routes.mediaPurgeOrphansAction(
+    const result = (await routes.mediaOrphanPurgeAction(
       purgeEvent([orphanKey], '1', bucket) as never,
     )) as MediaOrphanPurgeResult;
 
@@ -301,7 +301,7 @@ describe('mediaPurgeOrphans', () => {
       return wrapped(input, init);
     }));
 
-    const result = await routes.mediaPurgeOrphansAction(event as never);
+    const result = await routes.mediaOrphanPurgeAction(event as never);
 
     expect(result).toMatchObject({ status: 503 });
     // No delete happened: the irreversible purge fails closed when usage cannot be verified.
@@ -324,7 +324,7 @@ describe('mediaPurgeOrphans', () => {
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected, confirm "2": does not match the count of 1.
-    const result = await routes.mediaPurgeOrphansAction(purgeEvent([orphanKey], '2', bucket) as never);
+    const result = await routes.mediaOrphanPurgeAction(purgeEvent([orphanKey], '2', bucket) as never);
 
     expect(result).toMatchObject({ status: 400 });
     expect(bucket.delete).not.toHaveBeenCalled();

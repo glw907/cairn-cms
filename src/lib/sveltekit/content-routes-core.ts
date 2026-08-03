@@ -54,7 +54,7 @@ export interface NavConcept {
 }
 
 /**
- * The shared admin shell's data, produced by `shellPayload` and consumed by the CairnAdminShell
+ * The shared admin shell's data, produced by `shellLoad` and consumed by the CairnAdminShell
  *  component through `/admin/+layout.svelte`. A discriminated union: a public (login/auth) path
  *  carries only the site name and the resolved theme (the cookie is not auth-bearing, so a
  *  signed-out visitor's theme choice still applies) and renders bare; an authed path carries the
@@ -410,7 +410,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  the declared (or default) tree first, then the site's `deps.navFilter`, if configured, narrows
    *  that already-gated `items` set, fresh every request.
    */
-  async function shellPayload(event: CairnEvent): Promise<{ shell: AdminShellData }> {
+  async function shellLoad(event: CairnEvent): Promise<{ shell: AdminShellData }> {
     // The theme cookie carries no auth, so a public (login/auth) path reads and honors it too:
     // a signed-out visitor's dark-mode pick should not revert to light the moment they sign out.
     const cookieTheme = event.cookies?.get('cairn-admin-theme');
@@ -562,7 +562,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  page, so an unexpected-failure `?error=` those actions bounce back with rides along on every
    *  redirect branch, keeping the editor-visible guarantee for the two actions that always land here.
    */
-  function indexRedirect(event: CairnEvent): { view: 'welcome'; page: WelcomeData } {
+  function indexLoad(event: CairnEvent): { view: 'welcome'; page: WelcomeData } {
     const editor = requireSession(event);
     const bounced = event.url.searchParams.get('error');
     const suffix = bounced ? `?error=${encodeURIComponent(bounced)}` : '';
@@ -1699,9 +1699,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   return {
-    shellPayload,
+    shellLoad,
     helpLoad,
-    indexRedirect,
+    indexLoad,
     listLoad,
     createAction,
     editLoad,

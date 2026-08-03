@@ -132,6 +132,32 @@
   (the redirect to `/admin/login`, the 403 to the nearest error boundary), discarding any unsaved
   form input, where the old `500` left the page itself intact and recoverable with Back.
 
+- The route-factory members and the admin facade's `actions` keys now follow one grammar: a
+  member that is a SvelteKit `load` ends in `Load`, a member that is a form action ends in
+  `Action`, and a facade `actions` key is its member name minus the `Action` suffix. Twelve
+  route-factory members rename: `createContentRoutes`'s `settingsSave` to `settingsSaveAction`,
+  `vocabularySave` to `vocabularySaveAction`, `shellPayload` to `shellLoad`, `indexRedirect` to
+  `indexLoad`, `addDictionaryWordAction` to `dictionaryAddAction`, `mediaPurgeOrphansAction` to
+  `mediaOrphanPurgeAction`, `mediaReplaceApplyAction` to `mediaReplaceAction`, and
+  `mediaAltApplyAction` to `mediaAltPropagateAction`; `createNavRoutes`'s `navSave` to
+  `navSaveAction`; and `createEditorRoutes`'s `addEditorAction`, `removeEditorAction`, and
+  `setRoleAction` to `editorAddAction`, `editorRemoveAction`, and `editorSetRoleAction`. Seven
+  facade `actions` keys on `createCairnAdmin` (`src/lib/sveltekit/cairn-admin.ts`) rename to
+  match: `saveSettings` to `settingsSave`, `saveVocabulary` to `vocabularySave`,
+  `addDictionaryWord` to `dictionaryAdd`, `addEditor` to `editorAdd`, `removeEditor` to
+  `editorRemove`, `setRole` to `editorSetRole`, and `mediaPurge` to `mediaOrphanPurge`. The
+  engine's own admin components (`CairnTidySettings`, `VocabularyAdmin`, `ManageEditors`,
+  `EditPage`, `CairnMediaLibrary`) post the renamed facade keys in the same diff. See
+  [SvelteKit](docs/reference/sveltekit.md#createcontentroutes) and
+  [admin routes](docs/reference/admin-routes.md#the-actions-vocabulary). **Consumers must:**
+  rename every renamed route-factory member in a site's own `+page.server.ts` files (per-route
+  mounting only; the single-mount `createCairnAdmin` facade needs no source change). **Any site
+  that posts to a renamed facade action by name, in a form's `action="?/oldName"` attribute or a
+  programmatic `fetch('/admin/...?/oldName')` call, must change the posted `?/` action string to
+  the new name** (for example `?/saveSettings` to `?/settingsSave`, `?/addEditor` to
+  `?/editorAdd`, `?/mediaPurge` to `?/mediaOrphanPurge`); this is a runtime-only failure (a 404 on
+  submit), since the action name is a string literal a type gate cannot catch.
+
 ### Fixed
 
 - `scripts/check-reference-signatures.mjs`'s `normalizeSignature` stripped every `| undefined`

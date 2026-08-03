@@ -94,15 +94,15 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   const settings = createSettingsActions(ctx);
   const dictionary = createDictionaryActions(ctx);
   return {
-    shellPayload: core.shellPayload,
+    shellLoad: core.shellLoad,
     helpLoad: core.helpLoad,
-    indexRedirect: core.indexRedirect,
+    indexLoad: core.indexLoad,
     listLoad: core.listLoad,
     mediaLibraryLoad: media.mediaLibraryLoad,
     settingsLoad: settings.settingsLoad,
-    settingsSave: settings.settingsSave,
+    settingsSaveAction: settings.settingsSaveAction,
     vocabularyLoad: settings.vocabularyLoad,
-    vocabularySave: settings.vocabularySave,
+    vocabularySaveAction: settings.vocabularySaveAction,
     createAction: core.createAction,
     editLoad: core.editLoad,
     saveAction: core.saveAction,
@@ -117,13 +117,13 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     mediaDeleteAction: media.mediaDeleteAction,
     mediaBulkDeleteAction: media.mediaBulkDeleteAction,
     mediaOrphanScanAction: media.mediaOrphanScanAction,
-    mediaPurgeOrphansAction: media.mediaPurgeOrphansAction,
+    mediaOrphanPurgeAction: media.mediaOrphanPurgeAction,
     mediaUpdateAction: media.mediaUpdateAction,
     mediaReplacePreviewAction: media.mediaReplacePreviewAction,
-    mediaReplaceApplyAction: media.mediaReplaceApplyAction,
+    mediaReplaceAction: media.mediaReplaceAction,
     mediaAltPreviewAction: media.mediaAltPreviewAction,
-    mediaAltApplyAction: media.mediaAltApplyAction,
-    addDictionaryWordAction: dictionary.addDictionaryWordAction,
+    mediaAltPropagateAction: media.mediaAltPropagateAction,
+    dictionaryAddAction: dictionary.dictionaryAddAction,
     tidyAction: tidy.tidyAction,
   };
 }

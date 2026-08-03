@@ -221,7 +221,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
    */
-  async function settingsSave(event: CairnEvent): Promise<never> {
+  async function settingsSaveAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'settings');
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
@@ -278,7 +278,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  still opens. The usage overlay is best-effort and separate, mirroring mediaLibraryLoad: the
    *  manifest read and the non-strict buildTagUsageIndex share one try/catch that degrades `usage` to
    *  `{}` and `unlisted` to `[]` on any failure, keeping the committed vocabulary visible. The safety
-   *  boundary is the strict gate on vocabularySave, never this load, so degrading here is correct.
+   *  boundary is the strict gate on vocabularySaveAction, never this load, so degrading here is correct.
    */
   async function vocabularyLoad(event: CairnEvent): Promise<VocabularyLoadData> {
     const editor = requireEditor(event);
@@ -334,13 +334,13 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   /**
    * Save the tag vocabulary (Plan 3): validate the posted list, gate a delete on cross-branch usage
    *  failing closed, then read-modify-commit the `vocabulary` key into the same committed YAML the
-   *  nav and settings saves write. The transport is settingsSave's exactly: a form POST carrying the
+   *  nav and settings saves write. The transport is settingsSaveAction's exactly: a form POST carrying the
    *  vocabulary JSON, a head-guarded backend.commit, and a stale-head isConflict bounced back as a
    *  reload prompt. The delete gate is the safety boundary: a removed value still in use anywhere the
    *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
-  async function vocabularySave(event: CairnEvent): Promise<never> {
+  async function vocabularySaveAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'vocabulary');
 
@@ -403,5 +403,5 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     throw redirect(303, '/admin/vocabulary?saved=1');
   }
 
-  return { settingsLoad, settingsSave, vocabularyLoad, vocabularySave };
+  return { settingsLoad, settingsSaveAction, vocabularyLoad, vocabularySaveAction };
 }

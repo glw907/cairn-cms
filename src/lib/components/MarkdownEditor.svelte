@@ -116,7 +116,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     siteDictionary?: ReadonlyArray<string>;
     /** The caller-owned pending personal-dictionary additions. When an author chooses "Add to
      *  dictionary" the lint source adds the lowercased word here (the underline clears at once); the
-     *  host (EditPage) commits this set through the addDictionaryWord action at save time and reconciles
+     *  host (EditPage) commits this set through the dictionaryAdd action at save time and reconciles
      *  it against the merged response. A fresh set by default. */
     pendingAdditions?: Set<string>;
     /** Test-only seam for the spellcheck Worker. The real wasm and dictionary assets are resolved with

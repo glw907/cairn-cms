@@ -56,14 +56,14 @@ describe('ManageEditors', () => {
     await expect.element(screen.getByRole('button', { name: /add editor/i })).toBeInTheDocument();
   });
 
-  it('posts the dispatcher-named ?/addEditor, ?/removeEditor, and ?/setRole actions', async () => {
+  it('posts the dispatcher-named ?/editorAdd, ?/editorRemove, and ?/editorSetRole actions', async () => {
     const screen = render(ManageEditors, { data: data(), form: null });
     const actions = [...screen.container.querySelectorAll('form[method="POST"]')].map((form) =>
       form.getAttribute('action'),
     );
-    expect(actions).toContain('?/addEditor');
-    expect(actions).toContain('?/removeEditor');
-    expect(actions).toContain('?/setRole');
+    expect(actions).toContain('?/editorAdd');
+    expect(actions).toContain('?/editorRemove');
+    expect(actions).toContain('?/editorSetRole');
     expect(actions).not.toContain('?/add');
     expect(actions).not.toContain('?/remove');
   });

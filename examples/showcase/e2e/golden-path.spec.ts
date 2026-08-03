@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 // The fake-github.ts double records the last commit and serves it from /test/last-commit.
 
 test('an editor opens a post from the list, edits, saves, and the commit carries the right author', async ({ page, request }) => {
-  // Land on the admin: indexRedirect sends /admin -> /admin/posts (the first concept's list).
+  // Land on the admin: indexLoad sends /admin -> /admin/posts (the first concept's list).
   await page.goto('/admin');
   await expect(page).toHaveURL(/\/admin\/posts$/);
 
@@ -365,7 +365,7 @@ test('the editors view runs against the dev AUTH_DB double: list the seeds, add 
   // Add an editor through the form; the action round-trips through the double and the reloaded
   // list shows the new row. The email is unique per run (reuseExistingServer keeps state).
   const email = `added-${Date.now()}@showcase.test`;
-  const addForm = page.locator('form[action="?/addEditor"]');
+  const addForm = page.locator('form[action="?/editorAdd"]');
   await addForm.getByLabel('Name').fill('Added Editor');
   await addForm.getByLabel('Email').fill(email);
   await addForm.getByRole('button', { name: 'Add editor' }).click();

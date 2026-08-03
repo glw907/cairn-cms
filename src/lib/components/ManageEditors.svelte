@@ -3,7 +3,7 @@
 The owner-gated editor management surface, built on the admin toolkit: a table of editors with
 role-flip and remove actions, and an add-editor form. The acting owner's own row disables its
 destructive controls; the last-owner anti-lockout rule itself is enforced server-side
-(editors-routes). Actions post to the named `?/setRole`, `?/removeEditor`, and `?/addEditor`
+(editors-routes). Actions post to the named `?/editorSetRole`, `?/editorRemove`, and `?/editorAdd`
 actions, the names the single-mount dispatcher defines.
 
 The header band (the admin-toolkit organization pass's T7 adoption sweep) is `PageHeader`, mounted
@@ -57,7 +57,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
     return entry.role === entry.capability ? entry.role : `${entry.role} (${entry.capability})`;
   }
 
-  // The one lifecycle error to announce: a rejected addEditor/removeEditor/setRole `fail()` leads
+  // The one lifecycle error to announce: a rejected editorAdd/editorRemove/editorSetRole `fail()` leads
   // (form?.error), else a redirected unexpected-failure bounce (data.error) from an action, like
   // publishAll, that carries no form of its own here.
   const lifecycleError = $derived(form?.error ?? data.error ?? '');
@@ -118,7 +118,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
           </td>
           <td class="flex justify-end gap-2">
             {#if isDefaultVocabulary}
-              <form method="POST" action="?/setRole">
+              <form method="POST" action="?/editorSetRole">
                 <CsrfField />
                 <input type="hidden" name="email" value={editor.email} />
                 <input type="hidden" name="role" value={editor.role === 'owner' ? 'editor' : 'owner'} />
@@ -127,7 +127,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
                 </button>
               </form>
             {:else}
-              <form method="POST" action="?/setRole" class="flex items-center gap-1">
+              <form method="POST" action="?/editorSetRole" class="flex items-center gap-1">
                 <CsrfField />
                 <input type="hidden" name="email" value={editor.email} />
                 <select
@@ -143,7 +143,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
                 <button type="submit" class="btn btn-ghost btn-xs" disabled={isSelf}>Change</button>
               </form>
             {/if}
-            <form method="POST" action="?/removeEditor">
+            <form method="POST" action="?/editorRemove">
               <CsrfField />
               <input type="hidden" name="email" value={editor.email} />
               <button type="submit" class="btn btn-ghost btn-xs text-error" disabled={isSelf} aria-label={`Remove ${editor.displayName}`}>
@@ -157,7 +157,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
   </AdminTable>
 </div>
 
-<form method="POST" action="?/addEditor" class="card-shell grid gap-3 p-4 card-shadow sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+<form method="POST" action="?/editorAdd" class="card-shell grid gap-3 p-4 card-shadow sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
   <CsrfField />
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">Name</span>

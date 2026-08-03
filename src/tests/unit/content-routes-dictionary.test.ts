@@ -1,4 +1,4 @@
-// Task 9: the addDictionaryWord action (spec 1.6). The transport mirrors the media raw-body actions:
+// Task 9: the dictionaryAdd action (spec 1.6). The transport mirrors the media raw-body actions:
 // a text/plain POST, the CSRF token in X-Cairn-CSRF validated by validateCsrfHeader (CSRF first, then
 // the session), and a JSON body { word } or { words }. The action reads the committed dictionary from
 // the default branch, merges the validated words in sorted order if absent (idempotent), and commits
@@ -53,12 +53,12 @@ function commitCount(gh: GithubDouble): number {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('addDictionaryWord transport gates', () => {
+describe('dictionaryAdd transport gates', () => {
   it('refuses a missing CSRF header (fail 403) before any GitHub call', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.addDictionaryWordAction(addEvent({ word: 'cairn' }, { csrf: 'wrong' }) as never);
+    const result = await routes.dictionaryAddAction(addEvent({ word: 'cairn' }, { csrf: 'wrong' }) as never);
     expect(result).toMatchObject({ status: 403 });
     expect((result as unknown as { data: DictionaryAddFailure }).data.error).toBe('csrf');
     expect(commitCount(gh)).toBe(0);
@@ -68,7 +68,7 @@ describe('addDictionaryWord transport gates', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.addDictionaryWordAction(addEvent({ word: 'two words' }) as never);
+    const result = await routes.dictionaryAddAction(addEvent({ word: 'two words' }) as never);
     expect(result).toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
   });
@@ -77,19 +77,19 @@ describe('addDictionaryWord transport gates', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.addDictionaryWordAction(addEvent({ word: 'good\nevil' }) as never);
+    const result = await routes.dictionaryAddAction(addEvent({ word: 'good\nevil' }) as never);
     expect(result).toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
   });
 });
 
-describe('addDictionaryWord read-modify-write', () => {
+describe('dictionaryAdd read-modify-write', () => {
   it('inserts a new word in sorted order and commits the merged list', async () => {
     const gh = new GithubDouble({ main: { [DICT_PATH]: serializeDictionary(['alpha', 'gamma']) } });
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    const result = (await routes.addDictionaryWordAction(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'beta', 'gamma']);
     expect(commitCount(gh)).toBe(1);
     // The committed file is the canonical sorted set.
@@ -101,7 +101,7 @@ describe('addDictionaryWord read-modify-write', () => {
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    const result = (await routes.addDictionaryWordAction(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['cairn']);
     expect(commitCount(gh)).toBe(1);
     expect(parseDictionary(gh.read('main', DICT_PATH))).toEqual(['cairn']);
@@ -113,7 +113,7 @@ describe('addDictionaryWord read-modify-write', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
     // Case-insensitive: "cairn" collapses onto the existing "Cairn".
-    const result = (await routes.addDictionaryWordAction(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'Cairn']);
     expect(commitCount(gh)).toBe(0);
   });
@@ -123,13 +123,13 @@ describe('addDictionaryWord read-modify-write', () => {
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    const result = (await routes.addDictionaryWordAction(addEvent({ words: ['gamma', 'beta'] }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ words: ['gamma', 'beta'] }) as never)) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'beta', 'gamma']);
     expect(commitCount(gh)).toBe(1);
   });
 });
 
-describe('addDictionaryWord SHA-guarded retry', () => {
+describe('dictionaryAdd SHA-guarded retry', () => {
   it('re-reads and re-merges on a stale-SHA conflict, then succeeds on the retry', async () => {
     // A hand-rolled GitHub: the dictionary file lives in `file`, the contents read returns it, and the
     // commit sequence (ref read, commit read, trees POST, commits POST, ref PATCH) lands a write. The
@@ -182,20 +182,20 @@ describe('addDictionaryWord SHA-guarded retry', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const routes = createContentRoutes(runtime());
-    const result = (await routes.addDictionaryWordAction(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.dictionaryAddAction(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
     // The retry's re-merge keeps the concurrent "newword" and adds "beta": order-independent convergence.
     expect(result.words).toEqual(['alpha', 'beta', 'newword']);
     expect(parseDictionary(file)).toEqual(['alpha', 'beta', 'newword']);
   });
 });
 
-describe('addDictionaryWord routing gate (composer)', () => {
+describe('dictionaryAdd routing gate (composer)', () => {
   it('is registered so the composer test reaches it; the unit here proves the content function', async () => {
     // The composer 404/routing assertions live in cairn-admin-actions.test.ts. This file proves the
     // content function's behavior; the import above proves the result/failure types are exported.
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    expect(typeof routes.addDictionaryWordAction).toBe('function');
+    expect(typeof routes.dictionaryAddAction).toBe('function');
   });
 });

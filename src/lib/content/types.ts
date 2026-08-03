@@ -386,7 +386,7 @@ export interface CairnRuntime {
    * The repo-relative path to the committed personal dictionary file (one word per line, sorted),
    *  defaulted in composeRuntime to src/content/.cairn/dictionary.txt: the same `.cairn/` content root
    *  the manifests use. The edit load reads it and threads its words onto EditData; the
-   *  addDictionaryWord action reads, merges, and commits it. Optional on the runtime so a hand-built
+   *  dictionaryAdd action reads, merges, and commits it. Optional on the runtime so a hand-built
    *  runtime need not set it; composeRuntime always fills it, and the edit load and the action default
    *  a missing value to the same content-root path.
    */

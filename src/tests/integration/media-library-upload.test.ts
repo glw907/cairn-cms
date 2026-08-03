@@ -190,7 +190,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
 
   it('threads the head read before the manifest into commit as expectedHead', async () => {
     // media.json has no regenerate-from-files backstop, so the commit must be fail-closed on the
-    // head read BEFORE the manifest read, mirroring settingsSave/vocabularySave. Spy on a fresh
+    // head read BEFORE the manifest read, mirroring settingsSaveAction/vocabularySaveAction. Spy on a fresh
     // backend so the guarded commit's 5th argument is directly observable.
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
@@ -229,7 +229,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
     // Wrap the double's fetch: on the FIRST ref-heads GET (the action's own head read, mirroring the
-    // settingsSave conflict test's pattern), land a concurrent uploader's commit out of band, moving
+    // settingsSaveAction conflict test's pattern), land a concurrent uploader's commit out of band, moving
     // the head off the sha the action just read. The SECOND ref-heads GET is commitFiles' own
     // expectedHead check inside the guarded commit, which then sees the moved head and conflicts.
     const doubleFetch = globalThis.fetch as typeof fetch;

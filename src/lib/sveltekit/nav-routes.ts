@@ -95,7 +95,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
   }
 
   /** Save the nav tree: validate, then read-modify-commit the one menu with the session editor as author. */
-  async function navSave(event: CairnEvent): Promise<never> {
+  async function navSaveAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
     const config = runtime.navMenu;
@@ -142,5 +142,5 @@ export function createNavRoutes(runtime: CairnRuntime) {
     throw redirect(303, '/admin/nav?saved=1');
   }
 
-  return { navLoad, navSave };
+  return { navLoad, navSaveAction };
 }

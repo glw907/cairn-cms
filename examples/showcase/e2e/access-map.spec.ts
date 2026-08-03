@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { defineRoles, defineAccess, canReach } from '@glw907/cairn-cms';
-import type { Editor, Role } from '@glw907/cairn-cms';
+import type { Editor } from '@glw907/cairn-cms';
 
 // The consumer proof for the admin access map (spec 2026-07-18-admin-access-and-attention-design.md,
 // "Testing shape"). The engine's own unit suite (src/tests/unit/auth-access.test.ts) exercises
@@ -21,16 +21,10 @@ const roles = defineRoles({
   editor: 'editor',
 });
 
-// The showcase declares no `CairnRolesRegister` augmentation, so the unaugmented `Role` type stays
-// the default 'owner' | 'editor' pair. The fixture's third role ('reviewer') needs the same cast the
-// engine's own unit tests use for a custom vocabulary; a real site narrows `Role` via its own
-// augmentation and needs no such cast.
-function asRoles(...names: string[]): Role[] {
-  return names as unknown as Role[];
-}
-
+// Role names are open (`string`): the fixture's third role ('reviewer') needs no cast, and neither
+// does any AccessMap value below, since custom roles are first-class the moment they are declared.
 function makeEditor(role: string, capability: Editor['capability']): Editor {
-  return { email: 'editor@showcase.test', displayName: 'Test Editor', role: role as Role, capability };
+  return { email: 'editor@showcase.test', displayName: 'Test Editor', role, capability };
 }
 
 const MAPPED_CONCEPT = 'posts';
@@ -39,8 +33,8 @@ const MAPPED_HREF = '/admin/finance';
 const DEEPER_HREF = '/admin/finance/reports';
 
 const access = defineAccess(roles, {
-  [MAPPED_CONCEPT]: asRoles('reviewer'),
-  [MAPPED_HREF]: asRoles('reviewer'),
+  [MAPPED_CONCEPT]: ['reviewer'],
+  [MAPPED_HREF]: ['reviewer'],
 });
 
 const owner = makeEditor('owner', 'owner');

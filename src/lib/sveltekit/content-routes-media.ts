@@ -924,7 +924,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  the R2 object directly. Each delete is best-effort and batch-resilient: a per-object error is
    *  reported in `failed` and the loop continues; an absent object is a no-op (the R2 contract).
    */
-  async function mediaPurgeOrphansAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
+  async function mediaOrphanPurgeAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -1133,7 +1133,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  bytes are KEPT (the old row stays in media.json), so this action writes only to git and never
    *  resolves the bucket binding. It guards `resolvedAssets.enabled` for the media-off case only.
    */
-  async function mediaReplaceApplyAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaReplaceAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -1324,7 +1324,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  that changes nothing commits nothing and still redirects (a no-op success). It fails the operation
    *  closed on an unverifiable usage read, and writes only entry files in git (no R2 op).
    */
-  async function mediaAltApplyAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaAltPropagateAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -1391,12 +1391,12 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     mediaDeleteAction,
     mediaBulkDeleteAction,
     mediaOrphanScanAction,
-    mediaPurgeOrphansAction,
+    mediaOrphanPurgeAction,
     mediaUpdateAction,
     mediaReplacePreviewAction,
-    mediaReplaceApplyAction,
+    mediaReplaceAction,
     mediaAltPreviewAction,
-    mediaAltApplyAction,
+    mediaAltPropagateAction,
   };
 }
 

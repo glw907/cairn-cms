@@ -90,7 +90,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
    *  line), and the batch is capped. A body that yields no valid word refuses with a 400 and commits
    *  nothing, so the committed file can never gain an injected or empty line.
    */
-  async function addDictionaryWordAction(event: CairnEvent): Promise<ReturnType<typeof fail> | DictionaryAddResult> {
+  async function dictionaryAddAction(event: CairnEvent): Promise<ReturnType<typeof fail> | DictionaryAddResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
     // media actions. A failed check refuses before the session read or any GitHub call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
@@ -145,5 +145,5 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
     }
   }
 
-  return { addDictionaryWordAction };
+  return { dictionaryAddAction };
 }

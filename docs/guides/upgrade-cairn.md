@@ -202,6 +202,31 @@ Consumers must: replace any imported `Role` type with `string`; if your `app.d.t
 narrows anything; drop any cast you added to force a custom role name past the old `Role` union
 (an `AccessMap` value, a `navLayout` entry's `roles`, or an `Editor`/`EditorRow` fixture).
 
+The route-factory members and the admin facade's `actions` keys now follow one grammar: a member
+that is a SvelteKit `load` ends in `Load`, a member that is a form action ends in `Action`, and a
+facade `actions` key is its member name minus the `Action` suffix. Twelve route-factory members
+rename: `createContentRoutes`'s `settingsSave` to `settingsSaveAction`, `vocabularySave` to
+`vocabularySaveAction`, `shellPayload` to `shellLoad`, `indexRedirect` to `indexLoad`,
+`addDictionaryWordAction` to `dictionaryAddAction`, `mediaPurgeOrphansAction` to
+`mediaOrphanPurgeAction`, `mediaReplaceApplyAction` to `mediaReplaceAction`, and
+`mediaAltApplyAction` to `mediaAltPropagateAction`; `createNavRoutes`'s `navSave` to
+`navSaveAction`; and `createEditorRoutes`'s `addEditorAction`, `removeEditorAction`, and
+`setRoleAction` to `editorAddAction`, `editorRemoveAction`, and `editorSetRoleAction`. Seven
+facade `actions` keys on `createCairnAdmin` rename to match: `saveSettings` to `settingsSave`,
+`saveVocabulary` to `vocabularySave`, `addDictionaryWord` to `dictionaryAdd`, `addEditor` to
+`editorAdd`, `removeEditor` to `editorRemove`, `setRole` to `editorSetRole`, and `mediaPurge` to
+`mediaOrphanPurge`. See [SvelteKit](../reference/sveltekit.md#createcontentroutes) and
+[admin routes](../reference/admin-routes.md#the-actions-vocabulary).
+
+Consumers must: rename every renamed route-factory member in your own `+page.server.ts` files if
+you mount routes per-surface rather than through the single-mount `createCairnAdmin` facade (the
+facade itself needs no source change). If your own markup, a form's `action="?/oldName"` or a
+programmatic `fetch('/admin/...?/oldName')` call, posts to a renamed facade action by name,
+change the posted `?/` action string to the new name (for example `?/saveSettings` to
+`?/settingsSave`, `?/addEditor` to `?/editorAdd`, `?/mediaPurge` to `?/mediaOrphanPurge`); a
+mismatched name fails at runtime as a 404 on submit, not at compile time, since the action name is
+a string literal.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

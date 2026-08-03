@@ -1,8 +1,8 @@
 // Plan 3, Task 1: the vocabulary admin route pair. vocabularyLoad reads the committed vocabulary
-// plus the cross-branch usage overlay and the in-use-but-unlisted seed set; vocabularySave validates
+// plus the cross-branch usage overlay and the in-use-but-unlisted seed set; vocabularySaveAction validates
 // the posted vocabulary, gates a delete on cross-branch usage (failing closed), and commits the
 // `vocabulary` key into the same YAML the nav and settings saves write, head-guarded with the same
-// isConflict reload bounce. The save mirrors settingsSave/navSave exactly; the load's usage overlay
+// isConflict reload bounce. The save mirrors settingsSaveAction/navSaveAction exactly; the load's usage overlay
 // degrades best-effort like mediaLibraryLoad, so a transient read keeps the committed list visible.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { GithubDouble } from './_github-double.js';
@@ -143,7 +143,7 @@ describe('vocabularyLoad', () => {
   });
 });
 
-describe('vocabularySave', () => {
+describe('vocabularySaveAction', () => {
   it('commits a renamed label with no value change, head-guarded, with the editor as author', async () => {
     const gh = seeded();
     const routes = createContentRoutes(runtime());
@@ -152,7 +152,7 @@ describe('vocabularySave', () => {
       { value: 'svelte', label: 'SvelteKit' },
       { value: 'rust', label: 'Rust' },
     ]);
-    const { location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
     expect(location).toBe('/admin/vocabulary?saved=1');
     const commitPost = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))!;
     expect((commitPost.body as { author: unknown }).author).toEqual({ name: 'Ed Editor', email: 'ed@t' });
@@ -173,7 +173,7 @@ describe('vocabularySave', () => {
       { value: 'rust', label: 'Rust' },
       { value: 'extra', label: 'Extra' },
     ]);
-    const { location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
     expect(location).toBe('/admin/vocabulary?saved=1');
     const reparsed = extractVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
     expect(reparsed.map((v) => v.value)).toEqual(['svelte', 'rust', 'extra']);
@@ -184,7 +184,7 @@ describe('vocabularySave', () => {
     const routes = createContentRoutes(runtime());
     // Drop svelte, which the seeded post carries: blocked by the strict cross-branch gate.
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
-    const { status, location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    const { status, location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
     expect(status).toBe(303);
     expect(location).toMatch(/\/admin\/vocabulary\?error=/);
     expect(decodeURIComponent(location)).toContain('svelte');
@@ -199,7 +199,7 @@ describe('vocabularySave', () => {
     const routes = createContentRoutes(runtime());
     // Drop rust, which no entry carries: allowed.
     const posted = JSON.stringify([{ value: 'svelte', label: 'Svelte' }]);
-    const { location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
     expect(location).toBe('/admin/vocabulary?saved=1');
     const reparsed = extractVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
     expect(reparsed.map((v) => v.value)).toEqual(['svelte']);
@@ -211,7 +211,7 @@ describe('vocabularySave', () => {
     const routes = createContentRoutes(runtime());
     // A value that violates SAFE_TAG_VALUE makes validateVocabulary throw.
     const { status, location } = await expectRedirect(() =>
-      routes.vocabularySave(saveEvent('[{"value":"Not A Slug","label":"x"}]') as never),
+      routes.vocabularySaveAction(saveEvent('[{"value":"Not A Slug","label":"x"}]') as never),
     );
     expect(status).toBe(303);
     expect(location).toMatch(/\/admin\/vocabulary\?error=/);
@@ -227,7 +227,7 @@ describe('vocabularySave', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
-    const { status, location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    const { status, location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
     expect(status).toBe(303);
     expect(location).toMatch(/\/admin\/vocabulary\?error=/);
     expect(decodeURIComponent(location)).toMatch(/unrecognized key "weird"/);
@@ -263,7 +263,7 @@ describe('vocabularySave', () => {
       { value: 'svelte', label: 'SvelteKit' },
       { value: 'rust', label: 'Rust' },
     ]);
-    const { location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
     expect(location).toMatch(/error=.*changed%20since/i);
   });
 });

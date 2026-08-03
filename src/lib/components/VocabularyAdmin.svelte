@@ -2,7 +2,7 @@
 @component
 The tag-vocabulary admin screen ("Tags"), the proving pilot of the admin idiomatic re-expression.
 A near-twin of CairnTidySettings: an untrack-seeded `$state` working copy, a hidden-JSON field
-posted with `<CsrfField />` to `?/saveVocabulary`, and a `role="status"` live region. It curates the
+posted with `<CsrfField />` to `?/vocabularySave`, and a `role="status"` live region. It curates the
 site's shared tag vocabulary, the labels editors pick from when they write, and does three jobs plus
 a calmer fourth:
   - ADD a tag. A typed label derives a slug `value` live (matching SAFE_TAG_VALUE); an empty,
@@ -353,7 +353,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   {/if}
 
   <!-- THE SAVE FOOTER: the hidden-JSON post with the CSRF field, plus a one-line reassurance. -->
-  <form method="POST" action="?/saveVocabulary" class="mt-6 flex items-center gap-3 pt-4">
+  <form method="POST" action="?/vocabularySave" class="mt-6 flex items-center gap-3 pt-4">
     <CsrfField />
     <input type="hidden" name="vocabulary" value={vocabularyJson} />
     <span class="flex min-w-0 flex-1 items-center gap-1.5 type-meta leading-snug text-muted">

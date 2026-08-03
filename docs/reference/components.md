@@ -396,9 +396,9 @@ each name paired with its resolved capability; with the default owner/editor pai
 control renders today's toggle unchanged, and with any larger or differently shaped vocabulary it
 renders a labeled select listing every declared role with its capability shown alongside, and an
 owner-capability row's badge distinguishes it from an editor- or none-capability one. `form`
-carries the last action's result. Its forms post the named `?/addEditor`, `?/removeEditor`, and
-`?/setRole` actions, the names `createCairnAdmin`'s actions record defines; `setRole` rejects a
-posted role outside the vocabulary as a form validation error. On the per-route mounting it lives
+carries the last action's result. Its forms post the named `?/editorAdd`, `?/editorRemove`, and
+`?/editorSetRole` actions, the names `createCairnAdmin`'s actions record defines; `editorSetRole`
+rejects a posted role outside the vocabulary as a form validation error. On the per-route mounting it lives
 at `src/routes/admin/(app)/editors/+page.svelte` against the editors load and actions, registered
 under the same names.
 
@@ -451,7 +451,7 @@ read-only developer-tier facts (whether tidy is enabled, whether the API key is 
 model), the truthful gate flag, and the resolved editor-tier `conventions`. The editor tier (the
 per-convention check-and-tint toggles and the radiogroup variant choosers) renders only when tidy is
 enabled and the key is present; otherwise the screen shows the honest gate note with no disabled
-controls. Saving posts the named `?/saveSettings` action, which commits the conventions block to the
+controls. Saving posts the named `?/settingsSave` action, which commits the conventions block to the
 same committed site-config YAML the nav editor writes.
 
 ```svelte

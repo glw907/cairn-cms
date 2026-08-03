@@ -133,7 +133,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     if (!view) throw error(404, 'Not found');
     switch (view.view) {
       case 'index':
-        return content.indexRedirect(contentEvent(event, {}));
+        return content.indexLoad(contentEvent(event, {}));
       case 'login':
         return { view: 'login', page: auth.loginLoad(event) };
       case 'confirm':
@@ -208,7 +208,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  actually an unrelated server bug. A `fail(500)` reaches the same client code as a genuine
    *  status, so it renders the calm copy inline instead. Set only on the actions whose own client
    *  posts with `redirect: 'manual'`: `upload`, `mediaUpload`, `mediaLibraryUpload`,
-   *  `addDictionaryWord`, and `tidy`. Every other script-posted media action (a preview, a bulk
+   *  `dictionaryAdd`, and `tidy`. Every other script-posted media action (a preview, a bulk
    *  apply, a scan) posts with the default `redirect: 'follow'`, so this wrapper's own redirect
    *  never reaches them as an opaque response in the first place. The return type only proves out
    *  for a call site whose delegate's own declared return already includes
@@ -290,23 +290,23 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     save: viewAction('save', ['edit', 'nav'], (event, view) => {
       if (view.view === 'edit') return content.saveAction(contentEvent(event, { concept: view.concept.id, id: view.id }));
       if (!nav) throw error(404, 'Not found');
-      return nav.navSave(contentEvent(event, {}));
+      return nav.navSaveAction(contentEvent(event, {}));
     }, { carriesNewFlag: true }),
     // The tidy settings save (spec 2.8, Task 15): the editor commits the per-convention block to the
     // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
     // when tidy is off, the server half of the truthful visibility gate.
-    saveSettings: viewAction('saveSettings', ['settings'], (event) => content.settingsSave(contentEvent(event, {}))),
+    settingsSave: viewAction('settingsSave', ['settings'], (event) => content.settingsSaveAction(contentEvent(event, {}))),
     // The tag-vocabulary save (Plan 3): the editor commits the curated vocabulary to the committed
     // YAML, with the cross-branch delete gate failing closed. Gated to the vocabulary view.
-    saveVocabulary: viewAction('saveVocabulary', ['vocabulary'], (event) => content.vocabularySave(contentEvent(event, {}))),
+    vocabularySave: viewAction('vocabularySave', ['vocabulary'], (event) => content.vocabularySaveAction(contentEvent(event, {}))),
     upload: viewAction('upload', ['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { scriptPosted: true }),
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { carriesNewFlag: true }),
     discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
-    addDictionaryWord: viewAction('addDictionaryWord', ['edit'], (event, view) =>
-      content.addDictionaryWordAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { scriptPosted: true }),
+    dictionaryAdd: viewAction('dictionaryAdd', ['edit'], (event, view) =>
+      content.dictionaryAddAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { scriptPosted: true }),
     // Tidy (spec 2.1): the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
     // edit view, where the review surface lives, so it 404s elsewhere.
     tidy: viewAction('tidy', ['edit'], (event, view) =>
@@ -325,19 +325,19 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     mediaUpload: viewAction('mediaUpload', ['media'], (event) => content.uploadAction(contentEvent(event, {})), { scriptPosted: true }),
     mediaLibraryUpload: viewAction('mediaLibraryUpload', ['media'], (event) => content.mediaLibraryUploadAction(contentEvent(event, {})), { scriptPosted: true }),
     mediaReplacePreview: viewAction('mediaReplacePreview', ['media'], (event) => content.mediaReplacePreviewAction(contentEvent(event, {}))),
-    mediaReplace: viewAction('mediaReplace', ['media'], (event) => content.mediaReplaceApplyAction(contentEvent(event, {}))),
+    mediaReplace: viewAction('mediaReplace', ['media'], (event) => content.mediaReplaceAction(contentEvent(event, {}))),
     mediaAltPreview: viewAction('mediaAltPreview', ['media'], (event) => content.mediaAltPreviewAction(contentEvent(event, {}))),
-    mediaAltPropagate: viewAction('mediaAltPropagate', ['media'], (event) => content.mediaAltApplyAction(contentEvent(event, {}))),
+    mediaAltPropagate: viewAction('mediaAltPropagate', ['media'], (event) => content.mediaAltPropagateAction(contentEvent(event, {}))),
     // Pass C library actions: a multi-select bulk delete, the on-demand orphan scan, and the
     // irreversible byte purge. The component posts to `?/mediaBulkDelete`, `?/mediaOrphanScan`, and
-    // `?/mediaPurge` (the purge key is short of its content method name). All gate on the media view.
+    // `?/mediaOrphanPurge`. All gate on the media view.
     mediaBulkDelete: viewAction('mediaBulkDelete', ['media'], (event) => content.mediaBulkDeleteAction(contentEvent(event, {}))),
     mediaOrphanScan: viewAction('mediaOrphanScan', ['media'], (event) => content.mediaOrphanScanAction(contentEvent(event, {}))),
-    mediaPurge: viewAction('mediaPurge', ['media'], (event) => content.mediaPurgeOrphansAction(contentEvent(event, {}))),
+    mediaOrphanPurge: viewAction('mediaOrphanPurge', ['media'], (event) => content.mediaOrphanPurgeAction(contentEvent(event, {}))),
     publishAll: viewAction('publishAll', authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
-    addEditor: viewAction('addEditor', ['editors'], (event) => editors.addEditorAction(event)),
-    removeEditor: viewAction('removeEditor', ['editors'], (event) => editors.removeEditorAction(event)),
-    setRole: viewAction('setRole', ['editors'], (event) => editors.setRoleAction(event)),
+    editorAdd: viewAction('editorAdd', ['editors'], (event) => editors.editorAddAction(event)),
+    editorRemove: viewAction('editorRemove', ['editors'], (event) => editors.editorRemoveAction(event)),
+    editorSetRole: viewAction('editorSetRole', ['editors'], (event) => editors.editorSetRoleAction(event)),
   };
 
   /**
@@ -345,7 +345,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  payload (bare for a public path; the authed nav, user, and streamed pending set otherwise),
    *  so every `/admin/**` route renders inside one chrome without re-loading it per view.
    */
-  const shellLoad = (event: CairnEvent) => content.shellPayload(contentEvent(event, {}));
+  const shellLoad = (event: CairnEvent) => content.shellLoad(contentEvent(event, {}));
 
   return { load, actions, shellLoad };
 }

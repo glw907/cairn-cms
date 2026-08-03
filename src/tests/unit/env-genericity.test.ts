@@ -145,7 +145,7 @@ function typeOnlyContentRoutesAssignability(): void {
 }
 void typeOnlyContentRoutesAssignability;
 
-// createNavRoutes: navLoad/navSave both read the same CairnEvent slot as content-routes.
+// createNavRoutes: navLoad/navSaveAction both read the same CairnEvent slot as content-routes.
 function typeOnlyNavRoutesAssignability(): void {
   const nav = createNavRoutes({} as CairnRuntime);
   nav satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
@@ -168,9 +168,9 @@ void typeOnlyAuthRoutesAssignability;
 function typeOnlyEditorRoutesAssignability(): void {
   const editors = createEditorRoutes();
   editors.editorsLoad satisfies (event: SiteRequestEvent) => unknown;
-  editors.addEditorAction satisfies (event: SiteRequestEvent) => unknown;
-  editors.removeEditorAction satisfies (event: SiteRequestEvent) => unknown;
-  editors.setRoleAction satisfies (event: SiteRequestEvent) => unknown;
+  editors.editorAddAction satisfies (event: SiteRequestEvent) => unknown;
+  editors.editorRemoveAction satisfies (event: SiteRequestEvent) => unknown;
+  editors.editorSetRoleAction satisfies (event: SiteRequestEvent) => unknown;
 }
 void typeOnlyEditorRoutesAssignability;
 

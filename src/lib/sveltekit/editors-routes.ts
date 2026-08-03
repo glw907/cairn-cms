@@ -86,7 +86,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
   }
 
   /** POST add an editor. Owner-only. Rejects a role outside the declared vocabulary. */
-  async function addEditorAction(event: CairnEvent) {
+  async function editorAddAction(event: CairnEvent) {
     const { db, form, email, owner } = await ownerAction(event);
     const name = String(form.get('name') ?? '').trim();
     const role = parseRole(form.get('role'));
@@ -107,7 +107,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
   }
 
   /** POST remove an editor. Owner-only. Refuses the last owner-capability row, atomically. */
-  async function removeEditorAction(event: CairnEvent) {
+  async function editorRemoveAction(event: CairnEvent) {
     const { db, email, owner } = await ownerAction(event);
     const target = await findEditor(db, email);
     if (!target) return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
@@ -126,7 +126,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
    * POST change an editor's role. Owner-only. Rejects a role outside the declared vocabulary and
    *  refuses demoting the last owner-capability row, atomically.
    */
-  async function setRoleAction(event: CairnEvent) {
+  async function editorSetRoleAction(event: CairnEvent) {
     const { db, form, email, owner } = await ownerAction(event);
     const role = parseRole(form.get('role'));
     if (!role) return fail(400, { error: 'Choose a valid role' } satisfies EditorActionFailure);
@@ -139,12 +139,12 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
         return fail(400, { error: 'You cannot demote the last owner' } satisfies EditorActionFailure);
       }
     } else {
-      // Validated against the vocabulary above; see the same open-role note in addEditorAction.
+      // Validated against the vocabulary above; see the same open-role note in editorAddAction.
       await setEditorRole(db, email, role);
     }
     log.info('editor.role_changed', { owner, target: email, role, capability: resolveCapability(vocabulary, role) });
     return { ok: true as const };
   }
 
-  return { editorsLoad, addEditorAction, removeEditorAction, setRoleAction };
+  return { editorsLoad, editorAddAction, editorRemoveAction, editorSetRoleAction };
 }

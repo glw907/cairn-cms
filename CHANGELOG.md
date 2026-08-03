@@ -2,6 +2,82 @@
 
 <!-- release-size: minor -->
 
+### Consumers must (assembled so far)
+
+**This window is not yet cut.** Pass C2b (the refusal-channel convergence, in flight on its own
+worktree) lands in this same unpublished window and appends its own entries here before release;
+read this list as assembled so far, not final. Four sites depend on the package today, each on its
+own `0.x` caret range (907-life `^0.84.4`, cairn-pub `^0.87.4`, aksailingclub-org `^0.91.1`,
+ecxc-ski `^0.93.0`), and a caret admits only its own minor, so a site more than one minor behind
+this window crosses several earlier `Consumers must:` lists on the way here. Read every list your
+version range crosses, per [the upgrade guide](docs/guides/upgrade-cairn.md); this list covers
+only this window, not the older ones.
+
+The steps below are ordered so a rename that has to compile before another change lands first;
+each links to its full entry under Changed for the reasoning and the exact old and new names.
+
+1. **Toolchain.** Be on Node 22 or later for the build (`"engines"` now states it).
+2. **Imports and types.**
+   - Replace `AuthEnv`/`BackendEnv` with [`CairnEnv`](docs/reference/sveltekit.md#cairnenv); drop
+     any reliance on `PlatformContext.ctx`/`.context`.
+   - Replace `EventBase`, `RequestContext`, `ContentEvent`, `AdminEvent`, or `AdminActionEvent`
+     with [`CairnEvent`](docs/reference/sveltekit.md#the-event-shape); a hand-built event fixture
+     (a test, a script) now needs `params` and `route` alongside its existing fields.
+   - Drop any imported `Role` type and use `string`; drop a `CairnRolesRegister` `app.d.ts`
+     augmentation and any cast that forced a custom role name past the old union.
+   - Replace `CairnAdminDeps`, `ContentRoutesDeps`, `AdminActionDeps`, or `PublicRoutesDeps` with
+     its renamed `*Options`/`*Config` counterpart; replace `makeMediaResolver` with
+     `buildMediaResolver`; replace `OrphanScan` with `MediaOrphanScanResult` and `AdminNavIcon`
+     with `NavIcon`; drop any imported `MakeIcon` or `ConceptUrlPolicy`.
+   - Replace any imported `AdminActionError` with
+     [`UnauditedActionError`](docs/reference/sveltekit.md#refusal-channels) and remove any
+     `handleError` mapping of it; `adminAction`'s two refusals now answer with a `303` redirect
+     and a `403` error instead of the old `500`, so a monitor or an alert keyed on that status
+     needs the same update.
+   - Replace any `@glw907/cairn-cms/admin-fields` import with
+     [`@glw907/cairn-cms/admin-toolkit`](docs/reference/admin-toolkit.md#fields), renaming
+     `TextField`/`SelectField`/`SelectFieldOption` to `TextInput`/`SelectInput`/
+     `SelectInputOption`; replace `@glw907/cairn-cms/components`'s `OfficeList` import with the
+     same `/admin-toolkit` subpath.
+3. **`locals` reads.** Rename every `event.locals.editor`, `.backend`, and `.auditSink` read or
+   write in your `hooks.server.ts` or a custom admin route to `event.locals.cairnEditor`,
+   `.cairnBackend`, and `.cairnAuditSink`, including in a hand-duplicated `App.Locals`
+   augmentation. See [Ambient types](docs/reference/ambient.md).
+4. **Action names and posted `?/` keys.** Rename any route-factory member your site imports
+   directly in its own `+page.server.ts` files (see
+   [SvelteKit](docs/reference/sveltekit.md#createcontentroutes)); change the posted `?/` action
+   string on any form or `fetch` call that targets a renamed facade action, for example
+   `?/saveSettings` to `?/settingsSave` (see [admin
+   routes](docs/reference/admin-routes.md#the-actions-vocabulary)), since a stale name now 404s at
+   submit time with no compile-time warning.
+5. **Adapter config.** Replace `editor.adminNav` with `editor.navLayout` on the adapter, a flat
+   entry or section carrying over unchanged in shape (see [the navLayout
+   seam](docs/reference/sveltekit.md#the-navlayout-seam)), and replace any imported
+   `AdminNavEntry`/`AdminNavSection`/`AdminNavConfig`/`ResolvedNavSection`/`ResolvedNavItem` with
+   its `NavLayoutEntry`/`NavLayoutSection`/`NavLayout`/`ResolvedLayoutSection`/
+   `ResolvedLayoutNode` counterpart. Rekey any access map behind a parameterized or catch-all
+   [`createSectionAction`](docs/reference/sveltekit.md#createsectionaction) route from the
+   concrete request path to the bracket-form route id (`/admin/posts/[id]`); a map still keyed by
+   path now fails closed and refuses every session, including owner.
+6. **Log-consumer changes.** Update any Workers Logs saved query, alert, or dashboard filter
+   naming `admin.audit.sink_failed`, `admin.action.audit_sink_failed`, `tidy.done`, `tidy.error`,
+   `media.orphan_reconcile`, or `content.field_behavior_error` to its renamed form; update a filter
+   on a kebab-case media upload `reason` or on `github.unreachable`'s `scope: 'layout'` (which
+   never fired) to the corrected snake_case value. See [Log events](docs/reference/log-events.md).
+   None of this breaks at compile time; these are runtime values, not exported types.
+
+Two more steps, neither gated by a compiler: a call to `formatCivilDate` that relied on its old
+`'Not yet'` default for a missing date now renders an empty string unless you pass
+`{ fallback: 'Not yet' }` explicitly (see [Admin toolkit](docs/reference/admin-toolkit.md#formatts));
+and any monitoring keyed on `adminAction`'s old `500` for a missing-editor or CSRF refusal should
+watch for the new `303`/`403` instead, the same change step 2 already carries, restated here
+because a status-code dashboard is easy to miss on a code review.
+
+Every other entry below (the `/cloudflare` subpath, `createD1AuditSink`, the export-rule sweep's
+roughly ninety new exports, `/components`'s two new views, the newly named `AuthGuardOptions` and
+`EditorRoutesOptions` bags, the newly named factory return types) is additive: no rename, no
+removal, nothing this list needs to carry.
+
 ### Added
 
 - A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the

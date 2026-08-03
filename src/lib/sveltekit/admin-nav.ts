@@ -69,12 +69,13 @@ export interface ResolvedNavEntry {
 }
 
 /**
- * Validate and resolve one site entry: its icon must be in the bundled allowlist and its href must
- *  not collide with a built-in admin view (the parseAdminPath authority). Throws an actionable error
- *  naming the bad entry, so a misconfiguration fails at server start rather than rendering a broken
- *  or shadowing sidebar link.
+ * Validate one site entry: its icon must be in the bundled allowlist and its href must not collide
+ *  with a built-in admin view (the parseAdminPath authority). Throws an actionable error naming the
+ *  bad entry, so a misconfiguration fails at server start rather than rendering a broken or
+ *  shadowing sidebar link. Construction-time only; the shape a validated entry renders as is
+ *  {@link resolvedLayoutEntry}'s job, per request.
  */
-function resolveEntry(entry: NavLayoutEntry, concepts: ConceptDescriptor[]): ResolvedNavEntry {
+function validateEntry(entry: NavLayoutEntry, concepts: ConceptDescriptor[]): void {
   if (!ADMIN_NAV_ICON_NAMES.includes(entry.icon)) {
     throw new Error(
       `navLayout: icon "${entry.icon}" is not one of ${ADMIN_NAV_ICON_NAMES.join(', ')}`,
@@ -88,12 +89,6 @@ function resolveEntry(entry: NavLayoutEntry, concepts: ConceptDescriptor[]): Res
       `navLayout: href "${entry.href}" collides with cairn's built-in "${parsed.view}" view; choose an unclaimed /admin/<segment>`,
     );
   }
-  return {
-    label: entry.label,
-    iconName: entry.icon,
-    href: entry.href,
-    ownerOnly: entry.ownerOnly ?? false,
-  };
 }
 
 // The navLayout seam: a site's optional whole-sidebar arrangement, mixing engine screens and its
@@ -171,7 +166,8 @@ function isNavLayoutEngineRef(node: NavLayoutEntry | NavLayoutEngineRef): node i
  *  fallback would otherwise be the only thing standing between that and a silent last-write-wins
  *  render); a `roles` list, on an entry or a section, names only a role the site's vocabulary
  *  actually declares. A site entry embedded in the tree is validated the same way (the bundled icon
- *  allowlist, the built-in href collision), reusing {@link resolveEntry} so the two never drift.
+ *  allowlist, the built-in href collision) wherever it sits, top-level or inside a section, reusing
+ *  {@link validateEntry} so the two never drift.
  * @param layout - The raw config.
  *
  * The second parameter carries context this validation needs but does not itself derive: the
@@ -254,7 +250,7 @@ export function validateNavLayout(
         if (isNavLayoutEngineRef(child)) {
           checkEngineRef(child);
         } else {
-          resolveEntry(child, stubConcepts);
+          validateEntry(child, stubConcepts);
           checkHref(child.href, `an entry in section "${node.label}"`);
           checkRoles(child.roles, `an entry in section "${node.label}"`);
         }
@@ -262,7 +258,7 @@ export function validateNavLayout(
     } else if (isNavLayoutEngineRef(node)) {
       checkEngineRef(node);
     } else {
-      resolveEntry(node, stubConcepts);
+      validateEntry(node, stubConcepts);
       checkHref(node.href, 'a top-level entry');
       checkRoles(node.roles, 'a top-level entry');
     }
@@ -469,21 +465,23 @@ function hrefReachable(href: string, opts: ResolveNavLayoutOptions): boolean {
 }
 
 /**
- * The engine's canonical screen order: each declared concept (by declaration order), then the
- *  fixed utility screens, `nav` included only when a navMenu is configured (an unconfigured `nav`
- *  is never a valid reference at all, so it never appears here or in `fallback`). Both the default
- *  synthesis and the omission-fallback computation walk this same order.
+ * The engine's fixed utility screens in canonical sidebar order, `nav` included only when a navMenu
+ *  is configured (an unconfigured `nav` is never a valid reference at all, so it never appears here
+ *  or in `fallback`). `help` is not one of them: it trails the whole order, and the default
+ *  synthesis deliberately leaves it out of `items` entirely.
+ */
+function utilityScreenOrder(opts: ResolveNavLayoutOptions): string[] {
+  return ['media', 'vocabulary', ...(opts.navMenuLabel !== null ? ['nav'] : []), 'settings', 'editors'];
+}
+
+/**
+ * The engine's canonical screen order: each declared concept (by declaration order), then the fixed
+ *  utility screens, then `help`. The omission-fallback computation walks this whole order; the
+ *  default synthesis walks the same concepts and the same {@link utilityScreenOrder}, so the two
+ *  arrangements can never disagree about where a screen sits.
  */
 function engineScreenOrder(opts: ResolveNavLayoutOptions): string[] {
-  return [
-    ...opts.concepts.map((c) => c.id),
-    'media',
-    'vocabulary',
-    ...(opts.navMenuLabel !== null ? ['nav'] : []),
-    'settings',
-    'editors',
-    'help',
-  ];
+  return [...opts.concepts.map((c) => c.id), ...utilityScreenOrder(opts), 'help'];
 }
 
 /** Resolve one navLayout site entry (embedded in the tree), dropping its declarative `roles` field. */
@@ -572,8 +570,9 @@ function resolveDefaultLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout 
   }
   // engineVisible is the single visibility authority (nav needs a configured navMenu, editors needs
   // owner, all need capability !== 'none'), the same gate the concept loop above and the help
-  // fallback below rely on.
-  for (const screen of ['media', 'vocabulary', 'nav', 'settings', 'editors']) {
+  // fallback below rely on. utilityScreenOrder is the single order authority, shared with the
+  // omission-fallback walk, so a screen never sits in one arrangement's order and not the other's.
+  for (const screen of utilityScreenOrder(opts)) {
     if (engineVisible(screen, opts)) items.push(engineEntry(screen, opts));
   }
 

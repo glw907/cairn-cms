@@ -803,7 +803,7 @@ compiled from cairn's own admin usage.
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
 | `FormatMoneyOptions` | Extension API | `interface FormatMoneyOptions { currency?: string; locale?: string; fallback?: string }` | `formatMoney`'s options: the ISO 4217 currency code, BCP 47 locale tag, and the nullish-input fallback string (defaults `''`). |
-| `FormatCivilDateOptions` | Extension API | `interface FormatCivilDateOptions { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }` | `formatCivilDate`'s options: the null-date fallback word (defaults `''`), locale, and the `Intl.DateTimeFormat` options passthrough. |
+| `FormatCivilDateOptions` | Extension API | `interface FormatCivilDateOptions { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }` | `formatCivilDate`'s options: the nullish-or-empty-input fallback string (defaults `''`), locale, and the `Intl.DateTimeFormat` options passthrough. |
 | `FormatTimestampOptions` | Extension API | `interface FormatTimestampOptions { timeZone?: string; locale?: string; fallback?: string }` | `formatTimestamp`'s options: the IANA time zone, BCP 47 locale tag, and the nullish-input fallback string (defaults `''`). |
 | `FormatPhoneOptions` | Extension API | `interface FormatPhoneOptions { fallback?: string }` | `formatPhone`'s options: the nullish-input fallback string (defaults `''`). |
 | `StatusChipTone` | Extension API | `type StatusChipTone = 'neutral' \| 'info' \| 'success' \| 'warning' \| 'danger'` | `StatusChip`'s full semantic tone vocabulary. `danger` reads as daisyUI's `error` semantic under the hood. |

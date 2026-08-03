@@ -40,7 +40,7 @@ export function formatMoney(cents: number | null | undefined, options: FormatMon
 
 /** Options for {@link formatCivilDate}. */
 export interface FormatCivilDateOptions {
-  /** The word to show for a null or missing date. Defaults to `''`. */
+  /** The string to return for a nullish or empty `iso` value. Defaults to `''`. */
   fallback?: string;
   /** A BCP 47 locale tag. Defaults to `'en-US'`. */
   locale?: string;
@@ -57,7 +57,8 @@ export interface FormatCivilDateOptions {
  * `YYYY-MM-DD` string, or the leading date portion of a full SQLite datetime string. Parses at
  * local midnight so the calendar day never shifts a day west of Greenwich the way a bare
  * `new Date(iso)` UTC parse would, and never routes a civil date through a time-of-day formatter
- * (the "4:00 PM" artifact a timestamp formatter produces for a value that carries no time).
+ * (the "4:00 PM" artifact a timestamp formatter produces for a value that carries no time). A
+ * nullish or empty `iso` reads `options.fallback`.
  */
 export function formatCivilDate(iso: string | null | undefined, options: FormatCivilDateOptions = {}): string {
   const { fallback = '', locale = 'en-US', intlOptions = { year: 'numeric', month: 'short', day: 'numeric' } } =

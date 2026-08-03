@@ -1,7 +1,7 @@
 // cairn-cms: the tidy (LLM copy-edit) action. createTidyActions closes over the shared
 // ContentRoutesContext (content-routes-context.ts) built once by createContentRoutes, reusing its
 // resolved Anthropic client and request deadline.
-import { fail } from '@sveltejs/kit';
+import { fail, type ActionFailure } from '@sveltejs/kit';
 import { DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import { log } from '../log/index.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
@@ -75,7 +75,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *  stays the retryable "Try again." copy, with the log's `reason` field (`timeout`/`abort`/`model`)
    *  naming which.
    */
-  async function tidyAction(event: CairnEvent): Promise<ReturnType<typeof fail> | TidyResult> {
+  async function tidyAction(event: CairnEvent): Promise<ActionFailure<TidyFailure> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
     // before the session read and before any model call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {

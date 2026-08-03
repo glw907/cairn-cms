@@ -2,7 +2,7 @@
 // concept list, and the create/edit/save/publish/discard/delete/rename cycle for a single entry).
 // createCoreActions closes over the shared ContentRoutesContext (content-routes-context.ts) built
 // once by createContentRoutes, so a shim stays one line: `export const load = routes.editLoad`.
-import { redirect, error, fail } from '@sveltejs/kit';
+import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
 import { extractIncludes, rewriteIncludeDirective } from '../content/includes.js';
@@ -696,7 +696,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
-  async function createAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function createAction(event: CairnEvent): Promise<ActionFailure<CreateFailure>> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -1015,7 +1015,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     editor: Editor,
     concept: ConceptDescriptor,
     id: string,
-  ): Promise<ReturnType<typeof fail> | SaveHold> {
+  ): Promise<ActionFailure<SaveFailure> | SaveHold> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const form = await event.request.formData();
     const body = String(form.get('body') ?? '');
@@ -1199,7 +1199,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    * Save an edit: validate, then commit to the entry's pending branch with the session editor
    *  as author. Main and its manifest stay untouched until publish. Fails safe on 409.
    */
-  async function saveAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function saveAction(event: CairnEvent): Promise<ActionFailure<SaveFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
@@ -1219,7 +1219,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  The branch is deleted only when its head still matches the commit this action made; a
    *  concurrent save moved it, so the entry stays pending and the next publish picks it up.
    */
-  async function publishAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function publishAction(event: CairnEvent): Promise<ActionFailure<SaveFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
@@ -1425,7 +1425,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     concept: ConceptDescriptor,
     id: string,
     editor: Editor,
-  ): Promise<ReturnType<typeof fail> | never> {
+  ): Promise<ActionFailure<DeleteRefusal>> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const backend = ctx.resolveBackend(event);
 
@@ -1533,13 +1533,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Delete an entry from its editor. The id comes from the route param. */
-  async function deleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function deleteAction(event: CairnEvent): Promise<ActionFailure<DeleteRefusal>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     return deleteEntry(event, concept, id, editor);
   }
 
   /** Delete an entry from the concept list. The id comes from the form body. */
-  async function listDeleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function listDeleteAction(event: CairnEvent): Promise<ActionFailure<DeleteRefusal>> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -1555,7 +1555,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  are the authoritative gate. The same last-writer-wins manifest race as save and delete applies,
    *  caught by the build's fail-closed backstop.
    */
-  async function renameAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function renameAction(event: CairnEvent): Promise<ActionFailure<RenameFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const backend = ctx.resolveBackend(event);
 

@@ -91,20 +91,20 @@ export interface VocabularyLoadData {
 }
 
 /**
- * A refused tidy settings save: `fail(409)` when the config's head moved since the editor opened
- *  the page. Module-internal: the component reads the envelope's `error` string loosely, so no
- *  other module names this type.
+ * A refused tidy settings save: `fail(400)` on an invalid conventions payload, `fail(500)` on a
+ *  malformed committed config, `fail(409)` when the config's head moved since the editor opened
+ *  the page.
  */
-interface SettingsSaveFailure {
+export interface SettingsSaveFailure {
   error: string;
 }
 
 /**
- * A refused tag-vocabulary save: `fail(409)` when the config's head moved since the editor opened
- *  the page. Module-internal: the component reads the envelope's `error` string loosely, so no
- *  other module names this type.
+ * A refused tag-vocabulary save: `fail(400)` on an invalid vocabulary payload, `fail(500)` on a
+ *  malformed committed config, `fail(409)` when a removed value is still in use or the config's
+ *  head moved since the editor opened the page.
  */
-interface VocabularySaveFailure {
+export interface VocabularySaveFailure {
   error: string;
 }
 
@@ -251,7 +251,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
    */
-  async function settingsSaveAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function settingsSaveAction(event: CairnEvent): Promise<ActionFailure<SettingsSaveFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'settings');
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
@@ -369,7 +369,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
-  async function vocabularySaveAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function vocabularySaveAction(event: CairnEvent): Promise<ActionFailure<VocabularySaveFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'vocabulary');
 

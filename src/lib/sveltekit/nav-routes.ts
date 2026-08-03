@@ -1,7 +1,7 @@
 // The admin nav-editing routes: the load and save a site's /admin/nav shim calls. A factory closes
 // over the composed runtime, mirroring createContentRoutes, so the read and commit paths are
 // unit-testable against a fetch double riding the event's locals.cairnBackend seam.
-import { redirect, error, fail } from '@sveltejs/kit';
+import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
@@ -25,11 +25,10 @@ export interface NavLoadData {
 }
 
 /**
- * A refused nav save: `fail(409)` when the config's head moved since the editor opened the page.
- *  Module-internal: the component reads the envelope's `error` string loosely, so no other module
- *  names this type.
+ * A refused nav save: `fail(400)` on an invalid posted tree, `fail(409)` when the config's head
+ *  moved since the editor opened the page.
  */
-interface NavSaveFailure {
+export interface NavSaveFailure {
   error: string;
 }
 
@@ -103,7 +102,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
   }
 
   /** Save the nav tree: validate, then read-modify-commit the one menu with the session editor as author. */
-  async function navSaveAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function navSaveAction(event: CairnEvent): Promise<ActionFailure<NavSaveFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
     const config = runtime.navMenu;

@@ -57,6 +57,7 @@ export type {
   MediaReplaceFailure,
   MediaAltPropagateFailure,
   MediaBulkFailure,
+  MediaUploadFailure,
   MediaBulkDeleteResult,
   MediaOrphanPurgeResult,
   MediaReplacePreviewEntry,
@@ -77,7 +78,7 @@ export type {
 
 export type { TidyResult } from './content-routes-tidy.js';
 
-export type { SettingsData, VocabularyLoadData } from './content-routes-settings.js';
+export type { SettingsData, VocabularyLoadData, SettingsSaveFailure, VocabularySaveFailure } from './content-routes-settings.js';
 
 export type { DictionaryAddResult, DictionaryAddFailure } from './content-routes-dictionary.js';
 

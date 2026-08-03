@@ -114,8 +114,8 @@ backlog item is not done until the roadmap stops listing it. Shipped history liv
 and the per-plan post-mortems, not in the roadmap.
 
 Four production sites depend on the package, each on its own version range, so a stale doc costs
-real users. Treat the docs update as
-part of the work, not a chore after it. See the `docs-is-a-pass-dimension` memory.
+real users. Treat the docs update as part of the work, not a chore after it. See the
+`docs-is-a-pass-dimension` memory.
 
 ## Releases (cadence and scheme)
 

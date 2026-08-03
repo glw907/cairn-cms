@@ -686,9 +686,9 @@ type RequestResult =
   | { status: 'throttled'; sent: false };
 
 declare function createAuthRoutes(config: AuthRoutesConfig): {
-  loginLoad: (event: CairnEvent<CairnEnv>) => { siteName: string; error: string | null; csrf: string };
+  loginLoad: (event: CairnEvent<CairnEnv>) => LoginData;
   requestAction: (event: CairnEvent<CairnEnv>) => Promise<RequestResult>;
-  confirmLoad: (event: CairnEvent<CairnEnv>) => { token: string; siteName: string; error: string | null; csrf: string };
+  confirmLoad: (event: CairnEvent<CairnEnv>) => ConfirmData;
   confirmAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
   logoutAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
 };
@@ -733,7 +733,7 @@ Stability tier: Unstable API.
 
 ```ts
 declare function createEditorRoutes(opts?: EditorRoutesOptions): {
-  editorsLoad: (event: CairnEvent<CairnEnv>) => Promise<{ editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] }>;
+  editorsLoad: (event: CairnEvent<CairnEnv>) => Promise<EditorsData>;
   editorAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
   editorRemoveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
   editorSetRoleAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
@@ -1600,3 +1600,92 @@ imports the matching `*Data` type to type its `data` prop.
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it structurally with no cast. |
 | <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }` | The Cloudflare bindings and vars every cairn site's Worker needs. Every member but `ANTHROPIC_API_KEY` is required (not optional), so a binding a site forgets to wire fails `app.d.ts` at compile time rather than surfacing as a runtime `config.bindings-missing` error. **A recommended convenience preset, not a requirement:** every route factory's env parameter is `CairnEnv`, structurally satisfied by a bare `wrangler types`-generated env too (`EmailSender.send` returns `Promise<unknown>`, which structurally accepts `@cloudflare/workers-types`' wider `Promise<EmailSendResult>`), so intersecting this type exists to catch a forgotten binding at compile time, not to unblock a route factory assignment. `ANTHROPIC_API_KEY` stays optional since only the opt-in tidy action reads it. The GitHub App's id and installation id aren't runtime bindings: the adapter passes them as compile-time config to `githubApp({ appId, installationId })`, and only the private key names a Worker secret this type carries. `/sveltekit` is the canonical home for this and the other binding-shaped types; intersect it into `App.Platform.env` (`/ambient` augments only `App.Locals`, never `App.Platform`, since a second `Platform` declaration would collide with a site's own through interface merging): `env: CairnPlatformBindings & { /* the site's own bindings */ }`. A media-enabled site also intersects `CairnMediaBindings`. |
 | <a id="cairnmediabindings"></a>`CairnMediaBindings` | Extension API | `interface CairnMediaBindings { MEDIA_BUCKET: R2Bucket }` | The R2 binding a media-enabled site adds to its `Platform.env` intersection, split from `CairnPlatformBindings` since `MEDIA_BUCKET` exists only when the adapter's `assets` block turns media on: `env: CairnPlatformBindings & CairnMediaBindings & { /* the site's own bindings */ }`. |
+| `LoginData` | Unstable API | `interface LoginData { siteName: string; error: string \| null; csrf: string }` | `loginLoad`'s named payload: the site name, a resolved `?error` code, and the CSRF token the login form's hidden field carries. |
+| `ConfirmData` | Unstable API | `interface ConfirmData { token: string; siteName: string; error: string \| null; csrf: string }` | `confirmLoad`'s named payload: the token to re-submit, the site name, a resolved `?error` code, and the CSRF token. |
+| `EditorsData` | Unstable API | `interface EditorsData { editors: Editor[]; self: string; error: string \| null; vocabulary: { role: string; capability: Capability }[] }` | `editorsLoad`'s named payload: the allowlist with each row's resolved capability, the acting owner's email, a resolved `?error` code, and the role vocabulary. |
+| `FragmentTarget` | Unstable API | `interface FragmentTarget { id: string; title: string; body: string }` | One published fragment `EditData.fragmentTargets` offers the include picker: its id, title, and raw markdown body, read from the default branch only. |
+| `TidyClient` | Unstable API | `interface TidyClient` | The Anthropic Messages API surface the tidy action calls; a test injects a stub through `ContentRoutesOptions.tidy.client`. |
+| `TidyResult` | Unstable API | `interface TidyResult { corrected: string; model: string; usage: { input_tokens: number; output_tokens: number } }` | The successful tidy outcome: the corrected markdown, the model that produced it, and the token usage. The diff is computed client-side; the server commits nothing. |
+| `DictionaryAddResult` | Unstable API | `interface DictionaryAddResult { words: string[] }` | The personal-dictionary add outcome: the merged, canonical sorted word list after the add landed. |
+| `MediaBulkDeleteResult` | Unstable API | `interface MediaBulkDeleteResult { deleted: string[]; skipped: BulkDeleteSkip[]; failed: { hash: string; error: string }[] }` | The bulk-delete outcome: the deleted hashes, the skipped rows from the partition, and any per-object R2 delete failure. |
+| `MediaOrphanPurgeResult` | Unstable API | `interface MediaOrphanPurgeResult { purged: string[]; skippedClaimed: string[]; failed: { key: string; error: string }[] }` | The orphan-purge outcome: the purged R2 keys, the keys skipped because their hash was claimed since the scan, and any per-object delete failure. |
+| `MediaReplacePreviewEntry` | Unstable API | `interface MediaReplacePreviewEntry` | One entry `MediaReplacePreviewPlan.entries` rewrites, enriched with its display title, permalink, and per-reference placement diff. |
+| `MediaReplacePreviewPlan` | Unstable API | `interface MediaReplacePreviewPlan { affectedCount: number; entries: MediaReplacePreviewEntry[]; branchDelta: BranchRef[] }` | The replace-preview plan: the affected main entries, the distinct affected count, and the report-only cross-branch delta. Display-only; the apply re-derives its own plan. |
+| `MediaAltPreviewPlan` | Unstable API | `interface MediaAltPreviewPlan { entries: MediaAltPreviewEntry[]; branchDelta: BranchRef[]; counts: { willFill: number; customized: number; decorativeSkipped: number } }` | The alt-propagation preview plan: every entry that references the asset, the cross-branch delta, and the placement counts by bucket. |
+| `MediaAltPreviewEntry` | Unstable API | `interface MediaAltPreviewEntry` | One entry `MediaAltPreviewPlan.entries` reports, enriched with its display title, permalink, and per-reference placement bucket (will-fill, customized, or decorative-skipped). |
+| `MediaLibraryEntry` | Unstable API | `interface MediaLibraryEntry` | One stored asset in the picker's projected library, keyed elsewhere by the 16-hex content hash. |
+| `UsageEntry` | Unstable API | `interface UsageEntry` | One entry that references an asset, in the shape the where-used screen links and groups by. |
+| `MediaOrphanScanResult` | Unstable API | `interface MediaOrphanScanResult { orphanedBytes: OrphanByteRow[]; brokenRefs: BrokenRefRow[] }` | The orphan-scan surface model: the two row sets the Library's scan view renders. |
+| `OrphanByteRow` | Unstable API | `interface OrphanByteRow { key: string; hash: string }` | A purgeable orphan: a stored R2 key with no manifest row, plus the 16-hex hash parsed from it. |
+| `BrokenRefRow` | Unstable API | `interface BrokenRefRow { hash: string; slug: string; usage: UsageEntry[] }` | A broken reference: a manifest row whose bytes are gone. Read-only; the screen shows where it is used so an operator can re-ingest. |
+| `RepointPlacement` | Unstable API | `interface RepointPlacement` | One repointed reference in a replace preview: which surface it lived on, the old token as written, and the new token. |
+| `AltPlacement` | Unstable API | `interface AltPlacement` | One placement of the target hash in an alt-fill preview: which surface it lives on, its bucket, the existing alt, and the alt after the transform. |
+| `BranchRef` | Unstable API | `interface BranchRef` | One open edit branch that also references the asset, with the entries on it. Report-only; an apply rewrites main, never a branch. |
+| `BulkDeleteSkip` | Unstable API | `interface BulkDeleteSkip` | One selected hash a bulk delete does not delete, with why and (for the where-used case) its usage rows. |
+| `AccessMap` | Extension API | `type AccessMap = Record<string, string[]>` | A site's whole access declaration: a target to the role names admitted to it. See [`AccessMap`](./core.md#access-map). |
+| `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request. See [`Backend`](./core.md#stable-api). |
+| `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
+| `CairnRuntime` | Extension API | `interface CairnRuntime` | The composed runtime the engine serves from; every factory here takes one as its first argument. |
+| `NamedField` | Extension API | `type NamedField = FieldDescriptor & { name: string }` | A field descriptor with its frontmatter key re-attached as `name`, the normalized shape `ConceptDescriptor.fields` and `EditData.fields` carry. |
+| `ResolvedPreview` | Extension API | `type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>` | The flat preview shape `editLoad` ships to the edit page: the top-level `PreviewConfig` values with the entry's concept override already applied. |
+| `Capability` | Extension API | `type Capability = 'owner' \| 'editor' \| 'none'` | The three levels the engine understands. See [`Capability`](./core.md#capability). |
+| `RolesDeclaration` | Extension API | `type RolesDeclaration = Record<string, RoleDeclaration>` | A site's whole role vocabulary. See [`RolesDeclaration`](./core.md#roles). |
+| `RoleDeclaration` | Extension API | `type RoleDeclaration = Capability \| { capability: Capability; home?: string }` | One role's mapping in a `defineRoles` vocabulary. See [`RoleDeclaration`](./core.md#roles). |
+| `MediaEntry` | Extension API | `interface MediaEntry` | One stored asset's row: its content hash, its human layer, and its byte and pixel facts. See [`MediaEntry`](./media.md#types). |
+| `GettingStarted` | Extension API | `interface GettingStarted` | The three getting-started steps, their completion count, and the fixed step total, behind `HelpData.gettingStarted`. |
+| `MarkdownReferenceRow` | Extension API | `interface MarkdownReferenceRow { syntax: string; makes: string; group: 'text' \| 'links' \| 'blocks' }` | One cheat-sheet row the Help home and the Markdown help dialog both render: the literal syntax, a plain gloss, and its group. |
+| `InboundLink` | Unstable API | `interface InboundLink` | One inbound linker: enough to name it and link to its edit page in the delete guard. |
+| `LinkTarget` | Unstable API | `interface LinkTarget` | The minimal entry view the preview resolver and the picker read. |
+| `NavNode` | Extension API | `interface NavNode { label: string; url?: string; children?: NavNode[] }` | One navigation node: label, optional url, optional children. See [`NavNode`](./core.md#stable-api). |
+| `VocabularyEntry` | Extension API | `interface VocabularyEntry { value: string; label: string }` | One editor-owned tag: a frozen slug `value` and an editable display `label`. See [`VocabularyEntry`](./core.md#stable-api). |
+| `TidyConventions` | Extension API | `interface TidyConventions` | The corrected convention set the tidy prompt builder consumes. See [`TidyConventions`](./core.md#types). |
+| `TidyKeyProbeResult` | Unstable API | `type TidyKeyProbeResult = 'valid' \| 'invalid' \| 'unknown'` | The settings screen's three reportable key states, distinct from bare presence, cached from the last live tidy-action probe. |
+| `RepoFile` | Extension API | `interface RepoFile { id: string; name: string; path: string }` | A markdown file in a concept directory: id, name, path. |
+| `CommitAuthor` | Extension API | `interface CommitAuthor { name: string; email: string }` | A commit author: the signed-in editor's name and email. |
+| `FileChange` | Extension API | `interface FileChange { path: string; content: string \| null }` | One path change in a commit: write `content`, or delete the path when `content` is null. |
+| `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. See [`ComponentRegistry`](./core.md#render). |
+| `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). See [`ComponentDef`](./core.md#render). |
+| `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives. See [`ComponentContext`](./core.md#types). |
+| `IconSet` | Extension API | `type IconSet = Record<string, string>` | A glyph name to SVG path-data map the site owns. |
+| `VariantSpec` | Extension API | `interface VariantSpec` | A single image variant: the resize and format directives Cloudflare Images applies. See [`VariantSpec`](./media.md#types). |
+| `FragmentResolve` | Extension API | `type FragmentResolve = (id: string) => string \| undefined` | Resolve a fragment id to its raw markdown body, for the `::include` directive. |
+| `LinkResolve` | Extension API | `type LinkResolve = (ref: CairnRef) => string \| undefined` | Resolve a `CairnRef` to its live permalink. |
+| `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | Resolve a `media:` reference to its live delivery URL. |
+| `CairnRef` | Extension API | `interface CairnRef { concept: string; id: string }` | A resolved reference to a content entry by its concept and permanent id. |
+| `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. |
+| `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
+| `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API: a bare address, or an address with a display name. |
+| `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization. See [`ConceptDescriptor`](./core.md#stable-api). |
+| `SenderConfig` | Extension API | `interface SenderConfig { from: string; replyTo?: string }` | Magic-link sender identity for Cloudflare Email Sending. |
+| `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
+| `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration. See [`AssetConfig`](./media.md#types). |
+| `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame. |
+| `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept. |
+| `ValidationResult` | Extension API | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed `errors` plus the additive located `issues`. |
+| `ValidationIssue` | Extension API | `interface ValidationIssue` | One validation failure located by a `path` and its message. |
+| `FieldDescriptor` | Extension API | `type FieldDescriptor` | The plain-data descriptor union the form, validator, and inference all read. See [Field types](./core.md#field-types). |
+| `Fieldset` | Extension API | `interface Fieldset<R>` | The schema a `fieldset` call returns, carrying the descriptors, the behavior table, the validator, and the Standard Schema property. |
+| `TextField` | Extension API | `interface TextField` | A single-line text input. One of `FieldDescriptor`'s fifteen arms; see [Field types](./core.md#field-types). |
+| `TextareaField` | Extension API | `interface TextareaField` | A multi-line text input. |
+| `NumberField` | Extension API | `interface NumberField` | A numeric input. |
+| `SelectField` | Extension API | `interface SelectField` | A single-choice input over a closed option list. |
+| `MultiselectField` | Extension API | `interface MultiselectField` | A multiple-choice input. |
+| `UrlField` | Extension API | `interface UrlField` | A URL input whose format the validator enforces. |
+| `EmailField` | Extension API | `interface EmailField` | An email-address input whose format the validator enforces. |
+| `DateField` | Extension API | `interface DateField` | A calendar-date input. |
+| `DatetimeField` | Extension API | `interface DatetimeField` | A date-and-time input. |
+| `BooleanField` | Extension API | `interface BooleanField` | A checkbox; absent means false. |
+| `IconField` | Extension API | `interface IconField` | A glyph chosen from the adapter's icon set. |
+| `ImageField` | Extension API | `interface ImageField` | A hero image whose stored value is the nested `ImageValue` object. |
+| `ObjectField` | Extension API | `interface ObjectField` | A group of leaf fields, stored as a nested object. |
+| `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's permanent id. |
+| `ArrayField` | Extension API | `interface ArrayField` | A repeatable field whose stored value is a list of its item's values. |
+| `BehaviorTable` | Extension API | `type BehaviorTable = Record<string, FieldBehavior>` | The behavior table co-bundled with a fieldset, keyed by field name. |
+| `FieldBehavior` | Extension API | `interface FieldBehavior` | Function-valued behavior a field descriptor cannot carry as plain data: a cross-field `validate` and an array row's `itemLabel` deriver. |
+| `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. |
+| `CookieSetOptions` | Extension API | `interface CookieSetOptions { path: string; httpOnly?; secure?; sameSite?; maxAge? }` | The options `CookieJar.set` takes: standard cookie attributes, `path` required. |
+| `TidyConfig` | Extension API | `interface TidyConfig { enabled?; model?; conventions? }` | The tidy block on the site config. See [`TidyConfig`](./core.md#types). |
+| <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads. See [`Editor`](./core.md#editor). |
+| `AuthBranding` | Extension API | `interface AuthBranding { siteName: string; from: string; replyTo?: string }` | Per-site identity for the magic-link email; `AuthRoutesConfig.branding` takes this shape. |
+| `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries. See [`MagicLinkMessage`](./core.md#stable-api). |
+| `SendMagicLink` | Extension API | `type SendMagicLink = (env: CairnEnv, message: MagicLinkMessage) => Promise<void>` | The injected send a custom `SendMagicLink` implements; `AuthRoutesConfig.send` takes this shape. |

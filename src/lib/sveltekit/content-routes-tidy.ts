@@ -15,8 +15,7 @@ import type { CairnEvent } from './types.js';
 /**
  * The successful tidy outcome (spec 2.1): the corrected markdown, the model that produced it, and the
  * token usage. The diff is computed on the client (Task 12), so the server returns the plain text and
- * commits nothing. Admin-internal: consumed by the editor's review surface, not on the package's
- * sveltekit subpath, so it carries no reference page.
+ * commits nothing.
  */
 export interface TidyResult {
   corrected: string;

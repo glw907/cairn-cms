@@ -141,6 +141,7 @@ its layout is a template-level concern, since the engine has no dimensions to de
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
+| `AssetConfig` | Extension API | `interface AssetConfig { bucketBinding; publicBase?; urlForm?; maxUploadBytes?; allowedTypes?; variants?; transformations? }` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named variant presets. `normalizeAssets` resolves it into `ResolvedAssetConfig`. |
 | `ResolvedAssetConfig` | Extension API | `type ResolvedAssetConfig = { enabled: false } \| { enabled: true; bucketBinding; publicBase; urlForm; maxUploadBytes; allowedTypes; variants; transformations }` | The resolved media config the engine serves from. An absent `assets` block yields the `{ enabled: false }` variant; otherwise every field is filled from the `AssetConfig` or its default. |
 | `MediaEntry` | Extension API | `interface MediaEntry { hash; sha256; slug; displayName; originalFilename; alt; ext; contentType; bytes; width; height; createdAt }` | One stored asset's row: its content hash, its human layer, and its byte and pixel facts. `width` and `height` are `null` when no dimensions are known. |
 | `MediaManifest` | Extension API | `type MediaManifest = Record<string, MediaEntry>` | The whole stored-asset record, keyed by the 16-hex content-hash prefix. |

@@ -24,9 +24,11 @@ import type { LinkResolve } from '../content/links.js';
 
 export type { DocHeading } from './collect-headings.js';
 
-// The per-call resolver hooks renderMarkdown and renderDocument both accept, threaded onto the
-// VFile's data so the cairn: link, media:, and ::include steps read them at process time.
-type ResolveOptions = {
+/**
+ * The per-call resolver hooks `renderMarkdown` and `renderDocument` both accept, threaded onto
+ * the VFile's data so the cairn: link, media:, and ::include steps read them at process time.
+ */
+export type ResolveOptions = {
   resolve?: LinkResolve;
   resolveMedia?: MediaResolve;
   resolveFragment?: FragmentResolve;

@@ -51,6 +51,30 @@ const DEMOTED = [
   'MAX_NAV_NODES',
   'NavValidationError',
   'ResolvedPreview',
+  'ManifestDiff',
+  'ManifestEntryDiff',
+  'InboundReference',
+  'SlotKind',
+  'ComponentValues',
+  'ComponentValidation',
+  'ComponentInsert',
+  'ReferenceOptions',
+  'ResolvedReference',
+];
+
+// C2 breaking window (2026-08-02, R1): `ConceptUrlPolicy` demoted from the root barrel. The
+// 2026-07-01 KEEP verdict carried no recorded defense; the type stays internal (used by
+// `normalizeConcepts` and `defineConcept`), just no longer re-exported at the root.
+const C2_DEMOTED = ['ConceptUrlPolicy'];
+
+// C2 breaking window (2026-08-02, R4, Task 9): the export-rule sweep reverses the 2026-07-01
+// pruning verdict for these 22 names. Each is genuinely named in a root-public signature
+// (`ConceptConfig.datePrefix`, `ComponentDef.slots`, `Fieldset.behavior`, `Manifest.entries`,
+// `ManifestEntry.references`, `ConceptDescriptor.routing`, and `FieldDescriptor`'s own union
+// arms), so the new doctrine, every type named in a public signature is exported from a subpath
+// the consumer already imports, outranks the July minimalism call for exactly this set. Moved
+// into KEPT below rather than left in DEMOTED.
+const C2_READDED = [
   'TextField',
   'TextareaField',
   'NumberField',
@@ -70,26 +94,10 @@ const DEMOTED = [
   'FieldBehavior',
   'DatePrefix',
   'ManifestEntry',
-  'ManifestDiff',
-  'ManifestEntryDiff',
-  'LinkTarget',
-  'InboundLink',
-  'InboundReference',
   'ReferenceEdge',
-  'SlotKind',
   'SlotDef',
-  'ComponentValues',
-  'ComponentValidation',
-  'ComponentInsert',
-  'ReferenceOptions',
-  'ResolvedReference',
   'RoutingRule',
 ];
-
-// C2 breaking window (2026-08-02, R1): `ConceptUrlPolicy` demoted from the root barrel. The
-// 2026-07-01 KEEP verdict carried no recorded defense; the type stays internal (used by
-// `normalizeConcepts` and `defineConcept`), just no longer re-exported at the root.
-const C2_DEMOTED = ['ConceptUrlPolicy'];
 
 // The keep list for the root subpath, from the audit verdicts doc's `## .` section
 // (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`).
@@ -182,5 +190,11 @@ describe('root barrel prune', () => {
     const names = new Set(enumerateExports(DTS));
     const stillPresent = C2_DEMOTED.filter((name) => names.has(name));
     expect(stillPresent).toEqual([]);
+  });
+
+  it('resolves every C2 re-added name from the root subpath', () => {
+    const names = new Set(enumerateExports(DTS));
+    const missing = C2_READDED.filter((name) => !names.has(name));
+    expect(missing).toEqual([]);
   });
 });

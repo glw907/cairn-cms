@@ -6,6 +6,7 @@ import type { Backend } from '../github/backend.js';
 import type { AdminActionAuditSink } from './admin-action.js';
 import type { CairnEnv } from '../env.js';
 
+/** The options `CookieJar.set` takes: standard cookie attributes, `path` required. */
 export interface CookieSetOptions {
   path: string;
   httpOnly?: boolean;

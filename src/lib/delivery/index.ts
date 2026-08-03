@@ -8,3 +8,6 @@
 export * from './data.js';
 export { createPublicRoutes } from './public-routes.js';
 export type { PublicRoutesConfig, PublicRoutes, EntryData } from './public-routes.js';
+// `PublicRoutesConfig.resolveMedia` and `EntryData`'s render call both name `MediaResolve` and its
+// own `MediaRef` parameter; `./data.js` already re-exports both (its own `SiteRender` closure
+// names them too), so this barrel needs no separate export.

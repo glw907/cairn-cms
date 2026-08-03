@@ -1013,3 +1013,39 @@ function signatures above reference these.
 | `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send a custom `SendMagicLink` implements: `(env, message) => Promise<void>`; production sends through Cloudflare Email Sending. |
 | `RepoFile` | Extension API | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | Extension API | `interface CommitAuthor` | A commit author: the signed-in editor's name and email. |
+| `TextField` | Extension API | `interface TextField` | A single-line text input: `min`/`max`/`length` and a `pattern` constraint. One of `FieldDescriptor`'s fifteen arms (export-rule sweep, C2 breaking-window pass). |
+| `TextareaField` | Extension API | `interface TextareaField` | A multi-line text input, with the same length and pattern constraints as `TextField`. |
+| `NumberField` | Extension API | `interface NumberField` | A numeric input, with `min`/`max` and an `integer` constraint. |
+| `SelectField` | Extension API | `interface SelectField` | A single-choice input over a closed `options` list. |
+| `MultiselectField` | Extension API | `interface MultiselectField` | A multiple-choice input; `creatable` opens it to author-added values, and `taxonomy: true` marks a site's tag field. |
+| `UrlField` | Extension API | `interface UrlField` | A URL input whose format the validator enforces. |
+| `EmailField` | Extension API | `interface EmailField` | An email-address input whose format the validator enforces. |
+| `DateField` | Extension API | `interface DateField` | A calendar-date input, with `min`/`max` bounds as `YYYY-MM-DD`. |
+| `DatetimeField` | Extension API | `interface DatetimeField` | A date-and-time input, with `min`/`max` bounds as ISO strings. |
+| `BooleanField` | Extension API | `interface BooleanField` | A checkbox; absent means false. |
+| `IconField` | Extension API | `interface IconField` | A glyph chosen from the adapter's icon set; the stored value is the glyph's name. |
+| `ImageField` | Extension API | `interface ImageField` | A hero image whose stored value is the nested `ImageValue` object; `seo` marks it as the social-card image. |
+| `ObjectField` | Extension API | `interface ObjectField` | A group of leaf fields, stored as a nested object. Holds only leaves, no nested container. |
+| `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's permanent id. |
+| `ArrayField` | Extension API | `interface ArrayField` | A repeatable field whose stored value is a list of its `item`'s values. |
+| `BehaviorTable` | Extension API | `type BehaviorTable = Record<string, FieldBehavior>` | The behavior table co-bundled with a fieldset, keyed by field name. Empty for a behavior-free fieldset. |
+| `FieldBehavior` | Extension API | `interface FieldBehavior { validate?; itemLabel? }` | Function-valued behavior a field descriptor cannot carry as plain data: a cross-field `validate` and an array row's `itemLabel` deriver. Resident in the app bundle, never the `load` payload. |
+| `DatePrefix` | Extension API | `type DatePrefix = 'year' \| 'month' \| 'day'` | Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem. |
+| `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept (spec §7.2). Posts are dated feed entries; pages are plain navigable structure. |
+| `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. `title` and `body` are special: `title` serializes to the directive `[label]`, `body` to the unmarked content. |
+| `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives: the declared `attributes`, `slot(name)`/`items(name)` readers, and the stamped `node`. |
+| `ManifestEntry` | Extension API | `interface ManifestEntry` | One committed manifest entry's projection: its identity, routing, draft flag, and outbound `cairn:` edges. `Manifest.entries` carries these. |
+| `ReferenceEdge` | Extension API | `interface ReferenceEdge { field: string; concept: string; id: string }` | One typed frontmatter edge from a content entry to a target entry, recorded per manifest entry and reverse-mapped by the cross-branch index. |
+| `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. `MediaResolve`'s own parameter. |
+| `TidyConfig` | Extension API | `interface TidyConfig { enabled?; model?; conventions? }` | The tidy block on the site config; every field optional so the YAML can carry as little as `tidy: { enabled: true }`. |
+| `TidyConventions` | Extension API | `interface TidyConventions` | The corrected convention set the tidy prompt builder consumes, every field resolved to a concrete value from a site's partial `TidyConfig.conventions`. |
+| `NavLayout` | Extension API | `type NavLayout = (NavLayoutEntry \| NavLayoutEngineRef \| NavLayoutSection)[]` | A site's whole declared sidebar: engine references, its own entries, and sections. The adapter's `editor.navLayout` field takes this shape; see [the navLayout seam](./sveltekit.md#the-navlayout-seam) for the full member types. |
+| `NavLayoutEntry` | Extension API | `interface NavLayoutEntry` | A site's own nav entry inside a `navLayout` tree; see [`NavLayoutEntry`](./sveltekit.md#navlayoutentry) for its members. |
+| `NavLayoutEngineRef` | Extension API | `interface NavLayoutEngineRef` | A `navLayout` node that places one of the engine's own screens; see [`NavLayoutEngineRef`](./sveltekit.md#navlayoutengineref). |
+| `NavLayoutSection` | Extension API | `interface NavLayoutSection` | One named group inside a `navLayout` tree; see [`NavLayoutSection`](./sveltekit.md#navlayoutsection). |
+| `PublishActionsConfig` | Extension API | `type PublishActionsConfig = PublishActionEntry[]` | A site's raw `publishActions` config: next-step links rendered on the publish-success moment. |
+| `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link; `href` is a template string substituted with the published entry's identity at resolve time. |
+| `VariantSpec` | Extension API | `interface VariantSpec` | A single image variant: the resize and format directives Cloudflare Images applies to the original bytes. See the preceding [`media` adapter member](#media-adapter-member). |
+| `IslandRegistry` | Extension API | `type IslandRegistry = Record<string, Component>` | A site's hydratable client components, keyed by the name a component `use`s; `hydrateIslands` mounts over the matching `hydrate` directive's static fallback. |
+| `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | Resolve a `media:` reference to its live delivery URL. `undefined` is a preview miss; a resolver that throws is the build backstop. |
+| `ResolveOptions` | Extension API | `type ResolveOptions = { resolve?; resolveMedia?; resolveFragment? }` | The per-call resolver hooks `renderMarkdown` and `renderDocument` both accept, threaded onto the VFile's data so the `cairn:` link, `media:`, and `::include` steps read them at process time. |

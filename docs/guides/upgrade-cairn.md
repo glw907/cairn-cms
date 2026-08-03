@@ -301,6 +301,28 @@ Consumers must: replace any `@glw907/cairn-cms/admin-fields` import with
 `SelectInput`, and `SelectFieldOption` to `SelectInputOption`; replace
 `@glw907/cairn-cms/components`'s `OfficeList` import with `@glw907/cairn-cms/admin-toolkit`.
 
+The export rule adopted as standing doctrine: every type named in a public signature is exported
+from a subpath you already import, so you can always name a value a route factory or the adapter
+contract hands you instead of writing your own structural duplicate (the trap an AI coding agent
+especially falls into). Roughly ninety previously unreachable types become named, documented
+exports this window, closed under their own structural bodies: the field-descriptor union's
+fifteen arms (`TextField`, `SelectField`, `ArrayField`, and the rest, mentioned above) from the
+root barrel; the facade and action result and plan types (`TidyResult`, `DictionaryAddResult`,
+`MediaBulkDeleteResult`, `MediaOrphanPurgeResult`, `MediaOrphanScanResult`,
+`MediaReplacePreviewPlan`, `MediaAltPreviewPlan`) and their supporting shapes (`TidyClient`,
+`TidyConfig`, `TidyConventions`, `TidyKeyProbeResult`, `FragmentTarget`, `LinkTarget`,
+`InboundLink`, `UsageEntry`, `ReferenceEdge`, `MarkdownReferenceRow`, `MediaLibraryEntry`,
+`ResolvedPreview`, `CookieSetOptions`, `GettingStarted`, `ResolveOptions`) from `/sveltekit` and,
+where a root signature names it, the root barrel too. Three recurring anonymous inline
+load-payload shapes are named and exported from `/sveltekit`: `LoginData`, `ConfirmData`, and
+`EditorsData`, replacing the anonymous object literals the admin facade's `AdminData` union used
+to inline for its `'login'`, `'confirm'`, and `'editors'` views. See
+[Core](../reference/core.md#types), [SvelteKit](../reference/sveltekit.md#types), and [Delivery
+data](../reference/delivery-data.md#types).
+
+Consumers must: nothing. Every addition is a new named export; nothing already imported changed
+shape or name.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

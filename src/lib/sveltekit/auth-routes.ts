@@ -49,6 +49,27 @@ export type RequestResult =
   | { status: 'throttled'; sent: false };
 
 /**
+ * The login page's data (`loginLoad`): the site name, a resolved `?error` code, and the CSRF
+ * token the login form's hidden field carries.
+ */
+export interface LoginData {
+  siteName: string;
+  error: string | null;
+  csrf: string;
+}
+
+/**
+ * The confirm page's data (`confirmLoad`): the token to re-submit, the site name, a resolved
+ * `?error` code, and the CSRF token the confirm form's hidden field carries.
+ */
+export interface ConfirmData {
+  token: string;
+  siteName: string;
+  error: string | null;
+  csrf: string;
+}
+
+/**
  * The loggable form of a send failure. The engine's own senders throw clean errors, but `send` is
  * an injection seam, and a custom sender's thrown error may embed the failed message and with it
  * the magic link. Scrub any token query value and cap the length, so the documented "records never
@@ -128,7 +149,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
   }
 
   /** GET /admin/login. Public. Carries the site name, an optional `?error`, and the CSRF token. */
-  function loginLoad(event: CairnEvent): { siteName: string; error: string | null; csrf: string } {
+  function loginLoad(event: CairnEvent): LoginData {
     return {
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
@@ -141,9 +162,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
    * verifies. Sets Referrer-Policy: no-referrer so the token does not leak to a referrer, and
    * issues the CSRF token so the confirm form can render the hidden field.
    */
-  function confirmLoad(
-    event: CairnEvent,
-  ): { token: string; siteName: string; error: string | null; csrf: string } {
+  function confirmLoad(event: CairnEvent): ConfirmData {
     event.setHeaders({ 'Referrer-Policy': 'no-referrer' });
     return {
       token: event.url.searchParams.get('token') ?? '',

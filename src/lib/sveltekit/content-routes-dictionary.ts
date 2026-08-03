@@ -14,9 +14,8 @@ import type { CairnEvent } from './types.js';
 
 /**
  * The personal-dictionary add outcome (spec 1.6): the merged, canonical sorted word list after the
- *  add landed. The client reconciles its pending-additions set against this (a word now in the list is
- *  committed and dropped from pending). Admin-internal: exported for the editor host's reconcile, not
- *  on the package's sveltekit subpath, so it carries no reference page.
+ *  add landed. The client reconciles its pending-additions set against this (a word now in the list
+ *  is committed and dropped from pending).
  */
 export interface DictionaryAddResult {
   words: string[];

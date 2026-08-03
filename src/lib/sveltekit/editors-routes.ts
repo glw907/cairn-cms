@@ -32,6 +32,18 @@ interface EditorActionFailure {
   error: string;
 }
 
+/**
+ * The editors screen's data (`editorsLoad`): the allowlist (each row carrying its resolved
+ * capability), the acting owner's email, a resolved `?error` code, and the declared role
+ * vocabulary paired with each role's capability.
+ */
+export interface EditorsData {
+  editors: Editor[];
+  self: string;
+  error: string | null;
+  vocabulary: { role: string; capability: Capability }[];
+}
+
 /** Configuration for `createEditorRoutes`: the site's declared role vocabulary. */
 export interface EditorRoutesOptions {
   /**
@@ -73,12 +85,7 @@ export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
    *  bounced back with (the same redirect convention `list`, `edit`, `nav`, and `settings`
    *  already carry their own errors through).
    */
-  async function editorsLoad(event: CairnEvent): Promise<{
-    editors: Editor[];
-    self: string;
-    error: string | null;
-    vocabulary: { role: string; capability: Capability }[];
-  }> {
+  async function editorsLoad(event: CairnEvent): Promise<EditorsData> {
     const owner = requireOwner(event);
     const rows = await listEditors(requireDb(event.platform?.env ?? {}));
     const editors = rows.map((row) => ({ ...row, capability: resolveCapability(vocabulary, row.role) }));

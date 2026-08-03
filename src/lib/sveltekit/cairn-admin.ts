@@ -7,7 +7,7 @@
 import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { parseAdminPath, type AdminView } from './admin-dispatch.js';
 import { log } from '../log/index.js';
-import { createAuthRoutes } from './auth-routes.js';
+import { createAuthRoutes, type LoginData, type ConfirmData } from './auth-routes.js';
 import {
   createContentRoutes,
   type ContentRoutesOptions,
@@ -19,12 +19,10 @@ import {
   type HelpData,
   type WelcomeData,
 } from './content-routes.js';
-import { createEditorRoutes } from './editors-routes.js';
+import { createEditorRoutes, type EditorsData } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
 import type { AuthRoutesConfig } from './auth-routes.js';
 import type { AuthBranding } from '../email.js';
-import type { Editor } from '../auth/types.js';
-import type { Capability } from '../auth/roles.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { CairnEvent } from './types.js';
 
@@ -64,14 +62,11 @@ export interface CairnAdminOptions {
  * rides the separate shell load served through `/admin/+layout.server.ts`, not this per-view load.
  */
 export type AdminData =
-  | { view: 'login'; page: { siteName: string; error: string | null; csrf: string } }
-  | { view: 'confirm'; page: { token: string; siteName: string; error: string | null; csrf: string } }
+  | { view: 'login'; page: LoginData }
+  | { view: 'confirm'; page: ConfirmData }
   | { view: 'list'; page: ListData }
   | { view: 'edit'; page: EditData }
-  | {
-      view: 'editors';
-      page: { editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] };
-    }
+  | { view: 'editors'; page: EditorsData }
   | { view: 'nav'; page: NavLoadData }
   | { view: 'media'; page: MediaLibraryData }
   | { view: 'settings'; page: SettingsData }

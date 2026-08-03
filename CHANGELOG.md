@@ -26,6 +26,28 @@
   insert logs the whole truncated record and the error as `admin.audit.sink_failed`. See
   [SvelteKit](docs/reference/sveltekit.md#created1auditsink). Consumers must: nothing.
 
+- The export-rule sweep (C2 breaking-window pass, R4 ruling) adopts a standing doctrine: every
+  type named in a public signature is exported from a subpath the consumer already imports, so an
+  AI coding agent or a developer can always name a value it holds instead of inventing a
+  structural duplicate. Roughly ninety previously unreachable types become named, documented
+  exports, closed under their own structural bodies (a type re-exported from a subpath now pulls
+  every type its own shape names along with it): the field-descriptor union's fifteen arms
+  (`TextField`, `SelectField`, `ArrayField`, and the rest) from the root barrel; the facade/action
+  result and plan types (`TidyResult`, `DictionaryAddResult`, `MediaBulkDeleteResult`,
+  `MediaOrphanPurgeResult`, `MediaOrphanScanResult`, `MediaReplacePreviewPlan`,
+  `MediaAltPreviewPlan`, and their own nested shapes) and the tidy, content, and media-preview
+  supporting types (`TidyClient`, `TidyConfig`, `TidyConventions`, `TidyKeyProbeResult`,
+  `FragmentTarget`, `LinkTarget`, `InboundLink`, `UsageEntry`, `ReferenceEdge`,
+  `MarkdownReferenceRow`, `MediaLibraryEntry`, `ResolvedPreview`, `CookieSetOptions`,
+  `GettingStarted`, `ResolveOptions`) from `./sveltekit` and, where a signature there names it,
+  the root barrel. Three recurring anonymous inline load-payload shapes are named and exported
+  from `./sveltekit`: `LoginData` (`loginLoad`), `ConfirmData` (`confirmLoad`), and `EditorsData`
+  (`editorsLoad`), replacing the anonymous object literals `AdminData`'s `'login'`/`'confirm'`/
+  `'editors'` members used to inline. See [Core](docs/reference/core.md#types),
+  [SvelteKit](docs/reference/sveltekit.md#types), and
+  [Delivery data](docs/reference/delivery-data.md#types). Consumers must: nothing; every addition
+  is a new named export with no renamed or removed symbol.
+
 ### Changed
 
 - The env-genericity sweep audited every exported event and config type pinned to `AuthEnv`

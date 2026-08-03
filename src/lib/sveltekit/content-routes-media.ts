@@ -36,6 +36,16 @@ import type { CairnEvent } from './types.js';
 // appears in an exported signature, so it does not reach the public `.d.ts`.
 import type { R2Bucket } from '@cloudflare/workers-types';
 
+// Re-exported here so every type this module's own action results name down to their nested
+// shapes is importable from the one file `content-routes.ts` already re-exports (export-rule
+// sweep, C2 breaking-window pass, R4 ruling).
+export type { MediaLibraryEntry } from '../media/library-entry.js';
+export type { UsageEntry } from '../media/usage.js';
+export type { MediaOrphanScanResult, OrphanByteRow, BrokenRefRow } from '../media/orphan-scan.js';
+export type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
+export type { BranchRef } from '../media/rewrite-plan.js';
+export type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
+
 /**
  * One asset's where-used overlay, kept separate from MediaLibraryEntry so the picker's shared
  *  projection stays decoupled from the Library-only usage facts.
@@ -143,8 +153,7 @@ interface MediaUploadFailure {
 
 /**
  * The bulk-delete outcome the component renders: the deleted hashes, the skipped rows from the
- *  partition (with their reason and where-used), and any per-object R2 delete failure. Admin-internal,
- *  not on the package subpath, so no reference page.
+ *  partition (with their reason and where-used), and any per-object R2 delete failure.
  */
 export interface MediaBulkDeleteResult {
   deleted: string[];
@@ -154,7 +163,7 @@ export interface MediaBulkDeleteResult {
 
 /**
  * The orphan-purge outcome: the purged R2 keys, the keys skipped because their hash was claimed by a
- *  manifest row since the scan, and any per-object delete failure. Admin-internal, no reference page.
+ *  manifest row since the scan, and any per-object delete failure.
  */
 export interface MediaOrphanPurgeResult {
   purged: string[];
@@ -166,8 +175,7 @@ export interface MediaOrphanPurgeResult {
  * One entry the replace preview will rewrite, enriched with its display title and permalink from the
  *  content manifest (the planner's PlannedEntry carries neither). The screen lists these as the
  *  confirm dialog's where-touched preview, and the apply re-derives its own plan rather than trusting
- *  this. Admin-internal: exported from content-routes for the bundled Media Library component, not
- *  added to the package's sveltekit subpath, so it carries no reference page.
+ *  this.
  */
 export interface MediaReplacePreviewEntry {
   /** The concept id, e.g. "posts". */
@@ -197,10 +205,9 @@ export interface MediaReplacePreviewPlan {
  * One entry the alt-propagation preview reports, enriched with its display title and permalink from
  *  the content manifest. Its placements carry every reference of the asset on this entry, each tagged
  *  with the bucket it falls in (a will-fill, a customized alt left as-is, or a decorative hero), so
- *  the screen can show what would change. Module-internal: only MediaAltPreviewPlan's `entries` field
- *  names it, so the bundled Media Library component consumes it structurally through that field.
+ *  the screen can show what would change.
  */
-interface MediaAltPreviewEntry {
+export interface MediaAltPreviewEntry {
   /** The concept id, e.g. "posts". */
   concept: string;
   /** The entry id (its filename stem). */

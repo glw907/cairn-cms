@@ -45,6 +45,7 @@ export type {
   SaveFailure,
   DeleteRefusal,
   RenameFailure,
+  FragmentTarget,
 } from './content-routes-core.js';
 
 export type {
@@ -60,7 +61,17 @@ export type {
   MediaReplacePreviewEntry,
   MediaReplacePreviewPlan,
   MediaAltPreviewPlan,
+  MediaAltPreviewEntry,
   UploadResult,
+  MediaLibraryEntry,
+  UsageEntry,
+  MediaOrphanScanResult,
+  OrphanByteRow,
+  BrokenRefRow,
+  RepointPlacement,
+  AltPlacement,
+  BranchRef,
+  BulkDeleteSkip,
 } from './content-routes-media.js';
 
 export type { TidyResult } from './content-routes-tidy.js';

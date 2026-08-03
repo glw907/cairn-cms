@@ -555,3 +555,87 @@ for (const entry of newlyPublishedEntries(priorManifest, deployedManifest)) {
 | `ResolvedReference` | Extension API | `interface ResolvedReference { id; concept; title; permalink; summary? }` | A reference edge resolved to its target's identity, for a public route to render a linked target. |
 | `ManifestEntry` | Extension API | `interface ManifestEntry { id; concept; title; date?; permalink; summary?; draft; links; mediaRefs?; references?; tags?; includes?; publishedAt? }` | One corpus entry as the manifest holds it, the element type of `Manifest.entries` and `newlyPublishedEntries`'s return. `publishedAt`, ISO 8601 in UTC, is set once at the publish commit that first lands the entry non-draft and never overwritten or cleared afterward. |
 | `Manifest` | Extension API | `interface Manifest { version: 1; entries: ManifestEntry[] }` | The whole corpus as one committed file, with a version guard. `parseManifest` and `newlyPublishedEntries`'s `before`/`after` parameters carry this type. |
+
+The remaining rows are the export-rule closure `buildSiteManifest` and `createSiteIndexes`'s
+`CairnAdapter` generic bound names (C2 breaking-window pass, R4 ruling): every member type
+`CairnAdapter`'s own structure names, down to its own nested shapes, re-exported here so a site
+importing only from this subpath can still name the value it holds. Each links to its canonical
+home, [Core](./core.md), where the full prose lives.
+
+**`CairnAdapter` itself is the one deliberate exception.** This subpath's own charter forbids
+importing from `github`, `auth`, or `email` (enforced by a source-boundary test, so the delivery
+layer never pulls the backend or the magic-link auth surface into a public bundle), and
+`CairnAdapter`'s own body reaches all three through `roles`, `access`, and `backend`. `A`'s bound
+stays [`CairnAdapter`](./core.md#stable-api), imported from the root barrel a site already has in
+scope to declare its adapter; `createSiteIndexes(adapter, config, globs)` infers `A` from the
+`adapter` argument in every real call site, so no site writes the bound out by name.
+
+| `FragmentResolve` | Extension API | `type FragmentResolve = (id: string) => string \| undefined` | Resolve a fragment id to its raw markdown body, for the `::include` directive. |
+| `LinkResolve` | Extension API | `type LinkResolve = (ref: CairnRef) => string \| undefined` | Resolve a `CairnRef` to its live permalink. |
+| `ConceptConfig` | Extension API | `interface ConceptConfig<S>` | Per-site configuration for one content concept. See [`ConceptConfig`](./core.md#stable-api). |
+| `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization. See [`ConceptDescriptor`](./core.md#stable-api). |
+| `NamedField` | Extension API | `type NamedField = FieldDescriptor & { name: string }` | A field descriptor with its frontmatter key re-attached as `name`. See [`NamedField`](./core.md#stable-api). |
+| `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept. See [`RoutingRule`](./core.md#types). |
+| `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration. See [`AssetConfig`](./media.md#types). |
+| `SenderConfig` | Extension API | `interface SenderConfig { from: string; replyTo?: string }` | Magic-link sender identity for Cloudflare Email Sending. |
+| `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
+| `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame. |
+| `ValidationResult` | Extension API | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed `errors` plus the additive located `issues`. |
+| `ValidationIssue` | Extension API | `interface ValidationIssue` | One validation failure located by a `path` and its message. |
+| `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: `render({ body, concept?, frontmatter?, resolve?, resolveMedia?, resolveFragment? }): Promise<string>`. |
+| `FieldDescriptor` | Extension API | `type FieldDescriptor` | The plain-data descriptor union the form, validator, and inference all read. See [Field types](./core.md#field-types). |
+| `TextField` | Extension API | `interface TextField` | A single-line text input. One of `FieldDescriptor`'s fifteen arms; see [Field types](./core.md#field-types). |
+| `TextareaField` | Extension API | `interface TextareaField` | A multi-line text input. |
+| `NumberField` | Extension API | `interface NumberField` | A numeric input. |
+| `SelectField` | Extension API | `interface SelectField` | A single-choice input over a closed option list. |
+| `MultiselectField` | Extension API | `interface MultiselectField` | A multiple-choice input. |
+| `UrlField` | Extension API | `interface UrlField` | A URL input whose format the validator enforces. |
+| `EmailField` | Extension API | `interface EmailField` | An email-address input whose format the validator enforces. |
+| `DateField` | Extension API | `interface DateField` | A calendar-date input. |
+| `DatetimeField` | Extension API | `interface DatetimeField` | A date-and-time input. |
+| `BooleanField` | Extension API | `interface BooleanField` | A checkbox; absent means false. |
+| `IconField` | Extension API | `interface IconField` | A glyph chosen from the adapter's icon set. |
+| `ImageField` | Extension API | `interface ImageField` | A hero image whose stored value is the nested `ImageValue` object. |
+| `ObjectField` | Extension API | `interface ObjectField` | A group of leaf fields, stored as a nested object. |
+| `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's permanent id. |
+| `ArrayField` | Extension API | `interface ArrayField` | A repeatable field whose stored value is a list of its item's values. |
+| `Fieldset` | Extension API | `interface Fieldset<R>` | The schema a `fieldset` call returns, carrying the descriptors, the behavior table, the validator, and the Standard Schema property. |
+| `InferFieldset` | Extension API | `type InferFieldset<S>` | Extracts the normalized frontmatter type from a `Fieldset`. |
+| `BehaviorTable` | Extension API | `type BehaviorTable = Record<string, FieldBehavior>` | The behavior table co-bundled with a fieldset, keyed by field name. |
+| `FieldBehavior` | Extension API | `interface FieldBehavior` | Function-valued behavior a field descriptor cannot carry as plain data. |
+| `DatePrefix` | Extension API | `type DatePrefix = 'year' \| 'month' \| 'day'` | Filename date-prefix granularity for a dated concept. |
+| `CairnRef` | Extension API | `interface CairnRef { concept: string; id: string }` | A resolved reference to a content entry by its concept and permanent id. |
+| `ReferenceEdge` | Extension API | `interface ReferenceEdge { field: string; concept: string; id: string }` | One typed frontmatter edge from a content entry to a target entry. See [`ReferenceEdge`](./core.md#types). |
+| `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
+| `VocabularyEntry` | Extension API | `interface VocabularyEntry { value: string; label: string }` | One editor-owned tag: a frozen slug `value` and an editable display `label`. |
+| `TidyConfig` | Extension API | `interface TidyConfig { enabled?; model?; conventions? }` | The tidy block on the site config. See [`TidyConfig`](./core.md#types). |
+| `TidyConventions` | Extension API | `interface TidyConventions` | The corrected convention set the tidy prompt builder consumes. |
+| `AccessMap` | Extension API | `type AccessMap = Record<string, string[]>` | A site's whole access declaration. See [`AccessMap`](./core.md#access-map). |
+| `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
+| `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request. |
+| `CairnEnv` | Extension API | `interface CairnEnv` | The Worker bindings and vars the whole engine reads, all optional. See [`CairnEnv`](./sveltekit.md#cairnenv). |
+| `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` references. |
+| `RolesDeclaration` | Extension API | `type RolesDeclaration = Record<string, RoleDeclaration>` | A site's whole role vocabulary. See [`RolesDeclaration`](./core.md#roles). |
+| `RoleDeclaration` | Extension API | `type RoleDeclaration = Capability \| { capability: Capability; home?: string }` | One role's mapping in a `defineRoles` vocabulary. |
+| `Capability` | Extension API | `type Capability = 'owner' \| 'editor' \| 'none'` | The three levels the engine understands. See [`Capability`](./core.md#capability). |
+| `RepoFile` | Extension API | `interface RepoFile { id: string; name: string; path: string }` | A markdown file in a concept directory: id, name, path. |
+| `CommitAuthor` | Extension API | `interface CommitAuthor { name: string; email: string }` | A commit author: the signed-in editor's name and email. |
+| `FileChange` | Extension API | `interface FileChange { path: string; content: string \| null }` | One path change in a commit: write `content`, or delete the path when `content` is null. |
+| `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
+| `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). |
+| `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives. |
+| `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. |
+| `IconSet` | Extension API | `type IconSet = Record<string, string>` | A glyph name to SVG path-data map the site owns. |
+| `IslandRegistry` | Extension API | `type IslandRegistry = Record<string, Component>` | A site's hydratable client components, keyed by the name a component `use`s. |
+| `NavLayout` | Extension API | `type NavLayout = (NavLayoutEntry \| NavLayoutEngineRef \| NavLayoutSection)[]` | A site's whole declared sidebar. See [the navLayout seam](./sveltekit.md#the-navlayout-seam). |
+| `NavLayoutEntry` | Extension API | `interface NavLayoutEntry` | A site's own nav entry inside a `navLayout` tree. See [`NavLayoutEntry`](./sveltekit.md#navlayoutentry). |
+| `NavLayoutEngineRef` | Extension API | `interface NavLayoutEngineRef` | A `navLayout` node that places one of the engine's own screens. See [`NavLayoutEngineRef`](./sveltekit.md#navlayoutengineref). |
+| `NavLayoutSection` | Extension API | `interface NavLayoutSection` | One named group inside a `navLayout` tree. See [`NavLayoutSection`](./sveltekit.md#navlayoutsection). |
+| `PublishActionsConfig` | Extension API | `type PublishActionsConfig = PublishActionEntry[]` | A site's raw `publishActions` config. |
+| `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link. |
+| `VariantSpec` | Extension API | `interface VariantSpec` | A single image variant: the resize and format directives Cloudflare Images applies. See [`VariantSpec`](./media.md#types). |
+| `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | Resolve a `media:` reference to its live delivery URL. |
+| `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. |
+| `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries. |
+| `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
+| `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API. |

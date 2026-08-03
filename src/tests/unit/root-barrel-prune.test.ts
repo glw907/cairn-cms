@@ -53,6 +53,11 @@ const DEMOTED = [
   'ResolvedPreview',
   'ManifestDiff',
   'ManifestEntryDiff',
+  // Task 9's export-rule sweep gives these two a home on `/sveltekit` (the facade's own inbound
+  // and link-target payloads name them), which leaves the root demotion standing: the sweep moved
+  // where they are importable from, never back onto this barrel.
+  'LinkTarget',
+  'InboundLink',
   'InboundReference',
   'SlotKind',
   'ComponentValues',
@@ -66,6 +71,13 @@ const DEMOTED = [
 // 2026-07-01 KEEP verdict carried no recorded defense; the type stays internal (used by
 // `normalizeConcepts` and `defineConcept`), just no longer re-exported at the root.
 const C2_DEMOTED = ['ConceptUrlPolicy'];
+
+// C2 breaking window (2026-08-02): three names this pass removes outright, rather than demoting to
+// an internal type. `Role` goes with the role-name widening to `string` (R1); `AuthEnv` and
+// `BackendEnv` collapse into the one all-optional `CairnEnv`. Each carries a `Consumers must:`
+// line in the changelog, so the root barrel must keep refusing the old name: a later re-export
+// under a retired name would resurrect a contract this window deliberately ended.
+const C2_REMOVED = ['Role', 'AuthEnv', 'BackendEnv'];
 
 // C2 breaking window (2026-08-02, R4, Task 9): the export-rule sweep reverses the 2026-07-01
 // pruning verdict for these 22 names. Each is genuinely named in a root-public signature
@@ -189,6 +201,12 @@ describe('root barrel prune', () => {
   it('no longer resolves the C2 demoted names from the root subpath', () => {
     const names = new Set(enumerateExports(DTS));
     const stillPresent = C2_DEMOTED.filter((name) => names.has(name));
+    expect(stillPresent).toEqual([]);
+  });
+
+  it('no longer resolves the names C2 removes outright from the root subpath', () => {
+    const names = new Set(enumerateExports(DTS));
+    const stillPresent = C2_REMOVED.filter((name) => names.has(name));
     expect(stillPresent).toEqual([]);
   });
 

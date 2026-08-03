@@ -92,6 +92,29 @@ describe('validateNavLayout: construction throws', () => {
     );
   });
 
+  it('rejects a site entry whose href shadows a reserved admin segment', () => {
+    const layout: NavLayout = [{ label: 'X', icon: 'list', href: '/admin/settings' }];
+    expect(() => validateNavLayout(layout, ctx())).toThrow(
+      /navLayout: href "\/admin\/settings" collides with cairn's built-in "settings" view/,
+    );
+  });
+
+  it('rejects a site entry whose href shadows a built-in view (the media library)', () => {
+    const layout: NavLayout = [{ label: 'X', icon: 'list', href: '/admin/media' }];
+    expect(() => validateNavLayout(layout, ctx())).toThrow(
+      /navLayout: href "\/admin\/media" collides with cairn's built-in "media" view/,
+    );
+  });
+
+  it('rejects a section-embedded entry that shadows a reserved admin segment, the same way', () => {
+    const layout: NavLayout = [
+      { label: 'Club', children: [{ label: 'X', icon: 'list', href: '/admin/editors' }] },
+    ];
+    expect(() => validateNavLayout(layout, ctx())).toThrow(
+      /navLayout: href "\/admin\/editors" collides with cairn's built-in "editors" view/,
+    );
+  });
+
   it('rejects two site entries sharing an href, one top-level and one section-embedded', () => {
     const layout = [
       { label: 'X', icon: 'inbox', href: '/admin/dup' },

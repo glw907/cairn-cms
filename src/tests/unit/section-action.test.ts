@@ -387,6 +387,53 @@ describe('createSectionAction: target defaults to event.route.id, never the conc
     expect(handler).not.toHaveBeenCalled();
   });
 
+  it('a route group in the route id authorizes against the URL-shaped access-map key', async () => {
+    // A SvelteKit route group is organizational: `/admin/(app)/club/events` serves the URL
+    // `/admin/club/events`, which is the shape an access map is keyed by.
+    const urlShapedAccess: AccessMap = { '/admin/club/events': ['editor'] };
+    const { handler, action } = approveAction(boundDb);
+    const result = await action(
+      readyEvent({
+        cairnAccess: urlShapedAccess,
+        routeId: '/admin/(app)/club/events',
+        pathname: '/admin/club/events',
+      }),
+    );
+    expect(handler).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true, db: fakeDb });
+  });
+
+  it('strips every route group in a multi-group route id, not just the first', async () => {
+    const urlShapedAccess: AccessMap = { '/admin/club/events/[id]': ['editor'] };
+    const { handler, action } = approveAction(boundDb);
+    const result = await action(
+      readyEvent({
+        cairnAccess: urlShapedAccess,
+        routeId: '/admin/(app)/club/(section)/events/[id]',
+        pathname: '/admin/club/events/hello-world',
+      }),
+    );
+    expect(handler).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true, db: fakeDb });
+  });
+
+  it('leaves an explicit opts.target untouched, group segments included', async () => {
+    // Only the derived default is normalized: a caller who declares a target owns its exact string.
+    const literalAccess: AccessMap = { '/admin/(app)/club/events': ['editor'] };
+    const { handler, action } = approveAction(boundDb, { target: '/admin/(app)/club/events' });
+    const result = await action(readyEvent({ cairnAccess: literalAccess, routeId: '/admin/other' }));
+    expect(handler).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true, db: fakeDb });
+  });
+
+  it('a route id of nothing but groups fails closed rather than collapsing to an empty target', async () => {
+    const rootAccess: AccessMap = { '/': ['editor'], '': ['editor'] };
+    const { handler, action } = approveAction(boundDb);
+    const result = await action(readyEvent({ cairnAccess: rootAccess, routeId: '/(app)' }));
+    expect(refusal(result).status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
   it('a null route.id (the unreachable unmatched-request case) fails closed, never falling back to the pathname', async () => {
     // Even a map keyed on the exact pathname must not admit: a null route id must never fall
     // back to url.pathname, the attacker-chosen value this derivation removes.

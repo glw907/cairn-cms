@@ -620,6 +620,13 @@ An access map that keys a dynamic route by its concrete path stops matching. A s
 and path are the same string, so a site with no parameterized or catch-all admin route sees no
 change. `ownerOnly` requires owner capability on top of the map check, never instead of it.
 
+Route groups are the one place a route id and its URL differ on every site, so the derived target
+drops them: a route id of `/admin/(app)/roster` resolves to the target `/admin/roster`, and
+`/admin/(app)/club/(section)/events/[id]` to `/admin/club/events/[id]`. **Key the access map by
+the URL shape, group segments left out, however deep the route sits in groups.** This applies to
+the derived default only. `createSectionAction` matches a `target` you declare verbatim, so a
+declared target carrying a group segment needs a map key in that exact form.
+
 `Env` does not infer from `resolveDb`'s parameter alone; annotate it, as the snippet below
 does, or pass explicit type arguments, else it collapses to `{}` and every downstream binding
 read stops typechecking usefully.

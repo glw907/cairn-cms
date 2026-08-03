@@ -331,7 +331,10 @@ removal, nothing this list needs to carry.
   concrete request path (`/admin/posts/hello-world`); a map still keyed by the concrete path
   stops matching and the section fails closed (every session refused, including owner).** A
   static route's id and path are the same string, so a site with no parameterized or catch-all
-  admin section sees no change. A null `route.id` (unreachable for a dispatched form action)
+  admin section sees no change. The derived target drops route-group segments
+  (`/admin/(app)/roster` reads as `/admin/roster`), the one place a route id and its URL differ on
+  every site, so an access map stays keyed by URL shape; a `target` the call site declares is
+  matched verbatim. A null `route.id` (unreachable for a dispatched form action)
   falls back to a fixed constant that matches no access-map key, never to the path. A wrapped
   handler's `ctx.audit` call now also defaults `action`/`entity` from the call site's own
   `SectionActionOptions`, so the common call names only `entityId`/`detail`

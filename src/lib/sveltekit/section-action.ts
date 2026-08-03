@@ -57,6 +57,8 @@ export interface SectionActionOptions {
    * routes, and on a catch-all route the pathname is attacker-chosen while the route id is not.
    * On a parameterized route, `event.route.id` is the bracket form (`/admin/posts/[id]`), never
    * the concrete pathname a request carries; an access map keyed by concrete path stops matching.
+   * The derived default drops route-group segments (`/admin/(app)/roster` reads as
+   * `/admin/roster`), so a map stays keyed by URL shape; a declared target is used verbatim.
    */
   target?: string;
   /** Require owner capability on top of the map check, never instead of it. */
@@ -96,6 +98,27 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
 // attacker-chosen `url.pathname` R9 removes: an access map never declares a rule for this key,
 // so `hasAccessRule` always refuses it.
 const UNRESOLVED_ROUTE_TARGET = '(unresolved route)';
+// One whole route-group segment: a path segment that opens with `(` and closes with `)` right
+// before the next separator or the end. Anchored on both boundaries so a segment that merely
+// contains parentheses (`/(a)b`) is left alone.
+const ROUTE_GROUP_SEGMENT = /\/\([^/]+\)(?=\/|$)/g;
+
+/**
+ * Derive the authorization target from a route id: SvelteKit's route-group segments stripped, so
+ * the target matches the URL shape an access map is keyed by. A group is organizational only and
+ * never appears in a URL, so `/admin/(app)/roster` and `/admin/roster` are the same door, while
+ * `hasAccessRule`'s path-segment-prefix matching would refuse the group form against a map keyed
+ * `/admin/roster` and fail-close every session, owner included. The group name comes from the
+ * site's own directory layout, never from the request, so stripping it reintroduces nothing
+ * attacker-chosen; every surviving segment, a `[id]` parameter included, stays the compile-time
+ * literal the route id carries. A null id, and an id that is nothing but groups, both resolve to
+ * the fixed non-matching sentinel rather than the request path or an empty string.
+ */
+function targetFromRouteId(routeId: string | null): string {
+  if (routeId === null) return UNRESOLVED_ROUTE_TARGET;
+  const stripped = routeId.replace(ROUTE_GROUP_SEGMENT, '');
+  return stripped === '' ? UNRESOLVED_ROUTE_TARGET : stripped;
+}
 
 /**
  * Build a section's form-action wrapper. The returned function takes `(handler, opts)` per call
@@ -178,7 +201,10 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // null route id (only an unmatched request, an unreachable case here, does), but the
       // fallback stays a fixed non-matching constant, never the pathname, so a null id fails
       // closed rather than reintroducing the attacker-chosen value this derivation removes.
-      const target = opts.target ?? siteEvent.route.id ?? UNRESOLVED_ROUTE_TARGET;
+      // The derived id drops its route-group segments (targetFromRouteId), the one place a route
+      // id and its URL disagree on a correctly configured site; an explicit opts.target is the
+      // caller's own exact string and is never normalized.
+      const target = opts.target ?? targetFromRouteId(siteEvent.route.id);
 
       /** Seeds `action`/`entity` from `opts` unless the caller overrides either. */
       function sectionAudit(record: SectionActionAudit): void {

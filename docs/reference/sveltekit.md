@@ -985,7 +985,7 @@ below. Their request shapes and `fail` payloads:
   `X-Cairn-CSRF`. It validates CSRF first, then the session, refuses before any model call if tidy is
   disabled or the key is missing, bounds the body, and only then builds the prompt and calls the model
   under its own deadline. It commits nothing. Success returns `TidyResult`
-  (`{ corrected, model, usage }`, the corrected markdown plus the model id and token counts; the diff is
+  (`{ corrected, model, tokens }`, the corrected markdown plus the model id and token counts; the diff is
   computed on the client) and marks the shared key-health cache healthy. A refusal returns `TidyFailure`
   (`{ error }`): `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled, the API key is
   missing, or Anthropic rejects the key outright (a 401 or 403; this branch is not retryable, marks the
@@ -1674,7 +1674,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `EditorsData` | Unstable API | `interface EditorsData { editors: Editor[]; self: string; error: string \| null; vocabulary: { role: string; capability: Capability }[] }` | `editorsLoad`'s named payload: the allowlist with each row's resolved capability, the acting owner's email, a resolved `?error` code, and the role vocabulary. |
 | `FragmentTarget` | Unstable API | `interface FragmentTarget { id: string; title: string; body: string }` | One published fragment `EditData.fragmentTargets` offers the include picker: its id, title, and raw markdown body, read from the default branch only. |
 | `TidyClient` | Unstable API | `interface TidyClient` | The Anthropic Messages API surface the tidy action calls; a test injects a stub through `ContentRoutesOptions.tidy.client`. |
-| `TidyResult` | Unstable API | `interface TidyResult { corrected: string; model: string; usage: { input_tokens: number; output_tokens: number } }` | The successful tidy outcome: the corrected markdown, the model that produced it, and the token usage. The diff is computed client-side; the server commits nothing. |
+| `TidyResult` | Unstable API | `interface TidyResult { corrected: string; model: string; tokens: { input_tokens: number; output_tokens: number } }` | The successful tidy outcome: the corrected markdown, the model that produced it, and the token usage. The diff is computed client-side; the server commits nothing. |
 | `DictionaryAddResult` | Unstable API | `interface DictionaryAddResult { words: string[] }` | The personal-dictionary add outcome: the merged, canonical sorted word list after the add landed. |
 | `MediaBulkDeleteResult` | Unstable API | `interface MediaBulkDeleteResult { deleted: string[]; skipped: BulkDeleteSkip[]; failed: { hash: string; error: string }[] }` | The bulk-delete outcome: the deleted hashes, the skipped rows from the partition, and any per-object R2 delete failure. |
 | `MediaOrphanPurgeResult` | Unstable API | `interface MediaOrphanPurgeResult { purged: string[]; skippedClaimed: string[]; failed: { key: string; error: string }[] }` | The orphan-purge outcome: the purged R2 keys, the keys skipped because their hash was claimed since the scan, and any per-object delete failure. |

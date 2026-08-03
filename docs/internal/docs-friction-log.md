@@ -85,3 +85,20 @@ lands the grammar-ladder doctrine the harvest's pattern argued for, in
 `docs/explanation/enforced-design.md`: every composition claim gets either a component or a
 check, prose alone being the demonstrated failure mode. New findings start fresh below this
 line.
+
+- **`developer`: `CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it
+  whatever the last action returned, successes included.** `ContentFormFailure` (the prop's
+  declared shape) is an intersection of only the content actions' `fail()` payloads; SvelteKit's
+  generated `ActionData` unions every action's awaited return regardless of arm, and the
+  assignment type-checks today only because every failure-payload field name happens to differ
+  from every success-payload field name. C2b's refusal-channel pass hit this directly: sharpening
+  every `fail()` from `ActionFailure<unknown>` to a precise `ActionFailure<T>` turned that
+  previously-masked union into a real structural check, and `TidyResult.usage` (token counts)
+  collided with `MediaDeleteRefusal.usage` (where-used rows), failing every consumer's
+  `svelte-check` on upgrade until the field renamed to `TidyResult.tokens`. A new action whose
+  success payload shares a field name with any action's failure payload reproduces this, with no
+  warning until a consumer's own build. A type-level assertion in the library's own suite
+  (`src/tests/component/CairnAdmin.test.ts`) now catches a same-repo recurrence at compile time,
+  but the structural gap in the prop's own type is unrepaired. Candidate fix: type `form` to model
+  both arms honestly, for example a discriminated union or a generic keyed by the last action name,
+  rather than one merged failure-shaped intersection.

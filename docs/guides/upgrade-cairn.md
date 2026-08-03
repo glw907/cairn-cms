@@ -355,6 +355,15 @@ step described for `createSectionAction` in the preceding entry, or the helper f
 refuses every session, including owner. A static route's id and path are the same string, so a
 site with no parameterized or catch-all `requireAccess` route needs no change.
 
+`TidyResult.usage` renames to `TidyResult.tokens`. The name collided with
+`MediaDeleteRefusal.usage` (the where-used rows a refused media delete carries) inside
+SvelteKit's generated `ActionData` union for the admin route, once every content action carried a
+precise `ActionFailure<T>` rather than the old, looser `ActionFailure<unknown>`; the collision
+made `<CairnAdmin {form} />` fail your own `svelte-check`. See
+[`tidyAction`](../reference/sveltekit.md#createcontentroutes).
+
+**Consumers must:** rename any read of `TidyResult.usage` to `TidyResult.tokens`.
+
 The log-event vocabulary settles on one grammar (`area[.subject].verb_phrase`, a past-tense verb
 phrase for an occurrence or a state adjective for a detected condition) and every `reason`/`scope`
 value goes snake_case. Six events rename to fit: `admin.audit.sink_failed` to

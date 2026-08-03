@@ -20,7 +20,7 @@ import type { CairnEvent } from './types.js';
 export interface TidyResult {
   corrected: string;
   model: string;
-  usage: { input_tokens: number; output_tokens: number };
+  tokens: { input_tokens: number; output_tokens: number };
 }
 
 /**
@@ -197,7 +197,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     }
 
     log.info('tidy.succeeded', { editor: editor.email, model: message.model, usage: message.usage });
-    return { corrected, model: message.model, usage: message.usage };
+    return { corrected, model: message.model, tokens: message.usage };
   }
 
   return { tidyAction };

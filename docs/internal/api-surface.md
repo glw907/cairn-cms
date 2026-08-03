@@ -618,7 +618,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `TidyConfig`: { enabled?: boolean; model?: string; conventions?: Partial<TidyConventions> }
 - `TidyConventions`: { fixes: boolean; oxfordComma?: "always" | "complex-only" | "never"; numberStyle?: "under-ten" | "under-hundred" | "always-numerals"; measurements?: "abbreviate" | "spell-out"; percent?: "sign" | "word"; emDash?: "spaced" | "closed"; enDashRanges: boolean; ellipsis?: "single-char" | "three-dots"; timeFormat?: "5 PM" | "5pm" | "5 p.m."; smartQuotes: boolean; brandCaps: boolean }
 - `TidyKeyProbeResult`: "valid" | "invalid" | "unknown"
-- `TidyResult`: { corrected: string; model: string; usage: { input_tokens: number; output_tokens: number } }
+- `TidyResult`: { corrected: string; model: string; tokens: { input_tokens: number; output_tokens: number } }
 - `UnauditedActionError`: typeof UnauditedActionError
 - `UploadResult`: { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }

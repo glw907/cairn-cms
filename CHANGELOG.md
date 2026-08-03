@@ -39,6 +39,10 @@ each links to its full entry under Changed for the reasoning and the exact old a
      `TextField`/`SelectField`/`SelectFieldOption` to `TextInput`/`SelectInput`/
      `SelectInputOption`; replace `@glw907/cairn-cms/components`'s `OfficeList` import with the
      same `/admin-toolkit` subpath.
+   - Rename any read of [`TidyResult`](docs/reference/sveltekit.md#createcontentroutes)'s `usage` field to
+     `tokens`; the old name collided with `MediaDeleteRefusal.usage` inside SvelteKit's generated
+     `ActionData` union for the admin route, which is why `<CairnAdmin {form} />` failed to
+     typecheck.
 3. **`locals` reads.** Rename every `event.locals.editor`, `.backend`, and `.auditSink` read or
    write in your `hooks.server.ts` or a custom admin route to `event.locals.cairnEditor`,
    `.cairnBackend`, and `.cairnAuditSink`, including in a hand-duplicated `App.Locals`
@@ -423,6 +427,16 @@ removal, nothing this list needs to carry.
   [SvelteKit](docs/reference/sveltekit.md#adminaction) and [log
   events](docs/reference/log-events.md). Consumers must: nothing; a throwing or rejecting sink
   previously failed the action and now does not.
+
+- `TidyResult.usage` renames to `TidyResult.tokens`: the token-usage field collided with
+  `MediaDeleteRefusal.usage` (the where-used rows) inside SvelteKit's generated `ActionData` for
+  the admin route once every content action carried a precise `ActionFailure<T>` (the sharpening
+  landed earlier in this window), which made `<CairnAdmin {form} />` fail `svelte-check` on every
+  consumer site. A type-level assertion in the library's own test suite now checks every facade
+  action's awaited return, successes included, against `CairnAdmin`'s `form` prop type, so a
+  future field-name collision across actions fails a compile rather than shipping unnoticed. See
+  [SvelteKit](docs/reference/sveltekit.md#createcontentroutes). **Consumers must:** rename any read of
+  `TidyResult.usage` to `TidyResult.tokens`.
 
 ### Documentation
 

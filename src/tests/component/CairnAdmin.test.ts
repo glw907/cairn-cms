@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import type { ComponentProps } from 'svelte';
+import type { AwaitedActions } from '@sveltejs/kit';
 import { githubApp } from '../../lib/index.js';
 import { render } from 'vitest-browser-svelte';
 import CairnAdmin from '../../lib/components/CairnAdmin.svelte';
@@ -275,5 +277,23 @@ describe('form-action contract', () => {
     expect(rendered.length).toBeGreaterThan(0);
     const unknown = rendered.filter((name) => !dispatcherActions.has(name));
     expect(unknown).toEqual([]);
+  });
+
+  it("every action's awaited return assigns into CairnAdmin's declared form prop", () => {
+    // Type-level assertion, kept live by the runtime expect below. `AwaitedActions` is SvelteKit's
+    // own generated-`ActionData` machinery (unwraps ActionFailure<X> to X, then pads every union
+    // member with its siblings' keys as `?: never` so a weak, all-optional target still counts the
+    // members as having properties in common); reusing it here, over the same actions record a
+    // route's `export const actions = admin.actions` exposes verbatim (see
+    // examples/showcase/src/routes/admin/[...path]/+page.server.ts), reconstructs the exact type a
+    // consumer's `<CairnAdmin {form} />` receives, rather than a hand-copied guess. A future action
+    // whose success payload shares a field name with another action's failure payload (the
+    // TidyResult.usage/MediaDeleteRefusal.usage collision this test was written against) fails this
+    // to compile, before it ever reaches a consumer site's own svelte-check.
+    const actions = createCairnAdmin(runtime()).actions;
+    type ActionOutcome = AwaitedActions<typeof actions>;
+    const outcome = {} as ActionOutcome;
+    const form: ComponentProps<typeof CairnAdmin>['form'] = outcome;
+    expect(typeof form).toBe('object');
   });
 });

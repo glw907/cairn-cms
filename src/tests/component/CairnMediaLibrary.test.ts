@@ -79,7 +79,7 @@ const USAGE: Record<string, MediaUsageInfo> = {
 };
 
 function fixture(over: Partial<MediaLibraryData> = {}): MediaLibraryData {
-  return { assets: ASSETS, usage: USAGE, error: null, flash: null, flashError: null, ...over };
+  return { assets: ASSETS, usage: USAGE, error: null, flash: null, ...over };
 }
 
 describe('CairnMediaLibrary toolkit adoption', () => {
@@ -383,10 +383,12 @@ describe('CairnMediaLibrary empty and broken states', () => {
     expect(screen.container.textContent ?? '').toContain('Changes saved.');
   });
 
-  it('renders the conflict error from flashError in the inline error treatment', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture({ flashError: 'The media manifest changed. Reload and try again.' }) } as never);
+  it('renders nothing for a query-derived flashError now that the field is gone from the load', async () => {
+    const screen = render(CairnMediaLibrary, {
+      data: { ...fixture(), flashError: 'The media manifest changed. Reload and try again.' } as never,
+    });
     const alert = screen.container.querySelector('[role="alert"]');
-    expect(alert?.textContent ?? '').toContain('The media manifest changed. Reload and try again.');
+    expect(alert).toBeNull();
   });
 
   it('lists a missing-bytes asset with a broken-image affordance once its thumbnail fails', async () => {

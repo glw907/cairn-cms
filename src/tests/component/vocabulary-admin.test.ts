@@ -17,7 +17,6 @@ function data(over: Partial<VocabularyLoadData> = {}): VocabularyLoadData {
     ],
     usage: { 'snow-report': 8, gear: 0 },
     unlisted: [{ value: 'trip-reports', count: 3 }],
-    error: null,
     ...over,
   };
 }
@@ -162,10 +161,12 @@ describe('VocabularyAdmin', () => {
     expect(screen.container.innerHTML).not.toContain('var(--color-subtle)');
   });
 
-  it('surfaces a redirected error read from ?error= (an unexpected action failure)', async () => {
-    const screen = render(VocabularyAdmin, { data: data({ error: 'Something went wrong and your changes were not saved.' }) });
+  it('renders nothing for a query-derived error now that data.error is gone from the load', async () => {
+    const screen = render(VocabularyAdmin, {
+      data: { ...data(), error: 'Something went wrong and your changes were not saved.' } as never,
+    });
     const alert = screen.container.querySelector('.alert-error');
-    expect(alert?.textContent).toContain('Something went wrong and your changes were not saved.');
+    expect(alert).toBeNull();
   });
 
   it('surfaces a refused save\'s fail() error read from form, not only from data', async () => {

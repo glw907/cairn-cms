@@ -203,7 +203,7 @@ describe('mediaLibraryLoad degrade paths', () => {
     const data = await routes.mediaLibraryLoad(libraryEvent('', failingBackend) as never);
     // The token mint is lazy inside the first read now, so a token failure lands in the one
     // could-not-load-media degrade rather than the old separate auth tier.
-    expect(data).toEqual({ assets: [], usage: {}, error: 'Could not load media.', flash: null, flashError: null });
+    expect(data).toEqual({ assets: [], usage: {}, error: 'Could not load media.', flash: null });
   });
 });
 
@@ -224,7 +224,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?deleted=1') as never);
     expect(data.flash).toBe('deleted');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the updated flash from ?updated=1', async () => {
@@ -232,7 +231,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?updated=1') as never);
     expect(data.flash).toBe('updated');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the replaced flash from ?replaced=1', async () => {
@@ -240,7 +238,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?replaced=1') as never);
     expect(data.flash).toBe('replaced');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the altPropagated flash from ?altPropagated=1', async () => {
@@ -248,7 +245,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?altPropagated=1') as never);
     expect(data.flash).toBe('altPropagated');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the bulkDeleted flash from ?bulkDeleted=1', async () => {
@@ -256,7 +252,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?bulkDeleted=1') as never);
     expect(data.flash).toBe('bulkDeleted');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the orphansPurged flash from ?orphansPurged=1', async () => {
@@ -264,7 +259,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?orphansPurged=1') as never);
     expect(data.flash).toBe('orphansPurged');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the uploaded flash from ?uploaded=1', async () => {
@@ -272,15 +266,20 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?uploaded=1') as never);
     expect(data.flash).toBe('uploaded');
-    expect(data.flashError).toBeNull();
   });
 
-  it('returns null flash and flashError when the URL carries no flag', async () => {
+  it('returns null flash when the URL carries no flag', async () => {
     gh();
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent() as never);
     expect(data.flash).toBeNull();
-    expect(data.flashError).toBeNull();
+  });
+
+  it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
+    gh();
+    const routes = createContentRoutes(runtime());
+    const data = await routes.mediaLibraryLoad(libraryEvent('?error=You+have+been+signed+out') as never);
+    expect(data).not.toHaveProperty('flashError');
   });
 });
 

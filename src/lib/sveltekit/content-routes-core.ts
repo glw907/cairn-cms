@@ -28,6 +28,7 @@ import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
 import { keyKnownUnhealthy } from './tidy-key-health.js';
+import { resolveRefusalCode, refusalMessage } from './refusal-codes.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
@@ -139,7 +140,11 @@ export interface ListData {
   entries: EntrySummary[];
   /** A listing failure degrades to an inline message rather than a thrown 500. */
   error: string | null;
-  /** A create-form bounce error read from `?error`. */
+  /**
+   * A publish-all bounce's engine copy, resolved server-side from a `?error=` code through
+   *  {@link resolveRefusalCode} (`refusal-codes.ts`); an unrecognized value resolves to `null`, so
+   *  a crafted query never reaches this field.
+   */
   formError: string | null;
   /** The entry count from a publish-all redirect (`?publishedAll=`), for the list page's flash. */
   publishedAll: number | null;
@@ -169,7 +174,6 @@ export interface EditData {
   saved: boolean;
   /** True after a successful rename redirect (`?renamed=1`), to confirm the new URL to the author. */
   renamed: boolean;
-  error: string | null;
   /** The current URL slug (the date-stripped id for a dated concept), for the rename dialog prefill. */
   slug: string;
   /**
@@ -563,14 +567,14 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    * The role-aware admin-root landing (spec section 4). A role with a declared `home` is sent
    *  there. Absent a `home`, an owner- or editor-capability role lands on the first concept's list,
    *  the default landing (spec §7.6); a none-capability role gets the calm welcome view instead of a
-   *  dead-end redirect. The shell posts publishAll and logout to this exact path from every admin
-   *  page, so an unexpected-failure `?error=` those actions bounce back with rides along on every
-   *  redirect branch, keeping the editor-visible guarantee for the two actions that always land here.
+   *  dead-end redirect. A direct GET here can carry a `?error=` (an attacker-crafted link, or a
+   *  bookmark), so the relay only ever forwards a code {@link resolveRefusalCode} recognizes and
+   *  drops anything else, keeping the bounded vocabulary intact through the redirect.
    */
   function indexLoad(event: CairnEvent): { view: 'welcome'; page: WelcomeData } {
     const editor = requireSession(event);
-    const bounced = event.url.searchParams.get('error');
-    const suffix = bounced ? `?error=${encodeURIComponent(bounced)}` : '';
+    const bounced = resolveRefusalCode(event.url.searchParams.get('error'));
+    const suffix = bounced ? `?error=${bounced}` : '';
     const home = roleHome(runtime.roles, editor.role);
     if (home) {
       throw redirect(303, `${home}${suffix}`);
@@ -648,7 +652,8 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
-    const formError = event.url.searchParams.get('error');
+    const refusalCode = resolveRefusalCode(event.url.searchParams.get('error'));
+    const formError = refusalCode ? refusalMessage(refusalCode) : null;
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
     const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
     const base = { conceptId: concept.id, label: concept.label, singular: concept.singular, dated: concept.routing.dated, routable: concept.routing.routable, formError, publishedAll };
@@ -924,7 +929,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       isNew,
       saved: event.url.searchParams.get('saved') === '1',
       renamed: event.url.searchParams.get('renamed') === '1',
-      error: event.url.searchParams.get('error'),
       slug: slugFromId(id, datePrefix),
       linkTargets,
       fragmentTargets,
@@ -1350,8 +1354,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       published.push({ concept: entry.concept.id, id: entry.id, branch: entry.branch, sha: entry.sha });
     }
     if (published.length === 0) {
-      const message = 'Nothing to publish. Every entry is already live.';
-      throw redirect(303, `${listPage}?error=${encodeURIComponent(message)}`);
+      throw redirect(303, `${listPage}?error=nothing_to_publish`);
     }
     changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });
 
@@ -1372,8 +1375,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         ctx.logCommitFailed({ concept: entry.concept, id: entry.id, editor: editor.email }, err, 'publish.failed');
       }
       if (isConflict(err)) {
-        const message = 'The site changed while publishing. Reload and try again.';
-        throw redirect(303, `${listPage}?error=${encodeURIComponent(message)}`);
+        throw redirect(303, `${listPage}?error=publish_conflict`);
       }
       throw err;
     }

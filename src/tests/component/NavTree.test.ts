@@ -11,7 +11,6 @@ function data(over = {}) {
     ],
     pages: [{ label: 'about', url: '/about' }],
     saved: false,
-    error: null,
     ...over,
   };
 }

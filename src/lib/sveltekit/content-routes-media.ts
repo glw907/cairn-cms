@@ -66,11 +66,7 @@ export interface MediaLibraryData {
   assets: MediaLibraryEntry[];
   /** Per-hash usage overlay, kept separate from MediaLibraryEntry so the popover stays decoupled. */
   usage: Record<string, MediaUsageInfo>;
-  /**
-   * The degraded-load error: a failed token mint or media read. This slot is the failure of THIS
-   *  load, distinct from a prior action's conflict error (see `flashError`), so a read failure and a
-   *  redirected commit conflict never overwrite each other.
-   */
+  /** The degraded-load error: a failed token mint or media read. */
   error: string | null;
   /**
    * The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
@@ -79,11 +75,6 @@ export interface MediaLibraryData {
    *  `?uploaded=1`, null otherwise. The component renders a polite success strip for each.
    */
   flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | 'bulkDeleted' | 'orphansPurged' | 'uploaded' | null;
-  /**
-   * A redirected action's conflict error read from `?error=` (a commit-conflict bounce). Kept in
-   *  its own slot rather than the degraded-load `error` above, so the two never collide.
-   */
-  flashError: string | null;
 }
 
 /**
@@ -377,9 +368,9 @@ export function createMediaActions(ctx: ContentRoutesContext) {
   async function mediaLibraryLoad(event: CairnEvent): Promise<MediaLibraryData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
-    // Read the flash flags a redirected action carried back, mirroring listLoad's `?error`/
-    // `?publishedAll` grammar: a deleted/updated success flag and a commit-conflict error. The
-    // conflict error rides its own slot so it never collides with the degraded-load `error` below.
+    // Read the flash flags a redirected action carried back: a deleted/updated/etc success flag.
+    // No media action redirects with a `?error=` any more (every refusal answers in place through
+    // `fail()`), so this load carries no conflict-error slot to collide with the one below.
     let flash: MediaLibraryData['flash'] = null;
     if (event.url.searchParams.get('deleted') === '1') flash = 'deleted';
     else if (event.url.searchParams.get('updated') === '1') flash = 'updated';
@@ -388,7 +379,6 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     else if (event.url.searchParams.get('bulkDeleted') === '1') flash = 'bulkDeleted';
     else if (event.url.searchParams.get('orphansPurged') === '1') flash = 'orphansPurged';
     else if (event.url.searchParams.get('uploaded') === '1') flash = 'uploaded';
-    const flashError = event.url.searchParams.get('error');
     const backend = ctx.resolveBackend(event);
 
     // Union the media manifest by hash: main's rows first, then any branch hash not already present.
@@ -422,7 +412,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     } catch {
       // A wholesale read failure leaves whatever rows were already unioned; the screen lists them
       // with no usage overlay rather than failing.
-      return { assets: [...union.values()].map(mediaLibraryEntry), usage: {}, error: 'Could not load media.', flash, flashError };
+      return { assets: [...union.values()].map(mediaLibraryEntry), usage: {}, error: 'Could not load media.', flash };
     }
     const assets = [...union.values()].map(mediaLibraryEntry);
 
@@ -442,7 +432,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       usage = {};
     }
 
-    return { assets, usage, error: null, flash, flashError };
+    return { assets, usage, error: null, flash };
   }
 
   /**

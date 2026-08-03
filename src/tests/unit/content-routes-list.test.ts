@@ -246,12 +246,20 @@ describe('listLoad', () => {
     expect(data.error).toMatch(/could not load/i);
   });
 
-  it('surfaces a create-form error from the query', async () => {
+  it('resolves a known publish-all ?error= code to its engine copy', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=nothing_to_publish') as never);
+    expect(data.formError).toBe('Nothing to publish. Every entry is already live.');
+  });
+
+  it('drops a crafted ?error= carrying free text or an unrecognized code, rather than relaying it', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
     const routes = createContentRoutes(runtime());
     const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=Bad+slug') as never);
-    expect(data.formError).toBe('Bad slug');
+    expect(data.formError).toBeNull();
   });
 
   it('surfaces the publish-all count from the query and defaults it to null', async () => {

@@ -81,8 +81,8 @@ function seeded(): GithubDouble {
   return gh;
 }
 
-function loadEvent() {
-  return contentEvent({ url: 'https://t.example/admin/vocabulary' });
+function loadEvent(search = '') {
+  return contentEvent({ url: `https://t.example/admin/vocabulary${search}` });
 }
 
 function saveEvent(vocabularyJson: string) {
@@ -140,6 +140,13 @@ describe('vocabularyLoad', () => {
     expect(data.vocabulary).toEqual([]);
     expect(data.usage).toEqual({});
     expect(data.unlisted).toEqual([]);
+  });
+
+  it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
+    seeded();
+    const routes = createContentRoutes(runtime());
+    const data = await routes.vocabularyLoad(loadEvent('?error=You+have+been+signed+out') as never);
+    expect(data).not.toHaveProperty('error');
   });
 });
 

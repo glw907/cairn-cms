@@ -34,13 +34,12 @@ interface EditorActionFailure {
 
 /**
  * The editors screen's data (`editorsLoad`): the allowlist (each row carrying its resolved
- * capability), the acting owner's email, a resolved `?error` code, and the declared role
- * vocabulary paired with each role's capability.
+ * capability), the acting owner's email, and the declared role vocabulary paired with each
+ * role's capability.
  */
 export interface EditorsData {
   editors: Editor[];
   self: string;
-  error: string | null;
   vocabulary: { role: string; capability: Capability }[];
 }
 
@@ -80,10 +79,9 @@ export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
 
   /**
    * GET /admin/editors. Owner-only. Returns the allowlist (each row carrying its resolved
-   *  capability), the acting owner's email, the declared vocabulary (each role name paired with
-   *  its capability, for the role control), and any `?error=` an unexpected action failure
-   *  bounced back with (the same redirect convention `list`, `edit`, `nav`, and `settings`
-   *  already carry their own errors through).
+   *  capability), the acting owner's email, and the declared vocabulary (each role name paired
+   *  with its capability, for the role control). Every editor-management refusal answers through
+   *  `fail()`, so this load carries no `?error=` slot.
    */
   async function editorsLoad(event: CairnEvent): Promise<EditorsData> {
     const owner = requireOwner(event);
@@ -93,7 +91,7 @@ export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
       role,
       capability: resolveCapability(vocabulary, role),
     }));
-    return { editors, self: owner.email, error: event.url.searchParams.get('error'), vocabulary: vocabularyList };
+    return { editors, self: owner.email, vocabulary: vocabularyList };
   }
 
   /** POST add an editor. Owner-only. Rejects a role outside the declared vocabulary. */

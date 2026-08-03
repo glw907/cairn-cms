@@ -68,7 +68,6 @@ function editorsData(): AdminData {
     page: {
       editors: [{ email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' }],
       self: 'owner@t',
-      error: null,
       vocabulary: [
         { role: 'owner', capability: 'owner' },
         { role: 'editor', capability: 'editor' },
@@ -85,7 +84,6 @@ function navData(): AdminData {
       tree: [{ label: 'Home', url: '/' }],
       pages: [{ label: 'about', url: '/about' }],
       saved: false,
-      error: null,
     },
   };
 }
@@ -102,7 +100,6 @@ function settingsData(): AdminData {
       modelLabel: 'Claude Sonnet',
       conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
       saved: false,
-      error: null,
     },
   };
 }
@@ -121,7 +118,6 @@ function editData(): AdminData {
       isNew: false,
       saved: false,
       renamed: false,
-      error: null,
       slug: 'hello',
       linkTargets: [] as LinkTarget[],
       fragmentTargets: null,

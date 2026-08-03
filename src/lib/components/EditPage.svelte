@@ -1211,7 +1211,6 @@ persistent "?" carries Markdown help, design-arc D2).
     return flash;
   });
   const assertiveMessage = $derived.by(() => {
-    if (data.error) return data.error;
     if (formError) return formError;
     if (deleteRefusedLinks.length) {
       const count = deleteRefusedLinks.length;
@@ -1689,9 +1688,6 @@ persistent "?" carries Markdown help, design-arc D2).
       <a class="link link-primary" href={action.href}>{action.label}</a>
     {/each}
   </div>
-{/if}
-{#if data.error}
-  <div class="alert alert-error mb-4 type-body">{data.error}</div>
 {/if}
 {#if formError}
   <div class="alert alert-error mb-4 type-body">{formError}</div>

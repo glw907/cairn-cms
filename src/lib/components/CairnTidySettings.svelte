@@ -64,10 +64,9 @@ bespoke (ruling 7): a single-use control, not a repeated device.
 
   let { data, form = null }: Props = $props();
 
-  // The one lifecycle error to announce: a rejected save's fail() leads (form?.error), else a
-  // redirected unexpected-failure bounce (data.error) from an action, like publishAll, that
-  // carries no form of its own here.
-  const lifecycleError = $derived(form?.error ?? data.error ?? '');
+  // The one lifecycle error to announce: a rejected save's fail(). Every settings-save refusal
+  // now answers in place, so this load carries no `?error=` bounce.
+  const lifecycleError = $derived(form?.error ?? '');
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on

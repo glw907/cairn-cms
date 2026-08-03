@@ -97,7 +97,7 @@ describe('editLoad', () => {
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data).toMatchObject({
       conceptId: 'posts', id: '2026-05-hello', label: 'Posts', title: 'Hello',
-      body: 'The body.', isNew: false, saved: false, error: null,
+      body: 'The body.', isNew: false, saved: false,
     });
     expect(data.frontmatter.title).toBe('Hello');
     expect(data.frontmatter.date).toBe('2026-05-01');
@@ -373,12 +373,12 @@ describe('editLoad', () => {
     expect(data.slug).toBe('hello');
   });
 
-  it('reads saved and error flags from the query', async () => {
+  it('reads the saved flag from the query; a crafted ?error= renders nothing at all', async () => {
     editFetch('---\ntitle: Hi\n---\nx');
     const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('hi', '?saved=1&error=Nope') as never);
     expect(data.saved).toBe(true);
-    expect(data.error).toBe('Nope');
+    expect(data).not.toHaveProperty('error');
   });
 
   it('reads the renamed flag from the query', async () => {

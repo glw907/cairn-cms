@@ -225,6 +225,17 @@ describe('settingsLoad', () => {
     expect(data.enabled).toBe(false);
     expect(data.tidyEnabled).toBe(false);
   });
+
+  it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('valid') } });
+    const data = await routes.settingsLoad(
+      contentEvent({
+        url: 'https://t.example/admin/settings?error=You+have+been+signed+out',
+        env: { ANTHROPIC_API_KEY: 'sk-test' },
+      }) as never,
+    );
+    expect(data).not.toHaveProperty('error');
+  });
 });
 
 describe('settingsLoad: probe bound + cached (save-500-hardening)', () => {

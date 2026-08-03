@@ -174,6 +174,16 @@ describe('editorsLoad carries the declared vocabulary', () => {
     const admin = data.editors.find((e) => e.email === 'admin@x.dev');
     expect(admin).toMatchObject({ role: 'club-admin', capability: 'editor' });
   });
+
+  it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
+    await seedEditor('own@x.dev', 'Own', 'owner');
+    const ev = makeEvent({
+      url: 'https://test.dev/admin/editors?error=You+have+been+signed+out',
+      editor: { email: 'own@x.dev', displayName: 'Own', role: 'owner', capability: 'owner' },
+    });
+    const data = await routes.editorsLoad(ev);
+    expect(data).not.toHaveProperty('error');
+  });
 });
 
 describe('role validation against the vocabulary', () => {

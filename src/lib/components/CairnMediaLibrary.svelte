@@ -117,8 +117,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   let { data, form }: Props = $props();
 
-  // The success flash a redirected action carried back: a safe-delete or a metadata edit. The
-  // conflict error (data.flashError) renders in the inline error treatment below instead.
+  // The success flash a redirected action carried back: a safe-delete or a metadata edit. Every
+  // media refusal now answers in place through `form`, so there is no redirected conflict error
+  // to carry here.
   const FLASH_MESSAGE = {
     deleted: 'Asset deleted.',
     updated: 'Changes saved.',
@@ -1423,9 +1424,6 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 <div class="sr-only" aria-live="polite">{flashMessage}</div>
 {#if flashMessage}
   <div class="alert alert-success mb-4 type-body">{flashMessage}</div>
-{/if}
-{#if data.flashError}
-  <div role="alert" class="alert alert-error mb-4 type-body">{data.flashError}</div>
 {/if}
 {#if data.error}
   <div role="alert" class="alert alert-warning mb-4 type-body">{data.error}</div>

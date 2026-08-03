@@ -22,7 +22,6 @@ export interface NavLoadData {
   tree: NavNode[];
   pages: NavPageOption[];
   saved: boolean;
-  error: string | null;
 }
 
 /**
@@ -100,7 +99,6 @@ export function createNavRoutes(runtime: CairnRuntime) {
       tree,
       pages: await pageOptions(backend),
       saved: event.url.searchParams.get('saved') === '1',
-      error: event.url.searchParams.get('error'),
     };
   }
 

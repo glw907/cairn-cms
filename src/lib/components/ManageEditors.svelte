@@ -18,13 +18,11 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
   import { PageHeader, AdminTable } from '../admin-toolkit/index.js';
 
   interface Props {
-    /** The editors load's data: the allowlist, the acting owner's email, any `?error=` an
-     *  unexpected action failure bounced back with, and the site's declared role vocabulary
-     *  (each name paired with its resolved capability, in declaration order). */
+    /** The editors load's data: the allowlist, the acting owner's email, and the site's declared
+     *  role vocabulary (each name paired with its resolved capability, in declaration order). */
     data: {
       editors: Editor[];
       self: string;
-      error: string | null;
       vocabulary: { role: string; capability: Capability }[];
     };
     /** The last action's result (an error message when it failed). */
@@ -57,10 +55,9 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
     return entry.role === entry.capability ? entry.role : `${entry.role} (${entry.capability})`;
   }
 
-  // The one lifecycle error to announce: a rejected editorAdd/editorRemove/editorSetRole `fail()` leads
-  // (form?.error), else a redirected unexpected-failure bounce (data.error) from an action, like
-  // publishAll, that carries no form of its own here.
-  const lifecycleError = $derived(form?.error ?? data.error ?? '');
+  // The one lifecycle error to announce: a rejected editorAdd/editorRemove/editorSetRole `fail()`.
+  // Every editor-management refusal now answers in place, so this load carries no `?error=` bounce.
+  const lifecycleError = $derived(form?.error ?? '');
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second submit failing the same way) would otherwise go silent. An invisible nonce flips on

@@ -484,8 +484,7 @@ describe('publishAllAction', () => {
     const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
-    expect(location).toMatch(/^\/admin\/posts\?error=/);
-    expect(decodeURIComponent(location)).toContain('Nothing to publish. Every entry is already live.');
+    expect(location).toBe('/admin/posts?error=nothing_to_publish');
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
   });
 
@@ -500,7 +499,7 @@ describe('publishAllAction', () => {
     const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
-    expect(location).toMatch(/^\/admin\/posts\?error=/);
+    expect(location).toBe('/admin/posts?error=publish_conflict');
 
     const record = warnSpy.mock.calls
       .map((c) => c[0] as { event?: string; reason?: string })

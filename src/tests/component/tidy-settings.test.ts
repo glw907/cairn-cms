@@ -19,7 +19,6 @@ function data(over: Partial<SettingsData> = {}): SettingsData {
     modelLabel: 'Claude Sonnet',
     conventions: defaultTidyConventions(),
     saved: false,
-    error: null,
     ...over,
   };
 }

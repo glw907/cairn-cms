@@ -43,7 +43,7 @@ describe('navLoad', () => {
     expect(data.menu).toEqual({ name: 'primary', label: 'Primary nav', maxDepth: 2 });
     expect(data.tree).toEqual([{ label: 'Home', url: '/' }]);
     expect(data.pages).toEqual([{ label: 'about', url: '/about' }]);
-    expect(data.error).toBeNull();
+    expect(data).not.toHaveProperty('error');
   });
 
   it('degrades to an empty tree when the config is missing', async () => {
@@ -54,7 +54,16 @@ describe('navLoad', () => {
     const routes = createNavRoutes(runtime(NAV));
     const data = await routes.navLoad(loadEvent() as never);
     expect(data.tree).toEqual([]);
-    expect(data.error).toBeNull();
+  });
+
+  it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
+      return new Response('Not Found', { status: 404 });
+    }));
+    const routes = createNavRoutes(runtime(NAV));
+    const data = await routes.navLoad(loadEvent('?error=You+have+been+signed+out') as never);
+    expect(data).not.toHaveProperty('error');
   });
 
   it('degrades to an empty tree when the config is unparsable', async () => {

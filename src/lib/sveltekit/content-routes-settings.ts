@@ -74,8 +74,6 @@ export interface SettingsData {
   conventions: TidyConventions;
   /** The success flash a redirected save carries (`?saved=1`). */
   saved: boolean;
-  /** A redirected save's validation or conflict error read from `?error=`. */
-  error: string | null;
 }
 
 /**
@@ -90,8 +88,6 @@ export interface VocabularyLoadData {
   usage: Record<string, number>;
   /** Tags in use but absent from the vocabulary, with their count, sorted: the seed candidates. */
   unlisted: { value: string; count: number }[];
-  /** A redirected save's validation error, or an unexpected action failure's bounce, read from `?error=`. */
-  error: string | null;
 }
 
 /**
@@ -243,7 +239,6 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       modelLabel: tidyModelLabel(model),
       conventions: resolveTidyConventions(tidy?.conventions),
       saved: event.url.searchParams.get('saved') === '1',
-      error: event.url.searchParams.get('error'),
     };
   }
 
@@ -362,7 +357,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       unlisted = [];
     }
 
-    return { vocabulary, usage, unlisted, error: event.url.searchParams.get('error') };
+    return { vocabulary, usage, unlisted };
   }
 
   /**

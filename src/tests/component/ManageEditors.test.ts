@@ -24,7 +24,6 @@ function data() {
       { email: 'ed@t', displayName: 'Ed Two', role: 'editor' as const, capability: 'editor' as const },
     ],
     self: 'owner@t',
-    error: null,
     vocabulary: DEFAULT_VOCABULARY,
   };
 }
@@ -87,13 +86,13 @@ describe('ManageEditors', () => {
     expect(region?.textContent ?? '').toContain('That editor already exists');
   });
 
-  it('surfaces a redirected unexpected-failure error carried on data.error (no fail() form)', async () => {
+  it('renders nothing for a query-derived error now that data.error is gone from the load', async () => {
     const screen = render(ManageEditors, {
-      data: { ...data(), error: 'Something went wrong and your changes were not saved.' },
+      data: { ...data(), error: 'Something went wrong and your changes were not saved.' } as never,
       form: null,
     });
     const alert = screen.container.querySelector('.alert-error');
-    expect(alert?.textContent).toContain('Something went wrong and your changes were not saved.');
+    expect(alert).toBeNull();
   });
 });
 
@@ -117,7 +116,6 @@ describe('ManageEditors vocabulary-driven role control', () => {
           },
         ],
         self: 'owner@t',
-        error: null,
         vocabulary: ASC_VOCABULARY,
       },
       form: null,
@@ -143,7 +141,6 @@ describe('ManageEditors vocabulary-driven role control', () => {
           },
         ],
         self: 'owner@t',
-        error: null,
         vocabulary: ASC_VOCABULARY,
       },
       form: null,
@@ -184,7 +181,6 @@ describe('ManageEditors vocabulary-driven role control', () => {
           },
         ],
         self: 'owner@t',
-        error: null,
         vocabulary: ASC_VOCABULARY,
       },
       form: null,

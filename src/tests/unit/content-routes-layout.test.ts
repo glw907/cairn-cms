@@ -543,7 +543,19 @@ describe('indexLoad', () => {
     }
   });
 
-  it('carries a bounced ?error= through to the first concept, rather than dropping it', () => {
+  it('relays a known ?error= code through to the first concept, rather than dropping it', () => {
+    const routes = createContentRoutes(runtime());
+    const e = event('/admin?error=publish_conflict', 'owner');
+    try {
+      routes.indexLoad(e);
+      throw new Error('expected a redirect');
+    } catch (err) {
+      expect((err as { status: number; location: string }).status).toBe(307);
+      expect((err as { location: string }).location).toBe('/admin/posts?error=publish_conflict');
+    }
+  });
+
+  it('drops a crafted ?error= carrying free text or an unrecognized code, rather than relaying it', () => {
     const routes = createContentRoutes(runtime());
     const e = event('/admin?error=Something%20went%20wrong', 'owner');
     try {
@@ -551,7 +563,7 @@ describe('indexLoad', () => {
       throw new Error('expected a redirect');
     } catch (err) {
       expect((err as { status: number; location: string }).status).toBe(307);
-      expect((err as { location: string }).location).toBe('/admin/posts?error=Something%20went%20wrong');
+      expect((err as { location: string }).location).toBe('/admin/posts');
     }
   });
 

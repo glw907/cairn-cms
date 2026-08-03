@@ -281,7 +281,10 @@ describe('vocabularySaveAction', () => {
       { value: 'svelte', label: 'SvelteKit' },
       { value: 'rust', label: 'Rust' },
     ]);
-    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
-    expect(location).toMatch(/error=.*changed%20since/i);
+    const result = (await routes.vocabularySaveAction(
+      saveEvent(posted) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
   });
 });

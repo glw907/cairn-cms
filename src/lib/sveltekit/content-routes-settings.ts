@@ -1,7 +1,7 @@
 // cairn-cms: the tidy settings screen and the tag-vocabulary admin screen, both of which
 // read-modify-commit the same committed site-config YAML. createSettingsActions closes over the
 // shared ContentRoutesContext (content-routes-context.ts) built once by createContentRoutes.
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error, fail } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import {
   DEFAULT_TIDY_MODEL,
@@ -92,6 +92,24 @@ export interface VocabularyLoadData {
   unlisted: { value: string; count: number }[];
   /** A redirected save's validation error, or an unexpected action failure's bounce, read from `?error=`. */
   error: string | null;
+}
+
+/**
+ * A refused tidy settings save: `fail(409)` when the config's head moved since the editor opened
+ *  the page. Module-internal: the component reads the envelope's `error` string loosely, so no
+ *  other module names this type.
+ */
+interface SettingsSaveFailure {
+  error: string;
+}
+
+/**
+ * A refused tag-vocabulary save: `fail(409)` when the config's head moved since the editor opened
+ *  the page. Module-internal: the component reads the envelope's `error` string loosely, so no
+ *  other module names this type.
+ */
+interface VocabularySaveFailure {
+  error: string;
 }
 
 /**
@@ -228,7 +246,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
    */
-  async function settingsSaveAction(event: CairnEvent): Promise<never> {
+  async function settingsSaveAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'settings');
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
@@ -267,12 +285,9 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(
-        commitFields,
-        err,
-        '/admin/settings',
-        'The site config changed since you opened it. Reload and reapply your edits.',
-      );
+      return ctx.commitFailure(commitFields, err, {
+        error: 'The site config changed since you opened it. Reload and reapply your edits.',
+      } satisfies SettingsSaveFailure);
     }
 
     throw redirect(303, '/admin/settings?saved=1');
@@ -348,7 +363,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
-  async function vocabularySaveAction(event: CairnEvent): Promise<never> {
+  async function vocabularySaveAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'vocabulary');
 
@@ -400,12 +415,9 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(
-        commitFields,
-        err,
-        '/admin/vocabulary',
-        'The site config changed since you opened it. Reload and reapply your edits.',
-      );
+      return ctx.commitFailure(commitFields, err, {
+        error: 'The site config changed since you opened it. Reload and reapply your edits.',
+      } satisfies VocabularySaveFailure);
     }
 
     throw redirect(303, '/admin/vocabulary?saved=1');

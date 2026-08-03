@@ -839,9 +839,9 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   listLoad: (event: CairnEvent<CairnEnv>) => Promise<ListData>;
   mediaLibraryLoad: (event: CairnEvent<CairnEnv>) => Promise<MediaLibraryData>;
   settingsLoad: (event: CairnEvent<CairnEnv>) => Promise<SettingsData>;
-  settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyLoadData>;
-  vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   createAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
   editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>;
   saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
@@ -1070,7 +1070,7 @@ Stability tier: Unstable API.
 ```ts
 declare function createNavRoutes(runtime: CairnRuntime): {
   navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>;
-  navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
 };
 ```
 

@@ -5,6 +5,7 @@
 // instead of re-deriving these from `runtime`/`deps` itself. This is the seam a pure closure-lift
 // produces: the domain modules are unchanged in behavior, only in where their shared captures come
 // from.
+import type { ActionFailure } from '@sveltejs/kit';
 import type { Backend } from '../github/backend.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
@@ -197,16 +198,16 @@ export interface ContentRoutesContext {
     event?: 'commit.failed' | 'publish.failed',
   ): void;
   /**
-   * The shared commit catch for the entry and media actions: log the failure, bounce a conflict
-   *  back to `page` with `message` as the inline error, and rethrow anything else.
+   * The shared commit catch for the entry and media actions: log the failure, then answer a
+   *  conflict in place with `fail(409, payload)` carrying the caller's own screen failure shape,
+   *  and rethrow anything else.
    */
-  commitFailure(
+  commitFailure<T>(
     fields: { concept: string; id: string; editor: string },
     err: unknown,
-    page: string,
-    message: string,
-    opts?: { event?: 'commit.failed' | 'publish.failed'; query?: string },
-  ): never;
+    payload: T,
+    opts?: { event?: 'commit.failed' | 'publish.failed' },
+  ): ActionFailure<T>;
 }
 
 /**

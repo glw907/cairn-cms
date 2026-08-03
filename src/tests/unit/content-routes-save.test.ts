@@ -134,8 +134,15 @@ describe('saveAction', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
-    const { location } = await expectRedirect(() => routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never));
-    expect(location).toMatch(/error=.*changed%20since/i);
+    const result = (await routes.saveAction(
+      saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never,
+    )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
+    // The submitted body rides the failure, so the page reseeds the editor instead of a
+    // navigation discarding the unsaved edit.
+    expect(result.data.body).toBe('b');
+    expect(result.data.brokenLinks).toEqual([]);
   });
 
   it('blocks a save that links to an absent target, with no commit', async () => {
@@ -240,11 +247,7 @@ describe('saveAction', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never);
-    } catch {
-      // swallow the conflict redirect
-    }
+    await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never);
     const reasons = warnSpy.mock.calls.map((c) => (c[0] as { event?: string; reason?: string }));
     expect(reasons.some((r) => r.event === 'commit.failed' && r.reason === 'conflict')).toBe(true);
     vi.restoreAllMocks();
@@ -265,8 +268,11 @@ describe('saveAction', () => {
       e.name = 'CommitConflictError';
       throw e;
     }));
-    const { location } = await expectRedirect(() => routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never));
-    expect(location).toMatch(/error=.*changed%20since/i);
+    const result = (await routes.saveAction(
+      saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
   });
 });
 

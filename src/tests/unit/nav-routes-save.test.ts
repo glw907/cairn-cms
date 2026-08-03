@@ -68,7 +68,10 @@ describe('navSaveAction', () => {
       return new Response('{}', { status: 200 });
     }));
     const routes = createNavRoutes(runtime());
-    const { location } = await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never));
-    expect(location).toMatch(/error=.*changed%20since/i);
+    const result = (await routes.navSaveAction(
+      saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
   });
 });

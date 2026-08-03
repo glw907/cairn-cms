@@ -134,8 +134,11 @@ describe('settingsSaveAction', () => {
       return new Response('{}', { status: 200 });
     }));
     const routes = createContentRoutes(runtime());
-    const { location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"fixes":true}') as never));
-    expect(location).toMatch(/error=.*changed%20since/i);
+    const result = (await routes.settingsSaveAction(
+      saveEvent('{"fixes":true}') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
   });
 
   it('404s when the config file is gone at save time', async () => {

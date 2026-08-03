@@ -346,11 +346,13 @@ describe('publishAction', () => {
     failMainRefPatch();
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(
-      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed text' }) as never),
-    );
-    expect(location).toMatch(/^\/admin\/posts\/2026-05-01-hi\?error=/);
-    expect(decodeURIComponent(location)).toContain('Your edits are saved. Reload and publish again.');
+    const result = (await routes.publishAction(
+      actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed text' }) as never,
+    )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toBe('Your edits are saved. Reload and publish again.');
+    // The posted body rides the failure, mirroring saveAction's own conflict.
+    expect(result.data.body).toBe('typed text');
 
     const record = warnSpy.mock.calls
       .map((c) => c[0] as { event?: string; reason?: string; editor?: string })

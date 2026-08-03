@@ -957,6 +957,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   interface SaveHold {
     path: string;
     markdown: string;
+    /**
+     * The posted body alone, frontmatter stripped: publish's own conflict reseeds SaveFailure.body
+     *  from this rather than the frontmatter-bearing `markdown`, mirroring what the editor typed.
+     */
+    body: string;
     branch: string;
     branchSha: string;
     manifest: Manifest;
@@ -1162,10 +1167,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
-        'This file changed since you opened it. Reload and reapply your edits.', { query: suffix });
+      return ctx.commitFailure(commitFields, err, {
+        error: 'This file changed since you opened it. Reload and reapply your edits.',
+        brokenLinks: [],
+        body,
+      } satisfies SaveFailure);
     }
-    return { path, markdown, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange };
+    return { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange };
   }
 
   /**
@@ -1196,7 +1204,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
-    const { path, markdown, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange } = held;
+    const { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange } = held;
 
     // Stamp the first publish here, not in saveToBranch: a save commits no manifest, so the moment an
     // entry goes live is this commit. The stamped row replaces the unstamped one saveToBranch
@@ -1250,8 +1258,12 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       }
     } catch (err) {
       // The branch already holds the just-committed edits, so a conflict here loses nothing.
-      ctx.commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
-        'Your edits are saved. Reload and publish again.', { event: 'publish.failed' });
+      return ctx.commitFailure(
+        commitFields,
+        err,
+        { error: 'Your edits are saved. Reload and publish again.', brokenLinks: [], body } satisfies SaveFailure,
+        { event: 'publish.failed' },
+      );
     }
     // Only after the main commit lands, and only when the branch head is still the commit this
     // action made: a head that moved is a concurrent save, and deleting it would destroy edits.
@@ -1485,8 +1497,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
-        'This file changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: 'This file changed since you opened it. Reload and try again.',
+        inboundLinks: [],
+        id,
+      } satisfies DeleteRefusal);
     }
     // Cascade to the pending branch only after the removal lands on main, so a commit conflict
     // keeps the unpublished edits. A straggler ref left by a failure here is idempotent and
@@ -1691,8 +1706,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
-        'This file changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: 'This file changed since you opened it. Reload and try again.',
+      } satisfies RenameFailure);
     }
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
   }

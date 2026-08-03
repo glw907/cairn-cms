@@ -275,16 +275,6 @@ describe('mediaLibraryLoad flash flags', () => {
     expect(data.flashError).toBeNull();
   });
 
-  it('reads the conflict error from ?error= into flashError, not the load error slot', async () => {
-    gh();
-    const routes = createContentRoutes(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?error=The%20media%20manifest%20changed.') as never);
-    expect(data.flashError).toBe('The media manifest changed.');
-    expect(data.flash).toBeNull();
-    // The degraded-load error slot stays null on a successful load: the conflict error rides flashError.
-    expect(data.error).toBeNull();
-  });
-
   it('returns null flash and flashError when the URL carries no flag', async () => {
     gh();
     const routes = createContentRoutes(runtime());
@@ -576,6 +566,38 @@ describe('mediaDeleteAction orphan delete', () => {
     expect(data.error).toMatch(/not committed/i);
     expect(bucket.delete).not.toHaveBeenCalled();
     expect(timeline).toEqual([]);
+  });
+
+  it('answers a manifest commit conflict as fail(409), leaving the row and the bytes untouched', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(mediaEntry(HASH_ORPHAN, 'orphan')),
+        [MANIFEST_PATH]: contentManifest([]),
+      },
+    });
+    gh.install();
+    // The manifest commit's ref update fails the way GitHub signals a stale head.
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if ((init?.method ?? 'GET').toUpperCase() === 'PATCH' && url.includes('/git/refs/heads/main')) {
+        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      }
+      return double(input, init);
+    }));
+    const timeline: string[] = [];
+    const bucket = fakeBucket(timeline);
+    const routes = createContentRoutes(runtime());
+    const result = (await routes.mediaDeleteAction(
+      mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline) as never,
+    )) as unknown as { status: number; data: { error: string; hash: string; usage: unknown[]; foundIn: number } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
+    expect(result.data.hash).toBe(HASH_ORPHAN);
+    // The commit never landed, so the row-then-bytes order stops before the R2 delete.
+    expect(bucket.delete).not.toHaveBeenCalled();
+    expect(parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_ORPHAN]).toBeDefined();
   });
 });
 

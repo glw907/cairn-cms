@@ -739,8 +739,12 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The media manifest changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: 'The media manifest changed since you opened it. Reload and try again.',
+        hash,
+        usage: [],
+        foundIn,
+      } satisfies MediaDeleteRefusal);
     }
     // THEN delete the object. An absent object is a no-op (the R2 contract), so a dead row clears.
     await store.delete(objectKey);
@@ -833,8 +837,9 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The media manifest changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: 'The media manifest changed since you opened it. Reload and try again.',
+      } satisfies MediaBulkFailure);
     }
 
     // THEN delete each deletable hash's R2 object (the load-bearing order, see the docstring). Best
@@ -1038,8 +1043,9 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The media manifest changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: 'The media manifest changed since you opened it. Reload and try again.',
+      } satisfies MediaUpdateFailure);
     }
     throw redirect(303, '/admin/media?updated=1');
   }
@@ -1234,8 +1240,12 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('media.replaced', { editor: editor.email, oldHash, newHash, affected: plan.affectedCount });
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The site changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: 'The site changed since you opened it. Reload and try again.',
+        hash: oldHash,
+        usage: [],
+        foundIn: plan.affectedCount,
+      } satisfies MediaReplaceFailure);
     }
     throw redirect(303, '/admin/media?replaced=1');
   }
@@ -1385,8 +1395,9 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('media.alt_propagated', { editor: editor.email, hash, overwrite, written: changed.length });
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The site changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: 'The site changed since you opened it. Reload and try again.',
+      } satisfies MediaAltPropagateFailure);
     }
     throw redirect(303, '/admin/media?altPropagated=1');
   }

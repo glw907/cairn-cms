@@ -10,7 +10,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';
-  import type { DeleteRefusal, EntrySummary, ListData } from '../sveltekit/content-routes.js';
+  import type { ContentFormFailure, EntrySummary, ListData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
@@ -30,10 +30,10 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   interface Props {
     /** The list load's data: the concept, its entries, and any inline or form errors. */
     data: ListData;
-    /** The `?/delete` action result. A blocked delete returns the `DeleteRefusal` payload (the
-     *  shared `error` summary, the refused entry id, and its inbound linkers), so the list names
-     *  the blockers and refuses (block-until-clean). */
-    form?: Partial<DeleteRefusal> | null;
+    /** The last `?/create` or `?/delete` action result. A blocked delete carries the refused entry
+     *  id and its inbound linkers so the list names the blockers (block-until-clean); a blocked
+     *  create carries only the shared `error` summary. */
+    form?: ContentFormFailure | null;
   }
 
   let { data, form = null }: Props = $props();
@@ -236,11 +236,12 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   );
 
   // The one lifecycle error to announce (the visible alerts below keep their own styling). A blocked
-  // delete leads, then a form error, then a load error, since the refusal is the most recent and most
-  // actionable outcome of the last submit. The refusal announcement carries the blocker count, so a
-  // screen reader hears the magnitude (matching the visible banner) before navigating to the list.
+  // delete leads, then a blocked create's fail() (form?.error), then the publish-all survivor's
+  // relayed formError, then a load error, since the refusal is the most recent and most actionable
+  // outcome of the last submit. The refusal announcement carries the blocker count, so a screen
+  // reader hears the magnitude (matching the visible banner) before navigating to the list.
   const lifecycleError = $derived.by(() => {
-    if (!deleteRefused) return data.formError ?? data.error ?? '';
+    if (!deleteRefused) return form?.error ?? data.formError ?? data.error ?? '';
     const count = deleteRefused.inboundLinks.length;
     const blocker =
       deleteRefused.inboundKind === 'include'
@@ -295,8 +296,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 {#if publishedAllMessage}
   <div class="alert alert-success mb-4 type-body">{publishedAllMessage}</div>
 {/if}
-{#if data.formError}
-  <div class="alert alert-error mb-4 type-body">{data.formError}</div>
+{#if !deleteRefused && (form?.error ?? data.formError)}
+  <div class="alert alert-error mb-4 type-body">{form?.error ?? data.formError}</div>
 {/if}
 {#if data.error}
   <div class="alert alert-warning mb-4 type-body">{data.error}</div>

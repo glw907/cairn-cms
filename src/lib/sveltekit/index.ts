@@ -34,6 +34,7 @@ export type {
   SaveFailure,
   DeleteRefusal,
   RenameFailure,
+  CreateFailure,
   MediaDeleteRefusal,
   MediaUpdateFailure,
   MediaReplaceFailure,

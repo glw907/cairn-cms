@@ -210,8 +210,13 @@ describe('publishAction', () => {
     rt.concepts[0].validate = () => ({ ok: false as const, errors: { title: 'Title is required' } });
     const routes = createContentRoutes(rt);
 
-    const location = await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { body: 'b' }) as never));
-    expect(location).toMatch(/error=.*Title/);
+    const result = (await routes.publishAction(actionEvent('2026-05-01-hi', { body: 'b' }) as never)) as unknown as {
+      status: number;
+      data: { error: string; body: string };
+    };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toMatch(/Title/);
+    expect(result.data.body).toBe('b');
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
   });
 

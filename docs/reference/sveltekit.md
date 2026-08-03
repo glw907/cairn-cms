@@ -842,7 +842,7 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyLoadData>;
   vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  createAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  createAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>;
   saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
@@ -999,12 +999,14 @@ below. Their request shapes and `fail` payloads:
 Every action failure carries `error: string` as its one-line summary, alongside the payload that
 names what refused: a blocked save or publish returns `SaveFailure` (the broken links and the
 edited body), a refused delete returns `DeleteRefusal` (the inbound linkers and the entry id),
-and a refused rename returns `RenameFailure`. The media actions add two more: a refused media
-delete returns `MediaDeleteRefusal` (the asset hash, the where-used rows, and the count) and a
-refused media metadata edit returns `MediaUpdateFailure`. A refused replace returns
-`MediaReplaceFailure` (the same shape as the delete refusal) and a refused alt-propagation returns
-`MediaAltPropagateFailure` (the bare summary). A page component types its `form` prop with
-`ContentFormFailure`, the optional merge of all seven.
+a refused rename returns `RenameFailure`, and a refused create returns `CreateFailure` (the same
+bare summary as `RenameFailure`, for a bad slug, a missing date, or an address collision). The
+media actions add two more: a refused media delete returns `MediaDeleteRefusal` (the asset hash,
+the where-used rows, and the count) and a refused media metadata edit returns
+`MediaUpdateFailure`. A refused replace returns `MediaReplaceFailure` (the same shape as the
+delete refusal) and a refused alt-propagation returns `MediaAltPropagateFailure` (the bare
+summary). A page component types its `form` prop with `ContentFormFailure`, the optional merge of
+all eight.
 
 ```ts
 // src/routes/admin/(app)/[concept]/+page.server.ts (per-route mounting)
@@ -1638,12 +1640,13 @@ imports the matching `*Data` type to type its `data` prop.
 | `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; inboundKind?: 'link' \| 'include'; id: string }` | A refused delete: the one-line summary, the entries that still link to (or include) the refused one, and its id so a list marks the right row. `inboundKind` names which gate refused, `'include'` for a blocked fragment delete and `'link'` (the default when absent) otherwise, so the refusal copy names the real blocker. |
 | `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
+| `CreateFailure` | Unstable API | `interface CreateFailure { error: string }` | A refused create (bad slug, missing date, or an address collision): just the one-line summary. |
 | `MediaDeleteRefusal` | Unstable API | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
 | `MediaUpdateFailure` | Unstable API | `interface MediaUpdateFailure { error: string }` | A refused media metadata edit (an asset not committed on the default branch, or an invalid slug): just the one-line summary. |
 | `MediaReplaceFailure` | Unstable API | `interface MediaReplaceFailure { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media replace: the one-line summary, the asset's content hash, the where-used rows, and the distinct-entry count. Mirrors `MediaDeleteRefusal`: a fresh usage read found the asset still in use without the typed-slug override (409), or usage could not be verified or the bucket is unbound (503). |
 | `MediaAltPropagateFailure` | Unstable API | `interface MediaAltPropagateFailure { error: string }` | A refused media alt-propagation: just the one-line summary. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
 | `MediaBulkFailure` | Unstable API | `interface MediaBulkFailure { error: string }` | A refused media bulk delete or orphan purge: just the one-line summary. The whole batch failed closed because cross-branch usage could not be verified (503), or media is off / the bucket is unbound. Per-item outcomes ride the returned summary, not this fail. |
-| `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
+| `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & CreateFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `EditorRoutesOptions` | Unstable API | `interface EditorRoutesOptions { roles?: RolesDeclaration }` | Configuration for `createEditorRoutes`: the site's declared role vocabulary; omitted, the routes validate and resolve against the implicit owner/editor pair. |
 | `EditorRoutes` | Unstable API | `type EditorRoutes` | What `createEditorRoutes` returns: the owner-gated editor-management load and actions, shown expanded in [`createEditorRoutes`](#createeditorroutes). |
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |

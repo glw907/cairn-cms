@@ -733,16 +733,21 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     );
   });
 
-  it('a redirect thrown by an action (its own validated bounce) still propagates untouched, with no log', async () => {
-    new GithubDouble({ main: {} }).install();
+  it('a redirect thrown by an action (its own deliberate navigation, not a caught unexpected failure) still propagates untouched, with no log', async () => {
+    // Every validated content-action refusal now answers in place with fail() (R10), so the
+    // remaining example of an action's own deliberate throw-redirect is a success navigation
+    // (discard, here) rather than a validation bounce; the wrapper must still let it straight
+    // through, unlogged, exactly as it does a validation refusal's redirect.
+    const gh = new GithubDouble({
+      main: { 'src/content/posts/2026-05-01-hi.md': '---\ntitle: Hi\ndate: 2026-05-01\n---\nbody' },
+      'cairn/posts/2026-05-01-hi': { 'src/content/posts/2026-05-01-hi.md': '---\ntitle: Hi\ndate: 2026-05-01\n---\nbody edited' },
+    });
+    gh.install();
     const admin = createCairnAdmin(runtime(), deps);
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
-    const event = actionEvent('/admin/pages', { form: { title: '', slug: 'not valid slug!' } });
-    const result = await expectRedirectAssertion(() => admin.actions.create(event as never));
-    expect(result).toEqual({
-      status: 303,
-      location: `/admin/pages?error=${encodeURIComponent('Enter a valid address: lowercase letters, numbers, and hyphens.')}`,
-    });
+    const event = actionEvent('/admin/posts/2026-05-01-hi');
+    const result = await expectRedirectAssertion(() => admin.actions.discard(event as never));
+    expect(result).toEqual({ status: 303, location: '/admin/posts/2026-05-01-hi?discarded=1' });
     expect(errorSpy).not.toHaveBeenCalled();
   });
 

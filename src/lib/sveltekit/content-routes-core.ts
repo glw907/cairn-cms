@@ -318,6 +318,12 @@ export interface RenameFailure {
   error: string;
 }
 
+/** A refused create: `fail(400)` on a bad slug or missing date, `fail(409)` on an address collision. */
+export interface CreateFailure {
+  /** The one-line human summary every content action failure carries. */
+  error: string;
+}
+
 /**
  * Resolve the effective preview for one concept: its `byConcept` override wins per key, with
  *  nullish coalescing so an override key that is present but undefined keeps the top-level value.
@@ -685,7 +691,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
-  async function createAction(event: CairnEvent): Promise<never> {
+  async function createAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -693,27 +699,32 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const rawTitle = String(form.get('title') ?? '').trim();
     const slug = String(form.get('slug') ?? '').trim() || slugify(rawTitle);
     const date = String(form.get('date') ?? '').trim();
-    const bounce = (msg: string): never => {
-      throw redirect(303, `/admin/${concept.id}?error=${encodeURIComponent(msg)}`);
-    };
-    // The form asked a non-routable concept for a Name, so the bounce names the same thing back.
-    if (!isValidId(slug)) return bounce(invalidIdMessage(concept));
+    // The form asked a non-routable concept for a Name, so the refusal names the same thing back.
+    if (!isValidId(slug)) return fail(400, { error: invalidIdMessage(concept) } satisfies CreateFailure);
 
     let id = slug;
     if (concept.routing.dated) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bounce('Pick a date for this entry.');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return fail(400, { error: 'Pick a date for this entry.' } satisfies CreateFailure);
+      }
       if (/^\d{4}-/.test(slug)) {
-        return bounce('Leave the date out of the address; set it in the date field.');
+        return fail(400, {
+          error: 'Leave the date out of the address; set it in the date field.',
+        } satisfies CreateFailure);
       }
       id = composeDatedId(date, slug, concept.datePrefix);
     }
 
     const backend = ctx.resolveBackend(event);
     const existing = await backend.readFile(`${concept.dir}/${filenameFromId(id)}`, backend.defaultBranch);
-    if (existing !== null) return bounce('An entry with that address already exists.');
+    if (existing !== null) {
+      return fail(409, { error: 'An entry with that address already exists.' } satisfies CreateFailure);
+    }
     // A pending branch is an entry too (saved but not yet published); refuse to clobber it.
     if ((await backend.branchHead(pendingBranch(concept.id, id))) !== null) {
-      return bounce('An unpublished entry with that address already exists.');
+      return fail(409, {
+        error: 'An unpublished entry with that address already exists.',
+      } satisfies CreateFailure);
     }
 
     // The raw typed title (before slugification) rides the redirect so editLoad can seed the
@@ -1005,7 +1016,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const form = await event.request.formData();
     const body = String(form.get('body') ?? '');
     const isNew = form.get('new') === '1';
-    const suffix = isNew ? '&new=1' : '';
 
     // The backend is resolved up front: the branch-first prior-tags read below (the orphan union)
     //  needs it before the validate.
@@ -1045,35 +1055,40 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const result = concept.validate(decoded, body);
     if (!result.ok) {
       const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
-      throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
+      return fail(400, { error: message, brokenLinks: [], body } satisfies SaveFailure);
     }
 
     // A fragment can never include another fragment (the engine resolves an include only one
     // pass deep; see resolve-include.ts). Keyed on the concept being the fragments concept, not on
     // routability in general, since routability describes URL behavior and this is a fragments-only
     // nesting rule. The check runs extractIncludes, the same extraction the manifest builds its
-    // includes row from, so the bounce and the where-used index agree on what counts as an include.
+    // includes row from, so the refusal and the where-used index agree on what counts as an include.
     if (concept.id === FRAGMENTS_CONCEPT_ID && extractIncludes(body).length > 0) {
-      throw redirect(
-        303,
-        `/admin/${concept.id}/${id}?error=${encodeURIComponent("A fragment can't include another fragment.")}${suffix}`,
-      );
+      return fail(400, {
+        error: "A fragment can't include another fragment.",
+        brokenLinks: [],
+        body,
+      } satisfies SaveFailure);
     }
 
     // Belt and braces: normalizeConcepts already forces a date-token concept's `date` field to
     // required, so an ordinary validate() failure should have caught a missing date before this
     // point. A hand-rolled validate (or a descriptor built outside normalizeConcepts) could still
     // pass with no usable date, and manifestEntryFromFile's resolvePermalink below throws on
-    // exactly that case. Catch it here with the same editor-voiced redirect bounce every other
-    // save failure uses, rather than letting that throw escape as a raw 500.
+    // exactly that case. Catch it here with the same editor-voiced refusal every other save
+    // failure uses, rather than letting that throw escape as a raw 500.
     if (permalinkUsesDateToken(concept.permalink) && !asDate(result.data.date)) {
-      throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent('Pick a date for this entry.')}${suffix}`);
+      return fail(400, {
+        error: 'Pick a date for this entry.',
+        brokenLinks: [],
+        body,
+      } satisfies SaveFailure);
     }
 
     if (allowed !== null && taxField !== null) {
       const tagError = enforceTaxonomy(coerceTags(decoded[taxField]), allowed);
       if (tagError) {
-        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(tagError)}${suffix}`);
+        return fail(400, { error: tagError, brokenLinks: [], body } satisfies SaveFailure);
       }
     }
 

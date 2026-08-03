@@ -103,11 +103,14 @@ describe('saveAction', () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime(() => ({ ok: false, errors: { title: 'Title is required' } })));
-    const { status, location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-x', { title: '', body: 'b' }) as never),
-    );
-    expect(status).toBe(303);
-    expect(location).toMatch(/error=.*Title/);
+    const result = (await routes.saveAction(
+      saveEvent('2026-05-x', { title: '', body: 'b' }) as never,
+    )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toMatch(/Title/);
+    // The submitted body rides the failure, so the page reseeds the editor.
+    expect(result.data.body).toBe('b');
+    expect(result.data.brokenLinks).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -312,12 +315,12 @@ describe('saveAction taxonomy enforcement', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
-    const { status, location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'brandnew', body: 'plain', new: '1' }) as never),
-    );
-    expect(status).toBe(303);
-    expect(location).toMatch(/error=.*brandnew/i);
-    expect(location).toMatch(/new=1/);
+    const result = (await routes.saveAction(
+      saveEvent('2026-05-hi', { title: 'Hi', topics: 'brandnew', body: 'plain', new: '1' }) as never,
+    )) as unknown as { status: number; data: { error: string; body: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toMatch(/brandnew/i);
+    expect(result.data.body).toBe('plain');
     // No commit landed: the branch was never written.
     expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toBeNull();
   });
@@ -378,10 +381,12 @@ describe('saveAction belt-and-braces date guard', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(datedRuntime());
-    const { location } = await expectRedirect(() =>
-      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }) as never),
-    );
-    expect(location).toMatch(/error=.*Pick%20a%20date/i);
+    const result = (await routes.saveAction(
+      saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }) as never,
+    )) as unknown as { status: number; data: { error: string; body: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toMatch(/Pick a date/i);
+    expect(result.data.body).toBe('plain body');
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
   });
 });

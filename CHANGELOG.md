@@ -503,6 +503,45 @@ removal, nothing this list needs to carry.
   [SvelteKit](docs/reference/sveltekit.md#createcontentroutes). **Consumers must:** rename any read of
   `TidyResult.usage` to `TidyResult.tokens`.
 
+- `requireAccess`'s default `event.route.id` derivation (and `createSectionAction`'s own copy)
+  silently fell back to a shallower access-map key when a deeper key sat under a dynamic route
+  segment: a route id's `[id]`/`[...rest]` segment can never equal a deeper key's own literal
+  text, so a site that keyed both `/admin/money` and the stricter `/admin/money/payroll` under a
+  dynamic `/admin/money/[report]` route saw the deeper rule silently never apply, admitting the
+  shallower role instead (a review finding on this pass's own `route.id` change, caught before
+  release). The match now refuses outright rather than falling back whenever a map holds a key
+  deeper than a dynamic segment, so `requireAccess`/`createSectionAction` 403 and force an
+  explicit `target` for a route this ambiguous, the same posture the fail-closed unmatched case
+  already takes. A `defineAccess` screen-id key may no longer contain `(` or `)` either, closing
+  off the shape of the internal fail-closed sentinel a null or all-groups route id resolves to.
+  See [`requireAccess`](docs/reference/sveltekit.md#requireaccess). Consumers must: nothing for a
+  correctly configured map (one concrete key per route); a site relying on the shallow-fallback
+  behavior under a dynamic segment now sees a 403 and should declare `target` explicitly.
+
+- A refused first save or publish of a brand-new entry rendered a 404 and lost the draft: `?/save`
+  and `?/publish` resolve as query-only references against the page's own URL, replacing the whole
+  query (RFC 3986 §5.3), so a validation `fail()`'s load re-run lost `?new=1` and `editLoad` 404'd
+  on the not-yet-committed entry instead of rendering the refusal. `EditPage`'s form now carries
+  `&new=1` on its own POST target for a new entry, so the flag survives the re-run. Two related
+  refusal-visibility gaps close alongside it, review findings on this pass's own `fail()`
+  conversion: `publishAllAction`'s unexpected (non-conflict) commit failure and a failed session
+  logout both post to the bare `/admin`, whose own load unconditionally redirects away before it
+  can render a `fail()`'s payload, so each now answers on its own redirect channel instead
+  (publish-all gets a new bounded `publish_failed` code; logout clears the cookie before, not
+  after, its own best-effort session-row delete, so a D1 fault never leaves both the row and the
+  cookie valid). A `?/mediaUpdate` or `?/mediaAltPropagate` conflict lost its visible channel
+  entirely when the query-error relay it used to ride was removed earlier in this pass;
+  `MediaUpdateFailure`/`MediaAltPropagateFailure` now carry the asset's `hash` (optional; a
+  pre-hash failure in the alt-preview fetch action still has none), so the Library's existing
+  re-surface effect can re-open the right slide-over, and a hash-less refusal (no asset to
+  re-home to) now renders in a new top-level banner instead of nowhere. The login and confirm
+  pages likewise now render an unexpected action failure's own message instead of silently doing
+  nothing (`ConfirmPage` gains a `form` prop for this). See [Refusal
+  channels](docs/reference/sveltekit.md#refusal-channels). Consumers must: nothing; every changed
+  surface (`EditPage`, `LoginPage`, `ConfirmPage`, `CairnMediaLibrary`) is an internal component
+  behavior fix, and `MediaUpdateFailure.hash`/`MediaAltPropagateFailure.hash` are additive optional
+  fields.
+
 ### Documentation
 
 - The `./sveltekit` reference documents the admin action surface's refusal channels: the

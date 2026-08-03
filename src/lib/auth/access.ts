@@ -47,6 +47,12 @@ function validateKeyShape(key: string): void {
   if (key.includes('/')) {
     throw new Error(`defineAccess: key '${key}' is neither a screen id nor an /admin-prefixed path`);
   }
+  if (key.includes('(') || key.includes(')')) {
+    // Closes off UNRESOLVED_ROUTE_TARGET's own shape (below) at the first gate: a screen-id key
+    // must never spell a parenthesized sentinel, so a site cannot accidentally (or deliberately)
+    // grant a role the fail-closed target a null or all-groups route id resolves to.
+    throw new Error(`defineAccess: key '${key}' may not contain '(' or ')'`);
+  }
 }
 
 /**
@@ -79,7 +85,22 @@ export function defineAccess<const A extends AccessMap>(roles: RolesDeclaration,
   return map;
 }
 
-/** The map key that governs `target`, by deepest path-segment prefix, or `undefined` if none match. */
+/**
+ * The map key that governs `target`, by deepest path-segment prefix, or `undefined` if none match
+ * or the match is ambiguous.
+ *
+ * A route id's dynamic segment (`[id]`, `[...rest]`) is a literal string, never a resolved value,
+ * so it can never equal a deeper map key's own literal next segment (`/admin/money/payroll` can
+ * never prefix-match `/admin/money/[report]`, whatever report a request actually names). Falling
+ * back to the shallower key in that case would silently make the deeper rule dead code: a site
+ * that keys both `/admin/money` and `/admin/money/payroll`, meaning the second stricter than the
+ * first, would see every request the dynamic segment serves resolve against the shallower,
+ * more permissive rule instead, with no error and no signal that the deeper rule never applies.
+ * So when the matched prefix's very next target segment is dynamic and the map holds any key
+ * strictly deeper than that prefix, the match refuses outright (`undefined`) rather than falling
+ * back: the site must declare an explicit `target` for a route this ambiguous, the same way
+ * `SectionActionOptions.target`'s own doc already asks for a route with a rest parameter.
+ */
 function matchHrefKey(access: AccessMap, target: string): string | undefined {
   let best: string | undefined;
   for (const key of Object.keys(access)) {
@@ -88,6 +109,15 @@ function matchHrefKey(access: AccessMap, target: string): string | undefined {
       if (best === undefined || key.length > best.length) {
         best = key;
       }
+    }
+  }
+  if (best !== undefined && best !== target) {
+    const nextSegment = target.slice(best.length + 1).split('/', 1)[0];
+    if (nextSegment?.startsWith('[')) {
+      const shadowed = Object.keys(access).some(
+        (key) => isHrefKey(key) && key !== best && key.startsWith(`${best}/`),
+      );
+      if (shadowed) return undefined;
     }
   }
   return best;
@@ -107,8 +137,14 @@ function matchHrefKey(access: AccessMap, target: string): string | undefined {
  * deepest path-segment-prefix key in the map (`/admin/money` covers `/admin/money/refunds` unless
  * the deeper key is separately mapped; `/admin/moneyx` never matches `/admin/money`); an href with
  * no matching key admits any editor-capability session, the nav semantics a site relies on for
- * `navFilter`-free visibility. Fail-closed route enforcement for an unmatched target is
- * `requireAccess`'s job, via {@link hasAccessRule}, not this function's.
+ * `navFilter`-free visibility. When the matched prefix's next segment is a route id's dynamic
+ * parameter (`[id]`, `[...rest]`) and the map holds a key deeper than that prefix, the deeper key
+ * can never be reached (a dynamic segment's literal text never equals a concrete key's own), so
+ * the match refuses rather than falling back to the shallower rule ({@link matchHrefKey}); here
+ * that reads as an unmatched target, the same permissive admit as no rule at all, since this
+ * function's own unmatched-target floor is nav visibility, not enforcement. Fail-closed route
+ * enforcement for an unmatched or ambiguous target is `requireAccess`'s job, via
+ * {@link hasAccessRule}, not this function's.
  */
 export function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean {
   if (editor.capability === 'none') {

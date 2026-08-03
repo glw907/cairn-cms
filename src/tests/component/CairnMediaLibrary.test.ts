@@ -521,6 +521,28 @@ describe('CairnMediaLibrary detail slide-over', () => {
     expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid address');
   });
 
+  it('renders a hash-less action failure as a top-level banner (no slide-over to re-open)', async () => {
+    // A shell-level action (logout, publishAll) posted from the media page and unexpectedly
+    // failing carries no hash at all, so the re-surface effect cannot re-home it to a specific
+    // asset. It must still be visible somewhere, not silently dropped.
+    const failed = { error: 'Something went wrong and your changes were not saved.' };
+    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    const alert = screen.container.querySelector('[role="alert"]');
+    expect(alert?.textContent ?? '').toContain('Something went wrong');
+    // No slide-over opened for it.
+    expect(screen.container.querySelector('[role="region"]')).toBeNull();
+  });
+
+  it('renders a hash-bearing failure for an asset absent from the loaded set as a top-level banner', async () => {
+    // A 404 "not committed" whose hash is not in data.assets either: the re-surface effect finds
+    // no target and returns early, so this must still fall through to the top-level banner.
+    const failed = { error: 'That asset is not committed.', hash: 'ffffffffffffffff' };
+    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    const alert = screen.container.querySelector('[role="alert"]');
+    expect(alert?.textContent ?? '').toContain('That asset is not committed.');
+    expect(screen.container.querySelector('[role="region"]')).toBeNull();
+  });
+
   it('auto-re-opens the slide-over and shows the error on a hash-bearing non-usage failure (full-page post)', async () => {
     // The form posts full-page, so a fail() remounts with no selection. A hash-bearing failure that
     // is NOT an in-use block (a 404 "not committed", or an invalid-address update carrying the hash)

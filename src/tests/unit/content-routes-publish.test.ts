@@ -488,6 +488,41 @@ describe('publishAllAction', () => {
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
   });
 
+  it('bounces an unexpected (non-conflict) commit failure to the list page with the publish_failed code, rather than escaping to a fail() the /admin redirect would discard (HIGH2)', async () => {
+    // publishAllAction posts to the bare /admin, whose own load (indexLoad) always redirects
+    // away before rendering a component that reads `form`; a fail() here (viewAction's generic
+    // unexpected-failure arm) would therefore be silently discarded. An unexpected, non-conflict
+    // commit failure must stay on this action's own redirect channel instead.
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+    });
+    gh.install();
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+      // A non-422, non-2xx failure on the tree write: a generic backend fault, not a stale-head
+      // conflict, so isConflict(err) reads false and the commit's error is not a CommitConflictError.
+      if (method === 'POST' && url.endsWith('/git/trees')) {
+        return new Response('{"message":"internal error"}', { status: 500 });
+      }
+      return double(input, init);
+    });
+    const routes = createContentRoutes(runtime());
+
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    expect(location).toBe('/admin/posts?error=publish_failed');
+    // The branch survives a failed commit, so the edits are not lost.
+    expect(gh.branches.has(BRANCH)).toBe(true);
+    // Each entry in the failed batch is still logged, so the operator sees what did not go live.
+    const record = errorSpy.mock.calls
+      .map((c) => c[0] as { event?: string })
+      .find((r) => r.event === 'publish.failed');
+    expect(record).toBeTruthy();
+  });
+
   it('logs publish.failed on a commit conflict and bounces to the list page', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const gh = new GithubDouble({

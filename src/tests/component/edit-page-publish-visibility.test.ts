@@ -51,8 +51,11 @@ function postProps(over = {}) {
   };
 }
 
+// `^=` (starts-with), not `=`: a new entry's formaction carries `&new=1` too (`?/publish&new=1`,
+// so a failed first publish's load re-run still reads isNew off the URL), and this helper covers
+// both the new and the existing-entry forms.
 function publishButton(screen: { container: HTMLElement }) {
-  return screen.container.querySelector<HTMLButtonElement>('button[formaction="?/publish"][form="cairn-edit-form"]')!;
+  return screen.container.querySelector<HTMLButtonElement>('button[formaction^="?/publish"][form="cairn-edit-form"]')!;
 }
 
 // Edits the body through the registered format seam (an empty-selection bold wrap), the same

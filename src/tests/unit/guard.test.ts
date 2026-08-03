@@ -192,6 +192,41 @@ describe('requireAccess', () => {
     );
     expect(requireAccess(fixture)).toBe(publisher);
   });
+
+  it('403s a role admitted by the shallower key when a dynamic segment shadows a deeper, stricter key', () => {
+    // A site keys /admin/money (publisher) and /admin/money/payroll (webmaster-only) intending the
+    // deeper key to be stricter, but the actual serving route is the dynamic /admin/money/[report].
+    // The deeper key's literal text can never equal the route id's [report] segment, so it can
+    // never be reached; falling back to the shallower key would silently admit publisher into a
+    // door the site believed was webmaster-only. This must refuse rather than fall back.
+    const moneyAccess: AccessMap = { '/admin/money': ['publisher'], '/admin/money/payroll': ['webmaster'] };
+    const fixture = event(
+      { cairnEditor: publisher, cairnAccess: moneyAccess },
+      new URL('https://x.test/admin/money/payroll'),
+      '/admin/money/[report]',
+    );
+    expect(() => requireAccess(fixture)).toThrowError(expect.objectContaining({ status: 403 }));
+  });
+
+  it('403s even a webmaster role (the intended deeper rule) once the dynamic segment shadows it, since the ambiguity, not the role, is refused', () => {
+    const moneyAccess: AccessMap = { '/admin/money': ['publisher'], '/admin/money/payroll': ['webmaster'] };
+    const fixture = event(
+      { cairnEditor: webmaster, cairnAccess: moneyAccess },
+      new URL('https://x.test/admin/money/payroll'),
+      '/admin/money/[report]',
+    );
+    expect(() => requireAccess(fixture)).toThrowError(expect.objectContaining({ status: 403 }));
+  });
+
+  it('still matches the shallower key when no deeper key exists to shadow', () => {
+    const moneyAccess: AccessMap = { '/admin/money': ['publisher'] };
+    const fixture = event(
+      { cairnEditor: publisher, cairnAccess: moneyAccess },
+      new URL('https://x.test/admin/money/payroll'),
+      '/admin/money/[report]',
+    );
+    expect(requireAccess(fixture)).toBe(publisher);
+  });
 });
 
 describe('isPublicAdminPath', () => {

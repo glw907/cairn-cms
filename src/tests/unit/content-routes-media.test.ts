@@ -662,7 +662,10 @@ describe('mediaUpdateAction', () => {
     const result = await routes.mediaUpdateAction(
       mediaActionEvent({ hash: HASH_MAIN, slug: 'Not A Slug', displayName: 'x' }, bucket, timeline) as never,
     );
-    expect(result).toMatchObject({ status: 400 });
+    // A refusal that leaves the slide-over open on a full-page (no use:enhance) re-render must
+    // carry the asset's own hash, or the Library's re-surface effect cannot find it and the error
+    // renders nowhere (a real regression this pin closes).
+    expect(result).toMatchObject({ status: 400, data: { hash: HASH_MAIN } });
   });
 
   it('returns fail(404) for an asset not committed on main', async () => {
@@ -676,6 +679,32 @@ describe('mediaUpdateAction', () => {
     const result = await routes.mediaUpdateAction(
       mediaActionEvent({ hash: HASH_BRANCH, slug: 'x', displayName: 'x' }, bucket, timeline) as never,
     );
-    expect(result).toMatchObject({ status: 404 });
+    expect(result).toMatchObject({ status: 404, data: { hash: HASH_BRANCH } });
+  });
+
+  it('answers a manifest commit conflict as fail(409) carrying the asset hash', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: { [MEDIA_PATH]: mediaManifest(mediaEntry(HASH_MAIN, 'old-slug')), [MANIFEST_PATH]: contentManifest([]) },
+    });
+    gh.install();
+    // The manifest commit's ref update fails the way GitHub signals a stale head.
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if ((init?.method ?? 'GET').toUpperCase() === 'PATCH' && url.includes('/git/refs/heads/main')) {
+        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      }
+      return double(input, init);
+    }));
+    const timeline: string[] = [];
+    const bucket = fakeBucket(timeline);
+    const routes = createContentRoutes(runtime());
+    const result = await routes.mediaUpdateAction(
+      mediaActionEvent({ hash: HASH_MAIN, slug: 'new-slug', displayName: 'New name' }, bucket, timeline) as never,
+    );
+    expect(result).toMatchObject({ status: 409, data: { hash: HASH_MAIN } });
+    const data = (result as { data: { error: string } }).data;
+    expect(data.error).toMatch(/changed since/i);
   });
 });

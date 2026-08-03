@@ -207,16 +207,30 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     throw redirect(303, '/admin');
   }
 
-  /** POST /admin/auth/logout. Deletes the session row and clears the cookie. */
+  /**
+   * POST /admin/auth/logout. Clears the cookie first, so a fault below still kills the
+   *  browser-side credential rather than leaving the session both server- and client-side valid
+   *  (the cookie is the only thing a subsequent request can present); then best-effort deletes
+   *  the session row. A `deleteSession` fault is caught and logged here, never rethrown to
+   *  `viewAction`'s generic `fail(500)`: this action posts to the bare `/admin`, whose own load
+   *  (`indexLoad`) always redirects away before ever rendering a component that reads `form`, so a
+   *  `fail()` here would be silently discarded. The editor is already signed out either way, so
+   *  the redirect to `/admin/login` stays unconditional; a lingering D1 row with no valid cookie
+   *  presenting it is not reachable.
+   */
   async function logoutAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
     const name = sessionCookieName(event.url.protocol === 'https:');
     const id = event.cookies.get(name);
-    if (id) {
-      await deleteSession(db, id);
-      log.info('auth.session.destroyed');
-    }
     event.cookies.delete(name, { path: '/' });
+    if (id) {
+      try {
+        await deleteSession(db, id);
+        log.info('auth.session.destroyed');
+      } catch (err) {
+        log.error('auth.session.destroy_failed', { error: String(err) });
+      }
+    }
     throw redirect(303, '/admin/login');
   }
 

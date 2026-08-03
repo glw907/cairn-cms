@@ -61,7 +61,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 {#if data.view === 'login'}
   <LoginPage data={{ ...data.page, theme: publicTheme }} {form} />
 {:else if data.view === 'confirm'}
-  <ConfirmPage data={{ ...data.page, theme: publicTheme }} />
+  <ConfirmPage data={{ ...data.page, theme: publicTheme }} {form} />
 {:else if data.view === 'list'}
   <!-- The single mount reuses this component across /admin/posts -> /admin/pages, so the
        concept id keys the list: crossing concepts remounts it and drops the old query,

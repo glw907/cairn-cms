@@ -95,11 +95,15 @@ export interface MediaDeleteRefusal {
 
 /**
  * A refused media metadata edit: `fail(404)` for an asset not committed on the default branch, or
- *  `fail(400)` for an invalid slug.
+ *  `fail(400)` for an invalid slug, or `fail(409)` when the manifest changed since the editor
+ *  opened it. `hash` carries the posted asset's hash on every branch, so the Library can re-open
+ *  the right slide-over and render `error` against it.
  */
 export interface MediaUpdateFailure {
   /** The one-line human summary every action failure carries. */
   error: string;
+  /** The edited asset's content hash, when known at the point of refusal. */
+  hash?: string;
 }
 
 /**
@@ -116,11 +120,17 @@ export interface MediaReplaceFailure {
 
 /**
  * A refused media alt-propagation: `fail(503)` when usage cannot be verified across main and every
- *  open branch (fail closed), or the bucket is unbound. Just the one-line summary; alt fill has no
- *  typed-slug gate.
+ *  open branch (fail closed), or the bucket is unbound, or `fail(409)` on a commit conflict. Alt
+ *  fill has no typed-slug gate, so this carries just the summary and the asset hash (so the
+ *  Library can re-open the right slide-over).
  */
 export interface MediaAltPropagateFailure {
   error: string;
+  /**
+   * The asset's content hash, when known at the point of refusal (mediaAltPreviewAction's
+   *  pre-hash failures, a malformed request or an invalid hash string, carry none).
+   */
+  hash?: string;
 }
 
 /**
@@ -1011,14 +1021,14 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     const manifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = manifest[hash];
     if (!row) {
-      return fail(404, { error: 'That asset is not committed.' } satisfies MediaUpdateFailure);
+      return fail(404, { error: 'That asset is not committed.', hash } satisfies MediaUpdateFailure);
     }
 
     const displayName = sanitizeField(String(form.get('displayName') ?? ''), MAX_DISPLAY_NAME);
     const slug = String(form.get('slug') ?? '').trim();
     const alt = sanitizeField(String(form.get('alt') ?? ''), MAX_ALT);
     if (!MEDIA_SLUG_RE.test(slug)) {
-      return fail(400, { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.' } satisfies MediaUpdateFailure);
+      return fail(400, { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.', hash } satisfies MediaUpdateFailure);
     }
 
     const edited: MediaEntry = { ...row, displayName: displayName || slug, slug, alt };
@@ -1034,6 +1044,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     } catch (err) {
       return ctx.commitFailure(commitFields, err, {
         error: 'The media manifest changed since you opened it. Reload and try again.',
+        hash,
       } satisfies MediaUpdateFailure);
     }
     throw redirect(303, '/admin/media?updated=1');
@@ -1344,12 +1355,12 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     const mediaManifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = mediaManifest[hash];
     if (!row) {
-      return fail(404, { error: 'That asset is not committed.' } satisfies MediaAltPropagateFailure);
+      return fail(404, { error: 'That asset is not committed.', hash } satisfies MediaAltPropagateFailure);
     }
 
     // Media-enabled guard only: alt fill does no R2 write, so there is no bucket binding to resolve.
     if (!runtime.resolvedAssets.enabled) {
-      return fail(503, { error: MEDIA_DISABLED_MESSAGE } satisfies MediaAltPropagateFailure);
+      return fail(503, { error: MEDIA_DISABLED_MESSAGE, hash } satisfies MediaAltPropagateFailure);
     }
 
     // Re-derive from a FRESH content-manifest read with the actual overwrite choice. Strict, so an
@@ -1364,7 +1375,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
         transform: (md) => fillAltForHash(md, hash, row.alt, { overwrite }),
       });
     } catch {
-      return fail(503, { error: 'Could not verify where this asset is used. Try again.' } satisfies MediaAltPropagateFailure);
+      return fail(503, { error: 'Could not verify where this asset is used. Try again.', hash } satisfies MediaAltPropagateFailure);
     }
 
     // Commit only the entries the transform actually changed. A reported-but-unchanged placement (a
@@ -1386,6 +1397,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     } catch (err) {
       return ctx.commitFailure(commitFields, err, {
         error: 'The site changed since you opened it. Reload and try again.',
+        hash,
       } satisfies MediaAltPropagateFailure);
     }
     throw redirect(303, '/admin/media?altPropagated=1');

@@ -223,7 +223,13 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * bypass does not apply here. A route that wants the zero-config any-editor behavior should not
  * call this helper for that path. A null `event.route.id` (an unmatched request; a dispatched
  * load or action never actually sees one) falls back to a fixed constant that matches no
- * access-map key, never to the request path, so it fails closed the same way.
+ * access-map key, never to the request path, so it fails closed the same way. A route with a
+ * dynamic or rest parameter (`[id]`, `[...rest]`) also 403s every session, owner included, when
+ * the map holds a key deeper than the parameter: the deeper key's literal text can never equal
+ * the parameter's, so it can never be reached, and admitting through the shallower key instead
+ * would silently make the deeper rule dead code (see `matchHrefKey`, `auth/access.ts`). A site
+ * relying on such a route must declare `target` explicitly, the same warning
+ * `SectionActionOptions.target` carries for its own POST half.
  */
 export function requireAccess(event: CairnEvent, target?: string): Editor {
   const editor = requireSession(event);

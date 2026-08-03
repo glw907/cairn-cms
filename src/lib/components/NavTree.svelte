@@ -50,9 +50,10 @@ title the menu's own declared label; the sortable-list card below stays untouche
 
   // untrack here is not for runtime behavior -- $state runs its initializer once regardless.
   // It suppresses the Svelte compiler warning that `data` (a prop) is referenced outside a
-  // reactive context. A successful save redirects and remounts the component; a refused save
-  // now answers in place through `form` and leaves the component mounted, so the working rows
-  // stay exactly as the editor left them rather than resetting to the last-loaded tree.
+  // reactive context. This form posts full-page (no use:enhance), so both a successful save and
+  // a refused one produce a fresh document: `rows` always reseeds from `data.tree`, the
+  // last-loaded tree, not the working (drag-reordered, edited) one. A refusal's `form.error`
+  // renders below, but the working tree itself does not survive it.
   let rows = $state<Row[]>(untrack(() => flatten(data.tree, 0, [])));
   // depth is 0-based internally; maxDepth in the config is 1-based (1 = flat, 2 = one nesting level)
   const maxDepthIndex = $derived(data.menu.maxDepth - 1);

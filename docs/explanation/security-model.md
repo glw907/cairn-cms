@@ -92,6 +92,17 @@ money screens" but not "this instructor reaches only their own class," since tha
 map doesn't carry (which class, which instructor). A site that needs row-level scoping still owns
 that check itself, inside the route the map already gated to the right role.
 
+An href target derived from `event.route.id` matches the deepest path-segment-prefix key the map
+declares. Under a dynamic route segment (`/admin/money/[report]`), a key deeper than the segment
+can never literally match it, so a site that keys both `/admin/money` and a stricter
+`/admin/money/payroll`, meaning the second to override the first, would see every request the
+dynamic segment serves resolve against the shallower rule instead: the deeper rule dead code, with
+no error at declaration time. `requireAccess` and `createSectionAction` both refuse this shape
+outright (403, owner included) rather than silently admitting through the shallower key, so the
+site's own misconfiguration surfaces as a lockout to fix, not a quiet overgrant. A site relying on
+per-value authorization under a dynamic segment needs a declared `target` and its own check inside
+the route; the map's key-matching alone can't express it.
+
 ## What a save can write
 
 A save is a Git commit, made through a GitHub App rather than a stored personal token. The

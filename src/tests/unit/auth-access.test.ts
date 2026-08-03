@@ -58,6 +58,13 @@ describe('defineAccess validation', () => {
   it('throws on an href key not prefixed with /admin', () => {
     expect(() => defineAccess(roles, { '/money': ['owner'] })).toThrow(/defineAccess/);
   });
+
+  it("throws on a screen-id key containing '(' or ')', the shape targetFromRouteId's fail-closed sentinel takes", () => {
+    // '(unresolved route)' is what a null or all-groups route id resolves to (auth/access.ts); a
+    // site that could spell this key would turn that fail-closed sentinel into an open door.
+    expect(() => defineAccess(roles, { '(unresolved route)': ['owner'] })).toThrow(/defineAccess/);
+    expect(() => defineAccess(roles, { 'foo(bar)': ['owner'] })).toThrow(/defineAccess/);
+  });
 });
 
 describe('canReach: capability floors and owner bypass', () => {

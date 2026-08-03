@@ -226,11 +226,28 @@ describe('vocabularySaveAction', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('refuses in place with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
+  it('refuses malformed JSON with generic copy, never reflecting the posted body into the alert', async () => {
+    // JSON.parse's own SyntaxError embeds a snippet of the posted string in its message; that must
+    // never reach the response, only fixed copy (the LOW7 review finding this pins).
+    const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const routes = createContentRoutes(runtime());
+    const result = (await routes.vocabularySaveAction(
+      saveEvent('<script>not json</script>') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).not.toContain('<script>');
+    expect(result.data.error).toMatch(/could not be read/i);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses in place with generic copy on a malformed committed config, keeping the parser\'s own message in the log only', async () => {
     // An unrecognized top-level key is the documented way to trigger SiteConfigError. The committed
     // file fails to parse before the delete-gate check, so the action must answer the posting screen
     // with a fail(500) (now that the screen renders a `form` prop) rather than the generic 500 an
-    // uncaught throw would produce.
+    // uncaught throw would produce. The response carries fixed, generic copy: the parser's own
+    // message can echo a misplaced key or value straight from the committed file, so it stays in
+    // the log record for the site's operator, never in the editor-facing alert.
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n', [MANIFEST_PATH]: SEED_MANIFEST } });
     gh.install();
     const routes = createContentRoutes(runtime());
@@ -240,12 +257,15 @@ describe('vocabularySaveAction', () => {
       saveEvent(posted) as never,
     )) as unknown as { status: number; data: { error: string } };
     expect(result.status).toBe(500);
-    expect(result.data.error).toMatch(/unrecognized key "weird"/);
+    expect(result.data.error).not.toMatch(/weird/);
+    expect(result.data.error).toMatch(/not available/i);
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
     // config.invalid's scope names the calling screen, distinguishing this refusal path from
-    // vocabularyLoad's own degrade path (both share the same underlying parser failure).
-    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
+    // vocabularyLoad's own degrade path (both share the same underlying parser failure). The
+    // parser's own actionable message rides the log record, not the response.
+    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string; error?: string }];
     expect(record).toMatchObject({ event: 'config.invalid', scope: 'vocabulary' });
+    expect(record.error).toMatch(/unrecognized key "weird"/);
   });
 
   it('degrades to an empty vocabulary and logs config.invalid scoped to vocabulary when the committed config is malformed', async () => {

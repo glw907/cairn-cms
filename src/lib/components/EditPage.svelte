@@ -1623,7 +1623,7 @@ persistent "?" carries Markdown help, design-arc D2).
           bind:this={publishButton}
           type="submit"
           form="cairn-edit-form"
-          formaction="?/publish"
+          formaction={data.isNew ? '?/publish&new=1' : '?/publish'}
           class="btn btn-outline btn-primary btn-sm cairn-btn-guarded tracking-small-semibold shrink-0"
           class:cursor-not-allowed={!publishActionable}
           aria-disabled={publishActionable ? undefined : true}
@@ -1814,9 +1814,17 @@ persistent "?" carries Markdown help, design-arc D2).
   </div>
 {/if}
 
+<!-- This form has no use:enhance, so a validation fail() re-runs editLoad at the POST's own URL,
+     not the page's original one. A browser resolves an action of only "?/save" against the
+     current document URL by replacing its whole query (RFC 3986 5.3), so `?new=1` (and the
+     hidden field below, which the load never reads) would otherwise vanish from the URL a fresh
+     entry's first failed save reloads at: editLoad reads isNew from the URL alone, so it would
+     404 instead of rendering the failure and the draft would be lost. Appending `&new=1` to the
+     action (and to `formaction="?/publish"` below, same reasoning) keeps the flag in the URL a
+     fail() re-render actually sees. -->
 <form
   method="POST"
-  action="?/save"
+  action={data.isNew ? '?/save&new=1' : '?/save'}
   id="cairn-edit-form"
   bind:this={editForm}
   onsubmit={onEditSubmit}
@@ -2362,7 +2370,7 @@ persistent "?" carries Markdown help, design-arc D2).
       bind:this={publishButton}
       type="submit"
       form="cairn-edit-form"
-      formaction="?/publish"
+      formaction={data.isNew ? '?/publish&new=1' : '?/publish'}
       class="btn btn-outline btn-primary cairn-btn-guarded tracking-small-semibold min-h-11 flex-1"
       class:cursor-not-allowed={!publishActionable}
       aria-disabled={publishActionable ? undefined : true}

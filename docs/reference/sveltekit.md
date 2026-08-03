@@ -366,13 +366,17 @@ Nothing in this reference requires a site to define one.
 
 A small, closed set of refusals can't answer in place, because the request that surfaces them
 didn't originate on the page the refusal concerns: an expired or already-consumed sign-in link
-(the confirm page bounces to the login page), publish-all's outcome (posted from the topbar on any
-screen, so it always lands on the first concept list the session can reach rather than where it
-was raised), and the `/admin` landing relay forwarding an arriving code on to the route it
-redirects to. These three, and only these three, carry a bounded internal code on `?error=`,
-resolved server-side against a small closed vocabulary and rendered as fixed engine copy; an
+(the confirm page bounces to the login page), and publish-all's outcome (posted from the topbar
+on any screen, so it always lands on the first concept list the session can reach rather than
+where it was raised). Publish-all carries three possible codes: two validated outcomes
+(`nothing_to_publish`, `publish_conflict`) and one unexpected-fault code (`publish_failed`), so an
+unexpected commit failure stays on this redirect channel rather than escaping to `viewAction`'s
+own generic `fail()`, which the `/admin` landing's own redirect would silently discard before it
+could render. The `/admin` landing relay itself forwards an arriving code on to the route it
+redirects to. These three sites, and only these three, carry a bounded internal code on `?error=`,
+resolved server-side against a small closed vocabulary and rendered as fixed engine copy. An
 unrecognized value resolves to nothing, so a crafted query string carries no meaning past the
-resolver. No site code ever writes or reads a code directly. The login and confirm pages, and
+resolver, and no site code ever writes or reads a code directly. The login and confirm pages, and
 `listLoad`'s own publish-all outcome banner, treat the resolved value as a boolean flag: a fixed,
 engine-authored sentence shows or doesn't, never the query value itself.
 
@@ -1021,10 +1025,10 @@ a refused rename returns `RenameFailure`, and a refused create returns `CreateFa
 bare summary as `RenameFailure`, for a bad slug, a missing date, or an address collision). The
 media actions add two more: a refused media delete returns `MediaDeleteRefusal` (the asset hash,
 the where-used rows, and the count) and a refused media metadata edit returns
-`MediaUpdateFailure`. A refused replace returns `MediaReplaceFailure` (the same shape as the
-delete refusal) and a refused alt-propagation returns `MediaAltPropagateFailure` (the bare
-summary). A page component types its `form` prop with `ContentFormFailure`, the optional merge of
-all eight.
+`MediaUpdateFailure` (the asset hash, when known). A refused replace returns `MediaReplaceFailure`
+(the same shape as the delete refusal) and a refused alt-propagation returns
+`MediaAltPropagateFailure` (the asset hash, when known). A page component types its `form` prop
+with `ContentFormFailure`, the optional merge of all eight.
 
 ```ts
 // src/routes/admin/(app)/[concept]/+page.server.ts (per-route mounting)
@@ -1662,9 +1666,9 @@ imports the matching `*Data` type to type its `data` prop.
 | `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
 | `CreateFailure` | Unstable API | `interface CreateFailure { error: string }` | A refused create (bad slug, missing date, or an address collision): just the one-line summary. |
 | `MediaDeleteRefusal` | Unstable API | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
-| `MediaUpdateFailure` | Unstable API | `interface MediaUpdateFailure { error: string }` | A refused media metadata edit (an asset not committed on the default branch, or an invalid slug): just the one-line summary. |
+| `MediaUpdateFailure` | Unstable API | `interface MediaUpdateFailure { error: string; hash?: string }` | A refused media metadata edit (an asset not committed on the default branch, an invalid slug, or a manifest conflict): the one-line summary, and the edited asset's hash when known, so the Library re-opens the right slide-over. |
 | `MediaReplaceFailure` | Unstable API | `interface MediaReplaceFailure { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media replace: the one-line summary, the asset's content hash, the where-used rows, and the distinct-entry count. Mirrors `MediaDeleteRefusal`: a fresh usage read found the asset still in use without the typed-slug override (409), or usage could not be verified or the bucket is unbound (503). |
-| `MediaAltPropagateFailure` | Unstable API | `interface MediaAltPropagateFailure { error: string }` | A refused media alt-propagation: just the one-line summary. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
+| `MediaAltPropagateFailure` | Unstable API | `interface MediaAltPropagateFailure { error: string; hash?: string }` | A refused media alt-propagation: the one-line summary, and the asset's hash when known (absent from the alt-preview fetch action's own pre-hash failures), so the apply form's Library re-opens the right slide-over. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
 | `MediaBulkFailure` | Unstable API | `interface MediaBulkFailure { error: string }` | A refused media bulk delete or orphan purge: just the one-line summary. The whole batch failed closed because cross-branch usage could not be verified (503), or media is off / the bucket is unbound. Per-item outcomes ride the returned summary, not this fail. |
 | `MediaUploadFailure` | Unstable API | `interface MediaUploadFailure { error: string }` | A refused upload: one of the pre-store gates (session, media-off, missing bucket, oversized or disallowed content) or the Library-direct commit's own conflict bounce. Just the one-line summary; a refusal here never stores bytes or commits a row. |
 | `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & CreateFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |

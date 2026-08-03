@@ -139,19 +139,27 @@ type ParsedSiteConfig =
   | { ok: false; failure: ActionFailure<{ error: string }> };
 
 /**
+ * The generic copy a parse-error refusal answers with; the parser's own actionable message stays
+ *  in the `config.invalid` log record below, for the site's operator, not the editor's screen.
+ */
+const CONFIG_INVALID_MESSAGE = 'This section is not available. Let your site developer know.';
+
+/**
  * Parse the committed site-config YAML, refusing in place with `fail(500, { error })` on a
- *  {@link SiteConfigError} carrying the parser's own actionable message. A malformed config is an
- *  operator fault (a misplaced or unrecognized key), not an editor mistake, but it still blocks
- *  this save, so it answers the screen that posted rather than navigating away from the editor's
- *  unsaved work; both screens now receive `form`, so the refusal reaches them the same way a
- *  conflict does. Any other error propagates unchanged. `scope` names the calling screen
- *  (`'settings'` or `'vocabulary'`), which is enough on its own for the settings caller, since
- *  nothing else in this module emits `config.invalid` with `scope: 'settings'`. It is not enough
- *  for the vocabulary caller: vocabularyLoad's own degrade-path emit also carries
- *  `scope: 'vocabulary'` with the same `conditionId`, so the record alone cannot tell this refusal
- *  path from that load's degrade path; only the reference doc's prose (a load degrades, a save
- *  refuses) does. See docs/reference/log-events.md's `config.invalid` row, which documents this
- *  collision directly.
+ *  {@link SiteConfigError}. A malformed config is an operator fault (a misplaced or unrecognized
+ *  key), not an editor mistake, but it still blocks this save, so it answers the screen that
+ *  posted rather than navigating away from the editor's unsaved work; both screens now receive
+ *  `form`, so the refusal reaches them the same way a conflict does. The response carries generic
+ *  copy rather than the parser's own message, which can echo a misplaced key or value straight
+ *  from the committed file; the actionable detail stays in the log record below, for the site's
+ *  operator. Any other error propagates unchanged. `scope` names the calling screen (`'settings'`
+ *  or `'vocabulary'`), which is enough on its own for the settings caller, since nothing else in
+ *  this module emits `config.invalid` with `scope: 'settings'`. It is not enough for the
+ *  vocabulary caller: vocabularyLoad's own degrade-path emit also carries `scope: 'vocabulary'`
+ *  with the same `conditionId`, so the record alone cannot tell this refusal path from that
+ *  load's degrade path; only the reference doc's prose (a load degrades, a save refuses) does.
+ *  See docs/reference/log-events.md's `config.invalid` row, which documents this collision
+ *  directly.
  */
 function parseSiteConfigOrFail(raw: string, scope: 'settings' | 'vocabulary'): ParsedSiteConfig {
   try {
@@ -163,7 +171,7 @@ function parseSiteConfigOrFail(raw: string, scope: 'settings' | 'vocabulary'): P
       conditionId: 'config.site-config-invalid',
       error: String(err),
     });
-    return { ok: false, failure: fail(500, { error: err.message }) };
+    return { ok: false, failure: fail(500, { error: CONFIG_INVALID_MESSAGE }) };
   }
 }
 
@@ -378,6 +386,13 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     try {
       posted = validateVocabulary(JSON.parse(String(form.get('vocabulary') ?? '[]')));
     } catch (err) {
+      // A SyntaxError from JSON.parse embeds a snippet of the posted string in its own message
+      // (V8's own diagnostic), so it gets fixed, generic copy rather than reflecting posted-body
+      // content into the alert; SiteConfigError's messages stay safe to surface directly (each
+      // attacker-influenced value they name is already regex-constrained before it is embedded).
+      if (err instanceof SyntaxError) {
+        return fail(400, { error: 'That vocabulary could not be read. Reload and try again.' } satisfies VocabularySaveFailure);
+      }
       const message = err instanceof Error ? err.message : 'Invalid vocabulary';
       return fail(400, { error: message } satisfies VocabularySaveFailure);
     }

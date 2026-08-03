@@ -189,17 +189,18 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
    *  action keeps the editor on the page with the submitted body intact instead of navigating
    *  away, and a script-posted action (tidy, a dictionary word, an upload, all of which fetch
    *  with `redirect: 'manual'`) never sees a redirect it would otherwise fold into a false "your
-   *  session expired" message. The return type only proves out for a call site whose delegate's
-   *  own declared return already includes an `ActionFailure`, so the cast below just names
-   *  that fact; `R` is abstract inside this generic wrapper, unlike the
-   *  `throw redirect(...)`/rethrow paths above, which need no cast because a throw satisfies
-   *  every instantiation of R.
+   *  session expired" message. The wrapper's own return type unions in the plain shape this arm
+   *  actually produces, rather than a narrowing cast to the delegate's own `R`: a delegate whose
+   *  declared failure shape carries more than a bare error message (a save's broken-link list,
+   *  say) never actually gets those extra fields back from this arm, so the type says exactly
+   *  that, rather than promising a shape this arm cannot produce (a consumer's generated
+   *  `ActionData` would otherwise read a field that is really `undefined` at runtime).
    */
   function viewAction<V extends AdminView['view'], R>(
     action: string,
     allowed: readonly V[],
     delegate: (event: CairnEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
-  ): (event: CairnEvent) => Promise<R> {
+  ): (event: CairnEvent) => Promise<R | ActionFailure<{ error: string }>> {
     return async (event) => {
       const view = parseAdminPath(event.url.pathname, runtime.concepts);
       if (!view || !(allowed as readonly string[]).includes(view.view)) throw error(404, 'Not found');
@@ -222,9 +223,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
           // No editor to attribute; the record still names the action and the error.
         }
         log.error('admin.action.failed', fields);
-        // Verified per call site (see the doc comment above): R for every action already
-        // includes an ActionFailure, so this genuinely satisfies R at runtime.
-        return fail(500, { error: UNEXPECTED_ACTION_ERROR }) as R;
+        return fail(500, { error: UNEXPECTED_ACTION_ERROR });
       }
     };
   }
@@ -245,10 +244,11 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
   const actions = {
     request: viewAction('request', ['login'], (event) => auth.requestAction(event)),
     // confirmAction only ever throws (a deliberate redirect), so its own declared return stays
-    // Promise<never>; the annotation here widens just this call site to the truth the wrapper's
-    // unexpected-failure fail(500) adds (see the R note on viewAction above).
-    confirm: viewAction('confirm', ['confirm'], (event): Promise<ActionFailure<{ error: string }>> => auth.confirmAction(event)),
-    logout: viewAction('logout', anyView, (event): Promise<ActionFailure<{ error: string }>> => auth.logoutAction(event)),
+    // Promise<never>; no widening annotation needed here, since viewAction's own return type
+    // already adds ActionFailure<{ error: string }> unconditionally (see the R note above), and
+    // `never` vanishes from that union regardless of what the delegate declares.
+    confirm: viewAction('confirm', ['confirm'], (event) => auth.confirmAction(event)),
+    logout: viewAction('logout', anyView, (event) => auth.logoutAction(event)),
     create: viewAction('create', ['list'], (event, view) => content.createAction(contentEvent(event, { concept: view.concept.id }))),
     save: viewAction('save', ['edit', 'nav'], (event, view) => {
       if (view.view === 'edit') return content.saveAction(contentEvent(event, { concept: view.concept.id, id: view.id }));
@@ -265,7 +265,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
     upload: viewAction('upload', ['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // discardAction only ever throws (a deliberate success redirect); see the confirm/logout note above.
-    discard: viewAction('discard', ['edit'], (event, view): Promise<ActionFailure<{ error: string }>> =>
+    discard: viewAction('discard', ['edit'], (event, view) =>
       content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
@@ -300,8 +300,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
     mediaOrphanScan: viewAction('mediaOrphanScan', ['media'], (event) => content.mediaOrphanScanAction(contentEvent(event, {}))),
     mediaOrphanPurge: viewAction('mediaOrphanPurge', ['media'], (event) => content.mediaOrphanPurgeAction(contentEvent(event, {}))),
     // publishAllAction only ever throws (a deliberate redirect); see the confirm/logout note above.
-    publishAll: viewAction('publishAll', authedViews, (event): Promise<ActionFailure<{ error: string }>> =>
-      content.publishAllAction(contentEvent(event, {}))),
+    publishAll: viewAction('publishAll', authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
     editorAdd: viewAction('editorAdd', ['editors'], (event) => editors.editorAddAction(event)),
     editorRemove: viewAction('editorRemove', ['editors'], (event) => editors.editorRemoveAction(event)),
     editorSetRole: viewAction('editorSetRole', ['editors'], (event) => editors.editorSetRoleAction(event)),

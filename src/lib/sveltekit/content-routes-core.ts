@@ -28,7 +28,7 @@ import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
 import { keyKnownUnhealthy } from './tidy-key-health.js';
-import { resolveRefusalCode, refusalMessage } from './refusal-codes.js';
+import { resolveRefusalCode, refusalMessage, type RefusalCode } from './refusal-codes.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
@@ -564,6 +564,19 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
+   * Append a resolved refusal code to a redirect target as `error=`, merging into any query the
+   *  target already carries (a declared `home` may have one, e.g. `/admin/dash?tab=1`) rather than
+   *  appending a second bare `?`, which would parse into the existing key's value and swallow the
+   *  code (`/admin/dash?tab=1?error=expired` reads as `tab=1?error=expired`, not two params).
+   */
+  function withRefusalCode(path: string, code: RefusalCode | null): string {
+    if (!code) return path;
+    const url = new URL(path, 'https://internal.invalid');
+    url.searchParams.set('error', code);
+    return `${url.pathname}${url.search}`;
+  }
+
+  /**
    * The role-aware admin-root landing (spec section 4). A role with a declared `home` is sent
    *  there. Absent a `home`, an owner- or editor-capability role lands on the first concept's list,
    *  the default landing (spec §7.6); a none-capability role gets the calm welcome view instead of a
@@ -574,17 +587,16 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   function indexLoad(event: CairnEvent): { view: 'welcome'; page: WelcomeData } {
     const editor = requireSession(event);
     const bounced = resolveRefusalCode(event.url.searchParams.get('error'));
-    const suffix = bounced ? `?error=${bounced}` : '';
     const home = roleHome(runtime.roles, editor.role);
     if (home) {
-      throw redirect(303, `${home}${suffix}`);
+      throw redirect(303, withRefusalCode(home, bounced));
     }
     if (editor.capability !== 'none') {
       // The first concept the session can reach, not the site-wide first: a role mapped away
       // from that one would otherwise land on a 403 dead-end.
       const first = runtime.concepts.find((c) => canReach(runtime.access, editor, c.id));
       if (!first) throw error(404, 'No content types configured');
-      throw redirect(307, `/admin/${first.id}${suffix}`);
+      throw redirect(307, withRefusalCode(`/admin/${first.id}`, bounced));
     }
     return { view: 'welcome', page: { displayName: editor.displayName, siteName: runtime.siteName } };
   }
@@ -1377,7 +1389,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       if (isConflict(err)) {
         throw redirect(303, `${listPage}?error=publish_conflict`);
       }
-      throw err;
+      // Every other outcome of this action is its own redirect to listPage (above and below), so
+      // an unexpected commit failure gets the same treatment rather than escaping to viewAction's
+      // generic fail(500): this action posts to the bare /admin, whose own load (indexLoad)
+      // always redirects away before ever rendering a component that reads `form`, so a fail()
+      // here would be silently discarded before an editor ever saw it. The bounded publish_failed
+      // code carries the same calm copy viewAction's own unexpected-failure fallback uses.
+      throw redirect(303, `${listPage}?error=publish_failed`);
     }
     // Only after the main commit lands: a failure above keeps every branch and its edits. Each
     // branch deletes only when its head still matches the captured sha; a moved head is a

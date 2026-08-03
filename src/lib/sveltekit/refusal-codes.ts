@@ -5,17 +5,23 @@
 // field stays `string | null` and the public surface never grows a code union to write.
 
 /**
- * The three refusals that genuinely navigate rather than answering the form that posted: an
- *  expired sign-in link, and publish-all's two outcomes. `expired` keeps its shipped spelling;
- *  the other two are snake_case, matching the log vocabulary's grammar (`docs/reference/log-events.md`).
+ * The refusals that genuinely navigate rather than answering the form that posted: an expired
+ *  sign-in link, publish-all's three outcomes, and the one deliberate exception to the
+ *  "publish-all only ever redirects to its own three outcomes" rule, `publish_failed`, for the
+ *  unexpected (non-conflict) commit error that would otherwise reach `viewAction`'s generic
+ *  `fail(500)` and be discarded when `/admin`'s own load redirects away before it can render
+ *  (C2b's own post-review fix; `publishAllAction`, `content-routes-core.ts`). `expired` keeps its
+ *  shipped spelling; the rest are snake_case, matching the log vocabulary's grammar
+ *  (`docs/reference/log-events.md`).
  */
-export type RefusalCode = 'expired' | 'nothing_to_publish' | 'publish_conflict';
+export type RefusalCode = 'expired' | 'nothing_to_publish' | 'publish_conflict' | 'publish_failed';
 
 /** Each {@link RefusalCode}'s engine copy, the only prose the query channel is ever allowed to carry. */
 const REFUSAL_COPY: Record<RefusalCode, string> = {
   expired: 'That link expired. Request a new one below.',
   nothing_to_publish: 'Nothing to publish. Every entry is already live.',
   publish_conflict: 'The site changed while publishing. Reload and try again.',
+  publish_failed: 'Something went wrong and the site did not publish. Try again, and if it keeps failing, let your site developer know.',
 };
 
 /**

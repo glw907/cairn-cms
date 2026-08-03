@@ -102,3 +102,48 @@ line.
   but the structural gap in the prop's own type is unrepaired. Candidate fix: type `form` to model
   both arms honestly, for example a discriminated union or a generic keyed by the last action name,
   rather than one merged failure-shaped intersection.
+
+- **`developer`: four of the admin's non-enhanced forms lose their working (in-progress) state on
+  any refused submit, and only `EditPage` echoes it back.** `NavTree` (a drag-reordered tree),
+  `VocabularyAdmin` (in-progress renames/adds), `CairnTidySettings` (an edited conventions block),
+  and `ConceptList`'s create dialog (the typed title/slug/date) all reset to their last-loaded state
+  on a `fail()`, since none uses `use:enhance` and a plain POST re-renders a fresh document; only
+  `EditPage` survives this because its own `SaveFailure` echoes the posted body back. Found by the
+  C2b review round (a11y Warning 7, WCAG 3.3.7 Redundant Entry, new in 2.2); C2b itself fixed the
+  misleading NavTree comment that claimed otherwise but left the behavior as found, since restoring
+  the working state on all four screens is a larger, deliberately scoped change (either `use:enhance`
+  across the four forms, which also changes their live-region/focus behavior, or echoing the posted
+  payload back on each failure type). Candidate fix: pick one mechanism and apply it uniformly rather
+  than case-by-case.
+
+- **`editor`: a refused submit is announced `aria-live="polite"` on five admin screens, while
+  `EditPage` treats the same class of message as assertive, and no screen moves focus to the
+  refusal.** `NavTree`, `CairnTidySettings`, `VocabularyAdmin`, `ConceptList`, and `ManageEditors`
+  route their refusal through a `sr-only` `aria-live="polite"` region; `EditPage` gives a refused
+  submit its own assertive region. An error answering a user-initiated submit should interrupt
+  (WCAG 3.3.1/4.1.3, ARIA APG), and separately, since these forms have no `use:enhance`, the
+  refusal arrives as part of a freshly parsed document rather than a live DOM mutation, which is a
+  known-unreliable trigger for AT announcement timing; moving focus to the banner (`tabindex="-1"`,
+  `role="alert"`, an effect-driven `.focus()`) would fix both the announcement reliability and
+  WCAG 2.4.3 in one mechanism. Found by the C2b review round (a11y Warnings 4-6). Candidate fix:
+  give each of the five screens an assertive region matching `EditPage`'s, and move focus to the
+  rendered banner on a refusal.
+
+- **`editor`: `editLoad`'s `?new=1` create-dialog seed (`?title=`) renders an attacker-crafted query
+  value as the entry's heading and title field to a signed-in editor.** `/admin/posts/anything?new=1&title=<text>`
+  seeds `EditData.frontmatter.title`/`EditData.title` from the raw query string, unbounded; the
+  sibling `?date=` field is correctly regex-bounded right beside it. Svelte escapes the render, so
+  this is not XSS, but it is a form field and heading rendering arbitrary attacker text to a session
+  that clicked a crafted link, pre-existing and outside the C2b refusal-channel diff (found by the
+  C2b review round, security MEDIUM 5). Candidate fix: bound `title` the way `date` already is (a
+  length cap plus a conservative character class), or move the create dialog's typed title into a
+  short-lived server-side hold instead of the URL.
+
+- **`editor`: a rename's 409 conflict lists every open branch's `concept/id`, including one an
+  access-map role cannot reach.** `content-routes-core.ts`'s conflict-branch index for the rename
+  refusal builds from every open `cairn/*` branch with no `canReach` filter, unlike
+  `publishAllAction`'s own index for the same underlying data, which does filter. A role denied a
+  concept still learns that concept has an in-progress, unpublished entry and its id. Pre-existing,
+  outside the C2b refusal-channel diff (found by the C2b review round, security LOW 9). Candidate
+  fix: filter the conflict-branch index through `canReach(runtime.access, editor, row.concept)` the
+  way `publishAllAction` already does, collapsing an unreachable branch to a bare count.

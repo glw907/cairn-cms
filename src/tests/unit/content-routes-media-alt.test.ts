@@ -451,6 +451,10 @@ describe('mediaAltApply', () => {
     expect(result).toMatchObject({ status: 503 });
     const data = (result as { data: MediaAltPropagateFailure }).data;
     expect(data.error).toMatch(/could not verify/i);
+    // A refusal that leaves the slide-over open on a full-page (no use:enhance) re-render must
+    // carry the asset's own hash, or the Library's re-surface effect cannot find it and the error
+    // renders nowhere (a real regression this pin closes).
+    expect(data.hash).toBe(HASH);
     // Nothing committed: the body is untouched.
     expect(commitCount(gh)).toBe(0);
     expect(gh.read('main', 'src/content/posts/2026-05-empty.md')).toBe(emptyAltBody('sunset', HASH, 'Empty Alt'));
@@ -471,7 +475,34 @@ describe('mediaAltApply', () => {
     expect(result).toMatchObject({ status: 404 });
     const data = (result as { data: MediaAltPropagateFailure }).data;
     expect(data.error).toMatch(/not committed/i);
+    expect(data.hash).toBe(OTHER_HASH);
     expect(commitCount(gh)).toBe(0);
+  });
+
+  it('answers a content commit conflict as fail(409) carrying the asset hash', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(mediaEntry(HASH, 'sunset', { alt: DEFAULT_ALT })),
+        [MANIFEST_PATH]: contentManifest([postEntry('2026-05-empty', 'Empty Alt', [HASH])]),
+        'src/content/posts/2026-05-empty.md': emptyAltBody('sunset', HASH, 'Empty Alt'),
+      },
+    });
+    gh.install();
+    // The content commit's ref update fails the way GitHub signals a stale head.
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if ((init?.method ?? 'GET').toUpperCase() === 'PATCH' && url.includes('/git/refs/heads/main')) {
+        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      }
+      return double(input, init);
+    }));
+    const routes = createContentRoutes(runtime());
+    const result = await routes.mediaAltPropagateAction(applyEvent({ hash: HASH }) as never);
+    expect(result).toMatchObject({ status: 409, data: { hash: HASH } });
+    const data = (result as { data: MediaAltPropagateFailure }).data;
+    expect(data.error).toMatch(/changed since/i);
   });
 
   it('throws error(400) on a malformed hash', async () => {

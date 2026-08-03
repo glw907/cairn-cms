@@ -729,6 +729,16 @@ the named human gates only):**
   `createAuthRoutes`, the package's two headline factories. A lint rule (an `eslint-plugin-jsdoc`
   empty-tag check, or a small `check:*` script scanning `src/lib` for a bare `/**\s*/`) closes the
   class.
+- **Facade action-key vocabulary gate (filed by C2's close-out verification, 2026-08-03).** Nothing
+  pins the `createCairnAdmin` `actions` record's key list. Two defects this pass fixed by hand share
+  that root: the action tables in `docs/reference/admin-routes.md` and `docs/reference/sveltekit.md`
+  had drifted to 12 and 11 rows against a 29-key record, and seven facade keys renamed in Task 5 with
+  no test asserting the resulting wire names. A posted `?/` key is a runtime string with no
+  compile-time check, so a stale one 404s at submit. The showcase e2e does not close this: its
+  UI-driven specs click the engine's own components, which rename in lockstep with the keys, so only
+  a spec hardcoding `?/name` pins a wire name, and those cover one of the seven renames. A test
+  asserting `Object.keys(admin.actions)` against a committed list, cross-checked against both
+  reference tables, closes the table drift and the wire-name drift together.
 - **Gate gap: `check:reference:signatures` cannot see a table-only signature (filed by the
   pre-beta C1 seam-shape pass's review fold, 2026-08-01).** The gate reads only fenced `ts` code
   blocks; a callback's signature stated solely in a reference table's own Signature or Meaning

@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { devBackendHandle } from './handle.js';
 
 // devBackendHandle now mutates no global: it constructs a conforming Backend over the in-memory
-// store and sets event.locals.backend per request, so no fetch snapshot/restore is needed.
+// store and sets event.locals.cairnBackend per request, so no fetch snapshot/restore is needed.
 
 test('the handle sets the dev backend, an owner editor, and the AUTH_DB and APP_DB bindings on an /admin request', async () => {
   const handle = devBackendHandle();
@@ -14,13 +14,13 @@ test('the handle sets the dev backend, an owner editor, and the AUTH_DB and APP_
 
   await handle({ event, resolve: async () => new Response('ok') });
 
-  // The dev Backend rides locals.backend, the channel the engine resolves; it exposes the
+  // The dev Backend rides locals.cairnBackend, the channel the engine resolves; it exposes the
   // seven-method interface (defaultBranch + commit prove it is the conforming object).
-  expect(event.locals.backend).toBeTruthy();
-  expect(event.locals.backend.defaultBranch).toBe('main');
-  expect(event.locals.backend.commit).toBeTypeOf('function');
+  expect(event.locals.cairnBackend).toBeTruthy();
+  expect(event.locals.cairnBackend.defaultBranch).toBe('main');
+  expect(event.locals.cairnBackend.commit).toBeTypeOf('function');
 
-  expect(event.locals.editor).toEqual({
+  expect(event.locals.cairnEditor).toEqual({
     email: expect.any(String),
     displayName: expect.any(String),
     role: 'owner',
@@ -41,7 +41,7 @@ test('the handle does not touch a public (non-admin, non-media) request', async 
 
   await handle({ event, resolve: async () => new Response('ok') });
 
-  expect(event.locals.backend).toBeUndefined();
-  expect(event.locals.editor).toBeUndefined();
+  expect(event.locals.cairnBackend).toBeUndefined();
+  expect(event.locals.cairnEditor).toBeUndefined();
   expect(event.platform).toBeUndefined();
 });

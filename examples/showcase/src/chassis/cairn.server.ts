@@ -3,14 +3,14 @@
 // composeRuntime per route.
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import type { ContentRoutesDeps } from '@glw907/cairn-cms/sveltekit';
+import type { ContentRoutesOptions } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 import { devBackendEnabled } from './dev-gate.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 
 // Under the dev backend the tidy action calls a deterministic stub instead of the real Anthropic
-// SDK. The dev content backend now rides event.locals.backend (set by the fenced devBackendHandle),
+// SDK. The dev content backend now rides event.locals.cairnBackend (set by the fenced devBackendHandle),
 // so there is no token stub here. The block sits behind devBackendEnabled, a build-foldable gate
 // (see ./dev-gate.ts), and the fake-anthropic import is dynamic, so a default production build
 // folds the whole block out (DCE), keeping the dev package's bypass barrel out of the deployed
@@ -18,7 +18,7 @@ export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 // client from ANTHROPIC_API_KEY, and the engine connects the real GitHub backend via its provider.
 // /admin/editors runs against the in-memory AUTH_DB double in fake-auth-db.ts, which
 // hooks.server.ts injects as platform.env.
-let client: NonNullable<ContentRoutesDeps['tidy']>['client'] | undefined;
+let client: NonNullable<ContentRoutesOptions['tidy']>['client'] | undefined;
 if (devBackendEnabled) {
   const { createFakeAnthropic } = await import('@glw907/cairn-cms-dev');
   client = createFakeAnthropic();

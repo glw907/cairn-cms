@@ -141,12 +141,16 @@ config bootstrap owner, which needs no D1 access); the
 [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink): it adds a separate
 `audit_log` table this check never looks at.
 
-Two more checks read the same table. `auth.role-vocabulary` flags an editor row whose `role` isn't
+Three more checks build on this. `auth.role-vocabulary` flags an editor row whose `role` isn't
 one of the site's declared names, a pruned config or a hand-edited row (the runtime resolves it to
 `none` capability rather than locking the person out, but the doctor still surfaces the drift).
 `auth.email-normalization` flags a row whose email isn't trimmed and lowercase. A manual `wrangler
 d1 execute` insert is the only way such a row gets in. Both skip under the same conditions
-`auth.store` does.
+`auth.store` does. `auth.role-wiring` checks the other half of the same vocabulary: when the
+adapter declares custom roles, it reads `src/hooks.server.ts` and confirms `createAuthGuard` is
+passed that same vocabulary, so those roles resolve to their own capability instead of falling
+back to owner/editor's implicit `none`. It skips instead when no custom roles are declared, the
+file can't be found, or the guard call can't be read by the heuristic.
 
 ## Install the GitHub App
 

@@ -41,7 +41,6 @@ const RULE_IDS = ['gap-scale', 'token-colors', 'motion-band'];
 export const SCAN_SCOPE = [
   'src/lib/components',
   'src/lib/admin-toolkit',
-  'src/lib/admin-fields',
   'examples/showcase/src/chassis',
   'examples/showcase/src/routes',
   'examples/showcase/src/theme',

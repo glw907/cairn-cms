@@ -1,15 +1,15 @@
 // Task 5: the upload action's untrusted-input contract. The server owns every committed field and
 // trusts no client value. These tests drive the action directly through createContentRoutes against
 // the miniflare R2 bucket, with a constructed ContentEvent carrying the raw-body POST, the
-// X-Cairn-* headers, locals.editor, platform.env, and a fake cookie jar that returns the csrf cookie.
+// X-Cairn-* headers, locals.cairnEditor, platform.env, and a fake cookie jar that returns the csrf cookie.
 import { env } from 'cloudflare:test';
 import { githubApp } from '../../lib/index.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createContentRoutes, type ContentEvent } from '../../lib/sveltekit/content-routes.js';
+import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { r2Key, hashBytes, shortHash } from '../../lib/media/naming.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { CookieJar } from '../../lib/sveltekit/types.js';
+import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 
 const bucket = env.MEDIA_BUCKET;
@@ -66,9 +66,9 @@ interface UploadOpts {
   platformEnv?: Record<string, unknown>;
 }
 
-/** Build the ContentEvent for an upload POST. The raw body is the bytes; the metadata travels in
+/** Build the CairnEvent for an upload POST. The raw body is the bytes; the metadata travels in
  *  percent-encoded request headers. */
-function uploadEvent(opts: UploadOpts): ContentEvent {
+function uploadEvent(opts: UploadOpts): CairnEvent {
   const headers = new Headers();
   headers.set('content-type', opts.contentType ?? 'image/png');
   const length = opts.contentLength === undefined ? String(opts.bytes.length) : opts.contentLength;
@@ -84,12 +84,14 @@ function uploadEvent(opts: UploadOpts): ContentEvent {
   return {
     url,
     params: { concept: 'posts', id: 'my-entry' },
+    route: { id: '/admin/[concept]/[id]' },
     // A Uint8Array is a valid fetch body at runtime; the DOM lib's BodyInit predates the typed-array
     // overload, so cast through BodyInit to satisfy the constructor type.
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
-    locals: { editor: opts.hasEditor === false ? null : editor },
+    locals: { cairnEditor: opts.hasEditor === false ? null : editor },
     platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
+    setHeaders: () => {},
   };
 }
 
@@ -164,7 +166,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     });
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG }))) as ActionResult;
     expect(res.status).toBe(409);
-    expect(res.data?.error).toBe('hash-collision');
+    expect(res.data?.error).toBe('hash_collision');
   });
 
   it('rejects an oversize Content-Length with fail(413) before reading the body', async () => {
@@ -186,14 +188,14 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
       uploadEvent({ bytes: PNG, contentLength: String(11) }),
     )) as ActionResult;
     expect(res.status).toBe(413);
-    expect(res.data?.error).toBe('too-large');
+    expect(res.data?.error).toBe('too_large');
   });
 
   it('rejects a missing Content-Length with fail(411)', async () => {
     const routes = createContentRoutes(runtime());
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, contentLength: null }))) as ActionResult;
     expect(res.status).toBe(411);
-    expect(res.data?.error).toBe('length-required');
+    expect(res.data?.error).toBe('length_required');
   });
 
   it('rejects a missing X-Cairn-CSRF with fail(403)', async () => {
@@ -210,11 +212,11 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     expect(res.data?.error).toBe('csrf');
   });
 
-  it('returns fail(401) JSON, not a 303, when locals.editor is absent', async () => {
+  it('returns fail(401) JSON, not a 303, when locals.cairnEditor is absent', async () => {
     const routes = createContentRoutes(runtime());
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
     expect(res.status).toBe(401);
-    expect(res.data?.error).toBe('session-expired');
+    expect(res.data?.error).toBe('session_expired');
   });
 
   it('rejects an SVG payload with fail(415) even when allowedTypes includes image/svg+xml', async () => {
@@ -223,7 +225,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
       uploadEvent({ bytes: SVG, contentType: 'image/svg+xml', filename: 'logo.svg' }),
     )) as ActionResult;
     expect(res.status).toBe(415);
-    expect(res.data?.error).toBe('unsupported-type');
+    expect(res.data?.error).toBe('unsupported_type');
   });
 
   it('rejects a leading-< payload with fail(415)', async () => {
@@ -232,7 +234,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
       uploadEvent({ bytes: LT_PAYLOAD, contentType: 'image/png', filename: 'x.png' }),
     )) as ActionResult;
     expect(res.status).toBe(415);
-    expect(res.data?.error).toBe('unsupported-type');
+    expect(res.data?.error).toBe('unsupported_type');
   });
 
   it('stores JPEG bytes under the jpg ext even when the client declares image/webp (sniff wins)', async () => {
@@ -272,7 +274,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     await routes.uploadAction(uploadEvent({ bytes: SVG, contentType: 'image/svg+xml' }));
     expect(warn).toHaveBeenCalledWith(
       'media.upload_failed',
-      expect.objectContaining({ reason: 'unsupported-type' }),
+      expect.objectContaining({ reason: 'unsupported_type' }),
     );
   });
 

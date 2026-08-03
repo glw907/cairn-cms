@@ -25,7 +25,7 @@ function runtime(): CairnRuntime {
   };
 }
 
-// The dev double rides event.locals.backend; createCairnAdmin no longer takes a backend dep.
+// The dev double rides event.locals.cairnBackend; createCairnAdmin no longer takes a backend dep.
 const backend = makeGithubBackend(REPO, async () => 'tok');
 const deps = {};
 
@@ -41,11 +41,11 @@ function eventFor(
     url: new URL(`https://t.example${pathname}`),
     request: new Request(`https://t.example${pathname}`),
     locals: {
-      editor:
+      cairnEditor:
         opts.editor === undefined
           ? { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const }
           : opts.editor,
-      backend,
+      cairnBackend: backend,
     },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
@@ -78,10 +78,10 @@ describe('createCairnAdmin shellLoad', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('forwards CairnAdminDeps.navFilter to the content routes, so a dropped section is absent from the shell', async () => {
+  it('forwards CairnAdminOptions.navFilter to the content routes, so a dropped section is absent from the shell', async () => {
     new GithubDouble({ main: {} }).install();
     const rt = runtime();
-    rt.adminNav = [
+    rt.navLayout = [
       { label: 'Standalone', icon: 'wrench', href: '/admin/tools' },
       { label: 'Club', children: [{ label: 'Members', icon: 'users', href: '/admin/club/members' }] },
     ];
@@ -90,8 +90,8 @@ describe('createCairnAdmin shellLoad', () => {
     });
     const { shell } = await shellLoad(eventFor('/admin/posts') as never);
     if (shell.public) throw new Error('expected authed shell');
-    // The flat default arrangement places the flat 'Standalone' entry as its own loose top-level
-    // node and the legacy 'Club' section as another top-level node; the filter drops only the latter.
+    // The declared navLayout renders the flat 'Standalone' entry and the 'Club' section as
+    // top-level nodes; the filter drops only the latter.
     expect(shell.nav.items.map((item) => item.label)).not.toContain('Club');
     expect(shell.nav.items.map((item) => item.label)).toContain('Standalone');
   });

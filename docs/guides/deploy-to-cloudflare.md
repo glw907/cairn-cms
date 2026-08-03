@@ -70,13 +70,13 @@ If your site already has a `handle` hook of its own, sequence the guard last wit
 SvelteKit's own `sequence(yourHook, createAuthGuard())`, so your hook sees every request and
 the guard still owns `/admin` gating.
 
-The guard sets `event.locals.editor`, and the bindings it and the mount read (the D1 store,
+The guard sets `event.locals.cairnEditor`, and the bindings it and the mount read (the D1 store,
 the email sender, the GitHub App key) need typing on `App.Platform.env`. Intersecting the
-engine's binding types is required, not a style choice: typing `App.Platform.env` any other way,
-hand-rolled bindings or a bare `wrangler types`-generated `Env`, fails to compile the route wiring
-above (`export const actions = admin.actions;`) rather than failing at runtime, since
-`@cloudflare/workers-types`' `SendEmail.send` returns `Promise<EmailSendResult>` where cairn's
-auth env declares `Promise<void>`:
+engine's binding types is a recommended convenience preset, not a requirement: a bare
+`wrangler types`-generated `Env` also compiles clean against the preceding route wiring
+(`export const actions = admin.actions;`), since every route factory's env parameter is
+structurally satisfied by it too. Intersecting `CairnPlatformBindings` still catches a forgotten
+binding at compile time rather than at runtime, which is why the guide keeps it:
 
 ```ts
 // src/app.d.ts

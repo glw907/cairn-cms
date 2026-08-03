@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
-import { makeMediaResolver, manifestMediaResolver } from '../../lib/render/resolve-media.js';
+import { buildMediaResolver, manifestMediaResolver } from '../../lib/render/resolve-media.js';
 import { normalizeAssets } from '../../lib/media/config.js';
 import type { MediaManifest } from '../../lib/media/manifest.js';
 
@@ -47,7 +47,7 @@ const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
 
 describe('cairn media resolution', () => {
   it('rewrites a media token to the canonical delivery path', async () => {
-    const resolveMedia = makeMediaResolver(manifest, resolved);
+    const resolveMedia = buildMediaResolver(manifest, resolved);
     const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
       resolveMedia,
     });
@@ -55,14 +55,14 @@ describe('cairn media resolution', () => {
     expect(html).not.toContain('media:');
   });
   it('resolves the bare-hash form to the canonical slug from the manifest entry', async () => {
-    const resolveMedia = makeMediaResolver(manifest, resolved);
+    const resolveMedia = buildMediaResolver(manifest, resolved);
     const html = await renderMarkdown('![shoes](media:a1b2c3d4e5f6a7b8)', { resolveMedia });
     expect(html).toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
   });
   it('serves the bare full-size path and ignores the preset when transformations are off', async () => {
     // The default resolved config has transformations: false, so a fresh zone without Image
     // Transformations serves the full-size delivery path rather than a dead /cdn-cgi/image URL.
-    const resolveMedia = makeMediaResolver(manifest, resolved, { preset: 'inline' });
+    const resolveMedia = buildMediaResolver(manifest, resolved, { preset: 'inline' });
     const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
       resolveMedia,
     });
@@ -71,7 +71,7 @@ describe('cairn media resolution', () => {
   });
   it('applies a named preset to the delivery path when transformations are on', async () => {
     const transformsOn = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true });
-    const resolveMedia = makeMediaResolver(manifest, transformsOn, { preset: 'inline' });
+    const resolveMedia = buildMediaResolver(manifest, transformsOn, { preset: 'inline' });
     const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
       resolveMedia,
     });
@@ -80,7 +80,7 @@ describe('cairn media resolution', () => {
     );
   });
   it('marks an unknown hash with the broken-media class and does not throw', async () => {
-    const resolveMedia = makeMediaResolver({}, resolved);
+    const resolveMedia = buildMediaResolver({}, resolved);
     const html = await renderMarkdown('![gone](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
       resolveMedia,
     });
@@ -88,7 +88,7 @@ describe('cairn media resolution', () => {
     expect(html).toContain('title="Missing media asset"');
   });
   it('leaves a non-media image src untouched', async () => {
-    const resolveMedia = makeMediaResolver(manifest, resolved);
+    const resolveMedia = buildMediaResolver(manifest, resolved);
     const html = await renderMarkdown('![ext](https://example.com/y.png)', { resolveMedia });
     expect(html).toContain('src="https://example.com/y.png"');
   });
@@ -104,7 +104,7 @@ describe('cairn media resolution', () => {
   });
   it('threads a custom publicBase from the resolved config into the delivery path', async () => {
     const customBase = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', publicBase: '/assets' });
-    const resolveMedia = makeMediaResolver(manifest, customBase);
+    const resolveMedia = buildMediaResolver(manifest, customBase);
     const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
       resolveMedia,
     });
@@ -114,7 +114,7 @@ describe('cairn media resolution', () => {
 
 describe('measured-floor: intrinsic dimensions and responsive srcset', () => {
   it('managed media with known dimensions, transformations off: emits width/height only', async () => {
-    const resolveMedia = makeMediaResolver(manifest, resolved);
+    const resolveMedia = buildMediaResolver(manifest, resolved);
     const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
       resolveMedia,
     });
@@ -126,7 +126,7 @@ describe('measured-floor: intrinsic dimensions and responsive srcset', () => {
 
   it('managed media with known dimensions, transformations on: emits width/height and a width-ladder srcset', async () => {
     const transformsOn = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true });
-    const resolveMedia = makeMediaResolver(manifest, transformsOn);
+    const resolveMedia = buildMediaResolver(manifest, transformsOn);
     const html = await renderMarkdown('![shoes](media:blue-running-shoes.a1b2c3d4e5f6a7b8)', {
       resolveMedia,
     });
@@ -144,7 +144,7 @@ describe('measured-floor: intrinsic dimensions and responsive srcset', () => {
 
   it('managed media with no recorded dimensions: emits neither width/height nor srcset, even with transformations on', async () => {
     const transformsOn = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true });
-    const resolveMedia = makeMediaResolver(noDimsManifest, transformsOn);
+    const resolveMedia = buildMediaResolver(noDimsManifest, transformsOn);
     const html = await renderMarkdown('![scan](media:unknown-size.b2c3d4e5f6a7b8a1)', { resolveMedia });
     expect(html).toContain('src="/media/unknown-size.b2c3d4e5f6a7b8a1.png"');
     expect(html).not.toContain('width=');
@@ -154,7 +154,7 @@ describe('measured-floor: intrinsic dimensions and responsive srcset', () => {
   });
 
   it('raw external URL: gains no width/height/srcset (the engine cannot derive variants for it)', async () => {
-    const resolveMedia = makeMediaResolver(manifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true }));
+    const resolveMedia = buildMediaResolver(manifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true }));
     const html = await renderMarkdown('![ext](https://example.com/y.png)', { resolveMedia });
     expect(html).toBe('<p><img src="https://example.com/y.png" alt="ext"></p>');
   });

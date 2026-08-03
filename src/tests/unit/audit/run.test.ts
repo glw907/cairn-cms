@@ -13,14 +13,14 @@ let root: string;
 beforeAll(() => {
   root = mkdtempSync(join(tmpdir(), 'cairn-audit-'));
   mkdirSync(join(root, 'dist/components'), { recursive: true });
-  mkdirSync(join(root, 'src/lib/admin-fields'), { recursive: true });
+  mkdirSync(join(root, 'src/lib/admin-toolkit'), { recursive: true });
   mkdirSync(join(root, 'src/routes/admin/posts'), { recursive: true });
   writeFileSync(
     join(root, 'dist/components/cairn-admin.css'),
     '.type-body { font-size: var(--cairn-type-body) }'
   );
   writeFileSync(
-    join(root, 'src/lib/admin-fields/FieldLabel.svelte'),
+    join(root, 'src/lib/admin-toolkit/FieldLabel.svelte'),
     '<span class="type-label">x</span>\n'
   );
   writeFileSync(join(root, 'src/routes/admin/posts/+page.svelte'), '<div class="card"></div>\n');
@@ -82,7 +82,7 @@ describe('runStatic', () => {
     expect(report.filesScanned).toBe(2);
     expect(seen).toHaveLength(1);
     expect(seen[0].files.map((f) => f.file).sort()).toEqual([
-      'src/lib/admin-fields/FieldLabel.svelte',
+      'src/lib/admin-toolkit/FieldLabel.svelte',
       'src/routes/admin/posts/+page.svelte',
     ]);
     expect(seen[0].sheet.has('type-body')).toBe(true);
@@ -93,7 +93,7 @@ describe('runStatic', () => {
     const report = runStatic(loadConfig(root), [probeRule([])]);
     expect(report.ruleIds).toEqual(['probe']);
     expect(report.findings.map((f) => `${f.file}:${f.line} ${f.message}`)).toEqual([
-      'src/lib/admin-fields/FieldLabel.svelte:1 saw type-label',
+      'src/lib/admin-toolkit/FieldLabel.svelte:1 saw type-label',
       'src/routes/admin/posts/+page.svelte:1 saw card',
     ]);
     expect(report.suppressed).toEqual([]);

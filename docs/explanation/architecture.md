@@ -58,9 +58,9 @@ capability levels, owner, editor, and none, but leaves the role names open. `def
 each of your role names onto one of those three levels, and can name the `/admin` route a role
 lands on after sign-in. A site that declares no `roles` keeps the implicit `owner`/`editor` pair
 the engine has always had, so this changes nothing for a zero-config site. See
-[roles](../reference/core.md#roles) in the core reference for the full mapping rules and the
-typed read-side a site augments so its own routes see its declared role names on
-`locals.editor.role`.
+[roles](../reference/core.md#roles) in the core reference for the full mapping rules; a role
+*name* types as `string` everywhere the engine reads one, `locals.cairnEditor.role` included,
+since a site's own vocabulary is open and only the three-way capability is a closed union.
 
 A role vocabulary says who has which name; a site with more than one kind of editor usually also
 needs to say what each name may reach. `defineAccess` declares that map once, over cairn's own
@@ -84,7 +84,7 @@ the vocabulary editor, and the rest all dispatch from the same two exports, pars
 sidebar, the top bar, the theme), so a site's own custom screen, dropped in as a concrete
 route under `/admin/`, renders inside the same shell the engine's views do. The mount itself
 does no access control. A separate auth guard, wired once in `hooks.server.ts`, gates every
-`/admin/**` path before any load runs and sets `event.locals.editor`, the signed-in identity a
+`/admin/**` path before any load runs and sets `event.locals.cairnEditor`, the signed-in identity a
 site's own routes can read the same way. See [the canonical admin
 mount](../reference/admin-routes.md) for the exact files to copy.
 

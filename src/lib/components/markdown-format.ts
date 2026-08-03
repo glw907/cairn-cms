@@ -125,7 +125,10 @@ function toggleCodeFence(doc: string, from: number, to: number): FormatResult {
 }
 
 /**
- *
+ * Dispatch one toolbar format `kind` to its transform: a wrap kind (bold, italic, code, strike),
+ * the inline link insert, the code-fence toggle, an hr or table block insert, or a line-prefix
+ * kind (h2, h3, quote, ul, ol, task). Every branch is pure, returning the edited document with
+ * the selection range the editor applies verbatim.
  */
 export function applyMarkdownFormat(doc: string, from: number, to: number, kind: FormatKind): FormatResult {
   if (kind === 'bold' || kind === 'italic' || kind === 'code' || kind === 'strike') {

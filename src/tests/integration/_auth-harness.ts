@@ -6,8 +6,8 @@ export { expectRedirect, expectHttpError } from '../_redirect-assertions.js';
 
 /**
  * Insert an editor row directly. The editor table is the allowlist, so a row is "may sign in".
- * `role` is a plain string (not the typed `Role`): migration 0001 dropped the column's CHECK
- * constraint, so a fixture can seed any vocabulary-shaped role name a test needs.
+ * `role` is open (`string`): migration 0001 dropped the column's CHECK constraint, so a fixture
+ * can seed any vocabulary-shaped role name a test needs.
  */
 export async function seedEditor(email: string, displayName: string, role: string, now = Date.now()): Promise<void> {
   await env.AUTH_DB.prepare(
@@ -57,20 +57,20 @@ export function makeEvent(input: {
   form?: Record<string, string>;
   cookies?: CookieJar;
   editor?: Editor | null;
-  waitUntil?: (promise: Promise<unknown>) => void;
 }) {
-  const { url, form, cookies = makeCookies(), editor = null, waitUntil } = input;
+  const { url, form, cookies = makeCookies(), editor = null } = input;
   const request = form
     ? new Request(url, { method: 'POST', body: new URLSearchParams(form) })
     : new Request(url);
   return {
     url: new URL(url),
     request,
+    params: {},
+    route: { id: '/admin/auth/[...path]' },
     cookies,
-    locals: { editor },
+    locals: { cairnEditor: editor },
     platform: {
       env: { AUTH_DB: env.AUTH_DB, PUBLIC_ORIGIN: 'https://test.dev' },
-      ctx: waitUntil ? { waitUntil } : undefined,
     },
     setHeaders: () => {},
   };

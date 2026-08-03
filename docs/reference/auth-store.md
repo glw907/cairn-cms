@@ -6,13 +6,15 @@ and change a role, with the owner-count guards that keep at least one owner-capa
 the roster. It is server-only surface (no `svelte` export condition), for a site that provisions or
 manages editors from its own server code, a setup script, or a migration, outside the admin screen.
 
-The auth-flow functions the engine's magic-link guard uses internally, `findEditor`, `issueToken`,
+Anything proposed here must be a D1 editor-roster read or write, provisioning surface only. The
+auth-flow functions the engine's magic-link guard uses internally, `findEditor`, `issueToken`,
 `recentlyIssued`, `consumeToken`, `createSession`, `resolveSession`, and `deleteSession`, stay
 unexported here. They back the login flow only; no real caller outside the engine needs them, so
-they are not proven surface.
+they are not proven surface. A token or session primitive belongs on
+[`/auth-crypto`](./auth-crypto.md) instead, even one this store's own rows carry a hash of.
 
 Every function takes the site's `AUTH_DB` `D1Database` binding as its first argument, the same
-binding `AuthEnv` (see [core](./core.md)) types and a site's `wrangler.jsonc` declares. The engine's
+binding `CairnEnv` (see [core](./core.md)) types and a site's `wrangler.jsonc` declares. The engine's
 own `editors-routes` calls these exact functions, over the same rows, so a consumer script and the
 `ManageEditors` screen stay consistent.
 
@@ -83,7 +85,7 @@ declare function insertEditor(
   db: D1Database,
   email: string,
   displayName: string,
-  role: Role,
+  role: string,
   now: number,
 ): Promise<void>;
 ```
@@ -158,7 +160,7 @@ owner.
 Stability tier: Extension API.
 
 ```ts
-declare function setEditorRole(db: D1Database, email: string, role: Role): Promise<void>;
+declare function setEditorRole(db: D1Database, email: string, role: string): Promise<void>;
 ```
 
 Change an editor's role. Writes unconditionally, with no owner-count guard; prefer
@@ -191,5 +193,4 @@ Stability tier: Extension API.
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| `EditorRow` | Extension API | `type EditorRow = { email: string; displayName: string; role: Role }` | An allowlist row as the store reads it: email, displayName, and the bare role name. The store has no access to a site's declared vocabulary, so it never resolves `capability`; a caller that needs a full [`Editor`](./core.md#editor) resolves capability itself and spreads it onto this shape. |
-| `Role` | Extension API | `type Role` | The role names `locals.editor.role` carries, re-exported from [core](./core.md#role) for convenience: registry-derived from `CairnRolesRegister`, defaulting to `'owner' \| 'editor'` when a site declares no vocabulary. |
+| `EditorRow` | Extension API | `type EditorRow = { email: string; displayName: string; role: string }` | An allowlist row as the store reads it: email, displayName, and the bare role name. The store has no access to a site's declared vocabulary, so it never resolves `capability`; a caller that needs a full [`Editor`](./core.md#editor) resolves capability itself and spreads it onto this shape. |

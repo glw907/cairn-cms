@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
-import FieldLabel from '../../lib/admin-fields/FieldLabel.svelte';
-import SelectField from '../../lib/admin-fields/SelectField.svelte';
-import TextField from '../../lib/admin-fields/TextField.svelte';
+import FieldLabel from '../../lib/admin-toolkit/FieldLabel.svelte';
+import SelectInput from '../../lib/admin-toolkit/SelectInput.svelte';
+import TextInput from '../../lib/admin-toolkit/TextInput.svelte';
 import StackedFieldGrid from './_StackedFieldGrid.svelte';
 import StackedCompactRow from './_StackedCompactRow.svelte';
 // The stacked register's width hook lives only in the built sheet's dedicated unlayered rule, so
@@ -45,14 +45,14 @@ describe('FieldLabel', () => {
   });
 });
 
-describe('SelectField', () => {
+describe('SelectInput', () => {
   const options = [
     { value: 'open', label: 'Open' },
     { value: 'closed', label: 'Closed' },
   ];
 
   it('renders a labeled select with the given options and posts by name', async () => {
-    const screen = render(SelectField, { label: 'Status', name: 'status', value: 'open', options });
+    const screen = render(SelectInput, { label: 'Status', name: 'status', value: 'open', options });
     await expect.element(screen.getByText('Status')).toBeInTheDocument();
     const select = screen.container.querySelector('select[name="status"]') as unknown as HTMLSelectElement;
     expect(select).not.toBeNull();
@@ -62,9 +62,9 @@ describe('SelectField', () => {
 
 });
 
-describe('TextField', () => {
+describe('TextInput', () => {
   it('renders a labeled text input, defaulting the type', async () => {
-    const screen = render(TextField, { label: 'Search', name: 'q', value: '' });
+    const screen = render(TextInput, { label: 'Search', name: 'q', value: '' });
     await expect.element(screen.getByText('Search')).toBeInTheDocument();
     const input = screen.container.querySelector('input[name="q"]') as HTMLInputElement;
     expect(input).not.toBeNull();
@@ -72,7 +72,7 @@ describe('TextField', () => {
   });
 
   it('applies a narrower type and a placeholder', async () => {
-    const screen = render(TextField, { label: 'Search', name: 'q', value: '', type: 'search', placeholder: 'Find a member' });
+    const screen = render(TextInput, { label: 'Search', name: 'q', value: '', type: 'search', placeholder: 'Find a member' });
     const input = screen.container.querySelector('input[name="q"]') as HTMLInputElement;
     expect(input.getAttribute('type')).toBe('search');
     expect(input.getAttribute('placeholder')).toBe('Find a member');
@@ -80,7 +80,7 @@ describe('TextField', () => {
 });
 
 // Design ratchet Task 3 (closes finding 3): the stacked register (label above control) is the
-// default on FieldLabel/TextField/SelectField, and its sheet hook forces a contained control to
+// default on FieldLabel/TextInput/SelectInput, and its sheet hook forces a contained control to
 // fill its grid cell rather than clamping to daisyUI's fixed 20rem default. This proves the
 // register against the REAL compiled sheet, the same way AdminReset.test.ts proves the base layer.
 describe('the stacked register', () => {
@@ -98,14 +98,14 @@ describe('the stacked register', () => {
     sheet.remove();
   });
 
-  it('is the default: a bare TextField renders the label above the control', async () => {
-    const screen = render(TextField, { label: 'Search', name: 'q', value: '' });
+  it('is the default: a bare TextInput renders the label above the control', async () => {
+    const screen = render(TextInput, { label: 'Search', name: 'q', value: '' });
     const label = screen.container.querySelector('label')!;
     expect(label.className).toContain('flex-col');
   });
 
   it('opts into the inline register explicitly', async () => {
-    const screen = render(TextField, { label: 'Search', name: 'q', value: '', register: 'inline' });
+    const screen = render(TextInput, { label: 'Search', name: 'q', value: '', register: 'inline' });
     const label = screen.container.querySelector('label')!;
     expect(label.className).toContain('items-center');
   });

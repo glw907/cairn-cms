@@ -46,7 +46,13 @@ describe('log', () => {
 describe('media events', () => {
   it('emits media.uploaded at info with the asset fields', () => {
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    log.info('media.uploaded', { editor: 'a@b.test', hash: 'abc123', bytes: 4096, ext: 'png' });
+    log.info('media.uploaded', {
+      editor: 'a@b.test',
+      hash: 'abc123',
+      bytes: 4096,
+      contentType: 'image/png',
+      reused: false,
+    });
     const record = spy.mock.calls[0][0] as Record<string, unknown>;
     expect(record).toMatchObject({
       level: 'info',
@@ -54,19 +60,20 @@ describe('media events', () => {
       editor: 'a@b.test',
       hash: 'abc123',
       bytes: 4096,
-      ext: 'png',
+      contentType: 'image/png',
+      reused: false,
     });
   });
 
   it('emits media.upload_failed at warn with the editor and reason', () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    log.warn('media.upload_failed', { editor: 'a@b.test', reason: 'too-large' });
+    log.warn('media.upload_failed', { editor: 'a@b.test', reason: 'too_large' });
     const record = spy.mock.calls[0][0] as Record<string, unknown>;
     expect(record).toMatchObject({
       level: 'warn',
       event: 'media.upload_failed',
       editor: 'a@b.test',
-      reason: 'too-large',
+      reason: 'too_large',
     });
   });
 

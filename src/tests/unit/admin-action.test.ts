@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
-import { adminAction, AdminActionError, type AdminActionEvent, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
+import { adminAction, UnauditedActionError, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
 import { log } from '../../lib/log/index.js';
-import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
+import type { CairnEvent, CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 
 const editor: Editor = { email: 'owner@example.com', displayName: 'Owner', role: 'owner', capability: 'owner' };
@@ -23,7 +23,7 @@ function makeEvent(opts: {
   editor?: Editor | null;
   extra?: Record<string, string>;
   auditSink?: (record: AdminActionAuditRecord) => void;
-}): AdminActionEvent {
+}): CairnEvent {
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
   for (const [k, v] of Object.entries(opts.extra ?? {})) body.set(k, v);
@@ -37,8 +37,11 @@ function makeEvent(opts: {
   return {
     url: new URL('https://x.dev/admin/club/events'),
     request,
+    params: {},
+    route: { id: '/admin/club/events' },
     cookies: jar(opts.cookie !== undefined ? { '__Host-cairn_csrf': opts.cookie } : {}),
-    locals: { editor: opts.editor === undefined ? editor : opts.editor, auditSink: opts.auditSink },
+    locals: { cairnEditor: opts.editor === undefined ? editor : opts.editor, cairnAuditSink: opts.auditSink },
+    setHeaders: () => {},
   };
 }
 
@@ -47,8 +50,8 @@ async function statusOf(promise: Promise<unknown>): Promise<number> {
     await promise;
     throw new Error('expected adminAction to throw');
   } catch (err) {
-    expect(err).toBeInstanceOf(AdminActionError);
-    return (err as AdminActionError).status;
+    expect(err).toBeInstanceOf(UnauditedActionError);
+    return (err as UnauditedActionError).status;
   }
 }
 
@@ -76,7 +79,7 @@ async function httpErrorStatusOf(promise: Promise<unknown>): Promise<number> {
 }
 
 describe('adminAction: editor guard', () => {
-  it('redirects to /admin/login with no locals.editor, and never calls the handler', async () => {
+  it('redirects to /admin/login with no locals.cairnEditor, and never calls the handler', async () => {
     const handler = vi.fn();
     const action = adminAction(handler);
     const event = makeEvent({ editor: null, cookie: 'TOK', csrfField: 'TOK' });
@@ -165,7 +168,7 @@ describe('adminAction: CSRF guard (defense-in-depth)', () => {
 });
 
 describe('adminAction: the handler runs with a verified editor and a bound audit emitter', () => {
-  it('hands the handler the locals editor and forwards ctx.audit to the site auditSink', async () => {
+  it('hands the handler the locals cairnEditor and forwards ctx.audit to the site auditSink', async () => {
     const sink = vi.fn();
     const action = adminAction(async ({ ctx }) => {
       expect(ctx.editor).toEqual(editor);
@@ -242,7 +245,7 @@ describe('adminAction: the audit sink is fail-open', () => {
     vi.restoreAllMocks();
   });
 
-  it('completes the handler and returns its result when locals.auditSink throws synchronously', async () => {
+  it('completes the handler and returns its result when locals.cairnAuditSink throws synchronously', async () => {
     const sink = vi.fn(() => {
       throw new Error('sink exploded');
     });
@@ -257,7 +260,7 @@ describe('adminAction: the audit sink is fail-open', () => {
     expect(sink).toHaveBeenCalledOnce();
   });
 
-  it('logs admin.action.audit_sink_failed with the action identity and the error, never the record contents', async () => {
+  it('logs admin.action.sink_threw with the action identity and the error, never the record contents', async () => {
     const sink = vi.fn(() => {
       throw new Error('sink exploded');
     });
@@ -270,7 +273,7 @@ describe('adminAction: the audit sink is fail-open', () => {
     await action(event);
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.action.audit_sink_failed',
+        event: 'admin.action.sink_threw',
         path: '/admin/club/events',
         action: 'approve',
         entity: 'signup',
@@ -335,7 +338,7 @@ describe('adminAction: the audit sink is fail-open', () => {
     expect(record.error).toContain('boom');
   });
 
-  it('does not fail the action when locals.auditSink is async and rejects, and still logs the failure', async () => {
+  it('does not fail the action when locals.cairnAuditSink is async and rejects, and still logs the failure', async () => {
     const sink = vi.fn(async () => {
       throw new Error('async sink exploded');
     });
@@ -351,7 +354,7 @@ describe('adminAction: the audit sink is fail-open', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.action.audit_sink_failed',
+        event: 'admin.action.sink_threw',
         action: 'approve',
         entity: 'signup',
         entityId: '42',

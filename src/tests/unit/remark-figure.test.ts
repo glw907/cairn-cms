@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
-import { makeMediaResolver, manifestMediaResolver } from '../../lib/render/resolve-media.js';
+import { buildMediaResolver, manifestMediaResolver } from '../../lib/render/resolve-media.js';
 import { normalizeAssets } from '../../lib/media/config.js';
 import type { MediaManifest } from '../../lib/media/manifest.js';
 
@@ -111,7 +111,7 @@ describe('remarkFigure: the sizes attribute derives from the figure placement ro
     },
   };
   const resolved = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true });
-  const resolveDetailedMedia = makeMediaResolver(manifest, resolved);
+  const resolveDetailedMedia = buildMediaResolver(manifest, resolved);
   const { renderMarkdown: renderWithSanitize } = createRenderer(defineRegistry({ components: [] }));
 
   it('a center-placed figure gets the center sizes hint', async () => {

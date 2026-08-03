@@ -4,18 +4,20 @@
 // which workerd cannot exercise reliably. Run together they show the tripwire reads BOTH sources.
 import { describe, it, expect, vi } from 'vitest';
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
-import type { RequestContext } from '../../lib/sveltekit/types.js';
+import type { CairnEvent } from '../../lib/sveltekit/types.js';
 
 const handle = createAuthGuard();
 const OK = new Response('ok');
 
 // The adapter-node shape: no Cloudflare platform binding at all, so the flag can only be read from
 // process.env. `platform: undefined` mirrors a deploy where Worker vars never populate.
-function adapterNodeEvent(pathname: string): RequestContext {
+function adapterNodeEvent(pathname: string): CairnEvent {
   const url = `https://test.dev${pathname}`;
   return {
     url: new URL(url),
     request: new Request(url),
+    params: {},
+    route: { id: '/admin/[...path]' },
     cookies: {
       get: () => undefined,
       set: () => {},

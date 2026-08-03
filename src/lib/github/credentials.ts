@@ -3,16 +3,8 @@
 // save action (Plan 05) stays thin and a misconfigured Worker fails by name, not with a deep
 // TypeError. Mirrors requireDb/requireOrigin in env.ts.
 import { CairnError } from '../diagnostics/index.js';
+import type { CairnEnv } from '../env.js';
 import type { AppCredentials } from './types.js';
-
-/**
- * The Worker secret carrier `Backend.connect` reads: the GitHub App private key as base64 of the
- * PEM, single line. A consumer's `App.Platform.env` block names it. Aliased as the engine's
- * `BackendEnv` since the backend seam owns the secret channel.
- */
-export interface BackendEnv {
-  GITHUB_APP_PRIVATE_KEY_B64?: string;
-}
 
 /**
  * Assemble the `AppCredentials` the signer needs from the GitHub App's identity (app id,
@@ -21,7 +13,7 @@ export interface BackendEnv {
  */
 export function appCredentials(
   identity: { appId: string; installationId: string },
-  env: BackendEnv,
+  env: CairnEnv,
 ): AppCredentials {
   const privateKeyB64 = env.GITHUB_APP_PRIVATE_KEY_B64;
   if (!privateKeyB64) {

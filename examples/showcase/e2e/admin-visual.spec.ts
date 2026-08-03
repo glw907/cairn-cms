@@ -40,7 +40,7 @@ test('admin vocabulary screen — dark', async ({ page, context, baseURL }) => {
 });
 
 // The auth surfaces, swept in Phase 2 (office chrome). Both are public (isPublicAdminPath) and render
-// unconditionally in the showcase: the dev backend mints locals.editor directly, so the seeded session is
+// unconditionally in the showcase: the dev backend mints locals.cairnEditor directly, so the seeded session is
 // inert for these pathname-gated routes and there is no redirect to defend against. The login form is the
 // unauthenticated entry; the confirm page renders its static "Almost there" state for any token (a GET
 // consumes nothing, only the POST verifies), so the token reaches only a hidden input and the screenshot

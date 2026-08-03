@@ -61,6 +61,46 @@ the pass bursts, with no further ask.** Task 12 is the one behavioral
 read of the admin's failure rendering), and everything before it is mechanically verifiable by
 the type gates.
 
+### The cut is TAKEN (Geoff, 2026-08-02, mid-execution)
+
+Execution proposed the cut after Task 4 and Geoff took it, so this is no longer a contingency:
+
+- **C2 carries Tasks 1-11, 13, and 14.**
+- **C2b carries Task 12** (the refusal channel, R10) on its own worktree off `main`, immediately
+  after C2 merges, in the same unpublished window.
+- Task 14 assembles C2's `Consumers must:` list for Tasks 1-11 and 13; C2b appends its own at its
+  close, so the window still presents the consumer one combined batch.
+
+The evidence behind the call was not a task split (there were none) but the cost trajectory and
+the accretion rate: Tasks 1-4, the mechanically-verifiable ones, cost roughly 1.4M subagent
+tokens, and every remaining heavyweight (8, 9, 11, 12, 14) sits in the back half. Two pieces of
+discovered work were absorbed at dispatch time in those four tasks (removing `CairnRolesRegister`
+once `Role`'s deletion orphaned it, and repairing `examples/showcase/e2e/access-map.spec.ts`,
+which sits outside `tsconfig.json`'s include so no gate sees it). Both were routed to the task
+that already owned the file rather than becoming tasks of their own.
+
+An earlier cut was considered and rejected: Tasks 5 through 11 are one coherent grammar sweep,
+and splitting inside them would leave the public surface half-renamed across two merges, which
+costs a consumer more than either whole.
+
+### Discovered during execution, routed (not absorbed)
+
+**`requireAccess`'s target derivation still defaults to `event.url.pathname` (routed to C2b).**
+Task 10 moved `createSectionAction`'s `target` default to `event.route.id` on R9's grounds, that a
+catch-all route's pathname is attacker-chosen and its route id is not. `guard.ts`'s `requireAccess`,
+the load-side counterpart, still defaults to the pathname, so the two halves of one authorization
+story now disagree. The escalation shape is real: on a catch-all route a crafted pathname can match
+a permissive access rule the route's own id would not. This pass does not make anything worse (both
+halves read the pathname on `main` today) and Task 10's scope was written against
+`SectionActionConfig` alone, so C2 ships the asymmetry rather than widening a task in flight. **C2b
+takes it**, where `web-auth-security-reviewer` already gates the diff, and closes it with the same
+fail-closed constant Task 10 introduced.
+
+**`docs/guides/upgrade-cairn.md`'s `## Unreleased` heading is labelled `(non-breaking)`
+(Task 14 fixes it).** Every task in this pass has filed breaking `Consumers must:` entries beneath
+that heading. Relabelling it is a pass-level call, not a task-level one, which is why Task 10
+flagged it instead of retitling it; Task 14 owns the correction batch and carries it.
+
 ---
 
 ## The rulings
@@ -568,6 +608,124 @@ diffs), `api-surface.md` regenerated and committed, STATUS updated, post-mortem 
 merge the PR, hold unpublished. The showcase's green e2e (after in-worktree `npm install`) is
 the migration-list completeness proof.
 
+---
+
+## Execution record (2026-08-02 through 2026-08-03)
+
+**Where the work is: C2 is complete. Tasks 1-11, 13 and 14 landed, the review gate folded, all
+nineteen CI gates green.** Worktree `.claude/worktrees/c2-breaking-window`, branch
+`c2-breaking-window`, off `main` at `d57e7c94`.
+
+**Correction to this record's own earlier claim.** The line below originally read "all gates green
+at every commit". That was false, and the way it was false is the pass's most useful lesson. The
+per-task gate list (this plan's global constraints, lines 35-39) names six gates; CI runs
+**nineteen**. `check:dev-package` was in neither the plan's list nor any task's run, and it failed
+from Task 6 onward: `packages/cairn-cms-dev/src/fake-anthropic.ts` still imported the deleted
+`ContentRoutesDeps`, so the branch could not have merged at any point before close-out. Nothing
+caught it because the root `tsconfig.json` includes only `src/lib` and `src/tests`, and the import
+is type-only, so vitest erases it. The review gate found it; see the fold below.
+
+| Task | Commit | What landed |
+|---|---|---|
+| 1 | `d7d8e437` | `CairnEnv`, `EmailSender`, `PlatformContext` narrowed, the tripwire proof |
+| 2 | `291dfb6d` | `CairnEvent<Env = CairnEnv>` replaces all five event shapes |
+| 3 | `b9adcc08` | the four `locals.cairn*` keys |
+| 4 | `d0b84786` | role names widen to `string`; `Role` and `CairnRolesRegister` removed |
+| 5 | `d2a7436c` | the 19 member and facade-key renames |
+| 6 | `3dde3676` | the type table: bags, factory returns, `UnauditedActionError`, removals |
+| 7 | `c133e50b` | `adminNav` retired; `navLayout` is the one nav seam |
+| 8 | `b36fd15c` | `/admin-fields` merged away; fifteen subpaths chartered |
+| 9 | `a6b72e22` | the export rule adopted |
+| 10 | `ad1d7d91` | section-action audit defaulting; `target` from `event.route.id` |
+| 11 | `ddeebf5f` | the log vocabulary converged on one grammar |
+| 13 | `d94d3df3`, `97659a20` | the formatter nullish rule, plus the `ConceptList` call-site copy |
+| 14a | `e4a10292` | ten empty doc blocks filled, `canReach`'s source contradiction, the allowlist count |
+| 14b | `c9c7d671`, `024337d9` | nine published-docs corrections and the authn/authz terminology sweep |
+| 14c | `9523d024` | the reserved F vocabulary, four phase-P filings, the consolidated `Consumers must:` list |
+| — | `024654c6`, `5c663b93` | the taken cut and the routed findings (plan-only) |
+
+**Task 12 is NOT here. It is pass C2b**, per the taken cut above.
+
+### Close-out commits (2026-08-03)
+
+| Commit | What landed |
+|---|---|
+| `d483f9fd` | code-simplifier fold: two `adminNav`-removal leftovers, a stale fallback doc |
+| `8c7f088b` | the facade action-key vocabulary gate filed to phase P |
+| `40a693f5` | the showcase lockfile's stale local-package metadata refreshed |
+| `72194a5d` | **the `check:dev-package` break fixed** (`ContentRoutesOptions` in the dev package) |
+| `2aa3ae99` | **route groups normalized out of `createSectionAction`'s authorization target**, plus three restored test guards |
+| `c3ca75df` | the bridge-cast comment's false causal claim and a false `scope` docblock corrected |
+| `58bfe3e2` | eleven doc-drift findings from the review gate |
+
+### The tripwire proof (the pass's gating evidence, R5)
+
+`npm run check` on Task 1, before the fixture was touched:
+
+```
+src/tests/unit/env-genericity.test.ts(95,3): error TS2578: Unused '@ts-expect-error' directive.
+```
+
+R5 confirmed: `EmailSender.send` returning `Promise<unknown>` dissolves the
+`@cloudflare/workers-types` `SendEmail` incompatibility, so a bare `wrangler types` env assigns
+into `CairnPlatformBindings` with no cast. The fixture was flipped to a positive `satisfies` so a
+future narrowing on either side re-breaks it, and `CairnPlatformBindings` demoted from C1's
+*required* to a recommended convenience preset (C1's changelog entry amended in the same commit).
+
+### Deviations from the plan's literal text, each with cause
+
+- **`route.id` is `string | null`, not `string`** (Task 2). Kit's own `Handle` runs for unmatched
+  requests where kit reports `null`; a non-nullable id broke `createAuthGuard`'s `Handle`
+  assignability in five real doc snippets under `check:snippets`. Task 10 consumes this with a
+  fail-closed constant, never a pathname fallback.
+- **`CairnRolesRegister` removed alongside `Role`** (Task 4). The register existed solely to
+  narrow `Role`; with `Role` gone the grep found zero code consumers anywhere. Its own
+  `Consumers must:` line was filed.
+- **The export rule is transitively closed** (Task 9). The audit's ~40 estimate, and the
+  main loop's own cross-reference confirming 42, both undercounted: closing each newly-exported
+  type's own structural body grew the list to roughly 90. `CairnAdapter` stays the one documented
+  exception at `/delivery` and `/delivery/data`, because its body reaches auth- and github-shaped
+  types that `delivery-entry-boundary.test.ts` forbids that subpath from importing. The boundary
+  test was preserved, not weakened. Task 9 also **reverses the 2026-07-01 surface-pruning verdict**
+  for 22 root re-additions, recorded as a `C2_READDED` list in `root-barrel-prune.test.ts`.
+- **The union-vs-table parity test did not exist** (Task 11). This plan's Task 11 acceptance
+  asserted one did. It was written test-first instead (`src/tests/unit/log-events-table.test.ts`),
+  failing against the pre-fix table and passing after. R6's two confirmed field-drift rows
+  (`media.uploaded`'s never-emitted `ext`, `github.unreachable`'s never-fired `layout`) are what an
+  unenforced prose claim produces.
+- **`packages/cairn-cms-dev` was outside the plan's file lists** (Task 3) but sets the renamed
+  `locals` keys and runs inside `npm test`. This blind spot was named here and still not closed:
+  the same package broke on Task 6's type rename and shipped red until close-out (see the
+  correction at the top of this record). Naming a blind spot is not the same as gating it.
+- **R5's cast-removal acceptance was never met, and could not be** (Task 1). The ruling said "the
+  `section-action.ts` bridge casts are removed once the tripwire proves dissolution" and Task 1's
+  acceptance said "the casts are gone". Both casts are still there, and empirical removal proves
+  they must be: dropping them yields TS2345 in both directions, because `Env` is a fully
+  unconstrained generic parameter while `adminAction`'s handler is pinned to `CairnEnv`, so
+  `CairnEnv` and `Env` are mutually unassignable. **The ruling conflated two different things.**
+  What the R5 commit actually changed was dropping an `as unknown as` double hop down to a single
+  `as`; the cast itself was never in play, and its reason (an unconstrained generic) has nothing to
+  do with the `EMAIL` return type the tripwire dissolved. The replacement comment then encoded that
+  conflation as fact until the review gate caught it. Corrected in `c3ca75df`, which records the
+  TS2345 evidence at the call site.
+
+### Carried into Task 14, beyond its written file list
+
+1. `scripts/check-reference-signatures.mjs`'s allowlist comment claims `createCairnAdmin` has
+   "fifteen" members; the real `actions` count is 29. Pre-existing, and RN already assigns it here.
+2. The action-vocabulary tables in `docs/reference/sveltekit.md` and `docs/reference/admin-routes.md`
+   were incomplete before this pass (no rows for `settingsSave`, the media actions, `dictionaryAdd`,
+   `tidy`). Task 5 fixed only the renamed rows and correctly left the gaps.
+3. `docs/guides/upgrade-cairn.md`'s `## Unreleased` heading is labelled `(non-breaking)` while
+   every task in this window has filed breaking entries beneath it.
+4. **`CLAUDE.md` says "Two production sites depend on the package." It is three.**
+   `aksailingclub-org/package.json` carries `"@glw907/cairn-cms": "^0.91.1"`. On `0.x` that caret
+   admits only `>=0.91.1 <0.92.0`, so ASC is not on `0.92.0` or `0.93.0` either, and its migration
+   crosses this whole window in one jump. ASC is also the first admin-extension consumer
+   (`docs/internal/2026-08-01-asc-consumer-brief.md`), so it is the site that most exercises what
+   C2 reshaped.
+5. The assembled `Consumers must:` list for the window, cross-checked against the rename table.
+
 ## Self-review notes
 
 - Spec coverage: all eleven items ruled (R1–R11), all confirmed findings disposed
@@ -578,3 +736,77 @@ the migration-list completeness proof.
   Task 8's `TextInput` rename landing first (collision avoidance); the task order encodes this.
 - The one unverified-in-code assumption: R9's current `target` default semantics — Task 10
   carries an explicit verify-before-change step rather than an assumption.
+
+---
+
+## Post-mortem (2026-08-03)
+
+**Shipped.** 214 files, 27 commits, +4584/-2949 against `main`. Thirteen of the fourteen planned
+tasks (Task 12 cut to C2b under the pre-approved split), plus a seven-commit review fold. The
+public surface now follows one stated naming grammar, one event type, one env type, one prefixed
+`locals` namespace, open role names with closed capabilities, fourteen chartered subpaths, and a
+log vocabulary with one grammar. Holds unpublished.
+
+**Verified, with evidence.** All nineteen CI gates green (the pass's own plan listed six).
+`npm test` exit 0 at 384 files / 4725 tests. The consumer-build proof ran from a genuinely
+from-scratch `examples/showcase` install whose symlinks were confirmed to resolve to this worktree
+rather than to `main`, then a clean Rolldown build and 113 Playwright specs. R5's gating tripwire
+fired as required (TS2578) and is recorded above.
+
+### What the review gate bought
+
+Thirteen agents (six dimension finders, one adversarial refuter each, one completeness critic)
+raised 34 findings; 12 died under refutation, 21 survived and were folded. Two justify the whole
+exercise on their own:
+
+1. **The branch could not have merged.** `check:dev-package` had been failing since Task 6, unseen,
+   because it is not in this plan's gate list and no other gate reaches that workspace.
+2. **A fail-closed authorization break this pass introduced.** R9 moved `createSectionAction`'s
+   target from `url.pathname` to `route.id`, which is the right catch-all defense, but a SvelteKit
+   route id carries route-group segments and a URL never does. A site laid out as
+   `src/routes/admin/(app)/roster/` produced target `/admin/(app)/roster` against a map keyed
+   `/admin/roster`; `hasAccessRule` found no prefix match and denied *before* `canReach`'s owner
+   short-circuit could run, so every session got a 403, owner included. The reference's own
+   per-route mounting example uses a route group, so this was the documented layout, not an exotic
+   one. Fixed in `2aa3ae99` by stripping group segments from the derived default only.
+
+The completeness critic earned its slot by hunting weakened tests, which is where it found that
+`root-barrel-prune.test.ts` had dropped `LinkTarget` and `InboundLink` from its assertion lists
+rather than moving them, and that deleting `admin-nav.test.ts` took the reserved-segment shadowing
+coverage with it while the rule stayed live. Both restored and mutation-proved.
+
+### The lesson worth carrying
+
+**Three of the pass's own claims about itself were false, and every one passed every gate it ran.**
+The record said "all gates green at every commit" while a gate it never ran was red. Task 1's
+acceptance said "the casts are gone" when they were not and provably could not be. A code comment
+credited a removal that never happened, to a cause unrelated to it. None of these is a coding
+error; each is a *claim*, and claims are exactly what mechanical checking cannot reach. This is the
+third consecutive pass to find defects of this species at its review gate (C1 found five, the
+xcathletes seams pass shipped `check:snippets` red), which is now enough repetitions to stop
+calling it bad luck.
+
+The structural fix is the one this pass filed to phase P: convert claims into gates. A gate list in
+a plan is itself an unverified claim about what CI runs; the plan should derive it from
+`.github/workflows/test.yml` rather than restate it from memory.
+
+### Carried into C2b
+
+- Task 12, the refusal-channel convergence (ruling R10), on its own worktree off `main` after this
+  merges, same unpublished window, appending its own `Consumers must:` entries.
+- **The `requireAccess` asymmetry, now sharper.** `createSectionAction` derives its target from
+  `route.id` (group-normalized as of `2aa3ae99`); `guard.ts`'s `requireAccess` still defaults to
+  `event.url.pathname`. C2b should note that the group-normalization work is already done and
+  reusable: a `requireAccess` moved onto `route.id` would otherwise reintroduce exactly the break
+  `2aa3ae99` just fixed.
+- `docs/internal/2026-08-01-asc-consumer-brief.md`'s seam 2 first: ASC hand-rolled `club-action.ts`
+  because neither `adminAction` nor `requireAccess` served it, so the fix and the seam request may
+  want shaping together.
+
+### Filed to phase P by this pass
+
+The ambient-block drift gate, the log-events field/value parity gate, the export-rule closure gate,
+the empty-doc-block tripwire, and the facade action-key vocabulary gate (the last one filed at
+close-out, after the e2e proved it cannot pin a renamed `?/` wire name: its UI-driven specs click
+components that rename in lockstep with the keys, so only a spec hardcoding `?/name` pins anything,
+and those cover one of the seven renames).

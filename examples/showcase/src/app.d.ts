@@ -5,7 +5,7 @@ import type { D1Database, ExecutionContext } from '@cloudflare/workers-types';
 // MEDIA_BUCKET, present only because this site turns media on.
 import type { CairnPlatformBindings, CairnMediaBindings } from '@glw907/cairn-cms/sveltekit';
 import type { NavNode } from '@glw907/cairn-cms';
-// App.Locals.editor (set by the engine's auth guard) ships with the engine.
+// App.Locals.cairnEditor (set by the engine's auth guard) ships with the engine.
 import '@glw907/cairn-cms/ambient';
 
 declare global {

@@ -1,19 +1,18 @@
 // cairn-cms: the content routes' shared closure context. createContentRoutesContext builds this
 // object once per createContentRoutes call (the backend resolver, the manifest and media-json
-// readers, the commit-failure handlers, the tidy client, and the validated adminNav), and every
-// per-domain sibling module (content-routes-core.ts, -media.ts, -tidy.ts, -settings.ts,
-// -dictionary.ts) closes over it instead of re-deriving these from `runtime`/`deps` itself. This is
-// the seam a pure closure-lift produces: the domain modules are unchanged in behavior, only in
-// where their shared captures come from.
+// readers, the commit-failure handlers, the tidy client), and every per-domain sibling module
+// (content-routes-core.ts, -media.ts, -tidy.ts, -settings.ts, -dictionary.ts) closes over it
+// instead of re-deriving these from `runtime`/`deps` itself. This is the seam a pure closure-lift
+// produces: the domain modules are unchanged in behavior, only in where their shared captures come
+// from.
 import type { Backend } from '../github/backend.js';
-import type { BackendEnv } from '../github/credentials.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
-import { normalizeAdminNav, validateNavLayout, validateAccessComposition, type ResolvedNavItem, type ResolvedLayoutNode } from './admin-nav.js';
+import { validateNavLayout, validateAccessComposition, type ResolvedLayoutNode } from './admin-nav.js';
 import { DEFAULT_ROLES } from '../auth/roles.js';
 import { normalizePublishActions, type ResolvedPublishAction } from './publish-actions.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
-import type { CookieJar, EventBase } from './types.js';
+import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
 // Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
 // imported only here (a Worker module no component imports statically), and the server-only-deps test
@@ -21,28 +20,6 @@ import type { Editor } from '../auth/types.js';
 // type below keeps the action's surface small and the test seam injectable, so the SDK's deep types
 // never leak into a public signature.
 import Anthropic from '@anthropic-ai/sdk';
-
-/**
- * The structural event the content routes read; a real SvelteKit RequestEvent satisfies it.
- *
- * Deliberately pinned to `BackendEnv`, not generic over a site's own `Env` (env-genericity sweep,
- * pre-beta C1 Task 2): a compile-only fixture proving `createContentRoutes` and `createNavRoutes`
- * against a site's own generated route event, under a realistic compliant `App.Platform['env']`
- * (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the pattern
- * `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings`
- * shares the `GITHUB_APP_PRIVATE_KEY_B64` property name with `BackendEnv`, which is exactly what
- * keeps TypeScript's weak-type detection (TS2559) from rejecting the assignment; a genuinely
- * disjoint env (sharing no property names) still fails it, so the pin costs a compliant site
- * nothing. Adding a type parameter here would be public surface with no fixture forcing it.
- */
-export interface ContentEvent extends EventBase<BackendEnv> {
-  params: Record<string, string>;
-  /**
-   * SvelteKit's cookie jar. The layout load reads the persisted admin theme and issues the CSRF
-   *  token. Optional for non-route callers.
-   */
-  cookies?: CookieJar;
-}
 
 /**
  * The minimal Anthropic client surface the tidy action uses, typed structurally so the SDK's deep
@@ -96,7 +73,7 @@ export function tidyClientErrorStatus(err: unknown): number | undefined {
   return typeof status === 'number' ? status : undefined;
 }
 
-export interface ContentRoutesDeps {
+export interface ContentRoutesOptions {
   /** The tidy action's injectable dependencies, grouped since both members shape one call. */
   tidy?: {
     /**
@@ -130,7 +107,7 @@ export interface ContentRoutesDeps {
    */
   navFilter?: (
     items: ResolvedLayoutNode[],
-    ctx: { editor: Editor; event: ContentEvent },
+    ctx: { editor: Editor; event: CairnEvent },
   ) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>;
   /**
    * Per-session pending-work counts for the shell's nav badges (a queue of unread asset
@@ -146,7 +123,7 @@ export interface ContentRoutesDeps {
    */
   attention?: (ctx: {
     editor: Editor;
-    event: ContentEvent;
+    event: CairnEvent;
   }) => AttentionItem[] | Promise<AttentionItem[]>;
 }
 
@@ -177,16 +154,13 @@ const DEFAULT_TIDY_TIMEOUT_MS = 30_000;
 
 /**
  * The shared captures every content-routes domain module closes over: the resolved runtime and deps,
- *  the validated adminNav, the tidy client and its deadline, and the small set of helpers (backend
- *  resolution, manifest and media-json reads, dictionary path, commit-failure handling) more than one
- *  domain needs. Built once by {@link createContentRoutesContext}; module-local, never exported from
- *  the package.
+ *  the tidy client and its deadline, and the small set of helpers (backend resolution, manifest and
+ *  media-json reads, dictionary path, commit-failure handling) more than one domain needs. Built
+ *  once by {@link createContentRoutesContext}; module-local, never exported from the package.
  */
 export interface ContentRoutesContext {
   runtime: CairnRuntime;
-  deps: ContentRoutesDeps;
-  /** The developer's custom sidebar entries, validated once at construction (server start). */
-  adminNav: ResolvedNavItem[];
+  deps: ContentRoutesOptions;
   /** The developer's publish-actions config, validated once at construction (server start). */
   publishActions: ResolvedPublishAction[];
   /**
@@ -197,10 +171,10 @@ export interface ContentRoutesContext {
   /** The tidy action's own request deadline in milliseconds. */
   tidyTimeoutMs: number;
   /**
-   * Resolve the live content backend for one request. The dev double's `event.locals.backend`
+   * Resolve the live content backend for one request. The dev double's `event.locals.cairnBackend`
    *  wins, else the production `runtime.backend.connect(env)`.
    */
-  resolveBackend(event: ContentEvent): Backend;
+  resolveBackend(event: CairnEvent): Backend;
   /**
    * Main's manifest, parsed. A missing file starts empty (a fresh repo before the first commit).
    *  Always read from main: pending branches carry no manifest copy.
@@ -236,25 +210,20 @@ export interface ContentRoutesContext {
 }
 
 /**
- * Build the shared closure context for one createContentRoutes call: validate the developer's
- *  custom adminNav, resolve the tidy client and its deadline from the injectable deps, and bind the
+ * Build the shared closure context for one createContentRoutes call: validate a declared navLayout,
+ *  resolve the tidy client and its deadline from the injectable deps, and bind the
  *  backend/manifest/media-json/dictionary/commit-failure helpers over `runtime`. Every per-domain
  *  sibling factory takes the returned object as its one argument.
  */
-export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentRoutesDeps = {}): ContentRoutesContext {
-  // Validate the developer's custom adminNav once at construction (server start), so a bad icon name
-  // or a colliding href throws here rather than per request. The shell payload role-filters this set.
-  const adminNav = normalizeAdminNav(runtime.adminNav, runtime.concepts);
-  // Validate a declared navLayout the same fail-loud-at-startup way, beside adminNav's own
-  // validation, so a bad screen reference, an unresolvable role, or declaring both seams throws
-  // here rather than at request time. Undeclared (the common case) skips validation entirely; the
-  // resolver (a later task) synthesizes the default arrangement for that case.
+export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentRoutesOptions = {}): ContentRoutesContext {
+  // Validate a declared navLayout the fail-loud-at-startup way, so a bad screen reference or an
+  // unresolvable role throws here rather than at request time. Undeclared (the common case) skips
+  // validation entirely; the resolver synthesizes the default arrangement for that case.
   if (runtime.navLayout) {
     validateNavLayout(runtime.navLayout, {
       conceptIds: runtime.concepts.map((concept) => concept.id),
       navMenuConfigured: runtime.navMenu !== undefined,
       roleNames: Object.keys(runtime.roles ?? DEFAULT_ROLES),
-      hasAdminNav: runtime.adminNav !== undefined,
     });
   }
   // Validate a declared access map the same fail-loud-at-startup way: a screen-id key that names
@@ -271,14 +240,14 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
   const publishActions = normalizePublishActions(runtime.publishActions, runtime.concepts);
 
   /**
-   * Resolve the live content backend for one request. The dev double's `event.locals.backend`
+   * Resolve the live content backend for one request. The dev double's `event.locals.cairnBackend`
    *  wins, else the production `runtime.backend.connect(env)`. A test rides the same
-   *  `locals.backend` seam the dev double uses, so the read and commit paths run with no real
+   *  `locals.cairnBackend` seam the dev double uses, so the read and commit paths run with no real
    *  token mint. The GitHub provider mints and caches its installation token lazily behind
    *  `connect`, so a per-request resolve re-signs only on a cache miss.
    */
-  function resolveBackend(event: ContentEvent): Backend {
-    return event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
+  function resolveBackend(event: CairnEvent): Backend {
+    return event.locals.cairnBackend ?? runtime.backend.connect(event.platform?.env ?? {});
   }
 
   // The default Anthropic factory builds the real SDK client from the resolved key. Tests inject a fake
@@ -322,7 +291,6 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
   return {
     runtime,
     deps,
-    adminNav,
     publishActions,
     anthropicClient,
     tidyTimeoutMs,

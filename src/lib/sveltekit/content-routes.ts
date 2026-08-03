@@ -12,7 +12,7 @@
 // file directly) sees the same names at the same path.
 import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
-import type { ContentRoutesDeps } from './content-routes-context.js';
+import type { ContentRoutesOptions } from './content-routes-context.js';
 import { createCoreActions } from './content-routes-core.js';
 import type { SaveFailure, DeleteRefusal, RenameFailure } from './content-routes-core.js';
 import { createMediaActions } from './content-routes-media.js';
@@ -32,7 +32,7 @@ import { createDictionaryActions } from './content-routes-dictionary.js';
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
 export type { AdvisoryNotice, AdvisoryAction } from '../content/advisories.js';
 
-export type { ContentEvent, ContentRoutesDeps, TidyClient, AttentionItem } from './content-routes-context.js';
+export type { ContentRoutesOptions, TidyClient, AttentionItem } from './content-routes-context.js';
 
 export type {
   NavConcept,
@@ -45,6 +45,7 @@ export type {
   SaveFailure,
   DeleteRefusal,
   RenameFailure,
+  FragmentTarget,
 } from './content-routes-core.js';
 
 export type {
@@ -60,7 +61,17 @@ export type {
   MediaReplacePreviewEntry,
   MediaReplacePreviewPlan,
   MediaAltPreviewPlan,
+  MediaAltPreviewEntry,
   UploadResult,
+  MediaLibraryEntry,
+  UsageEntry,
+  MediaOrphanScanResult,
+  OrphanByteRow,
+  BrokenRefRow,
+  RepointPlacement,
+  AltPlacement,
+  BranchRef,
+  BulkDeleteSkip,
 } from './content-routes-media.js';
 
 export type { TidyResult } from './content-routes-tidy.js';
@@ -86,7 +97,7 @@ export type ContentFormFailure = Partial<
  *  by admin surface, not by the internal domain split below), which `check:surface` pins as the
  *  public contract.
  */
-export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
+export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOptions = {}) {
   const ctx = createContentRoutesContext(runtime, deps);
   const core = createCoreActions(ctx);
   const media = createMediaActions(ctx);
@@ -94,15 +105,15 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   const settings = createSettingsActions(ctx);
   const dictionary = createDictionaryActions(ctx);
   return {
-    shellPayload: core.shellPayload,
+    shellLoad: core.shellLoad,
     helpLoad: core.helpLoad,
-    indexRedirect: core.indexRedirect,
+    indexLoad: core.indexLoad,
     listLoad: core.listLoad,
     mediaLibraryLoad: media.mediaLibraryLoad,
     settingsLoad: settings.settingsLoad,
-    settingsSave: settings.settingsSave,
+    settingsSaveAction: settings.settingsSaveAction,
     vocabularyLoad: settings.vocabularyLoad,
-    vocabularySave: settings.vocabularySave,
+    vocabularySaveAction: settings.vocabularySaveAction,
     createAction: core.createAction,
     editLoad: core.editLoad,
     saveAction: core.saveAction,
@@ -117,13 +128,16 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     mediaDeleteAction: media.mediaDeleteAction,
     mediaBulkDeleteAction: media.mediaBulkDeleteAction,
     mediaOrphanScanAction: media.mediaOrphanScanAction,
-    mediaPurgeOrphansAction: media.mediaPurgeOrphansAction,
+    mediaOrphanPurgeAction: media.mediaOrphanPurgeAction,
     mediaUpdateAction: media.mediaUpdateAction,
     mediaReplacePreviewAction: media.mediaReplacePreviewAction,
-    mediaReplaceApplyAction: media.mediaReplaceApplyAction,
+    mediaReplaceAction: media.mediaReplaceAction,
     mediaAltPreviewAction: media.mediaAltPreviewAction,
-    mediaAltApplyAction: media.mediaAltApplyAction,
-    addDictionaryWordAction: dictionary.addDictionaryWordAction,
+    mediaAltPropagateAction: media.mediaAltPropagateAction,
+    dictionaryAddAction: dictionary.dictionaryAddAction,
     tidyAction: tidy.tidyAction,
   };
 }
+
+/** What `createContentRoutes` returns: the admin content routes' full load and action vocabulary. */
+export type ContentRoutes = ReturnType<typeof createContentRoutes>;

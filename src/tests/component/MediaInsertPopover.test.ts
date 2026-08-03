@@ -244,7 +244,7 @@ describe('MediaInsertPopover optimistic loop', () => {
 
   it('shows the typed card and cancels (never resolves) on a failure envelope', async () => {
     stubIngest();
-    stubSend(failureBody('too-large'));
+    stubSend(failureBody('too_large'));
     const { api, calls } = fakePlaceholders();
     const editor = fakeEditor(api);
     const screen = render(MediaInsertPopover, {

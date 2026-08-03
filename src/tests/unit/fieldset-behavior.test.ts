@@ -40,6 +40,6 @@ describe('fieldset behavior.validate', () => {
     const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
     const result = throwing.validate({ a: 'value' }, '');
     expect(result.ok).toBe(true);
-    expect(warn).toHaveBeenCalledWith('content.field_behavior_error', { field: 'a', error: 'boom' });
+    expect(warn).toHaveBeenCalledWith('content.field_behavior_failed', { field: 'a', error: 'boom' });
   });
 });

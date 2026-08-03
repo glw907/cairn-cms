@@ -2,7 +2,7 @@
 // back the guard's two rules and the loads that issue the double-submit token. See
 // docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md.
 import { csrfCookieName, generateCsrfToken, tokensMatch } from '../auth/crypto.js';
-import type { CookieJar, RequestContext } from './types.js';
+import type { CairnEvent, CookieJar } from './types.js';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 const FORM_CONTENT_TYPES = new Set([
@@ -19,7 +19,7 @@ export function isUnsafeFormRequest(request: Request): boolean {
 }
 
 /** The faithful framework check: the Origin header equals the request's own origin. */
-export function originMatches(event: Pick<RequestContext, 'url' | 'request'>): boolean {
+export function originMatches(event: Pick<CairnEvent, 'url' | 'request'>): boolean {
   return event.request.headers.get('origin') === event.url.origin;
 }
 
@@ -57,7 +57,7 @@ export function validateCsrfHeader(event: { url: URL; request: Request; cookies:
 }
 
 /** Validate the double-submit token on an admin form POST, reading the field from a body clone. */
-export async function validateCsrfToken(event: RequestContext): Promise<boolean> {
+export async function validateCsrfToken(event: CairnEvent): Promise<boolean> {
   const cookie = event.cookies.get(csrfCookieName(event.url.protocol === 'https:'));
   if (!cookie) return false;
   let submitted = '';

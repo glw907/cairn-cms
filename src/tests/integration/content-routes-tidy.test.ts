@@ -1,16 +1,16 @@
 // Task 11: the tidy Worker action, the first remote model call in the library and the highest blast
 // radius on the server side (untrusted content, the API key). These tests drive tidyAction directly
 // through createContentRoutes against the workerd pool, with the Anthropic client INJECTED so no
-// network call ever happens and no real key is needed. The injection seam is ContentRoutesDeps.tidy.client:
+// network call ever happens and no real key is needed. The injection seam is ContentRoutesOptions.tidy.client:
 // a factory the action calls with the resolved key, returning a structural client whose messages.create
 // the test stubs. The default factory (unset here) builds the real SDK client.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { githubApp } from '../../lib/index.js';
-import { createContentRoutes, type ContentEvent, type TidyClient } from '../../lib/sveltekit/content-routes.js';
+import { createContentRoutes, type TidyClient } from '../../lib/sveltekit/content-routes.js';
 import { keyKnownUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { CookieJar } from '../../lib/sveltekit/types.js';
+import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 
 afterEach(() => resetKeyHealthForTest());
@@ -53,9 +53,9 @@ interface TidyOpts {
   rawBody?: string;
 }
 
-/** Build the ContentEvent for a tidy POST: the JSON `{ text, scope }` rides the raw `text/plain` body,
+/** Build the CairnEvent for a tidy POST: the JSON `{ text, scope }` rides the raw `text/plain` body,
  *  the CSRF token in the X-Cairn-CSRF header. */
-function tidyEvent(opts: TidyOpts = {}): ContentEvent {
+function tidyEvent(opts: TidyOpts = {}): CairnEvent {
   const headers = new Headers();
   headers.set('content-type', 'text/plain');
   if ('csrf' in opts ? opts.csrf !== undefined : true) headers.set('x-cairn-csrf', opts.csrf ?? CSRF);
@@ -64,10 +64,12 @@ function tidyEvent(opts: TidyOpts = {}): ContentEvent {
   return {
     url,
     params: { concept: 'posts', id: 'my-entry' },
+    route: { id: '/admin/[concept]/[id]' },
     request: new Request(url, { method: 'POST', body, headers }),
-    locals: { editor: opts.hasEditor === false ? null : editor },
+    locals: { cairnEditor: opts.hasEditor === false ? null : editor },
     platform: { env: opts.platformEnv ?? { ANTHROPIC_API_KEY: 'sk-test-key' } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
+    setHeaders: () => {},
   };
 }
 
@@ -228,7 +230,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
       "Tidy isn't available right now. Your site's AI access needs attention; let your site developer know.",
     );
     expect(res.data?.error).not.toMatch(/try again/i);
-    expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'auth' }));
+    expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'auth' }));
   });
 
   it('maps a 403 the same way as a 401 (both are auth failures)', async () => {
@@ -256,7 +258,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(502);
-    expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'timeout' }));
+    expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'timeout' }));
   });
 
   it('a plain model error logs reason model (retryable)', async () => {
@@ -268,7 +270,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(502);
-    expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'model' }));
+    expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'model' }));
   });
 });
 

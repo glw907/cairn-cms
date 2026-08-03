@@ -2,11 +2,11 @@ import { describe, it, expect, expectTypeOf } from 'vitest';
 import {
   buildMagicLinkMessage,
   cloudflareSend,
-  type AuthEnv,
   type EmailAttachment,
   type EmailRecipient,
   type MagicLinkMessage,
 } from '../../lib/email.js';
+import type { CairnEnv } from '../../lib/env.js';
 import { CairnError } from '../../lib/diagnostics/index.js';
 
 describe('buildMagicLinkMessage', () => {
@@ -55,7 +55,7 @@ describe('buildMagicLinkMessage', () => {
 describe('cloudflareSend', () => {
   it('calls the EMAIL binding with the built message', async () => {
     const sent: unknown[] = [];
-    const env: AuthEnv = { EMAIL: { send: async (m) => void sent.push(m) } };
+    const env: CairnEnv = { EMAIL: { send: async (m) => void sent.push(m) } };
     await cloudflareSend(env, {
       to: 'ed@x.dev',
       from: 'noreply@x.dev',
@@ -144,9 +144,9 @@ describe('MagicLinkMessage widened fields (type-level)', () => {
     expect(msg.attachments).toHaveLength(2);
   });
 
-  it('widens the AuthEnv EMAIL binding to accept a MagicLinkMessage carrying every field', () => {
+  it('widens the CairnEnv EMAIL binding to accept a MagicLinkMessage carrying every field', () => {
     expectTypeOf<
-      Parameters<NonNullable<AuthEnv['EMAIL']>['send']>[0]
+      Parameters<NonNullable<CairnEnv['EMAIL']>['send']>[0]
     >().toMatchTypeOf<MagicLinkMessage>();
   });
 });

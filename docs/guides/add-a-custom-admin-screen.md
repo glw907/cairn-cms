@@ -130,21 +130,22 @@ same sidebar, top bar, and theme as every built-in view.
 screens build with, so a custom screen reaches for them instead of hand-rolling a parallel header
 or table chrome. The remaining DaisyUI classes (`input`, `btn`) are the same ones cairn builds the
 shell with, so a form needs no stylesheet of its own.
-[`OfficeList`](../reference/components.md#officelist) is the alternative header-plus-card shell
+[`OfficeList`](../reference/admin-toolkit.md#officelist) is the alternative header-plus-card shell
 for a triage screen that wants both in one wrap, with an optional `eyebrow` naming the section a
 screen belongs to; the Club section's own screens below all pass `eyebrow="Club"`.
 
 ## Gate it with `requireSession`, `requireEditor`, or `requireOwner`
 
 The engine's auth guard already ran before this route's `load` does, and it set
-`event.locals.editor` for the whole `/admin/*` subtree, typed with no work on your part by the one
-`import '@glw907/cairn-cms/ambient';` line every site's `src/app.d.ts` carries (see the [ambient
+`event.locals.cairnEditor` for the whole `/admin/*` subtree, typed with no work on your part by the
+one `import '@glw907/cairn-cms/ambient';` line every site's `src/app.d.ts` carries (see the [ambient
 types reference](../reference/ambient.md)). Reading that identity, and refusing the request when it
 isn't good enough, is
 [`requireSession`](../reference/sveltekit.md#requiresession),
 [`requireEditor`](../reference/sveltekit.md#requireeditor), and
-[`requireOwner`](../reference/sveltekit.md#requireowner). All three take the same minimal shape,
-`{ locals: { editor } }`, so they read straight off your route's own `load` or action event.
+[`requireOwner`](../reference/sveltekit.md#requireowner). All three take the same
+[`CairnEvent`](../reference/sveltekit.md#the-event-shape) shape, so a real SvelteKit `load` or
+action event satisfies them structurally with no extra work on your part.
 `requireSession` returns the signed-in editor, of any [capability](../reference/core.md#roles), or
 redirects to `/admin/login`. `requireEditor` does the same, then also answers a `none`-capability
 session with a 403. `requireOwner` goes further still, answering anything short of owner with a
@@ -154,11 +155,11 @@ session with a 403. `requireOwner` goes further still, answering anything short 
 
 **A `none`-capability session, the third rung of cairn's [declared role
 vocabulary](../reference/core.md#roles), still authenticates like any other editor: it carries the
-same populated, typed `locals.editor` and passes through this custom-route seam untouched.** Only
-cairn's own content and roster surfaces refuse it, by calling `requireEditor` or `requireOwner`
-themselves. Nothing here blocks a `none`-capability role from reaching your own screen. You decide
-with whichever of the three preceding calls matches the screen, or your own check on
-`event.locals.editor.capability`. [Give a role its own admin
+same populated, typed `locals.cairnEditor` and passes through this custom-route seam untouched.**
+Only cairn's own content and roster surfaces refuse it, by calling `requireEditor` or
+`requireOwner` themselves. Nothing here blocks a `none`-capability role from reaching your own
+screen. You decide with whichever of the three preceding calls matches the screen, or your own
+check on `event.locals.cairnEditor.capability`. [Give a role its own admin
 area](./give-a-role-its-own-admin-area.md) walks that exact case end to end, and [the
 `requireEditor` reference](../reference/sveltekit.md#requireeditor) states the none contract in
 full.
@@ -305,7 +306,7 @@ them.
 `ctx.audit` (available on every `adminAction`-wrapped handler, `clubAction` included) always logs
 one structured `admin.action.audited` record through the engine's own logger. That is enough to
 read in Workers Logs, but nothing persists it to a queryable table until the site wires
-`event.locals.auditSink` itself: cairn ships the seam, not the storage. The
+`event.locals.cairnAuditSink` itself: cairn ships the seam, not the storage. The
 `import '@glw907/cairn-cms/ambient'` line already in your `src/app.d.ts` types the assignment
 (see the [ambient types reference](../reference/ambient.md)).
 
@@ -340,7 +341,7 @@ const wireClubAuditSink: Handle = ({ event, resolve }) => {
     const ctx = event.platform?.ctx;
     // The bind is required: an unbound `ctx.waitUntil` throws "Illegal invocation" in workerd.
     const waitUntil = ctx ? ctx.waitUntil.bind(ctx) : undefined;
-    if (db) event.locals.auditSink = createClubAuditSink(db, waitUntil);
+    if (db) event.locals.cairnAuditSink = createClubAuditSink(db, waitUntil);
   }
   return resolve(event);
 };
@@ -380,44 +381,43 @@ export function createClubAuditSink(
 Outside a real Cloudflare runtime (a bare unit test, say), `waitUntil` is undefined, and the sink
 still runs, just without that extension; a test asserting on the sink's own call does not need one.
 
-## Link it from the sidebar with `adminNav`
+## Link it from the sidebar with `navLayout`
 
 A sidebar entry is validated data on your adapter's `editor` group. It does not register the
-route; the file already did that. This section covers `adminNav`, which adds an entry beside
-cairn's own built-in group; a site that wants to arrange the whole sidebar, cairn's own screens
-included, declares `navLayout` instead, covered in [Organize your admin
-nav](./organize-your-admin-nav.md) (the two are mutually exclusive). Either way the entry shape
-below is the same:
+route; the file already did that. This section covers `navLayout`, the one seam for your sidebar,
+covered in full in [Organize your admin nav](./organize-your-admin-nav.md). A site entry inside the
+tree is a plain, labeled, iconed link:
 
 ```ts
-import type { AdminNavEntry } from '@glw907/cairn-cms/sveltekit';
+import type { NavLayout } from '@glw907/cairn-cms/sveltekit';
 
-const adminNav: AdminNavEntry[] = [{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }];
+const navLayout: NavLayout = [{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }];
 ```
 
-That array is the value of `adminNav` on your adapter's `editor` group, the same group `nav` and
-`supportContact` live under.
+That array is the value of `navLayout` on your adapter's `editor` group, the same group `nav` and
+`supportContact` live under. Every one of cairn's own screens the tree never mentions still renders,
+in a trailing fallback group; see [Omission falls back; hiding is
+explicit](./organize-your-admin-nav.md#omission-falls-back-hiding-is-explicit) for the mechanism in
+full, including the same single-entry case as the array above.
 
-`icon` has to be one of the nine bundled Lucide names
-([`AdminNavIcon`](../reference/sveltekit.md#adminnavicon):
-`anchor`, `calendar`, `clipboard-list`, `list`, `users`, `package`, `inbox`, `table`, `wrench`), and
-`href` has to be a path no built-in view already owns. Cairn validates both when it builds the
-admin routes at server start, so a typo fails loudly at boot instead of rendering a broken or
-shadowing link:
+`icon` has to be one of the bundled Lucide names
+([`NavIcon`](../reference/sveltekit.md#navicon) lists the full allowlist), and `href` has to be a
+path no built-in view already owns. Cairn validates both when it builds the admin routes at server
+start, so a typo fails loudly at boot instead of rendering a broken or shadowing link:
 
 ```
-adminNav icon "mail" is not one of anchor, calendar, clipboard-list, list, users, package, inbox, table, wrench
-adminNav href "/admin/media" collides with cairn's built-in "media" view; choose an unclaimed /admin/<segment>
+navLayout: icon "envelope" is not one of anchor, banknote, bell, calendar, clipboard-list, file-pen, files, graduation-cap, image, inbox, key-round, life-buoy, list, list-ordered, mail, megaphone, menu, package, puzzle, send, settings, shield-check, table, tags, users, users-round, wrench
+navLayout: href "/admin/media" collides with cairn's built-in "media" view; choose an unclaimed /admin/<segment>
 ```
 
 Set `ownerOnly: true` on an entry to hide it from a signed-in editor whose resolved capability isn't
 `owner`, whatever their role name. That flag only decides what the sidebar renders. It changes
 nothing about what the route itself allows. The
 full seam, including the validated `ResolvedNavEntry` shape the shell
-actually renders, is [the custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam)
+actually renders, is [the navLayout seam](../reference/sveltekit.md#the-navlayout-seam)
 in the SvelteKit reference.
 
-The Club section built so far needs no `adminNav` entry or `navFilter` call to hide itself from a
+The Club section built so far needs no separate `navFilter` call to hide itself from a
 non-`club-admin` editor: since it's gated by the access map, [`resolveNavLayout`](../reference/sveltekit.md#the-navlayout-seam)
 reads the same map and drops it from the sidebar for any role the map doesn't name, and
 `navLayout`'s own declarative `roles` (see [Organize your admin nav](./organize-your-admin-nav.md))
@@ -437,11 +437,11 @@ import { cairn, siteConfig } from './cairn.config.js';
 import { clubFeatureEnabled, resolveClubDb } from './club/roles.js';
 import type { ResolvedLayoutNode } from '@glw907/cairn-cms/sveltekit';
 import type { Editor } from '@glw907/cairn-cms';
-import type { ContentEvent } from '@glw907/cairn-cms/sveltekit';
+import type { CairnEvent } from '@glw907/cairn-cms/sveltekit';
 
 async function filterClubNav(
   items: ResolvedLayoutNode[],
-  ctx: { editor: Editor; event: ContentEvent },
+  ctx: { editor: Editor; event: CairnEvent },
 ): Promise<ResolvedLayoutNode[]> {
   const db = resolveClubDb(ctx.event.platform?.env);
   const boatsEnabled = db ? await clubFeatureEnabled(db, 'boats') : false;
@@ -454,7 +454,7 @@ export const admin = createCairnAdmin(runtime, { navFilter: filterClubNav });
 
 Hiding the link this way is a courtesy, not a gate: pair it with a guard inside the Boats screen's
 own `load` (`requireAccess`, plus your own feature check) so a direct URL still refuses when the
-feature is off. See [`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) for the full
+feature is off. See [`ContentRoutesOptions`](../reference/sveltekit.md#contentroutesoptions) for the full
 `navFilter` signature, and [Organize your admin nav](./organize-your-admin-nav.md) for arranging
 cairn's own screens alongside a section like this one.
 
@@ -510,18 +510,18 @@ used. [`adminAction`](../reference/sveltekit.md#adminaction) documents the admin
 wrapper `createSectionAction`, [documented in full](../reference/sveltekit.md#createsectionaction),
 composes. [`defineRoles`](../reference/core.md#roles) and [Access map](../reference/core.md#access-map)
 document the declarations the Club section builds on, and [Restrict admin access by
-role](./restrict-admin-access.md) walks through wiring them in full. [The custom admin-nav
-seam](../reference/sveltekit.md#the-custom-admin-nav-seam) covers
-`AdminNavEntry`, `AdminNavIcon`, and the validated `ResolvedNavEntry` shape in full, and
-[`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) documents `navFilter`.
-[Organize your admin nav](./organize-your-admin-nav.md) covers `navLayout`, the seam for arranging
-the whole sidebar rather than adding one entry to it.
+role](./restrict-admin-access.md) walks through wiring them in full. [The navLayout
+seam](../reference/sveltekit.md#the-navlayout-seam) covers
+`NavLayoutEntry`, `NavIcon`, and the validated `ResolvedNavEntry` shape in full, and
+[`ContentRoutesOptions`](../reference/sveltekit.md#contentroutesoptions) documents `navFilter`.
+[Organize your admin nav](./organize-your-admin-nav.md) covers arranging the whole sidebar, from
+one added link to a full multi-section tree.
 [`CairnAdminShell`](../reference/components.md#cairnadminshell) documents the shell your screen
 renders inside. [The admin toolkit](../reference/admin-toolkit.md) documents `PageHeader` and
 `AdminTable`, the packaged header and table components this guide's screen builds with, and
-[`OfficeList`](../reference/components.md#officelist) documents the alternative header-plus-card
+[`OfficeList`](../reference/admin-toolkit.md#officelist) documents the alternative header-plus-card
 frame a triage screen composes in one wrap. [`CsrfField`](../reference/components.md#csrffield)
 documents the field every one of this guide's forms needs.
 [The canonical admin mount](../reference/admin-routes.md)
 covers the route pair and layout this guide assumed were already in place, and [the ambient types
-reference](../reference/ambient.md) covers the `locals.editor` typing in full.
+reference](../reference/ambient.md) covers the `locals.cairnEditor` typing in full.

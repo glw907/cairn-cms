@@ -9,11 +9,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
-import { createContentRoutes, type ContentEvent } from '../../lib/sveltekit/content-routes.js';
+import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { hashBytes, shortHash } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { CookieJar } from '../../lib/sveltekit/types.js';
+import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 import type { Backend } from '../../lib/github/backend.js';
 
@@ -51,7 +51,7 @@ function runtime(): CairnRuntime {
   } as CairnRuntime;
 }
 
-// The default read/commit backend every event's `locals.backend` rides.
+// The default read/commit backend every event's `locals.cairnBackend` rides.
 const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A fake cookie jar that returns the csrf cookie under the https `__Host-` name. */
@@ -72,9 +72,9 @@ interface UploadOpts {
   platformEnv?: Record<string, unknown>;
 }
 
-/** Build the ContentEvent for an upload POST. The raw body is the bytes; the filename travels in a
+/** Build the CairnEvent for an upload POST. The raw body is the bytes; the filename travels in a
  *  percent-encoded request header, exactly as the editor upload does. */
-function uploadEvent(opts: UploadOpts & { backend?: Backend }): ContentEvent {
+function uploadEvent(opts: UploadOpts & { backend?: Backend }): CairnEvent {
   const headers = new Headers();
   headers.set('content-type', 'image/png');
   headers.set('content-length', String(opts.bytes.length));
@@ -85,10 +85,12 @@ function uploadEvent(opts: UploadOpts & { backend?: Backend }): ContentEvent {
   return {
     url,
     params: {},
+    route: { id: '/admin/media' },
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
-    locals: { editor: opts.hasEditor === false ? null : editor, backend: opts.backend ?? backend },
+    locals: { cairnEditor: opts.hasEditor === false ? null : editor, cairnBackend: opts.backend ?? backend },
     platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
+    setHeaders: () => {},
   };
 }
 
@@ -170,7 +172,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
 
     expect(res.status).toBe(401);
-    expect(res.data?.error).toBe('session-expired');
+    expect(res.data?.error).toBe('session_expired');
     expect(gh.calls.some((c) => c.method === 'PATCH' && c.url.endsWith('/git/refs/heads/main'))).toBe(false);
   });
 
@@ -188,7 +190,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
 
   it('threads the head read before the manifest into commit as expectedHead', async () => {
     // media.json has no regenerate-from-files backstop, so the commit must be fail-closed on the
-    // head read BEFORE the manifest read, mirroring settingsSave/vocabularySave. Spy on a fresh
+    // head read BEFORE the manifest read, mirroring settingsSaveAction/vocabularySaveAction. Spy on a fresh
     // backend so the guarded commit's 5th argument is directly observable.
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
@@ -227,7 +229,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
     // Wrap the double's fetch: on the FIRST ref-heads GET (the action's own head read, mirroring the
-    // settingsSave conflict test's pattern), land a concurrent uploader's commit out of band, moving
+    // settingsSaveAction conflict test's pattern), land a concurrent uploader's commit out of band, moving
     // the head off the sha the action just read. The SECOND ref-heads GET is commitFiles' own
     // expectedHead check inside the guarded commit, which then sees the moved head and conflicts.
     const doubleFetch = globalThis.fetch as typeof fetch;

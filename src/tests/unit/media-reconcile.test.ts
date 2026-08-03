@@ -130,7 +130,7 @@ describe('runReconcile', () => {
     expect(result.missingObjects).toEqual([]);
   });
 
-  it('emits media.orphan_reconcile with counts only and no bytes or key list', async () => {
+  it('emits media.orphans_reconciled with counts only and no bytes or key list', async () => {
     const manifest: MediaManifest = {
       a1b2c3d4e5f6a7b8: entry('a1b2c3d4e5f6a7b8'),
       ffffffffffffffff: entry('ffffffffffffffff'),
@@ -143,7 +143,7 @@ describe('runReconcile', () => {
     await runReconcile(bucket, manifest);
     expect(infoSpy).toHaveBeenCalledTimes(1);
     const [event, fields] = infoSpy.mock.calls[0];
-    expect(event).toBe('media.orphan_reconcile');
+    expect(event).toBe('media.orphans_reconciled');
     expect(fields).toEqual({ orphaned: 1, missing: 1 });
     // The record carries counts only, never bytes or a key list.
     expect(Object.keys(fields ?? {})).toEqual(['orphaned', 'missing']);

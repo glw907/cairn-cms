@@ -72,7 +72,7 @@ And when the site grows past content editing, the dashboards don't have anywhere
 
 I'd rather develop than support, and that shaped cairn as much as anything. The more user-focused the tool, the more of my time goes to development and the less to technical support. I needed a tool that let me get a site started quickly in a Cloudflare environment and then gave me a groundwork for ongoing development, because most of the sites I build have some degree of functionality beyond being a good CMS.
 
-The engine's side of that bargain is a narrow public surface, checked by gates in CI, so nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, and the magic-link flow is only a default (a developer can replace the auth outright). And your content was plain markdown in your repo all along, so leaving cairn means rewiring the rendering, and the markdown was already yours.
+The engine's side of that bargain is a narrow public surface, checked by gates in CI, so nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.cairnEditor`, and the magic-link flow is only a default (a developer can replace the auth outright). And your content was plain markdown in your repo all along, so leaving cairn means rewiring the rendering, and the markdown was already yours.
 
 ## Why not cairn?
 

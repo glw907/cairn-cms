@@ -5,15 +5,8 @@ import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createSession } from '../../lib/auth/store.js';
 import { sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
 import { defineRoles } from '../../lib/auth/roles.js';
-import type { RequestContext } from '../../lib/sveltekit/types.js';
+import type { CairnEvent } from '../../lib/sveltekit/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
-import type { Role } from '../../lib/auth/types.js';
-
-// This file's Role type is the unaugmented owner/editor pair; naming a custom role in an
-// AccessMap value needs the same double-cast stand-in as guard.test.ts and auth-access.test.ts.
-function r(...names: string[]): Role[] {
-  return names as unknown as Role[];
-}
 
 const db = env.AUTH_DB;
 const handle = createAuthGuard();
@@ -23,11 +16,13 @@ beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM editor')]);
 });
 
-function event(pathname: string, cookies = makeCookies()): RequestContext {
+function event(pathname: string, cookies = makeCookies()): CairnEvent {
   const url = `https://test.dev${pathname}`;
   return {
     url: new URL(url),
     request: new Request(url),
+    params: {},
+    route: { id: '/admin/[...path]' },
     cookies,
     locals: {},
     platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -35,11 +30,13 @@ function event(pathname: string, cookies = makeCookies()): RequestContext {
   };
 }
 
-function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies()): RequestContext {
+function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies()): CairnEvent {
   const url = `http://${host}${pathname}`;
   return {
     url: new URL(url),
     request: new Request(url),
+    params: {},
+    route: { id: '/admin/[...path]' },
     cookies,
     locals: {},
     platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: `https://${host}` } },
@@ -50,7 +47,7 @@ function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies())
 function formEvent(
   pathname: string,
   opts: { csrfCookie?: string; csrfField?: string; csrfHeader?: string; origin?: string } = {},
-): RequestContext {
+): CairnEvent {
   const url = `https://test.dev${pathname}`;
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
@@ -62,6 +59,8 @@ function formEvent(
   return {
     url: new URL(url),
     request: new Request(url, { method: 'POST', headers, body }),
+    params: {},
+    route: { id: '/admin/[...path]' },
     cookies: makeCookies(cookieMap),
     locals: {},
     platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -81,12 +80,12 @@ describe('guard (scenario 6)', () => {
     expect(r).toEqual({ status: 303, location: '/admin/login' });
   });
 
-  it('admits a valid session and populates locals.editor', async () => {
+  it('admits a valid session and populates locals.cairnEditor', async () => {
     const cookies = await seedSession('own@x.dev');
     const ev = event('/admin', cookies);
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'own@x.dev', displayName: 'Ed', role: 'owner', capability: 'owner' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'own@x.dev', displayName: 'Ed', role: 'owner', capability: 'owner' });
   });
 
   it('lets the login and auth endpoints through without a session', async () => {
@@ -119,7 +118,7 @@ describe('capability resolution (a site-declared vocabulary)', () => {
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-club' }));
     const res = await guard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'club@x.dev', displayName: 'Club', role: 'club-admin', capability: 'editor' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'club@x.dev', displayName: 'Club', role: 'club-admin', capability: 'editor' });
   });
 
   it('resolves a declared none-capability role, authenticating without a warn log', async () => {
@@ -132,7 +131,7 @@ describe('capability resolution (a site-declared vocabulary)', () => {
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-inst' }));
     const res = await guard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'inst@x.dev', displayName: 'Inst', role: 'instructor', capability: 'none' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'inst@x.dev', displayName: 'Inst', role: 'instructor', capability: 'none' });
     const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
     expect(events).not.toContain('auth.role.unknown');
     vi.restoreAllMocks();
@@ -148,7 +147,7 @@ describe('capability resolution (a site-declared vocabulary)', () => {
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-orphan' }));
     const res = await guard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'orphan@x.dev', displayName: 'Orphan', role: 'retired-role', capability: 'none' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'orphan@x.dev', displayName: 'Orphan', role: 'retired-role', capability: 'none' });
     const records = warnSpy.mock.calls.map(
       (c) => c[0] as { event?: string; email?: string; role?: string },
     );
@@ -175,8 +174,8 @@ describe('double-wiring: a custom role against a guard that was never handed the
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-unwired' }));
     const res = await unwiredGuard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor?.capability).toBe('none');
-    expect(ev.locals.editor?.capability).not.toBe('owner');
+    expect(ev.locals.cairnEditor?.capability).toBe('none');
+    expect(ev.locals.cairnEditor?.capability).not.toBe('owner');
     const records = warnSpy.mock.calls.map((c) => c[0] as { event?: string; role?: string });
     expect(records.some((r) => r.event === 'auth.role.unknown' && r.role === 'instructor')).toBe(true);
     vi.restoreAllMocks();
@@ -184,8 +183,8 @@ describe('double-wiring: a custom role against a guard that was never handed the
 });
 
 describe('the access map (Task 2)', () => {
-  it('attaches the declared map to locals.cairnAccess alongside locals.editor', async () => {
-    const access: AccessMap = { '/admin/money': r('club-admin') };
+  it('attaches the declared map to locals.cairnAccess alongside locals.cairnEditor', async () => {
+    const access: AccessMap = { '/admin/money': ['club-admin'] };
     const guard = createAuthGuard({ access });
     const cookies = await seedSession('own@x.dev');
     const ev = event('/admin', cookies);
@@ -306,13 +305,15 @@ describe('CSRF (cairn owns it)', () => {
     const cookies = await seedSession('own@x.dev');
     cookies.jar.set(csrfCookieName(true), 'TOK');
     const url = 'https://test.dev/admin/posts/p1';
-    const ev: RequestContext = {
+    const ev: CairnEvent = {
       url: new URL(url),
       request: new Request(url, {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ csrf: 'TOK', title: 'x' }),
       }),
+      params: { concept: 'posts', id: 'p1' },
+      route: { id: '/admin/[concept]/[id]' },
       cookies,
       locals: {},
       platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -320,14 +321,14 @@ describe('CSRF (cairn owns it)', () => {
     };
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor?.email).toBe('own@x.dev');
+    expect(ev.locals.cairnEditor?.email).toBe('own@x.dev');
   });
 
   it('passes an admin POST whose X-Cairn-CSRF header matches, with no form field (the upload path)', async () => {
     const cookies = await seedSession('own@x.dev');
     cookies.jar.set(csrfCookieName(true), 'TOK');
     const url = 'https://test.dev/admin/posts/p1';
-    const ev: RequestContext = {
+    const ev: CairnEvent = {
       url: new URL(url),
       // A text/plain raw-body upload with the token in the header and no csrf form field.
       request: new Request(url, {
@@ -335,6 +336,8 @@ describe('CSRF (cairn owns it)', () => {
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': 'TOK' },
         body: new Uint8Array([0xff, 0xd8, 0xff]),
       }),
+      params: { concept: 'posts', id: 'p1' },
+      route: { id: '/admin/[concept]/[id]' },
       cookies,
       locals: {},
       platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -351,7 +354,7 @@ describe('CSRF (cairn owns it)', () => {
       },
     });
     expect(res).toBe(OK);
-    expect(ev.locals.editor?.email).toBe('own@x.dev');
+    expect(ev.locals.cairnEditor?.email).toBe('own@x.dev');
     expect(seen).toEqual(new Uint8Array([0xff, 0xd8, 0xff]));
   });
 
@@ -366,11 +369,13 @@ describe('CSRF (cairn owns it)', () => {
 });
 
 describe('missing AUTH_DB binding (operator fault)', () => {
-  function unboundEvent(pathname: string): RequestContext {
+  function unboundEvent(pathname: string): CairnEvent {
     const url = `https://test.dev${pathname}`;
     return {
       url: new URL(url),
       request: new Request(url),
+      params: {},
+      route: { id: '/admin/[...path]' },
       cookies: makeCookies(),
       locals: {},
       platform: { env: { PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -439,11 +444,13 @@ describe('missing AUTH_DB binding (operator fault)', () => {
 describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => {
   // AUTH_DB is bound so a refusal proves the tripwire fires before the bindings/session logic, not
   // because a binding is missing. The string '1' is the Worker-var form the dev backend sets.
-  function devBackendEvent(pathname: string, flag: string | boolean): RequestContext {
+  function devBackendEvent(pathname: string, flag: string | boolean): CairnEvent {
     const url = `https://test.dev${pathname}`;
     return {
       url: new URL(url),
       request: new Request(url),
+      params: {},
+      route: { id: '/admin/[...path]' },
       cookies: makeCookies(),
       locals: {},
       platform: { env: { AUTH_DB: db, CAIRN_DEV_BACKEND: flag } },

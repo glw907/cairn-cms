@@ -40,15 +40,18 @@ export type UploadEnvelope =
   | { type: 'error'; status?: number }
   | { type: 'opaqueredirect'; status?: number };
 
-// The server refuse reasons mapped to a card kind. `too-large` keeps its own card; an unsupported
-// type reads as a decode failure to the author (the bytes the browser sent are a type the server
-// will not store); `session-expired` is its own outcome. Every other reason (binding-missing,
-// media-disabled, csrf, length-required, hash-collision) is an operational refusal with no
-// author-actionable specifics, so it collapses to the generic card.
+// The server's snake_case refuse reasons mapped to a card kind. `too_large` keeps its own card; an
+// unsupported type reads as a decode failure to the author (the bytes the browser sent are a type
+// the server will not store); `session_expired` is its own outcome. Every other reason
+// (`binding_missing`, `media_disabled`, `csrf`, `length_required`, `hash_collision`) is an
+// operational refusal with no author-actionable specifics, so it collapses to the generic card.
+// The map's values are this client-only UploadFailureKind vocabulary, kebab-case by its own
+// convention (client-ingest.ts's IngestFailureKind), not the server wire reason: the two
+// vocabularies are independent and only the keys need to track the server's grammar.
 const REFUSE_TO_FAILURE: Record<string, UploadFailureKind | 'session-expired'> = {
-  'too-large': 'too-large',
-  'unsupported-type': 'decode-unsupported',
-  'session-expired': 'session-expired',
+  too_large: 'too-large',
+  unsupported_type: 'decode-unsupported',
+  session_expired: 'session-expired',
 };
 
 /**

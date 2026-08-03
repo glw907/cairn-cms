@@ -705,7 +705,7 @@
 }
 
 /* The stacked field register's width hook (design ratchet Task 3, closes finding 3): a control
-   inside a `.cairn-field-stacked` wrapper (FieldLabel's stacked register, the admin-fields default)
+   inside a `.cairn-field-stacked` wrapper (FieldLabel's stacked register, the admin-toolkit default)
    fills its container instead of clamping to daisyUI's own fixed 20rem preferred width, so a
    consumer cannot forget `w-full` and a stacked field in a wide multi-column grid track fills its
    own cell edge-to-edge. DaisyUI's `.input`/`.select`/`.textarea` width declarations are themselves

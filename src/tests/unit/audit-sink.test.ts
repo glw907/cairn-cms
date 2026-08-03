@@ -211,7 +211,7 @@ describe('createD1AuditSink', () => {
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.audit.sink_failed',
+        event: 'audit.sink.write_failed',
         reason: 'insert_rejected',
         editor: 'ed@x.dev',
         action: 'approve',
@@ -238,7 +238,7 @@ describe('createD1AuditSink', () => {
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.audit.sink_failed',
+        event: 'audit.sink.write_failed',
         reason: 'prepare_failed',
         editor: 'ed@x.dev',
         error: expect.stringContaining('typo binding'),
@@ -266,7 +266,7 @@ describe('createD1AuditSink', () => {
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.audit.sink_failed',
+        event: 'audit.sink.write_failed',
         reason: 'prepare_failed',
         error: expect.stringContaining('D1_TYPE_ERROR'),
       }),
@@ -282,7 +282,7 @@ describe('createD1AuditSink', () => {
     expect(() => sink(record())).not.toThrow();
 
     expect(spy).toHaveBeenCalledWith(
-      expect.objectContaining({ event: 'admin.audit.sink_failed', reason: 'prepare_failed' }),
+      expect.objectContaining({ event: 'audit.sink.write_failed', reason: 'prepare_failed' }),
     );
     spy.mockRestore();
   });
@@ -299,7 +299,7 @@ describe('createD1AuditSink', () => {
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.audit.sink_failed',
+        event: 'audit.sink.write_failed',
         reason: 'wait_until_failed',
         error: expect.stringContaining('Illegal invocation'),
       }),
@@ -320,7 +320,7 @@ describe('createD1AuditSink', () => {
 
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalledWith(
-      expect.objectContaining({ event: 'admin.audit.sink_failed', reason: 'wait_until_failed' }),
+      expect.objectContaining({ event: 'audit.sink.write_failed', reason: 'wait_until_failed' }),
     );
     spy.mockRestore();
   });
@@ -335,7 +335,7 @@ describe('createD1AuditSink', () => {
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.audit.sink_failed',
+        event: 'audit.sink.write_failed',
         reason: 'coercion_failed',
         editor: 'ed@x.dev',
         action: 'approve',
@@ -363,7 +363,7 @@ describe('createD1AuditSink', () => {
 
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
-        event: 'admin.audit.sink_failed',
+        event: 'audit.sink.write_failed',
         reason: 'coercion_failed',
         detail: '[unloggable value]',
         error: expect.stringContaining('boom'),

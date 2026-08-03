@@ -9,9 +9,8 @@
 // consumer provisioning an editor from an address as a user typed it would otherwise write a shadow
 // row that can never sign in yet still counts toward the last-owner guards.
 import type { D1Database } from '@cloudflare/workers-types';
-import type { Role } from './types.js';
 
-type EditorCols = { email: string; display_name: string; role: Role };
+type EditorCols = { email: string; display_name: string; role: string };
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -23,7 +22,7 @@ function normalizeEmail(email: string): string {
  * that needs a full `Editor` (the guard, `editorsLoad`) resolves capability itself and spreads it
  * onto this shape.
  */
-export type EditorRow = { email: string; displayName: string; role: Role };
+export type EditorRow = { email: string; displayName: string; role: string };
 
 function toEditor(row: EditorCols): EditorRow {
   return { email: row.email, displayName: row.display_name, role: row.role };
@@ -128,7 +127,7 @@ export async function insertEditor(
   db: D1Database,
   email: string,
   displayName: string,
-  role: Role,
+  role: string,
   now: number,
 ): Promise<void> {
   await db
@@ -199,7 +198,7 @@ export async function insertOwnerIfEmpty(
 }
 
 /** Change an editor's role. The guard reads the new role on the next request. */
-export async function setEditorRole(db: D1Database, email: string, role: Role): Promise<void> {
+export async function setEditorRole(db: D1Database, email: string, role: string): Promise<void> {
   await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, normalizeEmail(email)).run();
 }
 

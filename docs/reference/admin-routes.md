@@ -89,11 +89,11 @@ export const admin = createCairnAdmin(runtime);
 
 `createCairnAdmin` defaults the magic-link branding from the runtime's `siteName` and `sender`,
 so most sites pass no deps at all. A site that does override something passes the grouped
-`CairnAdminDeps` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
-reads markdown through a fake GitHub backend in development, which rides `event.locals.backend`
+`CairnAdminOptions` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
+reads markdown through a fake GitHub backend in development, which rides `event.locals.cairnBackend`
 from a fenced dev handle rather than through a dep. A deployed site connects the real backend and
 mints installation tokens on demand, so it passes no backend dep. See
-[`CairnAdminDeps`](./sveltekit.md#cairnadmindeps) for the full shape.
+[`CairnAdminOptions`](./sveltekit.md#cairnadminoptions) for the full shape.
 
 Keep the `prerender = false` line. The admin is session-gated, and a site that prerenders by
 default would otherwise try to bake a build-time snapshot of it; the explicit opt-out keeps the
@@ -134,13 +134,28 @@ so a `save` posted to a list URL refuses rather than misfiring:
 | `logout` | any parsed view | the session logout |
 | `create` | list | the entry create |
 | `save` | edit, nav | the entry save, or the nav save (404 without `editor.nav`) |
+| `settingsSave` | settings | the tidy settings commit |
+| `vocabularySave` | vocabulary | the tag-vocabulary commit, with the cross-branch delete gate failing closed |
+| `upload` | edit | the entry-scoped media ingest, staged for the next save |
 | `publish` | edit | the entry publish |
 | `discard` | edit | the pending-edit discard |
 | `rename` | edit | the entry rename |
+| `dictionaryAdd` | edit | the personal-dictionary add |
+| `tidy` | edit | the language-model tidy copy-edit |
 | `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
-| `publishAll` | list, edit, editors, nav | the site-wide publish |
-| `saveVocabulary` | vocabulary | the tag-vocabulary commit, with the cross-branch delete gate failing closed |
-| `addEditor`, `removeEditor`, `setRole` | editors | the owner-gated editor management |
+| `mediaDelete` | media | the committed asset's safe delete |
+| `mediaUpdate` | media | the committed asset's metadata edit (display name, slug, default alt) |
+| `mediaUpload` | media | the media-scoped ingest, the same upload the edit view's `upload` runs |
+| `mediaLibraryUpload` | media | the Library-direct upload, committed in the same step |
+| `mediaReplacePreview` | media | the replace-in-place preview (plans the rewrite, commits nothing) |
+| `mediaReplace` | media | the replace-in-place apply, one atomic commit |
+| `mediaAltPreview` | media | the alt-fill preview (plans the propagation, commits nothing) |
+| `mediaAltPropagate` | media | the alt-fill apply, one atomic commit |
+| `mediaBulkDelete` | media | the multi-select bulk delete, skip-and-report |
+| `mediaOrphanScan` | media | the on-demand orphan scan |
+| `mediaOrphanPurge` | media | the irreversible orphan byte purge |
+| `publishAll` | index, list, edit, editors, nav, media, settings, vocabulary, help (every authed view) | the site-wide publish |
+| `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
 The engine's components post these names, so an action-adding release reaches a site through the
 version bump alone; there is no per-site action table to keep in sync.
@@ -149,17 +164,15 @@ version bump alone; there is no per-site action table to keep in sync.
 
 The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates the whole
 `/admin/*` subtree before any load runs. The mount itself does no access control; the guard owns
-it. The guard sets `event.locals.editor`, and one line in `src/app.d.ts` types it:
+it. The guard sets `event.locals.cairnEditor`, and one line in `src/app.d.ts` types it:
 `import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)). The guard
 and the mount also read a set of Cloudflare bindings (the auth store, the email sender, the GitHub
 App credentials); intersecting
-[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) into `App.Platform.env` is
-required, not merely the tidier way to type it. A site that types `App.Platform.env` any other
-way, hand-rolled bindings or a bare `wrangler types`-generated `Env` straight off
-`@cloudflare/workers-types`, fails to compile `export const actions = admin.actions` below rather
-than surfacing at runtime, because `@cloudflare/workers-types`' `SendEmail.send` returns
-`Promise<EmailSendResult>` while the auth env's `EMAIL.send` declares `Promise<void>`. See
-[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) for the full requirement:
+[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) into `App.Platform.env` is a
+recommended convenience preset, not a requirement. Every route factory's env parameter is
+structurally satisfied by a bare `wrangler types`-generated `Env` too, so the type exists to catch
+a forgotten binding at compile time, not to unblock `export const actions = admin.actions` below.
+See [`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) for the full type:
 
 ```ts
 // src/app.d.ts

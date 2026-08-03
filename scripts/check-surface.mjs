@@ -143,7 +143,7 @@ function renderExport(checker, exportSym) {
 // Render the `/ambient` subpath's surface. The module exports no names (`export {}`), so its real
 // contract is the `declare global` augmentation of `App.Locals`. The augmentation's members are
 // rendered the same way an interface's are, keyed by a synthetic `App.Locals` name, so a change to
-// the ambient identity contract (the `editor`/`backend` fields) drifts the snapshot.
+// the ambient identity contract (the `cairnEditor`/`cairnBackend` fields) drifts the snapshot.
 /** @param {string} dtsPath */
 function renderAmbient(dtsPath) {
   const { checker, source } = loadDts(dtsPath);

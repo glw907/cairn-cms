@@ -21,7 +21,8 @@ import { buildTagUsageIndex } from '../content/tag-usage-index.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { probeTidyKey, type TidyKeyProbeResult } from './tidy-key-probe.js';
 import { cachedProbeResult } from './tidy-key-health.js';
-import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
+import type { ContentRoutesContext } from './content-routes-context.js';
+import type { CairnEvent } from './types.js';
 
 /**
  * The two-tier tidy settings load (spec 2.8, Task 15). The developer tier is read-only: `enabled`,
@@ -120,14 +121,21 @@ function tidyModelLabel(model: string): string {
  *  unrecognized key), not an editor mistake, and the tidy and vocabulary screens render no `form` prop
  *  over a plain, non-enhanced form, so a `fail(400)` would re-render with no visible error; the
  *  redirect carries the message through each screen's own `?error=` validation idiom instead. Any
- *  other error propagates unchanged.
+ *  other error propagates unchanged. `scope` names the calling screen (`'settings'` or
+ *  `'vocabulary'`), which is enough on its own for the settings caller, since nothing else in this
+ *  module emits `config.invalid` with `scope: 'settings'`. It is not enough for the vocabulary
+ *  caller: vocabularyLoad's own degrade-path emit also carries `scope: 'vocabulary'` with the same
+ *  `conditionId`, so the record alone cannot tell this redirect path from that load's degrade path;
+ *  only the reference doc's prose (a load degrades, a save redirects) does. See
+ *  docs/reference/log-events.md's `config.invalid` row, which documents this collision directly.
  */
-function parseSiteConfigOrRedirect(raw: string, errorPath: string): SiteConfig {
+function parseSiteConfigOrRedirect(raw: string, errorPath: string, scope: 'settings' | 'vocabulary'): SiteConfig {
   try {
     return parseSiteConfig(raw);
   } catch (err) {
     if (!(err instanceof SiteConfigError)) throw err;
     log.error('config.invalid', {
+      scope,
       conditionId: 'config.site-config-invalid',
       error: String(err),
     });
@@ -153,7 +161,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  truthful visibility gate, never the key itself: the key is a Worker secret, so this only reports
    *  that a non-empty `ANTHROPIC_API_KEY` exists and the value never leaves the server.
    */
-  function keyConfigured(event: ContentEvent): boolean {
+  function keyConfigured(event: CairnEvent): boolean {
     const env = (event.platform?.env ?? {}) as Record<string, unknown>;
     return typeof env.ANTHROPIC_API_KEY === 'string' && env.ANTHROPIC_API_KEY.length > 0;
   }
@@ -180,7 +188,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  itself bounded by `ctx.tidyTimeoutMs`, the same deadline a tidy call gets, rather than the
    *  Anthropic SDK's own multi-minute default.
    */
-  async function settingsLoad(event: ContentEvent): Promise<SettingsData> {
+  async function settingsLoad(event: CairnEvent): Promise<SettingsData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'settings');
     const tidy = runtime.tidy;
@@ -220,7 +228,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
    */
-  async function settingsSave(event: ContentEvent): Promise<never> {
+  async function settingsSaveAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'settings');
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
@@ -246,7 +254,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     const raw = await backend.readFile(path, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
     // Parse first so a malformed file fails before the write rather than committing onto a broken base.
-    parseSiteConfigOrRedirect(raw, '/admin/settings');
+    parseSiteConfigOrRedirect(raw, '/admin/settings', 'settings');
 
     const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
     try {
@@ -277,9 +285,9 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  still opens. The usage overlay is best-effort and separate, mirroring mediaLibraryLoad: the
    *  manifest read and the non-strict buildTagUsageIndex share one try/catch that degrades `usage` to
    *  `{}` and `unlisted` to `[]` on any failure, keeping the committed vocabulary visible. The safety
-   *  boundary is the strict gate on vocabularySave, never this load, so degrading here is correct.
+   *  boundary is the strict gate on vocabularySaveAction, never this load, so degrading here is correct.
    */
-  async function vocabularyLoad(event: ContentEvent): Promise<VocabularyLoadData> {
+  async function vocabularyLoad(event: CairnEvent): Promise<VocabularyLoadData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'vocabulary');
     const backend = ctx.resolveBackend(event);
@@ -299,6 +307,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
         // A malformed config keeps the same degrade rather than failing the screen closed; the
         // swallow names the operator fault in the log, as navLoad does.
         log.error('config.invalid', {
+          scope: 'vocabulary',
           conditionId: 'config.site-config-invalid',
           error: String(err),
         });
@@ -333,13 +342,13 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   /**
    * Save the tag vocabulary (Plan 3): validate the posted list, gate a delete on cross-branch usage
    *  failing closed, then read-modify-commit the `vocabulary` key into the same committed YAML the
-   *  nav and settings saves write. The transport is settingsSave's exactly: a form POST carrying the
+   *  nav and settings saves write. The transport is settingsSaveAction's exactly: a form POST carrying the
    *  vocabulary JSON, a head-guarded backend.commit, and a stale-head isConflict bounced back as a
    *  reload prompt. The delete gate is the safety boundary: a removed value still in use anywhere the
    *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
-  async function vocabularySave(event: ContentEvent): Promise<never> {
+  async function vocabularySaveAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'vocabulary');
 
@@ -364,7 +373,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
 
     // The delete gate: any value in the current vocabulary but absent from the posted one is being
     // removed, and a removed value still in use anywhere the strict index reads must block the save.
-    const current = extractVocabulary(parseSiteConfigOrRedirect(raw, '/admin/vocabulary'));
+    const current = extractVocabulary(parseSiteConfigOrRedirect(raw, '/admin/vocabulary', 'vocabulary'));
     const postedValues = new Set(posted.map((entry) => entry.value));
     const removed = current.filter((entry) => !postedValues.has(entry.value)).map((entry) => entry.value);
     if (removed.length > 0) {
@@ -402,5 +411,5 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     throw redirect(303, '/admin/vocabulary?saved=1');
   }
 
-  return { settingsLoad, settingsSave, vocabularyLoad, vocabularySave };
+  return { settingsLoad, settingsSaveAction, vocabularyLoad, vocabularySaveAction };
 }

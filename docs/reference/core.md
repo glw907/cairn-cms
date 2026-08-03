@@ -3,7 +3,10 @@
 The root export is the engine. It carries the adapter and schema contract a site declares, the
 markdown render pipeline, the composed runtime, the content and manifest projections, and the auth
 and GitHub App primitives. A site imports it at `src/lib/cairn.config.ts` and in its admin and
-delivery code.
+delivery code. Anything proposed here must be construction surface a `cairn.config.ts` builds
+with, or a read helper a site's own route calls directly; a SvelteKit route factory belongs on
+[`/sveltekit`](./sveltekit.md), and an admin Svelte component on [`/components`](./components.md),
+even though a site's adapter config also feeds both.
 
 ```ts
 import { defineAdapter, defineConcept, fieldset, fields, createRenderer } from '@glw907/cairn-cms';
@@ -492,6 +495,8 @@ declare function createRenderer(
 };
 ```
 
+`createRenderer` exports its return type by name as [`Renderer`](#types).
+
 Compose a site's render pipeline from its component registry: directive syntax, then stamped
 markers, then registry-built hast. It returns `renderMarkdown` plus the fully composed remark and
 rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererOptions`
@@ -831,13 +836,16 @@ declare const DEFAULT_ROLES: { owner: 'owner'; editor: 'editor' };
 ```
 
 Declare a site's role vocabulary on the adapter's `roles` member, the const-generic companion to
-`defineAdapter` and `defineConcept`: it const-captures the literal role names for the typed
-read-side below, and validates at construction, so a misdeclared vocabulary fails at build. It
-throws on an empty record, an empty role name, a malformed declaration, a `home` that is not an
-absolute `/admin`-prefixed path, a missing `owner` key, or an `owner` mapped to anything but owner
+`defineAdapter` and `defineConcept`: it const-captures the literal role names for the caller's own
+use, and validates at construction, so a misdeclared vocabulary fails at build. It throws on an
+empty record, an empty role name, a malformed declaration, a `home` that is not an absolute
+`/admin`-prefixed path, a missing `owner` key, or an `owner` mapped to anything but owner
 capability; `owner` is the one reserved name, since the last-owner guard and the bootstrap owner
 both anchor on it. Every other name is free, and a common name like `editor` may be omitted, or
-declared like any other name.
+declared like any other name. A role *name* types as `string` everywhere the engine reads one
+(`Editor.role`, an `AccessMap` value, a `navLayout` entry's `roles`); only the three-way
+capability (`owner`, `editor`, `none`) is a closed union, since that vocabulary is genuinely
+fixed while a site's own role names are not.
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the roles member -->
 ```ts
@@ -866,7 +874,7 @@ declare function roleHome(roles: RolesDeclaration | undefined, role: string): st
 declare function ownerLevelRoles(roles: RolesDeclaration | undefined): string[];
 ```
 
-The engine calls these to resolve `locals.editor.capability` and the `/admin` landing at the guard
+The engine calls these to resolve `locals.cairnEditor.capability` and the `/admin` landing at the guard
 and the routes; a custom admin route reads the same helpers to gate itself against a vocabulary
 without re-deriving the mapping. `resolveCapability` returns the mapped capability, treating an
 `undefined` vocabulary as `DEFAULT_ROLES`, and returns `'none'` for a role name absent from the
@@ -874,23 +882,6 @@ vocabulary, so a pruned config or a hand-edited row fails closed rather than loc
 of sign-in. `roleHome` returns the declared `home`, or `undefined` when the role declares none or
 is unknown. `ownerLevelRoles` lists every name mapped to owner capability, the set the last-owner
 guard counts across instead of the literal `'owner'` string.
-
-#### The typed read-side: `CairnRolesRegister`
-
-A site augments this empty registry interface once to narrow the public `Role` type to its own
-declared names everywhere the engine and the site's own routes read `locals.editor.role`,
-including custom admin routes. Unaugmented, `Role` stays exactly `'owner' | 'editor'`, today's type.
-
-```ts
-// src/app.d.ts
-import { roles } from './lib/cairn.config.js';
-
-declare module '@glw907/cairn-cms' {
-  interface CairnRolesRegister {
-    roles: typeof roles;
-  }
-}
-```
 
 ### Access map
 
@@ -910,7 +901,7 @@ declare function defineAccess<const A extends AccessMap>(roles: RolesDeclaration
 ```
 
 Declare a site's access map: a target, either an engine screen id (a declared concept, or one of
-`media`, `vocabulary`, `settings`) or an `/admin`-prefixed route path, to the role names admitted
+`media`, `vocabulary`, `nav`, `settings`) or an `/admin`-prefixed route path, to the role names admitted
 to it. Validates at construction, `defineRoles`-style: throws an actionable
 `defineAccess:`-prefixed error on an empty map, a role name outside the given vocabulary, an
 empty role list (owner-only must be written explicitly as `['owner']`), or a key that is neither a
@@ -945,9 +936,13 @@ declare function hasAccessRule(access: AccessMap | undefined, target: string): b
 ```
 
 `canReach` is the one decision point every enforcement and visibility check reads. `none`
-capability reaches nothing, mapped or unmapped. Owner capability reaches every target except the
-`editors` screen, which stays owner-only regardless of the map (the roster screen's existing
-floor, restated here so the one authority function covers it too). A screen-id target absent from
+capability reaches nothing, mapped or unmapped. Owner capability reaches every target, including
+the `editors` screen and any target with no rule; every other capability's reach stops at
+`editors`, which stays owner-only no matter what the map says (the roster screen's existing
+floor, restated here so the one authority function covers it too). In practice a site cannot even
+declare a rule for `editors` and have it silently ignored: composition-time validation
+(`validateAccessComposition`) admits only a declared concept id or one of the fixed engine screens
+as a map key, and throws an actionable error at server start on anything else. A screen-id target absent from
 the map admits any editor-capability session; present, it admits only the named roles. An href
 target matches the deepest path-segment-prefix key in the map (`/admin/money` covers
 `/admin/money/refunds` unless the deeper key is separately mapped; `/admin/moneyx` never matches
@@ -978,11 +973,9 @@ function signatures above reference these.
 | `CairnAdapter` | Extension API | `interface CairnAdapter` | The one seam the engine consumes, declared at `src/lib/cairn.config.ts`. |
 | `ConceptConfig` | Extension API | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, singular, fields, routing, permalink, datePrefix, summaryFields. The optional `singular` names the create affordances ("New post") and defaults to `label`; `routing`/`permalink`/`datePrefix` set the concept's URL policy. |
 | `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
-| `ConceptUrlPolicy` | Extension API | `interface ConceptUrlPolicy` | A concept's permalink pattern and date-prefix granularity, declared per concept via `defineConcept`. |
 | `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. |
 | `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
 | `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `githubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
-| `BackendEnv` | Extension API | `interface BackendEnv` | The Worker secret carrier `connect` reads, holding `GITHUB_APP_PRIVATE_KEY_B64`. |
 | `FileChange` | Extension API | `interface FileChange` | One path change in a commit: write `content`, or delete the path when `content` is null. |
 | `SenderConfig` | Extension API | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
 | `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
@@ -1003,9 +996,9 @@ function signatures above reference these.
 | `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview, and `hydrate` opts the directive into a client [island](./islands.md). |
 | `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `IconSet` | Extension API | `type IconSet` | A glyph name to SVG path-data map the site owns. |
-| `MakeIcon` | Extension API | `type MakeIcon` | A site's icon factory: turn a stamped name and role into a hast element. |
 | `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia?, resolveFragment? }): Promise<string>` the editor preview and every public page call. |
 | `RendererOptions` | Extension API | `interface RendererOptions` | The render pipeline's sanitize, anchor, table-scroll, and plugin-seam controls. |
+| `Renderer` | Extension API | `type Renderer` | What `createRenderer` returns: the composed plugin arrays plus `renderMarkdown`/`renderDocument`, shown expanded in [`createRenderer`](#createrenderer). |
 | `DocHeading` | Extension API | `interface DocHeading` | One heading `renderDocument` collected from a rendered page: `id`, flattened `text`, and `depth` (1-6), in document order. |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | Extension API | `interface NavNode` | One navigation node: label, optional url, optional children. |
@@ -1013,15 +1006,50 @@ function signatures above reference these.
 | <a id="capability"></a>`Capability` | Extension API | `type Capability` | The three levels the engine understands: `'owner'` (manages the roster), `'editor'` (edits content), `'none'` (an authenticated identity with no engine content access). |
 | `RoleDeclaration` | Extension API | `type RoleDeclaration` | One role's mapping in a `defineRoles` vocabulary: a bare `Capability`, or `{ capability: Capability; home?: string }` naming the `/admin` route that role lands on. |
 | `RolesDeclaration` | Extension API | `type RolesDeclaration` | A site's whole role vocabulary: role name to `RoleDeclaration`, the shape `defineRoles` validates and returns. |
-| <a id="cairnrolesregister"></a>`CairnRolesRegister` | Extension API | `interface CairnRolesRegister {}` | The empty registry interface a site augments to narrow `Role` to its own declared role names (see the preceding [Roles](#roles) section). |
-| <a id="role"></a>`Role` | Extension API | `type Role` | The role names `locals.editor.role` carries: registry-derived from `CairnRolesRegister`, defaulting to `'owner' \| 'editor'` when a site declares no vocabulary. |
-| <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, role, and its resolved `capability`. `locals.editor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`/`requireEditor`), and the ambient declaration that types `locals.editor` ships from the [`./ambient`](./ambient.md) subpath. Email is always trimmed and lowercased, an invariant held at every write and lookup path (the `auth.role-vocabulary` and `auth.email-normalization` [doctor checks](./doctor.md) flag a drift). |
-| `AccessMap` | Extension API | `type AccessMap = Record<string, Role[]>` | A site's whole access declaration: a target (an engine screen id or an `/admin`-prefixed route path) to the role names admitted to it. A target absent from the map keeps today's behavior. See [Access map](#access-map). |
-| `AuthEnv` | Extension API | `interface AuthEnv` | Worker bindings and vars the auth layer reads. |
+| <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, an open `role` (`string`; any site-declared name), and its resolved `capability`. `locals.cairnEditor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`/`requireEditor`), and the ambient declaration that types `locals.cairnEditor` ships from the [`./ambient`](./ambient.md) subpath. Email is always trimmed and lowercased, an invariant held at every write and lookup path (the `auth.role-vocabulary` and `auth.email-normalization` [doctor checks](./doctor.md) flag a drift). |
+| `AccessMap` | Extension API | `type AccessMap = Record<string, string[]>` | A site's whole access declaration: a target (an engine screen id or an `/admin`-prefixed route path) to the role names admitted to it. A target absent from the map keeps today's behavior. See [Access map](#access-map). |
+| <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv` | The Worker bindings and vars the whole engine reads, all optional: `AUTH_DB`, `PUBLIC_ORIGIN`, `CAIRN_DEV_BACKEND`, `EMAIL`, `GITHUB_APP_PRIVATE_KEY_B64`. One shape for every factory that needs platform bindings; a site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the required subset compile-checked. |
 | `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API: a bare address, or an address with a display name. |
 | `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
+| `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it with no cast. |
 | `AuthBranding` | Extension API | `interface AuthBranding` | Per-site identity for the magic-link email. |
 | `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries: the five required fields, plus optional `cc`, `bcc`, `replyTo`, and `attachments` widening the Email Sending API surface, live-verified 2026-07-07. `replyTo` takes a single address only; the platform rejects an array there. |
 | `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send a custom `SendMagicLink` implements: `(env, message) => Promise<void>`; production sends through Cloudflare Email Sending. |
 | `RepoFile` | Extension API | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | Extension API | `interface CommitAuthor` | A commit author: the signed-in editor's name and email. |
+| `TextField` | Extension API | `interface TextField` | A single-line text input: `min`/`max`/`length` and a `pattern` constraint. One of `FieldDescriptor`'s fifteen arms (export-rule sweep, C2 breaking-window pass). |
+| `TextareaField` | Extension API | `interface TextareaField` | A multi-line text input, with the same length and pattern constraints as `TextField`. |
+| `NumberField` | Extension API | `interface NumberField` | A numeric input, with `min`/`max` and an `integer` constraint. |
+| `SelectField` | Extension API | `interface SelectField` | A single-choice input over a closed `options` list. |
+| `MultiselectField` | Extension API | `interface MultiselectField` | A multiple-choice input; `creatable` opens it to author-added values, and `taxonomy: true` marks a site's tag field. |
+| `UrlField` | Extension API | `interface UrlField` | A URL input whose format the validator enforces. |
+| `EmailField` | Extension API | `interface EmailField` | An email-address input whose format the validator enforces. |
+| `DateField` | Extension API | `interface DateField` | A calendar-date input, with `min`/`max` bounds as `YYYY-MM-DD`. |
+| `DatetimeField` | Extension API | `interface DatetimeField` | A date-and-time input, with `min`/`max` bounds as ISO strings. |
+| `BooleanField` | Extension API | `interface BooleanField` | A checkbox; absent means false. |
+| `IconField` | Extension API | `interface IconField` | A glyph chosen from the adapter's icon set; the stored value is the glyph's name. |
+| `ImageField` | Extension API | `interface ImageField` | A hero image whose stored value is the nested `ImageValue` object; `seo` marks it as the social-card image. |
+| `ObjectField` | Extension API | `interface ObjectField` | A group of leaf fields, stored as a nested object. Holds only leaves, no nested container. |
+| `ReferenceField` | Extension API | `interface ReferenceField` | A single edge to one entry of a named concept, stored as that target's permanent id. |
+| `ArrayField` | Extension API | `interface ArrayField` | A repeatable field whose stored value is a list of its `item`'s values. |
+| `BehaviorTable` | Extension API | `type BehaviorTable = Record<string, FieldBehavior>` | The behavior table co-bundled with a fieldset, keyed by field name. Empty for a behavior-free fieldset. |
+| `FieldBehavior` | Extension API | `interface FieldBehavior { validate?; itemLabel? }` | Function-valued behavior a field descriptor cannot carry as plain data: a cross-field `validate` and an array row's `itemLabel` deriver. Resident in the app bundle, never the `load` payload. |
+| `DatePrefix` | Extension API | `type DatePrefix = 'year' \| 'month' \| 'day'` | Filename date-prefix granularity for a dated concept: the leading `YYYY[-MM[-DD]]-` on the stem. |
+| `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept (spec §7.2). Posts are dated feed entries; pages are plain navigable structure. |
+| `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. `title` and `body` are special: `title` serializes to the directive `[label]`, `body` to the unmarked content. |
+| `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives: the declared `attributes`, `slot(name)`/`items(name)` readers, and the stamped `node`. |
+| `ManifestEntry` | Extension API | `interface ManifestEntry` | One committed manifest entry's projection: its identity, routing, draft flag, and outbound `cairn:` edges. `Manifest.entries` carries these. |
+| `ReferenceEdge` | Extension API | `interface ReferenceEdge { field: string; concept: string; id: string }` | One typed frontmatter edge from a content entry to a target entry, recorded per manifest entry and reverse-mapped by the cross-branch index. |
+| `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. `MediaResolve`'s own parameter. |
+| `TidyConfig` | Extension API | `interface TidyConfig { enabled?; model?; conventions? }` | The tidy block on the site config; every field optional so the YAML can carry as little as `tidy: { enabled: true }`. |
+| `TidyConventions` | Extension API | `interface TidyConventions` | The corrected convention set the tidy prompt builder consumes, every field resolved to a concrete value from a site's partial `TidyConfig.conventions`. |
+| `NavLayout` | Extension API | `type NavLayout = (NavLayoutEntry \| NavLayoutEngineRef \| NavLayoutSection)[]` | A site's whole declared sidebar: engine references, its own entries, and sections. The adapter's `editor.navLayout` field takes this shape; see [the navLayout seam](./sveltekit.md#the-navlayout-seam) for the full member types. |
+| `NavLayoutEntry` | Extension API | `interface NavLayoutEntry` | A site's own nav entry inside a `navLayout` tree; see [`NavLayoutEntry`](./sveltekit.md#navlayoutentry) for its members. |
+| `NavLayoutEngineRef` | Extension API | `interface NavLayoutEngineRef` | A `navLayout` node that places one of the engine's own screens; see [`NavLayoutEngineRef`](./sveltekit.md#navlayoutengineref). |
+| `NavLayoutSection` | Extension API | `interface NavLayoutSection` | One named group inside a `navLayout` tree; see [`NavLayoutSection`](./sveltekit.md#navlayoutsection). |
+| `PublishActionsConfig` | Extension API | `type PublishActionsConfig = PublishActionEntry[]` | A site's raw `publishActions` config: next-step links rendered on the publish-success moment. |
+| `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link; `href` is a template string substituted with the published entry's identity at resolve time. |
+| `VariantSpec` | Extension API | `interface VariantSpec` | A single image variant: the resize and format directives Cloudflare Images applies to the original bytes. See the preceding [`media` adapter member](#media-adapter-member). |
+| `IslandRegistry` | Extension API | `type IslandRegistry = Record<string, Component>` | A site's hydratable client components, keyed by the name a component `use`s; `hydrateIslands` mounts over the matching `hydrate` directive's static fallback. |
+| `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | Resolve a `media:` reference to its live delivery URL. `undefined` is a preview miss; a resolver that throws is the build backstop. |
+| `ResolveOptions` | Extension API | `type ResolveOptions = { resolve?; resolveMedia?; resolveFragment? }` | The per-call resolver hooks `renderMarkdown` and `renderDocument` both accept, threaded onto the VFile's data so the `cairn:` link, `media:`, and `::include` steps read them at process time. |

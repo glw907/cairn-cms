@@ -8,8 +8,8 @@ import {
   type SectionActionOptions,
 } from '../../lib/sveltekit/section-action.js';
 import { log } from '../../lib/log/index.js';
-import type { AdminActionEvent, AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
-import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
+import type { AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
+import type { CairnEvent, CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 import type { Editor } from '../../lib/auth/types.js';
 import type { Action, ActionFailure, RequestEvent } from '@sveltejs/kit';
@@ -49,24 +49,32 @@ function makeEvent(opts: {
   cairnAccess?: AccessMap;
   env?: TestEnv;
   auditSink?: (record: AdminActionAuditRecord) => void;
-}): AdminActionEvent<TestEnv> {
+  /** The concrete request path; defaults to the shared '/admin/club/events' fixture path. */
+  pathname?: string;
+  /** The route id kit reports; defaults to `pathname` (the static-route case, where they match). */
+  routeId?: string | null;
+}): CairnEvent<TestEnv> {
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
-  const request = new Request('https://x.dev/admin/club/events', {
+  const pathname = opts.pathname ?? '/admin/club/events';
+  const request = new Request(`https://x.dev${pathname}`, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
   });
   return {
-    url: new URL('https://x.dev/admin/club/events'),
+    url: new URL(`https://x.dev${pathname}`),
     request,
+    params: {},
+    route: { id: opts.routeId === undefined ? pathname : opts.routeId },
     cookies: jar(opts.cookie !== undefined ? { '__Host-cairn_csrf': opts.cookie } : {}),
     locals: {
-      editor: opts.editor === undefined ? owner : opts.editor,
+      cairnEditor: opts.editor === undefined ? owner : opts.editor,
       cairnAccess: opts.cairnAccess,
-      auditSink: opts.auditSink,
+      cairnAuditSink: opts.auditSink,
     },
     platform: opts.env === undefined ? undefined : { env: opts.env },
+    setHeaders: () => {},
   };
 }
 
@@ -74,7 +82,7 @@ const mappedTarget = '/admin/club/events';
 const mappedAccess: AccessMap = { [mappedTarget]: ['editor'] };
 
 /** A ready-to-admit event: a verified CSRF pair, an editor-capability session, and a mapped path. */
-function readyEvent(overrides: Parameters<typeof makeEvent>[0] = {}): AdminActionEvent<TestEnv> {
+function readyEvent(overrides: Parameters<typeof makeEvent>[0] = {}): CairnEvent<TestEnv> {
   return makeEvent({
     cookie: 'MATCH',
     csrfField: 'MATCH',
@@ -89,9 +97,15 @@ function auditsOf(sink: ReturnType<typeof vi.fn>): AdminActionAuditRecord[] {
   return sink.mock.calls.map((call) => call[0] as AdminActionAuditRecord);
 }
 
+/**
+ * A handler whose `ctx.audit` call declares neither `action` nor `entity`, so its audit record
+ * proves the default-seeding from the call site's own `SectionActionOptions` (previously this
+ * declared both verbs a second time, diverging from `approveAction`'s `action: 'approve', entity:
+ * 'event'` and masking the double-declaration the audit sweep found).
+ */
 function okHandler() {
   return vi.fn(async ({ ctx }: { ctx: SectionActionContext<FakeDb> }) => {
-    ctx.audit({ action: 'test', entity: 'test' });
+    ctx.audit({});
     return { ok: true, db: ctx.db };
   });
 }
@@ -132,7 +146,7 @@ describe('createSectionAction: no rate limit configured', () => {
 });
 
 describe('createSectionAction: rate limit degrade-to-open', () => {
-  it('runs the handler when rateLimit.resolve returns undefined, and audits nothing for it', async () => {
+  it('runs the handler when rateLimit.resolve returns undefined; the handler audits with no action/entity, which defaults from opts', async () => {
     const sink = vi.fn();
     const { handler, action } = approveAction({
       ...boundDb,
@@ -141,7 +155,7 @@ describe('createSectionAction: rate limit degrade-to-open', () => {
     const result = await action(readyEvent({ auditSink: sink }));
     expect(handler).toHaveBeenCalledOnce();
     expect(result).toEqual({ ok: true, db: fakeDb });
-    expect(auditsOf(sink)).toEqual([expect.objectContaining({ action: 'test', entity: 'test' })]);
+    expect(auditsOf(sink)).toEqual([expect.objectContaining({ action: 'approve', entity: 'event' })]);
   });
 
   it('runs the handler when limit() throws, and logs rate_limit_failed, never rate_limit_absent', async () => {
@@ -327,7 +341,7 @@ describe('createSectionAction: rate limit catch rethrows control-flow shapes', (
   });
 });
 
-describe('createSectionAction: opts.target overrides event.url.pathname (the catch-all defense)', () => {
+describe('createSectionAction: opts.target overrides the default route.id-derived target (the catch-all defense)', () => {
   it('refuses when the map admits the pathname but not the declared target', async () => {
     const { handler, action } = approveAction(boundDb, { target: '/admin/club/other' });
     const result = await action(readyEvent({ cairnAccess: mappedAccess })); // mappedAccess admits pathname, not the target
@@ -341,6 +355,93 @@ describe('createSectionAction: opts.target overrides event.url.pathname (the cat
     const result = await action(readyEvent({ cairnAccess: targetOnlyAccess })); // admits the target, not the pathname
     expect(handler).toHaveBeenCalledOnce();
     expect(result).toEqual({ ok: true, db: fakeDb });
+  });
+});
+
+describe('createSectionAction: target defaults to event.route.id, never the concrete pathname (R9)', () => {
+  it('a parameterized route: an access map keyed on the bracket-form route id admits', async () => {
+    const bracketAccess: AccessMap = { '/admin/club/events/[id]': ['editor'] };
+    const { handler, action } = approveAction(boundDb);
+    const result = await action(
+      readyEvent({
+        cairnAccess: bracketAccess,
+        routeId: '/admin/club/events/[id]',
+        pathname: '/admin/club/events/hello-world',
+      }),
+    );
+    expect(handler).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true, db: fakeDb });
+  });
+
+  it('a parameterized route: an access map keyed on the concrete pathname does not match', async () => {
+    const concreteAccess: AccessMap = { '/admin/club/events/hello-world': ['editor'] };
+    const { handler, action } = approveAction(boundDb);
+    const result = await action(
+      readyEvent({
+        cairnAccess: concreteAccess,
+        routeId: '/admin/club/events/[id]',
+        pathname: '/admin/club/events/hello-world',
+      }),
+    );
+    expect(refusal(result).status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('a route group in the route id authorizes against the URL-shaped access-map key', async () => {
+    // A SvelteKit route group is organizational: `/admin/(app)/club/events` serves the URL
+    // `/admin/club/events`, which is the shape an access map is keyed by.
+    const urlShapedAccess: AccessMap = { '/admin/club/events': ['editor'] };
+    const { handler, action } = approveAction(boundDb);
+    const result = await action(
+      readyEvent({
+        cairnAccess: urlShapedAccess,
+        routeId: '/admin/(app)/club/events',
+        pathname: '/admin/club/events',
+      }),
+    );
+    expect(handler).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true, db: fakeDb });
+  });
+
+  it('strips every route group in a multi-group route id, not just the first', async () => {
+    const urlShapedAccess: AccessMap = { '/admin/club/events/[id]': ['editor'] };
+    const { handler, action } = approveAction(boundDb);
+    const result = await action(
+      readyEvent({
+        cairnAccess: urlShapedAccess,
+        routeId: '/admin/(app)/club/(section)/events/[id]',
+        pathname: '/admin/club/events/hello-world',
+      }),
+    );
+    expect(handler).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true, db: fakeDb });
+  });
+
+  it('leaves an explicit opts.target untouched, group segments included', async () => {
+    // Only the derived default is normalized: a caller who declares a target owns its exact string.
+    const literalAccess: AccessMap = { '/admin/(app)/club/events': ['editor'] };
+    const { handler, action } = approveAction(boundDb, { target: '/admin/(app)/club/events' });
+    const result = await action(readyEvent({ cairnAccess: literalAccess, routeId: '/admin/other' }));
+    expect(handler).toHaveBeenCalledOnce();
+    expect(result).toEqual({ ok: true, db: fakeDb });
+  });
+
+  it('a route id of nothing but groups fails closed rather than collapsing to an empty target', async () => {
+    const rootAccess: AccessMap = { '/': ['editor'], '': ['editor'] };
+    const { handler, action } = approveAction(boundDb);
+    const result = await action(readyEvent({ cairnAccess: rootAccess, routeId: '/(app)' }));
+    expect(refusal(result).status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('a null route.id (the unreachable unmatched-request case) fails closed, never falling back to the pathname', async () => {
+    // Even a map keyed on the exact pathname must not admit: a null route id must never fall
+    // back to url.pathname, the attacker-chosen value this derivation removes.
+    const pathnameKeyedAccess: AccessMap = { '/admin/club/events': ['editor'] };
+    const { handler, action } = approveAction(boundDb);
+    const result = await action(readyEvent({ cairnAccess: pathnameKeyedAccess, routeId: null }));
+    expect(refusal(result).status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
   });
 });
 
@@ -381,18 +482,34 @@ describe('createSectionAction: check ordering', () => {
 });
 
 describe('createSectionAction: happy path', () => {
-  it('hands the handler the exact db object, returns its value, and audits exactly once', async () => {
+  it('hands the handler the exact db object, returns its value, and audits exactly once with the defaulted verbs', async () => {
     const sink = vi.fn();
     const wrap = createSectionAction<TestEnv, FakeDb>(boundDb);
     const handler = vi.fn(async ({ ctx }: { ctx: SectionActionContext<FakeDb> }) => {
       expect(ctx.db).toBe(fakeDb);
-      ctx.audit({ action: 'approve', entity: 'event', entityId: '1' });
+      ctx.audit({ entityId: '1' }); // action/entity default from opts below
       return { approved: true };
     });
     const action = wrap(handler, { action: 'approve', entity: 'event' });
     const result = await action(readyEvent({ auditSink: sink }));
     expect(result).toEqual({ approved: true });
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ action: 'approve', entity: 'event', entityId: '1' })]);
+  });
+
+  it('a handler may still override one verb, for a call that touches more than one entity', async () => {
+    const sink = vi.fn();
+    const wrap = createSectionAction<TestEnv, FakeDb>(boundDb);
+    const handler = vi.fn(async ({ ctx }: { ctx: SectionActionContext<FakeDb> }) => {
+      // action stays the opts default ('approve'); entity is overridden to name the second row.
+      ctx.audit({ entity: 'invitation', entityId: '2' });
+      return { approved: true };
+    });
+    const action = wrap(handler, { action: 'approve', entity: 'event' });
+    const result = await action(readyEvent({ auditSink: sink }));
+    expect(result).toEqual({ approved: true });
+    expect(auditsOf(sink)).toEqual([
+      expect.objectContaining({ action: 'approve', entity: 'invitation', entityId: '2' }),
+    ]);
   });
 });
 
@@ -422,7 +539,17 @@ function typeOnlyRouteActionsAssignability(): void {
     return { id: ctx.db.marker };
   }, { action: 'approve', entity: 'event' });
 
-  approve satisfies Action;
+  // Kit's bare `Action` defaults its RouteId param to `string | null` (the fully-ambient,
+  // no-generated-types case); a real `+page.server.ts` never actually types its `actions` export
+  // against that default, since `./$types`'s own `Actions` always narrows RouteId to that route's
+  // non-null literal id. The explicit RouteId argument here matches that reality rather than the
+  // unreachable fully-ambient case (`CairnEvent['route']['id']` stays `string | null`, matching
+  // kit's own ambient default, so this narrower literal still assigns in with no cast).
+  // OutputData keeps kit's own `Record<string, any> | void` default (env-genericity.test.ts's
+  // `SiteActionReturn` explains why `any`, not `unknown`, is the faithful match: an interface
+  // return with no index signature, like `ActionFailure`, is not structurally assignable to
+  // `Record<string, unknown>`).
+  approve satisfies Action<Record<string, string>, Record<string, any> | void, string>;
 
   // The direct assignability check against a real generated route's Actions record, matching how
   // a site's own `export const actions: Actions = { approve }` assigns this factory's output, but

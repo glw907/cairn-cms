@@ -9,7 +9,6 @@ function ctx(overrides: Partial<Parameters<typeof validateNavLayout>[1]> = {}) {
     conceptIds: ['posts', 'pages'],
     navMenuConfigured: false,
     roleNames: ['owner', 'editor'],
-    hasAdminNav: false,
     ...overrides,
   };
 }
@@ -63,27 +62,17 @@ describe('validateNavLayout: construction throws', () => {
   });
 
   it('rejects a roles name outside the declared vocabulary, on a top-level entry', () => {
-    // 'club-admin' is not in the default owner/editor Role union; a real site's own augmented
-    // vocabulary is what makes a name like this assignable, so the test casts to exercise the
-    // runtime check this task adds, the same way the codebase's own custom-role fixtures do.
-    const layout = [
+    const layout: NavLayout = [
       { label: 'Signups', icon: 'inbox', href: '/admin/signups', roles: ['club-admin'] },
-    ] as unknown as NavLayout;
+    ];
     expect(() => validateNavLayout(layout, ctx())).toThrow(/role "club-admin".*outside the declared vocabulary/);
   });
 
   it('rejects a roles name outside the declared vocabulary, on a section', () => {
-    const layout = [
+    const layout: NavLayout = [
       { label: 'Club', roles: ['club-admin'], children: [{ screen: 'editors' }] },
-    ] as unknown as NavLayout;
+    ];
     expect(() => validateNavLayout(layout, ctx())).toThrow(/role "club-admin".*outside the declared vocabulary/);
-  });
-
-  it('rejects declaring both adminNav and navLayout', () => {
-    const layout: NavLayout = [{ screen: 'settings' }];
-    expect(() => validateNavLayout(layout, ctx({ hasAdminNav: true }))).toThrow(
-      /cannot declare both adminNav and navLayout/,
-    );
   });
 
   it('rejects a blank or whitespace-only section label', () => {
@@ -100,6 +89,29 @@ describe('validateNavLayout: construction throws', () => {
     ];
     expect(() => validateNavLayout(layout, ctx())).toThrow(
       /navLayout: two sections share the label "Club"/,
+    );
+  });
+
+  it('rejects a site entry whose href shadows a reserved admin segment', () => {
+    const layout: NavLayout = [{ label: 'X', icon: 'list', href: '/admin/settings' }];
+    expect(() => validateNavLayout(layout, ctx())).toThrow(
+      /navLayout: href "\/admin\/settings" collides with cairn's built-in "settings" view/,
+    );
+  });
+
+  it('rejects a site entry whose href shadows a built-in view (the media library)', () => {
+    const layout: NavLayout = [{ label: 'X', icon: 'list', href: '/admin/media' }];
+    expect(() => validateNavLayout(layout, ctx())).toThrow(
+      /navLayout: href "\/admin\/media" collides with cairn's built-in "media" view/,
+    );
+  });
+
+  it('rejects a section-embedded entry that shadows a reserved admin segment, the same way', () => {
+    const layout: NavLayout = [
+      { label: 'Club', children: [{ label: 'X', icon: 'list', href: '/admin/editors' }] },
+    ];
+    expect(() => validateNavLayout(layout, ctx())).toThrow(
+      /navLayout: href "\/admin\/editors" collides with cairn's built-in "editors" view/,
     );
   });
 
@@ -120,13 +132,13 @@ describe('validateNavLayout: construction throws', () => {
   });
 });
 
-describe('validateNavLayout: reuses adminNav entry validation for embedded site entries', () => {
-  it('rejects an unknown icon on a top-level entry, the same way normalizeAdminNav does', () => {
+describe('validateNavLayout: a section-embedded entry validates the same way a top-level one does', () => {
+  it('rejects an unknown icon on a top-level entry', () => {
     const layout = [{ label: 'X', icon: 'rocket', href: '/admin/x' }] as unknown as NavLayout;
     expect(() => validateNavLayout(layout, ctx())).toThrow(/icon/);
   });
 
-  it('rejects a colliding href on a section-embedded entry, the same way normalizeAdminNav does', () => {
+  it('rejects a colliding href on a section-embedded entry, the same way a top-level entry is rejected', () => {
     const layout: NavLayout = [{ label: 'Club', children: [{ label: 'X', icon: 'list', href: '/admin/posts' }] }];
     expect(() => validateNavLayout(layout, ctx())).toThrow(/posts/);
   });
@@ -166,17 +178,6 @@ describe('validateNavLayout: wired at admin construction', () => {
     expect(() =>
       createContentRoutes(runtime({ navLayout: [{ screen: 'bogus' }] })),
     ).toThrow(/navLayout: unknown screen "bogus"/);
-  });
-
-  it('throws building createContentRoutes from a runtime declaring both adminNav and navLayout', () => {
-    expect(() =>
-      createContentRoutes(
-        runtime({
-          adminNav: [{ label: 'X', icon: 'wrench', href: '/admin/x' }],
-          navLayout: [{ screen: 'settings' }],
-        }),
-      ),
-    ).toThrow(/cannot declare both adminNav and navLayout/);
   });
 
   it('does not throw building createContentRoutes from a runtime carrying a valid navLayout', () => {

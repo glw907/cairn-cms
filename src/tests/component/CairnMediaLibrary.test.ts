@@ -1596,7 +1596,7 @@ describe('CairnMediaLibrary orphan scan surface', () => {
       /find orphaned files/i.test(b.textContent ?? ''),
     )!;
 
-  // An OrphanScan with two orphaned bytes and one broken reference, the rev.2 fixture.
+  // A MediaOrphanScanResult with two orphaned bytes and one broken reference, the rev.2 fixture.
   const SCAN = {
     orphanedBytes: [
       { key: 'media/a3/a3f81c0e9b2d4f.jpg', hash: 'a3f81c0e9b2d4f00' },

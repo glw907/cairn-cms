@@ -140,7 +140,7 @@ export const fieldEdgeAlignment: RenderedRule = {
         `renders its left edge at ${mismatch.leftPx}px, ${mismatch.leftPx - mismatch.columnLeftPx}px right of ` +
         `its column's leftmost control (${mismatch.columnLeftPx}px) inside ${mismatch.containerSelector}. A ` +
         `staggered left edge is the staircase an inline label of varying width produces; switch the field to ` +
-        `register="stacked" (docs/reference/admin-fields.md), the register that cannot stagger.`,
+        `register="stacked" (docs/reference/admin-toolkit.md), the register that cannot stagger.`,
     }));
   },
 };

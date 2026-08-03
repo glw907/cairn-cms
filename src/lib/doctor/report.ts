@@ -12,7 +12,10 @@ const TAG: Record<CheckResult['status'], string> = {
 };
 
 /**
- *
+ * Render a completed doctor run as plain text: one PASS/FAIL/SKIP line per check, then a
+ * why/remediation block per failed check (resolved from the condition registry by its
+ * `conditionId`), then a pass/fail/skip count. Throws if a failed check's `conditionId` has no
+ * registry entry.
  */
 export function formatReport(results: { check: DoctorCheck; result: CheckResult }[]): string {
   const lines = results.map(

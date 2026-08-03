@@ -417,7 +417,7 @@ persistent "?" carries Markdown help, design-arc D2).
 
   // The personal-dictionary pending additions (spec 1.6), owned here and shared with MarkdownEditor's
   // lint source: an add-to-dictionary choice records the lowercased word here (and clears the underline
-  // at once), and this host commits the set through the addDictionaryWord action at save time. An add
+  // at once), and this host commits the set through the dictionaryAdd action at save time. An add
   // that fails to commit stays here for the session and re-attempts on the next save, so the word is
   // never silently dropped. A plain Set, not $state: the lint source mutates it, and nothing renders
   // from it, so reactivity is unneeded.
@@ -425,7 +425,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // The CSRF token getter from the admin layout context, for the raw-body dictionary commit.
   const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
 
-  /** Commit the pending personal-dictionary additions through the addDictionaryWord action, then drop
+  /** Commit the pending personal-dictionary additions through the dictionaryAdd action, then drop
    *  the words the server confirms from the pending set. Fire-and-forget at save time: the words are
    *  already live in the Worker's in-memory set, so a slow or failed commit never blocks the save. A
    *  failure (a network throw, an expired session, a parsed csrf/400/409) leaves the words pending for
@@ -436,7 +436,7 @@ persistent "?" carries Markdown help, design-arc D2).
     if (pendingAdditions.size === 0) return;
     const words = [...pendingAdditions];
     const outcome = await postFormAction<{ words?: unknown }>(
-      `/admin/${data.conceptId}/${data.id}?/addDictionaryWord`,
+      `/admin/${data.conceptId}/${data.id}?/dictionaryAdd`,
       {
         method: 'POST',
         redirect: 'manual',

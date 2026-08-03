@@ -1,6 +1,6 @@
 // The custom-nav icon allowlist mapped to its Lucide components, each a per-icon default import so
-// only these glyphs ship. The shell reads this map to render a developer's adminNav entry, or a
-// navLayout engine ref's icon override; the content layer never imports it. The key set mirrors
+// only these glyphs ship. The shell reads this map to render a developer's navLayout site entry, or
+// a navLayout engine ref's icon override; the content layer never imports it. The key set mirrors
 // ADMIN_NAV_ICON_NAMES in admin-nav.ts (a component test pins the two against drift).
 import AnchorIcon from '@lucide/svelte/icons/anchor';
 import BanknoteIcon from '@lucide/svelte/icons/banknote';
@@ -36,14 +36,14 @@ import ImageIcon from '@lucide/svelte/icons/image';
 import TagIcon from '@lucide/svelte/icons/tag';
 import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
 import type { Component } from 'svelte';
-import type { AdminNavIcon } from '../sveltekit/admin-nav.js';
+import type { NavIcon } from '../sveltekit/admin-nav.js';
 
 /**
- * Maps each allowed adminNav icon name, or navLayout engine-ref icon override, to its Lucide
+ * Maps each allowed navLayout icon name, or navLayout engine-ref icon override, to its Lucide
  *  component, for the shell to render. `image` and `settings` reuse the same components
  *  {@link ENGINE_NAV_ICONS} carries for its own fixed screens; one Lucide glyph, two allowlists.
  */
-export const ADMIN_NAV_ICONS: Record<AdminNavIcon, Component> = {
+export const ADMIN_NAV_ICONS: Record<NavIcon, Component> = {
   anchor: AnchorIcon,
   banknote: BanknoteIcon,
   bell: BellIcon,

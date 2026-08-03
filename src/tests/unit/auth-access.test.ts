@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { defineAccess, canReach, hasAccessRule } from '../../lib/auth/access.js';
 import { defineRoles } from '../../lib/auth/roles.js';
-import type { Editor, Role } from '../../lib/auth/types.js';
+import type { Editor } from '../../lib/auth/types.js';
 
 const roles = defineRoles({
   owner: 'owner',
@@ -11,21 +11,13 @@ const roles = defineRoles({
 });
 
 function editor(role: string, capability: Editor['capability'] = 'editor'): Editor {
-  return { email: 'e@x.test', displayName: 'E', role: role as Editor['role'], capability };
-}
-
-// This test file exercises a custom vocabulary against the default, unaugmented `Role` type
-// ('owner' | 'editor'), so a map value naming a site's own role needs the same double-cast the
-// rest of the suite uses for a custom role (see guard.test.ts); a real site's `CairnRolesRegister`
-// augmentation narrows `Role` to its declared names and needs no such cast.
-function r(...names: string[]): Role[] {
-  return names as unknown as Role[];
+  return { email: 'e@x.test', displayName: 'E', role, capability };
 }
 
 describe('defineAccess validation', () => {
   it('returns the map unchanged for a valid declaration', () => {
-    const access = defineAccess(roles, { pages: r('webmaster') });
-    expect(access).toEqual({ pages: r('webmaster') });
+    const access = defineAccess(roles, { pages: ['webmaster'] });
+    expect(access).toEqual({ pages: ['webmaster'] });
   });
 
   it('throws on an empty map', () => {
@@ -33,7 +25,7 @@ describe('defineAccess validation', () => {
   });
 
   it('throws on a role name outside the given vocabulary', () => {
-    expect(() => defineAccess(roles, { pages: r('ghost') })).toThrow(/defineAccess/);
+    expect(() => defineAccess(roles, { pages: ['ghost'] })).toThrow(/defineAccess/);
   });
 
   it('throws on an empty role list', () => {
@@ -69,7 +61,7 @@ describe('defineAccess validation', () => {
 });
 
 describe('canReach: capability floors and owner bypass', () => {
-  const access = defineAccess(roles, { pages: r('webmaster'), '/admin/money': r('club-admin') });
+  const access = defineAccess(roles, { pages: ['webmaster'], '/admin/money': ['club-admin'] });
 
   it('none capability reaches nothing, mapped or unmapped', () => {
     expect(canReach(access, editor('ghost', 'none'), 'pages')).toBe(false);
@@ -90,7 +82,7 @@ describe('canReach: capability floors and owner bypass', () => {
 });
 
 describe('canReach: mapped and unmapped screen ids', () => {
-  const access = defineAccess(roles, { pages: r('webmaster') });
+  const access = defineAccess(roles, { pages: ['webmaster'] });
 
   it('admits only the named role for a mapped screen', () => {
     expect(canReach(access, editor('webmaster'), 'pages')).toBe(true);
@@ -108,7 +100,7 @@ describe('canReach: mapped and unmapped screen ids', () => {
 
 describe('canReach: href prefix matching', () => {
   const access = defineAccess(roles, {
-    '/admin/money': r('club-admin'),
+    '/admin/money': ['club-admin'],
     '/admin/money/refunds': ['owner'],
   });
 
@@ -133,8 +125,8 @@ describe('canReach: href prefix matching', () => {
 
 describe('hasAccessRule', () => {
   const access = defineAccess(roles, {
-    pages: r('webmaster'),
-    '/admin/money': r('club-admin'),
+    pages: ['webmaster'],
+    '/admin/money': ['club-admin'],
   });
 
   it('reports true for a mapped screen id, false for an unmapped one', () => {

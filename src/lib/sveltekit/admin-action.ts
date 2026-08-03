@@ -15,9 +15,7 @@ import { csrfCookieName, tokensMatch } from '../auth/crypto.js';
 import { validateCsrfHeader } from './csrf.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
-import type { CookieJar, EventBase } from './types.js';
-import type { AuthEnv } from '../auth/types.js';
-import type { AccessMap } from '../auth/access.js';
+import type { CairnEvent } from './types.js';
 
 /** One audit-log record a mutating admin action must emit through `ctx.audit`. */
 export interface AdminActionAudit {
@@ -34,21 +32,8 @@ export interface AdminActionAudit {
 /** What a site's audit sink receives: the record plus the acting editor's email. */
 export type AdminActionAuditRecord = AdminActionAudit & { editor: string };
 
-/** A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.auditSink`. */
+/** A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.cairnAuditSink`. */
 export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
-
-/**
- * The minimal event shape `adminAction` reads: enough to verify CSRF, the editor, and the sink.
- * Generic over the platform env so `createSectionAction`'s produced wrapper (`./section-action.js`)
- * stays assignable to a route's generated `Actions` when a site's own `App.Platform['env']` names
- * its own bindings; the default preserves every existing consumer's meaning, since `adminAction`
- * itself never reads `event.platform`. `locals.cairnAccess` mirrors what `EventBase` already
- * carries, typed here so a wrapper built on this event can read it without a cast.
- */
-export interface AdminActionEvent<Env = AuthEnv> extends EventBase<Env> {
-  cookies: CookieJar;
-  locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap };
-}
 
 /** What a wrapped handler receives: the verified editor and a bound audit emitter. */
 export interface AdminActionContext {
@@ -59,15 +44,16 @@ export interface AdminActionContext {
 }
 
 /**
- * Thrown by `adminAction` for its one remaining dev-time defect signal: a handler that returned
- * normally (not `fail()`) having emitted zero `ctx.audit` records, thrown only when running under
- * `esm-env`'s `DEV` (or `deps.isDev`). It is a build-time author signal, not a production refusal:
- * in production the same condition logs `admin.action.unaudited` instead (see `adminAction`).
- * Every other refusal `adminAction` makes, a missing editor session or a CSRF mismatch, is
- * SvelteKit's own `redirect()` or `error()`, which carry their status to the browser directly and
- * need no `handleError` mapping; this class no longer stands in for one.
+ * Thrown by `adminAction` for exactly one meaning: a handler that returned normally (not
+ * `fail()`) having emitted zero `ctx.audit` records, thrown only when running under `esm-env`'s
+ * `DEV` (or `deps.isDev`). It is a build-time author signal, not a production refusal: in
+ * production the same condition logs `admin.action.unaudited` instead (see `adminAction`).
+ * `adminAction`'s own authorization refusals, a missing editor session or a CSRF mismatch, throw
+ * SvelteKit's own `redirect()` or `error()` instead, which carry their status to the browser
+ * directly and need no `handleError` mapping; this class carries no production status and never
+ * stood for one.
  */
-export class AdminActionError extends Error {
+export class UnauditedActionError extends Error {
   constructor(
     public status: number,
     message: string,
@@ -77,7 +63,7 @@ export class AdminActionError extends Error {
 }
 
 /** Injectable dependencies for `adminAction`, so a test can drive both branches of the unaudited path. */
-export interface AdminActionDeps {
+export interface AdminActionOptions {
   /** Overrides the build-time dev flag; every real caller takes the default (`esm-env`'s `DEV`). */
   isDev?: boolean;
 }
@@ -100,7 +86,7 @@ function serializeThrownError(error: unknown): string {
 /**
  * Wrap a custom admin action's handler. In order, fail-closed at every step:
  *
- * 1. `event.locals.editor` must be populated (the engine's admin guard already resolved it); its
+ * 1. `event.locals.cairnEditor` must be populated (the engine's admin guard already resolved it); its
  *    absence means the session expired or was never established, so this logs
  *    `admin.action.session_absent` and redirects to `/admin/login`, matching `requireSession`
  *    (`./guard.js`) exactly: an editor whose session lapsed needs the login page, not an error
@@ -136,26 +122,26 @@ function serializeThrownError(error: unknown): string {
  * ```
  *
  * `adminAction` itself stays non-generic over `Env` by design (env-genericity sweep, pre-beta C1
- * Task 2), on the same grounds as `RequestContext`'s pin (`./types.js`), not because it never
- * reads `event.platform`: its returned function is declared as taking `AdminActionEvent<AuthEnv>`
- * (the default type parameter), and a compile-only fixture
- * (`src/tests/unit/env-genericity.test.ts`) proves that assigns clean into a route's generated
- * `Actions` under a realistic compliant `App.Platform['env']`, because `CairnPlatformBindings`
- * (`./platform-bindings.js`) shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with
- * `AuthEnv`, which is what keeps TypeScript's weak-type detection (TS2559) from rejecting the
- * assignment. A site whose action needs its own env bindings, plus a database binding to resolve,
- * reaches for `createSectionAction` (`./section-action.js`), which is generic over `Env` for
- * exactly that reason; note its factory requires a `resolveDb`, so a site wanting only the CSRF-
- * plus-audit contract with no database binding stays on `adminAction` itself rather than reaching
- * for that door.
+ * Task 2), on the same grounds as {@link CairnEvent}'s own default, not because it never reads
+ * `event.platform`: its returned function is declared as taking `CairnEvent<CairnEnv>` (the
+ * default type parameter), and a compile-only fixture (`src/tests/unit/env-genericity.test.ts`)
+ * proves that assigns clean into a route's generated `Actions` under a realistic compliant
+ * `App.Platform['env']`, because `CairnPlatformBindings` (`./platform-bindings.js`) shares
+ * `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with `CairnEnv`, which is what keeps
+ * TypeScript's weak-type detection (TS2559) from rejecting the assignment. A site whose action
+ * needs its own env bindings, plus a database binding to resolve, reaches for
+ * `createSectionAction` (`./section-action.js`), which is generic over `Env` for exactly that
+ * reason; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
+ * contract with no database binding stays on `adminAction` itself rather than reaching for that
+ * door.
  */
 export function adminAction<T>(
-  handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
-  deps: AdminActionDeps = {},
-): (event: AdminActionEvent) => Promise<T> {
+  handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
+  deps: AdminActionOptions = {},
+): (event: CairnEvent) => Promise<T> {
   const dev = deps.isDev ?? DEV;
-  return async (event: AdminActionEvent): Promise<T> => {
-    const editor = event.locals.editor;
+  return async (event: CairnEvent): Promise<T> => {
+    const editor = event.locals.cairnEditor;
     if (!editor) {
       log.warn('admin.action.session_absent', { path: event.url.pathname });
       throw redirect(303, '/admin/login');
@@ -196,7 +182,7 @@ export function adminAction<T>(
         // above already logged the full record, so this failure log carries only the identity
         // fields and the error, never `record.detail`, which can hold arbitrary site data.
         const logSinkFailure = (error: unknown): void => {
-          log.error('admin.action.audit_sink_failed', {
+          log.error('admin.action.sink_threw', {
             path: event.url.pathname,
             action: record.action,
             entity: record.entity,
@@ -206,7 +192,7 @@ export function adminAction<T>(
           });
         };
         try {
-          const outcome = event.locals.auditSink?.(full);
+          const outcome = event.locals.cairnAuditSink?.(full);
           // The sink's declared type is `(record) => void`, but TypeScript's void-return
           // bivariance admits an async function with no error (docs/guides/add-a-custom-admin-
           // screen.md's own `waitUntil` advice is exactly the pressure that writes one). The
@@ -232,7 +218,7 @@ export function adminAction<T>(
     // precisely so callers never need to know that class's shape); a rejected request mutated
     // nothing, so it is exempt from the unaudited check below.
     if (emitted === 0 && !isActionFailure(result)) {
-      if (dev) throw new AdminActionError(500, `unaudited admin action (${event.url.pathname})`);
+      if (dev) throw new UnauditedActionError(500, `unaudited admin action (${event.url.pathname})`);
       log.error('admin.action.unaudited', { path: event.url.pathname, editor: editor.email });
     }
     return result;

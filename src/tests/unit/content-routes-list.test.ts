@@ -28,7 +28,7 @@ function listEvent(params: Record<string, string>, search = '', eventBackend?: B
 
 afterEach(() => vi.restoreAllMocks());
 
-// A sync-throwing backend for a shellPayload test that never installs a GitHub double. The
+// A sync-throwing backend for a shellLoad test that never installs a GitHub double. The
 // shell's `pendingEntries` probe (content-routes-core.ts) is intentionally fire-and-forget, so a
 // test that resolves it against a real backend (a real fetch, a fake token) leaves that fetch
 // running past the test's own return; the eventual 401 and its `console.warn` can land after the
@@ -58,13 +58,13 @@ function makeEvent(opts: {
 /** Narrow the shell payload to its authed member, failing the test loudly otherwise, and await
  *  the streamed pendingEntries probe so it settles before the test returns. */
 async function authedShell(routes: ReturnType<typeof createContentRoutes>, event: unknown) {
-  const { shell } = await routes.shellPayload(event as never);
+  const { shell } = await routes.shellLoad(event as never);
   if (shell.public) throw new Error('expected authed shell');
   await shell.pendingEntries;
   return shell;
 }
 
-describe('shellPayload', () => {
+describe('shellLoad', () => {
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
   });

@@ -18,8 +18,8 @@ import {
 } from '../auth/store.js';
 import { resolveCapability, ownerLevelRoles, DEFAULT_ROLES } from '../auth/roles.js';
 import type { Capability, RolesDeclaration } from '../auth/roles.js';
-import type { Editor, Role } from '../auth/types.js';
-import type { RequestContext } from './types.js';
+import type { Editor } from '../auth/types.js';
+import type { CairnEvent } from './types.js';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -33,12 +33,28 @@ interface EditorActionFailure {
 }
 
 /**
- * Build the owner-gated editor-management routes: list, add, remove, and role-change.
- * `opts.roles` is the site's declared role vocabulary (see `defineRoles`); omitted, the routes
- * validate and resolve against the implicit owner/editor pair, so a zero-config site sees no
- * behavior change.
+ * The editors screen's data (`editorsLoad`): the allowlist (each row carrying its resolved
+ * capability), the acting owner's email, a resolved `?error` code, and the declared role
+ * vocabulary paired with each role's capability.
  */
-export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
+export interface EditorsData {
+  editors: Editor[];
+  self: string;
+  error: string | null;
+  vocabulary: { role: string; capability: Capability }[];
+}
+
+/** Configuration for `createEditorRoutes`: the site's declared role vocabulary. */
+export interface EditorRoutesOptions {
+  /**
+   * The site's declared role vocabulary (see `defineRoles`); omitted, the routes validate and
+   *  resolve against the implicit owner/editor pair, so a zero-config site sees no behavior change.
+   */
+  roles?: RolesDeclaration;
+}
+
+/** Build the owner-gated editor-management routes: list, add, remove, and role-change. */
+export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
   const ownerRoles = ownerLevelRoles(vocabulary);
 
@@ -54,7 +70,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
    *  further field it needs off the returned `form` itself. `owner` is the acting owner's email,
    *  threaded through so a landed mutation can log who made it.
    */
-  async function ownerAction(event: RequestContext): Promise<{ db: D1Database; form: FormData; email: string; owner: string }> {
+  async function ownerAction(event: CairnEvent): Promise<{ db: D1Database; form: FormData; email: string; owner: string }> {
     const owner = requireOwner(event);
     const db = requireDb(event.platform?.env ?? {});
     const form = await event.request.formData();
@@ -69,12 +85,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
    *  bounced back with (the same redirect convention `list`, `edit`, `nav`, and `settings`
    *  already carry their own errors through).
    */
-  async function editorsLoad(event: RequestContext): Promise<{
-    editors: Editor[];
-    self: string;
-    error: string | null;
-    vocabulary: { role: string; capability: Capability }[];
-  }> {
+  async function editorsLoad(event: CairnEvent): Promise<EditorsData> {
     const owner = requireOwner(event);
     const rows = await listEditors(requireDb(event.platform?.env ?? {}));
     const editors = rows.map((row) => ({ ...row, capability: resolveCapability(vocabulary, row.role) }));
@@ -86,7 +97,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
   }
 
   /** POST add an editor. Owner-only. Rejects a role outside the declared vocabulary. */
-  async function addEditorAction(event: RequestContext) {
+  async function editorAddAction(event: CairnEvent) {
     const { db, form, email, owner } = await ownerAction(event);
     const name = String(form.get('name') ?? '').trim();
     const role = parseRole(form.get('role'));
@@ -99,15 +110,15 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
     if (await findEditor(db, email)) {
       return fail(400, { error: 'That editor already exists' } satisfies EditorActionFailure);
     }
-    // Validated against the vocabulary above; Role stays the engine's typed read-side, so the
-    // store's stable signature keeps a guarded cast here rather than widening to a bare string.
-    await insertEditor(db, email, name, role as Role, Date.now());
+    // Validated against the vocabulary above; role names are open (`string`), so the store's
+    // signature takes it directly, with no cast.
+    await insertEditor(db, email, name, role, Date.now());
     log.info('editor.added', { owner, target: email, role, capability: resolveCapability(vocabulary, role) });
     return { ok: true as const };
   }
 
   /** POST remove an editor. Owner-only. Refuses the last owner-capability row, atomically. */
-  async function removeEditorAction(event: RequestContext) {
+  async function editorRemoveAction(event: CairnEvent) {
     const { db, email, owner } = await ownerAction(event);
     const target = await findEditor(db, email);
     if (!target) return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
@@ -126,7 +137,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
    * POST change an editor's role. Owner-only. Rejects a role outside the declared vocabulary and
    *  refuses demoting the last owner-capability row, atomically.
    */
-  async function setRoleAction(event: RequestContext) {
+  async function editorSetRoleAction(event: CairnEvent) {
     const { db, form, email, owner } = await ownerAction(event);
     const role = parseRole(form.get('role'));
     if (!role) return fail(400, { error: 'Choose a valid role' } satisfies EditorActionFailure);
@@ -139,12 +150,15 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
         return fail(400, { error: 'You cannot demote the last owner' } satisfies EditorActionFailure);
       }
     } else {
-      // Validated against the vocabulary above; see the same guarded-cast note in addEditorAction.
-      await setEditorRole(db, email, role as Role);
+      // Validated against the vocabulary above; see the same open-role note in editorAddAction.
+      await setEditorRole(db, email, role);
     }
     log.info('editor.role_changed', { owner, target: email, role, capability: resolveCapability(vocabulary, role) });
     return { ok: true as const };
   }
 
-  return { editorsLoad, addEditorAction, removeEditorAction, setRoleAction };
+  return { editorsLoad, editorAddAction, editorRemoveAction, editorSetRoleAction };
 }
+
+/** What `createEditorRoutes` returns: the owner-gated editor-management load and actions. */
+export type EditorRoutes = ReturnType<typeof createEditorRoutes>;

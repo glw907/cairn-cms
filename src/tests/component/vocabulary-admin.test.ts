@@ -130,9 +130,9 @@ describe('VocabularyAdmin', () => {
       .toBeNull();
   });
 
-  it('posts the working copy as a hidden vocabulary JSON field with a CSRF field to ?/saveVocabulary', async () => {
+  it('posts the working copy as a hidden vocabulary JSON field with a CSRF field to ?/vocabularySave', async () => {
     const screen = render(VocabularyAdmin, { data: data() });
-    const form = screen.container.querySelector<HTMLFormElement>('form[action="?/saveVocabulary"]')!;
+    const form = screen.container.querySelector<HTMLFormElement>('form[action="?/vocabularySave"]')!;
     expect(form).not.toBeNull();
     expect(form.getAttribute('method')?.toUpperCase()).toBe('POST');
     expect(form.querySelector('input[name="csrf"]')).not.toBeNull();

@@ -3,7 +3,8 @@
 This subpath holds the node-safe media surface a site actually reaches into: the config normalizer,
 reading the committed manifest, the `media:` reference codec, and the render-time resolver. All of
 it is pure projection. Nothing here pulls `@sveltejs/kit` or `@cloudflare/workers-types` into the
-module graph, so a plain-Node tool, a Vite build step, or a site's render path can import it. The
+module graph, so a plain-Node tool, a Vite build step, or a site's render path can import it.
+Anything proposed here must be node-safe pure projection over the media surface. The
 R2-touching pieces (the object store and the delivery bucket seam), the `requireBucket` helper, and
 the `createMediaRoute` delivery factory live on [`/sveltekit`](./sveltekit.md) instead, off this
 surface, so the public type for `/media` names no kit or workers-types type. The manifest CRUD, the
@@ -12,7 +13,7 @@ upload and preview pipeline; every real caller reaches them by relative import, 
 unexported internals rather than public surface.
 
 ```ts
-import { makeMediaResolver, normalizeAssets } from '@glw907/cairn-cms/media';
+import { buildMediaResolver, normalizeAssets } from '@glw907/cairn-cms/media';
 ```
 
 A site reaches into this subpath to back its public render path with a media resolver: it reads the
@@ -22,10 +23,10 @@ types in `src/lib/media` and `src/lib/render/resolve-media.ts` are the source of
 export-coverage gate checks every name here against them.
 
 ```ts
-import { normalizeAssets, makeMediaResolver } from '@glw907/cairn-cms/media';
+import { normalizeAssets, buildMediaResolver } from '@glw907/cairn-cms/media';
 import mediaManifest from '../content/.cairn/media.json';
 
-const resolveMedia = makeMediaResolver(mediaManifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
+const resolveMedia = buildMediaResolver(mediaManifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
 ```
 
 ---
@@ -102,12 +103,12 @@ round trip is stable.
 
 ## The render resolver
 
-### `makeMediaResolver`
+### `buildMediaResolver`
 
 Stability tier: Extension API.
 
 ```ts
-declare function makeMediaResolver(
+declare function buildMediaResolver(
   manifest: MediaManifest,
   resolved: ResolvedAssetConfig,
   opts?: { preset?: string },
@@ -140,6 +141,7 @@ its layout is a template-level concern, since the engine has no dimensions to de
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
+| `AssetConfig` | Extension API | `interface AssetConfig { bucketBinding; publicBase?; urlForm?; maxUploadBytes?; allowedTypes?; variants?; transformations? }` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named variant presets. `normalizeAssets` resolves it into `ResolvedAssetConfig`. |
 | `ResolvedAssetConfig` | Extension API | `type ResolvedAssetConfig = { enabled: false } \| { enabled: true; bucketBinding; publicBase; urlForm; maxUploadBytes; allowedTypes; variants; transformations }` | The resolved media config the engine serves from. An absent `assets` block yields the `{ enabled: false }` variant; otherwise every field is filled from the `AssetConfig` or its default. |
 | `MediaEntry` | Extension API | `interface MediaEntry { hash; sha256; slug; displayName; originalFilename; alt; ext; contentType; bytes; width; height; createdAt }` | One stored asset's row: its content hash, its human layer, and its byte and pixel facts. `width` and `height` are `null` when no dimensions are known. |
 | `MediaManifest` | Extension API | `type MediaManifest = Record<string, MediaEntry>` | The whole stored-asset record, keyed by the 16-hex content-hash prefix. |

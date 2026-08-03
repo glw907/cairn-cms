@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
 
 test('a custom admin screen renders in the shell, reads identity, and writes its own D1', async ({ page }) => {
   await page.goto('/admin/signups');
-  // The registered adminNav entry renders as a sidebar link inside the shared shell. Scope to the
+  // The registered navLayout entry renders as a sidebar link inside the shared shell. Scope to the
   // sidebar nav: the same href also resolves in the command palette (which maps the nav items), so a
   // bare locator would match two real elements.
   await expect(

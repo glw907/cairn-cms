@@ -38,7 +38,7 @@ describe('CairnTidySettings: the visibility gate (tidy disabled)', () => {
     // The spellcheck reassurance is present.
     await expect.element(screen.getByText(/spellcheck is already working/i)).toBeInTheDocument();
     // No editor-tier section.
-    expect(screen.container.querySelector('form[action="?/saveSettings"]')).toBeNull();
+    expect(screen.container.querySelector('form[action="?/settingsSave"]')).toBeNull();
   });
 
   it('puts no convention control in the tab order (absent, not disabled)', async () => {
@@ -72,7 +72,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     expect(screen.container.textContent).toMatch(/set by your developer/i);
     await expect.element(screen.getByText(/Claude Sonnet/)).toBeInTheDocument();
     // The form exists, so the editor tier is present.
-    expect(screen.container.querySelector('form[action="?/saveSettings"]')).not.toBeNull();
+    expect(screen.container.querySelector('form[action="?/settingsSave"]')).not.toBeNull();
   });
 
   it('renders the check-and-tint toggles and the style rows at rest', async () => {
@@ -168,13 +168,13 @@ describe('CairnTidySettings: the broken-key state (save-500-honest-errors, Task 
     await expect.element(screen.getByRole('region', { name: /key isn.t working/i })).toBeInTheDocument();
     expect(screen.container.querySelector('[aria-label="Tidy is not set up"]')).toBeNull();
     // No editor-tier section either: the gate stays closed.
-    expect(screen.container.querySelector('form[action="?/saveSettings"]')).toBeNull();
+    expect(screen.container.querySelector('form[action="?/settingsSave"]')).toBeNull();
   });
 
   it('keeps the editor tier open when the probe is unverifiable ("unknown"), never punishing it', async () => {
     const screen = render(CairnTidySettings, {
       data: data({ enabled: true, keyConfigured: true, keyStatus: 'unknown' }),
     });
-    expect(screen.container.querySelector('form[action="?/saveSettings"]')).not.toBeNull();
+    expect(screen.container.querySelector('form[action="?/settingsSave"]')).not.toBeNull();
   });
 });

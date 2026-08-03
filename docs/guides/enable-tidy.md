@@ -76,8 +76,8 @@ if it were a plain var, and says so honestly rather than claiming a verification
 makes it skip.
 
 The real test is running tidy once. Open an entry in the admin, invoke tidy on a paragraph, and
-confirm it comes back with proposals. With observability on, a successful call logs `tidy.done`
-with the model and the token usage. A broken key instead logs `tidy.error`, or refuses outright
+confirm it comes back with proposals. With observability on, a successful call logs `tidy.succeeded`
+with the model and the token usage. A broken key instead logs `tidy.failed`, or refuses outright
 before the call ever goes out. [Log events](../reference/log-events.md) covers the whole `tidy.*`
 family, and [Read cairn's logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 

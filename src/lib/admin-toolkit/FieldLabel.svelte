@@ -9,10 +9,11 @@ control for a shared row's width (the finding-3 defect: an inline label's own te
 shrinkable of a flex row's two children, so a long label wraps once the row narrows). `inline`
 (label beside its control on one line, `flex items-center gap-1.5 type-body`, muted) stays
 available as the explicit, control-adjacent exception: a toolbar filter, a compact panel, a row
-already scoped tightly enough by a group legend that a full stacked label would be excess. Part of
-the `admin-fields` subpath (Part C item 1 of the phase-2 design suite); compose it directly around
-a bare custom control when a site's own field needs the admin's label rhythm with no bundled
-primitive to match. `SelectField` and `TextField` both wrap it internally.
+already scoped tightly enough by a group legend that a full stacked label would be excess. One of
+the toolkit's field primitives (merged from the retired `admin-fields` subpath, C2 breaking-window
+pass, R3); compose it directly around a bare custom control when a site's own field needs the
+admin's label rhythm with no bundled primitive to match. `SelectInput` and `TextInput` both wrap it
+internally.
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

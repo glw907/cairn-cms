@@ -9,12 +9,12 @@ import {
 } from '../../../lib/audit/config.js';
 
 describe('DEFAULT_STATIC_SCOPE', () => {
-  // The Phase 1 finding: admin-fields is the third public surface rendering inside the admin
-  // theme, and its absence from the stylesheet scan roots silently broke a shipped class. The
-  // audit's default scope carries the same roots the build and the class gate scan.
+  // The Phase 1 finding: a rendering surface's absence from the stylesheet scan roots silently
+  // broke a shipped class (the retired admin-fields subpath, before its C2 merge into
+  // admin-toolkit). The audit's default scope carries the same roots the build and the class gate
+  // scan.
   it('carries every surface that renders inside the admin theme', () => {
     expect(DEFAULT_STATIC_SCOPE).toContain('src/lib/admin-toolkit');
-    expect(DEFAULT_STATIC_SCOPE).toContain('src/lib/admin-fields');
     expect(DEFAULT_STATIC_SCOPE).toContain('src/lib/components');
   });
 

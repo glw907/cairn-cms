@@ -113,8 +113,9 @@ to prune a stale friction log that resurfaced a killed feature), so a pass that 
 backlog item is not done until the roadmap stops listing it. Shipped history lives in `docs/STATUS.md`
 and the per-plan post-mortems, not in the roadmap.
 
-Two production sites depend on the package, so a stale doc costs real users. Treat the docs update as
-part of the work, not a chore after it. See the `docs-is-a-pass-dimension` memory.
+Four production sites depend on the package, each on its own version range, so a stale doc costs
+real users. Treat the docs update as part of the work, not a chore after it. See the
+`docs-is-a-pass-dimension` memory.
 
 ## Releases (cadence and scheme)
 
@@ -153,8 +154,8 @@ The charter governs: the premise check, "is this cairn's job, and is it the lean
 before correctness checks on every spec. The persona beneath it: a developer who launches a
 content-managed site fast on cairn, builds their own functionality on top, and keeps pulling engine
 updates without rework. The lean extensibility redesign (shipped `0.77.0`) answered that: the
-`CairnAdminShell` custom-route seam, data-only `adminNav`, admin-scoped `locals.editor`, and the
-`check:surface`-enforced boundary. The diagnostic questions and pre-redesign inputs live in
+`CairnAdminShell` custom-route seam, the `navLayout` seam, admin-scoped `locals.cairnEditor`, and
+the `check:surface`-enforced boundary. The diagnostic questions and pre-redesign inputs live in
 [`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md), a
 point-in-time brief; verify its baseline before acting on it. Seam stability is tracked as `1.0`
 readiness in [`ROADMAP.md`](ROADMAP.md).

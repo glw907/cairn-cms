@@ -80,29 +80,29 @@ describe('uploadOutcome from a success envelope', () => {
 });
 
 describe('uploadOutcome from a failure envelope', () => {
-  it('maps too-large to the too-large failure kind', () => {
-    const out = uploadOutcome({ type: 'failure', status: 413, data: { error: 'too-large' } });
+  it('maps the too_large wire reason to the too-large failure kind', () => {
+    const out = uploadOutcome({ type: 'failure', status: 413, data: { error: 'too_large' } });
     expect(out.kind).toBe('failed');
     if (out.kind !== 'failed') throw new Error('expected failed');
     expect(out.failure).toBe('too-large');
   });
 
-  it('maps unsupported-type to the decode-unsupported failure kind', () => {
+  it('maps the unsupported_type wire reason to the decode-unsupported failure kind', () => {
     const out = uploadOutcome({
       type: 'failure',
       status: 415,
-      data: { error: 'unsupported-type' },
+      data: { error: 'unsupported_type' },
     });
     expect(out.kind).toBe('failed');
     if (out.kind !== 'failed') throw new Error('expected failed');
     expect(out.failure).toBe('decode-unsupported');
   });
 
-  it('maps session-expired to a session-expired outcome', () => {
+  it('maps the session_expired wire reason to a session-expired outcome', () => {
     const out = uploadOutcome({
       type: 'failure',
       status: 401,
-      data: { error: 'session-expired' },
+      data: { error: 'session_expired' },
     });
     expect(out.kind).toBe('session-expired');
   });
@@ -111,7 +111,7 @@ describe('uploadOutcome from a failure envelope', () => {
     const out = uploadOutcome({
       type: 'failure',
       status: 503,
-      data: { error: 'binding-missing' },
+      data: { error: 'binding_missing' },
     });
     expect(out.kind).toBe('failed');
     if (out.kind !== 'failed') throw new Error('expected failed');

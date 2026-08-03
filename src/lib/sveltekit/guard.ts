@@ -13,7 +13,7 @@ import { canReach, hasAccessRule } from '../auth/access.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
 import type { Editor } from '../auth/types.js';
-import type { HandleInput } from './types.js';
+import type { CairnEvent, HandleInput } from './types.js';
 
 /** The login page and the auth endpoints are public; everything else under /admin is gated. */
 export function isPublicAdminPath(pathname: string): boolean {
@@ -40,14 +40,28 @@ function isLocalHost(hostname: string): boolean {
   );
 }
 
+/** Configuration for `createAuthGuard`: the site's declared role vocabulary and access map. */
+export interface AuthGuardOptions {
+  /**
+   * The site's declared role vocabulary (see `defineRoles`); omitted, the guard resolves every
+   *  session against the implicit owner/editor pair, so a zero-config site sees no behavior change.
+   */
+  roles?: RolesDeclaration;
+  /**
+   * The site's declared access map (see `defineAccess`); omitted, the two enforcement points read
+   *  it differently. The engine's own screens, gated through {@link requireEngineAccess}'s
+   *  `canReach` check, stay open to any editor-capability session, so a zero-config site sees no
+   *  behavior change there. A `requireAccess` call on a site's own route reads the opposite way:
+   *  with no map at all, it has no opinion on any target and refuses every session, owner
+   *  included, since that helper's contract is a route that opted in but found nothing.
+   */
+  access?: AccessMap;
+}
+
 /**
- * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. `opts.roles` is the
- * site's declared role vocabulary (see `defineRoles`); omitted, the guard resolves every session
- * against the implicit owner/editor pair, so a zero-config site sees no behavior change.
- * `opts.access` is the site's declared access map (see `defineAccess`); omitted, every engine
- * screen and `requireAccess` call keeps today's any-editor-capability behavior.
+ * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses.
  */
-export function createAuthGuard(opts: { roles?: RolesDeclaration; access?: AccessMap } = {}) {
+export function createAuthGuard(opts: AuthGuardOptions = {}) {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
   const access = opts.access;
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
@@ -122,13 +136,13 @@ export function createAuthGuard(opts: { roles?: RolesDeclaration; access?: Acces
       const editor = id ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
       if (!editor) throw redirect(303, '/admin/login');
       // Resolve capability once per request, here, so every downstream load/action reads it off
-      // locals.editor with no re-derivation. A role absent from the vocabulary (a pruned config, a
-      // hand-edited row) still authenticates at none capability; only the log names it, so a stale
-      // config never locks the person out of sign-in.
+      // locals.cairnEditor with no re-derivation. A role absent from the vocabulary (a pruned
+      // config, a hand-edited row) still authenticates at none capability; only the log names it,
+      // so a stale config never locks the person out of sign-in.
       if (!Object.hasOwn(vocabulary, editor.role)) {
         log.warn('auth.role.unknown', { email: editor.email, role: editor.role });
       }
-      event.locals.editor = { ...editor, capability: resolveCapability(vocabulary, editor.role) };
+      event.locals.cairnEditor = { ...editor, capability: resolveCapability(vocabulary, editor.role) };
       // access ?? {}, not access: canReach and hasAccessRule agree on undefined and {} in every
       // branch (both fail closed on an unmapped target the same way), so this is behavior-
       // identical for a zero-config site. It buys section-action.ts a real signal: an absent
@@ -143,21 +157,18 @@ export function createAuthGuard(opts: { roles?: RolesDeclaration; access?: Acces
 
 /**
  * For a protected load/action: the session the guard already resolved, or a login redirect.
- *  The parameter is the minimal structural need (just `locals`), so every engine event shape
- *  (RequestContext, the content routes' ContentEvent) and a real RequestEvent all satisfy it.
+ *  Takes {@link CairnEvent}, so every engine load/action and a site's own real event satisfy it.
  */
-export function requireSession(event: { locals: { editor?: Editor | null } }): Editor {
-  const editor = event.locals.editor;
+export function requireSession(event: CairnEvent): Editor {
+  const editor = event.locals.cairnEditor;
   if (!editor) throw redirect(303, '/admin/login');
   return editor;
 }
 
 /**
- * For the management surface: a signed-in owner, or 403 for anyone else. The parameter is the
- * same minimal structural need as `requireSession` (just `locals.editor`), so a custom route's
- * standard load event satisfies it without the full RequestContext.
+ * For the management surface: a signed-in owner, or 403 for anyone else.
  */
-export function requireOwner(event: { locals: { editor?: Editor | null } }): Editor {
+export function requireOwner(event: CairnEvent): Editor {
   const editor = requireSession(event);
   if (editor.capability !== 'owner') throw error(403, 'Owner access required');
   return editor;
@@ -166,11 +177,11 @@ export function requireOwner(event: { locals: { editor?: Editor | null } }): Edi
 /**
  * For the engine's own content and admin-mutation surfaces: a signed-in owner or editor, or 403
  * for a none-capability session. The none contract (spec section 4): a none session still
- * authenticates and carries a populated `locals.editor`, so it passes through the
+ * authenticates and carries a populated `locals.cairnEditor`, so it passes through the
  * `CairnAdminShell` custom-route seam untouched; only the engine's own content and roster loads
  * and actions call this and refuse it.
  */
-export function requireEditor(event: { locals: { editor?: Editor | null } }): Editor {
+export function requireEditor(event: CairnEvent): Editor {
   const editor = requireSession(event);
   if (editor.capability === 'none') throw error(403, 'Editor access required');
   return editor;
@@ -205,10 +216,7 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * bypass does not apply here. A route that wants the zero-config any-editor behavior should not
  * call this helper for that path.
  */
-export function requireAccess(
-  event: { locals: { editor?: Editor | null; cairnAccess?: AccessMap }; url: URL },
-  target?: string,
-): Editor {
+export function requireAccess(event: CairnEvent, target?: string): Editor {
   const editor = requireSession(event);
   const resolvedTarget = target ?? event.url.pathname;
   const access = event.locals.cairnAccess;

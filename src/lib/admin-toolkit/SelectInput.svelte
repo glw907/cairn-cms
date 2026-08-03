@@ -1,18 +1,21 @@
 <!--
 @component
 One labeled select in the admin idiom (DaisyUI v5's default-bordered `select`, no `-bordered`
-modifier). The first of the `admin-fields` primitives (Part C item 1 of the phase-2 design suite):
-the smallest coherent set a custom `/admin/` screen composes today (a select, a text input, and the
-shared label wrapper), proven by the aksailingclub-org club-admin scaffold. The set is expected to
-grow, a date field and an image-picker are the likely next additions, the same way the engine's own
-field vocabulary grows one real consumer at a time. `FieldLabel`'s header comment documents the
-`register` this component passes straight through.
+modifier). One of the toolkit's field primitives (merged from the retired `admin-fields` subpath,
+C2 breaking-window pass, R3): the smallest coherent set a custom `/admin/` screen composes today (a
+select, a text input, and the shared label wrapper), proven by the aksailingclub-org club-admin
+scaffold. Named `SelectInput`, not `SelectField`, because the root barrel's field *descriptor* arm
+already owns that name (`fields.select`'s return shape); this component wraps a real `<select>`
+element, so `Input` is the honest noun for the rendered control. The set is expected to grow, a date
+field and an image-picker are the likely next additions, the same way the engine's own field
+vocabulary grows one real consumer at a time. `FieldLabel`'s header comment documents the `register`
+this component passes straight through.
 -->
 <script lang="ts">
   import FieldLabel from './FieldLabel.svelte';
 
   /** One selectable option: the submitted value and its visible text. */
-  export interface SelectFieldOption {
+  export interface SelectInputOption {
     value: string;
     label: string;
   }
@@ -25,7 +28,7 @@ field vocabulary grows one real consumer at a time. `FieldLabel`'s header commen
     /** The picked value, bindable. */
     value: string;
     /** The option list, in display order. */
-    options: SelectFieldOption[];
+    options: SelectInputOption[];
     /** The label register, forwarded to `FieldLabel`, whose own default prop owns the value. */
     register?: 'inline' | 'stacked';
   }

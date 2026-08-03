@@ -31,8 +31,7 @@ const KEPT = [
   'HelpData',
   'MediaUsageInfo',
   'MediaLibraryData',
-  'ContentEvent',
-  'ContentRoutesDeps',
+  'ContentRoutesOptions',
   'SaveFailure',
   'DeleteRefusal',
   'RenameFailure',
@@ -46,19 +45,19 @@ const KEPT = [
   'createNavRoutes',
   'NavLoadData',
   'NavPageOption',
-  'AdminNavEntry',
-  'AdminNavIcon',
+  'NavIcon',
   'ResolvedNavEntry',
   'createCairnAdmin',
-  'CairnAdminDeps',
+  'CairnAdminOptions',
   'AdminData',
   'healthLoad',
   'HealthData',
-  'RequestContext',
+  'CairnEvent',
   'CookieJar',
   'HandleInput',
-  'BackendEnv',
-  'AuthEnv',
+  'PlatformContext',
+  'CairnEnv',
+  'EmailSender',
 ];
 
 const DTS = resolve(
@@ -82,19 +81,19 @@ describe('sveltekit barrel prune', () => {
     expect(missing).toEqual([]);
   });
 
-  it('ContentRoutesDeps carries no backend member on the packaged type', () => {
+  it('ContentRoutesOptions carries no backend member on the packaged type', () => {
     const { checker, symbols } = moduleExports(DTS);
-    const symbol = symbols.find((s) => s.name === 'ContentRoutesDeps');
-    expect(symbol, 'ContentRoutesDeps must still be exported').toBeDefined();
+    const symbol = symbols.find((s) => s.name === 'ContentRoutesOptions');
+    expect(symbol, 'ContentRoutesOptions must still be exported').toBeDefined();
     const declared = symbol!.declarations?.[0];
-    expect(declared, 'ContentRoutesDeps must have a declaration').toBeDefined();
+    expect(declared, 'ContentRoutesOptions must have a declaration').toBeDefined();
     const type = checker.getTypeAtLocation(declared!);
     const memberNames = type.getProperties().map((p) => p.name);
     expect(memberNames).not.toContain('backend');
     // Surface-pruning Task 6: anthropic/tidyTimeoutMs regrouped into one `tidy` bag.
     expect(memberNames).not.toContain('anthropic');
     expect(memberNames).not.toContain('tidyTimeoutMs');
-    // navFilter is the per-request custom-adminNav filter seam, added alongside `tidy`; attention
+    // navFilter is the per-request custom-navLayout filter seam, added alongside `tidy`; attention
     // is the per-session pending-work seam (admin access-and-attention pass), added alongside it.
     expect(memberNames).toEqual(['tidy', 'navFilter', 'attention']);
   });

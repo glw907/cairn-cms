@@ -11,7 +11,7 @@ force the row's own combined space onto each control and trigger flex-shrink) is
 that can pull the measured width away from that default.
 -->
 <script lang="ts">
-  import FieldLabel from '../../lib/admin-fields/FieldLabel.svelte';
+  import FieldLabel from '../../lib/admin-toolkit/FieldLabel.svelte';
 </script>
 
 <div style="width: 900px;">

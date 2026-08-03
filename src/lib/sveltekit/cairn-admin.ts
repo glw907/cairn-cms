@@ -7,11 +7,10 @@
 import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { parseAdminPath, type AdminView } from './admin-dispatch.js';
 import { log } from '../log/index.js';
-import { createAuthRoutes } from './auth-routes.js';
+import { createAuthRoutes, type LoginData, type ConfirmData } from './auth-routes.js';
 import {
   createContentRoutes,
-  type ContentEvent,
-  type ContentRoutesDeps,
+  type ContentRoutesOptions,
   type ListData,
   type EditData,
   type MediaLibraryData,
@@ -20,71 +19,41 @@ import {
   type HelpData,
   type WelcomeData,
 } from './content-routes.js';
-import { createEditorRoutes } from './editors-routes.js';
+import { createEditorRoutes, type EditorsData } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
-import type { AuthBranding, SendMagicLink } from '../email.js';
-import type { AuthEnv, Editor } from '../auth/types.js';
-import type { Capability } from '../auth/roles.js';
-import type { BackendEnv } from '../github/credentials.js';
+import type { AuthRoutesConfig } from './auth-routes.js';
+import type { AuthBranding } from '../email.js';
 import type { CairnRuntime } from '../content/types.js';
-import type { CookieJar, EventBase } from './types.js';
-
-/**
- * The structural event the single-mount load reads: the union of what the wrapped loads need
- * (ContentEvent minus params, which the dispatcher synthesizes, plus RequestContext's cookies
- * and setHeaders). A real SvelteKit RequestEvent satisfies it.
- *
- * Deliberately pinned to `BackendEnv & AuthEnv`, not generic over a site's own `Env` (env-genericity
- * sweep, pre-beta C1 Task 2): a compile-only fixture proving `createCairnAdmin`'s `load`, `actions`,
- * and `shellLoad` against a site's own generated route event, under a realistic compliant
- * `App.Platform['env']` (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the
- * pattern `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings`
- * shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN`/`GITHUB_APP_PRIVATE_KEY_B64` property names with
- * `BackendEnv & AuthEnv`, which is exactly what keeps TypeScript's weak-type detection (TS2559) from
- * rejecting the assignment; a genuinely disjoint env (sharing no property names) still fails it, so
- * the pin costs a compliant site nothing. Adding a type parameter here would be public surface with
- * no fixture forcing it.
- */
-export interface AdminEvent extends EventBase<BackendEnv & AuthEnv> {
-  cookies: CookieJar;
-  setHeaders(headers: Record<string, string>): void;
-}
+import type { CairnEvent } from './types.js';
 
 /**
  * Injectable dependencies, grouped into the two cohesive bags a site actually overrides. The
- *  content backend rides `event.locals.backend` (the dev double) or the adapter's provider, so it
+ *  content backend rides `event.locals.cairnBackend` (the dev double) or the adapter's provider, so it
  *  is not a dep here.
  */
-export interface CairnAdminDeps {
-  /** The magic-link auth seam. */
-  auth?: {
-    /** Defaults from the runtime's `siteName` and `sender`; override to change the email identity. */
-    branding?: AuthBranding;
-    /** The same seam the underlying auth factory takes. */
-    send?: SendMagicLink;
-    /**
-     * A site-declared owner to seed an empty allowlist on the next magic-link request, in place
-     * of a hand-run `wrangler d1 execute` INSERT. See `AuthRoutesConfig['bootstrapOwner']`.
-     */
-    bootstrapOwner?: { email: string; displayName: string };
-  };
+export interface CairnAdminOptions {
+  /**
+   * The magic-link auth seam: the same members `createAuthRoutes` takes, all optional here since
+   *  `branding` defaults from the runtime. See `AuthRoutesConfig`.
+   */
+  auth?: Partial<AuthRoutesConfig>;
   /**
    * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
    *  to avoid a real network call.
    */
-  tidy?: ContentRoutesDeps['tidy'];
+  tidy?: ContentRoutesOptions['tidy'];
   /**
    * Forwarded to the content routes verbatim; a site whose own gating lives outside cairn (a role
    *  stored in its own D1, say) injects this to hide a section or an item from the arranged
-   *  sidebar for an editor who fails that check. See `ContentRoutesDeps['navFilter']`.
+   *  sidebar for an editor who fails that check. See `ContentRoutesOptions['navFilter']`.
    */
-  navFilter?: ContentRoutesDeps['navFilter'];
+  navFilter?: ContentRoutesOptions['navFilter'];
   /**
    * Forwarded to the content routes verbatim; a site injects this to surface per-session
    *  pending-work counts as nav badges (a queue of unread asset requests, say). See
-   *  `ContentRoutesDeps['attention']`.
+   *  `ContentRoutesOptions['attention']`.
    */
-  attention?: ContentRoutesDeps['attention'];
+  attention?: ContentRoutesOptions['attention'];
 }
 
 /**
@@ -93,14 +62,11 @@ export interface CairnAdminDeps {
  * rides the separate shell load served through `/admin/+layout.server.ts`, not this per-view load.
  */
 export type AdminData =
-  | { view: 'login'; page: { siteName: string; error: string | null; csrf: string } }
-  | { view: 'confirm'; page: { token: string; siteName: string; error: string | null; csrf: string } }
+  | { view: 'login'; page: LoginData }
+  | { view: 'confirm'; page: ConfirmData }
   | { view: 'list'; page: ListData }
   | { view: 'edit'; page: EditData }
-  | {
-      view: 'editors';
-      page: { editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] };
-    }
+  | { view: 'editors'; page: EditorsData }
   | { view: 'nav'; page: NavLoadData }
   | { view: 'media'; page: MediaLibraryData }
   | { view: 'settings'; page: SettingsData }
@@ -109,9 +75,15 @@ export type AdminData =
   | { view: 'welcome'; page: WelcomeData };
 
 /**
- *
+ * Compose every admin surface (auth, content, editors, nav) into the bundle a site mounts at its
+ * catch-all `/admin/[...path]` route: one `load` that dispatches on the parsed path to the
+ * matching view's own data, the full `actions` record (every named admin action, each parsing
+ * and validating its own view before delegating), and a separate `shellLoad` for
+ * `/admin/+layout.server.ts`'s shared chrome. `deps` overrides only the seams a site actually
+ * needs (auth send/bootstrap, tidy, `navFilter`, `attention`); everything else derives from
+ * `runtime`.
  */
-export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {}) {
+export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions = {}) {
   // The runtime already composes the site name and the sender identity, so the magic-link
   // branding needs no second copy of either unless a site overrides it.
   const branding: AuthBranding = deps.auth?.branding ?? {
@@ -127,19 +99,22 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
 
   /**
    * Build the event a wrapped content load reads. The catch-all route carries only a rest
-   *  param, so `concept` and `id` are synthesized from the parsed view. The override names
-   *  each field explicitly rather than spreading: a real RequestEvent's fields can sit behind
-   *  getters a bare spread copies poorly, and the structural ContentEvent contract needs only
-   *  these.
+   *  param, so `concept` and `id` are synthesized from the parsed view; `route` rides through
+   *  unchanged, since it names the catch-all route itself, not the synthesized view. The
+   *  override names each field explicitly rather than spreading: a real RequestEvent's fields
+   *  can sit behind getters a bare spread copies poorly, and the structural CairnEvent contract
+   *  needs only these.
    */
-  function contentEvent(event: AdminEvent, params: Record<string, string>): ContentEvent {
+  function contentEvent(event: CairnEvent, params: Record<string, string>): CairnEvent {
     return {
       url: event.url,
       params,
+      route: event.route,
       request: event.request,
       locals: event.locals,
       platform: event.platform,
       cookies: event.cookies,
+      setHeaders: event.setHeaders,
     };
   }
 
@@ -148,12 +123,12 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  Each authed view loads only its own page data; the shared chrome rides the separate shell
    *  load (`/admin/+layout.server.ts`), so this load no longer re-fetches the nav per view.
    */
-  async function load(event: AdminEvent): Promise<AdminData> {
+  async function load(event: CairnEvent): Promise<AdminData> {
     const view = parseAdminPath(event.url.pathname, runtime.concepts);
     if (!view) throw error(404, 'Not found');
     switch (view.view) {
       case 'index':
-        return content.indexRedirect(contentEvent(event, {}));
+        return content.indexLoad(contentEvent(event, {}));
       case 'login':
         return { view: 'login', page: auth.loginLoad(event) };
       case 'confirm':
@@ -228,7 +203,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  actually an unrelated server bug. A `fail(500)` reaches the same client code as a genuine
    *  status, so it renders the calm copy inline instead. Set only on the actions whose own client
    *  posts with `redirect: 'manual'`: `upload`, `mediaUpload`, `mediaLibraryUpload`,
-   *  `addDictionaryWord`, and `tidy`. Every other script-posted media action (a preview, a bulk
+   *  `dictionaryAdd`, and `tidy`. Every other script-posted media action (a preview, a bulk
    *  apply, a scan) posts with the default `redirect: 'follow'`, so this wrapper's own redirect
    *  never reaches them as an opaque response in the first place. The return type only proves out
    *  for a call site whose delegate's own declared return already includes
@@ -239,9 +214,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   function viewAction<V extends AdminView['view'], R>(
     action: string,
     allowed: readonly V[],
-    delegate: (event: AdminEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
+    delegate: (event: CairnEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
     opts: { carriesNewFlag?: boolean; scriptPosted?: boolean } = {},
-  ): (event: AdminEvent) => Promise<R> {
+  ): (event: CairnEvent) => Promise<R> {
     return async (event) => {
       const view = parseAdminPath(event.url.pathname, runtime.concepts);
       if (!view || !(allowed as readonly string[]).includes(view.view)) throw error(404, 'Not found');
@@ -262,7 +237,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
         if ('id' in view) fields.id = view.id;
         // A failure reading the editor must never mask the original error logged above.
         try {
-          const editor = event.locals.editor;
+          const editor = event.locals.cairnEditor;
           if (editor) fields.editor = editor.email;
         } catch {
           // No editor to attribute; the record still names the action and the error.
@@ -310,23 +285,23 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     save: viewAction('save', ['edit', 'nav'], (event, view) => {
       if (view.view === 'edit') return content.saveAction(contentEvent(event, { concept: view.concept.id, id: view.id }));
       if (!nav) throw error(404, 'Not found');
-      return nav.navSave(contentEvent(event, {}));
+      return nav.navSaveAction(contentEvent(event, {}));
     }, { carriesNewFlag: true }),
     // The tidy settings save (spec 2.8, Task 15): the editor commits the per-convention block to the
     // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
     // when tidy is off, the server half of the truthful visibility gate.
-    saveSettings: viewAction('saveSettings', ['settings'], (event) => content.settingsSave(contentEvent(event, {}))),
+    settingsSave: viewAction('settingsSave', ['settings'], (event) => content.settingsSaveAction(contentEvent(event, {}))),
     // The tag-vocabulary save (Plan 3): the editor commits the curated vocabulary to the committed
     // YAML, with the cross-branch delete gate failing closed. Gated to the vocabulary view.
-    saveVocabulary: viewAction('saveVocabulary', ['vocabulary'], (event) => content.vocabularySave(contentEvent(event, {}))),
+    vocabularySave: viewAction('vocabularySave', ['vocabulary'], (event) => content.vocabularySaveAction(contentEvent(event, {}))),
     upload: viewAction('upload', ['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { scriptPosted: true }),
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { carriesNewFlag: true }),
     discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
-    addDictionaryWord: viewAction('addDictionaryWord', ['edit'], (event, view) =>
-      content.addDictionaryWordAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { scriptPosted: true }),
+    dictionaryAdd: viewAction('dictionaryAdd', ['edit'], (event, view) =>
+      content.dictionaryAddAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { scriptPosted: true }),
     // Tidy (spec 2.1): the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
     // edit view, where the review surface lives, so it 404s elsewhere.
     tidy: viewAction('tidy', ['edit'], (event, view) =>
@@ -345,19 +320,19 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     mediaUpload: viewAction('mediaUpload', ['media'], (event) => content.uploadAction(contentEvent(event, {})), { scriptPosted: true }),
     mediaLibraryUpload: viewAction('mediaLibraryUpload', ['media'], (event) => content.mediaLibraryUploadAction(contentEvent(event, {})), { scriptPosted: true }),
     mediaReplacePreview: viewAction('mediaReplacePreview', ['media'], (event) => content.mediaReplacePreviewAction(contentEvent(event, {}))),
-    mediaReplace: viewAction('mediaReplace', ['media'], (event) => content.mediaReplaceApplyAction(contentEvent(event, {}))),
+    mediaReplace: viewAction('mediaReplace', ['media'], (event) => content.mediaReplaceAction(contentEvent(event, {}))),
     mediaAltPreview: viewAction('mediaAltPreview', ['media'], (event) => content.mediaAltPreviewAction(contentEvent(event, {}))),
-    mediaAltPropagate: viewAction('mediaAltPropagate', ['media'], (event) => content.mediaAltApplyAction(contentEvent(event, {}))),
+    mediaAltPropagate: viewAction('mediaAltPropagate', ['media'], (event) => content.mediaAltPropagateAction(contentEvent(event, {}))),
     // Pass C library actions: a multi-select bulk delete, the on-demand orphan scan, and the
     // irreversible byte purge. The component posts to `?/mediaBulkDelete`, `?/mediaOrphanScan`, and
-    // `?/mediaPurge` (the purge key is short of its content method name). All gate on the media view.
+    // `?/mediaOrphanPurge`. All gate on the media view.
     mediaBulkDelete: viewAction('mediaBulkDelete', ['media'], (event) => content.mediaBulkDeleteAction(contentEvent(event, {}))),
     mediaOrphanScan: viewAction('mediaOrphanScan', ['media'], (event) => content.mediaOrphanScanAction(contentEvent(event, {}))),
-    mediaPurge: viewAction('mediaPurge', ['media'], (event) => content.mediaPurgeOrphansAction(contentEvent(event, {}))),
+    mediaOrphanPurge: viewAction('mediaOrphanPurge', ['media'], (event) => content.mediaOrphanPurgeAction(contentEvent(event, {}))),
     publishAll: viewAction('publishAll', authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
-    addEditor: viewAction('addEditor', ['editors'], (event) => editors.addEditorAction(event)),
-    removeEditor: viewAction('removeEditor', ['editors'], (event) => editors.removeEditorAction(event)),
-    setRole: viewAction('setRole', ['editors'], (event) => editors.setRoleAction(event)),
+    editorAdd: viewAction('editorAdd', ['editors'], (event) => editors.editorAddAction(event)),
+    editorRemove: viewAction('editorRemove', ['editors'], (event) => editors.editorRemoveAction(event)),
+    editorSetRole: viewAction('editorSetRole', ['editors'], (event) => editors.editorSetRoleAction(event)),
   };
 
   /**
@@ -365,7 +340,10 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  payload (bare for a public path; the authed nav, user, and streamed pending set otherwise),
    *  so every `/admin/**` route renders inside one chrome without re-loading it per view.
    */
-  const shellLoad = (event: AdminEvent) => content.shellPayload(contentEvent(event, {}));
+  const shellLoad = (event: CairnEvent) => content.shellLoad(contentEvent(event, {}));
 
   return { load, actions, shellLoad };
 }
+
+/** What `createCairnAdmin` returns: the one load, the full action vocabulary, and the shell load. */
+export type CairnAdminRoutes = ReturnType<typeof createCairnAdmin>;

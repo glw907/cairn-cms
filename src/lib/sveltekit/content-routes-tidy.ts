@@ -9,13 +9,13 @@ import { validateCsrfHeader } from './csrf.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
 import { tidyClientErrorStatus } from './content-routes-context.js';
 import { markKeyHealthy, markKeyUnhealthy } from './tidy-key-health.js';
-import type { ContentRoutesContext, ContentEvent, TidyClient } from './content-routes-context.js';
+import type { ContentRoutesContext, TidyClient } from './content-routes-context.js';
+import type { CairnEvent } from './types.js';
 
 /**
  * The successful tidy outcome (spec 2.1): the corrected markdown, the model that produced it, and the
  * token usage. The diff is computed on the client (Task 12), so the server returns the plain text and
- * commits nothing. Admin-internal: consumed by the editor's review surface, not on the package's
- * sveltekit subpath, so it carries no reference page.
+ * commits nothing.
  */
 export interface TidyResult {
   corrected: string;
@@ -75,7 +75,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *  stays the retryable "Try again." copy, with the log's `reason` field (`timeout`/`abort`/`model`)
    *  naming which.
    */
-  async function tidyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | TidyResult> {
+  async function tidyAction(event: CairnEvent): Promise<ReturnType<typeof fail> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
     // before the session read and before any model call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
@@ -157,7 +157,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
         // unhealthy (Task 5) so editLoad's tidy projection hides the button for the TTL rather than
         // offering a control that will fail the same way on the next click.
         markKeyUnhealthy();
-        log.warn('tidy.error', { editor: editor.email, model, reason: 'auth' });
+        log.warn('tidy.failed', { editor: editor.email, model, reason: 'auth' });
         return fail(503, {
           error: "Tidy isn't available right now. Your site's AI access needs attention; let your site developer know.",
         } satisfies TidyFailure);
@@ -169,7 +169,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       let reason: 'timeout' | 'abort' | 'model' = 'model';
       if (deadlineHit) reason = 'timeout';
       else if (err instanceof Error && err.name === 'AbortError') reason = 'abort';
-      log.warn('tidy.error', { editor: editor.email, model, reason });
+      log.warn('tidy.failed', { editor: editor.email, model, reason });
       return fail(502, { error: 'Tidy could not finish. Try again.' } satisfies TidyFailure);
     } finally {
       clearTimeout(timer);
@@ -196,7 +196,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       return fail(502, { error: 'Tidy returned nothing. Try again.' } satisfies TidyFailure);
     }
 
-    log.info('tidy.done', { editor: editor.email, model: message.model, usage: message.usage });
+    log.info('tidy.succeeded', { editor: editor.email, model: message.model, usage: message.usage });
     return { corrected, model: message.model, usage: message.usage };
   }
 

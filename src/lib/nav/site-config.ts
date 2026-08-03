@@ -38,7 +38,7 @@ export class NavValidationError extends CairnError {
 /**
  * Validate and normalize an untrusted value into a NavNode[]: arrays only, non-empty labels, depth
  * within `maxDepth` (1 is flat), a bounded node count, and only the three known keys kept. Throws
- * NavValidationError on any violation. Used by navSave before writing.
+ * NavValidationError on any violation. Used by navSaveAction before writing.
  */
 export function validateNavTree(value: unknown, maxDepth: number): NavNode[] {
   let count = 0;

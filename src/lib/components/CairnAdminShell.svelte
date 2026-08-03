@@ -77,8 +77,7 @@ discriminant, not the fields, gates the chrome).
   }
 
   // shell.nav mixes the engine's own screens (carry `screen`) with the site's own entries (carry
-  // `iconName`); these two guards discriminate the resolved-layout shape the way
-  // isResolvedNavSection/isResolvedNavEntry discriminated the retired customNav shape.
+  // `iconName`); these two guards discriminate the resolved-layout shape.
   function isEngineChild(node: ResolvedLayoutChild): node is ResolvedEngineNavEntry {
     return 'screen' in node;
   }
@@ -123,11 +122,10 @@ discriminant, not the fields, gates the chrome).
 
   // shell.nav.items is the whole arranged, filtered scroll-area tree the resolver produced, in
   // declaration order: a declared navLayout as written, or, absent one, today's default arrangement
-  // through the same resolver, which synthesizes no section at all: the concepts, the legacy flat
-  // adminNav entries, and the engine screens arrive as loose top-level nodes rendered in a plain,
-  // header-less list, and each legacy adminNav section still renders as its own collapsible group
-  // after them. Consecutive loose top-level nodes batch into one group so they render together,
-  // without opening a collapsible section of their own.
+  // through the same resolver, which synthesizes no section at all: the concepts and the engine
+  // screens arrive as loose top-level nodes rendered in a plain, header-less list. Consecutive loose
+  // top-level nodes batch into one group so they render together, without opening a collapsible
+  // section of their own.
   const navGroups: NavGroup[] = $derived.by(() => {
     if (!shell) return [];
     const groups: NavGroup[] = [];
@@ -837,16 +835,14 @@ discriminant, not the fields, gates the chrome).
         <div class="flex-1 space-y-1 overflow-y-auto py-4">
           <!-- shell.nav.items is the whole arranged, filtered scroll area in declaration order: a
                section renders as its own collapsible group (a site's own declared navLayout
-               section, or a legacy adminNav section); the zero-config default synthesizes no
-               section at all, so its concepts, legacy flat entries, and engine screens arrive as
-               loose top-level nodes. A loose node batches with its neighbors into a plain,
-               header-less list rather than opening a group of its own. -->
-          <!-- Index-keyed on purpose: a label-keyed each would crash on a duplicate (the legacy
-               adminNav path can synthesize two same-labeled groups, e.g. two legacy adminNav
-               sections both named "Club"; validateNavLayout cannot retroactively reject that
-               path). This list is fully derived and stateless, and the collapsed-group open state
-               derives from the label-keyed `collapsed` Set, not DOM identity, so index keys never
-               desync a group's open/closed state from its content. -->
+               section); the zero-config default synthesizes no section at all, so its concepts and
+               engine screens arrive as loose top-level nodes. A loose node batches with its
+               neighbors into a plain, header-less list rather than opening a group of its own. -->
+          <!-- Index-keyed on purpose: a label-keyed each would crash on a duplicate; validateNavLayout
+               rejects a duplicate section label for a validated site, but the resolver itself does
+               not enforce that, so index keys never desync a group's open/closed state from its
+               content regardless. This list is fully derived and stateless, and the collapsed-group
+               open state derives from the label-keyed `collapsed` Set, not DOM identity. -->
           {#each navGroups as group, i (i)}
             {#if group.kind === 'section'}
               {@render navSection(group.label, group.items, group.attentionSum)}

@@ -29,7 +29,7 @@ function runtime(): CairnRuntime {
   };
 }
 
-// The dev double rides event.locals.backend; createCairnAdmin no longer takes a backend dep.
+// The dev double rides event.locals.cairnBackend; createCairnAdmin no longer takes a backend dep.
 const backend = makeGithubBackend(REPO, async () => 'tok');
 const deps = {};
 
@@ -87,11 +87,11 @@ function actionEvent(
     url: new URL(`https://t.example${pathname}`),
     request: new Request(`https://t.example${pathname}`, { method: 'POST', body: new URLSearchParams(opts.form ?? {}) }),
     locals: {
-      editor:
+      cairnEditor:
         opts.editor === undefined
           ? { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const }
           : opts.editor,
-      backend,
+      cairnBackend: backend,
     },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', ...opts.env } },
     cookies: {
@@ -305,7 +305,7 @@ describe('content actions', () => {
         body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
+      locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
       platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
@@ -349,7 +349,7 @@ describe('content actions', () => {
         body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
+      locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
       platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
@@ -429,24 +429,24 @@ describe('media replace and alt actions (composer wiring)', () => {
   });
 });
 
-describe('addDictionaryWord action (composer wiring)', () => {
-  it('404s addDictionaryWord posted outside the edit view', async () => {
+describe('dictionaryAdd action (composer wiring)', () => {
+  it('404s dictionaryAdd posted outside the edit view', async () => {
     const admin = createCairnAdmin(runtime(), deps);
-    await expect(admin.actions.addDictionaryWord(actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
+    await expect(admin.actions.dictionaryAdd(actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
   });
 
   it('reaches the content action on the edit view (403 without the CSRF header)', async () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdmin(runtime(), deps);
     // The composer's actionEvent posts no X-Cairn-CSRF header, so the content action refuses with a
-    // 403 csrf envelope: proof the route parsed the edit view and reached addDictionaryWord.
-    const result = await admin.actions.addDictionaryWord(actionEvent('/admin/posts/2026-05-01-hi') as never);
+    // 403 csrf envelope: proof the route parsed the edit view and reached dictionaryAdd.
+    const result = await admin.actions.dictionaryAdd(actionEvent('/admin/posts/2026-05-01-hi') as never);
     expect(result).toMatchObject({ status: 403 });
   });
 });
 
 describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', () => {
-  const newMediaActions = ['mediaBulkDelete', 'mediaOrphanScan', 'mediaPurge'] as const;
+  const newMediaActions = ['mediaBulkDelete', 'mediaOrphanScan', 'mediaOrphanPurge'] as const;
 
   for (const name of newMediaActions) {
     it(`404s ${name} posted outside the media view`, async () => {
@@ -469,17 +469,17 @@ describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', 
     expect(result).toMatchObject({ status: 503 });
   });
 
-  it('mediaPurge on the media view reaches mediaPurgeOrphansAction (refused 503 when media is off)', async () => {
+  it('mediaOrphanPurge on the media view reaches mediaOrphanPurgeAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdmin(runtime(), deps);
-    const result = await admin.actions.mediaPurge(actionEvent('/admin/media') as never);
+    const result = await admin.actions.mediaOrphanPurge(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 503 });
   });
 });
 
 describe('save on the nav view', () => {
-  it('delegates to navSave when a navMenu is configured', async () => {
-    // navSave is a head-guarded atomic commit, so the stateful double seeds main with the YAML and
+  it('delegates to navSaveAction when a navMenu is configured', async () => {
+    // navSaveAction is a head-guarded atomic commit, so the stateful double seeds main with the YAML and
     // answers the ref read, the head-guarded commit sequence, and the write.
     const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary: []\n' } });
     gh.install();
@@ -500,7 +500,7 @@ describe('save on the nav view', () => {
 describe('editor actions', () => {
   const owner = { email: 'own@t', displayName: 'Own', role: 'owner' as const, capability: 'owner' as const };
 
-  it('addEditor delegates on the editors view and inserts the row', async () => {
+  it('editorAdd delegates on the editors view and inserts the row', async () => {
     const { db, calls } = fakeD1();
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/editors', {
@@ -508,23 +508,23 @@ describe('editor actions', () => {
       form: { email: 'new@x.dev', name: 'New', role: 'editor' },
       env: { AUTH_DB: db },
     });
-    await expect(admin.actions.addEditor(event as never)).resolves.toEqual({ ok: true });
+    await expect(admin.actions.editorAdd(event as never)).resolves.toEqual({ ok: true });
     expect(calls.some((c) => c.sql.includes('INSERT INTO editor') && c.args[0] === 'new@x.dev')).toBe(true);
   });
 
-  it('removeEditor delegates on the editors view and deletes the row', async () => {
+  it('editorRemove delegates on the editors view and deletes the row', async () => {
     const { db, calls } = fakeD1({ 'FROM editor': { email: 'gone@t', display_name: 'Gone', role: 'editor' } });
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/editors', { editor: owner, form: { email: 'gone@t' }, env: { AUTH_DB: db } });
-    await expect(admin.actions.removeEditor(event as never)).resolves.toEqual({ ok: true });
+    await expect(admin.actions.editorRemove(event as never)).resolves.toEqual({ ok: true });
     expect(calls.some((c) => c.sql.includes('DELETE FROM editor') && c.args[0] === 'gone@t')).toBe(true);
   });
 
-  it('setRole delegates on the editors view and updates the role', async () => {
+  it('editorSetRole delegates on the editors view and updates the role', async () => {
     const { db, calls } = fakeD1({ 'FROM editor': { email: 'up@t', display_name: 'Up', role: 'editor' } });
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/editors', { editor: owner, form: { email: 'up@t', role: 'owner' }, env: { AUTH_DB: db } });
-    await expect(admin.actions.setRole(event as never)).resolves.toEqual({ ok: true });
+    await expect(admin.actions.editorSetRole(event as never)).resolves.toEqual({ ok: true });
     expect(calls.some((c) => c.sql.includes('UPDATE editor SET role') && c.args[0] === 'owner' && c.args[1] === 'up@t')).toBe(true);
   });
 });
@@ -540,25 +540,25 @@ describe('settings view', () => {
     };
   }
 
-  it('404s saveSettings posted outside the settings view (the viewAction gate)', async () => {
+  it('404s settingsSave posted outside the settings view (the viewAction gate)', async () => {
     const admin = createCairnAdmin(tidyRuntime(), deps);
-    await expect(admin.actions.saveSettings(actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
+    await expect(admin.actions.settingsSave(actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
   });
 
-  it('saveSettings on the settings view reaches settingsSave (commits the conventions, redirects saved)', async () => {
-    // settingsSave is a head-guarded atomic commit, so the stateful double seeds main with the YAML
+  it('settingsSave on the settings view reaches settingsSaveAction (commits the conventions, redirects saved)', async () => {
+    // settingsSaveAction is a head-guarded atomic commit, so the stateful double seeds main with the YAML
     // and answers the ref read, the head-guarded commit sequence, and the write.
     new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\ntidy:\n  enabled: true\n' } }).install();
     const admin = createCairnAdmin(tidyRuntime(), deps);
     const event = actionEvent('/admin/settings', { form: { conventions: '{"fixes":true,"oxfordComma":"always"}' } });
-    await expectRedirect(admin.actions.saveSettings(event as never), '/admin/settings?saved=1');
+    await expectRedirect(admin.actions.settingsSave(event as never), '/admin/settings?saved=1');
   });
 
-  it('saveSettings 404s when tidy is off, proving it reached settingsSave (the server half of the gate)', async () => {
+  it('settingsSave 404s when tidy is off, proving it reached settingsSaveAction (the server half of the gate)', async () => {
     // The default runtime has no tidy block, so the action 404s before any read.
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/settings', { form: { conventions: '{"fixes":true}' } });
-    await expect(admin.actions.saveSettings(event as never)).rejects.toMatchObject({ status: 404 });
+    await expect(admin.actions.settingsSave(event as never)).rejects.toMatchObject({ status: 404 });
   });
 
   it('serves the settings view load: the read-only developer facts', async () => {
@@ -609,7 +609,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   it('a throwing create action on the list view redirects with the calm copy and logs admin.action.failed', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/pages', { form: { title: 'Trailhead', slug: 'trailhead' } });
-    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = await expectRedirectAssertion(() => admin.actions.create(event as never));
     expect(result).toEqual({ status: 303, location: `/admin/pages?error=${encodeURIComponent(CALM_COPY)}` });
@@ -625,7 +625,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   it('a throwing save action on the edit view logs the concept, id, and editor, and redirects with the calm copy (no new=1: the flag was never posted)', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
-    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
     expect(result).toEqual({ status: 303, location: `/admin/posts/2026-05-01-hi?error=${encodeURIComponent(CALM_COPY)}` });
@@ -642,7 +642,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   it('a throwing save on a brand-new entry (new=1) preserves the flag on the bounce, so the next load does not 404 the stranded draft', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
-    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
     expect(result).toEqual({
       status: 303,
@@ -650,9 +650,9 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     });
   });
 
-  it('a throwing script-posted action (addDictionaryWord) returns fail(500) with the calm copy, not a redirect, and still logs admin.action.failed (save-500-hardening)', async () => {
-    // addDictionaryWordAction rethrows any non-conflict commit error, so a throwingBackend reaches
-    // viewAction's catch exactly like the save/create cases above. Unlike those, addDictionaryWord is
+  it('a throwing script-posted action (dictionaryAdd) returns fail(500) with the calm copy, not a redirect, and still logs admin.action.failed (save-500-hardening)', async () => {
+    // dictionaryAddAction rethrows any non-conflict commit error, so a throwingBackend reaches
+    // viewAction's catch exactly like the save/create cases above. Unlike those, dictionaryAdd is
     // marked scriptPosted, so the wrapper's fallback must be a fail(500) value, never a redirect: the
     // client posts with `redirect: 'manual'`, and a redirect here would read as an opaque, status-0
     // response the client folds into a false "your session expired" message.
@@ -665,7 +665,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
         body: JSON.stringify({ word: 'trailhead' }),
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
+      locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
         set: () => {},
@@ -674,9 +674,9 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
       setHeaders: () => {},
     };
     const admin = createCairnAdmin(runtime(), deps);
-    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
-    const result = (await admin.actions.addDictionaryWord(event as never)) as {
+    const result = (await admin.actions.dictionaryAdd(event as never)) as {
       status?: number;
       data?: { error?: string };
     };
@@ -684,7 +684,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     expect(result.data?.error).toBe(CALM_COPY);
     expect(errorSpy).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
-      action: 'addDictionaryWord',
+      action: 'dictionaryAdd',
       concept: 'posts',
       id: '2026-05-01-hi',
       editor: 'ed@t',
@@ -713,7 +713,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
         body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
+      locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
       platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),

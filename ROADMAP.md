@@ -22,7 +22,7 @@ event, not an everyday one." Cut it when the surface stops moving, not on a date
 
 - [ ] **The public seams have held across an initiative or two with no breaking change**: the adapter and
   field schema, `render`, the admin mount (`createCairnAdmin`, the `CairnAdminShell` custom-route seam, the
-  data-only `adminNav`), the route factories (`createContentRoutes`, `createPublicRoutes`), the admin design
+  `navLayout` seam), the route factories (`createContentRoutes`, `createPublicRoutes`), the admin design
   vocabulary (the `text-muted` / `text-subtle` role layer), and the log event names.
 - [ ] **No known breaking change is pending** on the public surface, or each is consciously deferred to the
   first post-1.0 major. The SvelteKit `checkOrigin` removal (kit#15992) is the standing example: decide
@@ -89,10 +89,11 @@ release-one boundary; the passes are invariant.
   `./cloudflare` subpath and the packaged D1 audit sink, additive) is done and holds unpublished.
 - **Phase C, settle the contract:** C1 the seam-shape pass is done and holds unpublished (the
   `check-reference-signatures.mjs` `| undefined` fix, the env-genericity sweep, the function-color
-  and refusal-channel rulings, and the toolchain matrix); C2 the naming pass (a Fable
-  sitting over `api-surface.md` settles the rename set and the `locals` policy, then one
-  execution pass lands every rename in one diff, one `Consumers must:` list — the only genuinely
-  breaking pass in the series).
+  and refusal-channel rulings, and the toolchain matrix); C2 the naming pass (a Fable sitting over
+  `api-surface.md` settled the rename set and the `locals` policy, then one execution pass landed
+  every rename in one diff, one `Consumers must:` list — the only genuinely breaking pass in the
+  series) is done and holds unpublished, its one behavioral task (the refusal-channel convergence,
+  R10) split out as **C2b** on its own worktree, in the same unpublished window.
 - **Phase F, the core features:** F1 the history/revert design sitting; F2 the history view
   pass; F3 the revert pass (the sitting may merge F2/F3); F4 the preview design sitting; F5 the
   preview pass.
@@ -158,7 +159,14 @@ The original decision framing, for the record:
   at the ASC-seams pass-one sitting as a named content of the "core-feature roadmap has landed" beta
   checklist item; needs its own design sitting before a plan (the history view's shape, how far back
   the list reads, what a revert of a published entry means for the draft branch). Gates the public
-  beta (Geoff, 2026-08-01): the beta does not cut until this ships.
+  beta (Geoff, 2026-08-01): the beta does not cut until this ships. **Vocabulary reserved (C2
+  breaking-window pass, R11, 2026-08-02):** history is `historyLoad` as the route-factory member
+  and `history` as the facade view (`HistoryData`, `HistoryEntry`); revert is `revertAction` as
+  the member and `revert` as the facade key (`RevertFailure`, used as
+  `ActionFailure<RevertFailure>`), logging `commit.reverted` with `concept`, `id`, `editor`, and
+  the reverted-to ref. Every name derives from this pass's ratified grammars (R1 for members,
+  facade keys, and the closed suffix set; R6 for the log-event shape), reserved now precisely so
+  the feature arrives under rules made with it rather than inventing its own.
 
 - **Public preview for a non-editor (FILED at promotion, Geoff, 2026-08-01).** Let an editor hand a
   draft to someone who is not an editor: the per-entry `cairn/<concept>/<id>` branch already holds
@@ -169,7 +177,13 @@ The original decision framing, for the record:
   factories know `render`; the admin knows the branch), the token's issue and expiry discipline
   (`./auth-crypto` now exports the primitives), and whether a preview of a draft that references
   unpublished media resolves. Gates the public beta alongside entry history and revert (Geoff,
-  2026-08-01): the beta does not cut until this ships.
+  2026-08-01): the beta does not cut until this ships. **Vocabulary reserved (C2 breaking-window
+  pass, R11, 2026-08-02):** `createPreviewRoute(runtime): RequestHandler`, following the ratified
+  `createMediaRoute` exception as its precedent (a kit `RequestHandler` return, not the engine's
+  own factory-return convention); `mintPreviewToken` and its `PreviewTokenConfig` bag; logging
+  `preview.token.minted` and `preview.rejected`, the latter with a snake_case `reason`. Every name
+  derives from R1's grammar and R6's log-event shape, reserved now for the same reason as history
+  and revert above.
 
 - **Help screen first-steps card overlap (pre-existing, found 2026-07-21).** The getting-started
   steps card on `/admin/help` renders its three step columns overlapping at desktop widths (the
@@ -646,7 +660,7 @@ the named human gates only):**
   rewrite's authoring guidance.
 - **Auth-replacement seam, documented and hardened (pre-beta; Geoff, 2026-07-02).** The
   README claims a developer can replace the auth outright; today only identity read-through
-  (`locals.editor` + `requireSession`/`requireOwner`) and the magic-link transport override
+  (`locals.cairnEditor` + `requireSession`/`requireOwner`) and the magic-link transport override
   ship as documented seams, and full replacement lives in an internal design doc. The item:
   document (and where needed, harden) the hand-off that lets a site bring its own login and
   issue cairn sessions — the seam only, not built-in auth options. The claim must be true
@@ -677,13 +691,6 @@ the named human gates only):**
   an assertion to `scripts/check-package-files.mjs` (already run by `check:package`) that every
   `dist/**/browser.js` the package emits is matched by at least one `sideEffects` glob, failing with the
   offending path. This is a watch converted into a gate, which is the form that cannot be forgotten.
-- **Pre-beta contract: a `locals` namespace policy (Geoff, 2026-08-01).** The engine writes four
-  keys into the namespace it shares with every site: `editor`, `backend`, `auditSink`, and
-  `cairnAccess`. One is prefixed, three are not, and the unprefixed names are maximally
-  collision-prone (a site with its own notion of `editor` is not exotic). Renaming a `locals` key
-  after beta breaks every consumer's `app.d.ts` and every read site-wide. Decide the convention
-  once, plausibly engine-owned keys carry the `cairn` prefix with the old names as deprecated
-  aliases through the beta window, while the whole change is one `Consumers must:` line.
 - **Extend `cairn-doctor`'s `config.dependency-floors` check beyond svelte and kit (filed by the
   pre-beta C1 toolchain-matrix task, 2026-08-01).** `src/lib/doctor/check-floors.ts` reads a
   consumer's `package-lock.json` and compares resolved versions against the engine's own
@@ -696,36 +703,42 @@ the named human gates only):**
   describe the consumer floor), and `vite`/`wrangler`/`@cloudflare/workers-types` carry no engine
   floor at all today, only a proven-against version. Scope the check to what the matrix actually
   promises rather than inventing floors the matrix does not assert.
-- **Pre-beta polish: the public-surface naming review (Geoff, 2026-08-01).** One deliberate read of
-  every exported name, option key, subpath, and log event as a whole, before beta's
-  compatibility-SemVer adoption makes each rename a `Consumers must:` line (and, after 1.0, a
-  major). The surface grew by accretion and carries visible asymmetries: the `create*` factory
-  family beside the bare `adminAction` wrapper, `./sveltekit` accreting toward a grab-bag while
-  `./auth-store` and `./auth-crypto` stay precise. None is wrong alone; some will be wrong read
-  together. `docs/internal/api-surface.md` (the `check:surface` snapshot) is the ready-made review
-  document, and every rename lands while renames are still cheap. The single
-  cheapest-now/dearest-later item in the pre-beta set.
-- **The full C2 breaking-window agenda is consolidated at
-  [`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`](docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md).**
-  It widens C2's charter from "the naming pass" to "the breaking-window pass" and folds the rename
-  set, the `locals` namespace policy, and the three C2 inputs filed below into one adjudicated
-  document, so the sitting reads evidence rather than a session's recollection. A fourth C2 input
-  filed alongside these, converging `adminAction`'s refusal channel, has already shipped (the
-  `refusal-channel-convergence` pass) and is removed from this list.
-- **C2 input: the env-genericity decision, whole (filed by the pre-beta C1 seam-shape pass's
-  review fold, 2026-08-01).** Whether `RequestContext`, `HandleInput`, and the remaining
-  `AuthEnv`-pinned types should become generic over `Env` so a bare wrangler-generated env assigns
-  with no `CairnPlatformBindings` intersection at all. Not free the way pass one's
-  `AdminActionEvent` fix was: a site would have to write `createCairnAdmin<SiteEnv>(runtime)`
-  explicitly, since inference has nothing to work from with no compliant default, so any answer
-  here is a `Consumers must:` change, not an invisible one. The compile evidence and the locked
-  incompatibility live in `src/tests/unit/env-genericity.test.ts`'s `@ts-expect-error` tripwire.
-- **C2 input: two near-identical log event names (filed by the pre-beta C1 seam-shape pass's
-  review fold, 2026-08-01).** `admin.audit.sink_failed` (the packaged D1 sink's own internal
-  persist failure) and `admin.action.audit_sink_failed` (a site's own sink throwing or rejecting at
-  the engine's call site) read as typos of each other at a glance, despite covering different
-  failures. Both are still unpublished, so a rename is free until the next release; after that it's
-  a breaking log-event rename, the same weight as any other public name.
+- **Ambient-block drift gate (filed by C2, R2, 2026-08-02).** The `/ambient` reference page states
+  `docs/reference/ambient.md`'s whole `App.Locals` block by hand off `src/lib/ambient.ts`; R2's
+  execution found the page had drifted already (`cairnAccess` was missing from it entirely). A
+  gate that diffs the published block against the source declaration, failing on any field the two
+  sides disagree on, closes the class the rewrite just fixed by hand.
+- **Log-events field and value parity gate (filed by C2, R6, 2026-08-02).** `docs/reference/log-events.md`
+  enumerates each event's fields and every literal value its `reason`/`scope` columns can carry in
+  prose; R6's execution found two rows had drifted from their emit sites (`media.uploaded`'s
+  documented `ext` field is never written, and `github.unreachable`'s documented `layout` scope
+  never fires). `src/tests/unit/log-events-table.test.ts`, written test-first against Task 11's
+  parity claim, is the seed to extend into a general field/value-column-versus-emit-site gate
+  rather than a fresh script.
+- **Export-rule closure gate (filed by C2, R4, 2026-08-02).** The standing doctrine: every type
+  named in a public signature is exported from a subpath the consumer already imports. Task 9's
+  execution found the rule transitively closed, not merely a check of each export's own top-level
+  signature identifiers: a re-exported type pulls its whole structural closure, so the gate has to
+  walk each exported type's own body too. `CairnAdapter` stays the one documented exception,
+  exempted at `/delivery` and `/delivery/data` because its body reaches auth- and github-shaped
+  types `delivery-entry-boundary.test.ts` forbids that subpath from importing; a gate encoding the
+  rule needs the same named exception, not a wider one.
+- **Empty-doc-block tripwire (filed by C2, RN, 2026-08-02).** A literal-empty `/** */` block over an
+  exported symbol in `src/lib` should fail a gate outright instead of waiting for a docs sweep to
+  notice by hand. Task 14a found and filled ten of them, including on `createCairnAdmin` and
+  `createAuthRoutes`, the package's two headline factories. A lint rule (an `eslint-plugin-jsdoc`
+  empty-tag check, or a small `check:*` script scanning `src/lib` for a bare `/**\s*/`) closes the
+  class.
+- **Facade action-key vocabulary gate (filed by C2's close-out verification, 2026-08-03).** Nothing
+  pins the `createCairnAdmin` `actions` record's key list. Two defects this pass fixed by hand share
+  that root: the action tables in `docs/reference/admin-routes.md` and `docs/reference/sveltekit.md`
+  had drifted to 12 and 11 rows against a 29-key record, and seven facade keys renamed in Task 5 with
+  no test asserting the resulting wire names. A posted `?/` key is a runtime string with no
+  compile-time check, so a stale one 404s at submit. The showcase e2e does not close this: its
+  UI-driven specs click the engine's own components, which rename in lockstep with the keys, so only
+  a spec hardcoding `?/name` pins a wire name, and those cover one of the seven renames. A test
+  asserting `Object.keys(admin.actions)` against a committed list, cross-checked against both
+  reference tables, closes the table drift and the wire-name drift together.
 - **Gate gap: `check:reference:signatures` cannot see a table-only signature (filed by the
   pre-beta C1 seam-shape pass's review fold, 2026-08-01).** The gate reads only fenced `ts` code
   blocks; a callback's signature stated solely in a reference table's own Signature or Meaning

@@ -79,11 +79,15 @@ describe('navLoad', () => {
     const routes = createNavRoutes(runtime(NAV));
     await routes.navLoad(loadEvent() as never);
     const records = errorSpy.mock.calls.map(
-      (c) => c[0] as { event?: string; conditionId?: string; error?: string },
+      (c) => c[0] as { event?: string; conditionId?: string; scope?: string; error?: string },
     );
     expect(
       records.some(
-        (r) => r.event === 'config.invalid' && r.conditionId === 'config.site-config-invalid' && !!r.error,
+        (r) =>
+          r.event === 'config.invalid' &&
+          r.conditionId === 'config.site-config-invalid' &&
+          r.scope === 'nav' &&
+          !!r.error,
       ),
     ).toBe(true);
   });
@@ -120,7 +124,7 @@ describe('navLoad', () => {
       url: new URL('https://t.example/admin/nav'),
       params: {},
       request: new Request('https://t.example/admin/nav'),
-      locals: { editor: { email: 'inst@t', displayName: 'Inst', role: 'instructor', capability: 'none' } },
+      locals: { cairnEditor: { email: 'inst@t', displayName: 'Inst', role: 'instructor', capability: 'none' } },
       platform: { env: {} },
     };
     await expect(routes.navLoad(event as never)).rejects.toMatchObject({ status: 403 });

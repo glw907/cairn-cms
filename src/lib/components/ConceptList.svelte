@@ -401,7 +401,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
                 {/if}
               </div>
             </td>
-            {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell py-2 type-subtitle">{formatCivilDate(entry.date)}</td>{/if}
+            {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell py-2 type-subtitle">{formatCivilDate(entry.date, { fallback: 'Not yet' })}</td>{/if}
             <td class="w-16 px-2 py-2 sm:w-28 sm:px-4">
               <!-- One chip family (design arc 2026-07-15, re-expressed on the toolkit's StatusChip):
                    New and Published share the toolkit's neutral tone; Edited alone carries the

@@ -106,7 +106,7 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 
 | Key | Default | What it names |
 |---|---|---|
-| `static.scope` | `src/routes/admin`, `src/lib/admin-toolkit`, `src/lib/admin-fields`, `src/lib/components` | Directories the static scan reads components from, recursively |
+| `static.scope` | `src/routes/admin`, `src/lib/admin-toolkit`, `src/lib/components` | Directories the static scan reads components from, recursively |
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
 | `sheet` | the built admin stylesheet, in your tree or your installed package | The stylesheet class tokens resolve against |

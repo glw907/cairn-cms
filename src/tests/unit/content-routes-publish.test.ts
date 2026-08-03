@@ -60,7 +60,7 @@ function roleActionEvent(role: 'webmaster' | 'publisher') {
     url: new URL(url),
     params: { concept: 'posts' },
     request: new Request(url, { method: 'POST' }),
-    locals: { editor: { email: `${role}@t`, displayName: role, role, capability: 'editor' as const }, backend: sharedBackend },
+    locals: { cairnEditor: { email: `${role}@t`, displayName: role, role, capability: 'editor' as const }, cairnBackend: sharedBackend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }

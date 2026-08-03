@@ -36,8 +36,7 @@ anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
 - [SvelteKit (`/sveltekit`)](./sveltekit.md): the single-mount `createCairnAdmin` facade, the auth guard, and the per-route factories.
 - [The canonical admin mount](./admin-routes.md): the two-file catch-all mount and the composer a site copies.
 - [Components (`/components`)](./components.md): the admin Svelte UI.
-- [Admin fields (`/admin-fields`)](./admin-fields.md): the field-renderer primitives a site's own custom `/admin/` screen composes.
-- [The admin toolkit (`/admin-toolkit`)](./admin-toolkit.md): the graduated admin components and formatters a site's own custom `/admin/` screen composes.
+- [The admin toolkit (`/admin-toolkit`)](./admin-toolkit.md): the field, screen-scaffold, and formatter primitives a site's own custom `/admin/` screen composes.
 - [Render authoring (`/render`)](./render.md): the component-authoring toolkit for a component `build()`.
 - [Islands (`/islands`)](./islands.md): the client runtime that mounts a site's live components over the static fallbacks.
 - [Delivery (`/delivery`)](./delivery.md): the public read-model route loaders, the response helpers, and `CairnHead`.
@@ -47,7 +46,7 @@ anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
 - [Auth crypto (`/auth-crypto`)](./auth-crypto.md): the server-only token, hash, compare, and cookie-naming primitives for a site's own second-audience auth flow.
 - [Cloudflare (`/cloudflare`)](./cloudflare.md): the server-only Turnstile verification and rate-limit wrapper for Cloudflare-native platform primitives.
 - [Vite (`/vite`)](./vite.md): the `cairnManifest()` build plugin.
-- [Ambient types (`/ambient`)](./ambient.md): the one-line `App.Locals.editor` augmentation for a site's `app.d.ts`.
+- [Ambient types (`/ambient`)](./ambient.md): the one-line `App.Locals.cairnEditor` augmentation for a site's `app.d.ts`.
 - [The `cairn-manifest` CLI](./cli-cairn-manifest.md): the manifest regenerate command.
 - [The `cairn-doctor` CLI](./doctor.md): the setup preflight that checks a site's local config, Cloudflare account, and GitHub App.
 - [The `cairn-media-seed` CLI](./cli-cairn-media-seed.md): seeds local R2 state from a deployed site's media library, for design iteration against `vite dev` with no deploy.

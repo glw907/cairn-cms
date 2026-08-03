@@ -24,11 +24,20 @@ describe('formatMoney', () => {
   it('honors a non-USD currency option', () => {
     expect(formatMoney(1000, { currency: 'CAD', locale: 'en-CA' })).toContain('10.00');
   });
+
+  it('reads the empty string for a null or undefined amount with no fallback', () => {
+    expect(formatMoney(null)).toBe('');
+    expect(formatMoney(undefined)).toBe('');
+  });
+
+  it('honors a caller-supplied fallback for a nullish amount', () => {
+    expect(formatMoney(null, { fallback: 'n/a' })).toBe('n/a');
+  });
 });
 
 describe('formatCivilDate', () => {
-  it('reads the fallback word for a null date', () => {
-    expect(formatCivilDate(null)).toBe('Not yet');
+  it('reads the empty string for a null date with no fallback', () => {
+    expect(formatCivilDate(null)).toBe('');
   });
 
   it('honors a caller-supplied fallback word', () => {
@@ -76,6 +85,15 @@ describe('formatTimestamp', () => {
   it('honors a caller-supplied time zone after fall-back completes', () => {
     expect(formatTimestamp('2026-11-01 12:00:00', { timeZone: 'America/Anchorage' })).toBe('Nov 1, 2026, 3:00 AM');
   });
+
+  it('reads the empty string for a null or undefined timestamp with no fallback', () => {
+    expect(formatTimestamp(null)).toBe('');
+    expect(formatTimestamp(undefined)).toBe('');
+  });
+
+  it('honors a caller-supplied fallback for a nullish timestamp', () => {
+    expect(formatTimestamp(null, { fallback: 'n/a' })).toBe('n/a');
+  });
 });
 
 describe('ageFromBirthdate', () => {
@@ -114,6 +132,15 @@ describe('formatPhone', () => {
 
   it('passes through a malformed value unchanged', () => {
     expect(formatPhone('not a phone number')).toBe('not a phone number');
+  });
+
+  it('reads the empty string for a null or undefined phone with no fallback', () => {
+    expect(formatPhone(null)).toBe('');
+    expect(formatPhone(undefined)).toBe('');
+  });
+
+  it('honors a caller-supplied fallback for a nullish phone', () => {
+    expect(formatPhone(null, { fallback: 'n/a' })).toBe('n/a');
   });
 });
 

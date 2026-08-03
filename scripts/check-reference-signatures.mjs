@@ -21,8 +21,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ALLOWLIST = /** @type {Set<string>} */ (
   new Set([
     // The page sums the actions record as `Record<string, (event) => Promise<unknown>>`; the real
-    // type expands all fifteen methods. The per-action signatures live on admin-routes.md and the
-    // four factory blocks below, so the facade block stays readable.
+    // type expands all twenty-nine methods. The per-action signatures live on admin-routes.md and
+    // the four factory blocks below, so the facade block stays readable.
     '/sveltekit#createCairnAdmin',
     // The page writes the bare `ConceptConfig`; the real type resolves the default type argument to
     // `ConceptConfig<Fieldset<Record<string, FieldDescriptor>>>`. The default carries no reader

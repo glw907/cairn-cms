@@ -48,7 +48,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     MediaOrphanPurgeResult,
     MediaBulkFailure,
   } from '../sveltekit/content-routes.js';
-  import type { OrphanScan } from '../media/orphan-scan.js';
+  import type { MediaOrphanScanResult } from '../media/orphan-scan.js';
   import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
   import type { AltPlacement } from '../content/media-rewrite.js';
   import type { UsageEntry } from '../media/usage.js';
@@ -1145,7 +1145,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // could feed an unrecoverable purge.
   type OrphanPhase = 'idle' | 'scanning' | 'result' | 'blocked';
   const ORPHAN_SCAN_URL = '?/mediaOrphanScan';
-  const ORPHAN_PURGE_URL = '?/mediaPurge';
+  const ORPHAN_PURGE_URL = '?/mediaOrphanPurge';
 
   let orphanDialog = $state<HTMLDialogElement | null>(null);
   // The "Find orphaned files" entry control, so focus restores to it on close.
@@ -1154,7 +1154,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   let orphanTitle = $state<HTMLElement | null>(null);
   let orphanPhase = $state<OrphanPhase>('idle');
   // The scan result (the result phase) or the fail-closed error message (the blocked phase).
-  let orphanScan = $state<OrphanScan | null>(null);
+  let orphanScan = $state<MediaOrphanScanResult | null>(null);
   let orphanBlockedError = $state('');
   // The orphaned-byte selection: a Set of R2 KEYS, distinct from the asset-hash Set above. Never
   // mutated in place; every change reassigns (the reactive-Set rule the rest of the screen follows).
@@ -1230,15 +1230,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   }
 
   // Run the scan: POST ?/mediaOrphanScan, parse the ActionResult envelope, and route to the result
-  // phase (an OrphanScan) or the fail-closed blocked phase (a 503 MediaBulkFailure or a network
-  // throw). The action reads no fields, but a SvelteKit form action rejects a body-less POST with a
-  // 415, so send an empty FormData to carry the form content-type. The CSRF token rides the header.
-  // Nothing is pre-selected: this feeds an irreversible purge, so the operator picks each byte (or the
-  // select-all) deliberately.
+  // phase (a MediaOrphanScanResult) or the fail-closed blocked phase (a 503 MediaBulkFailure or a
+  // network throw). The action reads no fields, but a SvelteKit form action rejects a body-less POST
+  // with a 415, so send an empty FormData to carry the form content-type. The CSRF token rides the
+  // header. Nothing is pre-selected: this feeds an irreversible purge, so the operator picks each
+  // byte (or the select-all) deliberately.
   async function runOrphanScan() {
     orphanPhase = 'scanning';
     orphanBlockedError = '';
-    const outcome = await postFormAction<OrphanScan>(ORPHAN_SCAN_URL, {
+    const outcome = await postFormAction<MediaOrphanScanResult>(ORPHAN_SCAN_URL, {
       method: 'POST',
       headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
       body: new FormData(),
@@ -1284,7 +1284,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     orphanPurgeError = '';
   }
 
-  // The purge: POST ?/mediaPurge with each selected key as a repeated `key` field plus `confirm` set to
+  // The purge: POST ?/mediaOrphanPurge with each selected key as a repeated `key` field plus `confirm` set to
   // the typed count. The server re-derives fresh and skips any key claimed since the scan, so the
   // selection here is advisory. The CSRF token rides the X-Cairn-CSRF header; the ActionResult envelope
   // is read through deserialize. A success carries the MediaOrphanPurgeResult; a fail or a network throw

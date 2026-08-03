@@ -14,7 +14,37 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-03: C2 is MERGED; next is pass C2b)
+## Immediate next action (2026-08-03: C2b is IN FLIGHT, eight tasks landed, Task F next)
+
+**Pass C2b is in flight on worktree `.claude/worktrees/c2b-refusal-channel`, branch
+`c2b-refusal-channel`, off `main` at `8559f3e7`.** Eight of nine tasks have landed and each cleared
+its gate: A `2dfa1ac0`, B1 `88b206f3`, C1 `664153b4`, C2 `9890ab8a`, B2 `7a10c40e`, D `ac5b3e08`,
+E `64b8b218`, G `e5191ef8`. The refusal channel is structurally closed and verified: no load returns
+a query-derived string, and the only `?error=` reads left are the auth pair, which both components
+consume as a boolean with fixed engine copy.
+
+**Resume prompt** (fresh Opus 5 session, launched from `~/Projects/cairn-cms`):
+"Continue pass C2b. Read `docs/superpowers/plans/2026-08-03-c2b-refusal-channel.md` in full,
+especially its execution record and the `Consumers must:` inventory. Work in the existing worktree
+`.claude/worktrees/c2b-refusal-channel` (do NOT create a new one; deps are installed in both the
+root and `examples/showcase`). Execute Task F, then run `web-auth-security-reviewer` over the
+branch diff, then read a failing save and a bounced navigation rendering in the main loop, then
+close out. Hold unpublished."
+
+**Read the plan's gate-list warning before dispatching anything.** This pass's orchestrator dropped
+`check:consumers` from its dispatch list by retyping it from memory, which is why a real
+consumer-facing `ActionData` collision survived to Task E instead of failing at Task B1. Paste the
+gate list out of `.github/workflows/test.yml`; do not retype it.
+
+**Two initiatives were scoped during this pass and are recorded in `ROADMAP.md`'s Now tier**, both
+sequenced ahead of the site migrations by Geoff: the **ambient-defaults audit** ("what does a
+deployed cairn site do that nobody decided?") and then the **AI-posture pass**. Evidence for both is
+committed at `docs/internal/2026-08-03-ai-crawler-posture-research.md`, including a measured audit
+finding 907.life and aksailingclub.org edge-blocking AI crawlers while cairn.pub and ecxc.ski do
+not, chosen by nobody. Comparables research for 22 tools sits in this session's scratchpad and
+should be moved into `docs/internal/` when C2b closes.
+
+## Superseded: the pre-C2b entry (2026-08-03: C2 is MERGED; next is pass C2b)
 
 **C2, the breaking-window pass, is DONE and merged to `main`** (PR #19, merge `ce81ab40`; 214
 files, 27 commits). All four CI workflows green on the merged sha. **The window HOLDS

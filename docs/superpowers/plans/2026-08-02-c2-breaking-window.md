@@ -83,6 +83,24 @@ An earlier cut was considered and rejected: Tasks 5 through 11 are one coherent 
 and splitting inside them would leave the public surface half-renamed across two merges, which
 costs a consumer more than either whole.
 
+### Discovered during execution, routed (not absorbed)
+
+**`requireAccess`'s target derivation still defaults to `event.url.pathname` (routed to C2b).**
+Task 10 moved `createSectionAction`'s `target` default to `event.route.id` on R9's grounds, that a
+catch-all route's pathname is attacker-chosen and its route id is not. `guard.ts`'s `requireAccess`,
+the load-side counterpart, still defaults to the pathname, so the two halves of one authorization
+story now disagree. The escalation shape is real: on a catch-all route a crafted pathname can match
+a permissive access rule the route's own id would not. This pass does not make anything worse (both
+halves read the pathname on `main` today) and Task 10's scope was written against
+`SectionActionConfig` alone, so C2 ships the asymmetry rather than widening a task in flight. **C2b
+takes it**, where `web-auth-security-reviewer` already gates the diff, and closes it with the same
+fail-closed constant Task 10 introduced.
+
+**`docs/guides/upgrade-cairn.md`'s `## Unreleased` heading is labelled `(non-breaking)`
+(Task 14 fixes it).** Every task in this pass has filed breaking `Consumers must:` entries beneath
+that heading. Relabelling it is a pass-level call, not a task-level one, which is why Task 10
+flagged it instead of retitling it; Task 14 owns the correction batch and carries it.
+
 ---
 
 ## The rulings

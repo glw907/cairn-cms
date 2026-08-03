@@ -1,4 +1,8 @@
-// The one-line App.Locals augmentation a consumer site imports from src/app.d.ts:
+// cairn-cms: the public `/ambient` barrel. The one-line App.Locals augmentation a consumer site
+// imports from src/app.d.ts, and nothing else: a type a site consumes directly (CairnEnv, Editor,
+// and so on) belongs on the root barrel or /sveltekit instead, even one this augmentation's own
+// members reference, since this module's whole contract is its import side effect, not a name a
+// site imports from it.
 //
 //   import '@glw907/cairn-cms/ambient';
 //

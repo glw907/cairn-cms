@@ -81,13 +81,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `verifyReferences`: (manifest: Manifest) => void
 - `VocabularyEntry`: { value: string; label: string }
 
-## `/admin-fields`
-
-- `FieldLabel`: Component<Props, {}, "">
-- `SelectField`: Component<Props, {}, "value">
-- `SelectFieldOption`: { value: string; label: string }
-- `TextField`: Component<Props, {}, "value">
-
 ## `/admin-toolkit`
 
 - `AdminTable`: Component<Props, {}, "">
@@ -101,6 +94,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EmptyState`: Component<Props, {}, "">
 - `EmptyStateHeadingLevel`: "p" | "h1" | "h2" | "h3"
 - `ExpandableRow`: $$IsomorphicComponent
+- `FieldLabel`: Component<Props, {}, "">
 - `formatCivilDate`: (iso: string | null | undefined, options?: FormatCivilDateOptions) => string
 - `FormatCivilDateOptions`: { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }
 - `formatMoney`: (cents: number, options?: FormatMoneyOptions) => string
@@ -115,14 +109,18 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ListToolbarAction`: { label: string; onClick: () => void }
 - `ListToolbarFilter`: { id: string; label: string; options: ListToolbarFilterOption[]; value: string; onChange: (value: string) => void; defaultValue?: string; promoted?: boolean; display?: "select" | "segmented" | "menu" }
 - `ListToolbarFilterOption`: { value: string; label: string; count?: number }
+- `OfficeList`: Component<Props, {}, "">
 - `PageHeader`: Component<Props, {}, "">
 - `PageWindowItem`: number | "ellipsis"
 - `Pagination`: Component<Props, {}, "">
+- `SelectInput`: Component<Props, {}, "value">
+- `SelectInputOption`: { value: string; label: string }
 - `STATUS_CHIP_DOT_CLASS`: { neutral: string; info: string; success: string; warning: string; danger: string }
 - `StatusChip`: Component<Props, {}, "">
 - `StatusChipRegister`: "bounded" | "quiet"
 - `StatusChipSize`: "xs" | "sm"
 - `StatusChipTone`: "neutral" | "info" | "success" | "warning" | "danger"
+- `TextInput`: Component<Props, {}, "value">
 
 ## `/ambient`
 
@@ -172,8 +170,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ManageEditors`: Component<Props, {}, "">
 - `MarkdownEditor`: Component<Props, {}, "value">
 - `NavTree`: Component<Props, {}, "">
-- `OfficeList`: Component<Props, {}, "">
 - `RenameDialog`: Component<Props, { open: () => void }, "">
+- `VocabularyAdmin`: Component<Props, {}, "">
+- `WelcomeView`: Component<$$ComponentProps, {}, "">
 
 ## `/delivery`
 

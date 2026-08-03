@@ -1,6 +1,9 @@
-// cairn-cms: the node-safe delivery data surface (@glw907/cairn-cms/delivery/data). The pure corpus
-// projections a SvelteKit site or a plain-Node tool reads, with no @sveltejs/kit and no .svelte in
-// the graph. The full ./delivery barrel re-exports this and adds the route loaders.
+// cairn-cms: the server-safe data half of /delivery; everything here imports no Svelte. The pure
+// corpus projections a SvelteKit site or a plain-Node tool reads, with no @sveltejs/kit and no
+// .svelte in the graph. The full ./delivery barrel re-exports this and adds the route loaders. A
+// SvelteKit-route-facing loader belongs on /delivery instead, even one built from these same
+// projections, and a rendering component on /delivery/head, so this barrel stays importable from
+// plain Node with no kit or Svelte dependency resolved.
 export type { ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
 export { buildLinkResolver, buildFragmentResolver, resolveReferences } from './site-resolver.js';
 export type { SiteResolver, ResolvedReference } from './site-resolver.js';

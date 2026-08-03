@@ -1,9 +1,11 @@
 <!--
 @component
 One labeled single-line text input in the admin idiom (DaisyUI v5's default-bordered `input`, no
-`-bordered` modifier). `SelectField`'s sibling on the `admin-fields` subpath; see that component's
-header comment for the seam both fill. `FieldLabel`'s header comment documents the `register`
-this component passes straight through.
+`-bordered` modifier). `SelectInput`'s sibling among the toolkit's field primitives (merged from
+the retired `admin-fields` subpath, C2 breaking-window pass, R3); see that component's header
+comment for the seam both fill and why this component is named `TextInput`, not `TextField`
+(the root barrel's field descriptor already owns that name). `FieldLabel`'s header comment
+documents the `register` this component passes straight through.
 -->
 <script lang="ts">
   import FieldLabel from './FieldLabel.svelte';

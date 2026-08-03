@@ -282,6 +282,25 @@ already uses for Help. Replace any imported `AdminNavEntry`, `AdminNavSection`, 
 `ResolvedNavSection`, or `ResolvedNavItem` type with `NavLayoutEntry`, `NavLayoutSection`,
 `NavLayout`, `ResolvedLayoutSection`, or `ResolvedLayoutNode` respectively.
 
+`@glw907/cairn-cms/admin-fields` merges into `@glw907/cairn-cms/admin-toolkit` and is removed:
+two subpaths stating one charter ("primitives for a site building its own admin screens") is one
+subpath. The merged toolkit's form components rename to resolve a name collision with the root
+barrel's field *descriptor* arms (elsewhere in this window, `TextField`/`SelectField` become
+importable at the root as content field descriptors): `TextField` becomes `TextInput`,
+`SelectField` becomes `SelectInput`, and `SelectFieldOption` becomes `SelectInputOption`.
+`FieldLabel` is unchanged. `OfficeList` also moves from `/components` to `/admin-toolkit`, beside
+`PageHeader`, its own later generalization; both stay, since they cover different shapes, a header
+primitive versus a full list-screen scaffold. `/components` also completes its per-view seam:
+`VocabularyAdmin` and `WelcomeView` join the barrel, so a site on the advanced per-route mounting
+can now mount every view `CairnAdmin` renders internally. See [The admin
+toolkit](../reference/admin-toolkit.md#fields) and
+[Components](../reference/components.md#vocabularyadmin).
+
+Consumers must: replace any `@glw907/cairn-cms/admin-fields` import with
+`@glw907/cairn-cms/admin-toolkit`; rename `TextField` to `TextInput`, `SelectField` to
+`SelectInput`, and `SelectFieldOption` to `SelectInputOption`; replace
+`@glw907/cairn-cms/components`'s `OfficeList` import with `@glw907/cairn-cms/admin-toolkit`.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1
@@ -366,7 +385,9 @@ control and fills the control to its container, so a field composed inside a mul
 grid renders with no extra markup. **`'stacked'` is now the default**, replacing the prior
 label-beside-control layout: `inline` stays available for a genuinely control-adjacent
 composition, but it is now an explicit choice rather than the default. See
-[Admin fields](../reference/admin-fields.md).
+[The admin toolkit](../reference/admin-toolkit.md#fields) (this content's current home; the
+`admin-fields` subpath these components shipped on at the time merged into `/admin-toolkit` in a
+later release, see that section above).
 
 **Consumers must:** pass `register="inline"` on any `FieldLabel`, `TextField`, or `SelectField`
 call whose label-beside-control layout should survive the upgrade. Every other call renders the

@@ -5,8 +5,15 @@ every triage-table screen composes, lifted out of `ConceptList` and kept to exac
 card frame, so a site's own custom `/admin/` screen gets the same office rhythm without hand-rolling
 it. The eyebrow-plus-display heading, an optional live subtitle, and an optional header-right action
 (a filter control, a primary button) sit above a bordered, theme-adaptive card shell; the caller
-supplies its own `<table>` (or any content) inside.
+supplies its own `<table>` (or any content) inside. Moved here from `/components` in the C2
+breaking-window pass (R3): `PageHeader`, this component's own later generalization, already lived on
+the toolkit, and a header-plus-card screen scaffold belongs beside it, not on the admin's own view
+barrel. `PageHeader` and this component both stay; they cover different shapes (a header primitive
+versus a full list-screen scaffold), never a duplicate.
 -->
+<!-- WATCH: the ROADMAP spacing-convergence entry between this component and PageHeader stays filed
+     and untouched here; it needs the visual gate, not a naming or subpath pass. -->
+
 <script lang="ts">
   import type { Snippet } from 'svelte';
 

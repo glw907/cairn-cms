@@ -7,7 +7,7 @@
      between runs so every round starts from the same "before" state, and a chapter amendment gets
      re-tested against this same page rather than a new one.
 
-     Deliberately un-cairn: no `cairn-admin.css`, no `admin-toolkit`/`admin-fields` import, no
+     Deliberately un-cairn: no `cairn-admin.css`, no `admin-toolkit` import, no
      grammar token (`type-*`/`gap-*`), no `StatusChip`. `probe-craft.css` is this route's own
      from-scratch Tailwind/DaisyUI build, the stock defaults a fresh build reaches for first.
 

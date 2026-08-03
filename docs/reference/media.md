@@ -3,7 +3,8 @@
 This subpath holds the node-safe media surface a site actually reaches into: the config normalizer,
 reading the committed manifest, the `media:` reference codec, and the render-time resolver. All of
 it is pure projection. Nothing here pulls `@sveltejs/kit` or `@cloudflare/workers-types` into the
-module graph, so a plain-Node tool, a Vite build step, or a site's render path can import it. The
+module graph, so a plain-Node tool, a Vite build step, or a site's render path can import it.
+Anything proposed here must be node-safe pure projection over the media surface. The
 R2-touching pieces (the object store and the delivery bucket seam), the `requireBucket` helper, and
 the `createMediaRoute` delivery factory live on [`/sveltekit`](./sveltekit.md) instead, off this
 surface, so the public type for `/media` names no kit or workers-types type. The manifest CRUD, the

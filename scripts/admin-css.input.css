@@ -20,14 +20,6 @@
    PageHeader/StatusChip use. check:admin-css-classes guards this scan root the same way it guards
    the safelist below. */
 @source "../src/lib/admin-toolkit/**/*.{svelte,ts,js}";
-/* The admin-fields subpath (FieldLabel, TextField, SelectField) is the third public surface that
-   renders inside the admin theme, and it was missing here for the same reason admin-toolkit was.
-   It went unnoticed because every class it used also appeared under src/lib/components, so it rode
-   along on someone else's scan. The Pass 2 type normalization ended that free ride: removing the
-   last scanned `text-sm` stopped Tailwind compiling the rule, and FieldLabel's own `text-sm` would
-   have shipped resolving to nothing. Scanning the directory is the structural fix; the class itself
-   also moved to a safelisted role utility. */
-@source "../src/lib/admin-fields/**/*.{svelte,ts,js}";
 /* The thirteen grammar and container role utilities are safelisted, not scanned. A Tailwind
    `@utility` is tree-shaken, so a role with no internal call site would never reach the shipped
    sheet: `type-title` and `gap-control` were both absent until this line went in. They are a

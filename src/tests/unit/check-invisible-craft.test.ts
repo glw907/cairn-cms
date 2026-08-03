@@ -20,7 +20,6 @@ describe('SCAN_SCOPE', () => {
   it('keeps walking the admin surfaces', () => {
     expect(SCAN_SCOPE).toContain('src/lib/components');
     expect(SCAN_SCOPE).toContain('src/lib/admin-toolkit');
-    expect(SCAN_SCOPE).toContain('src/lib/admin-fields');
   });
 
   it('names only directories the tree actually has, so a rename fails loudly', () => {

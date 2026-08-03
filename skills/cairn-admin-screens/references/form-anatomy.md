@@ -28,13 +28,13 @@ habit or by copying the nearest existing field.
    legend's eyebrow recipe here: a field label at the same weight as the group title above it
    reads as a second, redundant title, not a label, which is exactly why the group legend and
    the field label stay two distinct levels rather than one shared recipe. This is
-   `FieldLabel`'s `register="stacked"` recipe (the `admin-fields` subpath's default; see level 3
+   `FieldLabel`'s `register="stacked"` recipe (the `admin-toolkit` subpath's default; see level 3
    below for its sibling register).
 3. **Inline control-adjacent label**: a label on the same line as its control rather than
    above it, for a control the group legend already-scoped enough that a full stacked label
    would be excess: `flex items-center gap-1.5 type-body`, muted ink on the label span, plain
    weight. `FieldLabel` renders both this register and level 2's stacked register through its
-   `register: 'inline' | 'stacked'` prop; `SelectField` and `TextField` both wrap `FieldLabel`
+   `register: 'inline' | 'stacked'` prop; `SelectInput` and `TextInput` both wrap `FieldLabel`
    internally and pass the same prop through. Compose a bare custom control the same way when
    no bundled primitive matches.
 
@@ -105,14 +105,14 @@ against `cairn-audit`.
 Apply one of these, and verify the choice against the form's own rendered width, not the
 mobile breakpoint alone:
 
-- **Use `register="stacked"`** (label above control; `FieldLabel`'s default, so `SelectField`
-  and `TextField` need no prop at all) for any field inside a multi-column form grid. A
+- **Use `register="stacked"`** (label above control; `FieldLabel`'s default, so `SelectInput`
+  and `TextInput` need no prop at all) for any field inside a multi-column form grid. A
   stacked label never competes with its own control for the row's width, because it isn't
   sharing a row. Its sheet hook also fills the control to its grid cell, so it never clamps to
   daisyUI's fixed 20rem default the way an un-widened inline control can. The hook reaches only
   a direct child of the label, so a compact row nested one level deeper, two or more controls
   composed side by side inside a stacked field, keeps each control's own width instead of being
-  forced to fill the row (`docs/reference/admin-fields.md`'s `FieldLabel` section). `FieldLabel`
+  forced to fill the row (`docs/reference/admin-toolkit.md`'s `FieldLabel` section). `FieldLabel`
   renders one wrapping `<label>` with no `for`, and a wrapping label only associates with its
   *first* labelable descendant, so only the first control in a compact row picks up the
   wrapping label's accessible name. Give every control after the first its own accessible name
@@ -143,8 +143,8 @@ independent of whatever fills or doesn't fill the page underneath it).
 ## Cross-references
 
 - `exemplar-list.md`, `exemplar-detail.md`: the group-legend register in table-header and
-  section-heading form, and the stacked register at its two bundled call sites (`TextField`,
-  `SelectField`) rendering with no explicit `register` prop.
+  section-heading form, and the stacked register at its two bundled call sites (`TextInput`,
+  `SelectInput`) rendering with no explicit `register` prop.
 - `docs/reference/cairn-audit.md`'s `relational-spacing` rule mechanically checks that a
   rendered gap matches the relationship the markup claims (nested rhythm never wider than its
   container, a label the `gap-label` distance from its control); this file states which

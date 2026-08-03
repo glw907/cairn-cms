@@ -1,5 +1,8 @@
-// SvelteKit server logic consumed by site route shims: the guard plus the auth, editor,
-// content, and health route factories and functions.
+// cairn-cms: the public `/sveltekit` barrel. Everything a SvelteKit site wires into its routes:
+// factories, wrappers, guards, and the data types they exchange. The guard plus the auth, editor,
+// content, and health route factories and functions. An admin Svelte component belongs on
+// `/components` instead, even though a site also wires it into a route: this barrel is server
+// logic only, never a `.svelte` file.
 export { createAuthGuard, requireSession, requireOwner, requireEditor, requireAccess, type AuthGuardOptions } from './guard.js';
 export { createAuthRoutes, type AuthRoutesConfig, type RequestResult, type AuthRoutes } from './auth-routes.js';
 export { createEditorRoutes, type EditorRoutesOptions, type EditorRoutes } from './editors-routes.js';

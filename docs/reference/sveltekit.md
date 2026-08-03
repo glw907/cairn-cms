@@ -1,12 +1,15 @@
 # SvelteKit (`@glw907/cairn-cms/sveltekit`)
 
-This subpath holds the server side of the admin. The canonical wiring is the single mount:
-`createCairnAdmin` serves every admin view through one `load` and one `actions` record, which a
-site's catch-all `/admin/[...path]` route re-exports, plus the `Handle` that guards `/admin` from
-`hooks.server.ts`. The two files and the composer behind them are in
+This subpath is chartered, not split: everything a SvelteKit site wires into its routes,
+factories, wrappers, guards, and the data types they exchange. The canonical wiring is the single
+mount: `createCairnAdmin` serves every admin view through one `load` and one `actions` record,
+which a site's catch-all `/admin/[...path]` route re-exports, plus the `Handle` that guards
+`/admin` from `hooks.server.ts`. The two files and the composer behind them are in
 [the canonical admin mount](./admin-routes.md). The per-surface factories the facade wraps
 (`createAuthRoutes`, `createContentRoutes`, and friends) stay public as the advanced seam for a
-site that mounts routes by hand.
+site that mounts routes by hand. An admin Svelte component belongs on
+[`/components`](./components.md) instead, even though a site also wires it into a route: this
+subpath is server logic only, never a `.svelte` file.
 
 ```ts
 import { createAuthGuard, createCairnAdmin, healthLoad } from '@glw907/cairn-cms/sveltekit';

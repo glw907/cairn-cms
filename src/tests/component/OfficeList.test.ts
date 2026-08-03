@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
 import { page } from 'vitest/browser';
-import OfficeList from '../../lib/components/OfficeList.svelte';
+import OfficeList from '../../lib/admin-toolkit/OfficeList.svelte';
 // The header-stack margin fix and the mobile action self-start fix are both Tailwind utility
 // classes; the compiled sheet carries the real cascade the tests below measure against (the
 // bare component render has no stylesheet at all, so an unstyled UA h1/p margin would silently

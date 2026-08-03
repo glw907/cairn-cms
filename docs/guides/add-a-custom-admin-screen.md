@@ -130,7 +130,7 @@ same sidebar, top bar, and theme as every built-in view.
 screens build with, so a custom screen reaches for them instead of hand-rolling a parallel header
 or table chrome. The remaining DaisyUI classes (`input`, `btn`) are the same ones cairn builds the
 shell with, so a form needs no stylesheet of its own.
-[`OfficeList`](../reference/components.md#officelist) is the alternative header-plus-card shell
+[`OfficeList`](../reference/admin-toolkit.md#officelist) is the alternative header-plus-card shell
 for a triage screen that wants both in one wrap, with an optional `eyebrow` naming the section a
 screen belongs to; the Club section's own screens below all pass `eyebrow="Club"`.
 
@@ -520,7 +520,7 @@ one added link to a full multi-section tree.
 [`CairnAdminShell`](../reference/components.md#cairnadminshell) documents the shell your screen
 renders inside. [The admin toolkit](../reference/admin-toolkit.md) documents `PageHeader` and
 `AdminTable`, the packaged header and table components this guide's screen builds with, and
-[`OfficeList`](../reference/components.md#officelist) documents the alternative header-plus-card
+[`OfficeList`](../reference/admin-toolkit.md#officelist) documents the alternative header-plus-card
 frame a triage screen composes in one wrap. [`CsrfField`](../reference/components.md#csrffield)
 documents the field every one of this guide's forms needs.
 [The canonical admin mount](../reference/admin-routes.md)

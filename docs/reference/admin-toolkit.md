@@ -1,11 +1,18 @@
 # The admin toolkit (`@glw907/cairn-cms/admin-toolkit`)
 
-The admin toolkit's own general-purpose components and formatters, born in
-aksailingclub-org's theme layer (a consuming site's own admin screens, not the ceiling) and
-graduated here so a site building its own `/admin/` screen, and cairn's own admin screens,
-reach for one shared vocabulary instead of a bespoke parallel. Graduation is re-expression,
-not a file copy: every contract here stays general-purpose, carrying no domain knowledge from
-its first consumer.
+General-purpose primitives a site building its own `/admin/` screen, and cairn's own admin
+screens, reach for instead of a bespoke parallel. Two tiers share this one charter. The **field**
+primitives (`FieldLabel`, `TextInput`, `SelectInput`) render one labeled control in the admin's
+label and control rhythm; they merged here from the retired `admin-fields` subpath in the C2
+breaking-window pass, since two subpaths stating the same charter is one subpath. The
+**screen-scaffold** primitives (`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`,
+`Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`) plus the formatters compose a whole
+screen's chrome. Both tiers were born in aksailingclub-org's theme layer (a consuming site's own
+admin screens, not the ceiling) and graduated here by re-expression, not a file copy: every
+contract stays general-purpose, carrying no domain knowledge from its first consumer. Anything
+proposed here must be general-purpose across sites; a component that renders one of cairn's own
+content concepts (a `ConceptList` row, an `EditPage` field) belongs on `/components` instead, even
+though it also renders inside the admin theme.
 
 ```ts
 import { formatMoney, formatCivilDate, formatTimestamp, ageFromBirthdate } from '@glw907/cairn-cms/admin-toolkit';
@@ -119,6 +126,137 @@ line and `ListToolbar`'s count line both route their own `itemLabel` prop throug
 
 ---
 
+## Fields
+
+The field primitives a site's own custom `/admin/` screen composes, such as an events or members
+editor. They render with the admin's own label and control rhythm, matching the built-in content
+editor's fields. Merged here from the retired `admin-fields` subpath (C2 breaking-window pass, R3):
+the set is small today, `TextInput`, `SelectInput`, and `FieldLabel`; new field types land as new
+consumers need them.
+
+```ts
+import { TextInput, SelectInput, FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
+import type { SelectInputOption } from '@glw907/cairn-cms/admin-toolkit';
+```
+
+`FieldLabel`, and the `TextInput`/`SelectInput` primitives that wrap it, render one of two label
+registers, chosen with the `register` prop: `'inline'` or `'stacked'`. These are two of the three
+label registers the admin design system distinguishes. The third, the group legend, is a
+`<legend>` rather than this component.
+
+**`register="stacked"`** is the default. It puts the label on its own line preceding the control.
+Use it for any field inside a multi-column form grid: a stacked label never competes with its own
+control for a shared row's width, so it never wraps at a width an inline label would.
+**`register="inline"`** puts the label beside its control on one line, muted, for a genuinely
+control-adjacent composition, such as a toolbar filter or a compact panel where a group legend
+already scopes the control enough that a full stacked label would be excess.
+
+### `TextInput`
+
+Stability tier: Extension API.
+
+```ts
+let { label, name, value = $bindable(), type = 'text', placeholder, register }: {
+  label: string;
+  name: string;
+  value: string;
+  type?: 'text' | 'search' | 'email' | 'url';
+  placeholder?: string;
+  register?: 'inline' | 'stacked';
+};
+```
+
+One labeled single-line text input in the admin idiom. It's DaisyUI v5's default-bordered
+`input`, with no `-bordered` modifier. `type` narrows the native input type to `search`, `email`,
+or `url`; it defaults to a plain text input. `register` picks the label register described above,
+defaulting to `'stacked'`. Named `TextInput`, not `TextField`, because the root barrel's field
+*descriptor* arm already owns that name (`fields.text`'s return shape); this component wraps a
+real `<input>` element, so `Input` is the honest noun for the rendered control.
+
+```svelte
+<script lang="ts">
+  import { TextInput } from '@glw907/cairn-cms/admin-toolkit';
+
+  let query = $state('');
+</script>
+
+<TextInput label="Search" name="q" type="search" bind:value={query} />
+```
+
+### `SelectInput`
+
+Stability tier: Extension API.
+
+```ts
+let { label, name, value = $bindable(), options, register }: {
+  label: string;
+  name: string;
+  value: string;
+  options: SelectInputOption[];
+  register?: 'inline' | 'stacked';
+};
+```
+
+One labeled select in the same admin idiom as `TextInput`. It's DaisyUI v5's default-bordered
+`select`, with no `-bordered` modifier. `label` renders to the side of the control (inline) or
+preceding it (stacked). `name` is the native form-field name, so the select posts inside an
+ordinary form submit. `value` is bindable. `options` is the option list in display order.
+`register` picks the label register described above, defaulting to `'stacked'`. Named
+`SelectInput`, not `SelectField`, for the same reason `TextInput` isn't `TextField`.
+
+```svelte
+<script lang="ts">
+  import { SelectInput } from '@glw907/cairn-cms/admin-toolkit';
+
+  let status = $state('open');
+</script>
+
+<SelectInput label="Status" name="status" bind:value={status} options={[
+  { value: 'open', label: 'Open' },
+  { value: 'closed', label: 'Closed' },
+]} />
+```
+
+### `FieldLabel`
+
+Stability tier: Extension API.
+
+```ts
+let { label, children, register }: {
+  label: string;
+  children: Snippet;
+  register?: 'inline' | 'stacked';
+};
+```
+
+The label wrapper `TextInput` and `SelectInput` both compose internally. Compose it directly
+around a bare custom control (an admin field this subpath does not yet cover) to keep the same
+label rhythm. `register` picks the label register. `'stacked'` is the default:
+the label sits on its own line preceding the control, which fills to its container. `'inline'`
+puts the label beside the control on one line instead, muted, for a genuinely control-adjacent
+composition. A control that's a direct child of a stacked `FieldLabel` fills the label's own
+width. A control nested one level deeper, such as a compact row of two or more controls side by
+side, keeps its own width instead, since the stacked register's width hook only reaches a direct
+child.
+
+`FieldLabel` renders one wrapping `<label>` with no `for` attribute, and the browser associates a
+wrapping label with only the *first* labelable descendant it contains. In a compact row of two or
+more controls, only the first control picks up the wrapping label's accessible name; every
+control after it has none. Give each control after the first its own accessible name, either its
+own `<label>` (visually hidden if the row's own layout already reads clearly) or an `aria-label`.
+
+```svelte
+<script lang="ts">
+  import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
+</script>
+
+<FieldLabel label="Instructor">
+  <input class="input input-sm" name="instructor" />
+</FieldLabel>
+```
+
+---
+
 ## Components
 
 Each component assembles daisyUI classes only from cairn's admin CSS blessed set, and keeps
@@ -126,7 +264,7 @@ spacing, truncation, and wrapper layout in its own scoped `<style>` rather than 
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
-import { StatusChip, Pagination, AdminTable, ListToolbar, PageHeader, EmptyState, ExpandableRow } from '@glw907/cairn-cms/admin-toolkit';
+import { StatusChip, Pagination, AdminTable, ListToolbar, PageHeader, OfficeList, EmptyState, ExpandableRow } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 ### `StatusChip`
@@ -472,6 +610,51 @@ page-heading recipes from `docs/internal/admin-design-system.md`.
 </PageHeader>
 ```
 
+### `OfficeList`
+
+Stability tier: Extension API.
+
+```ts
+let { eyebrow, title, subtitle, action, children }: {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  action?: Snippet;
+  children: Snippet;
+};
+```
+
+The office-list primitive: the header-plus-card shell every triage-table screen composes, lifted
+out of `ConceptList` and kept to exactly its header and card frame. A site's own custom `/admin/`
+screen, a Club-style events or members list say, wraps its own `<table>` in this to reuse the
+shared header and card frame instead of rebuilding it. `eyebrow` names a grouping, such as a
+custom nav section's label, and is omitted entirely when there is none to name. `title` is the
+display-face heading. `subtitle` is the muted one-line note under it, a live count or a scope
+note. `action` is an optional header-right control such as a filter or a primary button.
+`children` is the screen's own content, rendered inside the shared bordered, theme-adaptive card
+shell.
+
+`OfficeList` moved here from `/components` in the C2 breaking-window pass (R3): `PageHeader`, this
+component's own later generalization above, already lived on the toolkit, and a header-plus-card
+screen scaffold belongs beside it. `PageHeader` and `OfficeList` both stay; they cover different
+shapes, a header primitive versus a full list-screen scaffold, never a duplicate. A new build
+reaches for `PageHeader` first; `OfficeList` stays correct where it already ships.
+
+```svelte
+<script lang="ts">
+  import { OfficeList } from '@glw907/cairn-cms/admin-toolkit';
+</script>
+
+<OfficeList eyebrow="Club" title="Events" subtitle="12 upcoming">
+  {#snippet action()}
+    <button type="button" class="btn btn-primary btn-sm">New event</button>
+  {/snippet}
+  <table class="table">
+    <!-- rows -->
+  </table>
+</OfficeList>
+```
+
 ### `EmptyState`
 
 Stability tier: Extension API.
@@ -624,3 +807,4 @@ compiled from cairn's own admin usage.
 | `EmptyStateHeadingLevel` | Extension API | `type EmptyStateHeadingLevel = 'p' \| 'h1' \| 'h2' \| 'h3'` | `EmptyState`'s `headingLevel` prop vocabulary: the heading's own element, defaulting to `'p'`. |
 | `ItemLabel` | Extension API | `interface ItemLabel { one: string; many: string }` | A count-line noun in both grammatical numbers, for `Pagination`'s and `ListToolbar`'s `itemLabel` prop and `computeCountLine`'s own parameter. |
 | `itemNoun` | Extension API | `declare function itemNoun(count: number, label: string \| ItemLabel): string` | Picks the grammatical number for a count surface: `label.one` at exactly 1, `label.many` otherwise. A plain string `label` is invariant across every count. |
+| `SelectInputOption` | Extension API | `interface SelectInputOption { value: string; label: string }` | One `SelectInput` option: the submitted value and its visible text. |

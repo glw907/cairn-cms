@@ -3,7 +3,11 @@
 This subpath is the public read model for a SvelteKit site. It carries the catch-all route loader,
 the public route-data types, and the feed, sitemap, and robots responders. Import it from a
 `+server.ts` or a `+page.server.ts` in the reader-facing site. The matching head
-component, [`CairnHead`](#cairnhead), lives one level down at `/delivery/head`.
+component, [`CairnHead`](#cairnhead), lives one level down at `/delivery/head`. Anything proposed
+here must be a SvelteKit-route-facing reader, or already live on
+[`/delivery/data`](./delivery-data.md); a pure projection with no kit dependency belongs on
+`/delivery/data` alone, and the `.svelte` head component stays split onto `/delivery/head` so
+neither pulls Svelte into a plain-Node build.
 
 ```ts
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
@@ -141,6 +145,11 @@ canonical token is left untouched, so `entry.frontmatter.image.src` stays the `m
 ---
 
 ## `CairnHead`
+
+`/delivery/head` carries exactly the one Svelte component. A plain-data SEO helper, `SeoMeta`
+included, belongs on [`/delivery/data`](./delivery-data.md) instead, even one this component
+itself consumes, so a plain-Node tool never resolves a component just to reach the data it
+renders.
 
 Stability tier: Extension API.
 

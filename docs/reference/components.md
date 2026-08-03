@@ -1,10 +1,16 @@
 # Components (`@glw907/cairn-cms/components`)
 
-This subpath holds the admin Svelte UI. It spans the layout shell, the sign-in and confirm pages,
-the content list and editor, the editors and nav screens, and the dialogs and pickers those
+This subpath holds the admin Svelte UI: the shell, the sign-in and confirm pages, the content list
+and editor, the editors, nav, vocabulary, and welcome screens, and the dialogs and pickers those
 compose. The canonical mount is one component: `CairnAdmin`, rendered from the catch-all
-`/admin/[...path]` route, switches to the matching view. The per-view components below it stay
-public as the advanced seam for a site that mounts routes by hand. For the catch-all wiring, see
+`/admin/[...path]` route, switches to the matching view. The membership rule for the view tier is
+exact: **every view `CairnAdmin` can render is individually mountable here**, so a site on the
+advanced per-route mounting reaches the same component the single-mount facade would have
+rendered; `VocabularyAdmin` and `WelcomeView` complete that seam. A general-purpose,
+domain-agnostic primitive belongs on [`/admin-toolkit`](./admin-toolkit.md) instead, even one this
+barrel's own screens compose internally (`PageHeader`, `AdminTable`): this barrel is for the
+admin's own views and their composed parts, never a reusable building block a site's custom screen
+would reach for on its own. For the catch-all wiring, see
 [the canonical admin mount](./admin-routes.md).
 
 ```ts
@@ -170,45 +176,6 @@ per-route mounting it lives at `src/routes/admin/(app)/[concept]/+page.svelte`.
 </script>
 
 <ConceptList {data} />
-```
-
-### `OfficeList`
-
-Stability tier: Extension API.
-
-```ts
-let { eyebrow, title, subtitle, action, children }: {
-  eyebrow?: string;
-  title: string;
-  subtitle?: string;
-  action?: Snippet;
-  children: Snippet;
-};
-```
-
-The office-list primitive: the header-plus-card shell every triage-table screen composes, lifted
-out of `ConceptList` and kept to exactly its header and card frame. A site's own custom `/admin/`
-screen, a Club-style events or members list say, wraps its own `<table>` in this to reuse the
-shared header and card frame instead of rebuilding it. `eyebrow` names a grouping, such as a
-custom nav section's label, and is omitted entirely when there is none to name. `title` is the
-display-face heading. `subtitle` is the muted one-line note under it, a live count or a scope
-note. `action` is an optional header-right control such as a filter or a primary button.
-`children` is the screen's own content, rendered inside the shared bordered, theme-adaptive card
-shell.
-
-```svelte
-<script lang="ts">
-  import { OfficeList } from '@glw907/cairn-cms/components';
-</script>
-
-<OfficeList eyebrow="Club" title="Events" subtitle="12 upcoming">
-  {#snippet action()}
-    <button type="button" class="btn btn-primary btn-sm">New event</button>
-  {/snippet}
-  <table class="table">
-    <!-- rows -->
-  </table>
-</OfficeList>
 ```
 
 ### `CairnMediaLibrary`
@@ -490,6 +457,58 @@ an explicit empty string suppresses the hand-off, the self-serve state. It mount
 </script>
 
 <HelpHome {data} />
+```
+
+### `VocabularyAdmin`
+
+Stability tier: Unstable API.
+
+```ts
+let { data }: { data: VocabularyLoadData };
+```
+
+The tag-vocabulary admin screen ("Tags"). `data` is the committed vocabulary, the per-value
+cross-branch usage count, and the in-use-but-unlisted seed set, from the vocabulary load. It adds
+a tag (a typed label derives its slug `value` live), renames a tag's label (the `value` slug stays
+immutable once created), removes a zero-usage tag (a guarded, disabled control for an in-use one,
+naming the count), and seeds the working copy from tags already on posts but absent from the
+vocabulary. A `role="status"` live region narrates the last mutation. It mounts inside
+`CairnAdminShell` on `PageHeader` for its header band.
+
+```svelte
+<script lang="ts">
+  import { VocabularyAdmin } from '@glw907/cairn-cms/components';
+  import type { VocabularyLoadData } from '@glw907/cairn-cms/sveltekit';
+
+  let { data }: { data: VocabularyLoadData } = $props();
+</script>
+
+<VocabularyAdmin {data} />
+```
+
+### `WelcomeView`
+
+Stability tier: Unstable API.
+
+```ts
+let { data }: { data: WelcomeData };
+```
+
+The calm, minimal signed-in screen a none-capability role with no declared `home` lands on at the
+admin root. `data` carries the account's `displayName` and the site's `siteName` for the greeting
+and standing line. It renders on the admin toolkit's `EmptyState`, passing `headingLevel="h1"`
+since this screen renders no `PageHeader` of its own, so the greeting is the page's only heading.
+It mounts inside `CairnAdminShell`, so it carries no theme wrapper or CSS of its own.
+
+```svelte
+<script lang="ts">
+  import { WelcomeView } from '@glw907/cairn-cms/components';
+  import type { WelcomeData } from '@glw907/cairn-cms/sveltekit';
+
+  let { data }: { data: WelcomeData } = $props();
+</script>
+
+<WelcomeView {data} />
 ```
 
 ---

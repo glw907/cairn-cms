@@ -1,5 +1,12 @@
-// Engine entry. Auth landed in Plan 01, the content model and adapter in Plan 02, and the
-// GitHub read-and-commit backend in Plan 03; render and nav follow.
+// cairn-cms: the root package barrel (`@glw907/cairn-cms`). Everything a site's own
+// `cairn.config.ts` needs to declare its adapter (`defineAdapter`, `defineConcept`, the
+// field/fieldset builders, `CairnAdapter` and its member types), plus the render pipeline entry
+// (`createRenderer`), the composed runtime's read surface, and the content-manifest and
+// GitHub-backend primitives a build script or the delivery layer calls. Auth landed in Plan 01,
+// the content model and adapter in Plan 02, and the GitHub read-and-commit backend in Plan 03. A
+// SvelteKit route factory belongs on `/sveltekit`, and an admin Svelte component on `/components`,
+// even though a site's adapter config also feeds both: this barrel carries no server route, no
+// Svelte component, and no per-request framework binding.
 export type { Editor, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { CairnEnv } from './env.js';
 // Site-declared role vocabulary (extensible-roles): sites map their own role names onto the three

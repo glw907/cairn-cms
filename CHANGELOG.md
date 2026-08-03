@@ -204,6 +204,28 @@
   `NavLayoutEntry`, `NavLayoutSection`, `NavLayout`, `ResolvedLayoutSection`, or
   `ResolvedLayoutNode` respectively.
 
+- `/admin-fields` merges into `/admin-toolkit` and is removed from the exports map: two subpaths
+  stating one charter ("primitives for a site building its own admin screens") is one subpath. The
+  merged toolkit's form components rename to resolve a name collision with the root barrel's field
+  *descriptor* arms (the export rule elsewhere in this window makes `TextField`/`SelectField`
+  importable at the root as content field descriptors): `TextField` becomes `TextInput`,
+  `SelectField` becomes `SelectInput`, and `SelectFieldOption` becomes `SelectInputOption`.
+  `FieldLabel` is unchanged. `OfficeList` also moves from `/components` to `/admin-toolkit`,
+  beside `PageHeader`, its own later generalization; both stay, since they cover different shapes,
+  a header primitive versus a full list-screen scaffold. See [The admin
+  toolkit](docs/reference/admin-toolkit.md#fields). **Consumers must:** replace any
+  `@glw907/cairn-cms/admin-fields` import with `@glw907/cairn-cms/admin-toolkit`; rename
+  `TextField` to `TextInput`, `SelectField` to `SelectInput`, and `SelectFieldOption` to
+  `SelectInputOption`; replace `@glw907/cairn-cms/components`'s `OfficeList` import with
+  `@glw907/cairn-cms/admin-toolkit`.
+
+- `/components` completes its per-view seam: `VocabularyAdmin` and `WelcomeView` join the barrel,
+  the two views `CairnAdmin` already rendered internally but a site on the advanced per-route
+  mounting could not reach directly. The membership rule is now exact: every view `CairnAdmin` can
+  render is individually mountable. See
+  [Components](docs/reference/components.md#vocabularyadmin). Consumers must: nothing; both
+  additions are additive.
+
 ### Fixed
 
 - `scripts/check-reference-signatures.mjs`'s `normalizeSignature` stripped every `| undefined`
@@ -240,6 +262,14 @@
   [Supported toolchain](docs/reference/supported-toolchain.md), states the package's
   minimum-supported and proven-against versions for `@sveltejs/kit`, `svelte`, `vite`,
   `typescript`, `node`, and TypeScript module resolution. No consumer action.
+
+- Every one of the package's fifteen export subpaths now carries a stated membership rule, in its
+  barrel header comment and in its reference page's opening: what belongs, and a plausible
+  candidate ruled out. [Auth crypto](docs/reference/auth-crypto.md#tokensmatch)'s `tokensMatch`
+  section also gains a fourth caller precondition: `TextEncoder` maps a lone (unpaired) surrogate
+  to the replacement character, so two distinct strings differing only in a lone surrogate encode
+  to the same bytes and compare equal, harmless for the CSPRNG tokens and hex hashes the function
+  is for. No consumer action.
 
 ## 0.93.0
 

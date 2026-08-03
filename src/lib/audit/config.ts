@@ -6,17 +6,15 @@ import { resolve } from 'node:path';
 /** The config file a consumer writes, read from the audited root. */
 export const CONFIG_FILE = 'cairn-audit.config.json';
 
-// Every surface that renders inside the admin theme, plus the site's own admin routes. The three
+// Every surface that renders inside the admin theme, plus the site's own admin routes. The two
 // library directories are the same roots the admin stylesheet build and the class-compilation gate
-// scan. admin-fields joined those roots late, after its classes had ridden along on the components
-// scan by coincidence until a migration removed the last shared token and a shipped class quietly
-// resolved to nothing. A directory that renders admin markup belongs here even when it looks
-// covered. A path that does not exist in a given tree is skipped, so a consumer inherits only what
-// it actually has.
+// scan (the retired `admin-fields` subpath merged into admin-toolkit in the C2 breaking-window
+// pass, so its own roster entry folded into that one). A directory that renders admin markup
+// belongs here even when it looks covered. A path that does not exist in a given tree is skipped,
+// so a consumer inherits only what it actually has.
 export const DEFAULT_STATIC_SCOPE = [
   'src/routes/admin',
   'src/lib/admin-toolkit',
-  'src/lib/admin-fields',
   'src/lib/components',
 ];
 

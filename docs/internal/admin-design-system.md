@@ -256,10 +256,10 @@ Recipes:
     would move pixels well beyond a single field's own label.
   - **Inline control-adjacent label,** on one line beside its control rather than above it:
     `flex items-center gap-1.5 type-body`, muted ink on the label span, plain weight. The
-    `admin-fields` subpath's `FieldLabel` renders both this register and the individual-field-label
+    `admin-toolkit` subpath's `FieldLabel` renders both this register and the individual-field-label
     register above through its `register` prop (`'inline' | 'stacked'`, design ratchet Task 3);
     `'stacked'` is the default (the robust shape for any multi-column form grid, finding 3), and
-    `SelectField`/`TextField` both pass the prop straight through.
+    `SelectInput`/`TextInput` both pass the prop straight through.
 - Nav item: `type-subtitle` (the lists use `menu-sm` for layout), `font-medium` inactive,
   `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
   table cells share it via `table type-subtitle`.
@@ -321,9 +321,10 @@ alongside the component recipes above and below it.
   editor's document title lost 2.25rem during this migration. Use `text-[1.5rem]/[2rem]` when a
   bracketed value genuinely needs both.
 - **A class used only outside the stylesheet's scan roots never compiles.** The roots are
-  `src/lib/components`, `src/lib/admin-toolkit`, and `src/lib/admin-fields`. A class used only in a
-  directory that is not scanned resolves to nothing at runtime rather than failing a build, so a new
-  admin-rendering directory joins both the `@source` list and `check:admin-css-classes`.
+  `src/lib/components` and `src/lib/admin-toolkit` (the retired `admin-fields` subpath merged into
+  the latter in the C2 breaking-window pass). A class used only in a directory that is not scanned
+  resolves to nothing at runtime rather than failing a build, so a new admin-rendering directory
+  joins both the `@source` list and `check:admin-css-classes`.
 
 ## Component recipes
 

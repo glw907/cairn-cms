@@ -6,10 +6,12 @@ and change a role, with the owner-count guards that keep at least one owner-capa
 the roster. It is server-only surface (no `svelte` export condition), for a site that provisions or
 manages editors from its own server code, a setup script, or a migration, outside the admin screen.
 
-The auth-flow functions the engine's magic-link guard uses internally, `findEditor`, `issueToken`,
+Anything proposed here must be a D1 editor-roster read or write, provisioning surface only. The
+auth-flow functions the engine's magic-link guard uses internally, `findEditor`, `issueToken`,
 `recentlyIssued`, `consumeToken`, `createSession`, `resolveSession`, and `deleteSession`, stay
 unexported here. They back the login flow only; no real caller outside the engine needs them, so
-they are not proven surface.
+they are not proven surface. A token or session primitive belongs on
+[`/auth-crypto`](./auth-crypto.md) instead, even one this store's own rows carry a hash of.
 
 Every function takes the site's `AUTH_DB` `D1Database` binding as its first argument, the same
 binding `CairnEnv` (see [core](./core.md)) types and a site's `wrangler.jsonc` declares. The engine's

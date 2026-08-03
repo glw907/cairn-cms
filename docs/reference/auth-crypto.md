@@ -6,11 +6,14 @@ bundler's static export check finds no such name on the stub and errors before a
 bare side-effect import (`import '@glw907/cairn-cms/auth-crypto'`) passes the build instead and
 throws at runtime, the moment that import executes in the browser.
 
-This subpath re-exports the token and session-id generators, the token hash, the constant-time
-compare, and the `__Host-` cookie-name primitive the engine's own magic-link guard uses, for a
-site that authenticates a second audience: member magic-link sessions, offer tokens, an OTP
-flow. A site building that flow stops copying the engine's cryptography by hand and reuses the
-same primitives the engine's own login proves in production.
+Anything proposed here must be a stateless Web Crypto primitive, a token, hash, compare, or
+cookie-name function, a second-audience login flow would otherwise copy by hand. This subpath
+re-exports the token and session-id generators, the token hash, the constant-time compare, and
+the `__Host-` cookie-name primitive the engine's own magic-link guard uses, for a site that
+authenticates a second audience: member magic-link sessions, offer tokens, an OTP flow. A site
+building that flow stops copying the engine's cryptography by hand and reuses the same primitives
+the engine's own login proves in production. A stateful provisioning read or write belongs on
+[`/auth-store`](./auth-store.md) instead, even one built on the same hashes this subpath produces.
 
 What stays out: the TTL constants and the send-cooldown constant, since a token or session
 lifetime is the site's own ruling, not the engine's; the engine's own cookie-name functions,
@@ -86,11 +89,16 @@ declare function tokensMatch(a: string, b: string): boolean;
 ```
 
 A length-checked, constant-time compare, so checking a token leaks no timing beyond its length.
-Three properties to design around: it leaks length, since a length mismatch is a cheap,
+Four properties to design around: it leaks length, since a length mismatch is a cheap,
 non-constant-time reject and length is not a secret; `tokensMatch('', '')` is deliberately
-`false`, so an unset expected value can never match an unset submitted one; and it is meant only
+`false`, so an unset expected value can never match an unset submitted one; it is meant only
 for fixed-length CSPRNG tokens and hex hashes, the shape `generateToken` and `hashToken`
-produce, never for a password or anything an attacker can enumerate.
+produce, never for a password or anything an attacker can enumerate; and it compares UTF-16
+encoded bytes, so two distinct strings that differ only in a lone (unpaired) surrogate collapse
+to the same replacement-character byte sequence and compare equal. That collapse is harmless for
+a CSPRNG token or a hex digest, since neither can carry a lone surrogate in the first place, which
+is exactly why this precondition is stated rather than guarded against; it stops being harmless
+the moment a caller reaches for `tokensMatch` on a value that isn't one of those two shapes.
 
 ## Naming a cookie
 

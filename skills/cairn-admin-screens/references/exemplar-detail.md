@@ -151,9 +151,9 @@ than once:
     <h2 id="household-dialog-title" class="text-lg font-bold">Edit household</h2>
     <form method="post" action="?/updateHousehold" class="flex flex-col gap-3" use:enhance={...}>
       <CsrfField />
-      <TextField label="Household name" name="name" bind:value={householdName} />
-      <TextField label="City" name="city" bind:value={householdCity} />
-      <SelectField label="Primary member" name="primaryMemberId" bind:value={householdPrimaryId} options={...} />
+      <TextInput label="Household name" name="name" bind:value={householdName} />
+      <TextInput label="City" name="city" bind:value={householdCity} />
+      <SelectInput label="Primary member" name="primaryMemberId" bind:value={householdPrimaryId} options={...} />
       <div class="modal-action">
         <button type="button" class="btn btn-sm" onclick={() => householdDialog?.close()}>Cancel</button>
         <button type="submit" class="btn btn-primary btn-sm">Save</button>
@@ -163,7 +163,7 @@ than once:
 </dialog>
 ```
 
-- `TextField`/`SelectField` both wrap `FieldLabel`, rendering its default `register="stacked"`
+- `TextInput`/`SelectInput` both wrap `FieldLabel`, rendering its default `register="stacked"`
   register here with no extra prop (`form-anatomy.md` states the full three-level contract this
   is one of); a single-column dialog form has no shared-row width to compete for, so the
   default is the right choice, not a call for the inline exception.

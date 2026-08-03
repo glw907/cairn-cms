@@ -3,7 +3,10 @@
 The root export is the engine. It carries the adapter and schema contract a site declares, the
 markdown render pipeline, the composed runtime, the content and manifest projections, and the auth
 and GitHub App primitives. A site imports it at `src/lib/cairn.config.ts` and in its admin and
-delivery code.
+delivery code. Anything proposed here must be construction surface a `cairn.config.ts` builds
+with, or a read helper a site's own route calls directly; a SvelteKit route factory belongs on
+[`/sveltekit`](./sveltekit.md), and an admin Svelte component on [`/components`](./components.md),
+even though a site's adapter config also feeds both.
 
 ```ts
 import { defineAdapter, defineConcept, fieldset, fields, createRenderer } from '@glw907/cairn-cms';

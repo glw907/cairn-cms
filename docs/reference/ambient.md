@@ -1,8 +1,11 @@
 # Ambient types (`/ambient`)
 
 A type-only module whose import side effect augments SvelteKit's `App.Locals` with the four
-fields the engine reads and writes on every admin request. A site imports it once, in
-`src/app.d.ts`, instead of hand-writing the `declare global` block:
+fields the engine reads and writes on every admin request, and nothing else: a type a site
+consumes directly, `CairnEnv`, `Editor`, and so on, belongs on [Core](./core.md) or
+[SvelteKit](./sveltekit.md) instead, even one this augmentation's own members reference, since
+this module's whole contract is its import side effect, not a name a site imports from it. A site
+imports it once, in `src/app.d.ts`, instead of hand-writing the `declare global` block:
 
 ```ts
 // src/app.d.ts

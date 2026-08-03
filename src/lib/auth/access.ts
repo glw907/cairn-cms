@@ -94,15 +94,19 @@ function matchHrefKey(access: AccessMap, target: string): string | undefined {
 /**
  * The one authority function every enforcement and visibility point reads: `requireAccess`, the
  * engine route gates, and the nav resolver. `none` capability reaches nothing, mapped or unmapped.
- * Owner capability reaches every target, including a target with no rule, except the `editors`
- * screen id, which stays owner-only regardless of what the map says (the roster screen's existing
- * floor, restated here so the one authority function covers it too). A screen-id target absent from
- * the map admits any editor-capability session; present, it admits only the named roles. An
- * href target matches the deepest path-segment-prefix key in the map (`/admin/money` covers
- * `/admin/money/refunds` unless the deeper key is separately mapped; `/admin/moneyx` never matches
- * `/admin/money`); an href with no matching key admits any editor-capability session, the nav
- * semantics a site relies on for `navFilter`-free visibility. Fail-closed route enforcement for an
- * unmatched target is `requireAccess`'s job, via {@link hasAccessRule}, not this function's.
+ * Owner capability reaches every target, including the `editors` screen id and any target with no
+ * rule. Every other capability's reach stops at `editors`, which stays owner-only no matter what
+ * the map says (the roster screen's existing floor, restated here so the one authority function
+ * covers it too). In practice a site cannot even declare a rule for `editors` and have it
+ * silently ignored: composition-time validation (`validateAccessComposition`) admits only a
+ * declared concept id or one of the fixed engine screens as a map key, and throws an actionable
+ * error at server start on anything else. A screen-id target absent from the map admits any
+ * editor-capability session; present, it admits only the named roles. An href target matches the
+ * deepest path-segment-prefix key in the map (`/admin/money` covers `/admin/money/refunds` unless
+ * the deeper key is separately mapped; `/admin/moneyx` never matches `/admin/money`); an href with
+ * no matching key admits any editor-capability session, the nav semantics a site relies on for
+ * `navFilter`-free visibility. Fail-closed route enforcement for an unmatched target is
+ * `requireAccess`'s job, via {@link hasAccessRule}, not this function's.
  */
 export function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean {
   if (editor.capability === 'none') {

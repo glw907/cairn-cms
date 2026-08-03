@@ -26,14 +26,15 @@ export function pass(detail: string): CheckResult {
 }
 
 /**
- *
+ * Build a failing check result; `detail` is the one line of evidence the report prints.
  */
 export function fail(detail: string): CheckResult {
   return { status: 'fail', detail };
 }
 
 /**
- *
+ * Build a skipped check result; `detail` names the missing input the check could not run
+ * without.
  */
 export function skip(detail: string): CheckResult {
   return { status: 'skip', detail };

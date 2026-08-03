@@ -82,7 +82,11 @@ function scrubSendError(err: unknown): string {
 }
 
 /**
- *
+ * Build the magic-link auth surface: the login and confirm loads, plus the request, confirm,
+ * and logout actions, the handlers a site's `/admin/auth/*` routes call directly or
+ * `createCairnAdmin` composes into its own dispatch. `config.send` overrides the default
+ * Cloudflare Email sender for tests or a custom transport; `config.bootstrapOwner` seeds the
+ * very first owner row through the request action, in place of a hand-run D1 insert.
  */
 export function createAuthRoutes(config: AuthRoutesConfig) {
   const send = config.send ?? cloudflareSend;

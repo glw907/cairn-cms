@@ -18,7 +18,8 @@ export const NO_ACCOUNT: CheckResult = skip(
 );
 
 /**
- *
+ * GET `path` against the Cloudflare API, authenticated with `ctx.cfToken`. Returns the raw
+ * `Response` unread; a check parses the body and decides pass, fail, or skip for itself.
  */
 export function cfGet(ctx: DoctorContext, path: string): Promise<Response> {
   return ctx.fetch(`${CF_API}${path}`, {
@@ -27,7 +28,8 @@ export function cfGet(ctx: DoctorContext, path: string): Promise<Response> {
 }
 
 /**
- *
+ * POST `body` as JSON to the Cloudflare API, authenticated with `ctx.cfToken`. Returns the raw
+ * `Response` unread, the same contract as {@link cfGet}.
  */
 export function cfPost(ctx: DoctorContext, path: string, body: unknown): Promise<Response> {
   return ctx.fetch(`${CF_API}${path}`, {

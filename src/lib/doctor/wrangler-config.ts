@@ -35,7 +35,10 @@ export interface R2BucketEntry {
 }
 
 /**
- *
+ * Read the doctor's wrangler-config facts from `wrangler.jsonc` (preferred when both exist) or
+ * `wrangler.toml` in the site's working directory. Returns null when neither file exists, which
+ * the checks report as a skip rather than a failure; throws if a present `wrangler.jsonc` fails
+ * to parse.
  */
 export async function readWranglerConfig(
   readFile: DoctorContext['readFile']

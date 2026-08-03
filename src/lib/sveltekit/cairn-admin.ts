@@ -75,7 +75,13 @@ export type AdminData =
   | { view: 'welcome'; page: WelcomeData };
 
 /**
- *
+ * Compose every admin surface (auth, content, editors, nav) into the bundle a site mounts at its
+ * catch-all `/admin/[...path]` route: one `load` that dispatches on the parsed path to the
+ * matching view's own data, the full `actions` record (every named admin action, each parsing
+ * and validating its own view before delegating), and a separate `shellLoad` for
+ * `/admin/+layout.server.ts`'s shared chrome. `deps` overrides only the seams a site actually
+ * needs (auth send/bootstrap, tidy, `navFilter`, `attention`); everything else derives from
+ * `runtime`.
  */
 export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions = {}) {
   // The runtime already composes the site name and the sender identity, so the magic-link

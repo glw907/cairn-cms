@@ -4,7 +4,9 @@ import { fail } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 
 /**
- *
+ * Run every check against `ctx` in declared order, catching any throw as a failing result so one
+ * broken probe never stops the rest. Returns every check paired with its result, plus the total
+ * failure count the bin uses to decide its exit code.
  */
 export async function runDoctor(
   checks: DoctorCheck[],

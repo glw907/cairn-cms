@@ -1227,7 +1227,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       // Fail open, the same as editLoad: a thrown index build degrades to no event and the publish
       // proceeds. Log it so a persistently failing advisory build is diagnosable, not invisible.
       collision = null;
-      log.warn('github.unreachable', { scope: 'publish-advisories', error: String(err) });
+      log.warn('github.unreachable', { scope: 'publish_advisories', error: String(err) });
     }
 
     const commitFields = { concept: concept.id, id, editor: editor.email };

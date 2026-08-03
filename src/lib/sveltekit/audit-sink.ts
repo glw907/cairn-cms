@@ -24,7 +24,7 @@ const MAX_DETAIL_LENGTH = 500;
 const TRUNCATION_MARKER = '…';
 
 // What a field logs as when its own coercion (`String(rawValue)` inside `truncate`) throws,
-// rather than losing the whole `admin.audit.sink_failed` line for the one field that could not
+// rather than losing the whole `audit.sink.write_failed` line for the one field that could not
 // be turned into a string.
 const UNCOERCIBLE_PLACEHOLDER = '[unloggable value]';
 
@@ -72,7 +72,7 @@ function truncate(rawValue: unknown, max: number): string {
  * Whichever path catches the failure logs the
  * truncated record (falling back to a placeholder for any field whose own coercion is what threw)
  * plus a `reason` distinguishing which stage failed (`coercion_failed`, `prepare_failed`,
- * `insert_rejected`, or `wait_until_failed`) and the error, as `admin.audit.sink_failed`; only the
+ * `insert_rejected`, or `wait_until_failed`) and the error, as `audit.sink.write_failed`; only the
  * first of these to fire actually logs, since a `wait_until_failed` throw leaves the insert it was
  * meant to back still in flight; that insert's own later rejection would otherwise log a second,
  * redundant line for the same attempt. The audited action already completed by the time any of
@@ -119,7 +119,7 @@ export function createD1AuditSink(
         // the same attempt. Only the first failure to reach this function logs.
         if (sinkFailedLogged) return;
         sinkFailedLogged = true;
-        log.error('admin.audit.sink_failed', {
+        log.error('audit.sink.write_failed', {
           reason,
           editor: actor,
           action,

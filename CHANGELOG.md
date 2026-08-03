@@ -23,7 +23,7 @@
   action, with every bound field truncated to a documented maximum so an oversized `detail`
   can't suppress its own row. `waitUntil` is a required parameter that explicitly accepts
   `undefined`, so a site chooses the drop risk rather than defaulting into it. A rejected
-  insert logs the whole truncated record and the error as `admin.audit.sink_failed`. See
+  insert logs the whole truncated record and the error as `audit.sink.write_failed`. See
   [SvelteKit](docs/reference/sveltekit.md#created1auditsink). Consumers must: nothing.
 
 - The export-rule sweep (C2 breaking-window pass, R4 ruling) adopts a standing doctrine: every
@@ -264,6 +264,23 @@
   parameterized or catch-all route behind `createSectionAction`, rekey the site's access map from
   the concrete path to the bracket-form route id, or the section silently refuses every session.
 
+- The log-event vocabulary settles on one grammar (`area[.subject].verb_phrase`, past-tense for an
+  occurrence or a state adjective for a detected condition) and every `reason`/`scope` value goes
+  snake_case. Six renames: `admin.audit.sink_failed` to `audit.sink.write_failed`;
+  `admin.action.audit_sink_failed` to `admin.action.sink_threw`; `tidy.done` to `tidy.succeeded`;
+  `tidy.error` to `tidy.failed`; `media.orphan_reconcile` to `media.orphans_reconciled`; and
+  `content.field_behavior_error` to `content.field_behavior_failed`. `guard.rejected`'s
+  `reason: 'csrf'` and `admin.action.csrf_rejected` stay distinct on purpose (different layers).
+  The media upload `reason` family goes snake_case, reaching the upload popover's own
+  failure-card mapping in the same change. `github.unreachable`'s `scope` values correct to
+  `shell`, `help`, and `publish_advisories` (the documented `layout` scope never fired).
+  `config.invalid` gains a `scope` (`nav`, `settings`, or `vocabulary`) so its three emit sites
+  and four call paths stop sharing one indistinguishable log line. See
+  [Log events](docs/reference/log-events.md). **Consumers must:** update any Workers Logs saved
+  query, alert, or dashboard filter naming one of the six old event names, a kebab-case media
+  upload `reason`, or `github.unreachable`'s `scope: 'layout'`, to the corrected value. Nothing
+  breaks at compile time, since these are runtime log values, not exported types.
+
 ### Fixed
 
 - `scripts/check-reference-signatures.mjs`'s `normalizeSignature` stripped every `| undefined`
@@ -281,7 +298,7 @@
   call site, not only by a sink's own discipline: a hand-rolled `event.locals.cairnAuditSink` that
   throws synchronously, or one that returns a rejecting promise (the seam's `(record) => void`
   type admits an async sink through void-return bivariance), no longer fails the wrapped action
-  either way; the failure logs a new `admin.action.audit_sink_failed` event instead. The same
+  either way; the failure logs a new `admin.action.sink_threw` event instead. The same
   catch also rethrows SvelteKit's own `redirect()`/`error()` untouched, so a sink built on one of
   those control-flow primitives is never swallowed into a log line the site never sees. See
   [SvelteKit](docs/reference/sveltekit.md#adminaction) and [log

@@ -230,7 +230,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
       "Tidy isn't available right now. Your site's AI access needs attention; let your site developer know.",
     );
     expect(res.data?.error).not.toMatch(/try again/i);
-    expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'auth' }));
+    expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'auth' }));
   });
 
   it('maps a 403 the same way as a 401 (both are auth failures)', async () => {
@@ -258,7 +258,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(502);
-    expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'timeout' }));
+    expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'timeout' }));
   });
 
   it('a plain model error logs reason model (retryable)', async () => {
@@ -270,7 +270,7 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(502);
-    expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'model' }));
+    expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'model' }));
   });
 });
 

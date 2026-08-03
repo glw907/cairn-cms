@@ -457,7 +457,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *
    * Session authority: behind `createAuthGuard` the guard is the production session gate. An
    * unauthenticated admin POST is redirected 303 by the guard before this action runs (an opaque,
-   * status-0 response under the client's `redirect: 'manual'`), so the `fail(401, 'session-expired')`
+   * status-0 response under the client's `redirect: 'manual'`), so the `fail(401, 'session_expired')`
    * below is a belt-and-suspenders for a direct or un-guarded call, not the primary path.
    */
   async function ingestAndStore(event: CairnEvent): Promise<ReturnType<typeof fail> | UploadResult> {
@@ -471,7 +471,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
 
     // 1. Media on.
     const resolved = runtime.resolvedAssets;
-    if (!resolved.enabled) return refuse(503, 'media-disabled');
+    if (!resolved.enabled) return refuse(503, 'media_disabled');
 
     // 2. Content-Length before the body is read: an absent or non-positive-integer length is a 411,
     //    an oversize length is a 413. Both refuse before the bytes are buffered. The header is
@@ -479,8 +479,8 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     //    a lying client still buffers up to the platform ceiling before the post-read recheck (step 5).
     const lengthHeader = event.request.headers.get('content-length');
     const length = lengthHeader === null ? NaN : Number(lengthHeader);
-    if (!Number.isInteger(length) || length <= 0) return refuse(411, 'length-required');
-    if (length > resolved.maxUploadBytes) return refuse(413, 'too-large');
+    if (!Number.isInteger(length) || length <= 0) return refuse(411, 'length_required');
+    if (length > resolved.maxUploadBytes) return refuse(413, 'too_large');
 
     // 3. CSRF from the X-Cairn-CSRF header (no body clone): the action is the CSRF authority for the
     //    raw-body upload, since the guard runs its form-CSRF only on form content types.
@@ -491,7 +491,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     // 4. JSON-aware session (belt-and-suspenders; see the docstring): behind the guard an
     //    unauthenticated POST is already 303'd before this runs. For a direct or un-guarded call,
     //    read the resolved editor directly and refuse with a 401 envelope rather than a 303 redirect.
-    if (!editor) return refuse(401, 'session-expired');
+    if (!editor) return refuse(401, 'session_expired');
 
     // 4.5. The access map's own admission gate for the media screen, the same one every other media
     //      action enforces. The concept editor's inline image picker calls this exact endpoint, so
@@ -499,22 +499,22 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     //      an image-bearing concept only when it also reaches `media`.
     if (!canReach(runtime.access, editor, 'media')) {
       log.warn('auth.access.denied', { email: editor.email, role: editor.role, target: 'media' });
-      return refuse(403, 'access-denied');
+      return refuse(403, 'access_denied');
     }
 
     // 5. Read the body once. Content-Length is client-advisory, so a lying client could send more
     //    than it declared; recheck the real size against the cap after the read.
     const bytes = new Uint8Array(await event.request.arrayBuffer());
-    if (bytes.length > resolved.maxUploadBytes) return refuse(413, 'too-large');
+    if (bytes.length > resolved.maxUploadBytes) return refuse(413, 'too_large');
 
     // 6. Server re-derivation: trust nothing the client declared.
     const declaredType = event.request.headers.get('content-type') ?? undefined;
     const sniffed = sniffMediaType(bytes);
     if (isDeniedUpload(bytes, declaredType) || sniffed === null || !resolved.allowedTypes.includes(sniffed)) {
-      return refuse(415, 'unsupported-type');
+      return refuse(415, 'unsupported_type');
     }
     const ext = extForMediaType(sniffed);
-    if (ext === null) return refuse(415, 'unsupported-type');
+    if (ext === null) return refuse(415, 'unsupported_type');
 
     const full = await hashBytes(bytes);
     const hash = shortHash(full);
@@ -534,7 +534,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     //    this cast and never in an exported signature.
     const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
     const rawBucket = platformEnv[resolved.bucketBinding];
-    if (!rawBucket) return refuse(503, 'binding-missing');
+    if (!rawBucket) return refuse(503, 'binding_missing');
     const store = r2Store(rawBucket as R2Bucket);
 
     const key = r2Key(hash, ext);
@@ -548,7 +548,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       // never serve the first file's bytes under the second's reference. A stored object with no
       // sha256 (a legacy or manually-put object we cannot verify) proceeds as a dedup hit, best effort.
       const storedSha = existing.customMetadata?.sha256;
-      if (storedSha !== undefined && storedSha !== full) return refuse(409, 'hash-collision');
+      if (storedSha !== undefined && storedSha !== full) return refuse(409, 'hash_collision');
       // Identical bytes are already stored: skip the put. A second upload does no second put, so a
       // concurrent dedup-reuse is never clobbered. Flag a stored type that disagrees with this sniff.
       reused = true;

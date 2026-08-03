@@ -121,14 +121,16 @@ function tidyModelLabel(model: string): string {
  *  unrecognized key), not an editor mistake, and the tidy and vocabulary screens render no `form` prop
  *  over a plain, non-enhanced form, so a `fail(400)` would re-render with no visible error; the
  *  redirect carries the message through each screen's own `?error=` validation idiom instead. Any
- *  other error propagates unchanged.
+ *  other error propagates unchanged. `scope` names the calling screen, so the shared
+ *  `config.invalid` record distinguishes this redirect path from the two loads' own degrade path.
  */
-function parseSiteConfigOrRedirect(raw: string, errorPath: string): SiteConfig {
+function parseSiteConfigOrRedirect(raw: string, errorPath: string, scope: 'settings' | 'vocabulary'): SiteConfig {
   try {
     return parseSiteConfig(raw);
   } catch (err) {
     if (!(err instanceof SiteConfigError)) throw err;
     log.error('config.invalid', {
+      scope,
       conditionId: 'config.site-config-invalid',
       error: String(err),
     });
@@ -247,7 +249,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     const raw = await backend.readFile(path, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
     // Parse first so a malformed file fails before the write rather than committing onto a broken base.
-    parseSiteConfigOrRedirect(raw, '/admin/settings');
+    parseSiteConfigOrRedirect(raw, '/admin/settings', 'settings');
 
     const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
     try {
@@ -300,6 +302,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
         // A malformed config keeps the same degrade rather than failing the screen closed; the
         // swallow names the operator fault in the log, as navLoad does.
         log.error('config.invalid', {
+          scope: 'vocabulary',
           conditionId: 'config.site-config-invalid',
           error: String(err),
         });
@@ -365,7 +368,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
 
     // The delete gate: any value in the current vocabulary but absent from the posted one is being
     // removed, and a removed value still in use anywhere the strict index reads must block the save.
-    const current = extractVocabulary(parseSiteConfigOrRedirect(raw, '/admin/vocabulary'));
+    const current = extractVocabulary(parseSiteConfigOrRedirect(raw, '/admin/vocabulary', 'vocabulary'));
     const postedValues = new Set(posted.map((entry) => entry.value));
     const removed = current.filter((entry) => !postedValues.has(entry.value)).map((entry) => entry.value);
     if (removed.length > 0) {

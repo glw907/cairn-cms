@@ -166,7 +166,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     });
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG }))) as ActionResult;
     expect(res.status).toBe(409);
-    expect(res.data?.error).toBe('hash-collision');
+    expect(res.data?.error).toBe('hash_collision');
   });
 
   it('rejects an oversize Content-Length with fail(413) before reading the body', async () => {
@@ -188,14 +188,14 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
       uploadEvent({ bytes: PNG, contentLength: String(11) }),
     )) as ActionResult;
     expect(res.status).toBe(413);
-    expect(res.data?.error).toBe('too-large');
+    expect(res.data?.error).toBe('too_large');
   });
 
   it('rejects a missing Content-Length with fail(411)', async () => {
     const routes = createContentRoutes(runtime());
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, contentLength: null }))) as ActionResult;
     expect(res.status).toBe(411);
-    expect(res.data?.error).toBe('length-required');
+    expect(res.data?.error).toBe('length_required');
   });
 
   it('rejects a missing X-Cairn-CSRF with fail(403)', async () => {
@@ -216,7 +216,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     const routes = createContentRoutes(runtime());
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
     expect(res.status).toBe(401);
-    expect(res.data?.error).toBe('session-expired');
+    expect(res.data?.error).toBe('session_expired');
   });
 
   it('rejects an SVG payload with fail(415) even when allowedTypes includes image/svg+xml', async () => {
@@ -225,7 +225,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
       uploadEvent({ bytes: SVG, contentType: 'image/svg+xml', filename: 'logo.svg' }),
     )) as ActionResult;
     expect(res.status).toBe(415);
-    expect(res.data?.error).toBe('unsupported-type');
+    expect(res.data?.error).toBe('unsupported_type');
   });
 
   it('rejects a leading-< payload with fail(415)', async () => {
@@ -234,7 +234,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
       uploadEvent({ bytes: LT_PAYLOAD, contentType: 'image/png', filename: 'x.png' }),
     )) as ActionResult;
     expect(res.status).toBe(415);
-    expect(res.data?.error).toBe('unsupported-type');
+    expect(res.data?.error).toBe('unsupported_type');
   });
 
   it('stores JPEG bytes under the jpg ext even when the client declares image/webp (sniff wins)', async () => {
@@ -274,7 +274,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     await routes.uploadAction(uploadEvent({ bytes: SVG, contentType: 'image/svg+xml' }));
     expect(warn).toHaveBeenCalledWith(
       'media.upload_failed',
-      expect.objectContaining({ reason: 'unsupported-type' }),
+      expect.objectContaining({ reason: 'unsupported_type' }),
     );
   });
 

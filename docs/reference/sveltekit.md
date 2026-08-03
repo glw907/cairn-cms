@@ -405,14 +405,14 @@ that writes a sink following the `waitUntil` advice in [add a custom admin
 screen](../guides/add-a-custom-admin-screen.md#wire-the-auditsink). `ctx.audit` catches the
 synchronous throw directly and attaches a fire-and-forget rejection handler to a promise-returning
 result, so the handler's own result still returns exactly as if the sink had succeeded either way,
-and the failure logs `admin.action.audit_sink_failed` (see [log events](./log-events.md)) rather
+and the failure logs `admin.action.sink_threw` (see [log events](./log-events.md)) rather
 than disappearing. The catch rethrows SvelteKit's own `redirect()`/`error()` untouched instead of
 logging them: both are plain classes, not `Error` instances, so a sink built on one of those
 control-flow primitives (a hand-rolled auth check inside a sink, say) is never swallowed into a
 log line the site never sees. This is a distinct event from `createD1AuditSink`'s own
-`admin.audit.sink_failed`: that one covers the packaged sink's internal persist failure, which the
+`audit.sink.write_failed`: that one covers the packaged sink's internal persist failure, which the
 packaged sink already catches before it can reach the engine's call site, while
-`admin.action.audit_sink_failed` covers any sink, hand-rolled or otherwise, that throws or rejects
+`admin.action.sink_threw` covers any sink, hand-rolled or otherwise, that throws or rejects
 at the point `ctx.audit` invokes it.
 
 ```ts
@@ -517,7 +517,7 @@ reachable) has to be a decision the caller makes on purpose, with the drop risk 
 
 The sink is fail-open, the same convention as [a hand-rolled one](../guides/add-a-custom-admin-screen.md#wire-the-auditsink):
 it returns synchronously, before the insert settles, so a persist failure never fails the audited
-action, and a rejected insert logs `admin.audit.sink_failed` (see [log events](./log-events.md))
+action, and a rejected insert logs `audit.sink.write_failed` (see [log events](./log-events.md))
 carrying the whole truncated record plus the error, since the audited action already completed and
 this is the only remaining trace of that row. Every bound field truncates to a documented maximum
 before binding, so an oversized `detail` (the one field a handler composes freely) cannot suppress

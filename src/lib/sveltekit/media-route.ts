@@ -126,7 +126,7 @@ export function createMediaRoute(runtime: CairnRuntime): RequestHandler {
     } catch (err) {
       if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') {
         log.warn('media.delivery_failed', {
-          reason: 'binding-missing',
+          reason: 'binding_missing',
           binding: resolved.bucketBinding,
         });
         return new Response(null, { status: 503 });

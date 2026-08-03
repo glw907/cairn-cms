@@ -78,6 +78,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
         // A malformed config keeps the same degrade (the nav page failing closed would be worse
         // for the editor), but the swallow names the operator fault in the log.
         log.error('config.invalid', {
+          scope: 'nav',
           conditionId: 'config.site-config-invalid',
           error: String(err),
         });

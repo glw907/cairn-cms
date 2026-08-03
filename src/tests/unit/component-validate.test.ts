@@ -129,7 +129,7 @@ describe('validateComponent custom validate', () => {
     });
     const r = await validateComponent(':::boom{name="x"}\nGo.\n:::', def);
     expect(r).toEqual({ ok: true });
-    expect(warn).toHaveBeenCalledWith('content.field_behavior_error', { field: 'name', error: 'kaboom' });
+    expect(warn).toHaveBeenCalledWith('content.field_behavior_failed', { field: 'name', error: 'kaboom' });
   });
 
   it('reports the required error before running pattern or validate on an empty value', async () => {

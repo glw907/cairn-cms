@@ -226,15 +226,33 @@ describe('vocabularySaveAction', () => {
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n', [MANIFEST_PATH]: SEED_MANIFEST } });
     gh.install();
     const routes = createContentRoutes(runtime());
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
     const { status, location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
     expect(status).toBe(303);
     expect(location).toMatch(/\/admin\/vocabulary\?error=/);
     expect(decodeURIComponent(location)).toMatch(/unrecognized key "weird"/);
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
+    // config.invalid's scope names the calling screen, distinguishing this redirect path from
+    // vocabularyLoad's own degrade path (both share the same underlying parser failure).
+    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
+    expect(record).toMatchObject({ event: 'config.invalid', scope: 'vocabulary' });
     // The load reads the same ?error= param back as data.error.
     const data = await routes.vocabularyLoad(contentEvent({ url: `https://t.example${location}` }) as never);
     expect(data.error).toMatch(/unrecognized key "weird"/);
+  });
+
+  it('degrades to an empty vocabulary and logs config.invalid scoped to vocabulary when the committed config is malformed', async () => {
+    // Distinct from the redirect path above: this is vocabularyLoad's own catch, which degrades to
+    // an empty list instead of bouncing to an ?error= redirect (there is no in-flight save to fail).
+    const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n', [MANIFEST_PATH]: SEED_MANIFEST } });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const data = await routes.vocabularyLoad(loadEvent() as never);
+    expect(data.vocabulary).toEqual([]);
+    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
+    expect(record).toMatchObject({ event: 'config.invalid', scope: 'vocabulary' });
   });
 
   it('reports a head-moved conflict as a reload prompt without overwriting', async () => {

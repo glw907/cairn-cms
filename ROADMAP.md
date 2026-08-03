@@ -720,12 +720,6 @@ the named human gates only):**
   explicitly, since inference has nothing to work from with no compliant default, so any answer
   here is a `Consumers must:` change, not an invisible one. The compile evidence and the locked
   incompatibility live in `src/tests/unit/env-genericity.test.ts`'s `@ts-expect-error` tripwire.
-- **C2 input: two near-identical log event names (filed by the pre-beta C1 seam-shape pass's
-  review fold, 2026-08-01).** `admin.audit.sink_failed` (the packaged D1 sink's own internal
-  persist failure) and `admin.action.audit_sink_failed` (a site's own sink throwing or rejecting at
-  the engine's call site) read as typos of each other at a glance, despite covering different
-  failures. Both are still unpublished, so a rename is free until the next release; after that it's
-  a breaking log-event rename, the same weight as any other public name.
 - **Gate gap: `check:reference:signatures` cannot see a table-only signature (filed by the
   pre-beta C1 seam-shape pass's review fold, 2026-08-01).** The gate reads only fenced `ts` code
   blocks; a callback's signature stated solely in a reference table's own Signature or Meaning

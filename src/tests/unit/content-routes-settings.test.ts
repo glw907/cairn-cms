@@ -152,11 +152,16 @@ describe('settingsSaveAction', () => {
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n' } });
     gh.install();
     const routes = createContentRoutes(runtime());
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const { status, location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"fixes":true}') as never));
     expect(status).toBe(303);
     expect(location).toMatch(/\/admin\/settings\?error=/);
     expect(decodeURIComponent(location)).toMatch(/unrecognized key "weird"/);
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
+    // config.invalid's scope names the calling screen, distinguishing this redirect path from
+    // vocabularyLoad's own degrade path (both share the same underlying parser failure).
+    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
+    expect(record).toMatchObject({ event: 'config.invalid', scope: 'settings' });
     // The load reads the same ?error= param back as data.error.
     const data = await routes.settingsLoad(
       contentEvent({ url: `https://t.example${location}` }) as never,

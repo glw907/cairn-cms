@@ -157,7 +157,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
         // unhealthy (Task 5) so editLoad's tidy projection hides the button for the TTL rather than
         // offering a control that will fail the same way on the next click.
         markKeyUnhealthy();
-        log.warn('tidy.error', { editor: editor.email, model, reason: 'auth' });
+        log.warn('tidy.failed', { editor: editor.email, model, reason: 'auth' });
         return fail(503, {
           error: "Tidy isn't available right now. Your site's AI access needs attention; let your site developer know.",
         } satisfies TidyFailure);
@@ -169,7 +169,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       let reason: 'timeout' | 'abort' | 'model' = 'model';
       if (deadlineHit) reason = 'timeout';
       else if (err instanceof Error && err.name === 'AbortError') reason = 'abort';
-      log.warn('tidy.error', { editor: editor.email, model, reason });
+      log.warn('tidy.failed', { editor: editor.email, model, reason });
       return fail(502, { error: 'Tidy could not finish. Try again.' } satisfies TidyFailure);
     } finally {
       clearTimeout(timer);
@@ -196,7 +196,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       return fail(502, { error: 'Tidy returned nothing. Try again.' } satisfies TidyFailure);
     }
 
-    log.info('tidy.done', { editor: editor.email, model: message.model, usage: message.usage });
+    log.info('tidy.succeeded', { editor: editor.email, model: message.model, usage: message.usage });
     return { corrected, model: message.model, usage: message.usage };
   }
 

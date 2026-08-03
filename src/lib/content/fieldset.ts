@@ -447,7 +447,7 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
         } catch (err) {
           // A developer's cross-field validate() is a bug, not an author fault; log and treat the field
           // as valid rather than breaking the save (E7: server code speaks through the log chokepoint).
-          log.warn('content.field_behavior_error', {
+          log.warn('content.field_behavior_failed', {
             field: key,
             error: err instanceof Error ? err.message : String(err),
           });

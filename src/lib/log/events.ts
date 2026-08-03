@@ -1,6 +1,10 @@
 // The cairn engine's diagnostic event vocabulary. Each name is the stable `type` a future
 // admin-extension subscriber switches on, so it is public-observable API: renaming one is a
 // breaking change. See docs/reference/log-events.md, kept in step with this union.
+//
+// The grammar: `area[.subject].verb_phrase`. A past-tense verb phrase names an occurrence; a
+// state adjective names a detected condition. Every `reason`/`scope` value a record carries is
+// snake_case.
 export type CairnLogEvent =
   | 'auth.link.requested'
   | 'auth.link.send_failed'
@@ -11,7 +15,7 @@ export type CairnLogEvent =
   | 'commit.succeeded'
   | 'commit.failed'
   | 'config.invalid'
-  | 'content.field_behavior_error'
+  | 'content.field_behavior_failed'
   | 'taxonomy.unmarked_field'
   | 'entry.published'
   | 'entry.discarded'
@@ -22,7 +26,7 @@ export type CairnLogEvent =
   | 'media.uploaded'
   | 'media.upload_failed'
   | 'media.delivery_failed'
-  | 'media.orphan_reconcile'
+  | 'media.orphans_reconciled'
   | 'media.resolve_missing'
   | 'media.resolver_absent'
   | 'include.missing'
@@ -42,8 +46,8 @@ export type CairnLogEvent =
   | 'auth.access.denied'
   | 'dictionary.added'
   | 'dictionary.add_conflict'
-  | 'tidy.done'
-  | 'tidy.error'
+  | 'tidy.succeeded'
+  | 'tidy.failed'
   | 'tidy.refused'
   | 'tidy.empty'
   | 'admin.action.audited'
@@ -55,6 +59,6 @@ export type CairnLogEvent =
   | 'admin.action.rate_limit_failed'
   | 'admin.action.rate_limited'
   | 'admin.action.misconfigured'
-  | 'admin.action.audit_sink_failed'
+  | 'admin.action.sink_threw'
   | 'turnstile.verify_failed'
-  | 'admin.audit.sink_failed';
+  | 'audit.sink.write_failed';

@@ -82,7 +82,7 @@ export async function runReconcile(
   } while (cursor !== undefined);
 
   const result = reconcileMedia(storedKeys, manifest);
-  log.info('media.orphan_reconcile', {
+  log.info('media.orphans_reconciled', {
     orphaned: result.orphanedObjects.length,
     missing: result.missingObjects.length,
   });

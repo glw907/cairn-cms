@@ -115,7 +115,7 @@ Cloudflare](./deploy-to-cloudflare.md#wire-the-guard), nothing changes for you e
 
 `adminAction`'s audit sink now holds its advertised fail-open promise at the engine's own call
 site: a hand-rolled `event.locals.cairnAuditSink` that throws, or one that rejects asynchronously, no
-longer fails the action it audited, and the failure logs the new `admin.action.audit_sink_failed`
+longer fails the action it audited, and the failure logs the new `admin.action.sink_threw`
 event instead of disappearing.
 
 The package now declares `"engines": { "node": ">=22" }`, and a new reference page, [Supported
@@ -338,6 +338,32 @@ rekey the site's access map from the concrete request path to the bracket-form r
 stops matching, and the section fails closed, refusing every session including owner, with no
 thrown error to surface the mistake. A static route's id and path are the same string, so a site
 with no parameterized or catch-all section behind `createSectionAction` needs no change.
+
+The log-event vocabulary settles on one grammar (`area[.subject].verb_phrase`, a past-tense verb
+phrase for an occurrence or a state adjective for a detected condition) and every `reason`/`scope`
+value goes snake_case. Six events rename to fit: `admin.audit.sink_failed` to
+`audit.sink.write_failed` (the packaged D1 sink's own persist failure, engine infrastructure, not
+the action layer); `admin.action.audit_sink_failed` to `admin.action.sink_threw` (a site-supplied
+sink throwing at the engine's call site); `tidy.done` to `tidy.succeeded` and `tidy.error` to
+`tidy.failed` (matching the `commit.*` pattern); `media.orphan_reconcile` to
+`media.orphans_reconciled` (matching `media.orphans_purged`); and `content.field_behavior_error`
+to `content.field_behavior_failed`. `guard.rejected`'s `reason: 'csrf'` and
+`admin.action.csrf_rejected` stay distinct on purpose: different layers, the pre-resolve guard
+versus the action wrapper's own defense in depth. The media upload `reason` family goes
+snake_case (`media_disabled`, `length_required`, `too_large`, `session_expired`, `access_denied`,
+`unsupported_type`, `binding_missing`, `hash_collision`), reaching the upload popover's own
+failure-card mapping in the same change. `github.unreachable`'s `scope` values become `shell`,
+`help`, and `publish_advisories` (the documented `layout` scope never fired). `config.invalid`
+gains a `scope` (`nav`, `settings`, or `vocabulary`) so its three emit sites and four call paths
+stop sharing one indistinguishable log line. See [Log events](../reference/log-events.md).
+
+**Consumers must:** update any Workers Logs saved query, alert, or dashboard filter that names
+`admin.audit.sink_failed`, `admin.action.audit_sink_failed`, `tidy.done`, `tidy.error`,
+`media.orphan_reconcile`, or `content.field_behavior_error` to the new name, and any filter on a
+kebab-case media upload `reason` (`media-disabled`, `length-required`, `too-large`,
+`session-expired`, `access-denied`, `unsupported-type`, `binding-missing`, `hash-collision`) or on
+`github.unreachable`'s `scope: 'layout'` (which never fired) to the corrected snake_case value.
+Nothing breaks at compile time, since these are runtime log values, not exported types.
 
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 

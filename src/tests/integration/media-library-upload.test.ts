@@ -172,7 +172,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
 
     expect(res.status).toBe(401);
-    expect(res.data?.error).toBe('session-expired');
+    expect(res.data?.error).toBe('session_expired');
     expect(gh.calls.some((c) => c.method === 'PATCH' && c.url.endsWith('/git/refs/heads/main'))).toBe(false);
   });
 

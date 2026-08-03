@@ -79,11 +79,15 @@ describe('navLoad', () => {
     const routes = createNavRoutes(runtime(NAV));
     await routes.navLoad(loadEvent() as never);
     const records = errorSpy.mock.calls.map(
-      (c) => c[0] as { event?: string; conditionId?: string; error?: string },
+      (c) => c[0] as { event?: string; conditionId?: string; scope?: string; error?: string },
     );
     expect(
       records.some(
-        (r) => r.event === 'config.invalid' && r.conditionId === 'config.site-config-invalid' && !!r.error,
+        (r) =>
+          r.event === 'config.invalid' &&
+          r.conditionId === 'config.site-config-invalid' &&
+          r.scope === 'nav' &&
+          !!r.error,
       ),
     ).toBe(true);
   });

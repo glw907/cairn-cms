@@ -608,6 +608,87 @@ diffs), `api-surface.md` regenerated and committed, STATUS updated, post-mortem 
 merge the PR, hold unpublished. The showcase's green e2e (after in-worktree `npm install`) is
 the migration-list completeness proof.
 
+---
+
+## Execution record (2026-08-02, in flight)
+
+**Where the work is: every code task in C2 has landed. Task 14 and the close-out remain.**
+Worktree `.claude/worktrees/c2-breaking-window`, branch `c2-breaking-window`, off `main` at
+`d57e7c94`. 200 files changed against `main`. Tree clean, all gates green at every commit.
+
+| Task | Commit | What landed |
+|---|---|---|
+| 1 | `d7d8e437` | `CairnEnv`, `EmailSender`, `PlatformContext` narrowed, the tripwire proof |
+| 2 | `291dfb6d` | `CairnEvent<Env = CairnEnv>` replaces all five event shapes |
+| 3 | `b9adcc08` | the four `locals.cairn*` keys |
+| 4 | `d0b84786` | role names widen to `string`; `Role` and `CairnRolesRegister` removed |
+| 5 | `d2a7436c` | the 19 member and facade-key renames |
+| 6 | `3dde3676` | the type table: bags, factory returns, `UnauditedActionError`, removals |
+| 7 | `c133e50b` | `adminNav` retired; `navLayout` is the one nav seam |
+| 8 | `b36fd15c` | `/admin-fields` merged away; fifteen subpaths chartered |
+| 9 | `a6b72e22` | the export rule adopted |
+| 10 | `ad1d7d91` | section-action audit defaulting; `target` from `event.route.id` |
+| 11 | `ddeebf5f` | the log vocabulary converged on one grammar |
+| 13 | `d94d3df3`, `97659a20` | the formatter nullish rule, plus the `ConceptList` call-site copy |
+| — | `024654c6`, `5c663b93` | the taken cut and the routed findings (plan-only) |
+
+**Task 12 is NOT here. It is pass C2b**, per the taken cut above.
+
+### The tripwire proof (the pass's gating evidence, R5)
+
+`npm run check` on Task 1, before the fixture was touched:
+
+```
+src/tests/unit/env-genericity.test.ts(95,3): error TS2578: Unused '@ts-expect-error' directive.
+```
+
+R5 confirmed: `EmailSender.send` returning `Promise<unknown>` dissolves the
+`@cloudflare/workers-types` `SendEmail` incompatibility, so a bare `wrangler types` env assigns
+into `CairnPlatformBindings` with no cast. The fixture was flipped to a positive `satisfies` so a
+future narrowing on either side re-breaks it, and `CairnPlatformBindings` demoted from C1's
+*required* to a recommended convenience preset (C1's changelog entry amended in the same commit).
+
+### Deviations from the plan's literal text, each with cause
+
+- **`route.id` is `string | null`, not `string`** (Task 2). Kit's own `Handle` runs for unmatched
+  requests where kit reports `null`; a non-nullable id broke `createAuthGuard`'s `Handle`
+  assignability in five real doc snippets under `check:snippets`. Task 10 consumes this with a
+  fail-closed constant, never a pathname fallback.
+- **`CairnRolesRegister` removed alongside `Role`** (Task 4). The register existed solely to
+  narrow `Role`; with `Role` gone the grep found zero code consumers anywhere. Its own
+  `Consumers must:` line was filed.
+- **The export rule is transitively closed** (Task 9). The audit's ~40 estimate, and the
+  main loop's own cross-reference confirming 42, both undercounted: closing each newly-exported
+  type's own structural body grew the list to roughly 90. `CairnAdapter` stays the one documented
+  exception at `/delivery` and `/delivery/data`, because its body reaches auth- and github-shaped
+  types that `delivery-entry-boundary.test.ts` forbids that subpath from importing. The boundary
+  test was preserved, not weakened. Task 9 also **reverses the 2026-07-01 surface-pruning verdict**
+  for 22 root re-additions, recorded as a `C2_READDED` list in `root-barrel-prune.test.ts`.
+- **The union-vs-table parity test did not exist** (Task 11). This plan's Task 11 acceptance
+  asserted one did. It was written test-first instead (`src/tests/unit/log-events-table.test.ts`),
+  failing against the pre-fix table and passing after. R6's two confirmed field-drift rows
+  (`media.uploaded`'s never-emitted `ext`, `github.unreachable`'s never-fired `layout`) are what an
+  unenforced prose claim produces.
+- **`packages/cairn-cms-dev` was outside the plan's file lists** (Task 3) but sets the renamed
+  `locals` keys and runs inside `npm test`.
+
+### Carried into Task 14, beyond its written file list
+
+1. `scripts/check-reference-signatures.mjs`'s allowlist comment claims `createCairnAdmin` has
+   "fifteen" members; the real `actions` count is 29. Pre-existing, and RN already assigns it here.
+2. The action-vocabulary tables in `docs/reference/sveltekit.md` and `docs/reference/admin-routes.md`
+   were incomplete before this pass (no rows for `settingsSave`, the media actions, `dictionaryAdd`,
+   `tidy`). Task 5 fixed only the renamed rows and correctly left the gaps.
+3. `docs/guides/upgrade-cairn.md`'s `## Unreleased` heading is labelled `(non-breaking)` while
+   every task in this window has filed breaking entries beneath it.
+4. **`CLAUDE.md` says "Two production sites depend on the package." It is three.**
+   `aksailingclub-org/package.json` carries `"@glw907/cairn-cms": "^0.91.1"`. On `0.x` that caret
+   admits only `>=0.91.1 <0.92.0`, so ASC is not on `0.92.0` or `0.93.0` either, and its migration
+   crosses this whole window in one jump. ASC is also the first admin-extension consumer
+   (`docs/internal/2026-08-01-asc-consumer-brief.md`), so it is the site that most exercises what
+   C2 reshaped.
+5. The assembled `Consumers must:` list for the window, cross-checked against the rename table.
+
 ## Self-review notes
 
 - Spec coverage: all eleven items ruled (R1–R11), all confirmed findings disposed

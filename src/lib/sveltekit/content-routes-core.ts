@@ -751,7 +751,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const titleParam = rawTitle ? `&title=${encodeURIComponent(rawTitle)}` : '';
     // The validated create-dialog date rides the redirect too, the same way the title does, so
     // editLoad seeds it into the fresh form instead of opening blank. A dated concept always has
-    // a date here (the bounce above refuses an unparseable one); a non-dated concept carries none.
+    // a date here (the refusal above rejects an unparseable one); a non-dated concept carries none.
     const dateParam = concept.routing.dated ? `&date=${encodeURIComponent(date)}` : '';
     throw redirect(303, `/admin/${concept.id}/${id}?new=1${dateParam}${titleParam}`);
   }
@@ -843,7 +843,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // The published fragments this entry can include (Task 6/7): null when nothing here can include
     // one, so the fragment picker and the preview's resolveFragment read the same absence signal.
     // That covers two cases. A site with no fragments concept has none to offer. A fragment's OWN
-    // edit screen cannot include one either (the save bounces a nested include), and resolving them
+    // edit screen cannot include one either (the save refuses a nested include), and resolving them
     // here would render a nested include in the preview that Save then refuses, so the preview
     // instead shows the literal-prose fallback the engine really ships. Skipping the batch there
     // also spares a fragment's every edit-load one read per published fragment.
@@ -1016,11 +1016,22 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
+   * A save refusal's payload: the one-line summary over an empty broken-link list, reseeding the
+   *  posted body so the editor re-renders with the unsaved work intact. The broken-link list is
+   *  empty on every refusal but the link guard's own, which builds its payload with the tokens it
+   *  found.
+   */
+  function saveRefusal(message: string, body: string): SaveFailure {
+    return { error: message, brokenLinks: [], body };
+  }
+
+  /**
    * The shared core of save and publish: parse the posted form, validate the frontmatter,
    *  guard the body's cairn links, ensure the pending branch, and commit the entry file there
-   *  with the session editor as author. Returns the broken-link fail for the page to render,
-   *  or the held state; throws the redirect bounces save has always thrown (invalid
-   *  frontmatter, a branch-commit conflict). Main stays untouched.
+   *  with the session editor as author. Returns the held state, or the `fail()` the page renders
+   *  in place: a broken-link refusal, a validation refusal (invalid frontmatter, a nested
+   *  include, a missing date, an out-of-vocabulary tag), or a branch-commit conflict. Main stays
+   *  untouched.
    */
   async function saveToBranch(
     event: CairnEvent,
@@ -1071,7 +1082,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const result = concept.validate(decoded, body);
     if (!result.ok) {
       const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
-      return fail(400, { error: message, brokenLinks: [], body } satisfies SaveFailure);
+      return fail(400, saveRefusal(message, body));
     }
 
     // A fragment can never include another fragment (the engine resolves an include only one
@@ -1080,11 +1091,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // nesting rule. The check runs extractIncludes, the same extraction the manifest builds its
     // includes row from, so the refusal and the where-used index agree on what counts as an include.
     if (concept.id === FRAGMENTS_CONCEPT_ID && extractIncludes(body).length > 0) {
-      return fail(400, {
-        error: "A fragment can't include another fragment.",
-        brokenLinks: [],
-        body,
-      } satisfies SaveFailure);
+      return fail(400, saveRefusal("A fragment can't include another fragment.", body));
     }
 
     // Belt and braces: normalizeConcepts already forces a date-token concept's `date` field to
@@ -1094,17 +1101,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // exactly that case. Catch it here with the same editor-voiced refusal every other save
     // failure uses, rather than letting that throw escape as a raw 500.
     if (permalinkUsesDateToken(concept.permalink) && !asDate(result.data.date)) {
-      return fail(400, {
-        error: 'Pick a date for this entry.',
-        brokenLinks: [],
-        body,
-      } satisfies SaveFailure);
+      return fail(400, saveRefusal('Pick a date for this entry.', body));
     }
 
     if (allowed !== null && taxField !== null) {
       const tagError = enforceTaxonomy(coerceTags(decoded[taxField]), allowed);
       if (tagError) {
-        return fail(400, { error: tagError, brokenLinks: [], body } satisfies SaveFailure);
+        return fail(400, saveRefusal(tagError, body));
       }
     }
 
@@ -1198,11 +1201,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      return ctx.commitFailure(commitFields, err, {
-        error: 'This file changed since you opened it. Reload and reapply your edits.',
-        brokenLinks: [],
-        body,
-      } satisfies SaveFailure);
+      return ctx.commitFailure(
+        commitFields,
+        err,
+        saveRefusal('This file changed since you opened it. Reload and reapply your edits.', body),
+      );
     }
     return { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange };
   }
@@ -1292,7 +1295,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       return ctx.commitFailure(
         commitFields,
         err,
-        { error: 'Your edits are saved. Reload and publish again.', brokenLinks: [], body } satisfies SaveFailure,
+        saveRefusal('Your edits are saved. Reload and publish again.', body),
         { event: 'publish.failed' },
       );
     }

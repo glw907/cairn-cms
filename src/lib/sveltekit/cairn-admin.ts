@@ -240,13 +240,15 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
    *  catch-all route exports `admin.actions` directly. Each wrapper stays thin: parse,
    *  validate the view, synthesize the params the wrapped action reads, delegate. The
    *  editor actions gate themselves with requireOwner, so no second gate is added here.
+   *
+   *  A delegate that only ever throws keeps its own declared `Promise<never>` and needs no
+   *  widening annotation at the call site: `viewAction` adds `ActionFailure<{ error: string }>`
+   *  to every wrapper's return unconditionally (see the `R` note above), and `never` vanishes
+   *  from that union. Confirm, logout, discard, and publishAll are the four, each ending in a
+   *  deliberate redirect.
    */
   const actions = {
     request: viewAction('request', ['login'], (event) => auth.requestAction(event)),
-    // confirmAction only ever throws (a deliberate redirect), so its own declared return stays
-    // Promise<never>; no widening annotation needed here, since viewAction's own return type
-    // already adds ActionFailure<{ error: string }> unconditionally (see the R note above), and
-    // `never` vanishes from that union regardless of what the delegate declares.
     confirm: viewAction('confirm', ['confirm'], (event) => auth.confirmAction(event)),
     logout: viewAction('logout', anyView, (event) => auth.logoutAction(event)),
     create: viewAction('create', ['list'], (event, view) => content.createAction(contentEvent(event, { concept: view.concept.id }))),
@@ -264,9 +266,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
     vocabularySave: viewAction('vocabularySave', ['vocabulary'], (event) => content.vocabularySaveAction(contentEvent(event, {}))),
     upload: viewAction('upload', ['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    // discardAction only ever throws (a deliberate success redirect); see the confirm/logout note above.
-    discard: viewAction('discard', ['edit'], (event, view) =>
-      content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
@@ -299,7 +299,6 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
     mediaBulkDelete: viewAction('mediaBulkDelete', ['media'], (event) => content.mediaBulkDeleteAction(contentEvent(event, {}))),
     mediaOrphanScan: viewAction('mediaOrphanScan', ['media'], (event) => content.mediaOrphanScanAction(contentEvent(event, {}))),
     mediaOrphanPurge: viewAction('mediaOrphanPurge', ['media'], (event) => content.mediaOrphanPurgeAction(contentEvent(event, {}))),
-    // publishAllAction only ever throws (a deliberate redirect); see the confirm/logout note above.
     publishAll: viewAction('publishAll', authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
     editorAdd: viewAction('editorAdd', ['editors'], (event) => editors.editorAddAction(event)),
     editorRemove: viewAction('editorRemove', ['editors'], (event) => editors.editorRemoveAction(event)),

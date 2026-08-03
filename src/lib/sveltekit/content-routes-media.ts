@@ -144,8 +144,8 @@ export interface MediaBulkFailure {
 
 /**
  * A refused upload: the pre-store gates (session, media-off, missing bucket, oversized or
- *  disallowed content) and the mediaLibraryUploadAction commit's own conflict bounce. Just the
- *  one-line summary; a refusal here never stores bytes or commits a row.
+ *  disallowed content) and the mediaLibraryUploadAction commit's own `fail(409)` on a conflict.
+ *  Just the one-line summary; a refusal here never stores bytes or commits a row.
  */
 export interface MediaUploadFailure {
   error: string;
@@ -341,6 +341,14 @@ function replacementToken(slug: string, hash: string): string {
 
 /** The fail(503) message every media action returns when the site declares no assets block. */
 const MEDIA_DISABLED_MESSAGE = 'Media is not enabled for this site.';
+/** The fail(409) message every action that read-modify-commits media.json answers a conflict with. */
+const MANIFEST_CONFLICT_MESSAGE = 'The media manifest changed since you opened it. Reload and try again.';
+/**
+ * The fail(409) message the two actions that rewrite entry bodies (replace-in-place, alt fill)
+ *  answer a conflict with. Names the site rather than the manifest, since what moved under the
+ *  editor is the content, not media.json.
+ */
+const CONTENT_CONFLICT_MESSAGE = 'The site changed since you opened it. Reload and try again.';
 
 /**
  * Resolve the R2 bucket for an action that reads or writes raw bytes, refusing before any write
@@ -601,8 +609,8 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  server derives and commits every field, trusting nothing client-posted (`ingestAndStore`'s
    *  contract). A hash already present in the manifest is an idempotent no-op: the asset (and its
    *  row) already exist, so the upload commits nothing and still returns the success envelope.
-   *  Mirrors the safe-delete/rename commit shape, but returns a `fail(409)` envelope on a conflict
-   *  rather than a redirect, since this action's client reads a JSON envelope, not a bounce.
+   *  Mirrors the safe-delete/rename commit shape: a conflict answers with a `fail(409)` envelope,
+   *  which this action's client reads as JSON rather than following.
    */
   async function mediaLibraryUploadAction(event: CairnEvent): Promise<ActionFailure<MediaUploadFailure> | UploadResult> {
     const result = await ingestAndStore(event);
@@ -630,9 +638,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     } catch (err) {
       ctx.logCommitFailed(commitFields, err);
       if (!isConflict(err)) throw err;
-      return fail(409, {
-        error: 'The media manifest changed since you opened it. Reload and try again.',
-      } satisfies MediaUploadFailure);
+      return fail(409, { error: MANIFEST_CONFLICT_MESSAGE } satisfies MediaUploadFailure);
     }
     return result;
   }
@@ -738,12 +744,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      return ctx.commitFailure(commitFields, err, {
-        error: 'The media manifest changed since you opened it. Reload and try again.',
-        hash,
-        usage: [],
-        foundIn,
-      } satisfies MediaDeleteRefusal);
+      return ctx.commitFailure(commitFields, err, { error: MANIFEST_CONFLICT_MESSAGE, hash, usage: [], foundIn } satisfies MediaDeleteRefusal);
     }
     // THEN delete the object. An absent object is a no-op (the R2 contract), so a dead row clears.
     await store.delete(objectKey);
@@ -836,9 +837,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      return ctx.commitFailure(commitFields, err, {
-        error: 'The media manifest changed since you opened it. Reload and try again.',
-      } satisfies MediaBulkFailure);
+      return ctx.commitFailure(commitFields, err, { error: MANIFEST_CONFLICT_MESSAGE } satisfies MediaBulkFailure);
     }
 
     // THEN delete each deletable hash's R2 object (the load-bearing order, see the docstring). Best
@@ -1042,10 +1041,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      return ctx.commitFailure(commitFields, err, {
-        error: 'The media manifest changed since you opened it. Reload and try again.',
-        hash,
-      } satisfies MediaUpdateFailure);
+      return ctx.commitFailure(commitFields, err, { error: MANIFEST_CONFLICT_MESSAGE, hash } satisfies MediaUpdateFailure);
     }
     throw redirect(303, '/admin/media?updated=1');
   }
@@ -1241,7 +1237,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       log.info('media.replaced', { editor: editor.email, oldHash, newHash, affected: plan.affectedCount });
     } catch (err) {
       return ctx.commitFailure(commitFields, err, {
-        error: 'The site changed since you opened it. Reload and try again.',
+        error: CONTENT_CONFLICT_MESSAGE,
         hash: oldHash,
         usage: [],
         foundIn: plan.affectedCount,
@@ -1395,10 +1391,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('media.alt_propagated', { editor: editor.email, hash, overwrite, written: changed.length });
     } catch (err) {
-      return ctx.commitFailure(commitFields, err, {
-        error: 'The site changed since you opened it. Reload and try again.',
-        hash,
-      } satisfies MediaAltPropagateFailure);
+      return ctx.commitFailure(commitFields, err, { error: CONTENT_CONFLICT_MESSAGE, hash } satisfies MediaAltPropagateFailure);
     }
     throw redirect(303, '/admin/media?altPropagated=1');
   }

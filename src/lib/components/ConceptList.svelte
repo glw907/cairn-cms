@@ -235,6 +235,11 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       : '',
   );
 
+  // The visible banner for the last submit: a blocked create's fail() leads, then the publish-all
+  // survivor's relayed formError. Null while a delete refusal owns the screen, which renders its own
+  // blockers panel below instead.
+  const submitError = $derived(deleteRefused ? null : (form?.error ?? data.formError));
+
   // The one lifecycle error to announce (the visible alerts below keep their own styling). A blocked
   // delete leads, then a blocked create's fail() (form?.error), then the publish-all survivor's
   // relayed formError, then a load error, since the refusal is the most recent and most actionable
@@ -296,8 +301,8 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 {#if publishedAllMessage}
   <div class="alert alert-success mb-4 type-body">{publishedAllMessage}</div>
 {/if}
-{#if !deleteRefused && (form?.error ?? data.formError)}
-  <div class="alert alert-error mb-4 type-body">{form?.error ?? data.formError}</div>
+{#if submitError}
+  <div class="alert alert-error mb-4 type-body">{submitError}</div>
 {/if}
 {#if data.error}
   <div class="alert alert-warning mb-4 type-body">{data.error}</div>

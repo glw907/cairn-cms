@@ -144,6 +144,9 @@ type ParsedSiteConfig =
  */
 const CONFIG_INVALID_MESSAGE = 'This section is not available. Let your site developer know.';
 
+/** The fail(409) copy both saves in this module answer a stale site-config head with. */
+const CONFIG_CONFLICT_MESSAGE = 'The site config changed since you opened it. Reload and reapply your edits.';
+
 /**
  * Parse the committed site-config YAML, refusing in place with `fail(500, { error })` on a
  *  {@link SiteConfigError}. A malformed config is an operator fault (a misplaced or unrecognized
@@ -254,7 +257,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    * Save the editor-tier tidy conventions: validate the posted block, then read-modify-commit it into
    *  the same committed YAML the nav editor writes, with the session editor as author. The transport is
    *  the nav save's exactly: a form POST carrying the conventions JSON, a head-guarded
-   *  `backend.commit`, and a stale-head `isConflict` bounced back as a reload prompt. Only the conventions
+   *  `backend.commit`, and a stale-head `isConflict` answered in place as a reload prompt. Only the conventions
    *  block is written (setTidy leaves `tidy.enabled` and `tidy.model` untouched), so an editor's save can
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
@@ -299,9 +302,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      return ctx.commitFailure(commitFields, err, {
-        error: 'The site config changed since you opened it. Reload and reapply your edits.',
-      } satisfies SettingsSaveFailure);
+      return ctx.commitFailure(commitFields, err, { error: CONFIG_CONFLICT_MESSAGE } satisfies SettingsSaveFailure);
     }
 
     throw redirect(303, '/admin/settings?saved=1');
@@ -372,8 +373,8 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    * Save the tag vocabulary (Plan 3): validate the posted list, gate a delete on cross-branch usage
    *  failing closed, then read-modify-commit the `vocabulary` key into the same committed YAML the
    *  nav and settings saves write. The transport is settingsSaveAction's exactly: a form POST carrying the
-   *  vocabulary JSON, a head-guarded backend.commit, and a stale-head isConflict bounced back as a
-   *  reload prompt. The delete gate is the safety boundary: a removed value still in use anywhere the
+   *  vocabulary JSON, a head-guarded backend.commit, and a stale-head isConflict answered in place as
+   *  a reload prompt. The delete gate is the safety boundary: a removed value still in use anywhere the
    *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
@@ -438,9 +439,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      return ctx.commitFailure(commitFields, err, {
-        error: 'The site config changed since you opened it. Reload and reapply your edits.',
-      } satisfies VocabularySaveFailure);
+      return ctx.commitFailure(commitFields, err, { error: CONFIG_CONFLICT_MESSAGE } satisfies VocabularySaveFailure);
     }
 
     throw redirect(303, '/admin/vocabulary?saved=1');

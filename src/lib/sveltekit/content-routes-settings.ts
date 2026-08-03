@@ -1,7 +1,7 @@
 // cairn-cms: the tidy settings screen and the tag-vocabulary admin screen, both of which
 // read-modify-commit the same committed site-config YAML. createSettingsActions closes over the
 // shared ContentRoutesContext (content-routes-context.ts) built once by createContentRoutes.
-import { redirect, error, fail } from '@sveltejs/kit';
+import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import {
   DEFAULT_TIDY_MODEL,
@@ -134,22 +134,32 @@ function tidyModelLabel(model: string): string {
 }
 
 /**
- * Parse the committed site-config YAML, redirecting a {@link SiteConfigError} back to `errorPath`
- *  with the parser's own actionable message. A malformed config is an operator fault (a misplaced or
- *  unrecognized key), not an editor mistake, and the tidy and vocabulary screens render no `form` prop
- *  over a plain, non-enhanced form, so a `fail(400)` would re-render with no visible error; the
- *  redirect carries the message through each screen's own `?error=` validation idiom instead. Any
- *  other error propagates unchanged. `scope` names the calling screen (`'settings'` or
- *  `'vocabulary'`), which is enough on its own for the settings caller, since nothing else in this
- *  module emits `config.invalid` with `scope: 'settings'`. It is not enough for the vocabulary
- *  caller: vocabularyLoad's own degrade-path emit also carries `scope: 'vocabulary'` with the same
- *  `conditionId`, so the record alone cannot tell this redirect path from that load's degrade path;
- *  only the reference doc's prose (a load degrades, a save redirects) does. See
- *  docs/reference/log-events.md's `config.invalid` row, which documents this collision directly.
+ * The result of {@link parseSiteConfigOrFail}: a literal `ok` discriminant, not a bare union of
+ *  `SiteConfig` and `ActionFailure`, since `SiteConfig`'s open index signature defeats both `in`
+ *  narrowing and `isActionFailure`'s negative branch on that union.
  */
-function parseSiteConfigOrRedirect(raw: string, errorPath: string, scope: 'settings' | 'vocabulary'): SiteConfig {
+type ParsedSiteConfig =
+  | { ok: true; config: SiteConfig }
+  | { ok: false; failure: ActionFailure<{ error: string }> };
+
+/**
+ * Parse the committed site-config YAML, refusing in place with `fail(500, { error })` on a
+ *  {@link SiteConfigError} carrying the parser's own actionable message. A malformed config is an
+ *  operator fault (a misplaced or unrecognized key), not an editor mistake, but it still blocks
+ *  this save, so it answers the screen that posted rather than navigating away from the editor's
+ *  unsaved work; both screens now receive `form`, so the refusal reaches them the same way a
+ *  conflict does. Any other error propagates unchanged. `scope` names the calling screen
+ *  (`'settings'` or `'vocabulary'`), which is enough on its own for the settings caller, since
+ *  nothing else in this module emits `config.invalid` with `scope: 'settings'`. It is not enough
+ *  for the vocabulary caller: vocabularyLoad's own degrade-path emit also carries
+ *  `scope: 'vocabulary'` with the same `conditionId`, so the record alone cannot tell this refusal
+ *  path from that load's degrade path; only the reference doc's prose (a load degrades, a save
+ *  refuses) does. See docs/reference/log-events.md's `config.invalid` row, which documents this
+ *  collision directly.
+ */
+function parseSiteConfigOrFail(raw: string, scope: 'settings' | 'vocabulary'): ParsedSiteConfig {
   try {
-    return parseSiteConfig(raw);
+    return { ok: true, config: parseSiteConfig(raw) };
   } catch (err) {
     if (!(err instanceof SiteConfigError)) throw err;
     log.error('config.invalid', {
@@ -157,7 +167,7 @@ function parseSiteConfigOrRedirect(raw: string, errorPath: string, scope: 'setti
       conditionId: 'config.site-config-invalid',
       error: String(err),
     });
-    throw redirect(303, `${errorPath}?error=${encodeURIComponent(err.message)}`);
+    return { ok: false, failure: fail(500, { error: err.message }) };
   }
 }
 
@@ -259,7 +269,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       conventions = validateTidyConventions(JSON.parse(String(form.get('conventions') ?? '{}')));
     } catch (err) {
       const message = err instanceof TidyConventionsError ? err.message : 'Invalid tidy settings';
-      throw redirect(303, `/admin/settings?error=${encodeURIComponent(message)}`);
+      return fail(400, { error: message } satisfies SettingsSaveFailure);
     }
 
     const path = siteConfigPath();
@@ -272,7 +282,8 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     const raw = await backend.readFile(path, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
     // Parse first so a malformed file fails before the write rather than committing onto a broken base.
-    parseSiteConfigOrRedirect(raw, '/admin/settings', 'settings');
+    const parsedConfig = parseSiteConfigOrFail(raw, 'settings');
+    if (!parsedConfig.ok) return parsedConfig.failure;
 
     const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
     try {
@@ -373,7 +384,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       posted = validateVocabulary(JSON.parse(String(form.get('vocabulary') ?? '[]')));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Invalid vocabulary';
-      throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(message)}`);
+      return fail(400, { error: message } satisfies VocabularySaveFailure);
     }
 
     const path = siteConfigPath();
@@ -388,7 +399,9 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
 
     // The delete gate: any value in the current vocabulary but absent from the posted one is being
     // removed, and a removed value still in use anywhere the strict index reads must block the save.
-    const current = extractVocabulary(parseSiteConfigOrRedirect(raw, '/admin/vocabulary', 'vocabulary'));
+    const parsedConfig = parseSiteConfigOrFail(raw, 'vocabulary');
+    if (!parsedConfig.ok) return parsedConfig.failure;
+    const current = extractVocabulary(parsedConfig.config);
     const postedValues = new Set(posted.map((entry) => entry.value));
     const removed = current.filter((entry) => !postedValues.has(entry.value)).map((entry) => entry.value);
     if (removed.length > 0) {
@@ -400,7 +413,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       const inUse = removed.find((value) => (usageIndex.get(value)?.length ?? 0) > 0);
       if (inUse !== undefined) {
         const message = `The tag "${inUse}" is still in use, so it cannot be deleted. Remove it from your content first.`;
-        throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(message)}`);
+        return fail(409, { error: message } satisfies VocabularySaveFailure);
       }
     }
 

@@ -35,16 +35,19 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   import TagIcon from '@lucide/svelte/icons/tag';
   import PlusIcon from '@lucide/svelte/icons/plus';
   import Trash2Icon from '@lucide/svelte/icons/trash-2';
-  import type { VocabularyLoadData } from '../sveltekit/content-routes.js';
+  import type { VocabularyLoadData, ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { VocabularyEntry } from '../index.js';
   import { PageHeader } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The committed vocabulary, the per-value cross-branch usage count, and the unlisted seed set. */
     data: VocabularyLoadData;
+    /** The last save's result: a refused `fail()` envelope carrying the reload-and-reapply
+     *  message, a rejected posted list, or the in-use delete refusal. */
+    form?: ContentFormFailure | null;
   }
 
-  let { data }: Props = $props();
+  let { data, form = null }: Props = $props();
 
   // The engine's slug shape: the derived value the route also enforces on save.
   const SAFE_TAG_VALUE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
@@ -123,6 +126,11 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   // The card recipe shared by the add and list cards.
   const cardClass = 'card-shell card-shadow';
 
+  // The one lifecycle error to announce: a rejected save's fail() leads (form?.error), else a
+  // redirected unexpected-failure bounce (data.error) from an action, like publishAll, that
+  // carries no form of its own here.
+  const lifecycleError = $derived(form?.error ?? data.error ?? '');
+
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
   // every fresh error so the region text always mutates and the screen reader speaks again (the
@@ -133,16 +141,18 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   function errorNonce(): string {
     return announceNonce % 2 === 0 ? '' : '​';
   }
-  // Each save hands a fresh `data` object (the action redirects on both success and failure, so the
-  // component always remounts), so the nonce bumps once per load, keyed to the load identity.
-  let lastData: unknown;
+  // Each submit hands a fresh `form` (or `data` on a load) object, so the nonce bumps once per
+  // submit or load, keyed to that identity rather than to a string change the live region would
+  // swallow.
+  let lastSubmit: unknown;
   $effect(() => {
-    if (data !== lastData) {
-      lastData = data;
-      if (data.error) announceNonce++;
+    const submit = form ?? data;
+    if (submit !== lastSubmit) {
+      lastSubmit = submit;
+      if (lifecycleError) announceNonce++;
     }
   });
-  const liveError = $derived(data.error ? `${data.error}${errorNonce()}` : '');
+  const liveError = $derived(lifecycleError ? `${lifecycleError}${errorNonce()}` : '');
 </script>
 
 <div class="mx-auto max-w-3xl px-2 py-2">
@@ -153,8 +163,8 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   />
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
-  {#if data.error}
-    <div class="alert alert-error mt-3 type-body">{data.error}</div>
+  {#if lifecycleError}
+    <div class="alert alert-error mt-3 type-body">{lifecycleError}</div>
   {/if}
 
   <!-- THE MUTATION ANNOUNCEMENT, always present so assistive tech re-announces every add, remove, and

@@ -79,4 +79,15 @@ describe('NavTree', () => {
     const screen = render(NavTree, { data: data({ saved: true }) });
     await expect.element(screen.getByText(/navigation saved/i)).toBeInTheDocument();
   });
+
+  it('surfaces a refused save\'s fail() error read from form, not only from data', async () => {
+    // A validation or conflict refusal now answers in place through `form`, not a ?error= redirect
+    // read back into `data.error`; the shell must wire `form` through for the message to reach here.
+    const screen = render(NavTree, {
+      data: data(),
+      form: { error: 'The site config changed since you opened it.' },
+    });
+    const alert = screen.container.querySelector('.alert-error');
+    expect(alert?.textContent).toContain('The site config changed since you opened it.');
+  });
 });

@@ -34,13 +34,15 @@ describe('navSaveAction', () => {
     expect(commitPost.body).not.toHaveProperty('committer');
   });
 
-  it('bounces an invalid tree back to the form and never commits', async () => {
+  it('refuses an invalid tree in place and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createNavRoutes(runtime());
-    const { status, location } = await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ url: '/no-label' }])) as never));
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/nav\?error=.*label/i);
+    const result = (await routes.navSaveAction(
+      saveEvent(JSON.stringify([{ url: '/no-label' }])) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toMatch(/label/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

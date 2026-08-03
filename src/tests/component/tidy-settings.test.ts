@@ -157,6 +157,17 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     const field = screen.container.querySelector<HTMLInputElement>('input[name="conventions"]')!;
     expect(JSON.parse(field.value).oxfordComma).toBe('always');
   });
+
+  it('surfaces a refused save\'s fail() error read from form, not only from data', async () => {
+    // A validation or conflict refusal now answers in place through `form`, not a ?error= redirect
+    // read back into `data.error`; the shell must wire `form` through for the message to reach here.
+    const screen = render(CairnTidySettings, {
+      data: data(),
+      form: { error: 'The site config changed since you opened it.' },
+    });
+    const alert = screen.container.querySelector('.alert-error');
+    expect(alert?.textContent).toContain('The site config changed since you opened it.');
+  });
 });
 
 describe('CairnTidySettings: the broken-key state (save-500-honest-errors, Task 5)', () => {

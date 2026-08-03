@@ -118,7 +118,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
       tree = validateNavTree(JSON.parse(String(form.get('tree') ?? '[]')), maxDepth);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Invalid navigation';
-      throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
+      return fail(400, { error: message } satisfies NavSaveFailure);
     }
 
     const backend = resolveBackend(event);

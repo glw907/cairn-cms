@@ -107,14 +107,16 @@ describe('settingsSaveAction', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('bounces a malformed conventions payload back to the form and never commits', async () => {
+  it('refuses a malformed conventions payload in place and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime());
     // oxfordComma carries a value outside its allowed set.
-    const { status, location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"oxfordComma":"sometimes"}') as never));
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/settings\?error=/);
+    const result = (await routes.settingsSaveAction(
+      saveEvent('{"oxfordComma":"sometimes"}') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -147,29 +149,25 @@ describe('settingsSaveAction', () => {
     await expect(routes.settingsSaveAction(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
   });
 
-  it('redirects with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
+  it('refuses in place with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
     // An unrecognized top-level key is the documented way to trigger SiteConfigError. The committed
-    // file fails to parse before the write, so the action must bounce to the settings screen's own
-    // ?error= redirect (the screen renders no `form` prop, so a fail(400) would re-render silently)
-    // rather than the generic 500 an uncaught throw would produce.
+    // file fails to parse before the write, so the action must answer the posting screen with a
+    // fail(500) (now that the screen renders a `form` prop) rather than the generic 500 an uncaught
+    // throw would produce.
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n' } });
     gh.install();
     const routes = createContentRoutes(runtime());
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { status, location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"fixes":true}') as never));
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/settings\?error=/);
-    expect(decodeURIComponent(location)).toMatch(/unrecognized key "weird"/);
+    const result = (await routes.settingsSaveAction(
+      saveEvent('{"fixes":true}') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(500);
+    expect(result.data.error).toMatch(/unrecognized key "weird"/);
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
-    // config.invalid's scope names the calling screen, distinguishing this redirect path from
+    // config.invalid's scope names the calling screen, distinguishing this refusal path from
     // vocabularyLoad's own degrade path (both share the same underlying parser failure).
     const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
     expect(record).toMatchObject({ event: 'config.invalid', scope: 'settings' });
-    // The load reads the same ?error= param back as data.error.
-    const data = await routes.settingsLoad(
-      contentEvent({ url: `https://t.example${location}` }) as never,
-    );
-    expect(data.error).toMatch(/unrecognized key "weird"/);
   });
 });
 

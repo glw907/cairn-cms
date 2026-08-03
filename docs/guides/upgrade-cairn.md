@@ -260,6 +260,28 @@ with `buildMediaResolver`; replace any imported `OrphanScan` with `MediaOrphanSc
 their shape, since both stay usable as unexported internals only through their owning modules'
 public factories).
 
+`adminNav` retires entirely. `navLayout` is now the one nav seam: `CairnAdapter.editor.adminNav`,
+`CairnRuntime.adminNav`, `AdminNavConfig`, `AdminNavSection`, `normalizeAdminNav`,
+`filterNavByRole`, `ResolvedNavItem`, and `ResolvedNavSection` are removed, and
+`ResolveNavLayoutOptions.adminNav` and `validateNavLayout`'s `hasAdminNav` ctx member go with them.
+`AdminNavEntry`'s members (`label`, `icon`, `href`, `ownerOnly?`) fold into `NavLayoutEntry`, which
+stops extending it and stands self-contained. The behavioral objection that kept `adminNav` alive,
+that it was additive (declare one link) where `navLayout` replaced the whole sidebar, is answered
+by `navLayout`'s own fallback: an engine screen a declared layout never references still lands in
+the trailing fallback group, so adding one link is still a one-entry declaration. See [the
+navLayout seam](../reference/sveltekit.md#the-navlayout-seam) and [Organize your admin
+nav](./organize-your-admin-nav.md#omission-falls-back-hiding-is-explicit).
+
+Consumers must: replace `editor.adminNav` on the adapter with `editor.navLayout`; a flat `adminNav`
+entry becomes a top-level `NavLayoutEntry` in the `navLayout` array, unchanged in shape (`{ label,
+icon, href, ownerOnly? }`), and an `adminNav` section becomes a `NavLayoutSection` (`{ label,
+children }`) the same way. A site whose whole reason for `adminNav` was adding one extra link
+declares that single entry in `navLayout` and nothing else: every one of cairn's own screens the
+declaration omits still renders, in the same trailing fallback group the zero-config sidebar
+already uses for Help. Replace any imported `AdminNavEntry`, `AdminNavSection`, `AdminNavConfig`,
+`ResolvedNavSection`, or `ResolvedNavItem` type with `NavLayoutEntry`, `NavLayoutSection`,
+`NavLayout`, `ResolvedLayoutSection`, or `ResolvedLayoutNode` respectively.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

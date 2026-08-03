@@ -380,23 +380,24 @@ export function createClubAuditSink(
 Outside a real Cloudflare runtime (a bare unit test, say), `waitUntil` is undefined, and the sink
 still runs, just without that extension; a test asserting on the sink's own call does not need one.
 
-## Link it from the sidebar with `adminNav`
+## Link it from the sidebar with `navLayout`
 
 A sidebar entry is validated data on your adapter's `editor` group. It does not register the
-route; the file already did that. This section covers `adminNav`, which adds an entry beside
-cairn's own built-in group; a site that wants to arrange the whole sidebar, cairn's own screens
-included, declares `navLayout` instead, covered in [Organize your admin
-nav](./organize-your-admin-nav.md) (the two are mutually exclusive). Either way the entry shape
-below is the same:
+route; the file already did that. This section covers `navLayout`, the one seam for your sidebar,
+covered in full in [Organize your admin nav](./organize-your-admin-nav.md). A site entry inside the
+tree is a plain, labeled, iconed link:
 
 ```ts
-import type { AdminNavEntry } from '@glw907/cairn-cms/sveltekit';
+import type { NavLayout } from '@glw907/cairn-cms/sveltekit';
 
-const adminNav: AdminNavEntry[] = [{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }];
+const navLayout: NavLayout = [{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }];
 ```
 
-That array is the value of `adminNav` on your adapter's `editor` group, the same group `nav` and
-`supportContact` live under.
+That array is the value of `navLayout` on your adapter's `editor` group, the same group `nav` and
+`supportContact` live under. Every one of cairn's own screens the tree never mentions still renders,
+in a trailing fallback group; see [Omission falls back; hiding is
+explicit](./organize-your-admin-nav.md#omission-falls-back-hiding-is-explicit) for the mechanism in
+full, including the same single-entry case as the array above.
 
 `icon` has to be one of the nine bundled Lucide names
 ([`NavIcon`](../reference/sveltekit.md#navicon):
@@ -406,18 +407,18 @@ admin routes at server start, so a typo fails loudly at boot instead of renderin
 shadowing link:
 
 ```
-adminNav icon "mail" is not one of anchor, calendar, clipboard-list, list, users, package, inbox, table, wrench
-adminNav href "/admin/media" collides with cairn's built-in "media" view; choose an unclaimed /admin/<segment>
+navLayout: icon "mail" is not one of anchor, calendar, clipboard-list, list, users, package, inbox, table, wrench
+navLayout: href "/admin/media" collides with cairn's built-in "media" view; choose an unclaimed /admin/<segment>
 ```
 
 Set `ownerOnly: true` on an entry to hide it from a signed-in editor whose resolved capability isn't
 `owner`, whatever their role name. That flag only decides what the sidebar renders. It changes
 nothing about what the route itself allows. The
 full seam, including the validated `ResolvedNavEntry` shape the shell
-actually renders, is [the custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam)
+actually renders, is [the navLayout seam](../reference/sveltekit.md#the-navlayout-seam)
 in the SvelteKit reference.
 
-The Club section built so far needs no `adminNav` entry or `navFilter` call to hide itself from a
+The Club section built so far needs no separate `navFilter` call to hide itself from a
 non-`club-admin` editor: since it's gated by the access map, [`resolveNavLayout`](../reference/sveltekit.md#the-navlayout-seam)
 reads the same map and drops it from the sidebar for any role the map doesn't name, and
 `navLayout`'s own declarative `roles` (see [Organize your admin nav](./organize-your-admin-nav.md))
@@ -510,12 +511,12 @@ used. [`adminAction`](../reference/sveltekit.md#adminaction) documents the admin
 wrapper `createSectionAction`, [documented in full](../reference/sveltekit.md#createsectionaction),
 composes. [`defineRoles`](../reference/core.md#roles) and [Access map](../reference/core.md#access-map)
 document the declarations the Club section builds on, and [Restrict admin access by
-role](./restrict-admin-access.md) walks through wiring them in full. [The custom admin-nav
-seam](../reference/sveltekit.md#the-custom-admin-nav-seam) covers
-`AdminNavEntry`, `NavIcon`, and the validated `ResolvedNavEntry` shape in full, and
+role](./restrict-admin-access.md) walks through wiring them in full. [The navLayout
+seam](../reference/sveltekit.md#the-navlayout-seam) covers
+`NavLayoutEntry`, `NavIcon`, and the validated `ResolvedNavEntry` shape in full, and
 [`ContentRoutesOptions`](../reference/sveltekit.md#contentroutesoptions) documents `navFilter`.
-[Organize your admin nav](./organize-your-admin-nav.md) covers `navLayout`, the seam for arranging
-the whole sidebar rather than adding one entry to it.
+[Organize your admin nav](./organize-your-admin-nav.md) covers arranging the whole sidebar, from
+one added link to a full multi-section tree.
 [`CairnAdminShell`](../reference/components.md#cairnadminshell) documents the shell your screen
 renders inside. [The admin toolkit](../reference/admin-toolkit.md) documents `PageHeader` and
 `AdminTable`, the packaged header and table components this guide's screen builds with, and

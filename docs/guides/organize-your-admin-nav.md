@@ -15,10 +15,10 @@ own.
 
 ## Declare the tree
 
-`navLayout` is a plain-data array on the adapter's `editor` group, an alternative to `adminNav`
-(declaring both throws at construction). Each node is one of three kinds. An *engine reference*
-places one of cairn's own screens by id. A *site entry* is the same shape `adminNav` already uses.
-A *section* groups a mix of both under one label:
+`navLayout` is a plain-data array on the adapter's `editor` group, the one seam for your sidebar.
+Each node is one of three kinds. An *engine reference* places one of cairn's own screens by id. A
+*site entry* is a labeled, iconed link to one of your own `/admin/` routes. A *section* groups a mix
+of both under one label:
 
 ```ts
 import type { NavLayout } from '@glw907/cairn-cms/sveltekit';
@@ -71,7 +71,7 @@ export const cairn = defineAdapter({
 Every node validates when the runtime composes: an unknown screen id, a screen referenced twice, a
 nested section, an empty section, an empty relabel, or a `roles` name outside your vocabulary all
 throw an actionable error naming the bad node, so a typo fails at server start instead of rendering
-a broken sidebar. A site entry inside the tree validates the same way an `adminNav` entry does (the
+a broken sidebar. A site entry inside the tree validates the same way a top-level entry does (the
 bundled icon allowlist, the built-in href collision); see [the navLayout
 seam](../reference/sveltekit.md#the-navlayout-seam) for the full contract.
 
@@ -202,12 +202,25 @@ preceding principles are yours to apply.
 
 ## Omission falls back; hiding is explicit
 
-A `navLayout` you declare doesn't have to reference every one of cairn's own screens. Anything the
-tree never mentions still renders, in a trailing group after a divider, in cairn's own screen order
-(each declared concept, then Library, Tags, the nav-menu editor, Settings, Editors, Help). The
-preceding worked example never references Help, so Help lands there, in the same foot slot the
-zero-config sidebar already reserves for it. This means an engine update that ships a new built-in
-screen surfaces on your sidebar instead of silently vanishing because your tree predates it.
+Adding one link to the sidebar doesn't require declaring the rest of it. Say your whole reason for
+reaching for `navLayout` is one extra route:
+
+```ts
+import type { NavLayout } from '@glw907/cairn-cms/sveltekit';
+
+const navLayout: NavLayout = [{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }];
+```
+
+That's the whole declaration. Every one of cairn's own screens it never references, every content
+concept plus Library, Tags, the nav-menu editor, Settings, Editors, and Help, still renders, in a
+trailing group after a divider, in cairn's own screen order. A `navLayout` you declare doesn't have
+to reference every one of cairn's own screens: anything the tree never mentions falls back
+automatically, so a one-link site never enumerates the screens it isn't touching.
+
+The multi-section worked example earlier in this guide never references Help either, so Help lands
+there too, in the same foot slot the zero-config sidebar already reserves for it. This means an
+engine update that ships a new built-in screen surfaces on your sidebar instead of silently
+vanishing because your tree predates it.
 
 To remove a door on purpose instead, mark it `hidden: true`:
 
@@ -234,9 +247,8 @@ who should see it.
 ## Related reference
 
 [The navLayout seam](../reference/sveltekit.md#the-navlayout-seam) documents every node type,
-`validateNavLayout`, and `resolveNavLayout` in full, including `collapsed` and the `icon` override.
-[The custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam) documents
-`AdminNavEntry` and its icon allowlist, the shape a `navLayout` site entry reuses.
+`NavLayoutEntry` and its icon allowlist, `validateNavLayout`, and `resolveNavLayout` in full,
+including `collapsed` and the `icon` override.
 [`ContentRoutesOptions` `navFilter`](../reference/sveltekit.md#contentroutesoptions) is the per-request
 seam for a grant that depends on state outside cairn's own role vocabulary, composed after every
 gate `navLayout` already applies. [The attention seam](../reference/sveltekit.md#the-attention-seam)

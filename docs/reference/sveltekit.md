@@ -1063,41 +1063,54 @@ export const GET = async (event) => json(await healthLoad(event, runtime));
 
 ---
 
-## The custom admin-nav seam
+## The navLayout seam
 
-A site adds a sidebar link to one of its own `/admin/` routes by declaring an `adminNav` entry in its
-adapter. The entries are plain data, validated when the runtime composes, so a bad icon or a colliding
-href fails the build rather than rendering a broken or shadowing link. `adminNav` is a mix of flat
-entries and one level of grouping: a plain `AdminNavEntry` renders as a loose top-level node in the
-same header-less list as the content concepts and the engine's own screens, and an `AdminNavSection`
-(a label plus its own flat `children`) renders as its own collapsible sidebar group alongside that
-loose list.
+A site arranges its whole admin sidebar as one ordered, declarative tree, mixing the engine's own
+screens with its own `/admin/` route entries. Declared as `navLayout` on the adapter's `editor`
+group, it's an ordered tree of three node kinds, all data-only, validated when the runtime composes:
+an engine reference places one of cairn's own screens (each declared concept plus the fixed utility
+screens); a site entry is a labeled, iconed link to one of the site's own `/admin/` routes, with an
+added `roles` gate; a section groups a mix of both under one label, one level deep. A bad icon, a
+colliding href, an unknown screen, or an unresolvable role fails the build rather than rendering a
+broken or silently wrong sidebar. Absent `navLayout`, the sidebar renders today's default
+arrangement, resolved through the same [`resolveNavLayout`](#resolvenavlayout) function, so the two
+paths can never drift.
 Stability tier: Extension API.
 
-A site that wants to arrange the *whole* sidebar, engine screens included, not just add to it,
-declares [`navLayout`](#the-navlayout-seam) instead. The two are mutually exclusive: declaring both
-throws at construction. `AdminNavEntry` is the entry shape a `navLayout` site entry reuses verbatim,
-so the icon allowlist and the href-collision check below apply there too.
+An engine screen the tree never references still renders, in a trailing group after a divider (the
+shell's foot slot), in engine order; `hidden: true` on an engine reference removes the door on
+purpose (the route itself stays live, since nav placement is never authorization). This is the
+answer for a site that wants to add just one link beside the built-in screens: declare `navLayout`
+with that one entry, and every engine screen the declaration omits lands in the trailing fallback
+group automatically, with no need to enumerate the rest of the sidebar. Every engine door and every
+site entry's href is additionally gated by the site's declared [access
+map](./core.md#access-map), when one is declared: see [Restrict admin access by
+role](../guides/restrict-admin-access.md) for the map, and [Organize your admin
+nav](../guides/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
+icon overrides, and the omission-fallback and `hidden` semantics in practice.
 
-### `AdminNavEntry`
+### `NavLayoutEntry`
 
 Stability tier: Extension API.
 
 ```ts
-interface AdminNavEntry {
+interface NavLayoutEntry {
   label: string;
   icon: NavIcon;
   href: string;
   ownerOnly?: boolean;
+  roles?: string[];
 }
 ```
 
-One developer-declared sidebar entry. `label` names the link, `icon` is a name from the bundled
-allowlist (see [`NavIcon`](#navicon)), and `href` points at the site's own `/admin/` route.
+A site's own nav entry inside a `navLayout` tree. `label` names the link, `icon` is a name from the
+bundled allowlist (see [`NavIcon`](#navicon)), and `href` points at the site's own `/admin/` route.
 The href must not collide with a built-in admin view; a collision throws at startup with the
-conflicting view named. Set `ownerOnly` to hide the link from a session that does not resolve to
-owner capability, regardless of its role name. The flag is cosmetic, so the route itself must still
-gate server-side.
+conflicting view named. `ownerOnly` hides the link from a session that does not resolve to owner
+capability, regardless of its role name; the flag is cosmetic, so the route itself must still gate
+server-side. `roles`, absent, renders for every role; a declared list renders the entry only when
+the signed-in editor's `role` is in it, matched against the open role names the adapter declares
+(see [the declared role vocabulary](./core.md#roles)).
 
 ### `NavIcon`
 
@@ -1134,7 +1147,7 @@ type NavIcon =
   | 'wrench';
 ```
 
-The bundled Lucide icon names an `AdminNavEntry` may use, or a `navLayout` engine reference's
+The bundled Lucide icon names a `NavLayoutEntry` may use, or a `navLayout` engine reference's
 [`icon`](#navlayoutengineref) override. An icon outside this allowlist throws when the runtime
 composes.
 
@@ -1151,77 +1164,8 @@ interface ResolvedNavEntry {
 }
 ```
 
-The validated shape the shell renders, produced from an `AdminNavEntry`: the icon name resolved and
+The validated shape the shell renders, produced from a `NavLayoutEntry`: the icon name resolved and
 `ownerOnly` defaulted to false. The authed shell payload carries the capability-filtered set of these.
-
-### `AdminNavSection`
-
-Stability tier: Extension API.
-
-```ts
-interface AdminNavSection {
-  label: string;
-  children: AdminNavEntry[];
-}
-```
-
-One level of grouping: a named group of the developer's own flat entries, rendered as its own
-collapsible sidebar group beside the loose top-level list of concepts, flat entries, and engine
-screens. A section holds only flat entries, so grouping stays exactly one level deep.
-
-### `AdminNavConfig`
-
-Stability tier: Extension API.
-
-```ts
-type AdminNavConfig = (AdminNavEntry | AdminNavSection)[];
-```
-
-A site's raw `adminNav` config: a mix of flat entries and sections, in declaration order. The
-adapter's `editor.adminNav` field takes this shape.
-
-### `ResolvedNavSection`
-
-Stability tier: Extension API.
-
-```ts
-interface ResolvedNavSection {
-  label: string;
-  children: ResolvedNavEntry[];
-}
-```
-
-The validated shape of an `AdminNavSection`, its children each resolved the same way a flat entry
-is.
-
-### `ResolvedNavItem`
-
-Stability tier: Extension API.
-
-```ts
-type ResolvedNavItem = ResolvedNavEntry | ResolvedNavSection;
-```
-
-One resolved `adminNav` item: a flat entry, or a one-level section of them. A site that declares no
-`navLayout` gets these folded into the default arrangement, flat entries into the loose top-level
-list and sections rendered as their own collapsible groups after it, through
-[`resolveNavLayout`](#resolvenavlayout); see [the navLayout seam](#the-navlayout-seam). Discriminate
-with `'children' in item`.
-
----
-
-## The navLayout seam
-
-A site that wants to arrange its whole sidebar, mixing the engine's own screens with its own,
-declares `navLayout` on its adapter's `editor` group instead of `adminNav`. It's an ordered tree of
-three node kinds, all data-only, validated when the runtime composes: an engine reference places one
-of cairn's own screens (each declared concept plus the fixed utility screens); a site entry is
-today's `AdminNavEntry` shape, with an added `roles` gate; a section groups a mix of both under one
-label, one level deep, the same rule `AdminNavSection` keeps. Declaring `navLayout` and `adminNav`
-together throws at construction, since only one can be the sidebar's source of truth. Absent
-`navLayout`, the sidebar renders today's default arrangement, `adminNav` entries included, resolved
-through the same [`resolveNavLayout`](#resolvenavlayout) function, so the two paths can never drift.
-Stability tier: Extension API.
 
 An engine screen the tree never references still renders, in a trailing group after a divider (the
 shell's foot slot), in engine order; `hidden: true` on an engine reference removes the door on
@@ -1268,21 +1212,6 @@ valid as the literal `true`. `nav` is a valid reference only when the adapter co
 door, since two dated concepts otherwise share one newspaper icon. An unknown name throws the same
 allowlist error a site entry's own icon does.
 
-### `NavLayoutEntry`
-
-Stability tier: Extension API.
-
-```ts
-interface NavLayoutEntry extends AdminNavEntry {
-  roles?: string[];
-}
-```
-
-A site's own nav entry inside a `navLayout` tree: today's [`AdminNavEntry`](#adminnaventry), plus
-declarative role visibility. Absent `roles` renders for every role; a declared list renders the
-entry only when the signed-in editor's `role` is in it, matched against the open role names the
-adapter declares (see [the declared role vocabulary](./core.md#roles)).
-
 ### `NavLayoutSection`
 
 Stability tier: Extension API.
@@ -1328,17 +1257,16 @@ declare function validateNavLayout(layout: NavLayout, ctx: {
   conceptIds: string[];
   navMenuConfigured: boolean;
   roleNames: string[];
-  hasAdminNav: boolean;
 }): void;
 ```
 
 Validate a raw `navLayout` tree once at construction, throwing an actionable, `navLayout`-prefixed
 error naming the bad node: an unknown screen id, a screen referenced more than once (`hidden`
 counts), `'nav'` referenced with no nav menu configured, a nested section, an empty section, an
-empty relabel, a `roles` name outside the declared vocabulary, or `adminNav` and `navLayout` both
-declared. A site entry embedded in the tree is validated the same way a flat `adminNav` entry is
-(the bundled icon allowlist, the built-in href collision). The engine calls this automatically when
-the runtime composes; a site does not normally call it directly.
+empty relabel, or a `roles` name outside the declared vocabulary. A site entry embedded in the tree
+is validated the same way a top-level entry is (the bundled icon allowlist, the built-in href
+collision). The engine calls this automatically when the runtime composes; a site does not normally
+call it directly.
 
 ### `ResolvedEngineNavEntry`
 
@@ -1424,7 +1352,6 @@ Stability tier: Extension API.
 ```ts
 interface ResolveNavLayoutOptions {
   layout: NavLayout | undefined;
-  adminNav: ResolvedNavItem[];
   concepts: { id: string; label: string; routing?: { dated: boolean } }[];
   navMenuLabel: string | null;
   access?: AccessMap;
@@ -1433,12 +1360,11 @@ interface ResolveNavLayoutOptions {
 ```
 
 The context [`resolveNavLayout`](#resolvenavlayout) needs to arrange and filter one request's
-sidebar: the site's raw `navLayout` (or `undefined` for the default arrangement), its normalized
-legacy `adminNav` (folded into the default arrangement), its concepts (`routing.dated` feeds the
-concept's kind icon), its nav-menu label (`null` when unconfigured, which gates the `nav` screen),
-the site's declared [access map](./core.md#access-map) (or `undefined` for zero-config), and the
-signed-in `editor`, whose capability gates every engine screen and whose role is matched against a
-node's declarative `roles` and against the access map.
+sidebar: the site's raw `navLayout` (or `undefined` for the default arrangement), its concepts
+(`routing.dated` feeds the concept's kind icon), its nav-menu label (`null` when unconfigured, which
+gates the `nav` screen), the site's declared [access map](./core.md#access-map) (or `undefined` for
+zero-config), and the signed-in `editor`, whose capability gates every engine screen and whose role
+is matched against a node's declarative `roles` and against the access map.
 
 ### `resolveNavLayout`
 
@@ -1533,8 +1459,8 @@ guide and the rendering contract in full.
 
 ## The publish-actions seam
 
-A site declares next-step links for the publish-success moment, the `adminNav` grammar applied
-after a publish. A `publishActions` entry on the adapter's `editor` group is plain data, validated
+A site declares next-step links for the publish-success moment, the `navLayout` site-entry grammar
+applied after a publish. A `publishActions` entry on the adapter's `editor` group is plain data, validated
 when the runtime composes: a blank field or an unknown concept fails the build instead of silently
 rendering a broken link after a publish. `editLoad` resolves the validated config for the one
 entry that just went live. It drops any entry a `concepts` list excludes, then substitutes
@@ -1561,7 +1487,8 @@ export const cairn = defineAdapter({
 
 Resolved, the `Announce` link renders beside the confirmation strip with `{id}` already substituted
 for the published entry. Omitting `concepts` follows every concept's publish. Naming one
-or more concept ids restricts it, the same shape `adminNav`'s `ownerOnly` narrows a sidebar entry.
+or more concept ids restricts it, the same shape a `NavLayoutEntry`'s `ownerOnly` narrows a sidebar
+entry.
 
 ### `PublishActionEntry`
 
@@ -1629,7 +1556,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `AdminActionOptions` | Extension API | `interface AdminActionOptions { isDev?: boolean }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. |
 | `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `adminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `adminAction`'s own authorization refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
 | `UploadResult` | Unstable API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
-| `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }> }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` or `adminNav` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. |
+| `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }> }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. |
 | `NavConcept` | Extension API | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |
 | `EntrySummary` | Extension API | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean; status: 'published' \| 'edited' \| 'new'; summary: string \| null }` | One row in a concept's list view. `status` derives from the ref set: live as-is, live with held edits, or pending-branch only. `summary` is the row's one-line excerpt (the manifest's indexed summary for a published row, the branch frontmatter or body excerpt for a pending one, null when neither yields text). |
 | `ListData` | Extension API | `interface ListData { conceptId; label; singular; dated; routable: boolean; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. `singular` is the create-affordance noun ("New post"), from the descriptor (defaulted to `label`). `routable` mirrors the concept's `routing.routable`, so the create form asks a non-routable concept (Fragments) for a name rather than an address. |

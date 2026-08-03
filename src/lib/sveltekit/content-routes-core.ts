@@ -462,7 +462,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const capability = editor.capability;
     const resolved = resolveNavLayout({
       layout: runtime.navLayout,
-      adminNav: ctx.adminNav,
       concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label, routing: c.routing })),
       navMenuLabel: runtime.navMenu?.label ?? null,
       access: runtime.access,

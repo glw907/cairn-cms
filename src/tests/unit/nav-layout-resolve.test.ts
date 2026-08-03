@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveNavLayout, type NavLayout } from '../../lib/sveltekit/admin-nav.js';
-import type { ResolvedNavItem, ResolvedLayoutSection } from '../../lib/sveltekit/admin-nav.js';
+import type { ResolvedLayoutSection } from '../../lib/sveltekit/admin-nav.js';
 import type { Capability } from '../../lib/auth/roles.js';
 import type { Editor } from '../../lib/auth/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
@@ -19,7 +19,6 @@ function opts(
   const { capability = 'owner', role = 'owner', ...rest } = overrides;
   return {
     layout: undefined,
-    adminNav: [] as ResolvedNavItem[],
     concepts: [
       { id: 'posts', label: 'Posts' },
       { id: 'pages', label: 'Pages' },
@@ -124,40 +123,17 @@ describe('resolveNavLayout: hidden', () => {
 
 describe('resolveNavLayout: default synthesis', () => {
   it('reproduces the locked default arrangement for an undeclared layout, as loose top-level nodes', () => {
-    const adminNav: ResolvedNavItem[] = [
-      { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
-      {
-        label: 'Tools',
-        children: [{ label: 'X', iconName: 'wrench', href: '/admin/x', ownerOnly: false }],
-      },
-    ];
-    const resolved = resolveNavLayout(opts({ layout: undefined, adminNav }));
+    const resolved = resolveNavLayout(opts({ layout: undefined }));
     expect(resolved.items).toEqual([
       { screen: 'posts', label: 'Posts', href: '/admin/posts', dated: false },
       { screen: 'pages', label: 'Pages', href: '/admin/pages', dated: false },
-      { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
       { screen: 'media', label: 'Library', href: '/admin/media' },
       { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },
       { screen: 'nav', label: 'Navigation', href: '/admin/nav' },
       { screen: 'settings', label: 'Settings', href: '/admin/settings' },
       { screen: 'editors', label: 'Editors', href: '/admin/editors' },
-      {
-        label: 'Tools',
-        children: [{ label: 'X', iconName: 'wrench', href: '/admin/x', ownerOnly: false }],
-      },
     ]);
     expect(resolved.fallback).toEqual([{ screen: 'help', label: 'Help', href: '/admin/help' }]);
-  });
-
-  it('yields a loose site entry with no section for a none-capability session', () => {
-    const adminNav: ResolvedNavItem[] = [
-      { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
-    ];
-    const resolved = resolveNavLayout(opts({ layout: undefined, adminNav, capability: 'none' }));
-    expect(resolved.items).toEqual([
-      { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
-    ]);
-    expect(resolved.fallback).toEqual([]);
   });
 });
 
@@ -389,20 +365,5 @@ describe('resolveNavLayout: default-layout parity with declared-layout on the sa
     expect(declared.items).not.toContainEqual(expect.objectContaining({ screen: 'pages' }));
     expect(defaulted.items).toContainEqual(expect.objectContaining({ screen: 'posts' }));
     expect(defaulted.items).not.toContainEqual(expect.objectContaining({ screen: 'pages' }));
-  });
-
-  it('gates a legacy adminNav href entry identically to a declared navLayout entry on the same map', () => {
-    const access = { '/admin/money': ['webmaster'] } as unknown as AccessMap;
-    const adminNav: ResolvedNavItem[] = [
-      { label: 'Money', iconName: 'wrench', href: '/admin/money', ownerOnly: false },
-    ];
-    const defaulted = resolveNavLayout(
-      opts({ layout: undefined, adminNav, access, capability: 'editor', role: 'publisher' }),
-    );
-    expect(defaulted.items).not.toContainEqual(expect.objectContaining({ href: '/admin/money' }));
-
-    const layout = [{ label: 'Money', icon: 'wrench', href: '/admin/money' }] as unknown as NavLayout;
-    const declared = resolveNavLayout(opts({ layout, access, capability: 'editor', role: 'publisher' }));
-    expect(declared.items).not.toContainEqual(expect.objectContaining({ href: '/admin/money' }));
   });
 });

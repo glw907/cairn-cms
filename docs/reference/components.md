@@ -99,8 +99,8 @@ zero-config shape. Each item's icon resolves
 from an engine screen id or a site entry's bundled icon name. See [the navLayout
 seam](./sveltekit.md#the-navlayout-seam) for the full contract. For a none-capability
 `user.capability` (the spec's none contract), `nav` carries no engine screen anywhere, in `items` or
-`fallback`, since every engine screen refuses that session with a 403; a site's own `navLayout` or
-`adminNav` entries still render. The command palette lists every visible item in `nav`, section
+`fallback`, since every engine screen refuses that session with a 403; a site's own `navLayout`
+entries still render. The command palette lists every visible item in `nav`, section
 children and the fallback group included, alongside its own view-site and theme-toggle commands.
 
 At desktop widths the sidebar is persistent and scroll-independent (`position: fixed`, so it never

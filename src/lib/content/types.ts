@@ -20,7 +20,7 @@ import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
 // A type-only import: it erases at compile, so it does not breach the content-must-not-import-sveltekit
 // layering rule. The validation that needs parseAdminPath lives in the sveltekit layer, not here.
-import type { AdminNavConfig, NavLayout } from '../sveltekit/admin-nav.js';
+import type { NavLayout } from '../sveltekit/admin-nav.js';
 // Also type-only, for the same layering reason: publishActions validates against the site's
 // concepts in the sveltekit layer, not here.
 import type { PublishActionsConfig } from '../sveltekit/publish-actions.js';
@@ -274,25 +274,17 @@ export interface CairnAdapter {
      */
     supportContact?: string;
     /**
-     * Sidebar entries for the developer's own custom `/admin/` screens, declared as data: a mix of
-     *  flat entries and one-level sections, in declaration order. Each flat entry names a label, a
-     *  bundled icon, and an href the engine validates against the built-in views. Absent leaves the
-     *  sidebar to the built-in entries only.
-     */
-    adminNav?: AdminNavConfig;
-    /**
      * The whole sidebar, arranged as one ordered tree mixing the engine's own screens with the
-     *  site's custom ones (a concept id or a fixed utility-screen name as an engine reference, an
-     *  `adminNav`-shaped entry, or a one-level section of either). Declaring this and `adminNav`
-     *  together throws at construction, since only one can be the sidebar's source of truth. Absent
-     *  leaves the sidebar to the default arrangement (today's built-in shape).
+     *  site's own entries (a concept id or a fixed utility-screen name as an engine reference, a
+     *  developer's own labeled `/admin/` link, or a one-level section of either). Absent leaves the
+     *  sidebar to the default arrangement (today's built-in shape).
      */
     navLayout?: NavLayout;
     /**
-     * Next-step links rendered on the publish-success moment (the `adminNav` grammar applied to
-     *  after a publish): a plain-data `{label, href}` list, `href` a template string substituted
-     *  with the published entry's concept and id, filterable to specific concepts. The engine
-     *  validates each entry when it composes, so a blank field or an unknown concept fails at
+     * Next-step links rendered on the publish-success moment (the `navLayout` site-entry grammar
+     *  applied to after a publish): a plain-data `{label, href}` list, `href` a template string
+     *  substituted with the published entry's concept and id, filterable to specific concepts. The
+     *  engine validates each entry when it composes, so a blank field or an unknown concept fails at
      *  server start. Absent renders the publish-success moment exactly as it renders today.
      */
     publishActions?: PublishActionsConfig;
@@ -401,19 +393,14 @@ export interface CairnRuntime {
   icons?: IconSet;
   navMenu?: NavMenuConfig;
   /**
-   * The raw custom admin-nav config, passed through from the adapter unvalidated (validation needs
-   *  parseAdminPath, a sveltekit symbol, so it runs at admin construction, not here). Optional.
-   */
-  adminNav?: AdminNavConfig;
-  /**
-   * The raw navLayout config, passed through from the adapter unvalidated (validation runs at
-   *  admin construction, the same as `adminNav`, since it checks screen ids and roles against the
-   *  site's real concepts and vocabulary). Optional; mutually exclusive with `adminNav`.
+   * The raw navLayout config, passed through from the adapter unvalidated (validation needs
+   *  parseAdminPath, a sveltekit symbol, so it runs at admin construction, not here, checking
+   *  screen ids and roles against the site's real concepts and vocabulary). Optional.
    */
   navLayout?: NavLayout;
   /**
    * The raw publish-actions config, passed through from the adapter unvalidated (validation runs
-   *  at admin construction, the same as `adminNav`, since it checks each entry's `concepts` filter
+   *  at admin construction, the same as `navLayout`, since it checks each entry's `concepts` filter
    *  against the site's real concepts). Optional.
    */
   publishActions?: PublishActionsConfig;

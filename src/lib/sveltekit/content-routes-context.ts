@@ -1,14 +1,14 @@
 // cairn-cms: the content routes' shared closure context. createContentRoutesContext builds this
 // object once per createContentRoutes call (the backend resolver, the manifest and media-json
-// readers, the commit-failure handlers, the tidy client, and the validated adminNav), and every
-// per-domain sibling module (content-routes-core.ts, -media.ts, -tidy.ts, -settings.ts,
-// -dictionary.ts) closes over it instead of re-deriving these from `runtime`/`deps` itself. This is
-// the seam a pure closure-lift produces: the domain modules are unchanged in behavior, only in
-// where their shared captures come from.
+// readers, the commit-failure handlers, the tidy client), and every per-domain sibling module
+// (content-routes-core.ts, -media.ts, -tidy.ts, -settings.ts, -dictionary.ts) closes over it
+// instead of re-deriving these from `runtime`/`deps` itself. This is the seam a pure closure-lift
+// produces: the domain modules are unchanged in behavior, only in where their shared captures come
+// from.
 import type { Backend } from '../github/backend.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
-import { normalizeAdminNav, validateNavLayout, validateAccessComposition, type ResolvedNavItem, type ResolvedLayoutNode } from './admin-nav.js';
+import { validateNavLayout, validateAccessComposition, type ResolvedLayoutNode } from './admin-nav.js';
 import { DEFAULT_ROLES } from '../auth/roles.js';
 import { normalizePublishActions, type ResolvedPublishAction } from './publish-actions.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
@@ -154,16 +154,13 @@ const DEFAULT_TIDY_TIMEOUT_MS = 30_000;
 
 /**
  * The shared captures every content-routes domain module closes over: the resolved runtime and deps,
- *  the validated adminNav, the tidy client and its deadline, and the small set of helpers (backend
- *  resolution, manifest and media-json reads, dictionary path, commit-failure handling) more than one
- *  domain needs. Built once by {@link createContentRoutesContext}; module-local, never exported from
- *  the package.
+ *  the tidy client and its deadline, and the small set of helpers (backend resolution, manifest and
+ *  media-json reads, dictionary path, commit-failure handling) more than one domain needs. Built
+ *  once by {@link createContentRoutesContext}; module-local, never exported from the package.
  */
 export interface ContentRoutesContext {
   runtime: CairnRuntime;
   deps: ContentRoutesOptions;
-  /** The developer's custom sidebar entries, validated once at construction (server start). */
-  adminNav: ResolvedNavItem[];
   /** The developer's publish-actions config, validated once at construction (server start). */
   publishActions: ResolvedPublishAction[];
   /**
@@ -213,25 +210,20 @@ export interface ContentRoutesContext {
 }
 
 /**
- * Build the shared closure context for one createContentRoutes call: validate the developer's
- *  custom adminNav, resolve the tidy client and its deadline from the injectable deps, and bind the
+ * Build the shared closure context for one createContentRoutes call: validate a declared navLayout,
+ *  resolve the tidy client and its deadline from the injectable deps, and bind the
  *  backend/manifest/media-json/dictionary/commit-failure helpers over `runtime`. Every per-domain
  *  sibling factory takes the returned object as its one argument.
  */
 export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentRoutesOptions = {}): ContentRoutesContext {
-  // Validate the developer's custom adminNav once at construction (server start), so a bad icon name
-  // or a colliding href throws here rather than per request. The shell payload role-filters this set.
-  const adminNav = normalizeAdminNav(runtime.adminNav, runtime.concepts);
-  // Validate a declared navLayout the same fail-loud-at-startup way, beside adminNav's own
-  // validation, so a bad screen reference, an unresolvable role, or declaring both seams throws
-  // here rather than at request time. Undeclared (the common case) skips validation entirely; the
-  // resolver (a later task) synthesizes the default arrangement for that case.
+  // Validate a declared navLayout the fail-loud-at-startup way, so a bad screen reference or an
+  // unresolvable role throws here rather than at request time. Undeclared (the common case) skips
+  // validation entirely; the resolver synthesizes the default arrangement for that case.
   if (runtime.navLayout) {
     validateNavLayout(runtime.navLayout, {
       conceptIds: runtime.concepts.map((concept) => concept.id),
       navMenuConfigured: runtime.navMenu !== undefined,
       roleNames: Object.keys(runtime.roles ?? DEFAULT_ROLES),
-      hasAdminNav: runtime.adminNav !== undefined,
     });
   }
   // Validate a declared access map the same fail-loud-at-startup way: a screen-id key that names
@@ -299,7 +291,6 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
   return {
     runtime,
     deps,
-    adminNav,
     publishActions,
     anthropicClient,
     tidyTimeoutMs,

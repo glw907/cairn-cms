@@ -1,16 +1,17 @@
-// cairn-cms: the custom admin-nav config seam. A developer declares a sidebar entry for their own
-// `/admin/` route as plain data; this module validates each entry and resolves it for the shell. It
-// is runtime-free except for parseAdminPath, the one collision authority: an href is valid only if
-// parseAdminPath returns null (genuinely unclaimed by a reserved segment, the media or index view, or
-// a concept route), so a partial reserved-segment list is never reimplemented here.
+// cairn-cms: the navLayout seam. A developer declares their whole admin sidebar as plain data, a
+// mix of the engine's own screens and their own `/admin/` route entries; this module validates the
+// declared tree (or synthesizes today's default arrangement when a site declares none) and resolves
+// it for the shell. It is runtime-free except for parseAdminPath, the one collision authority for a
+// site entry's href: valid only if parseAdminPath returns null (genuinely unclaimed by a reserved
+// segment, the media or index view, or a concept route), so a partial reserved-segment list is never
+// reimplemented here.
 import { parseAdminPath } from './admin-dispatch.js';
 import type { ConceptDescriptor } from '../content/types.js';
-import type { Capability } from '../auth/roles.js';
 import type { Editor } from '../auth/types.js';
 import { canReach, hasAccessRule, type AccessMap } from '../auth/access.js';
 
 /**
- * The bundled Lucide icon names a custom adminNav entry, or a navLayout engine ref's {@link
+ * The bundled Lucide icon names a navLayout site entry, or a navLayout engine ref's {@link
  *  NavLayoutEngineRef.icon} override, may use. Aligns with ADMIN_NAV_ICONS (a component-test
  *  pins the two against drift): stays an allowlist rather than the whole Lucide catalog, so the
  *  bundle stays bounded.
@@ -48,31 +49,18 @@ export const ADMIN_NAV_ICON_NAMES = [
 /** One of the bundled custom-nav icon names. */
 export type NavIcon = (typeof ADMIN_NAV_ICON_NAMES)[number];
 
-/** A developer's raw custom-nav config: a sidebar link to one of their own `/admin/` routes. */
-export interface AdminNavEntry {
+/** A site's own nav entry inside a navLayout tree: a labeled, iconed link to one of its own `/admin/` routes. */
+export interface NavLayoutEntry {
   label: string;
   icon: NavIcon;
   href: string;
   /** Hides the link from a non-owner; cosmetic only, so the route must still gate server-side. */
   ownerOnly?: boolean;
+  /** Renders only when the signed-in editor's role is in this list; absent renders for every role. */
+  roles?: string[];
 }
 
-/**
- * One level of grouping: a named section of the developer's own entries, rendered as its own
- *  collapsible sidebar group beside the default's loose top-level nodes (the concepts, Library,
- *  Tags, Settings, and the rest, rendered as a plain header-less list rather than a built-in
- *  section). A section holds only flat entries, so grouping stays exactly one level deep; nest no
- *  further.
- */
-export interface AdminNavSection {
-  label: string;
-  children: AdminNavEntry[];
-}
-
-/** A site's raw `adminNav` config: a mix of flat entries and one-level sections, in declaration order. */
-export type AdminNavConfig = (AdminNavEntry | AdminNavSection)[];
-
-/** A validated custom-nav entry the shell renders: the icon name resolved, ownerOnly defaulted. */
+/** A validated site entry the shell renders: the icon name resolved, ownerOnly defaulted. */
 export interface ResolvedNavEntry {
   label: string;
   iconName: NavIcon;
@@ -80,40 +68,16 @@ export interface ResolvedNavEntry {
   ownerOnly: boolean;
 }
 
-/** A validated custom-nav section: its children resolved the same way a flat entry is. */
-export interface ResolvedNavSection {
-  label: string;
-  children: ResolvedNavEntry[];
-}
-
-/** One resolved `adminNav` item: a flat entry, or a one-level section of them. */
-export type ResolvedNavItem = ResolvedNavEntry | ResolvedNavSection;
-
-/** True when a raw config item is a section (carries `children`) rather than a flat entry. */
-export function isAdminNavSection(item: AdminNavEntry | AdminNavSection): item is AdminNavSection {
-  return 'children' in item;
-}
-
-/** True when a resolved item is a section (carries `children`) rather than a flat entry. */
-export function isResolvedNavSection(item: ResolvedNavItem): item is ResolvedNavSection {
-  return 'children' in item;
-}
-
-/** True when a resolved item is a flat entry (no `children`) rather than a section. */
-export function isResolvedNavEntry(item: ResolvedNavItem): item is ResolvedNavEntry {
-  return !('children' in item);
-}
-
 /**
- * Validate and resolve one flat entry: its icon must be in the bundled allowlist and its href must
+ * Validate and resolve one site entry: its icon must be in the bundled allowlist and its href must
  *  not collide with a built-in admin view (the parseAdminPath authority). Throws an actionable error
  *  naming the bad entry, so a misconfiguration fails at server start rather than rendering a broken
  *  or shadowing sidebar link.
  */
-function resolveEntry(entry: AdminNavEntry, concepts: ConceptDescriptor[]): ResolvedNavEntry {
+function resolveEntry(entry: NavLayoutEntry, concepts: ConceptDescriptor[]): ResolvedNavEntry {
   if (!ADMIN_NAV_ICON_NAMES.includes(entry.icon)) {
     throw new Error(
-      `adminNav icon "${entry.icon}" is not one of ${ADMIN_NAV_ICON_NAMES.join(', ')}`,
+      `navLayout: icon "${entry.icon}" is not one of ${ADMIN_NAV_ICON_NAMES.join(', ')}`,
     );
   }
   // Strip a query or hash so the path alone is checked for a collision.
@@ -121,7 +85,7 @@ function resolveEntry(entry: AdminNavEntry, concepts: ConceptDescriptor[]): Reso
   const parsed = parseAdminPath(path, concepts);
   if (parsed) {
     throw new Error(
-      `adminNav href "${entry.href}" collides with cairn's built-in "${parsed.view}" view; choose an unclaimed /admin/<segment>`,
+      `navLayout: href "${entry.href}" collides with cairn's built-in "${parsed.view}" view; choose an unclaimed /admin/<segment>`,
     );
   }
   return {
@@ -132,62 +96,9 @@ function resolveEntry(entry: AdminNavEntry, concepts: ConceptDescriptor[]): Reso
   };
 }
 
-/**
- * Validate and resolve a site's custom adminNav config. Each flat entry's icon must be in the
- *  bundled allowlist and its href must not collide with a built-in admin view (the parseAdminPath
- *  authority); a section's children are each validated the same way. Throws an actionable error on
- *  the first bad entry, so a misconfiguration fails at server start rather than rendering a broken
- *  or shadowing sidebar link. Returns the resolved items in declaration order, `ownerOnly` defaulted
- *  to false on every flat entry.
- * @param entries - The raw config, or undefined when the site declares none.
- * @param concepts - The site's concepts, so parseAdminPath can recognize a concept-route href.
- * @returns The validated items, in declaration order.
- */
-export function normalizeAdminNav(
-  entries: AdminNavConfig | undefined,
-  concepts: ConceptDescriptor[],
-): ResolvedNavItem[] {
-  if (!entries) return [];
-  return entries.map((item): ResolvedNavItem => {
-    if (isAdminNavSection(item)) {
-      return {
-        label: item.label,
-        children: item.children.map((child) => resolveEntry(child, concepts)),
-      };
-    }
-    return resolveEntry(item, concepts);
-  });
-}
-
-/**
- * Capability-filter a resolved adminNav for one editor: a flat entry's `ownerOnly` hides it from a
- *  non-owner-capability session (owner-capability *only*, not the literal `'owner'` role name, so a
- *  vocabulary with a second owner-level role name sees the same entries as `'owner'` does), and a
- *  section keeps only the children an editor may see, disappearing entirely once every child is
- *  hidden (an all-owner-only section never teases an empty group at a non-owner).
- */
-export function filterNavByRole(items: ResolvedNavItem[], capability: Capability): ResolvedNavItem[] {
-  const visible = (entry: ResolvedNavEntry) => !entry.ownerOnly || capability === 'owner';
-  const out: ResolvedNavItem[] = [];
-  for (const item of items) {
-    if (isResolvedNavSection(item)) {
-      const children = item.children.filter(visible);
-      if (children.length > 0) out.push({ label: item.label, children });
-    } else if (visible(item)) {
-      out.push(item);
-    }
-  }
-  return out;
-}
-
-/** Flatten a resolved adminNav into its flat entries, section children included, in visual order. */
-export function flattenNavEntries(items: ResolvedNavItem[]): ResolvedNavEntry[] {
-  return items.flatMap((item) => (isResolvedNavSection(item) ? item.children : [item]));
-}
-
 // The navLayout seam: a site's optional whole-sidebar arrangement, mixing engine screens and its
-// own entries. `normalizeAdminNav`/`filterNavByRole` above stay in force for the legacy adminNav
-// path and for the default arrangement navLayout's resolver synthesizes when a site declares none.
+// own entries. Absent a declared layout, the resolver below synthesizes the default arrangement
+// through the same primitives (engineEntry, engineVisible), so the two paths can never drift.
 
 /** The engine's own fixed admin screens, each a navLayout reference target beyond a concept id. */
 const ENGINE_SCREEN_IDS = ['media', 'vocabulary', 'nav', 'settings', 'editors', 'help'] as const;
@@ -214,16 +125,10 @@ export interface NavLayoutEngineRef {
   icon?: NavIcon;
 }
 
-/** A site's own nav entry inside a navLayout tree: today's `AdminNavEntry`, plus declarative role visibility. */
-export interface NavLayoutEntry extends AdminNavEntry {
-  /** Renders only when the signed-in editor's role is in this list; absent renders for every role. */
-  roles?: string[];
-}
-
 /**
  * One named group inside a navLayout tree, holding a mix of site entries and engine references (no
- *  nesting, the same one-level rule `AdminNavSection` keeps). `roles` gates every child at once,
- *  composing with the capability gates each child already carries.
+ *  nesting; grouping stays exactly one level deep). `roles` gates every child at once, composing
+ *  with the capability gates each child already carries.
  */
 export interface NavLayoutSection {
   label: string;
@@ -256,25 +161,22 @@ function isNavLayoutEngineRef(node: NavLayoutEntry | NavLayoutEngineRef): node i
 /**
  * Validate a site's raw navLayout tree once at construction (server start), `defineRoles`-style:
  *  throws a `navLayout`-prefixed, actionable error naming the bad node, so a misconfiguration fails
- *  at server start rather than rendering a broken or silently-wrong sidebar. Checks, in order: a site
- *  cannot declare both `adminNav` and `navLayout` (no single source of truth for the sidebar
- *  otherwise); every engine reference names a real screen (a declared concept id or one of the fixed
- *  utility screens) and is referenced at most once, a hidden reference included; `'nav'` is
- *  referenced only when the site configures a navMenu; a relabel is never blank; a section's own
- *  label is never blank and never repeats another section's label; a section carries no nested
- *  section and at least one child; two site entries, top-level or inside a section, never share an
- *  href anywhere in the tree (a duplicate would resolve to two links pointing at the same route, and
- *  the shell's key-safety fallback would otherwise be the only thing standing between that and a
- *  silent last-write-wins render); a `roles` list, on an entry or a section, names only a role the
- *  site's vocabulary actually declares. A site entry embedded in the tree is validated the same way a
- *  flat `adminNav` entry is (the bundled icon allowlist, the built-in href collision), reusing
- *  {@link resolveEntry} so the two paths can never drift.
+ *  at server start rather than rendering a broken or silently-wrong sidebar. Checks, in order: every
+ *  engine reference names a real screen (a declared concept id or one of the fixed utility screens)
+ *  and is referenced at most once, a hidden reference included; `'nav'` is referenced only when the
+ *  site configures a navMenu; a relabel is never blank; a section's own label is never blank and
+ *  never repeats another section's label; a section carries no nested section and at least one
+ *  child; two site entries, top-level or inside a section, never share an href anywhere in the tree
+ *  (a duplicate would resolve to two links pointing at the same route, and the shell's key-safety
+ *  fallback would otherwise be the only thing standing between that and a silent last-write-wins
+ *  render); a `roles` list, on an entry or a section, names only a role the site's vocabulary
+ *  actually declares. A site entry embedded in the tree is validated the same way (the bundled icon
+ *  allowlist, the built-in href collision), reusing {@link resolveEntry} so the two never drift.
  * @param layout - The raw config.
  *
  * The second parameter carries context this validation needs but does not itself derive: the
  *  site's concept ids (for the engine screen-id set and the embedded-entry href collision check),
- *  whether a navMenu is configured, the declared role vocabulary's names, and whether the site also
- *  declared `adminNav`.
+ *  whether a navMenu is configured, and the declared role vocabulary's names.
  */
 export function validateNavLayout(
   layout: NavLayout,
@@ -282,14 +184,8 @@ export function validateNavLayout(
     conceptIds: string[];
     navMenuConfigured: boolean;
     roleNames: string[];
-    hasAdminNav: boolean;
   },
 ): void {
-  if (ctx.hasAdminNav) {
-    throw new Error(
-      'navLayout: a site cannot declare both adminNav and navLayout; declare custom screens inside navLayout',
-    );
-  }
   const knownScreens = new Set<string>([...ctx.conceptIds, ...ENGINE_SCREEN_IDS]);
   // parseAdminPath's concept lookup (findConcept) reads only `.id`, so a minimal stub carries the ids
   // this validation receives without materializing full ConceptDescriptor objects (fields, schema,
@@ -390,7 +286,7 @@ const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const
  *  own shape/vocabulary check: a screen-id key must name either a real concept or one of the fixed
  *  engine screens this pass enforces ({@link ACCESS_FIXED_SCREENS}), and an href key must not
  *  collide with a built-in admin route (the `parseAdminPath` authority, the same collision check
- *  `normalizeAdminNav` and `validateNavLayout` both use). Throws an actionable `access:`-prefixed
+ *  `validateNavLayout` uses for a site entry's own href). Throws an actionable `access:`-prefixed
  *  error naming the bad key, so a misconfiguration fails at server start rather than silently never
  *  gating (or never even reachable) at request time.
  * @param access - The site's declared access map.
@@ -423,9 +319,9 @@ export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: 
 }
 
 // The resolver: turns a validated (or absent) navLayout, plus the per-request capability/role and
-// the site's own concepts/navMenu/legacy adminNav, into one arranged, filtered, serializable tree
-// the shell renders directly. Runs fresh per request (the capability/role gates are per-editor), but
-// the arrangement itself is pure data shuffling, no I/O.
+// the site's own concepts/navMenu, into one arranged, filtered, serializable tree the shell renders
+// directly. Runs fresh per request (the capability/role gates are per-editor), but the arrangement
+// itself is pure data shuffling, no I/O.
 
 /** One resolved engine door: the fixed screen id, its label (declared default or a site relabel), and its engine-owned href. */
 export interface ResolvedEngineNavEntry {
@@ -478,8 +374,6 @@ export interface ResolvedNavLayout {
 export interface ResolveNavLayoutOptions {
   /** The site's raw navLayout, or undefined for the default synthesized arrangement. */
   layout: NavLayout | undefined;
-  /** The site's normalized legacy adminNav, folded into the default arrangement (locked call 6). */
-  adminNav: ResolvedNavItem[];
   /**
    * The site's concepts, each a navLayout reference target beyond the fixed engine screens.
    *  `routing.dated` feeds the concept's kind glyph; a caller passing normalized concepts always
@@ -665,41 +559,23 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
 
 /**
  * Synthesize the flat zero-config default arrangement for a site that declares no navLayout: the
- *  concepts, the legacy flat adminNav entries, then the fixed engine screens in their existing order
- *  (media, vocabulary, nav when configured, settings, editors) as loose top-level nodes, followed by
- *  each legacy adminNav section in declaration order; `help` is deliberately left unreferenced, so it
- *  resolves into `fallback`. No section wraps the engine or legacy-flat nodes: at the sizes a
+ *  concepts, then the fixed engine screens in their existing order (media, vocabulary, nav when
+ *  configured, settings, editors) as loose top-level nodes; `help` is deliberately left
+ *  unreferenced, so it resolves into `fallback`. No section wraps these nodes: at the sizes a
  *  zero-config site actually reaches, a section header pays a category-decision cost the flat list
- *  never earns back (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, §1). A legacy
- *  entry's href is gated by the access map the same way a declared navLayout entry's is ({@link
- *  hrefReachable}), so the two arrangements can never drift for the same map.
+ *  never earns back (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, §1).
  */
 function resolveDefaultLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout {
-  const roleFiltered = filterNavByRole(opts.adminNav, opts.editor.capability);
-  const accessFiltered: ResolvedNavItem[] = [];
-  for (const item of roleFiltered) {
-    if (isResolvedNavSection(item)) {
-      const children = item.children.filter((child) => hrefReachable(child.href, opts));
-      if (children.length > 0) accessFiltered.push({ label: item.label, children });
-    } else if (hrefReachable(item.href, opts)) {
-      accessFiltered.push(item);
-    }
-  }
-  const legacyFlatEntries = accessFiltered.filter(isResolvedNavEntry);
-  const legacySections = accessFiltered.filter(isResolvedNavSection);
-
   const items: ResolvedLayoutNode[] = [];
   for (const concept of opts.concepts) {
     if (engineVisible(concept.id, opts)) items.push(engineEntry(concept.id, opts));
   }
-  items.push(...legacyFlatEntries);
   // engineVisible is the single visibility authority (nav needs a configured navMenu, editors needs
   // owner, all need capability !== 'none'), the same gate the concept loop above and the help
   // fallback below rely on.
   for (const screen of ['media', 'vocabulary', 'nav', 'settings', 'editors']) {
     if (engineVisible(screen, opts)) items.push(engineEntry(screen, opts));
   }
-  items.push(...legacySections);
 
   const fallback: ResolvedLayoutChild[] = engineVisible('help', opts) ? [engineEntry('help', opts)] : [];
 

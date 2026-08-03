@@ -35,13 +35,8 @@ export type {
 export { createNavRoutes, type NavRoutes } from './nav-routes.js';
 export type { NavLoadData, NavPageOption } from './nav-routes.js';
 export type {
-  AdminNavEntry,
   NavIcon,
-  AdminNavSection,
-  AdminNavConfig,
   ResolvedNavEntry,
-  ResolvedNavSection,
-  ResolvedNavItem,
   EngineScreenId,
   NavLayout,
   NavLayoutEntry,

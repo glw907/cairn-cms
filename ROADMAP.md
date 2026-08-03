@@ -22,7 +22,7 @@ event, not an everyday one." Cut it when the surface stops moving, not on a date
 
 - [ ] **The public seams have held across an initiative or two with no breaking change**: the adapter and
   field schema, `render`, the admin mount (`createCairnAdmin`, the `CairnAdminShell` custom-route seam, the
-  data-only `adminNav`), the route factories (`createContentRoutes`, `createPublicRoutes`), the admin design
+  `navLayout` seam), the route factories (`createContentRoutes`, `createPublicRoutes`), the admin design
   vocabulary (the `text-muted` / `text-subtle` role layer), and the log event names.
 - [ ] **No known breaking change is pending** on the public surface, or each is consciously deferred to the
   first post-1.0 major. The SvelteKit `checkOrigin` removal (kit#15992) is the standing example: decide

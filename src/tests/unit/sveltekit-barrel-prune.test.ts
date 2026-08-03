@@ -45,7 +45,6 @@ const KEPT = [
   'createNavRoutes',
   'NavLoadData',
   'NavPageOption',
-  'AdminNavEntry',
   'NavIcon',
   'ResolvedNavEntry',
   'createCairnAdmin',
@@ -94,7 +93,7 @@ describe('sveltekit barrel prune', () => {
     // Surface-pruning Task 6: anthropic/tidyTimeoutMs regrouped into one `tidy` bag.
     expect(memberNames).not.toContain('anthropic');
     expect(memberNames).not.toContain('tidyTimeoutMs');
-    // navFilter is the per-request custom-adminNav filter seam, added alongside `tidy`; attention
+    // navFilter is the per-request custom-navLayout filter seam, added alongside `tidy`; attention
     // is the per-session pending-work seam (admin access-and-attention pass), added alongside it.
     expect(memberNames).toEqual(['tidy', 'navFilter', 'attention']);
   });

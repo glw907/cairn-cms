@@ -1,9 +1,10 @@
-// cairn-cms: the publish-actions seam, the adminNav grammar applied to the publish-success moment.
-// A site declares plain-data next-step links; this module validates them once at construction (the
-// same fail-loud-at-startup posture normalizeAdminNav takes) and, per publish, resolves the
-// validated set into templated links for the one entry that just went live. No callback crosses the
-// publish redirect: the href is a template string substituted server-side, so the data-only shape
-// survives the SSR boundary the same way adminNav's resolved items do.
+// cairn-cms: the publish-actions seam, the navLayout site-entry grammar applied to the
+// publish-success moment. A site declares plain-data next-step links; this module validates them
+// once at construction (the same fail-loud-at-startup posture navLayout's own validation takes) and,
+// per publish, resolves the validated set into templated links for the one entry that just went
+// live. No callback crosses the publish redirect: the href is a template string substituted
+// server-side, so the data-only shape survives the SSR boundary the same way a resolved nav entry
+// does.
 import type { ConceptDescriptor } from '../content/types.js';
 
 /**

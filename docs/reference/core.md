@@ -939,7 +939,10 @@ declare function hasAccessRule(access: AccessMap | undefined, target: string): b
 capability reaches nothing, mapped or unmapped. Owner capability reaches every target, including
 the `editors` screen and any target with no rule; every other capability's reach stops at
 `editors`, which stays owner-only no matter what the map says (the roster screen's existing
-floor, restated here so the one authority function covers it too). A screen-id target absent from
+floor, restated here so the one authority function covers it too). In practice a site cannot even
+declare a rule for `editors` and have it silently ignored: composition-time validation
+(`validateAccessComposition`) admits only a declared concept id or one of the fixed engine screens
+as a map key, and throws an actionable error at server start on anything else. A screen-id target absent from
 the map admits any editor-capability session; present, it admits only the named roles. An href
 target matches the deepest path-segment-prefix key in the map (`/admin/money` covers
 `/admin/money/refunds` unless the deeper key is separately mapped; `/admin/moneyx` never matches

@@ -95,9 +95,14 @@ attaches it to `locals.cairnEditor.capability`, so every downstream load and act
 no re-derivation.
 
 `opts.access` is the site's declared [access map](./core.md#access-map) (`defineAccess`, a
-[core](./core.md) export); omitted, every engine screen and [`requireAccess`](#requireaccess) call
-keeps today's any-editor-capability behavior. The guard attaches it internally to
-`locals.cairnAccess`, alongside `locals.cairnEditor`, so `requireAccess` needs no extra argument.
+[core](./core.md) export). Omitted, the engine's own screens and a site's own
+[`requireAccess`](#requireaccess) calls read differently. The engine's own screens (gated through
+`requireEngineAccess`'s `canReach` check) stay open to any editor-capability session, so a
+zero-config site sees no behavior change there. A `requireAccess` call on a site's own route reads
+the opposite way: with no map at all, it has no opinion on any target and refuses every session,
+owner included; see [`requireAccess`](#requireaccess) below for the reasoning. The guard attaches
+the map internally to `locals.cairnAccess`, alongside `locals.cairnEditor`, so `requireAccess`
+needs no extra argument.
 
 ```ts
 // src/hooks.server.ts
@@ -172,7 +177,7 @@ params the wrapped action reads, and delegates:
 | `mediaBulkDelete` | media | the multi-select bulk delete, skip-and-report |
 | `mediaOrphanScan` | media | the on-demand orphan scan |
 | `mediaOrphanPurge` | media | the irreversible orphan byte purge |
-| `publishAll` | list, edit, editors, nav | the site-wide publish |
+| `publishAll` | index, list, edit, editors, nav, media, settings, vocabulary, help (every authed view) | the site-wide publish |
 | `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
 ```ts

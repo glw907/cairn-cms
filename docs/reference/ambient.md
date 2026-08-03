@@ -33,9 +33,8 @@ for `cairnEditor` finds every engine read of the field in any repo, this one inc
 namespace to peel back first.
 
 `Editor`, `Backend`, `AdminActionAuditSink`, and `AccessMap` are exports of the same names:
-`Editor` and `Backend` from [core](./core.md), `AdminActionAuditSink` from
-[sveltekit](./sveltekit.md#adminactionauditsink), and `AccessMap` from
-[auth-store](./auth-store.md).
+`Editor`, `Backend`, and `AccessMap` from [core](./core.md), and `AdminActionAuditSink` from
+[sveltekit](./sveltekit.md#adminactionauditsink).
 
 - **`cairnEditor`** is the signed-in admin identity. `createAuthGuard` sets it on every
   `/admin/**` request; it's optional because a request the guard hasn't touched carries no editor

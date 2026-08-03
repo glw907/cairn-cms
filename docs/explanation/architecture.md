@@ -58,9 +58,9 @@ capability levels, owner, editor, and none, but leaves the role names open. `def
 each of your role names onto one of those three levels, and can name the `/admin` route a role
 lands on after sign-in. A site that declares no `roles` keeps the implicit `owner`/`editor` pair
 the engine has always had, so this changes nothing for a zero-config site. See
-[roles](../reference/core.md#roles) in the core reference for the full mapping rules and the
-typed read-side a site augments so its own routes see its declared role names on
-`locals.cairnEditor.role`.
+[roles](../reference/core.md#roles) in the core reference for the full mapping rules; a role
+*name* types as `string` everywhere the engine reads one, `locals.cairnEditor.role` included,
+since a site's own vocabulary is open and only the three-way capability is a closed union.
 
 A role vocabulary says who has which name; a site with more than one kind of editor usually also
 needs to say what each name may reach. `defineAccess` declares that map once, over cairn's own

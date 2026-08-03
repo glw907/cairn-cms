@@ -154,7 +154,7 @@ so a `save` posted to a list URL refuses rather than misfiring:
 | `mediaBulkDelete` | media | the multi-select bulk delete, skip-and-report |
 | `mediaOrphanScan` | media | the on-demand orphan scan |
 | `mediaOrphanPurge` | media | the irreversible orphan byte purge |
-| `publishAll` | list, edit, editors, nav | the site-wide publish |
+| `publishAll` | index, list, edit, editors, nav, media, settings, vocabulary, help (every authed view) | the site-wide publish |
 | `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
 The engine's components post these names, so an action-adding release reaches a site through the
@@ -168,13 +168,11 @@ it. The guard sets `event.locals.cairnEditor`, and one line in `src/app.d.ts` ty
 `import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)). The guard
 and the mount also read a set of Cloudflare bindings (the auth store, the email sender, the GitHub
 App credentials); intersecting
-[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) into `App.Platform.env` is
-required, not merely the tidier way to type it. A site that types `App.Platform.env` any other
-way, hand-rolled bindings or a bare `wrangler types`-generated `Env` straight off
-`@cloudflare/workers-types`, fails to compile `export const actions = admin.actions` below rather
-than surfacing at runtime, because `@cloudflare/workers-types`' `SendEmail.send` returns
-`Promise<EmailSendResult>` while the auth env's `EMAIL.send` declares `Promise<void>`. See
-[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) for the full requirement:
+[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) into `App.Platform.env` is a
+recommended convenience preset, not a requirement. Every route factory's env parameter is
+structurally satisfied by a bare `wrangler types`-generated `Env` too, so the type exists to catch
+a forgotten binding at compile time, not to unblock `export const actions = admin.actions` below.
+See [`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) for the full type:
 
 ```ts
 // src/app.d.ts

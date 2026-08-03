@@ -48,8 +48,12 @@ export interface AuthGuardOptions {
    */
   roles?: RolesDeclaration;
   /**
-   * The site's declared access map (see `defineAccess`); omitted, every engine screen and
-   *  `requireAccess` call keeps today's any-editor-capability behavior.
+   * The site's declared access map (see `defineAccess`); omitted, the two enforcement points read
+   *  it differently. The engine's own screens, gated through {@link requireEngineAccess}'s
+   *  `canReach` check, stay open to any editor-capability session, so a zero-config site sees no
+   *  behavior change there. A `requireAccess` call on a site's own route reads the opposite way:
+   *  with no map at all, it has no opinion on any target and refuses every session, owner
+   *  included, since that helper's contract is a route that opted in but found nothing.
    */
   access?: AccessMap;
 }

@@ -143,8 +143,9 @@ types reference](../reference/ambient.md)). Reading that identity, and refusing 
 isn't good enough, is
 [`requireSession`](../reference/sveltekit.md#requiresession),
 [`requireEditor`](../reference/sveltekit.md#requireeditor), and
-[`requireOwner`](../reference/sveltekit.md#requireowner). All three take the same minimal shape,
-`{ locals: { cairnEditor } }`, so they read straight off your route's own `load` or action event.
+[`requireOwner`](../reference/sveltekit.md#requireowner). All three take the same
+[`CairnEvent`](../reference/sveltekit.md#the-event-shape) shape, so a real SvelteKit `load` or
+action event satisfies them structurally with no extra work on your part.
 `requireSession` returns the signed-in editor, of any [capability](../reference/core.md#roles), or
 redirects to `/admin/login`. `requireEditor` does the same, then also answers a `none`-capability
 session with a 403. `requireOwner` goes further still, answering anything short of owner with a
@@ -399,15 +400,13 @@ in a trailing fallback group; see [Omission falls back; hiding is
 explicit](./organize-your-admin-nav.md#omission-falls-back-hiding-is-explicit) for the mechanism in
 full, including the same single-entry case as the array above.
 
-`icon` has to be one of the nine bundled Lucide names
-([`NavIcon`](../reference/sveltekit.md#navicon):
-`anchor`, `calendar`, `clipboard-list`, `list`, `users`, `package`, `inbox`, `table`, `wrench`), and
-`href` has to be a path no built-in view already owns. Cairn validates both when it builds the
-admin routes at server start, so a typo fails loudly at boot instead of rendering a broken or
-shadowing link:
+`icon` has to be one of the bundled Lucide names
+([`NavIcon`](../reference/sveltekit.md#navicon) lists the full allowlist), and `href` has to be a
+path no built-in view already owns. Cairn validates both when it builds the admin routes at server
+start, so a typo fails loudly at boot instead of rendering a broken or shadowing link:
 
 ```
-navLayout: icon "mail" is not one of anchor, calendar, clipboard-list, list, users, package, inbox, table, wrench
+navLayout: icon "envelope" is not one of anchor, banknote, bell, calendar, clipboard-list, file-pen, files, graduation-cap, image, inbox, key-round, life-buoy, list, list-ordered, mail, megaphone, menu, package, puzzle, send, settings, shield-check, table, tags, users, users-round, wrench
 navLayout: href "/admin/media" collides with cairn's built-in "media" view; choose an unclaimed /admin/<segment>
 ```
 

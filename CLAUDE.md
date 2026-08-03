@@ -154,8 +154,8 @@ The charter governs: the premise check, "is this cairn's job, and is it the lean
 before correctness checks on every spec. The persona beneath it: a developer who launches a
 content-managed site fast on cairn, builds their own functionality on top, and keeps pulling engine
 updates without rework. The lean extensibility redesign (shipped `0.77.0`) answered that: the
-`CairnAdminShell` custom-route seam, data-only `adminNav`, admin-scoped `locals.editor`, and the
-`check:surface`-enforced boundary. The diagnostic questions and pre-redesign inputs live in
+`CairnAdminShell` custom-route seam, the `navLayout` seam, admin-scoped `locals.cairnEditor`, and
+the `check:surface`-enforced boundary. The diagnostic questions and pre-redesign inputs live in
 [`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md), a
 point-in-time brief; verify its baseline before acting on it. Seam stability is tracked as `1.0`
 readiness in [`ROADMAP.md`](ROADMAP.md).

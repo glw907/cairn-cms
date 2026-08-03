@@ -598,8 +598,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
 - `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }
 - `SaveFailure`: { error: string; brokenLinks: string[]; body: string }
+- `SectionActionAudit`: { action?: string; entity?: string; entityId?: string | number; detail?: string }
 - `SectionActionConfig`: { resolveDb: (env: Env | undefined) => Db | undefined; rateLimit?: { resolve: (env: Env | undefined) => RateLimitLike | undefined; key: (ctx: AdminActionContext) => string; message?: string } }
-- `SectionActionContext`: AdminActionContext & { db: NonNullable<Db> }
+- `SectionActionContext`: Omit<AdminActionContext, "audit"> & { audit: (record: SectionActionAudit) => void; db: NonNullable<Db> }
 - `SectionActionOptions`: { action: string; entity: string; target?: string; ownerOnly?: boolean; deniedMessage?: string }
 - `SelectField`: { type: "select"; options: readonly string[]; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `SenderConfig`: { from: string; replyTo?: string }

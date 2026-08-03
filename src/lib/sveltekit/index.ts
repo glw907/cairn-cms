@@ -97,6 +97,7 @@ export {
   type RateLimitLike,
   type SectionActionConfig,
   type SectionActionOptions,
+  type SectionActionAudit,
   type SectionActionContext,
 } from './section-action.js';
 export { createCairnAdmin, type CairnAdminOptions, type CairnAdminRoutes, type AdminData } from './cairn-admin.js';

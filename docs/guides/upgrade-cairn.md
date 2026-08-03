@@ -323,6 +323,22 @@ data](../reference/delivery-data.md#types).
 Consumers must: nothing. Every addition is a new named export; nothing already imported changed
 shape or name.
 
+`createSectionAction`'s `SectionActionOptions.target` now defaults to `event.route.id`, never
+`event.url.pathname`: on a catch-all route the request path is attacker-chosen while the route id
+isn't. `resolveDb`'s shape stays ratified unchanged (`(env: Env | undefined) => Db | undefined`);
+the engine can't conjure an absent platform. A wrapped handler's `ctx.audit` call now also
+defaults `action`/`entity` from the call site's own `SectionActionOptions`, so the common call
+names only `entityId`/`detail` (`ctx.audit({ entityId })`); a handler that touches more than one
+entity in one call can still override either verb. See
+[`createSectionAction`](../reference/sveltekit.md#createsectionaction).
+
+**Consumers must:** for any `createSectionAction`-guarded parameterized or catch-all route,
+rekey the site's access map from the concrete request path to the bracket-form route id
+(`/admin/posts/[id]`, never `/admin/posts/hello-world`); a map still keyed by the concrete path
+stops matching, and the section fails closed, refusing every session including owner, with no
+thrown error to surface the mistake. A static route's id and path are the same string, so a site
+with no parameterized or catch-all section behind `createSectionAction` needs no change.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

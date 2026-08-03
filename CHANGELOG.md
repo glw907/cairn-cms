@@ -248,6 +248,22 @@
   [Components](docs/reference/components.md#vocabularyadmin). Consumers must: nothing; both
   additions are additive.
 
+- `createSectionAction`'s `SectionActionOptions.target` now defaults to `event.route.id`, never
+  `event.url.pathname` (C2 breaking-window pass, R9 ruling): on a catch-all route the path is
+  attacker-chosen and the route id is not. **On a parameterized or catch-all admin route, an
+  access map must key its rule by the bracket-form route id (`/admin/posts/[id]`), never the
+  concrete request path (`/admin/posts/hello-world`); a map still keyed by the concrete path
+  stops matching and the section fails closed (every session refused, including owner).** A
+  static route's id and path are the same string, so a site with no parameterized or catch-all
+  admin section sees no change. A null `route.id` (unreachable for a dispatched form action)
+  falls back to a fixed constant that matches no access-map key, never to the path. A wrapped
+  handler's `ctx.audit` call now also defaults `action`/`entity` from the call site's own
+  `SectionActionOptions`, so the common call names only `entityId`/`detail`
+  (`ctx.audit({ entityId })`); a handler may still override either verb. See
+  [SvelteKit](docs/reference/sveltekit.md#createsectionaction). **Consumers must:** for any
+  parameterized or catch-all route behind `createSectionAction`, rekey the site's access map from
+  the concrete path to the bracket-form route id, or the section silently refuses every session.
+
 ### Fixed
 
 - `scripts/check-reference-signatures.mjs`'s `normalizeSignature` stripped every `| undefined`

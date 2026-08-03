@@ -51,10 +51,12 @@ export interface SectionActionOptions {
   /** The domain entity the action mutates: reused as the audit `entity` on every denial too. */
   entity: string;
   /**
-   * The authorization target the access map matches; defaults to `event.url.pathname`. A route
-   * serving more than one section, or any route with a rest parameter, must declare it:
-   * SvelteKit dispatches actions by `?/name` while the map matches paths, and on a catch-all
-   * route the pathname is attacker-chosen.
+   * The authorization target the access map matches; defaults to `event.route.id`, never
+   * `event.url.pathname`. A route serving more than one section, or any route with a rest
+   * parameter, must declare it: SvelteKit dispatches actions by `?/name` while the map matches
+   * routes, and on a catch-all route the pathname is attacker-chosen while the route id is not.
+   * On a parameterized route, `event.route.id` is the bracket form (`/admin/posts/[id]`), never
+   * the concrete pathname a request carries; an access map keyed by concrete path stops matching.
    */
   target?: string;
   /** Require owner capability on top of the map check, never instead of it. */
@@ -63,11 +65,37 @@ export interface SectionActionOptions {
   deniedMessage?: string;
 }
 
-/** What a wrapped handler receives: adminAction's context plus the resolved binding. */
-export type SectionActionContext<Db> = AdminActionContext & { db: NonNullable<Db> };
+/**
+ * One audit record a `createSectionAction`-wrapped handler emits through `ctx.audit`. `action`
+ * and `entity` default from the call site's own `SectionActionOptions`, so the common call names
+ * only what the options declaration does not already say; a handler touching more than one
+ * entity (the audit sweep's confirmed two-row-touch case) still overrides either field.
+ */
+export interface SectionActionAudit {
+  /** Overrides `opts.action`; omit to reuse the call site's own declared verb. */
+  action?: string;
+  /** Overrides `opts.entity`; omit to reuse the call site's own declared entity. */
+  entity?: string;
+  /** The mutated row's id, when the action names one. */
+  entityId?: string | number;
+  /** A compact human-readable detail. Never a secret, a token, or a full record. */
+  detail?: string;
+}
+
+/** What a wrapped handler receives: adminAction's context, its own defaulting `audit`, plus the resolved binding. */
+export type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & {
+  /** Emit one audit record; `action`/`entity` default from the call site's `SectionActionOptions`. */
+  audit: (record: SectionActionAudit) => void;
+  db: NonNullable<Db>;
+};
 
 const DENIED_MESSAGE = 'You do not have access to this action.';
 const UNAVAILABLE_MESSAGE = 'This section is not available.';
+// Guaranteed to equal no real route id or pathname (both always start with `/`), so a null
+// `event.route.id` fails the authorization check closed instead of falling back to the
+// attacker-chosen `url.pathname` R9 removes: an access map never declares a rule for this key,
+// so `hasAccessRule` always refuses it.
+const UNRESOLVED_ROUTE_TARGET = '(unresolved route)';
 
 /**
  * Build a section's form-action wrapper. The returned function takes `(handler, opts)` per call
@@ -100,7 +128,9 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  *    `admin.action.misconfigured`, and returns `fail(500)`: a deployment misconfiguration, not a
  *    denial. This runs last, after authorization, so a session the access map refuses learns
  *    nothing about whether the section's binding is deployed.
- * 7. The handler runs once with `ctx: { ...ctx, db }`.
+ * 7. The handler runs once with `ctx: { ...ctx, db }`, `ctx.audit` seeded to default `action` and
+ *    `entity` from `opts` (a handler may still override either, for the confirmed two-row-touch
+ *    case that mutates more than one entity in one call).
  *
  * `Env` does not infer from `resolveDb`'s parameter alone; annotate it (as below) or pass
  * explicit type arguments, else it collapses to `{}` and every downstream binding read stops
@@ -115,7 +145,7 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  *   approve: sectionAction(async ({ form, ctx }) => {
  *     const id = String(form.get('id'));
  *     await ctx.db.prepare('update event set approved = 1 where id = ?').bind(id).run();
- *     ctx.audit({ action: 'approve', entity: 'event', entityId: id });
+ *     ctx.audit({ entityId: id }); // action/entity default to 'approve'/'event' below
  *     return { ok: true };
  *   }, { action: 'approve', entity: 'event' }),
  * };
@@ -143,7 +173,22 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // `Env` is a fully unconstrained generic type parameter).
       const siteEvent = event as CairnEvent<Env>;
       const path = siteEvent.url.pathname;
-      const target = opts.target ?? path;
+      // event.route.id, never url.pathname: on a catch-all route the pathname is
+      // attacker-chosen and the route id is not. A matched form action never actually sees a
+      // null route id (only an unmatched request, an unreachable case here, does), but the
+      // fallback stays a fixed non-matching constant, never the pathname, so a null id fails
+      // closed rather than reintroducing the attacker-chosen value this derivation removes.
+      const target = opts.target ?? siteEvent.route.id ?? UNRESOLVED_ROUTE_TARGET;
+
+      /** Seeds `action`/`entity` from `opts` unless the caller overrides either. */
+      function sectionAudit(record: SectionActionAudit): void {
+        ctx.audit({
+          action: record.action ?? opts.action,
+          entity: record.entity ?? opts.entity,
+          entityId: record.entityId,
+          detail: record.detail,
+        });
+      }
 
       /** One refused-authorization exit: the audit carries which gate refused, the response never does. */
       function deny(detail: string): ActionFailure<{ error: string }> {
@@ -226,7 +271,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // caller's own explicit Db argument might otherwise admit, so the check order above is what
       // a handler's ctx.db can rely on, never a type argument alone.
       const resolvedDb = db as NonNullable<Db>;
-      return handler({ event: siteEvent, form, ctx: { ...ctx, db: resolvedDb } });
+      return handler({ event: siteEvent, form, ctx: { ...ctx, audit: sectionAudit, db: resolvedDb } });
     });
 
     // The same relabeling as the `siteEvent` cast above, applied on the way out: adminAction

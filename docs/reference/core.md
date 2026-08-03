@@ -901,7 +901,7 @@ declare function defineAccess<const A extends AccessMap>(roles: RolesDeclaration
 ```
 
 Declare a site's access map: a target, either an engine screen id (a declared concept, or one of
-`media`, `vocabulary`, `settings`) or an `/admin`-prefixed route path, to the role names admitted
+`media`, `vocabulary`, `nav`, `settings`) or an `/admin`-prefixed route path, to the role names admitted
 to it. Validates at construction, `defineRoles`-style: throws an actionable
 `defineAccess:`-prefixed error on an empty map, a role name outside the given vocabulary, an
 empty role list (owner-only must be written explicitly as `['owner']`), or a key that is neither a
@@ -936,8 +936,9 @@ declare function hasAccessRule(access: AccessMap | undefined, target: string): b
 ```
 
 `canReach` is the one decision point every enforcement and visibility check reads. `none`
-capability reaches nothing, mapped or unmapped. Owner capability reaches every target except the
-`editors` screen, which stays owner-only regardless of the map (the roster screen's existing
+capability reaches nothing, mapped or unmapped. Owner capability reaches every target, including
+the `editors` screen and any target with no rule; every other capability's reach stops at
+`editors`, which stays owner-only no matter what the map says (the roster screen's existing
 floor, restated here so the one authority function covers it too). A screen-id target absent from
 the map admits any editor-capability session; present, it admits only the named roles. An href
 target matches the deepest path-segment-prefix key in the map (`/admin/money` covers

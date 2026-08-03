@@ -113,7 +113,8 @@ to prune a stale friction log that resurfaced a killed feature), so a pass that 
 backlog item is not done until the roadmap stops listing it. Shipped history lives in `docs/STATUS.md`
 and the per-plan post-mortems, not in the roadmap.
 
-Two production sites depend on the package, so a stale doc costs real users. Treat the docs update as
+Four production sites depend on the package, each on its own version range, so a stale doc costs
+real users. Treat the docs update as
 part of the work, not a chore after it. See the `docs-is-a-pass-dimension` memory.
 
 ## Releases (cadence and scheme)

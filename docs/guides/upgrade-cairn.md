@@ -79,7 +79,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: a cloudflare export, a packaged audit sink, and the seam-shape contract settled (non-breaking)
+## Unreleased: a cloudflare export, a packaged audit sink, and a breaking convergence of the event, locals, role, and nav seams
 
 A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the
 Cloudflare-native platform primitives two sites already copy by hand: `verifyTurnstile`, the
@@ -125,8 +125,9 @@ resolution.
 
 `adminAction`'s two refusals, a missing signed-in editor (authentication) and a CSRF mismatch, now
 throw SvelteKit's own `redirect()` and `error(403, ...)` instead of the dev-only error class, the
-same framework-native shapes `requireOwner`, `requireEditor`, `requireAccess`, and `requireSession`
-throw for their own authorization checks. `adminAction` itself still performs no authorization: a
+same framework-native shapes `requireOwner`, `requireEditor`, and `requireAccess` throw for their
+own authorization checks (`requireSession` throws the same redirect for its own authentication
+check). `adminAction` itself still performs no authorization: a
 `none`-capability editor's session passes both of its checks and reaches your handler unchanged;
 add [`requireAccess`](../reference/sveltekit.md#requireaccess) inside the handler, or build on
 [`createSectionAction`](../reference/sveltekit.md#createsectionaction), for a capability check.
@@ -145,7 +146,7 @@ channels](../reference/sveltekit.md#refusal-channels).
 Consumers must: be on Node 22 or later for your build toolchain (already the tutorial's stated
 requirement, now a declared one too); replace any imported `AdminActionError` with
 `UnauditedActionError`; and remove any `handleError` mapping of that class for `adminAction`'s two
-authorization refusals (they need no mapping anymore). Nothing else in this window changes an
+authentication refusals (they need no mapping anymore). Nothing else in this window changes an
 exported type, a route contract, or a behavior you'd observe without hitting one of those two: a
 throwing or rejecting audit sink previously failed the action it audited and now does not.
 

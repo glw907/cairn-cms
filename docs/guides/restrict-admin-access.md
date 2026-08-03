@@ -11,7 +11,7 @@ admin area](./give-a-role-its-own-admin-area.md).
 
 `defineAccess` takes your role vocabulary and a map of targets to the role names admitted to each
 one. A target is either one of cairn's own screens, by concept id or one of the fixed utility
-screens (`media`, `vocabulary`, `settings`), or one of your own `/admin`-prefixed routes:
+screens (`media`, `vocabulary`, `nav`, `settings`), or one of your own `/admin`-prefixed routes:
 
 ```ts
 // src/lib/cairn.access.ts

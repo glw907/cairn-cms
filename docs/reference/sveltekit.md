@@ -152,10 +152,26 @@ params the wrapped action reads, and delegates:
 | `logout` | any parsed view | the session logout |
 | `create` | list | the entry create |
 | `save` | edit, nav | the entry save, or the nav save (404 without a `navMenu`) |
+| `settingsSave` | settings | the tidy settings commit |
+| `vocabularySave` | vocabulary | the tag-vocabulary commit, with the cross-branch delete gate failing closed |
+| `upload` | edit | the entry-scoped media ingest, staged for the next save |
 | `publish` | edit | the entry publish |
 | `discard` | edit | the pending-edit discard |
 | `rename` | edit | the entry rename |
+| `dictionaryAdd` | edit | the personal-dictionary add |
+| `tidy` | edit | the language-model tidy copy-edit |
 | `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
+| `mediaDelete` | media | the committed asset's safe delete |
+| `mediaUpdate` | media | the committed asset's metadata edit (display name, slug, default alt) |
+| `mediaUpload` | media | the media-scoped ingest, the same upload the edit view's `upload` runs |
+| `mediaLibraryUpload` | media | the Library-direct upload, committed in the same step |
+| `mediaReplacePreview` | media | the replace-in-place preview (plans the rewrite, commits nothing) |
+| `mediaReplace` | media | the replace-in-place apply, one atomic commit |
+| `mediaAltPreview` | media | the alt-fill preview (plans the propagation, commits nothing) |
+| `mediaAltPropagate` | media | the alt-fill apply, one atomic commit |
+| `mediaBulkDelete` | media | the multi-select bulk delete, skip-and-report |
+| `mediaOrphanScan` | media | the on-demand orphan scan |
+| `mediaOrphanPurge` | media | the irreversible orphan byte purge |
 | `publishAll` | list, edit, editors, nav | the site-wide publish |
 | `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
@@ -291,10 +307,12 @@ export const load = (event) => {
 The admin action surface refuses a request through one of two developer-facing shapes, depending
 on which helper does the refusing.
 
-`requireOwner`, `requireEditor`, `requireAccess`, and `requireSession` all perform authorization: a
-signed-in session either carries the required role or capability, or the call throws. `adminAction`
-performs authentication and CSRF verification only, never authorization; a `none`-capability
-editor's session still passes both its checks and reaches the wrapped handler. All five throw
+`requireOwner`, `requireEditor`, and `requireAccess` all perform authorization: a signed-in session
+either carries the required role or capability, or the call throws. `requireSession` and
+`adminAction` perform authentication only, establishing who the caller is without deciding what
+they may reach: `requireSession` throws only for a session that was never resolved at all, and
+`adminAction`'s own checks (identity plus CSRF) let a `none`-capability editor's session pass
+through unchanged and reach the wrapped handler. All five throw
 SvelteKit's own `error()` (a 403) or `redirect()` (a 303 to `/admin/login`), whether called
 directly inside a hand-rolled load or action, or underneath `adminAction`'s wrapper. SvelteKit
 recognizes both as its native thrown shapes and renders the correct status through the nearest
@@ -369,9 +387,12 @@ unchanged. Add [`requireAccess`](#requireaccess) inside the handler, or build th
 
 In order, fail-closed at every step: (1) `event.locals.cairnEditor` must be populated, else a redirect
 to `/admin/login`, matching [`requireSession`](#requiresession) exactly (a lapsed session needs the
-login page, not an error page); (2) the CSRF cookie and the posted `csrf` field must match,
-constant-time, else SvelteKit's own `error(403, ...)`, rendered through the nearest `+error.svelte`;
-(3) the handler runs once, reading `event.request.formData()` exactly once so the handler never
+login page, not an error page); (2) a valid `X-Cairn-CSRF` header clears this step outright, the
+same witness [`createAuthGuard`](#createauthguard) checks first; only with no valid header must the
+posted `csrf` field match the CSRF cookie, constant-time, else SvelteKit's own `error(403, ...)`,
+rendered through the nearest `+error.svelte` (a fetch-based custom action that sets the header and
+posts `FormData` with no `csrf` field still passes this step); (3) the handler runs once, reading
+`event.request.formData()` exactly once so the handler never
 re-reads an already-consumed body; (4) a handler that returns normally (its request succeeded) must
 call `ctx.audit` at least once. A successful mutating action that emits zero audit records throws
 `UnauditedActionError(500, ...)` in dev (`esm-env`'s `DEV`, overridable through `deps.isDev` for a
@@ -385,14 +406,14 @@ since nothing rolls its writes back and the wrapper can't see them. Every emit l
 [log events](./log-events.md)) and, when the site sets one, forwards the record to
 `event.locals.cairnAuditSink`.
 
-Both preceding authorization branches throw one of SvelteKit's own recognized shapes (see [Refusal
+Both preceding authentication branches throw one of SvelteKit's own recognized shapes (see [Refusal
 channels](#refusal-channels)): the missing-editor redirect and the CSRF `error(403, ...)` carry
 their status to the browser directly, and neither needs a site `handleError` mapping. Only the
 dev-only required-audit check throws [`UnauditedActionError`](#types), which SvelteKit doesn't
 recognize as one of its own thrown shapes; it fires only under `esm-env`'s `DEV`, so it's a
 build-time author signal, never a production response, and it too needs no `handleError` mapping.
 A site building on [`createSectionAction`](#createsectionaction) inherits `adminAction`'s two
-authorization branches with the same no-mapping guarantee; only that factory's own authorization,
+authentication branches with the same no-mapping guarantee; only that factory's own authorization,
 rate-limit, and binding branches return `fail(...)` instead.
 
 [`AdminActionAuditSink`](#adminactionauditsink) is deliberately synchronous and fire-and-forget: it
@@ -608,7 +629,7 @@ limit, which deliberately degrades to open. Authorization runs before the databa
 check: a session the access map refuses learns nothing about whether the section's own database
 is deployed:
 
-1. `adminAction` resolves the editor, verifies CSRF, and reads the form once. Its own authorization
+1. `adminAction` resolves the editor, verifies CSRF, and reads the form once. Its own authentication
    guards throw SvelteKit's own `redirect()`/`error()`, not a `fail()`, and need no site
    `handleError` mapping; only this factory's own branches below render as form failures.
 2. The rate limit, when configured: an unresolved binding logs `admin.action.rate_limit_absent`
@@ -1579,7 +1600,7 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="sectionactioncontext"></a>`SectionActionContext` | Extension API | `type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & { audit: (record: SectionActionAudit) => void; db: NonNullable<Db> }` | What a [`createSectionAction`](#createsectionaction)-wrapped handler receives: `adminAction`'s own context, with `audit` replaced by the defaulting [`SectionActionAudit`](#types) form, plus the resolved, non-nullable database binding, so no handler re-resolves it. |
 | `AdminActionContext` | Extension API | `interface AdminActionContext { editor: Editor; audit: (record: AdminActionAudit) => void }` | What a wrapped handler receives: the verified editor and the bound `audit` emitter. |
 | `AdminActionOptions` | Extension API | `interface AdminActionOptions { isDev?: boolean }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. |
-| `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `adminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `adminAction`'s own authorization refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
+| `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `adminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `adminAction`'s own authentication refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
 | `UploadResult` | Unstable API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
 | `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }> }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. |
 | `NavConcept` | Extension API | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |

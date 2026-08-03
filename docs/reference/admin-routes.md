@@ -134,12 +134,27 @@ so a `save` posted to a list URL refuses rather than misfiring:
 | `logout` | any parsed view | the session logout |
 | `create` | list | the entry create |
 | `save` | edit, nav | the entry save, or the nav save (404 without `editor.nav`) |
+| `settingsSave` | settings | the tidy settings commit |
+| `vocabularySave` | vocabulary | the tag-vocabulary commit, with the cross-branch delete gate failing closed |
+| `upload` | edit | the entry-scoped media ingest, staged for the next save |
 | `publish` | edit | the entry publish |
 | `discard` | edit | the pending-edit discard |
 | `rename` | edit | the entry rename |
+| `dictionaryAdd` | edit | the personal-dictionary add |
+| `tidy` | edit | the language-model tidy copy-edit |
 | `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
+| `mediaDelete` | media | the committed asset's safe delete |
+| `mediaUpdate` | media | the committed asset's metadata edit (display name, slug, default alt) |
+| `mediaUpload` | media | the media-scoped ingest, the same upload the edit view's `upload` runs |
+| `mediaLibraryUpload` | media | the Library-direct upload, committed in the same step |
+| `mediaReplacePreview` | media | the replace-in-place preview (plans the rewrite, commits nothing) |
+| `mediaReplace` | media | the replace-in-place apply, one atomic commit |
+| `mediaAltPreview` | media | the alt-fill preview (plans the propagation, commits nothing) |
+| `mediaAltPropagate` | media | the alt-fill apply, one atomic commit |
+| `mediaBulkDelete` | media | the multi-select bulk delete, skip-and-report |
+| `mediaOrphanScan` | media | the on-demand orphan scan |
+| `mediaOrphanPurge` | media | the irreversible orphan byte purge |
 | `publishAll` | list, edit, editors, nav | the site-wide publish |
-| `vocabularySave` | vocabulary | the tag-vocabulary commit, with the cross-branch delete gate failing closed |
 | `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
 The engine's components post these names, so an action-adding release reaches a site through the

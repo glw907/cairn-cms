@@ -7,6 +7,13 @@
 // `formatTimestamp` differs from the ASC original on one point, deliberately: its `timeZone`
 // default is `'UTC'`, not ASC's own `'America/Anchorage'`. A shared engine formatter cannot default
 // to one consumer's zone; a site that wants its own local time passes `timeZone` explicitly.
+//
+// Every display formatter in this file (formatMoney, formatCivilDate, formatTimestamp, formatPhone)
+// accepts a nullish input and takes a `fallback?: string` option defaulting to `''`. The point is
+// uniformity: a caller rendering a possibly-absent value never has to remember which formatter
+// tolerates nullish and which throws, nor which one carries its own opinion about what absence
+// looks like. ageFromBirthdate is not a display formatter (it returns a number, not a string) and
+// stays outside this rule; see its own doc comment.
 
 /** Options for {@link formatMoney}. */
 export interface FormatMoneyOptions {
@@ -14,22 +21,26 @@ export interface FormatMoneyOptions {
   currency?: string;
   /** A BCP 47 locale tag. Defaults to `'en-US'`. */
   locale?: string;
+  /** The string to return for a nullish `cents` value. Defaults to `''`. */
+  fallback?: string;
 }
 
 /**
  * Format signed integer cents (a ledger's `amount_total_cents`/`amount_cents` shape) as a currency
  * string with thousands separators, e.g. `formatMoney(30044)` reads `"$300.44"` rather than the
  * raw-cents artifact `"$30044"`. Negative cents (a refund or a credit) render with a leading minus
- * sign, matching the ledger's own signed-integer convention.
+ * sign, matching the ledger's own signed-integer convention. A nullish `cents` reads
+ * `options.fallback`.
  */
-export function formatMoney(cents: number, options: FormatMoneyOptions = {}): string {
-  const { currency = 'USD', locale = 'en-US' } = options;
+export function formatMoney(cents: number | null | undefined, options: FormatMoneyOptions = {}): string {
+  const { currency = 'USD', locale = 'en-US', fallback = '' } = options;
+  if (cents == null) return fallback;
   return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(cents / 100);
 }
 
 /** Options for {@link formatCivilDate}. */
 export interface FormatCivilDateOptions {
-  /** The word to show for a null or missing date. Defaults to `'Not yet'`. */
+  /** The word to show for a null or missing date. Defaults to `''`. */
   fallback?: string;
   /** A BCP 47 locale tag. Defaults to `'en-US'`. */
   locale?: string;
@@ -49,7 +60,7 @@ export interface FormatCivilDateOptions {
  * (the "4:00 PM" artifact a timestamp formatter produces for a value that carries no time).
  */
 export function formatCivilDate(iso: string | null | undefined, options: FormatCivilDateOptions = {}): string {
-  const { fallback = 'Not yet', locale = 'en-US', intlOptions = { year: 'numeric', month: 'short', day: 'numeric' } } =
+  const { fallback = '', locale = 'en-US', intlOptions = { year: 'numeric', month: 'short', day: 'numeric' } } =
     options;
   if (!iso) return fallback;
   const civil = iso.slice(0, 10);
@@ -68,16 +79,19 @@ export interface FormatTimestampOptions {
   timeZone?: string;
   /** A BCP 47 locale tag. Defaults to `'en-US'`. */
   locale?: string;
+  /** The string to return for a nullish `sqliteDatetime` value. Defaults to `''`. */
+  fallback?: string;
 }
 
 /**
  * Format a SQLite `datetime('now')`-shaped UTC string (`"YYYY-MM-DD HH:MM:SS"`, no offset) as a
  * date and time in `timeZone`. Swapping the space for `T` and appending `Z` keeps `Date` reading
  * the input as UTC rather than the runtime's own zone, the same reasoning {@link formatCivilDate}
- * applies to a bare calendar day.
+ * applies to a bare calendar day. A nullish `sqliteDatetime` reads `options.fallback`.
  */
-export function formatTimestamp(sqliteDatetime: string, options: FormatTimestampOptions = {}): string {
-  const { timeZone = 'UTC', locale = 'en-US' } = options;
+export function formatTimestamp(sqliteDatetime: string | null | undefined, options: FormatTimestampOptions = {}): string {
+  const { timeZone = 'UTC', locale = 'en-US', fallback = '' } = options;
+  if (sqliteDatetime == null) return fallback;
   const parsed = new Date(`${sqliteDatetime.replace(' ', 'T')}Z`);
   if (Number.isNaN(parsed.getTime())) return sqliteDatetime;
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(parsed);
@@ -108,13 +122,21 @@ export function ageFromBirthdate(birthdateIso: string | null | undefined, asOf: 
  */
 const NANP_E164 = /^\+1(\d{3})(\d{3})(\d{4})$/;
 
+/** Options for {@link formatPhone}. */
+export interface FormatPhoneOptions {
+  /** The string to return for a nullish `phone` value. Defaults to `''`. */
+  fallback?: string;
+}
+
 /**
  * Format a stored E.164 phone number for a table cell: `+19075550100` becomes the hyphenated
  * `907-555-0100`, no leading `+1`. A number outside the NANP `+1` shape (a non-US country code,
  * or anything that fails to parse) passes through unchanged; a table cell has no reason to
- * reformat what it cannot parse.
+ * reformat what it cannot parse. A nullish `phone` reads `options.fallback`.
  */
-export function formatPhone(phone: string): string {
+export function formatPhone(phone: string | null | undefined, options: FormatPhoneOptions = {}): string {
+  const { fallback = '' } = options;
+  if (phone == null) return fallback;
   const match = NANP_E164.exec(phone);
   if (!match) return phone;
   const [, area, prefix, line] = match;

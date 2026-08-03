@@ -19,6 +19,7 @@ export {
   itemNoun,
   type FormatCivilDateOptions,
   type FormatMoneyOptions,
+  type FormatPhoneOptions,
   type FormatTimestampOptions,
   type ItemLabel,
 } from './format.js';

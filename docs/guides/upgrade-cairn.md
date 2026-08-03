@@ -365,6 +365,23 @@ kebab-case media upload `reason` (`media-disabled`, `length-required`, `too-larg
 `github.unreachable`'s `scope: 'layout'` (which never fired) to the corrected snake_case value.
 Nothing breaks at compile time, since these are runtime log values, not exported types.
 
+`/admin-toolkit`'s formatters settle on one nullish rule: every display formatter, `formatMoney`,
+`formatCivilDate`, `formatTimestamp`, and `formatPhone`, accepts a nullish input and takes a
+`fallback?: string` option defaulting to `''`, so you never have to remember which formatter
+tolerates a missing value and which throws. `formatMoney`, `formatTimestamp`, and `formatPhone`
+widen their first parameter to accept `null`/`undefined` and gain the `fallback` option
+(`formatPhone` gains its first options parameter, `FormatPhoneOptions`); `formatCivilDate` already
+accepted a nullish date, and keeps that shape, but its `fallback` default drops from the
+opinionated `'Not yet'` to `''`. `ageFromBirthdate` doesn't change: it returns `number | null`,
+not a display string, and stays outside this rule on its own documented grounds. See [Admin
+toolkit](../reference/admin-toolkit.md#formatts).
+
+**Consumers must:** if you call `formatCivilDate` and relied on its old `'Not yet'` default for a
+missing date, pass `{ fallback: 'Not yet' }` explicitly; otherwise that cell now renders an empty
+string. This is a silent visual change, not a compile error, since `formatCivilDate`'s date
+parameter was already nullable. Calls to `formatMoney`, `formatTimestamp`, or `formatPhone` with a
+value that's statically `number`/`string` (never nullish) need no change.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

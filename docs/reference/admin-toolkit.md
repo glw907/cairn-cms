@@ -36,19 +36,31 @@ Pure formatter functions: no daisyUI assembly, no markup, no CSS. Every formatte
 locale (and, for `formatTimestamp`, its time zone) as an option with a neutral default, so a
 second consumer in another locale or zone is a parameter, not a fork.
 
+Every display formatter in this file, `formatMoney`, `formatCivilDate`, `formatTimestamp`, and
+`formatPhone`, accepts a nullish input and takes a `fallback?: string` option that defaults to
+`''`. This is a standing rule, not a per-formatter choice. A screen often renders a field that
+isn't set yet, a member's phone, a ledger row before it posts, a date the editor hasn't
+published, and the caller shouldn't have to remember which formatter tolerates nullish input and
+which one throws, or carry a per-formatter opinion about what absence looks like. A site that
+wants its own text for absence, such as Not yet or TBD, passes `fallback` explicitly, and a
+future display formatter added to this file follows the same shape. `ageFromBirthdate` isn't a
+display formatter, since it returns a number rather than a string, so it sits outside this rule;
+see its own entry below.
+
 ### `formatMoney`
 
 Stability tier: Extension API.
 
 ```ts
-declare function formatMoney(cents: number, options?: FormatMoneyOptions): string;
+declare function formatMoney(cents: number | null | undefined, options?: FormatMoneyOptions): string;
 ```
 
 Format signed integer cents (a ledger's `amount_total_cents`/`amount_cents` shape) as a
 currency string with thousands separators. For example, `formatMoney(30044)` reads
 `"$300.44"` rather than the raw-cents artifact `"$30044"`. Negative cents (a refund or a
-credit) render with a leading minus sign. `options.currency` defaults `'USD'`; `options.locale`
-defaults `'en-US'`.
+credit) render with a leading minus sign. A nullish `cents` reads `options.fallback`.
+`options.currency` defaults `'USD'`; `options.locale` defaults `'en-US'`; `options.fallback`
+defaults `''`.
 
 ### `formatCivilDate`
 
@@ -63,25 +75,26 @@ from an ISO `YYYY-MM-DD` string, or the leading date portion of a full SQLite da
 local midnight so the calendar day never shifts a day west of Greenwich the way a bare
 `new Date(iso)` UTC parse would, and never routes a civil date through a time-of-day formatter
 (the "4:00 PM" artifact a timestamp formatter produces for a value that carries no time).
-`options.fallback` (the word shown for a null or missing date) defaults `'Not yet'`;
-`options.locale` defaults `'en-US'`. `options.intlOptions` overrides the default
-`{ year: 'numeric', month: 'short', day: 'numeric' }` shape, for a screen that renders only
-part of the date (a month/day list) or a longer form (a full month name).
+`options.fallback` (the word shown for a null or missing date) defaults `''`; a site that wants
+"Not yet" passes it explicitly. `options.locale` defaults `'en-US'`. `options.intlOptions`
+overrides the default `{ year: 'numeric', month: 'short', day: 'numeric' }` shape, for a screen
+that renders only part of the date (a month/day list) or a longer form (a full month name).
 
 ### `formatTimestamp`
 
 Stability tier: Extension API.
 
 ```ts
-declare function formatTimestamp(sqliteDatetime: string, options?: FormatTimestampOptions): string;
+declare function formatTimestamp(sqliteDatetime: string | null | undefined, options?: FormatTimestampOptions): string;
 ```
 
 Format a SQLite `datetime('now')`-shaped UTC string (`"YYYY-MM-DD HH:MM:SS"`, no offset) as a
 date and time in `options.timeZone`. Swapping the space for `T` and appending `Z` keeps `Date`
-reading the input as UTC rather than the runtime's own zone. `options.timeZone` defaults
-`'UTC'`, the neutral zone a Cloudflare Worker's own runtime already reads in, never a site's own
-zone; a site that wants its own local time (a club's Anchorage, say) passes `timeZone`
-explicitly. `options.locale` defaults `'en-US'`.
+reading the input as UTC rather than the runtime's own zone. A nullish `sqliteDatetime` reads
+`options.fallback`. `options.timeZone` defaults `'UTC'`, the neutral zone a Cloudflare Worker's
+own runtime already reads in, never a site's own zone; a site that wants its own local time (a
+club's Anchorage, say) passes `timeZone` explicitly. `options.locale` defaults `'en-US'`;
+`options.fallback` defaults `''`.
 
 ### `ageFromBirthdate`
 
@@ -94,20 +107,23 @@ declare function ageFromBirthdate(birthdateIso: string | null | undefined, asOf?
 Derive a whole-years age from an ISO birthdate, as of `asOf` (defaults to now; pass a fixed
 date for deterministic call sites). Turns over on the birthday itself rather than the day
 after, and reads `null` for a missing or unparseable birthdate so a caller renders its own "age
-unknown" copy instead of a formatter guessing at it.
+unknown" copy instead of a formatter guessing at it. This is not a display formatter (it
+returns a number, not a string), so it carries no `fallback` string option; the nullish rule
+above does not apply to it.
 
 ### `formatPhone`
 
 Stability tier: Extension API.
 
 ```ts
-declare function formatPhone(phone: string): string;
+declare function formatPhone(phone: string | null | undefined, options?: FormatPhoneOptions): string;
 ```
 
 Format a stored E.164 NANP phone number for a table cell: `+19075550100` becomes the
 hyphenated `907-555-0100`, no leading `+1`. A value outside the NANP `+1` shape (a non-US
 country code, or anything that fails to parse) passes through unchanged; a table cell has no
-reason to reformat what it cannot parse.
+reason to reformat what it cannot parse. A nullish `phone` reads `options.fallback`, which
+defaults `''`.
 
 ### `itemNoun`
 
@@ -786,9 +802,10 @@ compiled from cairn's own admin usage.
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| `FormatMoneyOptions` | Extension API | `interface FormatMoneyOptions { currency?: string; locale?: string }` | `formatMoney`'s options: the ISO 4217 currency code and BCP 47 locale tag. |
-| `FormatCivilDateOptions` | Extension API | `interface FormatCivilDateOptions { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }` | `formatCivilDate`'s options: the null-date fallback word, locale, and the `Intl.DateTimeFormat` options passthrough. |
-| `FormatTimestampOptions` | Extension API | `interface FormatTimestampOptions { timeZone?: string; locale?: string }` | `formatTimestamp`'s options: the IANA time zone and BCP 47 locale tag. |
+| `FormatMoneyOptions` | Extension API | `interface FormatMoneyOptions { currency?: string; locale?: string; fallback?: string }` | `formatMoney`'s options: the ISO 4217 currency code, BCP 47 locale tag, and the nullish-input fallback string (defaults `''`). |
+| `FormatCivilDateOptions` | Extension API | `interface FormatCivilDateOptions { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }` | `formatCivilDate`'s options: the null-date fallback word (defaults `''`), locale, and the `Intl.DateTimeFormat` options passthrough. |
+| `FormatTimestampOptions` | Extension API | `interface FormatTimestampOptions { timeZone?: string; locale?: string; fallback?: string }` | `formatTimestamp`'s options: the IANA time zone, BCP 47 locale tag, and the nullish-input fallback string (defaults `''`). |
+| `FormatPhoneOptions` | Extension API | `interface FormatPhoneOptions { fallback?: string }` | `formatPhone`'s options: the nullish-input fallback string (defaults `''`). |
 | `StatusChipTone` | Extension API | `type StatusChipTone = 'neutral' \| 'info' \| 'success' \| 'warning' \| 'danger'` | `StatusChip`'s full semantic tone vocabulary. `danger` reads as daisyUI's `error` semantic under the hood. |
 | `StatusChipSize` | Extension API | `type StatusChipSize = 'xs' \| 'sm'` | `StatusChip`'s two named sizes, matching AdminTable's own density tier names. |
 | `StatusChipRegister` | Extension API | `type StatusChipRegister = 'bounded' \| 'quiet'` | `StatusChip`'s two ratified visual registers: `'bounded'`, a demoted-hairline border for a chip that must read as a discrete object, and `'quiet'`, a token-tinted ground with no border for a settled state that should recede. |

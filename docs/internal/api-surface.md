@@ -133,11 +133,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `FieldLabel`: Component<Props, {}, "">
 - `formatCivilDate`: (iso: string | null | undefined, options?: FormatCivilDateOptions) => string
 - `FormatCivilDateOptions`: { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }
-- `formatMoney`: (cents: number, options?: FormatMoneyOptions) => string
-- `FormatMoneyOptions`: { currency?: string; locale?: string }
-- `formatPhone`: (phone: string) => string
-- `formatTimestamp`: (sqliteDatetime: string, options?: FormatTimestampOptions) => string
-- `FormatTimestampOptions`: { timeZone?: string; locale?: string }
+- `formatMoney`: (cents: number | null | undefined, options?: FormatMoneyOptions) => string
+- `FormatMoneyOptions`: { currency?: string; locale?: string; fallback?: string }
+- `formatPhone`: (phone: string | null | undefined, options?: FormatPhoneOptions) => string
+- `FormatPhoneOptions`: { fallback?: string }
+- `formatTimestamp`: (sqliteDatetime: string | null | undefined, options?: FormatTimestampOptions) => string
+- `FormatTimestampOptions`: { timeZone?: string; locale?: string; fallback?: string }
 - `ItemLabel`: { one: string; many: string }
 - `itemNoun`: (count: number, label: string | ItemLabel) => string
 - `ItemRange`: { first: number; last: number; total: number }

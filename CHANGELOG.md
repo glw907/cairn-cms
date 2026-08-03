@@ -281,6 +281,23 @@
   upload `reason`, or `github.unreachable`'s `scope: 'layout'`, to the corrected value. Nothing
   breaks at compile time, since these are runtime log values, not exported types.
 
+- `/admin-toolkit`'s formatters settle on one nullish rule (C2 breaking-window pass, RN ruling):
+  every display formatter, `formatMoney`, `formatCivilDate`, `formatTimestamp`, and `formatPhone`,
+  accepts a nullish input and takes a `fallback?: string` option defaulting to `''`, so a caller
+  never has to remember which formatter tolerates a missing value and which throws. `formatMoney`,
+  `formatTimestamp`, and `formatPhone` widen their first parameter to `T | null | undefined` and
+  gain the `fallback` option (`formatPhone` gains its first options parameter,
+  `FormatPhoneOptions`, exported from `./admin-toolkit`); `formatCivilDate` already accepted
+  nullish and keeps its shape, but its `fallback` default drops from the opinionated `'Not yet'`
+  to `''`. `ageFromBirthdate` is unaffected: it returns `number | null`, not a display string, and
+  stays outside this rule on its own documented grounds. See
+  [Admin toolkit](docs/reference/admin-toolkit.md#formatts). **Consumers must:** a site that calls
+  `formatMoney`, `formatTimestamp`, or `formatPhone` with a value that is statically `number`/
+  `string` (never nullish) sees no change; a site relying on `formatCivilDate`'s old `'Not yet'`
+  default now renders an empty string for a missing date and must pass `{ fallback: 'Not yet' }`
+  explicitly to keep the old copy. This is a silent visual change, not a compile error, since the
+  parameter type was already nullable.
+
 ### Fixed
 
 - `scripts/check-reference-signatures.mjs`'s `normalizeSignature` stripped every `| undefined`

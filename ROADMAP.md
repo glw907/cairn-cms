@@ -111,6 +111,9 @@ release-one boundary; the passes are invariant.
   zero-credential quickstart. The standing template track (cairn.pub voice, starter set, Topo
   with the docs-effectiveness infra, the scaffolder with its agent brief) runs parallel and
   feeds the rebuilds.
+- **The AI-posture pass runs BEFORE the migrations, not in phase P** (Geoff, 2026-08-03): C2b, then
+  the AI-posture pass, then the RC cut, then the migrations. It was briefly filed as P8; it moved
+  because a site should adopt its posture in the same session that migrates it. See Now.
 - Then the widened **go-public pass**, the **dress rehearsal**, and **RELEASE TWO:
   `1.0.0-beta.1`**.
 
@@ -148,6 +151,308 @@ The original decision framing, for the record:
   decision, not a default; check name availability first.
 
 ## Now
+
+- **The ambient-defaults audit: what does a deployed cairn site do that nobody decided? APPROVED
+  (Geoff, 2026-08-03), runs after C2b and BEFORE the AI-posture pass.**
+
+  **Why it exists.** Every gap-detection mechanism this project has is driven by someone bumping
+  into something: the consumer briefs report what ASC and xcathletes hit while building, the
+  friction log reports what writing a doc exposed, the review gates catch defects in code just
+  written, and the 2026-07-01 mission review asked what cairn does not do that a developer wants.
+  All of them are blind to the same class, **ambient behavior a deployed site inherits without
+  anyone choosing it**, because that class fails silently and so generates no report. The AI-crawler
+  finding is one instance: two of four sites were declining AI crawlers and nobody picked that.
+
+  **Why now, rather than in phase P.** Release one is the last cheap breaking round. A finding that
+  surfaces in phase P becomes its own breaking round against four sites; the same finding now joins
+  a `Consumers must:` list the migrations already absorb. And the AI-posture pass is its first
+  consumer: if several ambient defaults share a shape, they want one policy surface rather than a
+  bespoke `ai:` field plus a later refactor.
+
+  **The method, which is what makes this an audit and not a worry.** Enumerate the surfaces a
+  deployed cairn site presents to the world, and for each ask who chose the current behavior:
+
+  - HTTP response headers on public output (the admin has `applySecurityHeaders`; public is the
+    site's)
+  - robots.txt and sitemap, including the managed-layer interaction
+    ([[cloudflare-blocks-ai-crawlers-by-default]])
+  - cookies and privacy signals
+  - outbound email and its DNS authentication (SPF, DKIM, DMARC). Same shape as the crawler finding:
+    infrastructure-determined, invisible to the operator, total to the editor who never got the
+    magic link
+  - cache and CDN behavior
+  - error and redirect responses
+  - TLS and canonical host
+
+  For each, the answer is "the developer, explicitly", "cairn, deliberately, and it is documented",
+  or "nobody". **Only the third is a finding.** That terminates, which is the point.
+
+  **What owning the whole chain unlocks (Geoff, 2026-08-03).** cairn is Cloudflare-specific, and the
+  comparables survey makes clear that this is a capability rather than a limitation. Every other
+  tool in that survey hands off at some boundary and cannot reason past it. cairn owns the entire
+  publish chain: content, git, the GitHub App commit, the Worker, the bindings, the edge, and the
+  DNS. Nothing else surveyed can verify a link it does not own, which is the actual explanation for
+  the survey's near-universal silence.
+
+  Directions this opens, recorded as direction and not yet commitment, each an instance of "verify
+  what is actually true rather than what config claims":
+
+  - **Publish-chain verification end to end.** A publish commits to git, which deploys, which serves.
+    cairn could confirm the published entry is genuinely live at its permalink rather than assuming
+    the chain worked. No surveyed CMS controls enough of that path to try.
+  - **Magic-link deliverability.** cairn sends through Cloudflare Email and the site's DNS is in the
+    same account, so SPF, DKIM, DMARC, and sender-domain onboarding are all readable. This is the
+    same silent-failure shape as the crawler finding, and worse in consequence: an editor who never
+    receives the link has no way to report a failure they cannot see.
+  - **Binding and readiness truth.** `doctor/` and `check:readiness` already do a version of this
+    locally. The unlock is checking the deployed Worker rather than the local config.
+
+  These belong to later passes. They are recorded here because the audit will surface them and they
+  should land in a tier rather than in conversation.
+
+  **A comparables study runs alongside it** (Geoff, 2026-08-03; dispatched the same day so the
+  findings are on the shelf when the audit opens). **Consolidated results, 22 tools:**
+  `scratchpad/ambient-defaults-comparables.md`, to move into `docs/internal/` when C2b closes.
+  Read its coverage table first: three of four sub-agents misbehaved during the sweep, and the
+  Starlight, VitePress, and Kirby rows are thin. It asks how git-backed CMSs, site frameworks,
+  opinionated CMSs, and hosting layers each treat these same surfaces, classifying every tool and
+  surface pair as a silent default, a documented default, a forced decision, or absent. **The
+  forced-decision column is the point**: it tells us which mechanisms for making a developer choose
+  actually exist in the wild (required config key, failing build, init prompt, preflight check) and
+  which ones developers tolerate, which is exactly the evidence the no-default AI-posture ruling
+  needs. It also collects dated harm from silent defaults, and, bounded to this same
+  hygiene-and-operational space rather than a general feature survey, notes capabilities comparable
+  tools ship that cairn lacks.
+
+  **Bounded two ways.** The audit **reports and does not fix**. Findings triage into: rides this
+  window because it is breaking, defers to phase P because it is not, or is not cairn's job. Only
+  the first bucket touches the release. If run with breadth, one independent lens per surface is the
+  shape that fits, since a single reviewer's attention is exactly what this class slides past.
+
+- **The site's AI posture: its own dedicated pass, running after the audit. REQUESTED, PASS GRANTED, and
+  SEQUENCED AHEAD OF THE SITE MIGRATIONS (Geoff, 2026-08-03).** One config expressing a site
+  author's stance in either direction, from which cairn emits whatever artifacts that stance
+  implies, documented and present in **every cairn site's setup path**. The goal is the outcome,
+  never a particular file. Research is done
+  ([`docs/internal/2026-08-03-ai-crawler-posture-research.md`](docs/internal/2026-08-03-ai-crawler-posture-research.md)),
+  including a measured audit of all four consumer sites, so the pass starts from evidence rather
+  than a survey.
+
+  **Order: C2b → the ambient-defaults audit → this pass → cut `0.94.0-rc.1` → the migrations.** Geoff
+  moved it ahead of the site migrations on 2026-08-03, and the audit ahead of it, so this pass can
+  absorb the audit's findings into one policy surface instead of a bespoke field. The reasoning is the one that already folded the cairn.pub voice sitting
+  into the cairn.pub migration: a site being opened and redeployed anyway should adopt its posture in
+  that same session rather than earn a second visit. It rides the same unpublished window as C2 and
+  C2b, which it can do cheaply because the work is additive and adds almost nothing to the
+  `Consumers must:` list the migration already absorbs.
+
+  The cost, stated plainly: the RC slips by one pass, so the reshaped surface reaches real consumers
+  later. Worth it, because the alternative is touching four sites twice.
+
+  **Scope note: the grant is for a dedicated pass, not for folding this into C2b.** It runs on its
+  own worktree after C2b merges.
+
+  **One deliverable is partly deferred by dependency.** The setup path names the tutorial, the
+  getting-started scaffold, and the scaffolder, but the scaffolder is not built yet and stays last
+  in the queue. This pass covers the tutorial and the getting-started scaffold, and leaves the
+  scaffolder half as a standing input the scaffolder pass consumes, rather than pretending to
+  deliver it now.
+
+  Two co-equal directions, not a feature and its off switch:
+
+  1. **Invite.** A site that wants to be trained on is as effectively ingestible as cairn can make
+     it, by whatever method the evidence says actually works.
+  2. **Decline.** A site author who does not want their work consumed can ask LLMs not to, and that
+     request is made as effective as it can honestly be made.
+
+  **The two directions are probably not equally achievable, and the docs must not pretend otherwise.**
+  A site can decline credibly, but no site can make crawlers arrive. Declining also has a real
+  enforcement layer available that inviting does not, since every cairn site runs on Cloudflare and
+  its AI crawler controls sit below the polite-request layer. The research pass is confirming or
+  correcting that asymmetry; whichever way it lands, the reference page states plainly which
+  direction is a request and which is enforcement, because a site author choosing to decline
+  deserves an honest account of what the setting buys.
+
+  **Research is in and it inverted the feature**
+  ([`docs/internal/2026-08-03-ai-crawler-posture-research.md`](docs/internal/2026-08-03-ai-crawler-posture-research.md)).
+  Two findings outrank the question that was asked:
+
+  - **A cairn site that wants to be trained on is probably blocked right now, by platform default.**
+    Cloudflare has blocked GPTBot, ClaudeBot, and PerplexityBot by default on every new domain since
+    2025-07-01, at the edge, before the request reaches the origin. Every cairn site runs on
+    Cloudflare. No file a site publishes can undo an edge block, so the highest-leverage invite
+    action is not publishing anything.
+  - **`llms.txt` does not serve this goal.** Google states outright that Search ignores it
+    (2026-06-15, first-party); Ahrefs found 97% of published files receive zero requests across
+    137,210 domains; a second study found 1.1% of requests came from verifiable AI models with zero
+    referrer trails. It ships as a cheap nicety at most, never the headline. This hardens the
+    2026-06-29 finding rather than overturning it.
+
+  **The shape that follows.** Invite: diagnose the Cloudflare default rather than fight it, then
+  serve raw markdown at `.md` or on `Accept: text/markdown`, which is near-free for cairn precisely
+  because it stores markdown natively where an HTML-first CMS must reconstruct it. Decline: emit
+  per-token `Disallow` lines from a maintained crawler table (training tokens only, deliberately not
+  Googlebot or OAI-SearchBot, which are search), plus `Content-Signal: ai-train=no`.
+
+  **The estate audit, and the finding that shapes the engine work.** Measured 2026-08-03 with
+  per-crawler user agents against each origin: 907.life and aksailingclub.org **403 at Cloudflare's
+  edge** for GPTBot, ClaudeBot, and PerplexityBot and carry a managed `Content-Signal:
+  ai-train=no`; cairn.pub and ecxc.ski block and signal nothing. Two and two, and nobody chose it.
+
+  Underneath that: **Cloudflare's managed robots.txt prepends to the origin's rather than replacing
+  it.** 907.life's robots.txt tail is byte-identical to ecxc.ski's whole file, because that tail is
+  cairn's own `robots.ts` output surviving beneath the injection, leaving two `User-agent: *` groups
+  in one file. So **cairn cannot assume the robots.txt it emits is the robots.txt that ships**, and
+  a pass that only emits a file would be confidently wrong on half the estate.
+
+  **No silent default, and the goal is informed consideration rather than forced compliance. RULED
+  (Geoff, 2026-08-03, revising an earlier over-strict draft.)** A developer should not be bitten by
+  a site configured in a way they do not expect. That is the target. Making life difficult is not,
+  and the two are easy to confuse.
+
+  **The argument that settles the mechanism.** An earlier draft of this ruling made the posture a
+  required config field so a site could not typecheck without one. That would not have caught the
+  incident that prompted all of this: the developer would have set `invite` on 907.life, felt
+  informed, and Cloudflare would still have been returning 403 at the edge. **The failure was never
+  an unset value; it was a gap between the stated posture and the effective one.** A required field
+  guarantees a keystroke, not consideration, and it buys friction without buying awareness.
+
+  So the mechanism is **report the effective state, do not obstruct the developer**:
+
+  - **The `doctor/` probe is primary, not supporting.** It reads the deployed site and reports its
+    *actual* posture, flagging three cases: no stance stated, a stance stated that the live site
+    contradicts, and a managed layer overriding what cairn emitted. Only a probe can catch the
+    third, which is the one that happened.
+
+    *Comparables evidence, six tools in (Astro, Eleventy, Nuxt, Docusaurus, Starlight, VitePress):*
+    **no comparable tool reports effective state.** Read that with its limit in mind: all six are
+    static-site or docs frameworks, and the categories where a positive answer would actually live,
+    a CMS with a server runtime (Ghost, WordPress, Statamic, Kirby) and the hosting layers (Vercel,
+    Netlify, Cloudflare), have not reported. Six negative results from one category are not a
+    finished survey, and the audit should close that gap before the differentiation claim is leaned
+    on. `astro check` is TypeScript and template
+    diagnostics only; Eleventy ships no diagnostic command at all; neither fetches its own deployed
+    URL. Docusaurus is the closest miss and the most instructive: `onBrokenLinks` defaults to
+    `'throw'` and genuinely fails a production build, but it checks **local build output on disk and
+    never a live URL**, so it cannot see a CDN-layer override either. A tool can be strict and still
+    blind to this class.
+
+    For the static generators the absence is category rather than judgment, since they have no
+    runtime and often do not know their deployed origin. Neither constraint binds cairn, whose sites
+    are Workers with a known origin and which already has `doctor/` and `check:readiness`. Confirm
+    against the remaining comparables (Ghost, WordPress, Statamic, Kirby, and the hosting layers)
+    before leaning hard on the differentiation claim, since a CMS with a server runtime is where a
+    positive answer would actually live.
+
+    **The honest reason nobody else does this: they cannot, and cairn can (Geoff, 2026-08-03).** A
+    host-agnostic framework does not know what sits in front of it, so it cannot reason about an
+    edge layer it cannot identify. cairn is Cloudflare-specific by design, which converts a scope
+    restriction into a capability: it knows the edge is Cloudflare, it knows Cloudflare's managed
+    robots.txt prepends rather than replaces, and it can encode that knowledge. The differentiation
+    is real but it is **narrowness paying off, not insight**, and the docs should say so rather than
+    implying cairn solved a problem the field failed at.
+
+    **The two-tier probe loses its second tier, on evidence.** The plan was a black-box fetch plus a
+    Cloudflare API read of the zone's crawler settings, so the report could say *why* and not just
+    *what*. Research found **no API endpoint or dashboard field exposing AI Crawl Control's
+    per-crawler bucket state**; it is dashboard-only. So the black-box fetch of the live origin is
+    not the floor, it is the whole mechanism, and the probe reports observed behavior while naming
+    the dashboard as the place to look for cause. Confirm before building, since an unannounced API
+    could appear, but design for the fetch alone.
+
+    **Correction to this entry's earlier framing, in fairness to Cloudflare.** The prepend is
+    *documented* first-party ("Cloudflare will prepend our managed robots.txt before your existing
+    robots.txt"), so the mechanism was never hidden. What nobody surfaced was that the feature was
+    **enabled** on two of our zones. The failure was disclosure of state, not of behavior, which is
+    exactly the distinction this whole initiative turns on and is worth stating precisely rather
+    than blaming the platform for a documented design.
+
+    **A dated risk this pass must absorb: 2026-09-15.** Cloudflare's mixed-purpose-crawler default
+    change lands then and **reaches backward into existing "Block AI bots" configurations**, with no
+    in-dashboard notice found, only a changelog post. That is a behavior change arriving on live
+    consumer sites without anyone being told, the same species as the original finding. This pass
+    runs well before that date, so it owns both encoding the change and standing up a scheduled
+    routine to watch it, per the doctrine that a time trigger becomes a routine rather than a
+    backlog line someone has to remember to reread.
+  - **The config field is optional, with no silent default.** Unset means cairn emits nothing and
+    guesses nothing. Absence is honest; a fabricated default is what created this mess.
+
+    *The precedent set, across six tools.* Two shapes recur and both are tolerated. **Requirement
+    without a stance-gate**: Astro's `@astrojs/sitemap` needs a `site` URL once opted into,
+    Docusaurus requires `url` and `baseUrl` outright (where Next.js's equivalent silently resolves
+    to localhost), and Starlight makes `title` a schema-required field that throws at dev start.
+    Each demands a value the feature genuinely needs rather than a stance, which is why none of them
+    reads as obstruction. **Fail-by-default on a checkable defect**: Docusaurus `onBrokenLinks:
+    'throw'` and VitePress `ignoreDeadLinks: false` both fail a build on dead internal links.
+
+    The second shape is the cautionary one. Both are strict, both are well liked, and **both check
+    only the local build graph and never a deployed URL**, so neither could catch what happened to
+    us. Strictness is not the same property as looking at reality.
+
+  - **A consistency rule worth copying outright.** Docusaurus's sitemap plugin auto-filters
+    `noindex`-flagged pages out of the sitemap, so two related surfaces cannot disagree. cairn's
+    posture must stay consistent with per-entry unlisted state the same way, rather than letting a
+    sitewide stance and a per-entry flag drift apart.
+
+  - **Prior art to read before designing the emitter:** Nuxt's official `@nuxtjs/robots` module
+    already implements `Content-Signal` and `Content-Usage` directives. Someone has shipped this
+    vocabulary; read their shape before inventing one.
+  - **The setup path raises the question once**, with the options and their real consequences
+    present, at the moment a developer is already making decisions.
+  - **No build error and no boot failure.** cairn fails closed on authorization because guessing
+    costs a security hole. Guessing wrong here costs a wrong robots.txt, so a dark production site
+    would be the worse outcome.
+
+  This also lowers the consumer cost: an optional field is additive rather than breaking, so the
+  four existing sites adopt a stance because the probe tells them what they currently have, not
+  because a compiler blocked them.
+
+  **The pass therefore carries four things, not one:**
+
+  1. **The config and its emitters.** A site-level posture that drives cairn's own robots output and,
+     on the invite side, serving raw markdown at `.md` or on `Accept: text/markdown`. That second
+     one is near-free for cairn specifically, since it re-serves a file it already stores where an
+     HTML-first CMS must reconstruct markdown it threw away.
+  2. **A deployed-site probe in `doctor/`**, since emitting is not enough when a layer above can
+     override. It fetches the live robots.txt, compares it to what cairn emits, and reports the
+     site's *actual* posture including any managed-layer disagreement. This is the standing doctrine
+     of turning a watch into a gate rather than a note someone has to remember to re-read.
+  3. **The setup path, for every cairn site.** The tutorial, the getting-started scaffold, and the
+     scaffolder's output all surface the posture as a deliberate choice at setup rather than a
+     default nobody picked. This is the half Geoff called out: it is not enough that the capability
+     exists, it has to be met during setup.
+  4. **A guide** covering the posture, the Cloudflare interaction, and an honest account of what
+     each direction actually buys.
+
+  **The honesty constraint is a design requirement, not a docs nicety.** Declining is a request that
+  named crawlers say they honor, not enforcement: OpenAI's `ChatGPT-User` and Perplexity's
+  `Perplexity-User` are exempted from robots.txt by first-party design, Bytespider publishes no
+  commitment, and Cloudflare credibly accused Perplexity of stealth crawling in 2025-08. The config
+  copy must never read as "blocks AI training". `noai` meta tags are unsupported folklore and get no
+  claim attached. The only layer with teeth is Cloudflare AI Crawl Control, which is the developer's
+  infrastructure and not the engine's to configure, though `doctor/` is exactly where cairn already
+  diagnoses this class of thing.
+
+  **Accept the maintenance cost deliberately:** a crawler token table goes stale as bots appear and
+  rename. Whatever ships needs a refresh trigger, or it decays into confidently wrong output. A
+  scheduled routine watching the provider docs is the mechanism that matches the trigger.
+
+  **The posture is a site policy, never an engine default.** cairn ships the seam and the site
+  chooses. That is the charter line and it is why this is a config rather than a behavior, and it
+  means the shipped default has to be defensible on its own rather than inherited from whichever
+  direction got built first.
+
+  In charter because `delivery/` already owns this family: `sitemap.ts`, `robots.ts`, `feeds.ts`, and
+  `manifest.ts` are derived machine-readable artifacts over content cairn already models. Whatever
+  mechanism wins is their sibling, not a new subsystem. `robots.ts` in particular already exists,
+  which matters if the research says AI user-agent policy is the real lever. cairn's genuine
+  differentiator is that it stores markdown natively, so serving markdown costs a read where an
+  HTML-first CMS has to reconstruct what it threw away.
+
+  **The hazard to design against whatever mechanism wins:** anything that inlines body content must
+  serve published `main` content only, never a `cairn/*` pending branch. A pending edit reaching a
+  public file is a disclosure bug, not a formatting bug. Both this and the per-entry description
+  source (a frontmatter field, or the concept's existing `summaryFields`) are open at planning.
 
 - **Entry history and revert (editor-facing revisions). PROMOTED (Geoff, 2026-08-01).** Surface the
   version history cairn already writes: a per-entry history view over the backend's commit log (the

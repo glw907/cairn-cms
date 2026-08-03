@@ -14,8 +14,59 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-02: the C2 sitting is DONE; next is C2 execution in a fresh
-Opus 5 session)
+## Immediate next action (2026-08-02: C2 is IN FLIGHT on a worktree; finish Task 14 and close it out)
+
+**DO NOT START C2 FROM SCRATCH, AND DO NOT BRANCH OFF `main` FOR IT.** Every code task in C2 has
+already landed on the worktree `.claude/worktrees/c2-breaking-window` (branch
+`c2-breaking-window`, pushed to origin, off `main` at `d57e7c94`). 200 files changed, tree clean,
+all gates green at every commit. `main` itself is unchanged, so a cold session that branches off
+`main` by default will rebuild work that already exists.
+
+**What remains in C2: Task 14 (the docs correction batch) and the close-out ritual.** The
+per-task commit table, the TS2578 tripwire evidence, the five deviations from the plan's literal
+text, and the five items Task 14 carries beyond its written file list are all recorded in the
+plan's own **Execution record** section
+(`docs/superpowers/plans/2026-08-02-c2-breaking-window.md`). Read that section first; it is the
+handoff.
+
+**Task 12 is NOT in C2.** Geoff took the pre-approved cut mid-execution (2026-08-02): C2 carries
+Tasks 1-11, 13, 14; **Task 12, the refusal-channel convergence, is pass C2b** on its own worktree
+off `main` after C2 merges, in the same unpublished window, appending its own `Consumers must:`
+entries so the consumer still absorbs one batch. C2b also inherits one finding routed to it: **the
+authorization asymmetry this pass introduced**, where `createSectionAction` now derives `target`
+from `event.route.id` while `guard.ts`'s `requireAccess` still defaults to the attacker-influenceable
+`event.url.pathname`. Whoever runs C2b should read
+`docs/internal/2026-08-01-asc-consumer-brief.md`'s seam 2 first: ASC hand-rolled `club-action.ts`
+because neither `adminAction` nor `requireAccess` served it, so the fix and the seam request may
+want shaping together.
+
+**Resume prompt** (fresh Opus 5 session, launched from `~/Projects/cairn-cms`):
+"Finish the C2 breaking-window pass. Invoke `cairn-pass`, read
+`docs/superpowers/plans/2026-08-02-c2-breaking-window.md` in full including its Execution record
+section, and work in the EXISTING worktree `.claude/worktrees/c2-breaking-window` (branch
+`c2-breaking-window`) rather than creating a new one. Tasks 1-11 and 13 are done and committed;
+run Task 14 via a `cairn-implementer` dispatch, including the five carried items the Execution
+record lists, then the close-out ritual: code-simplifier over the changed code, the reviewer
+fan-out, the from-scratch showcase `npm install` plus e2e as the migration-list completeness
+proof, `api-surface.md` regenerated, post-mortem appended to the plan, STATUS updated, PR merged,
+hold unpublished. Then C2b."
+
+**Three consumer sites, not two.** `aksailingclub-org` carries `"@glw907/cairn-cms": "^0.91.1"`,
+which on `0.x` admits only `>=0.91.1 <0.92.0`, so ASC is behind `0.92.0` and `0.93.0` as well and
+migrates across this whole window in one jump. It is also the first admin-extension consumer, so
+it exercises what C2 reshaped more than the two content sites do. `CLAUDE.md` still says "Two
+production sites"; Task 14 corrects it.
+
+**The lowest-friction order after C2** (worked through with Geoff 2026-08-02): finish C2 → C2b →
+publish the window as one release with one combined `Consumers must:` list → migrate the three
+sites **from their own repos**, ASC first (a site's own gate is the only real proof, and the
+engine repo's own proof is `examples/showcase`) → phase P overlapping that migration, since P's
+gates are worth most *before* the next new surface arrives → feature execution after P, with the
+design sittings run during it. The scaffolder and Topo go late: the scaffolder emits from the
+engine's surface, and Topo is a docs shell C2 has churned hard. Migration findings flow back here
+(friction log, ROADMAP), never patched around site-side.
+
+## Superseded (kept for the C2 window's context)
 
 **THE STACK IS COLLAPSED. `main` IS CURRENT.** PRs #16 (ASC seams pass two) and #17 (phase C1, the
 seam-shape pass) both merged to `main` on 2026-08-02. A cold session branches off `main` again by

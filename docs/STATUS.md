@@ -14,34 +14,40 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-04: the auth-channel plan is APPROVED; execute it)
+## Immediate next action (2026-08-04: the auth-channel factory pass is COMPLETE on its worktree; merge is Geoff's call, then plan pass 2)
 
-**Execute the auth-channel factory plan**:
-[`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`](superpowers/plans/2026-08-03-auth-channel-factory.md),
-eight tasks, against spec **v3.1**
-[`docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`](superpowers/specs/2026-08-03-auth-channel-factory-design.md).
-Method: a fresh worktree `.claude/worktrees/auth-channel` off `main`, per-task `cairn-implementer`
-dispatches (pinned Sonnet), test-first, with the main loop reviewing each diff and confirming the
-full gate between dispatches.
+**The factory pass is done and unmerged.** Twelve commits on branch `auth-channel` (worktree
+`.claude/worktrees/auth-channel`, off `main` at `d504f958`, head `7412a1ae`): the full
+`./auth-channel` subpath, 164 tests across seven suites, docs arm complete, post-mortem appended
+to the plan. Final gate: 394 files / 4932 tests exit 0, `check` 0/0, all four CI-only gates green
+by name, docs gates green. The pass-end review ran as an adversarial find-and-verify workflow
+(24 raw findings, 12 confirmed, all folded; two majors: an unclosed `formData()` consumption and
+a guide migration-directory cross-apply). Details in the plan's post-mortem:
+[`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`](superpowers/plans/2026-08-03-auth-channel-factory.md).
 
-**Read the spec's revision log before the first dispatch.** Three adversarial rounds ran during the
-planning sitting and the first two rejected the design outright. The load-bearing rule the whole
-design is built from, repeated as a standing constraint in the plan:
+**Next: Geoff decides the merge, then plan pass 2** (the consumer proof: showcase `/members`
+fixture, `MEMBER_DB` binding and migration-apply, the `.cairn-template.json` scaffolder exclusion
+plus its emitted-template test, dev-gate integration, the e2e). The plan's "Pass 2" section holds
+the scope; ROADMAP's Now tier carries the entry. **A cold session must NOT branch pass 2 off
+`main` until the merge lands**; the factory exists only on `auth-channel`.
+
+**Merge pressure, worth knowing:** `main`'s own CI is currently red on the `docs-links` unit test.
+The provenance doc committed during planning links to the security-model page, which exists only
+on the branch. Merging clears it; nothing else on `main` is affected.
+
+**The rule that governed the pass, for pass 2's context:**
 
 > **No control keyed on the victim's identity may deny, delay, or destroy anything. Denial keys on
 > the requester. Identity-keyed controls either escalate through a channel the site can act on, or
 > they only log.**
 
-Three rounds died on violations of it, the third inside the mechanism written to prevent the
-second. The lockout regression tests in Tasks 3 and 4 are the structural guard and are specified
-with ordering, cookie-jar separation, and full-Defaults-table scope for that reason. **v3.1 itself
-was not reviewed**; Task 8's mandatory `web-auth-security-reviewer` is where an amendment defect
-gets caught. Provenance:
-[`docs/internal/2026-08-04-auth-channel-review-rounds.md`](internal/2026-08-04-auth-channel-review-rounds.md).
+Execution-locked decisions beyond the spec (the `requester_bucket` column, the sweep-on-mint
+housekeeping, the escalation-refund exits, the backwards-timestamp guard in `charge()`) are in the
+post-mortem; none has had its own adversarial round, so pass 2's review gate should read that list.
 
-**The window is open.** Verified 2026-08-04: xcathletes Task 4 has not run (Tasks 1 through 7 all
-queued in ecxc-ski, `xcathletes-org` does not exist, zero implementation code). The seam must land
-before it does, or the consumer hand-writes the code the seam exists to replace.
+**The window remains open but is now consumable.** xcathletes Task 4 still has not run
+(`xcathletes-org` does not exist as of this pass's close). Once the merge lands and a release is
+cut, the consumer builds against the factory instead of hand-writing it.
 
 **This pass is NOT releasable on its own.** The consumer proof is **pass 2** (the showcase
 `/members` fixture, its `MEMBER_DB` binding and migration-apply step, dev-gate integration, the
@@ -71,9 +77,10 @@ managed robots layer, zone TLS settings, DNS mail authentication). A posture con
 first group; the second wants a check.
 
 **Resume prompt** (fresh Opus 5 session, launched from `~/Projects/cairn-cms`):
-"Execute the auth-channel factory plan (`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`)
-against spec v3.1. Read the spec's revision log and the throttle rule first, create the worktree off
-`main`, then dispatch Task 1 to `cairn-implementer`."
+"The auth-channel factory pass is complete on branch `auth-channel` (see STATUS). If Geoff has
+approved the merge, merge the worktree to `main`, verify CI, then run `superpowers:brainstorming`
+followed by `superpowers:writing-plans` to plan pass 2 (the consumer proof) from the plan's Pass 2
+section and the post-mortem's execution-locked decisions list."
 
 **Carry this warning into every dispatch.** This pass's orchestrator derived the CI gate list from
 `.github/workflows/test.yml` once and then retyped it from memory across nine dispatches, dropping

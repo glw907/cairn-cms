@@ -695,6 +695,20 @@ the named human gates only):**
   no indication of which scope was absent, which cost a detour. That is the doctor pattern applied at
   setup.
 
+  **The one real design fork, to settle before any plan is written: is this a separate tool from the
+  scaffolder, or the same one?** "Create a new cairn site" is plausibly a single experience, where
+  the scaffolder emits the code and this creates the remote resources. Two tools that each do half
+  the job, with an unclear boundary over who writes `wrangler.jsonc`, would be worse than one. The
+  subsidiary questions fall out of that answer: whether it prompts or reads a declarative config
+  (a config file is reproducible and reviewable; prompts are friendlier), and whether it ships as a
+  published `create-*` package or a repo script only a cloner can run.
+
+  **It does not want a planning sitting yet, and the reason is structural: the ambient-defaults audit
+  is its specification.** The audit enumerates what a deployed cairn site presents and who chose each
+  piece, which is exactly this script's resource checklist. Planning first would produce a list the
+  audit then revises. Beyond the fork above, this is specification rather than design, so once the
+  audit lands it needs a decision and a plan, not a Fable sitting.
+
   Provisionable: D1 (`AUTH_DB`) plus schema, the R2 media bucket, Worker bindings and routes,
   observability, DNS, rate limits. **Not provisionable, and it must say so with links rather than
   papering over it:** creating the API token, Email Sending onboarding (Workers Paid plus dashboard),

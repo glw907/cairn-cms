@@ -163,6 +163,19 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 - `App.Locals`: { cairnEditor?: Editor | null; cairnBackend?: Backend; cairnAuditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }
 
+## `/auth-channel`
+
+- `AuthChannel`: { actions: { request: (event: AuthChannelEvent<Env>) => Promise<ChannelRequestResult>; confirm: (event: AuthChannelEvent<Env>) => Promise<ChannelConfirmResult>; logout: (event: AuthChannelEvent<Env>) => Promise<{ ok: true }> }; resolveSubject: (event: AuthChannelEvent<Env>) => Promise<string | null>; revokeSessions: (db: D1Database, subject: string) => Promise<void> }
+- `AuthChannelConfig`: { resolveDb: (env: Env | undefined) => D1Database | undefined; deliver: (contact: string, code: string, ctx: DeliverContext<Env>) => Promise<void>; lookup: (contact: string) => Promise<string | null>; normalize: (raw: string) => string; challenge: (event: AuthChannelEvent<Env>, form: FormData) => Promise<boolean>; cookie: { name: string }; verify?: ((subject: string) => Promise<boolean>); kind?: "code"; ttl?: { codeLength?: number; codeTtlMs?: number; attemptCap?: number; cooldownMs?: number; requesterCap?: number; identityCeiling?: number; escalationThreshold?: number; liveRowCap?: number; sessionTtlMs?: number }; rateLimit?: { resolve: (env: Env | undefined) => RateLimitLike | undefined; key?: ((event: AuthChannelEvent<Env>) => string) } }
+- `CHANNEL_SCHEMA_SQL`: "\nCREATE TABLE cairn_channel_meta (\n key TEXT PRIMARY KEY,\n value TEXT NOT NULL\n);\n\nCREATE TABLE cairn_channel_code (\n nonce_hash TEXT PRIMARY KEY,\n identity TEXT NOT NULL,\n code_hash TEXT NOT NULL,\n subject TEXT,\n kind TEXT NOT NULL DEFAULT 'code',\n attempts INTEGER NOT NULL DEFAULT 0,\n expires_at INTEGER NOT NULL,\n created_at INTEGER NOT NULL,\n requester_bucket TEXT NOT NULL\n);\n\nCREATE TABLE cairn_channel_session (\n token_hash TEXT PRIMARY KEY,\n subject TEXT NOT NULL,\n expires_at INTEGER NOT NULL,\n created_at INTEGER NOT NULL\n);\n\nCREATE TABLE cairn_channel_budget (\n bucket TEXT PRIMARY KEY,\n scope TEXT NOT NULL,\n count INTEGER NOT NULL DEFAULT 0,\n window_start INTEGER NOT NULL,\n prev_count INTEGER NOT NULL DEFAULT 0\n);\n\nCREATE INDEX idx_cairn_channel_code_identity ON cairn_channel_code (identity);\nCREATE INDEX idx_cairn_channel_code_expires ON cairn_channel_code (expires_at);\nCREATE INDEX idx_cairn_channel_code_requester_bucket ON cairn_channel_code (requester_bucket);\nCREATE INDEX idx_cairn_channel_session_subject ON cairn_channel_session (subject);\nCREATE INDEX idx_cairn_channel_session_expires ON cairn_channel_session (expires_at);\nCREATE INDEX idx_cairn_channel_budget_window ON cairn_channel_budget (window_start);\n\nINSERT INTO cairn_channel_meta (key, value) VALUES ('schema_version', '1');\n"
+- `CHANNEL_SCHEMA_VERSION`: "1"
+- `ChannelConfirmResult`: { ok: true } | { error: "throttled" | "challenge-required" | "unavailable" | "bad-code" | "expired" | "locked" | "no-pending-request" }
+- `ChannelRequestResult`: { sent: true } | { error: "invalid" | "throttled" | "challenge-required" | "unavailable" }
+- `createAuthChannel`: <Env>(config: AuthChannelConfig<Env>) => AuthChannel<Env>
+- `DeliverContext`: { env: Env | undefined; waitUntil: (promise: Promise<unknown>) => void }
+- `devDelivery`: <Env extends { CAIRN_DEV_BACKEND?: string | boolean }>(contact: string, code: string, ctx: DeliverContext<Env>) => Promise<void>
+- `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }
+
 ## `/auth-crypto`
 
 - `cookieName`: (base: string, secure: boolean) => string

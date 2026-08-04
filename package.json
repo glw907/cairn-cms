@@ -125,6 +125,10 @@
       "types": "./dist/auth-store/index.d.ts",
       "default": "./dist/auth-store/index.js"
     },
+    "./auth-channel": {
+      "types": "./dist/auth-channel/index.d.ts",
+      "default": "./dist/auth-channel/index.js"
+    },
     "./auth-crypto": {
       "types": "./dist/auth-crypto/index.d.ts",
       "browser": "./dist/auth-crypto/browser.js",

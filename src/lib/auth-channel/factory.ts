@@ -1,9 +1,9 @@
 // cairn-cms: `createAuthChannel`, the second-audience login factory (spec
 // docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md). Construction validates every
 // clamp, every required-config check, and the cookie-name discipline, so a misconfigured site
-// fails at startup rather than at the first login. `actions.request` (Task 3) is implemented
-// against Task 1's store and identity functions; `confirm`, `logout`, `resolveSubject`, and
-// `revokeSessions` are stubbed to throw until Task 4 fills them in.
+// fails at startup rather than at the first login. `actions.request` (Task 3), `actions.confirm`,
+// `actions.logout`, `resolveSubject`, and `revokeSessions` (Task 4) are all implemented against
+// Task 1's store and identity functions; Task 5 layers the optional rate limit on top.
 //
 // The rule every later task must honor, restated because construction is where a violation would
 // otherwise go unnoticed until a review round finds it: no control keyed on the victim's identity
@@ -17,12 +17,18 @@ import {
   verifySchema,
   provisionSalt,
   mintCode,
+  readCodeRow,
+  incrementAndReadCode,
   consumeCode,
   pruneRequesterRows,
+  createChannelSession,
+  resolveChannelSession,
+  destroyChannelSession,
+  revokeChannelSessions,
   charge,
   refund,
 } from './store.js';
-import { deriveIdentity, generateCode, requesterBucket } from './identity.js';
+import { canonicalizeCode, deriveIdentity, generateCode, requesterBucket } from './identity.js';
 import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';
 import type { RateLimitLike } from '../cloudflare/rate-limit.js';
 import type { CookieJar } from '../sveltekit/types.js';
@@ -36,6 +42,14 @@ const REQUESTER_SEND_SCOPE = 'send';
 
 /** The `charge` scope for the identity's hourly send ceiling: a log-only observation, never a denial (spec, Flows step 6). */
 const IDENTITY_CEILING_SCOPE = 'ceiling';
+
+/**
+ * The `charge`/`refund` scope for confirm's identity failure gate: charged provisionally before
+ * every compare and refunded only when that compare succeeds, so a failed guess accumulates and a
+ * correct one does not (spec, Flows step 5). Over the threshold this control escalates through
+ * `challenge-required`; it never denies, per the rule at the top of this file.
+ */
+const IDENTITY_ESCALATION_SCOPE = 'escalation';
 
 /**
  * Local development (`wrangler dev`) legitimately speaks http; a deployed host does not. Mirrors
@@ -327,9 +341,6 @@ function resolveLimits(ttl: AuthChannelConfig<unknown>['ttl']): ResolvedLimits {
  *   cookie: { name: 'member_session' },
  * });
  * ```
- *
- * `confirm`, `logout`, `resolveSubject`, and `revokeSessions` all throw `not implemented` in this
- * pass; Task 4 fills them in.
  * @throws Error on any misconfiguration: a missing required function, an unsupported `kind`, a
  * `cairn_`-prefixed cookie base, an invalid cookie-name token, or a `config.ttl` override outside
  * its clamp.
@@ -560,17 +571,229 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     return { sent: true };
   }
 
-  function notImplemented(name: string): never {
-    throw new Error(`createAuthChannel: ${name} is not implemented yet`);
+  /**
+   * POST handler for the `code` form field. Implements the spec's eight-step confirm flow (Flows
+   * section). The row is found by nonce hash alone: `contact` is never read and neither
+   * `normalize` nor `lookup` runs, which is what keeps the roster oracle v1 shipped closed. The
+   * identity failure gate (step 5) is checked before the compare and charged provisionally by the
+   * same `charge` call that tests it, refunded only when the compare that follows succeeds, so a
+   * failed guess accumulates toward escalation and a correct one never does.
+   */
+  async function confirmAction(event: AuthChannelEvent<Env>): Promise<ChannelConfirmResult> {
+    // Step 1: origin and scheme, identical discipline to requestAction.
+    if (!originMatches(event)) {
+      throw error(403, 'cairn auth-channel: origin mismatch');
+    }
+    if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
+      throw error(403, 'cairn auth-channel: https required');
+    }
+
+    const form = await event.request.formData();
+
+    // Step 2: canonicalize. Malformed touches nothing: no store access, no attempt spent.
+    const rawCode = String(form.get('code') ?? '');
+    const code = canonicalizeCode(rawCode, limits.codeLength);
+    if (code === null) {
+      return { error: 'bad-code' };
+    }
+
+    // Step 3: the pending nonce cookie. Absent is a statement about the requester's own browser,
+    // answered before any store access, so a cookie-blocked or cross-browser member gets an exit
+    // instead of an endless bad-code loop.
+    const secure = event.url.protocol === 'https:';
+    const pendingCookieNm = cookieName(`${cookieBase}_pending`, secure);
+    const nonceToken = event.cookies.get(pendingCookieNm);
+    if (!nonceToken) {
+      return { error: 'no-pending-request' };
+    }
+
+    const session = await resolveVerifiedSession(event.platform?.env);
+    if (!session) return { error: 'unavailable' };
+
+    const now = Date.now();
+    const nonceHash = await hashToken(nonceToken);
+
+    // Step 4: the row is found by nonce hash alone. No row (absent or already expired) answers
+    // expired; this is the only lookup confirm ever performs against the code table.
+    const row = await readCodeRow(session, nonceHash, now);
+    if (!row) {
+      return { error: 'expired' };
+    }
+    const correlationId = row.identity.slice(0, 16);
+
+    // Step 5: the identity failure gate. charge() both tests the gate and provisionally charges
+    // this attempt in the same call: when the identity is already at its threshold the call adds
+    // nothing (admitted is false), otherwise it adds one unit now, refunded below only if the
+    // compare that follows actually succeeds. This is what makes "charged on every failed
+    // compare" hold without a second store primitive.
+    const gateCharge = await charge(session, row.identity, IDENTITY_ESCALATION_SCOPE, now, limits.escalationThreshold);
+    if (!gateCharge.admitted) {
+      let challengeOk: boolean;
+      try {
+        challengeOk = await config.challenge(event, form);
+      } catch {
+        challengeOk = false;
+      }
+      if (!challengeOk) {
+        log.warn('auth.channel.escalated', { correlationId });
+        return { error: 'challenge-required' };
+      }
+      // A passing challenge on this retry proceeds to the compare below, having charged nothing
+      // on this call: the identity was already at its threshold, so charge() added no unit.
+    }
+
+    // Step 6: increment and read. The returned attempts is post-increment, so the cap check below
+    // admits exactly `cap` real guesses. A null result means the row vanished between step 4 and
+    // here (a concurrent consume winning the race); reported the same as an ordinary expiry.
+    const codeHash = await hashToken(code);
+    const incremented = await incrementAndReadCode(session, nonceHash, now);
+    if (!incremented) {
+      return { error: 'expired' };
+    }
+
+    // Step 7: over the cap, without comparing.
+    if (incremented.attempts > limits.attemptCap) {
+      log.warn('auth.channel.locked', { correlationId });
+      return { error: 'locked' };
+    }
+
+    // Step 8: the sole authority on whether the code matched. A wrong code deletes nothing (the
+    // row survives for the remaining guesses up to the cap) and this call's gate charge stands;
+    // this statement is never preceded by a separate compare.
+    const consumed = await consumeCode(session, nonceHash, codeHash, now);
+    if (!consumed) {
+      return { error: 'bad-code' };
+    }
+
+    // The code matched: refund the gate charge this call made (if any), since a successful
+    // confirm must not accumulate toward the escalation threshold.
+    if (gateCharge.admitted) {
+      await refund(session, row.identity, IDENTITY_ESCALATION_SCOPE, now);
+    }
+
+    if (consumed.subject === '') {
+      // A roster data fault, never an attacker signal: some upstream path wrote an empty string
+      // rather than null. Logged at error since a developer needs to see this, but the wire
+      // answer stays identical to a wrong code so the fault carries no distinguishing behavior.
+      log.error('auth.channel.confirmed', { correlationId, outcome: 'empty_subject_fault' });
+      return { error: 'bad-code' };
+    }
+    if (consumed.subject === null) {
+      // A decoy row, correctly guessed: consumed, never minted, and answered exactly like a
+      // wrong code so an attacker cannot distinguish "right code, decoy row" from "wrong code".
+      return { error: 'bad-code' };
+    }
+
+    const subject = consumed.subject;
+    log.info('auth.channel.confirmed', { correlationId });
+
+    // Clear the nonce cookie and delete any session row named by an incoming session cookie, so
+    // neither leaves an orphan.
+    event.cookies.delete(pendingCookieNm, { path: '/' });
+    const sessionCookieNm = cookieName(cookieBase, secure);
+    const existingSessionToken = event.cookies.get(sessionCookieNm);
+    if (existingSessionToken) {
+      await destroyChannelSession(session, await hashToken(existingSessionToken));
+    }
+
+    const sessionToken = generateToken();
+    const sessionTokenHash = await hashToken(sessionToken);
+    await createChannelSession(session, sessionTokenHash, subject, now, limits.sessionTtlMs);
+    log.info('auth.channel.session.created', { correlationId });
+    event.cookies.set(sessionCookieNm, sessionToken, {
+      path: '/',
+      httpOnly: true,
+      secure,
+      sameSite: 'lax',
+      maxAge: Math.floor(limits.sessionTtlMs / 1000),
+    });
+
+    return { ok: true };
+  }
+
+  /**
+   * POST handler that ends the current session: origin-checked, then clears both cookies and
+   * best-effort deletes the session row named by the incoming session cookie.
+   */
+  async function logoutAction(event: AuthChannelEvent<Env>): Promise<{ ok: true }> {
+    if (!originMatches(event)) {
+      throw error(403, 'cairn auth-channel: origin mismatch');
+    }
+    if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
+      throw error(403, 'cairn auth-channel: https required');
+    }
+
+    const secure = event.url.protocol === 'https:';
+    const sessionCookieNm = cookieName(cookieBase, secure);
+    const pendingCookieNm = cookieName(`${cookieBase}_pending`, secure);
+    const token = event.cookies.get(sessionCookieNm);
+    event.cookies.delete(sessionCookieNm, { path: '/' });
+    event.cookies.delete(pendingCookieNm, { path: '/' });
+
+    if (token) {
+      const session = await resolveVerifiedSession(event.platform?.env);
+      if (session) {
+        await destroyChannelSession(session, await hashToken(token));
+      }
+    }
+
+    log.info('auth.channel.session.destroyed');
+    return { ok: true };
+  }
+
+  /**
+   * Read the session cookie and resolve it to a subject, or null when absent, expired, or
+   * refused by `verify`. Runs `resolveChannelSession` against the bare `db` rather than a shared
+   * session: this call happens on every authenticated request rather than inside one channel
+   * flow, so it accepts the default consistency and any replica lag on the revocation path (spec,
+   * Storage: the documented exception to the shared-session rule).
+   */
+  async function resolveSubject(event: AuthChannelEvent<Env>): Promise<string | null> {
+    const secure = event.url.protocol === 'https:';
+    const sessionCookieNm = cookieName(cookieBase, secure);
+    const token = event.cookies.get(sessionCookieNm);
+    if (!token) return null;
+
+    const database = config.resolveDb(event.platform?.env);
+    if (!database) return null;
+
+    const tokenHash = await hashToken(token);
+    const now = Date.now();
+    const resolved = await resolveChannelSession(database, tokenHash, now);
+    if (!resolved) return null;
+
+    if (config.verify) {
+      let verified: boolean | null;
+      try {
+        verified = await config.verify(resolved.subject);
+      } catch {
+        // The hook itself faulted (a roster backend outage), which is not a roster answer:
+        // refuse this resolution without destroying the row, so a transient outage never
+        // converts into a permanent mass revocation. Only an explicit false revokes.
+        verified = null;
+      }
+      if (verified === null) return null;
+      if (!verified) {
+        await destroyChannelSession(database.withSession('first-primary'), tokenHash);
+        return null;
+      }
+    }
+
+    return resolved.subject;
+  }
+
+  /** Delete every session for a subject; the roster-removal exemplar calls this. */
+  async function revokeSessions(db: D1Database, subject: string): Promise<void> {
+    await revokeChannelSessions(db.withSession('first-primary'), subject);
   }
 
   return {
     actions: {
       request: requestAction,
-      confirm: async () => notImplemented('actions.confirm'),
-      logout: async () => notImplemented('actions.logout'),
+      confirm: confirmAction,
+      logout: logoutAction,
     },
-    resolveSubject: async () => notImplemented('resolveSubject'),
-    revokeSessions: async () => notImplemented('revokeSessions'),
+    resolveSubject,
+    revokeSessions,
   };
 }

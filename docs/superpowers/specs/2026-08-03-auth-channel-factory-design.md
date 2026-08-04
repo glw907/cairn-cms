@@ -244,8 +244,11 @@ schemes, origin refusal, dev-transport refusal outside dev, clamp rejection at c
 rate-limit degrade-to-open and blocked paths, no contact PII in any emitted log record.
 
 The showcase gains a small member-login fixture built from the xcathletes Task 4 shapes (per the
-fixture-inputs rule: consumer sources, not invented ones), using `devDelivery`, giving the e2e a
-full request, confirm, guarded-page loop against the built package.
+fixture-inputs rule: consumer sources, not invented ones), giving the e2e a full request, confirm,
+guarded-page loop against the built package. The fixture supplies a site-authored capture
+transport rather than `devDelivery`: the e2e runs the built showcase under preview, where
+`$app/environment` `dev` is false and `devDelivery` refuses by design (Gate 1 working as
+specified). The capture transport also demonstrates that `deliver` is genuinely site-owned.
 
 ## Documentation
 

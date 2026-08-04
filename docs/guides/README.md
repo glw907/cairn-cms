@@ -18,6 +18,8 @@ later, or the upkeep of a running site.
   page and the admin preview both call
 - **[Configure auth and D1](./configure-auth-and-d1.md)**: provision the auth database and walk
   a magic-link sign-in end to end
+- **[Add a login channel](./add-a-login-channel.md)**: build a login flow for a second audience,
+  members, athletes, boosters, with `createAuthChannel`
 - **[Set up the GitHub App](./set-up-the-github-app.md)**: create and install the App that signs
   every save and publish
 - **[Deploy to Cloudflare](./deploy-to-cloudflare.md)**: mount the admin's five files and wire

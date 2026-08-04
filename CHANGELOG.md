@@ -143,6 +143,21 @@ removal, nothing this list needs to carry.
   [SvelteKit](docs/reference/sveltekit.md#createcontentroutes). Consumers must: nothing; every
   addition is a new named export.
 
+- A new server-only export subpath, `@glw907/cairn-cms/auth-channel`, publishes
+  `createAuthChannel(config)`: a factory for a site's own second-audience login channel (members,
+  athletes, boosters), an 8-digit-by-default OTP code requested and confirmed over any transport
+  the site's own `deliver` function sends, backed by the site's own D1 binding rather than
+  `AUTH_DB`. The factory owns every security discipline behind the channel: salted identity
+  derivation, atomic sliding-window rate budgets, the nonce-bound code row, session issuance and
+  revocation, and its own D1 schema (`CHANNEL_SCHEMA_SQL`, `CHANNEL_SCHEMA_VERSION`). Every
+  denying control keys on the requester, never the victim's identity; an identity-keyed control
+  either escalates through a `challenge-required` retry or only logs. Also exports `devDelivery`,
+  a dev-only transport that refuses outside `CAIRN_DEV_BACKEND=1`. See [Auth
+  channel](docs/reference/auth-channel.md), [Add a login
+  channel](docs/guides/add-a-login-channel.md), and [the security
+  model](docs/explanation/auth-channel-security-model.md). Consumers must: nothing; this is a new
+  subpath with no bearing on the engine's own editor magic-link auth, which is unchanged.
+
 ### Changed
 
 - The env-genericity sweep audited every exported event and config type pinned to `AuthEnv`

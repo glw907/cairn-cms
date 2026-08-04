@@ -87,14 +87,18 @@ the cookie shipped without `HttpOnly`.
 
 ## What v3 took from it, and the rule that came out
 
-The two rejections had one shape: a control keyed on the victim that denies service. So v3 states
-the rule the design is now built from, and the plan repeats it as a standing constraint.
+The two rejections had one shape: a control keyed on the victim that denies service. So v3 wrote
+the rule down, as "anything that denies service keys on the requester; anything that bounds
+guessing keys on the identity and escalates rather than denies". Round 3 then showed that writing
+the rule was not enough, because v3 carved out two exceptions to it and both were exploited. The
+form that survived, in v3.1, is absolute:
 
-**Anything that denies service keys on the requester. Anything that bounds guessing keys on the
-identity and escalates rather than denies.**
+**No control keyed on the victim's identity may deny, delay, or destroy anything. Denial keys on
+the requester. Identity-keyed controls either escalate through a channel the site can act on, or
+they only log.**
 
-Escalation means demanding a fresh challenge, adding delay, and raising an operator-visible log. It
-bounds an attacker's rate without giving anyone a way to make a member's own login stop working.
+Escalation only counts when it has a wire representation the site can act on, which is what
+`challenge-required` in both result unions provides.
 
 The second structural change was raising code entropy to 8 digits (Geoff's call, deviating from the
 consumer's spec'd 6). Six digits was the root cause of every hard trade in both rejected versions:

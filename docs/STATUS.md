@@ -16,8 +16,8 @@ library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-08-03: C2b is DONE and unmerged; next is the ambient-defaults audit)
 
-**Pass C2b is complete**, thirteen commits on `c2b-refusal-channel` (worktree
-`.claude/worktrees/c2b-refusal-channel`, off `main` at `8559f3e7`), ending at `7cde9ce2`. **It is
+**Pass C2b is complete**, fifteen commits on `c2b-refusal-channel` (worktree
+`.claude/worktrees/c2b-refusal-channel`, off `main` at `8559f3e7`), ending at `f0098d4b`. **It is
 NOT merged and NOT pushed**, deliberately: no merge was asked for. It holds in the same
 `## Unreleased` window as C2, so the window now carries five passes.
 

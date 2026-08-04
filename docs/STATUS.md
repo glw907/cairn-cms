@@ -34,6 +34,18 @@ files 0/0). Three full-page renders were read in the main loop, including a craf
 that renders nothing at all. Full detail and the post-mortem:
 `docs/superpowers/plans/2026-08-03-c2b-refusal-channel.md`.
 
+**The pre-RC queue, in order** (Geoff, 2026-08-03). All three are additive and ride the same
+unpublished window:
+
+1. **The ambient-defaults audit** — ready now, gates the other two, reports rather than builds.
+2. **The auth seam** (ASC seam 1 as a `create*` factory) — a Fable planning sitting, then execution.
+   Its input is ready and its window closes the session xcathletes runs Task 4 of its platform pass.
+3. **The AI-posture pass** — consumes the audit, lands before the migrations so each site adopts a
+   posture in the session that migrates it.
+
+Then the RC cut and the migrations. **The audit yields its slot if xcathletes schedules Task 4
+sooner**: the audit is a report and can wait a pass, while the seam's window genuinely closes.
+
 **One decision open, and it does not block starting.** Whether the ambient-defaults audit wants a
 multi-agent sweep. It is one lens per surface, which suits a workflow, and it needs Geoff's explicit
 opt-in.

@@ -113,9 +113,22 @@ release-one boundary; the passes are invariant.
   zero-credential quickstart. The standing template track (cairn.pub voice, starter set, Topo
   with the docs-effectiveness infra, the scaffolder with its agent brief) runs parallel and
   feeds the rebuilds.
-- **The AI-posture pass runs BEFORE the migrations, not in phase P** (Geoff, 2026-08-03): C2b, then
-  the AI-posture pass, then the RC cut, then the migrations. It was briefly filed as P8; it moved
-  because a site should adopt its posture in the same session that migrates it. See Now.
+- **The pre-RC block, ordered (Geoff, 2026-08-03).** C2b merged, and three items now sit between it
+  and the RC cut, all additive and all riding the same unpublished window:
+
+  1. **The ambient-defaults audit.** Ready to run, and it gates two other things (the AI-posture pass
+     consumes it, and it is the provisioning script's specification), so it goes first. It reports
+     rather than builds.
+  2. **The auth seam** (ASC seam 1 as a `create*` factory): a Fable planning sitting, then execution.
+     Its design input is ready, and its window closes the session xcathletes runs Task 4, since after
+     that the consumer has hand-written the code the seam exists to replace.
+  3. **The AI-posture pass.** Consumes the audit, and lands before the migrations so each site adopts
+     a posture during the session that migrates it rather than earning a second visit.
+
+  Then the RC cut, the migrations, phase P, phase F. **The audit yields its slot if xcathletes
+  schedules Task 4 sooner**: the audit is a report and can wait a pass, while the seam's window
+  genuinely closes. The AI-posture pass was briefly filed as P8 and moved out for the same
+  adopt-during-migration reason. See Now for all three.
 - Then the widened **go-public pass**, the **dress rehearsal**, and **RELEASE TWO:
   `1.0.0-beta.1`**.
 

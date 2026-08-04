@@ -155,15 +155,32 @@ The original decision framing, for the record:
 ## Now
 
 - **Make the auth seam friendly enough that a site adds its own login channel. LIVE CONSUMER NEED
-  (Geoff, 2026-08-03): ecxc.ski is building SMS magic-URL login now.** This is ASC consumer-brief
-  seam 1, promoted from a request to a driver.
+  with a closing window (Geoff, 2026-08-03).** This is ASC consumer-brief seam 1, promoted from a
+  request to a driver, and the survey below says **the seam should land before the consumer builds**.
 
-  **The count is the argument.** ecxc's SMS build is the **fourth** hand-rolled copy of the engine's
-  auth cryptography: ASC's member magic-link sessions (`src/member-auth/lib/crypto.ts`), ASC's
-  waitlist-offer tokens (`src/admin-club/lib/offers.ts`), the xcathletes platform's member OTP, and
-  now this. The first two carry a comment saying they reimplemented rather than importing the
-  engine's internals, because no supported surface exists. Four instances of one pattern is not a
-  coincidence to note; it is a seam the engine owes.
+  **What the consumer is actually building, verified in the ecxc-ski repo 2026-08-03** (an earlier
+  draft of this entry got three details wrong; corrected here):
+
+  - It is the **team platform**, whose code will live in `xcathletes-org`, a repo that **does not
+    exist yet**. ecxc-ski holds the plans. ecxc-ski's own login is unmodified cairn magic-link.
+  - The audience is **athletes and boosters, not cairn editors**. Coaches stay cairn editors on
+    email magic-link against the existing `AUTH_DB`. This is a second audience with its own store,
+    which is precisely the case ASC seam 1 was written for and confirms the two-stores-never-blur
+    rule stays intact.
+  - The credential is a **6-digit OTP code, not a magic URL**, for both SMS and email. The plan
+    deliberately amends its own requirements doc, which had said magic link, to a uniform code flow.
+  - **Zero implementation code exists.** It is Task 4 of 7 in a pass whose Tasks 1 through 7 are all
+    queued for a future session; only Tasks 0 and 0.5 (accounts, cairn version bump) are closed.
+    Infrastructure is provisioned though: Twilio account funded, toll-free number bought, KYC
+    approved, verification pending, credentials already in the age store.
+
+  **The count, corrected.** This is the family's **third** reimplementation, not a fourth, and it is
+  the same xcathletes instance the ASC brief already named. ecxc-ski itself hand-rolls no auth
+  crypto. The two real existing copies are ASC's member magic-link sessions
+  (`src/member-auth/lib/crypto.ts`) and ASC's waitlist-offer tokens (`src/admin-club/lib/offers.ts`),
+  both carrying a comment saying they reimplemented rather than import engine internals because no
+  supported surface exists. Three instances still argues for the seam; overstating it to four does
+  not help.
 
   **SMS belongs in a site, not in the engine.** Deliberately ruled: a Twilio-class dependency is the
   first piece of a cairn site that cannot live on Cloudflare, which is the whole-chain ownership the
@@ -252,10 +269,25 @@ The original decision framing, for the record:
   than guessing it**, per the standing rule that a consumer stand-in must use the consumer's own
   sources.
 
-  **Sequencing depends on how far along ecxc is, which is an open question for Geoff.** If the build
-  is early, the seam should land first so ecxc writes zero throwaway crypto. If it is nearly done,
-  capture its shape now and let ecxc swap to the seam during its RC migration, so the copy never
-  ships twice. Either way this is additive and rides the same unpublished window.
+  **Sequencing: RESOLVED, the seam lands first.** Task 4 has not started and its repo does not exist,
+  so the consumer can build against the factory rather than hand-write `otp.ts`, `sessions.ts`, and
+  `transport.ts` and retrofit later. This is the cheapest moment the seam will ever have, and it
+  closes once that session runs. The work is additive, so it rides the same unpublished window
+  without disturbing the audit-then-AI-posture order.
+
+  **The consumer's own design is the seam's specification, and it is unusually complete.** Take these
+  parameters from the plan rather than inventing them: codes 6 digits, hashed at rest, 10-minute
+  expiry, **5 attempts then locked**, 60-second resend throttle, sessions 90-day `__Host-` cookies
+  with the token hashed at rest, and an unknown contact getting the same response as a known one so
+  the endpoint is no roster oracle. Around it: Turnstile in front of the request step, production
+  refusing to boot with the dev logging transport selected, and no code or contact PII in Worker
+  logs.
+
+  **That specification independently confirms the gap named above.** Its "5 attempts then locked" is
+  exactly the verification-attempt counter cairn's `magic_token` has no column for, arrived at by a
+  different route. So the attempt counter is not a hypothetical hardening; it is a requirement the
+  first real consumer of the seam already wrote down, and a factory that cannot express it would be
+  unusable on arrival.
 
 - **The ambient-defaults audit: what does a deployed cairn site do that nobody decided? APPROVED
   (Geoff, 2026-08-03), runs after C2b and BEFORE the AI-posture pass.**

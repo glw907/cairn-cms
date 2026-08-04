@@ -147,3 +147,16 @@ line.
   outside the C2b refusal-channel diff (found by the C2b review round, security LOW 9). Candidate
   fix: filter the conflict-branch index through `canReach(runtime.access, editor, row.concept)` the
   way `publishAllAction` already does, collapsing an unreachable branch to a bare count.
+
+- **`editor`: a refused save preserves the body but discards frontmatter field edits.** Found by the
+  C2b main-loop visual read, not by a gate or a reviewer. Converting the save refusal from a
+  `?error=` redirect to `fail(400, SaveFailure)` was meant to stop discarding an editor's work, and
+  it half succeeds: `SaveFailure` carries `body`, so the prose survives, and `EditPage` reseeds it
+  through `form?.body ?? data.body`. Every frontmatter field reloads from the stored record instead.
+  Observed directly: clearing Title and saving re-renders with the alert and the body intact, and
+  the Title reverted to its committed value. The realistic cost is larger than the test case
+  suggests, since an editor who retitles an entry, adds a tag that fails taxonomy validation, and
+  saves loses the retitle while keeping the prose. This is strictly better than the pre-C2b
+  behavior, where the redirect discarded everything, so it is an incomplete improvement rather than
+  a regression. Candidate fix: carry the submitted frontmatter on `SaveFailure` alongside `body` and
+  reseed the fields from it, which also makes the failure shape honest about what it holds.

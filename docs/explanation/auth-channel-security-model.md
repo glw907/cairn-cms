@@ -2,15 +2,14 @@
 
 `createAuthChannel` is the factory a site uses to add a second login channel, an OTP over SMS or
 another site-owned transport, for an audience that isn't its editors: members, athletes, boosters.
-The factory owns every security discipline; the site only supplies delivery, roster lookup, and a
-bot challenge. This page is for a developer improving that model, not one using the surface. It
-carries the trust boundary, the rule the design was built from, a threat catalogue naming the test
-that proves each mechanism holds, the residual risks the design accepts rather than solves, and how
-to propose a change without reopening ground three review rounds already settled.
+The factory owns the code, budget, session, and storage mechanics. The site supplies delivery,
+roster lookup, and a bot challenge, three callbacks that carry correctness obligations the factory
+cannot check for itself. This page is for a developer improving that model, not one using the
+surface; the reference page states the surface itself.
 
 ## The trust boundary
 
-Two browsers cross into a channel, and neither is trusted by default. A **requester** is any
+Two roles meet at a channel, and neither is trusted by default. A **requester** is any
 browser that submits the contact form; it may belong to the member it names, or to an attacker who
 knows that member's phone number. An **identity** is a roster entry (a contact, or the subject a
 site's `lookup` resolves it to); it never authenticates anything itself; it only names who a code
@@ -18,12 +17,12 @@ row and a budget belong to. The factory's whole job is to keep those two roles f
 a requester never learns whether the identity it named exists, and nothing an identity's own state
 can do reaches back to deny the requester who legitimately owns it.
 
-Three config callbacks carry correctness obligations the factory cannot enforce, and states them so
-the reference page and this one agree: `normalize` must be idempotent, canonical per identity, and
-injective across distinct people; `lookup`'s subject must be stable and canonical per person; and
-`challenge` must actually verify; the factory can tell a missing `challenge` from a present one, but
-not `async () => true` from a real Turnstile call. `challenge` is the most load-bearing of the
-three, because the entire economic bound on guessing (see Residual risks) is its consequence.
+Three config callbacks carry correctness obligations the factory cannot enforce. `normalize` must
+be idempotent, canonical per identity, and injective across distinct people. `lookup`'s subject
+must be stable and canonical per person. `challenge` must verify: the factory can tell a missing
+`challenge` from a present one, but not `async () => true` from a real Turnstile call. `challenge`
+is the most load-bearing of the three, because the entire economic bound on guessing (see Residual
+risks) is its consequence.
 
 ## The rule the design was built from
 
@@ -39,15 +38,16 @@ requesting browser, and then keyed the send budget on the victim's identity inst
 requests an hour from any browser answered the victim's own request with `{sent: true}` and
 delivered nothing. A third design wrote the rule down and then carved out two exceptions to it: an
 escalation path with no wire representation, which could only resolve as a fail-closed denial, and a
-live-row cap that pruned by identity rather than by requester. Both were exploited within one review
-round. The rule now has no exceptions. `docs/internal/2026-08-04-auth-channel-review-rounds.md`
+live-row cap that pruned by identity rather than by requester. Reviewers broke both within one
+round. The rule now has no exceptions.
+[`docs/internal/2026-08-04-auth-channel-review-rounds.md`](../internal/2026-08-04-auth-channel-review-rounds.md)
 records all three rounds in full, including what was rejected and why.
 
 Escalation only counts as escalation when it has a wire representation the site can render.
 `challenge-required` is that representation: an escalated `request` or `confirm` answers it without
 charging an attempt, without consuming a row, and without failing, so the site renders its challenge
 widget and the member retries. A failed challenge on an escalated action answers
-`challenge-required` again, never a hard error. A member under attack meets friction, never a wall.
+`challenge-required` again, never a hard error.
 
 ## Threat catalogue
 
@@ -140,11 +140,11 @@ member is redeemed from a different browser.** `confirm` reads no `contact` fiel
 `normalize` nor `lookup`; the code row is found by nonce hash alone, and the nonce is a 256-bit
 server-minted value that only ever leaves the server inside an `HttpOnly` cookie scoped to the
 browser that requested it. A code without the matching browser's cookie has no path to a session,
-which is what makes a code seen in transit useless to the person who saw it: the member must confirm
-in the same browser that requested. This is the design's stated trade against the cross-device
-flow (see Residual risks), and it is also why request never accepts, and confirm never asks for, a
-contact: a second lookup at confirm time is exactly the seam that let a transient roster error turn
-a real member into a decoy in an earlier design (recorded in the review-rounds doc). Tests:
+so a code seen in transit is useless to the person who saw it. The member must confirm in the same
+browser that requested, which is the trade this design makes against the cross-device flow (see
+Residual risks). The same reasoning keeps a contact out of `confirm` entirely: a second lookup at
+confirm time is the seam that let a transient roster error turn a real member into a decoy in an
+earlier design (recorded in the review-rounds doc). Tests:
 `auth-channel-confirm.test.ts`, describe "no attempt spent, no row consumed," "a mismatched nonce
 costs no attempt on the real row" and "an absent nonce costs no attempt and reaches no store."
 
@@ -244,14 +244,13 @@ The pass-level acceptance test is the bar any proposal has to clear: **a site mu
 write a working channel that is insecure without deliberately bypassing the factory.** A proposal
 that weakens a control has to state, explicitly, which entry in the threat catalogue above it
 reopens, and the lockout regression tests in particular (the two tests named under "Denial of
-service kept off the victim") have to keep passing unmodified; a proposal that changes what they
-assert rather than making the implementation satisfy them has not closed the gap, it has moved it.
+service kept off the victim") have to keep passing unmodified. A proposal that changes what those
+tests assert, rather than making the implementation satisfy them, has not closed the gap.
 
 **A change to this model earns an adversarial round before implementation**, the same discipline
-that produced it. Three rounds ran against this design before the first line of implementation code,
-at a cost of roughly 300k reviewer tokens, and found a real defect in each of the first two attempts
-and a subtler recurrence of the same defect in the third; every one of those defects would have
-shipped past code review because the code itself looked correct in isolation. Run a round with at
+that produced it. Three rounds ran against this design before the first line of implementation
+code. Each of the first two found a real defect, and the third found a subtler recurrence of the
+same defect; in all three the code itself read as correct in isolation. Run a round with at
 least one reviewer on the auth-security lens, dispatched with the design change and no
 implementation, and record the outcome in
 [`docs/internal/2026-08-04-auth-channel-review-rounds.md`](../internal/2026-08-04-auth-channel-review-rounds.md)

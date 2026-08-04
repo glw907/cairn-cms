@@ -392,7 +392,7 @@ mitigation, because the emitter does not read comments.
 
 ## Post-mortem (2026-08-04, pass complete on branch `auth-channel`)
 
-**What was built.** All eight tasks, nine commits on `.claude/worktrees/auth-channel` off `main`
+**What was built.** All eight tasks, twelve commits on `.claude/worktrees/auth-channel` off `main`
 at `d504f958`. The `./auth-channel` subpath ships `createAuthChannel`, `devDelivery`,
 `CHANNEL_SCHEMA_SQL`/`CHANNEL_SCHEMA_VERSION`, and seven exported types (including
 `AuthChannelEvent`, added at the review gate). The store is single-statement atomic throughout;

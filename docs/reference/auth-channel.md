@@ -10,9 +10,8 @@ engine's own owner/editor auth was never meant to model.
 Anything proposed here must be part of the second-audience login discipline the factory owns:
 code generation and canonicalization, identity derivation and salting, the atomic budget and
 lockout mechanics, session issuance and revocation, and the D1 schema underneath all of it. The
-email magic-link stays the zero-config default and the documented primary path for cairn editors; this
-factory is the supported second channel, not a "choose your auth" menu, so a general-purpose auth
-primitive with no bearing on that specific discipline stays out. See [the security
+email magic-link stays the zero-config default and the documented primary path for cairn editors.
+A general-purpose auth primitive with no bearing on this discipline stays out. See [the security
 model](../explanation/auth-channel-security-model.md) for the threat catalogue and the rule this
 design is built from: no control keyed on the victim's identity may deny, delay, or destroy
 anything.
@@ -35,7 +34,7 @@ Build a second-audience login channel: request, confirm, and logout actions, ses
 and roster-removal revocation, all backed by the D1 binding `config.resolveDb` names. Construction
 validates every clamp in [Defaults and clamps](#defaults-and-clamps), the required `challenge`, the
 `kind` restriction, and the cookie-name discipline, throwing an `Error` on any misconfiguration
-before a single request is ever served.
+before serving any request.
 
 `Env` does not infer from `resolveDb`'s parameter alone; annotate it explicitly, as the example
 below does, or it collapses to `{}` and every downstream binding read stops typechecking usefully.
@@ -80,11 +79,10 @@ const channel = createAuthChannel<Env>({
   `waitUntil` is Cloudflare's background-task hook (`platform.ctx.waitUntil`, with the deprecated
   `platform.context.waitUntil` as a fallback), or a no-op when neither is present, in which case
   `request` awaits `deliver` inline and logs
-  [`auth.channel.delivery_inline`](./log-events.md). A throw is caught, scrubbed for logging (every
-  occurrence of `contact` in the error's message is redacted, and the message is capped at 300
-  characters), deletes the pending code row, and refunds the requester's send charge, so a
-  provider outage neither strands a member behind the resend cooldown nor burns their escalation
-  budget.
+  [`auth.channel.delivery_inline`](./log-events.md). A throw is caught. The error is scrubbed
+  before logging (every occurrence of `contact` redacted, the message capped at 300 characters),
+  the pending code row is deleted, and the requester's send charge is refunded, so a provider
+  outage costs a member nothing but a retry.
 - **`lookup(contact)`**: normalized contact to subject id, or `null` for an unknown contact. The
   returned subject must be stable and canonical per person (see [Config
   obligations](#config-obligations)). A throw is caught, logged as the distinct `lookup_failed`
@@ -136,8 +134,8 @@ model](../explanation/auth-channel-security-model.md)) is `challenge`'s conseque
 ## Defaults and clamps
 
 Every field below is optional on `config.ttl` and independently clamped; an out-of-range or
-non-integer override throws at construction. A non-positive value always throws, even on a row
-whose clamp states only a ceiling.
+non-integer override throws at construction. A non-positive value always throws, even where the
+clamp states only a ceiling.
 
 | `ttl` field | Meaning | Default | Clamp |
 | --- | --- | --- | --- |
@@ -193,7 +191,7 @@ databases end up with different salts and no migration file carries a secret.
 
 Expired rows never need a site-side cleanup job. Each successful code mint also sweeps expired
 code rows, expired sessions, and budget rows more than two windows stale, through `waitUntil` so
-the cleanup never delays a response. A site schedules nothing.
+the cleanup never delays a response.
 
 ### `CHANNEL_SCHEMA_VERSION`
 
@@ -224,7 +222,7 @@ declare function devDelivery<Env extends { CAIRN_DEV_BACKEND?: string | boolean 
 A dev-only `deliver` implementation: prints the code to the console instead of sending it, and
 refuses unless `ctx.env.CAIRN_DEV_BACKEND === '1'`, the same positive signal the engine's own admin
 guard reads. The refusal lives inside this function's own body, so wrapping it (`deliver: (c, code,
-ctx) => devDelivery(c, code, ctx)`) does not bypass it: a correctly built production deployment
+ctx) => devDelivery(c, code, ctx)`) does not bypass it. A correctly built production deployment
 never sets the flag, so the refusal runs on every call, not only when a site forgets to swap the
 transport. Nothing in this function imports `$app/*`.
 

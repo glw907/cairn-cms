@@ -694,8 +694,9 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // reaches waitUntil, so an emulated no-op waitUntil (vite dev, vite preview) never orphans a
     // rejection. A delivery failure deletes the pending row via the same conditioned delete
     // consumeCode already provides (nonce hash and code hash both known here) and refunds the
-    // send charge, so a provider outage neither strands the member behind a cooldown nor burns
-    // their escalation budget.
+    // send charge, so a provider outage costs the member nothing but a retry; only the requester
+    // send scope is refunded here, since the confirm-side escalation budget was never charged on
+    // this path.
     log.info('auth.channel.requested', { outcome: 'delivered', correlationId });
     const ctx: DeliverContext<Env> = {
       env: event.platform?.env,

@@ -6,19 +6,24 @@
 > dispatches. Tasks specify outcomes, constraints, and acceptance criteria; the implementer writes
 > the code test-first against them.
 
-**Authority:** the approved design spec **v3**
+**Authority:** the approved design spec **v3.1**
 [`2026-08-03-auth-channel-factory-design.md`](../specs/2026-08-03-auth-channel-factory-design.md).
-Read it in full before the first dispatch. v1 and v2 were both reviewed and rejected; v3 supersedes
-them entirely and carries a revision log. Every task below cites spec sections rather than
+Read it in full before the first dispatch. v1, v2, and v3 were all reviewed and amended; v3.1
+supersedes them entirely and carries a revision log naming what each one got wrong. Every task below cites spec sections rather than
 restating them.
 
-**The rule that governs every throttle in this plan**, from the spec's own section on it: anything
-that denies service keys on the **requester**; anything that bounds guessing keys on the
-**identity** and **escalates** rather than denies. Two review rounds died on violations of it. Any
-task that adds a check keyed on the victim's identity and returns a denial has reintroduced the
-defect this design exists to avoid.
+**The rule that governs every throttle in this plan**, from the spec's own section on it:
 
-**Goal:** a site adds its own second-audience login channel (6-digit OTP over any site-owned
+> **No control keyed on the victim's identity may deny, delay, or destroy anything. Denial keys on
+> the requester. Identity-keyed controls either escalate through a channel the site can act on, or
+> they only log.**
+
+Three review rounds died on violations of it, the third inside the mechanism written to prevent the
+second. Any task that adds an identity-keyed check which denies, or which deletes a row it did not
+create, has reintroduced the defect this design exists to avoid. The rule has no exceptions now;
+v3 carved out two and both were exploited.
+
+**Goal:** a site adds its own second-audience login channel (8-digit OTP over any site-owned
 transport) by supplying delivery, roster lookup, and identifier shape. The factory owns every
 security discipline. Acceptance test for the pass: a site cannot write a working insecure channel
 without deliberately bypassing the factory.
@@ -47,7 +52,7 @@ that has not happened before starting (state lives in the ecxc-ski repo).
 - No PII in engine log records: channel events carry an identity-hash prefix, never a contact, and
   never a raw provider error string (spec, Logging).
 - No `$app/*` import anywhere in `src/lib`. The dev-transport refusal is a runtime check on
-  `platform.env`, following `guard.ts`.
+  `ctx.env.CAIRN_DEV_BACKEND`, following `guard.ts`.
 - Every D1 flow runs inside `db.withSession('first-primary')` (spec, Storage).
 - All times epoch milliseconds; hashing via `hashToken`; compares via `tokensMatch`; cookie names
   via `cookieName`. No new crypto.
@@ -63,7 +68,7 @@ that has not happened before starting (state lives in the ecxc-ski repo).
 | `src/lib/auth-channel/factory.ts` | `createAuthChannel`: config validation, the three actions, `resolveSubject`, `revokeSessions`. |
 | `src/lib/auth-channel/dev.ts` | `devDelivery` and its runtime refusal. |
 | `src/lib/auth-channel/index.ts` | The public barrel with its boundary comment. |
-| `src/lib/log/events.ts` | The closed `CairnLogEvent` union gains all ten channel events. |
+| `src/lib/log/events.ts` | The closed `CairnLogEvent` union gains all twelve channel events. |
 | `wrangler.test.jsonc` | A second D1 binding for the integration project. |
 | `src/tests/integration/auth-channel-*.test.ts`, `src/tests/unit/auth-channel-*.test.ts` | The suites. |
 | `docs/reference/auth-channel.md`, `docs/guides/add-a-login-channel.md` | The docs arm. |
@@ -82,12 +87,14 @@ nonceHash, identity, codeHash, subject, now, ttlMs, cooldownMs): Promise<boolean
 cooldown held); `readCodeRow(session, nonceHash, now)`; `incrementAndReadCode(session, nonceHash,
 now): Promise<{codeHash: string, attempts: number} | null>` (filtered on `expires_at > now`, so an
 expired row answers `expired` rather than incrementing toward `locked`); `consumeCode(session,
-nonceHash, codeHash, now): Promise<{subject: string | null} | null>`; `pruneIdentityRows(session,
-identity, keep)`; `createChannelSession(session, tokenHash, subject, now, ttlMs)`;
+nonceHash, codeHash, now): Promise<{subject: string | null} | null>`; `pruneRequesterRows(session,
+bucket, keep)`; `createChannelSession(session, tokenHash, subject, now, ttlMs)`;
 `resolveChannelSession(db, tokenHash, now)`; `destroyChannelSession(session, tokenHash)`;
 `revokeChannelSessions(session, subject)`; `charge(session, bucket, scope, now, cap):
-Promise<{admitted: boolean, count: number}>` (one function for all four budgets, differing only by
-bucket and scope); `refund(session, bucket, scope, now)`; `sweep(session, now)`. From
+Promise<{admitted: boolean, count?: number}>` (one function for every budget, differing only by
+bucket and scope; `count` is absent on the rejected branch, since a conditional upsert whose
+predicate fails returns no row); `refund(session, bucket, scope, now)` (clamped at zero, and a
+no-op against a window that has already rolled); `provisionSalt(session)`; `sweep(session, now)`. From
 `identity.ts`: `deriveIdentity(salt, subject, contact)`, `generateCode(length)`,
 `canonicalizeCode(raw, length)`, `requesterBucket(event)`.
 
@@ -103,17 +110,23 @@ never read-modify-write; sweeps are separate indexed statements covering all thr
 including the budget table, never an `OR`; every index in the spec's DDL ships; `deriveIdentity`
 takes the per-deployment salt from `cairn_channel_meta` and prefixes `'s:'` or `'c:'`;
 `generateCode` is rejection-sampled and zero-padded to the configured length; `canonicalizeCode`
-strips non-digits then requires exactly that length; `requesterBucket` reads
-`event.getClientAddress()` (never a client-settable header) and narrows IPv6 to its /64; store
-functions take an open session rather than a `db`, so one flow shares one session (`resolveSubject`
-is the documented exception and takes `db`).
+strips non-digits then requires exactly that length; `requesterBucket` pairs
+`event.getClientAddress()` (never a client-settable header, and IPv6 narrowed to its /64) with the
+identity; **`provisionSalt` is one `INSERT OR IGNORE` of 32 random hex followed by a read-back, so
+two independently migrated databases hold different salts, and an absent salt after that insert
+fails closed rather than defaulting to an empty string**; store functions take an open session
+rather than a `db`, so one flow shares one session (`resolveSubject` is the documented exception
+and takes `db`).
 
 **Acceptance:** tests prove the cooldown upsert is race-safe (concurrent mints on one nonce write
 once); consume returns exactly one row under concurrent identical confirms and rejects a wrong hash
 without deleting; decoy rows (`subject` null) never authorize, and neither does an empty-string
 subject; **k parallel charges at cap-1 admit exactly one**; the sliding window does not admit 2x at
-a window boundary; `refund` restores exactly one; sweeps use their indexes and clear budget rows
-older than two windows; `pruneIdentityRows` enforces the live-row cap; `revokeChannelSessions`
+a window boundary; `refund` restores exactly one, never drives the count negative, and does not
+resurrect a rolled window; sweeps use their indexes and clear budget rows older than two windows;
+**`pruneRequesterRows` never deletes a row created by a different requester bucket**; **two
+independently migrated databases derive different identities for the same contact, and an absent
+salt row fails closed**; a re-mint on a reused nonce resets `attempts` to zero; `revokeChannelSessions`
 clears every session for a subject; `verifySchema` fails closed on an old shape and does not cache
 a failure; `deriveIdentity` yields different values for the same string as subject and as contact;
 `canonicalizeCode` accepts `1234 5678` and a leading-zero code while rejecting a short one and a
@@ -129,7 +142,7 @@ non-numeric one.
 table, returning `{ actions: { request, confirm, logout }, resolveSubject, revokeSessions }`.
 Actions throw `not implemented` until Tasks 3 and 4. `devDelivery` exported. All surface types
 exported: `AuthChannel`, `AuthChannelConfig`, `DeliverContext`, `ChannelRequestResult`,
-`ChannelConfirmResult`, `RateLimitLike`. All ten event names added to `CairnLogEvent` up front, so
+`ChannelConfirmResult`, `RateLimitLike`. All twelve event names added to `CairnLogEvent` up front, so
 Tasks 3 through 5 typecheck.
 
 **Outcome:** construction is where misconfiguration dies. The `./auth-channel` subpath exists
@@ -159,19 +172,24 @@ without the dev flag (the wrapper bypass). `check:package` passes with the new s
 
 **Outcome:** the spec's request flow, all eight steps in order: the required `challenge` (the
 factory reads the form once and passes the `FormData` in), salted identity derivation with decoy
-writes for unknown contacts, **requester suppression**, **identity escalation**, nonce reuse and
-minting, and `waitUntil` delivery.
+writes for unknown contacts, **requester suppression**, the **log-only identity ceiling**, nonce
+reuse and minting, and `waitUntil` delivery. There is no request-side escalation: `challenge`
+already runs unconditionally, so a second demand there is either a no-op or a re-verification of a
+single-use token that fails closed.
 
 **Constraints, and the first two are the ones two review rounds died on:**
 
-- **Only the requester bucket may deny.** The requester charge returns `{error: 'throttled'}`; the
-  identity charge never denies, it demands a fresh challenge and logs `escalated`. The one
-  exception is the absolute anti-spam ceiling, logged at warn.
-- **The identity charge runs after the requester charge**, so an attacker cannot spend a victim's
-  escalation headroom more cheaply than their own.
+- **Only the requester bucket may deny**, and that bucket is the pair of client address and
+  identity. The identity send ceiling **only logs** (`auth.channel.ceiling_exceeded`, error level);
+  it must not deny, delay, or suppress delivery. An implementer who makes it deny has rebuilt the
+  defect that killed v3.
+- A failed or throwing `challenge` answers `{error: 'challenge-required'}`, writes no row, calls no
+  `deliver`, and charges nothing.
 - Reuse an unexpired `_pending` cookie rather than minting a fresh nonce every call, or the
   cooldown's `ON CONFLICT` branch can never fire and the cooldown silently does not exist; minting
-  a new nonce prunes that identity's rows to the live-row cap.
+  a new nonce prunes **the requester bucket's own** oldest rows, never the identity's.
+- **The requester charge is refunded when the cooldown holds**, or a member tapping resend spends
+  their whole hourly bucket on one delivered message.
 - Every input writes a row; delivery runs only for a known subject; `.catch()` is attached
   **before** the promise reaches `waitUntil`; read `platform.ctx?.waitUntil` first with
   `platform.context?.waitUntil` as the legacy fallback and log `auth.channel.delivery_inline` when
@@ -184,15 +202,23 @@ minting, and `waitUntil` delivery.
 - The origin check is unconditional, not gated on `isUnsafeFormRequest`'s content-type test; plain
   http outside localhost is refused rather than degrading the cookie.
 
-**Acceptance:** integration tests deep-equal the response bodies across known, unknown,
-cooldown-held, escalated, and store-failure inputs; **an attacker's requests against a victim's
-contact never prevent the victim from completing a login** (the lockout regression test, and it
-must fail if the identity charge is made to deny); no delivery call on the unknown and cooldown
-paths; two sequential requests from one cookie jar inside the cooldown deliver once; concurrent
-requests deliver once; a throwing `deliver` leaves no row, refunds the charge, and an immediate
-re-request delivers again; a `deliver` whose thrown message contains the contact produces a log
-record that does not; the nonce cookie carries `Path=/`, `HttpOnly`, `SameSite=Lax`, `Max-Age`
-matching the code TTL, and `Secure` whenever its name carries `__Host-`; http is refused.
+**Acceptance, and the first criterion is the structural guard the last three rounds needed:**
+
+- **The lockout regression test.** The victim requests first and holds a valid code, in its own
+  cookie jar. A separate attacker jar then exceeds **every identity-keyed cap in the Defaults
+  table**, the send ceiling included. The victim then completes a login **with no interaction
+  beyond the ordinary flow** (no extra challenge, no waiting, no re-request). This test must fail
+  if any identity-keyed control is made to deny, or if pruning is re-keyed on the identity. A
+  version of it that lets the victim act last, or shares one cookie jar, proves nothing.
+- A `challenge` returning false writes no row, calls no `deliver`, charges nothing, and answers
+  `challenge-required`.
+- Response bodies deep-equal across known, unknown, cooldown-held, and store-failure inputs; no
+  delivery call on the unknown and cooldown paths; two sequential requests from one cookie jar
+  inside the cooldown deliver once **and leave the requester bucket charged once**; concurrent
+  requests deliver once; a throwing `deliver` leaves no row, refunds the charge, and an immediate
+  re-request delivers again; a `deliver` whose thrown message contains the contact produces a log
+  record that does not; the nonce cookie carries `Path=/`, `HttpOnly`, `SameSite=Lax`, `Max-Age`
+  matching the code TTL, and `Secure` whenever its name carries `__Host-`; http is refused.
 
 ### Task 4: Confirm, session, logout, resolution, revocation
 
@@ -216,17 +242,29 @@ hook, and `revokeSessions`.
   code nor an absent nonce spends an attempt. An absent nonce answers `no-pending-request`, which
   is a statement about the requester's own browser and reaches no store.
 - The identity failure gate is charged on **every** failed compare and checked **before** the
-  compare, and it escalates (demand a fresh challenge) rather than denying.
+  compare. Over the threshold it returns `{error: 'challenge-required'}` **without charging an
+  attempt and without consuming the row**, and the factory then awaits `challenge` on the retry. A
+  failed challenge returns `challenge-required` again, never a hard error: a member under attack
+  meets friction, never a wall. v3 specified escalation with no result code, which could only
+  resolve as a fail-closed denial keyed on the victim.
 - The returned `attempts` is post-increment, so the cap check is `attempts > cap`, admitting
   exactly `cap` real guesses.
 - The session mints only on a returned subject that is non-null **and** non-empty; an empty-string
   subject is a roster data fault, logged at error, never a shared session.
+- The `DELETE ... RETURNING subject` is the sole authority on whether the code matched; do not
+  precede it with a separate compare, or the redundancy invites an unconditional delete.
 - Both cookies carry the full enumerated set from the spec's cookie table, `Max-Age` included, and
   `Secure` whenever the name carries `__Host-`; `secure` comes from `url.protocol`, which is what
-  the engine actually does. The nonce cookie is cleared on success.
+  the engine actually does. The nonce cookie is cleared on success **and on logout**, and a
+  successful confirm deletes any session row named by an incoming session cookie.
 
-**Acceptance:** tests prove exactly `cap` wrong guesses before `locked`; a malformed code, an
-absent nonce, and a mismatched nonce each cost no attempt; **confirm's `bad-code`, `locked`, and
+**Acceptance:** **the confirm-side lockout regression test**, run against a site whose confirm form
+carries no challenge token (the realistic configuration): the victim holds a valid code, an
+attacker in a separate cookie jar exceeds the identity failure gate, and the victim still completes
+with no interaction beyond rendering the challenge their own site chose to add. Then: exactly `cap`
+wrong guesses before `locked`; a re-mint after the cooldown resets `attempts` so a locked member
+has an exit; a malformed code, an absent nonce, a mismatched nonce, and a `challenge-required`
+response each cost no attempt and consume no row; **confirm's `bad-code`, `locked`, and
 `expired` responses are deep-equal between a decoy identity and a real one, with identical store
 effects** (the v1 critical was a confirm-side leak and v2's regression test sat on the request
 endpoint); **an attacker's confirms never prevent the victim from completing a login**; two
@@ -249,17 +287,20 @@ spec's named deltas.
 degrade to open with `auth.channel.rate_limit_absent` / `auth.channel.rate_limit_failed`, blocked
 answers `{error: 'throttled'}` and logs `auth.channel.rate_limited`.
 
-**Constraints:** the default key is the **pair** of requester bucket and identity on both actions,
-which bounds one host against one member while leaving a team on one venue's wifi unaffected (each
-member is a different key), and never the identity alone, which would be an attacker-triggerable
-per-victim denial of the kind the spec's throttle rule forbids; the requester bucket comes from
-`requesterBucket(event)`, never a client-settable header; `result?.success !== true` reads as
-blocked; a thrown SvelteKit `redirect()`/`error()` from a site callback rethrows rather than
-degrading; the check runs after the origin and scheme checks and before any store read; no
-`message` field, since the result shape carries a code rather than a sentence.
+**Constraints:** the default key is `requesterBucket(event)`, which is already the pair of client
+address and identity, and **never the identity alone**, which would be an attacker-triggerable
+per-victim denial of the kind the rule forbids; because that bucket needs the derived identity, the
+limiter runs **after** identity derivation rather than at step 1, or falls back to the client
+address alone when it must run earlier (v3 specified a key that could not be computed where it
+placed the check); the address comes from `event.getClientAddress()`, never a client-settable
+header; `result?.success !== true` reads as blocked; a thrown SvelteKit `redirect()`/`error()` from
+a site callback rethrows rather than degrading; no `message` field, since the result shape carries
+a code rather than a sentence.
 
 **Acceptance:** tests cover absent binding, throwing `key()` and `limit()` (open, logged;
-redirect/error rethrown), blocked on both actions, and the log trio's shapes. The reference page
+redirect/error rethrown), blocked on both actions, the log trio's shapes, and **the key
+composition: two different requester buckets against one identity do not share a limit**, which is
+what stops the default key silently collapsing to the identity alone. The reference page
 (Task 7) must say the tests use a structural stub, so the real binding's period and per-colo
 semantics are unproven by this suite.
 

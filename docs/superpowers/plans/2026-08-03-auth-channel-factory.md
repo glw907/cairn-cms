@@ -269,9 +269,11 @@ semantics are unproven by this suite.
 rather than a bullet inside the docs task because it is a distinct deliverable with a distinct
 audience: a developer who wants to improve the model, not one who wants to use the surface.
 
-**Files:** create `docs/explanation/auth-channel-security-model.md`,
-`docs/internal/2026-08-04-auth-channel-review-rounds.md`; modify
-`docs/explanation/README.md` (arm index).
+**Files:** create `docs/explanation/auth-channel-security-model.md`; modify
+`docs/explanation/README.md` (arm index) and
+`docs/internal/2026-08-04-auth-channel-review-rounds.md` (already written during the planning
+sitting, since the reviewer reports lived in agent transcripts that do not survive a context clear;
+this task adds round 3's outcome and any accepted residuals).
 
 **Outcome:** the spec's "The security model is a published document" section, in full. The
 explanation page carries the trust boundary, the threat catalogue (one entry per attack, each

@@ -324,3 +324,88 @@ closed phishing surface in `docs/explanation/security-model.md`.
   confirmed phishing surface, so it is mandatory.
 - A full-page render of a failing save and of a bounced navigation read in the main loop.
 - Holds unpublished in the shared `## Unreleased` window.
+
+---
+
+## Post-mortem (2026-08-03)
+
+**Shipped.** Thirteen commits on `c2b-refusal-channel`, off `main` at `8559f3e7`. Nine implementer
+dispatches (A, B1, C1, C2, B2, D, E, G, F) plus a review fold, a simplifier pass, and two
+orchestrator commits. Holds unpublished; the branch is not merged and not pushed.
+
+The admin refusal channel now has one rule. A refusal that answers the route the form posted to
+returns `fail()` with a precise `ActionFailure<T>`, rendered from the component's `form` prop. A
+refusal that genuinely navigates carries a bounded internal `RefusalCode` the load resolves to engine
+copy, dropping anything unrecognized. Twelve of the fifteen original `?error=` producers became the
+first kind; three survive as the second.
+
+**Verified independently by the orchestrator, not merely reported.** `npm run check` 1559 files 0/0;
+`npm test` exit 0 at 4768 tests; `check:consumers` OK, which covers the showcase `svelte-check` (585
+files 0/0) and the dev package. The four acceptance greps quoted in the execution record above.
+
+**The visual read, which found what nothing else did.** Three full-page renders read in the main
+loop. A failing save refuses in place with the body intact and never gains a `?error=`. A known code
+resolves to engine copy. A crafted phishing sentence renders nothing at all, absent from the page
+entirely. The read also surfaced that a refused save preserves the body and discards frontmatter
+field edits, filed to the friction log: `SaveFailure` carries only `body`, so a retitle lost to a
+taxonomy failure still disappears. No gate and no reviewer reached that; it needed eyes on a render.
+
+### What the review gate bought
+
+Four confirmed findings, each fixed with a regression test in `7c6da422`. Two justify the whole
+exercise:
+
+1. **An authorization bypass under the derivation Task A had just changed.** `matchHrefKey`'s
+   deepest-prefix matching cannot literally match a route id's dynamic segment (`[id]`, `[...rest]`)
+   against a deeper concrete map key, so it fell back to a shallower and more permissive key instead
+   of refusing. The pass touched the code immediately above this and did not see it.
+2. **A data-loss regression the pass itself introduced.** On a new entry the first failed save 404'd
+   and lost the draft: `EditPage`'s form has no `use:enhance`, and a browser resolves `action="?/save"`
+   by replacing the whole query per RFC 3986 section 5.3, dropping `?new=1`. That never mattered while
+   refusals redirected away. The moment they answered in place, the re-render hit a URL missing the
+   flag. This is the characteristic hazard of a convergence pass: the second-order consequence lands
+   in a file the diff never touched.
+
+Also fixed: logout leaving both the session row and the cookie valid on a D1 fault, and media
+conflict refusals having no rendering path.
+
+### The lesson, and it is the orchestrator's
+
+**The dispatch gate list omitted `check:consumers`.** It was derived correctly from
+`.github/workflows/test.yml` once, then restated from memory across nine dispatches with one gate
+missing. That gate already runs the showcase `svelte-check`, added by an earlier pass to close
+exactly this hole. Because no dispatch ran it, a real consumer-facing `ActionData` type collision
+survived to Task E's self-review instead of failing at Task B1, and the orchestrator then told the
+user, wrongly, that no CI gate covered it.
+
+C2's post-mortem, one pass earlier, named this species and prescribed the fix: derive a gate list
+from the workflow file rather than restating it. The prescription was followed once and then
+abandoned mid-pass. **Deriving is not a one-time act; the derived list has to be pasted into each
+dispatch, never retyped.** The close-out workflow did paste it, and it held.
+
+### Budgets
+
+Roughly 4.1M subagent tokens plus the main loop, dominated by nine implementer dispatches averaging
+~250k each and a 1.4M seven-agent close-out workflow. The pass ran to nine dispatches against Task
+12's four written deliverables, with two task splits (B into B1/B2, C into C1/C2), both taken at
+dispatch time from measurement rather than mid-flight from a task bursting. Splitting the pass was
+considered and refused on the record: no cut point left the branch coherent, since the intermediate
+states were regressions rather than merely incomplete.
+
+Human interaction points were high but mostly not defects. One was a genuine correction: the
+no-default-posture ruling was drafted as a required config field that would fail a build, and Geoff
+corrected the target from forcing to informing. That correction was right and the evidence agreed
+with him, since a required field would not have caught the incident that prompted it.
+
+### Carried
+
+- The branch is unmerged and unpushed, holding in the same `## Unreleased` window as C2.
+- The refused-save field-reseed gap (friction log).
+- `CairnAdmin`'s `form` prop models only failures while SvelteKit passes success payloads too; the
+  `TidyResult.usage` rename fixed today's collision, not the shape (friction log).
+- Two initiatives scoped during this pass and sequenced ahead of the site migrations: the
+  ambient-defaults audit, then the AI-posture pass. Evidence in
+  `docs/internal/2026-08-03-ai-crawler-posture-research.md`; comparables for 22 tools in this
+  session's scratchpad, to be moved into `docs/internal/`.
+- The runaway guard's thresholds are miscalibrated for this repo: thirty alarms, all false, because a
+  single implementer legitimately runs forty minutes on `npm test` and accumulates a large transcript.

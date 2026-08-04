@@ -14,7 +14,7 @@ import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
 import type { ContentRoutesOptions } from './content-routes-context.js';
 import { createCoreActions } from './content-routes-core.js';
-import type { SaveFailure, DeleteRefusal, RenameFailure } from './content-routes-core.js';
+import type { SaveFailure, DeleteRefusal, RenameFailure, CreateFailure } from './content-routes-core.js';
 import { createMediaActions } from './content-routes-media.js';
 import type {
   MediaDeleteRefusal,
@@ -45,6 +45,7 @@ export type {
   SaveFailure,
   DeleteRefusal,
   RenameFailure,
+  CreateFailure,
   FragmentTarget,
 } from './content-routes-core.js';
 
@@ -56,6 +57,7 @@ export type {
   MediaReplaceFailure,
   MediaAltPropagateFailure,
   MediaBulkFailure,
+  MediaUploadFailure,
   MediaBulkDeleteResult,
   MediaOrphanPurgeResult,
   MediaReplacePreviewEntry,
@@ -76,7 +78,7 @@ export type {
 
 export type { TidyResult } from './content-routes-tidy.js';
 
-export type { SettingsData, VocabularyLoadData } from './content-routes-settings.js';
+export type { SettingsData, VocabularyLoadData, SettingsSaveFailure, VocabularySaveFailure } from './content-routes-settings.js';
 
 export type { DictionaryAddResult, DictionaryAddFailure } from './content-routes-dictionary.js';
 
@@ -88,7 +90,7 @@ export type { DictionaryAddResult, DictionaryAddFailure } from './content-routes
  *  refusal without a second type.
  */
 export type ContentFormFailure = Partial<
-  SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure & TidyFailure
+  SaveFailure & DeleteRefusal & RenameFailure & CreateFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure & TidyFailure
 >;
 
 /**

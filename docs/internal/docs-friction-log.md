@@ -85,3 +85,78 @@ lands the grammar-ladder doctrine the harvest's pattern argued for, in
 `docs/explanation/enforced-design.md`: every composition claim gets either a component or a
 check, prose alone being the demonstrated failure mode. New findings start fresh below this
 line.
+
+- **`developer`: `CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it
+  whatever the last action returned, successes included.** `ContentFormFailure` (the prop's
+  declared shape) is an intersection of only the content actions' `fail()` payloads; SvelteKit's
+  generated `ActionData` unions every action's awaited return regardless of arm, and the
+  assignment type-checks today only because every failure-payload field name happens to differ
+  from every success-payload field name. C2b's refusal-channel pass hit this directly: sharpening
+  every `fail()` from `ActionFailure<unknown>` to a precise `ActionFailure<T>` turned that
+  previously-masked union into a real structural check, and `TidyResult.usage` (token counts)
+  collided with `MediaDeleteRefusal.usage` (where-used rows), failing every consumer's
+  `svelte-check` on upgrade until the field renamed to `TidyResult.tokens`. A new action whose
+  success payload shares a field name with any action's failure payload reproduces this, with no
+  warning until a consumer's own build. A type-level assertion in the library's own suite
+  (`src/tests/component/CairnAdmin.test.ts`) now catches a same-repo recurrence at compile time,
+  but the structural gap in the prop's own type is unrepaired. Candidate fix: type `form` to model
+  both arms honestly, for example a discriminated union or a generic keyed by the last action name,
+  rather than one merged failure-shaped intersection.
+
+- **`developer`: four of the admin's non-enhanced forms lose their working (in-progress) state on
+  any refused submit, and only `EditPage` echoes it back.** `NavTree` (a drag-reordered tree),
+  `VocabularyAdmin` (in-progress renames/adds), `CairnTidySettings` (an edited conventions block),
+  and `ConceptList`'s create dialog (the typed title/slug/date) all reset to their last-loaded state
+  on a `fail()`, since none uses `use:enhance` and a plain POST re-renders a fresh document; only
+  `EditPage` survives this because its own `SaveFailure` echoes the posted body back. Found by the
+  C2b review round (a11y Warning 7, WCAG 3.3.7 Redundant Entry, new in 2.2); C2b itself fixed the
+  misleading NavTree comment that claimed otherwise but left the behavior as found, since restoring
+  the working state on all four screens is a larger, deliberately scoped change (either `use:enhance`
+  across the four forms, which also changes their live-region/focus behavior, or echoing the posted
+  payload back on each failure type). Candidate fix: pick one mechanism and apply it uniformly rather
+  than case-by-case.
+
+- **`editor`: a refused submit is announced `aria-live="polite"` on five admin screens, while
+  `EditPage` treats the same class of message as assertive, and no screen moves focus to the
+  refusal.** `NavTree`, `CairnTidySettings`, `VocabularyAdmin`, `ConceptList`, and `ManageEditors`
+  route their refusal through a `sr-only` `aria-live="polite"` region; `EditPage` gives a refused
+  submit its own assertive region. An error answering a user-initiated submit should interrupt
+  (WCAG 3.3.1/4.1.3, ARIA APG), and separately, since these forms have no `use:enhance`, the
+  refusal arrives as part of a freshly parsed document rather than a live DOM mutation, which is a
+  known-unreliable trigger for AT announcement timing; moving focus to the banner (`tabindex="-1"`,
+  `role="alert"`, an effect-driven `.focus()`) would fix both the announcement reliability and
+  WCAG 2.4.3 in one mechanism. Found by the C2b review round (a11y Warnings 4-6). Candidate fix:
+  give each of the five screens an assertive region matching `EditPage`'s, and move focus to the
+  rendered banner on a refusal.
+
+- **`editor`: `editLoad`'s `?new=1` create-dialog seed (`?title=`) renders an attacker-crafted query
+  value as the entry's heading and title field to a signed-in editor.** `/admin/posts/anything?new=1&title=<text>`
+  seeds `EditData.frontmatter.title`/`EditData.title` from the raw query string, unbounded; the
+  sibling `?date=` field is correctly regex-bounded right beside it. Svelte escapes the render, so
+  this is not XSS, but it is a form field and heading rendering arbitrary attacker text to a session
+  that clicked a crafted link, pre-existing and outside the C2b refusal-channel diff (found by the
+  C2b review round, security MEDIUM 5). Candidate fix: bound `title` the way `date` already is (a
+  length cap plus a conservative character class), or move the create dialog's typed title into a
+  short-lived server-side hold instead of the URL.
+
+- **`editor`: a rename's 409 conflict lists every open branch's `concept/id`, including one an
+  access-map role cannot reach.** `content-routes-core.ts`'s conflict-branch index for the rename
+  refusal builds from every open `cairn/*` branch with no `canReach` filter, unlike
+  `publishAllAction`'s own index for the same underlying data, which does filter. A role denied a
+  concept still learns that concept has an in-progress, unpublished entry and its id. Pre-existing,
+  outside the C2b refusal-channel diff (found by the C2b review round, security LOW 9). Candidate
+  fix: filter the conflict-branch index through `canReach(runtime.access, editor, row.concept)` the
+  way `publishAllAction` already does, collapsing an unreachable branch to a bare count.
+
+- **`editor`: a refused save preserves the body but discards frontmatter field edits.** Found by the
+  C2b main-loop visual read, not by a gate or a reviewer. Converting the save refusal from a
+  `?error=` redirect to `fail(400, SaveFailure)` was meant to stop discarding an editor's work, and
+  it half succeeds: `SaveFailure` carries `body`, so the prose survives, and `EditPage` reseeds it
+  through `form?.body ?? data.body`. Every frontmatter field reloads from the stored record instead.
+  Observed directly: clearing Title and saving re-renders with the alert and the body intact, and
+  the Title reverted to its committed value. The realistic cost is larger than the test case
+  suggests, since an editor who retitles an entry, adds a tag that fails taxonomy validation, and
+  saves loses the retitle while keeping the prose. This is strictly better than the pre-C2b
+  behavior, where the redirect discarded everything, so it is an incomplete improvement rather than
+  a regression. Candidate fix: carry the submitted frontmatter on `SaveFailure` alongside `body` and
+  reseed the fields from it, which also makes the failure shape honest about what it holds.

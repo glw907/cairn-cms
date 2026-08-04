@@ -284,10 +284,17 @@ declare function requireAccess(event: CairnEvent<CairnEnv>, target?: string): Ed
 The one-line authorization story for a site's own custom route: the session the guard already
 resolved, checked against the site's declared [access map](./core.md#access-map) (attached to
 `locals.cairnAccess` by [`createAuthGuard`](#createauthguard)), or a 403. `target` defaults to
-`event.url.pathname`, so the common call, `const editor = requireAccess(event);`, is the whole
-authorization story for a route that opts into the map. Every denial, mapped or unmatched, emits
-`auth.access.denied` (see [log events](./log-events.md)) with the editor's email, role, and the
-resolved target.
+`event.route.id`, never `event.url.pathname`: on a catch-all route the request path is
+attacker-chosen while the route id is not, the same reasoning
+[`createSectionAction`](#createsectionaction)'s `SectionActionOptions.target` follows, so a
+route's load and its own POST action agree on what they are checking. The derived default drops
+route-group segments (`/admin/(app)/roster` reads as `/admin/roster`), so a map stays keyed by
+URL shape, and resolves a parameterized route id verbatim (`/admin/posts/[id]`), so a map keyed by
+its prefix still matches; a declared `target` is used exactly as given, never normalized. So the
+common call, `const editor = requireAccess(event);`, is still the whole authorization story for a
+route that opts into the map. Every denial, mapped or unmatched, emits `auth.access.denied` (see
+[log events](./log-events.md)) with the editor's email, role, and the resolved (normalized)
+target.
 
 The unmatched case, the map has no rule at all for `target`, refuses every session with a 403,
 owner included: the helper's contract is "this route opted into the map and the map has no
@@ -309,8 +316,9 @@ export const load = (event) => {
 
 ### Refusal channels
 
-The admin action surface refuses a request through one of two developer-facing shapes, depending
-on which helper does the refusing.
+The admin action surface refuses a request through one of three developer-facing shapes,
+depending on which helper does the refusing and whether the refusal can answer the very request
+that raised it.
 
 `requireOwner`, `requireEditor`, and `requireAccess` all perform authorization: a signed-in session
 either carries the required role or capability, or the call throws. `requireSession` and
@@ -324,12 +332,19 @@ recognizes both as its native thrown shapes and renders the correct status throu
 `+error.svelte`, or follows the redirect, with no site code required to translate either one, and
 no `handleError` mapping to write.
 
+`fail()` is the default for every refusal that answers the request that raised it, and it is
+carried by a precise `ActionFailure<T>` typed to the failing screen's own shape (`SaveFailure`,
+`DeleteRefusal`, `CreateFailure`, `NavSaveFailure`, and the rest documented against
+[`createContentRoutes`](#createcontentroutes) below), never a bare `ActionFailure<unknown>`. Every
+built-in content, media, settings, vocabulary, and nav action's own validation and commit-conflict
+refusal answers this way, and so does
 [`createSectionAction`](#createsectionaction)'s own authorization, rate-limit, and
-database-binding branches return SvelteKit's `fail(...)`, an `ActionFailure`, never a throw. The
-result renders as inline form state on the page that submitted it, the same shape a validation
-reject produces.
+database-binding branches. The result renders as inline form state on the page that submitted it:
+the editor's unsaved input survives in the returned payload, and nothing navigates away. A site's
+own custom action should reach for the same shape, through `createSectionAction` or a hand-rolled
+`fail(...)`, rather than a throw, for a refusal its own route can answer in place.
 
-This split is deliberate, not an inconsistency to converge:
+This split from the two throwing helpers above is deliberate, not an inconsistency to converge:
 
 > One security finding was deliberately not adopted: throwing for the 403/500 branches. `fail(...)`
 > is kept (type-verified, ASC-proven form UX), and the exposure it worried about closes by requiring
@@ -349,16 +364,30 @@ export const handleError: HandleServerError = ({ error }) => {
 
 Nothing in this reference requires a site to define one.
 
-Two further channels exist inside the engine and are never written by a site directly. The
-built-in content actions redirect on failure (`redirect(303, '/admin/<concept>?error=...')`), the
-same native shape `requireSession`'s session gate uses. And [`createAuthGuard`](#createauthguard)
-itself refuses at the `Handle`, before any route's own load or action runs, returning a raw,
-branded `Response` for a CSRF, origin, HTTPS, missing-binding, or dev-backend-in-production
-failure (the last, a 503, refuses when `CAIRN_DEV_BACKEND` is set in a deployed runtime, so a
-build that leaked its dev fixture fails loud rather than serving it). This last channel is why
-`adminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal already
-covers every unsafe POST under `/admin/**` whose content type is one of the three a browser can
-send cross-origin with no CORS preflight (`application/x-www-form-urlencoded`,
+A small, closed set of refusals can't answer in place, because the request that surfaces them
+didn't originate on the page the refusal concerns: an expired or already-consumed sign-in link
+(the confirm page bounces to the login page), and publish-all's outcome (posted from the topbar
+on any screen, so it always lands on the first concept list the session can reach rather than
+where it was raised). Publish-all carries three possible codes: two validated outcomes
+(`nothing_to_publish`, `publish_conflict`) and one unexpected-fault code (`publish_failed`), so an
+unexpected commit failure stays on this redirect channel rather than escaping to `viewAction`'s
+own generic `fail()`, which the `/admin` landing's own redirect would silently discard before it
+could render. The `/admin` landing relay itself forwards an arriving code on to the route it
+redirects to. These three sites, and only these three, carry a bounded internal code on `?error=`,
+resolved server-side against a small closed vocabulary and rendered as fixed engine copy. An
+unrecognized value resolves to nothing, so a crafted query string carries no meaning past the
+resolver, and no site code ever writes or reads a code directly. The login and confirm pages, and
+`listLoad`'s own publish-all outcome banner, treat the resolved value as a boolean flag: a fixed,
+engine-authored sentence shows or doesn't, never the query value itself.
+
+One further channel exists inside the engine and is never written by a site directly:
+[`createAuthGuard`](#createauthguard) itself refuses at the `Handle`, before any route's own load
+or action runs, returning a raw, branded `Response` for a CSRF, origin, HTTPS, missing-binding, or
+dev-backend-in-production failure (the last, a 503, refuses when `CAIRN_DEV_BACKEND` is set in a
+deployed runtime, so a build that leaked its dev fixture fails loud rather than serving it). This
+channel is why `adminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal
+already covers every unsafe POST under `/admin/**` whose content type is one of the three a
+browser can send cross-origin with no CORS preflight (`application/x-www-form-urlencoded`,
 `multipart/form-data`, `text/plain`), not literally every unsafe POST; a JSON POST is not
 screened by this check. That is not a gap in practice: those three are exactly the content types
 a browser can forge cross-origin without a preflight the site never answers, and SvelteKit itself
@@ -832,31 +861,31 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   listLoad: (event: CairnEvent<CairnEnv>) => Promise<ListData>;
   mediaLibraryLoad: (event: CairnEvent<CairnEnv>) => Promise<MediaLibraryData>;
   settingsLoad: (event: CairnEvent<CairnEnv>) => Promise<SettingsData>;
-  settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SettingsSaveFailure>>;
   vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyLoadData>;
-  vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
-  createAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure>>;
+  createAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<CreateFailure>>;
   editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>;
-  saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure>>;
+  publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure>>;
   publishAllAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
   discardAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
-  deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | UploadResult>;
-  mediaLibraryUploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | UploadResult>;
-  mediaDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  mediaBulkDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>;
-  mediaOrphanScanAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaOrphanScanResult>;
-  mediaOrphanPurgeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>;
-  mediaUpdateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  mediaReplacePreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>;
-  mediaReplaceAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  mediaAltPreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaAltPreviewPlan>;
-  mediaAltPropagateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
-  dictionaryAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | DictionaryAddResult>;
-  tidyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | TidyResult>;
+  deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>;
+  listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>;
+  renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RenameFailure>>;
+  uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
+  mediaLibraryUploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
+  mediaDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaDeleteRefusal>>;
+  mediaBulkDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaBulkFailure> | MediaBulkDeleteResult>;
+  mediaOrphanScanAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaBulkFailure> | MediaOrphanScanResult>;
+  mediaOrphanPurgeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaBulkFailure> | MediaOrphanPurgeResult>;
+  mediaUpdateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUpdateFailure>>;
+  mediaReplacePreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaReplaceFailure> | MediaReplacePreviewPlan>;
+  mediaReplaceAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaReplaceFailure>>;
+  mediaAltPreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaAltPropagateFailure> | MediaAltPreviewPlan>;
+  mediaAltPropagateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaAltPropagateFailure>>;
+  dictionaryAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult>;
+  tidyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<TidyFailure> | TidyResult>;
 };
 ```
 
@@ -978,7 +1007,7 @@ below. Their request shapes and `fail` payloads:
   `X-Cairn-CSRF`. It validates CSRF first, then the session, refuses before any model call if tidy is
   disabled or the key is missing, bounds the body, and only then builds the prompt and calls the model
   under its own deadline. It commits nothing. Success returns `TidyResult`
-  (`{ corrected, model, usage }`, the corrected markdown plus the model id and token counts; the diff is
+  (`{ corrected, model, tokens }`, the corrected markdown plus the model id and token counts; the diff is
   computed on the client) and marks the shared key-health cache healthy. A refusal returns `TidyFailure`
   (`{ error }`): `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled, the API key is
   missing, or Anthropic rejects the key outright (a 401 or 403; this branch is not retryable, marks the
@@ -992,12 +1021,14 @@ below. Their request shapes and `fail` payloads:
 Every action failure carries `error: string` as its one-line summary, alongside the payload that
 names what refused: a blocked save or publish returns `SaveFailure` (the broken links and the
 edited body), a refused delete returns `DeleteRefusal` (the inbound linkers and the entry id),
-and a refused rename returns `RenameFailure`. The media actions add two more: a refused media
-delete returns `MediaDeleteRefusal` (the asset hash, the where-used rows, and the count) and a
-refused media metadata edit returns `MediaUpdateFailure`. A refused replace returns
-`MediaReplaceFailure` (the same shape as the delete refusal) and a refused alt-propagation returns
-`MediaAltPropagateFailure` (the bare summary). A page component types its `form` prop with
-`ContentFormFailure`, the optional merge of all seven.
+a refused rename returns `RenameFailure`, and a refused create returns `CreateFailure` (the same
+bare summary as `RenameFailure`, for a bad slug, a missing date, or an address collision). The
+media actions add two more: a refused media delete returns `MediaDeleteRefusal` (the asset hash,
+the where-used rows, and the count) and a refused media metadata edit returns
+`MediaUpdateFailure` (the asset hash, when known). A refused replace returns `MediaReplaceFailure`
+(the same shape as the delete refusal) and a refused alt-propagation returns
+`MediaAltPropagateFailure` (the asset hash, when known). A page component types its `form` prop
+with `ContentFormFailure`, the optional merge of all eight.
 
 ```ts
 // src/routes/admin/(app)/[concept]/+page.server.ts (per-route mounting)
@@ -1063,7 +1094,7 @@ Stability tier: Unstable API.
 ```ts
 declare function createNavRoutes(runtime: CairnRuntime): {
   navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>;
-  navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  navSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<NavSaveFailure>>;
 };
 ```
 
@@ -1626,21 +1657,26 @@ imports the matching `*Data` type to type its `data` prop.
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's support contact, composed to cairn's hosted help when the adapter sets none, and left empty when the adapter sets it to an explicit empty string. |
 | `SettingsData` | Extension API | `interface SettingsData { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: TidyKeyProbeResult \| 'missing'; model: string; modelLabel: string; conventions: TidyConventions; saved: boolean; error: string \| null }` | The tidy settings view's data: the truthful two-tier gate (`enabled` is true only when tidy is on, the key is present, and the active probe has not confirmed it invalid), the developer-tier facts (`tidyEnabled`, `keyConfigured`, `keyStatus`, `model`, `modelLabel`), the editor-tier `conventions` the save writes back, and the status flags. |
 | `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[]; error: string \| null }` | The tag-vocabulary view's data: the committed vocabulary in config order, a per-value cross-branch usage count, and the in-use-but-unlisted seed candidates. The usage overlay is best-effort and degrades to empty on a read failure, keeping the committed vocabulary visible. |
+| `SettingsSaveFailure` | Unstable API | `interface SettingsSaveFailure { error: string }` | A refused tidy settings save (an invalid conventions payload, a malformed committed config, or the config's head moved since the editor opened the page): just the one-line summary. |
+| `VocabularySaveFailure` | Unstable API | `interface VocabularySaveFailure { error: string }` | A refused tag-vocabulary save (an invalid vocabulary payload, a malformed committed config, a removed value still in use, or the config's head moved since the editor opened the page): just the one-line summary. |
 | <a id="contentroutesoptions"></a>`ContentRoutesOptions` | Unstable API | `interface ContentRoutesOptions { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]> }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellLoad` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. |
 | `ContentRoutes` | Unstable API | `type ContentRoutes` | What `createContentRoutes` returns: the admin content routes' full load and action vocabulary, shown expanded in [`createContentRoutes`](#createcontentroutes). |
 | `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; inboundKind?: 'link' \| 'include'; id: string }` | A refused delete: the one-line summary, the entries that still link to (or include) the refused one, and its id so a list marks the right row. `inboundKind` names which gate refused, `'include'` for a blocked fragment delete and `'link'` (the default when absent) otherwise, so the refusal copy names the real blocker. |
 | `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
+| `CreateFailure` | Unstable API | `interface CreateFailure { error: string }` | A refused create (bad slug, missing date, or an address collision): just the one-line summary. |
 | `MediaDeleteRefusal` | Unstable API | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
-| `MediaUpdateFailure` | Unstable API | `interface MediaUpdateFailure { error: string }` | A refused media metadata edit (an asset not committed on the default branch, or an invalid slug): just the one-line summary. |
+| `MediaUpdateFailure` | Unstable API | `interface MediaUpdateFailure { error: string; hash?: string }` | A refused media metadata edit (an asset not committed on the default branch, an invalid slug, or a manifest conflict): the one-line summary, and the edited asset's hash when known, so the Library re-opens the right slide-over. |
 | `MediaReplaceFailure` | Unstable API | `interface MediaReplaceFailure { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media replace: the one-line summary, the asset's content hash, the where-used rows, and the distinct-entry count. Mirrors `MediaDeleteRefusal`: a fresh usage read found the asset still in use without the typed-slug override (409), or usage could not be verified or the bucket is unbound (503). |
-| `MediaAltPropagateFailure` | Unstable API | `interface MediaAltPropagateFailure { error: string }` | A refused media alt-propagation: just the one-line summary. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
+| `MediaAltPropagateFailure` | Unstable API | `interface MediaAltPropagateFailure { error: string; hash?: string }` | A refused media alt-propagation: the one-line summary, and the asset's hash when known (absent from the alt-preview fetch action's own pre-hash failures), so the apply form's Library re-opens the right slide-over. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
 | `MediaBulkFailure` | Unstable API | `interface MediaBulkFailure { error: string }` | A refused media bulk delete or orphan purge: just the one-line summary. The whole batch failed closed because cross-branch usage could not be verified (503), or media is off / the bucket is unbound. Per-item outcomes ride the returned summary, not this fail. |
-| `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
+| `MediaUploadFailure` | Unstable API | `interface MediaUploadFailure { error: string }` | A refused upload: one of the pre-store gates (session, media-off, missing bucket, oversized or disallowed content) or the Library-direct commit's own conflict bounce. Just the one-line summary; a refusal here never stores bytes or commits a row. |
+| `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & CreateFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `EditorRoutesOptions` | Unstable API | `interface EditorRoutesOptions { roles?: RolesDeclaration }` | Configuration for `createEditorRoutes`: the site's declared role vocabulary; omitted, the routes validate and resolve against the implicit owner/editor pair. |
 | `EditorRoutes` | Unstable API | `type EditorRoutes` | What `createEditorRoutes` returns: the owner-gated editor-management load and actions, shown expanded in [`createEditorRoutes`](#createeditorroutes). |
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
+| `NavSaveFailure` | Unstable API | `interface NavSaveFailure { error: string }` | A refused nav save (an invalid posted tree, or the config's head moved since the editor opened the page): just the one-line summary. |
 | `NavRoutes` | Unstable API | `type NavRoutes` | What `createNavRoutes` returns: the nav editor's load and save functions, shown expanded in [`createNavRoutes`](#createnavroutes). |
 | <a id="cairnadminoptions"></a>`CairnAdminOptions` | Extension API | `interface CairnAdminOptions { auth?: Partial<AuthRoutesConfig>; tidy?: ContentRoutesOptions['tidy']; navFilter?: ContentRoutesOptions['navFilter']; attention?: ContentRoutesOptions['attention'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth` is [`AuthRoutesConfig`](#authroutesconfig) made fully optional, so it references that shape once instead of re-declaring it; `auth.branding` defaults from the runtime's `siteName` and `sender` when omitted, `auth.send` is the same seam the underlying auth factory takes, and `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, and `attention` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellLoad` calls, and `attention` is the per-session pending-work seam (see `ContentRoutesOptions` below and [the attention seam](#the-attention-seam)), so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
 | `CairnAdminRoutes` | Extension API | `type CairnAdminRoutes` | What `createCairnAdmin` returns: the one `load`, the full `actions` vocabulary, and `shellLoad`, shown expanded in [`createCairnAdmin`](#createcairnadmin). |
@@ -1660,7 +1696,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `EditorsData` | Unstable API | `interface EditorsData { editors: Editor[]; self: string; error: string \| null; vocabulary: { role: string; capability: Capability }[] }` | `editorsLoad`'s named payload: the allowlist with each row's resolved capability, the acting owner's email, a resolved `?error` code, and the role vocabulary. |
 | `FragmentTarget` | Unstable API | `interface FragmentTarget { id: string; title: string; body: string }` | One published fragment `EditData.fragmentTargets` offers the include picker: its id, title, and raw markdown body, read from the default branch only. |
 | `TidyClient` | Unstable API | `interface TidyClient` | The Anthropic Messages API surface the tidy action calls; a test injects a stub through `ContentRoutesOptions.tidy.client`. |
-| `TidyResult` | Unstable API | `interface TidyResult { corrected: string; model: string; usage: { input_tokens: number; output_tokens: number } }` | The successful tidy outcome: the corrected markdown, the model that produced it, and the token usage. The diff is computed client-side; the server commits nothing. |
+| `TidyResult` | Unstable API | `interface TidyResult { corrected: string; model: string; tokens: { input_tokens: number; output_tokens: number } }` | The successful tidy outcome: the corrected markdown, the model that produced it, and the token usage. The diff is computed client-side; the server commits nothing. |
 | `DictionaryAddResult` | Unstable API | `interface DictionaryAddResult { words: string[] }` | The personal-dictionary add outcome: the merged, canonical sorted word list after the add landed. |
 | `MediaBulkDeleteResult` | Unstable API | `interface MediaBulkDeleteResult { deleted: string[]; skipped: BulkDeleteSkip[]; failed: { hash: string; error: string }[] }` | The bulk-delete outcome: the deleted hashes, the skipped rows from the partition, and any per-object R2 delete failure. |
 | `MediaOrphanPurgeResult` | Unstable API | `interface MediaOrphanPurgeResult { purged: string[]; skippedClaimed: string[]; failed: { key: string; error: string }[] }` | The orphan-purge outcome: the purged R2 keys, the keys skipped because their hash was claimed since the scan, and any per-object delete failure. |

@@ -96,10 +96,10 @@ describe('createAction with a pending branch', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(
-      routes.createAction(createEvent({ slug: 'hello', date: '2026-05-01' }) as never),
-    );
-    expect(location).toMatch(/^\/admin\/posts\?error=/);
-    expect(decodeURIComponent(location)).toMatch(/already exists/i);
+    const result = (await routes.createAction(
+      createEvent({ slug: 'hello', date: '2026-05-01' }) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/already exists/i);
   });
 });

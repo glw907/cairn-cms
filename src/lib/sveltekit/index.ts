@@ -34,6 +34,7 @@ export type {
   SaveFailure,
   DeleteRefusal,
   RenameFailure,
+  CreateFailure,
   MediaDeleteRefusal,
   MediaUpdateFailure,
   MediaReplaceFailure,
@@ -41,6 +42,9 @@ export type {
   MediaBulkFailure,
   ContentFormFailure,
   UploadResult,
+  MediaUploadFailure,
+  SettingsSaveFailure,
+  VocabularySaveFailure,
   // The export-rule sweep (C2 breaking-window pass, R4 ruling): every type a route factory's
   // return type names, down to its own nested shapes, becomes importable from this subpath.
   FragmentTarget,
@@ -64,7 +68,7 @@ export type {
   BulkDeleteSkip,
 } from './content-routes.js';
 export { createNavRoutes, type NavRoutes } from './nav-routes.js';
-export type { NavLoadData, NavPageOption } from './nav-routes.js';
+export type { NavLoadData, NavPageOption, NavSaveFailure } from './nav-routes.js';
 export type {
   NavIcon,
   ResolvedNavEntry,

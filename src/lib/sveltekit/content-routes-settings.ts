@@ -1,7 +1,7 @@
 // cairn-cms: the tidy settings screen and the tag-vocabulary admin screen, both of which
 // read-modify-commit the same committed site-config YAML. createSettingsActions closes over the
 // shared ContentRoutesContext (content-routes-context.ts) built once by createContentRoutes.
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import {
   DEFAULT_TIDY_MODEL,
@@ -74,8 +74,6 @@ export interface SettingsData {
   conventions: TidyConventions;
   /** The success flash a redirected save carries (`?saved=1`). */
   saved: boolean;
-  /** A redirected save's validation or conflict error read from `?error=`. */
-  error: string | null;
 }
 
 /**
@@ -90,8 +88,24 @@ export interface VocabularyLoadData {
   usage: Record<string, number>;
   /** Tags in use but absent from the vocabulary, with their count, sorted: the seed candidates. */
   unlisted: { value: string; count: number }[];
-  /** A redirected save's validation error, or an unexpected action failure's bounce, read from `?error=`. */
-  error: string | null;
+}
+
+/**
+ * A refused tidy settings save: `fail(400)` on an invalid conventions payload, `fail(500)` on a
+ *  malformed committed config, `fail(409)` when the config's head moved since the editor opened
+ *  the page.
+ */
+export interface SettingsSaveFailure {
+  error: string;
+}
+
+/**
+ * A refused tag-vocabulary save: `fail(400)` on an invalid vocabulary payload, `fail(500)` on a
+ *  malformed committed config, `fail(409)` when a removed value is still in use or the config's
+ *  head moved since the editor opened the page.
+ */
+export interface VocabularySaveFailure {
+  error: string;
 }
 
 /**
@@ -116,22 +130,43 @@ function tidyModelLabel(model: string): string {
 }
 
 /**
- * Parse the committed site-config YAML, redirecting a {@link SiteConfigError} back to `errorPath`
- *  with the parser's own actionable message. A malformed config is an operator fault (a misplaced or
- *  unrecognized key), not an editor mistake, and the tidy and vocabulary screens render no `form` prop
- *  over a plain, non-enhanced form, so a `fail(400)` would re-render with no visible error; the
- *  redirect carries the message through each screen's own `?error=` validation idiom instead. Any
- *  other error propagates unchanged. `scope` names the calling screen (`'settings'` or
- *  `'vocabulary'`), which is enough on its own for the settings caller, since nothing else in this
- *  module emits `config.invalid` with `scope: 'settings'`. It is not enough for the vocabulary
- *  caller: vocabularyLoad's own degrade-path emit also carries `scope: 'vocabulary'` with the same
- *  `conditionId`, so the record alone cannot tell this redirect path from that load's degrade path;
- *  only the reference doc's prose (a load degrades, a save redirects) does. See
- *  docs/reference/log-events.md's `config.invalid` row, which documents this collision directly.
+ * The result of {@link parseSiteConfigOrFail}: a literal `ok` discriminant, not a bare union of
+ *  `SiteConfig` and `ActionFailure`, since `SiteConfig`'s open index signature defeats both `in`
+ *  narrowing and `isActionFailure`'s negative branch on that union.
  */
-function parseSiteConfigOrRedirect(raw: string, errorPath: string, scope: 'settings' | 'vocabulary'): SiteConfig {
+type ParsedSiteConfig =
+  | { ok: true; config: SiteConfig }
+  | { ok: false; failure: ActionFailure<{ error: string }> };
+
+/**
+ * The generic copy a parse-error refusal answers with; the parser's own actionable message stays
+ *  in the `config.invalid` log record below, for the site's operator, not the editor's screen.
+ */
+const CONFIG_INVALID_MESSAGE = 'This section is not available. Let your site developer know.';
+
+/** The fail(409) copy both saves in this module answer a stale site-config head with. */
+const CONFIG_CONFLICT_MESSAGE = 'The site config changed since you opened it. Reload and reapply your edits.';
+
+/**
+ * Parse the committed site-config YAML, refusing in place with `fail(500, { error })` on a
+ *  {@link SiteConfigError}. A malformed config is an operator fault (a misplaced or unrecognized
+ *  key), not an editor mistake, but it still blocks this save, so it answers the screen that
+ *  posted rather than navigating away from the editor's unsaved work; both screens now receive
+ *  `form`, so the refusal reaches them the same way a conflict does. The response carries generic
+ *  copy rather than the parser's own message, which can echo a misplaced key or value straight
+ *  from the committed file; the actionable detail stays in the log record below, for the site's
+ *  operator. Any other error propagates unchanged. `scope` names the calling screen (`'settings'`
+ *  or `'vocabulary'`), which is enough on its own for the settings caller, since nothing else in
+ *  this module emits `config.invalid` with `scope: 'settings'`. It is not enough for the
+ *  vocabulary caller: vocabularyLoad's own degrade-path emit also carries `scope: 'vocabulary'`
+ *  with the same `conditionId`, so the record alone cannot tell this refusal path from that
+ *  load's degrade path; only the reference doc's prose (a load degrades, a save refuses) does.
+ *  See docs/reference/log-events.md's `config.invalid` row, which documents this collision
+ *  directly.
+ */
+function parseSiteConfigOrFail(raw: string, scope: 'settings' | 'vocabulary'): ParsedSiteConfig {
   try {
-    return parseSiteConfig(raw);
+    return { ok: true, config: parseSiteConfig(raw) };
   } catch (err) {
     if (!(err instanceof SiteConfigError)) throw err;
     log.error('config.invalid', {
@@ -139,7 +174,7 @@ function parseSiteConfigOrRedirect(raw: string, errorPath: string, scope: 'setti
       conditionId: 'config.site-config-invalid',
       error: String(err),
     });
-    throw redirect(303, `${errorPath}?error=${encodeURIComponent(err.message)}`);
+    return { ok: false, failure: fail(500, { error: CONFIG_INVALID_MESSAGE }) };
   }
 }
 
@@ -215,7 +250,6 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       modelLabel: tidyModelLabel(model),
       conventions: resolveTidyConventions(tidy?.conventions),
       saved: event.url.searchParams.get('saved') === '1',
-      error: event.url.searchParams.get('error'),
     };
   }
 
@@ -223,12 +257,12 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    * Save the editor-tier tidy conventions: validate the posted block, then read-modify-commit it into
    *  the same committed YAML the nav editor writes, with the session editor as author. The transport is
    *  the nav save's exactly: a form POST carrying the conventions JSON, a head-guarded
-   *  `backend.commit`, and a stale-head `isConflict` bounced back as a reload prompt. Only the conventions
+   *  `backend.commit`, and a stale-head `isConflict` answered in place as a reload prompt. Only the conventions
    *  block is written (setTidy leaves `tidy.enabled` and `tidy.model` untouched), so an editor's save can
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
    */
-  async function settingsSaveAction(event: CairnEvent): Promise<never> {
+  async function settingsSaveAction(event: CairnEvent): Promise<ActionFailure<SettingsSaveFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'settings');
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
@@ -241,7 +275,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       conventions = validateTidyConventions(JSON.parse(String(form.get('conventions') ?? '{}')));
     } catch (err) {
       const message = err instanceof TidyConventionsError ? err.message : 'Invalid tidy settings';
-      throw redirect(303, `/admin/settings?error=${encodeURIComponent(message)}`);
+      return fail(400, { error: message } satisfies SettingsSaveFailure);
     }
 
     const path = siteConfigPath();
@@ -254,7 +288,8 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     const raw = await backend.readFile(path, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
     // Parse first so a malformed file fails before the write rather than committing onto a broken base.
-    parseSiteConfigOrRedirect(raw, '/admin/settings', 'settings');
+    const parsedConfig = parseSiteConfigOrFail(raw, 'settings');
+    if (!parsedConfig.ok) return parsedConfig.failure;
 
     const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
     try {
@@ -267,12 +302,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(
-        commitFields,
-        err,
-        '/admin/settings',
-        'The site config changed since you opened it. Reload and reapply your edits.',
-      );
+      return ctx.commitFailure(commitFields, err, { error: CONFIG_CONFLICT_MESSAGE } satisfies SettingsSaveFailure);
     }
 
     throw redirect(303, '/admin/settings?saved=1');
@@ -336,19 +366,19 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       unlisted = [];
     }
 
-    return { vocabulary, usage, unlisted, error: event.url.searchParams.get('error') };
+    return { vocabulary, usage, unlisted };
   }
 
   /**
    * Save the tag vocabulary (Plan 3): validate the posted list, gate a delete on cross-branch usage
    *  failing closed, then read-modify-commit the `vocabulary` key into the same committed YAML the
    *  nav and settings saves write. The transport is settingsSaveAction's exactly: a form POST carrying the
-   *  vocabulary JSON, a head-guarded backend.commit, and a stale-head isConflict bounced back as a
-   *  reload prompt. The delete gate is the safety boundary: a removed value still in use anywhere the
+   *  vocabulary JSON, a head-guarded backend.commit, and a stale-head isConflict answered in place as
+   *  a reload prompt. The delete gate is the safety boundary: a removed value still in use anywhere the
    *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
-  async function vocabularySaveAction(event: CairnEvent): Promise<never> {
+  async function vocabularySaveAction(event: CairnEvent): Promise<ActionFailure<VocabularySaveFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'vocabulary');
 
@@ -357,8 +387,15 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     try {
       posted = validateVocabulary(JSON.parse(String(form.get('vocabulary') ?? '[]')));
     } catch (err) {
+      // A SyntaxError from JSON.parse embeds a snippet of the posted string in its own message
+      // (V8's own diagnostic), so it gets fixed, generic copy rather than reflecting posted-body
+      // content into the alert; SiteConfigError's messages stay safe to surface directly (each
+      // attacker-influenced value they name is already regex-constrained before it is embedded).
+      if (err instanceof SyntaxError) {
+        return fail(400, { error: 'That vocabulary could not be read. Reload and try again.' } satisfies VocabularySaveFailure);
+      }
       const message = err instanceof Error ? err.message : 'Invalid vocabulary';
-      throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(message)}`);
+      return fail(400, { error: message } satisfies VocabularySaveFailure);
     }
 
     const path = siteConfigPath();
@@ -373,7 +410,9 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
 
     // The delete gate: any value in the current vocabulary but absent from the posted one is being
     // removed, and a removed value still in use anywhere the strict index reads must block the save.
-    const current = extractVocabulary(parseSiteConfigOrRedirect(raw, '/admin/vocabulary', 'vocabulary'));
+    const parsedConfig = parseSiteConfigOrFail(raw, 'vocabulary');
+    if (!parsedConfig.ok) return parsedConfig.failure;
+    const current = extractVocabulary(parsedConfig.config);
     const postedValues = new Set(posted.map((entry) => entry.value));
     const removed = current.filter((entry) => !postedValues.has(entry.value)).map((entry) => entry.value);
     if (removed.length > 0) {
@@ -385,7 +424,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       const inUse = removed.find((value) => (usageIndex.get(value)?.length ?? 0) > 0);
       if (inUse !== undefined) {
         const message = `The tag "${inUse}" is still in use, so it cannot be deleted. Remove it from your content first.`;
-        throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(message)}`);
+        return fail(409, { error: message } satisfies VocabularySaveFailure);
       }
     }
 
@@ -400,12 +439,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(
-        commitFields,
-        err,
-        '/admin/vocabulary',
-        'The site config changed since you opened it. Reload and reapply your edits.',
-      );
+      return ctx.commitFailure(commitFields, err, { error: CONFIG_CONFLICT_MESSAGE } satisfies VocabularySaveFailure);
     }
 
     throw redirect(303, '/admin/vocabulary?saved=1');

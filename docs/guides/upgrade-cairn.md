@@ -342,6 +342,72 @@ with no parameterized or catch-all section behind `createSectionAction` needs no
 groups need no change either: the derived target drops group segments, so `/admin/(app)/roster`
 keeps matching a map keyed `/admin/roster`.
 
+`requireAccess`'s own `target` parameter now defaults the same way: `event.route.id`, never
+`event.url.pathname`. This closes the asymmetry between the two halves of the same authorization
+story that the C2 breaking-window post-mortem flagged. `createSectionAction` already made this
+change in the preceding entry, and `requireAccess` had not. The internal derivation the two share
+moves out of `section-action.ts` into `auth/access.ts`, invisible from a site. See
+[`requireAccess`](../reference/sveltekit.md#requireaccess).
+
+**Consumers must:** for any `requireAccess`-guarded parameterized or catch-all route, rekey the
+site's access map from the concrete request path to the bracket-form route id, the same rekey
+step described for `createSectionAction` in the preceding entry, or the helper fails closed and
+refuses every session, including owner. A static route's id and path are the same string, so a
+site with no parameterized or catch-all `requireAccess` route needs no change.
+
+The admin refusal channel converges on `fail()`: every built-in content, media, settings,
+vocabulary, and nav action's own validation and commit-conflict refusal now answers `fail(...)`
+in place, keeping your submitted body on the page, instead of throwing a redirect that discarded
+it. `settingsSaveAction`, `vocabularySaveAction`, `navSaveAction`, and `createAction` each widen
+from `Promise<never>` to `Promise<ActionFailure<T>>` (`SettingsSaveFailure`,
+`VocabularySaveFailure`, `NavSaveFailure`, and `CreateFailure` respectively). If you mount these
+route-factory members yourself, through `createContentRoutes` or `createNavRoutes` rather than
+the single-mount `createCairnAdmin` facade, and you hand-annotated one of their return types as
+`Promise<never>`, widen it to match. If you mount through the facade, or through these factories
+with no such annotation, you see no change beyond the new failure shapes reaching your own `form`
+prop, the same way `saveAction`'s `SaveFailure` already does. See [Refusal
+channels](../reference/sveltekit.md#refusal-channels).
+
+**Consumers must:** update any hand-annotated `Promise<never>` return type on
+`settingsSaveAction`, `vocabularySaveAction`, `navSaveAction`, or `createAction`. Nothing else
+here needs a code change.
+
+The facade's `viewAction` wrapper drops its `scriptPosted` branch: every action's own unexpected
+failure, whether the request came from a form post or a `fetch` call, now answers `fail(500, {
+error })` in place instead of a form-posted action redirecting away. A failed discard, sign-in
+confirm, logout, or publish-all now shows the same calm retry message on the page instead of
+bouncing you elsewhere when something unexpected goes wrong; a validated refusal or a deliberate
+success on any of these four is unchanged. The `scriptPosted` and `carriesNewFlag` facade options
+are gone, but neither was ever public. See [Refusal
+channels](../reference/sveltekit.md#refusal-channels).
+
+Consumers must: nothing. `viewAction` is internal to the facade, and the behavior change only
+touches an unexpected-failure path.
+
+Every refusal that genuinely navigates now carries a bounded internal code on `?error=` instead of a
+free-form string, resolved server-side against a small closed vocabulary; an unrecognized value
+resolves to nothing. Only three refusals still navigate at all (an expired sign-in link,
+publish-all's two outcomes) plus the `/admin` landing relay that forwards one of those two
+onward, so six other `?error=` readers and the data field each one filled are removed outright:
+`EditData.error`, `EditorsData.error`, `NavLoadData.error`, `SettingsData.error`,
+`VocabularyLoadData.error`, and `MediaLibraryData.flashError`. See [Refusal
+channels](../reference/sveltekit.md#refusal-channels) and [the security
+model](../explanation/security-model.md#who-may-edit).
+
+**Consumers must:** drop any read of `EditData.error`, `EditorsData.error`, `NavLoadData.error`,
+`SettingsData.error`, `VocabularyLoadData.error`, or `MediaLibraryData.flashError` in your own
+code; each field is gone outright. If you never read one of these fields directly, the common
+case since cairn's own components already handled them, you see no change.
+
+`TidyResult.usage` renames to `TidyResult.tokens`. The name collided with
+`MediaDeleteRefusal.usage` (the where-used rows a refused media delete carries) inside
+SvelteKit's generated `ActionData` union for the admin route, once every content action carried a
+precise `ActionFailure<T>` rather than the old, looser `ActionFailure<unknown>`; the collision
+made `<CairnAdmin {form} />` fail your own `svelte-check`. See
+[`tidyAction`](../reference/sveltekit.md#createcontentroutes).
+
+**Consumers must:** rename any read of `TidyResult.usage` to `TidyResult.tokens`.
+
 The log-event vocabulary settles on one grammar (`area[.subject].verb_phrase`, a past-tense verb
 phrase for an occurrence or a state adjective for a detected condition) and every `reason`/`scope`
 value goes snake_case. Six events rename to fit: `admin.audit.sink_failed` to

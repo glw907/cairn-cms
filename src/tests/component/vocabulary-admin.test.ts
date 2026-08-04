@@ -17,7 +17,6 @@ function data(over: Partial<VocabularyLoadData> = {}): VocabularyLoadData {
     ],
     usage: { 'snow-report': 8, gear: 0 },
     unlisted: [{ value: 'trip-reports', count: 3 }],
-    error: null,
     ...over,
   };
 }
@@ -162,8 +161,21 @@ describe('VocabularyAdmin', () => {
     expect(screen.container.innerHTML).not.toContain('var(--color-subtle)');
   });
 
-  it('surfaces a redirected error read from ?error= (a validated save refusal or an unexpected action failure)', async () => {
-    const screen = render(VocabularyAdmin, { data: data({ error: 'The site config changed since you opened it.' }) });
+  it('renders nothing for a query-derived error now that data.error is gone from the load', async () => {
+    const screen = render(VocabularyAdmin, {
+      data: { ...data(), error: 'Something went wrong and your changes were not saved.' } as never,
+    });
+    const alert = screen.container.querySelector('.alert-error');
+    expect(alert).toBeNull();
+  });
+
+  it('surfaces a refused save\'s fail() error read from form, not only from data', async () => {
+    // A validation or conflict refusal now answers in place through `form`, not a ?error= redirect
+    // read back into `data.error`; the shell must wire `form` through for the message to reach here.
+    const screen = render(VocabularyAdmin, {
+      data: data(),
+      form: { error: 'The site config changed since you opened it.' },
+    });
     const alert = screen.container.querySelector('.alert-error');
     expect(alert?.textContent).toContain('The site config changed since you opened it.');
   });

@@ -338,6 +338,18 @@ describe('ConceptList', () => {
     expect(rowDialog?.textContent ?? '').not.toMatch(/repoint/i);
   });
 
+  it("surfaces a refused create's fail() error read from form, not only from data.formError", async () => {
+    // A create refusal (a bad slug or an address collision) now answers in place through `form`,
+    // not a ?error= redirect read back into `data.formError`; the create dialog posts from this
+    // very route, so the message must reach the list without a navigation.
+    const screen = render(ConceptList, {
+      data: data(),
+      form: { error: 'An entry with that address already exists.' },
+    });
+    const banner = screen.container.querySelector('.alert-error');
+    expect(banner?.textContent ?? '').toContain('An entry with that address already exists.');
+  });
+
   // The density ruling (design arc 2026-07-15): rows are one line, so the summary stays off the
   // office list even when the entry carries one (it still serves the edit page's Details).
   it('a row stays one line: the summary never renders on the list', async () => {

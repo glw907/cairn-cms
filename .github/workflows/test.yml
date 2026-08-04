@@ -40,6 +40,11 @@ jobs:
       # exact toolchain a developer reproduces locally, the same convention e2e.yml follows.
       - run: npm ci --prefix examples/showcase
       - run: npm run check:consumers
+      # The showcase's own svelte-check: it sits outside tsconfig.json's `include`, so the root
+      # `npm run check` never reaches it. A consumer-facing type error (a facade action's success
+      # payload colliding with another action's failure field inside SvelteKit's generated
+      # ActionData) is invisible until this runs.
+      - run: npm --prefix examples/showcase run check
       - name: Install Vale 3.15.1
         run: |
           curl -sfL https://github.com/errata-ai/vale/releases/download/v3.15.1/vale_3.15.1_Linux_64-bit.tar.gz \

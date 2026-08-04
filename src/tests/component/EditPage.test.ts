@@ -1625,6 +1625,31 @@ describe('EditPage', () => {
     expect(header.querySelector('button[formaction="?/publish"][form="cairn-edit-form"]')).not.toBeNull();
   });
 
+  it("carries new=1 on the form's own POST target for a new entry, so a failed first save's load re-run still reads isNew", async () => {
+    // A non-enhanced form's fail() re-render re-runs editLoad at the POST's own URL, which a
+    // browser resolves by replacing the whole query of an action of only "?/save" (RFC 3986
+    // 5.3). Without new=1 riding the action/formaction itself, editLoad would see isNew=false
+    // for an entry that was never actually committed and throw a 404, discarding the refusal
+    // and the draft (the Task 12 regression this test pins).
+    const screen = render(EditPage, postProps({ isNew: true }));
+    expect(screen.container.querySelector('form#cairn-edit-form')?.getAttribute('action')).toBe('?/save&new=1');
+    const publishButtons = screen.container.querySelectorAll('button[form="cairn-edit-form"][formaction]');
+    expect(publishButtons.length).toBeGreaterThan(0);
+    for (const button of publishButtons) {
+      expect(button.getAttribute('formaction')).toBe('?/publish&new=1');
+    }
+  });
+
+  it('leaves the form action and formaction untouched (no new=1) for an existing entry', async () => {
+    const screen = render(EditPage, postProps({ isNew: false }));
+    expect(screen.container.querySelector('form#cairn-edit-form')?.getAttribute('action')).toBe('?/save');
+    const publishButtons = screen.container.querySelectorAll('button[form="cairn-edit-form"][formaction]');
+    expect(publishButtons.length).toBeGreaterThan(0);
+    for (const button of publishButtons) {
+      expect(button.getAttribute('formaction')).toBe('?/publish');
+    }
+  });
+
   it('lists Delete in the overflow menu and omits Discard changes while clean', async () => {
     const screen = render(EditPage, postProps());
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;

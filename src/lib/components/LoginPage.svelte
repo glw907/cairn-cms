@@ -21,8 +21,9 @@ the allowlist, so the page never leaks membership (spec §7.1).
      * shell payload always does. */
     data: { siteName: string; error: string | null; csrf: string; theme?: 'cairn-admin' | 'cairn-admin-dark' };
     /** The action result. `sent` is true once a request was accepted; `status` discriminates the
-     * neutral, send-error, and throttled outcomes. */
-    form: { sent?: boolean; status?: 'sent' | 'send_error' | 'throttled' } | null;
+     * neutral, send-error, and throttled outcomes. `error` carries an unexpected action failure
+     * (viewAction's generic fail(500)), which has neither field. */
+    form: { sent?: boolean; status?: 'sent' | 'send_error' | 'throttled'; error?: string } | null;
   }
 
   let { data, form }: Props = $props();
@@ -99,10 +100,13 @@ the allowlist, so the page never leaks membership (spec §7.1).
         <div role="status" class="alert mb-3 type-body">
           You requested a link recently. Check your inbox, or wait a minute and try again.
         </div>
+      {:else if form?.error}
+        <div role="alert" class="alert alert-error mb-3 type-body">{form.error}</div>
       {/if}
-      <!-- A fresh action result supersedes the GET-time error, so a resubmit into a throttle or a
-           send failure never shows the stale expired-link alert alongside the new state. -->
-      {#if data.error && !form?.status}
+      <!-- A fresh action result supersedes the GET-time error, so a resubmit into a throttle, a
+           send failure, or an unexpected failure never shows the stale expired-link alert
+           alongside the new state. -->
+      {#if data.error && !form?.status && !form?.error}
         <div role="alert" class="alert alert-error mb-3 type-body">That link expired. Request a new one below.</div>
       {/if}
       <form method="POST" action="?/request" class="flex flex-col gap-3">

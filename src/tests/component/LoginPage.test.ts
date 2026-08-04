@@ -64,6 +64,28 @@ describe('LoginPage', () => {
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
   });
 
+  it("shows the action's own error and keeps the form available on an unexpected send failure", async () => {
+    // viewAction's generic fail(500) carries only { error }, no status, so an unexpected failure
+    // must not read as the neutral no-op it previously silently was (the Task 12 review finding
+    // this pins).
+    const screen = render(LoginPage, {
+      data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' },
+      form: { error: 'Something went wrong. Try again.' },
+    });
+    await expect.element(screen.getByRole('alert')).toBeInTheDocument();
+    await expect.element(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+    await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
+  });
+
+  it('lets an unexpected-failure error supersede a stale expired-link error', async () => {
+    const screen = render(LoginPage, {
+      data: { siteName: 'Test Site', error: 'expired', csrf: 'csrf-tok' },
+      form: { error: 'Something went wrong. Try again.' },
+    });
+    await expect.element(screen.getByText(/something went wrong/i)).toBeInTheDocument();
+    expect(screen.container.textContent).not.toMatch(/that link expired/i);
+  });
+
   it('applies the SSR-resolved dark theme to its data-theme wrapper (the cookie carries no auth)', async () => {
     const screen = render(LoginPage, {
       data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok', theme: 'cairn-admin-dark' },

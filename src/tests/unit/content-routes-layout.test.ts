@@ -543,7 +543,19 @@ describe('indexLoad', () => {
     }
   });
 
-  it('carries a bounced ?error= through to the first concept, rather than dropping it', () => {
+  it('relays a known ?error= code through to the first concept, rather than dropping it', () => {
+    const routes = createContentRoutes(runtime());
+    const e = event('/admin?error=publish_conflict', 'owner');
+    try {
+      routes.indexLoad(e);
+      throw new Error('expected a redirect');
+    } catch (err) {
+      expect((err as { status: number; location: string }).status).toBe(307);
+      expect((err as { location: string }).location).toBe('/admin/posts?error=publish_conflict');
+    }
+  });
+
+  it('drops a crafted ?error= carrying free text or an unrecognized code, rather than relaying it', () => {
     const routes = createContentRoutes(runtime());
     const e = event('/admin?error=Something%20went%20wrong', 'owner');
     try {
@@ -551,7 +563,7 @@ describe('indexLoad', () => {
       throw new Error('expected a redirect');
     } catch (err) {
       expect((err as { status: number; location: string }).status).toBe(307);
-      expect((err as { location: string }).location).toBe('/admin/posts?error=Something%20went%20wrong');
+      expect((err as { location: string }).location).toBe('/admin/posts');
     }
   });
 
@@ -576,6 +588,26 @@ describe('indexLoad', () => {
     } catch (err) {
       expect((err as { status: number; location: string }).status).toBe(303);
       expect((err as { location: string }).location).toBe('/admin/classes');
+    }
+  });
+
+  it("merges a relayed ?error= into a declared home that already carries its own query, rather than swallowing it behind a second '?'", () => {
+    // A home carrying its own query (`/admin/dash?tab=1`) plus a relayed code must not produce
+    // `/admin/dash?tab=1?error=code`, which the second '?' parses into `tab`'s own value and the
+    // code never reaches resolveRefusalCode on the far side.
+    const rolesWithQueryHome = defineRoles({
+      owner: 'owner',
+      'club-admin': 'editor',
+      instructor: { capability: 'none' as const, home: '/admin/classes?tab=upcoming' },
+    });
+    const routes = createContentRoutes({ ...runtime(), roles: rolesWithQueryHome });
+    const e = customRoleEvent('/admin?error=publish_conflict', 'instructor', 'none');
+    try {
+      routes.indexLoad(e as never);
+      throw new Error('expected a redirect');
+    } catch (err) {
+      const location = (err as { status: number; location: string }).location;
+      expect(location).toBe('/admin/classes?tab=upcoming&error=publish_conflict');
     }
   });
 

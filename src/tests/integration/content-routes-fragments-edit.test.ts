@@ -55,12 +55,6 @@ async function redirectedTo(action: Promise<unknown>): Promise<string> {
   throw new Error('expected a redirect');
 }
 
-/** The `?error=` query param off a redirect location, decoded. */
-function errorParam(location: string): string | null {
-  const [, query] = location.split('?');
-  return new URLSearchParams(query ?? '').get('error');
-}
-
 afterEach(() => vi.restoreAllMocks());
 
 describe('editLoad: fragmentTargets (Task 6)', () => {
@@ -249,11 +243,14 @@ describe('saveToBranch: the nested-include bounce (Task 6)', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const location = await redirectedTo(
-      routes.saveAction(saveEvent('fragments', 'nested', { title: 'Nested', body: '::include{fragment="other"}' }) as never),
-    );
-    expect(errorParam(location)).toBe("A fragment can't include another fragment.");
-    // No commit landed: the bounce throws before saveToBranch touches the backend.
+    const result = (await routes.saveAction(
+      saveEvent('fragments', 'nested', { title: 'Nested', body: '::include{fragment="other"}' }) as never,
+    )) as unknown as { status: number; data: { error: string; body: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toBe("A fragment can't include another fragment.");
+    // The submitted body rides the failure, so the page reseeds the editor.
+    expect(result.data.body).toBe('::include{fragment="other"}');
+    // No commit landed: the refusal returns before saveToBranch touches the backend.
     expect(gh.read('cairn/fragments/nested', 'src/content/fragments/nested.md')).toBeNull();
   });
 

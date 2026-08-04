@@ -2,7 +2,7 @@
 // the orphan scan and purge, metadata edit, and the replace-in-place / alt-propagation preview and
 // apply pairs). createMediaActions closes over the shared ContentRoutesContext
 // (content-routes-context.ts) built once by createContentRoutes.
-import { redirect, error, fail } from '@sveltejs/kit';
+import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.js';
@@ -66,11 +66,7 @@ export interface MediaLibraryData {
   assets: MediaLibraryEntry[];
   /** Per-hash usage overlay, kept separate from MediaLibraryEntry so the popover stays decoupled. */
   usage: Record<string, MediaUsageInfo>;
-  /**
-   * The degraded-load error: a failed token mint or media read. This slot is the failure of THIS
-   *  load, distinct from a prior action's conflict error (see `flashError`), so a read failure and a
-   *  redirected commit conflict never overwrite each other.
-   */
+  /** The degraded-load error: a failed token mint or media read. */
   error: string | null;
   /**
    * The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
@@ -79,11 +75,6 @@ export interface MediaLibraryData {
    *  `?uploaded=1`, null otherwise. The component renders a polite success strip for each.
    */
   flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | 'bulkDeleted' | 'orphansPurged' | 'uploaded' | null;
-  /**
-   * A redirected action's conflict error read from `?error=` (a commit-conflict bounce). Kept in
-   *  its own slot rather than the degraded-load `error` above, so the two never collide.
-   */
-  flashError: string | null;
 }
 
 /**
@@ -104,11 +95,15 @@ export interface MediaDeleteRefusal {
 
 /**
  * A refused media metadata edit: `fail(404)` for an asset not committed on the default branch, or
- *  `fail(400)` for an invalid slug.
+ *  `fail(400)` for an invalid slug, or `fail(409)` when the manifest changed since the editor
+ *  opened it. `hash` carries the posted asset's hash on every branch, so the Library can re-open
+ *  the right slide-over and render `error` against it.
  */
 export interface MediaUpdateFailure {
   /** The one-line human summary every action failure carries. */
   error: string;
+  /** The edited asset's content hash, when known at the point of refusal. */
+  hash?: string;
 }
 
 /**
@@ -125,11 +120,17 @@ export interface MediaReplaceFailure {
 
 /**
  * A refused media alt-propagation: `fail(503)` when usage cannot be verified across main and every
- *  open branch (fail closed), or the bucket is unbound. Just the one-line summary; alt fill has no
- *  typed-slug gate.
+ *  open branch (fail closed), or the bucket is unbound, or `fail(409)` on a commit conflict. Alt
+ *  fill has no typed-slug gate, so this carries just the summary and the asset hash (so the
+ *  Library can re-open the right slide-over).
  */
 export interface MediaAltPropagateFailure {
   error: string;
+  /**
+   * The asset's content hash, when known at the point of refusal (mediaAltPreviewAction's
+   *  pre-hash failures, a malformed request or an invalid hash string, carry none).
+   */
+  hash?: string;
 }
 
 /**
@@ -143,11 +144,10 @@ export interface MediaBulkFailure {
 
 /**
  * A refused upload: the pre-store gates (session, media-off, missing bucket, oversized or
- *  disallowed content) and the mediaLibraryUploadAction commit's own conflict bounce. Just the one-line
- *  summary; a refusal here never stores bytes or commits a row. Module-internal: the client reads
- *  the envelope's `error` string loosely, so no other module names this type.
+ *  disallowed content) and the mediaLibraryUploadAction commit's own `fail(409)` on a conflict.
+ *  Just the one-line summary; a refusal here never stores bytes or commits a row.
  */
-interface MediaUploadFailure {
+export interface MediaUploadFailure {
   error: string;
 }
 
@@ -341,6 +341,14 @@ function replacementToken(slug: string, hash: string): string {
 
 /** The fail(503) message every media action returns when the site declares no assets block. */
 const MEDIA_DISABLED_MESSAGE = 'Media is not enabled for this site.';
+/** The fail(409) message every action that read-modify-commits media.json answers a conflict with. */
+const MANIFEST_CONFLICT_MESSAGE = 'The media manifest changed since you opened it. Reload and try again.';
+/**
+ * The fail(409) message the two actions that rewrite entry bodies (replace-in-place, alt fill)
+ *  answer a conflict with. Names the site rather than the manifest, since what moved under the
+ *  editor is the content, not media.json.
+ */
+const CONTENT_CONFLICT_MESSAGE = 'The site changed since you opened it. Reload and try again.';
 
 /**
  * Resolve the R2 bucket for an action that reads or writes raw bytes, refusing before any write
@@ -377,9 +385,9 @@ export function createMediaActions(ctx: ContentRoutesContext) {
   async function mediaLibraryLoad(event: CairnEvent): Promise<MediaLibraryData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
-    // Read the flash flags a redirected action carried back, mirroring listLoad's `?error`/
-    // `?publishedAll` grammar: a deleted/updated success flag and a commit-conflict error. The
-    // conflict error rides its own slot so it never collides with the degraded-load `error` below.
+    // Read the flash flags a redirected action carried back: a deleted/updated/etc success flag.
+    // No media action redirects with a `?error=` any more (every refusal answers in place through
+    // `fail()`), so this load carries no conflict-error slot to collide with the one below.
     let flash: MediaLibraryData['flash'] = null;
     if (event.url.searchParams.get('deleted') === '1') flash = 'deleted';
     else if (event.url.searchParams.get('updated') === '1') flash = 'updated';
@@ -388,7 +396,6 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     else if (event.url.searchParams.get('bulkDeleted') === '1') flash = 'bulkDeleted';
     else if (event.url.searchParams.get('orphansPurged') === '1') flash = 'orphansPurged';
     else if (event.url.searchParams.get('uploaded') === '1') flash = 'uploaded';
-    const flashError = event.url.searchParams.get('error');
     const backend = ctx.resolveBackend(event);
 
     // Union the media manifest by hash: main's rows first, then any branch hash not already present.
@@ -422,7 +429,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     } catch {
       // A wholesale read failure leaves whatever rows were already unioned; the screen lists them
       // with no usage overlay rather than failing.
-      return { assets: [...union.values()].map(mediaLibraryEntry), usage: {}, error: 'Could not load media.', flash, flashError };
+      return { assets: [...union.values()].map(mediaLibraryEntry), usage: {}, error: 'Could not load media.', flash };
     }
     const assets = [...union.values()].map(mediaLibraryEntry);
 
@@ -442,7 +449,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       usage = {};
     }
 
-    return { assets, usage, error: null, flash, flashError };
+    return { assets, usage, error: null, flash };
   }
 
   /**
@@ -460,11 +467,11 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    * status-0 response under the client's `redirect: 'manual'`), so the `fail(401, 'session_expired')`
    * below is a belt-and-suspenders for a direct or un-guarded call, not the primary path.
    */
-  async function ingestAndStore(event: CairnEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+  async function ingestAndStore(event: CairnEvent): Promise<ActionFailure<MediaUploadFailure> | UploadResult> {
     // Read the editor up front for log attribution; the gate at step 4 enforces its presence. The
     // pre-session gates (1 to 3) may log with an undefined editor email, which is fine.
     const editor = event.locals.cairnEditor ?? null;
-    const refuse = (status: number, reason: string): ReturnType<typeof fail> => {
+    const refuse = (status: number, reason: string): ActionFailure<MediaUploadFailure> => {
       log.warn('media.upload_failed', { editor: editor?.email, reason });
       return fail(status, { error: reason } satisfies MediaUploadFailure);
     };
@@ -591,7 +598,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    * `UploadResult` (also a 200 envelope). The action logs `media.upload_failed` on a refusal and
    * `media.uploaded` on success. Delegates to `ingestAndStore`, the shared store-and-derive body.
    */
-  async function uploadAction(event: CairnEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+  async function uploadAction(event: CairnEvent): Promise<ActionFailure<MediaUploadFailure> | UploadResult> {
     return ingestAndStore(event);
   }
 
@@ -602,10 +609,10 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  server derives and commits every field, trusting nothing client-posted (`ingestAndStore`'s
    *  contract). A hash already present in the manifest is an idempotent no-op: the asset (and its
    *  row) already exist, so the upload commits nothing and still returns the success envelope.
-   *  Mirrors the safe-delete/rename commit shape, but returns a `fail(409)` envelope on a conflict
-   *  rather than a redirect, since this action's client reads a JSON envelope, not a bounce.
+   *  Mirrors the safe-delete/rename commit shape: a conflict answers with a `fail(409)` envelope,
+   *  which this action's client reads as JSON rather than following.
    */
-  async function mediaLibraryUploadAction(event: CairnEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+  async function mediaLibraryUploadAction(event: CairnEvent): Promise<ActionFailure<MediaUploadFailure> | UploadResult> {
     const result = await ingestAndStore(event);
     if (!('record' in result)) return result;
     const editor = event.locals.cairnEditor!; // ingestAndStore already refused a missing session.
@@ -631,9 +638,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     } catch (err) {
       ctx.logCommitFailed(commitFields, err);
       if (!isConflict(err)) throw err;
-      return fail(409, {
-        error: 'The media manifest changed since you opened it. Reload and try again.',
-      } satisfies MediaUploadFailure);
+      return fail(409, { error: MANIFEST_CONFLICT_MESSAGE } satisfies MediaUploadFailure);
     }
     return result;
   }
@@ -658,7 +663,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  hash, so a reference added in that window still resolves to bytes that may be gone, the same
    *  delete-races-an-edit window every safe delete carries.
    */
-  async function mediaDeleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaDeleteAction(event: CairnEvent): Promise<ActionFailure<MediaDeleteRefusal>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -739,8 +744,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The media manifest changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, { error: MANIFEST_CONFLICT_MESSAGE, hash, usage: [], foundIn } satisfies MediaDeleteRefusal);
     }
     // THEN delete the object. An absent object is a no-op (the R2 contract), so a dead row clears.
     await store.delete(objectKey);
@@ -769,7 +773,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  aborts the rest of the batch. The result is an itemized 207-style summary the component renders
    *  (deleted / skipped with reasons / failed); there is no success redirect.
    */
-  async function mediaBulkDeleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
+  async function mediaBulkDeleteAction(event: CairnEvent): Promise<ActionFailure<MediaBulkFailure> | MediaBulkDeleteResult> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -833,8 +837,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The media manifest changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, { error: MANIFEST_CONFLICT_MESSAGE } satisfies MediaBulkFailure);
     }
 
     // THEN delete each deletable hash's R2 object (the load-bearing order, see the docstring). Best
@@ -873,7 +876,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  row, the purge surface) and brokenRefs (manifest rows whose bytes are gone, read-only, shown
    *  with their where-used so an operator can re-ingest rather than purge a still-referenced record).
    */
-  async function mediaOrphanScanAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaOrphanScanResult> {
+  async function mediaOrphanScanAction(event: CairnEvent): Promise<ActionFailure<MediaBulkFailure> | MediaOrphanScanResult> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -931,7 +934,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  the R2 object directly. Each delete is best-effort and batch-resilient: a per-object error is
    *  reported in `failed` and the loop continues; an absent object is a no-op (the R2 contract).
    */
-  async function mediaOrphanPurgeAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
+  async function mediaOrphanPurgeAction(event: CairnEvent): Promise<ActionFailure<MediaBulkFailure> | MediaOrphanPurgeResult> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -1005,7 +1008,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  rename never breaks an existing `media:` reference. The default alt is the asset's value for the
    *  next placement, never a propagating edit of the alt already committed in existing placements.
    */
-  async function mediaUpdateAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaUpdateAction(event: CairnEvent): Promise<ActionFailure<MediaUpdateFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -1017,14 +1020,14 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     const manifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = manifest[hash];
     if (!row) {
-      return fail(404, { error: 'That asset is not committed.' } satisfies MediaUpdateFailure);
+      return fail(404, { error: 'That asset is not committed.', hash } satisfies MediaUpdateFailure);
     }
 
     const displayName = sanitizeField(String(form.get('displayName') ?? ''), MAX_DISPLAY_NAME);
     const slug = String(form.get('slug') ?? '').trim();
     const alt = sanitizeField(String(form.get('alt') ?? ''), MAX_ALT);
     if (!MEDIA_SLUG_RE.test(slug)) {
-      return fail(400, { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.' } satisfies MediaUpdateFailure);
+      return fail(400, { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.', hash } satisfies MediaUpdateFailure);
     }
 
     const edited: MediaEntry = { ...row, displayName: displayName || slug, slug, alt };
@@ -1038,8 +1041,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The media manifest changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, { error: MANIFEST_CONFLICT_MESSAGE, hash } satisfies MediaUpdateFailure);
     }
     throw redirect(303, '/admin/media?updated=1');
   }
@@ -1057,7 +1059,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  with the MediaReplaceFailure shape (the same fail shape the apply uses), so the client reads
    *  `type`/`status` from the body, never the HTTP status.
    */
-  async function mediaReplacePreviewAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaReplacePreviewPlan> {
+  async function mediaReplacePreviewAction(event: CairnEvent): Promise<ActionFailure<MediaReplaceFailure> | MediaReplacePreviewPlan> {
     // CSRF first: this is a raw-body (JSON) POST, so the header witness is the authority, like the
     // upload action. A failed check refuses before the session read or any GitHub call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
@@ -1140,7 +1142,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  bytes are KEPT (the old row stays in media.json), so this action writes only to git and never
    *  resolves the bucket binding. It guards `resolvedAssets.enabled` for the media-off case only.
    */
-  async function mediaReplaceAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaReplaceAction(event: CairnEvent): Promise<ActionFailure<MediaReplaceFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -1234,8 +1236,12 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('media.replaced', { editor: editor.email, oldHash, newHash, affected: plan.affectedCount });
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The site changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: CONTENT_CONFLICT_MESSAGE,
+        hash: oldHash,
+        usage: [],
+        foundIn: plan.affectedCount,
+      } satisfies MediaReplaceFailure);
     }
     throw redirect(303, '/admin/media?replaced=1');
   }
@@ -1253,7 +1259,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  ActionResult the client reads. A refusal rides a `fail(status, ...)` envelope with the
    *  MediaAltPropagateFailure shape, so the client reads `type`/`status` from the body.
    */
-  async function mediaAltPreviewAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaAltPreviewPlan> {
+  async function mediaAltPreviewAction(event: CairnEvent): Promise<ActionFailure<MediaAltPropagateFailure> | MediaAltPreviewPlan> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
     // replace-preview actions. A failed check refuses before the session read or any GitHub call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
@@ -1331,7 +1337,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  that changes nothing commits nothing and still redirects (a no-op success). It fails the operation
    *  closed on an unverifiable usage read, and writes only entry files in git (no R2 op).
    */
-  async function mediaAltPropagateAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaAltPropagateAction(event: CairnEvent): Promise<ActionFailure<MediaAltPropagateFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -1345,12 +1351,12 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     const mediaManifest = parseMediaManifest(ctx.parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     const row = mediaManifest[hash];
     if (!row) {
-      return fail(404, { error: 'That asset is not committed.' } satisfies MediaAltPropagateFailure);
+      return fail(404, { error: 'That asset is not committed.', hash } satisfies MediaAltPropagateFailure);
     }
 
     // Media-enabled guard only: alt fill does no R2 write, so there is no bucket binding to resolve.
     if (!runtime.resolvedAssets.enabled) {
-      return fail(503, { error: MEDIA_DISABLED_MESSAGE } satisfies MediaAltPropagateFailure);
+      return fail(503, { error: MEDIA_DISABLED_MESSAGE, hash } satisfies MediaAltPropagateFailure);
     }
 
     // Re-derive from a FRESH content-manifest read with the actual overwrite choice. Strict, so an
@@ -1365,7 +1371,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
         transform: (md) => fillAltForHash(md, hash, row.alt, { overwrite }),
       });
     } catch {
-      return fail(503, { error: 'Could not verify where this asset is used. Try again.' } satisfies MediaAltPropagateFailure);
+      return fail(503, { error: 'Could not verify where this asset is used. Try again.', hash } satisfies MediaAltPropagateFailure);
     }
 
     // Commit only the entries the transform actually changed. A reported-but-unchanged placement (a
@@ -1385,8 +1391,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('media.alt_propagated', { editor: editor.email, hash, overwrite, written: changed.length });
     } catch (err) {
-      ctx.commitFailure(commitFields, err, '/admin/media',
-        'The site changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, { error: CONTENT_CONFLICT_MESSAGE, hash } satisfies MediaAltPropagateFailure);
     }
     throw redirect(303, '/admin/media?altPropagated=1');
   }

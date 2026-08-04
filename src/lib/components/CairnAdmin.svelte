@@ -61,7 +61,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 {#if data.view === 'login'}
   <LoginPage data={{ ...data.page, theme: publicTheme }} {form} />
 {:else if data.view === 'confirm'}
-  <ConfirmPage data={{ ...data.page, theme: publicTheme }} />
+  <ConfirmPage data={{ ...data.page, theme: publicTheme }} {form} />
 {:else if data.view === 'list'}
   <!-- The single mount reuses this component across /admin/posts -> /admin/pages, so the
        concept id keys the list: crossing concepts remounts it and drops the old query,
@@ -81,13 +81,13 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 {:else if data.view === 'editors'}
   <ManageEditors data={data.page} {form} />
 {:else if data.view === 'nav'}
-  <NavTree data={data.page} />
+  <NavTree data={data.page} {form} />
 {:else if data.view === 'media'}
   <CairnMediaLibrary data={data.page} {form} />
 {:else if data.view === 'settings'}
-  <CairnTidySettings data={data.page} />
+  <CairnTidySettings data={data.page} {form} />
 {:else if data.view === 'vocabulary'}
-  <VocabularyAdmin data={data.page} />
+  <VocabularyAdmin data={data.page} {form} />
 {:else if data.view === 'help'}
   <HelpHome data={data.page} />
 {:else if data.view === 'welcome'}

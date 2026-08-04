@@ -1,7 +1,7 @@
 // The admin nav-editing routes: the load and save a site's /admin/nav shim calls. A factory closes
 // over the composed runtime, mirroring createContentRoutes, so the read and commit paths are
 // unit-testable against a fetch double riding the event's locals.cairnBackend seam.
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
@@ -22,7 +22,14 @@ export interface NavLoadData {
   tree: NavNode[];
   pages: NavPageOption[];
   saved: boolean;
-  error: string | null;
+}
+
+/**
+ * A refused nav save: `fail(400)` on an invalid posted tree, `fail(409)` when the config's head
+ *  moved since the editor opened the page.
+ */
+export interface NavSaveFailure {
+  error: string;
 }
 
 /** Build the nav editor's load and save functions, closed over the composed runtime. */
@@ -91,12 +98,11 @@ export function createNavRoutes(runtime: CairnRuntime) {
       tree,
       pages: await pageOptions(backend),
       saved: event.url.searchParams.get('saved') === '1',
-      error: event.url.searchParams.get('error'),
     };
   }
 
   /** Save the nav tree: validate, then read-modify-commit the one menu with the session editor as author. */
-  async function navSaveAction(event: CairnEvent): Promise<never> {
+  async function navSaveAction(event: CairnEvent): Promise<ActionFailure<NavSaveFailure>> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
     const config = runtime.navMenu;
@@ -108,8 +114,15 @@ export function createNavRoutes(runtime: CairnRuntime) {
     try {
       tree = validateNavTree(JSON.parse(String(form.get('tree') ?? '[]')), maxDepth);
     } catch (err) {
+      // A SyntaxError from JSON.parse embeds a snippet of the posted string in its own message
+      // (V8's own diagnostic), so it gets fixed, generic copy rather than reflecting posted-body
+      // content into the alert; NavValidationError's messages are all engine-authored fixed
+      // strings, safe to surface directly.
+      if (err instanceof SyntaxError) {
+        return fail(400, { error: 'That navigation could not be read. Reload and try again.' } satisfies NavSaveFailure);
+      }
       const message = err instanceof Error ? err.message : 'Invalid navigation';
-      throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
+      return fail(400, { error: message } satisfies NavSaveFailure);
     }
 
     const backend = resolveBackend(event);
@@ -132,12 +145,9 @@ export function createNavRoutes(runtime: CairnRuntime) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      commitFailure(
-        commitFields,
-        err,
-        '/admin/nav',
-        'The site config changed since you opened it. Reload and reapply your edits.',
-      );
+      return commitFailure(commitFields, err, {
+        error: 'The site config changed since you opened it. Reload and reapply your edits.',
+      } satisfies NavSaveFailure);
     }
 
     throw redirect(303, '/admin/nav?saved=1');

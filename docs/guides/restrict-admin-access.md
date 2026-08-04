@@ -95,14 +95,19 @@ export const load = (event) => {
 };
 ```
 
-The zero-argument call reads `event.url.pathname`, the common case. Pass an explicit `target` when
-a route's action needs to check a different path than the one it's mounted at. There's one
-sharp edge worth knowing before you reach for this helper: an *unmatched* path (the map has no key
-that covers it at all) refuses every session, owner included, not just the roles the map doesn't
-name. The helper's contract is "this route opted into the map, and the map has no opinion on it,"
-a misconfiguration made loud, not an access decision, so `canReach`'s owner bypass doesn't apply
-here. If a route wants the zero-config any-editor behavior instead, call `requireSession` or
-`requireEditor` and don't map that path at all.
+The zero-argument call reads `event.route.id`, never `event.url.pathname`: on a catch-all route
+the request path is attacker-chosen while the route id isn't, so a map stays keyed by the route's
+compile-time shape rather than whatever a request happens to carry. A static route's id and path
+are the same string, so this reads no differently for the preceding worked example. A parameterized
+or catch-all route's map key needs the bracket-form route id (`/admin/posts/[id]`), never a
+concrete path. Pass an explicit `target` when a route's action needs to check a different path
+than the one it's mounted at. There's one sharp edge worth knowing before you reach for this
+helper: an *unmatched* target, the map has no key that covers it at all, refuses every session,
+owner included, not just the roles the map doesn't name. The helper's contract is "this route
+opted into the map, and the map has no opinion on it," a misconfiguration made loud, not an access
+decision, so `canReach`'s owner bypass doesn't apply here. If a route wants the zero-config
+any-editor behavior instead, call `requireSession` or `requireEditor` and don't map that path at
+all.
 
 ## Deny at the route, never merely hide
 

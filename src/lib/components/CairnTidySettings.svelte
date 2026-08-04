@@ -48,7 +48,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
   import InfoIcon from '@lucide/svelte/icons/info';
   import ArrowRightIcon from '@lucide/svelte/icons/arrow-right';
   import SparklesIcon from '@lucide/svelte/icons/sparkles';
-  import type { SettingsData } from '../sveltekit/content-routes.js';
+  import type { SettingsData, ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { TidyConventions } from '../nav/site-config.js';
   import { segmentTintClass } from './segmented-control.js';
   import { PageHeader, StatusChip } from '../admin-toolkit/index.js';
@@ -57,9 +57,16 @@ bespoke (ruling 7): a single-use control, not a repeated device.
     /** The two-tier settings load: the read-only developer facts, the truthful gate flag, and the
      *  resolved editor-tier conventions. */
     data: SettingsData;
+    /** The last save's result: a refused `fail()` envelope carrying the reload-and-reapply
+     *  message or a rejected conventions block. */
+    form?: ContentFormFailure | null;
   }
 
-  let { data }: Props = $props();
+  let { data, form = null }: Props = $props();
+
+  // The one lifecycle error to announce: a rejected save's fail(). Every settings-save refusal
+  // now answers in place, so this load carries no `?error=` bounce.
+  const lifecycleError = $derived(form?.error ?? '');
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
@@ -71,16 +78,18 @@ bespoke (ruling 7): a single-use control, not a repeated device.
   function nonce(): string {
     return announceNonce % 2 === 0 ? '' : '​';
   }
-  // Each save hands a fresh `data` object (the action redirects on both success and failure, so the
-  // component always remounts), so the nonce bumps once per load, keyed to the load identity.
-  let lastData: unknown;
+  // Each submit hands a fresh `form` (or `data` on a load) object, so the nonce bumps once per
+  // submit or load, keyed to that identity rather than to a string change the live region would
+  // swallow.
+  let lastSubmit: unknown;
   $effect(() => {
-    if (data !== lastData) {
-      lastData = data;
-      if (data.error) announceNonce++;
+    const submit = form ?? data;
+    if (submit !== lastSubmit) {
+      lastSubmit = submit;
+      if (lifecycleError) announceNonce++;
     }
   });
-  const liveError = $derived(data.error ? `${data.error}${nonce()}` : '');
+  const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
 
   // The working copy of the editor-tier conventions: every control binds to this, and the save posts
   // it. Seeded once from the load's resolved conventions, so the resting state IS the committed state.
@@ -336,8 +345,8 @@ bespoke (ruling 7): a single-use control, not a repeated device.
   {#if data.saved}
     <div role="status" class="alert alert-success mt-4 type-body">Tidy settings saved.</div>
   {/if}
-  {#if data.error}
-    <div class="alert alert-error mt-4 type-body">{data.error}</div>
+  {#if lifecycleError}
+    <div class="alert alert-error mt-4 type-body">{lifecycleError}</div>
   {/if}
 
   <!-- DEVELOPER TIER, read-only: the three deploy-time facts the editor depends on, model included as

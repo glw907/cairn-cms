@@ -54,6 +54,16 @@ the auth database binding is missing, rather than rendering a login form that ca
 Every response the guard lets through carries a baseline of hardening headers regardless: no
 framing, no sniffing, no referrer, HSTS.
 
+A crafted `?error=` link is inert. Every admin load that can receive an `?error=` value resolves
+it against a small internal vocabulary before it ever reaches a component, and drops anything it
+doesn't recognize; no admin screen puts the raw query string in front of an editor, whether in a
+plain alert or an `aria-live` region a screen reader announces immediately. This closes a
+link-crafting surface: eight loads used to read `?error=` and render its value verbatim inside a
+branded alert, so a link carrying an arbitrary sentence in the query string could put
+attacker-chosen text inside the CMS's own voice, on a page the editor already trusts. The login
+and confirm pages carry the two remaining raw `?error=` reads; both treat the value as a boolean
+flag, showing or hiding one fixed, engine-authored sentence, never the query value itself.
+
 **Residual risk.** The email account is now the credential. Anyone who reads an editor's inbox
 in the ten minutes after a request can claim their session, which is the trade every magic-link
 system makes in exchange for never asking a non-technical editor to manage a password.
@@ -81,6 +91,17 @@ OWASP A01). Nav placement is never the authorization here; the map, checked at t
 money screens" but not "this instructor reaches only their own class," since that needs state the
 map doesn't carry (which class, which instructor). A site that needs row-level scoping still owns
 that check itself, inside the route the map already gated to the right role.
+
+An href target derived from `event.route.id` matches the deepest path-segment-prefix key the map
+declares. Under a dynamic route segment (`/admin/money/[report]`), a key deeper than the segment
+can never literally match it, so a site that keys both `/admin/money` and a stricter
+`/admin/money/payroll`, meaning the second to override the first, would see every request the
+dynamic segment serves resolve against the shallower rule instead: the deeper rule dead code, with
+no error at declaration time. `requireAccess` and `createSectionAction` both refuse this shape
+outright (403, owner included) rather than silently admitting through the shallower key, so the
+site's own misconfiguration surfaces as a lockout to fix, not a quiet overgrant. A site relying on
+per-value authorization under a dynamic segment needs a declared `target` and its own check inside
+the route; the map's key-matching alone can't express it.
 
 ## What a save can write
 

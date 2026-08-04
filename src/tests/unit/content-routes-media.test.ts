@@ -203,7 +203,7 @@ describe('mediaLibraryLoad degrade paths', () => {
     const data = await routes.mediaLibraryLoad(libraryEvent('', failingBackend) as never);
     // The token mint is lazy inside the first read now, so a token failure lands in the one
     // could-not-load-media degrade rather than the old separate auth tier.
-    expect(data).toEqual({ assets: [], usage: {}, error: 'Could not load media.', flash: null, flashError: null });
+    expect(data).toEqual({ assets: [], usage: {}, error: 'Could not load media.', flash: null });
   });
 });
 
@@ -224,7 +224,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?deleted=1') as never);
     expect(data.flash).toBe('deleted');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the updated flash from ?updated=1', async () => {
@@ -232,7 +231,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?updated=1') as never);
     expect(data.flash).toBe('updated');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the replaced flash from ?replaced=1', async () => {
@@ -240,7 +238,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?replaced=1') as never);
     expect(data.flash).toBe('replaced');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the altPropagated flash from ?altPropagated=1', async () => {
@@ -248,7 +245,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?altPropagated=1') as never);
     expect(data.flash).toBe('altPropagated');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the bulkDeleted flash from ?bulkDeleted=1', async () => {
@@ -256,7 +252,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?bulkDeleted=1') as never);
     expect(data.flash).toBe('bulkDeleted');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the orphansPurged flash from ?orphansPurged=1', async () => {
@@ -264,7 +259,6 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?orphansPurged=1') as never);
     expect(data.flash).toBe('orphansPurged');
-    expect(data.flashError).toBeNull();
   });
 
   it('reads the uploaded flash from ?uploaded=1', async () => {
@@ -272,25 +266,20 @@ describe('mediaLibraryLoad flash flags', () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent('?uploaded=1') as never);
     expect(data.flash).toBe('uploaded');
-    expect(data.flashError).toBeNull();
   });
 
-  it('reads the conflict error from ?error= into flashError, not the load error slot', async () => {
-    gh();
-    const routes = createContentRoutes(runtime());
-    const data = await routes.mediaLibraryLoad(libraryEvent('?error=The%20media%20manifest%20changed.') as never);
-    expect(data.flashError).toBe('The media manifest changed.');
-    expect(data.flash).toBeNull();
-    // The degraded-load error slot stays null on a successful load: the conflict error rides flashError.
-    expect(data.error).toBeNull();
-  });
-
-  it('returns null flash and flashError when the URL carries no flag', async () => {
+  it('returns null flash when the URL carries no flag', async () => {
     gh();
     const routes = createContentRoutes(runtime());
     const data = await routes.mediaLibraryLoad(libraryEvent() as never);
     expect(data.flash).toBeNull();
-    expect(data.flashError).toBeNull();
+  });
+
+  it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
+    gh();
+    const routes = createContentRoutes(runtime());
+    const data = await routes.mediaLibraryLoad(libraryEvent('?error=You+have+been+signed+out') as never);
+    expect(data).not.toHaveProperty('flashError');
   });
 });
 
@@ -577,6 +566,38 @@ describe('mediaDeleteAction orphan delete', () => {
     expect(bucket.delete).not.toHaveBeenCalled();
     expect(timeline).toEqual([]);
   });
+
+  it('answers a manifest commit conflict as fail(409), leaving the row and the bytes untouched', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: {
+        [MEDIA_PATH]: mediaManifest(mediaEntry(HASH_ORPHAN, 'orphan')),
+        [MANIFEST_PATH]: contentManifest([]),
+      },
+    });
+    gh.install();
+    // The manifest commit's ref update fails the way GitHub signals a stale head.
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if ((init?.method ?? 'GET').toUpperCase() === 'PATCH' && url.includes('/git/refs/heads/main')) {
+        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      }
+      return double(input, init);
+    }));
+    const timeline: string[] = [];
+    const bucket = fakeBucket(timeline);
+    const routes = createContentRoutes(runtime());
+    const result = (await routes.mediaDeleteAction(
+      mediaActionEvent({ hash: HASH_ORPHAN }, bucket, timeline) as never,
+    )) as unknown as { status: number; data: { error: string; hash: string; usage: unknown[]; foundIn: number } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
+    expect(result.data.hash).toBe(HASH_ORPHAN);
+    // The commit never landed, so the row-then-bytes order stops before the R2 delete.
+    expect(bucket.delete).not.toHaveBeenCalled();
+    expect(parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!))[HASH_ORPHAN]).toBeDefined();
+  });
 });
 
 describe('mediaUpdateAction', () => {
@@ -641,7 +662,10 @@ describe('mediaUpdateAction', () => {
     const result = await routes.mediaUpdateAction(
       mediaActionEvent({ hash: HASH_MAIN, slug: 'Not A Slug', displayName: 'x' }, bucket, timeline) as never,
     );
-    expect(result).toMatchObject({ status: 400 });
+    // A refusal that leaves the slide-over open on a full-page (no use:enhance) re-render must
+    // carry the asset's own hash, or the Library's re-surface effect cannot find it and the error
+    // renders nowhere (a real regression this pin closes).
+    expect(result).toMatchObject({ status: 400, data: { hash: HASH_MAIN } });
   });
 
   it('returns fail(404) for an asset not committed on main', async () => {
@@ -655,6 +679,32 @@ describe('mediaUpdateAction', () => {
     const result = await routes.mediaUpdateAction(
       mediaActionEvent({ hash: HASH_BRANCH, slug: 'x', displayName: 'x' }, bucket, timeline) as never,
     );
-    expect(result).toMatchObject({ status: 404 });
+    expect(result).toMatchObject({ status: 404, data: { hash: HASH_BRANCH } });
+  });
+
+  it('answers a manifest commit conflict as fail(409) carrying the asset hash', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: { [MEDIA_PATH]: mediaManifest(mediaEntry(HASH_MAIN, 'old-slug')), [MANIFEST_PATH]: contentManifest([]) },
+    });
+    gh.install();
+    // The manifest commit's ref update fails the way GitHub signals a stale head.
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      if ((init?.method ?? 'GET').toUpperCase() === 'PATCH' && url.includes('/git/refs/heads/main')) {
+        return new Response('{"message":"Update is not a fast forward"}', { status: 422 });
+      }
+      return double(input, init);
+    }));
+    const timeline: string[] = [];
+    const bucket = fakeBucket(timeline);
+    const routes = createContentRoutes(runtime());
+    const result = await routes.mediaUpdateAction(
+      mediaActionEvent({ hash: HASH_MAIN, slug: 'new-slug', displayName: 'New name' }, bucket, timeline) as never,
+    );
+    expect(result).toMatchObject({ status: 409, data: { hash: HASH_MAIN } });
+    const data = (result as { data: { error: string } }).data;
+    expect(data.error).toMatch(/changed since/i);
   });
 });

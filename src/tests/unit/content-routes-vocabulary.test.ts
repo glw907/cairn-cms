@@ -81,8 +81,8 @@ function seeded(): GithubDouble {
   return gh;
 }
 
-function loadEvent() {
-  return contentEvent({ url: 'https://t.example/admin/vocabulary' });
+function loadEvent(search = '') {
+  return contentEvent({ url: `https://t.example/admin/vocabulary${search}` });
 }
 
 function saveEvent(vocabularyJson: string) {
@@ -141,6 +141,13 @@ describe('vocabularyLoad', () => {
     expect(data.usage).toEqual({});
     expect(data.unlisted).toEqual([]);
   });
+
+  it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
+    seeded();
+    const routes = createContentRoutes(runtime());
+    const data = await routes.vocabularyLoad(loadEvent('?error=You+have+been+signed+out') as never);
+    expect(data).not.toHaveProperty('error');
+  });
 });
 
 describe('vocabularySaveAction', () => {
@@ -179,15 +186,16 @@ describe('vocabularySaveAction', () => {
     expect(reparsed.map((v) => v.value)).toEqual(['svelte', 'rust', 'extra']);
   });
 
-  it('rejects removing an in-use value, naming it, with no commit', async () => {
+  it('refuses removing an in-use value in place, naming it, with no commit', async () => {
     const gh = seeded();
     const routes = createContentRoutes(runtime());
     // Drop svelte, which the seeded post carries: blocked by the strict cross-branch gate.
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
-    const { status, location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/vocabulary\?error=/);
-    expect(decodeURIComponent(location)).toContain('svelte');
+    const result = (await routes.vocabularySaveAction(
+      saveEvent(posted) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toContain('svelte');
     // No commit landed: the committed vocabulary still carries both entries.
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
     const reparsed = extractVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
@@ -205,41 +213,59 @@ describe('vocabularySaveAction', () => {
     expect(reparsed.map((v) => v.value)).toEqual(['svelte']);
   });
 
-  it('bounces a malformed posted vocabulary back to the form and never commits', async () => {
+  it('refuses a malformed posted vocabulary in place and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime());
     // A value that violates SAFE_TAG_VALUE makes validateVocabulary throw.
-    const { status, location } = await expectRedirect(() =>
-      routes.vocabularySaveAction(saveEvent('[{"value":"Not A Slug","label":"x"}]') as never),
-    );
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/vocabulary\?error=/);
+    const result = (await routes.vocabularySaveAction(
+      saveEvent('[{"value":"Not A Slug","label":"x"}]') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('redirects with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
+  it('refuses malformed JSON with generic copy, never reflecting the posted body into the alert', async () => {
+    // JSON.parse's own SyntaxError embeds a snippet of the posted string in its message; that must
+    // never reach the response, only fixed copy (the LOW7 review finding this pins).
+    const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const routes = createContentRoutes(runtime());
+    const result = (await routes.vocabularySaveAction(
+      saveEvent('<script>not json</script>') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).not.toContain('<script>');
+    expect(result.data.error).toMatch(/could not be read/i);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses in place with generic copy on a malformed committed config, keeping the parser\'s own message in the log only', async () => {
     // An unrecognized top-level key is the documented way to trigger SiteConfigError. The committed
-    // file fails to parse before the delete-gate check, so the action must bounce to the vocabulary
-    // screen's own ?error= redirect (the screen renders no `form` prop, so a fail(400) would
-    // re-render silently) rather than the generic 500 an uncaught throw would produce.
+    // file fails to parse before the delete-gate check, so the action must answer the posting screen
+    // with a fail(500) (now that the screen renders a `form` prop) rather than the generic 500 an
+    // uncaught throw would produce. The response carries fixed, generic copy: the parser's own
+    // message can echo a misplaced key or value straight from the committed file, so it stays in
+    // the log record for the site's operator, never in the editor-facing alert.
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n', [MANIFEST_PATH]: SEED_MANIFEST } });
     gh.install();
     const routes = createContentRoutes(runtime());
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
-    const { status, location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/vocabulary\?error=/);
-    expect(decodeURIComponent(location)).toMatch(/unrecognized key "weird"/);
+    const result = (await routes.vocabularySaveAction(
+      saveEvent(posted) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(500);
+    expect(result.data.error).not.toMatch(/weird/);
+    expect(result.data.error).toMatch(/not available/i);
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
-    // config.invalid's scope names the calling screen, distinguishing this redirect path from
-    // vocabularyLoad's own degrade path (both share the same underlying parser failure).
-    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
+    // config.invalid's scope names the calling screen, distinguishing this refusal path from
+    // vocabularyLoad's own degrade path (both share the same underlying parser failure). The
+    // parser's own actionable message rides the log record, not the response.
+    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string; error?: string }];
     expect(record).toMatchObject({ event: 'config.invalid', scope: 'vocabulary' });
-    // The load reads the same ?error= param back as data.error.
-    const data = await routes.vocabularyLoad(contentEvent({ url: `https://t.example${location}` }) as never);
-    expect(data.error).toMatch(/unrecognized key "weird"/);
+    expect(record.error).toMatch(/unrecognized key "weird"/);
   });
 
   it('degrades to an empty vocabulary and logs config.invalid scoped to vocabulary when the committed config is malformed', async () => {
@@ -281,7 +307,10 @@ describe('vocabularySaveAction', () => {
       { value: 'svelte', label: 'SvelteKit' },
       { value: 'rust', label: 'Rust' },
     ]);
-    const { location } = await expectRedirect(() => routes.vocabularySaveAction(saveEvent(posted) as never));
-    expect(location).toMatch(/error=.*changed%20since/i);
+    const result = (await routes.vocabularySaveAction(
+      saveEvent(posted) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
   });
 });

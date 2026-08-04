@@ -15,9 +15,13 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
      * the cookie carries no auth, so it applies before sign-in too). Optional so a test render
      * need not supply it; the real shell payload always does. */
     data: { token: string; siteName: string; error: string | null; csrf: string; theme?: 'cairn-admin' | 'cairn-admin-dark' };
+    /** The confirm action's result: `error` on an unexpected failure (viewAction's generic
+     * fail(500)), so it renders in place of the generic expired-link copy. Optional so a test
+     * render need not supply it. */
+    form?: { error?: string } | null;
   }
 
-  let { data }: Props = $props();
+  let { data, form = null }: Props = $props();
 </script>
 
 <svelte:head>
@@ -37,7 +41,11 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
       <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
     </div>
 
-    {#if data.error || !data.token}
+    {#if form?.error}
+      <h1 class="mb-2 type-heading font-bold font-[family-name:var(--font-display)]">This didn’t work</h1>
+      <div role="alert" class="alert alert-error type-body">{form.error}</div>
+      <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Back to sign in</a>
+    {:else if data.error || !data.token}
       <h1 class="mb-2 type-heading font-bold font-[family-name:var(--font-display)]">This link didn’t work</h1>
       <div role="alert" class="alert alert-error type-body">This sign-in link is invalid or expired.</div>
       <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Request a new link</a>

@@ -107,14 +107,16 @@ describe('settingsSaveAction', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('bounces a malformed conventions payload back to the form and never commits', async () => {
+  it('refuses a malformed conventions payload in place and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime());
     // oxfordComma carries a value outside its allowed set.
-    const { status, location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"oxfordComma":"sometimes"}') as never));
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/settings\?error=/);
+    const result = (await routes.settingsSaveAction(
+      saveEvent('{"oxfordComma":"sometimes"}') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toBeTruthy();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -134,8 +136,11 @@ describe('settingsSaveAction', () => {
       return new Response('{}', { status: 200 });
     }));
     const routes = createContentRoutes(runtime());
-    const { location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"fixes":true}') as never));
-    expect(location).toMatch(/error=.*changed%20since/i);
+    const result = (await routes.settingsSaveAction(
+      saveEvent('{"fixes":true}') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
   });
 
   it('404s when the config file is gone at save time', async () => {
@@ -144,29 +149,30 @@ describe('settingsSaveAction', () => {
     await expect(routes.settingsSaveAction(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
   });
 
-  it('redirects with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
+  it('refuses in place with generic copy on a malformed committed config, keeping the parser\'s own message in the log only', async () => {
     // An unrecognized top-level key is the documented way to trigger SiteConfigError. The committed
-    // file fails to parse before the write, so the action must bounce to the settings screen's own
-    // ?error= redirect (the screen renders no `form` prop, so a fail(400) would re-render silently)
-    // rather than the generic 500 an uncaught throw would produce.
+    // file fails to parse before the write, so the action must answer the posting screen with a
+    // fail(500) (now that the screen renders a `form` prop) rather than the generic 500 an uncaught
+    // throw would produce. The response carries fixed, generic copy: the parser's own message can
+    // echo a misplaced key or value straight from the committed file, so it stays in the log record
+    // for the site's operator, never in the editor-facing alert.
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n' } });
     gh.install();
     const routes = createContentRoutes(runtime());
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { status, location } = await expectRedirect(() => routes.settingsSaveAction(saveEvent('{"fixes":true}') as never));
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/settings\?error=/);
-    expect(decodeURIComponent(location)).toMatch(/unrecognized key "weird"/);
+    const result = (await routes.settingsSaveAction(
+      saveEvent('{"fixes":true}') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(500);
+    expect(result.data.error).not.toMatch(/weird/);
+    expect(result.data.error).toMatch(/not available/i);
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
-    // config.invalid's scope names the calling screen, distinguishing this redirect path from
-    // vocabularyLoad's own degrade path (both share the same underlying parser failure).
-    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string }];
+    // config.invalid's scope names the calling screen, distinguishing this refusal path from
+    // vocabularyLoad's own degrade path (both share the same underlying parser failure). The
+    // parser's own actionable message rides the log record, not the response.
+    const [record] = errorSpy.mock.calls[0] as [{ event?: string; scope?: string; error?: string }];
     expect(record).toMatchObject({ event: 'config.invalid', scope: 'settings' });
-    // The load reads the same ?error= param back as data.error.
-    const data = await routes.settingsLoad(
-      contentEvent({ url: `https://t.example${location}` }) as never,
-    );
-    expect(data.error).toMatch(/unrecognized key "weird"/);
+    expect(record.error).toMatch(/unrecognized key "weird"/);
   });
 });
 
@@ -223,6 +229,17 @@ describe('settingsLoad', () => {
     const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
     expect(data.enabled).toBe(false);
     expect(data.tidyEnabled).toBe(false);
+  });
+
+  it('a crafted ?error= renders nothing at all (no field carries it)', async () => {
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('valid') } });
+    const data = await routes.settingsLoad(
+      contentEvent({
+        url: 'https://t.example/admin/settings?error=You+have+been+signed+out',
+        env: { ANTHROPIC_API_KEY: 'sk-test' },
+      }) as never,
+    );
+    expect(data).not.toHaveProperty('error');
   });
 });
 

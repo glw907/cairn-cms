@@ -117,8 +117,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   let { data, form }: Props = $props();
 
-  // The success flash a redirected action carried back: a safe-delete or a metadata edit. The
-  // conflict error (data.flashError) renders in the inline error treatment below instead.
+  // The success flash a redirected action carried back: a safe-delete or a metadata edit. Every
+  // media refusal now answers in place through `form`, so there is no redirected conflict error
+  // to carry here.
   const FLASH_MESSAGE = {
     deleted: 'Asset deleted.',
     updated: 'Changes saved.',
@@ -840,12 +841,18 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   const refusalForSelected = $derived(
     form && form.hash && selected && form.hash === selected.hash ? form : null,
   );
-  // The slide-over's error alert covers two failures that leave no in-use dialog to re-open: a pure
-  // ?/mediaUpdate failure (only `error`, no `hash`) and a hash-bearing delete refusal that is NOT an
-  // in-use block (a 404 "not committed", with `hash` but no `usage`). An in-use refusal (usage rows)
-  // re-opens the dialog instead, so it is excluded here.
+  // The slide-over's error alert covers every hash-bearing failure that leaves no in-use dialog to
+  // re-open: a ?/mediaUpdate or ?/mediaAltPropagate refusal, and a hash-bearing delete refusal that
+  // is NOT an in-use block (a 404 "not committed", with `hash` but no `usage`). An in-use refusal
+  // (usage rows) re-opens the dialog instead, so it is excluded here.
   const hasUsage = $derived((form?.usage?.length ?? 0) > 0);
   const updateError = $derived(form?.error && !hasUsage ? form.error : null);
+  // The catch-all for a refusal the effect below could not re-home: no hash at all (a shell-level
+  // action's fail(500), say), or a hash the effect could not resolve to a known asset (a 404 whose
+  // asset is genuinely absent from `data.assets` too). Excluded whenever a more specific surface
+  // already claims the message: the in-use dialog (hasUsage) or the slide-over (selected, which the
+  // effect sets whenever it finds a matching asset).
+  const topLevelError = $derived(form?.error && !hasUsage && !selected ? form.error : null);
   const breakingRows = $derived.by((): UsageEntry[] => {
     if (refusalForSelected?.usage) return refusalForSelected.usage;
     return selected ? usageEntries(selected.hash) : [];
@@ -864,9 +871,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // Forms post full-page (no use:enhance), so on a failure the screen remounts with no selection and
   // the error would render nowhere. This effect re-surfaces the failure from the `form` prop. An
   // in-use delete refusal (usage rows) re-opens the dialog on its fresh breaking list; any other
-  // hash-bearing failure (a 404 "not committed", an invalid-slug ?/mediaUpdate) re-selects the asset
-  // and opens the slide-over so its error alert renders. The action redirects on success, so a
-  // present `form` is always a failure to re-surface.
+  // hash-bearing failure (a 404 "not committed", an invalid-slug ?/mediaUpdate, a manifest-changed
+  // ?/mediaUpdate or ?/mediaAltPropagate conflict) re-selects the asset and opens the slide-over so
+  // its error alert renders. A failure this effect cannot re-home (no hash, or a hash absent from
+  // `data.assets`) falls through to the top-level banner below instead. The action redirects on
+  // success, so a present `form` is always a failure to re-surface.
   //
   // The dialog is always mounted and its body reads breakingRows/deleteInUse reactively, so set the
   // state then call showModal() directly. tick() (NOT flushSync, which Svelte's flush_sync_in_effect
@@ -1424,11 +1433,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 {#if flashMessage}
   <div class="alert alert-success mb-4 type-body">{flashMessage}</div>
 {/if}
-{#if data.flashError}
-  <div role="alert" class="alert alert-error mb-4 type-body">{data.flashError}</div>
-{/if}
 {#if data.error}
   <div role="alert" class="alert alert-warning mb-4 type-body">{data.error}</div>
+{/if}
+{#if topLevelError}
+  <div role="alert" class="alert alert-error mb-4 type-body">{topLevelError}</div>
 {/if}
 
 {#if data.assets.length === 0}

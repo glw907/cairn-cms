@@ -79,7 +79,7 @@ const USAGE: Record<string, MediaUsageInfo> = {
 };
 
 function fixture(over: Partial<MediaLibraryData> = {}): MediaLibraryData {
-  return { assets: ASSETS, usage: USAGE, error: null, flash: null, flashError: null, ...over };
+  return { assets: ASSETS, usage: USAGE, error: null, flash: null, ...over };
 }
 
 describe('CairnMediaLibrary toolkit adoption', () => {
@@ -383,10 +383,12 @@ describe('CairnMediaLibrary empty and broken states', () => {
     expect(screen.container.textContent ?? '').toContain('Changes saved.');
   });
 
-  it('renders the conflict error from flashError in the inline error treatment', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture({ flashError: 'The media manifest changed. Reload and try again.' }) } as never);
+  it('renders nothing for a query-derived flashError now that the field is gone from the load', async () => {
+    const screen = render(CairnMediaLibrary, {
+      data: { ...fixture(), flashError: 'The media manifest changed. Reload and try again.' } as never,
+    });
     const alert = screen.container.querySelector('[role="alert"]');
-    expect(alert?.textContent ?? '').toContain('The media manifest changed. Reload and try again.');
+    expect(alert).toBeNull();
   });
 
   it('lists a missing-bytes asset with a broken-image affordance once its thumbnail fails', async () => {
@@ -517,6 +519,28 @@ describe('CairnMediaLibrary detail slide-over', () => {
     const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
     const panel = await openSlideOver(screen, /first-light/);
     expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid address');
+  });
+
+  it('renders a hash-less action failure as a top-level banner (no slide-over to re-open)', async () => {
+    // A shell-level action (logout, publishAll) posted from the media page and unexpectedly
+    // failing carries no hash at all, so the re-surface effect cannot re-home it to a specific
+    // asset. It must still be visible somewhere, not silently dropped.
+    const failed = { error: 'Something went wrong and your changes were not saved.' };
+    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    const alert = screen.container.querySelector('[role="alert"]');
+    expect(alert?.textContent ?? '').toContain('Something went wrong');
+    // No slide-over opened for it.
+    expect(screen.container.querySelector('[role="region"]')).toBeNull();
+  });
+
+  it('renders a hash-bearing failure for an asset absent from the loaded set as a top-level banner', async () => {
+    // A 404 "not committed" whose hash is not in data.assets either: the re-surface effect finds
+    // no target and returns early, so this must still fall through to the top-level banner.
+    const failed = { error: 'That asset is not committed.', hash: 'ffffffffffffffff' };
+    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    const alert = screen.container.querySelector('[role="alert"]');
+    expect(alert?.textContent ?? '').toContain('That asset is not committed.');
+    expect(screen.container.querySelector('[role="region"]')).toBeNull();
   });
 
   it('auto-re-opens the slide-over and shows the error on a hash-bearing non-usage failure (full-page post)', async () => {

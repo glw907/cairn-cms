@@ -246,12 +246,20 @@ describe('listLoad', () => {
     expect(data.error).toMatch(/could not load/i);
   });
 
-  it('surfaces a create-form error from the query', async () => {
+  it('resolves a known publish-all ?error= code to its engine copy', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=nothing_to_publish') as never);
+    expect(data.formError).toBe('Nothing to publish. Every entry is already live.');
+  });
+
+  it('drops a crafted ?error= carrying free text or an unrecognized code, rather than relaying it', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: manifestRaw([]) } });
     gh.install();
     const routes = createContentRoutes(runtime());
     const data = await routes.listLoad(listEvent({ concept: 'posts' }, '?error=Bad+slug') as never);
-    expect(data.formError).toBe('Bad slug');
+    expect(data.formError).toBeNull();
   });
 
   it('surfaces the publish-all count from the query and defaults it to null', async () => {
@@ -411,18 +419,21 @@ describe('createAction', () => {
 
   it('bounces back with an error for an invalid slug', async () => {
     const routes = createContentRoutes(runtime());
-    const { status, location } = await expectRedirect(() =>
-      routes.createAction(createEvent({ title: 'X', slug: 'Bad Slug!' }) as never),
-    );
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/posts\?error=/);
+    const result = (await routes.createAction(
+      createEvent({ title: 'X', slug: 'Bad Slug!' }) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toBeTruthy();
   });
 
   it('refuses to clobber an existing file', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('exists', { status: 200 })));
     const routes = createContentRoutes(runtime());
-    const { location } = await expectRedirect(() => routes.createAction(createEvent({ title: 'X', slug: 'existing', date: '2026-05-01' }) as never));
-    expect(location).toMatch(/error=.*already%20exists/i);
+    const result = (await routes.createAction(
+      createEvent({ title: 'X', slug: 'existing', date: '2026-05-01' }) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/already exists/i);
   });
 
   /** A runtime whose posts concept truncates the date prefix to the month. */
@@ -474,14 +485,21 @@ describe('createAction', () => {
 
   it('bounces when a dated concept gets no date', async () => {
     const routes = createContentRoutes(runtime());
-    const { location } = await expectRedirect(() => routes.createAction(createEvent({ slug: 'welcome' }) as never));
-    expect(location).toMatch(/error=/);
+    const result = (await routes.createAction(createEvent({ slug: 'welcome' }) as never)) as unknown as {
+      status: number;
+      data: { error: string };
+    };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toBeTruthy();
   });
 
   it('bounces when a dated slug carries its own date-like prefix', async () => {
     const routes = createContentRoutes(runtime());
-    const { location } = await expectRedirect(() => routes.createAction(createEvent({ slug: '2026-05-31-x', date: '2026-06-15' }) as never));
-    expect(location).toMatch(/error=/);
+    const result = (await routes.createAction(
+      createEvent({ slug: '2026-05-31-x', date: '2026-06-15' }) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toBeTruthy();
   });
 
   it('uses the slug verbatim as the id for a non-dated concept', async () => {

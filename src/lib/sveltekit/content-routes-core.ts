@@ -2,7 +2,7 @@
 // concept list, and the create/edit/save/publish/discard/delete/rename cycle for a single entry).
 // createCoreActions closes over the shared ContentRoutesContext (content-routes-context.ts) built
 // once by createContentRoutes, so a shim stays one line: `export const load = routes.editLoad`.
-import { redirect, error, fail } from '@sveltejs/kit';
+import { redirect, error, fail, type ActionFailure } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
 import { extractIncludes, rewriteIncludeDirective } from '../content/includes.js';
@@ -28,6 +28,7 @@ import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
 import { keyKnownUnhealthy } from './tidy-key-health.js';
+import { resolveRefusalCode, refusalMessage, type RefusalCode } from './refusal-codes.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
@@ -139,7 +140,11 @@ export interface ListData {
   entries: EntrySummary[];
   /** A listing failure degrades to an inline message rather than a thrown 500. */
   error: string | null;
-  /** A create-form bounce error read from `?error`. */
+  /**
+   * A publish-all bounce's engine copy, resolved server-side from a `?error=` code through
+   *  {@link resolveRefusalCode} (`refusal-codes.ts`); an unrecognized value resolves to `null`, so
+   *  a crafted query never reaches this field.
+   */
   formError: string | null;
   /** The entry count from a publish-all redirect (`?publishedAll=`), for the list page's flash. */
   publishedAll: number | null;
@@ -169,7 +174,6 @@ export interface EditData {
   saved: boolean;
   /** True after a successful rename redirect (`?renamed=1`), to confirm the new URL to the author. */
   renamed: boolean;
-  error: string | null;
   /** The current URL slug (the date-stripped id for a dated concept), for the rename dialog prefill. */
   slug: string;
   /**
@@ -314,6 +318,12 @@ export interface DeleteRefusal {
 
 /** A refused rename: `fail(400)` on a bad slug, `fail(409)` on a collision or pending edits. */
 export interface RenameFailure {
+  /** The one-line human summary every content action failure carries. */
+  error: string;
+}
+
+/** A refused create: `fail(400)` on a bad slug or missing date, `fail(409)` on an address collision. */
+export interface CreateFailure {
   /** The one-line human summary every content action failure carries. */
   error: string;
 }
@@ -554,27 +564,39 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
+   * Append a resolved refusal code to a redirect target as `error=`, merging into any query the
+   *  target already carries (a declared `home` may have one, e.g. `/admin/dash?tab=1`) rather than
+   *  appending a second bare `?`, which would parse into the existing key's value and swallow the
+   *  code (`/admin/dash?tab=1?error=expired` reads as `tab=1?error=expired`, not two params).
+   */
+  function withRefusalCode(path: string, code: RefusalCode | null): string {
+    if (!code) return path;
+    const url = new URL(path, 'https://internal.invalid');
+    url.searchParams.set('error', code);
+    return `${url.pathname}${url.search}`;
+  }
+
+  /**
    * The role-aware admin-root landing (spec section 4). A role with a declared `home` is sent
    *  there. Absent a `home`, an owner- or editor-capability role lands on the first concept's list,
    *  the default landing (spec §7.6); a none-capability role gets the calm welcome view instead of a
-   *  dead-end redirect. The shell posts publishAll and logout to this exact path from every admin
-   *  page, so an unexpected-failure `?error=` those actions bounce back with rides along on every
-   *  redirect branch, keeping the editor-visible guarantee for the two actions that always land here.
+   *  dead-end redirect. A direct GET here can carry a `?error=` (an attacker-crafted link, or a
+   *  bookmark), so the relay only ever forwards a code {@link resolveRefusalCode} recognizes and
+   *  drops anything else, keeping the bounded vocabulary intact through the redirect.
    */
   function indexLoad(event: CairnEvent): { view: 'welcome'; page: WelcomeData } {
     const editor = requireSession(event);
-    const bounced = event.url.searchParams.get('error');
-    const suffix = bounced ? `?error=${encodeURIComponent(bounced)}` : '';
+    const bounced = resolveRefusalCode(event.url.searchParams.get('error'));
     const home = roleHome(runtime.roles, editor.role);
     if (home) {
-      throw redirect(303, `${home}${suffix}`);
+      throw redirect(303, withRefusalCode(home, bounced));
     }
     if (editor.capability !== 'none') {
       // The first concept the session can reach, not the site-wide first: a role mapped away
       // from that one would otherwise land on a 403 dead-end.
       const first = runtime.concepts.find((c) => canReach(runtime.access, editor, c.id));
       if (!first) throw error(404, 'No content types configured');
-      throw redirect(307, `/admin/${first.id}${suffix}`);
+      throw redirect(307, withRefusalCode(`/admin/${first.id}`, bounced));
     }
     return { view: 'welcome', page: { displayName: editor.displayName, siteName: runtime.siteName } };
   }
@@ -642,7 +664,8 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
-    const formError = event.url.searchParams.get('error');
+    const refusalCode = resolveRefusalCode(event.url.searchParams.get('error'));
+    const formError = refusalCode ? refusalMessage(refusalCode) : null;
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
     const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
     const base = { conceptId: concept.id, label: concept.label, singular: concept.singular, dated: concept.routing.dated, routable: concept.routing.routable, formError, publishedAll };
@@ -685,7 +708,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
-  async function createAction(event: CairnEvent): Promise<never> {
+  async function createAction(event: CairnEvent): Promise<ActionFailure<CreateFailure>> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -693,27 +716,32 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const rawTitle = String(form.get('title') ?? '').trim();
     const slug = String(form.get('slug') ?? '').trim() || slugify(rawTitle);
     const date = String(form.get('date') ?? '').trim();
-    const bounce = (msg: string): never => {
-      throw redirect(303, `/admin/${concept.id}?error=${encodeURIComponent(msg)}`);
-    };
-    // The form asked a non-routable concept for a Name, so the bounce names the same thing back.
-    if (!isValidId(slug)) return bounce(invalidIdMessage(concept));
+    // The form asked a non-routable concept for a Name, so the refusal names the same thing back.
+    if (!isValidId(slug)) return fail(400, { error: invalidIdMessage(concept) } satisfies CreateFailure);
 
     let id = slug;
     if (concept.routing.dated) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bounce('Pick a date for this entry.');
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return fail(400, { error: 'Pick a date for this entry.' } satisfies CreateFailure);
+      }
       if (/^\d{4}-/.test(slug)) {
-        return bounce('Leave the date out of the address; set it in the date field.');
+        return fail(400, {
+          error: 'Leave the date out of the address; set it in the date field.',
+        } satisfies CreateFailure);
       }
       id = composeDatedId(date, slug, concept.datePrefix);
     }
 
     const backend = ctx.resolveBackend(event);
     const existing = await backend.readFile(`${concept.dir}/${filenameFromId(id)}`, backend.defaultBranch);
-    if (existing !== null) return bounce('An entry with that address already exists.');
+    if (existing !== null) {
+      return fail(409, { error: 'An entry with that address already exists.' } satisfies CreateFailure);
+    }
     // A pending branch is an entry too (saved but not yet published); refuse to clobber it.
     if ((await backend.branchHead(pendingBranch(concept.id, id))) !== null) {
-      return bounce('An unpublished entry with that address already exists.');
+      return fail(409, {
+        error: 'An unpublished entry with that address already exists.',
+      } satisfies CreateFailure);
     }
 
     // The raw typed title (before slugification) rides the redirect so editLoad can seed the
@@ -723,7 +751,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const titleParam = rawTitle ? `&title=${encodeURIComponent(rawTitle)}` : '';
     // The validated create-dialog date rides the redirect too, the same way the title does, so
     // editLoad seeds it into the fresh form instead of opening blank. A dated concept always has
-    // a date here (the bounce above refuses an unparseable one); a non-dated concept carries none.
+    // a date here (the refusal above rejects an unparseable one); a non-dated concept carries none.
     const dateParam = concept.routing.dated ? `&date=${encodeURIComponent(date)}` : '';
     throw redirect(303, `/admin/${concept.id}/${id}?new=1${dateParam}${titleParam}`);
   }
@@ -815,7 +843,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // The published fragments this entry can include (Task 6/7): null when nothing here can include
     // one, so the fragment picker and the preview's resolveFragment read the same absence signal.
     // That covers two cases. A site with no fragments concept has none to offer. A fragment's OWN
-    // edit screen cannot include one either (the save bounces a nested include), and resolving them
+    // edit screen cannot include one either (the save refuses a nested include), and resolving them
     // here would render a nested include in the preview that Save then refuses, so the preview
     // instead shows the literal-prose fallback the engine really ships. Skipping the batch there
     // also spares a fragment's every edit-load one read per published fragment.
@@ -913,7 +941,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       isNew,
       saved: event.url.searchParams.get('saved') === '1',
       renamed: event.url.searchParams.get('renamed') === '1',
-      error: event.url.searchParams.get('error'),
       slug: slugFromId(id, datePrefix),
       linkTargets,
       fragmentTargets,
@@ -957,6 +984,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   interface SaveHold {
     path: string;
     markdown: string;
+    /**
+     * The posted body alone, frontmatter stripped: publish's own conflict reseeds SaveFailure.body
+     *  from this rather than the frontmatter-bearing `markdown`, mirroring what the editor typed.
+     */
+    body: string;
     branch: string;
     branchSha: string;
     manifest: Manifest;
@@ -984,23 +1016,33 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
+   * A save refusal's payload: the one-line summary over an empty broken-link list, reseeding the
+   *  posted body so the editor re-renders with the unsaved work intact. The broken-link list is
+   *  empty on every refusal but the link guard's own, which builds its payload with the tokens it
+   *  found.
+   */
+  function saveRefusal(message: string, body: string): SaveFailure {
+    return { error: message, brokenLinks: [], body };
+  }
+
+  /**
    * The shared core of save and publish: parse the posted form, validate the frontmatter,
    *  guard the body's cairn links, ensure the pending branch, and commit the entry file there
-   *  with the session editor as author. Returns the broken-link fail for the page to render,
-   *  or the held state; throws the redirect bounces save has always thrown (invalid
-   *  frontmatter, a branch-commit conflict). Main stays untouched.
+   *  with the session editor as author. Returns the held state, or the `fail()` the page renders
+   *  in place: a broken-link refusal, a validation refusal (invalid frontmatter, a nested
+   *  include, a missing date, an out-of-vocabulary tag), or a branch-commit conflict. Main stays
+   *  untouched.
    */
   async function saveToBranch(
     event: CairnEvent,
     editor: Editor,
     concept: ConceptDescriptor,
     id: string,
-  ): Promise<ReturnType<typeof fail> | SaveHold> {
+  ): Promise<ActionFailure<SaveFailure> | SaveHold> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const form = await event.request.formData();
     const body = String(form.get('body') ?? '');
     const isNew = form.get('new') === '1';
-    const suffix = isNew ? '&new=1' : '';
 
     // The backend is resolved up front: the branch-first prior-tags read below (the orphan union)
     //  needs it before the validate.
@@ -1040,35 +1082,32 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const result = concept.validate(decoded, body);
     if (!result.ok) {
       const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
-      throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
+      return fail(400, saveRefusal(message, body));
     }
 
     // A fragment can never include another fragment (the engine resolves an include only one
     // pass deep; see resolve-include.ts). Keyed on the concept being the fragments concept, not on
     // routability in general, since routability describes URL behavior and this is a fragments-only
     // nesting rule. The check runs extractIncludes, the same extraction the manifest builds its
-    // includes row from, so the bounce and the where-used index agree on what counts as an include.
+    // includes row from, so the refusal and the where-used index agree on what counts as an include.
     if (concept.id === FRAGMENTS_CONCEPT_ID && extractIncludes(body).length > 0) {
-      throw redirect(
-        303,
-        `/admin/${concept.id}/${id}?error=${encodeURIComponent("A fragment can't include another fragment.")}${suffix}`,
-      );
+      return fail(400, saveRefusal("A fragment can't include another fragment.", body));
     }
 
     // Belt and braces: normalizeConcepts already forces a date-token concept's `date` field to
     // required, so an ordinary validate() failure should have caught a missing date before this
     // point. A hand-rolled validate (or a descriptor built outside normalizeConcepts) could still
     // pass with no usable date, and manifestEntryFromFile's resolvePermalink below throws on
-    // exactly that case. Catch it here with the same editor-voiced redirect bounce every other
-    // save failure uses, rather than letting that throw escape as a raw 500.
+    // exactly that case. Catch it here with the same editor-voiced refusal every other save
+    // failure uses, rather than letting that throw escape as a raw 500.
     if (permalinkUsesDateToken(concept.permalink) && !asDate(result.data.date)) {
-      throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent('Pick a date for this entry.')}${suffix}`);
+      return fail(400, saveRefusal('Pick a date for this entry.', body));
     }
 
     if (allowed !== null && taxField !== null) {
       const tagError = enforceTaxonomy(coerceTags(decoded[taxField]), allowed);
       if (tagError) {
-        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(tagError)}${suffix}`);
+        return fail(400, saveRefusal(tagError, body));
       }
     }
 
@@ -1162,17 +1201,20 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
-        'This file changed since you opened it. Reload and reapply your edits.', { query: suffix });
+      return ctx.commitFailure(
+        commitFields,
+        err,
+        saveRefusal('This file changed since you opened it. Reload and reapply your edits.', body),
+      );
     }
-    return { path, markdown, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange };
+    return { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange };
   }
 
   /**
    * Save an edit: validate, then commit to the entry's pending branch with the session editor
    *  as author. Main and its manifest stay untouched until publish. Fails safe on 409.
    */
-  async function saveAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function saveAction(event: CairnEvent): Promise<ActionFailure<SaveFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
@@ -1192,11 +1234,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  The branch is deleted only when its head still matches the commit this action made; a
    *  concurrent save moved it, so the entry stays pending and the next publish picks it up.
    */
-  async function publishAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function publishAction(event: CairnEvent): Promise<ActionFailure<SaveFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
-    const { path, markdown, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange } = held;
+    const { path, markdown, body, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange } = held;
 
     // Stamp the first publish here, not in saveToBranch: a save commits no manifest, so the moment an
     // entry goes live is this commit. The stamped row replaces the unstamped one saveToBranch
@@ -1250,8 +1292,12 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       }
     } catch (err) {
       // The branch already holds the just-committed edits, so a conflict here loses nothing.
-      ctx.commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
-        'Your edits are saved. Reload and publish again.', { event: 'publish.failed' });
+      return ctx.commitFailure(
+        commitFields,
+        err,
+        saveRefusal('Your edits are saved. Reload and publish again.', body),
+        { event: 'publish.failed' },
+      );
     }
     // Only after the main commit lands, and only when the branch head is still the commit this
     // action made: a head that moved is a concurrent save, and deleting it would destroy edits.
@@ -1323,8 +1369,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       published.push({ concept: entry.concept.id, id: entry.id, branch: entry.branch, sha: entry.sha });
     }
     if (published.length === 0) {
-      const message = 'Nothing to publish. Every entry is already live.';
-      throw redirect(303, `${listPage}?error=${encodeURIComponent(message)}`);
+      throw redirect(303, `${listPage}?error=nothing_to_publish`);
     }
     changes.push({ path: runtime.manifestPath, content: serializeManifest(next) });
 
@@ -1345,10 +1390,15 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         ctx.logCommitFailed({ concept: entry.concept, id: entry.id, editor: editor.email }, err, 'publish.failed');
       }
       if (isConflict(err)) {
-        const message = 'The site changed while publishing. Reload and try again.';
-        throw redirect(303, `${listPage}?error=${encodeURIComponent(message)}`);
+        throw redirect(303, `${listPage}?error=publish_conflict`);
       }
-      throw err;
+      // Every other outcome of this action is its own redirect to listPage (above and below), so
+      // an unexpected commit failure gets the same treatment rather than escaping to viewAction's
+      // generic fail(500): this action posts to the bare /admin, whose own load (indexLoad)
+      // always redirects away before ever rendering a component that reads `form`, so a fail()
+      // here would be silently discarded before an editor ever saw it. The bounded publish_failed
+      // code carries the same calm copy viewAction's own unexpected-failure fallback uses.
+      throw redirect(303, `${listPage}?error=publish_failed`);
     }
     // Only after the main commit lands: a failure above keeps every branch and its edits. Each
     // branch deletes only when its head still matches the captured sha; a moved head is a
@@ -1396,7 +1446,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     concept: ConceptDescriptor,
     id: string,
     editor: Editor,
-  ): Promise<ReturnType<typeof fail> | never> {
+  ): Promise<ActionFailure<DeleteRefusal>> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const backend = ctx.resolveBackend(event);
 
@@ -1485,8 +1535,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
-        'This file changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: 'This file changed since you opened it. Reload and try again.',
+        inboundLinks: [],
+        id,
+      } satisfies DeleteRefusal);
     }
     // Cascade to the pending branch only after the removal lands on main, so a commit conflict
     // keeps the unpublished edits. A straggler ref left by a failure here is idempotent and
@@ -1501,13 +1554,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Delete an entry from its editor. The id comes from the route param. */
-  async function deleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function deleteAction(event: CairnEvent): Promise<ActionFailure<DeleteRefusal>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     return deleteEntry(event, concept, id, editor);
   }
 
   /** Delete an entry from the concept list. The id comes from the form body. */
-  async function listDeleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function listDeleteAction(event: CairnEvent): Promise<ActionFailure<DeleteRefusal>> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -1523,7 +1576,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  are the authoritative gate. The same last-writer-wins manifest race as save and delete applies,
    *  caught by the build's fail-closed backstop.
    */
-  async function renameAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
+  async function renameAction(event: CairnEvent): Promise<ActionFailure<RenameFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const backend = ctx.resolveBackend(event);
 
@@ -1691,8 +1744,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      ctx.commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
-        'This file changed since you opened it. Reload and try again.');
+      return ctx.commitFailure(commitFields, err, {
+        error: 'This file changed since you opened it. Reload and try again.',
+      } satisfies RenameFailure);
     }
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
   }

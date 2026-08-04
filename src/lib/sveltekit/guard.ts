@@ -9,7 +9,7 @@ import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
 import { resolveCapability, DEFAULT_ROLES } from '../auth/roles.js';
-import { canReach, hasAccessRule } from '../auth/access.js';
+import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
 import type { Editor } from '../auth/types.js';
@@ -206,19 +206,34 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
 /**
  * For a site's custom route, the one-line authorization story: the session the guard already
  * resolved, checked against the site's declared access map (attached to `locals.cairnAccess`
- * alongside `editor`), or a 403. `target` defaults to the request path, so the common call is
- * `const editor = requireAccess(event);`. Every denial, mapped or unmatched, emits
- * `auth.access.denied` with the editor's email, role, and the resolved target.
+ * alongside `editor`), or a 403. `target` defaults to `event.route.id`, never
+ * `event.url.pathname`: on a catch-all route the request path is attacker-chosen while the route
+ * id is not (the same reasoning `createSectionAction`'s `SectionActionOptions.target` follows, so
+ * a route's load and its own POST action agree on what they are checking). The derived default
+ * drops route-group segments (`/admin/(app)/roster` reads as `/admin/roster`), so a map stays
+ * keyed by URL shape, and resolves a parameterized route id verbatim (`/admin/posts/[id]`), so a
+ * map keyed by its prefix still matches; a declared `target` is used exactly as given, never
+ * normalized. So the common call is still `const editor = requireAccess(event);`. Every denial,
+ * mapped or unmatched, emits `auth.access.denied` with the editor's email, role, and the resolved
+ * (normalized) target.
  *
  * The unmatched case (the map has no rule at all for `target`) 403s every session, owner
  * included: this helper's contract is "this route opted into the map and the map has no opinion
  * on it," a misconfiguration made loud rather than an access decision, so `canReach`'s owner
  * bypass does not apply here. A route that wants the zero-config any-editor behavior should not
- * call this helper for that path.
+ * call this helper for that path. A null `event.route.id` (an unmatched request; a dispatched
+ * load or action never actually sees one) falls back to a fixed constant that matches no
+ * access-map key, never to the request path, so it fails closed the same way. A route with a
+ * dynamic or rest parameter (`[id]`, `[...rest]`) also 403s every session, owner included, when
+ * the map holds a key deeper than the parameter: the deeper key's literal text can never equal
+ * the parameter's, so it can never be reached, and admitting through the shallower key instead
+ * would silently make the deeper rule dead code (see `matchHrefKey`, `auth/access.ts`). A site
+ * relying on such a route must declare `target` explicitly, the same warning
+ * `SectionActionOptions.target` carries for its own POST half.
  */
 export function requireAccess(event: CairnEvent, target?: string): Editor {
   const editor = requireSession(event);
-  const resolvedTarget = target ?? event.url.pathname;
+  const resolvedTarget = target ?? targetFromRouteId(event.route.id);
   const access = event.locals.cairnAccess;
   if (!hasAccessRule(access, resolvedTarget) || !canReach(access, editor, resolvedTarget)) {
     log.warn('auth.access.denied', { email: editor.email, role: editor.role, target: resolvedTarget });

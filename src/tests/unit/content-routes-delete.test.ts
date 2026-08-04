@@ -147,8 +147,13 @@ describe('deleteAction with a pending branch', () => {
       return double(input, init);
     });
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    const { location } = await expectRedirect(() => routes.deleteAction(deleteEvent('2026-05-hi') as never));
-    expect(location).toMatch(/error=.*changed%20since/i);
+    const result = (await routes.deleteAction(deleteEvent('2026-05-hi') as never)) as unknown as {
+      status: number;
+      data: { error: string; inboundLinks: unknown[]; id: string };
+    };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
+    expect(result.data.id).toBe('2026-05-hi');
     // The entry survives on main and the pending edits survive on their branch.
     expect(gh.branches.has('cairn/posts/2026-05-hi')).toBe(true);
     expect(gh.read('main', ENTRY_PATH)).toContain('live');

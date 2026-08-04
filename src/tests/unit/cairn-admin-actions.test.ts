@@ -606,13 +606,14 @@ const CALM_COPY =
   'Something went wrong and your changes were not saved. Your writing is still here. Try again, and if it keeps failing, let your site developer know.';
 
 describe('unexpected admin action failures (admin.action.failed, no raw 500)', () => {
-  it('a throwing create action on the list view redirects with the calm copy and logs admin.action.failed', async () => {
+  it('a throwing create action on the list view returns fail(500) with the calm copy and logs admin.action.failed', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/pages', { form: { title: 'Trailhead', slug: 'trailhead' } });
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
-    const result = await expectRedirectAssertion(() => admin.actions.create(event as never));
-    expect(result).toEqual({ status: 303, location: `/admin/pages?error=${encodeURIComponent(CALM_COPY)}` });
+    const result = (await admin.actions.create(event as never)) as { status?: number; data?: { error?: string } };
+    expect(result.status).toBe(500);
+    expect(result.data?.error).toBe(CALM_COPY);
     expect(errorSpy).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
       action: 'create',
@@ -622,13 +623,14 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     });
   });
 
-  it('a throwing save action on the edit view logs the concept, id, and editor, and redirects with the calm copy (no new=1: the flag was never posted)', async () => {
+  it('a throwing save action on the edit view logs the concept, id, and editor, and returns fail(500) with the calm copy', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
-    const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
-    expect(result).toEqual({ status: 303, location: `/admin/posts/2026-05-01-hi?error=${encodeURIComponent(CALM_COPY)}` });
+    const result = (await admin.actions.save(event as never)) as { status?: number; data?: { error?: string } };
+    expect(result.status).toBe(500);
+    expect(result.data?.error).toBe(CALM_COPY);
     expect(errorSpy).toHaveBeenCalledTimes(1);
     expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
       action: 'save',
@@ -639,23 +641,25 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     });
   });
 
-  it('a throwing save on a brand-new entry (new=1) preserves the flag on the bounce, so the next load does not 404 the stranded draft', async () => {
+  it('a throwing save on a brand-new entry (new=1) still returns fail(500) in place, so there is no bounce to strand the draft behind', async () => {
+    // Before this pass the wrapper's fallback was a redirect that had to reconstruct the posted
+    // new=1 flag to avoid stranding the draft behind editLoad's unsaved-entry 404. Now the
+    // failure never navigates at all, so the flag has nothing to preserve; posting new=1 changes
+    // nothing about the fail(500) response.
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
     const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
-    const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
-    expect(result).toEqual({
-      status: 303,
-      location: `/admin/posts/2026-05-01-hi?error=${encodeURIComponent(CALM_COPY)}&new=1`,
-    });
+    const result = (await admin.actions.save(event as never)) as { status?: number; data?: { error?: string } };
+    expect(result.status).toBe(500);
+    expect(result.data?.error).toBe(CALM_COPY);
   });
 
-  it('a throwing script-posted action (dictionaryAdd) returns fail(500) with the calm copy, not a redirect, and still logs admin.action.failed (save-500-hardening)', async () => {
+  it('a throwing script-posted action (dictionaryAdd) returns fail(500) with the calm copy and still logs admin.action.failed (save-500-hardening)', async () => {
     // dictionaryAddAction rethrows any non-conflict commit error, so a throwingBackend reaches
-    // viewAction's catch exactly like the save/create cases above. Unlike those, dictionaryAdd is
-    // marked scriptPosted, so the wrapper's fallback must be a fail(500) value, never a redirect: the
-    // client posts with `redirect: 'manual'`, and a redirect here would read as an opaque, status-0
-    // response the client folds into a false "your session expired" message.
+    // viewAction's catch exactly like the save/create cases above. Every action's unexpected
+    // failure now answers fail(500) in place; a script-posted client (fetch with
+    // `redirect: 'manual'`) needs this most, since a redirect here would read as an opaque,
+    // status-0 response the client folds into a false "your session expired" message.
     const csrf = 'csrf-token-value-0123456789abcdef';
     const url = new URL('https://t.example/admin/posts/2026-05-01-hi');
     const base = {
@@ -692,13 +696,13 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     });
   });
 
-  it('a throwing tidy action returns fail(500) with the calm copy, not a redirect (save-500-hardening)', async () => {
+  it('a throwing tidy action returns fail(500) with the calm copy (save-500-hardening)', async () => {
     // Force a genuine throw deep inside tidyAction, past its own try/catch: a malformed conventions
     // block (never produced by the validated settings save, but a stand-in for the class of bug the
-    // wrapper exists to catch) makes resolveTidyConventions throw reading off null. tidy is
-    // scriptPosted, so the wrapper's fallback must be a fail(500) value, never a redirect: the client
-    // posts with `redirect: 'manual'` and would otherwise read a redirect as an opaque, status-0
-    // response and show a false "your session expired" message.
+    // wrapper exists to catch) makes resolveTidyConventions throw reading off null. tidy's client
+    // posts with `redirect: 'manual'`, so the wrapper's fallback matters most here: a redirect would
+    // read as an opaque, status-0 response and show a false "your session expired" message, which is
+    // exactly what fail(500) avoids.
     const csrf = 'csrf-token-value-0123456789abcdef';
     const url = new URL('https://t.example/admin/posts/2026-05-01-hi');
     const tidyRuntime = {
@@ -733,17 +737,44 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     );
   });
 
-  it('a redirect thrown by an action (its own validated bounce) still propagates untouched, with no log', async () => {
-    new GithubDouble({ main: {} }).install();
+  it('a redirect thrown by an action (its own deliberate navigation, not a caught unexpected failure) still propagates untouched, with no log', async () => {
+    // Every validated content-action refusal now answers in place with fail() (R10), so the
+    // remaining example of an action's own deliberate throw-redirect is a success navigation
+    // (discard, here) rather than a validation bounce; the wrapper must still let it straight
+    // through, unlogged, exactly as it does a validation refusal's redirect.
+    const gh = new GithubDouble({
+      main: { 'src/content/posts/2026-05-01-hi.md': '---\ntitle: Hi\ndate: 2026-05-01\n---\nbody' },
+      'cairn/posts/2026-05-01-hi': { 'src/content/posts/2026-05-01-hi.md': '---\ntitle: Hi\ndate: 2026-05-01\n---\nbody edited' },
+    });
+    gh.install();
     const admin = createCairnAdmin(runtime(), deps);
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
-    const event = actionEvent('/admin/pages', { form: { title: '', slug: 'not valid slug!' } });
-    const result = await expectRedirectAssertion(() => admin.actions.create(event as never));
-    expect(result).toEqual({
-      status: 303,
-      location: `/admin/pages?error=${encodeURIComponent('Enter a valid address: lowercase letters, numbers, and hyphens.')}`,
-    });
+    const event = actionEvent('/admin/posts/2026-05-01-hi');
+    const result = await expectRedirectAssertion(() => admin.actions.discard(event as never));
+    expect(result).toEqual({ status: 303, location: '/admin/posts/2026-05-01-hi?discarded=1' });
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('a throwing discard action returns fail(500) with the calm copy rather than throwing (discard was declared Promise<never>)', async () => {
+    // discardAction's own declared return stayed Promise<never>: every one of its paths is a
+    // deliberate throw. The facade widened just this call site so the wrapper's unexpected-failure
+    // fail(500) can still reach the editor instead of the type lying about what the action can hand
+    // back.
+    const admin = createCairnAdmin(runtime(), deps);
+    const base = actionEvent('/admin/posts/2026-05-01-hi');
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = (await admin.actions.discard(event as never)) as { status?: number; data?: { error?: string } };
+    expect(result.status).toBe(500);
+    expect(result.data?.error).toBe(CALM_COPY);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
+      action: 'discard',
+      concept: 'posts',
+      id: '2026-05-01-hi',
+      editor: 'ed@t',
+      error: 'boom: github unreachable',
+    });
   });
 
   it('an HttpError thrown by an action (its own deliberate 404) still propagates untouched, with no log', async () => {

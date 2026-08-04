@@ -34,13 +34,30 @@ describe('navSaveAction', () => {
     expect(commitPost.body).not.toHaveProperty('committer');
   });
 
-  it('bounces an invalid tree back to the form and never commits', async () => {
+  it('refuses an invalid tree in place and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createNavRoutes(runtime());
-    const { status, location } = await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ url: '/no-label' }])) as never));
-    expect(status).toBe(303);
-    expect(location).toMatch(/\/admin\/nav\?error=.*label/i);
+    const result = (await routes.navSaveAction(
+      saveEvent(JSON.stringify([{ url: '/no-label' }])) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toMatch(/label/i);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses malformed JSON with generic copy, never reflecting the posted body into the alert', async () => {
+    // JSON.parse's own SyntaxError embeds a snippet of the posted string in its message; that must
+    // never reach the response, only fixed copy (the LOW7 review finding this pins).
+    const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const routes = createNavRoutes(runtime());
+    const result = (await routes.navSaveAction(
+      saveEvent('<script>not json</script>') as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(400);
+    expect(result.data.error).not.toContain('<script>');
+    expect(result.data.error).toMatch(/could not be read/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -68,7 +85,10 @@ describe('navSaveAction', () => {
       return new Response('{}', { status: 200 });
     }));
     const routes = createNavRoutes(runtime());
-    const { location } = await expectRedirect(() => routes.navSaveAction(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never));
-    expect(location).toMatch(/error=.*changed%20since/i);
+    const result = (await routes.navSaveAction(
+      saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never,
+    )) as unknown as { status: number; data: { error: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toMatch(/changed since/i);
   });
 });

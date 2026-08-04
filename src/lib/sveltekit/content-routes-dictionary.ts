@@ -1,7 +1,7 @@
 // cairn-cms: the git-committed personal dictionary's add action (spec 1.6). createDictionaryActions
 // closes over the shared ContentRoutesContext (content-routes-context.ts) built once by
 // createContentRoutes.
-import { fail } from '@sveltejs/kit';
+import { fail, type ActionFailure } from '@sveltejs/kit';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import type { Backend } from '../github/backend.js';
@@ -89,7 +89,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
    *  line), and the batch is capped. A body that yields no valid word refuses with a 400 and commits
    *  nothing, so the committed file can never gain an injected or empty line.
    */
-  async function dictionaryAddAction(event: CairnEvent): Promise<ReturnType<typeof fail> | DictionaryAddResult> {
+  async function dictionaryAddAction(event: CairnEvent): Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
     // media actions. A failed check refuses before the session read or any GitHub call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {

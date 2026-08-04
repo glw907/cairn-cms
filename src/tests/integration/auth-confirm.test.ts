@@ -116,4 +116,44 @@ describe('confirm and logout logging', () => {
     expect(events).toContain('auth.session.destroyed');
     vi.restoreAllMocks();
   });
+
+  it('clears the browser cookie even when the session-row delete fails, so a D1 fault never leaves both valid (HIGH2)', async () => {
+    // Establish a real session, then swap in a D1 binding whose delete throws, simulating the
+    // fault. Before this fix, the cookie was deleted only AFTER the (awaited) row delete, so a
+    // fault here left both the row and the cookie intact and the editor silently still signed
+    // in. The cookie must clear regardless of whether the row delete succeeds.
+    const token = await liveToken('ed@x.dev');
+    const cookies = makeCookies();
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    expect(await countRows('session')).toBe(1);
+
+    const brokenDb = {
+      prepare: () => ({
+        bind: () => ({
+          run: () => Promise.reject(new Error('D1 fault')),
+        }),
+      }),
+    };
+    const logoutEvent = {
+      url: new URL('https://test.dev/admin/auth/logout'),
+      request: new Request('https://test.dev/admin/auth/logout', { method: 'POST', body: new URLSearchParams() }),
+      params: {},
+      route: { id: '/admin/auth/[...path]' },
+      cookies,
+      locals: { cairnEditor: null },
+      platform: { env: { AUTH_DB: brokenDb, PUBLIC_ORIGIN: 'https://test.dev' } },
+      setHeaders: () => {},
+    };
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await expectRedirect(() => routes.logoutAction(logoutEvent as never));
+    // The cookie is gone from the jar regardless of the D1 fault.
+    expect(cookies.get('__Host-cairn_session')).toBeUndefined();
+    // The fault is logged, not swallowed silently.
+    const events = errorSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).toContain('auth.session.destroy_failed');
+    vi.restoreAllMocks();
+    // The row is untouched (the broken double never wrote), confirming the fault is real and the
+    // row-vs-cookie asymmetry this test pins is not accidentally masked by a no-op double.
+    expect(await countRows('session')).toBe(1);
+  });
 });

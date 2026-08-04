@@ -93,18 +93,18 @@ function cannedMessage(text: string) {
 type TidyResult = { status?: number; data?: { error?: string } } & {
   corrected?: string;
   model?: string;
-  usage?: { input_tokens: number; output_tokens: number };
+  tokens?: { input_tokens: number; output_tokens: number };
 };
 
 describe('tidy action: the remote model-call boundary (Task 11)', () => {
-  it('returns { corrected, model, usage } on a stubbed success and commits nothing', async () => {
+  it('returns { corrected, model, tokens } on a stubbed success and commits nothing', async () => {
     const create = vi.fn<TidyClient['messages']['create']>(async () => cannedMessage('the cat'));
     const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
     const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
 
     expect(res.corrected).toBe('the cat');
     expect(res.model).toBe('claude-sonnet-4-6');
-    expect(res.usage).toEqual({ input_tokens: 12, output_tokens: 8 });
+    expect(res.tokens).toEqual({ input_tokens: 12, output_tokens: 8 });
     expect(create).toHaveBeenCalledTimes(1);
     // The user text rides as the user message, never interpolated into the system prompt.
     const call = create.mock.calls[0]![0];

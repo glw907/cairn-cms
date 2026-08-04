@@ -210,8 +210,13 @@ describe('publishAction', () => {
     rt.concepts[0].validate = () => ({ ok: false as const, errors: { title: 'Title is required' } });
     const routes = createContentRoutes(rt);
 
-    const location = await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { body: 'b' }) as never));
-    expect(location).toMatch(/error=.*Title/);
+    const result = (await routes.publishAction(actionEvent('2026-05-01-hi', { body: 'b' }) as never)) as unknown as {
+      status: number;
+      data: { error: string; body: string };
+    };
+    expect(result.status).toBe(400);
+    expect(result.data.error).toMatch(/Title/);
+    expect(result.data.body).toBe('b');
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
   });
 
@@ -346,11 +351,13 @@ describe('publishAction', () => {
     failMainRefPatch();
     const routes = createContentRoutes(runtime());
 
-    const location = await redirectedTo(
-      routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed text' }) as never),
-    );
-    expect(location).toMatch(/^\/admin\/posts\/2026-05-01-hi\?error=/);
-    expect(decodeURIComponent(location)).toContain('Your edits are saved. Reload and publish again.');
+    const result = (await routes.publishAction(
+      actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed text' }) as never,
+    )) as unknown as { status: number; data: { error: string; brokenLinks: string[]; body: string } };
+    expect(result.status).toBe(409);
+    expect(result.data.error).toBe('Your edits are saved. Reload and publish again.');
+    // The posted body rides the failure, mirroring saveAction's own conflict.
+    expect(result.data.body).toBe('typed text');
 
     const record = warnSpy.mock.calls
       .map((c) => c[0] as { event?: string; reason?: string; editor?: string })
@@ -477,9 +484,43 @@ describe('publishAllAction', () => {
     const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
-    expect(location).toMatch(/^\/admin\/posts\?error=/);
-    expect(decodeURIComponent(location)).toContain('Nothing to publish. Every entry is already live.');
+    expect(location).toBe('/admin/posts?error=nothing_to_publish');
     expect(gh.calls.filter((c) => c.method === 'PATCH')).toHaveLength(0);
+  });
+
+  it('bounces an unexpected (non-conflict) commit failure to the list page with the publish_failed code, rather than escaping to a fail() the /admin redirect would discard (HIGH2)', async () => {
+    // publishAllAction posts to the bare /admin, whose own load (indexLoad) always redirects
+    // away before rendering a component that reads `form`; a fail() here (viewAction's generic
+    // unexpected-failure arm) would therefore be silently discarded. An unexpected, non-conflict
+    // commit failure must stay on this action's own redirect channel instead.
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+    });
+    gh.install();
+    const double = globalThis.fetch;
+    vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input instanceof Request ? input.url : input);
+      const method = (init?.method ?? 'GET').toUpperCase();
+      // A non-422, non-2xx failure on the tree write: a generic backend fault, not a stale-head
+      // conflict, so isConflict(err) reads false and the commit's error is not a CommitConflictError.
+      if (method === 'POST' && url.endsWith('/git/trees')) {
+        return new Response('{"message":"internal error"}', { status: 500 });
+      }
+      return double(input, init);
+    });
+    const routes = createContentRoutes(runtime());
+
+    const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
+    expect(location).toBe('/admin/posts?error=publish_failed');
+    // The branch survives a failed commit, so the edits are not lost.
+    expect(gh.branches.has(BRANCH)).toBe(true);
+    // Each entry in the failed batch is still logged, so the operator sees what did not go live.
+    const record = errorSpy.mock.calls
+      .map((c) => c[0] as { event?: string })
+      .find((r) => r.event === 'publish.failed');
+    expect(record).toBeTruthy();
   });
 
   it('logs publish.failed on a commit conflict and bounces to the list page', async () => {
@@ -493,7 +534,7 @@ describe('publishAllAction', () => {
     const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
-    expect(location).toMatch(/^\/admin\/posts\?error=/);
+    expect(location).toBe('/admin/posts?error=publish_conflict');
 
     const record = warnSpy.mock.calls
       .map((c) => c[0] as { event?: string; reason?: string })

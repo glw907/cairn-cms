@@ -39,6 +39,10 @@ each links to its full entry under Changed for the reasoning and the exact old a
      `TextField`/`SelectField`/`SelectFieldOption` to `TextInput`/`SelectInput`/
      `SelectInputOption`; replace `@glw907/cairn-cms/components`'s `OfficeList` import with the
      same `/admin-toolkit` subpath.
+   - Rename any read of [`TidyResult`](docs/reference/sveltekit.md#createcontentroutes)'s `usage` field to
+     `tokens`; the old name collided with `MediaDeleteRefusal.usage` inside SvelteKit's generated
+     `ActionData` union for the admin route, which is why `<CairnAdmin {form} />` failed to
+     typecheck.
 3. **`locals` reads.** Rename every `event.locals.editor`, `.backend`, and `.auditSink` read or
    write in your `hooks.server.ts` or a custom admin route to `event.locals.cairnEditor`,
    `.cairnBackend`, and `.cairnAuditSink`, including in a hand-duplicated `App.Locals`
@@ -65,6 +69,12 @@ each links to its full entry under Changed for the reasoning and the exact old a
    on a kebab-case media upload `reason` or on `github.unreachable`'s `scope: 'layout'` (which
    never fired) to the corrected snake_case value. See [Log events](docs/reference/log-events.md).
    None of this breaks at compile time; these are runtime values, not exported types.
+7. **`requireAccess`'s default target.** Rekey any access map behind a
+   [`requireAccess`](docs/reference/sveltekit.md#requireaccess) call on a parameterized or
+   catch-all admin route from the concrete request path to the bracket-form route id
+   (`/admin/posts/[id]`), the same rekey step 5 already covers for `createSectionAction`; a map
+   still keyed by the concrete path now fails closed and refuses every session, including owner. A
+   site with no parameterized or catch-all route behind `requireAccess` sees no change.
 
 Two more steps, neither gated by a compiler: a call to `formatCivilDate` that relied on its old
 `'Not yet'` default for a missing date now renders an empty string unless you pass
@@ -123,6 +133,15 @@ removal, nothing this list needs to carry.
   [SvelteKit](docs/reference/sveltekit.md#types), and
   [Delivery data](docs/reference/delivery-data.md#types). Consumers must: nothing; every addition
   is a new named export with no renamed or removed symbol.
+
+- Five new refusal-shape exports on `./sveltekit` (pass C2b, the refusal-channel convergence),
+  one per action the pass moved off the query channel onto `fail()`: `CreateFailure` (a refused
+  create), `NavSaveFailure`, `SettingsSaveFailure`, and `VocabularySaveFailure` (a refused nav,
+  settings, or vocabulary save), and `MediaUploadFailure` (a refused upload, including the Media
+  Library's own direct-commit conflict bounce). Each is the bare `{ error: string }` one-line
+  summary the engine's other single-field refusals already use. See
+  [SvelteKit](docs/reference/sveltekit.md#createcontentroutes). Consumers must: nothing; every
+  addition is a new named export.
 
 ### Changed
 
@@ -343,6 +362,79 @@ removal, nothing this list needs to carry.
   parameterized or catch-all route behind `createSectionAction`, rekey the site's access map from
   the concrete path to the bracket-form route id, or the section silently refuses every session.
 
+- `requireAccess`'s own `target` parameter now defaults the same way (pass C2b, the
+  refusal-channel convergence): `event.route.id`, never `event.url.pathname`, closing the
+  asymmetry the C2 breaking-window post-mortem flagged between the load-side helper and
+  `createSectionAction`'s already-corrected default. The shared derivation
+  (`targetFromRouteId`, internal to the engine) moves out of `section-action.ts` into
+  `auth/access.ts`, next to `canReach` and `hasAccessRule`, so both call sites import one copy
+  rather than keeping a second in sync by hand. Behavior is otherwise identical to
+  `createSectionAction`'s own R9 change: route-group segments drop
+  (`/admin/(app)/roster` reads as `/admin/roster`), a parameterized route id resolves verbatim
+  (`/admin/posts/[id]`), and a null `route.id` falls back to a fixed constant that matches no
+  access-map key, never to the request path. See
+  [`requireAccess`](docs/reference/sveltekit.md#requireaccess). **Consumers must:** for any
+  `requireAccess`-guarded parameterized or catch-all route, rekey the site's access map from the
+  concrete request path to the bracket-form route id, or the helper fails closed and refuses
+  every session, including owner. A static route's id and path are the same string, so a site
+  with no parameterized or catch-all `requireAccess` route sees no change.
+
+- The admin refusal channel converges on `fail()` (pass C2b, the refusal-channel convergence, R10
+  ruling): every content, media, settings, vocabulary, and nav action's own validation and
+  commit-conflict refusal now answers `fail(...)` in place, keeping the editor on the page with the
+  submitted body intact, rather than throwing a redirect that discarded it. The shared
+  `commitFailure` helper (reached from every read-modify-commit action) stops throwing and returns
+  its caller's own typed `ActionFailure` instead. `settingsSaveAction` widens from
+  `Promise<never>` to `Promise<ActionFailure<SettingsSaveFailure>>`, and `vocabularySaveAction`,
+  `navSaveAction`, and `createAction` widen the same way to their own new failure type
+  (`VocabularySaveFailure`, `NavSaveFailure`, `CreateFailure`). `NavTree`, `CairnTidySettings`, and
+  `VocabularyAdmin` now receive `form` from the shell, the same way `ManageEditors` always has, so
+  their conflict and validation refusals render. Every same-route save-validation bounce on the
+  edit and list screens converts the same way; `ConceptList` and `EditPage` already received
+  `form`, so no shell wiring was needed there. See [Refusal
+  channels](docs/reference/sveltekit.md#refusal-channels) and
+  [`createContentRoutes`](docs/reference/sveltekit.md#createcontentroutes). **Consumers must:**
+  update the return-type annotation of any hand-duplicated wrapper around `settingsSaveAction`,
+  `vocabularySaveAction`, `navSaveAction`, or `createAction` that assumed `Promise<never>`. A site
+  that renders these built-in screens through `createCairnAdmin` or `createContentRoutes` /
+  `createNavRoutes` directly, with no such wrapper, sees no change beyond the behavior note below.
+
+- The admin facade's `viewAction` wrapper drops its `scriptPosted` branch (pass C2b, R10 ruling):
+  every action's own unexpected failure now answers `fail(500, { error })` in place, form-posted or
+  script-posted alike, instead of a form-posted action redirecting while a script-posted one (tidy,
+  a dictionary word, an upload) got the `fail()` treatment already. The `scriptPosted` and
+  `carriesNewFlag` facade options, and the request clone that supported reconstructing a dropped
+  `new=1` flag on the redirect path, are removed; they had no other reader. Because this arm is
+  shared, the facade's `confirm`, `logout`, `discard`, and `publishAll` actions each widen their
+  own call-site return annotation to include `ActionFailure<{ error: string }>` alongside the
+  `never` their underlying delegate still declares (each delegate only ever throws on its own
+  deliberate success or expected-refusal path; the wrapper is what can now also return): a failed
+  discard, sign-in confirm, logout, or publish-all answers in place with the same calm retry copy
+  instead of navigating away on an unexpected failure. See
+  [Refusal channels](docs/reference/sveltekit.md#refusal-channels). Consumers must: nothing;
+  `scriptPosted` and `carriesNewFlag` were never public, since `viewAction` is internal to the
+  facade, and the behavior change touches only an unexpected-failure path, not a deliberate
+  success or a validated refusal.
+
+- Every refusal that genuinely navigates (three survive: an expired sign-in link, publish-all's two
+  outcomes, and the `/admin` landing relay that forwards one onward) now carries a bounded internal
+  `RefusalCode` on `?error=` instead of a redirect target's own free-form string, resolved
+  server-side against a small closed vocabulary that drops any value it doesn't recognize (pass
+  C2b, R10 ruling; this closes a link-crafting surface documented in [the security
+  model](docs/explanation/security-model.md#who-may-edit)). `RefusalCode` stays internal to the
+  engine; no exported signature names it, so `ListData.formError`, `LoginData.error`, and
+  `ConfirmData.error` keep their existing `string | null` type. Six other `?error=` readers now sit
+  orphaned, since the redirect that used to fill them converted to `fail()` earlier in this pass,
+  and are removed outright along with their data field: `EditData.error`, `EditorsData.error`,
+  `NavLoadData.error`, `SettingsData.error`, `VocabularyLoadData.error`, and
+  `MediaLibraryData.flashError`. See [Refusal
+  channels](docs/reference/sveltekit.md#refusal-channels). **Consumers must:** drop any read of
+  `EditData.error`, `EditorsData.error`, `NavLoadData.error`, `SettingsData.error`,
+  `VocabularyLoadData.error`, or `MediaLibraryData.flashError`; each field is gone, not renamed,
+  since its own producing refusal now answers through `fail()` instead of a redirect that carried
+  it. A site that never read one of these fields directly (the common case, since cairn's own
+  components already handled them) sees no change.
+
 - The log-event vocabulary settles on one grammar (`area[.subject].verb_phrase`, past-tense for an
   occurrence or a state adjective for a detected condition) and every `reason`/`scope` value goes
   snake_case. Six renames: `admin.audit.sink_failed` to `audit.sink.write_failed`;
@@ -400,6 +492,55 @@ removal, nothing this list needs to carry.
   [SvelteKit](docs/reference/sveltekit.md#adminaction) and [log
   events](docs/reference/log-events.md). Consumers must: nothing; a throwing or rejecting sink
   previously failed the action and now does not.
+
+- `TidyResult.usage` renames to `TidyResult.tokens`: the token-usage field collided with
+  `MediaDeleteRefusal.usage` (the where-used rows) inside SvelteKit's generated `ActionData` for
+  the admin route once every content action carried a precise `ActionFailure<T>` (the sharpening
+  landed earlier in this window), which made `<CairnAdmin {form} />` fail `svelte-check` on every
+  consumer site. A type-level assertion in the library's own test suite now checks every facade
+  action's awaited return, successes included, against `CairnAdmin`'s `form` prop type, so a
+  future field-name collision across actions fails a compile rather than shipping unnoticed. See
+  [SvelteKit](docs/reference/sveltekit.md#createcontentroutes). **Consumers must:** rename any read of
+  `TidyResult.usage` to `TidyResult.tokens`.
+
+- `requireAccess`'s default `event.route.id` derivation (and `createSectionAction`'s own copy)
+  silently fell back to a shallower access-map key when a deeper key sat under a dynamic route
+  segment: a route id's `[id]`/`[...rest]` segment can never equal a deeper key's own literal
+  text, so a site that keyed both `/admin/money` and the stricter `/admin/money/payroll` under a
+  dynamic `/admin/money/[report]` route saw the deeper rule silently never apply, admitting the
+  shallower role instead (a review finding on this pass's own `route.id` change, caught before
+  release). The match now refuses outright rather than falling back whenever a map holds a key
+  deeper than a dynamic segment, so `requireAccess`/`createSectionAction` 403 and force an
+  explicit `target` for a route this ambiguous, the same posture the fail-closed unmatched case
+  already takes. A `defineAccess` screen-id key may no longer contain `(` or `)` either, closing
+  off the shape of the internal fail-closed sentinel a null or all-groups route id resolves to.
+  See [`requireAccess`](docs/reference/sveltekit.md#requireaccess). Consumers must: nothing for a
+  correctly configured map (one concrete key per route); a site relying on the shallow-fallback
+  behavior under a dynamic segment now sees a 403 and should declare `target` explicitly.
+
+- A refused first save or publish of a brand-new entry rendered a 404 and lost the draft: `?/save`
+  and `?/publish` resolve as query-only references against the page's own URL, replacing the whole
+  query (RFC 3986 §5.3), so a validation `fail()`'s load re-run lost `?new=1` and `editLoad` 404'd
+  on the not-yet-committed entry instead of rendering the refusal. `EditPage`'s form now carries
+  `&new=1` on its own POST target for a new entry, so the flag survives the re-run. Two related
+  refusal-visibility gaps close alongside it, review findings on this pass's own `fail()`
+  conversion: `publishAllAction`'s unexpected (non-conflict) commit failure and a failed session
+  logout both post to the bare `/admin`, whose own load unconditionally redirects away before it
+  can render a `fail()`'s payload, so each now answers on its own redirect channel instead
+  (publish-all gets a new bounded `publish_failed` code; logout clears the cookie before, not
+  after, its own best-effort session-row delete, so a D1 fault never leaves both the row and the
+  cookie valid). A `?/mediaUpdate` or `?/mediaAltPropagate` conflict lost its visible channel
+  entirely when the query-error relay it used to ride was removed earlier in this pass;
+  `MediaUpdateFailure`/`MediaAltPropagateFailure` now carry the asset's `hash` (optional; a
+  pre-hash failure in the alt-preview fetch action still has none), so the Library's existing
+  re-surface effect can re-open the right slide-over, and a hash-less refusal (no asset to
+  re-home to) now renders in a new top-level banner instead of nowhere. The login and confirm
+  pages likewise now render an unexpected action failure's own message instead of silently doing
+  nothing (`ConfirmPage` gains a `form` prop for this). See [Refusal
+  channels](docs/reference/sveltekit.md#refusal-channels). Consumers must: nothing; every changed
+  surface (`EditPage`, `LoginPage`, `ConfirmPage`, `CairnMediaLibrary`) is an internal component
+  behavior fix, and `MediaUpdateFailure.hash`/`MediaAltPropagateFailure.hash` are additive optional
+  fields.
 
 ### Documentation
 

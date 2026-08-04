@@ -329,7 +329,7 @@ closed phishing surface in `docs/explanation/security-model.md`.
 
 ## Post-mortem (2026-08-03)
 
-**Shipped.** Thirteen commits on `c2b-refusal-channel`, off `main` at `8559f3e7`. Nine implementer
+**Shipped.** Fourteen commits on `c2b-refusal-channel`, off `main` at `8559f3e7`. Nine implementer
 dispatches (A, B1, C1, C2, B2, D, E, G, F) plus a review fold, a simplifier pass, and two
 orchestrator commits. Holds unpublished; the branch is not merged and not pushed.
 

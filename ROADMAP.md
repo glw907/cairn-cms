@@ -110,25 +110,35 @@ release-one boundary; the passes are invariant.
   the zero-state pass; P3 viewport extremes; P4 sign-in touchpoints, with the keyboard/SR
   walkthrough as the attended session at phase end plus a fixes rider; P5 the
   `CairnMediaLibrary` split; P6 front-door docs (cold-reader, diagnostic-pair); P7 the
-  zero-credential quickstart. The standing template track (cairn.pub voice, starter set, Topo
-  with the docs-effectiveness infra, the scaffolder with its agent brief) runs parallel and
-  feeds the rebuilds.
+  zero-credential quickstart; **P8 the ambient-defaults remediation**, the phase-P bucket of the
+  2026-08-03 audit, enumerated in
+  [its report](docs/internal/2026-08-03-ambient-defaults-audit.md) rather than restated here.
+  Thirteen items, all additive, ordered by consequence in the report: the undetected managed-robots
+  prepend, the silent post-handoff mail path, the absent DNS-authentication check, the missing
+  `Cache-Control` on every admin response, the unverified `prerender` flag, the 307/308
+  trailing-slash divergence across the family, and the stripped `charset` on cairn's one deliberate
+  public-output header, among others. P7 and P8 overlap heavily and should be planned together, since
+  the quickstart's credential story and the audit's effective-state checks answer the same question
+  from opposite ends. The standing template track (cairn.pub voice, starter set, Topo with the
+  docs-effectiveness infra, the scaffolder with its agent brief) runs parallel and feeds the
+  rebuilds.
 - **The pre-RC block, ordered (Geoff, 2026-08-03).** C2b merged, and three items now sit between it
   and the RC cut, all additive and all riding the same unpublished window:
 
-  1. **The ambient-defaults audit.** Ready to run, and it gates two other things (the AI-posture pass
-     consumes it, and it is the provisioning script's specification), so it goes first. It reports
-     rather than builds.
+  1. ~~**The ambient-defaults audit.**~~ **RUN 2026-08-03**, report at
+     [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/2026-08-03-ambient-defaults-audit.md).
+     It does not gate the RC: one finding is recommended for this window (the engine's unconditional
+     two-year `includeSubDomains` admin HSTS, which overrides a zone owner's own HSTS decision), and
+     it is a judgment call rather than a forced hand. Everything else went to phase P or to the
+     operator.
   2. **The auth seam** (ASC seam 1 as a `create*` factory): a Fable planning sitting, then execution.
      Its design input is ready, and its window closes the session xcathletes runs Task 4, since after
      that the consumer has hand-written the code the seam exists to replace.
   3. **The AI-posture pass.** Consumes the audit, and lands before the migrations so each site adopts
      a posture during the session that migrates it rather than earning a second visit.
 
-  Then the RC cut, the migrations, phase P, phase F. **The audit yields its slot if xcathletes
-  schedules Task 4 sooner**: the audit is a report and can wait a pass, while the seam's window
-  genuinely closes. The AI-posture pass was briefly filed as P8 and moved out for the same
-  adopt-during-migration reason. See Now for all three.
+  Then the RC cut, the migrations, phase P, phase F. The AI-posture pass was briefly filed as P8 and
+  moved out for the adopt-during-migration reason. See Now for both remaining items.
 - Then the widened **go-public pass**, the **dress rehearsal**, and **RELEASE TWO:
   `1.0.0-beta.1`**.
 
@@ -302,82 +312,47 @@ The original decision framing, for the record:
   first real consumer of the seam already wrote down, and a factory that cannot express it would be
   unusable on arrival.
 
-- **The ambient-defaults audit: what does a deployed cairn site do that nobody decided? APPROVED
-  (Geoff, 2026-08-03), runs after C2b and BEFORE the AI-posture pass.**
+- **The ambient-defaults audit: RUN 2026-08-03.** Report:
+  [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/2026-08-03-ambient-defaults-audit.md).
+  Fourteen agents, one lens per surface plus an adversarial verifier per surface. It reported and
+  fixed nothing, per its own boundary, and the method terminated as designed.
 
-  **Why it exists.** Every gap-detection mechanism this project has is driven by someone bumping
-  into something: the consumer briefs report what ASC and xcathletes hit while building, the
-  friction log reports what writing a doc exposed, the review gates catch defects in code just
-  written, and the 2026-07-01 mission review asked what cairn does not do that a developer wants.
-  All of them are blind to the same class, **ambient behavior a deployed site inherits without
-  anyone choosing it**, because that class fails silently and so generates no report. The AI-crawler
-  finding is one instance: two of four sites were declining AI crawlers and nobody picked that.
+  **It does not gate the RC.** One finding is recommended for this window, and the recommendation is
+  a judgment call rather than a forced hand: `applySecurityHeaders` sets
+  `Strict-Transport-Security: max-age=63072000; includeSubDomains` unconditionally on every admin
+  response, so one editor visit to `/admin` pins a site's apex and every subdomain to HTTPS for two
+  years, including on zones whose owner deliberately left edge HSTS off (measured on cairn.pub, whose
+  public pages carry no HSTS at all). It is not API-breaking, so it could defer; it is recommended to
+  ride because the fix changes a security header four deployed sites emit, a domain-wide two-year pin
+  is a site owner's call rather than an inherited one, and the migrations open each site anyway.
 
-  **Why now, rather than in phase P.** Release one is the last cheap breaking round. A finding that
-  surfaces in phase P becomes its own breaking round against four sites; the same finding now joins
-  a `Consumers must:` list the migrations already absorb. And the AI-posture pass is its first
-  consumer: if several ambient defaults share a shape, they want one policy surface rather than a
-  bespoke `ai:` field plus a later refactor.
+  **The audit's answer to the AI-posture pass's question: the ambient defaults do NOT share one
+  shape.** They split into behavior the engine emits (headers, cache directives, cookie attributes)
+  and behavior the engine can only observe (Cloudflare's managed robots layer, zone TLS settings, DNS
+  mail authentication). A posture config belongs to the first group and should not try to absorb the
+  second. The second wants a check, which is the same conclusion the setup work reaches independently.
 
-  **The method, which is what makes this an audit and not a worry.** Enumerate the surfaces a
-  deployed cairn site presents to the world, and for each ask who chose the current behavior:
+  **What owning the whole chain unlocks (Geoff, 2026-08-03), now with evidence behind it.** cairn is
+  Cloudflare-specific, and the comparables survey makes that a capability rather than a limitation:
+  nothing among 22 tools fetches its own live deployed site and reports what it is actually serving,
+  with WordPress Site Health the cautionary case, since two of its three checks read configuration
+  back to itself while looking like live probes. cairn's `doctor/` currently sits on the same side of
+  that line for its three Cloudflare checks. The audit established the cost is low: every finding that
+  needed measuring rather than reading was reachable with `curl` and `dig` and **no credential at
+  all**, including HSTS presence, the http-to-https redirect, the TLS floor, the served robots.txt,
+  the trailing-slash status, and the full DKIM and return-path SPF picture. Directions, still
+  direction rather than commitment:
 
-  - HTTP response headers on public output (the admin has `applySecurityHeaders`; public is the
-    site's)
-  - robots.txt and sitemap, including the managed-layer interaction
-    ([[cloudflare-blocks-ai-crawlers-by-default]])
-  - cookies and privacy signals
-  - outbound email and its DNS authentication (SPF, DKIM, DMARC). Same shape as the crawler finding:
-    infrastructure-determined, invisible to the operator, total to the editor who never got the
-    magic link
-  - cache and CDN behavior
-  - error and redirect responses
-  - TLS and canonical host
-
-  For each, the answer is "the developer, explicitly", "cairn, deliberately, and it is documented",
-  or "nobody". **Only the third is a finding.** That terminates, which is the point.
-
-  **What owning the whole chain unlocks (Geoff, 2026-08-03).** cairn is Cloudflare-specific, and the
-  comparables survey makes clear that this is a capability rather than a limitation. Every other
-  tool in that survey hands off at some boundary and cannot reason past it. cairn owns the entire
-  publish chain: content, git, the GitHub App commit, the Worker, the bindings, the edge, and the
-  DNS. Nothing else surveyed can verify a link it does not own, which is the actual explanation for
-  the survey's near-universal silence.
-
-  Directions this opens, recorded as direction and not yet commitment, each an instance of "verify
-  what is actually true rather than what config claims":
-
-  - **Publish-chain verification end to end.** A publish commits to git, which deploys, which serves.
-    cairn could confirm the published entry is genuinely live at its permalink rather than assuming
-    the chain worked. No surveyed CMS controls enough of that path to try.
-  - **Magic-link deliverability.** cairn sends through Cloudflare Email and the site's DNS is in the
-    same account, so SPF, DKIM, DMARC, and sender-domain onboarding are all readable. This is the
-    same silent-failure shape as the crawler finding, and worse in consequence: an editor who never
-    receives the link has no way to report a failure they cannot see.
-  - **Binding and readiness truth.** `doctor/` and `check:readiness` already do a version of this
-    locally. The unlock is checking the deployed Worker rather than the local config.
-
-  These belong to later passes. They are recorded here because the audit will surface them and they
-  should land in a tier rather than in conversation.
-
-  **A comparables study runs alongside it** (Geoff, 2026-08-03; dispatched the same day so the
-  findings are on the shelf when the audit opens). **Consolidated results, 22 tools:**
-  `scratchpad/ambient-defaults-comparables.md`, to move into `docs/internal/` when C2b closes.
-  Read its coverage table first: three of four sub-agents misbehaved during the sweep, and the
-  Starlight, VitePress, and Kirby rows are thin. It asks how git-backed CMSs, site frameworks,
-  opinionated CMSs, and hosting layers each treat these same surfaces, classifying every tool and
-  surface pair as a silent default, a documented default, a forced decision, or absent. **The
-  forced-decision column is the point**: it tells us which mechanisms for making a developer choose
-  actually exist in the wild (required config key, failing build, init prompt, preflight check) and
-  which ones developers tolerate, which is exactly the evidence the no-default AI-posture ruling
-  needs. It also collects dated harm from silent defaults, and, bounded to this same
-  hygiene-and-operational space rather than a general feature survey, notes capabilities comparable
-  tools ship that cairn lacks.
-
-  **Bounded two ways.** The audit **reports and does not fix**. Findings triage into: rides this
-  window because it is breaking, defers to phase P because it is not, or is not cairn's job. Only
-  the first bucket touches the release. If run with breadth, one independent lens per surface is the
-  shape that fits, since a single reviewer's attention is exactly what this class slides past.
+  - **Effective-state checks in `doctor/`, credential-optional.** Run everything reachable without a
+    token, and do more when one is present, so a developer is never blocked waiting on access. This
+    replaces config readback with behavior probing and is strictly more truthful, since a Cloudflare
+    toggle reading one way while the edge behaves another is documented in the comparables research.
+  - **Publish-chain verification end to end.** Confirm the published entry is genuinely live at its
+    permalink rather than assuming the chain worked. No surveyed CMS controls enough of the path to try.
+  - **Magic-link deliverability.** The audit found the concrete gap: cairn's docs promise Cloudflare
+    "adds the SPF, DKIM, and DMARC records for you", which holds on a fresh domain and does not when
+    a `_dmarc` record already exists. Two of four sites kept pre-cairn `p=none` policies through
+    onboarding.
 
 - **The site's AI posture: its own dedicated pass, running after the audit. REQUESTED, PASS GRANTED, and
   SEQUENCED AHEAD OF THE SITE MIGRATIONS (Geoff, 2026-08-03).** One config expressing a site

@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-03: C2b is MERGED; next is the ambient-defaults audit)
+## Immediate next action (2026-08-03: the ambient-defaults audit is RUN; next is the auth seam)
 
 **Pass C2b is complete and MERGED to `main`** ([PR #20](https://github.com/glw907/cairn-cms/pull/20),
 merge `51d55dd3`; fifteen commits from `c2b-refusal-channel`, branched off `main` at `8559f3e7`).
@@ -34,28 +34,40 @@ files 0/0). Three full-page renders were read in the main loop, including a craf
 that renders nothing at all. Full detail and the post-mortem:
 `docs/superpowers/plans/2026-08-03-c2b-refusal-channel.md`.
 
-**The pre-RC queue, in order** (Geoff, 2026-08-03). All three are additive and ride the same
-unpublished window:
+**The ambient-defaults audit is RUN** (2026-08-03), as a 14-agent workflow: one lens per surface
+plus an adversarial verifier per surface. Report:
+[`docs/internal/2026-08-03-ambient-defaults-audit.md`](internal/2026-08-03-ambient-defaults-audit.md).
+It reported and fixed nothing, per its own boundary.
 
-1. **The ambient-defaults audit** — ready now, gates the other two, reports rather than builds.
-2. **The auth seam** (ASC seam 1 as a `create*` factory) — a Fable planning sitting, then execution.
+**It does not gate the RC.** One finding is recommended for this window and the recommendation is a
+judgment call, not a forced hand: the engine's admin HSTS is `max-age=63072000; includeSubDomains`
+unconditionally, so one editor visit to `/admin` pins a site's apex and every subdomain to HTTPS for
+two years, including on zones whose owner left edge HSTS off (measured on cairn.pub). It is not
+API-breaking, so it could defer; it is recommended to ride because the fix changes a security header
+four deployed sites emit and the migrations open each site anyway. Everything else triaged to phase P
+or to the operator. The audit's own inputs needed three corrections, all recorded in the report,
+including that the ASC cairn site is `dev.aksailingclub.org` rather than the apex.
+
+**The pre-RC queue, in order** (Geoff, 2026-08-03). Both remaining items are additive and ride the
+same unpublished window:
+
+1. **The auth seam** (ASC seam 1 as a `create*` factory) — a Fable planning sitting, then execution.
    Its input is ready and its window closes the session xcathletes runs Task 4 of its platform pass.
-3. **The AI-posture pass** — consumes the audit, lands before the migrations so each site adopts a
-   posture in the session that migrates it.
+   This is now the immediate next action.
+2. **The AI-posture pass** — consumes the audit, lands before the migrations so each site adopts a
+   posture in the session that migrates it. The audit's answer to its shared-shape question: the
+   ambient defaults do **not** want one policy surface. They split into behavior the engine emits
+   (headers, cache directives, cookie attributes) and behavior the engine can only observe (the
+   managed robots layer, zone TLS settings, DNS mail authentication). A posture config belongs to
+   the first group and should not try to absorb the second; the second wants a check.
 
-Then the RC cut and the migrations. **The audit yields its slot if xcathletes schedules Task 4
-sooner**: the audit is a report and can wait a pass, while the seam's window genuinely closes.
+Then the RC cut and the migrations.
 
-**One decision open, and it does not block starting.** Whether the ambient-defaults audit wants a
-multi-agent sweep. It is one lens per surface, which suits a workflow, and it needs Geoff's explicit
-opt-in.
-
-**Resume prompt** (fresh Opus 5 session, launched from `~/Projects/cairn-cms`):
-"Run the ambient-defaults audit. Read `ROADMAP.md`'s Now tier entry for it (the method, the surface
-list, the three-way who-chose-this test, and the report-don't-fix boundary) and
-`docs/internal/2026-08-03-ai-crawler-posture-research.md` for the evidence and the measured
-four-site audit. It runs BEFORE the AI-posture pass, which is its first consumer, and both run
-before the site migrations. Ask first whether C2b should merge to `main`."
+**Resume prompt** (fresh session, launched from `~/Projects/cairn-cms`):
+"Plan the auth seam: ASC seam 1 as a `create*` factory. Read `ROADMAP.md`'s Now tier entry for it
+(the shaping principle, what the factory owns versus what the site supplies, and the SMS threat-model
+section) and the `cairn-auth-seam-factory` memory. The window closes when xcathletes runs Task 4 of
+its platform pass, so confirm that has not happened first."
 
 **Carry this warning into every dispatch.** This pass's orchestrator derived the CI gate list from
 `.github/workflows/test.yml` once and then retyped it from memory across nine dispatches, dropping

@@ -205,10 +205,38 @@ no `message` field.
 
 **Acceptance:** tests cover absent binding, throwing `key()` and `limit()` (open, logged;
 redirect/error rethrown), blocked on both actions, and the log trio's shapes. The reference page
-(Task 6) must say the tests use a structural stub, so the real binding's period and per-colo
+(Task 7) must say the tests use a structural stub, so the real binding's period and per-colo
 semantics are unproven by this suite.
 
-### Task 6: Documentation, surface, and tracking
+### Task 6: The security model as a published document
+
+**Added 2026-08-04 at Geoff's direction, after Tasks 1 through 5 were written.** It is its own task
+rather than a bullet inside the docs task because it is a distinct deliverable with a distinct
+audience: a developer who wants to improve the model, not one who wants to use the surface.
+
+**Files:** create `docs/explanation/auth-channel-security-model.md`,
+`docs/internal/2026-08-04-auth-channel-review-rounds.md`; modify
+`docs/explanation/README.md` (arm index).
+
+**Outcome:** the spec's "The security model is a published document" section, in full. The
+explanation page carries the trust boundary, the threat catalogue (one entry per attack, each
+naming the attack, the mechanism, and the test that proves it), the named residual risks, and the
+how-to-propose-a-change section. The internal doc records both adversarial rounds: what was
+attacked, what was confirmed, what was rejected and why.
+
+**Constraints:** every threat-catalogue entry cites a real test by name from Tasks 1 through 5, so
+the page cannot claim a mechanism the suite does not prove; the residual-risk list is honest and
+includes the send-budget denial, the weak at-rest protection of a 6-digit hash, SMS's restricted
+status under NIST SP 800-63B, and the same-browser confirmation requirement; the page follows the
+explanation-arm register in `docs/internal/docs-register.md`; it is written for a developer
+improving the model, never as reassurance prose.
+
+**Acceptance:** `check:docs` (link and anchor gate) and `check:arm-indexes` green; the page's every
+named test exists in the suite (grep each name); `check:prose` and Vale's Google package green over
+the new explanation page; a fresh reader can answer "why does the nonce cookie exist" from the page
+alone.
+
+### Task 7: Documentation, surface, and tracking
 
 **Files:** create `docs/reference/auth-channel.md`, `docs/guides/add-a-login-channel.md`; modify
 `docs/reference/log-events.md`, `docs/reference/README.md`, `CHANGELOG.md`, `ROADMAP.md`;
@@ -217,7 +245,8 @@ regenerate `docs/internal/api-surface.md`.
 **Outcome:** the docs arm per the spec's Documentation section.
 
 **Constraints:** a test asserts the guide's DDL block equals `CHANNEL_SCHEMA_SQL`, so the doc
-cannot drift; the guide carries the same-browser confirmation rule with its anti-phishing upside,
+cannot drift; the reference page and the guide both link the security-model page from Task 6; the
+guide carries the same-browser confirmation rule with its anti-phishing upside,
 the `challenge` hook as Turnstile's home, the client-side resend timer, the roster-removal
 exemplar calling `revokeSessions`, the read-replication constraint, and the operator correlation
 one-liner; `CHANNEL_SCHEMA_SQL` is documented as migration-only, never a request path; the
@@ -229,7 +258,7 @@ consumer proof) as its own entry.
 `check:snippets`, `check:package`, and `check:surface -- --update` (snapshot committed) all green,
 run by name.
 
-### Task 7: Pass close
+### Task 8: Pass close
 
 The `cairn-pass` ending ritual, whole: code-simplifier over the pass's changes; the full gate
 including the four CI-only checks by name; reviewer fan-out with `web-auth-security-reviewer`

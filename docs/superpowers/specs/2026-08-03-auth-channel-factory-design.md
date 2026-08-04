@@ -387,6 +387,45 @@ operator correlation one-liner, and the statement that email magic-link stays th
 `CHANNEL_SCHEMA_SQL` is documented as migration-only, never a request path. Changelog under
 `## Unreleased`, additive, no version bump.
 
+### The security model is a published document (Geoff, 2026-08-04)
+
+The disciplines in this spec are worth nothing to a developer who cannot see why they exist. A
+reader who does not know that the nonce cookie exists to stop an attacker contesting a victim's
+code row will read it as ceremony and route around it, and a reader who wants to improve the model
+has no way in. So the model ships as an explanation-arm page,
+`docs/explanation/auth-channel-security-model.md`, and it is a permanent doc that later passes
+maintain, not a one-time writeup.
+
+What the page carries:
+
+- **The trust boundary**, stated once: what the engine guarantees, what the site owns, and the one
+  config field (`normalize`) that carries a correctness obligation.
+- **The threat catalogue**, one entry per attack the design answers, each naming the attack, the
+  mechanism that answers it, and the test that proves the mechanism. Roster enumeration through
+  response bodies, timing, and store failures. Attempt-budget exhaustion. Code invalidation. Code
+  brute force, with the arithmetic shown. SMS-pumping toll fraud. Session theft and its blast
+  radius. Deprovisioned-member access. Credential exposure through logs and through read-only
+  database access.
+- **The residual risks, named rather than buried.** An attacker can still burn a member's hourly
+  send budget, which delays that member's login without granting access. Hashing a 6-digit code
+  gives little at-rest protection, and the mitigation is the 10-minute TTL plus session binding.
+  SMS is a restricted authenticator under NIST SP 800-63B, which obliges a site choosing it to
+  assess and disclose that risk. The Cloudflare rate-limit binding is back pressure, not a
+  control. A member must confirm in the browser that requested.
+- **How to propose a change**, which is the part that makes the page useful rather than decorative:
+  the acceptance test any proposal must still pass, the disciplines that are load-bearing and why,
+  and the standing instruction that a change to this model gets an adversarial review round before
+  implementation, not only at the pass-end gate.
+
+The page follows the docs register's explanation arm and links from the reference page and the
+guide, so a developer reaching either one finds it.
+
+Separately and internally, `docs/internal/2026-08-04-auth-channel-review-rounds.md` records the two
+adversarial rounds: what was attacked, what was confirmed, what was rejected and why. That is the
+provenance a future reviewer needs to avoid re-litigating settled ground, and it is the raw
+material the explanation page is distilled from. It stays internal because it is process history,
+not developer documentation.
+
 ## Revision log (v1 to v2)
 
 Adopted from review: session binding via nonce cookie; identity-keyed rows with decoy writes for

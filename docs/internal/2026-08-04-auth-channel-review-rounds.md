@@ -107,8 +107,48 @@ converts the guessing bound from arithmetic to economics.
 
 Framed as a final round: hunt a third instance of the deny-on-the-victim defect, check the new
 mechanisms for the self-consistency failure v2 had, verify the residual-risk arithmetic, and check
-that the plan's acceptance criteria would actually fail when they should. Its outcome and any
-accepted residuals are recorded in the pass post-mortem.
+that the plan's acceptance criteria would fail when they should. It found the defect a third time,
+**inside the mechanism v3 had added to prevent it**.
+
+**Escalation was never a mechanism.** Neither result union carried a way to say "solve a
+challenge", so a site could not render one. On `request`, `challenge` already ran unconditionally,
+so "demand a fresh challenge" was either a no-op or a second verification of a single-use token
+that fails closed. On `confirm`, where the realistic site form carries no token, demanding one
+meant `challenge` returned false and the flow failed closed, which is a denial keyed on the victim.
+The plan's own acceptance criterion (deep-equal response bodies across an escalated input) required
+the mechanism to be inert.
+
+**The live-row cap evicted the victim's code.** The spec said a new nonce deletes "that browser's
+prior rows", but rows are keyed on the nonce alone with no browser column, so what the plan
+specified pruned by identity. The polarity was backwards in the sharpest possible way: nonce reuse
+means a legitimate repeat requester never mints a new nonce and therefore never prunes, so pruning
+fired almost exclusively for cookie-clearing attackers and deleted almost exclusively legitimate
+rows.
+
+**The anti-spam ceiling denied on the identity**, on a sliding window, so an attacker sustaining 30
+requests an hour sustained the denial indefinitely at roughly a dollar a day per victim. The v3
+residual described it as bounded "within an hour window", which was wrong.
+
+**`challenge: () => true` was a working insecure channel written through the factory.** v3 required
+`challenge` as config and rested its whole economic bound on it, while listing only `normalize` and
+`lookup` as carrying correctness obligations.
+
+**The salt could not be per-deployment.** It lived in a static exported constant that a doc test
+pins byte-for-byte, so the three reachable outcomes were a public shared salt, an unenforced
+placeholder, or a broken test.
+
+The round also confirmed the v3 arithmetic was internally correct while resting on the inert
+escalation, so the published figure was eight times low, and that the roster-aggregate number (the
+one an operator actually cares about) was missing.
+
+Its own verdict was that these were bounded and local corrections rather than a fourth redesign,
+and it scoped them to about seven places. **v3.1 applied that list.** The correction that matters
+most is not any single mechanism: it is that the rule became absolute. v3 carved out two exceptions
+to "never key a denial on the victim" and both were exploited within one review round.
+
+**v3.1 has not itself been reviewed.** The sitting stopped there by agreement, and the pass-end
+gate (Task 8, `web-auth-security-reviewer` mandatory) is where it gets caught if the amendment
+introduced something new.
 
 ## What to carry forward
 

@@ -352,7 +352,11 @@ exemplar calling `revokeSessions`, the read-replication constraint, and the oper
 one-liner; `CHANNEL_SCHEMA_SQL` is documented as migration-only, never a request path; the
 changelog entry is additive under `## Unreleased` with no version bump; ROADMAP marks the Now-tier
 auth-seam entry shipped, files the editor-default-to-codes question, and files **pass 2** (the
-consumer proof) as its own entry.
+consumer proof) as its own entry. ROADMAP also files a passkey layer (added 2026-08-04 at Geoff's
+direction): returning-member passkeys on the auth-channel session model, post-1.0 tier. Passkeys
+cannot replace the code channel (enrollment and recovery still need the roster-contact bootstrap);
+they layer on top via the `kind` discriminator, and a design for them earns its own adversarial
+rounds before implementation.
 
 **Acceptance:** `check:reference`, `check:reference:signatures`, `check:docs`, `check:arm-indexes`,
 `check:snippets`, `check:package`, and `check:surface -- --update` (snapshot committed) all green,

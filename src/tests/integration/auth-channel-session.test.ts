@@ -154,6 +154,36 @@ describe('session cookie attributes on confirm success', () => {
   });
 });
 
+describe('confirm cleans up an orphaned prior session', () => {
+  it('deletes the row an incoming session cookie names and logs session.destroyed with the correlation id', async () => {
+    const channel = createAuthChannel<TestEnv>(makeConfig({ lookup: async () => 'sub-orphan' }));
+    const firstToken = await signIn(channel, 'orphan@x.test', 'sub-orphan');
+    const firstHash = await hashToken(firstToken);
+
+    // A second confirm from the same browser, still carrying the first session's cookie: the old
+    // row must not survive as an orphan once the new session mints.
+    const { nonceToken, code } = await seedCode({ contact: 'orphan@x.test', subject: 'sub-orphan' });
+    const jar = makeCookies({ [PENDING_HTTPS]: nonceToken, [SESSION_HTTPS]: firstToken });
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
+      expect(result).toEqual({ ok: true });
+      const destroyed = infoSpy.mock.calls
+        .map((c) => c[0] as { event?: string; correlationId?: string })
+        .filter((r) => r.event === 'auth.channel.session.destroyed');
+      expect(destroyed).toHaveLength(1);
+      expect(destroyed[0].correlationId).toMatch(/^[0-9a-f]{16}$/);
+    } finally {
+      vi.restoreAllMocks();
+    }
+    const oldRow = await db
+      .prepare('SELECT COUNT(*) AS n FROM cairn_channel_session WHERE token_hash = ?1')
+      .bind(firstHash)
+      .first<{ n: number }>();
+    expect(oldRow?.n ?? 0).toBe(0);
+  });
+});
+
 describe('logout', () => {
   it('refuses a mismatched origin', async () => {
     const channel = createAuthChannel<TestEnv>(makeConfig());

@@ -778,6 +778,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     const existingSessionToken = event.cookies.get(sessionCookieNm);
     if (existingSessionToken) {
       await destroyChannelSession(session, await hashToken(existingSessionToken));
+      log.info('auth.channel.session.destroyed', { correlationId });
     }
 
     const sessionToken = generateToken();

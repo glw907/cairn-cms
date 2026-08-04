@@ -4,8 +4,7 @@ Internal process record for the `createAuthChannel` seam. Written 2026-08-04, du
 sitting, so the findings survive the sitting's context. This is provenance, not documentation: it
 exists so a later reviewer can see what was already attacked and why a mechanism is shaped the way
 it is, without re-litigating settled ground. The developer-facing distillation is
-`docs/explanation/auth-channel-security-model.md` (Task 6 of the factory plan creates it and
-restores this as a live link; a link before the page exists fails the docs-links gate);
+[`docs/explanation/auth-channel-security-model.md`](../explanation/auth-channel-security-model.md);
 the design itself is
 [the spec](../superpowers/specs/2026-08-03-auth-channel-factory-design.md).
 

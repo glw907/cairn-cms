@@ -7,161 +7,36 @@
 // structural guard against the default key silently collapsing to the identity alone. This
 // suite uses a structural stub for the binding; the real Cloudflare limiter's period and
 // per-colo semantics are not proven here (Task 7's reference page notes that).
-import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { redirect } from '@sveltejs/kit';
-import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';
 import { createAuthChannel } from '../../lib/auth-channel/index.js';
-import type { AuthChannelConfig, RateLimitLike } from '../../lib/auth-channel/index.js';
-import { mintCode, provisionSalt } from '../../lib/auth-channel/store.js';
-import { deriveIdentity, generateCode } from '../../lib/auth-channel/identity.js';
-import { hashToken, cookieName } from '../../lib/auth/crypto.js';
+import type { RateLimitLike } from '../../lib/auth-channel/index.js';
 import { log } from '../../lib/log/index.js';
-import { applyChannelSchema, resetChannelDb } from './_channel-harness.js';
+import {
+  applyChannelSchema,
+  budgetSum,
+  codeRowCount,
+  makeChannelConfig as makeConfig,
+  makeCookies,
+  makeEvent,
+  resetChannelDb,
+  seedCode,
+  PENDING_HTTPS,
+} from './_channel-harness.js';
+import type { ChannelTestEnv } from './_channel-harness.js';
 import { expectRedirect } from '../_redirect-assertions.js';
-import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
-
-type TestEnv = { CHANNEL_DB: D1Database };
-
-const db = env.CHANNEL_DB;
 
 beforeAll(async () => {
-  await applyChannelSchema(db);
+  await applyChannelSchema();
 });
 
 beforeEach(async () => {
-  await resetChannelDb(db);
+  await resetChannelDb();
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
-
-function session(): D1DatabaseSession {
-  return db.withSession('first-primary');
-}
-
-/** An in-memory cookie jar, mirroring the request/confirm suites' own. */
-function makeCookies(initial: Record<string, string> = {}): CookieJar & {
-  sets: { name: string; value: string; opts: CookieSetOptions }[];
-} {
-  const jar = new Map(Object.entries(initial));
-  const sets: { name: string; value: string; opts: CookieSetOptions }[] = [];
-  return {
-    sets,
-    get: (name) => jar.get(name),
-    set: (name, value, opts) => {
-      jar.set(name, value);
-      sets.push({ name, value, opts });
-    },
-    delete: (name) => void jar.delete(name),
-  };
-}
-
-interface EventInput {
-  url?: string;
-  address?: string;
-  contact?: string;
-  code?: string;
-  cookies?: ReturnType<typeof makeCookies>;
-}
-
-function baseUrl(input: EventInput): URL {
-  return new URL(input.url ?? 'https://member.example.test/login');
-}
-
-/** Build a request-action event; origin matches the URL's own so the origin check never trips. */
-function makeRequestEvent(input: EventInput = {}) {
-  const u = baseUrl(input);
-  const request = new Request(u, {
-    method: 'POST',
-    body: new URLSearchParams(input.contact !== undefined ? { contact: input.contact } : {}),
-    headers: { origin: u.origin },
-  });
-  return {
-    url: u,
-    request,
-    cookies: input.cookies ?? makeCookies(),
-    getClientAddress: () => input.address ?? '203.0.113.1',
-    platform: { env: { CHANNEL_DB: db } },
-  };
-}
-
-/** Build a confirm-action event; origin matches the URL's own so the origin check never trips. */
-function makeConfirmEvent(input: EventInput = {}) {
-  const u = baseUrl(input);
-  const body = new URLSearchParams();
-  if (input.code !== undefined) body.set('code', input.code);
-  const request = new Request(u, { method: 'POST', body, headers: { origin: u.origin } });
-  return {
-    url: u,
-    request,
-    cookies: input.cookies ?? makeCookies(),
-    getClientAddress: () => input.address ?? '203.0.113.1',
-    platform: { env: { CHANNEL_DB: db } },
-  };
-}
-
-/** A minimal, valid config: identity normalize, an always-passing challenge, a deliver spy. */
-function makeConfig(
-  overrides: Partial<AuthChannelConfig<TestEnv>> = {},
-): { config: AuthChannelConfig<TestEnv>; sent: { contact: string; code: string }[] } {
-  const sent: { contact: string; code: string }[] = [];
-  const config: AuthChannelConfig<TestEnv> = {
-    resolveDb: (e) => e?.CHANNEL_DB,
-    deliver: async (contact, code) => {
-      sent.push({ contact, code });
-    },
-    lookup: async () => null,
-    normalize: (raw) => raw.trim().toLowerCase(),
-    challenge: async () => true,
-    cookie: { name: 'member_session' },
-    ...overrides,
-  };
-  return { config, sent };
-}
-
-const PENDING_HTTPS = cookieName('member_session_pending', true);
-
-/** Mint a code row directly against the store, so a confirm-side test controls the nonce, code,
- *  and subject precisely without going through the request action. */
-async function seedCode(opts: {
-  contact: string;
-  subject: string | null;
-  requesterBucket?: string;
-}): Promise<{ nonceToken: string; code: string; identity: string }> {
-  const nonceToken = crypto.randomUUID();
-  const nonceHash = await hashToken(nonceToken);
-  const salt = await provisionSalt(session());
-  const identity = await deriveIdentity(salt, opts.subject, opts.contact);
-  const code = generateCode(8);
-  const codeHash = await hashToken(code);
-  await mintCode(
-    session(),
-    nonceHash,
-    identity,
-    codeHash,
-    opts.subject,
-    Date.now(),
-    10 * 60_000,
-    60_000,
-    opts.requesterBucket ?? `bucket-${nonceToken}`,
-  );
-  return { nonceToken, code, identity };
-}
-
-async function codeRowCount(): Promise<number> {
-  const row = await db.prepare('SELECT COUNT(*) AS n FROM cairn_channel_code').first<{ n: number }>();
-  return row?.n ?? 0;
-}
-
-async function budgetSum(scope: string): Promise<number> {
-  const row = await db
-    .prepare('SELECT COALESCE(SUM(count), 0) AS n FROM cairn_channel_budget WHERE scope = ?1')
-    .bind(scope)
-    .first<{ n: number }>();
-  return row?.n ?? 0;
-}
 
 describe('rate limit: absent binding degrades to open', () => {
   it('runs request normally and logs rate_limit_absent with no PII', async () => {
@@ -170,8 +45,8 @@ describe('rate limit: absent binding degrades to open', () => {
       lookup: async () => 'sub-1',
       rateLimit: { resolve: () => undefined },
     });
-    const channel = createAuthChannel<TestEnv>(config);
-    const result = await channel.actions.request(makeRequestEvent({ contact: 'known@x.test' }));
+    const channel = createAuthChannel<ChannelTestEnv>(config);
+    const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
     expect(result).toEqual({ sent: true });
     expect(sent).toHaveLength(1);
     const call = warnSpy.mock.calls.find(([event]) => event === 'auth.channel.rate_limit_absent');
@@ -195,8 +70,8 @@ describe('rate limit: throwing key()/limit() degrades to open', () => {
         },
       },
     });
-    const channel = createAuthChannel<TestEnv>(config);
-    const result = await channel.actions.request(makeRequestEvent({ contact: 'known@x.test' }));
+    const channel = createAuthChannel<ChannelTestEnv>(config);
+    const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
     expect(result).toEqual({ sent: true });
     expect(sent).toHaveLength(1);
     expect(warnSpy).toHaveBeenCalledWith(
@@ -215,8 +90,8 @@ describe('rate limit: throwing key()/limit() degrades to open', () => {
       lookup: async () => 'sub-1',
       rateLimit: { resolve: () => limiter },
     });
-    const channel = createAuthChannel<TestEnv>(config);
-    const result = await channel.actions.request(makeRequestEvent({ contact: 'known@x.test' }));
+    const channel = createAuthChannel<ChannelTestEnv>(config);
+    const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
     expect(result).toEqual({ sent: true });
     expect(sent).toHaveLength(1);
     expect(warnSpy).toHaveBeenCalledWith(
@@ -237,9 +112,9 @@ describe('rate limit: throwing key()/limit() degrades to open', () => {
         },
       },
     });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const { status, location } = await expectRedirect(() =>
-      channel.actions.request(makeRequestEvent({ contact: 'known@x.test' })),
+      channel.actions.request(makeEvent({ contact: 'known@x.test' })),
     );
     expect(status).toBe(303);
     expect(location).toBe('/somewhere');
@@ -255,8 +130,8 @@ describe('rate limit: blocked', () => {
       lookup: async () => 'sub-1',
       rateLimit: { resolve: () => limiter },
     });
-    const channel = createAuthChannel<TestEnv>(config);
-    const result = await channel.actions.request(makeRequestEvent({ contact: 'known@x.test' }));
+    const channel = createAuthChannel<ChannelTestEnv>(config);
+    const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
     expect(result).toEqual({ error: 'throttled' });
     expect(sent).toHaveLength(0);
     expect(await codeRowCount()).toBe(0);
@@ -273,9 +148,9 @@ describe('rate limit: blocked', () => {
     const { nonceToken } = await seedCode({ contact: 'known@x.test', subject: 'sub-1' });
     const limiter: RateLimitLike = { limit: async () => ({ success: false }) };
     const config = makeConfig({ rateLimit: { resolve: () => limiter } }).config;
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const cookies = makeCookies({ [PENDING_HTTPS]: nonceToken });
-    const result = await channel.actions.confirm(makeConfirmEvent({ cookies, code: '00000000' }));
+    const result = await channel.actions.confirm(makeEvent({ cookies, code: '00000000' }));
     expect(result).toEqual({ error: 'throttled' });
     expect(await codeRowCount()).toBe(1);
     expect(await budgetSum('escalation')).toBe(0);
@@ -300,10 +175,10 @@ describe('rate limit: default key composition', () => {
       lookup: async () => null,
       rateLimit: { resolve: () => limiter },
     });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
 
-    await channel.actions.request(makeRequestEvent({ contact: 'shared@x.test', address: '203.0.113.10' }));
-    await channel.actions.request(makeRequestEvent({ contact: 'shared@x.test', address: '198.51.100.20' }));
+    await channel.actions.request(makeEvent({ contact: 'shared@x.test', address: '203.0.113.10' }));
+    await channel.actions.request(makeEvent({ contact: 'shared@x.test', address: '198.51.100.20' }));
 
     expect(keys).toHaveLength(2);
     expect(keys[0]).not.toBe(keys[1]);

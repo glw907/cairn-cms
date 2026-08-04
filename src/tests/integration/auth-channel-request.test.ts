@@ -5,118 +5,38 @@
 // after an attacker in a separate cookie jar blows past every identity-keyed cap.
 import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
-import type { D1Database } from '@cloudflare/workers-types';
 import { createAuthChannel } from '../../lib/auth-channel/index.js';
-import type { AuthChannelConfig, DeliverContext } from '../../lib/auth-channel/index.js';
 import { consumeCode } from '../../lib/auth-channel/store.js';
-import { hashToken, cookieName } from '../../lib/auth/crypto.js';
-import { applyChannelSchema, resetChannelDb } from './_channel-harness.js';
+import { hashToken } from '../../lib/auth/crypto.js';
+import {
+  applyChannelSchema,
+  budgetSum,
+  channelSession,
+  codeRowCount,
+  makeChannelConfig as makeConfig,
+  makeCookies,
+  makeEvent,
+  resetChannelDb,
+  PENDING_HTTP,
+  PENDING_HTTPS,
+} from './_channel-harness.js';
+import type { ChannelTestEnv } from './_channel-harness.js';
 import { expectHttpError } from '../_redirect-assertions.js';
-import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
-
-type TestEnv = { CHANNEL_DB: D1Database };
 
 const db = env.CHANNEL_DB;
 
 beforeAll(async () => {
-  await applyChannelSchema(db);
+  await applyChannelSchema();
 });
 
 beforeEach(async () => {
-  await resetChannelDb(db);
+  await resetChannelDb();
 });
-
-/** An in-memory cookie jar that also records every set() call, for attribute assertions. */
-function makeCookies(initial: Record<string, string> = {}): CookieJar & {
-  sets: { name: string; value: string; opts: CookieSetOptions }[];
-} {
-  const jar = new Map(Object.entries(initial));
-  const sets: { name: string; value: string; opts: CookieSetOptions }[] = [];
-  return {
-    sets,
-    get: (name) => jar.get(name),
-    set: (name, value, opts) => {
-      jar.set(name, value);
-      sets.push({ name, value, opts });
-    },
-    delete: (name) => void jar.delete(name),
-  };
-}
-
-interface EventInput {
-  url?: string;
-  address?: string;
-  contact?: string;
-  cookies?: ReturnType<typeof makeCookies>;
-  origin?: string | null;
-  waitUntil?: (promise: Promise<unknown>) => void;
-}
-
-/** Build a request-action event. Origin defaults to the URL's own origin so ordinary tests never
- *  trip the unconditional origin check; pass `origin: null` or a mismatched value to test it. */
-function makeEvent(input: EventInput = {}) {
-  const url = input.url ?? 'https://member.example.test/login';
-  const u = new URL(url);
-  const headers: Record<string, string> = {};
-  const origin = input.origin === undefined ? u.origin : input.origin;
-  if (origin !== null) headers.origin = origin;
-  const request = new Request(url, {
-    method: 'POST',
-    body: new URLSearchParams(input.contact !== undefined ? { contact: input.contact } : {}),
-    headers,
-  });
-  return {
-    url: u,
-    request,
-    cookies: input.cookies ?? makeCookies(),
-    getClientAddress: () => input.address ?? '203.0.113.1',
-    platform: {
-      env: { CHANNEL_DB: db },
-      ...(input.waitUntil ? { ctx: { waitUntil: input.waitUntil } } : {}),
-    },
-  };
-}
-
-/** A minimal, valid config: identity function normalize, a challenge that always passes, and a
- *  deliver spy recording every call. Overridable per test. */
-function makeConfig(
-  overrides: Partial<AuthChannelConfig<TestEnv>> = {},
-): { config: AuthChannelConfig<TestEnv>; sent: { contact: string; code: string }[] } {
-  const sent: { contact: string; code: string }[] = [];
-  const config: AuthChannelConfig<TestEnv> = {
-    resolveDb: (e) => e?.CHANNEL_DB,
-    deliver: async (contact, code) => {
-      sent.push({ contact, code });
-    },
-    lookup: async () => null,
-    normalize: (raw) => raw.trim().toLowerCase(),
-    challenge: async () => true,
-    cookie: { name: 'member_session' },
-    ...overrides,
-  };
-  return { config, sent };
-}
-
-async function codeRowCount(): Promise<number> {
-  const row = await db.prepare('SELECT COUNT(*) AS n FROM cairn_channel_code').first<{ n: number }>();
-  return row?.n ?? 0;
-}
-
-async function budgetCount(scope: string): Promise<number> {
-  const row = await db
-    .prepare('SELECT COALESCE(SUM(count), 0) AS n FROM cairn_channel_budget WHERE scope = ?1')
-    .bind(scope)
-    .first<{ n: number }>();
-  return row?.n ?? 0;
-}
-
-const PENDING_HTTPS = cookieName('member_session_pending', true);
-const PENDING_HTTP = cookieName('member_session_pending', false);
 
 describe('origin and scheme checks', () => {
   it('refuses a mismatched origin', async () => {
     const { config } = makeConfig();
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const event = makeEvent({ contact: 'a@x.test', origin: 'https://evil.test' });
     const { status } = await expectHttpError(() => channel.actions.request(event));
     expect(status).toBe(403);
@@ -125,7 +45,7 @@ describe('origin and scheme checks', () => {
 
   it('refuses plain http outside localhost', async () => {
     const { config } = makeConfig();
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const event = makeEvent({ url: 'http://member.example.test/login', contact: 'a@x.test' });
     const { status } = await expectHttpError(() => channel.actions.request(event));
     expect(status).toBe(403);
@@ -133,7 +53,7 @@ describe('origin and scheme checks', () => {
 
   it('allows plain http on localhost', async () => {
     const { config, sent } = makeConfig({ lookup: async () => 'sub-1' });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const event = makeEvent({ url: 'http://localhost:5173/login', contact: 'a@x.test' });
     const result = await channel.actions.request(event);
     expect(result).toEqual({ sent: true });
@@ -141,15 +61,62 @@ describe('origin and scheme checks', () => {
   });
 });
 
+describe('housekeeping rides the mint', () => {
+  it('a successful request sweeps expired code rows, expired sessions, and stale budget rows', async () => {
+    const past = Date.now() - 60 * 60 * 1000;
+    await db
+      .prepare(
+        `INSERT INTO cairn_channel_code
+           (nonce_hash, identity, code_hash, subject, kind, attempts, expires_at, created_at, requester_bucket)
+         VALUES ('stale-nonce', 'stale-id', 'stale-hash', NULL, 'code', 0, ?1, ?2, 'stale-bucket')`,
+      )
+      .bind(past, past)
+      .run();
+    await db
+      .prepare(
+        `INSERT INTO cairn_channel_session (token_hash, subject, expires_at, created_at)
+         VALUES ('stale-session', 'stale-subject', ?1, ?2)`,
+      )
+      .bind(past, past)
+      .run();
+    await db
+      .prepare(
+        `INSERT INTO cairn_channel_budget (bucket, scope, count, window_start, prev_count)
+         VALUES ('stale:budget', 'stale', 1, ?1, 0)`,
+      )
+      .bind(past - 2 * 60 * 60 * 1000)
+      .run();
+
+    const { config } = makeConfig({ lookup: async () => 'sub-sweep' });
+    const channel = createAuthChannel<ChannelTestEnv>(config);
+    // No platform on the test event, so the sweep awaits inline and is deterministic here.
+    const result = await channel.actions.request(makeEvent({ contact: 'sweep@x.test' }));
+    expect(result).toEqual({ sent: true });
+
+    const staleCode = await db
+      .prepare("SELECT COUNT(*) AS n FROM cairn_channel_code WHERE nonce_hash = 'stale-nonce'")
+      .first<{ n: number }>();
+    const staleSession = await db
+      .prepare("SELECT COUNT(*) AS n FROM cairn_channel_session WHERE token_hash = 'stale-session'")
+      .first<{ n: number }>();
+    const staleBudget = await db
+      .prepare("SELECT COUNT(*) AS n FROM cairn_channel_budget WHERE bucket = 'stale:budget'")
+      .first<{ n: number }>();
+    expect(staleCode?.n ?? -1).toBe(0);
+    expect(staleSession?.n ?? -1).toBe(0);
+    expect(staleBudget?.n ?? -1).toBe(0);
+  });
+});
+
 describe('challenge (step 2)', () => {
   it('a false challenge writes no row, calls no deliver, charges nothing, and answers challenge-required', async () => {
     const { config, sent } = makeConfig({ challenge: async () => false, lookup: async () => 'sub-1' });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
     expect(result).toEqual({ error: 'challenge-required' });
     expect(sent).toHaveLength(0);
     expect(await codeRowCount()).toBe(0);
-    expect(await budgetCount('send')).toBe(0);
+    expect(await budgetSum('send')).toBe(0);
   });
 
   it('a throwing challenge fails closed the same way', async () => {
@@ -158,7 +125,7 @@ describe('challenge (step 2)', () => {
         throw new Error('turnstile down');
       },
     });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'known@x.test' }));
     expect(result).toEqual({ error: 'challenge-required' });
     expect(sent).toHaveLength(0);
@@ -169,7 +136,7 @@ describe('challenge (step 2)', () => {
 describe('normalize (step 3)', () => {
   it('rejects output over 254 characters', async () => {
     const { config } = makeConfig({ normalize: () => 'x'.repeat(255) });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'anything' }));
     expect(result).toEqual({ error: 'invalid' });
     expect(await codeRowCount()).toBe(0);
@@ -181,14 +148,14 @@ describe('normalize (step 3)', () => {
         throw new Error('bad shape');
       },
     });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'anything' }));
     expect(result).toEqual({ error: 'invalid' });
   });
 
   it('rejects an empty contact', async () => {
     const { config } = makeConfig();
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent());
     expect(result).toEqual({ error: 'invalid' });
     expect(await codeRowCount()).toBe(0);
@@ -198,7 +165,7 @@ describe('normalize (step 3)', () => {
 describe('unavailable (input-independent faults)', () => {
   it('answers unavailable when resolveDb yields no binding', async () => {
     const { config } = makeConfig({ resolveDb: () => undefined });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(makeEvent({ contact: 'a@x.test' }));
     expect(result).toEqual({ error: 'unavailable' });
   });
@@ -207,11 +174,11 @@ describe('unavailable (input-independent faults)', () => {
     await db.prepare("UPDATE cairn_channel_meta SET value = '0' WHERE key = 'schema_version'").run();
     try {
       const { config: absentConfig } = makeConfig({ resolveDb: () => undefined });
-      const absentChannel = createAuthChannel<TestEnv>(absentConfig);
+      const absentChannel = createAuthChannel<ChannelTestEnv>(absentConfig);
       const absentResult = await absentChannel.actions.request(makeEvent({ contact: 'a@x.test' }));
 
       const { config: mismatchConfig } = makeConfig();
-      const mismatchChannel = createAuthChannel<TestEnv>(mismatchConfig);
+      const mismatchChannel = createAuthChannel<ChannelTestEnv>(mismatchConfig);
       const mismatchResult = await mismatchChannel.actions.request(makeEvent({ contact: 'a@x.test' }));
 
       expect(absentResult).toEqual({ error: 'unavailable' });
@@ -226,15 +193,15 @@ describe('unavailable (input-independent faults)', () => {
 describe('response uniformity across known, unknown, and cooldown-held inputs', () => {
   it('known, unknown, and cooldown-held all answer the byte-identical {sent: true}', async () => {
     const { config: knownConfig, sent: knownSent } = makeConfig({ lookup: async () => 'sub-1' });
-    const knownChannel = createAuthChannel<TestEnv>(knownConfig);
+    const knownChannel = createAuthChannel<ChannelTestEnv>(knownConfig);
     const knownResult = await knownChannel.actions.request(makeEvent({ contact: 'known@x.test', address: '203.0.113.10' }));
 
     const { config: unknownConfig, sent: unknownSent } = makeConfig();
-    const unknownChannel = createAuthChannel<TestEnv>(unknownConfig);
+    const unknownChannel = createAuthChannel<ChannelTestEnv>(unknownConfig);
     const unknownResult = await unknownChannel.actions.request(makeEvent({ contact: 'unknown@x.test', address: '203.0.113.11' }));
 
     const { config: cooldownConfig, sent: cooldownSent } = makeConfig({ lookup: async () => 'sub-2' });
-    const cooldownChannel = createAuthChannel<TestEnv>(cooldownConfig);
+    const cooldownChannel = createAuthChannel<ChannelTestEnv>(cooldownConfig);
     const jar = makeCookies();
     await cooldownChannel.actions.request(makeEvent({ contact: 'again@x.test', address: '203.0.113.12', cookies: jar }));
     const cooldownResult = await cooldownChannel.actions.request(
@@ -257,7 +224,7 @@ describe('response uniformity across known, unknown, and cooldown-held inputs', 
 describe('nonce reuse and the cooldown (step 7)', () => {
   it('two sequential requests in one jar inside the cooldown deliver once and leave the requester bucket charged once', async () => {
     const { config, sent } = makeConfig({ lookup: async () => 'sub-1' });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const jar = makeCookies();
     const first = await channel.actions.request(makeEvent({ contact: 'ed@x.test', cookies: jar }));
     const second = await channel.actions.request(makeEvent({ contact: 'ed@x.test', cookies: jar }));
@@ -265,7 +232,7 @@ describe('nonce reuse and the cooldown (step 7)', () => {
     expect(second).toEqual({ sent: true });
     expect(sent).toHaveLength(1);
     expect(await codeRowCount()).toBe(1);
-    expect(await budgetCount('send')).toBe(1);
+    expect(await budgetSum('send')).toBe(1);
   });
 
   it('concurrent requests against one reused, cooldown-elapsed nonce deliver exactly once', async () => {
@@ -273,7 +240,7 @@ describe('nonce reuse and the cooldown (step 7)', () => {
     try {
       vi.setSystemTime(1_700_000_000_000);
       const { config, sent } = makeConfig({ lookup: async () => 'sub-1' });
-      const channel = createAuthChannel<TestEnv>(config);
+      const channel = createAuthChannel<ChannelTestEnv>(config);
       const jar = makeCookies();
       await channel.actions.request(makeEvent({ contact: 'race@x.test', cookies: jar }));
       expect(sent).toHaveLength(1);
@@ -306,14 +273,14 @@ describe('delivery failure (step 8)', () => {
         throw new Error('provider down');
       },
     });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const jar = makeCookies();
 
     const first = await channel.actions.request(makeEvent({ contact: 'fail@x.test', cookies: jar }));
     expect(first).toEqual({ sent: true });
     expect(calls).toBe(1);
     expect(await codeRowCount()).toBe(0);
-    expect(await budgetCount('send')).toBe(0);
+    expect(await budgetSum('send')).toBe(0);
 
     const second = await channel.actions.request(makeEvent({ contact: 'fail@x.test', cookies: jar }));
     expect(second).toEqual({ sent: true });
@@ -328,7 +295,7 @@ describe('delivery failure (step 8)', () => {
         throw new Error(`failed to reach ${contact}`);
       },
     });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {
       await channel.actions.request(makeEvent({ contact }));
@@ -346,13 +313,15 @@ describe('delivery failure (step 8)', () => {
   it('backgrounds delivery through waitUntil when a platform is present, with .catch already attached', async () => {
     const scheduled: Promise<unknown>[] = [];
     const { config, sent } = makeConfig({ lookup: async () => 'sub-1' });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const result = await channel.actions.request(
       makeEvent({ contact: 'bg@x.test', waitUntil: (p) => void scheduled.push(p) }),
     );
     expect(result).toEqual({ sent: true });
-    expect(scheduled).toHaveLength(1);
-    await scheduled[0];
+    // Two backgrounded promises: the housekeeping sweep that rides every fresh mint, then the
+    // delivery itself. Neither runs on the response path.
+    expect(scheduled).toHaveLength(2);
+    await Promise.all(scheduled);
     expect(sent).toHaveLength(1);
   });
 });
@@ -360,7 +329,7 @@ describe('delivery failure (step 8)', () => {
 describe('nonce cookie attributes', () => {
   it('carries Path=/, HttpOnly, SameSite=Lax, Max-Age matching the code TTL, and Secure with __Host- on https', async () => {
     const { config } = makeConfig({ lookup: async () => 'sub-1' });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const jar = makeCookies();
     await channel.actions.request(makeEvent({ contact: 'cookie@x.test', cookies: jar }));
     const set = jar.sets.find((s) => s.name === PENDING_HTTPS);
@@ -377,7 +346,7 @@ describe('nonce cookie attributes', () => {
 
   it('drops Secure and the __Host- prefix on local http', async () => {
     const { config } = makeConfig({ lookup: async () => 'sub-1' });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const jar = makeCookies();
     await channel.actions.request(makeEvent({ url: 'http://localhost:5173/login', contact: 'cookie@x.test', cookies: jar }));
     const set = jar.sets.find((s) => s.name === PENDING_HTTP);
@@ -395,7 +364,7 @@ describe('the lockout regression test', () => {
       lookup: async (c) => (c === contact ? subject : null),
       ttl: { identityCeiling: 10 }, // the clamp floor, so the test exceeds it quickly
     });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
 
     // The victim requests first, in their own cookie jar, and holds the resulting code.
     const victimJar = makeCookies();
@@ -438,7 +407,7 @@ describe('the lockout regression test', () => {
     // The victim completes with no interaction beyond the one ordinary request above: their held
     // nonce and code still consume successfully (Task 4's confirm action does not exist yet, so
     // this is proven at the store layer, exactly as the code the confirm action will call).
-    const consumed = await consumeCode(db.withSession('first-primary'), victimNonceHash, victimCodeHash, Date.now());
+    const consumed = await consumeCode(channelSession(), victimNonceHash, victimCodeHash, Date.now());
     expect(consumed).toEqual({ subject });
   });
 });
@@ -450,7 +419,7 @@ describe('a throwing lookup', () => {
         throw new Error('roster db down');
       },
     });
-    const channel = createAuthChannel<TestEnv>(config);
+    const channel = createAuthChannel<ChannelTestEnv>(config);
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {

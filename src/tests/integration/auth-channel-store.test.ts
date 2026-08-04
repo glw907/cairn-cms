@@ -20,21 +20,17 @@ import {
   sweep,
 } from '../../lib/auth-channel/store.js';
 import { deriveIdentity } from '../../lib/auth-channel/identity.js';
-import { applyChannelSchema, resetChannelDb, readBudgetRow } from './_channel-harness.js';
+import { applyChannelSchema, resetChannelDb, readBudgetRow, channelSession as session } from './_channel-harness.js';
 
 const db = env.CHANNEL_DB;
 
 beforeAll(async () => {
-  await applyChannelSchema(db);
+  await applyChannelSchema();
 });
 
 beforeEach(async () => {
-  await resetChannelDb(db);
+  await resetChannelDb();
 });
-
-function session(): D1DatabaseSession {
-  return db.withSession('first-primary');
-}
 
 describe('CHANNEL_DB is physically separate from AUTH_DB', () => {
   it('never writes a channel table into AUTH_DB', async () => {
@@ -372,7 +368,7 @@ describe('charge / refund', () => {
       Array.from({ length: cap }, () => charge(session(), 'req-bucket-3', 'send', now + cap, cap)),
     );
     expect(attempts.filter((r) => r.admitted)).toHaveLength(1);
-    const row = await readBudgetRow(db, 'req-bucket-3', 'send');
+    const row = await readBudgetRow('req-bucket-3', 'send');
     expect(row?.count).toBe(cap);
   });
 
@@ -410,11 +406,11 @@ describe('charge / refund', () => {
     const now = 22_000_000;
     await charge(session(), 'req-bucket-6', 'send', now, 5);
     await refund(session(), 'req-bucket-6', 'send', now);
-    const afterOneRefund = await readBudgetRow(db, 'req-bucket-6', 'send');
+    const afterOneRefund = await readBudgetRow('req-bucket-6', 'send');
     expect(afterOneRefund?.count).toBe(0);
 
     await refund(session(), 'req-bucket-6', 'send', now);
-    const afterSecondRefund = await readBudgetRow(db, 'req-bucket-6', 'send');
+    const afterSecondRefund = await readBudgetRow('req-bucket-6', 'send');
     expect(afterSecondRefund?.count).toBe(0);
   });
 
@@ -422,7 +418,7 @@ describe('charge / refund', () => {
     const origin = 2000 * CHANNEL_BUDGET_WINDOW_MS;
     await charge(session(), 'req-bucket-7', 'send', origin, 5);
     await refund(session(), 'req-bucket-7', 'send', origin + CHANNEL_BUDGET_WINDOW_MS);
-    const row = await readBudgetRow(db, 'req-bucket-7', 'send');
+    const row = await readBudgetRow('req-bucket-7', 'send');
     expect(row?.count).toBe(1);
   });
 });
@@ -448,7 +444,7 @@ describe('sweep', () => {
     expect(await resolveChannelSession(db, 'session-sweep-expired', now)).toBeNull();
     expect(await resolveChannelSession(db, 'session-sweep-live', now)).not.toBeNull();
 
-    expect(await readBudgetRow(db, 'req-sweep-stale', 'send')).toBeNull();
-    expect(await readBudgetRow(db, 'req-sweep-fresh', 'send')).not.toBeNull();
+    expect(await readBudgetRow('req-sweep-stale', 'send')).toBeNull();
+    expect(await readBudgetRow('req-sweep-fresh', 'send')).not.toBeNull();
   });
 });

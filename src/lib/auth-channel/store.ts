@@ -7,7 +7,7 @@
 // request and accepts replica lag on the revocation path.
 //
 // Three throttle-shaped functions here (`mintCode`, `charge`, `refund`) are each one atomic
-// conditional upsert, never a read followed by a decide followed by a write: a read-modify-write
+// conditional statement, never a read followed by a decide followed by a write: a read-modify-write
 // implementation passes every single-caller test while admitting far more than its cap under
 // concurrency, which is exactly the shape the design's threat model rules out.
 import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';

@@ -190,6 +190,10 @@ published on npm and pinned byte-for-byte by a test cannot carry a per-deploymen
 bytes under the `identity_salt` key in `cairn_channel_meta`, so two independently migrated
 databases end up with different salts and no migration file carries a secret.
 
+Expired rows never need a site-side cleanup job. Each successful code mint also sweeps expired
+code rows, expired sessions, and budget rows more than two windows stale, through `waitUntil` so
+the cleanup never delays a response. A site schedules nothing.
+
 ### `CHANNEL_SCHEMA_VERSION`
 
 Stability tier: Extension API.

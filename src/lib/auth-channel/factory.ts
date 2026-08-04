@@ -27,13 +27,18 @@ import {
   revokeChannelSessions,
   charge,
   refund,
+  sweep,
 } from './store.js';
 import { canonicalizeCode, deriveIdentity, generateCode, requesterBucket } from './identity.js';
 import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';
 import type { RateLimitLike } from '../cloudflare/rate-limit.js';
 import type { CookieJar } from '../sveltekit/types.js';
 
-/** A minute and a day in milliseconds, spelled out so the Defaults table's own units read straight off the clamp calls below. The per-hour knobs (requesterCap, identityCeiling, escalationThreshold) are plain counts, not durations. */
+/**
+ * A minute and a day in milliseconds, spelled out so the Defaults table's own units read straight
+ * off the clamp calls below. The per-hour knobs (requesterCap, identityCeiling,
+ * escalationThreshold) are plain counts, not durations.
+ */
 const MINUTE_MS = 60_000;
 const DAY_MS = 24 * 60 * MINUTE_MS;
 
@@ -65,6 +70,38 @@ function isLocalHost(hostname: string): boolean {
     hostname === '[::1]' ||
     hostname.endsWith('.localhost')
   );
+}
+
+/**
+ * Step 1 of every action: the unconditional origin and scheme checks, mirroring `guard.ts`'s admin
+ * rule. Neither result union carries a wire code for a forged or downgraded request, so both
+ * refusals throw the framework's own `error()` rather than degrade the cookie or the response.
+ * @throws HttpError 403 on an origin mismatch, or on plain http anywhere but a local host.
+ */
+function assertOriginAndScheme<Env>(event: AuthChannelEvent<Env>): void {
+  if (!originMatches(event)) {
+    throw error(403, 'cairn auth-channel: origin mismatch');
+  }
+  if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
+    throw error(403, 'cairn auth-channel: https required');
+  }
+}
+
+/**
+ * Run the site's bot challenge, treating a throw exactly like a false answer. Both actions fail
+ * closed on the result: `request` before any mint, `confirm` only on an escalated attempt, and
+ * neither ever hard-fails, so a member always keeps a retry path.
+ */
+async function runChallenge<Env>(
+  config: AuthChannelConfig<Env>,
+  event: AuthChannelEvent<Env>,
+  form: FormData,
+): Promise<boolean> {
+  try {
+    return await config.challenge(event, form);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -257,12 +294,11 @@ function resolveCookieBase(cookie: { name: string } | undefined): string {
   return base;
 }
 
-/** Validate `kind`, defaulting to `'code'`; any other value rejects, since only `'code'` is implemented. */
-function resolveKind(kind: 'code' | undefined): 'code' {
+/** Throws unless `kind` is absent or `'code'`, since only `'code'` is implemented. */
+function validateKind(kind: 'code' | undefined): void {
   if (kind !== undefined && kind !== 'code') {
     throw new Error(`createAuthChannel: config.kind "${String(kind)}" is not supported; only "code" is implemented`);
   }
-  return 'code';
 }
 
 /** One clamp: an inclusive floor and/or ceiling, either side omittable when the Defaults table states only one. */
@@ -274,7 +310,8 @@ interface ClampRule {
 /** Resolve one `config.ttl.<field>` override against its default and clamp, rejecting a non-finite, non-integer, or out-of-range value. */
 function resolveLimit(field: string, value: number | undefined, fallback: number, rule: ClampRule): number {
   const resolved = value ?? fallback;
-  if (!Number.isFinite(resolved) || !Number.isInteger(resolved)) {
+  // Number.isInteger already rejects NaN and both infinities, so it is the whole finiteness check.
+  if (!Number.isInteger(resolved)) {
     throw new Error(`createAuthChannel: config.ttl.${field} must be an integer, got ${String(resolved)}`);
   }
   // Rows whose clamp states only a ceiling would otherwise admit zero and negative overrides,
@@ -312,7 +349,7 @@ function resolveLimits(ttl: AuthChannelConfig<unknown>['ttl']): ResolvedLimits {
     codeLength: resolveLimit('codeLength', overrides.codeLength, 8, { min: 8, max: 10 }),
     codeTtlMs: resolveLimit('codeTtlMs', overrides.codeTtlMs, 10 * MINUTE_MS, { max: 15 * MINUTE_MS }),
     attemptCap: resolveLimit('attemptCap', overrides.attemptCap, 5, { max: 10 }),
-    cooldownMs: resolveLimit('cooldownMs', overrides.cooldownMs, 60 * 1000, { min: 30 * 1000 }),
+    cooldownMs: resolveLimit('cooldownMs', overrides.cooldownMs, MINUTE_MS, { min: 30_000 }),
     requesterCap: resolveLimit('requesterCap', overrides.requesterCap, 20, { min: 5, max: 100 }),
     identityCeiling: resolveLimit('identityCeiling', overrides.identityCeiling, 30, { min: 10 }),
     escalationThreshold: resolveLimit('escalationThreshold', overrides.escalationThreshold, 20, { min: 10 }),
@@ -414,7 +451,10 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   if (config.verify !== undefined) requireFn('verify', config.verify);
 
   const cookieBase = resolveCookieBase(config.cookie);
-  resolveKind(config.kind);
+  // The nonce cookie's base name, composed once so no call site can drift from the `_pending`
+  // suffix resolveCookieBase already validated.
+  const pendingBase = `${cookieBase}_pending`;
+  validateKind(config.kind);
   const limits = resolveLimits(config.ttl);
 
   // Caches only a positive schema check, once per channel instance (spec, Storage): caching a
@@ -448,28 +488,15 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * stay uniform and the response never leaks roster membership.
    */
   async function requestAction(event: AuthChannelEvent<Env>): Promise<ChannelRequestResult> {
-    // Step 1: origin and scheme, unconditional and mirroring guard.ts's admin rule. Neither
-    // ChannelRequestResult union carries a wire code for a forged or downgraded request, so both
-    // refusals throw the framework's own error() rather than degrade the cookie or the response.
-    if (!originMatches(event)) {
-      throw error(403, 'cairn auth-channel: origin mismatch');
-    }
-    if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
-      throw error(403, 'cairn auth-channel: https required');
-    }
+    // Step 1: origin and scheme.
+    assertOriginAndScheme(event);
 
     const form = await event.request.formData();
 
     // Step 2: the required challenge. A false or throwing challenge fails closed, writes no
     // row, calls no deliver, and charges nothing; identity is not yet derived here, so this
     // outcome carries no correlation id.
-    let challengeOk: boolean;
-    try {
-      challengeOk = await config.challenge(event, form);
-    } catch {
-      challengeOk = false;
-    }
-    if (!challengeOk) {
+    if (!(await runChallenge(config, event, form))) {
       log.info('auth.channel.requested', { outcome: 'challenge_failed' });
       return { error: 'challenge-required' };
     }
@@ -555,8 +582,8 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // expired one), or mint a fresh nonce. mintCode's own conditional upsert is the sole
     // authority on whether a reused nonce's cooldown has elapsed.
     const secure = event.url.protocol === 'https:';
-    const pendingCookieName = cookieName(`${cookieBase}_pending`, secure);
-    const existingNonce = event.cookies.get(pendingCookieName);
+    const pendingCookie = cookieName(pendingBase, secure);
+    const existingNonce = event.cookies.get(pendingCookie);
     const nonceToken = existingNonce ?? generateToken();
     const nonceHash = await hashToken(nonceToken);
     const code = generateCode(limits.codeLength);
@@ -574,7 +601,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       fullRequesterBucket,
     );
 
-    event.cookies.set(pendingCookieName, nonceToken, {
+    event.cookies.set(pendingCookie, nonceToken, {
       path: '/',
       httpOnly: true,
       secure,
@@ -596,6 +623,20 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // created itself.
     await pruneRequesterRows(session, fullRequesterBucket, limits.liveRowCap);
 
+    // Housekeeping rides the mint, mirroring the engine's own purge-on-mint discipline for
+    // magic_token: three indexed deletes clear expired code rows, expired sessions, and budget
+    // rows more than two windows stale, through waitUntil so no response waits on them. Without
+    // this the tables grow one row per probed contact forever, the exact defect the design
+    // rejected in an earlier revision; a sweep failure is swallowed because the next mint retries
+    // it.
+    const waitUntilFn = resolveWaitUntil(event);
+    const sweepPromise = sweep(session, now).catch(() => {});
+    if (waitUntilFn) {
+      waitUntilFn(sweepPromise);
+    } else {
+      await sweepPromise;
+    }
+
     if (subject === null) {
       // One requested record per request, its outcome the request's final state: a throwing
       // lookup rides here as lookup_failed at warn (so a roster outage stays distinguishable
@@ -616,7 +657,6 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // send charge, so a provider outage neither strands the member behind a cooldown nor burns
     // their escalation budget.
     log.info('auth.channel.requested', { outcome: 'delivered', correlationId });
-    const waitUntilFn = resolveWaitUntil(event);
     const ctx: DeliverContext<Env> = {
       env: event.platform?.env,
       waitUntil: waitUntilFn ?? (() => {}),
@@ -650,12 +690,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    */
   async function confirmAction(event: AuthChannelEvent<Env>): Promise<ChannelConfirmResult> {
     // Step 1: origin and scheme, identical discipline to requestAction.
-    if (!originMatches(event)) {
-      throw error(403, 'cairn auth-channel: origin mismatch');
-    }
-    if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
-      throw error(403, 'cairn auth-channel: https required');
-    }
+    assertOriginAndScheme(event);
 
     const form = await event.request.formData();
 
@@ -670,8 +705,8 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // answered before any store access, so a cookie-blocked or cross-browser member gets an exit
     // instead of an endless bad-code loop.
     const secure = event.url.protocol === 'https:';
-    const pendingCookieNm = cookieName(`${cookieBase}_pending`, secure);
-    const nonceToken = event.cookies.get(pendingCookieNm);
+    const pendingCookie = cookieName(pendingBase, secure);
+    const nonceToken = event.cookies.get(pendingCookie);
     if (!nonceToken) {
       return { error: 'no-pending-request' };
     }
@@ -712,13 +747,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // compare" hold without a second store primitive.
     const gateCharge = await charge(session, row.identity, IDENTITY_ESCALATION_SCOPE, now, limits.escalationThreshold);
     if (!gateCharge.admitted) {
-      let challengeOk: boolean;
-      try {
-        challengeOk = await config.challenge(event, form);
-      } catch {
-        challengeOk = false;
-      }
-      if (!challengeOk) {
+      if (!(await runChallenge(config, event, form))) {
         log.warn('auth.channel.escalated', { correlationId });
         return { error: 'challenge-required' };
       }
@@ -773,9 +802,9 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
 
     // Clear the nonce cookie and delete any session row named by an incoming session cookie, so
     // neither leaves an orphan.
-    event.cookies.delete(pendingCookieNm, { path: '/' });
-    const sessionCookieNm = cookieName(cookieBase, secure);
-    const existingSessionToken = event.cookies.get(sessionCookieNm);
+    event.cookies.delete(pendingCookie, { path: '/' });
+    const sessionCookie = cookieName(cookieBase, secure);
+    const existingSessionToken = event.cookies.get(sessionCookie);
     if (existingSessionToken) {
       await destroyChannelSession(session, await hashToken(existingSessionToken));
       log.info('auth.channel.session.destroyed', { correlationId });
@@ -785,7 +814,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     const sessionTokenHash = await hashToken(sessionToken);
     await createChannelSession(session, sessionTokenHash, subject, now, limits.sessionTtlMs);
     log.info('auth.channel.session.created', { correlationId });
-    event.cookies.set(sessionCookieNm, sessionToken, {
+    event.cookies.set(sessionCookie, sessionToken, {
       path: '/',
       httpOnly: true,
       secure,
@@ -801,19 +830,14 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    * best-effort deletes the session row named by the incoming session cookie.
    */
   async function logoutAction(event: AuthChannelEvent<Env>): Promise<{ ok: true }> {
-    if (!originMatches(event)) {
-      throw error(403, 'cairn auth-channel: origin mismatch');
-    }
-    if (event.url.protocol === 'http:' && !isLocalHost(event.url.hostname)) {
-      throw error(403, 'cairn auth-channel: https required');
-    }
+    assertOriginAndScheme(event);
 
     const secure = event.url.protocol === 'https:';
-    const sessionCookieNm = cookieName(cookieBase, secure);
-    const pendingCookieNm = cookieName(`${cookieBase}_pending`, secure);
-    const token = event.cookies.get(sessionCookieNm);
-    event.cookies.delete(sessionCookieNm, { path: '/' });
-    event.cookies.delete(pendingCookieNm, { path: '/' });
+    const sessionCookie = cookieName(cookieBase, secure);
+    const pendingCookie = cookieName(pendingBase, secure);
+    const token = event.cookies.get(sessionCookie);
+    event.cookies.delete(sessionCookie, { path: '/' });
+    event.cookies.delete(pendingCookie, { path: '/' });
 
     if (token) {
       const session = await resolveVerifiedSession(event.platform?.env);
@@ -835,8 +859,8 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
    */
   async function resolveSubject(event: AuthChannelEvent<Env>): Promise<string | null> {
     const secure = event.url.protocol === 'https:';
-    const sessionCookieNm = cookieName(cookieBase, secure);
-    const token = event.cookies.get(sessionCookieNm);
+    const sessionCookie = cookieName(cookieBase, secure);
+    const token = event.cookies.get(sessionCookie);
     if (!token) return null;
 
     const database = config.resolveDb(event.platform?.env);

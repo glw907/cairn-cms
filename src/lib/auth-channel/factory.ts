@@ -9,7 +9,7 @@
 // otherwise go unnoticed until a review round finds it: no control keyed on the victim's identity
 // may deny, delay, or destroy anything. Denial keys on the requester; an identity-keyed control
 // either escalates through `challenge-required` or only logs.
-import { error } from '@sveltejs/kit';
+import { error, isHttpError, isRedirect } from '@sveltejs/kit';
 import { cookieName, generateToken, hashToken } from '../auth/crypto.js';
 import { originMatches } from '../sveltekit/csrf.js';
 import { log } from '../log/index.js';
@@ -322,6 +322,66 @@ function resolveLimits(ttl: AuthChannelConfig<unknown>['ttl']): ResolvedLimits {
 }
 
 /**
+ * Compose the rate limit's default key: the requester bucket's address half (spec, Flows step 5)
+ * paired with the derived identity, the exact `${address}|${identity}` join `mintCode` stores as
+ * `requester_bucket` and `pruneRequesterRows` filters on. Never the identity alone: a key keyed
+ * only on identity would let a stranger who merely knows a contact deny that contact's own login
+ * attempts, the defect the throttle rule (deny on the requester, escalate on the identity) exists
+ * to forbid.
+ */
+function composeRequesterBucketKey<Env>(event: AuthChannelEvent<Env>, identity: string): string {
+  return `${requesterBucket(event)}|${identity}`;
+}
+
+/**
+ * Apply the optional rate limit (spec, Surface's `rateLimit?` row: back pressure only, never a
+ * security control). Both actions call this after deriving the identity their default key needs
+ * (`request` right after step 4's derivation, `confirm` right after step 4's row read), rather
+ * than at the spec's literal step 1: the plan's Task 5 overrides that placement deliberately,
+ * since a key that needs the identity cannot be computed before the identity exists (v3 died on
+ * specifying a key at a step that could not compute it).
+ *
+ * Degrades to open on an absent binding (`auth.channel.rate_limit_absent`) or a throwing
+ * `key()`/`limit()` call (`auth.channel.rate_limit_failed`), mirroring `section-action.ts`'s own
+ * rate-limit branch exactly, including the one exception: a thrown SvelteKit `redirect()` or
+ * `error()` from a site-supplied `key()` override rethrows untouched rather than degrading, since
+ * a site relying on either as control flow must not be silently swallowed. Returns false, having
+ * logged `auth.channel.rate_limited`, only when the binding itself denies
+ * (`result?.success !== true`, so a malformed non-boolean response reads as blocked, not a pass).
+ */
+async function checkChannelRateLimit<Env>(
+  rateLimit: AuthChannelConfig<Env>['rateLimit'],
+  event: AuthChannelEvent<Env>,
+  action: 'request' | 'confirm',
+  defaultKey: string,
+  correlationId: string,
+): Promise<boolean> {
+  if (!rateLimit) return true;
+  const limiter = rateLimit.resolve(event.platform?.env);
+  if (!limiter) {
+    log.warn('auth.channel.rate_limit_absent', { action, correlationId });
+    return true;
+  }
+  try {
+    const key = rateLimit.key ? rateLimit.key(event) : defaultKey;
+    const result = await limiter.limit({ key });
+    if (result?.success !== true) {
+      log.warn('auth.channel.rate_limited', { action, correlationId });
+      return false;
+    }
+    return true;
+  } catch (err) {
+    if (isRedirect(err) || isHttpError(err)) throw err;
+    log.warn('auth.channel.rate_limit_failed', {
+      action,
+      correlationId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return true;
+  }
+}
+
+/**
  * Build a second-audience login channel: magic-code request, confirm, logout, session
  * resolution, and revocation, all backed by a site-owned D1 binding. Construction is where
  * misconfiguration dies: every clamp in the Defaults table, the required `challenge`, the `kind`
@@ -463,7 +523,16 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // mistaken for the identity half or vice versa. This exact composed string is also what
     // mintCode stores as requester_bucket and what pruneRequesterRows filters on, so eviction can
     // only ever touch rows the same address-and-identity pair created.
-    const fullRequesterBucket = `${requesterBucket(event)}|${identity}`;
+    const fullRequesterBucket = composeRequesterBucketKey(event, identity);
+
+    // The optional rate limit (spec, Surface's rateLimit? row) runs here, deferred from the
+    // spec's literal step 1 to right after identity derivation, since its default key is this
+    // same requester bucket and cannot be computed any earlier (plan Task 5). Blocked here means
+    // neither the requester send charge below nor a code row has been touched yet.
+    const rateLimitOk = await checkChannelRateLimit(config.rateLimit, event, 'request', fullRequesterBucket, correlationId);
+    if (!rateLimitOk) {
+      return { error: 'throttled' };
+    }
 
     // Step 5: requester suppression, the sole denying control in this flow. Charged and checked
     // before the identity ceiling, so a suppressed request never counts against it either.
@@ -620,6 +689,21 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       return { error: 'expired' };
     }
     const correlationId = row.identity.slice(0, 16);
+
+    // The optional rate limit runs here, right after the row read supplies the derived identity
+    // this nonce's mint already fixed, and before the failure gate below, so a blocked confirm
+    // charges nothing and consumes no row (plan Task 5, the same deferred-from-step-1 placement
+    // requestAction uses).
+    const rateLimitOk = await checkChannelRateLimit(
+      config.rateLimit,
+      event,
+      'confirm',
+      composeRequesterBucketKey(event, row.identity),
+      correlationId,
+    );
+    if (!rateLimitOk) {
+      return { error: 'throttled' };
+    }
 
     // Step 5: the identity failure gate. charge() both tests the gate and provisionally charges
     // this attempt in the same call: when the identity is already at its threshold the call adds

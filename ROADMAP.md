@@ -570,6 +570,34 @@ the named human gates only):**
 
 ## Next
 
+- **A Cloudflare provisioning script, and its token preflight (Geoff, 2026-08-03).** One script that
+  creates what a cairn site needs on Cloudflare, instead of a developer assembling it by hand.
+
+  **It completes an arc rather than starting one**, and the sequencing follows from that: the
+  ambient-defaults audit defines what a correct deployed site looks like, the scaffolder emits the
+  code, this provisions the infrastructure, and the AI-posture pass's `doctor/` probe verifies the
+  result. The audit is the input to the other three, so this runs after it and pairs with the
+  scaffolder. P7, the zero-credential quickstart, is the same story from the developer's side.
+
+  **The charter line that makes it legal.** The AI-posture ruling says cairn reports infrastructure
+  and never configures it. That governs **the library at runtime** and it stands. Setup **tooling** a
+  developer deliberately runs once is a different artifact and may provision, which is what
+  `wrangler` already is. Keep them separate; the runtime library must never reach for provisioning
+  credentials.
+
+  **The valuable half is the preflight, not the provisioning.** The stated pain is getting the access
+  right, not making the API calls. A script cannot mint its own token, but it can verify a supplied
+  one and name exactly what is missing. Worked example from the day this was filed: `GET
+  /zones/{id}/bot_management` returned a bare `Authentication error` with an account-wide token and
+  no indication of which scope was absent, which cost a detour. That is the doctor pattern applied at
+  setup.
+
+  Provisionable: D1 (`AUTH_DB`) plus schema, the R2 media bucket, Worker bindings and routes,
+  observability, DNS, rate limits. **Not provisionable, and it must say so with links rather than
+  papering over it:** creating the API token, Email Sending onboarding (Workers Paid plus dashboard),
+  GitHub App creation and installation, nameserver delegation. Two hard requirements: idempotent
+  against a partly-provisioned account, and dry-run before it acts.
+
 - **`COLLATE NOCASE` on `editor.email`, to ride along with the next auth migration.** The column is a
   BINARY-collated `TEXT PRIMARY KEY` (`migrations/0000_auth.sql:3`), so two case variants of one address
   are two rows. The 2026-08-01 xcathletes seams pass closed this at the store: every email argument in

@@ -14,12 +14,19 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-03: C2b is DONE and unmerged; next is the ambient-defaults audit)
+## Immediate next action (2026-08-03: C2b is MERGED; next is the ambient-defaults audit)
 
-**Pass C2b is complete**, fifteen commits on `c2b-refusal-channel` (worktree
-`.claude/worktrees/c2b-refusal-channel`, off `main` at `8559f3e7`), ending at `f0098d4b`. **It is
-NOT merged and NOT pushed**, deliberately: no merge was asked for. It holds in the same
-`## Unreleased` window as C2, so the window now carries five passes.
+**Pass C2b is complete and MERGED to `main`** ([PR #20](https://github.com/glw907/cairn-cms/pull/20),
+merge `51d55dd3`; fifteen commits from `c2b-refusal-channel`, branched off `main` at `8559f3e7`).
+All five CI workflows green on the merged head (`test`, `e2e`, `design`, `norms`, `scaffold`).
+
+**The window HOLDS UNPUBLISHED.** `package.json` is untouched and the changelog window is still
+`## Unreleased`, now carrying five passes: the ASC seams pass two, C1, the earlier refusal-channel
+convergence, C2, and C2b. Nothing is cut until the ambient-defaults audit and the AI-posture pass
+land with it.
+
+The worktree `.claude/worktrees/c2b-refusal-channel` still exists and is now redundant; remove it
+whenever convenient (`git worktree remove`).
 
 Every gate verified by the orchestrator rather than only reported: `npm run check` 1559 files 0/0,
 `npm test` exit 0 at 4768 tests, `check:consumers` OK (which covers the showcase `svelte-check`, 585
@@ -27,12 +34,9 @@ files 0/0). Three full-page renders were read in the main loop, including a craf
 that renders nothing at all. Full detail and the post-mortem:
 `docs/superpowers/plans/2026-08-03-c2b-refusal-channel.md`.
 
-**Two decisions to make before the next pass starts.** Neither blocks the audit.
-
-1. **Merge C2b to `main`** (a PR, as C2 used), or leave it on the branch. The window holds
-   unpublished either way.
-2. Whether the ambient-defaults audit wants a multi-agent sweep. It is one lens per surface, which
-   suits a workflow, and it needs an explicit opt-in.
+**One decision open, and it does not block starting.** Whether the ambient-defaults audit wants a
+multi-agent sweep. It is one lens per surface, which suits a workflow, and it needs Geoff's explicit
+opt-in.
 
 **Resume prompt** (fresh Opus 5 session, launched from `~/Projects/cairn-cms`):
 "Run the ambient-defaults audit. Read `ROADMAP.md`'s Now tier entry for it (the method, the surface

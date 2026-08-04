@@ -173,11 +173,77 @@ The original decision framing, for the record:
   modes, two log vocabularies) for an actor set that is usually an owner plus a few editors. The
   engine's job is to make the site's own channel cheap to build correctly, not to ship the channel.
 
-  **What the seam exports:** `generateToken`, `generateSessionId`, `generateCsrfToken`, `hashToken`,
-  and the cookie-name builders, server-only. This is not a pure export-map promotion, since the
+  **Email magic-link stays the default and the documented path (Geoff, 2026-08-03).** The seam is
+  not a "choose your auth" menu. It is the zero-config default plus a supported way to add a second
+  channel correctly, and the docs must read that way or every new site will start shopping.
+
+  **The shaping principle, and it decides the seam's form: secure by construction, not by
+  documentation (Geoff, 2026-08-03, "easy to build securely, so a developer doesn't get themselves or
+  their site in trouble").** Exporting five primitives plus a careful reference page fails this test,
+  because every discipline above becomes something the developer has to remember, and the four
+  existing hand-rolled copies are the evidence that they will not.
+
+  **So seam 1 should take seam 2's shape.** `createSectionAction` is the ratified precedent: the site
+  supplies only what the engine cannot know (its binding resolver, its rate limit), and the engine
+  composes the whole guarded pipeline around it, fail-closed at every step. The auth seam wants the
+  same form under the `create*` verb: a factory that owns the disciplines and takes the site's
+  **delivery function** and its **identifier shape**, returning the request and confirm handlers
+  already wired. A site writing SMS then supplies a Twilio call and nothing security-relevant, and
+  the insecure version is the one that requires deliberately going around the seam rather than the
+  one you get by forgetting a step. That inverts the current situation, where the secure version is
+  the one you have to know to build.
+
+  It also gives the seam an honest acceptance test: **a site should not be able to write a working
+  channel that is insecure without bypassing the factory.**
+
+  **What the seam exports underneath the factory:** `generateToken`, `generateSessionId`,
+  `generateCsrfToken`, `hashToken`, and the cookie-name builders, server-only, for the site that
+  genuinely needs to compose something the factory does not cover. This is not a pure export-map promotion, since the
   cookie names and TTLs are fixed to the editor store today, so the promotion parameterizes them (a
   cookie base name, TTLs as arguments) while the pure crypto exports as is. Audience semantics stay
   site-owned: the store schema, the session model, and the two-stores-never-blur rule are untouched.
+
+  **The seam's real value is the disciplines, not the primitives (Geoff, 2026-08-03: leverage the
+  engine to make a site's channel as secure as it can be).** `generateToken` is a thin wrapper over
+  `crypto.getRandomValues`; nobody gets that wrong. What a hand-rolled copy forgets is everything
+  around it, and the engine already enforces all of it in `src/lib/auth/`:
+
+  - the token is **hashed at rest** (`magic_token.token_hash`), never stored raw
+  - comparison is **constant-time** (`tokensMatch`)
+  - **short expiry**, `TOKEN_TTL_MS` 10 minutes, against a 30-day session
+  - a **per-address cooldown**, `SEND_COOLDOWN_MS` 60 seconds, so the channel cannot be used to flood
+  - **one live token per address**: minting deletes the prior token and purges expired rows in the
+    same statement
+  - **secure-aware cookie naming**, so a local http dev cookie and a deployed `__Host-` style cookie
+    never collide
+  - a **log vocabulary** (`auth.token.minted`, `auth.token.confirmed`, `auth.session.created`) so a
+    site's own channel is as observable as the engine's
+
+  A site that imports the primitives and reimplements the disciplines is barely better off than one
+  that copied everything. So the seam should carry the enforcement, not just the building blocks, and
+  the reference page should state each discipline as a contract the site inherits rather than a
+  suggestion. That is also the honest test of whether the seam succeeded: ecxc's SMS channel should
+  be as hard to get wrong as the engine's own email one.
+
+  **Where SMS is genuinely a different threat model, and the engine does not cover it yet.** Since
+  some sites will need this, these are the parts the seam has to answer rather than inherit. The
+  first is a real gap in the current store, not a doc note:
+
+  - **A short numeric code needs an attempt counter, and `magic_token` has no column for one.** The
+    engine's discipline set is safe today *because* the token is long and opaque, so guessing is not
+    a threat and no verification-attempt limit exists. A six-digit code has a 10^6 space and a
+    10-minute TTL, which is brute-forceable without a per-code attempt cap. Either the store grows
+    an attempt counter as part of this seam, or the seam states plainly that a site issuing
+    low-entropy codes must supply one. Silently exporting an email-shaped discipline set to an SMS
+    caller is the failure mode to avoid.
+  - **Phone numbers get recycled; email addresses effectively do not.** A stale number in an editor
+    record is a live account-takeover path with no equivalent on the email side, so a site's SMS
+    channel needs a re-verification story the engine's email flow never needed.
+  - **SMS pumping fraud** turns a send endpoint into a billable attack. The existing per-address
+    60-second cooldown does not bound total spend; a global send cap belongs in any SMS adapter.
+  - **SMS should not silently become an owner's only factor.** SIM swap is cheap and mature, so a
+    channel weaker than email must not end up as the sole route to commit-capable admin access
+    without that being a deliberate, documented site decision.
 
   **What SMS stretches that email did not, and the design input to capture:** an emailed magic link
   is a long opaque URL-safe token, while an SMS code is usually short and numeric, with a much

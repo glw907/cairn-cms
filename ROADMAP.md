@@ -131,9 +131,10 @@ release-one boundary; the passes are invariant.
      two-year `includeSubDomains` admin HSTS, which overrides a zone owner's own HSTS decision), and
      it is a judgment call rather than a forced hand. Everything else went to phase P or to the
      operator.
-  2. **The auth seam** (ASC seam 1 as a `create*` factory): a Fable planning sitting, then execution.
-     Its design input is ready, and its window closes the session xcathletes runs Task 4, since after
-     that the consumer has hand-written the code the seam exists to replace.
+  2. **The auth seam** (ASC seam 1 as `createAuthChannel`): **PLANNED 2026-08-04**, spec v3.1 and an
+     eight-task plan approved after three adversarial review rounds. Splits into two passes: the
+     factory, then the consumer proof (showcase fixture, scaffolder exclusion, e2e). Its window
+     closes the session xcathletes runs Task 4, still open as of 2026-08-04.
   3. **The AI-posture pass.** Consumes the audit, and lands before the migrations so each site adopts
      a posture during the session that migrates it rather than earning a second visit.
 

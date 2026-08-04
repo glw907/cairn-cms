@@ -14,60 +14,66 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-03: the ambient-defaults audit is RUN; next is the auth seam)
+## Immediate next action (2026-08-04: the auth-channel plan is APPROVED; execute it)
 
-**Pass C2b is complete and MERGED to `main`** ([PR #20](https://github.com/glw907/cairn-cms/pull/20),
-merge `51d55dd3`; fifteen commits from `c2b-refusal-channel`, branched off `main` at `8559f3e7`).
-All five CI workflows green on the merged head (`test`, `e2e`, `design`, `norms`, `scaffold`).
+**Execute the auth-channel factory plan**:
+[`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`](superpowers/plans/2026-08-03-auth-channel-factory.md),
+eight tasks, against spec **v3.1**
+[`docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`](superpowers/specs/2026-08-03-auth-channel-factory-design.md).
+Method: a fresh worktree `.claude/worktrees/auth-channel` off `main`, per-task `cairn-implementer`
+dispatches (pinned Sonnet), test-first, with the main loop reviewing each diff and confirming the
+full gate between dispatches.
 
-**The window HOLDS UNPUBLISHED.** `package.json` is untouched and the changelog window is still
-`## Unreleased`, now carrying five passes: the ASC seams pass two, C1, the earlier refusal-channel
-convergence, C2, and C2b. Nothing is cut until the ambient-defaults audit and the AI-posture pass
-land with it.
+**Read the spec's revision log before the first dispatch.** Three adversarial rounds ran during the
+planning sitting and the first two rejected the design outright. The load-bearing rule the whole
+design is built from, repeated as a standing constraint in the plan:
 
-The worktree `.claude/worktrees/c2b-refusal-channel` still exists and is now redundant; remove it
-whenever convenient (`git worktree remove`).
+> **No control keyed on the victim's identity may deny, delay, or destroy anything. Denial keys on
+> the requester. Identity-keyed controls either escalate through a channel the site can act on, or
+> they only log.**
 
-Every gate verified by the orchestrator rather than only reported: `npm run check` 1559 files 0/0,
-`npm test` exit 0 at 4768 tests, `check:consumers` OK (which covers the showcase `svelte-check`, 585
-files 0/0). Three full-page renders were read in the main loop, including a crafted phishing link
-that renders nothing at all. Full detail and the post-mortem:
-`docs/superpowers/plans/2026-08-03-c2b-refusal-channel.md`.
+Three rounds died on violations of it, the third inside the mechanism written to prevent the
+second. The lockout regression tests in Tasks 3 and 4 are the structural guard and are specified
+with ordering, cookie-jar separation, and full-Defaults-table scope for that reason. **v3.1 itself
+was not reviewed**; Task 8's mandatory `web-auth-security-reviewer` is where an amendment defect
+gets caught. Provenance:
+[`docs/internal/2026-08-04-auth-channel-review-rounds.md`](internal/2026-08-04-auth-channel-review-rounds.md).
 
-**The ambient-defaults audit is RUN** (2026-08-03), as a 14-agent workflow: one lens per surface
-plus an adversarial verifier per surface. Report:
+**The window is open.** Verified 2026-08-04: xcathletes Task 4 has not run (Tasks 1 through 7 all
+queued in ecxc-ski, `xcathletes-org` does not exist, zero implementation code). The seam must land
+before it does, or the consumer hand-writes the code the seam exists to replace.
+
+**This pass is NOT releasable on its own.** The consumer proof is **pass 2** (the showcase
+`/members` fixture, its `MEMBER_DB` binding and migration-apply step, dev-gate integration, the
+e2e, and the `.cairn-template.json` scaffolder exclusion), so nothing proves the built package
+through a consumer's bundler until that lands. The exclusion is load-bearing:
+`scripts/emit-template.mjs` copies the showcase verbatim minus four excluded paths, so a fixture
+with a code-readback route would ship into every scaffolded site as an unauthenticated OTP oracle.
+
+**Then:** pass 2, the AI-posture pass, the RC cut, the migrations.
+
+**The window still HOLDS UNPUBLISHED** at `0.93.0`. `package.json` is untouched and the changelog
+window is `## Unreleased`, carrying the ASC seams pass two, C1, the refusal-channel convergence,
+C2, and C2b.
+
+**The ambient-defaults audit is RUN** (2026-08-03), report at
 [`docs/internal/2026-08-03-ambient-defaults-audit.md`](internal/2026-08-03-ambient-defaults-audit.md).
-It reported and fixed nothing, per its own boundary.
+It does not gate the RC. One finding is recommended for this window and is a judgment call: the
+engine's admin HSTS is `max-age=63072000; includeSubDomains` unconditionally, so one editor visit
+to `/admin` pins a site's apex and every subdomain to HTTPS for two years, including on zones whose
+owner left edge HSTS off. Everything else triaged to phase P or to the operator.
 
-**It does not gate the RC.** One finding is recommended for this window and the recommendation is a
-judgment call, not a forced hand: the engine's admin HSTS is `max-age=63072000; includeSubDomains`
-unconditionally, so one editor visit to `/admin` pins a site's apex and every subdomain to HTTPS for
-two years, including on zones whose owner left edge HSTS off (measured on cairn.pub). It is not
-API-breaking, so it could defer; it is recommended to ride because the fix changes a security header
-four deployed sites emit and the migrations open each site anyway. Everything else triaged to phase P
-or to the operator. The audit's own inputs needed three corrections, all recorded in the report,
-including that the ASC cairn site is `dev.aksailingclub.org` rather than the apex.
+**The AI-posture pass** consumes the audit and lands before the migrations so each site adopts a
+posture in the session that migrates it. The audit's answer to its shared-shape question: the
+ambient defaults do **not** want one policy surface. They split into behavior the engine emits
+(headers, cache directives, cookie attributes) and behavior the engine can only observe (the
+managed robots layer, zone TLS settings, DNS mail authentication). A posture config belongs to the
+first group; the second wants a check.
 
-**The pre-RC queue, in order** (Geoff, 2026-08-03). Both remaining items are additive and ride the
-same unpublished window:
-
-1. **The auth seam** (ASC seam 1 as a `create*` factory) — a Fable planning sitting, then execution.
-   Its input is ready and its window closes the session xcathletes runs Task 4 of its platform pass.
-   This is now the immediate next action.
-2. **The AI-posture pass** — consumes the audit, lands before the migrations so each site adopts a
-   posture in the session that migrates it. The audit's answer to its shared-shape question: the
-   ambient defaults do **not** want one policy surface. They split into behavior the engine emits
-   (headers, cache directives, cookie attributes) and behavior the engine can only observe (the
-   managed robots layer, zone TLS settings, DNS mail authentication). A posture config belongs to
-   the first group and should not try to absorb the second; the second wants a check.
-
-Then the RC cut and the migrations.
-
-**Resume prompt** (fresh session, launched from `~/Projects/cairn-cms`):
-"Plan the auth seam: ASC seam 1 as a `create*` factory. Read `ROADMAP.md`'s Now tier entry for it
-(the shaping principle, what the factory owns versus what the site supplies, and the SMS threat-model
-section) and the `cairn-auth-seam-factory` memory. The window closes when xcathletes runs Task 4 of
-its platform pass, so confirm that has not happened first."
+**Resume prompt** (fresh Opus 5 session, launched from `~/Projects/cairn-cms`):
+"Execute the auth-channel factory plan (`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`)
+against spec v3.1. Read the spec's revision log and the throttle rule first, create the worktree off
+`main`, then dispatch Task 1 to `cairn-implementer`."
 
 **Carry this warning into every dispatch.** This pass's orchestrator derived the CI gate list from
 `.github/workflows/test.yml` once and then retyped it from memory across nine dispatches, dropping
@@ -75,13 +81,11 @@ its platform pass, so confirm that has not happened first."
 instead of failing at Task B1. **Paste the list out of the workflow file into each dispatch; do not
 retype it.**
 
-**Two initiatives were scoped during this pass and sit in `ROADMAP.md`'s Now tier**, both sequenced
-ahead of the site migrations by Geoff: the **ambient-defaults audit** ("what does a deployed cairn
-site do that nobody decided?"), then the **AI-posture pass**. The measured audit found 907.life and
-aksailingclub.org edge-blocking AI crawlers while cairn.pub and ecxc.ski do not, chosen by nobody,
-and found that Cloudflare's managed robots.txt prepends to the origin's rather than replacing it, so
-cairn cannot assume the robots.txt it emits is the one that ships. Comparables research covering 22
-tools landed at `docs/internal/2026-08-03-ambient-defaults-comparables.md` and
+**Background for the AI-posture pass.** The measured audit found 907.life and aksailingclub.org
+edge-blocking AI crawlers while cairn.pub and ecxc.ski do not, chosen by nobody, and found that
+Cloudflare's managed robots.txt prepends to the origin's rather than replacing it, so cairn cannot
+assume the robots.txt it emits is the one that ships. Comparables research covering 22 tools landed
+at `docs/internal/2026-08-03-ambient-defaults-comparables.md` and
 `docs/internal/2026-08-03-runtime-cms-comparables.md`; read their coverage tables first, since both
 sweeps had thin spots.
 
@@ -101,9 +105,9 @@ window:
 documents; it migrates right after ASC, and the owed cairn.pub live admin smoke (Geoff's magic link
 plus a publish round-trip) folds into that same session rather than staying a separate debt.
 
-**The order after the audit and the AI-posture pass:** cut `0.94.0-rc.1` rather than the final
-number, migrate ASC and cairn.pub against the RC from their own repos, mint `0.94.0` once their
-gates are green, migrate the remaining two off the recipe the first migration writes into
+**The order after the auth-channel passes and the AI-posture pass:** cut `0.94.0-rc.1` rather than
+the final number, migrate ASC and cairn.pub against the RC from their own repos, mint `0.94.0` once
+their gates are green, migrate the remaining two off the recipe the first migration writes into
 `docs/guides/upgrade-cairn.md`, then phase P with the four-CI-gates consolidation pulled forward,
 then phase F with F1 and F4 batched into one Fable sitting. Scaffolder and Topo stay last. The RC
 exists because `examples/showcase` is a stand-in cairn wrote for itself.

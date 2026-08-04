@@ -154,6 +154,43 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Make the auth seam friendly enough that a site adds its own login channel. LIVE CONSUMER NEED
+  (Geoff, 2026-08-03): ecxc.ski is building SMS magic-URL login now.** This is ASC consumer-brief
+  seam 1, promoted from a request to a driver.
+
+  **The count is the argument.** ecxc's SMS build is the **fourth** hand-rolled copy of the engine's
+  auth cryptography: ASC's member magic-link sessions (`src/member-auth/lib/crypto.ts`), ASC's
+  waitlist-offer tokens (`src/admin-club/lib/offers.ts`), the xcathletes platform's member OTP, and
+  now this. The first two carry a comment saying they reimplemented rather than importing the
+  engine's internals, because no supported surface exists. Four instances of one pattern is not a
+  coincidence to note; it is a seam the engine owes.
+
+  **SMS belongs in a site, not in the engine.** Deliberately ruled: a Twilio-class dependency is the
+  first piece of a cairn site that cannot live on Cloudflare, which is the whole-chain ownership the
+  project's own positioning rests on. It is also a weaker factor than email for admin access to a
+  publishing system with commit rights, since SIM swap is a mature account-takeover attack. And it
+  would permanently double the auth surface (two token stores, two rate limits, two delivery failure
+  modes, two log vocabularies) for an actor set that is usually an owner plus a few editors. The
+  engine's job is to make the site's own channel cheap to build correctly, not to ship the channel.
+
+  **What the seam exports:** `generateToken`, `generateSessionId`, `generateCsrfToken`, `hashToken`,
+  and the cookie-name builders, server-only. This is not a pure export-map promotion, since the
+  cookie names and TTLs are fixed to the editor store today, so the promotion parameterizes them (a
+  cookie base name, TTLs as arguments) while the pure crypto exports as is. Audience semantics stay
+  site-owned: the store schema, the session model, and the two-stores-never-blur rule are untouched.
+
+  **What SMS stretches that email did not, and the design input to capture:** an emailed magic link
+  is a long opaque URL-safe token, while an SMS code is usually short and numeric, with a much
+  shorter TTL. So the seam has to answer whether it generates both shapes or only the opaque one
+  with the site deriving the short form. **Take that answer from ecxc's real implementation rather
+  than guessing it**, per the standing rule that a consumer stand-in must use the consumer's own
+  sources.
+
+  **Sequencing depends on how far along ecxc is, which is an open question for Geoff.** If the build
+  is early, the seam should land first so ecxc writes zero throwaway crypto. If it is nearly done,
+  capture its shape now and let ecxc swap to the seam during its RC migration, so the copy never
+  ships twice. Either way this is additive and rides the same unpublished window.
+
 - **The ambient-defaults audit: what does a deployed cairn site do that nobody decided? APPROVED
   (Geoff, 2026-08-03), runs after C2b and BEFORE the AI-posture pass.**
 

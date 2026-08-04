@@ -51,6 +51,7 @@ describe('CHANNEL_DB is physically separate from AUTH_DB', () => {
     expect(names).toContain('cairn_channel_budget');
     expect(names).toContain('idx_cairn_channel_code_identity');
     expect(names).toContain('idx_cairn_channel_code_expires');
+    expect(names).toContain('idx_cairn_channel_code_requester_bucket');
     expect(names).toContain('idx_cairn_channel_session_subject');
     expect(names).toContain('idx_cairn_channel_session_expires');
     expect(names).toContain('idx_cairn_channel_budget_window');
@@ -420,6 +421,28 @@ describe('charge / refund', () => {
     await refund(session(), 'req-bucket-7', 'send', origin + CHANNEL_BUDGET_WINDOW_MS);
     const row = await readBudgetRow('req-bucket-7', 'send');
     expect(row?.count).toBe(1);
+  });
+
+  it('a charge one full window before the stored window is not admitted and leaves window_start and count intact', async () => {
+    const t0 = 23_000_000;
+    const cap = 3;
+    for (let i = 0; i < cap; i++) {
+      const r = await charge(session(), 'req-bucket-8', 'send', t0 + i, cap);
+      expect(r.admitted).toBe(true);
+    }
+    const before = await readBudgetRow('req-bucket-8', 'send');
+    expect(before?.count).toBe(cap);
+
+    // An out-of-order timestamp: a charge whose own now maps to a window one full window BEFORE
+    // the row's stored window_start (a delayed retry racing a later request, say). Admitting it
+    // unconditionally would roll window_start backwards and wipe the accumulated count; the fix
+    // charges it against the stored window's own estimate instead, and refuses it outright once
+    // that estimate is already at cap.
+    const backwards = await charge(session(), 'req-bucket-8', 'send', t0 - CHANNEL_BUDGET_WINDOW_MS, cap);
+    expect(backwards).toEqual({ admitted: false });
+    const after = await readBudgetRow('req-bucket-8', 'send');
+    expect(after?.count).toBe(cap);
+    expect(after?.windowStart).toBe(before?.windowStart);
   });
 });
 

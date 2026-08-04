@@ -348,6 +348,14 @@ export async function revokeChannelSessions(session: D1DatabaseSession, subject:
  * charges at `cap - 1` admit exactly one and the estimate never doubles at a window boundary.
  * `count` is present on the admitted branch only, since a conditional upsert whose predicate
  * fails returns no row to read it from.
+ *
+ * The "same window" branch is keyed on `window_start >= ?3`, not `=`: an out-of-order `now` (a
+ * charge that lands one or more windows BEFORE the stored row's own window, say a delayed retry
+ * racing a later request) must charge against the stored window's own estimate rather than
+ * rolling it backwards, which would wipe the accumulated count. `window_start = MAX(...)` mirrors
+ * this: the stored value only ever advances, never regresses. The rolled-one-window branch stays
+ * keyed on the exact `= WINDOW` delta, since that branch's decay math assumes exactly one window
+ * elapsed.
  */
 export async function charge(
   session: D1DatabaseSession,
@@ -366,7 +374,7 @@ export async function charge(
        VALUES (?1, ?2, 1, ?3, 0)
        ON CONFLICT(bucket) DO UPDATE SET
          count = CASE
-           WHEN cairn_channel_budget.window_start = ?3 THEN
+           WHEN cairn_channel_budget.window_start >= ?3 THEN
              CASE
                WHEN (cairn_channel_budget.count + cairn_channel_budget.prev_count * ?4) < ?5
                  THEN cairn_channel_budget.count + 1
@@ -383,14 +391,14 @@ export async function charge(
              END
          END,
          prev_count = CASE
-           WHEN cairn_channel_budget.window_start = ?3 THEN cairn_channel_budget.prev_count
+           WHEN cairn_channel_budget.window_start >= ?3 THEN cairn_channel_budget.prev_count
            WHEN ?3 - cairn_channel_budget.window_start = ${CHANNEL_BUDGET_WINDOW_MS} THEN cairn_channel_budget.count
            ELSE 0
          END,
-         window_start = ?3
+         window_start = MAX(cairn_channel_budget.window_start, ?3)
        WHERE (
          CASE
-           WHEN cairn_channel_budget.window_start = ?3
+           WHEN cairn_channel_budget.window_start >= ?3
              THEN (cairn_channel_budget.count + cairn_channel_budget.prev_count * ?4)
            ELSE (
              CASE WHEN ?3 - cairn_channel_budget.window_start = ${CHANNEL_BUDGET_WINDOW_MS}

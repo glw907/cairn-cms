@@ -135,9 +135,10 @@ function scrubDeliverError(err: unknown, contact: string): string {
  * `RequestEvent`'s cookie jar, URL, request, platform env, and client address. Kept local rather
  * than reused from `CairnEvent` (`../sveltekit/types.js`), since that type's `locals` shape names
  * the engine's own admin concepts (`cairnEditor`, `cairnAccess`) that have no bearing on a second
- * audience's login channel; a real SvelteKit `RequestEvent` satisfies both structurally.
+ * audience's login channel; a real SvelteKit `RequestEvent` satisfies both structurally. Exported
+ * since it names the parameter of every site-supplied callback (`challenge`, `rateLimit.key`).
  */
-interface AuthChannelEvent<Env> {
+export interface AuthChannelEvent<Env> {
   url: URL;
   request: Request;
   cookies: CookieJar;
@@ -371,6 +372,23 @@ function composeRequesterBucketKey<Env>(event: AuthChannelEvent<Env>, identity: 
 }
 
 /**
+ * Refund confirm's identity failure gate charge, when this call actually made one. Takes the
+ * charged session and identity as plain parameters, rather than closing over `confirmAction`'s own
+ * narrowed locals, since a nested closure loses the surrounding narrowing TypeScript applies to
+ * `session` and `row` at each call site.
+ */
+async function refundGateCharge(
+  session: D1DatabaseSession,
+  identity: string,
+  gateCharge: { admitted: boolean },
+  now: number,
+): Promise<void> {
+  if (gateCharge.admitted) {
+    await refund(session, identity, IDENTITY_ESCALATION_SCOPE, now);
+  }
+}
+
+/**
  * Apply the optional rate limit (spec, Surface's `rateLimit?` row: back pressure only, never a
  * security control). Both actions call this after deriving the identity their default key needs
  * (`request` right after step 4's derivation, `confirm` right after step 4's row read), rather
@@ -462,6 +480,19 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
   // lifetime, but a confirmed match never needs re-querying on every request.
   let schemaVerified = false;
 
+  // Caches only a positive salt provisioning, mirroring schemaVerified above: the salt is
+  // immutable once provisioned (spec, Storage), so a confirmed value never needs re-fetching, but
+  // a transient failure must not pin an isolate into refusing every login for its lifetime.
+  let cachedSalt: string | null = null;
+
+  /** Resolve the channel's identity salt, provisioning it on first use and caching only success. */
+  async function resolveSalt(session: D1DatabaseSession): Promise<string> {
+    if (cachedSalt !== null) return cachedSalt;
+    const salt = await provisionSalt(session);
+    cachedSalt = salt;
+    return salt;
+  }
+
   /**
    * Resolve the channel's D1 binding and confirm its schema, opening one session a whole flow
    * shares. Returns null on either an absent binding or a schema mismatch, both of which the
@@ -491,7 +522,11 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // Step 1: origin and scheme.
     assertOriginAndScheme(event);
 
-    const form = await event.request.formData();
+    // Read the body off a clone, never the original request: a site's own wrapper around this
+    // action (a custom route that also logs the raw body, say) may still need to read it, and a
+    // second `formData()` call against an already-consumed body throws (mirrors csrf.ts's
+    // `validateCsrfToken`, which clones for the same reason).
+    const form = await event.request.clone().formData();
 
     // Step 2: the required challenge. A false or throwing challenge fails closed, writes no
     // row, calls no deliver, and charges nothing; identity is not yet derived here, so this
@@ -534,7 +569,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // identity.
     let salt: string;
     try {
-      salt = await provisionSalt(session);
+      salt = await resolveSalt(session);
     } catch {
       return { error: 'unavailable' };
     }
@@ -610,10 +645,15 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     });
 
     if (!minted) {
-      // The cooldown held: no row was written this call, so the requester charge above is
-      // refunded, or a member tapping resend would spend their whole hourly bucket on one
-      // delivered message.
+      // The cooldown held: no row was written this call, no code was delivered, so both charges
+      // above are refunded. The requester charge, or a member tapping resend would spend their
+      // whole hourly bucket on one delivered message. The identity ceiling charge too (when this
+      // call actually admitted one): nothing minted and nothing delivered, so a member's resend
+      // taps must not accrue toward the ceiling_exceeded operator alarm.
       await refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now);
+      if (ceilingCharge.admitted) {
+        await refund(session, identity, IDENTITY_CEILING_SCOPE, now);
+      }
       log.info('auth.channel.requested', { outcome: 'cooldown', correlationId });
       return { sent: true };
     }
@@ -663,9 +703,12 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     };
     const deliverPromise = config.deliver(contact, code, ctx).catch(async (err: unknown) => {
       log.error('auth.channel.send_failed', { correlationId, error: scrubDeliverError(err, contact) });
-      const failureNow = Date.now();
-      await consumeCode(session, nonceHash, codeHash, failureNow);
-      await refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, failureNow);
+      // Reuse this call's own captured `now`, never a fresh Date.now(): delivery runs through
+      // waitUntil, so a fresh timestamp taken once the promise settles can land in a later budget
+      // window than the one the send charge above actually incremented, and refund() is a no-op
+      // against a window it did not charge.
+      await consumeCode(session, nonceHash, codeHash, now);
+      await refund(session, fullRequesterBucket, REQUESTER_SEND_SCOPE, now);
     });
 
     if (waitUntilFn) {
@@ -692,7 +735,9 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     // Step 1: origin and scheme, identical discipline to requestAction.
     assertOriginAndScheme(event);
 
-    const form = await event.request.formData();
+    // Read the body off a clone, never the original request, for the same reason requestAction
+    // does: the site's own wrapper may still need the body.
+    const form = await event.request.clone().formData();
 
     // Step 2: canonicalize. Malformed touches nothing: no store access, no attempt spent.
     const rawCode = String(form.get('code') ?? '');
@@ -761,11 +806,16 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
     const codeHash = await hashToken(code);
     const incremented = await incrementAndReadCode(session, nonceHash, now);
     if (!incremented) {
+      // No compare occurred: the spec charges the gate "on every failed compare", so this call's
+      // gate charge (if it charged one) is refunded rather than left standing.
+      await refundGateCharge(session, row.identity, gateCharge, now);
       return { error: 'expired' };
     }
 
-    // Step 7: over the cap, without comparing.
+    // Step 7: over the cap, without comparing; refunded for the same reason as the expired branch
+    // above.
     if (incremented.attempts > limits.attemptCap) {
+      await refundGateCharge(session, row.identity, gateCharge, now);
       log.warn('auth.channel.locked', { correlationId });
       return { error: 'locked' };
     }
@@ -780,9 +830,7 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
 
     // The code matched: refund the gate charge this call made (if any), since a successful
     // confirm must not accumulate toward the escalation threshold.
-    if (gateCharge.admitted) {
-      await refund(session, row.identity, IDENTITY_ESCALATION_SCOPE, now);
-    }
+    await refundGateCharge(session, row.identity, gateCharge, now);
 
     if (consumed.subject === '') {
       // A roster data fault, never an attacker signal: some upstream path wrote an empty string
@@ -843,10 +891,13 @@ export function createAuthChannel<Env>(config: AuthChannelConfig<Env>): AuthChan
       const session = await resolveVerifiedSession(event.platform?.env);
       if (session) {
         await destroyChannelSession(session, await hashToken(token));
+        // Logged only here, where a row was actually destroyed: a request with no session
+        // cookie, or one whose db is unavailable, destroys nothing and must not fire this record
+        // (log-events.md's logout row states this exact condition).
+        log.info('auth.channel.session.destroyed');
       }
     }
 
-    log.info('auth.channel.session.destroyed');
     return { ok: true };
   }
 

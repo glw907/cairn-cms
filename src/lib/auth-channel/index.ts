@@ -11,6 +11,7 @@ export { CHANNEL_SCHEMA_SQL, CHANNEL_SCHEMA_VERSION } from './store.js';
 export type {
   AuthChannel,
   AuthChannelConfig,
+  AuthChannelEvent,
   DeliverContext,
   ChannelRequestResult,
   ChannelConfirmResult,

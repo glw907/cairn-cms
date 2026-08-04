@@ -21,10 +21,31 @@ npx wrangler d1 create your-site-members
 
 `createAuthChannel` owns the schema as one exported string, `CHANNEL_SCHEMA_SQL`; there is no
 packaged `.sql` migration file for it the way there is for the engine's own auth store, since a
-channel's binding, and its migration directory, are entirely your own. Add a new file under your
-site's `migrations/` directory (say `migrations/0000_channel.sql`) carrying this exact statement.
-The engine's own test suite pins this block to `CHANNEL_SCHEMA_SQL` byte for byte, so copy it
-verbatim rather than adapting it:
+channel's binding is entirely your own.
+
+**Give this database its own migrations directory, never your site's existing `migrations/`.**
+`wrangler d1 migrations apply` applies every file it finds in a database's configured directory
+to that database, so sharing one directory between two databases means the engine's own auth
+migrations run against your member database and this channel's migration runs against `AUTH_DB`,
+neither of which the schema on either side expects. Point this database at its own directory with
+the per-database `migrations_dir` key:
+
+```jsonc
+{
+  "d1_databases": [
+    {
+      "binding": "MEMBER_DB",
+      "database_name": "your-site-members",
+      "database_id": "<the id wrangler d1 create printed>",
+      "migrations_dir": "migrations-members"
+    }
+  ]
+}
+```
+
+Add a new file under that directory (`migrations-members/0000_channel.sql`) carrying this exact
+statement. The engine's own test suite pins this block to `CHANNEL_SCHEMA_SQL` byte for byte, so
+copy it verbatim rather than adapting it:
 
 ```sql
 CREATE TABLE cairn_channel_meta (
@@ -79,20 +100,6 @@ npx wrangler d1 migrations apply your-site-members --remote
 Don't write anything for the identity salt. `createAuthChannel` provisions it itself, on first use,
 so leave `cairn_channel_meta` carrying only the `schema_version` row this migration inserts.
 
-Bind the database in `wrangler.jsonc`:
-
-```jsonc
-{
-  "d1_databases": [
-    {
-      "binding": "MEMBER_DB",
-      "database_name": "your-site-members",
-      "database_id": "<the id wrangler d1 create printed>"
-    }
-  ]
-}
-```
-
 ## Build the channel
 
 Construct one `createAuthChannel` instance and export it from a server-only module, so every route
@@ -122,9 +129,9 @@ export const memberChannel = createAuthChannel<App.Platform['env']>({
 });
 ```
 
-## Wire the request and confirm routes
+## Wire the request, confirm, and logout routes
 
-Two routes, both plain SvelteKit actions that just call through to the channel:
+Three routes, all plain SvelteKit actions that just call through to the channel:
 
 ```ts
 // src/routes/members/login/+page.server.ts
@@ -146,6 +153,16 @@ export const actions: Actions = {
 };
 ```
 
+```ts
+// src/routes/members/logout/+page.server.ts
+import type { Actions } from './$types';
+import { memberChannel } from '$lib/server/member-channel.js';
+
+export const actions: Actions = {
+  default: (event) => memberChannel.actions.logout(event),
+};
+```
+
 The confirm form submits one field, `code`. Never add a hidden `contact` field to it: `confirm`
 reads the pending code row by the nonce cookie alone and never re-derives identity from a submitted
 contact, which is what keeps a stolen code useless outside the browser that requested it (see
@@ -154,6 +171,29 @@ the same browser that requested the code.** That is a deliberate cost, not an ov
 makes a code intercepted in transit, forwarded by a phishing page, or read over someone's shoulder
 worthless anywhere but the device that asked for it. Design your UI around it: don't invite a
 member to paste a code into a different device or tab than the one that requested it.
+
+## Read the signed-in subject
+
+Every route under the member area reads the session with `resolveSubject`, typically from a
+`+layout.server.ts` that guards the whole subtree and hands the subject down to its pages:
+
+```ts
+// src/routes/members/(app)/+layout.server.ts
+import { redirect } from '@sveltejs/kit';
+import type { LayoutServerLoad } from './$types';
+import { memberChannel } from '$lib/server/member-channel.js';
+
+export const load: LayoutServerLoad = async (event) => {
+  const subject = await memberChannel.resolveSubject(event);
+  if (!subject) throw redirect(303, '/members/login');
+  return { subject };
+};
+```
+
+`resolveSubject` returns `null` for an absent, expired, or `verify`-refused session, never throws.
+The preceding `redirect` is your own route's policy, not the channel's. `subject` is whatever your
+`lookup` function returned at request time, so treat it as an opaque id into your own roster, not a
+display name or contact.
 
 ## Wire Turnstile as the challenge hook
 

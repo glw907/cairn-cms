@@ -54,17 +54,23 @@ export function channelSession(): D1DatabaseSession {
   return db.withSession('first-primary');
 }
 
+/** One recorded delete() call: the cookie name and the options it was cleared with. */
+export interface RecordedDelete {
+  name: string;
+  opts: { path: string };
+}
+
 /** An in-memory cookie jar that also records every set() and delete() call, for attribute assertions. */
 export interface RecordingCookieJar extends CookieJar {
   sets: { name: string; value: string; opts: CookieSetOptions }[];
-  deletes: string[];
+  deletes: RecordedDelete[];
 }
 
 /** Build a recording cookie jar, optionally pre-loaded with the cookies a browser would send. */
 export function makeCookies(initial: Record<string, string> = {}): RecordingCookieJar {
   const jar = new Map(Object.entries(initial));
   const sets: { name: string; value: string; opts: CookieSetOptions }[] = [];
-  const deletes: string[] = [];
+  const deletes: RecordedDelete[] = [];
   return {
     sets,
     deletes,
@@ -73,9 +79,9 @@ export function makeCookies(initial: Record<string, string> = {}): RecordingCook
       jar.set(name, value);
       sets.push({ name, value, opts });
     },
-    delete: (name) => {
+    delete: (name, opts) => {
       jar.delete(name);
-      deletes.push(name);
+      deletes.push({ name, opts });
     },
   };
 }

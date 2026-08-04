@@ -13,6 +13,7 @@ import { hashToken } from '../../lib/auth/crypto.js';
 import {
   applyChannelSchema,
   attemptsFor,
+  budgetSum,
   channelSession,
   codeRowCount,
   makeChannelConfig,
@@ -154,6 +155,31 @@ describe('the attempt cap (steps 6-7)', () => {
     } finally {
       vi.restoreAllMocks();
     }
+  });
+
+  it('a locked outcome leaves the escalation budget unchanged, since no compare occurred', async () => {
+    const channel = createAuthChannel<ChannelTestEnv>(makeConfig({ lookup: async () => 'sub-1' }));
+    const { nonceToken, code } = await seedCode({ contact: 'locked-budget@x.test', subject: 'sub-1' });
+    const jar = makeCookies({ [PENDING_HTTPS]: nonceToken });
+    const wrong = wrongCodeFor(code);
+
+    for (let i = 0; i < 5; i++) {
+      await channel.actions.confirm(makeEvent({ code: wrong, cookies: jar }));
+    }
+    const beforeLock = await budgetSum('escalation');
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const locked = await channel.actions.confirm(makeEvent({ code: wrong, cookies: jar }));
+      expect(locked).toEqual({ error: 'locked' });
+    } finally {
+      vi.restoreAllMocks();
+    }
+
+    // The locked attempt's own gate charge was refunded (this call compared nothing), so the
+    // total across the whole gate is unchanged from before the attempt.
+    const afterLock = await budgetSum('escalation');
+    expect(afterLock).toBe(beforeLock);
   });
 
   it('a re-mint after the cooldown resets attempts, giving a locked member an exit', async () => {
@@ -360,7 +386,9 @@ describe('nonce cookie cleared and no contact in any log record', () => {
     const jar = makeCookies({ [PENDING_HTTPS]: nonceToken });
     const result = await channel.actions.confirm(makeEvent({ code, cookies: jar }));
     expect(result).toEqual({ ok: true });
-    expect(jar.deletes).toContain(PENDING_HTTPS);
+    const pendingDelete = jar.deletes.find((d) => d.name === PENDING_HTTPS);
+    expect(pendingDelete).toBeDefined();
+    expect(pendingDelete?.opts.path).toBe('/');
   });
 
   it('no confirm log record carries a contact', async () => {

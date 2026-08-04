@@ -135,8 +135,12 @@ describe('logout', () => {
     try {
       const result = await channel.actions.logout(makeEvent({ cookies: jar }));
       expect(result).toEqual({ ok: true });
-      expect(jar.deletes).toContain(SESSION_HTTPS);
-      expect(jar.deletes).toContain(PENDING_HTTPS);
+      const sessionDelete = jar.deletes.find((d) => d.name === SESSION_HTTPS);
+      const pendingDelete = jar.deletes.find((d) => d.name === PENDING_HTTPS);
+      expect(sessionDelete).toBeDefined();
+      expect(sessionDelete?.opts.path).toBe('/');
+      expect(pendingDelete).toBeDefined();
+      expect(pendingDelete?.opts.path).toBe('/');
       const destroyedRecords = infoSpy.mock.calls
         .map((c) => c[0] as { event?: string })
         .filter((r) => r.event === 'auth.channel.session.destroyed');

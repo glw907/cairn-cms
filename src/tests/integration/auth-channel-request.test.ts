@@ -6,12 +6,9 @@
 import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { createAuthChannel } from '../../lib/auth-channel/index.js';
-import { consumeCode } from '../../lib/auth-channel/store.js';
-import { hashToken } from '../../lib/auth/crypto.js';
 import {
   applyChannelSchema,
   budgetSum,
-  channelSession,
   codeRowCount,
   makeChannelConfig as makeConfig,
   makeCookies,
@@ -235,7 +232,26 @@ describe('nonce reuse and the cooldown (step 7)', () => {
     expect(await budgetSum('send')).toBe(1);
   });
 
-  it('concurrent requests against one reused, cooldown-elapsed nonce deliver exactly once', async () => {
+  it('a cooldown-held resend leaves the identity ceiling budget unchanged', async () => {
+    const { config, sent } = makeConfig({ lookup: async () => 'sub-1' });
+    const channel = createAuthChannel<ChannelTestEnv>(config);
+    const jar = makeCookies();
+    await channel.actions.request(makeEvent({ contact: 'ceiling-cooldown@x.test', cookies: jar }));
+    const beforeResend = await budgetSum('ceiling');
+
+    // The cooldown holds on this second call (same jar, same nonce), so nothing mints and
+    // nothing delivers; the identity ceiling charge this call made must be refunded rather than
+    // left standing, or a member's own resend taps would silently accrue toward the
+    // ceiling_exceeded operator alarm.
+    const second = await channel.actions.request(makeEvent({ contact: 'ceiling-cooldown@x.test', cookies: jar }));
+    expect(second).toEqual({ sent: true });
+    expect(sent).toHaveLength(1);
+
+    const afterResend = await budgetSum('ceiling');
+    expect(afterResend).toBe(beforeResend);
+  });
+
+  it('of two concurrent remints against one cooldown-elapsed nonce, exactly one wins and delivers a second code', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     try {
       vi.setSystemTime(1_700_000_000_000);
@@ -360,8 +376,13 @@ describe('the lockout regression test', () => {
   it('an attacker exceeding the identity send ceiling from many buckets never blocks the victim, who requested first', async () => {
     const contact = 'roster-member@x.test';
     const subject = 'roster-member-subject';
+    let challengeCalls = 0;
     const { config, sent } = makeConfig({
       lookup: async (c) => (c === contact ? subject : null),
+      challenge: async () => {
+        challengeCalls += 1;
+        return true;
+      },
       ttl: { identityCeiling: 10 }, // the clamp floor, so the test exceeds it quickly
     });
     const channel = createAuthChannel<ChannelTestEnv>(config);
@@ -376,16 +397,15 @@ describe('the lockout regression test', () => {
     const victimNonceToken = victimJar.get(PENDING_HTTPS);
     expect(victimNonceToken).toBeDefined();
     const victimCode = sent[0].code;
-    const victimNonceHash = await hashToken(victimNonceToken as string);
-    const victimCodeHash = await hashToken(victimCode);
 
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     try {
       // A separate attacker, in a separate cookie jar per attempt and a distinct client address
       // per attempt (so no per-requester-bucket cap ever trips), exceeds the identity send
       // ceiling: the only identity-keyed cap this action can reach (the escalation threshold is
-      // confirm-side, Task 4). Twelve attacker sends plus the victim's own puts the identity's
-      // count at 13, past the ceiling of 10.
+      // confirm-side). Twelve attacker sends plus the victim's own puts the identity's count at
+      // 13, past the ceiling of 10.
       for (let i = 0; i < 12; i++) {
         const attackerResult = await channel.actions.request(
           makeEvent({ contact, address: `198.51.100.${100 + i}`, cookies: makeCookies() }),
@@ -400,15 +420,30 @@ describe('the lockout regression test', () => {
         .map((c) => c[0] as { event?: string })
         .filter((r) => r.event === 'auth.channel.ceiling_exceeded');
       expect(ceilingRecords.length).toBeGreaterThan(0);
+
+      // The victim completes with no extra interaction beyond the one ordinary request above:
+      // their own held nonce and code, run through the real composed confirm action (their jar,
+      // their code), never the store layer directly.
+      const challengeCallsBeforeConfirm = challengeCalls;
+      const confirmResult = await channel.actions.confirm(makeEvent({ code: victimCode, cookies: victimJar }));
+      expect(confirmResult).toEqual({ ok: true });
+
+      const escalatedRecords = warnSpy.mock.calls
+        .map((c) => c[0] as { event?: string })
+        .filter((r) => r.event === 'auth.channel.escalated');
+      expect(escalatedRecords).toHaveLength(0);
+      // The identity escalation gate is confirm-side only and was never touched by the
+      // request-side attack above, so the victim's confirm never had to invoke challenge.
+      expect(challengeCalls).toBe(challengeCallsBeforeConfirm);
+
+      const sessionRows = await db
+        .prepare('SELECT COUNT(*) AS n FROM cairn_channel_session WHERE subject = ?1')
+        .bind(subject)
+        .first<{ n: number }>();
+      expect(sessionRows?.n ?? -1).toBe(1);
     } finally {
       vi.restoreAllMocks();
     }
-
-    // The victim completes with no interaction beyond the one ordinary request above: their held
-    // nonce and code still consume successfully (Task 4's confirm action does not exist yet, so
-    // this is proven at the store layer, exactly as the code the confirm action will call).
-    const consumed = await consumeCode(channelSession(), victimNonceHash, victimCodeHash, Date.now());
-    expect(consumed).toEqual({ subject });
   });
 });
 

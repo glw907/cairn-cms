@@ -95,12 +95,12 @@ const channel = createAuthChannel<Env>({
   unlike every other config function here. Output over 254 characters, or a thrown error, answers
   `{error: 'invalid'}`.
 - **`challenge(event, form)`**: the bot challenge, required, and the most load-bearing of the three
-  correctness obligations (see [Config obligations](#config-obligations)). Awaited before any code
-  is minted on `request`, and on a `confirm` whose identity has crossed the escalation threshold. A
-  `false` return or a thrown error never hard-fails: `request` answers
-  `{error: 'challenge-required'}` with no row written and no `deliver` call; an escalated `confirm`
-  answers `{error: 'challenge-required'}` with no attempt charged and no row consumed, so a member
-  always has a retry path.
+  correctness obligations (see [Config obligations](#config-obligations)). `event` is an
+  [`AuthChannelEvent`](#authchannelevent). Awaited before any code is minted on `request`, and on
+  a `confirm` whose identity has crossed the escalation threshold. A `false` return or a thrown
+  error never hard-fails: `request` answers `{error: 'challenge-required'}` with no row written
+  and no `deliver` call; an escalated `confirm` answers `{error: 'challenge-required'}` with no
+  attempt charged and no row consumed, so a member always has a retry path.
 - **`cookie.name`**: the session cookie's base name, through
   [`cookieName`](./auth-crypto.md#cookiename); the same base plus a `_pending` suffix names the
   nonce cookie. A `cairn_`-prefixed base throws at construction, since it would collide with the
@@ -159,7 +159,8 @@ and a throwing `key()` or `limit()` call degrades to open as well (see
 [`auth.channel.rate_limit_absent`](./log-events.md) and
 [`auth.channel.rate_limit_failed`](./log-events.md)). The default key is the requester bucket
 (the client address paired with the derived identity), never the identity alone; `key(event)`
-overrides it. Both actions apply the check after deriving the identity the default key needs, not
+overrides it, where `event` is the same [`AuthChannelEvent`](#authchannelevent) `challenge`
+receives. Both actions apply the check after deriving the identity the default key needs, not
 before every other step. The Workers `RateLimit` binding is per-location and eventually
 consistent, the same caveat [`/cloudflare`](./cloudflare.md#checking-a-rate-limit) states for its
 own wrapper; the engine's own test suite exercises `rateLimit` against a structural
@@ -231,7 +232,8 @@ transport. Nothing in this function imports `$app/*`.
 
 | Export | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| <a id="authchannel"></a>`AuthChannel` | Extension API | `interface AuthChannel<Env> { actions: { request: (event) => Promise<ChannelRequestResult>; confirm: (event) => Promise<ChannelConfirmResult>; logout: (event) => Promise<{ ok: true }> }; resolveSubject: (event) => Promise<string \| null>; revokeSessions: (db: D1Database, subject: string) => Promise<void> }` | What [`createAuthChannel`](#createauthchannel) returns. `event` is a SvelteKit `RequestEvent`-shaped object (`url`, `request`, `cookies`, `platform`, `getClientAddress()`); every real SvelteKit event satisfies it structurally. |
+| <a id="authchannel"></a>`AuthChannel` | Extension API | `interface AuthChannel<Env> { actions: { request: (event) => Promise<ChannelRequestResult>; confirm: (event) => Promise<ChannelConfirmResult>; logout: (event) => Promise<{ ok: true }> }; resolveSubject: (event) => Promise<string \| null>; revokeSessions: (db: D1Database, subject: string) => Promise<void> }` | What [`createAuthChannel`](#createauthchannel) returns. `event` is an [`AuthChannelEvent`](#authchannelevent). |
+| <a id="authchannelevent"></a>`AuthChannelEvent` | Extension API | `interface AuthChannelEvent<Env> { url: URL; request: Request; cookies: CookieJar; platform?: { env?: Env; ctx?: { waitUntil?: (promise: Promise<unknown>) => void }; context?: { waitUntil?: (promise: Promise<unknown>) => void } }; getClientAddress(): string }` | The event shape every `createAuthChannel` action, `challenge`, and `rateLimit.key` reads: a SvelteKit `RequestEvent`'s cookie jar, URL, request, platform env, and client address. Every real SvelteKit `RequestEvent` satisfies it structurally. |
 | <a id="authchannelconfig"></a>`AuthChannelConfig` | Extension API | `interface AuthChannelConfig<Env> { resolveDb: (env: Env \| undefined) => D1Database \| undefined; deliver: (contact: string, code: string, ctx: DeliverContext<Env>) => Promise<void>; lookup: (contact: string) => Promise<string \| null>; normalize: (raw: string) => string; challenge: (event, form: FormData) => Promise<boolean>; cookie: { name: string }; verify?: (subject: string) => Promise<boolean>; kind?: 'code'; ttl?: { codeLength?: number; codeTtlMs?: number; attemptCap?: number; cooldownMs?: number; requesterCap?: number; identityCeiling?: number; escalationThreshold?: number; liveRowCap?: number; sessionTtlMs?: number }; rateLimit?: { resolve: (env: Env \| undefined) => RateLimitLike \| undefined; key?: (event) => string } }` | Construction-time configuration for [`createAuthChannel`](#createauthchannel); see [Building a channel](#building-a-channel) for every field, and [Defaults and clamps](#defaults-and-clamps) for every `ttl` field. |
 | <a id="delivercontext"></a>`DeliverContext` | Extension API | `interface DeliverContext<Env> { env: Env \| undefined; waitUntil: (promise: Promise<unknown>) => void }` | The context [`deliver`](#createauthchannel) and [`devDelivery`](#devdelivery) receive alongside the contact and code: the resolved platform env and Cloudflare's background-task hook. |
 | <a id="channelrequestresult"></a>`ChannelRequestResult` | Extension API | `type ChannelRequestResult = { sent: true } \| { error: 'invalid' \| 'throttled' \| 'challenge-required' \| 'unavailable' }` | The `request` action's result. `sent` is `true` even for an unknown contact, so the response never leaks roster membership. |

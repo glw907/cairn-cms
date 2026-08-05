@@ -451,6 +451,72 @@ string. This is a silent visual change, not a compile error, since `formatCivilD
 parameter was already nullable. Calls to `formatMoney`, `formatTimestamp`, or `formatPhone` with a
 value that's statically `number`/`string` (never nullish) need no change.
 
+Your adapter can now carry `aiPosture`, set to `'decline'` or `'invite'`, read by
+`buildRobots`/`robotsResponse` (`@glw907/cairn-cms/delivery`). Set `'decline'` and your
+`robots.txt` adds a `Disallow: /` group per token in a new first-party-verified training-crawler
+table, `AI_CRAWLERS` (and its review date, `AI_CRAWLERS_REVIEWED`), plus
+`Content-Signal: ai-train=no`. Set `'invite'` and it adds `Content-Signal: search=yes,
+ai-train=yes` and no `Disallow` lines at all, since there's no robots directive that invites a
+crawler. Declining is a request that named crawlers say they honor, not enforcement: robots.txt
+has no mechanism to block a fetch, and OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User`
+are exempt from robots.txt by their own operators' first-party design. See [Choose an AI
+posture](./choose-an-ai-posture.md) and [Delivery data](../reference/delivery-data.md#buildrobots).
+
+**Consumers must:** nothing. `aiPosture` is optional and unset on your site today, so this
+window's `robots.txt` output is byte-identical to before.
+
+`cairn-doctor` gains a nineteenth check, `ai.posture-effective`: a plain, credential-free
+`GET /robots.txt` against your deployed origin, reporting what the live file actually carries
+rather than what your adapter declares. It distinguishes stating no posture, stating a posture
+your live site contradicts, and a managed layer, Cloudflare's AI Crawl Control or its managed
+robots.txt, prepending directives cairn didn't write, a shape measured live on three of the four
+sites in cairn's own operator estate. Only the middle case fails; stating no posture passes, and so
+does a managed layer, since whether that's wanted is your call as the zone's owner. See
+[`cairn-doctor`](../reference/doctor.md#the-checks).
+
+**Consumers must:** nothing today, since the failing case needs a declared `aiPosture` and you
+haven't declared one. If you adopt a posture and this check goes red afterward, your deployment
+doesn't carry the stance you stated.
+
+Every routable, non-`noindex` entry can now serve a raw-markdown twin of its own page.
+`markdownResponse` (`@glw907/cairn-cms/delivery`) wraps a body in `text/markdown; charset=utf-8`,
+a sibling of `robotsResponse`/`sitemapResponse`, and `createPublicRoutes` gains `markdownEntries()`
+and `markdownLoad(event)` to enumerate and serve one `.md`-suffixed path per entry. The twin reads
+only through the injected site resolver, so it can serve only what that resolver carries. Wire it
+through a prerendered route, the same way you already wire robots.txt and the sitemap, and the
+build runs against committed `main` content, which is what keeps a pending `cairn/*` edit branch
+structurally out of reach. A runtime route reopens that question. See
+[Wire the delivery surface](./wire-the-delivery-surface.md#serve-a-raw-markdown-twin-of-every-entry)
+and [Choose an AI posture](./choose-an-ai-posture.md).
+
+**Consumers must:** nothing. No site wires this route today, so it ships no new response on your
+deployed site until you add it.
+
+The admin `Strict-Transport-Security` header no longer sends `includeSubDomains` by default (the
+AI-posture pass, the HSTS rider). Every `/admin` response previously pinned your site's apex and
+every sibling subdomain to https in the visiting editor's browser for two years, including on a
+zone whose owner had left edge HSTS off, and you had no way to un-pin an already-pinned editor
+except by serving a corrective header. `max-age`
+still sends unconditionally; the admin surface is the one place cairn has standing to insist on
+https for itself. Only `includeSubDomains` becomes conditional, since pinning subdomains cairn
+knows nothing about is your call, not the engine's. `AuthGuardOptions` gains
+`includeSubDomains?: boolean`, alongside `roles` and `access`. cairn's doctor also reconciles the
+zone-level `edge.hsts` check's wording: a failing zone setting no longer reads as though nothing
+is protected, since your admin responses already carry their own header regardless of the zone.
+See [`createAuthGuard`](../reference/sveltekit.md#createauthguard).
+
+The guard's rejection pages and its login redirect now send no `Strict-Transport-Security` at all.
+RFC 6797 has a browser replace its cached policy on every header it receives, so a rejection page
+sending `max-age` alone would have cleared the `includeSubDomains` your guarded responses asserted,
+and the CSRF rejection is reachable by any cross-site POST with no session at all.
+
+**Consumers must:** if you want the previous domain-wide pinning back, set
+`createAuthGuard({ includeSubDomains: true })` in your `hooks.server.ts`. If you take no action,
+your admin responses keep `max-age` but stop pinning sibling subdomains. **Check your zone
+first:** if edge HSTS already sends `includeSubDomains` for the admin's host, which is the case on
+more than one site running this engine, set the option so cairn states the same policy rather than
+a weaker one on the same host.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

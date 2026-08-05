@@ -66,7 +66,7 @@ environment. They are never derived from the repo and never printed.
 
 ## The checks
 
-Eighteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
+Nineteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
 `--probe` the live admin probe. The condition id is the identity the report, the runtime errors,
 and the readiness checklist share. Some checks share one condition id (`config.media-bucket` and
 `config.tidy-key` both reuse `config.bindings-missing`), so the readiness count holds while the
@@ -86,12 +86,13 @@ checklist gains a distinct line.
 | `config.dependency-floors` | `config.dependency-floors-unmet` | The lockfile's resolved `svelte` and `@sveltejs/kit` versions satisfy the engine's declared peer ranges, read from the installed `@glw907/cairn-cms/package.json` so the floors are declared once. | No `package-lock.json` exists (a pnpm or yarn lockfile is not read), or the lockfile carries no entry for a dependency. |
 | `email.sender-onboarded` | `email.sender-not-onboarded` | The from-domain has an enabled Email Sending subdomain on its zone. | No API token, or no from-address. |
 | `edge.https-forced` | `edge.https-not-forced` | Always Use HTTPS is on for the zone. | No API token, or no from-address. |
-| `edge.hsts` | `edge.hsts-off` | HSTS is enabled with a max-age of at least 30 days. | No API token, or no from-address. |
+| `edge.hsts` | `edge.hsts-off` | The zone's own HSTS setting is enabled with a max-age of at least 30 days. It reads that setting and nothing else, so a site adding the header another way (a Transform Rule, a `_headers` file, its own hook) still reports a failure here. cairn's admin responses carry their own `Strict-Transport-Security` max-age whatever the zone says, so a failure names the rest of the site rather than `/admin`. | No API token, or no from-address. |
 | `auth.store` | `auth.store-unreachable` | The `AUTH_DB` D1 database answers, the `editor`, `magic_token`, and `session` tables exist, and at least one owner-capability row is present (every declared role mapped to owner capability, `owner` when the site declares none). | No API token or account id, or the wrangler config carries no `AUTH_DB` `database_id`. |
 | `auth.role-vocabulary` | `auth.unknown-role` | Every distinct `role` value in the `editor` table is a name the site's declared vocabulary knows (checked by name, not resolved capability, so a role explicitly declared `none` still counts as known). | Same as `auth.store`. |
 | `auth.role-wiring` | `auth.role-wiring-missing` | When the adapter declares custom roles with `defineRoles`, `src/hooks.server.ts` passes the same vocabulary to `createAuthGuard({ roles })` (a heuristic text read), so a role outside owner/editor resolves to its declared capability instead of falling back to `none`. | The site declares no custom roles, `src/hooks.server.ts` is not found, or the heuristic cannot read the `createAuthGuard` call (none found, or its argument is not a readable object literal). |
 | `auth.email-normalization` | `auth.email-not-normalized` | Every `editor.email` is trimmed and lowercase, the invariant every write and lookup path holds; a manual `wrangler d1 execute` insert is the one way to violate it. | Same as `auth.store`. |
 | `github.app` | `github.app-unreachable` | The App key parses and signs, an installation token mints, and the repository answers a read. | The GitHub credential trio or the repo is missing. |
+| `ai.posture-effective` | `ai.posture-not-effective` | A plain `GET /robots.txt` against the deployed origin, reporting what the live file actually carries. It fails on one case only: a site that declares an `aiPosture` the served file doesn't carry, which is a stated stance crawlers never read. A site that declares none passes, since absence is honest, and so does a managed layer (Cloudflare's AI Crawl Control or its managed robots.txt) prepending directives cairn didn't write, since whether that's wanted belongs to the zone's owner. The report never asserts why a zone is configured as it is, which is unreadable from a robots.txt body alone. | No wrangler config file exists and `PUBLIC_ORIGIN` is not in the environment, or the origin doesn't answer. |
 | `email.live-send` | `email.send-failed` | One real message sends through the Email Sending REST API. Runs only with `--send-test`. | No API token, account id, or from-address. |
 | `admin.login-probe` | `admin.login-probe-failed` | The deployed `/admin/login` answers with a working sign-in envelope, and the request action accepts a POST. Runs only with `--probe`. | Bare `--probe` finds no URL in the wrangler vars or `PUBLIC_ORIGIN`. |
 

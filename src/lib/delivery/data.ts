@@ -25,6 +25,7 @@ export type {
   ValidationResult,
   ValidationIssue,
   SiteRender,
+  AiPosture,
 } from '../content/types.js';
 export type { FieldDescriptor } from '../content/fields.js';
 export type {
@@ -70,11 +71,13 @@ export { buildSitemap, unlistedRoutes } from './sitemap.js';
 export type { SitemapUrl } from './sitemap.js';
 export { feedView, sitemapView } from './views.js';
 export { buildRobots } from './robots.js';
+export { AI_CRAWLERS, AI_CRAWLERS_REVIEWED } from './ai-crawlers.js';
+export type { AiCrawler } from './ai-crawlers.js';
 export { buildSeoMeta } from './seo.js';
 export type { SeoInput, SeoMeta } from './seo.js';
 export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
-export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './responses.js';
+export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from './responses.js';
 export { jsonLdScript } from './json-ld.js';
 export { buildSiteManifest, newlyPublishedEntries } from './manifest.js';
 export { parseManifest } from '../content/manifest.js';

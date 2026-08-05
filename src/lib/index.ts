@@ -38,6 +38,10 @@ export type {
   // `ConceptConfig.datePrefix` and `ConceptDescriptor.routing` name these (export-rule sweep,
   // C2 breaking-window pass, R4 ruling).
   RoutingRule,
+  // `CairnAdapter.aiPosture` names this, so it reaches root the way every other adapter member
+  // type does. `/delivery` and `/delivery/data` export it too, since that is where `buildRobots`
+  // and `robotsResponse` read it.
+  AiPosture,
 } from './content/types.js';
 export { defineConcept } from './content/concepts.js';
 export { composeRuntime } from './content/compose.js';

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from '../../lib/delivery/responses.js';
+import { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from '../../lib/delivery/responses.js';
 
 const channel = { title: 'T', description: 'D', siteUrl: 'https://x.test', feedUrl: 'https://x.test/feed.xml' };
 const items = [{ title: 'Post', url: 'https://x.test/p', date: '2026-05-14', summary: 'S' }];
@@ -29,5 +29,20 @@ describe('delivery response helpers', () => {
     const body = await res.text();
     expect(body).toContain('Sitemap:');
     expect(body).toContain('Disallow: /admin');
+  });
+
+  it('robotsResponse passes posture through with the content type unchanged', async () => {
+    const res = robotsResponse({ sitemapUrl: 'https://x.test/sitemap.xml', posture: 'decline' });
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8');
+    const body = await res.text();
+    expect(body).toContain('Content-Signal: ai-train=no');
+    expect(body).toContain('User-agent: GPTBot');
+  });
+
+  it('markdownResponse is raw markdown with the text/markdown content type', async () => {
+    const res = markdownResponse({ body: '# Heading\n\nSome **bold** text.' });
+    expect(res.headers.get('Content-Type')).toBe('text/markdown; charset=utf-8');
+    const body = await res.text();
+    expect(body).toBe('# Heading\n\nSome **bold** text.');
   });
 });

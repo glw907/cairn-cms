@@ -4,6 +4,7 @@
 import { buildRssFeed, buildJsonFeed, type FeedChannel, type FeedItem } from './feeds.js';
 import { buildSitemap, type SitemapUrl } from './sitemap.js';
 import { buildRobots } from './robots.js';
+import type { AiPosture } from '../content/types.js';
 
 /** An RSS 2.0 feed response. */
 export function rssResponse(channel: FeedChannel, items: FeedItem[]): Response {
@@ -26,9 +27,19 @@ export function sitemapResponse(urls: SitemapUrl[]): Response {
   });
 }
 
-/** A robots.txt response. */
-export function robotsResponse(opts: { sitemapUrl: string; disallow?: string[] }): Response {
+/** A robots.txt response. `posture` passes through to {@link buildRobots} unchanged. */
+export function robotsResponse(opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }): Response {
   return new Response(buildRobots(opts), {
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
+}
+
+/**
+ * A raw-markdown twin response. `body` is an entry's stored markdown, unrendered, so a request for
+ *  the `.md` twin gets cairn's native source rather than a reconstruction of the rendered html.
+ */
+export function markdownResponse(opts: { body: string }): Response {
+  return new Response(opts.body, {
+    headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
   });
 }

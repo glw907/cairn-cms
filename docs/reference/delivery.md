@@ -40,6 +40,8 @@ Stability tier: Scaffold API.
 function createPublicRoutes(deps: PublicRoutesConfig): {
   entryLoad: (event: { url: URL }) => Promise<EntryData>;
   entries: () => { path: string }[];
+  markdownEntries: () => { path: string }[];
+  markdownLoad: (event: { url: URL }) => Promise<{ body: string }>;
 };
 ```
 
@@ -50,6 +52,16 @@ Build the public route loader for a site's unified index. Pass the
 the SEO defaults. The returned object carries `entryLoad`, the one loader the catch-all route calls,
 and `entries`, the prerender enumerator. `entryLoad` resolves one entry by request path and folds in
 the rendered html, the SEO head, and the hero; it throws `error(404)` on a miss.
+
+`markdownEntries` and `markdownLoad` build the raw-markdown twin: one `.md`-suffixed path per entry
+whose frontmatter `robots` field doesn't carry `noindex`, and a loader that resolves the same
+`.md`-suffixed request path back to the entry's stored body, unrendered. `markdownLoad` throws
+`error(404)` on a miss, the same as `entryLoad`, and on a `noindex` entry, so the loader and the
+enumerator agree whether or not the site's route is prerendered. Both read only through the injected `SiteResolver`,
+so a request for a path the resolver doesn't carry gets `error(404)`, and nothing outside the
+resolver's own committed content can reach a response. Pair `markdownEntries`/`markdownLoad` with
+[`markdownResponse`](./delivery-data.md#markdownresponse) in a prerendered `+server.ts`, never a
+runtime one, so the served set is always what a build against `main` produced.
 
 The showcase wires `entryLoad` and `entries` into its `[...path]` catch-all server. The
 `+page.server.ts` calls `entryLoad` and the `+page.svelte` renders the entry directly.
@@ -115,8 +127,8 @@ builds the body resolver, and when it is absent no `heroImage` projection is der
 
 Stability tier: Scaffold API.
 
-What `createPublicRoutes` returns: the one entry loader and the prerender path enumerator, shown
-expanded in [`createPublicRoutes`](#createpublicroutes).
+What `createPublicRoutes` returns: the entry loader, the prerender path enumerator, and the markdown
+twin's loader and enumerator, shown expanded in [`createPublicRoutes`](#createpublicroutes).
 
 ### `EntryData`
 
@@ -158,16 +170,24 @@ import { CairnHead } from '@glw907/cairn-cms/delivery/head';
 ```
 
 ```svelte
-<CairnHead seo={SeoMeta} title={string | false} titleTemplate={(title: string) => string} />
+<CairnHead
+  seo={SeoMeta}
+  title={string | false}
+  titleTemplate={(title: string) => string}
+  markdownUrl={string}
+/>
 ```
 
 Render a page's SEO head from a [`SeoMeta`](./delivery-data.md) object into `<svelte:head>`: a title,
 meta tags, link tags, and one escaped JSON-LD script. The title renders from `seo.title` by default;
 `title={false}` lets the site own the `<title>`, and a string overrides it. `titleTemplate` carries the
 site's own title-suffix convention (for example `(t) => `${t} · 907.life`\`) and applies to `seo.title`
-only when `title` is left undefined, so an explicit `title` or `title={false}` still wins. The
-component carries no CSS, so it pulls in no admin styles. The showcase mounts it from the `seo` field
-the catch-all loader returns.
+only when `title` is left undefined, so an explicit `title` or `title={false}` still wins. `markdownUrl`,
+when passed, adds a `rel="alternate" type="text/markdown"` link pointing at the entry's raw-markdown
+twin ([`markdownResponse`](./delivery-data.md#markdownresponse)); a site that has not wired the twin
+route, or an entry with no twin (a `noindex` entry, which `markdownEntries` excludes), passes nothing
+and the link is omitted. The component carries no CSS, so it pulls in no admin styles. The showcase
+mounts it from the `seo` field the catch-all loader returns.
 
 ```svelte
 <script lang="ts">

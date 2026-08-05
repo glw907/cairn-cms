@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path';
 import { resolveViteRoot } from './resolve-root.js';
 import { parseManifest, serializeManifest } from '../content/manifest.js';
 import type { RolesDeclaration } from '../auth/roles.js';
+import type { AiPosture } from '../content/types.js';
 
 /**
  * The key the cairnManifest plugin stashes its options under, so the write path can read them off the
@@ -303,6 +304,11 @@ export interface AdapterFacts {
    *  doctor's vocabulary-aware checks read it, falling back to the implicit owner/editor pair.
    */
   roles?: RolesDeclaration;
+  /**
+   * `cairn.aiPosture`, the site's stated stance toward AI training crawlers; undefined when the
+   *  site states no posture. The doctor's live posture check reads it.
+   */
+  aiPosture?: AiPosture;
 }
 
 /**
@@ -318,6 +324,7 @@ const backend = cairn?.backend ?? {};
 const email = cairn?.email ?? {};
 const media = cairn?.media ?? {};
 const roles = cairn?.roles;
+const aiPosture = cairn?.aiPosture;
 const facts = {};
 // The owner/repo identity is GitHub-specific, so it is read only off the github-app provider.
 if (backend.kind === 'github-app') {
@@ -327,6 +334,7 @@ if (backend.kind === 'github-app') {
 if (typeof email.from === 'string') facts.from = email.from;
 if (typeof media.bucketBinding === 'string') facts.mediaBucketBinding = media.bucketBinding;
 if (roles && typeof roles === 'object') facts.roles = roles;
+if (typeof aiPosture === 'string') facts.aiPosture = aiPosture;
 export const result = JSON.stringify(facts);
 `;
 }
@@ -362,6 +370,9 @@ export async function readAdapterFacts(cwd: string = process.cwd()): Promise<Ada
     if (typeof parsed.mediaBucketBinding === 'string') facts.mediaBucketBinding = parsed.mediaBucketBinding;
     if (parsed.roles !== undefined && typeof parsed.roles === 'object' && parsed.roles !== null) {
       facts.roles = parsed.roles as RolesDeclaration;
+    }
+    if (parsed.aiPosture === 'invite' || parsed.aiPosture === 'decline') {
+      facts.aiPosture = parsed.aiPosture;
     }
     return facts;
   } catch {

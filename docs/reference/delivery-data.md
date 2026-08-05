@@ -193,10 +193,53 @@ if (unlistedRoutes(routeIds, EXTRA_ROUTES).length) {
 Stability tier: Extension API.
 
 ```ts
-function buildRobots(opts: { sitemapUrl: string; disallow?: string[] }): string;
+function buildRobots(opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }): string;
 ```
 
-Build a robots.txt body that points at the sitemap and disallows the given paths.
+Build a robots.txt body that points at the sitemap and disallows the given paths. `posture` is
+optional and, left unset, changes nothing: the output is byte-identical to a site that states no
+posture, which is every site on the engine today. `'decline'` adds `Content-Signal: ai-train=no`
+and one `User-agent`/`Disallow: /` group per training-crawler token in [`AI_CRAWLERS`](#ai_crawlers).
+`'invite'` adds `Content-Signal: search=yes, ai-train=yes` and no `Disallow`, since no robots
+directive invites a crawler.
+
+Declining is a request that named crawlers say they honor, not enforcement. robots.txt has no
+mechanism to block a fetch. OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User` are exempt
+from robots.txt by their own operators' first-party design, so a fully declining site can still
+receive a live fetch when someone asks an assistant about it. See the [`AiPosture`](#types) row
+below for the full honesty constraint, carried on `CairnAdapter.aiPosture`.
+
+`Content-Signal` syntax follows Cloudflare's published policy
+(https://blog.cloudflare.com/content-signals-policy/): directive `Content-Signal`, keys
+`search`/`ai-input`/`ai-train`, values `yes`/`no`. An absent key states no preference. That is why
+a declining site emits `ai-train=no` alone. cairn has no standing to assert a search preference on
+a site's behalf.
+
+### `AI_CRAWLERS`
+
+Stability tier: Extension API.
+
+```ts
+declare const AI_CRAWLERS: readonly AiCrawler[];
+```
+
+The training-crawler table `buildRobots` disallows under `posture: 'decline'`. Every record's
+`citation` is a first-party page from the operator itself, verified 2026-08-05 (the evidence is in
+`docs/internal/2026-08-05-ai-crawler-token-verification.md` in the source repository). The table
+carries training tokens only. `Googlebot`, `OAI-SearchBot`, and `Claude-SearchBot` are search
+crawlers and are deliberately absent, since disallowing a search crawler costs a site its search
+presence for no training benefit. A token no first-party page documents doesn't ship here.
+
+### `AI_CRAWLERS_REVIEWED`
+
+Stability tier: Extension API.
+
+```ts
+declare const AI_CRAWLERS_REVIEWED: string;
+```
+
+The date `AI_CRAWLERS` was last verified against every operator's first-party documentation, as a
+`YYYY-MM-DD` string.
 
 ### `rssResponse`
 
@@ -277,11 +320,12 @@ export const GET = () => {
 Stability tier: Extension API.
 
 ```ts
-function robotsResponse(opts: { sitemapUrl: string; disallow?: string[] }): Response;
+function robotsResponse(opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }): Response;
 ```
 
-Wrap a robots.txt body in a `Response`. The showcase route points at the sitemap and disallows
-`/admin`.
+Wrap a robots.txt body in a `Response`. `posture` passes through to [`buildRobots`](#buildrobots)
+unchanged. The content type is `text/plain; charset=utf-8` regardless of posture. The showcase
+route points at the sitemap and disallows `/admin`.
 
 ```ts
 import { robotsResponse } from '@glw907/cairn-cms/delivery';
@@ -289,6 +333,41 @@ import { ORIGIN } from '$lib/content';
 
 export const GET = () =>
   robotsResponse({ sitemapUrl: ORIGIN + '/sitemap.xml', disallow: ['/admin'] });
+```
+
+### `markdownResponse`
+
+Stability tier: Extension API.
+
+```ts
+function markdownResponse(opts: { body: string }): Response;
+```
+
+Wrap an entry's stored markdown body in a `Response` with `text/markdown; charset=utf-8`. `body` is
+the raw markdown, unrendered: cairn stores markdown natively, so serving the twin is a direct read
+rather than a reconstruction from rendered html. Pairs with `createPublicRoutes`'s
+`markdownEntries`/`markdownLoad` ([`/delivery`](./delivery.md#createpublicroutes)), which enumerate
+and load the twin for every routable, non-`noindex` entry; `markdownLoad` is also what applies the
+`noindex` refusal, so a lookup that bypasses it (a hand-rolled `site.byPermalink` call, say) would
+serve a body the enumerator never listed.
+
+```ts
+import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { cairn, siteConfig } from '$lib/cairn.config';
+
+const routes = createPublicRoutes({
+  site,
+  render: cairn.rendering.render,
+  origin: ORIGIN,
+  siteName: siteConfig.siteName,
+  description: SITE_DESCRIPTION,
+});
+
+export const GET = async ({ url }: { url: URL }) => {
+  const { body } = await routes.markdownLoad({ url });
+  return markdownResponse({ body });
+};
 ```
 
 ---
@@ -549,6 +628,8 @@ for (const entry of newlyPublishedEntries(priorManifest, deployedManifest)) {
 | `FeedChannel` | Extension API | `interface FeedChannel { title; description; siteUrl; feedUrl; language?; author? }` | Feed channel metadata, with absolute URLs. |
 | `FeedItem` | Extension API | `interface FeedItem { title; url; date?; updated?; summary; contentHtml?; tags? }` | One feed entry; `contentHtml` carries the rendered body for a full-content feed. |
 | `SitemapUrl` | Extension API | `interface SitemapUrl { loc: string; lastmod?: string }` | One sitemap URL; `lastmod` is a YYYY-MM-DD date. |
+| `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, set on `CairnAdapter.aiPosture` and read by [`buildRobots`](#buildrobots)/[`robotsResponse`](#robotsresponse). Declining is a request named crawlers say they honor, not enforcement. |
+| `AiCrawler` | Extension API | `interface AiCrawler { token: string; operator: string; category: 'training'; citation: string; note?: string }` | One [`AI_CRAWLERS`](#ai_crawlers) record: the robots.txt token, its operator, and the first-party page documenting it. |
 | `SeoInput` | Extension API | `interface SeoInput { title; description; canonicalUrl; siteName; type?; published?; modified?; feeds?; image?; imageAlt?; robots?; author? }` | The inputs for the head builder, all URLs absolute. `imageAlt` becomes `twitter:image:alt` when `image` is set. |
 | `SeoMeta` | Extension API | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
 | `SeoFields` | Extension API | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |

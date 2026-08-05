@@ -352,6 +352,12 @@ export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 
 **Payoff:** `npm run dev`, open the listing, click through to your first post. That page just traveled the whole pipeline: markdown file, frontmatter schema, your render function, your design.
 
+**Worth deciding here:** your adapter can carry one more field alongside `content`, `backend`, and `rendering`: `aiPosture`, set to `'decline'` or `'invite'`. Your site's `robots.txt` route (the [delivery-surface guide](../guides/wire-the-delivery-surface.md) covers building it) passes that value straight to `robotsResponse`. Now is a reasonable time to decide it, since you're already choosing what this site exposes to the world. [Choose an AI posture](../guides/choose-an-ai-posture.md) covers what each direction actually does, what it doesn't, and the Cloudflare interaction that determines what a crawler actually sees.
+
+Setting `'decline'` adds a `Disallow: /` line for each training crawler in cairn's table, plus a `Content-Signal` line stating you'd rather your content stayed out of training data. That works only on a crawler that reads and honors robots.txt. OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User` are exempt from it by their own operators' design, so a fully declining site can still answer a live fetch the moment someone asks an assistant about it. Setting `'invite'` states the opposite preference and skips the `Disallow` lines entirely, since no robots directive can summon a crawler. A site can decline credibly. No site can make one arrive.
+
+Leaving `aiPosture` unset states nothing. cairn writes only the stance you give it, and guessing one on your behalf is exactly what this field exists to avoid. Set it whenever you decide, in either direction. Nothing else about your adapter changes.
+
 ## Milestone 7: Add the nav menu
 
 Site structure that editors shouldn't edit by accident (the nav, the site name) lives in a YAML config file, read at build time.

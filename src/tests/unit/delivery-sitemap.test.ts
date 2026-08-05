@@ -55,4 +55,84 @@ describe('buildRobots', () => {
     const txt = buildRobots({ sitemapUrl: 'https://example.com/sitemap.xml', disallow: ['/admin'] });
     expect(txt).toContain('Disallow: /admin');
   });
+
+  // Captured from buildRobots before the AI-posture pass touched the builder. An unset posture
+  // must stay byte-identical to this, since every site on the engine today states no posture and
+  // none of them may see its output change on upgrade.
+  const UNSET_POSTURE_FIXTURE =
+    'User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: https://example.com/sitemap.xml\n';
+
+  it('is byte-identical to the pre-posture output when posture is unset', () => {
+    const txt = buildRobots({ sitemapUrl: 'https://example.com/sitemap.xml', disallow: ['/admin'] });
+    expect(txt).toBe(UNSET_POSTURE_FIXTURE);
+  });
+
+  it('decline adds Content-Signal: ai-train=no and a Disallow group per training crawler', () => {
+    const txt = buildRobots({
+      sitemapUrl: 'https://example.com/sitemap.xml',
+      disallow: ['/admin'],
+      posture: 'decline',
+    });
+    expect(txt).toBe(
+      [
+        'User-agent: *',
+        'Content-Signal: ai-train=no',
+        'Allow: /',
+        'Disallow: /admin',
+        '',
+        'User-agent: Amazonbot',
+        'Disallow: /',
+        '',
+        'User-agent: Applebot-Extended',
+        'Disallow: /',
+        '',
+        'User-agent: CCBot',
+        'Disallow: /',
+        '',
+        'User-agent: ClaudeBot',
+        'Disallow: /',
+        '',
+        'User-agent: Google-Extended',
+        'Disallow: /',
+        '',
+        'User-agent: GPTBot',
+        'Disallow: /',
+        '',
+        'User-agent: meta-externalagent',
+        'Disallow: /',
+        '',
+        'Sitemap: https://example.com/sitemap.xml',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('decline still emits the site\'s own disallow paths', () => {
+    const txt = buildRobots({
+      sitemapUrl: 'https://example.com/sitemap.xml',
+      disallow: ['/admin', '/drafts'],
+      posture: 'decline',
+    });
+    expect(txt).toContain('Disallow: /admin');
+    expect(txt).toContain('Disallow: /drafts');
+  });
+
+  it('invite adds an affirmative Content-Signal and no crawler Disallow groups', () => {
+    const txt = buildRobots({
+      sitemapUrl: 'https://example.com/sitemap.xml',
+      disallow: ['/admin'],
+      posture: 'invite',
+    });
+    expect(txt).toBe(
+      [
+        'User-agent: *',
+        'Content-Signal: search=yes, ai-train=yes',
+        'Allow: /',
+        'Disallow: /admin',
+        '',
+        'Sitemap: https://example.com/sitemap.xml',
+        '',
+      ].join('\n'),
+    );
+  });
 });

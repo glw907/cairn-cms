@@ -34,6 +34,21 @@ describe('/delivery backend-free boundary', () => {
     }
   });
 
+  // The markdown twin's disclosure hazard, asserted directly rather than argued: public-routes.ts
+  // is already one of the files the walk above covers, so markdownLoad and markdownEntries already
+  // carry the same forbidden-import proof. This test names the file and the reason explicitly, so
+  // the guarantee is legible without tracing back through the generic walk: nothing on the path a
+  // pending cairn/* branch would reach (github, auth) is importable from the module that builds the
+  // markdown route, so no in-flight edit can surface through it.
+  it('keeps the markdown twin path (public-routes.ts) free of a branch-aware import', () => {
+    const src = readFileSync('src/lib/delivery/public-routes.ts', 'utf8');
+    for (const pattern of forbidden) {
+      expect(src, 'public-routes.ts (markdownLoad/markdownEntries) must not import a backend module').not.toMatch(
+        pattern,
+      );
+    }
+  });
+
   // delivery/index.ts and delivery/public-routes.ts import @sveltejs/kit by design; neither is
   // reachable from data.ts, so the walk proves the kit-free claim without special-casing them.
   it('keeps the /delivery/data graph free of @sveltejs/kit and .svelte imports', () => {

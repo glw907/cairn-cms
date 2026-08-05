@@ -56,12 +56,12 @@ describe('createPublicRoutes entryLoad', () => {
     });
   });
 
-  it('exposes the entry loader and prerender enumeration only', () => {
+  it('exposes the entry loader, the prerender enumeration, and the markdown twin surface only', () => {
     const surface = routes as Record<string, unknown>;
     expect(surface.archiveLoad).toBeUndefined();
     expect(surface.tagIndexLoad).toBeUndefined();
     expect(surface.tagLoad).toBeUndefined();
-    expect(Object.keys(routes).sort()).toEqual(['entries', 'entryLoad']);
+    expect(Object.keys(routes).sort()).toEqual(['entries', 'entryLoad', 'markdownEntries', 'markdownLoad']);
   });
 
   it('entries enumerates every entry path across concepts', () => {

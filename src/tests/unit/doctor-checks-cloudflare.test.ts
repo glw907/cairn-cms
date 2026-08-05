@@ -235,17 +235,25 @@ describe('edge.hsts', () => {
     expect(calls[1].url).toBe(`${API}/zones/zone-1/settings/security_header`);
   });
 
-  it('fails when HSTS is disabled', async () => {
+  it('fails when HSTS is disabled, without implying the admin surface is unprotected', async () => {
     const { fetch } = hstsFetch({ enabled: false, max_age: 63072000 });
     const result = await edgeHsts.run(ctx({ ...CREDS, fetch }));
     expect(result.status).toBe('fail');
+    // Reconciled with the engine's own behavior: applySecurityHeaders sends its own
+    // Strict-Transport-Security max-age on every admin response regardless of this zone
+    // setting, so a failing zone check must say so rather than implying nothing is protected.
+    expect(result.detail).toContain('admin');
+    expect(result.detail).toContain('Strict-Transport-Security');
+    expect(result.detail).toContain('regardless of this setting');
   });
 
-  it('fails when the max-age is under thirty days', async () => {
+  it('fails when the max-age is under thirty days, still naming the admin surface', async () => {
     const { fetch } = hstsFetch({ enabled: true, max_age: 86400 });
     const result = await edgeHsts.run(ctx({ ...CREDS, fetch }));
     expect(result.status).toBe('fail');
     expect(result.detail).toContain('max-age');
+    expect(result.detail).toContain('admin');
+    expect(result.detail).toContain('regardless of this setting');
   });
 
   it('ties to the edge.hsts-off condition', () => {

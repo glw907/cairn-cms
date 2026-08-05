@@ -136,10 +136,17 @@ interface SecurityHeaderValue {
   strict_transport_security?: { enabled?: boolean; max_age?: number };
 }
 
+// This check reads the ZONE's own HSTS setting, which is a separate thing from the
+// Strict-Transport-Security header cairn's own admin responses already send: `applySecurityHeaders`
+// (`sveltekit/admin-response.ts`) sets `max-age` on every `/admin` response regardless of this
+// zone setting, so an editor's browser is already pinned to https for the admin host either way.
+// A zone with this setting off still leaves the REST of the site (every non-admin route, static
+// assets) with no HSTS at all, which is the real gap this check reports; its wording says so
+// explicitly rather than implying the zone is the only thing protecting anything.
 export const edgeHsts: DoctorCheck = {
   id: 'edge.hsts',
   conditionId: 'edge.hsts-off',
-  title: 'HSTS',
+  title: 'Zone HSTS',
   async run(ctx: DoctorContext): Promise<CheckResult> {
     if (!ctx.cfToken) return NO_TOKEN;
     if (!ctx.from) return NO_FROM;
@@ -152,13 +159,23 @@ export const edgeHsts: DoctorCheck = {
       if ('fail' in setting) return setting.fail;
       const sts = setting.value?.strict_transport_security;
       if (sts?.enabled !== true) {
-        return fail('HSTS is disabled on the zone');
+        return fail(
+          "the zone's HSTS setting is off, so nothing at the zone level adds " +
+            "Strict-Transport-Security to a non-/admin route. cairn's admin responses carry their " +
+            'own max-age regardless of this setting. This reads the zone setting only, so if the ' +
+            'site adds the header another way, check a live response before acting on this'
+        );
       }
       const maxAge = sts.max_age ?? 0;
       if (maxAge < MIN_HSTS_MAX_AGE) {
-        return fail(`HSTS max-age ${maxAge} is under the ${MIN_HSTS_MAX_AGE} (30 day) floor`);
+        return fail(
+          `the zone's HSTS max-age ${maxAge} is under the ${MIN_HSTS_MAX_AGE} (30 day) floor, ` +
+            'so the zone under-protects any route it is the only source of HSTS for. ' +
+            "cairn's admin responses set their own Strict-Transport-Security max-age " +
+            'regardless of this setting'
+        );
       }
-      return pass(`HSTS enabled with max-age ${maxAge}`);
+      return pass(`the zone sends HSTS with max-age ${maxAge}`);
     } catch (err) {
       return fail(err instanceof Error ? err.message : String(err));
     }

@@ -47,4 +47,15 @@ describe('CairnHead', () => {
     render(CairnHead, { seo, title: false, titleTemplate: (t) => `${t} · 907.life` });
     expect(document.title).toBe('site-owned');
   });
+
+  it('emits the markdown alternate link only when markdownUrl is passed', async () => {
+    render(CairnHead, { seo });
+    expect(document.head.querySelector('link[rel="alternate"][type="text/markdown"]')).toBeNull();
+  });
+
+  it('emits a rel="alternate" type="text/markdown" link pointing at the twin when markdownUrl is passed', async () => {
+    render(CairnHead, { seo, markdownUrl: 'https://x.test/p.md' });
+    const link = document.head.querySelector('link[rel="alternate"][type="text/markdown"]');
+    expect(link?.getAttribute('href')).toBe('https://x.test/p.md');
+  });
 });

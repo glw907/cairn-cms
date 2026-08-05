@@ -158,6 +158,41 @@ removal, nothing this list needs to carry.
   model](docs/explanation/auth-channel-security-model.md). Consumers must: nothing; this is a new
   subpath with no bearing on the engine's own editor magic-link auth, which is unchanged.
 
+- A new optional `CairnAdapter.aiPosture` field (`AiPosture`, `'invite' | 'decline'`), read by
+  `buildRobots`/`robotsResponse` (`@glw907/cairn-cms/delivery`). `'decline'` adds
+  `Content-Signal: ai-train=no` and a `Disallow: /` group per token in a new first-party-verified
+  training-crawler table, `AI_CRAWLERS` (plus its review date, `AI_CRAWLERS_REVIEWED`); `'invite'`
+  adds `Content-Signal: search=yes, ai-train=yes` and no `Disallow`. Declining is a request that
+  named crawlers say they honor, not enforcement: robots.txt has no mechanism to block a fetch,
+  and OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User` are exempt from robots.txt by
+  their own operators' first-party design. See [Delivery data](docs/reference/delivery-data.md).
+  Consumers must: nothing; `aiPosture` is optional and unset on every site today, so this window's
+  robots.txt output is byte-identical to before for all four.
+
+- A nineteenth `cairn-doctor` check, `ai.posture-effective`: a plain, credential-free
+  `GET /robots.txt` against the deployed origin, reporting what the live file actually carries
+  rather than what the adapter declares. It distinguishes no posture stated, a stated posture the
+  live file contradicts, and a managed layer (Cloudflare's AI Crawl Control or its managed
+  robots.txt) prepending directives cairn did not write, a shape measured live on three of the
+  four estate zones. Only the middle case fails, since a stated stance crawlers never read is a
+  broken deployment. Stating no posture passes, and so does the managed layer, since whether that
+  is wanted belongs to the zone's owner. The report never asserts why a zone is configured as it
+  is. See [`cairn-doctor`](docs/reference/doctor.md#the-checks). Consumers must: nothing today,
+  since the failing case needs a declared `aiPosture` and no site declares one. A site that adopts
+  a posture and sees this check go red has a deployment that does not carry the stance it states.
+
+- A raw-markdown twin for every routable entry (`@glw907/cairn-cms/delivery`): `markdownResponse`
+  wraps a body in `text/markdown; charset=utf-8`, a sibling of `robotsResponse`/`sitemapResponse`,
+  and `createPublicRoutes` gains `markdownEntries()` and `markdownLoad(event)`, enumerating and
+  serving one `.md`-suffixed path per entry whose frontmatter `robots` field doesn't carry
+  `noindex`. `markdownLoad` returns the entry's stored markdown body unrendered, reading only
+  through the injected `SiteResolver`, so it can serve only what that resolver carries. The
+  engine ships the builder and the enumerator; a site wires one small prerendered route to serve
+  the set, and the build runs against committed `main` content, which is what keeps a pending
+  `cairn/*` edit branch structurally out of reach. A runtime route reopens that question. See [Delivery](docs/reference/delivery.md) and [Delivery
+  data](docs/reference/delivery-data.md#markdownresponse). Consumers must: nothing; no site has
+  wired the route yet, so this ships no new response on any deployed site.
+
 ### Changed
 
 - The env-genericity sweep audited every exported event and config type pinned to `AuthEnv`
@@ -483,6 +518,37 @@ removal, nothing this list needs to carry.
   default now renders an empty string for a missing date and must pass `{ fallback: 'Not yet' }`
   explicitly to keep the old copy. This is a silent visual change, not a compile error, since the
   parameter type was already nullable.
+
+- The admin `Strict-Transport-Security` header no longer sends `includeSubDomains` by default (the
+  AI-posture pass, HSTS rider). `applySecurityHeaders` (`sveltekit/admin-response.ts`) previously
+  set `max-age=63072000; includeSubDomains` on every `/admin` response unconditionally: one editor
+  visit pinned the site's apex and every sibling subdomain to https in that browser for two years,
+  including on a zone whose owner had left edge HSTS off, with no way for the operator to un-pin an
+  already-pinned editor except by serving a corrective header from the same host.
+  `max-age` still sends on every admin response the guard returns, since the admin surface is the one
+  place the engine has standing to insist on https; only `includeSubDomains` becomes conditional,
+  since pinning subdomains the engine knows nothing about is a decision that belongs to whoever
+  owns the domain. `AuthGuardOptions` gains `includeSubDomains?: boolean`, threaded from
+  `createAuthGuard`'s single call to `applySecurityHeaders`; omitted or `false` is the new default
+  and matches the shape of every other `AuthGuardOptions` field, so a zero-config site sees only
+  the header change, no code change. The doctor's zone-level `edge.hsts` check is reconciled to
+  say so: a failing zone setting no longer reads as though nothing is protected, since cairn's own
+  admin responses already carry their own header regardless of that zone setting. See
+  [SvelteKit](docs/reference/sveltekit.md#createauthguard).
+
+  The guard's rejection pages and its login redirect now send no `Strict-Transport-Security` at
+  all. RFC 6797 section 8.1 has a browser replace its cached policy on every header it receives, so
+  a rejection page sending `max-age` alone is not a weaker default but a policy write that clears
+  the `includeSubDomains` an opted-in site's guarded responses asserted. The CSRF rejection is
+  reachable by any cross-site POST carrying no session, so leaving it would have handed any page on
+  the web a repeatable way to unpin an opted-in site's sibling subdomains. Omitting the header
+  writes nothing, and the guarded path still pins the admin host.
+  **Consumers must:** a site that wants
+  the previous domain-wide pinning back sets `createAuthGuard({ includeSubDomains: true })` in its
+  `hooks.server.ts`; a site that takes no action keeps `max-age` on the admin surface but stops
+  pinning its sibling subdomains. Check the zone before deciding: where edge HSTS already sends
+  `includeSubDomains` for the admin's host, which is the measured state on more than one site
+  running this engine, set the option so the engine states the same policy rather than a weaker one.
 
 ### Fixed
 

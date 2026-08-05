@@ -16,10 +16,12 @@ what the deployed site is *actually* doing, so the gap between a stated posture 
 becomes visible instead of silent. After this pass, the four migration sessions can each adopt a
 posture, and `0.94.0-rc.1` can be cut.
 
-**Four decisions await Geoff's confirmation before Task 1 dispatches.** They are listed in the
-spec's "Decisions that need confirmation" section: markdown serving staying in the pass, the HSTS
-default dropping `includeSubDomains`, `llms.txt` not shipping, and the probe staying black-box only.
-The planning session ran in the background and recorded them as recommendations, not rulings.
+**All four open decisions are confirmed (Geoff, 2026-08-05)**, recorded in the spec's "Decisions,
+confirmed" section: markdown serving stays in the pass, the HSTS default drops `includeSubDomains`,
+`llms.txt` does not ship, and the probe stays black-box only. One addition rode the confirmation:
+the guide carries the `Accept: text/markdown` negotiation recipe as zone config (a Transform Rule
+rewriting to the `.md` twin), with Cloudflare's managed "Markdown for Agents" named as the
+zero-config variant. Task 7 carries it. Nothing gates Task 1.
 
 **Sequencing:** this pass lands before the RC cut and before the four site migrations. It rides the
 same unpublished window as C2, C2b, and the auth-channel work. Nothing here is published on its own.
@@ -279,6 +281,15 @@ oversight. Where the guide notes that no comparable tool reports effective state
 narrowness paying off rather than insight: cairn is Cloudflare-specific by design, so it can reason
 about an edge layer a host-agnostic framework cannot identify.
 
+**The guide also carries the negotiation recipe (ruled 2026-08-05):** a Cloudflare Transform Rule
+matching `Accept: text/markdown` on content paths and rewriting to the `.md` twin's path before
+cache lookup, so the twin is cached under its own key. Cloudflare's managed "Markdown for Agents"
+feature is named as the zero-config variant, with the distinction stated: it reconstructs markdown
+from HTML, where the twin is true source. The recipe says plainly that no training crawler
+documents sending this header, so it serves live agent fetchers; the crawling work is done by the
+twins, the alternate link, and not being edge-blocked. The rule expression in the recipe is written
+against Cloudflare's current Rules-language docs and cited, not recalled.
+
 **The ROADMAP is a pass dimension.** Mark the AI-posture entry done and remove it from the live
 tiers. Prune the stale `llms.txt` delivery-view entry, which the research contradicts. Correct the
 entry's "no API endpoint or dashboard field exposes AI Crawl Control's per-crawler bucket state"
@@ -327,8 +338,8 @@ exact resume prompt and launch directory.
 signals → Task 1. Markdown serving → Tasks 3 and 4. Per-entry `noindex` consistency → Task 3. The
 disclosure hazard → Tasks 3 and 4. The measured content type → Task 4. The doctor probe and its three
 cases → Task 2. The HSTS rider and the doctor reconciliation → Task 5. The setup path and the
-scaffolder standing input → Task 6. The guide, the reference, the `llms.txt` explanation, the ROADMAP
-prune and the three corrections → Task 7. The watch routine → Task 8. Every acceptance criterion in
+scaffolder standing input → Task 6. The guide with the negotiation recipe, the reference, the
+`llms.txt` explanation, the ROADMAP prune and the corrections → Task 7. The watch routine → Task 8. Every acceptance criterion in
 the spec maps to a task's acceptance block.
 
 **Placeholders.** None. The one deliberately undetermined item, the markdown route's exact shape, is

@@ -68,11 +68,13 @@ migrates it. **It is now planned and not yet executed:** spec at
 eight-task plan at
 [`docs/superpowers/plans/2026-08-05-ai-posture.md`](superpowers/plans/2026-08-05-ai-posture.md).
 
-**Four decisions await Geoff before Task 1 dispatches** (the planning session ran in the background,
-so they are recorded as recommendations, not rulings): markdown serving stays in the pass rather than
-becoming a follow-up; the admin HSTS drops `includeSubDomains` by default with a per-site opt-in;
-`llms.txt` does not ship and the guide says why; the doctor probe stays black-box only. The spec's
-"Decisions that need confirmation" section carries the reasoning for each.
+**All four decisions are CONFIRMED (Geoff, 2026-08-05)**: markdown serving stays in the pass; the
+admin HSTS drops `includeSubDomains` by default with a per-site opt-in; `llms.txt` does not ship and
+the guide says why; the doctor probe stays black-box only. One addition rode the confirmation: the
+guide carries the `Accept: text/markdown` negotiation recipe as zone config (an edge Transform Rule
+rewriting to the `.md` twin), with Cloudflare's managed "Markdown for Agents" named as the
+zero-config variant. The spec's "Decisions, confirmed" section carries the rulings. **The pass is
+ready to execute; nothing gates Task 1.**
 
 **Planning overturned two things the ROADMAP still asserted**, both recorded in the spec's
 corrections section. `Accept: text/markdown` negotiation **cannot work** on a cairn site, because the
@@ -105,7 +107,7 @@ per the model economy):
 "Execute `docs/superpowers/plans/2026-08-05-ai-posture.md` with `cairn-pass`, task-by-task via
 `cairn-implementer` dispatches, on a fresh worktree `.claude/worktrees/ai-posture` off `main`. Read
 the authority spec `docs/superpowers/specs/2026-08-05-ai-posture-design.md` in full first, including
-its corrections section. Confirm the four open decisions in the spec before Task 1. Run each
+its corrections section; the four open decisions are confirmed there (Geoff, 2026-08-05). Run each
 dispatch's gates in the foreground, and paste the CI gate list from `.github/workflows/test.yml` into
 every dispatch."
 

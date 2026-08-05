@@ -15,10 +15,9 @@ Inputs, all read in full before this was written:
 The ROADMAP settles most of this. What follows adds only what it left open, plus three corrections
 that measurement forced.
 
-## Decisions that need confirmation at the plan gate
+## Decisions, confirmed (Geoff, 2026-08-05)
 
-This session ran in the background, so these four are recorded as the design's positions and its
-reasoning, not as ratified rulings. Each needs a yes before execution starts.
+Planned in a background session, put to Geoff, and ratified with one addition.
 
 1. **Markdown serving stays in the pass** rather than becoming a follow-up, on the reasoning in
    "Pass size" below.
@@ -29,15 +28,29 @@ reasoning, not as ratified rulings. Each needs a yes before execution starts.
 4. **The doctor probe stays black-box only**, with the ROADMAP's "no API exposes this" claim
    corrected rather than carried forward as settled.
 
+The addition: **the guide carries the `Accept: text/markdown` negotiation recipe as zone config**
+rather than the engine owning negotiation. The reasoning is the corrected first finding below.
+
 ## Three corrections to this pass's own inputs
 
-**`Accept: text/markdown` negotiation cannot work on a cairn site, and is dropped.** The public
+**`Accept: text/markdown` negotiation is priced out of the engine, not foreclosed.** The public
 catch-all is `export const prerender = true` (`examples/showcase/src/routes/(site)/[...path]/+page.server.ts:6`),
-so a content request is served by Cloudflare's static-asset layer and never reaches the Worker. No
-code in the origin can vary on a request header it never sees. The research presented `.md` suffix
-and `Accept` negotiation as two competing conventions and noted the evidence for agent use of the
-latter was thin; the architecture decides it independently of the evidence. Only the `.md` suffix is
-buildable here, and it is the cheaper half anyway, since a prerendered markdown twin is a static file.
+so a content request is served by Cloudflare's static-asset layer and the Worker never sees the
+header. Making it see the header means `run_worker_first` on content paths, which converts every
+public page view from a free static hit into a Worker invocation, the exact cost `prerender` exists
+to avoid, spent on demand the research already called thin. The shape that keeps static serving is
+an edge rewrite: a Transform Rule matching the header and rewriting to the `.md` twin's path before
+cache lookup, so the twin is cached under its own key and there is no same-URL-two-bodies hazard.
+That is zone config, the developer's infrastructure, cairn's to document rather than own, and
+Cloudflare has already claimed the layer: its managed "Markdown for Agents" feature answers the
+header by reconstructing markdown from HTML, where cairn's twin is true source markdown.
+
+**Ruled (Geoff, 2026-08-05): the engine ships the `.md` twins; the guide carries the Transform Rule
+recipe, naming the managed feature as the zero-config variant; engine-owned negotiation is held
+unless agent demand firms up.** One premise sharpened during the ruling: no training crawler
+documents sending this header, since crawlers fetch HTML the way browsers do, so negotiation serves
+live agent fetchers. For crawling, the twins, the `rel="alternate"` link, and not being edge-blocked
+do the work.
 
 **Markdown serving needs a site-owned route, and that is the correct shape rather than a
 compromise.** The engine cannot serve entry bodies from its `handle` hook, because the site resolver
@@ -261,7 +274,8 @@ cannot fail CI on a date nobody chose.
 - It does not configure Cloudflare AI Crawl Control. That is the developer's infrastructure, and the
   engine diagnoses it rather than owning it.
 - It does not ship `llms.txt`.
-- It does not implement `Accept: text/markdown`, which the architecture forecloses.
+- It does not implement `Accept: text/markdown` in the engine, which the architecture prices out;
+  the guide's Transform Rule recipe is the negotiation story.
 - It does not read the WAF rule for probe cause, on an unverified premise and a token that cannot
   currently read it.
 - It does not touch the phase-P bucket of the ambient-defaults audit beyond the HSTS item.

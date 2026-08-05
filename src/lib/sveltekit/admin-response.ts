@@ -12,12 +12,12 @@ export interface SecurityHeaderOptions {
    */
   includeSubDomains?: boolean;
   /**
-   * Send no Strict-Transport-Security header at all. For a response that cannot know the site's
-   *  opt-in, which is every rejection page, since sending the weaker header would not be a weaker
-   *  default but a policy write: RFC 6797 section 8.1 has a UA REPLACE its cached policy whenever a
-   *  received header conveys different information, so a `max-age`-only header from the same host
-   *  clears an `includeSubDomains` assertion the guarded path had made. Omitting the header writes
-   *  nothing, since the RFC acts only on receipt.
+   * Send no Strict-Transport-Security header at all, for a response that cannot know the site's
+   *  opt-in, which is every rejection page. Sending the `max-age`-only header there would write
+   *  policy rather than state a weaker default: RFC 6797 section 8.1 has a UA REPLACE its cached
+   *  policy whenever a received header conveys different information, so a `max-age`-only header
+   *  from the same host clears an `includeSubDomains` assertion the guarded path had made. Omitting
+   *  the header writes nothing, since the RFC acts only on receipt.
    */
   omitHsts?: boolean;
 }

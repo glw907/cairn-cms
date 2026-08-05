@@ -53,10 +53,11 @@ export const AI_CRAWLERS: readonly AiCrawler[] = [
     operator: 'Common Crawl',
     category: 'training',
     citation: 'https://commoncrawl.org/ccbot',
-    note: "Common Crawl's own pages describe an open web-archive corpus for research and do not "
-      + 'themselves claim the data trains AI models, unlike the other operators in this table. That '
-      + 'corpus is nonetheless a widely used upstream of AI training, which is why declining CCBot is '
-      + 'still the right line for a declining site to emit.',
+    note:
+      "Common Crawl's own pages describe an open web-archive corpus for research and do not " +
+      'themselves claim the data trains AI models, unlike the other operators in this table. That ' +
+      'corpus is nonetheless a widely used upstream of AI training, which is why declining CCBot ' +
+      'is still the right line for a declining site to emit.',
   },
   {
     token: 'ClaudeBot',

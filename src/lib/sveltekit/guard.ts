@@ -58,15 +58,16 @@ export interface AuthGuardOptions {
   access?: AccessMap;
   /**
    * Pin every sibling subdomain to HTTPS along with the admin host itself, on the
-   * Strict-Transport-Security header the guard attaches to each admin response it returns. A
-   * rejection page and the login redirect carry no such header at all, deliberately: neither
+   * Strict-Transport-Security header the guard attaches to each admin response it returns.
+   * Omitted or false, that header carries only `max-age`, so a zero-config site sees no behavior
+   * change. `max-age` is sent either way: the admin surface is the one place the engine has
+   * standing to insist on HTTPS, while pinning every sibling subdomain the engine knows nothing
+   * about is a decision that belongs to whoever owns the domain, so it stays off unless the site
+   * opts in.
+   *
+   * A rejection page and the login redirect carry no such header at all, deliberately: neither
    * receives this option, and a weaker header would replace a pinned policy rather than restate
-   * it (see {@link applySecurityHeaders} and `brandedAdminPage`). Omitted or
-   * false, the header carries only `max-age` (see {@link applySecurityHeaders}), so a
-   * zero-config site sees no behavior change. `max-age` is always sent regardless: the admin
-   * surface is the one place the engine has standing to insist on HTTPS. Pinning every sibling
-   * subdomain the engine knows nothing about is a decision that belongs to whoever owns the
-   * domain, so this stays off unless the site opts in.
+   * it (see {@link applySecurityHeaders} and `brandedAdminPage`).
    */
   includeSubDomains?: boolean;
 }

@@ -23,20 +23,23 @@ const NO_URL: CheckResult = skip(
   'set PUBLIC_ORIGIN in the wrangler vars, or set PUBLIC_ORIGIN in the environment'
 );
 
-// Lowercased token to its canonical spelling. RFC 9309 section 2.2.1 matches product tokens
+// The crawler table's product tokens, lowercased. RFC 9309 section 2.2.1 matches product tokens
 // case-insensitively, so a file writing `gptbot` declines the same crawler `GPTBot` does.
-const AI_TOKENS = new Map(AI_CRAWLERS.map((crawler) => [crawler.token.toLowerCase(), crawler.token]));
+const AI_TOKENS = new Set(AI_CRAWLERS.map((crawler) => crawler.token.toLowerCase()));
 
 /** Strip whitespace and case so a comparison never hinges on comma-spacing. */
 function canonicalizeSignal(value: string): string {
   return value.replace(/\s+/g, '').toLowerCase();
 }
 
-// The two Content-Signal values buildRobots emits, read from the builder rather than transcribed.
-// A copy that drifted from the builder would make cairn's own robots.txt read here as a file some
-// other layer wrote, which is the one conclusion this check must never reach by accident.
-const CANONICAL_DECLINE = canonicalizeSignal(CONTENT_SIGNAL.decline);
-const CANONICAL_INVITE = canonicalizeSignal(CONTENT_SIGNAL.invite);
+// Each Content-Signal value buildRobots emits, canonicalized, against the posture it states. The
+// values come from the builder rather than a transcription: a copy that drifted from the builder
+// would make cairn's own robots.txt read here as a file some other layer wrote, which is the one
+// conclusion this check must never reach by accident.
+const SIGNAL_POSTURES = new Map<string, AiPosture>([
+  [canonicalizeSignal(CONTENT_SIGNAL.decline), 'decline'],
+  [canonicalizeSignal(CONTENT_SIGNAL.invite), 'invite'],
+]);
 
 /** The live AI-posture probe: fetches /robots.txt off the deployed origin and reports it as-is. */
 export const postureEffective: DoctorCheck = {
@@ -48,13 +51,12 @@ export const postureEffective: DoctorCheck = {
     // environment, the same precedence the public-origin and live-probe checks apply.
     const base = (await readWranglerConfig(ctx.readFile))?.publicOrigin ?? ctx.publicOrigin;
     if (base === undefined) return NO_URL;
-    let origin: URL;
+    let target: URL;
     try {
-      origin = new URL(base);
+      target = new URL('/robots.txt', base);
     } catch {
       return skip(`probe URL does not parse: ${base}`);
     }
-    const target = new URL('/robots.txt', origin);
     let res: Response;
     try {
       res = await ctx.fetch(String(target));
@@ -75,10 +77,10 @@ interface ParsedRobots {
   userAgentStarCount: number;
   /** A `Content-Signal` line present whose value matches neither of cairn's own two shapes. */
   foreignContentSignal: boolean;
-  /** The one `Content-Signal` value that does match a cairn shape, canonicalized, if any. */
-  contentSignal?: string;
-  /** AI_CRAWLERS tokens carrying their own `User-agent: <token>` / `Disallow: /` pair. */
-  declinedTokens: Set<string>;
+  /** The posture stated by the one `Content-Signal` line that does match a cairn shape, if any. */
+  signalPosture?: AiPosture;
+  /** Whether any {@link AI_CRAWLERS} token carries its own `User-agent`/`Disallow: /` group. */
+  declinesAiToken: boolean;
 }
 
 /**
@@ -91,11 +93,12 @@ interface ParsedRobots {
 function parseRobots(text: string): ParsedRobots {
   let userAgentStarCount = 0;
   let foreignContentSignal = false;
-  let contentSignal: string | undefined;
-  const declinedTokens = new Set<string>();
-  // The agents of the group being read, and whether a rule has closed it. A `User-agent` line
-  // after a rule starts a new group; one directly after another joins the current group.
-  let currentAgents: string[] = [];
+  let signalPosture: AiPosture | undefined;
+  let declinesAiToken = false;
+  // Whether the group being read names a crawler-table token, and whether a rule has closed it. A
+  // `User-agent` line after a rule starts a new group; one directly after another joins the
+  // current group, so a token named anywhere above the group's `Disallow: /` counts.
+  let groupNamesAiToken = false;
   let groupHasRule = false;
 
   for (const raw of text.split(/\r?\n/)) {
@@ -103,36 +106,29 @@ function parseRobots(text: string): ParsedRobots {
     const agent = /^user-agent:\s*(.+)$/i.exec(line);
     if (agent) {
       if (groupHasRule) {
-        currentAgents = [];
+        groupNamesAiToken = false;
         groupHasRule = false;
       }
       const token = agent[1].trim();
-      currentAgents.push(token);
       if (token === '*') userAgentStarCount += 1;
+      else if (AI_TOKENS.has(token.toLowerCase())) groupNamesAiToken = true;
       continue;
     }
     const signal = /^content-signal:\s*(.+)$/i.exec(line);
     if (signal) {
-      const canonical = canonicalizeSignal(signal[1]);
-      if (canonical === CANONICAL_DECLINE || canonical === CANONICAL_INVITE) {
-        contentSignal = canonical;
-      } else {
-        foreignContentSignal = true;
-      }
+      const posture = SIGNAL_POSTURES.get(canonicalizeSignal(signal[1]));
+      if (posture === undefined) foreignContentSignal = true;
+      else signalPosture = posture;
       groupHasRule = true;
       continue;
     }
     const disallow = /^disallow:\s*(.+)$/i.exec(line);
     if (!disallow) continue;
     groupHasRule = true;
-    if (disallow[1].trim() !== '/') continue;
-    for (const token of currentAgents) {
-      const match = AI_TOKENS.get(token.toLowerCase());
-      if (match !== undefined) declinedTokens.add(match);
-    }
+    if (disallow[1].trim() === '/' && groupNamesAiToken) declinesAiToken = true;
   }
 
-  return { userAgentStarCount, foreignContentSignal, contentSignal, declinedTokens };
+  return { userAgentStarCount, foreignContentSignal, signalPosture, declinesAiToken };
 }
 
 /**
@@ -142,10 +138,8 @@ function parseRobots(text: string): ParsedRobots {
  * token to the table, without the site changing anything.
  */
 function observedPosture(parsed: ParsedRobots): AiPosture | undefined {
-  if (parsed.contentSignal === CANONICAL_INVITE) return 'invite';
-  if (parsed.contentSignal === CANONICAL_DECLINE) return 'decline';
-  if (parsed.declinedTokens.size > 0) return 'decline';
-  return undefined;
+  if (parsed.signalPosture !== undefined) return parsed.signalPosture;
+  return parsed.declinesAiToken ? 'decline' : undefined;
 }
 
 /**
@@ -165,7 +159,7 @@ function describeOutsideLayer(parsed: ParsedRobots, target: URL): string | undef
     return (
       `${target} carries ${parsed.userAgentStarCount} "User-agent: *" groups${signal}. cairn's ` +
       'own output writes one such group, so a second came from somewhere ahead of it, and this ' +
-      'check cannot see what or assert why. A managed robots.txt prepending to the origin\'s is ' +
+      "check cannot see what or assert why. A managed robots.txt prepending to the origin's is " +
       "the common source, so the zone's robots.txt and AI Crawl Control settings are where to " +
       'look first.'
     );
@@ -196,34 +190,30 @@ function evaluate(declared: AiPosture | undefined, text: string, target: URL): C
   const outside = describeOutsideLayer(parsed, target);
   const suffix = outside ? ` ${outside}` : '';
 
-  if (declared !== undefined && declared !== observed) {
-    return fail(
-      `aiPosture is '${declared}', but ${target} carries ` +
-        (observed === undefined
-          ? 'no directives consistent with it'
-          : `directives consistent with '${observed}' instead`) +
-        `.${suffix}`
-    );
-  }
-
   if (declared !== undefined) {
-    return pass(
-      `aiPosture is '${declared}', and ${target} carries directives consistent with it.${suffix}`
-    );
+    if (declared === observed) {
+      return pass(
+        `aiPosture is '${declared}', and ${target} carries directives consistent with it.${suffix}`
+      );
+    }
+    const carries =
+      observed === undefined
+        ? 'no directives consistent with it'
+        : `directives consistent with '${observed}' instead`;
+    return fail(`aiPosture is '${declared}', but ${target} carries ${carries}.${suffix}`);
   }
 
+  const unset = 'no AI posture is stated (aiPosture is unset)';
   if (outside) {
-    return pass(`no AI posture is stated (aiPosture is unset). ${outside}`);
+    return pass(`${unset}. ${outside}`);
   }
-
   if (observed === undefined) {
     return pass(
-      `no AI posture is stated (aiPosture is unset), and ${target} carries no AI-crawler ` +
-        'directives, consistent with stating nothing.'
+      `${unset}, and ${target} carries no AI-crawler directives, consistent with stating nothing.`
     );
   }
   return pass(
-    `no AI posture is stated (aiPosture is unset), but ${target} carries directives ` +
-      `consistent with '${observed}'. Set aiPosture explicitly if that is deliberate.`
+    `${unset}, but ${target} carries directives consistent with '${observed}'. ` +
+      'Set aiPosture explicitly if that is deliberate.'
   );
 }

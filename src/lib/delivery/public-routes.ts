@@ -165,6 +165,11 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
     return site.entries();
   }
 
+  /** Whether an entry's frontmatter `robots` field asks search engines not to index it. */
+  function isNoindex(frontmatter: Record<string, unknown>): boolean {
+    return readSeoFields(frontmatter).robots?.includes('noindex') ?? false;
+  }
+
   /**
    * Prerender enumeration for the raw-markdown twin, one `.md`-suffixed `{ path }` per entry whose
    *  frontmatter `robots` field does not carry `noindex` (read through {@link readSeoFields}). A page
@@ -175,8 +180,7 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
     return entries()
       .filter((e) => {
         const found = site.byPermalink('/' + e.path);
-        const robots = found ? readSeoFields(found.frontmatter).robots : undefined;
-        return !(robots && robots.includes('noindex'));
+        return !found || !isNoindex(found.frontmatter);
       })
       .map((e) => ({ path: `${e.path}.md` }));
   }
@@ -195,14 +199,15 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
   async function markdownLoad(event: { url: URL }): Promise<{ body: string }> {
     const path = event.url.pathname.replace(/\.md$/, '');
     const entry = site.byPermalink(path);
-    if (!entry) throw error(404, `Not found: ${event.url.pathname}`);
-    const robots = readSeoFields(entry.frontmatter).robots;
-    if (robots?.includes('noindex')) throw error(404, `Not found: ${event.url.pathname}`);
+    if (!entry || isNoindex(entry.frontmatter)) throw error(404, `Not found: ${event.url.pathname}`);
     return { body: entry.body };
   }
 
   return { entryLoad, entries, markdownEntries, markdownLoad };
 }
 
-/** What `createPublicRoutes` returns: the entry loader, the prerender enumerator, and the markdown twin's loader and enumerator. */
+/**
+ * What `createPublicRoutes` returns: the entry loader and its prerender enumerator, plus the
+ *  markdown twin's loader and enumerator.
+ */
 export type PublicRoutes = ReturnType<typeof createPublicRoutes>;

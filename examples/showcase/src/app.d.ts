@@ -9,6 +9,14 @@ import type { NavNode } from '@glw907/cairn-cms';
 import '@glw907/cairn-cms/ambient';
 
 declare global {
+  /**
+   * The build-time half of the dev-backend gate, substituted as a literal by the Vite `define` in
+   * vite.config.ts: `true` under `npm run dev` and under a `VITE_CAIRN_E2E=1` build, `false` in a
+   * default production build. Declared once here because every call site names it directly, which
+   * is what lets each branch fold locally (see src/chassis/dev-gate.ts).
+   */
+  const __CAIRN_DEV_BUILD__: boolean;
+
   namespace App {
     // The root layout server load's return shape, declared app-wide so a component mounted in
     // more than one route tree (SiteHeader, in the (site) layout and the root +error.svelte)

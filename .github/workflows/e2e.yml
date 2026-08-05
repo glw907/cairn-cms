@@ -38,10 +38,10 @@ jobs:
       # docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md.
       - run: npm ci --prefix examples/showcase
       - run: npx --prefix examples/showcase playwright install --with-deps chromium
-      # A DEFAULT build (no VITE_CAIRN_E2E) proves the fence holds: the build-foldable gate folds
-      # away, so the dev backend and its owner-session bypass are eliminated from the deployable
-      # bundle. test:e2e's own webServer then does the flagged build (VITE_CAIRN_E2E=1) + preview to
-      # run the specs, so this default-build grep must run first.
+      # A DEFAULT build (no VITE_CAIRN_E2E) proves the fence holds: Vite substitutes `false` for
+      # __CAIRN_DEV_BUILD__ at every call site, so the dev backend and its owner-session bypass are
+      # eliminated from the deployable bundle. test:e2e's own webServer then does the flagged build
+      # (VITE_CAIRN_E2E=1) + preview to run the specs, so this default-build grep must run first.
       - run: npm --prefix examples/showcase run build
       - name: Assert the dev backend is eliminated from the default build's deployable bundle
         # adapter-cloudflare 7 does not bundle: .svelte-kit/cloudflare/_worker.js is a loader that

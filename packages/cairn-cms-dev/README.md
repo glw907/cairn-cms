@@ -12,16 +12,37 @@ so the package ships behind a three-layer fence and must stay out of every produ
 
 ## Use it
 
-Activate the backend from your `hooks.server.ts`, behind the build-foldable `dev` flag and an
-explicit opt-in. Import it dynamically so a production build drops it:
+Activate the backend from your `hooks.server.ts`, behind a build-time flag and an explicit runtime
+opt-in. Declare the build-time flag as a Vite `define`, which substitutes it as a literal wherever
+you name it:
 
 ```ts
-import { dev } from '$app/environment';
+// vite.config.ts
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig(({ command }) => ({
+  define: { __CAIRN_DEV_BUILD__: JSON.stringify(command === 'serve') },
+  plugins: [sveltekit()],
+}));
+```
+
+Declare its type once, in `src/app.d.ts`:
+
+```ts
+declare global {
+  const __CAIRN_DEV_BUILD__: boolean;
+}
+```
+
+Then name it directly in the branch, and import the package dynamically:
+
+```ts
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import type { Handle } from '@sveltejs/kit';
 
 let handle: Handle;
-if (dev && process.env.CAIRN_DEV_BACKEND === '1') {
+if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
   const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
   handle = devBackendHandle();
 } else {
@@ -43,12 +64,16 @@ Open `/admin`. The handle resolves an owner session and supplies the binding dou
 
 Three independent layers keep the bypass out of production. The bypass ships only if all three fail.
 
-1. The build-foldable `dev` gate. `dev` from `$app/environment` is `false` in a production build, so
-   the `if (dev && ...)` branch and its dynamic `import()` fold away under dead-code elimination, and
-   the deployed bundle holds no dev-backend code. Gate every import from this package the same way:
-   the package re-exports its whole surface from one module, so a single static `import` pulls the
-   bypass into the build. Verify a release by grepping the built output for a bypass string such as
-   `createDevBackend` or `devBackendHandle`.
+1. The build-time gate. A default production build substitutes `false` for `__CAIRN_DEV_BUILD__` in
+   the text of every branch that names it, so Rollup drops the branch with its dynamic `import()`
+   and the deployed bundle holds no dev-backend code. Name the define at each call site. A shared
+   `export const` read from a helper module does not work: SvelteKit's SSR build folds the constant
+   inside its own chunk but does not propagate the value across the module boundary, so the
+   consuming chunk keeps the branch and this package rides into the deployed Worker. Gate every
+   import from this package the same way: the package re-exports its whole surface from one module,
+   so a single static `import` pulls the bypass into the build. Verify a release by grepping the
+   artifact Cloudflare actually receives, which `wrangler deploy --dry-run --outdir=<dir>` writes,
+   for a bypass string such as `createDevBackend` or `devBackendHandle`.
 2. The `devDependency` boundary. A production install with `npm ci --omit=dev` skips the package, so a
    forced import throws at runtime instead of bypassing.
 3. The engine tripwire. If `CAIRN_DEV_BACKEND` reaches a deployed runtime, cairn's auth guard refuses

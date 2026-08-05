@@ -1,16 +1,27 @@
-// cairn-cms: the showcase's one build-foldable dev-backend gate, read by hooks.server.ts,
-// cairn.server.ts, and the three /test fixture routes. `dev` and `import.meta.env` both fold to a
-// literal at build time, so a default `npm run build` collapses this module-level constant to
-// `false`, which eliminates every `if (devBackendEnabled)` branch (and its dynamic
-// `@glw907/cairn-cms-dev` import) from the deployable bundle; the e2e workflow greps the built
-// Worker for the dev package's names to prove the fold held. Keep every call site reading this
-// exported constant directly rather than wrapping it in another function call, so the fold has one
-// module boundary to survive, not two.
-import { dev } from '$app/environment';
+// cairn-cms: the runtime half of the showcase's dev-backend gate, read by hooks.server.ts,
+// cairn.server.ts, and the three /test fixture routes. The gate has two halves and they live
+// apart on purpose.
+//
+// The build-time half is `__CAIRN_DEV_BUILD__`, a Vite `define` (see vite.config.ts). Vite
+// substitutes it as a literal into the text of every module that names it, so `if
+// (__CAIRN_DEV_BUILD__ && devBackendOptIn())` folds at the call site itself and Rollup drops the
+// dead branch with its dynamic `@glw907/cairn-cms-dev` import. Keep every call site naming the
+// define directly. Exporting one shared `const devBackendEnabled` from here does NOT work, and was
+// the earlier shape: SvelteKit's SSR build folds the constant inside this chunk but does not
+// propagate the value into the consuming chunk, which keeps its `if` and its import, so the whole
+// dev backend rode into the deployable Worker. Verified against `wrangler deploy --dry-run` output
+// on 2026-08-04; the e2e and scaffold workflows now grep that artifact both ways.
+//
+// The runtime half is below. It reads an environment variable that no build can know, so it has
+// nothing to fold and one shared home costs nothing.
 
 /**
- * True when the dev backend should activate: a dev build or the e2e build's
- * `VITE_CAIRN_E2E=1` flag, and the operator opted in with `CAIRN_DEV_BACKEND=1`.
+ * True when the operator opted this process into the dev backend with `CAIRN_DEV_BACKEND=1`.
+ *
+ * @remarks
+ * Always call this behind `__CAIRN_DEV_BUILD__`, never alone: the define is what keeps the dev
+ * package out of a default production build.
  */
-export const devBackendEnabled =
-  (dev || import.meta.env.VITE_CAIRN_E2E === '1') && process.env.CAIRN_DEV_BACKEND === '1';
+export function devBackendOptIn(): boolean {
+  return process.env.CAIRN_DEV_BACKEND === '1';
+}

@@ -346,18 +346,27 @@ function markdownResponse(opts: { body: string }): Response;
 Wrap an entry's stored markdown body in a `Response` with `text/markdown; charset=utf-8`. `body` is
 the raw markdown, unrendered: cairn stores markdown natively, so serving the twin is a direct read
 rather than a reconstruction from rendered html. Pairs with `createPublicRoutes`'s
-`markdownEntries`/`markdownLoad` (`/delivery`), which enumerate and load the twin for every routable,
-non-`noindex` entry.
+`markdownEntries`/`markdownLoad` ([`/delivery`](./delivery.md#createpublicroutes)), which enumerate
+and load the twin for every routable, non-`noindex` entry; `markdownLoad` is also what applies the
+`noindex` refusal, so a lookup that bypasses it (a hand-rolled `site.byPermalink` call, say) would
+serve a body the enumerator never listed.
 
 ```ts
-import { markdownResponse } from '@glw907/cairn-cms/delivery';
-import { site, ORIGIN } from '$lib/content';
+import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { cairn, siteConfig } from '$lib/cairn.config';
 
-export const GET = ({ url }: { url: URL }) => {
-  const path = url.pathname.replace(/\.md$/, '');
-  const entry = site.byPermalink(path);
-  if (!entry) throw new Response(null, { status: 404 });
-  return markdownResponse({ body: entry.body });
+const routes = createPublicRoutes({
+  site,
+  render: cairn.rendering.render,
+  origin: ORIGIN,
+  siteName: siteConfig.siteName,
+  description: SITE_DESCRIPTION,
+});
+
+export const GET = async ({ url }: { url: URL }) => {
+  const { body } = await routes.markdownLoad({ url });
+  return markdownResponse({ body });
 };
 ```
 

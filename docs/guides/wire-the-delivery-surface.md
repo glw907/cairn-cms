@@ -343,11 +343,28 @@ export const GET: RequestHandler = async ({ url }) => {
 pass the request `url` through unchanged, the same way `entryLoad` reads it above.
 
 `CairnHead`'s optional `markdownUrl` prop points a page at its own twin with a
-`rel="alternate" type="text/markdown"` link, once the route above exists:
+`rel="alternate" type="text/markdown"` link, once the route above exists. Guard it: a `noindex`
+entry has no twin (`markdownEntries` excludes it), so `markdownUrl` must read the same robots
+verdict the head already rendered, not pass unconditionally:
 
 ```svelte
-<CairnHead seo={data.seo} markdownUrl={ORIGIN + data.entry.permalink + '.md'} />
+<script lang="ts">
+  import type { PageData } from './$types';
+
+  let { data }: { data: PageData } = $props();
+
+  const markdownUrl = $derived(
+    data.seo.meta.some((m) => m.name === 'robots' && m.content.includes('noindex'))
+      ? undefined
+      : data.canonicalUrl + '.md',
+  );
+</script>
+
+<CairnHead seo={data.seo} {markdownUrl} />
 ```
+
+`data.canonicalUrl` is already the entry's absolute URL ([`EntryData`](../reference/delivery.md#entrydata)),
+so this needs no `ORIGIN` import.
 
 `examples/showcase/src/params/md.ts` and
 `examples/showcase/src/routes/(site)/[...path=md]/+server.ts` are the working reference this

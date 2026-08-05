@@ -17,9 +17,16 @@ test('the markdown twin serves the stored markdown, unrendered', async ({ reques
 });
 
 test('a noindex entry has no markdown twin', async ({ request }) => {
-  // src/content/pages/about.md declares `robots: noindex`; markdownEntries excludes it from the
-  // prerendered build, so the twin path 404s rather than serving anything.
-  const res = await request.get('/pages/about.md');
+  // src/content/pages/about.md declares `robots: noindex`. The pages concept has no permalink
+  // override, so its default pattern is /:slug: the page itself lives at /about, and its twin
+  // would live at /about.md. Assert the page resolves first, so the twin's 404 cannot pass on a
+  // resolver miss for a path that never existed at all.
+  const page = await request.get('/about');
+  expect(page.status()).toBe(200);
+
+  // markdownEntries excludes a noindex entry from the prerendered build, so the twin path 404s
+  // rather than serving anything.
+  const res = await request.get('/about.md');
   expect(res.status()).toBe(404);
 });
 
@@ -36,6 +43,7 @@ test('the rendered head advertises the twin, and the twin it points at exists', 
 });
 
 test('a noindex entry emits no alternate markdown link', async ({ page }) => {
-  await page.goto('/pages/about');
+  const response = await page.goto('/about');
+  expect(response?.status()).toBe(200);
   await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveCount(0);
 });

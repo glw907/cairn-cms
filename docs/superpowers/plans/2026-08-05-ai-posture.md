@@ -355,3 +355,110 @@ dispatch gets wasted.
 **Sizing.** Eight tasks, six deliverables. The spec's "Pass size" section records why the natural cut
 was rejected and names markdown serving as the cut point if it outgrows Tasks 3 and 4. If a third
 task split becomes necessary during execution, propose splitting the pass rather than the task.
+
+---
+
+## Post-mortem (2026-08-05)
+
+**Shipped.** All eight tasks, on `ai-posture` off `main`. A site states `aiPosture: 'invite' |
+'decline'` and the engine emits what that implies; the doctor reports what the deployed site is
+actually doing; the admin HSTS stops pinning sibling subdomains by default; every routable entry has
+a raw-markdown twin; and the guide, the tutorial moment, and the reference carry an honest account of
+what each direction buys. Ten commits, `cb036c1c` through `7531e2bf`.
+
+**Verified.** `npm test` exit 0 at 5005 tests across 402 files, `npm run check` 0 errors 0 warnings
+across 1583 files, and the four CI-only gates green by name. The showcase was reinstalled from
+scratch in the worktree first, so its e2e proved this engine rather than main's.
+
+### Corrections to the plan, all deliberate
+
+**Bytespider does not ship**, against Task 1's sentence that it stays. The plan assumed ByteDance
+publishes no *compliance commitment*; verification found it publishes no first-party documentation of
+the token at all. The governing constraint and Task 1's own "trimmed if any fails" clause both
+resolve it the same way. The guide explains the omission so it does not read as a gap against
+Cloudflare's managed list.
+
+**`AiCrawler` gained an optional `note`.** Six of seven operators claim on their own pages that the
+token feeds training. Common Crawl does not; its pages describe a research archive. The line still
+ships, and the record does not put an unsourced claim in Common Crawl's mouth.
+
+**The 2026-09-15 trigger is narrower than the plan states.** The plan asserts the change "reaches
+backward into existing 'Block AI bots' configurations with no in-dashboard notice." Cloudflare's own
+post does not support that: it scopes the new defaults to newly onboarding domains, then tells
+existing owners they may opt out before the date, and never reconciles the two. The watch routine
+carries the ambiguity and is told not to resolve it by inference.
+
+**The Transform Rule's cache-key consequence is an inference, not a Cloudflare claim.** Cloudflare
+documents the phase ordering (`http_request_transform` third, `http_request_cache_settings`
+eighteenth) and never states that the rewrite determines the cache key. The guide marks it as its
+own reading.
+
+### Decisions locked in
+
+- **`AiPosture` reaches the root export**, matching every other `CairnAdapter` member type under the
+  C2 export-rule closure.
+- **`markdownLoad` refuses a `noindex` entry**, not just the enumerator, so the two surfaces agree by
+  construction rather than for as long as the site's route stays prerendered.
+- **The posture check fails on one case**: a site declaring a posture the served file does not carry.
+  That needed a registered diagnostics condition, since the report resolves a failed check's
+  `why`/`Fix` from the registry. Stating nothing passes, and a managed layer passes.
+- **The route shape**, settled by experiment against SvelteKit 2 rather than from memory: a param
+  matcher at the site's `src/params/md.ts` plus `(site)/[...path=md]/+server.ts` beside the page
+  catch-all. `params.path` carries the suffix; `markdownLoad` strips it.
+- **The measured content type.** A `.md` twin serves `text/markdown; charset=utf-8` through
+  `wrangler dev` on a real build, where the engine's `.xml` sitemap and feed lose their charset to the
+  same extension-keyed re-derivation. `vite preview` reports no charset for the identical file, so the
+  local server chosen changes the answer. Both facts are in the guide.
+- **A vendor's specifics get a link, never a copy** (Geoff, mid-pass). Written into
+  `docs/internal/docs-register.md`'s universal contract, so it binds every arm and every future pass.
+
+### The review gate earned its keep, and found a defect this pass introduced
+
+A Fable sitting designed the review rather than running it: six dispatches, ranked by expected yield,
+with the survivor-counting shape explicitly banned after it returned zero survivors on three real
+defects last pass. Every reviewer had to return either findings or a named closest call, so an empty
+result stays legible.
+
+The most serious finding was ours. Making `includeSubDomains` conditional created a divergence
+between the guarded path and the rejection pages, and RFC 6797 section 8.1 has a browser *replace*
+its cached policy on every header it receives. So a rejection page sending `max-age` alone was not a
+weaker default but a policy write clearing the pin an opted-in site's guarded responses had asserted,
+and the CSRF rejection is reachable by any cross-site POST with no session. Rejection pages now send
+no `Strict-Transport-Security` at all. The comment that had justified the old behavior was wrong on
+its own terms: it claimed the option was out of scope at those call sites when the closure captures
+it.
+
+The doctor's check had three behavioral defects, all found by executing it rather than reading it: it
+returned early on the managed-layer shape, so the incident that motivated the whole feature (declare
+`invite`, managed layer declines) reported PASS and never named the declared posture; its parser
+credited only the last of consecutive `User-agent` lines, so a hand-written declining file was
+reported as contradicting itself; and it asserted a Cloudflare prepend on a single-group file
+carrying its own `Content-Signal`.
+
+Seven claim defects came out of the honesty audit, several in strings this orchestrator wrote. The
+sharpest: the guide claimed every operator in the table documents honoring robots.txt when four do,
+and the `edge.hsts` check reported what every route serves having read one zone setting, in the same
+release that added a check *because* a zone setting is not what ships.
+
+### What went wrong in the running of it
+
+**Two executors in one worktree, and the second was me.** Task 7b ran a full gate while the
+orchestrator was editing `src/lib` in the same tree, so 7b hit a transient parse error, reported a
+live-collision concern, and stopped short of two gates. The files were disjoint from its docs-only
+scope, which is why nothing corrupted, but the cost was a wasted gate run and a false alarm. The rule
+is one executor per worktree and it does not exempt the orchestrator.
+
+**Task 7 was split into 7a and 7b** (the guide, then the tracking arm), the pass's first task split.
+One split does not argue for splitting the pass; a second would have.
+
+**Two research dispatches were needed** because `cairn-implementer` has no web tools and the pass's
+governing constraint requires first-party verification. Worth pre-baking next time a pass's
+acceptance depends on external evidence.
+
+### Carried forward
+
+The pass holds unpublished. `package.json` is untouched and the window stays `## Unreleased` at
+`0.93.0`. The harvest brainstorm now runs **before** the RC cut, not after the migrations: neither ASC
+nor ecxc builds until after the beta, so their harvest material is entirely in their plans and is
+available now, and a seam added pre-beta is ordinary work where one added after is a compatibility
+event against four consumers. `docs/internal/engine-harvest-candidates.md` is its pre-baked input.

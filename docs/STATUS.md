@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-05: the auth-channel work is DONE and releasable; the AI-posture pass is next)
+## Immediate next action (2026-08-05: the AI-posture pass is PLANNED and awaiting four confirmations)
 
 **Both auth-channel passes are merged.** The factory pass merged 2026-08-04 (`06b3470d`). The
 consumer proof merged 2026-08-05 (branch `auth-channel-2`, twelve commits): `createChannelDb` in the
@@ -63,7 +63,24 @@ survivor filter rather than surfaced as unjudged.
 
 **Next: the AI-posture pass**, then the RC cut, then the migrations. It consumes the ambient-defaults
 audit (below) and lands before the migrations so each site adopts a posture in the session that
-migrates it.
+migrates it. **It is now planned and not yet executed:** spec at
+[`docs/superpowers/specs/2026-08-05-ai-posture-design.md`](superpowers/specs/2026-08-05-ai-posture-design.md),
+eight-task plan at
+[`docs/superpowers/plans/2026-08-05-ai-posture.md`](superpowers/plans/2026-08-05-ai-posture.md).
+
+**Four decisions await Geoff before Task 1 dispatches** (the planning session ran in the background,
+so they are recorded as recommendations, not rulings): markdown serving stays in the pass rather than
+becoming a follow-up; the admin HSTS drops `includeSubDomains` by default with a per-site opt-in;
+`llms.txt` does not ship and the guide says why; the doctor probe stays black-box only. The spec's
+"Decisions that need confirmation" section carries the reasoning for each.
+
+**Planning overturned two things the ROADMAP still asserted**, both recorded in the spec's
+corrections section. `Accept: text/markdown` negotiation **cannot work** on a cairn site, because the
+public catch-all is prerendered and the request never reaches the Worker, so only the `.md` suffix is
+buildable. And Cloudflare's AI Crawl Control now **writes a WAF custom rule** when it blocks a
+crawler, which is an API-readable object class, so the "no API exposes per-crawler state" finding is
+no longer safe to assert; the read was attempted and returned `Authentication error` on all four
+zones, a token-scope gap rather than a confirmed absence.
 
 **The window still HOLDS UNPUBLISHED** at `0.93.0`. `package.json` is untouched and the changelog
 window is `## Unreleased`, carrying the ASC seams pass two, C1, the refusal-channel convergence,
@@ -85,11 +102,12 @@ first group; the second wants a check.
 
 **Resume prompt** (fresh session, launched from `~/Projects/cairn-cms`; execution runs on Opus 5
 per the model economy):
-"Execute `docs/superpowers/plans/2026-08-04-auth-channel-consumer-proof.md` with `cairn-pass`,
-task-by-task via `cairn-implementer` dispatches, on a fresh worktree
-`.claude/worktrees/auth-channel-2` off `main`. Read the plan's authority spec (v2) in full first,
-run each dispatch's gates in the foreground, and paste the CI gate list from
-`.github/workflows/test.yml` into every dispatch."
+"Execute `docs/superpowers/plans/2026-08-05-ai-posture.md` with `cairn-pass`, task-by-task via
+`cairn-implementer` dispatches, on a fresh worktree `.claude/worktrees/ai-posture` off `main`. Read
+the authority spec `docs/superpowers/specs/2026-08-05-ai-posture-design.md` in full first, including
+its corrections section. Confirm the four open decisions in the spec before Task 1. Run each
+dispatch's gates in the foreground, and paste the CI gate list from `.github/workflows/test.yml` into
+every dispatch."
 
 **Carry this warning into every dispatch.** This pass's orchestrator derived the CI gate list from
 `.github/workflows/test.yml` once and then retyped it from memory across nine dispatches, dropping

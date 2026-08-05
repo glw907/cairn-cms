@@ -559,6 +559,17 @@ removal, nothing this list needs to carry.
 
 ### Documentation
 
+- [Add a login channel](docs/guides/add-a-login-channel.md) gains a "Prove your channel" section:
+  `createChannelDb` (`@glw907/cairn-cms-dev`, the in-memory `node:sqlite` double for a channel's
+  own D1 binding, with its Node.js 22.13 floor), the capture-transport pattern for a `deliver`
+  that records instead of sends, the fixture-roster-only rule for a capture transport's readback
+  route, the warning against wrapping a dev-only transport in a deployed Worker with observability
+  turned on, and the origin-check boundary a site keeps in mind if it disables SvelteKit's own
+  built-in check elsewhere. The showcase's own member fixture
+  (`examples/showcase/src/members/`, `examples/showcase/src/routes/members/`, and
+  `examples/showcase/e2e/members.spec.ts`) is the section's worked exemplar, with its two
+  deliberate divergences from a real site named. No consumer action.
+
 - The `./sveltekit` reference documents the admin action surface's refusal channels: the
   framework-native `error()`/`redirect()` shared by `requireOwner`/`requireEditor`/`requireAccess`/
   `requireSession` and `adminAction`'s own authorization guards, `fail(...)` from

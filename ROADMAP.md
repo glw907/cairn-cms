@@ -180,29 +180,19 @@ The original decision framing, for the record:
 
 ## Now
 
-- **The consumer proof for the auth-channel factory (pass 2 of the auth-seam work). LIVE CONSUMER
-  NEED (Geoff, 2026-08-03/04).** The factory pass (`createAuthChannel`, spec v3.1, eight-task plan,
-  three adversarial review rounds) shipped: the `./auth-channel` subpath, its D1 schema and store,
-  the request/confirm/logout actions, the rate limit, and the docs arm. That pass proved the factory
-  only against the engine's own integration harness, deliberately: nothing yet proves it through a
-  consumer's bundler. This entry is what remains, scoped at the factory pass's own sizing call
-  (`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`, "Scope boundary"):
-
-  - A showcase member fixture exercising the factory end to end (request, confirm, logout,
-    revocation), the standing pattern every seam proves itself against before a real consumer
-    depends on it.
-  - The fixture's own D1 plumbing: a second binding (`MEMBER_DB` or equivalent), its migration-apply
-    step in the test harness, mirroring the pattern `wrangler.test.jsonc` already set for the
-    engine's own auth store.
-  - A `.cairn-template.json` scaffolder exclusion, so a generated site does not inherit the
-    showcase's own member-channel wiring by default.
-  - The e2e workflow markers and the e2e itself, proving a real request-confirm-session round trip
-    through a built package.
-
-  Consequence carried forward from the factory pass: until this lands, the unpublished window stays
-  unreleasable on the auth-channel work alone (though other unrelated work in the window may still
-  cut independently). The window closes the session xcathletes runs its own Task 4 against the
-  factory; confirm that has not already happened before starting (state lives in the ecxc-ski repo).
+- **Decide whether the chassis safelists the classes the engine's rendered markdown emits.**
+  Surfaced 2026-08-04 by the auth-channel consumer proof; evidence and the measurement in
+  [`docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md`](docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md),
+  finding 1. `src/lib/render/rehype-dispatch.ts` writes `card-body` and `card-title` into runtime
+  HTML, and the alert directive writes `alert` and its variants. Tailwind scans source files and
+  never runtime output, so DaisyUI ships those base rules only when some source file happens to
+  name the same class. The showcase chassis keeps the `card` and `alert` families expecting those
+  declarations to be there; they are not. A fixture page in pass 2 named `card-title` once and every
+  callout on the site restyled, wrapping a heading and shifting 26px down every page below it.
+  Deciding this changes the approved visual baseline, so it runs through the `visual-fidelity` gate
+  with Geoff's before/after, not as a side effect of another pass. The mechanically detectable
+  half, that every class the engine emits is either safelisted or independently styled, belongs in
+  `cairn-audit`.
 
 - **The ambient-defaults audit: RUN 2026-08-03.** Report:
   [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/2026-08-03-ambient-defaults-audit.md).

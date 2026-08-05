@@ -455,6 +455,11 @@ export const cairn = defineAdapter({
   // The media R2 binding. The fake R2 double rides platform.env in dev; a real site binds it in
   // wrangler.jsonc and mounts the /media delivery route.
   media: { bucketBinding: 'MEDIA_BUCKET' },
+  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the
+  // site's robots.txt route (docs/guides/wire-the-delivery-surface.md) passes it to
+  // robotsResponse, and CairnAdapter.aiPosture (docs/reference/core.md) documents both values.
+  // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate
+  // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.
   rendering: {
     // Render through the engine so registered components (the callout) produce their markup; the
     // engine's own pipeline already wraps every table in a scrollable, labeled region by default

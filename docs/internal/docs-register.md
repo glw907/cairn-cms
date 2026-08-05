@@ -37,6 +37,19 @@ fail.
   and "frontmatter" freely; editor-facing guides speak the editor's vocabulary.
 - Product terms are the precise vocabulary, not jargon to remove: concept, adapter, render,
   seam, island, holding branch, manifest, role/capability. They name real system objects.
+- **A vendor's specifics get a link, never a copy** (Geoff, 2026-08-05). Dashboard navigation,
+  plan-availability tiers, expression-language signatures, field references, console
+  walkthroughs, and pricing all sit behind a link to the vendor's own page. Whatever cairn
+  copies, cairn owns keeping in sync, and it goes stale silently: vendors rename dashboard
+  sections and move features between tiers without telling anyone, so a restated detail is
+  wrong on a schedule cairn does not control, and a reader trusts it precisely because it looks
+  specific. Write out in full only what is cairn's own reasoning, which does not drift: why the
+  engine cannot do a thing itself, what an architectural choice costs, which of two mechanisms
+  is true source and which a reconstruction. Quote a vendor verbatim only for a short
+  load-bearing distinction, with the link. Keep at most one illustrative snippet, framed as
+  illustrative, with the authoritative reference beside it. When two of a vendor's own pages
+  disagree, linking one disposes of the conflict that restating them would force you to
+  reconcile.
 
 ## The four arm registers
 

@@ -101,7 +101,11 @@ release-one boundary; the passes are invariant.
   preview pass.
 - **RELEASE ONE cuts here**, the last substantial `0.x`: contract, renames, and the three core
   features in one window. The standing pipeline consumes it (the Waymark rebuilds, ASC's
-  retrofit) — the one round of breaking changes.
+  retrofit) — the one round of breaking changes. **Phase F runs before this cut and phase P after
+  it** (Geoff confirmed the order 2026-08-04, against a STATUS draft that had put P first), which
+  is what keeps P8's ambient-defaults remediation out of the release the consumer sites absorb.
+  One wrinkle the RC introduced: `0.94.0` now carries the contract and the renames ahead of this
+  cut so the migrations can happen, so what release one adds on top is the core features.
 - **Phase P, polish and docs (non-breaking; internal order flexible):** P1 mechanical hardening
   (ci-parity, the `commitFiles` test, the surface machine artifact, the error-message sweep, and a
   small showcase route exercising `adminAction` and its converged refusal paths end to end, since

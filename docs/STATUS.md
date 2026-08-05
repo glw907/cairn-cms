@@ -117,8 +117,9 @@ plus a publish round-trip) folds into that same session rather than staying a se
 **The order after the auth-channel passes and the AI-posture pass:** cut `0.94.0-rc.1` rather than
 the final number, migrate ASC and cairn.pub against the RC from their own repos, mint `0.94.0` once
 their gates are green, migrate the remaining two off the recipe the first migration writes into
-`docs/guides/upgrade-cairn.md`, then phase P with the four-CI-gates consolidation pulled forward,
-then phase F with F1 and F4 batched into one Fable sitting. Scaffolder and Topo stay last, and
+`docs/guides/upgrade-cairn.md`, then phase F with F1 and F4 batched into one Fable sitting, then
+RELEASE ONE, then phase P with the four-CI-gates consolidation pulled forward. Scaffolder and Topo
+stay last, and
 Cloudflare provisioning now lands inside the pre-beta series as part of the scaffolder itself
 (Geoff, 2026-08-04, two rulings: pre-beta rather than after it, because every site provisioned so
 far was set up by an agent holding account-wide access and the `wrangler`-plus-dashboard path a
@@ -126,12 +127,6 @@ developer actually walks has never been measured; and one create-a-site experien
 separate provisioning tool, so `create-cairn-site` emits the code and creates the remote resources
 in one run). The RC exists because
 `examples/showcase` is a stand-in cairn wrote for itself.
-
-**One ordering conflict to settle.** This paragraph puts phase P before phase F; ROADMAP's pre-beta
-series puts phase F first, cuts RELEASE ONE there, and runs phase P after. That changes when P8, the
-ambient-defaults remediation, lands relative to the release the consumer sites absorb. Neither doc is
-authoritative over the other today, so the next pass that touches sequencing should pick one and fix
-the loser.
 
 **Carry-forwards (live):** admin error statuses flattening to HTTP 200 under the shell's streamed
 pending count (upstream sveltejs/kit#12987, OPEN); `config.kit.csrf.checkOrigin` is an ACTIVE

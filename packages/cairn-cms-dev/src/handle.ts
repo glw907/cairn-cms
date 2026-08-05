@@ -1,8 +1,9 @@
 // The blessed dev-backend SvelteKit Handle factory. It installs the in-memory GitHub/D1/R2 doubles
 // and mints an owner session, the local-dev substitute for the GitHub App commit pipeline and the
 // magic-link auth loop. A consumer activates it from hooks.server.ts behind the three-layer fence
-// (the build-foldable `dev` flag, the devDependency boundary, and the engine prod tripwire); the
-// fence, not this factory, owns the dev+flag gate, so calling devBackendHandle always installs.
+// (a build-time flag named at each call site, the devDependency boundary, and the engine prod
+// tripwire; see this package's README for why a shared exported constant does not hold layer one);
+// the fence, not this factory, owns the dev+flag gate, so calling devBackendHandle always installs.
 //
 // Two risk tiers ride here. The owner-session bypass is an authentication breach if it reaches a
 // deployed runtime; the GitHub/R2/D1 doubles only degrade to "saves do not persist." The bypass is

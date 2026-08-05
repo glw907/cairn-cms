@@ -10,6 +10,7 @@
 import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
 import type { AuthChannelEvent } from '@glw907/cairn-cms/auth-channel';
 import { captureDeliver } from './capture-transport.js';
+import { INSECURE_TEST_CHALLENGE_FIELD, INSECURE_TEST_CHALLENGE_TOKEN } from './challenge-token.js';
 
 /**
  * The showcase's demo member roster: one `@showcase.test` contact per e2e spec plus one spare for
@@ -24,15 +25,6 @@ export const MEMBER_ROSTER: ReadonlyMap<string, string> = new Map([
   ['revocation@showcase.test', 'member-revocation'],
   ['spare@showcase.test', 'member-spare'],
 ]);
-
-/**
- * The hidden form value the members login page embeds, and the only thing
- * `insecureTestChallenge` checks for.
- */
-export const INSECURE_TEST_CHALLENGE_FIELD = 'test-challenge';
-
-/** The value `INSECURE_TEST_CHALLENGE_FIELD` must carry for `insecureTestChallenge` to pass. */
-export const INSECURE_TEST_CHALLENGE_TOKEN = 'cairn-showcase-test-challenge';
 
 /**
  * A stand-in `challenge` hook, named to be unmistakable about what it is not: CI has no route to

@@ -10,6 +10,14 @@
       "binding": "AUTH_DB",
       "database_name": "cairn-test",
       "database_id": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      // A second, physically separate binding for the auth-channel factory (spec decision 1:
+      // the factory owns its own schema on a site's own database, never AUTH_DB). Never reused
+      // for the engine's own auth store.
+      "binding": "CHANNEL_DB",
+      "database_name": "cairn-channel-test",
+      "database_id": "00000000-0000-0000-0000-000000000002"
     }
   ],
   "r2_buckets": [

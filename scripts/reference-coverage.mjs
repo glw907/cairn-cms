@@ -306,6 +306,7 @@ export const CONFIG = [
   { subpath: '/delivery/head', dts: 'dist/delivery/head.d.ts', page: 'docs/reference/delivery.md' },
   { subpath: '/media', dts: 'dist/media/index.d.ts', page: 'docs/reference/media.md' },
   { subpath: '/auth-store', dts: 'dist/auth-store/index.d.ts', page: 'docs/reference/auth-store.md' },
+  { subpath: '/auth-channel', dts: 'dist/auth-channel/index.d.ts', page: 'docs/reference/auth-channel.md' },
   { subpath: '/auth-crypto', dts: 'dist/auth-crypto/index.d.ts', page: 'docs/reference/auth-crypto.md' },
   { subpath: '/cloudflare', dts: 'dist/cloudflare/index.d.ts', page: 'docs/reference/cloudflare.md' },
   { subpath: '/vite', dts: 'dist/vite/index.d.ts', page: 'docs/reference/vite.md' },

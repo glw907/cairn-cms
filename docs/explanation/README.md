@@ -16,6 +16,9 @@ decision and the reasoning behind it. Several link out to the reference for the 
 - [The security model](./security-model.md): the trust boundaries cairn owns (who may edit, what
   each role may reach once signed in, what a save can write to the repo, what an author's markdown
   can render in a visitor's browser) and what each one guarantees.
+- [The auth-channel security model](./auth-channel-security-model.md): the trust boundary behind
+  `createAuthChannel`, the rule the design was built from, the threat catalogue naming the test
+  that proves each mechanism, and the residual risks the design accepts rather than solves.
 - [The render sanitize floor](./render-safety.md): exactly what the render pipeline keeps, strips,
   and rewrites from an author's markdown, and the guarantee your site inherits from it.
 - [Reference integrity](./reference-integrity.md): how a reference field stays correct across a

@@ -62,4 +62,18 @@ export type CairnLogEvent =
   | 'admin.action.misconfigured'
   | 'admin.action.sink_threw'
   | 'turnstile.verify_failed'
-  | 'audit.sink.write_failed';
+  | 'audit.sink.write_failed'
+  // The auth-channel factory (createAuthChannel), twelve events per its design spec
+  // (docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md, Logging).
+  | 'auth.channel.requested'
+  | 'auth.channel.send_failed'
+  | 'auth.channel.delivery_inline'
+  | 'auth.channel.confirmed'
+  | 'auth.channel.locked'
+  | 'auth.channel.escalated'
+  | 'auth.channel.ceiling_exceeded'
+  | 'auth.channel.session.created'
+  | 'auth.channel.session.destroyed'
+  | 'auth.channel.rate_limited'
+  | 'auth.channel.rate_limit_absent'
+  | 'auth.channel.rate_limit_failed';

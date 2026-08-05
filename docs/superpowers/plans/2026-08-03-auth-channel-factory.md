@@ -352,7 +352,11 @@ exemplar calling `revokeSessions`, the read-replication constraint, and the oper
 one-liner; `CHANNEL_SCHEMA_SQL` is documented as migration-only, never a request path; the
 changelog entry is additive under `## Unreleased` with no version bump; ROADMAP marks the Now-tier
 auth-seam entry shipped, files the editor-default-to-codes question, and files **pass 2** (the
-consumer proof) as its own entry.
+consumer proof) as its own entry. ROADMAP also files a passkey layer (added 2026-08-04 at Geoff's
+direction): returning-member passkeys on the auth-channel session model, post-1.0 tier. Passkeys
+cannot replace the code channel (enrollment and recovery still need the roster-contact bootstrap);
+they layer on top via the `kind` discriminator, and a design for them earns its own adversarial
+rounds before implementation.
 
 **Acceptance:** `check:reference`, `check:reference:signatures`, `check:docs`, `check:arm-indexes`,
 `check:snippets`, `check:package`, and `check:surface -- --update` (snapshot committed) all green,
@@ -383,3 +387,64 @@ The scaffolder exclusion is the load-bearing item: `scripts/emit-template.mjs` c
 verbatim minus four excluded paths, so a `/members` fixture with a code-readback route would ship
 into every scaffolded site as an unauthenticated OTP oracle. A comment in the file is not a
 mitigation, because the emitter does not read comments.
+
+---
+
+## Post-mortem (2026-08-04, pass complete on branch `auth-channel`)
+
+**What was built.** All eight tasks, twelve commits on `.claude/worktrees/auth-channel` off `main`
+at `d504f958`. The `./auth-channel` subpath ships `createAuthChannel`, `devDelivery`,
+`CHANNEL_SCHEMA_SQL`/`CHANNEL_SCHEMA_VERSION`, and seven exported types (including
+`AuthChannelEvent`, added at the review gate). The store is single-statement atomic throughout;
+the factory implements the spec's flows with the throttle rule intact end to end. Docs: the
+reference page, the guide, the security-model explanation page (twenty threat-catalogue entries,
+each citing a real test name), the log-events reconciliation, the changelog entry under
+`## Unreleased`, and the ROADMAP delta (auth-seam entry pruned as shipped; pass 2, the
+editor-default-to-codes question, and the passkey layer filed).
+
+**Evidence.** Final state: 394 test files, 4932 tests, exit 0; `npm run check` 0/0; all four
+CI-only gates run by name and green (`check:comments`, `check:reference:signatures`,
+`check:surface`, `check:snippets`); `check:docs`, `check:arm-indexes`, `check:reference`,
+`check:package`, `check:prose` green. 164 tests across the seven auth-channel suites. The
+lockout regression tests complete the victim through the real actions in separate cookie jars.
+
+**Decisions locked during execution** (all spec-compatible, none reviewed by an adversarial
+round, flagged for pass 2's context): `cairn_channel_code` gained a `requester_bucket` column
+(the spec's own prune rule required it; its DDL lacked it) and `mintCode` a ninth parameter; the
+requester bucket composes as `${addressHalf}|${saltedIdentity}`; `requesterBucket()` unwraps
+IPv4-mapped IPv6 literals; the `ttl` config name stays spec-literal though it bundles counts
+(friction-logged); housekeeping sweeps ride each successful mint through `waitUntil` (the
+simplifier found `sweep()` implemented but unreachable, the exact table-growth defect v2 was
+rejected for); the escalation gate charges provisionally and refunds on success, `locked`, and
+the expired race (no compare, no charge); the identity ceiling refunds on cooldown-held resends;
+`charge()` tolerates backwards timestamps without rolling a window back; a throwing `verify`
+refuses resolution without destroying the session row; both actions parse a clone of the request
+body.
+
+**The review gate ran as an adversarial find-and-verify workflow** (Geoff's opt-in): three
+Opus reviewer lenses, 24 raw findings, one Opus skeptic per finding, 12 confirmed (11 unique),
+all folded in commit `9df1d956`. Two majors: the unclosed `formData()` consumption and the
+guide's shared-migrations-directory cross-apply. Twelve findings dropped at the per-lens top-8
+cap, inspected by the orchestrator: all minor, three folded cheaply, the rest design-accepted.
+The refute-by-default verify step killed exactly the false positives a flat fan-out would have
+surfaced (re-reported residual risks, misread code).
+
+**Process notes.** Two implementer dispatches parked themselves waiting on their own background
+test runs and had to be resumed; future dispatches should say "run gates in the foreground" (both
+dispatches after the first correction carried that line and the problem stopped). One dispatch
+committed despite a do-not-commit instruction; the commit contained exactly its reviewed files,
+so it stood. The CI gate list was pasted from the workflow file into every dispatch per the
+standing warning, and no gate was dropped. `main`'s own CI is red on `docs-links` (the provenance
+doc committed during planning links to the Task 6 page that now exists only on this branch);
+merging clears it. Main-loop review caught real defects the implementers' green gates did not:
+the IPv4-mapped bucket collapse, the negative-clamp gap (reported as present, absent in code),
+the double `lookup_failed` emission, and the verify-throw mass-revocation.
+
+**Budgets.** Subagent tokens roughly 5.4M total: ~2.6M across ten implementer/simplifier/docs
+dispatches, ~2.3M for the 27-agent review workflow, ~0.2M for the register pass. Geoff
+interaction points: zero blocking questions during execution; the pass's one open decision (merge
+timing) is presented at close as designed.
+
+**Not done, by design.** No version bump, no publish (the window holds at `0.93.0` unpublished);
+no consumer-bundler proof (pass 2 owns it: the showcase `/members` fixture, `MEMBER_DB`,
+the `.cairn-template.json` exclusion plus its emitted-template test, the e2e); no release claim.

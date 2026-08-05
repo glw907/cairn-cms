@@ -131,10 +131,12 @@ release-one boundary; the passes are invariant.
      two-year `includeSubDomains` admin HSTS, which overrides a zone owner's own HSTS decision), and
      it is a judgment call rather than a forced hand. Everything else went to phase P or to the
      operator.
-  2. **The auth seam** (ASC seam 1 as `createAuthChannel`): **PLANNED 2026-08-04**, spec v3.1 and an
-     eight-task plan approved after three adversarial review rounds. Splits into two passes: the
-     factory, then the consumer proof (showcase fixture, scaffolder exclusion, e2e). Its window
-     closes the session xcathletes runs Task 4, still open as of 2026-08-04.
+  2. **The auth seam** (ASC seam 1 as `createAuthChannel`): spec v3.1, eight-task plan, three
+     adversarial review rounds. **The factory pass shipped 2026-08-04** (`./auth-channel`, the D1
+     schema and store, request/confirm/logout, the rate limit, the docs arm); **pass 2, the
+     consumer proof (showcase fixture, scaffolder exclusion, e2e), is still open** and files as its
+     own Now-tier entry. Its window closes the session xcathletes runs Task 4, still open as of
+     2026-08-04.
   3. **The AI-posture pass.** Consumes the audit, and lands before the migrations so each site adopts
      a posture during the session that migrates it rather than earning a second visit.
 
@@ -178,140 +180,29 @@ The original decision framing, for the record:
 
 ## Now
 
-- **Make the auth seam friendly enough that a site adds its own login channel. LIVE CONSUMER NEED
-  with a closing window (Geoff, 2026-08-03).** This is ASC consumer-brief seam 1, promoted from a
-  request to a driver, and the survey below says **the seam should land before the consumer builds**.
+- **The consumer proof for the auth-channel factory (pass 2 of the auth-seam work). LIVE CONSUMER
+  NEED (Geoff, 2026-08-03/04).** The factory pass (`createAuthChannel`, spec v3.1, eight-task plan,
+  three adversarial review rounds) shipped: the `./auth-channel` subpath, its D1 schema and store,
+  the request/confirm/logout actions, the rate limit, and the docs arm. That pass proved the factory
+  only against the engine's own integration harness, deliberately: nothing yet proves it through a
+  consumer's bundler. This entry is what remains, scoped at the factory pass's own sizing call
+  (`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`, "Scope boundary"):
 
-  **What the consumer is actually building, verified in the ecxc-ski repo 2026-08-03** (an earlier
-  draft of this entry got three details wrong; corrected here):
+  - A showcase member fixture exercising the factory end to end (request, confirm, logout,
+    revocation), the standing pattern every seam proves itself against before a real consumer
+    depends on it.
+  - The fixture's own D1 plumbing: a second binding (`MEMBER_DB` or equivalent), its migration-apply
+    step in the test harness, mirroring the pattern `wrangler.test.jsonc` already set for the
+    engine's own auth store.
+  - A `.cairn-template.json` scaffolder exclusion, so a generated site does not inherit the
+    showcase's own member-channel wiring by default.
+  - The e2e workflow markers and the e2e itself, proving a real request-confirm-session round trip
+    through a built package.
 
-  - It is the **team platform**, whose code will live in `xcathletes-org`, a repo that **does not
-    exist yet**. ecxc-ski holds the plans. ecxc-ski's own login is unmodified cairn magic-link.
-  - The audience is **athletes and boosters, not cairn editors**. Coaches stay cairn editors on
-    email magic-link against the existing `AUTH_DB`. This is a second audience with its own store,
-    which is precisely the case ASC seam 1 was written for and confirms the two-stores-never-blur
-    rule stays intact.
-  - The credential is a **6-digit OTP code, not a magic URL**, for both SMS and email. The plan
-    deliberately amends its own requirements doc, which had said magic link, to a uniform code flow.
-  - **Zero implementation code exists.** It is Task 4 of 7 in a pass whose Tasks 1 through 7 are all
-    queued for a future session; only Tasks 0 and 0.5 (accounts, cairn version bump) are closed.
-    Infrastructure is provisioned though: Twilio account funded, toll-free number bought, KYC
-    approved, verification pending, credentials already in the age store.
-
-  **The count, corrected.** This is the family's **third** reimplementation, not a fourth, and it is
-  the same xcathletes instance the ASC brief already named. ecxc-ski itself hand-rolls no auth
-  crypto. The two real existing copies are ASC's member magic-link sessions
-  (`src/member-auth/lib/crypto.ts`) and ASC's waitlist-offer tokens (`src/admin-club/lib/offers.ts`),
-  both carrying a comment saying they reimplemented rather than import engine internals because no
-  supported surface exists. Three instances still argues for the seam; overstating it to four does
-  not help.
-
-  **SMS belongs in a site, not in the engine.** Deliberately ruled: a Twilio-class dependency is the
-  first piece of a cairn site that cannot live on Cloudflare, which is the whole-chain ownership the
-  project's own positioning rests on. It is also a weaker factor than email for admin access to a
-  publishing system with commit rights, since SIM swap is a mature account-takeover attack. And it
-  would permanently double the auth surface (two token stores, two rate limits, two delivery failure
-  modes, two log vocabularies) for an actor set that is usually an owner plus a few editors. The
-  engine's job is to make the site's own channel cheap to build correctly, not to ship the channel.
-
-  **Email magic-link stays the default and the documented path (Geoff, 2026-08-03).** The seam is
-  not a "choose your auth" menu. It is the zero-config default plus a supported way to add a second
-  channel correctly, and the docs must read that way or every new site will start shopping.
-
-  **The shaping principle, and it decides the seam's form: secure by construction, not by
-  documentation (Geoff, 2026-08-03, "easy to build securely, so a developer doesn't get themselves or
-  their site in trouble").** Exporting five primitives plus a careful reference page fails this test,
-  because every discipline above becomes something the developer has to remember, and the four
-  existing hand-rolled copies are the evidence that they will not.
-
-  **So seam 1 should take seam 2's shape.** `createSectionAction` is the ratified precedent: the site
-  supplies only what the engine cannot know (its binding resolver, its rate limit), and the engine
-  composes the whole guarded pipeline around it, fail-closed at every step. The auth seam wants the
-  same form under the `create*` verb: a factory that owns the disciplines and takes the site's
-  **delivery function** and its **identifier shape**, returning the request and confirm handlers
-  already wired. A site writing SMS then supplies a Twilio call and nothing security-relevant, and
-  the insecure version is the one that requires deliberately going around the seam rather than the
-  one you get by forgetting a step. That inverts the current situation, where the secure version is
-  the one you have to know to build.
-
-  It also gives the seam an honest acceptance test: **a site should not be able to write a working
-  channel that is insecure without bypassing the factory.**
-
-  **What the seam exports underneath the factory:** `generateToken`, `generateSessionId`,
-  `generateCsrfToken`, `hashToken`, and the cookie-name builders, server-only, for the site that
-  genuinely needs to compose something the factory does not cover. This is not a pure export-map promotion, since the
-  cookie names and TTLs are fixed to the editor store today, so the promotion parameterizes them (a
-  cookie base name, TTLs as arguments) while the pure crypto exports as is. Audience semantics stay
-  site-owned: the store schema, the session model, and the two-stores-never-blur rule are untouched.
-
-  **The seam's real value is the disciplines, not the primitives (Geoff, 2026-08-03: leverage the
-  engine to make a site's channel as secure as it can be).** `generateToken` is a thin wrapper over
-  `crypto.getRandomValues`; nobody gets that wrong. What a hand-rolled copy forgets is everything
-  around it, and the engine already enforces all of it in `src/lib/auth/`:
-
-  - the token is **hashed at rest** (`magic_token.token_hash`), never stored raw
-  - comparison is **constant-time** (`tokensMatch`)
-  - **short expiry**, `TOKEN_TTL_MS` 10 minutes, against a 30-day session
-  - a **per-address cooldown**, `SEND_COOLDOWN_MS` 60 seconds, so the channel cannot be used to flood
-  - **one live token per address**: minting deletes the prior token and purges expired rows in the
-    same statement
-  - **secure-aware cookie naming**, so a local http dev cookie and a deployed `__Host-` style cookie
-    never collide
-  - a **log vocabulary** (`auth.token.minted`, `auth.token.confirmed`, `auth.session.created`) so a
-    site's own channel is as observable as the engine's
-
-  A site that imports the primitives and reimplements the disciplines is barely better off than one
-  that copied everything. So the seam should carry the enforcement, not just the building blocks, and
-  the reference page should state each discipline as a contract the site inherits rather than a
-  suggestion. That is also the honest test of whether the seam succeeded: ecxc's SMS channel should
-  be as hard to get wrong as the engine's own email one.
-
-  **Where SMS is genuinely a different threat model, and the engine does not cover it yet.** Since
-  some sites will need this, these are the parts the seam has to answer rather than inherit. The
-  first is a real gap in the current store, not a doc note:
-
-  - **A short numeric code needs an attempt counter, and `magic_token` has no column for one.** The
-    engine's discipline set is safe today *because* the token is long and opaque, so guessing is not
-    a threat and no verification-attempt limit exists. A six-digit code has a 10^6 space and a
-    10-minute TTL, which is brute-forceable without a per-code attempt cap. Either the store grows
-    an attempt counter as part of this seam, or the seam states plainly that a site issuing
-    low-entropy codes must supply one. Silently exporting an email-shaped discipline set to an SMS
-    caller is the failure mode to avoid.
-  - **Phone numbers get recycled; email addresses effectively do not.** A stale number in an editor
-    record is a live account-takeover path with no equivalent on the email side, so a site's SMS
-    channel needs a re-verification story the engine's email flow never needed.
-  - **SMS pumping fraud** turns a send endpoint into a billable attack. The existing per-address
-    60-second cooldown does not bound total spend; a global send cap belongs in any SMS adapter.
-  - **SMS should not silently become an owner's only factor.** SIM swap is cheap and mature, so a
-    channel weaker than email must not end up as the sole route to commit-capable admin access
-    without that being a deliberate, documented site decision.
-
-  **What SMS stretches that email did not, and the design input to capture:** an emailed magic link
-  is a long opaque URL-safe token, while an SMS code is usually short and numeric, with a much
-  shorter TTL. So the seam has to answer whether it generates both shapes or only the opaque one
-  with the site deriving the short form. **Take that answer from ecxc's real implementation rather
-  than guessing it**, per the standing rule that a consumer stand-in must use the consumer's own
-  sources.
-
-  **Sequencing: RESOLVED, the seam lands first.** Task 4 has not started and its repo does not exist,
-  so the consumer can build against the factory rather than hand-write `otp.ts`, `sessions.ts`, and
-  `transport.ts` and retrofit later. This is the cheapest moment the seam will ever have, and it
-  closes once that session runs. The work is additive, so it rides the same unpublished window
-  without disturbing the audit-then-AI-posture order.
-
-  **The consumer's own design is the seam's specification, and it is unusually complete.** Take these
-  parameters from the plan rather than inventing them: codes 6 digits, hashed at rest, 10-minute
-  expiry, **5 attempts then locked**, 60-second resend throttle, sessions 90-day `__Host-` cookies
-  with the token hashed at rest, and an unknown contact getting the same response as a known one so
-  the endpoint is no roster oracle. Around it: Turnstile in front of the request step, production
-  refusing to boot with the dev logging transport selected, and no code or contact PII in Worker
-  logs.
-
-  **That specification independently confirms the gap named above.** Its "5 attempts then locked" is
-  exactly the verification-attempt counter cairn's `magic_token` has no column for, arrived at by a
-  different route. So the attempt counter is not a hypothetical hardening; it is a requirement the
-  first real consumer of the seam already wrote down, and a factory that cannot express it would be
-  unusable on arrival.
+  Consequence carried forward from the factory pass: until this lands, the unpublished window stays
+  unreleasable on the auth-channel work alone (though other unrelated work in the window may still
+  cut independently). The window closes the session xcathletes runs its own Task 4 against the
+  factory; confirm that has not already happened before starting (state lives in the ecxc-ski repo).
 
 - **The ambient-defaults audit: RUN 2026-08-03.** Report:
   [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/2026-08-03-ambient-defaults-audit.md).
@@ -1360,6 +1251,17 @@ the named human gates only):**
   landing so it describes real generated output.
 ## Later
 
+- **A passkey layer on the auth-channel session model, post-1.0 (Geoff, 2026-08-04).** Returning
+  members authenticate with a passkey instead of a fresh code, layered on top of
+  `createAuthChannel`'s existing session model rather than replacing it: passkeys cannot replace
+  the code channel outright, since enrollment and account recovery both still need the
+  roster-contact bootstrap the code flow already provides. The `cairn_channel_code` table's `kind`
+  column (currently always `'code'`, and `AuthChannelConfig.kind` already rejects any value but
+  `'code'` at construction) is the seam this layers through: a `'passkey'` kind on the same tables,
+  the same session issuance, the same revocation. Not before 1.0, and not without its own design
+  sitting and adversarial review rounds first, the same discipline the code-channel design went
+  through (three rounds, v1 through v3.1) before its first implementer dispatch.
+
 - **A packaged component-authoring skill, once the template track supplies the evidence (Geoff,
   2026-08-01; no hurry).** cairn ships one skill, `cairn-admin-screens`, scoped to `/admin`. Nothing
   covers the other authoring task a consuming site repeats: defining a content component with
@@ -1517,6 +1419,17 @@ the named human gates only):**
 
 ## Considering
 
+- **Migrate the engine's own editor default from magic-link to codes.** The auth-channel factory
+  design (`docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`, decision 6) named
+  this out of scope on purpose: `magic_token` and the editor magic-link flow are untouched by
+  `createAuthChannel`, which serves a second audience only. The open question this entry tracks is
+  whether the engine's own zero-config editor auth should someday move from a magic-link URL to an
+  OTP code, either on the same `createAuthChannel` session model or its own. No trigger yet:
+  magic-link's disciplines (hashed-at-rest tokens, a per-address cooldown, one live token per
+  address) already hold in production on two sites, and a code brings its own guessing-bound
+  trade-offs the design spec's residual risks catalogue names for the second-audience case. Take
+  this up only if a concrete reason to prefer codes for editors surfaces, not speculatively; email
+  magic-link stays the documented, zero-config editor default until then.
 - **Inline includes.** Fragments (shipped) resolve block-only: an `::include` stands on its own line
   and splices the fragment's blocks in place, so a fragment cannot supply a phrase mid-sentence. The
   promote trigger is a real production case. Watch ASC's Discord vocabulary, where a recurring inline

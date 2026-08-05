@@ -12,6 +12,9 @@ declare global {
   namespace Cloudflare {
     interface Env {
       AUTH_DB: D1Database;
+      // The auth-channel factory's own second D1 binding (wrangler.test.jsonc), physically
+      // separate from AUTH_DB per the design's decision 1.
+      CHANNEL_DB: D1Database;
       MEDIA_BUCKET: R2Bucket;
       TEST_MIGRATIONS: D1Migration[];
     }

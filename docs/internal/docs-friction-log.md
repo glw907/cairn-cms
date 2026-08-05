@@ -160,3 +160,16 @@ line.
   behavior, where the redirect discarded everything, so it is an incomplete improvement rather than
   a regression. Candidate fix: carry the submitted frontmatter on `SaveFailure` alongside `body` and
   reseed the fields from it, which also makes the failure shape honest about what it holds.
+
+- **`developer`: `createAuthChannel`'s `ttl` config bag bundles more than durations.** Its name reads
+  as a bag of lifetimes, and five of its nine fields are exactly that (`codeTtlMs`, `cooldownMs`,
+  `sessionTtlMs`, plus the two length/count fields `codeLength` and `attemptCap` that aren't
+  durations either). The other four, `requesterCap`, `identityCeiling`, `escalationThreshold`, and
+  `liveRowCap`, are plain per-hour counts and a row cap with no time unit at all. The shape is
+  spec-faithful: the design's own "Defaults and clamps" table groups every numeric knob together on
+  purpose, since they're all clamped construction-time overrides with the same validation shape
+  (`resolveLimit`), and splitting them into a `ttl` bag plus a separate `limits` bag would be two
+  config surfaces to document and remember instead of one. Still odd to write in the reference page
+  as `ttl?: { requesterCap?: number; ... }` with a straight face. No candidate fix proposed; noted
+  for whoever next touches this surface, since the field carries no behavior of its own to change,
+  only a name a future config redesign might reconsider.

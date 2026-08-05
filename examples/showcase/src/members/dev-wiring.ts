@@ -30,6 +30,15 @@ function resolveChannelDb(): Promise<ChannelDb> {
  * `/media`, discarding whatever was there. hooks.server.ts therefore composes
  * `sequence(devBackendHandle(), membersDevHandle)`, putting this handle second: the merge layers
  * onto whatever platform is in hand, so neither handle clobbers the other on any path.
+ *
+ * It also stamps `CAIRN_DEV_BACKEND: '1'` onto `platform.env`, mirroring how a real deployment
+ * would carry it as a Worker var. hooks.server.ts only reaches this handle once its own
+ * `__CAIRN_DEV_BUILD__ && devBackendOptIn()` guard has already read `process.env.CAIRN_DEV_BACKEND`
+ * as `'1'`, so this is a truthful mirror, not a bypass; it exists because the harness's local
+ * preview server (`examples/showcase/vite.config.ts`; no `wrangler dev`) has no mechanism to carry
+ * a dynamic OS env var onto the platform-proxy env it otherwise builds from `wrangler.jsonc`.
+ * `captureDeliver` and the `/test` harness routes both gate on this platform-level flag, never
+ * `process.env`, so without this line neither one would ever see it set.
  */
 export const membersDevHandle: Handle = async ({ event, resolve }) => {
   const db = await resolveChannelDb();
@@ -38,6 +47,7 @@ export const membersDevHandle: Handle = async ({ event, resolve }) => {
     env: {
       ...event.platform?.env,
       MEMBER_DB: db,
+      CAIRN_DEV_BACKEND: '1',
     },
   } as unknown as App.Platform;
   return resolve(event);

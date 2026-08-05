@@ -120,8 +120,8 @@ release-one boundary; the passes are invariant.
   public-output header, among others. P7 and P8 overlap heavily and should be planned together, since
   the quickstart's credential story and the audit's effective-state checks answer the same question
   from opposite ends. The standing template track (cairn.pub voice, starter set, Topo with the
-  docs-effectiveness infra, the scaffolder with its agent brief, and the Cloudflare provisioning
-  script paired with it) runs parallel and feeds the rebuilds.
+  docs-effectiveness infra, the scaffolder with its agent brief, now carrying Cloudflare
+  provisioning in the same tool) runs parallel and feeds the rebuilds.
 - **The pre-RC block, ordered (Geoff, 2026-08-03).** C2b merged, and three items now sit between it
   and the RC cut, all additive and all riding the same unpublished window:
 
@@ -550,9 +550,9 @@ the named human gates only):**
    docs.cairn.pub (Topo, later) is the shared source both audiences get linked into, which is
    what makes the editor-class pages publicly reachable rather than buried in a GitHub tree.
 6. **The scaffolder** (the pre-B3 DX slot, B3/B4, then the Part C generator), baking the
-   reviewed template, **and the Cloudflare provisioning script with its token preflight**
-   (pulled into the pre-beta series by Geoff, 2026-08-04; the Next-tier entry carries the
-   reasoning and the unsettled tool-boundary fork).
+   reviewed template, **and Cloudflare provisioning with its token preflight in the same tool**
+   (Geoff, 2026-08-04: pre-beta, and one create-a-site experience rather than two tools splitting
+   the job; the Next-tier entry carries the reasoning).
 7. **Rebuild ecxc.ski and 907.life from Waymark, via the scaffolder where possible** — one
    effort dogfoods the template's redirection story AND `create-cairn-site`; permalinks exact,
    live admin smokes ride here, build-alongside-then-swap.
@@ -604,8 +604,7 @@ the named human gates only):**
   Sequencing follows the pairing already stated below: it lands with the scaffolder in sequence item
   6, ahead of the Waymark rebuilds that dogfood the create-a-site path in item 7, and ahead of the
   dress rehearsal in item 9, which is where a fresh-eyes first hour would otherwise discover it.
-  **One consequence for the fork below: it now gates the scaffolder's plan rather than sitting
-  beside it**, because a scaffolder that ships first settles the boundary question by default.
+  The fork below is settled, so the scaffolder's plan can absorb this rather than wait on it.
 
   **It completes an arc rather than starting one**, and the sequencing follows from that: the
   ambient-defaults audit defines what a correct deployed site looks like, the scaffolder emits the
@@ -626,19 +625,35 @@ the named human gates only):**
   no indication of which scope was absent, which cost a detour. That is the doctor pattern applied at
   setup.
 
-  **The one real design fork, to settle before any plan is written: is this a separate tool from the
-  scaffolder, or the same one?** "Create a new cairn site" is plausibly a single experience, where
-  the scaffolder emits the code and this creates the remote resources. Two tools that each do half
-  the job, with an unclear boundary over who writes `wrangler.jsonc`, would be worse than one. The
-  subsidiary questions fall out of that answer: whether it prompts or reads a declarative config
-  (a config file is reproducible and reviewable; prompts are friendlier), and whether it ships as a
-  published `create-*` package or a repo script only a cloner can run.
+  **The design fork is SETTLED (Geoff, 2026-08-04): the same tool as the scaffolder, one
+  create-a-site experience.** The scaffolder emits the code and the same run creates the remote
+  resources. Two tools each doing half the job, with an unclear boundary over who writes
+  `wrangler.jsonc`, would have been worse than one. The merge also removes the placeholder step it
+  would otherwise force: a scaffolder that cannot provision has to emit a `wrangler.jsonc` with
+  blank D1 and R2 identifiers for the developer to fill in by hand, while one tool writes the real
+  ids it just created. `create-cairn-site` is the name the pre-beta sequence already uses for it.
 
-  **It does not want a planning sitting yet, and the reason is structural: the ambient-defaults audit
-  is its specification.** The audit enumerates what a deployed cairn site presents and who chose each
-  piece, which is exactly this script's resource checklist. Planning first would produce a list the
-  audit then revises. Beyond the fork above, this is specification rather than design, so once the
-  audit lands it needs a decision and a plan, not a Fable sitting.
+  Two things follow, one settled and one still open:
+
+  - **It ships as a published `create-*` package**, since the ruling's whole point is a single
+    experience for someone who has not cloned this repo. A repo script only a cloner can run cannot
+    be that.
+  - **Prompts versus a declarative config stays open**, since the merge does not decide it.
+    Recommendation, for the plan to accept or reject: prompt on the first run and write the answers
+    to a reviewable config the same tool re-reads, which serves the friendlier first run and the two
+    hard requirements below at once, because re-running against a partly-provisioned account then
+    reads state rather than re-asking.
+
+  **The charter boundary survives the merge unchanged.** `create-cairn-site` is setup tooling a
+  developer runs deliberately, so it may provision. The runtime library still must never reach for
+  provisioning credentials, and folding the two tools together must not fold that line.
+
+  **Both preconditions are now met, so this is plan-ready.** It never wanted a Fable sitting, for a
+  structural reason: the ambient-defaults audit is its specification, since the audit enumerates what
+  a deployed cairn site presents and who chose each piece, which is exactly this tool's resource
+  checklist. Planning ahead of it would have produced a list the audit then revised. The audit ran
+  2026-08-03 and the fork closed 2026-08-04, so what remains is specification rather than design. The
+  plan is written with the scaffolder's, since they are now one tool.
 
   Provisionable: D1 (`AUTH_DB`) plus schema, the R2 media bucket, Worker bindings and routes,
   observability, DNS, rate limits. **Not provisionable, and it must say so with links rather than

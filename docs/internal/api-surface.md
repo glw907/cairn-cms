@@ -476,7 +476,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
 - `AttentionItem`: { href: string; count: number; label?: string }
 - `AuthBranding`: { siteName: string; from: string; replyTo?: string }
-- `AuthGuardOptions`: { roles?: RolesDeclaration; access?: AccessMap }
+- `AuthGuardOptions`: { roles?: RolesDeclaration; access?: AccessMap; includeSubDomains?: boolean }
 - `AuthRoutes`: { loginLoad: (event: CairnEvent<CairnEnv>) => LoginData; requestAction: (event: CairnEvent<CairnEnv>) => Promise<RequestResult>; confirmLoad: (event: CairnEvent<CairnEnv>) => ConfirmData; confirmAction: (event: CairnEvent<CairnEnv>) => Promise<never>; logoutAction: (event: CairnEvent<CairnEnv>) => Promise<never> }
 - `AuthRoutesConfig`: { branding: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }
 - `Backend`: { defaultBranch: string; readFile: (path: string, ref: string) => Promise<string | null>; readEntries: (dir: string, ref: string) => Promise<RepoFile[]>; branchHead: (branch: string) => Promise<string | null>; listBranches: (prefix: string) => Promise<string[]>; commit: (branch: string, changes: FileChange[], author: CommitAuthor, message: string, expectedHead?: string) => Promise<string>; createBranch: (name: string, fromBranch: string) => Promise<void>; deleteBranch: (name: string) => Promise<void> }

@@ -484,6 +484,25 @@ removal, nothing this list needs to carry.
   explicitly to keep the old copy. This is a silent visual change, not a compile error, since the
   parameter type was already nullable.
 
+- The admin `Strict-Transport-Security` header no longer sends `includeSubDomains` by default (the
+  AI-posture pass, HSTS rider). `applySecurityHeaders` (`sveltekit/admin-response.ts`) previously
+  set `max-age=63072000; includeSubDomains` on every `/admin` response unconditionally: one editor
+  visit pinned the site's apex and every sibling subdomain to https in that browser for two years,
+  even on a zone whose owner left edge HSTS off, and only `max-age=0` from the same host could
+  clear it. `max-age` still sends on every admin response, since the admin surface is the one
+  place the engine has standing to insist on https; only `includeSubDomains` becomes conditional,
+  since pinning subdomains the engine knows nothing about is a decision that belongs to whoever
+  owns the domain. `AuthGuardOptions` gains `includeSubDomains?: boolean`, threaded from
+  `createAuthGuard`'s single call to `applySecurityHeaders`; omitted or `false` is the new default
+  and matches the shape of every other `AuthGuardOptions` field, so a zero-config site sees only
+  the header change, no code change. The doctor's zone-level `edge.hsts` check is reconciled to
+  say so: a failing zone setting no longer reads as though nothing is protected, since cairn's own
+  admin responses already carry their own header regardless of that zone setting. See
+  [SvelteKit](docs/reference/sveltekit.md#createauthguard). **Consumers must:** a site that wants
+  the previous domain-wide pinning back sets `createAuthGuard({ includeSubDomains: true })` in its
+  `hooks.server.ts`; a site that takes no action keeps `max-age` on the admin surface but stops
+  pinning its sibling subdomains.
+
 ### Fixed
 
 - The dev-backend build fence taught by `@glw907/cairn-cms-dev` did not eliminate. A site gating the

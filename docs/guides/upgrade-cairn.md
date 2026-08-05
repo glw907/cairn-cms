@@ -451,6 +451,22 @@ string. This is a silent visual change, not a compile error, since `formatCivilD
 parameter was already nullable. Calls to `formatMoney`, `formatTimestamp`, or `formatPhone` with a
 value that's statically `number`/`string` (never nullish) need no change.
 
+The admin `Strict-Transport-Security` header no longer sends `includeSubDomains` by default (the
+AI-posture pass, the HSTS rider). Every `/admin` response previously pinned your site's apex and
+every sibling subdomain to https in the visiting editor's browser for two years, even on a zone
+where you'd left edge HSTS off, and only `max-age=0` from the same host could clear it. `max-age`
+still sends unconditionally; the admin surface is the one place cairn has standing to insist on
+https for itself. Only `includeSubDomains` becomes conditional, since pinning subdomains cairn
+knows nothing about is your call, not the engine's. `AuthGuardOptions` gains
+`includeSubDomains?: boolean`, alongside `roles` and `access`. cairn's doctor also reconciles the
+zone-level `edge.hsts` check's wording: a failing zone setting no longer reads as though nothing
+is protected, since your admin responses already carry their own header regardless of the zone.
+See [`createAuthGuard`](../reference/sveltekit.md#createauthguard).
+
+**Consumers must:** if you want the previous domain-wide pinning back, set
+`createAuthGuard({ includeSubDomains: true })` in your `hooks.server.ts`. If you take no action,
+your admin responses keep `max-age` but stop pinning sibling subdomains.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

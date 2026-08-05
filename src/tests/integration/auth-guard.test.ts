@@ -252,7 +252,7 @@ describe('admin security headers (Unit 2)', () => {
     expect(res.headers.get('X-Frame-Options')).toBe('DENY');
     expect(res.headers.get('Content-Security-Policy')).toBe("frame-ancestors 'none'");
     expect(res.headers.get('Referrer-Policy')).toBe('no-referrer');
-    expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000; includeSubDomains');
+    expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000');
     expect(res.headers.get('Permissions-Policy')).toBe('camera=(), microphone=(), geolocation=()');
   });
 
@@ -264,6 +264,13 @@ describe('admin security headers (Unit 2)', () => {
   it('leaves a non-admin response untouched', async () => {
     const res = await handle({ event: event('/about'), resolve: async () => new Response('ok') });
     expect(res.headers.get('X-Frame-Options')).toBeNull();
+  });
+
+  it('restores includeSubDomains when the site opts in on createAuthGuard', async () => {
+    const guard = createAuthGuard({ includeSubDomains: true });
+    const cookies = await seedSession('own2@x.dev');
+    const res = await guard({ event: event('/admin', cookies), resolve: async () => new Response('ok') });
+    expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000; includeSubDomains');
   });
 });
 

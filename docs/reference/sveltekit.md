@@ -104,6 +104,13 @@ owner included; see [`requireAccess`](#requireaccess) below for the reasoning. T
 the map internally to `locals.cairnAccess`, alongside `locals.cairnEditor`, so `requireAccess`
 needs no extra argument.
 
+`opts.includeSubDomains` controls the `includeSubDomains` directive on the
+`Strict-Transport-Security` header the guard attaches to every admin response. `max-age` is
+always sent; the admin surface is the one place the engine has standing to insist on HTTPS.
+Omitted or `false`, the header carries only `max-age`, so a zero-config site sees no behavior
+change and does not pin any sibling subdomain to HTTPS. Set it to `true` to pin the whole domain,
+a decision that belongs to whoever owns it.
+
 ```ts
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';
@@ -1685,7 +1692,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | Extension API | `interface HandleInput { event: CairnEvent; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input; `event` is [`CairnEvent`](#the-event-shape). |
-| `AuthGuardOptions` | Scaffold API | `interface AuthGuardOptions { roles?: RolesDeclaration; access?: AccessMap }` | Configuration for `createAuthGuard`: the site's declared role vocabulary and access map, each omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). |
+| `AuthGuardOptions` | Scaffold API | `interface AuthGuardOptions { roles?: RolesDeclaration; access?: AccessMap; includeSubDomains?: boolean }` | Configuration for `createAuthGuard`: the site's declared role vocabulary and access map, and whether the admin `Strict-Transport-Security` header pins sibling subdomains; each omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). |
 | <a id="platformcontext"></a>`PlatformContext` | Extension API | `interface PlatformContext<Env> { env?: Env }` | The Cloudflare platform wrapper an event carries. The engine reads only `env`; a site's own `App.Platform` type is free to carry other members (`ctx`, and so on) alongside it, since a real SvelteKit `RequestEvent` has more than this structural subset and still satisfies it. |
 | <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string \| boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker bindings and vars the whole engine reads, all optional: the D1 session store, the canonical confirmation-link origin, the `CAIRN_DEV_BACKEND` tripwire flag the guard reads, the Email Sending binding, and the GitHub App's private-key secret. One shape serves every factory that needs platform bindings, rather than a per-layer split; every member is optional, since a test or a partial handler builds one piece at a time. A site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the members every site needs compile-checked (not a requirement: see that type's own row). |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it structurally with no cast. |

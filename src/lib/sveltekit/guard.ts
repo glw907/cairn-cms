@@ -56,6 +56,16 @@ export interface AuthGuardOptions {
    *  included, since that helper's contract is a route that opted in but found nothing.
    */
   access?: AccessMap;
+  /**
+   * Pin every sibling subdomain to HTTPS along with the admin host itself, on the
+   * Strict-Transport-Security header the guard attaches to every admin response; omitted or
+   * false, the header carries only `max-age` (see {@link applySecurityHeaders}), so a
+   * zero-config site sees no behavior change. `max-age` is always sent regardless: the admin
+   * surface is the one place the engine has standing to insist on HTTPS. Pinning every sibling
+   * subdomain the engine knows nothing about is a decision that belongs to whoever owns the
+   * domain, so this stays off unless the site opts in.
+   */
+  includeSubDomains?: boolean;
 }
 
 /**
@@ -64,6 +74,7 @@ export interface AuthGuardOptions {
 export function createAuthGuard(opts: AuthGuardOptions = {}) {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
   const access = opts.access;
+  const includeSubDomains = opts.includeSubDomains;
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
 
@@ -150,7 +161,7 @@ export function createAuthGuard(opts: AuthGuardOptions = {}) {
       event.locals.cairnAccess = access ?? {};
     }
     const response = await resolve(event);
-    applySecurityHeaders(response.headers);
+    applySecurityHeaders(response.headers, { includeSubDomains });
     return response;
   };
 }

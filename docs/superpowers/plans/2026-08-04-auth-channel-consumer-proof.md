@@ -449,3 +449,26 @@ progress note rather than leaving Geoff to ask.
 - The showcase's default deployable bundle measures ~3.17 MiB gzipped, over the Workers Free 3 MiB
   script limit. The showcase never deploys, so it gates nothing today, but a scaffolded site starts
   from this template. Filed here rather than fixed.
+
+### Addendum: the workflow changes were never validated until they hit CI
+
+The merge to `main` turned `e2e` and `scaffold` red, and the cause was in this pass's own Task 2
+edit. A step name read `- name: Gate self-test: the markers ARE present ...`, and an unquoted
+colon-and-space inside a plain YAML scalar is a mapping indicator, so both files stopped parsing.
+Both workflows went dark on the same push.
+
+Two things made this worse than an ordinary typo. First, an unparseable workflow fails as a run with
+no jobs, no failed step, and no log: `gh run view --log-failed` answers "log not found" and the run
+page explains nothing, so diagnosing it means parsing the YAML locally. Second, **nothing in the
+repository read these files.** Task 2's acceptance line asked for "worktree CI green on the workflow
+changes," which was never satisfiable without pushing the branch, and the local gate list has no
+workflow-syntax check at all. The pass verified the greps by hand-running them and never verified
+that the file declaring them could parse.
+
+Fixed by quoting, and closed structurally: `src/tests/unit/workflow-yaml.test.ts` parses every
+workflow and asserts it declares jobs. **A gate that can be taken fully offline by a syntax error is
+worse than a gate that fails**, and this repo had no check standing between the two. Converting the
+watch into a test is the standard already stated in `CLAUDE.md`; this is one more instance of it.
+
+The irony is exact and worth recording: a pass whose central finding was "a gate with no positive
+control rots silently" shipped a change that silently took two gates offline.

@@ -30,4 +30,12 @@ describe('delivery response helpers', () => {
     expect(body).toContain('Sitemap:');
     expect(body).toContain('Disallow: /admin');
   });
+
+  it('robotsResponse passes posture through with the content type unchanged', async () => {
+    const res = robotsResponse({ sitemapUrl: 'https://x.test/sitemap.xml', posture: 'decline' });
+    expect(res.headers.get('Content-Type')).toBe('text/plain; charset=utf-8');
+    const body = await res.text();
+    expect(body).toContain('Content-Signal: ai-train=no');
+    expect(body).toContain('User-agent: GPTBot');
+  });
 });

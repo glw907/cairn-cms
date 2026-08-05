@@ -106,6 +106,20 @@ export interface ConceptUrlPolicy {
   datePrefix?: DatePrefix;
 }
 
+/**
+ * A site's stated stance toward AI training crawlers, read by `buildRobots`/`robotsResponse`
+ * (`/delivery`). `'decline'` emits `Disallow: /` for every token in the engine's crawler table
+ * plus `Content-Signal: ai-train=no`; `'invite'` emits an affirmative `Content-Signal` and no
+ * `Disallow`. Unset (the default on every site today) emits neither: the engine states no
+ * posture it was not told to state.
+ *
+ * Declining is a request that named crawlers say they honor, not enforcement; robots.txt has no
+ * mechanism to block a fetch. OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User` are
+ * exempt from robots.txt by their own operators' first-party design, so a fully declining site
+ * can still be fetched live when someone asks an assistant about it.
+ */
+export type AiPosture = 'invite' | 'decline';
+
 /** Magic-link sender identity for Cloudflare Email Sending. */
 export interface SenderConfig {
   from: string;
@@ -255,6 +269,12 @@ export interface CairnAdapter {
   };
   /** R2-backed media (seam 4): the bucket binding and image variants. Absent leaves media off. */
   media?: AssetConfig;
+  /**
+   * The site's stated stance toward AI training crawlers. Absent (the default) emits nothing: the
+   *  engine states no posture the site did not declare. See {@link AiPosture} for what each value
+   *  emits and why declining is a request, not enforcement.
+   */
+  aiPosture?: AiPosture;
   /** Admin-experience knobs: the preview frame, the nav menu, and the editor support contact. */
   editor?: {
     /**

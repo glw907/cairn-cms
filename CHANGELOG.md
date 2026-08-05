@@ -158,6 +158,17 @@ removal, nothing this list needs to carry.
   model](docs/explanation/auth-channel-security-model.md). Consumers must: nothing; this is a new
   subpath with no bearing on the engine's own editor magic-link auth, which is unchanged.
 
+- A new optional `CairnAdapter.aiPosture` field (`AiPosture`, `'invite' | 'decline'`), read by
+  `buildRobots`/`robotsResponse` (`@glw907/cairn-cms/delivery`). `'decline'` adds
+  `Content-Signal: ai-train=no` and a `Disallow: /` group per token in a new first-party-verified
+  training-crawler table, `AI_CRAWLERS` (plus its review date, `AI_CRAWLERS_REVIEWED`); `'invite'`
+  adds `Content-Signal: search=yes, ai-train=yes` and no `Disallow`. Declining is a request that
+  named crawlers say they honor, not enforcement: robots.txt has no mechanism to block a fetch,
+  and OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User` are exempt from robots.txt by
+  their own operators' first-party design. See [Delivery data](docs/reference/delivery-data.md).
+  Consumers must: nothing; `aiPosture` is optional and unset on every site today, so this window's
+  robots.txt output is byte-identical to before for all four.
+
 ### Changed
 
 - The env-genericity sweep audited every exported event and config type pinned to `AuthEnv`

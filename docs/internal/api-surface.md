@@ -3,6 +3,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `.`
 
 - `AccessMap`: { [x: string]: string[] }
+- `AiPosture`: "invite" | "decline"
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
 - `AuthBranding`: { siteName: string; from: string; replyTo?: string }
@@ -10,7 +11,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `BackendProvider`: { kind: string; branch: string; connect: (env: CairnEnv) => Backend }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
 - `BooleanField`: { type: "boolean"; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Fieldset<Record<string, FieldDescriptor>>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: AssetConfig; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; navLayout?: NavLayout; publishActions?: PublishActionsConfig } }
+- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Fieldset<Record<string, FieldDescriptor>>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: AssetConfig; aiPosture?: AiPosture; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; navLayout?: NavLayout; publishActions?: PublishActionsConfig } }
 - `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnRef`: { concept: string; id: string }
 - `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; navLayout?: NavLayout; publishActions?: PublishActionsConfig; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
@@ -227,6 +228,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/delivery`
 
+- `AI_CRAWLERS`: readonly AiCrawler[]
+- `AI_CRAWLERS_REVIEWED`: "2026-08-05"
+- `AiCrawler`: { token: string; operator: string; category: "training"; citation: string; note?: string }
+- `AiPosture`: "invite" | "decline"
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
@@ -234,7 +239,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `buildFragmentResolver`: (site: SiteResolver) => FragmentResolve
 - `buildJsonFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildLinkResolver`: (site: SiteResolver) => LinkResolve
-- `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[] }) => string
+- `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => string
 - `buildRssFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
 - `buildSiteManifest`: <A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>) => Manifest
@@ -298,7 +303,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string | undefined
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
-- `robotsResponse`: (opts: { sitemapUrl: string; disallow?: string[] }) => Response
+- `robotsResponse`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => Response
 - `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }
 - `rssResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `SelectField`: { type: "select"; options: readonly string[]; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -329,6 +334,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/delivery/data`
 
+- `AI_CRAWLERS`: readonly AiCrawler[]
+- `AI_CRAWLERS_REVIEWED`: "2026-08-05"
+- `AiCrawler`: { token: string; operator: string; category: "training"; citation: string; note?: string }
+- `AiPosture`: "invite" | "decline"
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
@@ -336,7 +345,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `buildFragmentResolver`: (site: SiteResolver) => FragmentResolve
 - `buildJsonFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildLinkResolver`: (site: SiteResolver) => LinkResolve
-- `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[] }) => string
+- `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => string
 - `buildRssFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
 - `buildSiteManifest`: <A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>) => Manifest
@@ -396,7 +405,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string | undefined
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
-- `robotsResponse`: (opts: { sitemapUrl: string; disallow?: string[] }) => Response
+- `robotsResponse`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => Response
 - `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }
 - `rssResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `SelectField`: { type: "select"; options: readonly string[]; label: string; help?: string; required?: boolean; default?: string | boolean }

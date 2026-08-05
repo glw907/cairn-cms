@@ -120,8 +120,8 @@ release-one boundary; the passes are invariant.
   public-output header, among others. P7 and P8 overlap heavily and should be planned together, since
   the quickstart's credential story and the audit's effective-state checks answer the same question
   from opposite ends. The standing template track (cairn.pub voice, starter set, Topo with the
-  docs-effectiveness infra, the scaffolder with its agent brief) runs parallel and feeds the
-  rebuilds.
+  docs-effectiveness infra, the scaffolder with its agent brief, and the Cloudflare provisioning
+  script paired with it) runs parallel and feeds the rebuilds.
 - **The pre-RC block, ordered (Geoff, 2026-08-03).** C2b merged, and three items now sit between it
   and the RC cut, all additive and all riding the same unpublished window:
 
@@ -550,7 +550,9 @@ the named human gates only):**
    docs.cairn.pub (Topo, later) is the shared source both audiences get linked into, which is
    what makes the editor-class pages publicly reachable rather than buried in a GitHub tree.
 6. **The scaffolder** (the pre-B3 DX slot, B3/B4, then the Part C generator), baking the
-   reviewed template.
+   reviewed template, **and the Cloudflare provisioning script with its token preflight**
+   (pulled into the pre-beta series by Geoff, 2026-08-04; the Next-tier entry carries the
+   reasoning and the unsettled tool-boundary fork).
 7. **Rebuild ecxc.ski and 907.life from Waymark, via the scaffolder where possible** — one
    effort dogfoods the template's redirection story AND `create-cairn-site`; permalinks exact,
    live admin smokes ride here, build-alongside-then-swap.
@@ -587,6 +589,17 @@ the named human gates only):**
 
 - **A Cloudflare provisioning script, and its token preflight (Geoff, 2026-08-03).** One script that
   creates what a cairn site needs on Cloudflare, instead of a developer assembling it by hand.
+
+  **It ships before the beta (Geoff, 2026-08-04).** Every cairn site provisioned so far was set up by
+  an operator holding account-wide Cloudflare access, so the setup path has only ever been measured
+  on its easiest possible run. A developer without that access assembles the same resources by hand
+  through the dashboard, and that is the experience cairn ships. Waiting until after
+  `1.0.0-beta.1` means the first stranger to install cairn is the first person to walk it.
+  Sequencing follows the pairing already stated below: it lands with the scaffolder in sequence item
+  6, ahead of the Waymark rebuilds that dogfood the create-a-site path in item 7, and ahead of the
+  dress rehearsal in item 9, which is where a fresh-eyes first hour would otherwise discover it.
+  **One consequence for the fork below: it now gates the scaffolder's plan rather than sitting
+  beside it**, because a scaffolder that ships first settles the boundary question by default.
 
   **It completes an arc rather than starting one**, and the sequencing follows from that: the
   ambient-defaults audit defines what a correct deployed site looks like, the scaffolder emits the

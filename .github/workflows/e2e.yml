@@ -58,7 +58,7 @@ jobs:
             echo "FAIL: dev-backend artifact in the deployable Worker"; exit 1
           fi
           echo "OK: no dev-backend artifact in the deployable Worker"
-      - name: Gate self-test: the markers ARE present in a flagged build's deployable bundle
+      - name: "Gate self-test: the markers ARE present in a flagged build's deployable bundle"
         # A grep that can never match again is how this gate rotted before: adapter-cloudflare 7
         # stopped bundling and the old grep target (.svelte-kit/cloudflare) held no server code, so
         # the negative check above passed vacuously on every build, flagged or not. This positive

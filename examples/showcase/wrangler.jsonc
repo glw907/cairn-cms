@@ -35,8 +35,8 @@
     },
     {
       // The developer's own database, holding the signups table /admin/signups reads. Its own
-      // migrations_dir for the same reason MEMBER_DB has one: `wrangler d1 migrations apply`
-      // walks one directory per database, so a shared directory applies every schema to both.
+      // migrations_dir, never "migrations": `wrangler d1 migrations apply` walks one directory
+      // per database, so a shared directory applies every schema to both.
       "binding": "APP_DB",
       "database_name": "cairn-showcase-app",
       "database_id": "00000000-0000-0000-0000-000000000001",

@@ -14,7 +14,50 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-05: the AI-posture pass is PLANNED and awaiting four confirmations)
+## Immediate next action (2026-08-05: the AI-posture pass is MERGED; the harvest brainstorm is next, before the RC)
+
+**The AI-posture pass merged to `main`** (`e0d1388d`, branch `ai-posture`, thirteen commits). A site
+states `aiPosture: 'invite' | 'decline'` and the engine emits what that implies; `cairn-doctor` fetches
+the deployed origin's live `/robots.txt` and reports what actually ships; every routable non-`noindex`
+entry has a raw-markdown twin; the admin HSTS stopped pinning sibling subdomains by default; and the
+tutorial raises the posture where a developer is already deciding. Post-mortem in the plan:
+[`docs/superpowers/plans/2026-08-05-ai-posture.md`](superpowers/plans/2026-08-05-ai-posture.md).
+
+**Next, and it changed: the ENGINE-HARVEST BRAINSTORM runs BEFORE the RC cut** (Geoff, 2026-08-05).
+Neither ASC nor ecxc builds its planned functionality until after the beta, so their harvest material
+is entirely in their plans and is available now rather than gated behind the migrations. A seam added
+pre-beta is ordinary engine work; one added after is a compatibility event against four consumers on
+four ranges. Cutting the RC first would hand ASC a release candidate for a surface that then changes.
+Pre-baked input: [`docs/internal/engine-harvest-candidates.md`](internal/engine-harvest-candidates.md),
+which describes and evidences and deliberately decides nothing. **It is a Fable sitting** (charter
+scope and taste), ending at approval with any resulting engine work in a fresh Opus session. Its own
+headline: three assessable candidates against four blocked on clarity, and three of the four blocked
+items name their own future brainstorm, so the honest answer may be to wait rather than pre-harvest.
+
+**Then the order is unchanged:** cut `0.94.0-rc.1`, migrate ASC and cairn.pub against it from their own
+repos, mint `0.94.0` once their gates are green, migrate the remaining two off the recipe the first
+migration writes into `docs/guides/upgrade-cairn.md`, then phase F, then RELEASE ONE, then phase P.
+
+**A watch routine is live** for the two external AI-crawler triggers: `trig_01SLdXarWCJX2LD2FB8b3Dqk`,
+monthly on the 1st, first run 2026-09-01, emailing only when a condition trips. It watches Cloudflare's
+2026-09-15 crawler-default change and the crawler table's staleness. **It carries a correction to the
+plan:** whether that change reaches backward into zones with an existing configuration is genuinely
+ambiguous in Cloudflare's own post, which the ROADMAP had asserted as settled fact.
+
+**Three rulings from this pass that outlive it.** A vendor's specifics get a **link, never a copy**, in
+every docs arm, now in `docs/internal/docs-register.md`'s universal contract. The **friction log is a
+staging area, not a backlog**: triage is complete-or-move and every entry leaves, with the full rules in
+the log's own header and the summary in `CLAUDE.md`. And **a repeat is an altitude signal**: the same
+friction from a second consumer site, or the same workaround in two sites, is engine work rather than a
+faster patch.
+
+**A DX reporting shape for the migrations is still owed** and belongs in the RC-cut session, since its
+first consumer is the ASC migration. The four migrations are the same upgrade walked four times, so
+per-migration reporting turns them into a comparison; without it, what gets learned depends on whoever
+runs each session remembering to write it down.
+
+## Superseded (the auth-channel window, kept until the RC cut)
+
 
 **Both auth-channel passes are merged.** The factory pass merged 2026-08-04 (`06b3470d`). The
 consumer proof merged 2026-08-05 (branch `auth-channel-2`, twelve commits): `createChannelDb` in the

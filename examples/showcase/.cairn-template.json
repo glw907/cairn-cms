@@ -1,7 +1,9 @@
 {
   "exclude": [
     "src/routes/test",
-    "src/routes/(site)/calendar",
+    "src/members",
+    "src/routes/members",
+    "migrations-members",
     "e2e",
     "playwright.config.ts"
   ]

@@ -486,6 +486,21 @@ removal, nothing this list needs to carry.
 
 ### Fixed
 
+- The dev-backend build fence taught by `@glw907/cairn-cms-dev` did not eliminate. A site gating the
+  dev backend on a shared exported constant (`export const devBackendEnabled = dev && ...`, the shape
+  the package's README and the tutorial both taught) ships the whole dev backend in its deployed
+  Worker: SvelteKit's SSR build folds the constant to `false` inside its own chunk and never
+  propagates that value across the module boundary, so every consuming `if` and its dynamic
+  `import()` survive. The code is unreachable behind the literal `false`, and cairn's own 503
+  `dev_backend_in_prod` tripwire still backstops it, so nothing is exploitable; the fake auth store,
+  the R2 and Anthropic doubles, and the seed editor identity ride into the bundle regardless. The
+  README, the tutorial, and the showcase now name a build-time flag at each call site (a Vite
+  `define`) so each branch folds where it is written. **Consumers must:** if you followed the old
+  shape, replace the shared constant with a `define` named directly in every `if` that guards a
+  dev-backend import, and verify with `npx wrangler deploy --dry-run --outdir=<dir>` plus a grep of
+  that output for `devBackendHandle`. Grepping `.svelte-kit/cloudflare` proves nothing under
+  adapter-cloudflare 7: it holds a loader and assets, not the server code wrangler bundles.
+
 - `scripts/check-reference-signatures.mjs`'s `normalizeSignature` stripped every `| undefined`
   unconditionally, so the exported surface's own nullability (`ContentIndex.byId`,
   `SiteResolver.byPermalink`, `CookieJar.get`, the access-map helpers, and more) never showed up
@@ -558,6 +573,17 @@ removal, nothing this list needs to carry.
   fields.
 
 ### Documentation
+
+- [Add a login channel](docs/guides/add-a-login-channel.md) gains a "Prove your channel" section:
+  `createChannelDb` (`@glw907/cairn-cms-dev`, the in-memory `node:sqlite` double for a channel's
+  own D1 binding, with its Node.js 22.13 floor), the capture-transport pattern for a `deliver`
+  that records instead of sends, the fixture-roster-only rule for a capture transport's readback
+  route, the warning against wrapping a dev-only transport in a deployed Worker with observability
+  turned on, and the origin-check boundary a site keeps in mind if it disables SvelteKit's own
+  built-in check elsewhere. The showcase's own member fixture
+  (`examples/showcase/src/members/`, `examples/showcase/src/routes/members/`, and
+  `examples/showcase/e2e/members.spec.ts`) is the section's worked exemplar, with its two
+  deliberate divergences from a real site named. No consumer action.
 
 - The `./sveltekit` reference documents the admin action surface's refusal channels: the
   framework-native `error()`/`redirect()` shared by `requireOwner`/`requireEditor`/`requireAccess`/

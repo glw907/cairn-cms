@@ -14,26 +14,21 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-04: the auth-channel factory pass is COMPLETE on its worktree; merge is Geoff's call, then plan pass 2)
+## Immediate next action (2026-08-04: the auth-channel factory pass is MERGED to main; plan pass 2)
 
-**The factory pass is done and unmerged.** Twelve commits on branch `auth-channel` (worktree
-`.claude/worktrees/auth-channel`, off `main` at `d504f958`, head `7412a1ae`): the full
-`./auth-channel` subpath, 164 tests across seven suites, docs arm complete, post-mortem appended
-to the plan. Final gate: 394 files / 4932 tests exit 0, `check` 0/0, all four CI-only gates green
-by name, docs gates green. The pass-end review ran as an adversarial find-and-verify workflow
-(24 raw findings, 12 confirmed, all folded; two majors: an unclosed `formData()` consumption and
-a guide migration-directory cross-apply). Details in the plan's post-mortem:
+**The factory pass is merged** (Geoff approved 2026-08-04; merge commit `06b3470d`, twelve pass
+commits): the full `./auth-channel` subpath, 164 tests across seven suites, docs arm complete,
+post-mortem appended to the plan. Post-merge `npm test` on `main` exits 0 (4932 tests), which also
+cleared the `docs-links` red that the planning-era provenance commit had left on `main`. The
+pass-end review ran as an adversarial find-and-verify workflow (24 raw findings, 12 confirmed, all
+folded; two majors: an unclosed `formData()` consumption and a guide migration-directory
+cross-apply). Details in the plan's post-mortem:
 [`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`](superpowers/plans/2026-08-03-auth-channel-factory.md).
 
-**Next: Geoff decides the merge, then plan pass 2** (the consumer proof: showcase `/members`
-fixture, `MEMBER_DB` binding and migration-apply, the `.cairn-template.json` scaffolder exclusion
-plus its emitted-template test, dev-gate integration, the e2e). The plan's "Pass 2" section holds
-the scope; ROADMAP's Now tier carries the entry. **A cold session must NOT branch pass 2 off
-`main` until the merge lands**; the factory exists only on `auth-channel`.
-
-**Merge pressure, worth knowing:** `main`'s own CI is currently red on the `docs-links` unit test.
-The provenance doc committed during planning links to the security-model page, which exists only
-on the branch. Merging clears it; nothing else on `main` is affected.
+**Next: plan pass 2** (the consumer proof: showcase `/members` fixture, `MEMBER_DB` binding and
+migration-apply, the `.cairn-template.json` scaffolder exclusion plus its emitted-template test,
+dev-gate integration, the e2e). The plan's "Pass 2" section holds the scope; ROADMAP's Now tier
+carries the entry. Pass 2 branches off `main` normally now that the merge is in.
 
 **The rule that governed the pass, for pass 2's context:**
 
@@ -76,11 +71,12 @@ ambient defaults do **not** want one policy surface. They split into behavior th
 managed robots layer, zone TLS settings, DNS mail authentication). A posture config belongs to the
 first group; the second wants a check.
 
-**Resume prompt** (fresh Opus 5 session, launched from `~/Projects/cairn-cms`):
-"The auth-channel factory pass is complete on branch `auth-channel` (see STATUS). If Geoff has
-approved the merge, merge the worktree to `main`, verify CI, then run `superpowers:brainstorming`
-followed by `superpowers:writing-plans` to plan pass 2 (the consumer proof) from the plan's Pass 2
-section and the post-mortem's execution-locked decisions list."
+**Resume prompt** (fresh session, launched from `~/Projects/cairn-cms`; planning is a Fable
+sitting per the model economy):
+"Plan pass 2 of the auth-channel work (the consumer proof) with `superpowers:brainstorming` then
+`superpowers:writing-plans`, from the Pass 2 section of
+`docs/superpowers/plans/2026-08-03-auth-channel-factory.md` and the post-mortem's
+execution-locked decisions list in the same file."
 
 **Carry this warning into every dispatch.** This pass's orchestrator derived the CI gate list from
 `.github/workflows/test.yml` once and then retyped it from memory across nine dispatches, dropping

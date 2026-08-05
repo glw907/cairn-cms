@@ -127,6 +127,21 @@ gate. Treat it as required for production: without it, browsers don't pin https 
 so a stray http link can still reach the guard rejection above on a later visit. Turn it on under
 the same SSL/TLS, Edge Certificates panel, with a max-age of six months or more.
 
+## Make the stated AI posture effective
+
+This one only applies when the site declares an `aiPosture` on its adapter. A site that declares
+none states nothing, which is a legitimate choice, and the check reports it without failing.
+
+When a site does declare one, the doctor fetches the origin's live `/robots.txt` and compares what
+it carries against what the site says. A mismatch means crawlers read a different stance from the
+one the site states. Two causes account for most of them. The site's `robots.txt` route might not
+pass `aiPosture` to `robotsResponse`, or the build carrying it might not have deployed. Or the
+zone's managed robots.txt might be writing the served file, which Cloudflare does by prepending to
+the origin's rather than replacing it, so the shipped file carries two `User-agent: *` groups and
+matches neither layer's intent. The doctor reports that shape separately and does not fail on it,
+because whether it's wanted is the zone owner's call. AI Crawl Control in the Cloudflare dashboard
+is where to look.
+
 ## Provision the auth store
 
 The `AUTH_DB` D1 database needs to answer, carry the `editor`, `magic_token`, and `session`

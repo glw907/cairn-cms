@@ -103,7 +103,7 @@ describe('condition registry', () => {
     // auth.role-wiring-missing for the double-wiring doctor check, plus
     // skill.admin-screens-stale for the packaged skill's doctor delivery. Grow this count only
     // with a registry change.
-    expect(allConditions()).toHaveLength(20);
+    expect(allConditions()).toHaveLength(21);
   });
 
   it('resolves the skill-freshness condition (the packaged admin-screens skill delivery)', () => {

@@ -133,6 +133,14 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		remediation: 'Turn on HSTS for the zone under SSL/TLS, Edge Certificates, with a max-age of at least six months.',
 		docsAnchor: 'cloudflare-readiness.md#turn-on-hsts',
 	},
+	'ai.posture-not-effective': {
+		id: 'ai.posture-not-effective',
+		severity: 'warning',
+		title: 'The stated AI posture is not the served one',
+		why: 'The adapter declares an aiPosture, but the robots.txt the origin actually serves carries nothing consistent with it, so the stance crawlers read is not the stance the site states.',
+		remediation: "Check that the site's robots.txt route passes aiPosture to robotsResponse and that the build carrying it deployed. If the served file is not the one cairn emits, the zone's managed robots.txt is writing it; look at AI Crawl Control in the Cloudflare dashboard.",
+		docsAnchor: 'cloudflare-readiness.md#make-the-stated-ai-posture-effective',
+	},
 	'auth.store-unreachable': {
 		id: 'auth.store-unreachable',
 		severity: 'blocker',

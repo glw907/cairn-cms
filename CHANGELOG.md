@@ -169,6 +169,18 @@ removal, nothing this list needs to carry.
   Consumers must: nothing; `aiPosture` is optional and unset on every site today, so this window's
   robots.txt output is byte-identical to before for all four.
 
+- A nineteenth `cairn-doctor` check, `ai.posture-effective`: a plain, credential-free
+  `GET /robots.txt` against the deployed origin, reporting what the live file actually carries
+  rather than what the adapter declares. It distinguishes no posture stated, a stated posture the
+  live file contradicts, and a managed layer (Cloudflare's AI Crawl Control or its managed
+  robots.txt) prepending directives cairn did not write, a shape measured live on three of the
+  four estate zones. Only the middle case fails, since a stated stance crawlers never read is a
+  broken deployment. Stating no posture passes, and so does the managed layer, since whether that
+  is wanted belongs to the zone's owner. The report never asserts why a zone is configured as it
+  is. See [`cairn-doctor`](docs/reference/doctor.md#the-checks). Consumers must: nothing today,
+  since the failing case needs a declared `aiPosture` and no site declares one. A site that adopts
+  a posture and sees this check go red has a deployment that does not carry the stance it states.
+
 - A raw-markdown twin for every routable entry (`@glw907/cairn-cms/delivery`): `markdownResponse`
   wraps a body in `text/markdown; charset=utf-8`, a sibling of `robotsResponse`/`sitemapResponse`,
   and `createPublicRoutes` gains `markdownEntries()` and `markdownLoad(event)`, enumerating and

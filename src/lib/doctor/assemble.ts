@@ -4,6 +4,7 @@
 // are its only consumers.
 import type { DoctorCheck, DoctorContext } from './types.js';
 import type { RolesDeclaration } from '../auth/roles.js';
+import type { AiPosture } from '../content/types.js';
 import {
   configBindings,
   configMediaBucket,
@@ -26,6 +27,7 @@ import {
 } from './checks-cloudflare.js';
 import { githubApp } from './checks-github.js';
 import { skillFreshness } from './check-skill.js';
+import { postureEffective } from './check-posture.js';
 
 const USAGE =
   'Usage: cairn-doctor [--from <address>] [--repo <owner/name>] [--send-test <address>] [--probe [url]] [--fix]';
@@ -120,8 +122,8 @@ export function contextFromEnv(
  */
 export interface DerivationSources {
   /**
-   * Returns `{ owner, repo, from, mediaBucketBinding }` off the adapter, or null when nothing is
-   *  derivable.
+   * Returns `{ owner, repo, from, mediaBucketBinding, roles, aiPosture }` off the adapter, or
+   *  null when nothing is derivable.
    */
   adapterFacts: () => Promise<{
     owner?: string;
@@ -129,6 +131,7 @@ export interface DerivationSources {
     from?: string;
     mediaBucketBinding?: string;
     roles?: RolesDeclaration;
+    aiPosture?: AiPosture;
   } | null>;
   /** Returns the wrangler config's account_id, or undefined when none is declared. */
   wranglerAccountId: () => Promise<string | undefined>;
@@ -147,15 +150,16 @@ export async function deriveMissingInputs(
   sources: DerivationSources
 ): Promise<Omit<DoctorContext, 'fetch' | 'readFile'>> {
   const out = { ...ctx };
-  // The adapter read also carries the media bucket binding and the role vocabulary, neither of
-  // which has an env source, so it runs when from, repo, the media binding, or the vocabulary is
-  // still missing. A failure leaves each input absent so its check skips with the usual
-  // remediation rather than the doctor crashing.
+  // The adapter read also carries the media bucket binding, the role vocabulary, and the AI
+  // posture, none of which has an env source, so it runs when from, repo, the media binding, the
+  // vocabulary, or the posture is still missing. A failure leaves each input absent so its check
+  // skips with the usual remediation rather than the doctor crashing.
   if (
     out.from === undefined ||
     out.repo === undefined ||
     out.mediaBucketBinding === undefined ||
-    out.roles === undefined
+    out.roles === undefined ||
+    out.aiPosture === undefined
   ) {
     const facts = await sources.adapterFacts().catch(() => null);
     if (out.from === undefined && typeof facts?.from === 'string') {
@@ -173,6 +177,9 @@ export async function deriveMissingInputs(
     }
     if (out.roles === undefined && facts?.roles !== undefined) {
       out.roles = facts.roles;
+    }
+    if (out.aiPosture === undefined && facts?.aiPosture !== undefined) {
+      out.aiPosture = facts.aiPosture;
     }
   }
   if (out.cfAccountId === undefined) {
@@ -207,5 +214,6 @@ export function defaultChecks(): DoctorCheck[] {
     roleWiring,
     emailNormalization,
     githubApp,
+    postureEffective,
   ];
 }

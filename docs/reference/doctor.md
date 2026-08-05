@@ -66,7 +66,7 @@ environment. They are never derived from the repo and never printed.
 
 ## The checks
 
-Eighteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
+Nineteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
 `--probe` the live admin probe. The condition id is the identity the report, the runtime errors,
 and the readiness checklist share. Some checks share one condition id (`config.media-bucket` and
 `config.tidy-key` both reuse `config.bindings-missing`), so the readiness count holds while the
@@ -92,6 +92,7 @@ checklist gains a distinct line.
 | `auth.role-wiring` | `auth.role-wiring-missing` | When the adapter declares custom roles with `defineRoles`, `src/hooks.server.ts` passes the same vocabulary to `createAuthGuard({ roles })` (a heuristic text read), so a role outside owner/editor resolves to its declared capability instead of falling back to `none`. | The site declares no custom roles, `src/hooks.server.ts` is not found, or the heuristic cannot read the `createAuthGuard` call (none found, or its argument is not a readable object literal). |
 | `auth.email-normalization` | `auth.email-not-normalized` | Every `editor.email` is trimmed and lowercase, the invariant every write and lookup path holds; a manual `wrangler d1 execute` insert is the one way to violate it. | Same as `auth.store`. |
 | `github.app` | `github.app-unreachable` | The App key parses and signs, an installation token mints, and the repository answers a read. | The GitHub credential trio or the repo is missing. |
+| `ai.posture-effective` | `ai.posture-not-effective` | A plain `GET /robots.txt` against the deployed origin, reporting what the live file actually carries. It fails on one case only: a site that declares an `aiPosture` the served file doesn't carry, which is a stated stance crawlers never read. A site that declares none passes, since absence is honest, and so does a managed layer (Cloudflare's AI Crawl Control or its managed robots.txt) prepending directives cairn didn't write, since whether that's wanted belongs to the zone's owner. The report never asserts why a zone is configured as it is, which is unreadable from a robots.txt body alone. | No wrangler config file exists and `PUBLIC_ORIGIN` is not in the environment, or the origin doesn't answer. |
 | `email.live-send` | `email.send-failed` | One real message sends through the Email Sending REST API. Runs only with `--send-test`. | No API token, account id, or from-address. |
 | `admin.login-probe` | `admin.login-probe-failed` | The deployed `/admin/login` answers with a working sign-in envelope, and the request action accepts a POST. Runs only with `--probe`. | Bare `--probe` finds no URL in the wrangler vars or `PUBLIC_ORIGIN`. |
 

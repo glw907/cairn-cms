@@ -49,7 +49,7 @@ describe('deriveMissingInputs', () => {
     expect(out).toMatchObject(expected);
   });
 
-  it('never reads the adapter when from, repo, the media binding, and roles are all provided', async () => {
+  it('never reads the adapter when from, repo, the media binding, roles, and the AI posture are all provided', async () => {
     const adapterFacts = vi.fn(async () => ADAPTER);
     await deriveMissingInputs(
       {
@@ -58,6 +58,7 @@ describe('deriveMissingInputs', () => {
         repo: 'o/r',
         mediaBucketBinding: 'MEDIA_BUCKET',
         roles: { owner: 'owner' },
+        aiPosture: 'decline',
       },
       sources({ adapterFacts })
     );
@@ -100,6 +101,31 @@ describe('deriveMissingInputs', () => {
       sources({ adapterFacts })
     );
     expect(out.roles).toBe(provided);
+  });
+
+  it('reads the AI posture off the adapter even when every other input is provided', async () => {
+    // The AI posture has no env source either, so it always needs the adapter read.
+    const adapterFacts = vi.fn(async () => ({ ...ADAPTER, aiPosture: 'decline' as const }));
+    const out = await deriveMissingInputs(
+      { cwd: '/site', from: 'a@b.c', repo: 'o/r', mediaBucketBinding: 'MEDIA_BUCKET', roles: ADAPTER.roles },
+      sources({ adapterFacts })
+    );
+    expect(adapterFacts).toHaveBeenCalledTimes(1);
+    expect(out.aiPosture).toBe('decline');
+  });
+
+  it('a provided AI posture beats the adapter', async () => {
+    const adapterFacts = vi.fn(async () => ({ ...ADAPTER, aiPosture: 'decline' as const }));
+    const out = await deriveMissingInputs(
+      { cwd: '/site', aiPosture: 'invite' },
+      sources({ adapterFacts })
+    );
+    expect(out.aiPosture).toBe('invite');
+  });
+
+  it('leaves the AI posture absent when the adapter states none', async () => {
+    const out = await deriveMissingInputs({ cwd: '/site' }, sources());
+    expect(out.aiPosture).toBeUndefined();
   });
 
   it('never reads the wrangler config when the account id is provided', async () => {
@@ -255,6 +281,38 @@ export const siteConfig = {};
       from: 'cms@acme.test',
       roles: { owner: 'owner', instructor: { capability: 'editor', home: '/admin/schedule' } },
     });
+  }, 30000);
+
+  it('reads the AI posture off the adapter', async () => {
+    const dir = tempProject({
+      'vite.config.ts': PLUGIN_CONFIG,
+      'src/lib/cairn.config.ts': `export const cairn = {
+  backend: { kind: 'github-app', owner: 'acme', repo: 'site', branch: 'main' },
+  email: { from: 'cms@acme.test' },
+  aiPosture: 'decline',
+};
+export const siteConfig = {};
+`,
+    });
+    expect(await readAdapterFacts(dir)).toEqual({
+      owner: 'acme',
+      repo: 'site',
+      from: 'cms@acme.test',
+      aiPosture: 'decline',
+    });
+  }, 30000);
+
+  it('omits an AI posture that is not one of the two declared values', async () => {
+    const dir = tempProject({
+      'vite.config.ts': PLUGIN_CONFIG,
+      'src/lib/cairn.config.ts': `export const cairn = {
+  backend: { kind: 'github-app', owner: 'acme', repo: 'site', branch: 'main' },
+  aiPosture: 'block-everything',
+};
+export const siteConfig = {};
+`,
+    });
+    expect(await readAdapterFacts(dir)).toEqual({ owner: 'acme', repo: 'site' });
   }, 30000);
 
   it('omits adapter fields that are missing or not strings', async () => {

@@ -2,6 +2,7 @@
 // another's result. The conditionId ties the check to the registry entry whose why/remediation
 // the report prints, keeping the doctor, the runtime errors, and the checklist on one identity.
 import type { RolesDeclaration } from '../auth/roles.js';
+import type { AiPosture } from '../content/types.js';
 
 type CheckStatus = 'pass' | 'fail' | 'skip';
 
@@ -76,6 +77,12 @@ export interface DoctorContext {
    *  vocabulary-aware checks fall back to the implicit owner/editor pair.
    */
   roles?: RolesDeclaration;
+  /**
+   * The site's stated AI-crawler posture, derived off the adapter's `aiPosture` field the same
+   *  way `roles` is derived. Undefined when the site states no posture; the live posture check
+   *  reports that absence rather than skipping.
+   */
+  aiPosture?: AiPosture;
   /** Injected fetch for tests; defaults to global fetch. */
   fetch: typeof fetch;
   /** Read a file under cwd, or null when absent. Injected for tests. */

@@ -293,6 +293,67 @@ a silent sitemap gap. `unlistedRoutes` catches it: hand it the route ids under t
 the same `EXTRA_ROUTES` list, and assert the result is empty in the site's own test suite.
 The [delivery data reference](../reference/delivery-data.md#unlistedroutes) has the full example.
 
+## Serve a raw-markdown twin of every entry
+
+`createPublicRoutes` also builds a raw-markdown twin of every routable, non-`noindex` entry: a
+`.md`-suffixed path that returns the entry's stored markdown body, unrendered, instead of the
+rendered page. Wiring it is one small prerendered route, the same shape as the robots and sitemap
+routes above, plus a param matcher so it doesn't collide with the catch-all page route.
+
+A param matcher at `src/params/md.ts` claims a rest-parameter segment ending `.md`:
+
+```ts
+import type { ParamMatcher } from '@sveltejs/kit';
+
+export const match: ParamMatcher = (param) => param.endsWith('.md');
+```
+
+The route itself sits beside the existing `[...path]` catch-all, at `[...path=md]`, naming the
+matcher above so it claims only the suffixed path and leaves every other content request to the
+plain catch-all:
+
+```ts
+import type { RequestHandler, EntryGenerator } from './$types';
+import { createPublicRoutes, markdownResponse } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { cairn, siteConfig } from '$lib/cairn.config';
+
+// Prerendered, same as every other public route. This is load-bearing rather than incidental: the
+// build runs against committed main content, so there is no request path by which a pending
+// cairn/* edit branch can reach this route. Switching it to runtime SSR reopens that hazard.
+export const prerender = true;
+
+const routes = createPublicRoutes({
+  site,
+  render: cairn.rendering.render,
+  origin: ORIGIN,
+  siteName: siteConfig.siteName,
+  description: SITE_DESCRIPTION,
+});
+
+export const entries: EntryGenerator = () => routes.markdownEntries();
+
+export const GET: RequestHandler = async ({ url }) => {
+  const { body } = await routes.markdownLoad({ url });
+  return markdownResponse({ body });
+};
+```
+
+`params.path` on the matched route carries the `.md` suffix; `markdownLoad` strips it itself, so
+pass the request `url` through unchanged, the same way `entryLoad` reads it above.
+
+`CairnHead`'s optional `markdownUrl` prop points a page at its own twin with a
+`rel="alternate" type="text/markdown"` link, once the route above exists:
+
+```svelte
+<CairnHead seo={data.seo} markdownUrl={ORIGIN + data.entry.permalink + '.md'} />
+```
+
+`examples/showcase/src/params/md.ts` and
+`examples/showcase/src/routes/(site)/[...path=md]/+server.ts` are the working reference this
+section is built from. [Choose an AI posture](./choose-an-ai-posture.md#serve-raw-markdown-alongside-your-pages)
+covers why a site would wire this and what the served content type actually measures as.
+
 ## Related reference
 
 [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes),

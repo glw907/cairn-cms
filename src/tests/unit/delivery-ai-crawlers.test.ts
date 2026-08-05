@@ -6,6 +6,13 @@ import { AI_CRAWLERS, AI_CRAWLERS_REVIEWED, type AiCrawler } from '../../lib/del
 const EXCLUDED_SEARCH_TOKENS = ['Googlebot', 'OAI-SearchBot', 'Claude-SearchBot'];
 
 describe('AI_CRAWLERS', () => {
+  // Every assertion below iterates the table, so an emptied table would pass all of them
+  // vacuously while a declining site silently emitted no Disallow group at all. Pin the count
+  // first, so the structural gate cannot report green on exactly the failure it exists to catch.
+  it('carries the seven verified records', () => {
+    expect(AI_CRAWLERS).toHaveLength(7);
+  });
+
   it('carries a citation that parses as an https: URL for every record', () => {
     for (const crawler of AI_CRAWLERS) {
       expect(crawler.citation.length).toBeGreaterThan(0);

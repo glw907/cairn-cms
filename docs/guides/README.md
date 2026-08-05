@@ -28,6 +28,8 @@ later, or the upkeep of a running site.
   account, and credentials before a real editor signs in
 - **[Wire the delivery surface](./wire-the-delivery-surface.md)**: build the catch-all route,
   feed, and sitemap that turn declared content into a site
+- **[Choose an AI posture](./choose-an-ai-posture.md)**: decide whether your site declines or
+  invites AI training crawlers, and what each direction actually buys you
 - **[Add an island](./add-an-island.md)**: hydrate one interactive Svelte component inside
   otherwise-static rendered content
 - **[Add a custom admin screen](./add-a-custom-admin-screen.md)**: add your own SvelteKit route

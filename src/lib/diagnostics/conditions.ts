@@ -129,7 +129,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		id: 'edge.hsts-off',
 		severity: 'warning',
 		title: 'HSTS is off',
-		why: 'The zone sends no Strict-Transport-Security header with a meaningful max-age, so browsers do not pin https and a later http visit can still hit the admin guard rejection.',
+		why: 'The zone sends no Strict-Transport-Security header with a meaningful max-age, so nothing pins https for the site at large and a later http visit reaches the origin over plain transport. The admin host is covered either way, since cairn\'s own admin responses carry their own max-age, so this is about every other route.',
 		remediation: 'Turn on HSTS for the zone under SSL/TLS, Edge Certificates, with a max-age of at least six months.',
 		docsAnchor: 'cloudflare-readiness.md#turn-on-hsts',
 	},

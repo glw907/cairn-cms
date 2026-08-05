@@ -105,8 +105,11 @@ the map internally to `locals.cairnAccess`, alongside `locals.cairnEditor`, so `
 needs no extra argument.
 
 `opts.includeSubDomains` controls the `includeSubDomains` directive on the
-`Strict-Transport-Security` header the guard attaches to every admin response. `max-age` is
-always sent; the admin surface is the one place the engine has standing to insist on HTTPS.
+`Strict-Transport-Security` header the guard attaches to each admin response it returns. `max-age`
+is always sent there; the admin surface is the one place the engine has standing to insist on
+HTTPS. The guard's rejection pages and its login redirect send no `Strict-Transport-Security` at
+all, since neither receives this option and a weaker header would replace a pinned policy rather
+than restate it.
 Omitted or `false`, the header carries only `max-age`, so a zero-config site sees no behavior
 change and does not pin any sibling subdomain to HTTPS. Set it to `true` to pin the whole domain,
 a decision that belongs to whoever owns it.

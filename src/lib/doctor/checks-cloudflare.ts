@@ -160,16 +160,17 @@ export const edgeHsts: DoctorCheck = {
       const sts = setting.value?.strict_transport_security;
       if (sts?.enabled !== true) {
         return fail(
-          "the zone's HSTS setting is off, so every route except /admin sends no HSTS at all. " +
-            "cairn's admin responses carry their own Strict-Transport-Security max-age " +
-            'regardless of this setting'
+          "the zone's HSTS setting is off, so nothing at the zone level adds " +
+            "Strict-Transport-Security to a non-/admin route. cairn's admin responses carry their " +
+            'own max-age regardless of this setting. This reads the zone setting only, so if the ' +
+            'site adds the header another way, check a live response before acting on this'
         );
       }
       const maxAge = sts.max_age ?? 0;
       if (maxAge < MIN_HSTS_MAX_AGE) {
         return fail(
           `the zone's HSTS max-age ${maxAge} is under the ${MIN_HSTS_MAX_AGE} (30 day) floor, ` +
-            'which leaves every route except /admin under-protected. ' +
+            'so the zone under-protects any route it is the only source of HSTS for. ' +
             "cairn's admin responses set their own Strict-Transport-Security max-age " +
             'regardless of this setting'
         );

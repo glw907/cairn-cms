@@ -523,8 +523,9 @@ removal, nothing this list needs to carry.
   AI-posture pass, HSTS rider). `applySecurityHeaders` (`sveltekit/admin-response.ts`) previously
   set `max-age=63072000; includeSubDomains` on every `/admin` response unconditionally: one editor
   visit pinned the site's apex and every sibling subdomain to https in that browser for two years,
-  even on a zone whose owner left edge HSTS off, and only `max-age=0` from the same host could
-  clear it. `max-age` still sends on every admin response, since the admin surface is the one
+  including on a zone whose owner had left edge HSTS off, with no way for the operator to un-pin an
+  already-pinned editor except by serving a corrective header from the same host.
+  `max-age` still sends on every admin response the guard returns, since the admin surface is the one
   place the engine has standing to insist on https; only `includeSubDomains` becomes conditional,
   since pinning subdomains the engine knows nothing about is a decision that belongs to whoever
   owns the domain. `AuthGuardOptions` gains `includeSubDomains?: boolean`, threaded from
@@ -533,10 +534,21 @@ removal, nothing this list needs to carry.
   the header change, no code change. The doctor's zone-level `edge.hsts` check is reconciled to
   say so: a failing zone setting no longer reads as though nothing is protected, since cairn's own
   admin responses already carry their own header regardless of that zone setting. See
-  [SvelteKit](docs/reference/sveltekit.md#createauthguard). **Consumers must:** a site that wants
+  [SvelteKit](docs/reference/sveltekit.md#createauthguard).
+
+  The guard's rejection pages and its login redirect now send no `Strict-Transport-Security` at
+  all. RFC 6797 section 8.1 has a browser replace its cached policy on every header it receives, so
+  a rejection page sending `max-age` alone is not a weaker default but a policy write that clears
+  the `includeSubDomains` an opted-in site's guarded responses asserted. The CSRF rejection is
+  reachable by any cross-site POST carrying no session, so leaving it would have handed any page on
+  the web a repeatable way to unpin an opted-in site's sibling subdomains. Omitting the header
+  writes nothing, and the guarded path still pins the admin host.
+  **Consumers must:** a site that wants
   the previous domain-wide pinning back sets `createAuthGuard({ includeSubDomains: true })` in its
   `hooks.server.ts`; a site that takes no action keeps `max-age` on the admin surface but stops
-  pinning its sibling subdomains.
+  pinning its sibling subdomains. Check the zone before deciding: where edge HSTS already sends
+  `includeSubDomains` for the admin's host, which is the measured state on more than one site
+  running this engine, set the option so the engine states the same policy rather than a weaker one.
 
 ### Fixed
 

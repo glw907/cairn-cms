@@ -9,9 +9,12 @@
 // search crawlers, deliberately excluded, since disallowing a search crawler costs a site its
 // search presence for no training benefit.
 //
-// Listing a token here is a request, not an enforcement mechanism: each operator's own page says it
-// honors robots.txt, and a declining site is asking, not blocking. See `AiPosture` on
-// `CairnAdapter` for the honesty constraint this table exists to satisfy.
+// Listing a token here is a request, not an enforcement mechanism. Each operator's own page
+// documents robots.txt as the control for its token, and four of the seven (Amazon, Anthropic,
+// Google, Common Crawl) state outright that they honor it; the other three document the control
+// without making that promise in those words. A declining site is asking, not blocking. See
+// `AiPosture` on `CairnAdapter` for the honesty constraint this table exists to satisfy, and the
+// verification doc above for what each operator actually says.
 
 /**
  * One training crawler's robots.txt token, its operator, and the first-party page documenting it.

@@ -114,9 +114,10 @@ export interface ConceptUrlPolicy {
  * posture it was not told to state.
  *
  * Declining is a request that named crawlers say they honor, not enforcement; robots.txt has no
- * mechanism to block a fetch. OpenAI's `ChatGPT-User` and Perplexity's `Perplexity-User` are
- * exempt from robots.txt by their own operators' first-party design, so a fully declining site
- * can still be fetched live when someone asks an assistant about it.
+ * mechanism to block a fetch. OpenAI documents that robots.txt rules "may not apply" to its
+ * `ChatGPT-User`, and Perplexity that `Perplexity-User` "generally ignores" them, since a user
+ * initiated the fetch, so a fully declining site can still be fetched live when someone asks an
+ * assistant about it.
  */
 export type AiPosture = 'invite' | 'decline';
 

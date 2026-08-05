@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { postureEffective } from '../../lib/doctor/check-posture.js';
 import { defaultChecks } from '../../lib/doctor/assemble.js';
 import { buildRobots } from '../../lib/delivery/robots.js';
+import { AI_CRAWLERS } from '../../lib/delivery/ai-crawlers.js';
 import { condition } from '../../lib/diagnostics/index.js';
 import type { DoctorContext } from '../../lib/doctor/types.js';
 
@@ -137,7 +138,9 @@ describe('ai.posture-effective', () => {
       expect(result.detail).toContain('2 "User-agent: *" groups');
       expect(result.detail).toContain('Content-Signal directive cairn did not write');
       expect(result.detail).toContain('Cloudflare dashboard');
-      expect(result.detail).not.toContain('no AI posture is stated');
+      // The unset posture and the managed layer are both named. Reporting only the layer would
+      // leave the operator unable to tell which of the two facts the check actually observed.
+      expect(result.detail).toContain('no AI posture is stated');
     });
 
     it('does not claim to know why the zone is configured that way', async () => {
@@ -246,5 +249,113 @@ describe('ai.posture-effective', () => {
       })
     );
     expect(calls).toEqual(['https://from-wrangler.example/robots.txt']);
+  });
+});
+
+// The cases Review B proved reachable: each one is a served file a real operator could produce on
+// which the check previously misreported. They are grouped apart from the three headline cases
+// because each exists to pin a specific misreport, not to describe the check's normal shape.
+describe('ai.posture-effective, served files the check used to misread', () => {
+  it('fails, naming both facts, when a declared invite meets a managed layer that declines', async () => {
+    // The incident this check exists for. Reporting only the managed layer would never tell the
+    // operator their stated stance is not the served one, which is the whole gap being surfaced.
+    const result = await postureEffective.run(
+      ctx({ fetch: robotsResponse(NINE_OH_SEVEN_MANAGED), aiPosture: 'invite' })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain("aiPosture is 'invite'");
+    expect(result.detail).toContain("consistent with 'decline' instead");
+    expect(result.detail).toContain('Cloudflare dashboard');
+  });
+
+  it('reads consecutive User-agent lines as one group, per RFC 9309', async () => {
+    // A hand-written declining file. Crediting only the last agent would report this genuinely
+    // declining site as contradicting its own declared posture.
+    const grouped = [
+      'User-agent: *',
+      'Allow: /',
+      'Disallow: /admin',
+      '',
+      ...AI_CRAWLERS.map((c) => `User-agent: ${c.token}`),
+      'Disallow: /',
+      '',
+      'Sitemap: https://site.example/sitemap.xml',
+      '',
+    ].join('\n');
+    const result = await postureEffective.run(
+      ctx({ fetch: robotsResponse(grouped), aiPosture: 'decline' })
+    );
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('consistent with it');
+  });
+
+  it('matches a crawler token case-insensitively, per RFC 9309', async () => {
+    const lowercased = [
+      'User-agent: *',
+      'Allow: /',
+      '',
+      'User-agent: gptbot',
+      'Disallow: /',
+      '',
+      'Sitemap: https://site.example/sitemap.xml',
+      '',
+    ].join('\n');
+    const result = await postureEffective.run(
+      ctx({ fetch: robotsResponse(lowercased), aiPosture: 'decline' })
+    );
+    expect(result.status).toBe('pass');
+  });
+
+  it('does not blame Cloudflare for a single-group file carrying its own Content-Signal', async () => {
+    // One group is not the prepend shape, so sending this operator to the dashboard would send
+    // them after a setting that does not exist. cairn emits ai-train=no alone, so any site also
+    // expressing a search preference lands here.
+    const ownSignal = [
+      'User-agent: *',
+      'Content-Signal: search=yes, ai-train=no',
+      'Allow: /',
+      'Disallow: /admin',
+      '',
+      'Sitemap: https://site.example/sitemap.xml',
+      '',
+    ].join('\n');
+    const result = await postureEffective.run(ctx({ fetch: robotsResponse(ownSignal) }));
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('cairn did not write');
+    expect(result.detail).not.toContain('Cloudflare');
+    expect(result.detail).toContain('not the prepend shape');
+  });
+
+  it('still reads a file as declining when it covers only some of the table', async () => {
+    // A site's deployed file does not change when a release adds a token to the table, so
+    // requiring full coverage would fail it retroactively on the developer's next upgrade.
+    const partial = [
+      'User-agent: *',
+      'Allow: /',
+      '',
+      `User-agent: ${AI_CRAWLERS[0].token}`,
+      'Disallow: /',
+      '',
+      'Sitemap: https://site.example/sitemap.xml',
+      '',
+    ].join('\n');
+    const result = await postureEffective.run(
+      ctx({ fetch: robotsResponse(partial), aiPosture: 'decline' })
+    );
+    expect(result.status).toBe('pass');
+  });
+
+  it("recognizes the builder's own invite output, so cairn never reads its own file as foreign", async () => {
+    // CANONICAL_INVITE derives from the builder rather than a transcription, and this is the
+    // round trip that holds the two together.
+    const body = buildRobots({
+      sitemapUrl: 'https://site.example/sitemap.xml',
+      disallow: ['/admin'],
+      posture: 'invite',
+    });
+    const result = await postureEffective.run(ctx({ fetch: robotsResponse(body), aiPosture: 'invite' }));
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('consistent with it');
+    expect(result.detail).not.toContain('cairn did not write');
   });
 });

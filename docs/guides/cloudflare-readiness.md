@@ -124,8 +124,15 @@ on under SSL/TLS, Edge Certificates.
 HSTS needs to be enabled with a max-age of at least 30 days. cairn tags this condition `warning`
 severity in the report, but like every failed check it still exits 1, so it fails a CI doctor
 gate. Treat it as required for production: without it, browsers don't pin https for the domain,
-so a stray http link can still reach the guard rejection above on a later visit. Turn it on under
-the same SSL/TLS, Edge Certificates panel, with a max-age of six months or more.
+so a stray http link reaches the origin over plain transport on a later visit. The admin host is
+covered either way, since cairn's admin responses carry their own `max-age`, so what the zone
+setting buys you is every other route. Turn it on under the same SSL/TLS, Edge Certificates panel,
+with a max-age of six months or more.
+
+The doctor reads the zone setting and nothing else, so a site that adds the header another way (a
+Transform Rule, a `_headers` file, its own hook) still reports a failure here. If your zone sends
+`includeSubDomains` for the admin's host, set `createAuthGuard({ includeSubDomains: true })` so
+cairn's admin responses state the same policy instead of a weaker one.
 
 ## Make the stated AI posture effective
 

@@ -173,3 +173,43 @@ line.
   as `ttl?: { requesterCap?: number; ... }` with a straight face. No candidate fix proposed; noted
   for whoever next touches this surface, since the field carries no behavior of its own to change,
   only a name a future config redesign might reconsider.
+
+- **`developer`: the markdown twin's route shape had no documented answer and had to be settled by
+  experiment against SvelteKit 2.** A `.md`-suffixed rest route (`(site)/[...path=md]`) needs a
+  param matcher (`src/params/md.ts`) that claims only a segment ending `.md`, coexisting with the
+  existing `(site)/[...path]` catch-all with no collision between the two. Nothing in SvelteKit's
+  own docs states that a suffix condition on a rest parameter is expressible this way, or that route
+  resolution prefers the more specific matcher over the plain catch-all once it is. The AI-posture
+  pass's design spec named this a deliberate unknown and required the plan to determine it by
+  experiment rather than guess from memory (`docs/superpowers/plans/2026-08-05-ai-posture.md`, Task
+  3), which is exactly this friction, now settled for cairn's own code but still undocumented
+  upstream. `examples/showcase/src/params/md.ts` and
+  `examples/showcase/src/routes/(site)/[...path=md]/+server.ts` are the working shape; [Wire the
+  delivery surface](../guides/wire-the-delivery-surface.md#serve-a-raw-markdown-twin-of-every-entry)
+  now documents it so a consumer doesn't have to re-derive it.
+
+- **`developer`: Cloudflare's static-asset layer re-derives a served file's content type from its
+  extension, so the engine's own `charset` header survives for some extensions and not others, and
+  a local `vite preview` measurement disagrees with what a deployed site actually serves.** cairn's
+  `markdownResponse` sets `Content-Type: text/markdown; charset=utf-8`, and that charset reaches the
+  wire under `wrangler dev` because Cloudflare's own extension table carries a charset for `.md`;
+  the equivalent deliberate header on the `.xml` sitemap and feed responses does not survive,
+  because Cloudflare's table carries no charset for `.xml`. A developer who measures locally with
+  `vite preview` instead sees a third answer again, `text/markdown` with no charset at all, since
+  `vite preview` and Cloudflare's static-asset layer derive the header differently for the same
+  built file. [Choose an AI posture](../guides/choose-an-ai-posture.md#serve-raw-markdown-alongside-your-pages)
+  now states the measured value and which tool to trust, but the underlying inconsistency, an
+  origin header surviving or not by extension, invisible until measured against the real edge, is a
+  rough edge in the platform this engine sits on rather than something cairn's own response builders
+  can smooth over.
+
+- **`developer`: a site that wants to decline a crawler token cairn has verified no first-party
+  documentation for, ByteDance's `Bytespider` being the live example, has no first-class cairn seam
+  for it.** `robotsResponse`'s `disallow` option adds a path under the blanket `User-agent: *`
+  group, disallowing it for every crawler rather than naming one token, so it is not really the
+  right tool for declining a single bot. [Choose an AI posture](../guides/choose-an-ai-posture.md)
+  names the two available workarounds, that option or Cloudflare's edge controls, and says plainly
+  that neither is a clean fit: the first disallows the wrong scope and the second is out of the
+  engine's reach by design. No candidate fix proposed here; cairn's citation discipline (a token
+  with no first-party backing doesn't ship) is the point, and a seam that made an uncited disallow
+  group easy to write would cut against that discipline rather than serve it.

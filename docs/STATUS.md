@@ -120,8 +120,9 @@ their gates are green, migrate the remaining two off the recipe the first migrat
 `docs/guides/upgrade-cairn.md`, then phase P with the four-CI-gates consolidation pulled forward,
 then phase F with F1 and F4 batched into one Fable sitting. Scaffolder and Topo stay last, and the
 Cloudflare provisioning script now rides with the scaffolder inside the pre-beta series rather than
-after it (Geoff, 2026-08-04: every site provisioned so far was set up with account-wide access, so
-the dashboard path a developer actually faces has never been measured). The RC exists because
+after it (Geoff, 2026-08-04: every site provisioned so far was set up by an agent holding
+account-wide access, so the `wrangler`-plus-dashboard path a developer actually walks has never been
+measured). The RC exists because
 `examples/showcase` is a stand-in cairn wrote for itself.
 
 **One ordering conflict to settle.** This paragraph puts phase P before phase F; ROADMAP's pre-beta

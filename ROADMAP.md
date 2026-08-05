@@ -592,9 +592,15 @@ the named human gates only):**
 
   **It ships before the beta (Geoff, 2026-08-04).** Every cairn site provisioned so far was set up by
   an operator holding account-wide Cloudflare access, so the setup path has only ever been measured
-  on its easiest possible run. A developer without that access assembles the same resources by hand
-  through the dashboard, and that is the experience cairn ships. Waiting until after
-  `1.0.0-beta.1` means the first stranger to install cairn is the first person to walk it.
+  on its easiest possible run, and an agent driving the Cloudflare API with an account-wide token is
+  not how most developers configure Cloudflare. A developer without that setup reaches for `wrangler`
+  where it covers the resource, and the dashboard everywhere else. The cost concentrates in the
+  everywhere else, which this entry already enumerates as the non-provisionable list: minting a
+  correctly scoped API token, Email Sending onboarding, GitHub App creation and installation, and
+  nameserver delegation. Working with an agent does not skip that wall, since an agent holding a
+  wrongly scoped token gets the same opaque `Authentication error` the preflight exists to name.
+  Waiting until after `1.0.0-beta.1` means the first stranger to install cairn is the first person to
+  walk the real path.
   Sequencing follows the pairing already stated below: it lands with the scaffolder in sequence item
   6, ahead of the Waymark rebuilds that dogfood the create-a-site path in item 7, and ahead of the
   dress rehearsal in item 9, which is where a fresh-eyes first hour would otherwise discover it.

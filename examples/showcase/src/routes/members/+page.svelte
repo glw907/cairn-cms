@@ -25,8 +25,8 @@ would be served by the asset layer with the Worker, and therefore the guard, nev
 
 <div class="flex min-h-screen flex-col items-center justify-center gap-4 bg-base-200 p-4 text-base-content">
   <div class="card w-full max-w-sm bg-base-100 shadow">
-    <div class="card-body gap-4">
-      <h1 class="card-title">Signed in</h1>
+    <div class="flex flex-col gap-4 p-6">
+      <h1 class="text-lg font-semibold">Signed in</h1>
       <p class="text-sm">
         You are signed in as <span class="font-mono">{data.subject}</span>.
       </p>

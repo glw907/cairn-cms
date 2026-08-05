@@ -30,8 +30,8 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
 
 <div class="flex min-h-screen flex-col items-center justify-center gap-4 bg-base-200 p-4 text-base-content">
   <div class="card w-full max-w-sm bg-base-100 shadow">
-    <div class="card-body gap-5">
-      <h1 class="card-title">Member sign in</h1>
+    <div class="flex flex-col gap-5 p-6">
+      <h1 class="text-lg font-semibold">Member sign in</h1>
 
       <form method="POST" action="?/request" class="flex flex-col gap-3">
         <input type="hidden" name={INSECURE_TEST_CHALLENGE_FIELD} value={INSECURE_TEST_CHALLENGE_TOKEN} />
@@ -54,9 +54,9 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
       </form>
 
       {#if form && 'requestError' in form}
-        <div role="alert" class="alert alert-error text-sm">Could not send a code. Try again.</div>
+        <div role="alert" class="rounded-box border border-error p-3 text-sm text-error">Could not send a code. Try again.</div>
       {:else if form && 'requested' in form && form.requested}
-        <div role="status" class="alert alert-success text-sm">A code was sent. Check the inbox.</div>
+        <div role="status" class="rounded-box border border-success p-3 text-sm">A code was sent. Check the inbox.</div>
       {/if}
 
       <form method="POST" action="?/confirm" class="flex flex-col gap-3">
@@ -79,7 +79,7 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
       </form>
 
       {#if form && 'confirmError' in form}
-        <div role="alert" class="alert alert-error text-sm">That code did not work. Try again.</div>
+        <div role="alert" class="rounded-box border border-error p-3 text-sm text-error">That code did not work. Try again.</div>
       {/if}
     </div>
   </div>

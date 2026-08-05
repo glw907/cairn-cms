@@ -509,16 +509,44 @@ export default defineConfig({
 });
 ```
 
-Last, wire the development backend. It stands in for the GitHub App and the magic-link auth loop, so `/admin` runs locally with no cloud accounts:
+Last, wire the development backend. It stands in for the GitHub App and the magic-link auth loop, so `/admin` runs locally with no cloud accounts.
+
+The backend must never reach production, so it sits behind a build-time flag. Declare that flag as a Vite `define`, which substitutes it as a literal into every file that names it:
+
+```ts
+// vite.config.ts
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig(({ command }) => ({
+  plugins: [sveltekit()],
+  ssr: { noExternal: ['@glw907/cairn-cms'] },
+  define: { __CAIRN_DEV_BUILD__: JSON.stringify(command === 'serve') },
+}));
+```
+
+Give it a type, once:
+
+```ts
+// src/app.d.ts
+declare global {
+  const __CAIRN_DEV_BUILD__: boolean;
+}
+
+export {};
+```
+
+Now name the flag directly in the branch that loads the backend, and import the package dynamically:
+
+<!-- snippet-check-skip: reads __CAIRN_DEV_BUILD__, the ambient global declared in the app.d.ts block above -->
 
 ```ts
 // src/hooks.server.ts
-import { dev } from '$app/environment';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 import type { Handle } from '@sveltejs/kit';
 
 let handle: Handle;
-if (dev && process.env.CAIRN_DEV_BACKEND === '1') {
+if (__CAIRN_DEV_BUILD__ && process.env.CAIRN_DEV_BACKEND === '1') {
   const { devBackendHandle } = await import('@glw907/cairn-cms-dev');
   handle = devBackendHandle();
 } else {
@@ -526,6 +554,8 @@ if (dev && process.env.CAIRN_DEV_BACKEND === '1') {
 }
 export { handle };
 ```
+
+Name the define at each call site rather than exporting one shared constant from a helper module. A production build substitutes `false` in the text of every branch that names it, so the bundler drops the branch along with its `import()`. A shared constant folds inside its own chunk but doesn't propagate across the module boundary, which leaves the branch in place and ships the development backend in the deployed Worker.
 
 `@glw907/cairn-cms-dev` is a separate package, and only a `devDependency`; install it before starting the server:
 

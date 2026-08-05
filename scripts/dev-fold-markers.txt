@@ -1,0 +1,12 @@
+editor@showcase.test
+createDevBackend
+devBackendHandle
+cairn-cms-dev
+dev-token
+sk-showcase-stub
+createFakeAuthDb
+createFakeR2
+createFakeAnthropic
+lastRecordedCommit
+committedFile
+createChannelDb

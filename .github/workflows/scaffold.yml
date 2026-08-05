@@ -34,9 +34,30 @@ jobs:
           npm install
           npm run check
           npm run build
-      - name: Assert the dev backend is eliminated from the emitted Worker
+      - name: Assert the dev backend is eliminated from the emitted Worker's deployable bundle
+        # adapter-cloudflare 7 does not bundle: .svelte-kit/cloudflare/_worker.js is a loader that
+        # imports ../output/server/index.js by relative path, so the server code wrangler actually
+        # bundles and deploys is invisible to a grep over .svelte-kit/cloudflare. `wrangler deploy
+        # --dry-run` produces the artifact Cloudflare receives without needing credentials; grep that.
+        working-directory: /tmp/cairn-emitted
         run: |
-          if grep -rl -e 'editor@showcase.test' -e 'createDevBackend' -e 'devBackendHandle' -e 'cairn-cms-dev' -e 'dev-token' -e 'sk-showcase-stub' -e 'createFakeAuthDb' -e 'createFakeR2' -e 'createFakeAnthropic' -e 'lastRecordedCommit' -e 'committedFile' /tmp/cairn-emitted/.svelte-kit/cloudflare 2>/dev/null; then
+          rm -rf /tmp/dev-fold-default
+          npx wrangler deploy --dry-run --outdir=/tmp/dev-fold-default
+          if grep -rlF -f "$GITHUB_WORKSPACE/scripts/dev-fold-markers.txt" /tmp/dev-fold-default 2>/dev/null; then
             echo "FAIL: dev-backend artifact in the emitted Worker"; exit 1
           fi
-          echo "OK: emitted template builds clean"
+          echo "OK: no dev-backend artifact in the emitted Worker"
+      - name: Gate self-test: the markers ARE present in a flagged emitted build's deployable bundle
+        # A grep that can never match again is how this gate rotted before: adapter-cloudflare 7
+        # stopped bundling and the old grep target (.svelte-kit/cloudflare) held no server code, so
+        # the negative check above passed vacuously on every build, flagged or not. This positive
+        # control proves the grep still finds real matches when the dev backend is actually present.
+        working-directory: /tmp/cairn-emitted
+        run: |
+          rm -rf /tmp/dev-fold-flagged
+          VITE_CAIRN_E2E=1 npm run build
+          npx wrangler deploy --dry-run --outdir=/tmp/dev-fold-flagged
+          if ! grep -rlF -f "$GITHUB_WORKSPACE/scripts/dev-fold-markers.txt" /tmp/dev-fold-flagged 2>/dev/null; then
+            echo "FAIL: gate self-test: no dev-fold marker matched a flagged emitted build's deployable bundle"; exit 1
+          fi
+          echo "OK: gate self-test: markers present in the flagged emitted build's deployable bundle"

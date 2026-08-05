@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-04: the auth-channel factory pass is MERGED to main; plan pass 2)
+## Immediate next action (2026-08-04: pass 2 is PLANNED; a fresh Opus 5 session executes it)
 
 **The factory pass is merged** (Geoff approved 2026-08-04; merge commit `06b3470d`, twelve pass
 commits): the full `./auth-channel` subpath, 164 tests across seven suites, docs arm complete,
@@ -25,10 +25,15 @@ folded; two majors: an unclosed `formData()` consumption and a guide migration-d
 cross-apply). Details in the plan's post-mortem:
 [`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`](superpowers/plans/2026-08-03-auth-channel-factory.md).
 
-**Next: plan pass 2** (the consumer proof: showcase `/members` fixture, `MEMBER_DB` binding and
-migration-apply, the `.cairn-template.json` scaffolder exclusion plus its emitted-template test,
-dev-gate integration, the e2e). The plan's "Pass 2" section holds the scope; ROADMAP's Now tier
-carries the entry. Pass 2 branches off `main` normally now that the merge is in.
+**Pass 2 is planned and approved** (2026-08-04, Fable sitting). Spec:
+[`docs/superpowers/specs/2026-08-04-auth-channel-consumer-proof-design.md`](superpowers/specs/2026-08-04-auth-channel-consumer-proof-design.md)
+(**v2** after a two-lens adversarial round; read the revision log). Plan:
+[`docs/superpowers/plans/2026-08-04-auth-channel-consumer-proof.md`](superpowers/plans/2026-08-04-auth-channel-consumer-proof.md)
+(eight tasks, worktree `.claude/worktrees/auth-channel-2` off `main`). Two findings from the
+round matter beyond this pass: the dev-fold grep gate in `e2e.yml`/`scaffold.yml` is **vacuous
+today** (adapter-cloudflare 7 stopped bundling, so the grepped directory holds no server code;
+Task 2 repairs it with a wrangler dry-run target and a positive control), and `test:emit` runs
+in no CI workflow (the new emitted-tree test lands in `src/tests/unit/` instead).
 
 **The rule that governed the pass, for pass 2's context:**
 
@@ -71,12 +76,13 @@ ambient defaults do **not** want one policy surface. They split into behavior th
 managed robots layer, zone TLS settings, DNS mail authentication). A posture config belongs to the
 first group; the second wants a check.
 
-**Resume prompt** (fresh session, launched from `~/Projects/cairn-cms`; planning is a Fable
-sitting per the model economy):
-"Plan pass 2 of the auth-channel work (the consumer proof) with `superpowers:brainstorming` then
-`superpowers:writing-plans`, from the Pass 2 section of
-`docs/superpowers/plans/2026-08-03-auth-channel-factory.md` and the post-mortem's
-execution-locked decisions list in the same file."
+**Resume prompt** (fresh session, launched from `~/Projects/cairn-cms`; execution runs on Opus 5
+per the model economy):
+"Execute `docs/superpowers/plans/2026-08-04-auth-channel-consumer-proof.md` with `cairn-pass`,
+task-by-task via `cairn-implementer` dispatches, on a fresh worktree
+`.claude/worktrees/auth-channel-2` off `main`. Read the plan's authority spec (v2) in full first,
+run each dispatch's gates in the foreground, and paste the CI gate list from
+`.github/workflows/test.yml` into every dispatch."
 
 **Carry this warning into every dispatch.** This pass's orchestrator derived the CI gate list from
 `.github/workflows/test.yml` once and then retyped it from memory across nine dispatches, dropping

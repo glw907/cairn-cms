@@ -130,7 +130,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		severity: 'warning',
 		title: 'HSTS is off',
 		why: 'The zone sends no Strict-Transport-Security header with a meaningful max-age, so nothing pins https for the site at large and a later http visit reaches the origin over plain transport. The admin host is covered either way, since cairn\'s own admin responses carry their own max-age, so this is about every other route.',
-		remediation: 'Turn on HSTS for the zone under SSL/TLS, Edge Certificates, with a max-age of at least six months.',
+		remediation: "Turn on HSTS for the zone, with a max-age of six months or more. The check's own floor is 30 days.",
 		docsAnchor: 'cloudflare-readiness.md#turn-on-hsts',
 	},
 	'ai.posture-not-effective': {
@@ -138,7 +138,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		severity: 'warning',
 		title: 'The stated AI posture is not the served one',
 		why: 'The adapter declares an aiPosture, but the robots.txt the origin actually serves carries nothing consistent with it, so the stance crawlers read is not the stance the site states.',
-		remediation: "Check that the site's robots.txt route passes aiPosture to robotsResponse and that the build carrying it deployed. If the served file is not the one cairn emits, the zone's managed robots.txt is writing it; look at AI Crawl Control in the Cloudflare dashboard.",
+		remediation: "Check that the site's robots.txt route passes aiPosture to robotsResponse and that the build carrying it deployed. If the served file is not the one cairn emits, something ahead of the origin is writing it, which a zone's managed robots.txt does by prepending; this check cannot see which. Look at the zone's robots.txt and AI Crawl Control settings in the Cloudflare dashboard.",
 		docsAnchor: 'cloudflare-readiness.md#make-the-stated-ai-posture-effective',
 	},
 	'auth.store-unreachable': {

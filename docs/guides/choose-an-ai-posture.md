@@ -4,13 +4,7 @@ Your adapter can carry `aiPosture`, set to `'decline'` or `'invite'`
 ([`CairnAdapter.aiPosture`](../reference/core.md#types)). Left unset, cairn writes nothing and
 guesses nothing: your `robots.txt` looks exactly as it did before this field existed. That is a
 legitimate choice, not a gap to fill in. Set the field once you have actually decided which way
-your site should face AI training crawlers; this guide covers what each direction does, what it
-doesn't do, and the one Cloudflare interaction that determines what a crawler actually sees.
-
-Wherever this guide states a fact about how a crawler or a platform behaves, it cites the
-operator's own page. A robots.txt line is a request, and the honesty this guide holds to is the
-same one cairn's own doc comments and reference pages hold to: nothing here reads as "blocks AI
-training," because nothing in this stack can make that claim truthfully.
+your site should face AI training crawlers.
 
 ## What `decline` writes
 
@@ -60,9 +54,8 @@ mouth that its own page doesn't say.
 Under `'invite'`, `buildRobots` writes `Content-Signal: search=yes, ai-train=yes` and no
 `Disallow` lines at all, because there's no robots directive that summons a crawler. Robots.txt
 can only ask an obedient crawler to stay away; it has no opposite move that reaches out and pulls
-one in. That asymmetry runs through this whole guide. A site can decline credibly, since every operator in
-the table above documents robots.txt as the control for its token. No site can make a crawler
-arrive.
+one in. A site can state a declining preference that every operator in the table documents robots.txt as
+the control for. It has no matching way to state an inviting one that reaches anybody.
 
 ## Declining is a request, not a block
 
@@ -85,16 +78,16 @@ an inference from that list rather than something Meta states.
 None of that is enforcement. A `Disallow: /` line is a published preference a well-behaved crawler
 chooses to read and act on, the same as a "no soliciting" sign is a preference a courteous visitor
 chooses to respect. Nothing in cairn, in robots.txt, or in the `Content-Signal` extension can stop
-an HTTP request from arriving. The one layer with actual enforcement is covered further down, and
-it isn't robots.txt.
+an HTTP request from arriving. Cloudflare's edge is the layer that can actually refuse one, covered
+below.
 
 ### The user-triggered-fetch exemption
 
 Two of the crawlers a declining site is trying to keep out have a documented carve-out for a
 different kind of request from the same operator. OpenAI's `ChatGPT-User` docs say that "because
-these actions are initiated by a user, robots.txt rules may not apply." Perplexity's
-`Perplexity-User` docs say, in the same spirit, that "since a user requested the fetch, this
-fetcher generally ignores robots.txt rules." Both are first-party statements about the operators'
+these actions are initiated by a user, robots.txt rules may not apply." [Perplexity's `Perplexity-User` docs](https://docs.perplexity.ai/docs/resources/perplexity-crawlers)
+say, in the same spirit, that "since a user requested the fetch, this fetcher generally ignores
+robots.txt rules." Both are first-party statements about the operators'
 own live agent fetchers, not about their training crawlers. A fully declining site can still be
 fetched the moment someone asks ChatGPT or Perplexity about it directly; the declined tokens above
 are the automated training crawl, not the live answer to a live question.
@@ -106,13 +99,13 @@ Declining `CCBot` today does not withdraw a Common Crawl dump that already shipp
 `Disallow` line anywhere untrains a model that already learned from your content. If your content
 has already been crawled, this configuration changes what happens next, not what already happened.
 
-## The layer with real teeth is Cloudflare's, and it isn't cairn's to configure
+## Enforcement lives at the Cloudflare edge, not in cairn
 
 Every cairn site runs on Cloudflare, and Cloudflare's own edge product,
 [AI Crawl Control](https://developers.cloudflare.com/ai-crawl-control/), categorizes crawler traffic
 and can allow or block a crawler at the edge, independent of whether that crawler reads or honors
-anything cairn writes. That is real enforcement, in the sense the robots.txt table above
-deliberately is not, because it runs before a request ever reaches your site's origin. Cloudflare
+anything cairn writes. That is enforcement in a sense robots.txt cannot be, because it runs before a
+request ever reaches your site's origin. Cloudflare
 documents a third action, [charging per crawl](https://developers.cloudflare.com/ai-crawl-control/features/pay-per-crawl/what-is-pay-per-crawl/);
 check that page for its current availability before planning around it.
 
@@ -124,9 +117,9 @@ layer can rewrite the very file cairn generated before it ever reaches a crawler
 
 ## Serve raw markdown alongside your pages
 
-The other direction, inviting rather than declining, has one thing cairn can genuinely do well: it
-already stores your content as markdown, so serving that markdown back is a direct read rather than
-a reconstruction. Every routable, non-`noindex` entry gets a `.md`-suffixed twin of its own URL,
+The other direction, inviting rather than declining, is where cairn's storage format does some
+work. It already stores your content as markdown, so serving that markdown back is a direct read
+rather than a reconstruction. Every routable, non-`noindex` entry gets a `.md`-suffixed twin of its own URL,
 built from [`createPublicRoutes`](../reference/delivery.md#createpublicroutes)'s
 `markdownEntries`/`markdownLoad` pair and wrapped in a response by
 [`markdownResponse`](../reference/delivery-data.md#markdownresponse). Wire the twin's route
@@ -179,9 +172,8 @@ and the [`http.request.headers` field reference](https://developers.cloudflare.c
 for the syntax a real rule needs.
 
 On ordering: Cloudflare's [request-phase list](https://developers.cloudflare.com/ruleset-engine/reference/phases-list/)
-documents URL Rewrite Rules running in the `http_request_transform` phase, third in the pipeline,
-and Cache Rules running in `http_request_cache_settings`, eighteenth. Cloudflare states that phase
-order; it does not itself state that the rewrite therefore determines the cache key. The reading
+documents URL Rewrite Rules running in the `http_request_transform` phase and Cache Rules running
+in `http_request_cache_settings`, later in the same pipeline. Cloudflare states that phase order; it does not itself state that the rewrite therefore determines the cache key. The reading
 above, that the twin ends up cached separately from the HTML page because the URL it's served
 under has already changed by the time caching happens, follows from that documented ordering. It
 is this guide's inference, not a sentence Cloudflare publishes.
@@ -190,12 +182,11 @@ Cloudflare also ships a managed, zero-config version of markdown serving, Markdo
 covered at [its own reference page](https://developers.cloudflare.com/fundamentals/reference/markdown-for-agents/)
 and announced on [Cloudflare's blog](https://blog.cloudflare.com/markdown-for-agents/). Consult
 those pages directly for which plans carry it and how to turn it on; both are Cloudflare's to keep
-current, not this guide's to restate. The one distinction worth stating here, because it's the
-whole reason cairn's own twin is worth having alongside or instead of the managed feature, is in
-Cloudflare's own words: "Cloudflare will detect this, fetch the original HTML version from the
-origin, and convert it to markdown before serving it to the client." That's a reconstruction, HTML
-converted back into an approximation of markdown after the fact. cairn's twin is the opposite: the
-markdown you actually wrote, served as-is. Cloudflare documents no interaction between Markdown for
+current, not this guide's to restate. The distinction worth stating is in Cloudflare's own words:
+"Cloudflare will detect this, fetch the original HTML version from the origin, and convert it to
+markdown before serving it to the client." The managed feature runs at the edge, where rendered HTML
+is what it has to work from, so it converts. cairn's twin is read from the markdown the entry is
+stored as. That is a difference in where each one sits, not in how well either works. Cloudflare documents no interaction between Markdown for
 Agents and URL Rewrite Rules, in the blog post, the reference page, or Cloudflare's changelog, so
 running both on the same zone is an undocumented combination, not one this guide has tested or can
 vouch for.
@@ -219,8 +210,8 @@ serving crawling.
 
 ## Why `llms.txt` isn't here
 
-`llms.txt`, a proposed root-level file curating an AI-friendly summary of a site, is deliberately
-absent from this guide's recommendations. Google's
+cairn ships no `llms.txt` support, and this is why. The file is a proposed root-level summary of a
+site, curated for AI clients. Google's
 [AI-optimization guidance](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
 states that maintaining one "will neither harm nor help your site's visibility or rankings in
 Google Search, as Google Search ignores them." Two independent measurements of real traffic agree
@@ -230,8 +221,8 @@ the file goes largely unread. Ahrefs
 [separate analysis of 6,122 domains](https://www.longato.ch/llmstxt-2026-june/) found that
 verifiable AI models accounted for 1.1% of the 22,494 requests to the file over thirty days, and
 that no request anywhere in those logs carried `/llms.txt` as its referrer. Neither OpenAI nor Anthropic
-documents consuming a site's `llms.txt`, though both publish one for their own documentation. cairn
-doesn't ship a feature built on a convention its own evidence says isn't reaching anyone.
+documents consuming a site's `llms.txt`, though both publish one for their own documentation. cairn ships no feature built on the file, since the measurements above show it rarely requested,
+and rarely requested by an AI client when it is.
 
 ## See the effective posture on a live site
 

@@ -137,7 +137,7 @@ describe('ai.posture-effective', () => {
       expect(result.status).toBe('pass');
       expect(result.detail).toContain('2 "User-agent: *" groups');
       expect(result.detail).toContain('Content-Signal directive cairn did not write');
-      expect(result.detail).toContain('Cloudflare dashboard');
+      expect(result.detail).toContain('AI Crawl Control settings are where to look first');
       // The unset posture and the managed layer are both named. Reporting only the layer would
       // leave the operator unable to tell which of the two facts the check actually observed.
       expect(result.detail).toContain('no AI posture is stated');
@@ -148,7 +148,7 @@ describe('ai.posture-effective', () => {
         ctx({ fetch: robotsResponse(NINE_OH_SEVEN_MANAGED), aiPosture: 'decline' })
       );
       expect(result.status).toBe('pass');
-      expect(result.detail).toContain('cannot see or assert why');
+      expect(result.detail).toContain('cannot see what or assert why');
     });
 
     it('carries none of the honesty-banned "blocks AI training" phrasing', async () => {
@@ -265,7 +265,7 @@ describe('ai.posture-effective, served files the check used to misread', () => {
     expect(result.status).toBe('fail');
     expect(result.detail).toContain("aiPosture is 'invite'");
     expect(result.detail).toContain("consistent with 'decline' instead");
-    expect(result.detail).toContain('Cloudflare dashboard');
+    expect(result.detail).toContain('AI Crawl Control settings are where to look first');
   });
 
   it('reads consecutive User-agent lines as one group, per RFC 9309', async () => {

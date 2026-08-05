@@ -482,9 +482,10 @@ Every routable, non-`noindex` entry can now serve a raw-markdown twin of its own
 `markdownResponse` (`@glw907/cairn-cms/delivery`) wraps a body in `text/markdown; charset=utf-8`,
 a sibling of `robotsResponse`/`sitemapResponse`, and `createPublicRoutes` gains `markdownEntries()`
 and `markdownLoad(event)` to enumerate and serve one `.md`-suffixed path per entry. The twin reads
-only through the injected site resolver, so a pending `cairn/*` edit branch can never reach it;
-wire it through a prerendered route, the same way you already wire robots.txt and the sitemap, and
-prerendering is what closes that disclosure hazard structurally rather than by convention. See
+only through the injected site resolver, so it can serve only what that resolver carries. Wire it
+through a prerendered route, the same way you already wire robots.txt and the sitemap, and the
+build runs against committed `main` content, which is what keeps a pending `cairn/*` edit branch
+structurally out of reach. A runtime route reopens that question. See
 [Wire the delivery surface](./wire-the-delivery-surface.md#serve-a-raw-markdown-twin-of-every-entry)
 and [Choose an AI posture](./choose-an-ai-posture.md).
 

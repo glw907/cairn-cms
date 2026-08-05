@@ -163,10 +163,11 @@ function describeOutsideLayer(parsed: ParsedRobots, target: URL): string | undef
       ? ', along with a Content-Signal directive cairn did not write'
       : '';
     return (
-      `${target} carries ${parsed.userAgentStarCount} "User-agent: *" groups${signal}, which is ` +
-      "the shape Cloudflare's managed robots.txt produces when it prepends to the origin's own " +
-      'file. This check cannot see or assert why the zone is configured that way; look at the ' +
-      "zone's robots.txt and AI Crawl Control settings in the Cloudflare dashboard."
+      `${target} carries ${parsed.userAgentStarCount} "User-agent: *" groups${signal}. cairn's ` +
+      'own output writes one such group, so a second came from somewhere ahead of it, and this ' +
+      'check cannot see what or assert why. A managed robots.txt prepending to the origin\'s is ' +
+      "the common source, so the zone's robots.txt and AI Crawl Control settings are where to " +
+      'look first.'
     );
   }
   if (parsed.foreignContentSignal) {

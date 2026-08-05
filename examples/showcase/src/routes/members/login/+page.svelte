@@ -44,7 +44,7 @@ inside the cooldown still answers `sent`, so the button's label is the only thin
             type="email"
             class="input w-full"
             placeholder="you@showcase.test"
-            value={(form && 'contact' in form && form.contact) || ''}
+            value={form && 'contact' in form ? form.contact : ''}
             required
           />
         </fieldset>

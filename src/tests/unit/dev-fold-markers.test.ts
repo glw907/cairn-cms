@@ -12,7 +12,10 @@ const ROOT = resolve(__dirname, '../../..');
 
 function markerLines(): string[] {
   const raw = readFileSync(resolve(ROOT, 'scripts/dev-fold-markers.txt'), 'utf-8');
-  return raw.split('\n').filter((_, index, all) => !(index === all.length - 1 && all[index] === ''));
+  const lines = raw.split('\n');
+  // The file's own trailing newline, not an empty pattern line: grep does not read it as one.
+  if (lines.at(-1) === '') lines.pop();
+  return lines;
 }
 
 describe('scripts/dev-fold-markers.txt', () => {

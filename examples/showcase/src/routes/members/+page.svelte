@@ -11,7 +11,7 @@ would be served by the asset layer with the Worker, and therefore the guard, nev
   import type { PageData } from './$types';
 
   interface Props {
-    /** The load's resolved subject: the opaque roster id `memberChannel.resolveSubject` returned. */
+    /** The load's payload; its `subject` is the opaque roster id `resolveSubject` returned. */
     data: PageData;
   }
 

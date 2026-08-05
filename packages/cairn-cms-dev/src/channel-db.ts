@@ -17,12 +17,10 @@ const NODE_SQLITE_FLOOR = '22.13.0';
  * `'22.0.0'` compare equal.
  */
 function isAtLeast(version: string, floor: string): boolean {
-  const v = version.split('.').map(Number);
-  const f = floor.split('.').map(Number);
-  for (let i = 0; i < f.length; i += 1) {
-    const vp = v[i] ?? 0;
-    const fp = f[i] ?? 0;
-    if (vp !== fp) return vp > fp;
+  const parts = version.split('.').map(Number);
+  for (const [index, floorPart] of floor.split('.').map(Number).entries()) {
+    const part = parts[index] ?? 0;
+    if (part !== floorPart) return part > floorPart;
   }
   return true;
 }

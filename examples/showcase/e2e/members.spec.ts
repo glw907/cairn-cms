@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 
 // This suite drives the shipped ./auth-channel subpath through a real browser against the
 // showcase's members login fixture (src/members/channel.ts, docs/guides/add-a-login-channel.md's
@@ -34,14 +34,14 @@ interface Capture {
 }
 
 /** Read the last captured delivery for `contact` via the dev-only readback route. */
-async function readCapture(request: import('@playwright/test').APIRequestContext, contact: string): Promise<Capture> {
+async function readCapture(request: APIRequestContext, contact: string): Promise<Capture> {
   const res = await request.get(`/test/last-otp?contact=${encodeURIComponent(contact)}`);
   expect(res.ok()).toBe(true);
   return (await res.json()) as Capture;
 }
 
 /** Read back just the code for `contact`, the common case outside the cooldown spec. */
-async function readLastCode(request: import('@playwright/test').APIRequestContext, contact: string): Promise<string> {
+async function readLastCode(request: APIRequestContext, contact: string): Promise<string> {
   return (await readCapture(request, contact)).code;
 }
 

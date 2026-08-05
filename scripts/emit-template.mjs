@@ -40,7 +40,11 @@ export function stripMarkedBlocks(content, filePath) {
       continue;
     }
     if (line.includes(EXCLUDE_END)) {
-      if (!inBlock) throw new Error(`stripMarkedBlocks: ${EXCLUDE_END} with no matching ${EXCLUDE_START} in ${filePath}`);
+      if (!inBlock) {
+        throw new Error(
+          `stripMarkedBlocks: ${EXCLUDE_END} with no matching ${EXCLUDE_START} in ${filePath}`,
+        );
+      }
       inBlock = false;
       continue;
     }

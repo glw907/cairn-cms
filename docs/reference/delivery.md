@@ -40,6 +40,8 @@ Stability tier: Scaffold API.
 function createPublicRoutes(deps: PublicRoutesConfig): {
   entryLoad: (event: { url: URL }) => Promise<EntryData>;
   entries: () => { path: string }[];
+  markdownEntries: () => { path: string }[];
+  markdownLoad: (event: { url: URL }) => Promise<{ body: string }>;
 };
 ```
 
@@ -50,6 +52,16 @@ Build the public route loader for a site's unified index. Pass the
 the SEO defaults. The returned object carries `entryLoad`, the one loader the catch-all route calls,
 and `entries`, the prerender enumerator. `entryLoad` resolves one entry by request path and folds in
 the rendered html, the SEO head, and the hero; it throws `error(404)` on a miss.
+
+`markdownEntries` and `markdownLoad` build the raw-markdown twin: one `.md`-suffixed path per entry
+whose frontmatter `robots` field doesn't carry `noindex`, and a loader that resolves the same
+`.md`-suffixed request path back to the entry's stored body, unrendered. `markdownLoad` throws
+`error(404)` on a miss, the same as `entryLoad`, and on a `noindex` entry, so the loader and the
+enumerator agree whether or not the site's route is prerendered. Both read only through the injected `SiteResolver`,
+so a request for a path the resolver doesn't carry gets `error(404)`, and nothing outside the
+resolver's own committed content can reach a response. Pair `markdownEntries`/`markdownLoad` with
+[`markdownResponse`](./delivery-data.md#markdownresponse) in a prerendered `+server.ts`, never a
+runtime one, so the served set is always what a build against `main` produced.
 
 The showcase wires `entryLoad` and `entries` into its `[...path]` catch-all server. The
 `+page.server.ts` calls `entryLoad` and the `+page.svelte` renders the entry directly.
@@ -115,8 +127,8 @@ builds the body resolver, and when it is absent no `heroImage` projection is der
 
 Stability tier: Scaffold API.
 
-What `createPublicRoutes` returns: the one entry loader and the prerender path enumerator, shown
-expanded in [`createPublicRoutes`](#createpublicroutes).
+What `createPublicRoutes` returns: the entry loader, the prerender path enumerator, and the markdown
+twin's loader and enumerator, shown expanded in [`createPublicRoutes`](#createpublicroutes).
 
 ### `EntryData`
 

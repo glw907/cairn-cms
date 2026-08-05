@@ -169,6 +169,18 @@ removal, nothing this list needs to carry.
   Consumers must: nothing; `aiPosture` is optional and unset on every site today, so this window's
   robots.txt output is byte-identical to before for all four.
 
+- A raw-markdown twin for every routable entry (`@glw907/cairn-cms/delivery`): `markdownResponse`
+  wraps a body in `text/markdown; charset=utf-8`, a sibling of `robotsResponse`/`sitemapResponse`,
+  and `createPublicRoutes` gains `markdownEntries()` and `markdownLoad(event)`, enumerating and
+  serving one `.md`-suffixed path per entry whose frontmatter `robots` field doesn't carry
+  `noindex`. `markdownLoad` returns the entry's stored markdown body unrendered, reading only
+  through the injected `SiteResolver`, so a pending `cairn/*` branch edit can never reach it. The
+  engine ships the builder and the enumerator; a site wires one small prerendered route to serve
+  the set, which structurally closes the disclosure hazard, since a prerender only ever runs
+  against committed `main` content. See [Delivery](docs/reference/delivery.md) and [Delivery
+  data](docs/reference/delivery-data.md#markdownresponse). Consumers must: nothing; no site has
+  wired the route yet, so this ships no new response on any deployed site.
+
 ### Changed
 
 - The env-genericity sweep audited every exported event and config type pinned to `AuthEnv`

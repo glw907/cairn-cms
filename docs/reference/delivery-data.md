@@ -335,6 +335,32 @@ export const GET = () =>
   robotsResponse({ sitemapUrl: ORIGIN + '/sitemap.xml', disallow: ['/admin'] });
 ```
 
+### `markdownResponse`
+
+Stability tier: Extension API.
+
+```ts
+function markdownResponse(opts: { body: string }): Response;
+```
+
+Wrap an entry's stored markdown body in a `Response` with `text/markdown; charset=utf-8`. `body` is
+the raw markdown, unrendered: cairn stores markdown natively, so serving the twin is a direct read
+rather than a reconstruction from rendered html. Pairs with `createPublicRoutes`'s
+`markdownEntries`/`markdownLoad` (`/delivery`), which enumerate and load the twin for every routable,
+non-`noindex` entry.
+
+```ts
+import { markdownResponse } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN } from '$lib/content';
+
+export const GET = ({ url }: { url: URL }) => {
+  const path = url.pathname.replace(/\.md$/, '');
+  const entry = site.byPermalink(path);
+  if (!entry) throw new Response(null, { status: 404 });
+  return markdownResponse({ body: entry.body });
+};
+```
+
 ---
 
 ## SEO and manifest builders

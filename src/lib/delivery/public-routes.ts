@@ -165,8 +165,44 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
     return site.entries();
   }
 
-  return { entryLoad, entries };
+  /**
+   * Prerender enumeration for the raw-markdown twin, one `.md`-suffixed `{ path }` per entry whose
+   *  frontmatter `robots` field does not carry `noindex` (read through {@link readSeoFields}). A page
+   *  that asks not to be indexed does not acquire a machine-readable twin either, so the two surfaces
+   *  cannot disagree.
+   */
+  function markdownEntries(): { path: string }[] {
+    return entries()
+      .filter((e) => {
+        const found = site.byPermalink('/' + e.path);
+        const robots = found ? readSeoFields(found.frontmatter).robots : undefined;
+        return !(robots && robots.includes('noindex'));
+      })
+      .map((e) => ({ path: `${e.path}.md` }));
+  }
+
+  /**
+   * One entry's stored markdown body, unrendered, for the `.md`-suffixed request path. Strips the
+   *  suffix and resolves the remainder through the same {@link SiteResolver.byPermalink} entryLoad
+   *  uses, so the twin can only ever serve what the resolver itself carries. Throws `error(404)` on a
+   *  miss, matching entryLoad.
+   *
+   *  A `noindex` entry 404s here as well as being absent from {@link markdownEntries}. The
+   *  enumerator alone would be enough while the site's route is prerendered, which is the wiring the
+   *  guide teaches, but the two surfaces then agree only for as long as nobody switches the route to
+   *  runtime SSR. Refusing here makes them agree by construction instead.
+   */
+  async function markdownLoad(event: { url: URL }): Promise<{ body: string }> {
+    const path = event.url.pathname.replace(/\.md$/, '');
+    const entry = site.byPermalink(path);
+    if (!entry) throw error(404, `Not found: ${event.url.pathname}`);
+    const robots = readSeoFields(entry.frontmatter).robots;
+    if (robots?.includes('noindex')) throw error(404, `Not found: ${event.url.pathname}`);
+    return { body: entry.body };
+  }
+
+  return { entryLoad, entries, markdownEntries, markdownLoad };
 }
 
-/** What `createPublicRoutes` returns: the one entry loader and the prerender path enumerator. */
+/** What `createPublicRoutes` returns: the entry loader, the prerender enumerator, and the markdown twin's loader and enumerator. */
 export type PublicRoutes = ReturnType<typeof createPublicRoutes>;

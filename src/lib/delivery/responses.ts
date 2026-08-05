@@ -33,3 +33,13 @@ export function robotsResponse(opts: { sitemapUrl: string; disallow?: string[]; 
     headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
 }
+
+/**
+ * A raw-markdown twin response. `body` is an entry's stored markdown, unrendered, so a request for
+ *  the `.md` twin gets cairn's native source rather than a reconstruction of the rendered html.
+ */
+export function markdownResponse(opts: { body: string }): Response {
+  return new Response(opts.body, {
+    headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
+  });
+}

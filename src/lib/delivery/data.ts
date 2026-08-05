@@ -77,7 +77,7 @@ export { buildSeoMeta } from './seo.js';
 export type { SeoInput, SeoMeta } from './seo.js';
 export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
-export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './responses.js';
+export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from './responses.js';
 export { jsonLdScript } from './json-ld.js';
 export { buildSiteManifest, newlyPublishedEntries } from './manifest.js';
 export { parseManifest } from '../content/manifest.js';

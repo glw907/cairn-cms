@@ -4,8 +4,10 @@ Renders a page's SEO head from a SeoMeta object into <svelte:head>: a title, met
 tags, and one escaped JSON-LD script. The title renders from seo.title by default; title={false}
 lets the site own the <title>, and a string overrides it. titleTemplate wraps seo.title in the
 site's own suffix convention (for example `(t) => `${t} · 907.life`); it applies only when title
-is left undefined, so an explicit title or title={false} still wins. It carries no CSS, so it
-pulls in no admin styles.
+is left undefined, so an explicit title or title={false} still wins. markdownUrl, when passed,
+adds a rel="alternate" type="text/markdown" link pointing at the entry's raw-markdown twin; a
+site that has not wired the twin route passes nothing and the link is omitted. It carries no
+CSS, so it pulls in no admin styles.
 -->
 <script lang="ts">
   import type { SeoMeta } from './seo.js';
@@ -18,7 +20,17 @@ pulls in no admin styles.
     title,
     /** The site's title-suffix convention, applied to seo.title when title is left undefined. */
     titleTemplate,
-  }: { seo: SeoMeta; title?: string | false; titleTemplate?: (title: string) => string } = $props();
+    /**
+     * Absolute URL of this entry's raw-markdown twin. When set, emits a
+     *  rel="alternate" type="text/markdown" link; when omitted, no such link is emitted.
+     */
+    markdownUrl,
+  }: {
+    seo: SeoMeta;
+    title?: string | false;
+    titleTemplate?: (title: string) => string;
+    markdownUrl?: string;
+  } = $props();
   const titleText = $derived(
     title !== undefined ? title : titleTemplate ? titleTemplate(seo.title) : seo.title,
   );
@@ -38,5 +50,8 @@ pulls in no admin styles.
   {#each seo.links as l}
     <link rel={l.rel} type={l.type} href={l.href} title={l.title} />
   {/each}
+  {#if markdownUrl}
+    <link rel="alternate" type="text/markdown" href={markdownUrl} />
+  {/if}
   {@html jsonLdScript(seo.jsonLd)}
 </svelte:head>

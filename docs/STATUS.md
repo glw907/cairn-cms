@@ -14,49 +14,56 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-04: pass 2 is PLANNED; a fresh Opus 5 session executes it)
+## Immediate next action (2026-08-05: the auth-channel work is DONE and releasable; the AI-posture pass is next)
 
-**The factory pass is merged** (Geoff approved 2026-08-04; merge commit `06b3470d`, twelve pass
-commits): the full `./auth-channel` subpath, 164 tests across seven suites, docs arm complete,
-post-mortem appended to the plan. Post-merge `npm test` on `main` exits 0 (4932 tests), which also
-cleared the `docs-links` red that the planning-era provenance commit had left on `main`. The
-pass-end review ran as an adversarial find-and-verify workflow (24 raw findings, 12 confirmed, all
-folded; two majors: an unclosed `formData()` consumption and a guide migration-directory
-cross-apply). Details in the plan's post-mortem:
-[`docs/superpowers/plans/2026-08-03-auth-channel-factory.md`](superpowers/plans/2026-08-03-auth-channel-factory.md).
+**Both auth-channel passes are merged.** The factory pass merged 2026-08-04 (`06b3470d`). The
+consumer proof merged 2026-08-05 (branch `auth-channel-2`, twelve commits): `createChannelDb` in the
+dev package, the showcase `/members` fixture with its own `MEMBER_DB` and migration, three dev-only
+harness routes, marker-based template stripping with a forbidden-token scan over the emitted tree,
+five e2e specs (118 in the full suite), and the guide's "Prove your channel" section. Post-mortem in
+the plan:
+[`docs/superpowers/plans/2026-08-04-auth-channel-consumer-proof.md`](superpowers/plans/2026-08-04-auth-channel-consumer-proof.md).
 
-**Pass 2 is planned and approved** (2026-08-04, Fable sitting). Spec:
-[`docs/superpowers/specs/2026-08-04-auth-channel-consumer-proof-design.md`](superpowers/specs/2026-08-04-auth-channel-consumer-proof-design.md)
-(**v2** after a two-lens adversarial round; read the revision log). Plan:
-[`docs/superpowers/plans/2026-08-04-auth-channel-consumer-proof.md`](superpowers/plans/2026-08-04-auth-channel-consumer-proof.md)
-(eight tasks, worktree `.claude/worktrees/auth-channel-2` off `main`). Two findings from the
-round matter beyond this pass: the dev-fold grep gate in `e2e.yml`/`scaffold.yml` is **vacuous
-today** (adapter-cloudflare 7 stopped bundling, so the grepped directory holds no server code;
-Task 2 repairs it with a wrangler dry-run target and a positive control), and `test:emit` runs
-in no CI workflow (the new emitted-tree test lands in `src/tests/unit/` instead).
+**The window is now releasable on the auth-channel work**, which is what pass 2 existed to prove. It
+still HOLDS UNPUBLISHED by default; cut only when independently warranted (a consumer needs it, or
+the queue reaches the RC).
 
-**The rule that governed the pass, for pass 2's context:**
+**Read the pass's harvest before the next UI or gate work:**
+[`docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md`](internal/2026-08-04-auth-channel-consumer-proof-harvest.md).
+Two findings are engine-level mechanics, not showcase quirks:
+
+1. **The dev-backend build fence did not eliminate.** A shared exported constant does not fold across
+   a module boundary, so every site following the shape the dev-package README and the tutorial
+   taught ships its dev backend as dead code in the deployed Worker. Fixed everywhere in this repo
+   (a Vite `define` named at each call site) and carried as a `Consumers must:` line in the window.
+2. **Engine-rendered markup depends on classes Tailwind may never emit.** `rehype-dispatch.ts` writes
+   `card-body` and `card-title` into runtime HTML, which Tailwind never scans, so DaisyUI ships those
+   base rules only if some source file happens to name them. One fixture page naming `card-title`
+   restyled every callout on the site. **This is an OPEN design question, filed to ROADMAP's Now
+   tier**, and resolving it moves the approved visual baseline, so it runs through `visual-fidelity`
+   with Geoff's before/after rather than as a side effect of another pass.
+
+**The rule that governed both passes, still binding on anything auth-shaped:**
 
 > **No control keyed on the victim's identity may deny, delay, or destroy anything. Denial keys on
 > the requester. Identity-keyed controls either escalate through a channel the site can act on, or
 > they only log.**
 
-Execution-locked decisions beyond the spec (the `requester_bucket` column, the sweep-on-mint
-housekeeping, the escalation-refund exits, the backwards-timestamp guard in `charge()`) are in the
-post-mortem; none has had its own adversarial round, so pass 2's review gate should read that list.
+**The seam window is still open.** xcathletes Task 4 has not run (`~/Projects/xcathletes-org` does
+not exist as of 2026-08-05). Once a release is cut, that consumer builds against the factory instead
+of hand-writing it.
 
-**The window remains open but is now consumable.** xcathletes Task 4 still has not run
-(`xcathletes-org` does not exist as of this pass's close). Once the merge lands and a release is
-cut, the consumer builds against the factory instead of hand-writing it.
+**Two review-gate lessons worth carrying into the next one.** A refutation prompt saying "refute if
+uncertain," scored by counting survivors, returned zero on a diff carrying three real defects (a
+client-bundle leak of the channel module, a missing changelog entry, a stale published comment); the
+orchestrator found them by reading the raw findings. Read raw findings, not just the verdict, and
+treat an all-refuted result as a signal the bar is mistuned. Also: 43 agents and 3.1M tokens was
+over-scaled for this diff, and two verifiers that died on API errors were silently dropped by the
+survivor filter rather than surfaced as unjudged.
 
-**This pass is NOT releasable on its own.** The consumer proof is **pass 2** (the showcase
-`/members` fixture, its `MEMBER_DB` binding and migration-apply step, dev-gate integration, the
-e2e, and the `.cairn-template.json` scaffolder exclusion), so nothing proves the built package
-through a consumer's bundler until that lands. The exclusion is load-bearing:
-`scripts/emit-template.mjs` copies the showcase verbatim minus four excluded paths, so a fixture
-with a code-readback route would ship into every scaffolded site as an unauthenticated OTP oracle.
-
-**Then:** pass 2, the AI-posture pass, the RC cut, the migrations.
+**Next: the AI-posture pass**, then the RC cut, then the migrations. It consumes the ambient-defaults
+audit (below) and lands before the migrations so each site adopts a posture in the session that
+migrates it.
 
 **The window still HOLDS UNPUBLISHED** at `0.93.0`. `package.json` is untouched and the changelog
 window is `## Unreleased`, carrying the ASC seams pass two, C1, the refusal-channel convergence,

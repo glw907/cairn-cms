@@ -39,9 +39,20 @@
   });
 
   const hero = $derived(data.heroImage ?? rawHeroFallback);
+
+  /**
+   * The entry's raw-markdown twin, `undefined` for a `noindex` entry so the head never advertises a
+   * twin `markdownEntries` excluded from the build. Read off the rendered robots meta tag rather than
+   * re-reading frontmatter, so this agrees with whatever the head itself already decided.
+   */
+  const markdownUrl = $derived(
+    data.seo.meta.some((m) => m.name === 'robots' && m.content.includes('noindex'))
+      ? undefined
+      : data.canonicalUrl + '.md',
+  );
 </script>
 
-<CairnHead seo={data.seo} />
+<CairnHead seo={data.seo} {markdownUrl} />
 
 <!-- The bespoke reading surface. The `.prose` container caps the column at the measure and binds every
      element to the theme tokens (prose.css, @import-ed into theme.css). The hero figure leads the

@@ -329,3 +329,123 @@ deliverable 4 is Tasks 2 and 6; deliverable 5 is Task 2; the docs section is Tas
 gate and residuals are Task 8 and the spec's own list. The spec's normative invariants
 (first-null, singleton, merge-not-assign, in-body refusals, self-subject revocation, fail-loud
 stripping, prerender false, default clamps) each appear verbatim in a task's constraints.
+
+---
+
+## Post-mortem (2026-08-05)
+
+**Shipped, and the pass's goal is met:** the `./auth-channel` subpath is now proven through a
+consumer's bundler and a real browser. Twelve commits on `auth-channel-2`, merged to `main`.
+
+### What landed
+
+- **Task 1**, `createChannelDb` in `@glw907/cairn-cms-dev`: an in-memory `node:sqlite` double behind
+  the D1 surface the channel store touches. Its tests drive the engine's own `mintCode` and
+  `CHANNEL_SCHEMA_SQL`, so the fidelity is non-circular. `first()` maps `undefined` to `null`,
+  the invariant that keeps a cooldown-rejected mint from reporting success.
+- **Task 2**, the dev-fold gate, repointed at a real `wrangler deploy --dry-run` bundle with a
+  positive control, and the pattern list moved to `scripts/dev-fold-markers.txt`.
+- **Task 2b (added mid-pass, Geoff's call)**, the fold repair. See below.
+- **Task 3**, the fixture: channel config, six-contact roster, capture transport, `MEMBER_DB` with
+  its own `migrations_dir`, and dev wiring reachable only through a dynamic import inside the
+  build-time branch.
+- **Task 4**, the members routes and three harness routes, each refusing in its own body.
+- **Task 5**, `stripMarkedBlocks` plus the forbidden-token scan over the emitted tree, in
+  `src/tests/unit/` where CI actually collects it.
+- **Task 6**, five e2e specs. Full suite 118 passing.
+- **Task 7**, the guide's "Prove your channel" section, changelog, ROADMAP, and the harvest.
+
+### The pass's real story: a gate that had never been honest
+
+Task 2 existed because spec v2's adversarial round found the dev-fold gate vacuous. Repairing it
+turned it honest, and it immediately failed. A default build's deployable bundle carried the entire
+dev backend, because `dev-gate.ts` exported one constant and told every call site to read it, "so
+the fold has one module boundary to survive, not two." One is one too many: SvelteKit's SSR build
+folds the constant inside its own chunk and never propagates the value across the boundary.
+
+The code was unreachable behind the literal `false` and the engine's 503 tripwire still backstopped
+it, so nothing was exploitable. Everything claiming the bundle was clean was wrong, including the
+published dev-package README, the tutorial, and six code comments.
+
+Geoff's call was to fix it in-pass rather than record it, which is what kept the pass coherent: its
+whole purpose is proving an OTP oracle cannot ship. The fix is a Vite `define` substituted at each
+call site. Verified both directions on the showcase and the emitted template.
+
+**The general lesson, banked in the harvest:** a gate whose passing condition is an absence needs a
+companion assertion that it can still detect a presence. Absence gates decay into no-ops when the
+thing they inspect moves, and nothing announces it.
+
+### The visual regression, and a lesson about "pre-existing"
+
+Task 6 reported five failing `site-visual` specs as pre-existing and unrelated. They were neither.
+Its evidence was that removing its own spec file left them failing, which proves only that its file
+was not the cause. **The control for "did my work cause this" is the base branch.** A run on clean
+`main` passed all eleven.
+
+The cause was worth the hunt. `src/lib/render/rehype-dispatch.ts` writes `card-body` and `card-title`
+into runtime-generated HTML. Tailwind scans source files and never runtime output, so DaisyUI ships
+those base rules only when some source file happens to name the same class. A members login page
+named `card-title` once, every callout on the public site picked up DaisyUI's card styling, a
+heading wrapped to a second line, and 26px shifted down every page below it.
+
+The fixture now uses plain utilities, which is the conservative fix, not the resolution. Whether the
+chassis should safelist the classes the engine emits is filed to the roadmap's Now tier, routed
+through the visual-fidelity gate, because resolving it moves the approved baseline.
+
+### The review gate found three real defects its own verifiers refuted
+
+A six-lens adversarial find-and-verify workflow ran at Geoff's opt-in: 43 agents, 37 raw findings,
+and the workflow's own answer was zero survivors. That answer was wrong, and the fault is in how the
+gate was written. The refutation prompt said "set refuted=true if you are uncertain," which is the
+right instinct against false positives and, at 35 refutations out of 35, is evidence the bar was
+mistuned rather than that the code was clean. Two more verifiers died on API errors, and their
+findings were silently dropped by the survivor filter rather than surfaced as unjudged.
+
+Reading the raw findings directly turned up three real defects:
+
+1. **The login page shipped the channel module to the browser.** It imported two challenge constants
+   from `channel.ts`, which calls `createAuthChannel` at module scope and imports the capture
+   transport. The built client bundle carried `createAuthChannel`, `captureDeliver`, a roster
+   contact, and a subject id. Contained in the showcase, which never deploys, but this is the
+   exemplar consumers copy, and a real site would serve its member roster to every visitor. The
+   constants moved to a leaf module; verified clean against a fresh default build.
+2. **The changelog carried no entry for the dev-fold fix**, so the release body would have shipped
+   without the one `Consumers must:` line the window most needs.
+3. **`packages/cairn-cms-dev/src/handle.ts` still named the retired fold** as layer one of its fence,
+   in the published package, after the pass claimed to have corrected every instance.
+
+**The lesson for the next gate:** "refute if uncertain" plus "count only survivors" is a filter that
+can return zero on a diff with real defects in it. Read the raw findings, not just the verdict, and
+treat an all-refuted result as a signal to check the bar. Route a dead verifier to the orchestrator
+as unjudged rather than letting a truthiness filter drop it.
+
+### Scope and cost
+
+Nine planned tasks became ten, plus three follow-on fixes. Every addition traced to one causal chain
+from a single defect (the fold), and the pass was not split, which still looks right: Tasks 3 through
+7 ran exactly as written.
+
+Cost was dominated by one decision. The review workflow ran 43 agents for 3.1M tokens across roughly
+7.8 hours of wall clock, and returned zero survivors that a direct read of its own raw output
+overturned in minutes. **A smaller fan-out with the orchestrator reading raw findings would have
+found the same three defects for a fraction of the spend.** Six lenses at high effort, each with
+per-finding verifiers at high effort, is over-scaled for a diff this size.
+
+Human interaction points: two. One genuine fork (the fold defect, correctly Geoff's call on pass
+scope) and one check-in on elapsed time, which the runaway guard should have pre-empted with a
+progress note rather than leaving Geoff to ask.
+
+### Residuals
+
+- The spec's DCE question is **answered**: a default build did NOT eliminate the dev chunks, and now
+  does. Recorded here and in the harvest.
+- The e2e proves the inline-delivery path only; `waitUntil` fire-and-forget stays covered by unit tests.
+- Cookie prefixes (`__Host-`, `Secure`) are still never driven through a real browser: the harness is
+  plain-http localhost.
+- `scripts/emit-template.test.mjs` still runs in no CI workflow, so the new `stripMarkedBlocks` unit
+  cases are not enforced there. The emitted-tree vitest test exercises the same code path and does
+  run, so the mechanism is covered; the unit cases are not. Worth folding into the four-CI-gates
+  consolidation already queued in phase P.
+- The showcase's default deployable bundle measures ~3.17 MiB gzipped, over the Workers Free 3 MiB
+  script limit. The showcase never deploys, so it gates nothing today, but a scaffolded site starts
+  from this template. Filed here rather than fixed.

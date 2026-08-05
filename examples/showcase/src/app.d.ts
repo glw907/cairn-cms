@@ -31,6 +31,22 @@ declare global {
         CairnMediaBindings & {
           // The developer's own D1 binding for the custom Signups admin screen (cairn never reads it).
           APP_DB: D1Database;
+          // The optional Cloudflare Worker var mirroring CAIRN_DEV_BACKEND (also settable as an
+          // OS var; see src/chassis/dev-gate.ts and guard.ts's own platform.env read). Declared
+          // here rather than in the engine's own CairnPlatformBindings, since it is a
+          // devDependency-gated convenience a site opts into, never a required binding.
+          // Declaring it as an optional member is what lets devDelivery's and captureDeliver's
+          // own generic constraint (`{ CAIRN_DEV_BACKEND?: string | boolean }`) assign against
+          // this env without TypeScript's weak-type detection (TS2559) rejecting the call, the
+          // same property-sharing discipline platform-bindings.ts documents for
+          // CairnPlatformBindings itself.
+          CAIRN_DEV_BACKEND?: string | boolean;
+          // cairn-template:exclude-start
+          // The showcase members fixture's own binding (docs/guides/add-a-login-channel.md);
+          // cairn's engine never reads it. Excluded from every scaffolded site along with
+          // src/members/, src/routes/members/, and the wrangler.jsonc MEMBER_DB block.
+          MEMBER_DB: D1Database;
+          // cairn-template:exclude-end
         };
       context: ExecutionContext;
       caches: CacheStorage & { default: Cache };

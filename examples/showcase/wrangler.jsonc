@@ -23,18 +23,37 @@
   // Email Sending binding for magic links (arbitrary recipients). A real site sets remote = true
   // so `wrangler dev` sends real mail; the dev backend fakes it locally.
   "send_email": [{ "name": "EMAIL" }],
-  // cairn-cms self-owned magic-link auth store (editor allowlist, sessions, tokens).
+  // cairn-cms self-owned magic-link auth store (editor allowlist, sessions, tokens). Each
+  // database gets its own migrations_dir: a channel database sharing the default migrations/
+  // directory with AUTH_DB would cross-apply schemas neither side expects.
   "d1_databases": [
     {
       "binding": "AUTH_DB",
       "database_name": "cairn-showcase-auth",
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
     },
     {
+      // The developer's own database, holding the signups table /admin/signups reads. Its own
+      // migrations_dir for the same reason MEMBER_DB has one: `wrangler d1 migrations apply`
+      // walks one directory per database, so a shared directory applies every schema to both.
       "binding": "APP_DB",
       "database_name": "cairn-showcase-app",
-      "database_id": "00000000-0000-0000-0000-000000000001"
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations-app"
     }
+    // cairn-template:exclude-start
+    ,
+    {
+      // The showcase members fixture's own D1 binding (docs/guides/add-a-login-channel.md).
+      // Its own migrations_dir, never "migrations": sharing AUTH_DB's directory would apply
+      // this channel's schema against the auth store and vice versa.
+      "binding": "MEMBER_DB",
+      "database_name": "cairn-showcase-members",
+      "database_id": "00000000-0000-0000-0000-000000000002",
+      "migrations_dir": "migrations-members"
+    }
+    // cairn-template:exclude-end
   ],
   // R2 bucket backing the media library; the /media route streams content-addressed bytes from here.
   "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "cairn-showcase-media" }],

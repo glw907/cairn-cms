@@ -31,6 +31,8 @@ function fakeHistoryBackend(opts: {
   mainCommits?: BackendCommit[];
   branchCommits?: Record<string, BackendCommit[]>;
   branchHeads?: Record<string, string>;
+  /** The entry file's content on the default branch; null models a deleted or never-published entry. */
+  mainFile?: string | null;
 }): Backend & { calls: { path: string; ref: string; limit: number }[] } {
   const defaultBranch = opts.defaultBranch ?? 'main';
   const calls: { path: string; ref: string; limit: number }[] = [];
@@ -40,7 +42,8 @@ function fakeHistoryBackend(opts: {
   return {
     defaultBranch,
     calls,
-    readFile: async () => boom(),
+    readFile: async (path: string, ref?: string) =>
+      ref === defaultBranch ? (opts.mainFile === undefined ? '# published' : opts.mainFile) : boom(),
     readEntries: async () => boom(),
     branchHead: async (branch: string) => opts.branchHeads?.[branch] ?? null,
     listBranches: async () => boom(),
@@ -127,9 +130,18 @@ describe('historyLoad', () => {
     expect(data.draft).toEqual({ editor: 'Ed Editor', startedAt: '2026-06-01T00:00:00Z' });
   });
 
+  it('404s a deleted entry even though its commit log survives in git', async () => {
+    const backend = fakeHistoryBackend({ mainCommits: [commitAt(0), commitAt(1)], mainFile: null });
+    const routes = createContentRoutes(runtime());
+    await expect(routes.historyLoad(historyEvent('2026-05-hello', backend) as never)).rejects.toMatchObject({
+      status: 404,
+    });
+  });
+
   it('yields empty entries plus the draft row for a never-published entry with an open draft', async () => {
     const backend = fakeHistoryBackend({
       mainCommits: [],
+      mainFile: null,
       branchHeads: { [PENDING_BRANCH]: 'sha-draft' },
       branchCommits: {
         [PENDING_BRANCH]: [{ ref: 'sha-draft', author: { name: 'Ed Editor', email: 'ed@t' }, date: '2026-06-01T00:00:00Z' }],

@@ -1005,10 +1005,15 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const backend = ctx.resolveBackend(event);
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const branch = pendingBranch(concept.id, id);
-    const [commits, headSha] = await Promise.all([
+    const [commits, headSha, mainRaw] = await Promise.all([
       backend.listCommits(path, backend.defaultBranch, HISTORY_LIMIT),
       backend.branchHead(branch),
+      backend.readFile(path, backend.defaultBranch),
     ]);
+    // A deleted entry still has a commit log (git's path filter reads history, not presence), so
+    // existence is checked the way editLoad checks it: the file on the default branch, or an open
+    // draft. Absent both, history 404s like the edit view; undelete is deliberately out of scope.
+    if (mainRaw === null && headSha === null) throw error(404, 'Entry not found');
     const truncated = commits.length > HISTORY_LIMIT;
     const entries: HistoryEntry[] = commits.slice(0, HISTORY_LIMIT).map((c) => ({
       ref: c.ref,

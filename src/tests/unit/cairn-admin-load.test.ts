@@ -4,6 +4,7 @@ import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { Backend } from '../../lib/github/backend.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -41,6 +42,7 @@ function adminEvent(
     editor?: { email: string; displayName: string; role: 'owner' | 'editor'; capability: 'owner' | 'editor' } | null;
     search?: string;
     db?: unknown;
+    backend?: Backend;
   } = {},
 ) {
   const headers: Record<string, string> = {};
@@ -52,12 +54,38 @@ function adminEvent(
         opts.editor === undefined
           ? { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const }
           : opts.editor,
-      cairnBackend: backend,
+      cairnBackend: opts.backend ?? backend,
     },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', AUTH_DB: opts.db } },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
     setHeaders: (h: Record<string, string>) => Object.assign(headers, h),
     _headers: headers,
+  };
+}
+
+/**
+ * A minimal `Backend` fake for the history facade test: `historyLoad`'s whole contract with the
+ * backend is `listCommits`/`branchHead` call shapes, which a hand-built fake asserts directly
+ * without needing the fetch-level `GithubDouble` (which carries no commits-API endpoint).
+ */
+function fakeHistoryBackend(): Backend {
+  const boom = (): never => {
+    throw new Error('fakeHistoryBackend: unexpected call');
+  };
+  return {
+    defaultBranch: 'main',
+    // The existence probe: the entry is present on main, so history renders instead of 404ing.
+    readFile: async (path, ref) => (ref === 'main' ? '# published' : boom()),
+    readEntries: async () => boom(),
+    branchHead: async () => null,
+    listBranches: async () => boom(),
+    commit: async () => boom(),
+    listCommits: async (path, ref, limit) => {
+      if (path !== 'src/content/posts/2026-05-hello.md' || ref !== 'main') return [];
+      return [{ ref: 'sha-0', author: { name: 'Jamie Rivera', email: 'jamie@t' }, date: '2026-05-01T00:00:00Z' }].slice(0, limit + 1);
+    },
+    createBranch: async () => boom(),
+    deleteBranch: async () => boom(),
   };
 }
 
@@ -141,6 +169,33 @@ describe('authed views', () => {
     expect(data.page.id).toBe('2026-05-hello');
     expect(data.page.title).toBe('Hello');
     expect(data.page.body).toBe('body');
+  });
+
+  it('delegates the history view with the concept and id synthesized from the URL', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    const event = adminEvent('/admin/posts/2026-05-hello/history', { backend: fakeHistoryBackend() });
+    const data = await admin.load(event as never);
+    expect(data.view).toBe('history');
+    if (data.view !== 'history') throw new Error('narrowing');
+    expect('layout' in data).toBe(false);
+    // The page carries historyLoad's HistoryData shape: entries, draft, truncated.
+    expect(data.page.entries).toEqual([{ ref: 'sha-0', editor: 'Jamie Rivera', date: '2026-05-01T00:00:00Z' }]);
+    expect(data.page.draft).toBeNull();
+    expect(data.page.truncated).toBe(false);
+  });
+
+  it('404s the history view for an unknown concept', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    await expect(admin.load(adminEvent('/admin/unknown/2026-05-hello/history') as never)).rejects.toMatchObject({
+      status: 404,
+    });
+  });
+
+  it('404s the history view for a malformed id', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    await expect(admin.load(adminEvent('/admin/posts/Hello/history') as never)).rejects.toMatchObject({
+      status: 404,
+    });
   });
 
   it('delegates the editors view for an owner', async () => {

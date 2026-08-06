@@ -131,11 +131,13 @@
     },
     "./auth-crypto": {
       "types": "./dist/auth-crypto/index.d.ts",
+      "worker": "./dist/auth-crypto/index.js",
       "browser": "./dist/auth-crypto/browser.js",
       "default": "./dist/auth-crypto/index.js"
     },
     "./cloudflare": {
       "types": "./dist/cloudflare/index.d.ts",
+      "worker": "./dist/cloudflare/index.js",
       "browser": "./dist/cloudflare/browser.js",
       "default": "./dist/cloudflare/index.js"
     },

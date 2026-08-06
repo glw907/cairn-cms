@@ -203,6 +203,18 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Exercise a server-only subpath under real Wrangler in cairn's own CI.** The `0.94.0-rc.1`
+  Workers blocker (a `browser` condition with no `worker` ahead of it, so the server bundle got the
+  client stub and the Worker never started) shipped past every gate this repo runs, and the two
+  gates added with its fix are both Node `--conditions` proxies for Wrangler's esbuild. If Wrangler
+  changes its condition set, both stay green while every consumer breaks the same way. Nothing in
+  `examples/showcase/src` imports `/auth-crypto` or `/cloudflare`, and the showcase e2e serves
+  through `vite preview` rather than Wrangler, so closing this needs a real workerd start, not one
+  more import. The cheapest shape is a small fixture Worker that imports one subpath, built and
+  started with `wrangler dev --local`, asserting it answers rather than refusing the connection.
+  Filed 2026-08-06 from the fix's own review; the defect filing is
+  [`docs/internal/feedback/2026-08-05-rc1-worker-condition-defect.md`](docs/internal/feedback/2026-08-05-rc1-worker-condition-defect.md).
+
 - **Decide whether the chassis safelists the classes the engine's rendered markdown emits.**
   Surfaced 2026-08-04 by the auth-channel consumer proof; evidence and the measurement in
   [`docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md`](docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md),

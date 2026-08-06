@@ -14,65 +14,60 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-05: `0.94.0-rc.1` IS PUBLISHED; the ASC migration is the next session, from its own repo)
+## Immediate next action (2026-08-06: cut `0.94.0-rc.2` once `rc2-worker-condition` merges)
 
-**`0.94.0-rc.1` is on npm, under the `next` dist-tag.** `latest` still serves `0.93.0`, and a caret
-range does not resolve a prerelease, so no consumer moves until it chooses to. A site testing the
-candidate pins the exact version (`"@glw907/cairn-cms": "0.94.0-rc.1"`) and returns to `^0.94.0`
-when the stable lands. Release `v0.94.0-rc.1`, tagged on `main` at `adc21174`, all four workflows
-green at that commit. The RC is a one-time guard for this window, not a pattern (Geoff,
-2026-08-05): later pre-beta cuts go straight to the final number, and the beta-and-after scheme
-(`1.0.0-beta.N` under `next`, then strict SemVer with RCs only ahead of a major) is in ROADMAP's
-"Toward 1.0".
+**Both `aksailingclub-org` and `cairn-pub` have migrated to `0.94.0-rc.1` and filed their
+reports**: [ASC](internal/feedback/2026-08-05-aksailingclub-org-migration.md),
+[cairn-pub](internal/feedback/2026-08-05-cairn-pub-migration.md). Every migration follows the DX
+reporting shape at [`docs/internal/feedback/README.md`](internal/feedback/README.md) and lands its
+report in that same directory as a docs-only change.
 
-**Ruling 1 landed and merged** (branch `audit-actor`, six commits, `4e1f52bb`). Direct
-domain-event calls to `createD1AuditSink` are a sanctioned pattern, and `AdminActionAuditRecord`'s
-identity field is `actor`, not `editor`. The log events follow the actor they can report:
-`admin.action.audited` and `audit.sink.write_failed` key their identity `actor`, while
-`admin.action.sink_threw`, `admin.action.unaudited`, `admin.action.csrf_rejected`, and
-`admin.action.rate_limited` keep `editor`, because each fires only where the actor is a verified
-cairn editor. Nothing else from the harvest entered the engine. Decision record:
-[`docs/superpowers/specs/2026-08-05-engine-harvest-decisions.md`](superpowers/specs/2026-08-05-engine-harvest-decisions.md).
+**ASC's own Playwright gate found a blocker**: `/auth-crypto` and `/cloudflare` published a
+`browser` condition with no `worker` condition ahead of it, so a Workers build resolved the
+same client-only throwing stub a browser build gets, and the deployed Worker never started. Filed
+at
+[`2026-08-05-rc1-worker-condition-defect.md`](internal/feedback/2026-08-05-rc1-worker-condition-defect.md).
+**ASC's migration branch stays held on `0.94.0-rc.1` until the fix ships.**
 
-**The DX reporting shape is written**, at
-[`docs/internal/feedback/README.md`](internal/feedback/README.md). It carries ruling 3's three
-seam-fit questions plus the two deltas that correct the upgrade guide, the first gate failure, and
-both budgets. Every migration fills it and lands the report in cairn, in that same directory, as a
-docs-only change; the full per-task evidence stays in the site's own repo. Its own governing rule
-is that every finding leaves the report.
+**`/auth-crypto` has carried this since stable `0.93.0`**, the release that shipped the subpath;
+it stayed latent because no consumer imported it until this window. `/cloudflare` carried it from
+its first publish in `0.94.0-rc.1`. So the defect is not RC-only, and `ecxc-ski` on `^0.93.0`
+would hit it the moment it adopts `/auth-crypto`.
 
-**Resume prompt for the next session** (launched from `~/Projects/aksailingclub-org`, on Opus 5):
-"Migrate this site to `@glw907/cairn-cms@0.94.0-rc.1`, pinning the exact version rather than a
-caret, since a caret cannot resolve a prerelease. Read cairn's
-`docs/guides/upgrade-cairn.md` `0.94.0-rc.1` entry and cross every `Consumers must:` list your
-range crosses. Delete the hand-rolled audit sink in favor of `createD1AuditSink`, whose record
-field is now `actor`. This migration is the FIRST walk, so it writes the recipe the other three
-follow. Close by filling cairn's `docs/internal/feedback/README.md` shape into
-`docs/internal/feedback/2026-08-XX-aksailingclub-org-migration.md` in the cairn repo, and file the
-three ROADMAP riders from ruling 4 of cairn's engine-harvest decisions onto this repo's own
-`ROADMAP.md`."
+**Branch `rc2-worker-condition` fixes it**, adding a `worker` condition ahead of `browser` in both
+subpaths' `exports` entries. Two gates cover the class, and they are not equally strong. The
+structural check (`scripts/check-package-files.mjs`, wired into `check:package`) runs
+unconditionally, needs no build, and sits on the publish path, so it is what would have aborted
+the `rc.1` cut. The behavioral resolver probe
+(`src/tests/unit/packaging-boundary.test.ts`) spawns Node against the built package under
+Wrangler's own condition set (`workerd,worker,browser`, verified against wrangler's own
+`getBuildConditions`), and every case is `skipIf(!built)`, so it proves nothing without
+`npm run package` first. CI runs `npm ci`, whose `prepare` builds `dist`, so it runs there.
 
-**Then:** cairn.pub migrates next, against the same RC, folding in the owed cairn.pub live admin
-smoke (Geoff's magic link plus a publish round-trip). Mint `0.94.0` once both gates are green, then
-migrate `907-life` and `ecxc-ski` off the recipe the first migration wrote. Then phase F with F1 and
-F4 batched into one Fable sitting, then RELEASE ONE, then phase P with the four-CI-gates
-consolidation pulled forward. Scaffolder and Topo stay last, and Cloudflare provisioning lands
-inside the pre-beta series as part of the scaffolder itself (Geoff, 2026-08-04).
+**What neither gate covers:** real Wrangler. Both are Node `--conditions` proxies, so if Wrangler
+ever changed its condition set both stay green while every consumer breaks the same way. The
+end-to-end proof is ASC's Playwright suite against `rc.2` from the registry, and the standing gate
+is filed in [`ROADMAP.md`](../ROADMAP.md).
 
-**How the final `0.94.0` cut handles the changelog.** The window is now headed `## 0.94.0-rc.1`, not
-`## Unreleased`. At the stable cut, rename THAT heading to `## 0.94.0` rather than adding a second
-entry above it: the candidate and the stable carry identical content, and a separate entry would
-duplicate a 35-step `Consumers must:` list. `check:version` supports either shape, since it sizes an
-entry against the nearest earlier heading whose numeric core differs. Do the same in
-`docs/guides/upgrade-cairn.md`, and drop that entry's release-candidate preamble.
+**Next action: cut `0.94.0-rc.2`.** Merge this branch, rename the `## 0.94.0-rc.1` heading in
+`CHANGELOG.md` and the matching heading in `docs/guides/upgrade-cairn.md` to `0.94.0-rc.2` (the
+candidate and the fix carry the same window; a stable-cut rename, not a new entry, per the rule
+below), bump `package.json`, and release under the `next` dist-tag. ASC's Playwright suite is the
+proof: once it runs green against `rc.2`, mint the stable `0.94.0`, then migrate `907-life` and
+`ecxc-ski` off the recipe ASC's migration wrote, each resolving on its own caret.
 
-**The release machinery learned prereleases in this session, in both halves.** Neither could cut an
-RC before. `scripts/check-version.mjs` matched headings on `^## (\d+\.\d+\.\d+)\b`, so
-`## 0.94.0-rc.1` parsed as `0.94.0` and failed its own equality check; it now parses the suffix,
-orders by SemVer precedence, and sizes against the nearest earlier differing core. `publish.yml`
-passed no `--tag`, and npm defaults to `latest` whatever the version looks like, so the RC would
-have reached every bare `npm install` while reaching no caret-pinned consumer at all; the tag is now
-derived from the version. The `cairn-release` skill was corrected to match.
+**How a stable cut handles the changelog.** The window is headed `## 0.94.0-rc.1` (soon
+`## 0.94.0-rc.2`), not `## Unreleased`. At the stable cut, rename that heading to `## 0.94.0`
+rather than adding a second entry above it: the candidate and the stable carry identical content,
+and a separate entry would duplicate a long `Consumers must:` list. `check:version` supports
+either shape, since it sizes an entry against the nearest earlier heading whose numeric core
+differs. Do the same in `docs/guides/upgrade-cairn.md`, and drop that entry's
+release-candidate preamble.
+
+**cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
+carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to
+an App installation needs a token that can modify the App (the `gh` OAuth token and the stored bot
+PAT both refuse), which needs Geoff, in a browser, at the App's own installation settings.
 
 **One registry loose end, not acted on.** A stale `rc` dist-tag still points at `0.6.0-rc.1` from
 the pre-rebuild era, so `npm install @glw907/cairn-cms@rc` serves something ancient. The scheme uses
@@ -85,19 +80,13 @@ monthly on the 1st, first run 2026-09-01, emailing only when a condition trips. 
 plan:** whether that change reaches backward into zones with an existing configuration is genuinely
 ambiguous in Cloudflare's own post, which the ROADMAP had asserted as settled fact.
 
-**Three rulings from the AI-posture pass that outlive it.** A vendor's specifics get a **link, never
-a copy**, in every docs arm, now in `docs/internal/docs-register.md`'s universal contract. The
-**friction log is a staging area, not a backlog**: triage is complete-or-move and every entry
-leaves. And **a repeat is an altitude signal**: the same friction from a second consumer site, or
-the same workaround in two sites, is engine work rather than a faster patch.
-
 **FOUR consumer sites, each on its own `0.x` caret**, none of which resolves the RC:
 
 | Repo | Range | Behind |
 |---|---|---|
 | `907-life` | `^0.84.4` | 0.85 through 0.93, plus this window |
-| `cairn-pub` | `^0.87.4` | 0.88 through 0.93, plus this window |
-| `aksailingclub-org` | `^0.91.1` | 0.92, 0.93, plus this window |
+| `cairn-pub` | `^0.87.4` | 0.88 through 0.93, plus this window (migration ran against `rc.1`; the `Consumers must:` work is done, blocked only on the GitHub App item above) |
+| `aksailingclub-org` | `^0.91.1` | 0.92, 0.93, plus this window (migration ran against `rc.1`; held on this branch's fix before `rc.2` proves the Playwright gate) |
 | `ecxc-ski` | `^0.93.0` | this window only |
 
 (`~/Projects/asc-site` is a second checkout of `aksailingclub-org`, not a fifth consumer.)

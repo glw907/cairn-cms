@@ -6,6 +6,11 @@ bundler's static export check finds no such name on the stub and errors before a
 bare side-effect import (`import '@glw907/cairn-cms/cloudflare'`) passes the build instead and
 throws at runtime, the moment that import executes in the browser.
 
+The `worker` and `default` conditions resolve the real module. Only `browser` resolves the stub.
+A Cloudflare Workers build activates `worker` and `browser` together, and the exports map declares
+`worker` first, so the real module reaches the Worker. "Server only" describes where the stub
+lives. A Workers deploy resolves the real module.
+
 This subpath is for Cloudflare-native platform primitives only: Turnstile is the platform's own
 bot defense, and `RateLimit` is a platform binding. A third-party service verifier, a payment
 processor's webhook check, a chat platform's notifier, never belongs here, whatever precedent

@@ -3,6 +3,7 @@ import {
   checkPackageFiles,
   checkDocsPacked,
   checkSkillPacked,
+  checkWorkerCondition,
   parsePackFilePaths
 } from '../../../scripts/check-package-files.mjs';
 
@@ -103,6 +104,95 @@ describe('checkSkillPacked', () => {
     if (result.ok) throw new Error('expected failure');
     expect(result.error).toContain('skills/cairn-admin-screens/SKILL.md');
     expect(result.error).toContain('files');
+  });
+});
+
+// The Workers-runtime resolver defect (2026-08-05 RC1 filing): Wrangler re-bundles the adapter
+// output with esbuild for workerd and applies the "browser" condition to the SERVER bundle, so a
+// subpath that ships a "browser" stub without a preceding "worker" condition sends the throwing
+// browser-only stub into the Worker. "worker" must be present, declared before "browser", and
+// resolve to something other than the stub. It is deliberately not required to equal "default",
+// which leaves an entry free to ship a workerd-specific build later. Each case spells its entry
+// out in full, since the declaration order of the conditions is itself what is under test.
+describe('checkWorkerCondition', () => {
+  it('fails an entry declaring browser with no worker condition', () => {
+    const result = checkWorkerCondition({
+      './auth-crypto': {
+        types: './dist/auth-crypto/index.d.ts',
+        browser: './dist/auth-crypto/browser.js',
+        default: './dist/auth-crypto/index.js'
+      }
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('./auth-crypto');
+    expect(result.error).toContain('worker');
+  });
+
+  it('passes the shipped shape, worker ahead of browser and matching default', () => {
+    expect(
+      checkWorkerCondition({
+        './auth-crypto': {
+          types: './dist/auth-crypto/index.d.ts',
+          worker: './dist/auth-crypto/index.js',
+          browser: './dist/auth-crypto/browser.js',
+          default: './dist/auth-crypto/index.js'
+        }
+      })
+    ).toEqual({ ok: true, count: 1 });
+  });
+
+  it('passes an entry with no browser condition at all, unaffected by the defect', () => {
+    expect(
+      checkWorkerCondition({
+        './auth-store': {
+          types: './dist/auth-store/index.d.ts',
+          default: './dist/auth-store/index.js'
+        }
+      })
+    ).toEqual({ ok: true, count: 0 });
+  });
+
+  it('fails when worker is declared after browser', () => {
+    const result = checkWorkerCondition({
+      './auth-crypto': {
+        types: './dist/auth-crypto/index.d.ts',
+        browser: './dist/auth-crypto/browser.js',
+        worker: './dist/auth-crypto/index.js',
+        default: './dist/auth-crypto/index.js'
+      }
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('./auth-crypto');
+    expect(result.error).toContain('order');
+  });
+
+  it('passes a worker target that differs from default, a workerd-specific build', () => {
+    expect(
+      checkWorkerCondition({
+        './cloudflare': {
+          types: './dist/cloudflare/index.d.ts',
+          worker: './dist/cloudflare/workerd.js',
+          browser: './dist/cloudflare/browser.js',
+          default: './dist/cloudflare/index.js'
+        }
+      })
+    ).toEqual({ ok: true, count: 1 });
+  });
+
+  it('fails when worker points at the browser stub rather than the real module', () => {
+    const result = checkWorkerCondition({
+      './auth-crypto': {
+        types: './dist/auth-crypto/index.d.ts',
+        worker: './dist/auth-crypto/browser.js',
+        browser: './dist/auth-crypto/browser.js',
+        default: './dist/auth-crypto/index.js'
+      }
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('./auth-crypto');
   });
 });
 

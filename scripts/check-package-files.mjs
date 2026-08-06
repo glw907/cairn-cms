@@ -3,7 +3,11 @@
 // package a registry consumer cannot provision the auth store from, with nothing to catch it. This
 // asserts the tarball npm would publish carries the migrations directory. The core is a pure
 // function the test drives; the CLI runs `npm pack --dry-run` and feeds it the real file list.
+// It also gates the one exports-map property publint and attw do not check: that a subpath with a
+// `browser` stub declares `worker` ahead of it, so a Cloudflare Workers build resolves the real
+// module.
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -100,6 +104,65 @@ export function checkSkillPacked(filePaths) {
   return { ok: true };
 }
 
+// The Workers-runtime resolver defect that shipped in 0.94.0-rc.1. Wrangler re-bundles the
+// adapter's output with esbuild for workerd, and that pass activates the "browser" condition on
+// the SERVER bundle, so a subpath whose "browser" target is a client-only stub ships that stub
+// into the Worker and the Worker never starts. A "worker" condition declared ahead of "browser",
+// pointing where "default" points, is what wins the resolution back.
+
+/**
+ * Check an exports map: every entry declaring "browser" also declares "worker" ahead of it,
+ * resolving to something other than the browser stub.
+ *
+ * @remarks
+ * Scope: the top level of each entry in the package's own "exports" map. A "browser" nested inside
+ * another condition object, or a second map under "publishConfig", is out of reach and neither
+ * shape exists here today.
+ * @param {Record<string, Record<string, string> | string>} exportsMap the package.json "exports" map
+ * @returns {{ ok: true, count: number } | { ok: false, error: string }}
+ */
+export function checkWorkerCondition(exportsMap) {
+  const issues = [];
+  let checked = 0;
+  for (const [subpath, entry] of Object.entries(exportsMap)) {
+    if (typeof entry !== 'object' || entry === null) continue;
+
+    const conditions = Object.keys(entry);
+    if (!conditions.includes('browser')) continue;
+    checked++;
+
+    if (!conditions.includes('worker')) {
+      issues.push(
+        `${subpath} declares "browser" with no "worker" condition; a Workers build resolves "browser" and gets the browser-only stub`
+      );
+      continue;
+    }
+
+    if (conditions.indexOf('worker') > conditions.indexOf('browser')) {
+      issues.push(
+        `${subpath} declares "worker" after "browser"; conditions resolve in declaration order, so "worker" must come first`
+      );
+    }
+
+    // The invariant is that a Workers build must not reach the stub, which leaves an entry free to
+    // ship a workerd-specific build distinct from its Node "default" later.
+    if (typeof entry.worker !== 'string') {
+      issues.push(
+        `${subpath} declares a "worker" condition that is not a path; this check compares condition targets as strings`
+      );
+    } else if (entry.worker === entry.browser) {
+      issues.push(
+        `${subpath} points "worker" at the same file as "browser" (${entry.worker}); a Workers build must resolve the real module, not the browser stub`
+      );
+    }
+  }
+
+  if (issues.length > 0) {
+    return { ok: false, error: issues.join('; ') };
+  }
+  return { ok: true, count: checked };
+}
+
 /**
  * Extract the packed file paths from `npm pack --json` stdout. The `prepare` lifecycle
  * (svelte-package, which prints `src/lib -> dist`) can leak onto stdout ahead of the JSON on some
@@ -148,8 +211,16 @@ function main() {
     process.exit(1);
   }
 
+  // The only check here that reads the exports map rather than the packed file list.
+  const packageJson = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
+  const workerResult = checkWorkerCondition(packageJson.exports);
+  if (!workerResult.ok) {
+    console.error(`check-package-files: ${workerResult.error}`);
+    process.exit(1);
+  }
+
   console.log(
-    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the packaged skill packed)`
+    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the packaged skill packed, ${workerResult.count} browser-conditioned export(s) worker-gated)`
   );
 }
 

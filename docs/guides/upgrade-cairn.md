@@ -94,6 +94,12 @@ browser bundles already reached into server-side code, and adopting the subpath 
 thing to say so. The fix is to split whatever the client chain actually wanted into its own
 module, not to work around the condition.
 
+Through `0.94.0-rc.1`, the same `browser` condition also fired on the server side. Wrangler
+re-bundles the adapter's output for `workerd`, and that resolution applies `browser` too, so a
+deployed Worker imported the throwing stub and never started. Nothing before deploy reported it.
+`0.94.0` adds a `worker` condition ahead of `browser` in both subpaths, which fixes it. If you
+adopt either subpath on `0.93.0` or `0.94.0-rc.1`, move to `0.94.0`.
+
 **A rendered audit with no session measures your sign-in card.** Covered in step 8.
 
 **A refusal that changes shape changes what a form does.** `0.94.0`'s refusal-channel work moves

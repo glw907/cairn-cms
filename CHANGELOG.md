@@ -585,6 +585,22 @@ removal, nothing this list needs to carry.
 
 ### Fixed
 
+- `@glw907/cairn-cms/auth-crypto` and `@glw907/cairn-cms/cloudflare` failed to start on Cloudflare
+  Workers: both subpaths' `exports` entries published a `browser` condition pointing at a
+  client-only stub that throws at import, and Wrangler's own esbuild re-bundle of the adapter
+  output for `workerd` resolves that same `browser` condition, so the *server* bundle got the
+  throwing stub and the Worker never started. `/auth-crypto` has carried the defect since
+  `0.93.0`, the release that shipped the subpath, and it stayed latent because nothing consumed
+  the subpath until this window; `/cloudflare` carried it from its first publish in
+  `0.94.0-rc.1`. A consumer migration found it at an end-to-end gate, after `svelte-check`,
+  `vitest`, and `vite build` had all passed; see
+  [the defect filing](docs/internal/feedback/2026-08-05-rc1-worker-condition-defect.md). The fix
+  adds a `worker` condition ahead of `browser` in both entries, pointing at the same module
+  `default` does, so a Workers build resolves the real module while a browser build still hits the
+  throwing stub. A packaging check now fails the build when a `browser`-conditioned export declares
+  no `worker` condition ahead of it, and a resolver probe runs the built package under Wrangler's
+  own condition set to confirm the real module resolves. **Consumers must:** nothing.
+
 - The dev-backend build fence taught by `@glw907/cairn-cms-dev` did not eliminate. A site gating the
   dev backend on a shared exported constant (`export const devBackendEnabled = dev && ...`, the shape
   the package's README and the tutorial both taught) ships the whole dev backend in its deployed

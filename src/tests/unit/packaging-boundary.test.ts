@@ -91,6 +91,108 @@ describe('packaging boundary (needs dist/index.js; run npm run package to unskip
     }
   );
 
+  // The worker-condition regression that shipped in 0.94.0-rc.1. Both `./auth-crypto` and
+  // `./cloudflare` declare a `browser` condition pointing at a stub that throws `is server-only`,
+  // and Wrangler's own esbuild bundler resolves that condition for the deployed Worker too: its
+  // build conditions are `["workerd", "worker", "browser"]` (`getBuildConditions()` in
+  // `node_modules/wrangler/wrangler-dist/cli.js`). The server bundle got the throwing stub and the
+  // Worker never started.
+  //
+  // A shape check on the exports map can look right and still resolve wrong, so these probes ask
+  // Node's own resolver under the conditions Wrangler applies. Both conditions have to be active
+  // together: Node never activates `browser` unless it is explicitly requested, so a `worker`-only
+  // probe falls through to `default` even on the broken map and cannot reproduce the regression.
+  // The fix is a `worker` condition declared ahead of `browser`, pointing at the same target as
+  // `default`, since declaration order is what lets `worker` win once both are active.
+  describe('worker-condition resolution for ./auth-crypto and ./cloudflare', () => {
+    const subpaths = [
+      { specifier: '@glw907/cairn-cms/auth-crypto', realExport: 'generateToken' },
+      { specifier: '@glw907/cairn-cms/cloudflare', realExport: 'verifyTurnstile' },
+    ];
+    const allSpecifiers = subpaths.map((s) => s.specifier);
+    const wranglerConditions = ['workerd', 'worker', 'browser'];
+
+    /** Import each specifier in a throwaway consumer, under the given active conditions. */
+    function resolveInProbeDir(specifiers: string[], conditions: string[]): string {
+      const probeDir = mkdtempSync(join(tmpdir(), 'cairn-worker-condition-'));
+      try {
+        mkdirSync(join(probeDir, 'node_modules', '@glw907'), { recursive: true });
+        symlinkSync(ROOT, join(probeDir, 'node_modules', '@glw907', 'cairn-cms'), 'dir');
+
+        const script = `
+          const specifiers = ${JSON.stringify(specifiers)};
+          for (const specifier of specifiers) {
+            try {
+              const mod = await import(specifier);
+              console.log('RESOLVED:' + specifier + ':' + Object.keys(mod).sort().join(','));
+            } catch (err) {
+              console.log('REJECTED:' + specifier + ':' + err.message);
+            }
+          }
+        `;
+        const args = [
+          ...conditions.map((c) => `--conditions=${c}`),
+          '--input-type=module',
+          '-e',
+          script,
+        ];
+        const out = spawnSync(process.execPath, args, {
+          cwd: probeDir,
+          env: { PATH: process.env.PATH },
+          encoding: 'utf8',
+        });
+        expect(out.status).toBe(0);
+        return out.stdout;
+      } finally {
+        rmSync(probeDir, { recursive: true, force: true });
+      }
+    }
+
+    /** Read the export names the probe printed for one specifier's RESOLVED line. */
+    function resolvedExportNames(stdout: string, specifier: string): string[] {
+      const prefix = `RESOLVED:${specifier}:`;
+      const line = stdout.split('\n').find((l) => l.startsWith(prefix));
+      if (!line) {
+        throw new Error(`the probe printed no RESOLVED line for ${specifier}; got: ${stdout}`);
+      }
+      return line.slice(prefix.length).split(',');
+    }
+
+    it.skipIf(!built)(
+      `a Workers build (Wrangler's ${wranglerConditions.join(', ')} conditions) resolves the real module, not the throwing stub`,
+      () => {
+        const stdout = resolveInProbeDir(allSpecifiers, wranglerConditions);
+        for (const { specifier, realExport } of subpaths) {
+          expect(stdout).toContain(`RESOLVED:${specifier}:`);
+          expect(stdout).not.toContain(`REJECTED:${specifier}`);
+          expect(resolvedExportNames(stdout, specifier)).toContain(realExport);
+        }
+      }
+    );
+
+    it.skipIf(!built)(
+      'a plain Node import, with no extra conditions, resolves the real module',
+      () => {
+        const stdout = resolveInProbeDir(allSpecifiers, []);
+        for (const { specifier, realExport } of subpaths) {
+          expect(stdout).toContain(`RESOLVED:${specifier}:`);
+          expect(resolvedExportNames(stdout, specifier)).toContain(realExport);
+        }
+      }
+    );
+
+    it.skipIf(!built)(
+      'a browser-only build (the client guard, with no worker condition active) still fails closed',
+      () => {
+        const stdout = resolveInProbeDir(allSpecifiers, ['browser']);
+        for (const { specifier } of subpaths) {
+          expect(stdout).toContain(`REJECTED:${specifier}:`);
+          expect(stdout).toContain(`${specifier} is server-only`);
+        }
+      }
+    );
+  });
+
   // A regression for the extraction helper itself, run unconditionally (not skipIf(!built)): it
   // needs no dist build, only a fixture reproducing the npm 10.x pollution (a script's own
   // stdout, such as svelte-package's "src/lib -> dist" notice, landing ahead of the `--json`

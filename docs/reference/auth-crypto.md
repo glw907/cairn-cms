@@ -6,6 +6,11 @@ bundler's static export check finds no such name on the stub and errors before a
 bare side-effect import (`import '@glw907/cairn-cms/auth-crypto'`) passes the build instead and
 throws at runtime, the moment that import executes in the browser.
 
+The `worker` and `default` conditions resolve the real module. Only `browser` resolves the stub.
+A Cloudflare Workers build activates `worker` and `browser` together, and the exports map declares
+`worker` first, so the real module reaches the Worker. "Server only" describes where the stub
+lives. A Workers deploy resolves the real module.
+
 Anything proposed here must be a stateless Web Crypto primitive, a token, hash, compare, or
 cookie-name function, a second-audience login flow would otherwise copy by hand. This subpath
 re-exports the token and session-id generators, the token hash, the constant-time compare, and

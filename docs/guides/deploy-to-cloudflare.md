@@ -120,6 +120,12 @@ This disables the check globally, not just for `/admin`. cairn's guard restores 
 `Origin` check for every non-admin form on your site, so nothing else on your site loses its
 CSRF protection.
 
+Leave `ssr.target` out of your `vite.config.js`. An older Cloudflare SvelteKit pattern sets
+`ssr.target: 'webworker'`, which makes the server build resolve browser conditions. cairn's
+server-only subpaths, `@glw907/cairn-cms/auth-crypto` and `@glw907/cairn-cms/cloudflare`, then
+resolve their client stub on the server and your Worker throws at startup. `adapter-cloudflare`
+doesn't need the setting.
+
 ## Force HTTPS
 
 The guard reads the request scheme to decide the login cookie's shape (`__Host-` prefixed

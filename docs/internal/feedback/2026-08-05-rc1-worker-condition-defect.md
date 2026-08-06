@@ -1,5 +1,16 @@
 # `0.94.0-rc.1` blocker: `/auth-crypto` and `/cloudflare` fail to start on Workers
 
+**Resolved** on branch `rc2-worker-condition`: the `worker` condition fix below is applied to
+`package.json`, backed by a structural gate (`scripts/check-package-files.mjs`) and a behavioral
+resolver probe (`src/tests/unit/packaging-boundary.test.ts`). Ships in `0.94.0-rc.2`.
+
+Two corrections the fix's own review produced. **`/auth-crypto` has carried this since stable
+`0.93.0`**, the release that shipped the subpath, so the title's "`0.94.0-rc.1` blocker" understates
+it; the defect was latent there because no consumer imported the subpath. And **neither new gate
+exercises real Wrangler**, since both resolve through Node's `--conditions`. The end-to-end proof is
+ASC's Playwright suite against `rc.2` from the registry, and the standing gate this section suggests
+is now filed in `ROADMAP.md`'s Now tier.
+
 Found 2026-08-05 by the `aksailingclub-org` migration, at that site's Playwright gate, after
 `svelte-check`, `vitest`, and `vite build` had all passed. **This blocks the RC for any consumer
 that adopts either subpath, which is every site in this window, since both are server-side

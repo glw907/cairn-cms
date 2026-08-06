@@ -42,7 +42,7 @@ import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import type { ContentRoutesContext, AttentionItem } from './content-routes-context.js';
-import type { CairnEvent } from './types.js';
+import type { CairnEvent, HistoryData, HistoryEntry } from './types.js';
 
 // The advisory notice types are defined alongside the cross-branch address index in the content
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
@@ -975,6 +975,60 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
+   * The most recent publishes `historyLoad` reads; a module constant, not a site config knob
+   * (the spec's plan-time call). `listCommits` is asked for one more than this, so the extra
+   * probe row sets `truncated` without a second read and is never itself rendered.
+   */
+  const HISTORY_LIMIT = 25;
+
+  /**
+   * Render what git recorded for a commit's author, degrading name to email to "unknown": the
+   * default branch's log can hold commits made outside cairn (a direct edit, a migration), so
+   * this never assumes a cairn editor produced the row.
+   */
+  function commitEditorName(author: { name: string; email: string }): string {
+    return author.name.trim() || author.email.trim() || 'unknown';
+  }
+
+  /**
+   * Load one entry's publish history (spec "Part 1: entry history"): the default branch's
+   * bounded commit log for the entry's file, plus a synthetic draft row when a pending branch
+   * exists. Guarded exactly as `editLoad`: `requireEngineAccess` covers authentication and the
+   * per-concept capability boundary; this route enforces nothing else.
+   */
+  async function historyLoad(event: CairnEvent): Promise<HistoryData> {
+    const editor = requireEditor(event);
+    const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
+    const id = event.params.id ?? '';
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const backend = ctx.resolveBackend(event);
+    const path = `${concept.dir}/${filenameFromId(id)}`;
+    const branch = pendingBranch(concept.id, id);
+    const [commits, headSha] = await Promise.all([
+      backend.listCommits(path, backend.defaultBranch, HISTORY_LIMIT),
+      backend.branchHead(branch),
+    ]);
+    const truncated = commits.length > HISTORY_LIMIT;
+    const entries: HistoryEntry[] = commits.slice(0, HISTORY_LIMIT).map((c) => ({
+      ref: c.ref,
+      editor: commitEditorName(c.author),
+      date: c.date,
+    }));
+    let draft: HistoryData['draft'] = null;
+    if (headSha !== null) {
+      // One more read, at the branch, for the head commit's own author and date: branchHead
+      // only answers a sha, never metadata. limit 1 asks for the one row this needs; a branch
+      // whose head did not touch the file (unreachable in practice: every save and revert
+      // commits it) degrades to no draft row rather than a throw.
+      const branchCommits = await backend.listCommits(path, branch, 1);
+      const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
+      if (head) draft = { editor: commitEditorName(head.author), startedAt: head.date };
+    }
+    return { entries, draft, truncated };
+  }
+
+  /**
    * The held outcome of a validated save: everything publish needs to copy the same markdown
    *  to main without re-reading the branch. `branchSha` is the branch commit saveToBranch just
    *  made, the guard for the post-publish branch delete; `manifest` is main's manifest with
@@ -1758,6 +1812,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     listLoad,
     createAction,
     editLoad,
+    historyLoad,
     saveAction,
     publishAction,
     publishAllAction,

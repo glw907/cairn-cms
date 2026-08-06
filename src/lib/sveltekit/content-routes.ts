@@ -118,6 +118,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOp
     vocabularySaveAction: settings.vocabularySaveAction,
     createAction: core.createAction,
     editLoad: core.editLoad,
+    historyLoad: core.historyLoad,
     saveAction: core.saveAction,
     publishAction: core.publishAction,
     publishAllAction: core.publishAllAction,

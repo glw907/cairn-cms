@@ -98,3 +98,42 @@ export interface HandleInput {
   event: CairnEvent;
   resolve(event: CairnEvent): Promise<Response> | Response;
 }
+
+/**
+ * One row in an entry's publish history, as `historyLoad` renders it: a version is a publish
+ * (spec "Part 1: entry history"). `editor` renders what git recorded, degrading to the raw
+ * commit-author name or its email, then to "unknown", rather than assuming a cairn editor: a
+ * file's log on the default branch can also hold commits made outside cairn (a direct edit, a
+ * migration).
+ */
+export interface HistoryEntry {
+  /** The commit's full sha, the exact value revert validates a target ref against. */
+  ref: string;
+  /** The commit author's name, degraded to email, then to "unknown" when git recorded neither. */
+  editor: string;
+  /** ISO 8601: when the version landed on the default branch. */
+  date: string;
+}
+
+/**
+ * `historyLoad`'s data: the entry's bounded recent-publish list plus its open draft, when one
+ * exists. The view's own label stays "recent versions", never a completeness claim: a rename
+ * restarts the commits API's path filter, so `entries` can be shorter than the entry's real
+ * lifetime even when `truncated` is false.
+ */
+export interface HistoryData {
+  /** The most recent publishes, newest first, capped at the module's history-read bound. */
+  entries: HistoryEntry[];
+  /**
+   * The pending branch's head commit, rendered as a synthetic top row, or null when the entry
+   * carries no open draft. Never derived from a save; a draft's save-by-save history is
+   * ephemeral by design and this field surfaces only its current head.
+   */
+  draft: { editor: string; startedAt: string } | null;
+  /**
+   * True when the backend's `limit + 1` probe found more publishes than the bound holds, so the
+   * view can say "showing the most recent N" rather than paginating. An entry with exactly the
+   * bound's own count of publishes is NOT truncated.
+   */
+  truncated: boolean;
+}

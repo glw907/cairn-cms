@@ -412,6 +412,14 @@ function retiredContentAdvisory(retiredFields: string[], retiredTags: string[]):
   };
 }
 
+/**
+ * Read a comma-joined query param as a list, dropping empty segments. An absent param and an
+ * empty one both read as no list, so a caller needs no separate presence check.
+ */
+function commaListParam(url: URL, name: string): string[] {
+  return (url.searchParams.get(name) ?? '').split(',').filter(Boolean);
+}
+
 /** Look up the concept named by the `[concept]` route param, or a 404. */
 function conceptOf(runtime: CairnRuntime, params: Record<string, string>): ConceptDescriptor {
   const concept = findConcept(runtime.concepts, params.concept ?? '');
@@ -958,15 +966,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // referenceWarnings ride; this rehydrates them into the same advisories array the address-
     // collision notice above already populates, so EditPage's one generic advisory region renders
     // both with no separate code path.
-    const revertedFields = event.url.searchParams.get('revertRetiredFields');
-    const revertedTags = event.url.searchParams.get('revertRetiredTags');
-    if (revertedFields || revertedTags) {
-      const notice = retiredContentAdvisory(
-        revertedFields ? revertedFields.split(',').filter(Boolean) : [],
-        revertedTags ? revertedTags.split(',').filter(Boolean) : [],
-      );
-      if (notice) advisories = [...advisories, notice];
-    }
+    const revertNotice = retiredContentAdvisory(
+      commaListParam(event.url, 'revertRetiredFields'),
+      commaListParam(event.url, 'revertRetiredTags'),
+    );
+    if (revertNotice) advisories = [...advisories, revertNotice];
 
     // Project the one committed media manifest read two ways: the minimal resolver triple the preview
     // needs (`mediaTargets`) and the picker's full human layer (`mediaLibrary`), both keyed by hash.
@@ -1056,6 +1060,26 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
+   * Who holds the open draft on `branch` and since when, read from its head commit: `branchHead`
+   * answers a sha and never metadata, so the author and date come from a one-row `listCommits` at
+   * the branch. Null when the branch has no head, and null rather than a throw when its head
+   * commit did not touch this file (unreachable in practice, since every save and revert commits
+   * it). Shared by `historyLoad`'s synthetic draft row and `revertAction`'s collision refusal, so
+   * a refused revert names the same person the history screen shows.
+   */
+  async function draftFromBranchHead(
+    backend: Backend,
+    path: string,
+    branch: string,
+    headSha: string | null,
+  ): Promise<HistoryData['draft']> {
+    if (headSha === null) return null;
+    const branchCommits = await backend.listCommits(path, branch, 1);
+    const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
+    return head ? { editor: commitEditorName(head.author), startedAt: head.date } : null;
+  }
+
+  /**
    * Load one entry's publish history (spec "Part 1: entry history"): the default branch's
    * bounded commit log for the entry's file, plus a synthetic draft row when a pending branch
    * exists. Guarded exactly as `editLoad`: `requireEngineAccess` covers authentication and the
@@ -1089,16 +1113,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       editor: commitEditorName(c.author),
       date: c.date,
     }));
-    let draft: HistoryData['draft'] = null;
-    if (headSha !== null) {
-      // One more read, at the branch, for the head commit's own author and date: branchHead
-      // only answers a sha, never metadata. limit 1 asks for the one row this needs; a branch
-      // whose head did not touch the file (unreachable in practice: every save and revert
-      // commits it) degrades to no draft row rather than a throw.
-      const branchCommits = await backend.listCommits(path, branch, 1);
-      const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
-      if (head) draft = { editor: commitEditorName(head.author), startedAt: head.date };
-    }
+    const draft = await draftFromBranchHead(backend, path, branch, headSha);
     return { entries, draft, truncated, head: mainHead };
   }
 
@@ -1882,25 +1897,19 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   /**
    * The revert collision refusal (spec "Part 2: revert"): a pending branch already blocks this
    * entry, from either entry point (`revertAction`'s own fast pre-check, or `createBranch`'s
-   * authoritative collision under a race). Re-reads the branch's head commit for the blocking
-   * draft's own author and start date, the same derivation `historyLoad`'s synthetic draft row
-   * uses, so the refusal names a real person rather than a bare 409. A branch that vanished
-   * between the collision and this re-read (an unlucky discard) degrades to "unknown" rather
-   * than throwing: the refusal still stands, since the caller's own attempt already failed.
+   * authoritative collision under a race). Re-reads the blocking draft through
+   * `draftFromBranchHead`, so the refusal names the same person the history screen shows rather
+   * than answering a bare 409. A branch that vanished between the collision and this re-read (an
+   * unlucky discard) degrades to "unknown" rather than throwing: the refusal still stands, since
+   * the caller's own attempt already failed.
    */
   async function draftExistsFailure(backend: Backend, path: string, branch: string): Promise<ActionFailure<RevertFailure>> {
-    const headSha = await backend.branchHead(branch);
-    let draftEditor = 'unknown';
-    let draftStartedAt = '';
-    if (headSha !== null) {
-      const branchCommits = await backend.listCommits(path, branch, 1);
-      const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
-      if (head) {
-        draftEditor = commitEditorName(head.author);
-        draftStartedAt = head.date;
-      }
-    }
-    return fail(409, { reason: 'draft_exists', draftEditor, draftStartedAt } satisfies RevertFailure);
+    const draft = await draftFromBranchHead(backend, path, branch, await backend.branchHead(branch));
+    return fail(409, {
+      reason: 'draft_exists',
+      draftEditor: draft?.editor ?? 'unknown',
+      draftStartedAt: draft?.startedAt ?? '',
+    } satisfies RevertFailure);
   }
 
   /**

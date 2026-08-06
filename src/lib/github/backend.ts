@@ -10,23 +10,12 @@ import { branchHeadSha, createBranch as createBranchRef, deleteBranch, listBranc
 import { appCredentials } from './credentials.js';
 import { cachedInstallationToken } from './signing.js';
 import { CommitConflictError } from './types.js';
-import type { CommitAuthor, RepoFile } from './types.js';
+import type { BackendCommit, CommitAuthor, RepoFile } from './types.js';
 import type { CairnEnv } from '../env.js';
 
-/**
- * One entry in a file's publish history, as `Backend.listCommits` returns it. `ref` is the full
- * commit sha, the exact value revert validates a target against; `author` and `date` render what
- * git recorded, which may not be a cairn editor (main's log also holds commits made outside
- * cairn).
- */
-export interface BackendCommit {
-  /** The commit's full sha. */
-  ref: string;
-  /** The commit's own author trailer: name and email, whoever git recorded as having authored it. */
-  author: { name: string; email: string };
-  /** ISO 8601: when the commit landed on the ref that was read. */
-  date: string;
-}
+// The history row this seam answers with lives with the other GitHub data types; re-exported here
+// so `Backend` and its row keep one import site for a consumer.
+export type { BackendCommit } from './types.js';
 
 /**
  * A live, connected content store pinned to a default branch. The GitHub implementation already

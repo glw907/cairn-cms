@@ -23,6 +23,21 @@ export interface CommitAuthor {
   email: string;
 }
 
+/**
+ * One entry in a file's publish history, as `Backend.listCommits` returns it. `ref` is the full
+ * commit sha, the exact value revert validates a target against; `author` and `date` render what
+ * git recorded, which may not be a cairn editor (main's log also holds commits made outside
+ * cairn).
+ */
+export interface BackendCommit {
+  /** The commit's full sha. */
+  ref: string;
+  /** The commit's own author trailer: name and email, whoever git recorded as having authored it. */
+  author: { name: string; email: string };
+  /** ISO 8601: when the commit landed on the ref that was read. */
+  date: string;
+}
+
 /** What the App signer needs: the app id, the installation, and the base64 PEM secret. */
 export interface AppCredentials {
   appId: string;

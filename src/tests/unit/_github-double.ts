@@ -122,9 +122,9 @@ export class GithubDouble {
       const filterPath = u.searchParams.get('path') ?? '';
       if (!this.branches.has(ref)) return new Response('Not Found', { status: 404 });
       const perPage = Number(u.searchParams.get('per_page') ?? '30') || 30;
+      // filter() already copies, so reverse() rewrites that copy, never the recorded history.
       const rows = this.history
         .filter((h) => h.branch === ref && h.paths.includes(filterPath))
-        .slice()
         .reverse()
         .slice(0, perPage)
         .map((h) => ({ sha: h.sha, commit: { author: h.author, committer: { date: h.date } } }));

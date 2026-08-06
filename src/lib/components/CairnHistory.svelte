@@ -7,9 +7,9 @@ rename and the view has no way to know its own list fell short of the entry's re
 synthetic draft row pins on top when the entry carries an open pending branch; it carries no
 revert affordance, since it is not itself a publish. Each publish row's own revert affordance is a
 form posting `?/revert` with two hidden fields: `ref`, the row's full commit sha, and `head`, the
-default branch's head sha the page rendered against. `revertAction` (a later task) re-validates
-`ref` against a fresh history read and refuses a stale `head` rather than silently reverting over
-a publish that landed after this page loaded. Failure mode: a stale `data` prop (a page rendered
+default branch's head sha the page rendered against. `revertAction` re-validates `ref` against a
+fresh history read and refuses a stale `head` rather than silently reverting over a publish that
+landed after this page loaded. Failure mode: a stale `data` prop (a page rendered
 before a since-published revert) still renders a revert form whose `head` no longer matches
 `main`; `revertAction` is the authority that catches that, this screen only carries the value it
 was given.
@@ -53,7 +53,7 @@ was given.
     />
   {:else}
     <div class="overflow-hidden card-shell card-shadow">
-      <AdminTable density="sm" rowCount={rowCount}>
+      <AdminTable density="sm" {rowCount}>
         {#snippet header()}
           <th class="{headerLabel} w-28 pl-6">Status</th>
           <th class="{headerLabel}">Editor</th>

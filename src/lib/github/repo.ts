@@ -5,7 +5,7 @@
 // is not.
 import { idFromFilename } from '../content/ids.js';
 import { CommitConflictError } from './types.js';
-import type { CommitAuthor, RepoFile, RepoRef } from './types.js';
+import type { BackendCommit, CommitAuthor, RepoFile, RepoRef } from './types.js';
 
 const API = 'https://api.github.com';
 
@@ -121,7 +121,7 @@ export async function fetchCommitLog(
   ref: string,
   limit: number,
   token?: string,
-): Promise<{ ref: string; author: { name: string; email: string }; date: string }[]> {
+): Promise<BackendCommit[]> {
   const res = await fetch(commitsUrl(repo, path, ref, limit), {
     headers: ghHeaders('application/vnd.github+json', token),
   });

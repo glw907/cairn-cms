@@ -663,9 +663,9 @@ export function createDevBackend(): Backend {
     },
 
     async listCommits(path: string, ref: string, limit: number): Promise<BackendCommit[]> {
+      // filter() already copies, so reverse() rewrites that copy, never the shared commitLog.
       return commitLog
         .filter((entry) => entry.branch === ref && entry.paths.includes(path))
-        .slice()
         .reverse()
         .slice(0, limit + 1)
         .map((entry) => ({ ref: entry.ref, author: entry.author, date: entry.date }));

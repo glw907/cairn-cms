@@ -154,6 +154,14 @@ moves to this subpath as its one declaration in the source tree; if you imported
 `@glw907/cairn-cms/sveltekit`, that import keeps working unchanged. See
 [Cloudflare](../reference/cloudflare.md).
 
+**If you are replacing a hand-rolled copy, read the argument order at every call site.**
+`verifyTurnstile(token, secret, opts)` takes the secret second, and the client IP moves to
+`opts.ip`. One of the copies this subpath replaces took `(token, ip, secret)`. All three are
+strings, so a swapped pair compiles, and verification then runs against a secret that is really an
+IP address and fails closed on every submission. No typecheck and no unit test with a mocked
+siteverify sees it. The first consumer migration through this window was safe only because it
+changed every call site in one pass.
+
 A new factory on `@glw907/cairn-cms/sveltekit`, `createD1AuditSink(db, waitUntil)`, is the first
 packaged implementation of the `AdminActionAuditSink` seam: apply the bundled
 `migrations/0002_audit.sql` and wire the factory to persist every `ctx.audit` record into one

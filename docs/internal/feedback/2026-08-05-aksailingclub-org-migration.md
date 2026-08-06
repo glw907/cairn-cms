@@ -112,6 +112,13 @@ a defect of this walk: the field-register flip is the migration's one visual eff
 - `cairn-doctor` reporting a zone-settings 403 as the same `FAIL` a wrong setting gets:
   **filed to the friction log**, since the real fix is in the check, not the guide; the guide
   carries a warning in the meantime.
+- `createD1AuditSink` being unable to join a `db.batch()`, so an audit row cannot be atomic with
+  the write it describes: **filed to the friction log**, with a candidate fix (export the bound
+  statement the sink already builds) and the note that the same need from a second site is the
+  altitude signal.
+- `verifyTurnstile`'s `(token, secret, opts)` against the `(token, ip, secret)` copy it replaces:
+  **fixed here**, a warning in the guide's `/cloudflare` entry, since the swap compiles and then
+  fails closed on every submission.
 - `formatCivilDate`'s entry costing a search that found nothing: **dropped**, not true as a finding.
   The site's same-named local is the site's own.
 - The 65 pre-existing `no-uncompiled-class` findings on this site's Club screens: **filed to the

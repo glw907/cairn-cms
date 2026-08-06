@@ -228,3 +228,19 @@ line.
   failure as its own outcome, distinct from a failing setting. Found on the `aksailingclub-org`
   `0.94.0-rc.1` migration (see [that report](./feedback/2026-08-05-aksailingclub-org-migration.md)),
   where both of the run's only two failures were this.
+
+- **`developer`: `createD1AuditSink` cannot join a caller's `db.batch()`, so an operation whose
+  audit row has to be atomic with the write it describes still hand-rolls its own insert.** The
+  sink is fire-and-forget by contract. It returns before the insert settles and hands the caller
+  nothing to compose with, which is exactly what makes it safe to call from `adminAction` and
+  fail-open, and it is also what puts it out of reach of a transaction. On `aksailingclub-org`, the
+  first site to adopt it, four operations (the season rollover, the signup statements, two
+  enrollment writes) correctly kept their own insert, because a batch is the only way to make the
+  audit row and the write it describes succeed or fail together. Candidate fix: export the
+  statement half the sink already composes, a builder returning the bound `D1PreparedStatement` for
+  a record, so a caller can push it into its own batch and still get the packaged column mapping
+  and truncation; the sink itself then becomes that builder plus the fire-and-forget dispatch. Not
+  proposed as urgent, since the admin path the seam was built for fits without a workaround and the
+  hand-rolled inserts beside it are correct. The same need from a second consumer site is the
+  altitude signal that turns it into engine work. Found on the `aksailingclub-org` `0.94.0-rc.1`
+  migration (see [that report](./feedback/2026-08-05-aksailingclub-org-migration.md)).

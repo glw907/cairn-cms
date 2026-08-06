@@ -49,6 +49,9 @@ before starting the ASC migration."
 **Then the order is unchanged:** cut `0.94.0-rc.1`, migrate ASC and cairn.pub against it from their own
 repos, mint `0.94.0` once their gates are green, migrate the remaining two off the recipe the first
 migration writes into `docs/guides/upgrade-cairn.md`, then phase F, then RELEASE ONE, then phase P.
+**The RC is a one-time guard for this window, not a pattern** (Geoff, 2026-08-05): later pre-beta
+cuts go straight to the final number, and the beta-and-after scheme (`1.0.0-beta.N` under `next`,
+then strict SemVer with RCs only ahead of a major) is recorded in ROADMAP's "Toward 1.0".
 
 **A watch routine is live** for the two external AI-crawler triggers: `trig_01SLdXarWCJX2LD2FB8b3Dqk`,
 monthly on the 1st, first run 2026-09-01, emailing only when a condition trips. It watches Cloudflare's

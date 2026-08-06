@@ -114,6 +114,7 @@ export type {
   CookieSetOptions,
   HistoryData,
   HistoryEntry,
+  RevertFailure,
 } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { CairnEnv } from '../env.js';

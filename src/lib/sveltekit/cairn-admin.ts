@@ -273,6 +273,10 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    // Revert (spec "Part 2: revert"): starts a draft from an old publish. Gated to the history
+    // view, where the revert forms live; concept/id are synthesized the same way every other
+    // per-entry action's are.
+    revert: viewAction('revert', ['history'], (event, view) => content.revertAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
     dictionaryAdd: viewAction('dictionaryAdd', ['edit'], (event, view) =>

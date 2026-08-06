@@ -15,6 +15,7 @@ export type CairnLogEvent =
   | 'auth.session.destroy_failed'
   | 'commit.succeeded'
   | 'commit.failed'
+  | 'commit.reverted'
   | 'config.invalid'
   | 'content.field_behavior_failed'
   | 'taxonomy.unmarked_field'

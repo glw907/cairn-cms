@@ -126,6 +126,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOp
     deleteAction: core.deleteAction,
     listDeleteAction: core.listDeleteAction,
     renameAction: core.renameAction,
+    revertAction: core.revertAction,
     uploadAction: media.uploadAction,
     mediaLibraryUploadAction: media.mediaLibraryUploadAction,
     mediaDeleteAction: media.mediaDeleteAction,

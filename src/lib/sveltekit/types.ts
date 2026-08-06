@@ -145,3 +145,39 @@ export interface HistoryData {
    */
   head: string | null;
 }
+
+/**
+ * A refused revert (spec "Part 2: revert"): fail-closed, and stays on the page as an
+ * `ActionFailure`, never a force path. `draft_exists` and `history_stale` answer `fail(409, ...)`;
+ * `ref_unknown` answers `fail(404, ...)`. There is no fourth, "reverted content is invalid"
+ * reason: schema drift in the old version warns on the edit screen after a successful revert, it
+ * never refuses one.
+ */
+export type RevertFailure =
+  | {
+      /**
+       * A pending branch already blocks this entry, from `revertAction`'s own fast pre-check or
+       * from `createBranch`'s authoritative collision under a race with another save or revert.
+       */
+      reason: 'draft_exists';
+      /** Who started the blocking draft, degraded the same way {@link HistoryEntry.editor} is. */
+      draftEditor: string;
+      /** ISO 8601: when the blocking draft's branch head landed. */
+      draftStartedAt: string;
+    }
+  | {
+      /**
+       * The posted ref is not a member of a freshly re-read recent-publish list: it named a
+       * commit outside the bounded history window, or the window moved between page render and
+       * submit.
+       */
+      reason: 'ref_unknown';
+    }
+  | {
+      /**
+       * The default branch's head moved since the history page rendered (the posted `head`
+       * mismatches `branchHead(defaultBranch)`), so reverting now would silently undo a publish
+       * this request never saw.
+       */
+      reason: 'history_stale';
+    };

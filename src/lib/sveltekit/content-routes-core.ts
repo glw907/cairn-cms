@@ -23,7 +23,7 @@ import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pe
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, stampFirstPublish, upsertEntry, removeEntry, inboundLinks, inboundReferences, inboundIncludes, type Manifest, type ManifestEntry, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
-import { isConflict } from '../github/types.js';
+import { isConflict, isBranchExists } from '../github/types.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
@@ -42,7 +42,7 @@ import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import type { ContentRoutesContext, AttentionItem } from './content-routes-context.js';
-import type { CairnEvent, HistoryData, HistoryEntry } from './types.js';
+import type { CairnEvent, HistoryData, HistoryEntry, RevertFailure } from './types.js';
 
 // The advisory notice types are defined alongside the cross-branch address index in the content
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
@@ -360,6 +360,56 @@ function invalidIdMessage(concept: ConceptDescriptor): string {
  */
 function manifestRow(manifest: Manifest, conceptId: string, id: string): ManifestEntry | undefined {
   return manifest.entries.find((e) => e.concept === conceptId && e.id === id);
+}
+
+/**
+ * The frontmatter keys every entry carries regardless of the site's own declared fields: the
+ * engine reads these directly (`manifestEntryFromFile`, the list-row summarizer) rather than
+ * gating them on a `NamedField`, so they are never "retired" even when a concept declares no
+ * field of the same name.
+ */
+const BUILTIN_FRONTMATTER_KEYS = new Set(['title', 'date', 'draft']);
+
+/**
+ * The revert schema-drift signals (spec "Part 2: revert", warn-not-refuse): frontmatter keys the
+ * old version carries that the concept's current fields no longer declare, and taxonomy tags no
+ * longer in the configured vocabulary. Pure and read-only; the caller decides what to do with the
+ * result, since revert never refuses on it.
+ */
+function revertSchemaDrift(
+  concept: ConceptDescriptor,
+  frontmatter: Record<string, unknown>,
+  vocabValues: string[],
+): { retiredFields: string[]; retiredTags: string[] } {
+  const known = new Set(concept.fields.map((f) => f.name));
+  const retiredFields = Object.keys(frontmatter).filter((k) => !known.has(k) && !BUILTIN_FRONTMATTER_KEYS.has(k));
+  const taxField = resolveTaxonomyField(concept.fields);
+  const retiredTags =
+    vocabValues.length > 0 && taxField !== null ? unlistedTags(vocabValues, coerceTags(frontmatter[taxField])) : [];
+  return { retiredFields, retiredTags };
+}
+
+/**
+ * The revert schema-drift advisory (spec "Part 2: revert"): "this version predates a change to
+ * this content type," naming the fields and tags. Shared between `revertAction`, which derives
+ * the two lists from the old content it is about to commit, and `editLoad`, which rehydrates the
+ * same notice from the redirect's query params, the channel save's own advisories already ride.
+ * Null when neither list carries anything, so a plain revert adds no notice.
+ */
+function retiredContentAdvisory(retiredFields: string[], retiredTags: string[]): AdvisoryNotice | null {
+  if (retiredFields.length === 0 && retiredTags.length === 0) return null;
+  const parts: string[] = [];
+  if (retiredFields.length) {
+    parts.push(`the ${retiredFields.length === 1 ? 'field' : 'fields'} ${retiredFields.join(', ')}`);
+  }
+  if (retiredTags.length) {
+    parts.push(`the ${retiredTags.length === 1 ? 'tag' : 'tags'} ${retiredTags.join(', ')}`);
+  }
+  return {
+    kind: 'reverted-schema-drift',
+    severity: 'warn',
+    message: `This version predates a change to this content type: ${parts.join(' and ')} no longer belong to it. Saving keeps only what the current form shows.`,
+  };
 }
 
 /** Look up the concept named by the `[concept]` route param, or a 404. */
@@ -901,6 +951,21 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       } catch {
         // A malformed-date entry that cannot resolve its permalink degrades to no advisory, fail open.
       }
+    }
+
+    // The revert schema-drift advisory (spec "Part 2: revert"): revertAction carries its two
+    // retired-name lists on the redirect query, the same channel save's own draftLinks/
+    // referenceWarnings ride; this rehydrates them into the same advisories array the address-
+    // collision notice above already populates, so EditPage's one generic advisory region renders
+    // both with no separate code path.
+    const revertedFields = event.url.searchParams.get('revertRetiredFields');
+    const revertedTags = event.url.searchParams.get('revertRetiredTags');
+    if (revertedFields || revertedTags) {
+      const notice = retiredContentAdvisory(
+        revertedFields ? revertedFields.split(',').filter(Boolean) : [],
+        revertedTags ? revertedTags.split(',').filter(Boolean) : [],
+      );
+      if (notice) advisories = [...advisories, notice];
     }
 
     // Project the one committed media manifest read two ways: the minimal resolver triple the preview
@@ -1814,6 +1879,120 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
   }
 
+  /**
+   * The revert collision refusal (spec "Part 2: revert"): a pending branch already blocks this
+   * entry, from either entry point (`revertAction`'s own fast pre-check, or `createBranch`'s
+   * authoritative collision under a race). Re-reads the branch's head commit for the blocking
+   * draft's own author and start date, the same derivation `historyLoad`'s synthetic draft row
+   * uses, so the refusal names a real person rather than a bare 409. A branch that vanished
+   * between the collision and this re-read (an unlucky discard) degrades to "unknown" rather
+   * than throwing: the refusal still stands, since the caller's own attempt already failed.
+   */
+  async function draftExistsFailure(backend: Backend, path: string, branch: string): Promise<ActionFailure<RevertFailure>> {
+    const headSha = await backend.branchHead(branch);
+    let draftEditor = 'unknown';
+    let draftStartedAt = '';
+    if (headSha !== null) {
+      const branchCommits = await backend.listCommits(path, branch, 1);
+      const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
+      if (head) {
+        draftEditor = commitEditorName(head.author);
+        draftStartedAt = head.date;
+      }
+    }
+    return fail(409, { reason: 'draft_exists', draftEditor, draftStartedAt } satisfies RevertFailure);
+  }
+
+  /**
+   * Revert an entry to an earlier publish (spec "Part 2: revert"): start a draft from an old
+   * version, never a time machine. In order: (1) the posted `ref` must be a member of a FRESH
+   * `listCommits` read (full-sha exact match), so only the listed recent publishes are revertable
+   * through the UI; (2) the posted `head` must still match `branchHead(defaultBranch)`, or someone
+   * published since the history page rendered; (3) the old content is read and inspected for
+   * schema drift, which only ever warns, never refuses; (4) a pending branch already blocking this
+   * entry refuses fail-closed, from the fast pre-check or from `createBranch`'s own typed
+   * collision under a race; (5) the old markdown commits onto the new branch with `expectedHead`
+   * set to the sha `createBranch` just made, so a save landing in that narrow window answers 409
+   * instead of being silently overwritten; (6) `commit.reverted` logs alongside the ordinary
+   * `commit.succeeded`; (7) the action lands on the edit screen's post-save redirect, carrying any
+   * schema-drift advisory the same way save's own advisories ride. There is no force path: every
+   * refusal here is a fail-closed `ActionFailure` that stays on the page.
+   */
+  async function revertAction(event: CairnEvent): Promise<ActionFailure<RevertFailure>> {
+    const { editor, concept, id } = requireEntryFromParams(runtime, event);
+    const backend = ctx.resolveBackend(event);
+    const path = `${concept.dir}/${filenameFromId(id)}`;
+    const branch = pendingBranch(concept.id, id);
+
+    const form = await event.request.formData();
+    const ref = String(form.get('ref') ?? '');
+    const head = String(form.get('head') ?? '');
+
+    // (1) Full-sha exact membership in a fresh read, not a trust of the posted row.
+    const commits = await backend.listCommits(path, backend.defaultBranch, HISTORY_LIMIT);
+    if (!commits.slice(0, HISTORY_LIMIT).some((c) => c.ref === ref)) {
+      return fail(404, { reason: 'ref_unknown' } satisfies RevertFailure);
+    }
+
+    // (2) main must not have moved since the history page rendered.
+    const mainHead = await backend.branchHead(backend.defaultBranch);
+    if (mainHead !== head) {
+      return fail(409, { reason: 'history_stale' } satisfies RevertFailure);
+    }
+
+    // (3) Read and inspect the old content; this never refuses the revert, only carries an
+    // advisory forward, so an old version is never permanently unrevertable.
+    const raw = await backend.readFile(path, ref);
+    if (raw === null) throw error(404, 'Entry not found');
+    const { frontmatter } = parseMarkdown(raw);
+    const vocabValues = runtime.vocabulary.map((v) => v.value);
+    const { retiredFields, retiredTags } = revertSchemaDrift(concept, frontmatter, vocabValues);
+
+    // (4) The pre-check is a fast path for a friendly message; createBranch's typed collision,
+    // caught below, is the authoritative refusal for a race this pre-check cannot see.
+    if ((await backend.branchHead(branch)) !== null) {
+      return draftExistsFailure(backend, path, branch);
+    }
+    try {
+      await backend.createBranch(branch, backend.defaultBranch);
+    } catch (err) {
+      if (isBranchExists(err)) return draftExistsFailure(backend, path, branch);
+      throw err;
+    }
+
+    // (5) Fail-closed on the sha the branch was just created at: mainHead, already validated
+    // against the form. Re-reading branchHead here instead would reopen the race this guards
+    // (a save landing between createBranch and the re-read would be read back as the expected
+    // head and then silently overwritten); with mainHead as the comparand, any commit that
+    // sneaks onto the new branch makes this commit conflict, mapped to the collision refusal.
+    const commitFields = { concept: concept.id, id, editor: editor.email, branch };
+    let newSha: string;
+    try {
+      newSha = await backend.commit(
+        branch,
+        [{ path, content: raw }],
+        { name: editor.displayName, email: editor.email },
+        `Revert ${concept.label.toLowerCase()}: ${id} to ${ref.slice(0, 7)}`,
+        mainHead,
+      );
+    } catch (err) {
+      if (isConflict(err)) return draftExistsFailure(backend, path, branch);
+      throw err;
+    }
+
+    // (6) commit.succeeded mirrors every other commit path; commit.reverted is revert's own
+    // record, carrying the reverted-to ref and the branch sha the revert commit landed at.
+    log.info('commit.succeeded', commitFields);
+    log.info('commit.reverted', { concept: concept.id, id, editor: editor.email, ref, branchSha: newSha });
+
+    // (7) The edit screen's post-save redirect, carrying the schema-drift advisory (if any)
+    // through the same query-string channel save's draftLinks/referenceWarnings ride.
+    let query = 'saved=1';
+    if (retiredFields.length) query += `&revertRetiredFields=${encodeURIComponent(retiredFields.join(','))}`;
+    if (retiredTags.length) query += `&revertRetiredTags=${encodeURIComponent(retiredTags.join(','))}`;
+    throw redirect(303, `/admin/${concept.id}/${id}?${query}`);
+  }
+
   return {
     shellLoad,
     helpLoad,
@@ -1829,5 +2008,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     deleteAction,
     listDeleteAction,
     renameAction,
+    revertAction,
   };
 }

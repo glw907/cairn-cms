@@ -58,7 +58,17 @@ coupling out loud, and it can only say it at bundle time. There is no compile-ti
 "this import is reachable from the client," so the guide now carries a section naming the symptom
 and the usual cause.
 
-**Runtime-only, past typecheck and build.** Two, both caught by the test suite rather than by
+**A second, worse gate failure, at the Playwright suite.** The deployed Worker does not start:
+`/auth-crypto` and `/cloudflare` publish a `browser` condition, and `browser` is a condition a
+Workers build resolves too, so the *server* bundle gets the throwing stub. 75 of 75 specs failed
+with `ERR_CONNECTION_REFUSED`, and nothing in that output names a cairn subpath. **This blocks the
+RC for every consumer in this window**, since both subpaths are server-side Cloudflare primitives;
+it needs an `rc.2` adding a `worker` condition ahead of `browser`. Filed in full, with the fix
+verified against this site, as
+[the RC blocker](./2026-08-05-rc1-worker-condition-defect.md). The migration branch is complete
+and green on `check`, `test`, `build`, and `cairn-audit`, and is held at this defect.
+
+**Runtime-only, past typecheck and build.** Two more, both caught by the test suite rather than by
 anything the engine could have flagged. The `locals` rename is invisible to a site that declared
 its own `App.Locals.auditSink` instead of importing `/ambient`: `hooks.server.ts` kept compiling
 while writing a key the engine no longer reads, so audit persistence would have silently stopped.
@@ -72,8 +82,8 @@ mocked success against an empty token.
 | --- | --- | --- | --- |
 | `createD1AuditSink` | Yes, and the packaged insert matched the existing table column for column. The one gap is structural: the sink is fire-and-forget by contract, so it cannot join a `db.batch()`. Four site operations that need their audit row atomic with the write it describes (the season rollover, the signup statements, two enrollment writes) still hand-roll their insert, correctly. | Nothing for the admin path. The scheduled jobs runner keeps its own `actor`/action vocabulary (`'system:cron'`, `job.run`, `job.send_cap_hit`) and threads the `scheduled` handler's `waitUntil` through, since the sink returns before its insert settles and a cron tick's last rows would otherwise drop. | None. |
 | `createSectionAction` | Yes. It absorbed the site's whole hand-rolled `clubAdminAction`: the composition that file's header argued for is the composition the engine now ships, and the site's version is 57 lines of config where it was 128 lines of logic. | Nothing. The site's own `ClubActionContext`/`ClubActionOptions` are now type aliases over the engine's, kept only so 40-odd call sites need no edit. | None. The rate limit is configured rather than overridden, and no call site declares `target`, since the site's access map keys on path prefixes that a bracket-form route id still matches. |
-| `/cloudflare` | Yes, and both primitives are strictly stricter than the copies they replaced. `verifyTurnstile` takes `(token, secret, opts)` where the site's copy took `(token, ip, secret)`; two adjacent string parameters swapping order is a silent hazard, and the only thing that caught it here was that the site changed every call site at once. | `RATE_LIMIT_MESSAGE`, the user-facing refusal copy, which is the site's and should be. The Turnstile site key and the `Window.turnstile` ambient type stay site-side too; the seam covers verification only. | None. No call site passes `hostname` or `action`, which is a gap on the site's side, not the seam's. |
-| `/auth-crypto` | Yes for the cryptography. The server-only `browser` condition is the whole first-gate-failure story above, which is a fit question only in the sense that adopting the subpath surfaces a coupling a site may not know it has. | A thin naming layer, `member-auth/lib/crypto.ts`, that keeps the member store's own cookie base names and its deliberately-different 15-minute token TTL. The cryptography underneath is gone; only the domain naming remains. `tokensMatch` had been reimplemented twice more, in `auth.ts` and `portal-action.ts`, and both are now the engine's. | None. |
+| `/cloudflare` | **No**, for the same reason as `/auth-crypto` below: it does not start on Workers as published. Once fixed, yes, and both primitives are strictly stricter than the copies they replaced. `verifyTurnstile` takes `(token, secret, opts)` where the site's copy took `(token, ip, secret)`; two adjacent string parameters swapping order is a silent hazard, and the only thing that caught it here was that the site changed every call site at once. | `RATE_LIMIT_MESSAGE`, the user-facing refusal copy, which is the site's and should be. The Turnstile site key and the `Window.turnstile` ambient type stay site-side too; the seam covers verification only. | None. No call site passes `hostname` or `action`, which is a gap on the site's side, not the seam's. |
+| `/auth-crypto` | **No.** The subpath does not work on Cloudflare Workers as published (see the RC blocker above); this row describes the fit once that is fixed, measured against a locally patched copy. Yes for the cryptography. The server-only `browser` condition is the whole first-gate-failure story above, which is a fit question only in the sense that adopting the subpath surfaces a coupling a site may not know it has. | A thin naming layer, `member-auth/lib/crypto.ts`, that keeps the member store's own cookie base names and its deliberately-different 15-minute token TTL. The cryptography underneath is gone; only the domain naming remains. `tokensMatch` had been reimplemented twice more, in `auth.ts` and `portal-action.ts`, and both are now the engine's. | None. |
 
 One shape the four seams do not cover, worth recording rather than filing: this site's
 `portalAction` wrapper guards `/my-account/**` writes for a **member** session, which is not a
@@ -125,5 +135,8 @@ a defect of this walk: the field-register flip is the migration's one visual eff
   site's own polish backlog**, not an engine finding. Verified pre-existing by checking the flagged
   classes against `0.91.1`'s shipped sheet; six of seven sampled were already absent there, and
   nothing in this window removed a class.
+- The `browser` condition firing for the Workers server build: **filed as its own document**,
+  `2026-08-05-rc1-worker-condition-defect.md`, because it blocks the RC rather than informing it.
+  It is engine code, not a guide gap, so nothing about it went into the upgrade guide.
 - The `datetime('now')` `created_at` column: **filed to the site's own polish backlog** as a future
   migration, weighed against a table rebuild on live audit rows and deliberately not taken here.

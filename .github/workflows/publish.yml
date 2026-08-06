@@ -44,6 +44,20 @@ jobs:
       - run: npm install --no-audit --no-fund
       # Validate the published package shape before releasing.
       - run: npm run check:package
-      # Stable release: publish to the default `latest` tag. The repo is public, so
-      # OIDC trusted publishing attaches build provenance automatically.
-      - run: npm publish --access public
+      # The repo is public, so OIDC trusted publishing attaches build provenance automatically.
+      #
+      # The dist-tag is derived from the version rather than left to npm's default, which is
+      # `latest` whatever the version's shape. A prerelease published to `latest` would serve a
+      # candidate to every bare `npm install @glw907/cairn-cms`, while the caret ranges the
+      # consumer sites pin would not resolve it at all, so the one audience it reached would be
+      # the one that never asked for it. ROADMAP's "Toward 1.0" names `next` as the prerelease
+      # dist-tag, and `latest` keeps pointing at the last stable until a stable supersedes it.
+      - name: Publish to npm
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          case "$VERSION" in
+            *-*) TAG=next ;;
+            *)   TAG=latest ;;
+          esac
+          echo "publishing $VERSION to the '$TAG' dist-tag"
+          npm publish --access public --tag "$TAG"

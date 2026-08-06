@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkVersion } from '../../../scripts/check-version.mjs';
+import { checkVersion, compareVersions } from '../../../scripts/check-version.mjs';
 
 // The marker the rule reserves for a deliberate minor or major release.
 const MINOR_MARK = '<!-- release-size: minor -->';
@@ -57,6 +57,94 @@ describe('checkVersion', () => {
   it('passes a single-heading changelog (initial)', () => {
     const result = checkVersion('0.1.0', '# Changelog\n\n## 0.1.0\n\nfirst release.\n');
     expect(result).toEqual({ ok: true, bump: 'initial' });
+  });
+});
+
+// A three-entry changelog, for the prerelease cases: `top`, then `mid`, then `prev`.
+function changelog3(top: string, mid: string, prev: string, body = '') {
+  return `# Changelog\n\n## ${top}\n\n${body}\n\n## ${mid}\n\nnotes.\n\n## ${prev}\n\nolder notes.\n`;
+}
+
+describe('compareVersions', () => {
+  it('orders by numeric core first', () => {
+    expect(compareVersions('0.94.0', '0.93.0')).toBeGreaterThan(0);
+    expect(compareVersions('0.93.9', '1.0.0')).toBeLessThan(0);
+    expect(compareVersions('0.93.0', '0.93.0')).toBe(0);
+  });
+
+  it('ranks a prerelease below the release it leads to', () => {
+    expect(compareVersions('0.94.0-rc.1', '0.94.0')).toBeLessThan(0);
+    expect(compareVersions('0.94.0', '0.94.0-rc.1')).toBeGreaterThan(0);
+    // Still above the previous stable, which is what makes the RC a legal advance.
+    expect(compareVersions('0.94.0-rc.1', '0.93.0')).toBeGreaterThan(0);
+  });
+
+  it('compares prerelease identifiers numerically, then lexically', () => {
+    expect(compareVersions('0.94.0-rc.2', '0.94.0-rc.10')).toBeLessThan(0);
+    expect(compareVersions('1.0.0-beta.1', '1.0.0-rc.1')).toBeLessThan(0);
+    // A numeric identifier ranks below an alphanumeric one at the same position.
+    expect(compareVersions('1.0.0-1', '1.0.0-alpha')).toBeLessThan(0);
+    // More identifiers wins when every shared field is equal.
+    expect(compareVersions('1.0.0-rc.1', '1.0.0-rc.1.1')).toBeLessThan(0);
+  });
+});
+
+describe('checkVersion: prerelease headings', () => {
+  it('passes an RC whose core is a minor over the last stable, with the marker', () => {
+    const result = checkVersion(
+      '0.94.0-rc.1',
+      changelog('0.94.0-rc.1', '0.93.0', `a new subsystem.\n${MINOR_MARK}`),
+    );
+    expect(result).toEqual({ ok: true, bump: 'minor' });
+  });
+
+  it('fails an RC whose core is a minor with no marker', () => {
+    const result = checkVersion('0.94.0-rc.1', changelog('0.94.0-rc.1', '0.93.0', 'no marker.'));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/minor/i);
+  });
+
+  it('sizes the promotion against the last stable, skipping its own RC line', () => {
+    const result = checkVersion(
+      '0.94.0',
+      changelog3('0.94.0', '0.94.0-rc.1', '0.93.0', `a new subsystem.\n${MINOR_MARK}`),
+    );
+    expect(result).toEqual({ ok: true, bump: 'minor' });
+  });
+
+  it('passes a second RC on the same line without redeclaring the size', () => {
+    const result = checkVersion(
+      '0.94.0-rc.2',
+      changelog3('0.94.0-rc.2', '0.94.0-rc.1', '0.93.0', `a fix to the candidate.\n${MINOR_MARK}`),
+    );
+    expect(result).toEqual({ ok: true, bump: 'minor' });
+  });
+
+  it('treats a line with no earlier differing core as a prerelease step', () => {
+    const result = checkVersion(
+      '0.94.0-rc.2',
+      changelog('0.94.0-rc.2', '0.94.0-rc.1', 'a fix to the candidate.'),
+    );
+    expect(result).toEqual({ ok: true, bump: 'prerelease' });
+  });
+
+  it('fails an RC that does not advance over the heading below it', () => {
+    const result = checkVersion(
+      '0.94.0-rc.1',
+      changelog('0.94.0-rc.1', '0.94.0', 'the promotion already shipped.'),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/advance/i);
+  });
+
+  it('simulates an Unreleased window above an RC as that RC\'s promotion', () => {
+    const result = checkVersion(
+      '0.94.0-rc.1',
+      changelogWithUnreleased('the next window.', '0.94.0-rc.1', '0.93.0'),
+    );
+    // The simulated cut is 0.94.0, a minor over 0.93.0, so an unmarked window fails the rule.
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toMatch(/Unreleased/);
   });
 });
 

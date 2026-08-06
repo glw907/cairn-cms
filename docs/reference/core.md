@@ -810,12 +810,20 @@ declare class CommitConflictError extends Error {
   readonly path: string;
   constructor(path: string);
 }
+declare class BranchExistsError extends Error {
+  readonly branch: string;
+  constructor(branch: string);
+}
 declare class SiteConfigError extends Error {
   readonly conditionId: string;
 }
 ```
 
-`CommitConflictError` signals a lost SHA race on a commit, so the save fails safe. `SiteConfigError`
+`CommitConflictError` signals a lost SHA race on a commit, so the save fails safe. `BranchExistsError`
+signals a branch-create collision: another editor's draft already holds the name, or a repeated
+attempt raced itself. Both the GitHub App backend and the packaged dev backend throw it identically
+from `Backend.createBranch`, so a caller (`revertAction` is the one built-in caller today) catches
+the collision as a typed refusal instead of a raw 500. `SiteConfigError`
 is thrown by `parseSiteConfig` on a malformed root, and its `conditionId` (always
 `config.site-config-invalid`) names the registered diagnostic condition the fault maps to.
 
@@ -977,6 +985,7 @@ function signatures above reference these.
 | `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
 | `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `githubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
 | `FileChange` | Extension API | `interface FileChange` | One path change in a commit: write `content`, or delete the path when `content` is null. |
+| `BackendCommit` | Extension API | `interface BackendCommit { ref: string; author: { name: string; email: string }; date: string }` | One entry in `Backend.listCommits`'s answer, newest first: the commit's full sha (`ref`), the git commit-author trailer (`author`, never the matched GitHub account, which is null for a magic-link editor), and `date` (ISO 8601, when the commit landed on the read ref). A file's log can hold commits made outside cairn, so `author` renders whoever git recorded, not necessarily a cairn editor. |
 | `SenderConfig` | Extension API | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
 | `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
 | `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |

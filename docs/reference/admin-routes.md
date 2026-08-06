@@ -111,6 +111,7 @@ The one route answers every admin URL. `createCairnAdmin`'s load parses `event.u
 | `/admin/auth/confirm` | confirm | The magic-link landing. Public. |
 | `/admin/<concept>` | list | One concept's entries, with create, delete, and publish-all. |
 | `/admin/<concept>/<id>` | edit | The entry editor. |
+| `/admin/<concept>/<id>/history` | history | The entry's publish history, and revert to an earlier publish. A 404 for an unknown concept or id, or for a deleted entry, exactly like the edit view. |
 | `/admin/editors` | editors | The owner-gated editor management. |
 | `/admin/nav` | nav | The nav tree editor. A 404 unless the adapter configures `editor.nav`. |
 | `/admin/media` | media | The media library. |
@@ -143,6 +144,7 @@ so a `save` posted to a list URL refuses rather than misfiring:
 | `dictionaryAdd` | edit | the personal-dictionary add |
 | `tidy` | edit | the language-model tidy copy-edit |
 | `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
+| `revert` | history | the entry revert-as-draft, from a listed prior publish |
 | `mediaDelete` | media | the committed asset's safe delete |
 | `mediaUpdate` | media | the committed asset's metadata edit (display name, slug, default alt) |
 | `mediaUpload` | media | the media-scoped ingest, the same upload the edit view's `upload` runs |
@@ -154,7 +156,7 @@ so a `save` posted to a list URL refuses rather than misfiring:
 | `mediaBulkDelete` | media | the multi-select bulk delete, skip-and-report |
 | `mediaOrphanScan` | media | the on-demand orphan scan |
 | `mediaOrphanPurge` | media | the irreversible orphan byte purge |
-| `publishAll` | index, list, edit, editors, nav, media, settings, vocabulary, help (every authed view) | the site-wide publish |
+| `publishAll` | index, list, edit, history, editors, nav, media, settings, vocabulary, help (every authed view) | the site-wide publish |
 | `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
 The engine's components post these names, so an action-adding release reaches a site through the

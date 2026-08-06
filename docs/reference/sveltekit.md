@@ -176,6 +176,7 @@ params the wrapped action reads, and delegates:
 | `dictionaryAdd` | edit | the personal-dictionary add |
 | `tidy` | edit | the language-model tidy copy-edit |
 | `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
+| `revert` | history | the entry revert-as-draft, from a listed prior publish |
 | `mediaDelete` | media | the committed asset's safe delete |
 | `mediaUpdate` | media | the committed asset's metadata edit (display name, slug, default alt) |
 | `mediaUpload` | media | the media-scoped ingest, the same upload the edit view's `upload` runs |
@@ -187,7 +188,7 @@ params the wrapped action reads, and delegates:
 | `mediaBulkDelete` | media | the multi-select bulk delete, skip-and-report |
 | `mediaOrphanScan` | media | the on-demand orphan scan |
 | `mediaOrphanPurge` | media | the irreversible orphan byte purge |
-| `publishAll` | index, list, edit, editors, nav, media, settings, vocabulary, help (every authed view) | the site-wide publish |
+| `publishAll` | index, list, edit, history, editors, nav, media, settings, vocabulary, help (every authed view) | the site-wide publish |
 | `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
 ```ts
@@ -891,6 +892,7 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure>>;
   createAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<CreateFailure>>;
   editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>;
+  historyLoad: (event: CairnEvent<CairnEnv>) => Promise<HistoryData>;
   saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure>>;
   publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure>>;
   publishAllAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
@@ -898,6 +900,7 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>;
   listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>;
   renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RenameFailure>>;
+  revertAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure>>;
   uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
   mediaLibraryUploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
   mediaDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaDeleteRefusal>>;
@@ -990,6 +993,35 @@ admin topbar posts it as the named `?/publishAll` action from any admin page. `d
 deletes the pending branch, returning to the edit page for a published entry (`?discarded=1`) or
 to the list for an entry that never published. `renameAction` refuses with a 409 while a pending
 branch exists, and a delete cascades to the pending branch after its own commit lands.
+
+`historyLoad` and `revertAction` back the `history` view: a version is a publish, reachable from
+the edit screen for any entry that has published or carries an open draft. `historyLoad` reads the
+default branch's commit log for the entry's file through `Backend.listCommits`, bounded to the most
+recent 25 publishes, plus a synthetic top row for an open draft when one exists. The list shows
+every commit that touched the file, including changes made outside cairn (a direct edit, a
+repo-wide migration), rendering whichever author name and date git recorded rather than assuming a
+cairn editor. The label the screen renders is "recent versions," never a completeness claim: the
+commits API's path filter doesn't follow a rename, so a renamed entry's history restarts at the
+rename, and `HistoryData.truncated` only ever flags the 25-row bound, never a rename boundary the
+route can't see. A deleted entry answers a 404 exactly as `editLoad` does. Undelete is out of scope
+(see [ROADMAP.md](../../ROADMAP.md)), and a developer who needs a removed entry's content reads it
+straight from git. `revertAction` starts a fresh draft from an old publish: it re-validates the
+posted `ref` against a fresh `listCommits` read, full-sha exact membership, so `ref_unknown` always
+means the target fell outside that same 25-row window, either because it named a commit history
+never listed or because the window moved between page render and submit. The 25-row bound therefore
+composes with that membership check into one deliberate consequence: revert reaches only the last
+25 publishes through the UI, and git is the developer's escape hatch for anything older. A stale
+`head`, the default branch moved since the history page rendered, refuses `history_stale`, and a
+pending branch already blocking the entry refuses `draft_exists` with the blocking draft's
+own editor and start date, from either `revertAction`'s own pre-check or `Backend.createBranch`'s
+authoritative `BranchExistsError` under a race. None of the three refusals commits anything; every
+one stays on the page as an `ActionFailure<RevertFailure>`. A successful revert commits the old
+markdown onto the pending branch (`expectedHead` pinned to the sha the branch was just created at,
+so a save that lands in the narrow window right after still answers a conflict rather than being
+silently overwritten), logs `commit.reverted` alongside the ordinary `commit.succeeded` (see [log
+events](./log-events.md)), and redirects to the edit screen exactly like a save, carrying a
+schema-drift advisory when the old version predates a since-retired field or vocabulary tag: revert
+warns on drift, it never refuses on it, so an old version is never permanently unrevertable.
 
 `settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
@@ -1675,6 +1707,8 @@ imports the matching `*Data` type to type its `data` prop.
 | `EntrySummary` | Extension API | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean; status: 'published' \| 'edited' \| 'new'; summary: string \| null }` | One row in a concept's list view. `status` derives from the ref set: live as-is, live with held edits, or pending-branch only. `summary` is the row's one-line excerpt (the manifest's indexed summary for a published row, the branch frontmatter or body excerpt for a pending one, null when neither yields text). |
 | `ListData` | Extension API | `interface ListData { conceptId; label; singular; dated; routable: boolean; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. `singular` is the create-affordance noun ("New post"), from the descriptor (defaulted to `label`). `routable` mirrors the concept's `routing.routable`, so the create form asks a non-routable concept (Fragments) for a name rather than an address. |
 | `EditData` | Extension API | `interface EditData { conceptId; id; label; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; fragmentTargets: { id; title; body }[] \| null; routable: boolean; mediaTargets: Record<string, { slug; ext; contentType }>; mediaLibrary: Record<string, { hash; slug; ext; contentType; displayName; alt; width; height; bytes }>; inboundLinks; pending; published; publishedFlash; publishActions: PublishActionLink[]; discardedFlash; preview: ResolvedPreview \| null; advisories: AdvisoryNotice[]; orphanTags: string[] }` | The entry editor's data: form-ready frontmatter, the body, the link targets, the media targets (the minimal resolver input keyed by content hash, empty when media is off or the read fails), the media library (the picker's full human layer keyed by the same content hash, projected from the same committed-manifest read, with the `hash` duplicated into each value for `Object.values` iteration, and degrading to empty on the same path as `mediaTargets`), the inbound links for the delete guard, the publish state (`pending` means the body came from the entry's branch; `published` means the file exists on the default branch), the site's [publish-actions](#the-publish-actions-seam) resolved for this entry (`publishActions`, rendered only alongside `publishedFlash`), the adapter's `preview` knob resolved for this entry's concept (its `byConcept` override applied; null when the site sets none, which leaves the frame unstyled behind a hint), and the non-blocking server-built `advisories` (today the cross-branch address collision, empty when there is none). `fragmentTargets` carries the published fragments this entry can include, for the fragment picker and the preview's include resolution, each a minimal `{ id; title; body }` projection; null when nothing here can include one, which covers both a site that declares no `fragments` concept and an entry that is itself a fragment (a fragment can't include a fragment), and empty when fragments are includable but none are published yet. `routable` mirrors the entry's concept `routing.routable`, so the Address fieldset shows a bare name instead of a URL for a non-routable concept (Fragments). `orphanTags` carries the entry's prior tags absent from the configured vocabulary, for the closed taxonomy picker's own-tag flag, and stays empty when the site configures no vocabulary, the concept has no taxonomy field, or every prior tag is already in the vocabulary. |
+| `HistoryData` | Extension API | `interface HistoryData { entries: HistoryEntry[]; draft: { editor: string; startedAt: string } \| null; truncated: boolean; head: string \| null }` | `historyLoad`'s data for the `history` view: the most recent 25 publishes newest first (`entries`), a synthetic top row for an open draft (`draft`, null when there is none), `truncated` when the backend's `limit + 1` probe found more publishes than the 25-row bound holds (an entry with exactly 25 stays `false`), and `head`, the default branch's head sha at load time, carried by the revert form as its staleness comparand. |
+| `HistoryEntry` | Extension API | `interface HistoryEntry { ref: string; editor: string; date: string }` | One row in `HistoryData.entries`: the commit's full sha (`ref`, the exact value `revertAction` validates a posted target against), the author name git recorded (`editor`, degraded to email, then to "unknown," since a file's log can hold commits made outside cairn), and `date` (ISO 8601, when the version landed on the default branch). |
 | `AdvisoryNotice` | Extension API | `interface AdvisoryNotice { kind: string; severity: 'warn'; message: string; count?: number; actions?: AdvisoryAction[] }` | A non-blocking editor advisory carried on `EditData.advisories`, serializable so it rides the SSR boundary (data only, no callback). `kind` names the notice (`'address-collision'` today), `severity` is always `'warn'` (warn-and-allow, never a gate), `count` is an aggregating notice's running total, and `actions` are the offered links. |
 | `AdvisoryAction` | Extension API | `interface AdvisoryAction { label: string; href?: string }` | One action an advisory offers: a button or link label and an optional `href` link target. |
 | `MediaUsageInfo` | Extension API | `interface MediaUsageInfo { count: number; entries: UsageEntry[] }` | One asset's where-used overlay: the distinct-entry count (by concept and id) and every row (published and edit-branch origins), kept separate from `MediaLibraryEntry` so the picker projection stays decoupled. |
@@ -1690,6 +1724,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; inboundKind?: 'link' \| 'include'; id: string }` | A refused delete: the one-line summary, the entries that still link to (or include) the refused one, and its id so a list marks the right row. `inboundKind` names which gate refused, `'include'` for a blocked fragment delete and `'link'` (the default when absent) otherwise, so the refusal copy names the real blocker. |
 | `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
 | `CreateFailure` | Unstable API | `interface CreateFailure { error: string }` | A refused create (bad slug, missing date, or an address collision): just the one-line summary. |
+| `RevertFailure` | Unstable API | `type RevertFailure = { reason: 'draft_exists'; draftEditor: string; draftStartedAt: string } \| { reason: 'ref_unknown' } \| { reason: 'history_stale' }` | A refused revert (`ActionFailure<RevertFailure>`), fail-closed with no force path: `draft_exists` (`fail(409, ...)`, the blocking draft's own editor and start date) when a pending branch already exists for the entry, from `revertAction`'s own pre-check or `Backend.createBranch`'s typed `BranchExistsError` under a race; `ref_unknown` (`fail(404, ...)`) when the posted ref isn't a member of a fresh `listCommits` read, the 25-row window's own boundary; `history_stale` (`fail(409, ...)`) when the default branch moved since the history page rendered. There is no fourth reason for invalid old content: a retired field or vocabulary tag in the reverted version rides forward as an advisory on the edit screen instead, and never refuses the revert. |
 | `MediaDeleteRefusal` | Unstable API | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
 | `MediaUpdateFailure` | Unstable API | `interface MediaUpdateFailure { error: string; hash?: string }` | A refused media metadata edit (an asset not committed on the default branch, an invalid slug, or a manifest conflict): the one-line summary, and the edited asset's hash when known, so the Library re-opens the right slide-over. |
 | `MediaReplaceFailure` | Unstable API | `interface MediaReplaceFailure { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media replace: the one-line summary, the asset's content hash, the where-used rows, and the distinct-entry count. Mirrors `MediaDeleteRefusal`: a fresh usage read found the asset still in use without the typed-slug override (409), or usage could not be verified or the bucket is unbound (503). |
@@ -1705,7 +1740,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `NavRoutes` | Unstable API | `type NavRoutes` | What `createNavRoutes` returns: the nav editor's load and save functions, shown expanded in [`createNavRoutes`](#createnavroutes). |
 | <a id="cairnadminoptions"></a>`CairnAdminOptions` | Extension API | `interface CairnAdminOptions { auth?: Partial<AuthRoutesConfig>; tidy?: ContentRoutesOptions['tidy']; navFilter?: ContentRoutesOptions['navFilter']; attention?: ContentRoutesOptions['attention'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth` is [`AuthRoutesConfig`](#authroutesconfig) made fully optional, so it references that shape once instead of re-declaring it; `auth.branding` defaults from the runtime's `siteName` and `sender` when omitted, `auth.send` is the same seam the underlying auth factory takes, and `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, and `attention` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellLoad` calls, and `attention` is the per-session pending-work seam (see `ContentRoutesOptions` below and [the attention seam](#the-attention-seam)), so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
 | `CairnAdminRoutes` | Extension API | `type CairnAdminRoutes` | What `createCairnAdmin` returns: the one `load`, the full `actions` vocabulary, and `shellLoad`, shown expanded in [`createCairnAdmin`](#createcairnadmin). |
-| `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
+| `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'history' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `HistoryData` for the `history` view, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `WelcomeData` | Extension API | `interface WelcomeData { displayName: string; siteName: string }` | The `'welcome'` view's data: the calm, minimal admin-root landing a none-capability role with no declared `home` gets. [`CairnAdmin`](./components.md#cairnadmin) switches it to a bare internal view inside the shell, so any site-granted nav stays visible. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |

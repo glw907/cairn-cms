@@ -54,7 +54,19 @@ is filed in [`ROADMAP.md`](../ROADMAP.md).
 candidate and the fix carry the same window; a stable-cut rename, not a new entry, per the rule
 below), bump `package.json`, and release under the `next` dist-tag. ASC's Playwright suite is the
 proof: once it runs green against `rc.2`, mint the stable `0.94.0`, then migrate `907-life` and
-`ecxc-ski` off the recipe ASC's migration wrote, each resolving on its own caret.
+`ecxc-ski` off the recipe ASC's migration wrote, each resolving on its own caret. (The cut
+itself is executed and waiting: both commits are on `main`, held at a GitHub Actions outage;
+the release fires once CI proves the cut commit.)
+
+**Phase F is pre-baked** (the F1+F4 sitting ran 2026-08-06, during the outage wait). The spec is
+[`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md);
+the plans are [`2026-08-06-history-revert.md`](superpowers/plans/2026-08-06-history-revert.md)
+(pass one, F2/F3 merged) and [`2026-08-06-preview.md`](superpowers/plans/2026-08-06-preview.md)
+(pass two; its task 0 adversarial review blocks every dispatch). Execution runs in a fresh
+Opus 5 session per the model economy, each pass on its own worktree off `main`; it does not
+depend on the migration window and may run parallel to it. Resume prompt: "Execute the Phase F
+pass-one plan at docs/superpowers/plans/2026-08-06-history-revert.md via cairn-pass; the spec
+and plan are committed; work a fresh worktree off main."
 
 **How a stable cut handles the changelog.** The window is headed `## 0.94.0-rc.1` (soon
 `## 0.94.0-rc.2`), not `## Unreleased`. At the stable cut, rename that heading to `## 0.94.0`

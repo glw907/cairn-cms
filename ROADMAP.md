@@ -21,10 +21,14 @@ seam becomes a major-version (`2.0`) event, which the charter already calls "a d
 event, not an everyday one." Cut it when the surface stops moving, not on a date.
 
 **Release mechanics per phase (Geoff, 2026-08-05, the harvest sitting).** The `0.94.0-rc.1`
-candidate is a one-time guard for the current window, which is the largest breaking window to date
-and is proven only against the self-authored showcase; it is not a pattern, and later pre-beta cuts
-go straight to the final number with patches as the correction channel. At beta the scheme switches
-to `1.0.0-beta.N` prereleases under the `next` dist-tag: breaking changes stay allowed between
+candidate **published 2026-08-05** to the `next` dist-tag, a one-time guard for the current window,
+which is the largest breaking window to date and is proven only against the self-authored showcase;
+it is not a pattern, and later pre-beta cuts go straight to the final number with patches as the
+correction channel. The publish workflow now derives its dist-tag from the version, so any
+prerelease lands on `next` and `latest` keeps serving the last stable, and `check:version` sizes a
+prerelease against the nearest earlier heading whose numeric core differs. At beta the scheme
+switches to `1.0.0-beta.N` prereleases under that same `next` tag: breaking changes stay allowed
+between
 betas, each carrying migration notes, while the seam surface hardens against its first outside
 consumers. From `1.0.0` on the number carries compatibility under strict SemVer: breaking changes
 batch into majors with one migration guide, minors are additive, patches are fixes, `Consumers

@@ -10,6 +10,17 @@ of them (the preview route shape, part 3). The ROADMAP entries this spec consume
 
 Every decision below is Geoff-ratified from this sitting unless marked as a plan-time call.
 
+**Adversarial round, same day.** Three design-level reviewers (a web-auth security lens on the
+token discipline, a SvelteKit lens on the data-shape-reuse claim, a general red team on the
+revert semantics) ran against this spec and its plans before any implementation, pulling pass
+two's mandatory pre-dispatch review early. Their findings are folded throughout; the paragraphs
+below marked *(round 2)* changed as a result. Three calls went back to Geoff and are ratified:
+the preview route accepts the site's globbed corpus in the Worker bundle for v1 (a bundle-size
+assertion warns, and the narrowed manifest-backed resolver files to ROADMAP); a revoke-all
+affordance ships in the preview pass; undelete stays out of v1 (history for a deleted entry
+404s like the edit view, and the capability files to ROADMAP with the recently-deleted surface
+it actually needs).
+
 ## The premise: what the machinery already makes durable
 
 Three facts of the existing architecture ground every choice here.
@@ -54,6 +65,16 @@ a plan-time call) through the new backend member. When the log runs deeper, the 
 branch exists: "unpublished draft, started by X", giving the view one honest live element without
 mixing save history into it.
 
+**The view never claims completeness** *(round 2)*. The screen's own label is "recent versions,"
+unconditionally: the commits API's path filter does not follow renames, so a renamed entry's
+history restarts at the rename, and a completeness claim would be false there. Two adjacent
+honesty rules ride along. The list shows every commit that touched the file, including commits
+made outside cairn (a developer editing markdown directly, a repo-wide migration); the view
+renders what git recorded rather than assuming an editor, degrading to the raw name or
+"unknown". And a deleted entry's history is out of scope for v1: it 404s exactly as the edit
+view does, the guide names the developer's git escape hatch, and undelete files to ROADMAP with
+the recently-deleted surface it needs to be reachable at all (Geoff, 2026-08-06).
+
 **The seam change.** One additive `Backend` member, shape at plan time approximately
 `listCommits(path: string, ref: string, limit: number)`, returning per-commit ref, author, and
 date, backed by the GitHub commits API's path filter. The facade view is the reserved `history`;
@@ -77,6 +98,31 @@ self-draft case costs one extra step (discard, then revert), and discard already
 deliberate moment. This matches the house refusal doctrine everywhere else in the engine (the
 delete gate refusing on inbound links, conflicts answering 409 in place).
 
+**The backend call is the authoritative gate, not the check** *(round 2)*. GitHub's ref-create
+POST is create-only, so refuse-on-collision is guaranteed by the platform; the branch-exists
+pre-check demotes to a fast path for a friendly message. `createBranch`'s already-exists failure
+maps to a typed conflict both backends throw identically (the dev backend today silently
+clobbers where GitHub 422s, a pre-existing defect the pass fixes), and `revertAction` catches it
+into the same `RevertFailure` rather than a raw 500 when two editors race. Revert's own commit
+passes the expected head it just created, so a save that lands in the window answers 409 instead
+of being silently overwritten. Two further refusals join the family: `history_stale` (the
+history form carries `main`'s head; a mismatch means someone published since the page rendered,
+and reverting would silently undo their work), and the posted ref must be a member of the
+freshly re-read history list (full-sha, exact match), which gives `ref_unknown` one meaning,
+makes `commit.reverted`'s provenance true by construction, and states a deliberate consequence:
+only the listed recent publishes are revertable through the UI.
+
+**Reverted content is validated, warn-not-refuse** *(round 2)*. Revert must not commit raw old
+bytes blind: an old version can carry frontmatter fields the schema has since retired (which the
+edit screen would silently drop on the next save, making "restore" quietly not mean restore),
+vocabulary values since removed (which the prior-tags union would launder back into the allowed
+set), and links or includes to since-deleted targets. `revertAction` parses and validates the
+old version before creating the branch and carries the failures onto the edit screen as
+advisories, through the same channel save's advisories already use: "this version predates a
+change to this content type," naming the fields. Refusing outright would make old versions
+permanently unrevertable, which is the wrong answer for the persona; the Publish gate stays the
+hard backstop it already is.
+
 ## Part 3: public preview for a non-editor
 
 **The rejected shape, recorded because its flaw is instructive.** The first proposal was a
@@ -91,14 +137,46 @@ asset pipeline badly, one option at a time.
 
 **The chosen shape: a site-mounted, never-prerendered preview page that reuses the site's own
 entry-rendering path.** The site mounts `/preview/[token]` the same way it mounts everything else
-in the embedded-routing model. The cairn-provided load, `previewLoad`, verifies the token, reads
-the draft off the pending branch, runs it through the same composition the public load runs, and
-returns the same data shape the public entry page receives, plus preview metadata (expiry, the
-draft flag, and the published permalink in the courtesy case below). The site's preview page
-component then does what its public entry page does. Fidelity is a structural consequence rather
-than an approximated feature: full CSS, working build-function components, hydrating islands,
-because it is a real page in the site's own app. The default draft-banner treatment ships as a
-small cairn component; the load's metadata feeds it.
+in the embedded-routing model, **inside the same layout group as its entry pages** *(round 2)*:
+the stylesheets and chrome live on the layout chain, so mounting outside the group reproduces
+exactly the unstyled page the rejected shape was rejected for. The cairn-provided load,
+`previewLoad`, verifies the token, reads the draft off the pending branch, runs it through the
+same composition the public load runs, and returns the same data shape the public entry page
+receives, plus preview metadata (`preview.state: 'draft' | 'published'`, the expiry, and the
+live permalink in the ended case below). The site's preview page component then does what its
+public entry page does. Fidelity is a structural consequence rather than an approximated
+feature: full CSS, working build-function components, hydrating islands, because it is a real
+page in the site's own app. The default banner treatment ships as a small cairn component; the
+load's metadata feeds it.
+
+**"Same composition" is enforced by construction, with two named exceptions** *(round 2)*. The
+public entry shape is built in site code from the config the site passes `createPublicRoutes`
+(`composeRuntime` alone cannot construct it), so `previewLoad` takes that same config object as
+a parameter: the site hands over the literal object it already built, and shape drift becomes a
+compile error rather than a convention. The type contract is explicit: the return is the public
+entry shape intersected with `preview`, with a compile-time assertion that no other key differs.
+The two exceptions, stated rather than discovered: the link and fragment resolvers are the
+admin preview's *marking* pair built from the pending branch's manifest, never the build's
+*throwing* pair (a draft linking an unpublished sibling must render with the link marked, not
+500); and the media resolver reads `media.json` off the backend at request time (branch first,
+`main` fallback), because the site's build-time media snapshot is stale in exactly the
+share-a-draft window. Preview media is thereby strictly fresher than the public site, the
+correct polarity.
+
+**The fidelity boundary, stated honestly** *(round 2)*. Preview is faithful for the entry
+itself. Anything computed over the corpus reflects *published* state: references and bylines
+resolve against the live corpus (a draft author pointing at an unpublished page shows no
+byline), newer/older links, tag indexes, and nav are the published ones, canonical and og:url
+tags carry the draft's future permalink (which does not resolve yet), and the raw-markdown twin
+a site advertises does not exist for a draft. Interactive islands in the site's chrome are live
+on the preview page for whoever holds the link, the read kind fetching published state and the
+write kind (a signup form) genuinely operational; a site that wants them quiet on previews gates
+them on `preview`. One deliberate v1 cost rides this shape (Geoff, 2026-08-06): the site's
+public-routes config carries its build-time globbed corpus, so the never-prerendered preview
+route pulls that corpus into the deployed Worker bundle, roughly 1-2MB at club scale against
+Cloudflare's 10MB paid ceiling. A bundle-size assertion on the showcase build warns before it
+bites, and the narrowed manifest-backed resolver that would restore the corpus-stays-out
+invariant files to ROADMAP, triggered by a real site approaching the limit.
 
 **Token discipline: opaque D1 rows, not signed tokens.** `mintPreviewToken` inserts a row in
 `AUTH_DB`: token hash, concept, entry id, issuing editor, expiry. Verification is a lookup. This
@@ -106,29 +184,71 @@ is the same opaque-row discipline the rebuilt auth chose for sessions, and it av
 stateless alternative's real cost, a new per-site signing secret to provision, for a saving of
 one indexed D1 read on a page a handful of humans will ever load. A new bundled migration ships
 the table, same opt-in discipline as the audit sink's (and its guide entry says what the table
-needs rather than only naming the file, per the ASC migration's correction).
+needs rather than only naming the file, per the ASC migration's correction). The security round
+confirmed the primitives *(round 2)*: 256-bit tokens make enumeration a non-threat, the
+hash-then-lookup path needs no constant-time discipline (and must not grow one as cargo cult),
+and the multi-use non-consuming GET is structurally immune to the email-scanner prefetch that
+burns magic links, a deliberate property worth keeping stated.
 
-**A preview link dies with its branch.** Verification requires the token row valid, unexpired,
-and the pending branch still present. Publish and discard both delete the branch, so every
-outstanding preview link for an entry expires naturally the moment the draft stops being a draft.
-No revocation bookkeeping. One refinement is deliberate: a valid token whose branch is gone
-because the entry published renders a "this draft went live" page linking the live permalink,
-so a day-old link ends at the published page rather than a dead end. Every other failure path is
-`preview.rejected` with its snake_case `reason` (expired, unknown, branch gone unpublished).
+**Minting is an authority-delegation action** *(round 2)*. It converts one editor's read on a
+concept into an unauthenticated public read for anyone holding the URL, so it carries the full
+entry-scoped authorization every other entry action carries (`requireEntryFromParams`: editor
+capability plus the access map), not merely the view gate. A site restricting a concept by
+access map should know that everyone admitted to it can hand its drafts to the internet. And
+because the preview page is a real page in the site's own app, the URL, which is the
+credential, flows wherever the site's chrome sends URLs: analytics beacons, client error
+reporting, canonical and og tags. The guide requires suppressing those emissions on the preview
+route, keyed on the `preview` flag the load provides.
+
+**A preview link dies with its branch, and can be killed sooner** *(round 2)*. Verification
+requires the token row valid, unexpired, and the pending branch still present, in that order,
+expiry strictly before any branch read. Publish and discard both delete the branch, so every
+outstanding preview link for an entry expires naturally the moment the draft stops being a
+draft. Rename, delete, and discard also clear the entry's token rows (which closes an id-reuse
+collision where a stale token could resolve to a different entry's later draft); **publish
+deliberately does not**, because the ended page below requires the row to outlive the branch,
+a coupling that must not be "fixed" by a later cleanup. For the mis-shared-link incident, a
+revoke-all affordance ships on the edit screen (Geoff, 2026-08-06): one delete by concept and
+entry id, same authorization as minting. Expired rows sweep opportunistically at insert time,
+the same no-cron idiom the magic-token and session stores already use.
+
+**The ended page never claims more than it knows** *(round 2)*. A valid, unexpired token whose
+branch is gone renders "this preview has ended," linking the entry's live version when the
+entry's file exists on the default branch. The earlier draft of this spec had it say "this
+draft went live," which lies after a discard-of-an-edit (the branch is equally gone, and the
+reviewer would read the current live version believing they reviewed the draft). The softened
+copy is true in every case, costs no predicate machinery, and the expiry-first ordering keeps
+an expired token from becoming a perpetual has-it-published-yet probe. Every other failure path
+is `preview.rejected` with its snake_case `reason` (`unknown`, `expired`, `branch_gone`),
+identical outward 404s in status and body; response timing differs by class (the fast paths
+precede any network call) and that is accepted rather than papered over with artificial delay.
 
 **Scope and expiry.** A token grants read on one draft entry. No cookie is set, no session
 exists, nothing else becomes reachable. Expiry defaults to 7 days, configurable through
-`PreviewTokenConfig`, multi-use within its window: the magic link's 15 minutes is authentication
-discipline, where this is a share-with-a-colleague artifact that must survive a weekend. Minting
-runs from an editor action on the edit screen; the member and facade key derive under R1's
-grammar at plan time.
+`PreviewTokenConfig` (validated: finite, positive, one minute to 30 days), multi-use within its
+window: the magic link's 15 minutes is authentication discipline, where this is a
+share-with-a-colleague artifact that must survive a weekend. Minting runs from an editor action
+on the edit screen; the member and facade keys (mint and revoke) derive under R1's grammar at
+plan time, and any absolute URL the screen shows derives from `PUBLIC_ORIGIN`, never the
+request's own host. The preview response carries its own headers on every path, refusals
+included (`noindex`, `no-store`, `no-referrer`, `nosniff`, frame denial): `/preview` is not an
+admin path, so the guard's header layer never touches it, the same reason the media route
+carries its own.
 
-**Stated assumption, verified by the implementing pass.** Unpublished media resolves on the
-preview page because uploads land in R2 at upload time, not at publish, and serve through the
-site's existing media route. If that assumption fails in any path, it is a design input, not a
-patch site.
+*(round 2: the earlier media assumption is superseded by the request-time media-resolver
+mechanism above, which the adversarial round showed the assumption actually required: the
+binding constraint was the site's build-time manifest snapshot, not R2 presence.)*
 
 ## Vocabulary deltas
+
+New names from the adversarial round *(round 2)*, each derived under the ratified grammars and
+confirmed against `docs/internal/api-surface.md` at plan time: `RevertFailure` gains reasons
+`draft_exists`, `ref_unknown`, and `history_stale`; the revoke affordance's member and facade
+key follow the mint's R1 derivation; `preview.token.revoked` joins the log vocabulary (R6
+shape, carrying concept, id, editor, and the count of rows cleared); and `PreviewData.preview`
+carries the discriminant `state: 'draft' | 'published'`. One disambiguation note rides the
+reference docs: `CairnRuntime.preview` (the admin editor's preview styling) and this
+draft-share family are different subsystems that happen to share a word.
 
 Reserved names consumed unchanged: `historyLoad`, `history`, `HistoryData`, `HistoryEntry`,
 `revertAction`, `revert`, `RevertFailure`, `commit.reverted`, `mintPreviewToken`,
@@ -147,6 +267,11 @@ lands.
 anticipated): they share the backend member, the facade view, and the pipeline. Preview stands
 alone as the second pass.
 
+**The pre-dispatch adversarial review ran early**, 2026-08-06, in the design sitting itself
+(the security, SvelteKit, and red-team lenses above), and its findings are folded into this
+spec and both plans. Pass two's task 0 therefore becomes a light confirmation that nothing
+drifted between this spec and the code the pass starts from, not a fresh round.
+
 **Preview is a permanent public surface**, so per the standing rule it gets two or more
 adversarial reviewers on different lenses (`web-auth-security-reviewer` mandatory among them)
 BEFORE the first implementer dispatch, not at pass end.
@@ -163,11 +288,15 @@ draft row, the collision refusal, and a full revert-then-publish round trip.
 
 ## Plan-time verifications (assumptions this spec makes checkable rather than silent)
 
-- Media resolution for draft-referenced uploads (part 3's stated assumption).
-- Entry file-path stability: the commits API path filter reads one path, so if any edit flow
-  renames an entry's file (a slug edit on an undated concept, for instance), history truncates at
-  the rename. Verify whether a rename path exists; if it does, the view's bounded window makes
-  this a documentation note, not a blocker.
+Two of the original four resolved in the adversarial round: the media assumption became the
+request-time resolver mechanism in part 3, and the rename question is answered (`renameAction`
+exists, so history truncates at a rename, which is why the view says "recent versions" and
+never claims completeness). Still open for the implementing passes:
+
 - The exact bounded-read size and whether the GitHub commits API's path filter behaves under the
   App installation token as it does under a user token.
-- The R1-derived names for the mint action's member and facade key.
+- The R1-derived names for the mint and revoke actions' members and facade keys.
+- That the site's public composition does not itself filter unpublished entries when handed a
+  draft directly *(round 2)*: if a site's composition applies its own draft or scheduled-date
+  filtering, the preview renders empty and the failure masquerades as a token bug. If it fails,
+  it is a design input, not a patch site.

@@ -6,23 +6,74 @@ version; a version with no `Consumers must:` list is a drop-in bump.
 
 ## Upgrade
 
-1. **Bump the version range.**
+1. **Bump the version range**, to the version you are actually going to, on a branch of its own.
 
    ```sh
-   npm install @glw907/cairn-cms@^0.79.0
+   npm install @glw907/cairn-cms@^0.94.0
    ```
+
+   A prerelease pins exactly, with no caret: a caret range never resolves a prerelease, so
+   `^0.94.0-rc.1` silently leaves you where you were.
 
 2. **Read every `Consumers must:` list between your old version and the new one** in the
    [CHANGELOG](../../CHANGELOG.md). Each breaking release states its own list, so a run from
    `0.76.0` to `0.78.2` means reading `0.78.0`'s and `0.78.2`'s lists in order. A version
    with no `Consumers must:` list changed nothing you need to act on.
-3. **Apply each listed change** to your adapter, your routes, or your `wrangler.jsonc`, as that
-   version's list names.
-4. **Run `npx cairn-doctor`** against your site. It catches a binding, a config key, or a
+3. **Run your typechecker first and work its output**, before reading down the lists by hand.
+   Most of a breaking window is renames, and the compiler enumerates those faster and more
+   completely than you can grep. Cross the lists off as its errors take you through them.
+4. **Then walk the lists for what the compiler can't see.** This is what the lists are really
+   for, and it's the half that ships broken if you skip it. Three shapes recur:
+   - **A rename the engine owns but your `app.d.ts` also declared.** A field you duplicated
+     rather than imported keeps compiling under its old name and is simply never read again. The
+     `locals` rename below is the worked case: a site that declared its own
+     `App.Locals.auditSink` compiles clean and stops persisting audit rows.
+   - **A string.** A posted `?/action` name, an access-map key, a saved log query. None of these
+     are types, so nothing checks them.
+   - **A hand-built event fixture** in a test or a script. When an engine event gains a required
+     field, a fixture that omits it throws from inside the engine rather than failing closed.
+5. **Run `npx cairn-doctor`** against your site. It catches a binding, a config key, or a
    dependency floor the new version now expects that your site hasn't caught up to yet. See the
-   [`cairn-doctor` reference](../reference/doctor.md) for what it checks.
-5. **Run your own site's build and test gate** before you deploy. cairn's gates only exercise
-   the package. They can't reach your adapter, your `render`, or your routes.
+   [`cairn-doctor` reference](../reference/doctor.md) for what it checks. Its two zone checks
+   read the Cloudflare API, and an API token without Zone Settings Read makes both report the
+   same `FAIL` a genuinely wrong setting would. Check the token's scopes before acting on the
+   suggested fix.
+6. **Run your own site's build and test gate** before you deploy, in that order and both of
+   them. cairn's gates only exercise the package. They can't reach your adapter, your `render`,
+   or your routes, and a typechecker and a test suite that both pass still leave the bundler's
+   own errors ahead of you. See [What a green typecheck misses](#what-a-green-typecheck-misses).
+7. **Regenerate your visual baselines** if the window you crossed changed how `/admin` renders, and
+   read the diff rather than accepting it. Windows that did: `0.91.0` (the header stack tightens),
+   `0.92.0` (a UA reset layer, and the stacked field register becomes the default), and `0.94.0`.
+8. **Re-run `npx cairn-audit --rendered` with a session cookie**, never without one. Without
+   `CAIRN_AUDIT_COOKIES` every `/admin` page in your config redirects to the sign-in card, and the
+   run measures that card twelve times and reports zero errors. It looks exactly like a pass. See
+   [Auditing an authenticated admin](../reference/cairn-audit.md) for the cookie.
+
+## What a green typecheck misses
+
+A typechecker and a test suite can both pass on an upgrade that doesn't build, and on an
+upgrade that builds and then behaves differently. Three gaps, each of which has bitten a real
+consumer migration:
+
+**A server-only subpath fails at bundle time, not typecheck.** `@glw907/cairn-cms/auth-crypto`
+and `@glw907/cairn-cms/cloudflare` publish a `browser` condition that throws on import, so the
+primitives can never reach a client bundle. TypeScript resolves the `types` condition either
+way and says nothing. If any module in a client-reachable import chain imports one of these
+subpaths, your build fails with `MISSING_EXPORT ... is not exported by
+.../auth-crypto/browser.js`, which names the stub rather than the reason.
+
+That error is usually correct about your site and not about the upgrade. It means a module the
+browser bundles already reached into server-side code, and adopting the subpath is only the first
+thing to say so. The fix is to split whatever the client chain actually wanted into its own
+module, not to work around the condition.
+
+**A rendered audit with no session measures your sign-in card.** Covered in step 8.
+
+**A refusal that changes shape changes what a form does.** `0.94.0`'s refusal-channel work moves
+several refusals between `fail()`, `redirect()`, and `error()`. A `fail()` keeps the submitted
+body on the page. The other two navigate away and discard it, and nothing in a typecheck or a
+unit test sees the difference.
 
 ## Adopt the admin type grammar
 
@@ -110,6 +161,17 @@ packaged implementation of the `AdminActionAuditSink` seam: apply the bundled
 truncates every bound field to a documented maximum. See
 [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink).
 
+**Check for an `audit_log` table before applying that migration.** The bundled schema is one
+consumer's table carried whole, so a site that hand-rolled a sink before this factory existed
+very likely already has the table, and `CREATE TABLE audit_log` then fails against it. What the
+sink actually needs is a table it can bind five columns into: `actor`, `action`, `entity`,
+`entity_id`, and `detail`. If yours already has those, wire the factory and skip the migration.
+The one difference worth knowing about is `created_at`: the bundled schema defaults it to
+`strftime`'s ISO 8601 form, unambiguous UTC at millisecond resolution, where an older
+`datetime('now')` default writes a space-separated, second-resolution string that `new Date(...)`
+reads as local time and that sorts same-second rows non-deterministically. That is a reason to
+migrate the column eventually, not a reason to hold up the upgrade.
+
 Consumers must: nothing. Both additions are additive, and the `RateLimitLike` re-export keeps its
 existing shape and location on `/sveltekit`.
 
@@ -124,6 +186,15 @@ incompatibility dissolved in the C2 breaking-window pass** (see that section bel
 return type, so `CairnPlatformBindings` stays a recommended convenience preset rather than a
 requirement. If your `app.d.ts` already follows [Deploy to
 Cloudflare](./deploy-to-cloudflare.md#wire-the-guard), nothing changes for you either way.
+
+**Consumers must:** widen any email-binding type you declared yourself. Widening cairn's own
+return type is a fix from cairn's side and a break from yours: a hand-written
+`{ EMAIL?: { send(message): Promise<void> } }`, the structural subset a site writes when it wants
+to read the binding loosely rather than trust `CairnPlatformBindings`, no longer accepts what
+`CairnPlatformBindings['EMAIL']` now is, and every call passing one to the other stops compiling.
+Widen your own declaration to `Promise<unknown>` to match, or import
+[`EmailSender`](../reference/sveltekit.md#cairnenv) rather than restating its shape. The first
+consumer migration through this window hit it at five call sites.
 
 `adminAction`'s audit sink now holds its advertised fail-open promise at the engine's own call
 site: a hand-rolled `event.locals.cairnAuditSink` that throws, or one that rejects asynchronously, no
@@ -185,7 +256,11 @@ shapes. See [the event shape](../reference/sveltekit.md#the-event-shape).
 
 Consumers must: replace any imported `EventBase`, `RequestContext`, `ContentEvent`, `AdminEvent`,
 or `AdminActionEvent` with `CairnEvent` on the same subpath; a hand-built event fixture (a test, a
-script) now needs `params` and `route` alongside the fields it already carried.
+script) now needs `params` and `route` alongside the fields it already carried. A fixture built
+with an `as unknown as` cast, the usual shape, still compiles without them and then throws
+`Cannot read properties of undefined (reading 'id')` from inside the engine on the first call that
+derives an authorization target. Set `route.id` to the bracket-form route the fixture stands for,
+not the concrete request path, since that is what the derivation reads.
 
 `locals`'s four keys take the flat `cairn` prefix: `editor` becomes `cairnEditor`, `backend`
 becomes `cairnBackend`, and `auditSink` becomes `cairnAuditSink` (`cairnAccess` already carried

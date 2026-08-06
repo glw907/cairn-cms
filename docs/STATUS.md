@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-06: cut `0.94.0-rc.2` once `rc2-worker-condition` merges)
+## Immediate next action (2026-08-06: `0.94.0-rc.2` is PUBLISHED; run the ASC verification session)
 
 **Both `aksailingclub-org` and `cairn-pub` have migrated to `0.94.0-rc.1` and filed their
 reports**: [ASC](internal/feedback/2026-08-05-aksailingclub-org-migration.md),
@@ -56,18 +56,14 @@ below), bump `package.json`, and release under the `next` dist-tag. ASC's Playwr
 proof: once it runs green against `rc.2`, mint the stable `0.94.0`, then migrate `907-life` and
 `ecxc-ski` off the recipe ASC's migration wrote, each resolving on its own caret.
 
-**The cut is executed and parked on the 2026-08-06 GitHub Actions outage.** Local `main` holds
-the fix (`1a4274b8`), the cut (`87758852`), and the Phase F docs commits, none pushed. The
-finish sequence for a fresh session, in order: (1) confirm Actions recovered
-(`curl -s https://www.githubstatus.com/api/v2/components.json`, the Actions component
-`operational`); (2) push `main`; (3) confirm the four workflows run at the pushed tip (the
-outage may have dropped the earlier push event; the docs commits in this push are the nudge);
-(4) all four green, then `gh release create v0.94.0-rc.2 --prerelease --target main --title
-"v0.94.0-rc.2: the Workers startup fix on the rc.1 window" --notes-file
-.release-notes-v0.94.0-rc.2.md` (the notes file sits untracked at the repo root, verified
-item-by-item against the window; delete it after the release); (5) `gh run watch` the publish
-workflow, then `npm view @glw907/cairn-cms dist-tags` shows `next: 0.94.0-rc.2`; (6) update
-this section and hand the ASC verification session its prompt below.
+**The release is finished (2026-08-06, late afternoon).** The outage parked the cut for most of
+a day: workflow-triggering webhooks were throttled to ~15%, so the finish sequence ran on a
+five-minute empty-commit nudge loop until attempt 14's push event got through, all four
+workflows ran green at the tip, and `gh release create v0.94.0-rc.2` fired the OIDC publish.
+`npm view @glw907/cairn-cms dist-tags` confirms `next: 0.94.0-rc.2` (`latest` stays `0.93.0`).
+The notes file is consumed and deleted; `main` carries a run of empty "Nudge CI" commits from
+the loop, harmless by design. **Next action: launch the ASC verification session with the
+prompt below.**
 
 **The ASC verification prompt** (launch from `~/Projects/aksailingclub-org`, Opus 5, only
 after `rc.2` is on the registry): "Verify this site against `@glw907/cairn-cms@0.94.0-rc.2`.
@@ -96,9 +92,12 @@ the plans are [`2026-08-06-history-revert.md`](superpowers/plans/2026-08-06-hist
 (pass one, F2/F3 merged) and [`2026-08-06-preview.md`](superpowers/plans/2026-08-06-preview.md)
 (pass two; its task 0 adversarial review blocks every dispatch). Execution runs in a fresh
 Opus 5 session per the model economy, each pass on its own worktree off `main`; it does not
-depend on the migration window and may run parallel to it. Resume prompt: "Execute the Phase F
-pass-one plan at docs/superpowers/plans/2026-08-06-history-revert.md via cairn-pass; the spec
-and plan are committed; work a fresh worktree off main."
+depend on the migration window and may run parallel to it. **Pass one is UNDERWAY (2026-08-06)
+on the `history-revert` worktree** (`.claude/worktrees/history-revert`): all six plan tasks and
+the simplifier pass are committed there, the adversarial review gate has run (43 confirmed
+findings deduplicating to ~15 issues), and the review-fix rounds are landing. A session resuming
+cold picks up that worktree at its committed tip rather than cutting a fresh one; the remaining
+work is the fix rounds, the pass-end ritual, and the merge to `main`.
 
 **How a stable cut handles the changelog.** The window is headed `## 0.94.0-rc.1` (soon
 `## 0.94.0-rc.2`), not `## Unreleased`. At the stable cut, rename that heading to `## 0.94.0`

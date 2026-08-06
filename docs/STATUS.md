@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-05: the AI-posture pass is MERGED; the harvest brainstorm is next, before the RC)
+## Immediate next action (2026-08-05: the harvest brainstorm is DECIDED; the RC-cut session is next, opening with the audit-seam task)
 
 **The AI-posture pass merged to `main`** (`e0d1388d`, branch `ai-posture`, thirteen commits). A site
 states `aiPosture: 'invite' | 'decline'` and the engine emits what that implies; `cairn-doctor` fetches
@@ -23,16 +23,25 @@ entry has a raw-markdown twin; the admin HSTS stopped pinning sibling subdomains
 tutorial raises the posture where a developer is already deciding. Post-mortem in the plan:
 [`docs/superpowers/plans/2026-08-05-ai-posture.md`](superpowers/plans/2026-08-05-ai-posture.md).
 
-**Next, and it changed: the ENGINE-HARVEST BRAINSTORM runs BEFORE the RC cut** (Geoff, 2026-08-05).
-Neither ASC nor ecxc builds its planned functionality until after the beta, so their harvest material
-is entirely in their plans and is available now rather than gated behind the migrations. A seam added
-pre-beta is ordinary engine work; one added after is a compatibility event against four consumers on
-four ranges. Cutting the RC first would hand ASC a release candidate for a surface that then changes.
-Pre-baked input: [`docs/internal/engine-harvest-candidates.md`](internal/engine-harvest-candidates.md),
-which describes and evidences and deliberately decides nothing. **It is a Fable sitting** (charter
-scope and taste), ending at approval with any resulting engine work in a fresh Opus session. Its own
-headline: three assessable candidates against four blocked on clarity, and three of the four blocked
-items name their own future brainstorm, so the honest answer may be to wait rather than pre-harvest.
+**The engine-harvest brainstorm RAN and is DECIDED** (Fable sitting, Geoff ratified 2026-08-05).
+Decision record:
+[`docs/superpowers/specs/2026-08-05-engine-harvest-decisions.md`](superpowers/specs/2026-08-05-engine-harvest-decisions.md),
+consuming the standing input
+[`docs/internal/engine-harvest-candidates.md`](internal/engine-harvest-candidates.md). The frame held:
+validation over addition. **One task enters the engine, and it gates the RC**: sanction direct
+domain-event use of the D1 audit sink and rename the record's identity field `editor` to `actor`
+(ruling 1; the blast radius was verified by grep across all four consumer repos, ASC's hand-rolled
+sink being the only reader and already queued for deletion). Everything else is filings: the
+xcathletes pass-1 plan gets amended to the `createAuthChannel` factory before execution (carrying the
+pre-pass-3 team-URL decision, since the permalink token set was verified closed), the seam-fit
+questions fold into the DX reporting shape below, the ASC ROADMAP gets two rider lines in its
+migration session, and the composed form-protection wrapper is declined.
+
+**Resume prompt** (fresh session from `~/Projects/cairn-cms`, on Opus 5 per the model economy):
+"Execute ruling 1 of `docs/superpowers/specs/2026-08-05-engine-harvest-decisions.md` as one
+`cairn-implementer` task on a fresh worktree off `main`, full gate, merge; then cut `0.94.0-rc.1`
+via `cairn-release`, and author the per-migration DX reporting shape (ruling 3's three questions)
+before starting the ASC migration."
 
 **Then the order is unchanged:** cut `0.94.0-rc.1`, migrate ASC and cairn.pub against it from their own
 repos, mint `0.94.0` once their gates are green, migrate the remaining two off the recipe the first

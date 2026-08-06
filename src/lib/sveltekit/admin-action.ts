@@ -30,11 +30,10 @@ export interface AdminActionAudit {
 }
 
 /**
- * What a site's audit sink receives: the `AdminActionAudit` record plus `actor`, the acting
- * identity. `adminAction` and `createSectionAction` always populate it with the verified editor's
- * email, but a site calling `createD1AuditSink` (or any `AdminActionAuditSink`) directly with its
- * own domain events supplies whatever identity that event names; `actor` need not be a cairn
- * editor.
+ * What a site's audit sink receives. `adminAction` and `createSectionAction` set `actor` to the
+ * verified editor's email. A site may also call a sink directly to record its own domain events,
+ * `createD1AuditSink` included. `actor` then holds whatever identity that event names, and need
+ * not be a cairn editor.
  */
 export type AdminActionAuditRecord = AdminActionAudit & { actor: string };
 

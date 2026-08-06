@@ -94,6 +94,21 @@ describe('createD1AuditSink', () => {
     ]);
   });
 
+  // The sanctioned direct-call case (docs/reference/sveltekit.md#created1auditsink): site code
+  // records its own domain event, so `actor` names whatever identity that event names and the sink
+  // inspects it no more than it inspects an editor's email.
+  it('binds an actor that is not a cairn editor, and a namespaced domain action', async () => {
+    const calls = await recordedCalls({
+      actor: 'member:4821',
+      action: 'roster.add',
+      entity: 'roster',
+      entityId: 'fall-2026',
+    });
+
+    expect(calls[0].args[0]).toBe('member:4821');
+    expect(calls[0].args[1]).toBe('roster.add');
+  });
+
   it('binds null, not undefined, for an absent entityId and an absent detail', async () => {
     const calls = await recordedCalls({ entityId: undefined, detail: undefined });
 

@@ -34,7 +34,7 @@ domain-event use of the D1 audit sink and rename the record's identity field `ed
 sink being the only reader and already queued for deletion). Everything else is filings: the
 xcathletes pass-1 plan gets amended to the `createAuthChannel` factory before execution (carrying the
 pre-pass-3 team-URL decision, since the permalink token set was verified closed), the seam-fit
-questions fold into the DX reporting shape below, the ASC ROADMAP gets two rider lines in its
+questions fold into the DX reporting shape below, the ASC ROADMAP gets three rider lines in its
 migration session, and the composed form-protection wrapper is declined.
 
 **Resume prompt** (fresh session from `~/Projects/cairn-cms`, on Opus 5 per the model economy):

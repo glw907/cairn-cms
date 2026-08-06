@@ -47,7 +47,7 @@ function fakeD1(
 
 function record(overrides: Partial<AdminActionAuditRecord> = {}): AdminActionAuditRecord {
   return {
-    editor: 'ed@x.dev',
+    actor: 'ed@x.dev',
     action: 'approve',
     entity: 'event',
     entityId: 'evt-1',
@@ -82,7 +82,7 @@ describe('createD1AuditSink', () => {
     expect(calls[0].sql.match(/\?/g)).toHaveLength(5);
   });
 
-  it('binds the editor, action, entity, entityId, and detail in order', async () => {
+  it('binds the actor, action, entity, entityId, and detail in order', async () => {
     const calls = await recordedCalls();
 
     expect(calls[0].args).toEqual([
@@ -119,7 +119,7 @@ describe('createD1AuditSink', () => {
 
   it('truncates every field to its documented maximum and marks it with an ellipsis', async () => {
     const calls = await recordedCalls({
-      editor: 'x'.repeat(MAX_ACTOR_LENGTH + 50),
+      actor: 'x'.repeat(MAX_ACTOR_LENGTH + 50),
       action: 'x'.repeat(MAX_ACTION_LENGTH + 50),
       entity: 'x'.repeat(MAX_ENTITY_LENGTH + 50),
       entityId: 'x'.repeat(MAX_ENTITY_ID_LENGTH + 50),
@@ -213,7 +213,7 @@ describe('createD1AuditSink', () => {
       expect.objectContaining({
         event: 'audit.sink.write_failed',
         reason: 'insert_rejected',
-        editor: 'ed@x.dev',
+        actor: 'ed@x.dev',
         action: 'approve',
         entity: 'event',
         entityId: 'evt-1',
@@ -240,7 +240,7 @@ describe('createD1AuditSink', () => {
       expect.objectContaining({
         event: 'audit.sink.write_failed',
         reason: 'prepare_failed',
-        editor: 'ed@x.dev',
+        actor: 'ed@x.dev',
         error: expect.stringContaining('typo binding'),
       }),
     );
@@ -337,7 +337,7 @@ describe('createD1AuditSink', () => {
       expect.objectContaining({
         event: 'audit.sink.write_failed',
         reason: 'coercion_failed',
-        editor: 'ed@x.dev',
+        actor: 'ed@x.dev',
         action: 'approve',
         entity: 'event',
         detail: '[unloggable value]',

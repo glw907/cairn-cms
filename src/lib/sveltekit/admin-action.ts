@@ -29,8 +29,14 @@ export interface AdminActionAudit {
   detail?: string;
 }
 
-/** What a site's audit sink receives: the record plus the acting editor's email. */
-export type AdminActionAuditRecord = AdminActionAudit & { editor: string };
+/**
+ * What a site's audit sink receives: the `AdminActionAudit` record plus `actor`, the acting
+ * identity. `adminAction` and `createSectionAction` always populate it with the verified editor's
+ * email, but a site calling `createD1AuditSink` (or any `AdminActionAuditSink`) directly with its
+ * own domain events supplies whatever identity that event names; `actor` need not be a cairn
+ * editor.
+ */
+export type AdminActionAuditRecord = AdminActionAudit & { actor: string };
 
 /** A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.cairnAuditSink`. */
 export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
@@ -173,7 +179,7 @@ export function adminAction<T>(
       editor,
       audit(record) {
         emitted++;
-        const full: AdminActionAuditRecord = { ...record, editor: editor.email };
+        const full: AdminActionAuditRecord = { ...record, actor: editor.email };
         log.info('admin.action.audited', { ...full });
         // Fail-open, per the seam's documented promise (docs/reference/sveltekit.md): a site's
         // own hand-rolled sink is arbitrary code the engine does not control, and the mutation

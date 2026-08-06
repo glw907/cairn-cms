@@ -121,7 +121,7 @@ export function createD1AuditSink(
         sinkFailedLogged = true;
         log.error('audit.sink.write_failed', {
           reason,
-          editor: actor,
+          actor,
           action,
           entity,
           entityId,
@@ -132,7 +132,7 @@ export function createD1AuditSink(
     }
 
     try {
-      actor = truncate(record.editor, MAX_ACTOR_LENGTH);
+      actor = truncate(record.actor, MAX_ACTOR_LENGTH);
       action = truncate(record.action, MAX_ACTION_LENGTH);
       entity = truncate(record.entity, MAX_ENTITY_LENGTH);
       entityId = record.entityId == null ? null : truncate(record.entityId, MAX_ENTITY_ID_LENGTH);

@@ -41,7 +41,7 @@ async function persist(record: AdminActionAuditRecord): Promise<void> {
 describe('createD1AuditSink against a real D1', () => {
   it('inserts a record and the database populates created_at', async () => {
     await persist({
-      editor: 'ed@x.dev',
+      actor: 'ed@x.dev',
       action: 'approve',
       entity: 'event',
       entityId: 'evt-1',
@@ -63,7 +63,7 @@ describe('createD1AuditSink against a real D1', () => {
   });
 
   it('inserts entity_id and detail as null when the record omits them', async () => {
-    await persist({ editor: 'ed@x.dev', action: 'sign-in', entity: 'session' });
+    await persist({ actor: 'ed@x.dev', action: 'sign-in', entity: 'session' });
 
     const rows = await selectRows();
     expect(rows).toHaveLength(1);
@@ -82,7 +82,7 @@ describe('createD1AuditSink against a real D1', () => {
     const MAX_DETAIL_LENGTH = 500;
     const detail = 'x'.repeat(MAX_DETAIL_LENGTH - 2) + '🎉' + 'y'.repeat(20);
 
-    await persist({ editor: 'ed@x.dev', action: 'approve', entity: 'event', detail });
+    await persist({ actor: 'ed@x.dev', action: 'approve', entity: 'event', detail });
 
     const rows = await selectRows();
     expect(rows).toHaveLength(1);

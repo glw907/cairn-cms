@@ -183,7 +183,7 @@ describe('adminAction: the handler runs with a verified editor and a bound audit
       entity: 'signup',
       entityId: '42',
       detail: 'ok',
-      editor: editor.email,
+      actor: editor.email,
     });
   });
 

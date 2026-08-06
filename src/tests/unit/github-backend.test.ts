@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { githubApp, makeGithubBackend } from '../../lib/github/backend.js';
 import { CairnError } from '../../lib/diagnostics/index.js';
+import { BranchExistsError } from '../../lib/github/types.js';
 import { GithubDouble } from './_github-double.js';
 
 const CONFIG = {
@@ -103,5 +104,14 @@ describe('makeGithubBackend live implementation', () => {
     const backend = makeGithubBackend(CONFIG, () => 'test-token');
 
     await expect(backend.createBranch('cairn/posts/x', 'missing')).rejects.toThrow(/unreadable source/);
+  });
+
+  it('createBranch throws BranchExistsError when the branch already exists', async () => {
+    const gh = new GithubDouble({ main: { 'a.md': 'x' } });
+    gh.createBranch('cairn/posts/hello', 'main');
+    gh.install();
+    const backend = makeGithubBackend(CONFIG, () => 'test-token');
+
+    await expect(backend.createBranch('cairn/posts/hello', 'main')).rejects.toBeInstanceOf(BranchExistsError);
   });
 });

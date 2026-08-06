@@ -4,7 +4,7 @@
 // per request via connect(env), with the GitHub App installation token minted and cached behind
 // the seam. makeGithubBackend takes an injectable token getter so a test wires a literal token and
 // the in-memory fetch double intercepts the same GitHub URLs the production getter would reach.
-import { readRaw, listMarkdown, commitFiles } from './repo.js';
+import { readRaw, listMarkdown, commitFiles, fetchCommitLog } from './repo.js';
 import type { FileChange } from './repo.js';
 import { branchHeadSha, createBranch as createBranchRef, deleteBranch, listBranches } from './branches.js';
 import { appCredentials } from './credentials.js';
@@ -12,6 +12,21 @@ import { cachedInstallationToken } from './signing.js';
 import { CommitConflictError } from './types.js';
 import type { CommitAuthor, RepoFile } from './types.js';
 import type { CairnEnv } from '../env.js';
+
+/**
+ * One entry in a file's publish history, as `Backend.listCommits` returns it. `ref` is the full
+ * commit sha, the exact value revert validates a target against; `author` and `date` render what
+ * git recorded, which may not be a cairn editor (main's log also holds commits made outside
+ * cairn).
+ */
+export interface BackendCommit {
+  /** The commit's full sha. */
+  ref: string;
+  /** The commit's own author trailer: name and email, whoever git recorded as having authored it. */
+  author: { name: string; email: string };
+  /** ISO 8601: when the commit landed on the ref that was read. */
+  date: string;
+}
 
 /**
  * A live, connected content store pinned to a default branch. The GitHub implementation already
@@ -48,7 +63,14 @@ export interface Backend {
     expectedHead?: string,
   ): Promise<string>;
 
-  /** Create a branch at another branch's current head. */
+  /**
+   * A file's commit history at `ref`, newest first, one request capped at `limit + 1` entries so
+   * the caller can set a truncation flag without a second read. A 404 or an empty log returns
+   * `[]`, never throws: an entry with no publish history is a state, not an error.
+   */
+  listCommits(path: string, ref: string, limit: number): Promise<BackendCommit[]>;
+
+  /** Create a branch at another branch's current head. Throws `BranchExistsError` on a collision. */
   createBranch(name: string, fromBranch: string): Promise<void>;
 
   /** Delete a branch; a missing branch is success. */
@@ -112,6 +134,9 @@ export function makeGithubBackend(config: GithubAppConfig, getToken: () => strin
     },
     async listBranches(prefix) {
       return listBranches(config, prefix, await getToken());
+    },
+    async listCommits(path, ref, limit) {
+      return fetchCommitLog({ ...config, branch: ref }, path, ref, limit, await getToken());
     },
     async commit(branch, changes, author, message, expectedHead) {
       return commitFiles({ ...config, branch }, changes, { message, author }, await getToken(), expectedHead);

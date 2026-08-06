@@ -596,6 +596,7 @@ function throwingBackend(message = 'boom: github unreachable'): Backend {
     readEntries: async () => boom(),
     branchHead: async () => boom(),
     listBranches: async () => boom(),
+    listCommits: async () => boom(),
     commit: async () => boom(),
     createBranch: async () => boom(),
     deleteBranch: async () => boom(),

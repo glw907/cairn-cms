@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { CommitConflictError } from '@glw907/cairn-cms';
+import { BranchExistsError, CommitConflictError } from '@glw907/cairn-cms';
 import {
   createDevBackend,
   committedFile,
@@ -70,6 +70,48 @@ test('createBranch from an absent source rejects with a conflict-named error', a
   await expect(backend.createBranch('cairn/posts/x', 'no-such-branch')).rejects.toBeInstanceOf(
     CommitConflictError,
   );
+});
+
+test('createBranch of an already-existing branch throws BranchExistsError rather than overwriting', async () => {
+  const backend = createDevBackend();
+  const branch = 'cairn/posts/2026-06-collision';
+  await backend.createBranch(branch, 'main');
+
+  // A second create of the same name must refuse, never silently replace the first draft's tree.
+  const path = 'src/content/posts/2026-06-collision.md';
+  await backend.commit(branch, [{ path, content: 'first draft\n' }], { name: 'E', email: 'e@t' }, 'save');
+
+  await expect(backend.createBranch(branch, 'main')).rejects.toBeInstanceOf(BranchExistsError);
+  expect(await backend.readFile(path, branch)).toBe('first draft\n');
+});
+
+test('listCommits answers newest first, bounded at limit + 1, empty for a never-published path', async () => {
+  const backend = createDevBackend();
+  const path = 'src/content/posts/2026-06-history.md';
+  const author = { name: 'History Editor', email: 'history@showcase.test' };
+
+  // A never-published path has no commit log yet.
+  expect(await backend.listCommits(path, 'main', 25)).toEqual([]);
+
+  const shas: string[] = [];
+  for (let i = 0; i < 4; i++) {
+    const sha = await backend.commit('main', [{ path, content: `body ${i}\n` }], author, `save ${i}`);
+    shas.push(sha);
+  }
+
+  // Newest first: the most recent commit's sha leads.
+  const full = await backend.listCommits(path, 'main', 25);
+  expect(full.map((c) => c.ref)).toEqual([...shas].reverse());
+  expect(full[0].author).toEqual(author);
+  full.forEach((c) => expect(c.date).toMatch(/^\d{4}-\d{2}-\d{2}T/));
+
+  // Bounded at limit + 1: 4 commits exist, so a limit of 2 truncates to 3 (the caller's own signal).
+  const bounded = await backend.listCommits(path, 'main', 2);
+  expect(bounded).toHaveLength(3);
+  expect(bounded.map((c) => c.ref)).toEqual([shas[3], shas[2], shas[1]]);
+
+  // A different path on the same branch has no history rows.
+  expect(await backend.listCommits('src/content/posts/2026-06-unrelated.md', 'main', 25)).toEqual([]);
 });
 
 test('an empty change set rejects, mirroring the real commitFiles', async () => {

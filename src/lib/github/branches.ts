@@ -2,6 +2,7 @@
 // branch is created lazily at first save, listed by the `cairn/` prefix to derive pending
 // state, and deleted by publish and discard. All three are covered by the App's contents
 // permission; no PRs are involved.
+import { BranchExistsError } from './types.js';
 import type { RepoRef } from './types.js';
 
 const API = 'https://api.github.com';
@@ -33,13 +34,25 @@ export async function branchHeadSha(repo: RepoRef, branch: string, token: string
   return ((await res.json()) as { object: { sha: string } }).object.sha;
 }
 
-/** Create `branch` pointing at `fromSha`. Throws on any failure including an existing ref. */
+/**
+ * Create `branch` pointing at `fromSha`. GitHub's ref-create POST is create-only, so an existing
+ * ref of the same name answers 422; that becomes a `BranchExistsError` rather than a raw failure,
+ * since a caller (revert, a raced save) needs to catch the collision as a refusal. Any other
+ * failure throws plain.
+ */
 export async function createBranch(repo: RepoRef, branch: string, fromSha: string, token: string): Promise<void> {
   const res = await fetch(gitUrl(repo, 'refs'), {
     method: 'POST',
     headers: headers(token),
     body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: fromSha }),
   });
+  if (res.status === 422) {
+    // 422 also covers other validation failures (a malformed ref, an unknown sha), so only the
+    // already-exists message becomes the typed collision; anything else stays a plain failure.
+    const body = await res.text();
+    if (/already exists/i.test(body)) throw new BranchExistsError(branch);
+    throw new Error(`GitHub branch create ${branch} failed: 422 ${body}`);
+  }
   if (!res.ok) throw new Error(`GitHub branch create ${branch} failed: ${res.status} ${await res.text()}`);
   await res.body?.cancel();
 }

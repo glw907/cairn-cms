@@ -48,3 +48,21 @@ export class CommitConflictError extends Error {
 export function isConflict(err: unknown): boolean {
   return err instanceof CommitConflictError || (err as { name?: string } | null)?.name === 'CommitConflictError';
 }
+
+/**
+ * A branch-create collided with an existing ref of the same name: another editor's draft, or a
+ * repeated attempt racing itself. Thrown by both backends' createBranch so a caller catches the
+ * collision as a refusal (fail(409, ...)) instead of a raw 500. Defined and caught inside the
+ * package so `instanceof` is reliable, unlike kit's `redirect`/`error` across the peer boundary.
+ */
+export class BranchExistsError extends Error {
+  constructor(public readonly branch: string) {
+    super(`Branch already exists: ${branch}`);
+    this.name = 'BranchExistsError';
+  }
+}
+
+/** Match a branch-exists collision by class and by name (bundling can alias the class identity). */
+export function isBranchExists(err: unknown): boolean {
+  return err instanceof BranchExistsError || (err as { name?: string } | null)?.name === 'BranchExistsError';
+}

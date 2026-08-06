@@ -557,7 +557,7 @@ removal, nothing this list needs to carry.
   season rollover, anything append-only worth a durable trail) is now a sanctioned pattern, not
   only an implementation detail of `adminAction` and `createSectionAction` (the 2026-08-05
   engine-harvest sitting, ruling 1). The sink was already generic: it binds whatever
-  `{ editor, action, entity, entityId, detail }` it receives into the `actor, action, entity,
+  `{ actor, action, entity, entityId, detail }` record it receives into the `actor, action, entity,
   entity_id, detail` columns with no admin-specific behavior. A namespaced action vocabulary
   (`roster.add`, not a bare `add`) keeps a domain row distinguishable from an admin-action row in
   the shared table; the existing fail-open, truncation, and `waitUntil` promises apply to a direct

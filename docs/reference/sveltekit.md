@@ -520,6 +520,11 @@ domain row stays distinguishable from an admin-action row in the shared table. T
 truncation, and `waitUntil` promises documented below apply to a direct call exactly as they do to
 one `adminAction` makes.
 
+A direct call logs nothing on the way in. `admin.action.audited` is `adminAction`'s own record of a
+`ctx.audit` emit, so a row your site code writes leaves no log line unless the insert fails, which
+logs `audit.sink.write_failed` the same as any other. Log the event yourself if you want the trail
+in Workers Logs as well as the table.
+
 `db` can be any D1 binding, not only `AUTH_DB`. A separate database, `your-site-audit` in the
 example below, keeps audit writes from contending with session and token lookups, since D1
 serializes writes per database, and the `hooks.server.ts` example below binds a dedicated

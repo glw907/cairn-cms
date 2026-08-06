@@ -4,9 +4,10 @@ cairn emits structured diagnostic events through `console`, which Cloudflare Wor
 and indexes when a site sets `observability.enabled = true`. Each record carries an envelope
 (`level`, `event`, `timestamp`) plus the event-specific fields listed below. The `event` name is a
 stable contract, so renaming one is a breaking change. Records carry an editor's email for
-attribution; the `actor` field on `admin.action.audited` and `audit.sink.write_failed` carries
-whatever identity a direct `createD1AuditSink` caller supplied instead, when the caller is not an
-`adminAction`-wrapped handler. No record ever carries a magic-link token, a session ID, or a
+attribution. The one exception is `audit.sink.write_failed`, whose `actor` field carries whatever
+identity the caller supplied, which need not be an editor when site code calls
+[`createD1AuditSink`](./sveltekit.md#created1auditsink) directly with its own domain events. No
+record ever carries a magic-link token, a session ID, or a
 magic-link's contents (see
 [the security model](../explanation/security-model.md) for the redaction stance). To query these
 in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).

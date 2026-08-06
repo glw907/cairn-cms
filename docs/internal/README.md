@@ -49,7 +49,9 @@ governs; do not duplicate its conventions here.
 ## feedback/
 
 Developer-experience feedback from real site migrations and incidents, one dated file per
-pass: `YYYY-MM-DD-<site>-<topic>.md`.
+pass: `YYYY-MM-DD-<site>-<topic>.md`. Its own `feedback/README.md` carries the fixed report
+shape every migration fills, so the four sites crossing one window stay comparable, and the
+rule that every finding leaves the report.
 
 ## history/
 

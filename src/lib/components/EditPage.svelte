@@ -1595,6 +1595,13 @@ persistent "?" carries Markdown help, design-arc D2).
           </li>
         {/if}
         <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
+        <!-- Recent versions is a plain navigation, not an action: it stays a link rather than a
+             pickAction button, so the popover's own light-dismiss (the browser's default anchor
+             click) is enough and no dialog or form needs opening first. -->
+        <li>
+          <a href={`/admin/${data.conceptId}/${data.id}/history`}>History</a>
+        </li>
+        <li class="menu-divider my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
         {#if data.pending}
           <li>
             <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>

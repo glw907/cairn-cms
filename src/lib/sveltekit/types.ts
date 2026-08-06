@@ -136,4 +136,12 @@ export interface HistoryData {
    * bound's own count of publishes is NOT truncated.
    */
   truncated: boolean;
+  /**
+   * The default branch's head commit sha at load time. The history screen's revert form carries
+   * it as a hidden field alongside the target ref, so `revertAction` can refuse a stale revert
+   * (`main` moved since this page rendered) rather than silently reverting over a publish it
+   * never saw. Null only when the default branch itself carries no commits, a repository state
+   * this engine otherwise never produces.
+   */
+  head: string | null;
 }

@@ -398,9 +398,11 @@ discriminant, not the fields, gates the chrome).
   // depth alone as the signal wrongly receded the persistent desktop sidebar on that navigation (it
   // fell back to the mobile-drawer's toggle-controlled visibility, which read as the sidebar
   // sliding away, since only a genuine desk route needs that recede).
+  // Exactly three segments: the edit desk is /admin/<concept>/<id> and nothing else. A deeper
+  // concept path (the /history view) is an office screen again, so it keeps office chrome.
   const isDeskRoute = $derived.by(() => {
     const segs = (shell?.pathname ?? '').split('/').filter(Boolean);
-    return segs.length > 2 && segs[0] === 'admin' && (shell?.concepts.some((c) => c.id === segs[1]) ?? false);
+    return segs.length === 3 && segs[0] === 'admin' && (shell?.concepts.some((c) => c.id === segs[1]) ?? false);
   });
 
   // The topbar context portal: a reactive holder a descendant document fills with its desk snippet.

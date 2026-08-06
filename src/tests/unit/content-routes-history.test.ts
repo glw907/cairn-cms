@@ -138,6 +138,16 @@ describe('historyLoad', () => {
     });
   });
 
+  it('carries the default branch head sha, the revert form\'s staleness comparand', async () => {
+    const backend = fakeHistoryBackend({
+      mainCommits: [commitAt(0)],
+      branchHeads: { main: 'sha-main-head' },
+    });
+    const routes = createContentRoutes(runtime());
+    const data = await routes.historyLoad(historyEvent('2026-05-hello', backend) as never);
+    expect(data.head).toBe('sha-main-head');
+  });
+
   it('yields empty entries plus the draft row for a never-published entry with an open draft', async () => {
     const backend = fakeHistoryBackend({
       mainCommits: [],

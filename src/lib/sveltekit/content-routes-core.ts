@@ -1005,10 +1005,14 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const backend = ctx.resolveBackend(event);
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const branch = pendingBranch(concept.id, id);
-    const [commits, headSha, mainRaw] = await Promise.all([
+    const [commits, headSha, mainRaw, mainHead] = await Promise.all([
       backend.listCommits(path, backend.defaultBranch, HISTORY_LIMIT),
       backend.branchHead(branch),
       backend.readFile(path, backend.defaultBranch),
+      // The default branch's own head sha, carried onto the page as HistoryData.head: the
+      // revert form's staleness comparand, unrelated to headSha above (the pending branch's own
+      // head, read for the draft row).
+      backend.branchHead(backend.defaultBranch),
     ]);
     // A deleted entry still has a commit log (git's path filter reads history, not presence), so
     // existence is checked the way editLoad checks it: the file on the default branch, or an open
@@ -1030,7 +1034,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
       if (head) draft = { editor: commitEditorName(head.author), startedAt: head.date };
     }
-    return { entries, draft, truncated };
+    return { entries, draft, truncated, head: mainHead };
   }
 
   /**

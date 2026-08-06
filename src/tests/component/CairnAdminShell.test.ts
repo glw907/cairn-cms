@@ -429,6 +429,18 @@ describe('CairnAdminShell', () => {
     expect(drawer.classList.contains('xl:drawer-open')).toBe(false);
   });
 
+  it('treats the four-segment history route as an office route, not a desk', async () => {
+    // Only the edit desk (/admin/<concept>/<id>, exactly three segments) gets desk chrome; a
+    // deeper concept path like the history view keeps the office sidebar breakpoint.
+    const screen = render(CairnAdminShell, {
+      data: data(true, null, '/admin/posts/2026-05-hello/history'),
+      children: child,
+    });
+    const drawer = screen.container.querySelector('.drawer')!;
+    expect(drawer.classList.contains('lg:drawer-open')).toBe(true);
+    expect(drawer.classList.contains('xl:drawer-open')).toBe(false);
+  });
+
   it('reserves room for the fixed persistent sidebar at the route kind\'s own breakpoint', async () => {
     // Regression guard for the production scroll-bleed report: the desktop sidebar is `position:
     // fixed` (cairn-admin.css), which needs `drawer-content` to reserve its own width instead of

@@ -13,6 +13,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   import ConfirmPage from './ConfirmPage.svelte';
   import ConceptList from './ConceptList.svelte';
   import EditPage from './EditPage.svelte';
+  import CairnHistory from './CairnHistory.svelte';
   import ManageEditors from './ManageEditors.svelte';
   import NavTree from './NavTree.svelte';
   import CairnMediaLibrary from './CairnMediaLibrary.svelte';
@@ -78,6 +79,8 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     {icons}
     {form}
   />
+{:else if data.view === 'history'}
+  <CairnHistory data={data.page} />
 {:else if data.view === 'editors'}
   <ManageEditors data={data.page} {form} />
 {:else if data.view === 'nav'}

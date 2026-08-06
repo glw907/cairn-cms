@@ -79,7 +79,19 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: a cloudflare export, a packaged audit sink, and a breaking convergence of the event, locals, role, and nav seams
+## 0.94.0-rc.1: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
+
+This is a release candidate on the `next` dist-tag, not a stable release. It is the largest
+breaking window so far, and until a real site crosses it the only proof it's had is cairn's own
+`examples/showcase`. A caret range never resolves a prerelease, so pin the exact version to test
+against it:
+
+```jsonc
+"@glw907/cairn-cms": "0.94.0-rc.1"
+```
+
+Move back to a caret (`^0.94.0`) once `0.94.0` publishes. The steps below are the same either way;
+the stable release carries this identical list.
 
 A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the
 Cloudflare-native platform primitives two sites already copy by hand: `verifyTurnstile`, the

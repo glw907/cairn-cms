@@ -1,17 +1,22 @@
-## Unreleased
+## 0.94.0-rc.1
 
 <!-- release-size: minor -->
 
-### Consumers must (assembled so far)
+**A release candidate, published to the `next` dist-tag.** This is the largest breaking window to
+date and it has only ever been proven against `examples/showcase`, a stand-in cairn wrote for
+itself, so the candidate exists to let a real site cross it before the number is final. A caret
+range does not resolve a prerelease, so a site testing this pins the exact version
+(`"@glw907/cairn-cms": "0.94.0-rc.1"`) and returns to a caret at `0.94.0`. The candidate is a
+one-time guard for this window, not a new cadence.
 
-**This window is not yet cut.** Pass C2b (the refusal-channel convergence, in flight on its own
-worktree) lands in this same unpublished window and appends its own entries here before release;
-read this list as assembled so far, not final. Four sites depend on the package today, each on its
-own `0.x` caret range (907-life `^0.84.4`, cairn-pub `^0.87.4`, aksailingclub-org `^0.91.1`,
-ecxc-ski `^0.93.0`), and a caret admits only its own minor, so a site more than one minor behind
-this window crosses several earlier `Consumers must:` lists on the way here. Read every list your
-version range crosses, per [the upgrade guide](docs/guides/upgrade-cairn.md); this list covers
-only this window, not the older ones.
+### Consumers must
+
+Four sites depend on the package today, each on its own `0.x` caret range (907-life `^0.84.4`,
+cairn-pub `^0.87.4`, aksailingclub-org `^0.91.1`, ecxc-ski `^0.93.0`), and a caret admits only its
+own minor, so a site more than one minor behind this window crosses several earlier
+`Consumers must:` lists on the way here. Read every list your version range crosses, per
+[the upgrade guide](docs/guides/upgrade-cairn.md); this list covers only this window, not the older
+ones.
 
 The steps below are ordered so a rename that has to compile before another change lands first;
 each links to its full entry under Changed for the reasoning and the exact old and new names.

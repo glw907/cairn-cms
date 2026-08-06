@@ -54,9 +54,41 @@ is filed in [`ROADMAP.md`](../ROADMAP.md).
 candidate and the fix carry the same window; a stable-cut rename, not a new entry, per the rule
 below), bump `package.json`, and release under the `next` dist-tag. ASC's Playwright suite is the
 proof: once it runs green against `rc.2`, mint the stable `0.94.0`, then migrate `907-life` and
-`ecxc-ski` off the recipe ASC's migration wrote, each resolving on its own caret. (The cut
-itself is executed and waiting: both commits are on `main`, held at a GitHub Actions outage;
-the release fires once CI proves the cut commit.)
+`ecxc-ski` off the recipe ASC's migration wrote, each resolving on its own caret.
+
+**The cut is executed and parked on the 2026-08-06 GitHub Actions outage.** Local `main` holds
+the fix (`1a4274b8`), the cut (`87758852`), and the Phase F docs commits, none pushed. The
+finish sequence for a fresh session, in order: (1) confirm Actions recovered
+(`curl -s https://www.githubstatus.com/api/v2/components.json`, the Actions component
+`operational`); (2) push `main`; (3) confirm the four workflows run at the pushed tip (the
+outage may have dropped the earlier push event; the docs commits in this push are the nudge);
+(4) all four green, then `gh release create v0.94.0-rc.2 --prerelease --target main --title
+"v0.94.0-rc.2: the Workers startup fix on the rc.1 window" --notes-file
+.release-notes-v0.94.0-rc.2.md` (the notes file sits untracked at the repo root, verified
+item-by-item against the window; delete it after the release); (5) `gh run watch` the publish
+workflow, then `npm view @glw907/cairn-cms dist-tags` shows `next: 0.94.0-rc.2`; (6) update
+this section and hand the ASC verification session its prompt below.
+
+**The ASC verification prompt** (launch from `~/Projects/aksailingclub-org`, Opus 5, only
+after `rc.2` is on the registry): "Verify this site against `@glw907/cairn-cms@0.94.0-rc.2`.
+This is a short verification session, not a migration walk: branch `cairn-0.94-migration` is
+complete and held at the rc.1 Workers blocker, which rc.2 fixes with a `worker` export
+condition. (1) Confirm the fix is on the registry: `npm view @glw907/cairn-cms@0.94.0-rc.2`
+resolves and its `./auth-crypto` and `./cloudflare` exports show `worker` ahead of `browser`;
+stop and report if not. (2) Repin the exact version, regenerate the lockfile, `npm ci`, and
+verify the INSTALLED copy carries the condition (node_modules was patched and reverted during
+diagnosis; this session proves the registry artifact). (3) Run check, test, build, then the
+Playwright e2e suite; the e2e run is the point, it alone starts a Worker; report the result
+plainly either way, since cairn mints `0.94.0` on this green. (4) On green, run the owed
+visual-baseline regeneration, READ the diff, and compose Geoff's before/after for the
+field-register flip, the migration's one visual effect; nothing deploys before he sees it.
+(5) Do not merge or deploy on the RC; end with the branch green on the pinned rc.2 and this
+repo's STATUS pointing at the caret flip as the next action (flip in-session only if `0.94.0`
+is already live). (6) Close with a docs-only amendment to cairn `main`: update the migration
+report's `/auth-crypto` and `/cloudflare` seam-fit rows to the rc.2 result and add one line to
+the defect filing recording that the end-to-end proof ran; route any new finding as found
+rather than batching a reporting tail, which the second walk measured at 40% of its session
+cost."
 
 **Phase F is pre-baked** (the F1+F4 sitting ran 2026-08-06, during the outage wait). The spec is
 [`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md);

@@ -517,6 +517,26 @@ first:** if edge HSTS already sends `includeSubDomains` for the admin's host, wh
 more than one site running this engine, set the option so cairn states the same policy rather than
 a weaker one on the same host.
 
+Site code can now call [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) directly
+with its own domain events, a roster change or a season rollover, not only through `adminAction`
+and `createSectionAction` (the 2026-08-05 engine-harvest sitting, ruling 1). The sink was already
+generic; the change is sanction, not new code. Namespace your action names (`roster.add`, not a
+bare `add`) so a domain row stays distinguishable from an admin-action row in the shared table.
+
+Sanctioning direct use means the record's identity field can no longer be a cairn editor
+specifically, so `AdminActionAuditRecord`'s field renames from `editor` to `actor`, matching the
+column it has always landed in. `adminAction`'s own composition follows, as does the packaged
+sink's own read. Two log events rename their identity field to `actor` to match:
+`admin.action.audited` and `audit.sink.write_failed`. `admin.action.sink_threw` keeps `editor`,
+since it fires only from inside `adminAction`, where the actor is always a verified cairn editor.
+See [SvelteKit](../reference/sveltekit.md#types) and [log events](../reference/log-events.md).
+
+**Consumers must:** rename any read of `record.editor` to `record.actor` in a hand-rolled
+`AdminActionAuditSink` (the [custom admin screen guide](./add-a-custom-admin-screen.md#wire-the-auditsink)'s
+example is the shape to check against), or in a custom `App.Locals` augmentation that duplicates
+`AdminActionAuditRecord`'s shape rather than importing it. A site wiring no audit sink does
+nothing.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

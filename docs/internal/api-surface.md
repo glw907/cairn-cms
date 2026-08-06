@@ -474,7 +474,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AccessMap`: { [x: string]: string[] }
 - `adminAction`: <T>(handler: (args: { event: CairnEvent<CairnEnv>; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionOptions) => (event: CairnEvent<CairnEnv>) => Promise<T>
 - `AdminActionAudit`: { action: string; entity: string; entityId?: string | number; detail?: string }
-- `AdminActionAuditRecord`: AdminActionAudit & { editor: string }
+- `AdminActionAuditRecord`: AdminActionAudit & { actor: string }
 - `AdminActionAuditSink`: (record: AdminActionAuditRecord) => void
 - `AdminActionContext`: { editor: Editor; audit: (record: AdminActionAudit) => void }
 - `AdminActionOptions`: { isDev?: boolean }

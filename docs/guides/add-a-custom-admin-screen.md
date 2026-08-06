@@ -370,7 +370,7 @@ export function createClubAuditSink(
   return (record: AdminActionAuditRecord) => {
     const write = db
       .prepare('INSERT INTO audit_log (actor, action, entity, entity_id, detail) VALUES (?1, ?2, ?3, ?4, ?5)')
-      .bind(record.editor, record.action, record.entity, record.entityId ?? null, record.detail ?? null)
+      .bind(record.actor, record.action, record.entity, record.entityId ?? null, record.detail ?? null)
       .run()
       .catch((err: unknown) => console.error('admin/club: audit_log insert failed', err));
     waitUntil?.(write);

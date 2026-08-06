@@ -48,10 +48,11 @@ namespace to peel back first.
   sets it, and the real provider connects instead.
 
 - **`cairnAuditSink`** is the site-supplied persistence seam
-  [`adminAction`](./sveltekit.md#adminaction) forwards every audit record through. A site that
-  wants its own audit trail assigns it in a hooks handle; a site that never assigns it still logs
-  `admin.action.audited` on every emit. [`createD1AuditSink`](./sveltekit.md#created1auditsink) is
-  the packaged implementation of this seam.
+  [`adminAction`](./sveltekit.md#adminaction) forwards every audit record through, and a site's own
+  domain code may also call it directly with its own events. A site that wants its own audit trail
+  assigns it in a hooks handle; a site that never assigns it still logs `admin.action.audited` on
+  every `ctx.audit` emit. [`createD1AuditSink`](./sveltekit.md#created1auditsink) is the packaged
+  implementation of this seam.
 
 - **`cairnAccess`** is the site's declared access map, attached by `createAuthGuard` alongside
   `cairnEditor`. It's internal, never serialized to a page payload, and exists so

@@ -43,6 +43,9 @@ each links to its full entry under Changed for the reasoning and the exact old a
      `tokens`; the old name collided with `MediaDeleteRefusal.usage` inside SvelteKit's generated
      `ActionData` union for the admin route, which is why `<CairnAdmin {form} />` failed to
      typecheck.
+   - Rename any read of [`AdminActionAuditRecord`](docs/reference/sveltekit.md#types)'s `editor`
+     field to `actor`, in a hand-rolled `AdminActionAuditSink` or a custom `App.Locals`
+     augmentation that duplicates the type; a site wiring no audit sink does nothing.
 3. **`locals` reads.** Rename every `event.locals.editor`, `.backend`, and `.auditSink` read or
    write in your `hooks.server.ts` or a custom admin route to `event.locals.cairnEditor`,
    `.cairnBackend`, and `.cairnAuditSink`, including in a hand-duplicated `App.Locals`
@@ -549,6 +552,31 @@ removal, nothing this list needs to carry.
   pinning its sibling subdomains. Check the zone before deciding: where edge HSTS already sends
   `includeSubDomains` for the admin's host, which is the measured state on more than one site
   running this engine, set the option so the engine states the same policy rather than a weaker one.
+
+- Site code calling `createD1AuditSink` directly with its own domain events (a roster change, a
+  season rollover, anything append-only worth a durable trail) is now a sanctioned pattern, not
+  only an implementation detail of `adminAction` and `createSectionAction` (the 2026-08-05
+  engine-harvest sitting, ruling 1). The sink was already generic: it binds whatever
+  `{ editor, action, entity, entityId, detail }` it receives into the `actor, action, entity,
+  entity_id, detail` columns with no admin-specific behavior. A namespaced action vocabulary
+  (`roster.add`, not a bare `add`) keeps a domain row distinguishable from an admin-action row in
+  the shared table; the existing fail-open, truncation, and `waitUntil` promises apply to a direct
+  call unchanged. See [SvelteKit](docs/reference/sveltekit.md#created1auditsink).
+
+  Sanctioning direct use means `AdminActionAuditRecord`'s identity field no longer names only a
+  cairn editor, so it renames from `editor` to `actor`, matching the column it has always landed
+  in: `AdminActionAuditRecord` is now `AdminActionAudit & { actor: string }`.
+  `adminAction`'s own composition and the packaged sink's own read follow. Two log events follow
+  the actor they can report: `admin.action.audited` (which spreads the record) and
+  `audit.sink.write_failed` (composed by the sink itself, which can now fire for a non-editor
+  actor) both key their identity field `actor`. `admin.action.sink_threw` fires only from inside
+  `adminAction`, where the actor is always a verified cairn editor, and keeps `editor`, as do the
+  auth events. `AdminActionAudit` (what a handler passes to `ctx.audit`) carries no identity field
+  and is unchanged. See [SvelteKit](docs/reference/sveltekit.md#types) and
+  [log events](docs/reference/log-events.md). **Consumers must:** rename any read of
+  `record.editor` to `record.actor` in a hand-rolled `AdminActionAuditSink`, or in a custom
+  `App.Locals` augmentation that duplicates `AdminActionAuditRecord`'s shape rather than importing
+  it; a site that wires no audit sink does nothing.
 
 ### Fixed
 

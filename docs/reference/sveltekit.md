@@ -510,6 +510,16 @@ The packaged implementation of the [`AdminActionAuditSink`](#adminactionauditsin
 persists every audit record `adminAction` and `createSectionAction` emit into one `audit_log`
 table, opt-in the same way the auth migrations are.
 
+Calling it directly, with a record your own site code composes rather than one `ctx.audit`
+produced, is supported: the sink has no admin-specific behavior, only a generic
+`{ actor, action, entity, entityId?, detail? }` shape bound into the columns of the same name. A
+domain event, a roster change, a season rollover, anything append-only worth a durable trail,
+persists the same way an admin action's audit does. `actor` is the acting identity for that row
+and need not be a cairn editor; namespace your action names (`roster.add`, not a bare `add`) so a
+domain row stays distinguishable from an admin-action row in the shared table. The fail-open,
+truncation, and `waitUntil` promises documented below apply to a direct call exactly as they do to
+one `adminAction` makes.
+
 `db` can be any D1 binding, not only `AUTH_DB`. A separate database, `your-site-audit` in the
 example below, keeps audit writes from contending with session and token lookups, since D1
 serializes writes per database, and the `hooks.server.ts` example below binds a dedicated
@@ -1644,7 +1654,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `AuthRoutes` | Unstable API | `type AuthRoutes` | What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers, shown expanded in [`createAuthRoutes`](#createauthroutes). |
 | `RequestResult` | Unstable API | `type RequestResult = { status: 'sent'; sent: true } \| { status: 'send_error'; sent: false } \| { status: 'throttled'; sent: false }` | The magic-link request outcome `requestAction` resolves: a successful or membership-hiding send, a send error, or a cooldown throttle. A site reads `form.status` (or the legacy `form.sent` boolean) off this. |
 | `AdminActionAudit` | Extension API | `interface AdminActionAudit { action: string; entity: string; entityId?: string \| number; detail?: string }` | One audit-log record an `adminAction`-wrapped handler emits through `ctx.audit`: the imperative verb, the domain entity, its id when the action names one, and a compact detail (never a secret, a token, or a full record). |
-| `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { editor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus the acting editor's email. |
+| `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { actor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus `actor`, the acting identity. `adminAction` and `createSectionAction` populate it with the verified editor's email; a direct `createD1AuditSink` call names its own actor, which need not be a cairn editor. |
 | <a id="adminactionauditsink"></a>`AdminActionAuditSink` | Extension API | `type AdminActionAuditSink = (record: AdminActionAuditRecord) => void` | A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.cairnAuditSink`. Optional; every emit logs `admin.action.audited` regardless. |
 | <a id="ratelimitlike"></a>`RateLimitLike` | Extension API | `interface RateLimitLike { limit(options: { key: string }): Promise<{ success: boolean }> }` | The structural slice of a Workers `RateLimit` binding [`createSectionAction`](#createsectionaction) calls; any conforming limiter serves, so the surface takes no dependency on `@cloudflare/workers-types`. |
 | <a id="sectionactionconfig"></a>`SectionActionConfig` | Extension API | `interface SectionActionConfig<Env, Db> { resolveDb: (env: Env \| undefined) => Db \| undefined; rateLimit?: { resolve: (env: Env \| undefined) => RateLimitLike \| undefined; key: (ctx: AdminActionContext) => string; message?: string } }` | Site-fixed configuration for one [`createSectionAction`](#createsectionaction) factory, called once per section: the DB binding resolver (`undefined` fails the action closed with a 500) and the optional rate limit, degrade-to-open. |

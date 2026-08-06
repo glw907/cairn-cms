@@ -1062,6 +1062,38 @@ the named human gates only):**
   showcase as the deployable template) fixes most of this by construction. (3) The docs on-ramp gap —
   an "after scaffolding: what you got and what to change" orientation page, gated on the scaffolder
   landing so it describes real generated output.
+
+- **`/healthz` needs a check that reaches the repository, not only the signing key.** Surfaced
+  2026-08-05 by the `cairn-pub` `0.94.0-rc.1` migration (see [that
+  report](docs/internal/feedback/2026-08-05-cairn-pub-migration.md)). `healthLoad` runs
+  `signingSelfTest` against the App id and the key secret and stops there, which is a deliberate,
+  documented scope: it catches a broken PKCS#1-to-PKCS#8 conversion, and that is the failure it was
+  built for. The gap is that the endpoint is named `healthz`, its top-level field is `ok`, and a
+  site whose App installation has never carried its own repository answers `{"ok":true}` while
+  every save and publish 404s. `cairn-doctor` catches that case and `/healthz` does not, so the
+  cheap always-on check disagrees with the expensive occasional one. Candidate: a second check that
+  mints an installation token and reads the configured repository, reported beside
+  `githubAppSigning` rather than folded into it, since the two fail for unrelated reasons and an
+  operator wants to know which. Weigh the added latency and the GitHub rate-limit cost against
+  making `/healthz` honest about the backend, and consider caching a success. This is the same wall
+  the provisioning-script entry above names as non-provisionable (App creation and installation);
+  the difference is that this one is about telling an operator the wall is still up.
+
+- **`cairn-audit`'s rendered page-identity guard passes a route that renders an error page.**
+  Surfaced 2026-08-05 by the `cairn-pub` migration, the same report. The guard compares a page's
+  settled DOM against the identity its server-rendered response carried, which catches a route that
+  hydrates into different chrome. It cannot catch a route that renders the same error page in both
+  captures: on that run `/admin/signups` was returning the site's public error page under a valid
+  session, the two captures agreed, every rule ran against the error page under the screen's name,
+  and the run reported zero errors across all seven pages. The findings read as wrong only to a
+  human scanning them (`header.site-header`, an accent-filled "Return to homepage"), which is the
+  reading a gate exists to spare. Candidate: assert a 2xx response status on the no-JavaScript
+  baseline capture the harness already takes, and report a non-2xx as a harness finding at error
+  tier the way a stale allowlist entry is. The config docs already promise the run fails on "any
+  configured page rendering outside 2xx", so this is closer to a defect than a feature; the case
+  that escapes is a page whose framework answers 200 and renders an error boundary, which is
+  exactly what SvelteKit did here.
+
 ## Later
 
 - **A passkey layer on the auth-channel session model, post-1.0 (Geoff, 2026-08-04).** Returning

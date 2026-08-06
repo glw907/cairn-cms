@@ -22,6 +22,14 @@ version; a version with no `Consumers must:` list is a drop-in bump.
 3. **Run your typechecker first and work its output**, before reading down the lists by hand.
    Most of a breaking window is renames, and the compiler enumerates those faster and more
    completely than you can grep. Cross the lists off as its errors take you through them.
+
+   How much this finds depends on how much of the admin surface your site consumes, not on how
+   large the window is. Most `Consumers must:` entries name an admin-side type, a route-factory
+   member, or a return type you only annotate if you mount routes per-surface. A site that mounts
+   through the `createCairnAdmin` facade and reads its locals through
+   `@glw907/cairn-cms/ambient` can cross the largest window in cairn's history on a handful of
+   errors, or one. Read a green typecheck as a fact about your site's shape, not as evidence the
+   window was small: the compiler-invisible half in step 4 is the same size either way.
 4. **Then walk the lists for what the compiler can't see.** This is what the lists are really
    for, and it's the half that ships broken if you skip it. Three shapes recur:
    - **A rename the engine owns but your `app.d.ts` also declared.** A field you duplicated
@@ -33,7 +41,12 @@ version; a version with no `Consumers must:` list is a drop-in bump.
    - **A hand-built event fixture** in a test or a script. When an engine event gains a required
      field, a fixture that omits it throws from inside the engine rather than failing closed.
 5. **Run `npx cairn-doctor`** against your site. It catches a binding, a config key, or a
-   dependency floor the new version now expects that your site hasn't caught up to yet. See the
+   dependency floor the new version now expects that your site hasn't caught up to yet. Read it as
+   a health check on the whole site rather than an upgrade-compatibility check: most of what it
+   measures is live infrastructure that has nothing to do with the version you came from, and an
+   upgrade is often the first time anyone runs it. On the second consumer migration through this
+   window, the doctor's most valuable finding was a GitHub App installation that had never carried
+   the site's own repository, so every save and publish had failed since launch. See the
    [`cairn-doctor` reference](../reference/doctor.md) for what it checks. Its two zone checks
    read the Cloudflare API, and an API token without Zone Settings Read makes both report the
    same `FAIL` a genuinely wrong setting would. Check the token's scopes before acting on the
@@ -42,13 +55,26 @@ version; a version with no `Consumers must:` list is a drop-in bump.
    them. cairn's gates only exercise the package. They can't reach your adapter, your `render`,
    or your routes, and a typechecker and a test suite that both pass still leave the bundler's
    own errors ahead of you. See [What a green typecheck misses](#what-a-green-typecheck-misses).
+
+   The published docs tree ships inside the tarball, so `node_modules/@glw907/cairn-cms/docs`
+   changes with the version like any other file. If your site renders that tree, pages arrive,
+   pages retire, and arm indexes reorder on every bump, and a typechecker sees none of it. Run a
+   link check of your own over the rendered corpus.
 7. **Regenerate your visual baselines** if the window you crossed changed how `/admin` renders, and
    read the diff rather than accepting it. Windows that did: `0.91.0` (the header stack tightens),
    `0.92.0` (a UA reset layer, and the stacked field register becomes the default), and `0.94.0`.
+   If you keep no baselines, the substitute is step 8's rendered audit under a session cookie,
+   plus a before-and-after read of the live pages the window moved. Capture the "before" from your
+   deployed site before you deploy the upgrade, since that's the only moment it exists.
 8. **Re-run `npx cairn-audit --rendered` with a session cookie**, never without one. Without
    `CAIRN_AUDIT_COOKIES` every `/admin` page in your config redirects to the sign-in card, and the
    run measures that card twelve times and reports zero errors. It looks exactly like a pass. See
    [Auditing an authenticated admin](../reference/cairn-audit.md) for the cookie.
+
+   If you audit your own admin screens too, note that `rendered.pages` **replaces** the default
+   page list rather than adding to it, so a config naming only your screen silently drops cairn's
+   six core routes. Restate the defaults beside your own. See
+   [`rendered.pages`](../reference/cairn-audit.md#configuration).
 
 ## What a green typecheck misses
 

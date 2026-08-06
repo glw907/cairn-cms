@@ -110,7 +110,7 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
 | `sheet` | the built admin stylesheet, in your tree or your installed package | The stylesheet class tokens resolve against |
-| `rendered.pages` | the core admin routes | The pages rendered mode visits |
+| `rendered.pages` | the core admin routes | The pages rendered mode visits. **Replaces the defaults, never extends them**: a config naming one page of your own audits that page alone, and the six core routes go unmeasured while the run still reports a clean pass. Restate the defaults beside your own page |
 | `rendered.allowlist` | none | Rendered-mode exemptions. See [The allowlist](#the-allowlist) |
 
 A default scan path your tree doesn't have is skipped, since the defaults span a library and a

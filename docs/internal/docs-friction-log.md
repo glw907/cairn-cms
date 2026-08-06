@@ -229,6 +229,18 @@ line.
   `0.94.0-rc.1` migration (see [that report](./feedback/2026-08-05-aksailingclub-org-migration.md)),
   where both of the run's only two failures were this.
 
+  **Second site, same 403** (`cairn-pub`, see [that
+  report](./feedback/2026-08-05-cairn-pub-migration.md)), which is the altitude signal. Two of that
+  run's three failures were this pair, on a different zone under the same operator token, so the
+  403 is the standard outcome rather than one site's misconfigured token. It also cost real work
+  downstream: `0.94.0-rc.1` asks a consumer to check whether the zone sends `includeSubDomains`
+  before deciding on `createAuthGuard({ includeSubDomains })`, and the check that would answer that
+  is one of the two returning 403, so the answer had to come from reading live response headers by
+  hand. The same release shipped the precedent for the fix in this repo's own tree:
+  `ai.posture-effective` answers a live-state question with a credential-free `GET /robots.txt`
+  against the deployed origin. `edge.hsts` can read `Strict-Transport-Security` off a plain
+  response the same way, and `edge.always-https` can follow an `http://` request.
+
 - **`developer`: `createD1AuditSink` cannot join a caller's `db.batch()`, so an operation whose
   audit row has to be atomic with the write it describes still hand-rolls its own insert.** The
   sink is fire-and-forget by contract. It returns before the insert settles and hands the caller
@@ -244,3 +256,17 @@ line.
   hand-rolled inserts beside it are correct. The same need from a second consumer site is the
   altitude signal that turns it into engine work. Found on the `aksailingclub-org` `0.94.0-rc.1`
   migration (see [that report](./feedback/2026-08-05-aksailingclub-org-migration.md)).
+
+- **`developer`: `cairn-audit`'s `rendered.pages` replaces the default page list rather than
+  merging with it, so a consumer that adds one screen of its own quietly stops auditing cairn's
+  six core routes.** `loadConfig` passes `DEFAULT_RENDERED_PAGES` as the fallback for an absent
+  key, which is the ordinary shape for a config default and the wrong one here: the six defaults
+  are cairn's own screens, which a consumer mounts and does not own, while the pages a consumer
+  writes are additions beside them. Nothing in the run says the six went unmeasured, and the exit
+  code is clean, which is the silent green this tool's own config loader is otherwise strict
+  about ("a typo that quietly narrows the audit to nothing"). The reference now documents the
+  replace semantics, which closes the surprise; the candidate fix behind it is to merge the two
+  lists and give a consumer an explicit opt-out for the rare case where it means to audit its own
+  screens alone. Weigh that against a consumer that deliberately narrows a run for speed, which
+  merging would take away. Found on the `cairn-pub` `0.94.0-rc.1` migration (see [that
+  report](./feedback/2026-08-05-cairn-pub-migration.md)).

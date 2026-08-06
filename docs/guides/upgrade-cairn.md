@@ -97,8 +97,9 @@ module, not to work around the condition.
 Through `0.94.0-rc.1`, the same `browser` condition also fired on the server side. Wrangler
 re-bundles the adapter's output for `workerd`, and that resolution applies `browser` too, so a
 deployed Worker imported the throwing stub and never started. Nothing before deploy reported it.
-`0.94.0` adds a `worker` condition ahead of `browser` in both subpaths, which fixes it. If you
-adopt either subpath on `0.93.0` or `0.94.0-rc.1`, move to `0.94.0`.
+`0.94.0-rc.2` adds a `worker` condition ahead of `browser` in both subpaths, which fixes it, and
+`0.94.0` carries the same fix. If you adopt either subpath on `0.93.0` or `0.94.0-rc.1`, move
+forward.
 
 **A rendered audit with no session measures your sign-in card.** Covered in step 8.
 
@@ -162,15 +163,16 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## 0.94.0-rc.1: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
+## 0.94.0-rc.2: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
 
-This is a release candidate on the `next` dist-tag, not a stable release. It is the largest
-breaking window so far, and until a real site crosses it the only proof it's had is cairn's own
-`examples/showcase`. A caret range never resolves a prerelease, so pin the exact version to test
-against it:
+This is a release candidate on the `next` dist-tag, not a stable release. It's the largest
+breaking window so far. A real site has since crossed it and found a defect in the
+`auth-crypto` and `cloudflare` export conditions that stopped a Worker from starting (see
+[What a green typecheck misses](#what-a-green-typecheck-misses), below). This candidate carries
+the fix. A caret range never resolves a prerelease, so pin the exact version to test against it:
 
 ```jsonc
-"@glw907/cairn-cms": "0.94.0-rc.1"
+"@glw907/cairn-cms": "0.94.0-rc.2"
 ```
 
 Move back to a caret (`^0.94.0`) once `0.94.0` publishes. The steps below are the same either way;

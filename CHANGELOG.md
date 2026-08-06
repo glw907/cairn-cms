@@ -1,12 +1,12 @@
-## 0.94.0-rc.1
+## 0.94.0-rc.2
 
 <!-- release-size: minor -->
 
 **A release candidate, published to the `next` dist-tag.** This is the largest breaking window to
-date and it has only ever been proven against `examples/showcase`, a stand-in cairn wrote for
-itself, so the candidate exists to let a real site cross it before the number is final. A caret
+date. A real site has since crossed it and found a defect this candidate fixes (see Fixed,
+below), so the candidate exists to let that crossing finish before the number is final. A caret
 range does not resolve a prerelease, so a site testing this pins the exact version
-(`"@glw907/cairn-cms": "0.94.0-rc.1"`) and returns to a caret at `0.94.0`. The candidate is a
+(`"@glw907/cairn-cms": "0.94.0-rc.2"`) and returns to a caret at `0.94.0`. The candidate is a
 one-time guard for this window, not a new cadence.
 
 ### Consumers must

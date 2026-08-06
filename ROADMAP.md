@@ -49,7 +49,10 @@ event, not an everyday one." Cut it when the surface stops moving, not on a date
   (the admin sweep, the starter-template fold, and the docs phase), so the surface a developer copies is
   native, not bespoke, and the developer-facing design vocabulary is a documented, versioned seam.
 - [ ] **`create-cairn-site` ships**, so a new consumer starts from a scaffold rather than hand-copying the
-  showcase. (Weigh whether this gates 1.0 or rides the first 1.x.)
+  showcase. (Weigh whether this gates 1.0 or rides the first 1.x.) The pass opens by measuring the
+  un-agented path: walk the tutorial's `wrangler`-plus-dashboard setup cold, no agent, and record
+  where it drags, since every site so far was provisioned by an agent holding account-wide access
+  and that path has never been measured (Geoff, 2026-08-05, the harvest sitting).
 - [ ] **The core-feature roadmap has landed** to the point the author opens the project up: the intro's
   "closely held until the core lands" condition is the same condition as 1.0. Named contents (Geoff,
   2026-08-01): entry history, revert, and public preview for a non-editor, all three ratified as

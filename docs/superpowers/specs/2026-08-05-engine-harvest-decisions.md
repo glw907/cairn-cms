@@ -133,7 +133,9 @@ because the xcathletes requirements' own governance section already records it.
   not at all. It does not drift open as a side effect of designing the page.
 - The **season-rollover** design states explicitly whether content edits sit inside the guarded
   operation, manually beside it, or out of scope. Programmatic content writes are the one place a
-  genuine seam gap could hide, since no export subpath commits content.
+  genuine seam gap could hide, since no export subpath commits content. The engine's position on
+  that question is recorded below ("Position: programmatic content edits"), so the design inherits
+  an answer rather than an open question.
 - **Class-management** screens are judged component by component against the existing
   mechanic-versus-domain test once they exist; the auth side is already served.
 - **Multi-team isolation** stays deferred, at the site's own request.
@@ -144,6 +146,31 @@ because the xcathletes requirements' own governance section already records it.
 per-site. Neither has filed an ask for a composed wrapper, and the ASC brief deliberately stopped
 at primitives. Measured duplication of composition without a filed need does not clear the leanness
 bar. Revisit only if a consumer files the ask.
+
+## Position: programmatic content edits (developed in the sitting)
+
+Ruling 4 left the season-rollover content-write question with ASC's design. The sitting then
+developed the engine's position, ratified by Geoff 2026-08-05, so that design inherits an answer.
+
+1. **Deliberate-publish binds every actor.** The owner is another editor: publishing content is a
+   person's act through the existing Publish flow, whoever they are and whatever staged the edit.
+   A guarded operation's confirm click is not a Publish click. No engine surface will commit
+   content to `main` programmatically.
+2. **If a design needs programmatic content edits, the answer is a staging seam.** The operation
+   writes each affected entry's proposed content onto its ordinary `cairn/<concept>/<id>` branch
+   through a thin server-side callable, and the owner reviews and publishes each entry through the
+   existing admin flow. Two properties come free: the branch diff is the operation's content
+   preview, and a re-run restages with no new state model. The seam is additive, ordinary work
+   whenever a consumer files it, before or after beta.
+3. **Manual-beside stays valid.** At yearly frequency a checklist step may simply be right; a
+   design should weigh the staging seam against it honestly rather than assume automation.
+4. **The forbidden shape is site code hand-rolling GitHub App content commits**, which would
+   duplicate the engine's most sensitive mechanic (repo credentials, committer identity, branch
+   discipline) in site code.
+
+The practical effect on the ASC sitting: its question shrinks from "can we edit content
+programmatically" to "is staging-plus-owner-publish worth it over a checklist", a site-local
+ergonomics call with a known engine answer either way.
 
 ## What executes where
 

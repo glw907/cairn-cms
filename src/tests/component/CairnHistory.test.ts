@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import CairnHistory from '../../lib/components/CairnHistory.svelte';
-import type { HistoryData, HistoryEntry } from '../../lib/sveltekit/types.js';
+import type { HistoryData, HistoryEntry, RevertFailure } from '../../lib/sveltekit/types.js';
 
 /** A distinct, full 40-character sha for row `n`, so a test can tell rows apart by ref. */
 function sha(n: number): string {
@@ -106,5 +106,42 @@ describe('CairnHistory', () => {
     // Row 0 is the draft, row 1 is the current published version, row 2 is older.
     expect(rows[1].textContent).toContain('Current');
     expect(rows[2].textContent).not.toContain('Current');
+  });
+
+  describe('a refused revert renders in place', () => {
+    it('names the blocking draft\'s author and start date for draft_exists', async () => {
+      const form: RevertFailure = {
+        reason: 'draft_exists',
+        draftEditor: 'Blocking Editor',
+        draftStartedAt: '2026-02-01T12:00:00Z',
+      };
+      const screen = render(CairnHistory, { data: data({ entries: [entry(1)] }), form });
+      const banner = screen.container.querySelector('.alert-error');
+      expect(banner?.textContent ?? '').toContain('Blocking Editor');
+      expect(banner?.textContent ?? '').toMatch(/publish or discard/i);
+    });
+
+    it('says the history changed for history_stale', async () => {
+      const form: RevertFailure = { reason: 'history_stale' };
+      const screen = render(CairnHistory, { data: data({ entries: [entry(1)] }), form });
+      const banner = screen.container.querySelector('.alert-error');
+      expect(banner?.textContent ?? '').toMatch(/history changed/i);
+    });
+
+    it('says the version is no longer listed for ref_unknown', async () => {
+      const form: RevertFailure = { reason: 'ref_unknown' };
+      const screen = render(CairnHistory, { data: data({ entries: [entry(1)] }), form });
+      const banner = screen.container.querySelector('.alert-error');
+      expect(banner?.textContent ?? '').toMatch(/no longer in the recent list/i);
+    });
+
+    it('renders the bare message for viewAction\'s generic catch-all', async () => {
+      const screen = render(CairnHistory, {
+        data: data({ entries: [entry(1)] }),
+        form: { error: 'Something went wrong. Try again.' },
+      });
+      const banner = screen.container.querySelector('.alert-error');
+      expect(banner?.textContent ?? '').toContain('Something went wrong. Try again.');
+    });
   });
 });

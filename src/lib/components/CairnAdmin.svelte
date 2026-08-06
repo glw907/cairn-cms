@@ -23,6 +23,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   import WelcomeView from './WelcomeView.svelte';
   import type { AdminData } from '../sveltekit/cairn-admin.js';
   import type { ContentFormFailure } from '../sveltekit/content-routes.js';
+  import type { RevertFailure } from '../sveltekit/types.js';
   import type { ComponentRegistry } from '../render/registry.js';
   import type { IconSet } from '../render/glyph.js';
   import type { SiteRender } from '../content/types.js';
@@ -32,12 +33,19 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     data: AdminData;
     /** The last action's result, forwarded to whichever view rendered: the shared content-action
      *  failure family (every failure carries `error`), merged with the auth and editors results,
-     *  so the route's one `form` export covers every view. */
+     *  so the route's one `form` export covers every view. `RevertFailure`'s own fields fold into
+     *  the same merged bag, composed the same way `ContentFormFailure` itself Partial-merges every
+     *  other action's failure fields, so a real `?/revert` refusal type-carries through this one
+     *  prop; the history view narrows it back to the strict disjoint shape at the point it mounts
+     *  `CairnHistory` below. */
     form?:
       | (ContentFormFailure & {
           sent?: boolean;
           status?: 'sent' | 'send_error' | 'throttled';
           ok?: boolean;
+          reason?: RevertFailure['reason'];
+          draftEditor?: string;
+          draftStartedAt?: string;
         })
       | null;
     /** The site's design-accurate render pipeline, for the edit view's preview pane. */
@@ -80,7 +88,10 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     {form}
   />
 {:else if data.view === 'history'}
-  <CairnHistory data={data.page} />
+  <!-- Only revertAction's own wrapped result (a RevertFailure refusal, or viewAction's generic
+       { error } catch-all) ever posts to this view, so the broader merged form union narrows
+       here: template narrowing on data.view does not reduce it for us. -->
+  <CairnHistory data={data.page} form={form as RevertFailure | { error: string } | null | undefined} />
 {:else if data.view === 'editors'}
   <ManageEditors data={data.page} {form} />
 {:else if data.view === 'nav'}

@@ -1949,10 +1949,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       return fail(409, { reason: 'history_stale' } satisfies RevertFailure);
     }
 
-    // (3) Read and inspect the old content; this never refuses the revert, only carries an
-    // advisory forward, so an old version is never permanently unrevertable.
+    // (3) Read and inspect the old content; this never refuses the revert on schema drift, only
+    // carries an advisory forward, so an old version is never permanently unrevertable. A listed
+    // sha can still read as null, though: a delete commit touches the path (so listCommits offers
+    // it) but leaves nothing to read back. That refuses in place, the same as any other listed
+    // ref this action cannot honor, rather than escaping as a full 404 page.
     const raw = await backend.readFile(path, ref);
-    if (raw === null) throw error(404, 'Entry not found');
+    if (raw === null) return fail(404, { reason: 'ref_unknown' } satisfies RevertFailure);
     const { frontmatter } = parseMarkdown(raw);
     const vocabValues = runtime.vocabulary.map((v) => v.value);
     const { retiredFields, retiredTags } = revertSchemaDrift(concept, frontmatter, vocabValues);

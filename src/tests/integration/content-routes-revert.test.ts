@@ -195,6 +195,31 @@ describe('revertAction', () => {
     expect(result.data).toEqual({ reason: 'ref_unknown' });
   });
 
+  it('refuses ref_unknown in place when the listed sha is a delete commit whose content no longer reads', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    gh.install();
+    const routes = createContentRoutes(echoRuntime());
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
+
+    // Delete removes the entry from main, but its own commit still touched the path, so a
+    // fresh listCommits read keeps offering it as a version.
+    await expectRedirect(() => routes.deleteAction(actionEvent(ID) as never));
+    const deleteSha = gh.headSha('main');
+
+    // Recreate the entry at the same id, the way an editor might after realizing the delete
+    // was a mistake; the recreate commit is what makes the entry, and the earlier delete
+    // commit, both visible in the same history window.
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' }) as never));
+    const history = await routes.historyLoad(historyEvent(ID) as never);
+    expect(history.entries.some((e) => e.ref === deleteSha)).toBe(true);
+
+    const result = (await routes.revertAction(
+      revertEvent(ID, { ref: deleteSha, head: history.head! }) as never,
+    )) as unknown as { status: number; data: RevertFailure };
+    expect(result.status).toBe(404);
+    expect(result.data).toEqual({ reason: 'ref_unknown' });
+  });
+
   it('refuses an invalid entry id the same way every other entry action does', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();

@@ -12,10 +12,12 @@ fresh history read and refuses a stale `head` rather than silently reverting ove
 landed after this page loaded. Failure mode: a stale `data` prop (a page rendered
 before a since-published revert) still renders a revert form whose `head` no longer matches
 `main`; `revertAction` is the authority that catches that, this screen only carries the value it
-was given.
+was given. A refusal renders as an alert above the table, naming what blocked it: `draft_exists`
+names the blocking draft's author and start date, `history_stale` and `ref_unknown` each name
+what moved, and an unexpected failure falls back to its own bare message.
 -->
 <script lang="ts">
-  import type { HistoryData } from '../sveltekit/types.js';
+  import type { HistoryData, RevertFailure } from '../sveltekit/types.js';
   import CsrfField from './CsrfField.svelte';
   import { PageHeader, AdminTable, StatusChip, EmptyState } from '../admin-toolkit/index.js';
 
@@ -23,9 +25,15 @@ was given.
     /** The history load's data: the bounded publish list, the open draft (if any), the
      *  truncation flag, and the default branch's head sha this page rendered against. */
     data: HistoryData;
+    /** The last `?/revert` action's result: a fail-closed `RevertFailure` naming why the revert
+     *  was refused, or `viewAction`'s generic `{ error }` catch-all on an unexpected failure. The
+     *  two shapes are disjoint (a refusal carries `reason` and no `error`; the catch-all carries
+     *  `error` and no `reason`), so a reason check alone narrows the union. Null or undefined on
+     *  first load and after a successful revert (which redirects away from this view). */
+    form?: RevertFailure | { error: string } | null | undefined;
   }
 
-  let { data }: Props = $props();
+  let { data, form = null }: Props = $props();
 
   /**
    * Format a publish's ISO timestamp for a history row: a version is a moment an editor might
@@ -41,10 +49,40 @@ was given.
 
   const rowCount = $derived(data.entries.length + (data.draft ? 1 : 0));
   const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
+
+  /**
+   * The refused revert's message, naming the blocker: a `draft_exists` refusal names the
+   * draft's own author and start date and instructs the editor to publish or discard it first
+   * (spec "Part 2: revert"); `history_stale` and `ref_unknown` each name what moved out from
+   * under the posted form. `viewAction`'s generic `{ error }` catch-all falls through to its own
+   * message unchanged. Null when there is nothing to report (no `form`, or a bare-error shape
+   * this branch never reaches).
+   */
+  const revertRefusal = $derived.by(() => {
+    if (!form || !('reason' in form)) return null;
+    if (form.reason === 'draft_exists') {
+      const started = form.draftStartedAt ? `, started ${formatVersionDate(form.draftStartedAt)}` : '';
+      return `${form.draftEditor} has a draft in progress${started}. Publish or discard it before reverting.`;
+    }
+    if (form.reason === 'history_stale') {
+      return 'The history changed since this page loaded. Reload and try again.';
+    }
+    return 'That version is no longer in the recent list.';
+  });
+
+  /** `viewAction`'s generic `{ error }` catch-all, the branch `revertRefusal` above leaves
+   *  untouched: the two shapes are disjoint, so `form` never carries both. */
+  const bareError = $derived(form && 'error' in form ? form.error : null);
 </script>
 
 <div class="mx-auto w-full max-w-3xl">
   <PageHeader title="Recent versions" meta={data.truncated ? 'Showing the most recent 25 versions.' : undefined} />
+
+  {#if revertRefusal}
+    <div class="alert alert-error mb-4 type-body">{revertRefusal}</div>
+  {:else if bareError}
+    <div class="alert alert-error mb-4 type-body">{bareError}</div>
+  {/if}
 
   {#if data.entries.length === 0 && !data.draft}
     <EmptyState

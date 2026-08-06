@@ -213,3 +213,18 @@ line.
   engine's reach by design. No candidate fix proposed here; cairn's citation discipline (a token
   with no first-party backing doesn't ship) is the point, and a seam that made an uncited disallow
   group easy to write would cut against that discipline rather than serve it.
+
+- **`operator`: `cairn-doctor`'s two zone checks report a Cloudflare API permission failure with
+  the same `FAIL` and the same remediation text a genuinely wrong zone setting gets.** The
+  `always_use_https` and `security_header` checks read the zone settings API, and an API token
+  without Zone Settings Read gets a 403 back. Both checks then print `read returned 403` inside a
+  `FAIL` whose `Fix` paragraph tells the operator to go turn the setting on, which on the site that
+  hit this was already on: `http://` on both hosts redirects to `https://`, verified with a plain
+  `curl -I`, while the doctor run said Always Use HTTPS had failed. An operator who trusts the
+  output changes a correct setting, or worse, believes their zone is unprotected. The measurement
+  the check wants is available without any API permission at all, since the redirect and the
+  `Strict-Transport-Security` header are both observable from an unauthenticated request, so the
+  candidate fix is either to fall back to that observation on a 403 or to report a permission
+  failure as its own outcome, distinct from a failing setting. Found on the `aksailingclub-org`
+  `0.94.0-rc.1` migration (see [that report](./feedback/2026-08-05-aksailingclub-org-migration.md)),
+  where both of the run's only two failures were this.

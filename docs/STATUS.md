@@ -43,8 +43,10 @@ the owner publishes through the existing flow; the season-rollover rider points 
 **Resume prompt** (fresh session from `~/Projects/cairn-cms`, on Opus 5 per the model economy):
 "Execute ruling 1 of `docs/superpowers/specs/2026-08-05-engine-harvest-decisions.md` as one
 `cairn-implementer` task on a fresh worktree off `main`, full gate, merge; then cut `0.94.0-rc.1`
-via `cairn-release`, and author the per-migration DX reporting shape (ruling 3's three questions)
-before starting the ASC migration."
+via `cairn-release`, author the per-migration DX reporting shape (ruling 3's three questions), and
+close." The ASC migration is a SEPARATE session launched from `~/Projects/aksailingclub-org`,
+migrating against the published RC; it also files the three ROADMAP riders from ruling 4 and walks
+the DX reporting shape as its first consumer.
 
 **Then the order is unchanged:** cut `0.94.0-rc.1`, migrate ASC and cairn.pub against it from their own
 repos, mint `0.94.0` once their gates are green, migrate the remaining two off the recipe the first

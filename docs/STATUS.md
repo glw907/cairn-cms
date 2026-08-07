@@ -58,21 +58,21 @@ the live admin smoke and its transcript are in the post-mortem). Both hold under
 the discard nuance, is
 [`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md).
 
-**RELEASE ONE gates on the vertical alignment pass, which is now the IMMEDIATE next action**
-(Geoff, 2026-08-06/07: the beta does not ship with the alignment class unanswered, and the
-class is more pervasive than field rows). The plan, widened 2026-08-07 from the earlier
-field-row draft, is
-[`2026-08-07-vertical-alignment.md`](superpowers/plans/2026-08-07-vertical-alignment.md): a
-MEASURED inventory across the admin's rendered screens first (glyph-box centers, not element
-boxes; every flex row, the icon-text and mixed-line-height classes included), then
-engine-owned recipes (`FieldRow`, whatever row classes the inventory confirms, the
-`text-box-trim` silent default), the generalized `cairn-audit` vertical rule, and the
-retroactive `0.92.0` geometry note. The inventory sizes the pass; the sizing rule applies
-from the first split. It runs on a fresh worktree off `main` in a fresh Opus 5 session,
-standard method. Resume prompt: "Execute the vertical alignment plan at
-docs/superpowers/plans/2026-08-07-vertical-alignment.md via cairn-pass; the plan is committed
-on main; work a fresh worktree off main. Task 2 moves the approved admin visual baseline, so
-its diffs run through the visual-fidelity read with Geoff's before/after."
+**RELEASE ONE gates on the vertical alignment pass, RESCOPED CAIRN-WIDE 2026-08-07; the
+admin-only plan is superseded and must not be executed.** The first execution attempt (Opus
+session, same day) was stopped mid-task-1 when its own calibration work found the defect class
+live on a public surface (ASC's `/join` cards: icon ink 2.8 to 5.1px above title cap centre on
+all six cards) while the plan fenced the public side off. Geoff ratified the rescope: the pass
+delivers cairn-cms machinery on BOTH surfaces (admin toolkit recipes, Waymark chassis recipes,
+one generalized `cairn-audit` rule measuring any rendered page); consumer-site fixes run in
+each site's repo on its own clock; release one still waits for the whole pass, with the
+npm-shipped machinery keeping the gate if the inventory forces a split. The ratified design is
+[`2026-08-07-vertical-alignment-cairn-wide-design.md`](superpowers/specs/2026-08-07-vertical-alignment-cairn-wide-design.md)
+(it carries the three measurement traps the probe walked into, binding on probe, rule, and
+fixtures). The rescoped plan is being written in the current Fable sitting via writing-plans;
+until it lands, there is nothing to execute. The `vertical-alignment` worktree sits clean at
+`main`'s tip and is reusable; the stopped dispatch's 802-line probe draft is salvaged (paths in
+the spec).
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to

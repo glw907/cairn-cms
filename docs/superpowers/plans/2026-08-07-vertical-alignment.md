@@ -1,5 +1,13 @@
 # Vertical alignment (the pervasive class, not one row shape) — implementation plan
 
+> **SUPERSEDED (2026-08-07, same day): do not execute this plan.** Execution was stopped
+> mid-task-1 when the calibration work found the defect class live on a public-site surface this
+> plan fences off. Geoff rescoped the pass cairn-wide (admin toolkit AND the Waymark chassis).
+> The ratified design is
+> [`2026-08-07-vertical-alignment-cairn-wide-design.md`](../specs/2026-08-07-vertical-alignment-cairn-wide-design.md);
+> the rescoped plan supersedes this one. The diagnosis, constraints, and task skeletons below
+> carry forward except where the spec revises them.
+
 > **For agentic workers:** execute task-by-task per the repo's standing method: dispatch each
 > task to `cairn-implementer` (pinned Sonnet), test-first; the main loop reviews each diff and
 > confirms the full gate before the next dispatch. This pass GATES RELEASE ONE, and the

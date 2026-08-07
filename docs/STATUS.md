@@ -86,18 +86,19 @@ the defect filing recording that the end-to-end proof ran; route any new finding
 rather than batching a reporting tail, which the second walk measured at 40% of its session
 cost."
 
-**Phase F is pre-baked** (the F1+F4 sitting ran 2026-08-06, during the outage wait). The spec is
-[`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md);
-the plans are [`2026-08-06-history-revert.md`](superpowers/plans/2026-08-06-history-revert.md)
-(pass one, F2/F3 merged) and [`2026-08-06-preview.md`](superpowers/plans/2026-08-06-preview.md)
-(pass two; its task 0 adversarial review blocks every dispatch). Execution runs in a fresh
-Opus 5 session per the model economy, each pass on its own worktree off `main`; it does not
-depend on the migration window and may run parallel to it. **Pass one is UNDERWAY (2026-08-06)
-on the `history-revert` worktree** (`.claude/worktrees/history-revert`): all six plan tasks and
-the simplifier pass are committed there, the adversarial review gate has run (43 confirmed
-findings deduplicating to ~15 issues), and the review-fix rounds are landing. A session resuming
-cold picks up that worktree at its committed tip rather than cutting a fresh one; the remaining
-work is the fix rounds, the pass-end ritual, and the merge to `main`.
+**Phase F pass one (history and revert) is DONE and MERGED to `main`** (2026-08-06, merge
+`55aaad28`, sixteen commits; post-mortem appended to
+[`2026-08-06-history-revert.md`](superpowers/plans/2026-08-06-history-revert.md)). It holds
+under the new `## Unreleased` changelog window for RELEASE ONE; no version bump. The spec is
+[`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md).
+**Pass two, public preview, is next for engine work**: the plan is
+[`2026-08-06-preview.md`](superpowers/plans/2026-08-06-preview.md), its task 0 drift check plus
+the mandatory pre-dispatch adversarial security round block every dispatch, and it runs on a
+fresh worktree off `main` in a fresh Opus 5 session. One input the preview plan predates: the
+merge changed `Backend.createBranch` to return the sha it created the branch at; preview
+consumes that wherever it creates branches. Resume prompt: "Execute the Phase F pass-two plan
+at docs/superpowers/plans/2026-08-06-preview.md via cairn-pass; the spec and plan are committed;
+work a fresh worktree off main."
 
 **How a stable cut handles the changelog.** The window is headed `## 0.94.0-rc.1` (soon
 `## 0.94.0-rc.2`), not `## Unreleased`. At the stable cut, rename that heading to `## 0.94.0`

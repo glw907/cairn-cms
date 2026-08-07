@@ -11,6 +11,12 @@ exercises real Wrangler**, since both resolve through Node's `--conditions`. The
 ASC's Playwright suite against `rc.2` from the registry, and the standing gate this section suggests
 is now filed in `ROADMAP.md`'s Now tier.
 
+**That end-to-end proof ran on 2026-08-06 and passed.** ASC repinned to `0.94.0-rc.2` from the
+registry on a clean `npm ci`, and its Playwright suite started a Worker and ran all 75 specs with
+every functional spec green, where `rc.1` had refused all 75 connections. The fix holds against
+the published artifact, not only against the patched `node_modules` copy this filing was written
+from.
+
 Found 2026-08-05 by the `aksailingclub-org` migration, at that site's Playwright gate, after
 `svelte-check`, `vitest`, and `vite build` had all passed. **This blocks the RC for any consumer
 that adopts either subpath, which is every site in this window, since both are server-side

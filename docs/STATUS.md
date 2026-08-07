@@ -14,77 +14,34 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-06: `0.94.0-rc.2` is PUBLISHED; run the ASC verification session)
+## Immediate next action (2026-08-07: stable `0.94.0` is on `latest`; flip ASC's caret, then walk the other consumers up)
 
-**Both `aksailingclub-org` and `cairn-pub` have migrated to `0.94.0-rc.1` and filed their
-reports**: [ASC](internal/feedback/2026-08-05-aksailingclub-org-migration.md),
-[cairn-pub](internal/feedback/2026-08-05-cairn-pub-migration.md). Every migration follows the DX
-reporting shape at [`docs/internal/feedback/README.md`](internal/feedback/README.md) and lands its
-report in that same directory as a docs-only change.
+**Stable `0.94.0` published 2026-08-07**, the content-identical promotion of `0.94.0-rc.2`: same
+source, same exports, same breaking list, proven end-to-end by ASC's 75-spec Playwright run
+against `rc.2` from the registry. `npm view` confirms `latest: 0.94.0`. (`next` still points at
+`0.94.0-rc.2`, now behind `latest`; it sits there harmlessly until the next candidate replaces
+it.) One mechanic to know when reading the history: the release targeted commit `1d415c1b` on
+`release/v0.94.0`, a one-commit promotion branch off the `v0.94.0-rc.2` tag, NOT `main`'s tip,
+because `main` already carried the history-revert window under `## Unreleased` for release one
+and publish.yml ships whatever tree it checks out. The stable-cut renames (heading to
+`## 0.94.0`, RC preambles dropped, per the rule now archived) landed twice, once on the
+promotion branch and once on `main`; tag `v0.94.0` keeps the promotion commit alive.
 
-**ASC's own Playwright gate found a blocker**: `/auth-crypto` and `/cloudflare` published a
-`browser` condition with no `worker` condition ahead of it, so a Workers build resolved the
-same client-only throwing stub a browser build gets, and the deployed Worker never started. Filed
-at
-[`2026-08-05-rc1-worker-condition-defect.md`](internal/feedback/2026-08-05-rc1-worker-condition-defect.md).
-**ASC's migration branch stays held on `0.94.0-rc.1` until the fix ships.**
+**Next action: flip ASC's caret.** `aksailingclub-org`'s branch `cairn-0.94-migration` is green
+on an exact `0.94.0-rc.2` pin and waited only on this publish: repin to `^0.94.0`, regenerate
+the lockfile, `npm ci`, rerun its gate, and proceed per that repo's STATUS (Geoff's
+before/after on the field-register flip still gates the deploy).
 
-**`/auth-crypto` has carried this since stable `0.93.0`**, the release that shipped the subpath;
-it stayed latent because no consumer imported it until this window. `/cloudflare` carried it from
-its first publish in `0.94.0-rc.1`. So the defect is not RC-only, and `ecxc-ski` on `^0.93.0`
-would hit it the moment it adopts `/auth-crypto`.
+**Then:** migrate `907-life` and `ecxc-ski` off the recipe ASC's migration wrote, each resolving
+on its own caret, and bump `cairn-pub` off `rc.1` (its saves and publishes stay blocked on the
+GitHub App installation item below; the version bump is not).
 
-**Branch `rc2-worker-condition` fixes it**, adding a `worker` condition ahead of `browser` in both
-subpaths' `exports` entries. Two gates cover the class, and they are not equally strong. The
-structural check (`scripts/check-package-files.mjs`, wired into `check:package`) runs
-unconditionally, needs no build, and sits on the publish path, so it is what would have aborted
-the `rc.1` cut. The behavioral resolver probe
-(`src/tests/unit/packaging-boundary.test.ts`) spawns Node against the built package under
-Wrangler's own condition set (`workerd,worker,browser`, verified against wrangler's own
-`getBuildConditions`), and every case is `skipIf(!built)`, so it proves nothing without
-`npm run package` first. CI runs `npm ci`, whose `prepare` builds `dist`, so it runs there.
-
-**What neither gate covers:** real Wrangler. Both are Node `--conditions` proxies, so if Wrangler
-ever changed its condition set both stay green while every consumer breaks the same way. The
-end-to-end proof is ASC's Playwright suite against `rc.2` from the registry, and the standing gate
-is filed in [`ROADMAP.md`](../ROADMAP.md).
-
-**Next action: cut `0.94.0-rc.2`.** Merge this branch, rename the `## 0.94.0-rc.1` heading in
-`CHANGELOG.md` and the matching heading in `docs/guides/upgrade-cairn.md` to `0.94.0-rc.2` (the
-candidate and the fix carry the same window; a stable-cut rename, not a new entry, per the rule
-below), bump `package.json`, and release under the `next` dist-tag. ASC's Playwright suite is the
-proof: once it runs green against `rc.2`, mint the stable `0.94.0`, then migrate `907-life` and
-`ecxc-ski` off the recipe ASC's migration wrote, each resolving on its own caret.
-
-**The release is finished (2026-08-06, late afternoon).** The outage parked the cut for most of
-a day: workflow-triggering webhooks were throttled to ~15%, so the finish sequence ran on a
-five-minute empty-commit nudge loop until attempt 14's push event got through, all four
-workflows ran green at the tip, and `gh release create v0.94.0-rc.2` fired the OIDC publish.
-`npm view @glw907/cairn-cms dist-tags` confirms `next: 0.94.0-rc.2` (`latest` stays `0.93.0`).
-The notes file is consumed and deleted; `main` carries a run of empty "Nudge CI" commits from
-the loop, harmless by design. **Next action: launch the ASC verification session with the
-prompt below.**
-
-**The ASC verification prompt** (launch from `~/Projects/aksailingclub-org`, Opus 5, only
-after `rc.2` is on the registry): "Verify this site against `@glw907/cairn-cms@0.94.0-rc.2`.
-This is a short verification session, not a migration walk: branch `cairn-0.94-migration` is
-complete and held at the rc.1 Workers blocker, which rc.2 fixes with a `worker` export
-condition. (1) Confirm the fix is on the registry: `npm view @glw907/cairn-cms@0.94.0-rc.2`
-resolves and its `./auth-crypto` and `./cloudflare` exports show `worker` ahead of `browser`;
-stop and report if not. (2) Repin the exact version, regenerate the lockfile, `npm ci`, and
-verify the INSTALLED copy carries the condition (node_modules was patched and reverted during
-diagnosis; this session proves the registry artifact). (3) Run check, test, build, then the
-Playwright e2e suite; the e2e run is the point, it alone starts a Worker; report the result
-plainly either way, since cairn mints `0.94.0` on this green. (4) On green, run the owed
-visual-baseline regeneration, READ the diff, and compose Geoff's before/after for the
-field-register flip, the migration's one visual effect; nothing deploys before he sees it.
-(5) Do not merge or deploy on the RC; end with the branch green on the pinned rc.2 and this
-repo's STATUS pointing at the caret flip as the next action (flip in-session only if `0.94.0`
-is already live). (6) Close with a docs-only amendment to cairn `main`: update the migration
-report's `/auth-crypto` and `/cloudflare` seam-fit rows to the rc.2 result and add one line to
-the defect filing recording that the end-to-end proof ran; route any new finding as found
-rather than batching a reporting tail, which the second walk measured at 40% of its session
-cost."
+**One finding came back with the verification**, filed to `ROADMAP.md`'s Now tier rather than left
+in a report: the stacked register drops a field's control by the label's height, so a bare sibling
+control in the same row no longer aligns with it (12.5px on ASC's season picker, both widths, both
+themes). It sits beside the optical-centring default Geoff asked for on 2026-07-30, which was
+refiled at the same time after being lost in a closed plan's next-pass-seed paragraph. They are one
+class and are worth one pass.
 
 **Phase F pass one (history and revert) is DONE and MERGED to `main`** (2026-08-06, merge
 `55aaad28`, sixteen commits; post-mortem appended to
@@ -99,14 +56,6 @@ merge changed `Backend.createBranch` to return the sha it created the branch at;
 consumes that wherever it creates branches. Resume prompt: "Execute the Phase F pass-two plan
 at docs/superpowers/plans/2026-08-06-preview.md via cairn-pass; the spec and plan are committed;
 work a fresh worktree off main."
-
-**How a stable cut handles the changelog.** The window is headed `## 0.94.0-rc.1` (soon
-`## 0.94.0-rc.2`), not `## Unreleased`. At the stable cut, rename that heading to `## 0.94.0`
-rather than adding a second entry above it: the candidate and the stable carry identical content,
-and a separate entry would duplicate a long `Consumers must:` list. `check:version` supports
-either shape, since it sizes an entry against the nearest earlier heading whose numeric core
-differs. Do the same in `docs/guides/upgrade-cairn.md`, and drop that entry's
-release-candidate preamble.
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to
@@ -124,13 +73,14 @@ monthly on the 1st, first run 2026-09-01, emailing only when a condition trips. 
 plan:** whether that change reaches backward into zones with an existing configuration is genuinely
 ambiguous in Cloudflare's own post, which the ROADMAP had asserted as settled fact.
 
-**FOUR consumer sites, each on its own `0.x` caret**, none of which resolves the RC:
+**FOUR consumer sites, each on its own `0.x` caret**, none of which reaches `0.94.0` unaided
+(a caret admits only its own minor in `0.x`, so each site moves by migration):
 
 | Repo | Range | Behind |
 |---|---|---|
 | `907-life` | `^0.84.4` | 0.85 through 0.93, plus this window |
 | `cairn-pub` | `^0.87.4` | 0.88 through 0.93, plus this window (migration ran against `rc.1`; the `Consumers must:` work is done, blocked only on the GitHub App item above) |
-| `aksailingclub-org` | `^0.91.1` | 0.92, 0.93, plus this window (migration ran against `rc.1`; held on this branch's fix before `rc.2` proves the Playwright gate) |
+| `aksailingclub-org` | `^0.91.1` | 0.92, 0.93, plus this window (migration branch green on the exact `rc.2` pin; the caret flip to `^0.94.0` is the next action) |
 | `ecxc-ski` | `^0.93.0` | this window only |
 
 (`~/Projects/asc-site` is a second checkout of `aksailingclub-org`, not a fifth consumer.)
@@ -162,4 +112,6 @@ pass as planned).
 The C1 seam-shape pass, the refusal-channel convergence, and the C2 window as it stood before
 merging are in `STATUS-archive-2026-08-02-to-2026-08-03.md`. The auth-channel window and the
 AI-posture pass, as STATUS carried them up to the `0.94.0-rc.1` cut, are in
-`STATUS-archive-2026-08-04-to-2026-08-05.md`.
+`STATUS-archive-2026-08-04-to-2026-08-05.md`. The rc.2 cut, the ASC end-to-end verification, and
+the RC window as STATUS carried them to the stable `0.94.0` cut are in
+`STATUS-archive-2026-08-06-to-2026-08-07.md`.

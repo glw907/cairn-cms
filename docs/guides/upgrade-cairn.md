@@ -205,20 +205,7 @@ members, `previewMintAction`/`previewRevokeAction` (and the facade's `actions` g
 `previewMint`/`previewRevoke`); leaving them unwired costs you nothing else, the same way an
 unwired `historyLoad`/`revertAction` costs nothing.
 
-## 0.94.0-rc.2: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
-
-This is a release candidate on the `next` dist-tag, not a stable release. It's the largest
-breaking window so far. A real site has since crossed it and found a defect in the
-`auth-crypto` and `cloudflare` export conditions that stopped a Worker from starting (see
-[What a green typecheck misses](#what-a-green-typecheck-misses), below). This candidate carries
-the fix. A caret range never resolves a prerelease, so pin the exact version to test against it:
-
-```jsonc
-"@glw907/cairn-cms": "0.94.0-rc.2"
-```
-
-Move back to a caret (`^0.94.0`) once `0.94.0` publishes. The steps below are the same either way;
-the stable release carries this identical list.
+## 0.94.0: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
 
 A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the
 Cloudflare-native platform primitives two sites already copy by hand: `verifyTurnstile`, the

@@ -65,16 +65,9 @@
   but minting produces a working link only once the route is mounted and the migration is
   applied.
 
-## 0.94.0-rc.2
+## 0.94.0
 
 <!-- release-size: minor -->
-
-**A release candidate, published to the `next` dist-tag.** This is the largest breaking window to
-date. A real site has since crossed it and found a defect this candidate fixes (see Fixed,
-below), so the candidate exists to let that crossing finish before the number is final. A caret
-range does not resolve a prerelease, so a site testing this pins the exact version
-(`"@glw907/cairn-cms": "0.94.0-rc.2"`) and returns to a caret at `0.94.0`. The candidate is a
-one-time guard for this window, not a new cadence.
 
 ### Consumers must
 

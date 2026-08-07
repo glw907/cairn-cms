@@ -203,20 +203,25 @@ The original decision framing, for the record:
 
 ## Now
 
-- **A stacked field beside an unlabelled sibling control leaves the row misaligned.** `0.92.0` made
-  the stacked register the default, so a field's label moves above its control and the control drops
-  by the label's height. A sibling in the same row that carries no label does not move, and the two
-  halves of the row stop lining up. Measured on `aksailingclub-org`'s `/admin/club/documents` season
-  picker, against CI-rendered baselines rather than a workstation capture: before the flip the
-  input's vertical centre sat at 145.0px and the `View` button's at 144.5px; after it, 157.0px
-  against an unmoved 144.5px. The 12.5px offset is identical at 390 and at 1440 and in both themes,
-  which makes it layout rather than a theme's spacing. This is a mechanic, not a site's design
-  choice: every consumer that puts a field beside a bare button gets it, and patching one site's
-  theme leaves the rest to rediscover it. Which element governs the row's alignment is a real
-  question, since the answer depends on whether the sibling reads as part of the field or as its own
-  control, so it wants an engine decision rather than a default nobody chose. Found 2026-08-06 by the
-  ASC `rc.2` verification; the evidence is the regenerated baselines in that repo's `873a3bb`, and
-  the site is holding its merge on Geoff's answer.
+- **The field register has now produced an alignment defect on BOTH axes, and the mechanical net
+  covers one.** `cairn-audit`'s `field-edge-alignment` rule exists because the `inline` register
+  staircased controls' LEFT edges, found by ASC's Assets-trial harvest. `0.92.0` made `stacked` the
+  default and produced the vertical counterpart, which no rule catches: the label takes a line above
+  the control, so the control sits in the lower half of the field's block, and a bare sibling
+  control in the same row aligns to the block rather than to the control. A row written
+  `flex items-center` therefore hangs its button half a label-height above the input it acts on.
+  Measured on ASC's `/admin/club/documents` season picker against CI baselines: the input's vertical
+  centre went 145.0px → 157.0px across the flip while the `View` button stayed at 144.5px, a 12.5px
+  offset identical at 390 and 1440 and in both themes. The correct composition is `items-end`.
+  **The evidence that this is not discoverable from the component is inside one repo**: ASC writes
+  this row three times, and `admin/club/settings` had `items-end` right since 2026-07-14 while
+  `documents` and `money` both had `items-center` wrong, fixed 2026-08-06. Same shape, same repo,
+  two of three wrong, and nothing in `FieldLabel`'s contract says which to reach for. Two responses
+  worth taking together: say it in `FieldLabel`'s own `@component` block and the admin design
+  system's form-row section, since a stacked field changes what the row around it must do; and add
+  the vertical counterpart rule to `cairn-audit`, where a control inside a stacked field whose
+  vertical centre differs from a sibling control's in the same flex row is the detectable shape.
+  Found 2026-08-06 by the ASC `rc.2` verification.
 
 - **Exercise a server-only subpath under real Wrangler in cairn's own CI.** The `0.94.0-rc.1`
   Workers blocker (a `browser` condition with no `worker` ahead of it, so the server bundle got the

@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-07: stable `0.94.0` is on `latest`; flip ASC's caret, then walk the other consumers up)
+## Immediate next action (2026-08-07: stable `0.94.0` on `latest`; ASC adopted; the vertical alignment pass gates release one)
 
 **Stable `0.94.0` published 2026-08-07**, the content-identical promotion of `0.94.0-rc.2`: same
 source, same exports, same breaking list, proven end-to-end by ASC's 75-spec Playwright run
@@ -27,9 +27,10 @@ and publish.yml ships whatever tree it checks out. The stable-cut renames (headi
 `## 0.94.0`, RC preambles dropped, per the rule now archived) landed twice, once on the
 promotion branch and once on `main`; tag `v0.94.0` keeps the promotion commit alive.
 
-**ASC's caret is flipped** (2026-08-07, `8076b00` on `cairn-0.94-migration`: `^0.94.0`, per
-Geoff). The merge to that repo's `main` and the deploy run in ASC's own session per its
-STATUS; nothing in cairn waits on them.
+**ASC's `0.94.0` adoption is COMPLETE and verified** (2026-08-07): the migration merged to that
+repo's `main` via its PR #3 (merge `3e7d97d`), `origin/main` carries the `^0.94.0` pin, the
+"Deploy to Cloudflare Workers" run on `main` completed green, and ASC's own STATUS records the
+adoption merged, deployed, and smoked. Nothing in cairn waits on ASC.
 
 **The remaining consumer migrations WAIT for release one (Geoff, 2026-08-07).** The vertical
 alignment pass holds unpublished, so migrating now would make `907-life`, `ecxc-ski`, and
@@ -89,14 +90,15 @@ monthly on the 1st, first run 2026-09-01, emailing only when a condition trips. 
 plan:** whether that change reaches backward into zones with an existing configuration is genuinely
 ambiguous in Cloudflare's own post, which the ROADMAP had asserted as settled fact.
 
-**FOUR consumer sites, each on its own `0.x` caret**, none of which reaches `0.94.0` unaided
-(a caret admits only its own minor in `0.x`, so each site moves by migration):
+**FOUR consumer sites.** ASC is current on `^0.94.0`; the other three sit on their own `0.x`
+carets and move only by migration (a caret admits only its own minor in `0.x`), which waits for
+release one per the ordering above:
 
 | Repo | Range | Behind |
 |---|---|---|
 | `907-life` | `^0.84.4` | 0.85 through 0.93, plus this window |
 | `cairn-pub` | `^0.87.4` | 0.88 through 0.93, plus this window (migration ran against `rc.1`; the `Consumers must:` work is done, blocked only on the GitHub App item above) |
-| `aksailingclub-org` | `^0.91.1` | 0.92, 0.93, plus this window (migration branch green on the exact `rc.2` pin; the caret flip to `^0.94.0` is the next action) |
+| `aksailingclub-org` | `^0.94.0` | current (adoption merged, deployed, and smoked 2026-08-07) |
 | `ecxc-ski` | `^0.93.0` | this window only |
 
 (`~/Projects/asc-site` is a second checkout of `aksailingclub-org`, not a fifth consumer.)

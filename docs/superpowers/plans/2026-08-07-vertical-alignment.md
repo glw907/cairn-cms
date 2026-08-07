@@ -45,13 +45,23 @@ rendered-audit engine already exposes the measuring half), and the inventory doc
 `docs/internal/2026-08-vertical-alignment-inventory.md`.
 
 Render the admin's screens (the visual suite's page list is the enumeration: office, lists,
-edit with the Details panel open, media library and detail, editors, settings, dialogs) at
-1280 and 390, both themes, and MEASURE, per flex/grid row containing two or more visible
-children: each child's visible-content vertical center (for text: the glyph box via
-`getClientRects` on a Range, not the element box; for controls and icons: the border box)
-and the delta between siblings. Emit every row whose delta exceeds 2px, with a screenshot
-crop reference, the component file, and a first-guess class (stacked-field row, icon-text
-row, mixed-line-height pair, fixed-height control, optical-only). ALSO measure the known
+edit with the Details panel open, media library and detail, editors, settings, dialogs, PLUS
+the command palette open and one open-menu state) at the admin visual suite's own widths
+(1440 and 768, per `admin-visual.spec.ts`) plus 390, both themes, and MEASURE two row kinds:
+every flex/grid row containing two or more visible children, AND every `<tr>` in the table
+surfaces (`AdminTable`, `OfficeList`) with two or more visible cells, since the lists are
+`<table>` markup the flex/grid walk never visits and exactly where badge-beside-text and
+control-in-cell shapes live. For each sibling pair, take the visible-content geometry (for
+text: the glyph box via `getClientRects` on a Range, not the element box; for controls and
+icons: the border box) and compute the delta BY THE PAIR'S CLASS: a text-beside-text pair
+compares BASELINES, because a mixed-size pair sharing a baseline is correct typography whose
+glyph centers diverge by design, and center-delta there would both over-report the inventory
+and push task 2 toward worse fixes; an icon-beside-text or control-beside-text pair compares
+visible-content vertical centers. States not rendered (hover, focus, validation) are listed
+in the inventory doc as unmeasured, so the zero-rows claim stays honest. Emit every row whose
+class-appropriate delta exceeds 2px, with a screenshot crop reference, the component file,
+and a first-guess class (stacked-field row, icon-text row, mixed-line-height pair,
+fixed-height control, table-cell, optical-only). ALSO measure the known
 optical suspects (buttons, chips, badges: glyph center vs padding-box center). The output is
 a table the orchestrator reads and Geoff can skim, each row dispositioned in task 2/3 or
 explicitly declined with a reason. The ASC season-row case (12.5px) is the calibration row:
@@ -93,10 +103,16 @@ screens (or each survivor is a documented decline); the public design system is 
 
 **Files:** a new rendered rule beside `field-edge-alignment`; fixtures.
 
-The rule generalizes to what task 1 proved measurable: within one flex row, a sibling whose
-visible-content vertical center diverges beyond threshold (start 4px; ASC measured 12.5),
-with the stacked-field case called out by name in the finding message (recommending
-`FieldRow`/`items-end` and stating the measured delta). Scope to composition contexts the
+The rule generalizes to what task 1 proved measurable: within one flex row (or table row, if
+task 1 confirms the table surfaces defective), a sibling whose class-appropriate delta
+diverges beyond threshold, with the stacked-field case called out by name in the finding
+message (recommending `FieldRow`/`items-end` and stating the measured delta). The rule
+inherits task 1's metric-by-class split: text-beside-text compares baselines and NEVER fires
+on a deliberately baseline-aligned mixed-size pair; icon/control-beside-text compares
+centers. Set the threshold from the inventory's measured noise floor rather than the
+placeholder 4px (ASC measured 12.5), and record in the inventory doc any fixed defect that
+sits between the inventory's 2px reporting bar and the rule's firing bar, so a silent
+regression window is a stated decision, not an accident. Scope to composition contexts the
 inventory validated, so legitimately top-aligned layouts do not false-positive; learn from
 `field-edge-alignment`'s filed weaknesses (previous-member clustering, the
 always-recommends-stacked message). If glyph-box measurement proves too flaky for CI, the
@@ -104,8 +120,9 @@ rule ships the border-box half and the inventory doc records the optical half as
 probe-script-only, stated plainly rather than silently narrowed.
 
 **Acceptance criteria:** fires on a fixture reproducing ASC's season row; silent on `FieldRow`
-compositions, same-height rows, and validated top-aligned layouts; green over the swept
-engine and showcase.
+compositions, same-height rows, validated top-aligned layouts, and a baseline-aligned
+mixed-size text pair (a fixture proves this non-firing); green over the swept engine and
+showcase.
 
 ### Task 4: docs, changelog, upgrade note, roadmap
 

@@ -288,3 +288,11 @@ line.
   screens alone. Weigh that against a consumer that deliberately narrows a run for speed, which
   merging would take away. Found on the `cairn-pub` `0.94.0-rc.1` migration (see [that
   report](./feedback/2026-08-05-cairn-pub-migration.md)).
+
+- **[developer] `token-colors` reads a self-palette public component as 16 hazards.**
+  `PreviewBanner` mounts on public pages where neither `cairn-admin.css` nor Tailwind may
+  exist, so it deliberately carries its own fallback palette, and the gate needed 17
+  co-located suppressions to accept that. The question worth an answer: should a component
+  that declares (or consumes by fallback) its own `--cairn-*` palette be a declared palette
+  site, the standing exclusion `cairn-admin.css` and `theme.css` already get, rather than a
+  suppression cluster? Raised by the code-simplifier on the preview pass, 2026-08-07.

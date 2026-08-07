@@ -43,19 +43,29 @@ themes). It sits beside the optical-centring default Geoff asked for on 2026-07-
 refiled at the same time after being lost in a closed plan's next-pass-seed paragraph. They are one
 class and are worth one pass.
 
-**Phase F pass one (history and revert) is DONE and MERGED to `main`** (2026-08-06, merge
-`55aaad28`, sixteen commits; post-mortem appended to
-[`2026-08-06-history-revert.md`](superpowers/plans/2026-08-06-history-revert.md)). It holds
-under the new `## Unreleased` changelog window for RELEASE ONE; no version bump. The spec is
+**Both Phase F passes are DONE and MERGED to `main`.** Pass one (history and revert): merge
+`55aaad28`, 2026-08-06, post-mortem in
+[`2026-08-06-history-revert.md`](superpowers/plans/2026-08-06-history-revert.md). Pass two
+(public preview): merge `e3db7de8` via PR #23, 2026-08-07, all five CI checks green on the
+real merge ref, post-mortem in [`2026-08-06-preview.md`](superpowers/plans/2026-08-06-preview.md)
+(the pass-end adversarial workflow refuted 34 of 41 findings and the 7 confirmed are fixed;
+the live admin smoke and its transcript are in the post-mortem). Both hold under
+`## Unreleased` for RELEASE ONE; no version bump. The spec, with its round 3 corrections and
+the discard nuance, is
 [`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md).
-**Pass two, public preview, is next for engine work**: the plan is
-[`2026-08-06-preview.md`](superpowers/plans/2026-08-06-preview.md), its task 0 drift check plus
-the mandatory pre-dispatch adversarial security round block every dispatch, and it runs on a
-fresh worktree off `main` in a fresh Opus 5 session. One input the preview plan predates: the
-merge changed `Backend.createBranch` to return the sha it created the branch at; preview
-consumes that wherever it creates branches. Resume prompt: "Execute the Phase F pass-two plan
-at docs/superpowers/plans/2026-08-06-preview.md via cairn-pass; the spec and plan are committed;
-work a fresh worktree off main."
+
+**RELEASE ONE now gates on one more pass: field-row vertical alignment** (Geoff, 2026-08-06:
+the beta does not ship with the alignment class unanswered). The plan is committed at
+[`2026-08-07-field-row-alignment.md`](superpowers/plans/2026-08-07-field-row-alignment.md); it
+answers BOTH halves of the one-class finding above (the structural `FieldRow` recipe + engine
+sweep + `cairn-audit` vertical rule, and the optical `text-box-trim` silent default), closes
+the ROADMAP both-axes entry, and adds the retroactive `0.92.0` geometry note to the upgrade
+guide. It runs on a fresh worktree off `main` in a fresh Opus 5 session, standard method.
+Resume prompt: "Execute the field-row alignment plan at
+docs/superpowers/plans/2026-08-07-field-row-alignment.md via cairn-pass; the plan is committed
+on main; work a fresh worktree off main. Task 1 moves the approved admin visual baseline
+(text-box-trim), so its diffs run through the visual-fidelity read with Geoff's before/after."
+The preview worktree (`.claude/worktrees/preview`) is merged and can be pruned.
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to

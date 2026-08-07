@@ -27,14 +27,13 @@ and publish.yml ships whatever tree it checks out. The stable-cut renames (headi
 `## 0.94.0`, RC preambles dropped, per the rule now archived) landed twice, once on the
 promotion branch and once on `main`; tag `v0.94.0` keeps the promotion commit alive.
 
-**Next action: flip ASC's caret.** `aksailingclub-org`'s branch `cairn-0.94-migration` is green
-on an exact `0.94.0-rc.2` pin and waited only on this publish: repin to `^0.94.0`, regenerate
-the lockfile, `npm ci`, rerun its gate, and proceed per that repo's STATUS (Geoff's
-before/after on the field-register flip still gates the deploy).
+**ASC's caret is flipped** (2026-08-07, `8076b00` on `cairn-0.94-migration`: `^0.94.0`, per
+Geoff). The merge to that repo's `main` and the deploy run in ASC's own session per its
+STATUS; nothing in cairn waits on them.
 
-**Then:** migrate `907-life` and `ecxc-ski` off the recipe ASC's migration wrote, each resolving
-on its own caret, and bump `cairn-pub` off `rc.1` (its saves and publishes stay blocked on the
-GitHub App installation item below; the version bump is not).
+**Next consumer action:** migrate `907-life` and `ecxc-ski` off the recipe ASC's migration
+wrote, each resolving on its own caret, and bump `cairn-pub` off `rc.1` (its saves and
+publishes stay blocked on the GitHub App installation item below; the version bump is not).
 
 **One finding came back with the verification**, filed to `ROADMAP.md`'s Now tier rather than left
 in a report: the stacked register drops a field's control by the label's height, so a bare sibling

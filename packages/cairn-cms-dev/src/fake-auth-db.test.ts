@@ -129,3 +129,102 @@ test('the plain setEditorRole and deleteEditor matchers still work alongside the
   const gone = await db.prepare(FIND_EDITOR).bind('writer@showcase.test').first();
   expect(gone).toBeNull();
 });
+
+// The preview_tokens dispatch (src/lib/auth/preview-store.ts's exact SQL), the preview pass's
+// addition to this fixture: mintPreviewToken's insert (and its expiry sweep), previewLoad's two
+// lookups, and the revoke/lifecycle-cleanup deletes by entry or by editor.
+
+const INSERT_PREVIEW_TOKEN =
+  'INSERT INTO preview_tokens (token_hash, concept, entry_id, editor, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?)';
+const SWEEP_EXPIRED = 'DELETE FROM preview_tokens WHERE expires_at <= ?';
+const FIND_PREVIEW_TOKEN = 'SELECT concept, entry_id, editor, expires_at FROM preview_tokens WHERE token_hash = ? AND expires_at > ?';
+const FIND_PREVIEW_TOKEN_ANY_EXPIRY = 'SELECT concept, entry_id, editor, expires_at FROM preview_tokens WHERE token_hash = ?';
+const DELETE_BY_ENTRY = 'DELETE FROM preview_tokens WHERE concept = ? AND entry_id = ?';
+const DELETE_BY_EDITOR = 'DELETE FROM preview_tokens WHERE editor = ?';
+
+async function mintToken(
+  db: FakeAuthDb,
+  hash: string,
+  record: { concept: string; entryId: string; editor: string; expiresAt: number },
+): Promise<void> {
+  const now = Date.now();
+  await db.batch([
+    db.prepare(SWEEP_EXPIRED).bind(now),
+    db.prepare(INSERT_PREVIEW_TOKEN).bind(hash, record.concept, record.entryId, record.editor, record.expiresAt, now),
+  ]);
+}
+
+test('insertPreviewToken then findPreviewToken round-trips a minted row', async () => {
+  const db = createFakeAuthDb();
+  await mintToken(db, 'hash-1', { concept: 'posts', entryId: '2026-01-01-hi', editor: 'ed@t', expiresAt: Date.now() + 60_000 });
+
+  const row = await db
+    .prepare(FIND_PREVIEW_TOKEN)
+    .bind('hash-1', Date.now())
+    .first<{ concept: string; entry_id: string; editor: string; expires_at: number }>();
+
+  expect(row).toMatchObject({ concept: 'posts', entry_id: '2026-01-01-hi', editor: 'ed@t' });
+});
+
+test('an unknown hash misses both findPreviewToken and findPreviewTokenAnyExpiry', async () => {
+  const db = createFakeAuthDb();
+
+  expect(await db.prepare(FIND_PREVIEW_TOKEN).bind('nope', Date.now()).first()).toBeNull();
+  expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('nope').first()).toBeNull();
+});
+
+test('findPreviewToken excludes an expired row that findPreviewTokenAnyExpiry still returns', async () => {
+  const db = createFakeAuthDb();
+  // Insert directly (bypassing the insert-time sweep) so an already-expired row can exist for the
+  // lookup-time expiry check to exclude, mirroring previewLoad's expired-vs-unknown distinguisher.
+  await db
+    .prepare(INSERT_PREVIEW_TOKEN)
+    .bind('hash-expired', 'posts', '2026-01-01-hi', 'ed@t', Date.now() - 1000, Date.now() - 2000)
+    .run();
+
+  expect(await db.prepare(FIND_PREVIEW_TOKEN).bind('hash-expired', Date.now()).first()).toBeNull();
+  const anyExpiry = await db
+    .prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY)
+    .bind('hash-expired')
+    .first<{ expires_at: number }>();
+  expect(anyExpiry).not.toBeNull();
+});
+
+test('insertPreviewToken sweeps expired rows in the same batch', async () => {
+  const db = createFakeAuthDb();
+  await db
+    .prepare(INSERT_PREVIEW_TOKEN)
+    .bind('hash-old', 'posts', '2026-01-01-hi', 'ed@t', Date.now() - 1000, Date.now() - 2000)
+    .run();
+
+  await mintToken(db, 'hash-new', { concept: 'posts', entryId: '2026-01-02-hi', editor: 'ed@t', expiresAt: Date.now() + 60_000 });
+
+  expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('hash-old').first()).toBeNull();
+  expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('hash-new').first()).not.toBeNull();
+});
+
+test('deletePreviewTokens removes every row for one entry, and only that entry', async () => {
+  const db = createFakeAuthDb();
+  await mintToken(db, 'hash-a', { concept: 'posts', entryId: 'target', editor: 'ed@t', expiresAt: Date.now() + 60_000 });
+  await mintToken(db, 'hash-b', { concept: 'posts', entryId: 'target', editor: 'other@t', expiresAt: Date.now() + 60_000 });
+  await mintToken(db, 'hash-c', { concept: 'posts', entryId: 'other-entry', editor: 'ed@t', expiresAt: Date.now() + 60_000 });
+
+  const res = await db.prepare(DELETE_BY_ENTRY).bind('posts', 'target').run();
+
+  expect(res.meta.changes).toBe(2);
+  expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('hash-a').first()).toBeNull();
+  expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('hash-b').first()).toBeNull();
+  expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('hash-c').first()).not.toBeNull();
+});
+
+test("the editor-removal cascade's own delete clears every row that editor minted, across entries", async () => {
+  const db = createFakeAuthDb();
+  await mintToken(db, 'hash-a', { concept: 'posts', entryId: 'one', editor: 'gone@t', expiresAt: Date.now() + 60_000 });
+  await mintToken(db, 'hash-b', { concept: 'posts', entryId: 'two', editor: 'gone@t', expiresAt: Date.now() + 60_000 });
+  await mintToken(db, 'hash-c', { concept: 'posts', entryId: 'three', editor: 'staying@t', expiresAt: Date.now() + 60_000 });
+
+  const res = await db.prepare(DELETE_BY_EDITOR).bind('gone@t').run();
+
+  expect(res.meta.changes).toBe(2);
+  expect(await db.prepare(FIND_PREVIEW_TOKEN_ANY_EXPIRY).bind('hash-c').first()).not.toBeNull();
+});

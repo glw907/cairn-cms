@@ -1,8 +1,11 @@
 // A dev-only AUTH_DB double for the showcase, the auth-store sibling of fake-github.ts. It
-// implements just the D1Database surface src/lib/auth/store.ts touches (prepare(sql).bind()
-// with first/run/all, plus batch) over an in-memory editors map, so /admin/editors works under
+// implements just the D1Database surface src/lib/auth/store.ts and src/lib/auth/preview-store.ts
+// touch (prepare(sql).bind() with first/run/all, plus batch) over in-memory editor and
+// preview-token maps, so /admin/editors and the preview mint/revoke/load chain work under
 // CAIRN_DEV_BACKEND=1 without a real D1 binding. Installed from hooks.server.ts as
-// platform.env.AUTH_DB; never part of the published engine.
+// platform.env.AUTH_DB (the admin routes AND, since the preview pass, /preview/[token] too, the
+// only non-admin path this fixture reaches: previewLoad reads the same rows previewMintAction
+// wrote, and both must share this one instance); never part of the published engine.
 //
 // Dispatch is on the store's exact SQL strings, matched as normalized substrings. Unknown SQL
 // throws with the SQL in the message, deliberately: when a store change adds or rewords a
@@ -25,6 +28,17 @@ interface EditorRow {
   role: Role;
 }
 
+/** A row in the fake `preview_tokens` table, in the store's column shape (preview-store.ts). */
+interface PreviewTokenRow {
+  concept: string;
+  entry_id: string;
+  editor: string;
+  expires_at: number;
+}
+
+/** Either fake table's row shape; `execute` dispatches into both maps from one function. */
+type FakeRow = EditorRow | PreviewTokenRow;
+
 export interface FakeAuthDb {
   prepare(sql: string): FakeStatement;
   batch(statements: FakeStatement[]): Promise<unknown[]>;
@@ -44,9 +58,14 @@ export function createFakeAuthDb(): FakeAuthDb {
   const ownerCount = (ownerRoles: string[]) =>
     [...editors.values()].filter((e) => ownerRoles.includes(e.role)).length;
 
-  function execute(rawSql: string, args: unknown[]): FakeExecResult<EditorRow> {
+  // Preview tokens, keyed by their hash (the store never sees the plaintext): mintPreviewToken's
+  // insert, previewLoad's two lookups (with and without the expiry predicate), and the
+  // revoke/lifecycle-cleanup deletes by entry or by editor.
+  const previewTokens = new Map<string, PreviewTokenRow>();
+
+  function execute(rawSql: string, args: unknown[]): FakeExecResult<FakeRow> {
     const sql = rawSql.replace(/\s+/g, ' ').trim();
-    const none: FakeExecResult<EditorRow> = { row: null, rows: [], changes: 0 };
+    const none: FakeExecResult<FakeRow> = { row: null, rows: [], changes: 0 };
 
     // resolveSession: the fixture hook injects locals.cairnEditor directly and the engine guard
     // is not installed in dev, so no session row ever exists. Answer null rather than throwing.
@@ -114,6 +133,72 @@ export function createFakeAuthDb(): FakeAuthDb {
     // deleteEditor / removeOwnerIfNotLast batch cleanup: no sessions or tokens exist in dev.
     if (sql.includes('DELETE FROM session WHERE email = ?')) return none;
     if (sql.includes('DELETE FROM magic_token WHERE email = ?')) return none;
+
+    // insertPreviewToken's expiry sweep, the first statement of its batch.
+    if (sql.startsWith('DELETE FROM preview_tokens WHERE expires_at <= ?')) {
+      const now = Number(args[0]);
+      let changes = 0;
+      for (const [hash, row] of previewTokens) {
+        if (row.expires_at <= now) {
+          previewTokens.delete(hash);
+          changes++;
+        }
+      }
+      return { ...none, changes };
+    }
+
+    // insertPreviewToken's own insert (args: tokenHash, concept, entryId, editor, expiresAt, createdAt).
+    if (sql.includes('INSERT INTO preview_tokens')) {
+      previewTokens.set(String(args[0]), {
+        concept: String(args[1]),
+        entry_id: String(args[2]),
+        editor: String(args[3]),
+        expires_at: Number(args[4]),
+      });
+      return { ...none, changes: 1 };
+    }
+
+    // findPreviewToken: the expiry-checked lookup. Checked before findPreviewTokenAnyExpiry below,
+    // since this statement's SQL is a superset of that one's (the `AND expires_at > ?` marker
+    // distinguishes them; matching order matters, exactly like the guarded editor delete above).
+    if (sql.includes('FROM preview_tokens WHERE token_hash = ?') && sql.includes('AND expires_at > ?')) {
+      const row = previewTokens.get(String(args[0]));
+      const now = Number(args[1]);
+      return { ...none, row: row && row.expires_at > now ? row : null };
+    }
+
+    // findPreviewTokenAnyExpiry: the same lookup with no expiry predicate, previewLoad's
+    // expired-versus-unknown distinguisher.
+    if (sql.includes('FROM preview_tokens WHERE token_hash = ?')) {
+      return { ...none, row: previewTokens.get(String(args[0])) ?? null };
+    }
+
+    // deletePreviewTokens: the revoke action and the rename/delete/discard lifecycle cleanup.
+    if (sql.includes('DELETE FROM preview_tokens WHERE concept = ? AND entry_id = ?')) {
+      const [concept, entryId] = [String(args[0]), String(args[1])];
+      let changes = 0;
+      for (const [hash, row] of previewTokens) {
+        if (row.concept === concept && row.entry_id === entryId) {
+          previewTokens.delete(hash);
+          changes++;
+        }
+      }
+      return { ...none, changes };
+    }
+
+    // The editor-removal cascade's third statement (deleteEditor/removeOwnerIfNotLast, store.ts):
+    // every preview link the removed editor minted.
+    if (sql.includes('DELETE FROM preview_tokens WHERE editor = ?')) {
+      const editor = String(args[0]);
+      let changes = 0;
+      for (const [hash, row] of previewTokens) {
+        if (row.editor === editor) {
+          previewTokens.delete(hash);
+          changes++;
+        }
+      }
+      return { ...none, changes };
+    }
 
     throw new Error(`fake-auth-db: unhandled SQL (extend the dispatch table): ${sql}`);
   }

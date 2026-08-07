@@ -1638,13 +1638,16 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
     await backend.deleteBranch(pendingBranch(concept.id, id));
     log.info('entry.discarded', { concept: concept.id, id, editor: editor.email });
-    // The discarded draft's branch is gone, so any outstanding preview link for it would already
-    // 404 (branch_gone); clearing the rows here closes the id-reuse window instead of leaving it
-    // to that natural expiry.
-    await clearPreviewTokens(event, concept, id);
 
     const onMain = await backend.readFile(`${concept.dir}/${filenameFromId(id)}`, backend.defaultBranch);
     if (onMain !== null) throw redirect(303, `/admin/${concept.id}/${id}?discarded=1`);
+    // Only a never-published entry's discard clears preview-token rows: the id is now free for an
+    // unrelated future entry to claim, the id-reuse collision the clear closes. Discarding an EDIT
+    // of a live entry leaves its rows alone (the same "publish does not clear" coupling), since the
+    // id still names the same, still-live entry and the ended page (previewLoad's own branch-gone,
+    // main-exists path) is the correct answer for an outstanding link, never a bare 404 implying the
+    // link never existed.
+    await clearPreviewTokens(event, concept, id);
     throw redirect(303, `/admin/${concept.id}`);
   }
 

@@ -58,6 +58,26 @@ jobs:
             echo "FAIL: dev-backend artifact in the deployable Worker"; exit 1
           fi
           echo "OK: no dev-backend artifact in the deployable Worker"
+      - name: Assert the Worker bundle stays under the v1 corpus-in-bundle budget
+        # The preview pass's globbed PublicRoutesConfig (the whole site's content corpus) now rides
+        # into the deployable Worker for real (previewLoad, /preview/[token], is the first
+        # runtime-routable route to import the public delivery composition), the accepted v1 cost the
+        # plan's global constraints named. This reads the SAME /tmp/dev-fold-default artifact the
+        # step above already produced (`wrangler deploy --dry-run`), not a second measurement, and
+        # gates on gzip size, the figure Cloudflare's own script-size limits are measured against.
+        # The threshold is picked with roughly 60% headroom over the size measured when this gate was
+        # added (about 3.1 MB gzipped); the narrowed manifest-backed resolver (ROADMAP) replaces the
+        # full corpus with a per-entry read when this budget starts to bite.
+        working-directory: examples/showcase
+        run: |
+          size=$(gzip -9 -c /tmp/dev-fold-default/_worker.js | wc -c)
+          budget=$((5 * 1024 * 1024))
+          echo "Worker bundle (gzip): ${size} bytes; budget: ${budget} bytes"
+          if [ "$size" -gt "$budget" ]; then
+            echo "FAIL: Worker bundle ${size} bytes (gzip) exceeds the ${budget}-byte v1 budget"
+            exit 1
+          fi
+          echo "OK: Worker bundle ${size} bytes (gzip) is under the ${budget}-byte v1 budget"
       - name: "Gate self-test: the markers ARE present in a flagged build's deployable bundle"
         # A grep that can never match again is how this gate rotted before: adapter-cloudflare 7
         # stopped bundling and the old grep target (.svelte-kit/cloudflare) held no server code, so

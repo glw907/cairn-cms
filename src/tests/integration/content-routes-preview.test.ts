@@ -348,13 +348,32 @@ describe('lifecycle cleanup', () => {
     entries: [{ id: ID, concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
   });
 
-  it('discardAction clears the entry’s preview-token rows', async () => {
+  it('discardAction clears the entry’s preview-token rows when the entry never published (the id frees for reuse)', async () => {
     await seedToken(ID, 'discard-hash');
     const gh = new GithubDouble({ main: {}, [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody' } });
     gh.install();
     const routes = createContentRoutes(runtime());
     await expectRedirect(() => routes.discardAction(actionEvent(ID) as never));
     expect(await findPreviewToken(db, 'discard-hash')).toBeNull();
+    // The redirect target is the concept list (the entry is gone entirely), which is what makes
+    // clearing correct here and not for the live-entry case below: no page exists at this id for
+    // the ended page to describe.
+  });
+
+  it('discardAction leaves the entry’s preview-token rows intact when discarding an edit of a LIVE entry (the ended page needs the row)', async () => {
+    await seedToken(ID, 'discard-live-hash');
+    // The entry's file already exists on main: discarding its pending edit removes only the draft,
+    // never the published copy, so an outstanding preview link should still resolve, landing on
+    // previewLoad's own branch-gone-but-main-exists "ended" page rather than a bare 404 that would
+    // read as the link never having existed.
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody' },
+      [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nan edit' },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    await expectRedirect(() => routes.discardAction(actionEvent(ID) as never));
+    expect(await findPreviewToken(db, 'discard-live-hash')).not.toBeNull();
   });
 
   it('deleteAction (the editor delete) clears the entry’s preview-token rows', async () => {

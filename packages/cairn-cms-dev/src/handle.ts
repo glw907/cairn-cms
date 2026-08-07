@@ -15,6 +15,7 @@ import {
   seedMediaLibrary,
   seedVocabulary,
   seedFragments,
+  seedPreviewTwin,
   SEED_MEDIA_KEYS,
 } from './fake-github.js';
 import { createFakeAuthDb } from './fake-auth-db.js';
@@ -56,6 +57,12 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
   // because it patches `tags:` onto the manifest that seed writes.
   seedVocabulary();
 
+  // Seed the preview twin-render fixture (spec part 3, "Public preview for a non-editor"): the one
+  // entry this in-memory repo shares byte-for-byte with the real on-disk corpus, so an admin draft
+  // against it and its prerendered public page are comparable. Runs after the media seed for the
+  // same reason seedFragments and seedVocabulary do.
+  seedPreviewTwin();
+
   // One dev Backend over the module-level store, built at handle-build time so every request shares
   // the same singleton repo (a commit on one request is visible to the recorder route on the next).
   const backend = createDevBackend();
@@ -74,7 +81,13 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
     const path = event.url.pathname;
     const isAdmin = path === '/admin' || path.startsWith('/admin/');
     const isMedia = path === '/media' || path.startsWith('/media/');
-    if (isAdmin || isMedia) {
+    // /preview/[token] is the one non-admin route the engine reaches AUTH_DB and cairnBackend
+    // from (previewLoad, spec part 3): it needs the SAME fakeAuthDb instance previewMintAction
+    // wrote its row into (both admin and preview must share this one process-lifetime store, or
+    // a minted token would never resolve) and the same in-memory repo, but never the owner
+    // session bypass below, which is admin-only.
+    const isPreview = path === '/preview' || path.startsWith('/preview/');
+    if (isAdmin || isMedia || isPreview) {
       // The dev Backend rides event.locals.cairnBackend, the per-request channel the engine
       // resolves (locals.cairnBackend ?? runtime.backend.connect(env)). It replaces the retired
       // global-fetch patch: the engine's reads and commits hit the in-memory repo through this
@@ -84,15 +97,27 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
       // The binding doubles ride platform.env the way the Cloudflare adapter would supply the real
       // ones. The template's App.Platform also declares context and caches, which the dev routes
       // never touch, so this partial value casts through unknown; the engine reads the env
-      // structurally at runtime. AUTH_DB is admin-only; MEDIA_BUCKET serves both the upload action
-      // under /admin and the delivery route under /media. ANTHROPIC_API_KEY is a dummy presence
-      // flag: the tidy action refuses before building a client when it is absent, so the value is
-      // set even though the fake client (fake-anthropic.ts) never reads it. APP_DB is the
-      // developer-binding example: a custom admin screen reads and writes its own D1 binding the
-      // engine never touches, so the dev handle supplies a fake for it the same way it does AUTH_DB.
+      // structurally at runtime. AUTH_DB serves /admin and /preview (previewLoad's own binding
+      // read); MEDIA_BUCKET serves the upload action under /admin and the delivery route under
+      // /media. ANTHROPIC_API_KEY is a dummy presence flag: the tidy action refuses before
+      // building a client when it is absent, so the value is set even though the fake client
+      // (fake-anthropic.ts) never reads it. APP_DB is the developer-binding example: a custom
+      // admin screen reads and writes its own D1 binding the engine never touches, so the dev
+      // handle supplies a fake for it the same way it does AUTH_DB. Both AUTH_DB and APP_DB stay
+      // admin-only otherwise: /preview needs only AUTH_DB, never the tidy stub or the developer's
+      // own binding.
+      //
+      // Plain vars (PUBLIC_ORIGIN and any other non-binding wrangler.jsonc `vars` entry) are
+      // preserved from whatever the adapter's own platform proxy already resolved, spread first so
+      // the fakes below always win on a name collision: previewMintAction's `requireOrigin(env)`
+      // is the first admin action that ever reads a var in dev, since every earlier one either
+      // ignores it or, like the login flow, never runs at all under the owner-session bypass.
+      const existingEnv = (event.platform?.env ?? {}) as Record<string, unknown>;
       event.platform = {
         env: {
-          ...(isAdmin ? { AUTH_DB: fakeAuthDb, APP_DB: fakeAppDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
+          ...existingEnv,
+          ...(isAdmin || isPreview ? { AUTH_DB: fakeAuthDb } : {}),
+          ...(isAdmin ? { APP_DB: fakeAppDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
           MEDIA_BUCKET: fakeR2,
         },
       } as unknown as App.Platform;

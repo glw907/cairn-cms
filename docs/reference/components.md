@@ -42,12 +42,13 @@ the matching `/sveltekit` loads, and their snippets show that shape.
 Stability tier: Extension API.
 
 ```ts
-let { data, form, render, registry, icons }: {
+let { data, form, render, registry, icons, previewMint }: {
   data: AdminData;
   form?: Record<string, unknown> | null;
   render?: SiteRender;
   registry?: ComponentRegistry;
   icons?: IconSet;
+  previewMint?: boolean;
 };
 ```
 
@@ -60,7 +61,10 @@ views, and the `'welcome'` view, the calm signed-in screen a none-capability rol
 from `page.data.shell`. `form` forwards the route's action result to whichever view rendered, so a
 blocked save reaches `EditPage` and a login outcome reaches `LoginPage` through the one prop.
 `render`, `registry`, and `icons` come from the site's adapter and pass through to `EditPage` for
-the preview, the insert palette, and the icon fields. The showcase mounts it like this:
+the preview, the insert palette, and the icon fields. `previewMint` forwards to `EditPage`, gating
+whether its "Share preview" group renders (defaulting to `true` there when left unset); see
+[`EditPage`](#editpage) below for the important caveat on what setting it to `false` does and does
+not do. The showcase mounts it like this:
 
 ```svelte
 <!-- src/routes/admin/[...path]/+page.svelte -->
@@ -221,12 +225,13 @@ surfaces in the slide-over.
 Stability tier: Unstable API.
 
 ```ts
-let { data, registry, render, icons, form }: {
+let { data, registry, render, icons, form, previewMint = true }: {
   data: EditData & { siteName: string };
   registry?: ComponentRegistry;
   render?: SiteRender;
   icons?: IconSet;
   form?: ContentFormFailure | null;
+  previewMint?: boolean;
 };
 ```
 
@@ -236,6 +241,16 @@ The single-entry editor. `data` is the `EditData` from the edit load, merged wit
 carries the last content action's failure as a `ContentFormFailure` (always with its `error`
 summary), so a blocked save re-renders the author's edits and the broken links to fix. On the
 per-route mounting it lives at `src/routes/admin/(app)/[concept]/[id]/+page.svelte`.
+
+**`previewMint` is presentational only.** It gates whether the details sidebar's "Share preview"
+group renders at all (spec part 3, "Public preview for a non-editor"): the mint and revoke controls,
+the minted-link display, and the expiry line. Setting it to `false` hides that group from the
+markup. It does **not** turn off the underlying `previewMint`/`previewRevoke` facade actions
+(`previewMintAction`/`previewRevokeAction`, [SvelteKit](./sveltekit.md#public-preview)), which stay
+mounted and carry their own full entry-scoped authorization regardless of whether this component
+offers any button that posts to them. Hiding the group is a product choice about what an editor
+sees on this screen, never an access-control decision: a site that wants a role unable to mint a
+preview link at all should restrict the concept in its [access map](./core.md#access-map) instead.
 
 The page lays out in four zones. A sticky translucent header holds a breadcrumb back to the
 concept list, the entry's status badge (New, Edited, or Published, with a separate Hidden badge
@@ -716,6 +731,42 @@ compose it.
 ```
 
 ---
+
+## Public preview
+
+`PreviewBanner` is the one exception to this barrel's admin-only membership rule: a design-agnostic
+component for a page a site's own visitors reach, not the admin. See [Public
+preview](./sveltekit.md#public-preview) for the `previewLoad` seam it pairs with, and [Share a
+draft preview](../guides/share-a-draft-preview.md) for the full walkthrough.
+
+### `PreviewBanner`
+
+Stability tier: Extension API.
+
+```ts
+let { preview }: { preview: PreviewData['preview'] };
+```
+
+A status notice for a shared preview link, driven only by the `preview` field
+[`previewLoad`](./sveltekit.md#previewload) adds to its data. It renders one of two states and
+nothing else: no fetch, no internal state, no interactivity. `state: 'draft'` names the expiry so
+the holder knows the link ages out; `state: 'published'` reports only that the preview has ended,
+since a discarded edit and a published entry both reach this state and the copy must never claim
+the draft went live (false for the discard case). It links the live permalink when `preview.published`
+is set, and renders no link when it's `null` (a discarded new entry, which never had a live page).
+A site may ignore this component entirely and render its own banner from the same metadata; this is
+only the default treatment a getting-started site mounts.
+
+```svelte
+<script lang="ts">
+  import { PreviewBanner } from '@glw907/cairn-cms/components';
+  import type { PageData } from './$types';
+
+  let { data }: { data: PageData } = $props();
+</script>
+
+<PreviewBanner preview={data.preview} />
+```
 
 ## Hydrate and the island boundary
 

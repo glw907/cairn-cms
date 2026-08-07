@@ -63,6 +63,11 @@ resolver's own committed content can reach a response. Pair `markdownEntries`/`m
 [`markdownResponse`](./delivery-data.md#markdownresponse) in a prerendered `+server.ts`, never a
 runtime one, so the served set is always what a build against `main` produced.
 
+`entryLoad` composes each entry's data through `composeEntryData`, exported separately below for a
+caller that needs the same composition over a different lookup: [`previewLoad`](./sveltekit.md#previewload)
+(`/sveltekit`) is the one other caller today, rendering a shared draft through this identical
+composition so a preview and its eventual public page can't structurally drift.
+
 The showcase wires `entryLoad` and `entries` into its `[...path]` catch-all server. The
 `+page.server.ts` calls `entryLoad` and the `+page.svelte` renders the entry directly.
 
@@ -153,6 +158,42 @@ projection of the frontmatter `image` field, resolved through `resolveMedia`: `u
 root-relative path for an `<img>` and `absoluteUrl` the origin-anchored form for the og:image. The
 canonical token is left untouched, so `entry.frontmatter.image.src` stays the `media:` token, and
 `heroImage` is undefined when no hero is set, media is off, or the reference does not resolve.
+
+### `composeEntryData`
+
+Stability tier: Unstable API.
+
+```ts
+declare function composeEntryData(config: PublicRoutesConfig, entry: ContentEntry<Record<string, unknown>>, overrides?: EntryDataOverrides): Promise<EntryData>;
+```
+
+The per-entry composition `entryLoad` runs for every request: the rendered html, the SEO head, the
+adjacent-entry pair, and the hero projection, folded into one `EntryData`. `entryLoad` is
+lookup-then-compose over this function with no `overrides`, so its output is unchanged from before
+this function existed; `overrides` exists for a caller that resolves an entry through a different
+lookup and needs the identical composition, so a second render path can't drift from the public
+one by hand-copying it. [`previewLoad`](./sveltekit.md#previewload) is that caller today,
+substituting the marking link and fragment resolvers built from the pending branch's manifest and a
+request-time media resolver in place of the build's throwing pair and the site's committed
+`media.json`.
+
+### `EntryDataOverrides`
+
+Stability tier: Unstable API.
+
+```ts
+interface EntryDataOverrides {
+  resolveLink?: LinkResolve;
+  resolveFragment?: FragmentResolve;
+  resolveMedia?: MediaResolve;
+}
+```
+
+Substitutes for `composeEntryData`'s three resolvers, each defaulting to the build's own (throwing)
+pair drawn from `config.site`, or `config.resolveMedia` for the hero, when left unset.
+`resolveLink` substitutes `buildLinkResolver(config.site)`, `resolveFragment` substitutes
+`buildFragmentResolver(config.site)`, and `resolveMedia` substitutes `config.resolveMedia`,
+consumed by both the hero derivation and the body render.
 
 ---
 

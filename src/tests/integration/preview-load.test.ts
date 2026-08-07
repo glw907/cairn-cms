@@ -21,6 +21,8 @@ import { serializeMediaManifest } from '../../lib/media/manifest.js';
 import { runtime as baseRuntime, postsConcept as basePostsConcept, contentEvent } from '../unit/_content-harness.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
 import { __setBuilding } from '../_app-environment.js';
+import { createRenderer } from '../../lib/render/pipeline.js';
+import { defineRegistry } from '../../lib/render/registry.js';
 
 const db = env.AUTH_DB;
 
@@ -71,6 +73,21 @@ function publicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutes
         const url = resolve?.({ concept, id });
         return url ? `[link:${url}]` : '[broken]';
       }),
+    origin: ORIGIN,
+    siteName: 'Test',
+    description: 'Test description.',
+    ...overrides,
+  };
+}
+
+/** The real render pipeline, so a body `media:` token's resolution (or its broken marker) reflects
+ *  what composeEntryData actually threads into `render`, not a hand-rolled stand-in. */
+function mediaRenderPublicConfig(overrides: Partial<PublicRoutesConfig> = {}): PublicRoutesConfig {
+  const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+  return {
+    site: createSiteResolver([]),
+    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
+      renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
     origin: ORIGIN,
     siteName: 'Test',
     description: 'Test description.',
@@ -372,6 +389,54 @@ describe('previewLoad: the draft render', () => {
     const { event } = loadEvent(token);
     const data = (await previewLoad(runtime({ resolvedAssets }), publicConfig(), event as never)) as PreviewData;
     expect(data.heroImage?.url).toBe(`/media/photo.${hash}.webp`);
+  });
+
+  it('resolves a body media: token through the branch-first resolver, an upload absent from the build-time snapshot', async () => {
+    const hash = '0123456789abcdef';
+    const mediaEntry: MediaEntry = {
+      hash,
+      sha256: 'x'.repeat(64),
+      slug: 'photo',
+      displayName: 'Photo',
+      originalFilename: 'photo.png',
+      alt: 'Alt',
+      ext: 'webp',
+      contentType: 'image/webp',
+      bytes: 10,
+      width: 100,
+      height: 100,
+      createdAt: new Date().toISOString(),
+    };
+    const gh = freshGithub({
+      branch: {
+        [ENTRY_PATH]: `---\ntitle: Hi\n---\n![pic](media:a.${hash})`,
+        [MEDIA_PATH]: serializeMediaManifest({ [hash]: mediaEntry }),
+      },
+      // The build-time snapshot (the committed manifest a site's public render would fall back
+      // to) never carries this hash: it exists only in the branch's own media.json, so a body
+      // render that skips composeEntryData's resolveMedia thread would mark the image broken.
+      main: { [MEDIA_PATH]: serializeMediaManifest({}) },
+    });
+    gh.install();
+    const resolvedAssets: ResolvedAssetConfig = {
+      enabled: true,
+      bucketBinding: 'BUCKET',
+      publicBase: '/media',
+      urlForm: 'slug',
+      maxUploadBytes: 1,
+      allowedTypes: [],
+      variants: {},
+      transformations: false,
+    };
+    const token = await mintValidToken();
+    const { event } = loadEvent(token);
+    const data = (await previewLoad(
+      runtime({ resolvedAssets }),
+      mediaRenderPublicConfig(),
+      event as never,
+    )) as PreviewData;
+    expect(data.html).toContain(`/media/photo.${hash}.webp`);
+    expect(data.html).not.toContain('cairn-broken-media');
   });
 });
 

@@ -62,4 +62,45 @@ describe('PreviewBanner', () => {
     await expect.element(screen.getByRole('complementary', { name: /preview/i })).toBeInTheDocument();
     expect(screen.container.querySelector('[role="status"]')).toBeNull();
   });
+
+  it('underlines the ended-page link, so it is never distinguished by colour alone', async () => {
+    const preview: PreviewData['preview'] = {
+      state: 'published',
+      expiresAt: '2026-08-20T12:00:00.000Z',
+      published: { permalink: '/blog/my-post' },
+    };
+    // Mirrors Tailwind Preflight's own reset (`a { text-decoration: inherit; }`), which strips
+    // the UA-default underline a consuming site's own stylesheet would otherwise leave standing;
+    // without this reset the UA default alone would pass this assertion regardless of whether
+    // the component's own rule declares one.
+    const preflight = document.createElement('style');
+    preflight.textContent = 'a { text-decoration: inherit; }';
+    document.head.appendChild(preflight);
+    try {
+      const screen = render(PreviewBanner, { preview });
+      const link = screen.getByRole('link', { name: /view the published page/i }).element() as HTMLElement;
+      expect(getComputedStyle(link).textDecorationLine).toBe('underline');
+    } finally {
+      preflight.remove();
+    }
+  });
+
+  it('lets a site override the default palette from :root, since the scoped element never declares the custom property itself', async () => {
+    const preview: PreviewData['preview'] = {
+      state: 'draft',
+      expiresAt: '2026-08-20T12:00:00.000Z',
+      published: null,
+    };
+    document.documentElement.style.setProperty('--cairn-preview-bg', 'rgb(10, 20, 30)');
+    try {
+      const screen = render(PreviewBanner, { preview });
+      const banner = screen.container.querySelector('.cairn-preview-banner') as HTMLElement;
+      // A property Svelte's scoping class declared directly on this element would win over any
+      // ancestor no matter its specificity (a directly declared value always beats an inherited
+      // one); only reading the property through var() lets the site's :root override reach here.
+      expect(getComputedStyle(banner).backgroundColor).toBe('rgb(10, 20, 30)');
+    } finally {
+      document.documentElement.style.removeProperty('--cairn-preview-bg');
+    }
+  });
 });

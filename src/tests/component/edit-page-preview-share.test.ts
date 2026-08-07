@@ -182,4 +182,78 @@ describe('EditPage Share preview', () => {
     expect(screen.container.textContent ?? '').not.toContain('https://example.com/preview/abc123');
     vi.unstubAllGlobals();
   });
+
+  it('never renders a stale revoke result under a freshly minted URL', async () => {
+    stubFetchOnce({ type: 'success', status: 200, data: { count: 2 } });
+    const screen = render(EditPage, postProps());
+    await openDetails(screen);
+    await screen.getByRole('button', { name: 'Revoke all links' }).click();
+    await expect.element(screen.getByText('Revoked 2 links.')).toBeInTheDocument();
+
+    const expiresAt = Date.UTC(2026, 7, 20, 18, 30);
+    stubFetchOnce({
+      type: 'success',
+      status: 200,
+      data: { url: 'https://example.com/preview/fresh', expiresAt },
+    });
+    await screen.getByRole('button', { name: 'Share preview link' }).click();
+    await expect.element(screen.getByLabelText('Preview link')).toHaveValue('https://example.com/preview/fresh');
+    // A stale "Revoked 2 links." result would imply the store is empty right under a URL that
+    // says otherwise.
+    await expect.element(screen.getByText('Revoked 2 links.')).not.toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('clears a stale mint refusal once a revoke succeeds', async () => {
+    stubFetchOnce({
+      type: 'failure',
+      status: 400,
+      data: { error: 'This entry has no unpublished draft to share. Save an edit first.' },
+    });
+    const screen = render(EditPage, postProps());
+    await openDetails(screen);
+    await screen.getByRole('button', { name: 'Share preview link' }).click();
+    await expect
+      .element(screen.getByText('This entry has no unpublished draft to share. Save an edit first.'))
+      .toBeInTheDocument();
+
+    stubFetchOnce({ type: 'success', status: 200, data: { count: 0 } });
+    await screen.getByRole('button', { name: 'Revoke all links' }).click();
+    await expect.element(screen.getByText('No preview links to revoke.')).toBeInTheDocument();
+    await expect
+      .element(screen.getByText('This entry has no unpublished draft to share. Save an edit first.'))
+      .not.toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('clears the whole share/revoke panel when navigation lands on another entry', async () => {
+    stubFetchOnce({
+      type: 'success',
+      status: 200,
+      data: { url: 'https://example.com/preview/entry-a', expiresAt: Date.UTC(2026, 7, 20, 18, 30) },
+    });
+    const screen = render(EditPage, postProps());
+    await openDetails(screen);
+    await screen.getByRole('button', { name: 'Share preview link' }).click();
+    await expect.element(screen.getByLabelText('Preview link')).toBeInTheDocument();
+    vi.unstubAllGlobals();
+
+    // SvelteKit reuses the page component across a same-route navigation (the /admin/[...path]
+    // route matches both entries), so a client-side hop to entry B must not carry entry A's
+    // minted preview state onto entry B's Details panel.
+    await screen.rerender(postProps({ id: '2026-06-other', slug: 'other' }));
+    await openDetails(screen);
+    await expect.element(screen.getByLabelText('Preview link')).not.toBeInTheDocument();
+    expect(screen.container.textContent ?? '').not.toContain('https://example.com/preview/entry-a');
+
+    // The revoke side must clear the same way.
+    stubFetchOnce({ type: 'success', status: 200, data: { count: 3 } });
+    await screen.getByRole('button', { name: 'Revoke all links' }).click();
+    await expect.element(screen.getByText('Revoked 3 links.')).toBeInTheDocument();
+    vi.unstubAllGlobals();
+
+    await screen.rerender(postProps({ id: '2026-07-third', slug: 'third' }));
+    await openDetails(screen);
+    await expect.element(screen.getByText('Revoked 3 links.')).not.toBeInTheDocument();
+  });
 });

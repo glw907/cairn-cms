@@ -170,6 +170,7 @@ export async function composeEntryData(
       frontmatter: entry.frontmatter,
       resolve: overrides?.resolveLink ?? buildLinkResolver(site),
       resolveFragment: overrides?.resolveFragment ?? buildFragmentResolver(site),
+      resolveMedia,
     }),
     canonicalUrl,
     seo,

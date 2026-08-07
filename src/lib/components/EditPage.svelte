@@ -1144,6 +1144,10 @@ persistent "?" carries Markdown help, design-arc D2).
       }
       shareResult = { url, expiresAt };
       shareCopied = false;
+      // The store now holds a live link; drop any revoke result still on screen so the panel
+      // never implies the store is empty right under a URL that says otherwise.
+      revokeCount = null;
+      revokeError = null;
       // Focus the URL field once it renders, so a keyboard or screen-reader author lands on the
       // result without hunting for it.
       void tick().then(() => shareUrlInput?.focus());
@@ -1184,10 +1188,12 @@ persistent "?" carries Markdown help, design-arc D2).
         return;
       }
       revokeCount = typeof outcome.data.count === 'number' ? outcome.data.count : 0;
-      // The store now holds nothing for this entry; drop any minted URL still on screen so the
-      // panel never shows a link the store can no longer stand behind.
+      // The store now holds nothing for this entry; drop any minted URL or stale mint error
+      // still on screen so the panel never shows a link (or a share refusal) the store can no
+      // longer stand behind.
       shareResult = null;
       shareCopied = false;
+      shareError = null;
     } catch {
       revokeError = REVOKE_FAILED;
     } finally {
@@ -1311,6 +1317,13 @@ persistent "?" carries Markdown help, design-arc D2).
       previewHtml = '';
       previewFailed = false;
       removedLinks = [];
+      shareBusy = false;
+      shareResult = null;
+      shareError = null;
+      shareCopied = false;
+      revokeBusy = false;
+      revokeCount = null;
+      revokeError = null;
     });
   });
 

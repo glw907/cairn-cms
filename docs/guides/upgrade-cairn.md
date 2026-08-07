@@ -182,6 +182,29 @@ your own `Backend`, this window adds a required member, `listCommits(path, ref, 
 changes `createBranch`'s return type from `Promise<void>` to `Promise<string>` (return the sha it
 created the branch at). Ordinary consumers who only use the packaged backends see neither change.
 
+## Unreleased: public preview for a non-editor (non-breaking)
+
+An editor can now hand a draft to someone who isn't an editor: the edit screen's new "Share
+preview" group mints an opaque link, and a new `previewLoad` route serves it through your site's
+own rendering. Read [Share a draft preview](./share-a-draft-preview.md) for the full setup
+(the migration, the route mount, the credential-shaped emissions to suppress, and the lifecycle),
+and [SvelteKit](../reference/sveltekit.md#public-preview) for `previewLoad`, `mintPreviewToken`,
+and the `previewMintAction`/`previewRevokeAction` route members if you mount routes per-surface.
+
+**Consumers must: nothing**, unless you adopt the feature. Everything here is additive and
+unmounted by default; the edit screen's Share preview group ships automatically with the version
+bump but mints nothing useful until you take the two adopter-only steps below.
+
+If you adopt it: copy and apply the new bundled migration, `migrations/0003_preview.sql`, to your
+`AUTH_DB` (the same way you applied `0000_auth.sql`, see [Configure auth and
+D1](./configure-auth-and-d1.md#provision-the-d1-database)), and mount a
+`+page.server.ts`/`+page.svelte` pair at `/preview/[token]`, inside the same layout group as your
+entry pages. If you implement your own `Backend` or call `createContentRoutes`/`createCairnAdmin`
+directly rather than through the single-mount facade, their returned objects each gain two new
+members, `previewMintAction`/`previewRevokeAction` (and the facade's `actions` gains
+`previewMint`/`previewRevoke`); leaving them unwired costs you nothing else, the same way an
+unwired `historyLoad`/`revertAction` costs nothing.
+
 ## 0.94.0: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
 
 A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the

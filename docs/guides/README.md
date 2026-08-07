@@ -64,6 +64,8 @@ later, or the upkeep of a running site.
   across their first publish and fan out from your own endpoint
 - **[Migrate existing content](./migrate-existing-content.md)**: map markdown from Hugo, Jekyll,
   or whatever came before onto cairn's concepts
+- **[Share a draft preview](./share-a-draft-preview.md)**: mint an opaque link so someone who
+  isn't an editor can read a pending draft through the site's own rendering
 - **[Upgrade cairn](./upgrade-cairn.md)**: bump the version range and run the doctor over the
   `Consumers must:` lines
 - **[Troubleshooting](./troubleshooting.md)**: trace a symptom to its log event and the fix, for

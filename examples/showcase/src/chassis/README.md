@@ -25,6 +25,8 @@ the mechanism.
 | --- | --- |
 | `content.ts` | The delivery content layer: globs the markdown, builds the site/posts indexes through `createSiteIndexes`. |
 | `feed.ts` | Maps the site's posts index into `cairn-cms/delivery`'s `FeedItem` shape, shared by the RSS and JSON Feed routes. |
+| `public-routes.ts` | The one `PublicRoutesConfig` literal, shared by the prerendered entry route and the preview route so their rendering config can never drift apart. |
+| `entry-data.ts` | The reference-edge resolution layered onto `EntryData`/`PreviewData`, shared the same way as `public-routes.ts`. |
 | `cairn.server.ts` | The one server-side runtime composition point (`composeRuntime`, `createCairnAdmin`); every server route that needs the runtime imports it from here. |
 | `dev-gate.ts` | The runtime half of the dev-backend gate (`CAIRN_DEV_BACKEND=1`), read by hooks and the runtime composition; its build-time half is the `__CAIRN_DEV_BUILD__` define in `vite.config.ts`. |
 | `render.ts` | The component-grammar wiring (a theme's icon set into the engine's glyph-rendering helpers) and the prose-typography remark plugin seam. |

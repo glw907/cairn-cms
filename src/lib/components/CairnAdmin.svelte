@@ -54,9 +54,12 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     registry?: ComponentRegistry;
     /** The site's icon set, for the edit view's guided form fields. */
     icons?: IconSet;
+    /** Whether the edit view's Share preview group renders (spec part 3, "Public preview for a
+     *  non-editor"); forwarded to `EditPage`. Defaults to `true` there when left unset. */
+    previewMint?: boolean;
   }
 
-  let { data, form = null, render, registry, icons }: Props = $props();
+  let { data, form = null, render, registry, icons, previewMint }: Props = $props();
 
   // The SSR-resolved admin theme the auth views (login, confirm) render under. It rides the shell
   // payload (page.data.shell), a public member on every auth route: the theme cookie carries no
@@ -86,6 +89,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
     {registry}
     {icons}
     {form}
+    {previewMint}
   />
 {:else if data.view === 'history'}
   <!-- Only revertAction's own wrapped result (a RevertFailure refusal, or viewAction's generic

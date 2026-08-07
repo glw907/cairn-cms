@@ -45,3 +45,49 @@ test('the handle does not touch a public (non-admin, non-media) request', async 
   expect(event.locals.cairnEditor).toBeUndefined();
   expect(event.platform).toBeUndefined();
 });
+
+test('the handle wires the dev backend and AUTH_DB onto /preview/[token], but never the owner-editor bypass', async () => {
+  const handle = devBackendHandle();
+  const event = {
+    url: new URL('http://localhost/preview/some-token'),
+    locals: {},
+    platform: undefined,
+  } as any;
+
+  await handle({ event, resolve: async () => new Response('ok') });
+
+  // previewLoad reads the same cairnBackend and AUTH_DB an admin request does, so a token
+  // previewMintAction wrote resolves; it never reads cairnEditor, so the bypass must stay off.
+  expect(event.locals.cairnBackend).toBeTruthy();
+  expect(event.platform.env.AUTH_DB).toBeTruthy();
+  expect(event.locals.cairnEditor).toBeUndefined();
+  // /preview needs no admin-only binding: neither the tidy stub nor the developer's own binding.
+  expect(event.platform.env.APP_DB).toBeUndefined();
+  expect(event.platform.env.ANTHROPIC_API_KEY).toBeUndefined();
+});
+
+test('the same fakeAuthDb instance serves both /admin and /preview, so a minted row is visible to both', async () => {
+  const handle = devBackendHandle();
+  const adminEvent = { url: new URL('http://localhost/admin'), locals: {}, platform: undefined } as any;
+  const previewEvent = { url: new URL('http://localhost/preview/x'), locals: {}, platform: undefined } as any;
+
+  await handle({ event: adminEvent, resolve: async () => new Response('ok') });
+  await handle({ event: previewEvent, resolve: async () => new Response('ok') });
+
+  expect(previewEvent.platform.env.AUTH_DB).toBe(adminEvent.platform.env.AUTH_DB);
+});
+
+test('a plain var already on the platform proxy (PUBLIC_ORIGIN) survives onto an /admin request', async () => {
+  const handle = devBackendHandle();
+  const event = {
+    url: new URL('http://localhost/admin'),
+    locals: {},
+    platform: { env: { PUBLIC_ORIGIN: 'http://localhost:4173' } },
+  } as any;
+
+  await handle({ event, resolve: async () => new Response('ok') });
+
+  expect(event.platform.env.PUBLIC_ORIGIN).toBe('http://localhost:4173');
+  // The fakes still win: this is not a passthrough that could shadow AUTH_DB with a real proxy value.
+  expect(event.platform.env.AUTH_DB).toBeTruthy();
+});

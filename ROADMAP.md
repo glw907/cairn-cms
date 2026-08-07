@@ -72,9 +72,13 @@ Readiness checklist:
 - [ ] **The core-feature roadmap has landed** to the point the author opens the project up: the intro's
   "closely held until the core lands" condition is the same condition as 1.0. Named contents (Geoff,
   2026-08-01): entry history, revert, and public preview for a non-editor, all three ratified as
-  landing BEFORE the public beta; their entries live in Now. Release intent (Geoff, 2026-08-01):
-  the three bundle into one release, the next cut after the ASC-seams window publishes, however
-  many passes they take to land.
+  landing BEFORE the public beta, and all three implemented (the design sitting's
+  `createPreviewRoute(runtime): RequestHandler` reservation is superseded by the shipped
+  `previewLoad`, a site-mounted `Load` under R1's grammar; see
+  `docs/superpowers/specs/2026-08-06-history-revert-preview-design.md`, "Part 3"), holding
+  unpublished for release one. Release intent (Geoff, 2026-08-01): the three bundle into one
+  release, the next cut after the ASC-seams window publishes, however many passes they take to
+  land.
 
 **Churn stays free until the public beta (Geoff, 2026-07-30).** The design-ratchet pass broke two
 public seams outright (the admin-fields `register` default flip, the tightened
@@ -301,20 +305,6 @@ The original decision framing, for the record:
     "adds the SPF, DKIM, and DMARC records for you", which holds on a fresh domain and does not when
     a `_dmarc` record already exists. Two of four sites kept pre-cairn `p=none` policies through
     onboarding.
-
-- **Public preview for a non-editor (FILED at promotion, Geoff, 2026-08-01).** Let an editor hand a
-  draft to someone who is not an editor: the per-entry `cairn/<concept>/<id>` branch already holds
-  the draft, so the artifact exists and only the surface is missing, the same signature entry
-  history and revert carried before they shipped. Gates the public beta on its own now that entry
-  history and revert have shipped (Geoff, 2026-08-01): the beta does not cut until this ships too.
-  Designed at the 2026-08-06 sitting alongside history and revert (see
-  `docs/superpowers/specs/2026-08-06-history-revert-preview-design.md`, "Part 3"), which revises the
-  originally reserved `createPreviewRoute(runtime): RequestHandler` shape to a site-mounted
-  `previewLoad` under R1's ordinary `Load`-suffix grammar; the rest of the reservation carries
-  unchanged into its own pass. **Vocabulary reserved (C2 breaking-window pass, R11, 2026-08-02):**
-  `mintPreviewToken` and its `PreviewTokenConfig` bag; logging `preview.token.minted` and
-  `preview.rejected`, the latter with a snake_case `reason`. Every name derives from R1's grammar
-  and R6's log-event shape, reserved now for the same reason history and revert's own names were.
 
 - **Help screen first-steps card overlap (pre-existing, found 2026-07-21).** The getting-started
   steps card on `/admin/help` renders its three step columns overlapping at desktop widths (the
@@ -1123,6 +1113,32 @@ the named human gates only):**
   configured page rendering outside 2xx", so this is closer to a defect than a feature; the case
   that escapes is a page whose framework answers 200 and renders an error boundary, which is
   exactly what SvelteKit did here.
+
+- **A narrowed, manifest-backed resolver for `previewLoad` (filed 2026-08-06, preview pass).** The
+  shipped v1 hands `previewLoad` the site's own `PublicRoutesConfig`, globbed build-time corpus
+  included, so the never-prerendered preview route pulls that whole corpus into the deployed
+  Worker bundle (roughly 1-2 MB at club scale against Cloudflare's 10 MB paid ceiling), a
+  deliberate, stated v1 cost (Geoff, 2026-08-06). This would replace the bundled corpus with a
+  request-time manifest read, restoring the corpus-stays-out-of-the-Worker invariant the rest of
+  the delivery surface holds. **Trigger:** a real site approaching the bundle-size limit; the
+  showcase's own bundle-size assertion (`examples/showcase`'s e2e build step) is the tripwire that
+  should surface it.
+
+- **A `cairn-doctor` check that the preview route is not prerenderable (filed 2026-08-06, preview
+  pass).** `previewLoad` itself throws a build-time error when a site lets `/preview/[token]`
+  prerender, but that only fires on a build the developer actually runs locally or in CI; a
+  doctor check would catch the same misconfiguration as a deploy-time preflight, the same
+  proactive shape as the doctor's other route-shape checks, rather than relying solely on the
+  in-engine backstop.
+
+- **An engine-level rate-limit seam for `previewLoad` (filed 2026-08-06, preview pass).**
+  `previewLoad` currently calls no rate limit of its own; the guide's WAF-rule recommendation on
+  `/preview/*` is the whole story until this lands. A seam accepting the existing
+  [`RateLimitLike`](docs/reference/sveltekit.md#ratelimitlike) (the same structural interface
+  `createSectionAction` already takes, degrade-to-open on an absent binding) would let a site wire
+  a Workers `RateLimit` binding directly to the load, matching the engine's own idiom rather than
+  leaning on the zone's edge rules alone. **Trigger:** real-world spray traffic against a deployed
+  `/preview/[token]` route.
 
 ## Later
 

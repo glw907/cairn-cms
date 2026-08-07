@@ -31,6 +31,40 @@
   `Promise<void>` to `Promise<string>`, returning the sha it created the branch at. Undelete
   stays out of scope for this release (see ROADMAP.md).
 
+- An editor can now hand a draft to someone who isn't an editor: the edit screen's new "Share
+  preview" group mints an opaque link (`previewMint`/`previewRevoke` facade actions, backed by
+  the new `previewMintAction`/`previewRevokeAction` route-factory members and `mintPreviewToken`,
+  all `/sveltekit`), and the site mounts a new, never-prerendered `previewLoad` route that renders
+  the shared draft through the exact composition its public entry page runs
+  (`composeEntryData`/`EntryDataOverrides`, newly exported from `/delivery`), so the preview and
+  its eventual public page can't structurally drift: full CSS, working components, hydrating
+  islands. The link carries `PreviewData` (`EntryData` plus a `preview` field: `state`, `expiresAt`,
+  and the live `permalink` once published), which the new `PreviewBanner` component
+  (`/components`) renders as a small default banner a site may replace. A new bundled migration,
+  `migrations/0003_preview.sql`, adds the opt-in `preview_tokens` table the feature needs; a link
+  dies with its branch (publish and discard both delete it), rename/delete/discard clear a
+  never-published entry's outstanding rows, removing an editor clears theirs, and the edit
+  screen's Revoke-all button clears every row for an entry on demand. TTL defaults to seven days
+  and configures through `CairnAdminOptions.preview`/`ContentRoutesOptions.preview`
+  (`PreviewTokenConfig`). Four new log events (`preview.token.minted`, `preview.token.revoked`,
+  `preview.cleanup_failed`, `preview.rejected`) never carry the token itself. See
+  [SvelteKit](docs/reference/sveltekit.md#public-preview),
+  [Components](docs/reference/components.md#previewbanner),
+  [Delivery](docs/reference/delivery.md#composeentrydata), [Log
+  events](docs/reference/log-events.md), and [Share a draft
+  preview](docs/guides/share-a-draft-preview.md) for the full adopter walkthrough, including the
+  operational notes on caching, rate limiting, and the URL-as-credential exposure a preview link
+  carries.
+
+  Consumers must: nothing to keep building and deploying as before; every addition here is
+  purely additive and unmounted by default. **A site that adopts the feature** (an
+  adopter-only step, not a required upgrade action) copies and applies
+  `migrations/0003_preview.sql` to its `AUTH_DB` and mounts a `+page.server.ts`/`+page.svelte`
+  pair at `/preview/[token]`, inside the same layout group as its entry pages; the edit screen's
+  Share preview group ships automatically to every site mounting the single-mount admin facade,
+  but minting produces a working link only once the route is mounted and the migration is
+  applied.
+
 ## 0.94.0
 
 <!-- release-size: minor -->

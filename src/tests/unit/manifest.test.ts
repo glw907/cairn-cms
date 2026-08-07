@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences, inboundIncludes, deriveTagUsage } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, manifestFragmentResolver, inboundLinks, inboundReferences, inboundIncludes, deriveTagUsage } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
@@ -544,6 +544,28 @@ describe('manifestLinkResolver', () => {
     ]);
     expect(resolve({ concept: 'pages', id: 'a' })).toBe('/a');
     expect(resolve({ concept: 'posts', id: 'missing' })).toBeUndefined();
+  });
+});
+
+describe('manifestFragmentResolver', () => {
+  it('resolves a known fragment id to its raw body and returns undefined for a miss', () => {
+    const resolve = manifestFragmentResolver([
+      { id: 'address', title: 'Address', body: 'Our address is 12 Harbor Way.' },
+    ]);
+    expect(resolve?.('address')).toBe('Our address is 12 Harbor Way.');
+    expect(resolve?.('missing')).toBeUndefined();
+  });
+
+  it('carries a previewTitle lookup that mirrors the same hit and miss', () => {
+    const resolve = manifestFragmentResolver([
+      { id: 'address', title: 'Address', body: 'Our address is 12 Harbor Way.' },
+    ]);
+    expect(resolve?.previewTitle?.('address')).toBe('Address');
+    expect(resolve?.previewTitle?.('missing')).toBeUndefined();
+  });
+
+  it('returns undefined for null targets (nothing here can include a fragment)', () => {
+    expect(manifestFragmentResolver(null)).toBeUndefined();
   });
 });
 

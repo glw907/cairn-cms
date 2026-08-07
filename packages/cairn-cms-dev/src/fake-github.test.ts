@@ -7,6 +7,7 @@ import {
   seedMediaLibrary,
   seedVocabulary,
   seedFragments,
+  seedPreviewTwin,
   SEED_VOCABULARY,
   SEED_FRAGMENTS,
 } from './fake-github.js';
@@ -206,6 +207,31 @@ test('seedFragments writes published fragment manifest rows and matching body fi
     expect(body).toContain(`title: ${row.title}`);
     expect(body).toContain(row.body);
   }
+});
+
+test('seedPreviewTwin writes the twin-render fixture on main: the entry file, a manifest row, and a media.json hero row', async () => {
+  // Depends on the media seed's content manifest and media.json (it appends to both), the same
+  // ordering discipline seedFragments and seedVocabulary follow.
+  seedMediaLibrary();
+  seedPreviewTwin();
+  const backend = createDevBackend();
+
+  const body = await backend.readFile('src/content/posts/2026-01-15-hello.md', 'main');
+  expect(body).not.toBeNull();
+  expect(body).toContain('title: Hello, cairn');
+  expect(body).toContain('image:\n  src: media:hello-hero.00112233445566aa');
+  expect(body).toContain('[about page](cairn:pages/about)');
+  expect(body).toContain(':::alert{role=caution}');
+  expect(body).toContain(':::banner{message="New waymarks post to the trail log every Friday." expires="2999-01-01"}');
+
+  const manifestRaw = await backend.readFile('src/content/.cairn/index.json', 'main');
+  const manifest = JSON.parse(manifestRaw!) as { entries: { id: string; concept: string; permalink: string }[] };
+  const entry = manifest.entries.find((e) => e.id === '2026-01-15-hello' && e.concept === 'posts');
+  expect(entry).toMatchObject({ permalink: '/posts/hello' });
+
+  const mediaRaw = await backend.readFile('src/content/.cairn/media.json', 'main');
+  const media = JSON.parse(mediaRaw!) as Record<string, { slug: string; ext: string }>;
+  expect(media['00112233445566aa']).toMatchObject({ slug: 'hello-hero', ext: 'png' });
 });
 
 test('expectedHead is a fail-closed guard: a matching head commits, a moved head conflicts', async () => {

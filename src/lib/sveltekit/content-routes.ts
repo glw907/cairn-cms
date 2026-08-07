@@ -14,7 +14,7 @@ import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
 import type { ContentRoutesOptions } from './content-routes-context.js';
 import { createCoreActions } from './content-routes-core.js';
-import type { SaveFailure, DeleteRefusal, RenameFailure, CreateFailure } from './content-routes-core.js';
+import type { SaveFailure, DeleteRefusal, RenameFailure, CreateFailure, PreviewMintFailure } from './content-routes-core.js';
 import { createMediaActions } from './content-routes-media.js';
 import type {
   MediaDeleteRefusal,
@@ -46,6 +46,7 @@ export type {
   DeleteRefusal,
   RenameFailure,
   CreateFailure,
+  PreviewMintFailure,
   FragmentTarget,
 } from './content-routes-core.js';
 
@@ -90,7 +91,7 @@ export type { DictionaryAddResult, DictionaryAddFailure } from './content-routes
  *  refusal without a second type.
  */
 export type ContentFormFailure = Partial<
-  SaveFailure & DeleteRefusal & RenameFailure & CreateFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure & TidyFailure
+  SaveFailure & DeleteRefusal & RenameFailure & CreateFailure & PreviewMintFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure & TidyFailure
 >;
 
 /**
@@ -126,6 +127,8 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOp
     deleteAction: core.deleteAction,
     listDeleteAction: core.listDeleteAction,
     renameAction: core.renameAction,
+    previewMintAction: core.previewMintAction,
+    previewRevokeAction: core.previewRevokeAction,
     revertAction: core.revertAction,
     uploadAction: media.uploadAction,
     mediaLibraryUploadAction: media.mediaLibraryUploadAction,

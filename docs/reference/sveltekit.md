@@ -900,6 +900,8 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>;
   listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>;
   renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RenameFailure>>;
+  previewMintAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { url: string; expiresAt: number }>;
+  previewRevokeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { count: number }>;
   revertAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure>>;
   uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
   mediaLibraryUploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
@@ -1023,6 +1025,29 @@ events](./log-events.md)), and redirects to the edit screen exactly like a save,
 schema-drift advisory when the old version predates a since-retired field or vocabulary tag: revert
 warns on drift, it never refuses on it, so an old version is never permanently unrevertable.
 
+`previewMintAction` and `previewRevokeAction` back the edit screen's share affordance (spec part 3,
+"Public preview for a non-editor"): minting hands an editor's own read on a draft to anyone holding
+the returned URL, so both call `requireEntryFromParams` as their first statement, the same
+entry-scoped authorization `saveAction` and `publishAction` carry, not merely the view gate.
+`previewMintAction` refuses with `fail(400)` when the entry carries no pending draft (there is
+nothing to share yet); on success it returns `{ url, expiresAt }` directly, no redirect, so the
+share panel can show and copy the link in place, sets `cache-control: no-store` on its own
+response (the one admin payload that carries a bearer credential), and logs
+`preview.token.minted`. The minted `url` is built from `PUBLIC_ORIGIN`
+([`requireOrigin`](#createauthroutes)), never the request's own host. `previewRevokeAction` deletes
+every outstanding link for the entry in one call, returning `{ count }`; it is idempotent, since
+revoking with nothing minted still succeeds with a count of zero. Both actions answer the same
+`ActionFailure<PreviewMintFailure>` when `AUTH_DB` is missing the `preview_tokens` table
+(`migrations/0003_preview.sql` not yet applied), naming the migration to apply rather than
+surfacing a raw D1 error, since the engine ships the share affordance to every upgraded site's edit
+screen regardless of adoption. `renameAction`, `deleteAction`/`listDeleteAction`, and
+`discardAction` each clear a never-published entry's outstanding preview rows as part of their own
+cascade, closing an id-reuse collision where a stale link could later resolve to a different
+entry's draft; publishing deliberately leaves the rows in place, since [`previewLoad`](#previewload)
+needs them to answer a stale link with "this preview has ended" rather than a bare 404. See [Public
+preview](#public-preview) below for the site-mounted page these actions feed, and [Share a draft
+preview](../guides/share-a-draft-preview.md) for the adopter's full walkthrough.
+
 `settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
 `'valid'` / `'unknown'`) alongside the presence-only `keyConfigured`, so a revoked key closes the
@@ -1141,6 +1166,117 @@ import { cairn, siteConfig } from '$lib/cairn.config.js';
 
 export const GET = createMediaRoute(composeRuntime({ adapter: cairn, siteConfig }));
 ```
+
+## Public preview
+
+An editor can hand a draft to someone who isn't an editor (spec part 3, "Public preview for a
+non-editor"): the edit screen's share affordance, the preceding
+[`previewMintAction`](#createcontentroutes) section, mints an opaque token for the entry's pending
+draft, and a site-mounted, never-prerendered
+page renders it through the site's own public composition, so the preview is a real page in the
+site's own app rather than an approximated shell. See [Share a draft
+preview](../guides/share-a-draft-preview.md) for the full adopter walkthrough, including the
+`preview_tokens` migration, the mount, and the lifecycle.
+
+**Disambiguation: two unrelated `preview` seams share a word.** [`CairnRuntime.preview`](#types)
+(`PreviewConfig`) is the site's stylesheets and container classes for the *admin editor's own*
+preview pane, resolved per entry as [`EditData.preview`](#types) (`ResolvedPreview`); it never
+leaves the admin and carries no token. The family on this page is a different subsystem: a
+credentialed, unauthenticated read on one draft for whoever holds a minted URL. The two never
+interact; they only happen to be named the same thing.
+
+### `previewLoad`
+
+Stability tier: Scaffold API.
+
+```ts
+declare function previewLoad(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent<CairnEnv>): Promise<PreviewData>;
+```
+
+Serve a minted preview link. Mount it at `/preview/[token]`, **inside the same layout group as
+your entry pages**, so the stylesheets and chrome on that layout chain apply to the preview the
+same way they apply to a public entry; mounting outside the group reproduces the unstyled page the
+engine's earlier, rejected preview shape was rejected for. `config` is the site's own
+[`PublicRoutesConfig`](./delivery.md#publicroutesconfig), the literal object already passed to
+[`createPublicRoutes`](./delivery.md#createpublicroutes): `previewLoad` renders through
+[`composeEntryData`](./delivery.md#composeentrydata), the same composition `entryLoad` runs, so a
+preview and its eventual public page can't structurally drift.
+
+The verification chain runs in this order, cheapest first, and stops at the first failure: the
+token's own shape (`^[A-Za-z0-9_-]{43}$`, `generateToken`'s exact form; a malformed token is a 404
+with no D1 read and no log, so spray traffic costs nothing), the `AUTH_DB` binding, the row lookup
+by hash, the row's expiry, the row's stored concept and id against the live `runtime.concepts`,
+and finally the branch read, whose own miss is the branch-gone signal (there's no separate
+existence pre-check). Every refusal throws an identical `error(404)` with the same plain body;
+only the `preview.rejected` log (see [Log events](./log-events.md)) carries which of the seven
+reasons applied, and it never carries the token itself. A missing `AUTH_DB` binding answers
+`error(503)` instead, after the same log, since a load can't return a bare `Response`.
+
+Two outcomes reach a rendered page. While the entry's pending branch still exists, the draft
+renders with `preview.state: 'draft'`. Once the branch is gone (a publish or a discard both delete
+it), and the entry's file exists on the default branch, the ended page renders with
+`preview.state: 'published'` and `preview.published.permalink` set: "this preview has ended,"
+linking the live version, never a claim that the draft itself went live (a discarded *edit* of an
+already-live entry reaches this same state, and that claim would be false for it). A gone branch
+with nothing published (a discarded, never-published entry) answers the uniform 404 instead,
+reason `branch_gone`.
+
+`previewLoad` sets its own response headers (`x-robots-tag: noindex, nofollow`,
+`cache-control: private, no-store`, `referrer-policy: no-referrer`,
+`x-content-type-options: nosniff`, `x-frame-options: DENY`) as its first statement, on every path
+including both refusal classes: `/preview` sits outside `/admin`, so the admin guard's own header
+layer never reaches it. It reads no cookie, sets none, and never touches
+`locals.cairnEditor`/`locals.cairnAccess`; the token alone is the credential. It throws a
+descriptive build-time error when `building` (`$app/environment`) is true, so a site that lets this
+route prerender gets a red build naming the fix (`export const prerender = false;`) instead of a
+token-bearing static asset.
+
+```ts
+// src/routes/(site)/preview/[token]/+page.server.ts
+import type { PageServerLoad } from './$types';
+import { previewLoad } from '@glw907/cairn-cms/sveltekit';
+import { runtime } from '$lib/cairn.server.js';
+import { publicRoutesConfig } from '$lib/public-routes.js';
+
+// REQUIRED: a preview link is a bearer credential. Prerendering this route would bake a token
+// into a static asset every build ships.
+export const prerender = false;
+
+export const load: PageServerLoad = (event) => previewLoad(runtime, publicRoutesConfig, event);
+```
+
+```svelte
+<!-- src/routes/(site)/preview/[token]/+page.svelte -->
+<script lang="ts">
+  import type { PageData } from './$types';
+  import { PreviewBanner } from '@glw907/cairn-cms/components';
+  import ArticleView from '$lib/components/ArticleView.svelte';
+
+  let { data }: { data: PageData } = $props();
+</script>
+
+<PreviewBanner preview={data.preview} />
+<ArticleView {data} preview />
+```
+
+### `mintPreviewToken`
+
+Stability tier: Unstable API.
+
+```ts
+declare function mintPreviewToken(db: D1Database, config: PreviewTokenConfig, record: { concept: string; entryId: string; editor: string }): Promise<{ token: string; expiresAt: number }>;
+```
+
+Mint a preview token: generate a fresh 256-bit token, store only its hash (`hashToken`,
+`/auth-crypto`) in `AUTH_DB` alongside the entry it shares and the minting editor, and return the
+plaintext once, since it's never stored and can't be recovered later. The documented path to this
+function is [`previewMintAction`](#createcontentroutes), which carries the entry-scoped
+authorization a preview mint needs (converting one editor's read into an unauthenticated public
+read is an authority-delegation act); `mintPreviewToken` itself performs no authorization or
+draft-existence check, so a caller that reaches it directly, to build a custom mint action, owns
+both. `config.ttlMs` defaults to seven days and must be finite, positive, and between one minute
+and thirty days; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error before any
+token is generated.
 
 ## Navigation routes
 
@@ -1718,13 +1854,16 @@ imports the matching `*Data` type to type its `data` prop.
 | `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[]; error: string \| null }` | The tag-vocabulary view's data: the committed vocabulary in config order, a per-value cross-branch usage count, and the in-use-but-unlisted seed candidates. The usage overlay is best-effort and degrades to empty on a read failure, keeping the committed vocabulary visible. |
 | `SettingsSaveFailure` | Unstable API | `interface SettingsSaveFailure { error: string }` | A refused tidy settings save (an invalid conventions payload, a malformed committed config, or the config's head moved since the editor opened the page): just the one-line summary. |
 | `VocabularySaveFailure` | Unstable API | `interface VocabularySaveFailure { error: string }` | A refused tag-vocabulary save (an invalid vocabulary payload, a malformed committed config, a removed value still in use, or the config's head moved since the editor opened the page): just the one-line summary. |
-| <a id="contentroutesoptions"></a>`ContentRoutesOptions` | Unstable API | `interface ContentRoutesOptions { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]> }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellLoad` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. |
+| <a id="contentroutesoptions"></a>`ContentRoutesOptions` | Unstable API | `interface ContentRoutesOptions { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]>; preview?: PreviewTokenConfig }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellLoad` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. `preview` is the TTL [`previewMintAction`](#createcontentroutes) mints against, absent resolving to [`PreviewTokenConfig`](#types)'s own seven-day default. |
 | `ContentRoutes` | Unstable API | `type ContentRoutes` | What `createContentRoutes` returns: the admin content routes' full load and action vocabulary, shown expanded in [`createContentRoutes`](#createcontentroutes). |
+| <a id="previewtokenconfig"></a>`PreviewTokenConfig` | Unstable API | `interface PreviewTokenConfig { ttlMs?: number }` | A site's preview-token configuration for [`mintPreviewToken`](#mintpreviewtoken): how long a minted share link stays valid. `ttlMs` defaults to seven days (long enough to survive a weekend review) and must be finite, positive, and between one minute and thirty days inclusive; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error at mint time. |
+| <a id="previewdata"></a>`PreviewData` | Extension API | `interface PreviewData extends EntryData { preview: { state: 'draft' \| 'published'; expiresAt: string; published: { permalink: string } \| null } }` | [`previewLoad`](#previewload)'s data: a public entry page's own [`EntryData`](./delivery.md#entrydata), the exact shape `entryLoad` returns, plus `preview`, the metadata [`PreviewBanner`](./components.md#previewbanner) (or a site's own banner) reads. `preview.state` is `'draft'` while the shared branch is still open and `'published'` once it's gone; `preview.published` names the live permalink only in the `'published'` state, when the entry's file exists on the default branch, and is `null` otherwise (a discarded, never-published entry's branch-gone case never reaches this shape at all, since it answers a 404 instead). A compile-time assertion in the engine's own test suite proves this type adds no key beyond `preview`, so a future `EntryData` field breaks the engine's own build rather than a consuming site's. |
 | `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; inboundKind?: 'link' \| 'include'; id: string }` | A refused delete: the one-line summary, the entries that still link to (or include) the refused one, and its id so a list marks the right row. `inboundKind` names which gate refused, `'include'` for a blocked fragment delete and `'link'` (the default when absent) otherwise, so the refusal copy names the real blocker. |
 | `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
 | `CreateFailure` | Unstable API | `interface CreateFailure { error: string }` | A refused create (bad slug, missing date, or an address collision): just the one-line summary. |
 | `RevertFailure` | Unstable API | `type RevertFailure = { reason: 'draft_exists'; draftEditor: string; draftStartedAt: string } \| { reason: 'ref_unknown' } \| { reason: 'history_stale' }` | A refused revert (`ActionFailure<RevertFailure>`), fail-closed with no force path: `draft_exists` (`fail(409, ...)`, the blocking draft's own editor and start date) when a pending branch already exists for the entry, from `revertAction`'s own pre-check or `Backend.createBranch`'s typed `BranchExistsError` under a race; `ref_unknown` (`fail(404, ...)`) when the posted ref isn't a member of a fresh `listCommits` read, the 25-row window's own boundary; `history_stale` (`fail(409, ...)`) when the default branch moved since the history page rendered. There is no fourth reason for invalid old content: a retired field or vocabulary tag in the reverted version rides forward as an advisory on the edit screen instead, and never refuses the revert. |
+| `PreviewMintFailure` | Unstable API | `interface PreviewMintFailure { error: string }` | A refused `previewMintAction` or `previewRevokeAction`: `fail(400)` from a mint whose entry carries no pending draft to share, or `fail(500)` from either action when `AUTH_DB` is missing the `preview_tokens` table (`migrations/0003_preview.sql` not yet applied), an actionable message naming the fix. Both actions answer the missing-table case with this same shape, since the engine ships the share affordance to every upgraded site's edit screen regardless of adoption. |
 | `MediaDeleteRefusal` | Unstable API | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
 | `MediaUpdateFailure` | Unstable API | `interface MediaUpdateFailure { error: string; hash?: string }` | A refused media metadata edit (an asset not committed on the default branch, an invalid slug, or a manifest conflict): the one-line summary, and the edited asset's hash when known, so the Library re-opens the right slide-over. |
 | `MediaReplaceFailure` | Unstable API | `interface MediaReplaceFailure { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media replace: the one-line summary, the asset's content hash, the where-used rows, and the distinct-entry count. Mirrors `MediaDeleteRefusal`: a fresh usage read found the asset still in use without the typed-slug override (409), or usage could not be verified or the bucket is unbound (503). |
@@ -1738,7 +1877,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
 | `NavSaveFailure` | Unstable API | `interface NavSaveFailure { error: string }` | A refused nav save (an invalid posted tree, or the config's head moved since the editor opened the page): just the one-line summary. |
 | `NavRoutes` | Unstable API | `type NavRoutes` | What `createNavRoutes` returns: the nav editor's load and save functions, shown expanded in [`createNavRoutes`](#createnavroutes). |
-| <a id="cairnadminoptions"></a>`CairnAdminOptions` | Extension API | `interface CairnAdminOptions { auth?: Partial<AuthRoutesConfig>; tidy?: ContentRoutesOptions['tidy']; navFilter?: ContentRoutesOptions['navFilter']; attention?: ContentRoutesOptions['attention'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth` is [`AuthRoutesConfig`](#authroutesconfig) made fully optional, so it references that shape once instead of re-declaring it; `auth.branding` defaults from the runtime's `siteName` and `sender` when omitted, `auth.send` is the same seam the underlying auth factory takes, and `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, and `attention` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellLoad` calls, and `attention` is the per-session pending-work seam (see `ContentRoutesOptions` below and [the attention seam](#the-attention-seam)), so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
+| <a id="cairnadminoptions"></a>`CairnAdminOptions` | Extension API | `interface CairnAdminOptions { auth?: Partial<AuthRoutesConfig>; tidy?: ContentRoutesOptions['tidy']; navFilter?: ContentRoutesOptions['navFilter']; attention?: ContentRoutesOptions['attention']; preview?: ContentRoutesOptions['preview'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth` is [`AuthRoutesConfig`](#authroutesconfig) made fully optional, so it references that shape once instead of re-declaring it; `auth.branding` defaults from the runtime's `siteName` and `sender` when omitted, `auth.send` is the same seam the underlying auth factory takes, and `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, `attention`, and `preview` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellLoad` calls, `attention` is the per-session pending-work seam (see `ContentRoutesOptions` below and [the attention seam](#the-attention-seam)), and `preview` is the preview-link lifetime `previewMint` mints against, so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
 | `CairnAdminRoutes` | Extension API | `type CairnAdminRoutes` | What `createCairnAdmin` returns: the one `load`, the full `actions` vocabulary, and `shellLoad`, shown expanded in [`createCairnAdmin`](#createcairnadmin). |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'history' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `HistoryData` for the `history` view, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `WelcomeData` | Extension API | `interface WelcomeData { displayName: string; siteName: string }` | The `'welcome'` view's data: the calm, minimal admin-root landing a none-capability role with no declared `home` gets. [`CairnAdmin`](./components.md#cairnadmin) switches it to a bare internal view inside the shell, so any site-granted nav stays visible. |

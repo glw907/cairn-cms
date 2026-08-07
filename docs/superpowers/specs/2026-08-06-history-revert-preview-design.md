@@ -239,6 +239,63 @@ carries its own.
 mechanism above, which the adversarial round showed the assumption actually required: the
 binding constraint was the site's build-time manifest snapshot, not R2 presence.)*
 
+**Round 3 corrections (execution task 0, 2026-08-06).** The pre-dispatch confirmation round
+(web-auth-security plus SvelteKit data-shape, against the code at `11a5f8a1`) corrected four
+factual assumptions above; each is a drift fix forced by the code, not a design change.
+
+1. **There is no pending-branch manifest.** Pending branches carry no manifest copy
+   (`content-routes-context.ts`: "Always read from main"); a branch read would return main's
+   copy as of the fork, strictly staler. The marking link resolver builds from the DEFAULT
+   branch's manifest with the draft's own re-derived row upserted in memory, the exact pair
+   the save-time link guard uses (`manifestEntryFromFile` + `upsertEntry`). `media.json`, by
+   contrast, IS committed to the branch by save, so branch-first stands for media only.
+2. **"Same composition by construction" requires an extraction, now authorized.**
+   `entryLoad` is lookup-driven and its composition (hero derivation, SEO unify, resolver
+   choice) is closure-private, so handing `previewLoad` the config alone would produce a
+   hand-copy that merely typechecks. The per-entry composition extracts from
+   `src/lib/delivery/public-routes.ts` into an exported `composeEntryData(...)` that takes
+   resolver overrides; `entryLoad` becomes lookup-then-compose and `previewLoad` calls the
+   same function with the marking pair and the request-time media resolver
+   (`buildMediaResolver` with `runtime.resolvedAssets` over branch-first `media.json`, never
+   the lean `manifestMediaResolver`, whose hardcoded url form would break twin-render
+   equivalence). The concept descriptor comes from `runtime.concepts`; `PublicRoutesConfig`
+   cannot reach it and must not be made to.
+3. **The fragment-marking half exists only as component-inline code.** It extracts as
+   `manifestFragmentResolver` beside `manifestLinkResolver` in `src/lib/content/manifest.ts`,
+   and the admin edit preview repoints to the extraction so no second copy ships. The
+   non-routable-concept filter the admin applies to link targets applies to preview
+   identically, and preview does not set `previewTitle` (the boundary eyebrow is an editor
+   affordance, wrong on a public share page).
+4. **The `locals` constraint means session state, not the whole bag.** `previewLoad` never
+   reads `locals.cairnEditor` or `locals.cairnAccess` and sets no cookie; it resolves its
+   backend through the standard `locals.cairnBackend ?? runtime.backend.connect(env)` seam,
+   which is how the showcase e2e and the integration suite exist at all.
+
+The same round hardened the storage and lifecycle half: `expires_at` stores INTEGER epoch
+milliseconds like its sibling tables (a TEXT column against a numeric bind would make every
+token immortal under SQLite's cross-class comparison, invisibly to any test that round-trips
+through one helper); row cleanup lives inside `deleteEntry` covering both success exits, so
+the list-initiated delete cannot bypass it; `deleteEditor` and `removeOwnerIfNotLast` cascade
+to `preview_tokens`, matching the session and magic-token cascade (an off-boarded editor's
+outstanding links die with their access, while a mere role or access-map change deliberately
+does not retro-revoke, the revoke-all affordance being the remedy); and the missing-table
+state (binding wired, migration unapplied, the likeliest half-configuration) answers the same
+uniform 404 with its own log reason rather than a raw D1 500. One nuance surfaced at execution
+(task 5): "discard clears the entry's token rows" above holds only for a never-published entry,
+where the freed id is what makes the reuse collision possible. Discarding an EDIT of a live
+entry leaves its rows intact, because the ended page this same section requires cannot render
+without them, and no collision exists while the entry still owns its id on the default branch. The `preview.rejected` reason
+vocabulary grows accordingly: `unknown`, `expired`, `branch_gone`, plus `row_invalid` (stored
+concept or id no longer valid against the config), `draft_invalid` (the draft fails its
+descriptor's validation, a state revert-as-draft can legitimately produce, logged distinctly
+so it never masquerades as a token bug), and `table_missing`. Frame denial is
+`x-frame-options: DENY` (a CSP `frame-ancestors` set from a load would collide with a site's
+kit-generated CSP header), the full header set issues in one `setHeaders` call as the load's
+first statement, all refusals share one literal not-found message constant, and the
+missing-binding refusal is `error(503)` after the binding-named log (a load cannot return a
+bare Response, so "exactly the media-route precedent" softens to "the same log, the same
+status").
+
 ## Vocabulary deltas
 
 New names from the adversarial round *(round 2)*, each derived under the ratified grammars and

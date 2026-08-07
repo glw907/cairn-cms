@@ -12,6 +12,8 @@ import type { SeoMeta } from './seo.js';
 import { readSeoFields, resolveImageUrl } from './seo-fields.js';
 import { buildLinkResolver, buildFragmentResolver } from './site-resolver.js';
 import type { SiteRender } from '../content/types.js';
+import type { LinkResolve } from '../content/links.js';
+import type { FragmentResolve } from '../render/resolve-include.js';
 import type { MediaResolve } from '../render/resolve-media.js';
 import { parseMediaToken } from '../media/reference.js';
 import { log } from '../log/index.js';
@@ -67,9 +69,120 @@ export interface EntryData {
   heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string };
 }
 
+/**
+ * Derive the hero projection from an entry's frontmatter, without mutating it (locked decision 5).
+ *  The hero lives at the conventional `image` key as the validated nested object `{ src, alt, caption }`;
+ *  only an image field's validate arm produces an object-with-string-`src` shape, so detecting that
+ *  structure is enough (a text field stores a string, a tags field an array). Returns undefined when
+ *  media is off, no hero is set, the token does not parse, or the resolver finds no asset.
+ *
+ *  Scope: this resolves the `image` key, which is the back-compat SEO default the schema's `seo`
+ *  flag also defaults to. A concept that renames its hero (e.g. `cover`) with `seo: true` validates
+ *  and renders in the editor, but its delivery resolution is not wired here yet, since the field
+ *  declarations are not reachable in the delivery read path. Honoring a renamed `seo`-flagged field
+ *  (and a second image field per concept) at delivery is a carried follow-up; every consumer today
+ *  uses `image`.
+ */
+function deriveHeroImage(
+  frontmatter: Record<string, unknown>,
+  resolveMedia: MediaResolve | undefined,
+  origin: string,
+): EntryData['heroImage'] {
+  if (!resolveMedia) return undefined;
+  const value = frontmatter.image;
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const obj = value as { src?: unknown; alt?: unknown; caption?: unknown };
+  if (typeof obj.src !== 'string' || obj.src === '') return undefined;
+  const ref = parseMediaToken(obj.src);
+  if (!ref) return undefined;
+  const path = resolveMedia(ref);
+  if (!path) return undefined;
+  const hero: NonNullable<EntryData['heroImage']> = {
+    url: path,
+    absoluteUrl: resolveImageUrl(path, origin),
+    alt: typeof obj.alt === 'string' ? obj.alt : '',
+  };
+  if (typeof obj.caption === 'string' && obj.caption !== '') hero.caption = obj.caption;
+  return hero;
+}
+
+/**
+ * Substitutes for {@link composeEntryData}'s three resolvers, each defaulting to the build's own
+ *  (throwing) pair drawn from `config.site`, or `config.resolveMedia` for the hero. `previewLoad`
+ *  (task 3b) is the first caller to pass these: the marking link and fragment resolvers built from
+ *  a pending branch's manifest, and a request-time media resolver built from that branch's
+ *  `media.json`. The hero derivation consumes `resolveMedia` from here too, not only the body render.
+ */
+export interface EntryDataOverrides {
+  /** Substitutes `buildLinkResolver(config.site)`. */
+  resolveLink?: LinkResolve;
+  /** Substitutes `buildFragmentResolver(config.site)`. */
+  resolveFragment?: FragmentResolve;
+  /** Substitutes `config.resolveMedia`, consumed by both the hero derivation and the body render. */
+  resolveMedia?: MediaResolve;
+}
+
+/**
+ * Compose one entry's public data shape: the rendered html, its SEO, its adjacent-entry pair, and
+ *  its hero projection. `createPublicRoutes`'s `entryLoad` is lookup-then-compose over this
+ *  function with no overrides, so its output is unchanged; `previewLoad` (task 3b) is the first
+ *  caller to pass `overrides`, substituting the marking resolvers and a request-time media
+ *  resolver in place of the build's throwing pair and the site's committed `media.json`.
+ */
+export async function composeEntryData(
+  config: PublicRoutesConfig,
+  entry: ContentEntry,
+  overrides?: EntryDataOverrides,
+): Promise<EntryData> {
+  const { site, render, origin, siteName, description, feeds, defaultImage } = config;
+  const resolveMedia = overrides?.resolveMedia ?? config.resolveMedia;
+  const { newer, older } = site.adjacent(entry);
+  const canonicalUrl = origin + entry.permalink;
+  const fields = readSeoFields(entry.frontmatter);
+  const heroImage = deriveHeroImage(entry.frontmatter, resolveMedia, origin);
+  // The SEO unify (locked decision 3): a resolved structured hero is the social card and wins over
+  // the back-compat string `image` field and the site default. A bare-string `image` keeps its
+  // origin-anchored behavior. An empty hero alt emits no twitter:image:alt.
+  const rawImage = fields.image ?? defaultImage;
+  const image = heroImage?.absoluteUrl ?? (rawImage ? resolveImageUrl(rawImage, origin) : undefined);
+  const imageAlt = heroImage?.alt && heroImage.alt.trim() !== '' ? heroImage.alt : undefined;
+  // A dated entry is an article; an undated one (a page) is a website.
+  const seo = buildSeoMeta({
+    title: entry.title,
+    description: fields.description || entry.excerpt || description,
+    canonicalUrl,
+    siteName,
+    type: entry.date ? 'article' : 'website',
+    ...(entry.date ? { published: entry.date } : {}),
+    ...(entry.updated ? { modified: entry.updated } : {}),
+    ...(image ? { image } : {}),
+    ...(imageAlt ? { imageAlt } : {}),
+    ...(fields.robots ? { robots: fields.robots } : {}),
+    ...(fields.author ? { author: fields.author } : {}),
+    ...(entry.date ? { feeds } : {}),
+  });
+  return {
+    concept: entry.concept,
+    entry,
+    html: await render({
+      body: entry.body,
+      concept: entry.concept,
+      frontmatter: entry.frontmatter,
+      resolve: overrides?.resolveLink ?? buildLinkResolver(site),
+      resolveFragment: overrides?.resolveFragment ?? buildFragmentResolver(site),
+      resolveMedia,
+    }),
+    canonicalUrl,
+    seo,
+    newer,
+    older,
+    ...(heroImage ? { heroImage } : {}),
+  };
+}
+
 /** Build the public route resolver for a site's unified index. */
 export function createPublicRoutes(deps: PublicRoutesConfig) {
-  const { site, render, origin, siteName, description, feeds, defaultImage, resolveMedia, assetsEnabled } = deps;
+  const { site, resolveMedia, assetsEnabled } = deps;
 
   // Diagnose a forgotten wire-point: media is configured on but no resolver reached this factory, so
   // every public hero and body `media:` token renders bare (the ecxc 0.57.0 finding). The condition
@@ -80,84 +193,11 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
     log.warn('media.resolver_absent', { enabled: true });
   }
 
-  /**
-   * Derive the hero projection from an entry's frontmatter, without mutating it (locked decision 5).
-   *  The hero lives at the conventional `image` key as the validated nested object `{ src, alt, caption }`;
-   *  only an image field's validate arm produces an object-with-string-`src` shape, so detecting that
-   *  structure is enough (a text field stores a string, a tags field an array). Returns undefined when
-   *  media is off, no hero is set, the token does not parse, or the resolver finds no asset.
-   *
-   *  Scope: this resolves the `image` key, which is the back-compat SEO default the schema's `seo`
-   *  flag also defaults to. A concept that renames its hero (e.g. `cover`) with `seo: true` validates
-   *  and renders in the editor, but its delivery resolution is not wired here yet, since the field
-   *  declarations are not reachable in the delivery read path. Honoring a renamed `seo`-flagged field
-   *  (and a second image field per concept) at delivery is a carried follow-up; every consumer today
-   *  uses `image`.
-   */
-  function deriveHeroImage(frontmatter: Record<string, unknown>): EntryData['heroImage'] {
-    if (!resolveMedia) return undefined;
-    const value = frontmatter.image;
-    if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined;
-    const obj = value as { src?: unknown; alt?: unknown; caption?: unknown };
-    if (typeof obj.src !== 'string' || obj.src === '') return undefined;
-    const ref = parseMediaToken(obj.src);
-    if (!ref) return undefined;
-    const path = resolveMedia(ref);
-    if (!path) return undefined;
-    const hero: NonNullable<EntryData['heroImage']> = {
-      url: path,
-      absoluteUrl: resolveImageUrl(path, origin),
-      alt: typeof obj.alt === 'string' ? obj.alt : '',
-    };
-    if (typeof obj.caption === 'string' && obj.caption !== '') hero.caption = obj.caption;
-    return hero;
-  }
-
   /** One entry by request path, rendered through the site renderer, or a 404. */
   async function entryLoad(event: { url: URL }): Promise<EntryData> {
     const entry = site.byPermalink(event.url.pathname);
     if (!entry) throw error(404, `Not found: ${event.url.pathname}`);
-    const { newer, older } = site.adjacent(entry);
-    const canonicalUrl = origin + entry.permalink;
-    const fields = readSeoFields(entry.frontmatter);
-    const heroImage = deriveHeroImage(entry.frontmatter);
-    // The SEO unify (locked decision 3): a resolved structured hero is the social card and wins over
-    // the back-compat string `image` field and the site default. A bare-string `image` keeps its
-    // origin-anchored behavior. An empty hero alt emits no twitter:image:alt.
-    const rawImage = fields.image ?? defaultImage;
-    const image = heroImage?.absoluteUrl ?? (rawImage ? resolveImageUrl(rawImage, origin) : undefined);
-    const imageAlt = heroImage?.alt && heroImage.alt.trim() !== '' ? heroImage.alt : undefined;
-    // A dated entry is an article; an undated one (a page) is a website.
-    const seo = buildSeoMeta({
-      title: entry.title,
-      description: fields.description || entry.excerpt || description,
-      canonicalUrl,
-      siteName,
-      type: entry.date ? 'article' : 'website',
-      ...(entry.date ? { published: entry.date } : {}),
-      ...(entry.updated ? { modified: entry.updated } : {}),
-      ...(image ? { image } : {}),
-      ...(imageAlt ? { imageAlt } : {}),
-      ...(fields.robots ? { robots: fields.robots } : {}),
-      ...(fields.author ? { author: fields.author } : {}),
-      ...(entry.date ? { feeds } : {}),
-    });
-    return {
-      concept: entry.concept,
-      entry,
-      html: await render({
-        body: entry.body,
-        concept: entry.concept,
-        frontmatter: entry.frontmatter,
-        resolve: buildLinkResolver(site),
-        resolveFragment: buildFragmentResolver(site),
-      }),
-      canonicalUrl,
-      seo,
-      newer,
-      older,
-      ...(heroImage ? { heroImage } : {}),
-    };
+    return composeEntryData(deps, entry);
   }
 
   /** Prerender enumeration: one `{ path }` per entry across every concept. */

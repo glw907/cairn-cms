@@ -582,6 +582,119 @@ export function seedVocabulary(): void {
   heads.set(SEED_VOCAB_BRANCH, nextSha());
 }
 
+// --- the preview twin-render seed ---
+//
+// The preview pass's e2e (preview.spec.ts) proves fidelity by comparing a minted preview page's
+// rendered HTML against a REAL public page's, byte for byte modulo one deliberate word. The public
+// pages are fully prerendered from the showcase's on-disk corpus (src/content/), a content universe
+// this whole file otherwise deliberately keeps separate from (see the fragments seed's own
+// comment): the admin/preview backend is this in-memory repo, built at server start, and the public
+// build is a static snapshot baked at `vite build` time from disk files, so nothing an admin action
+// commits here ever reaches a prerendered page. Twin-render equivalence is only checkable at all
+// when ONE entry exists, byte-identical, on BOTH sides: this seed is that one exception, mirroring
+// the real on-disk src/content/posts/2026-01-15-hello.md (permalink /posts/hello) so the admin can
+// open, edit, and preview the SAME entry the public route serves. Keep this literal byte-identical
+// to the disk file (and the media row below matched to its committed src/content/.cairn/media.json
+// entry) when either changes; every other seed in this file is free to drift from disk on purpose,
+// this one may not.
+
+const PREVIEW_TWIN_ID = '2026-01-15-hello';
+const PREVIEW_TWIN_PATH = `src/content/posts/${PREVIEW_TWIN_ID}.md`;
+const PREVIEW_TWIN_HERO_HASH = '00112233445566aa';
+const PREVIEW_TWIN_HERO_SLUG = 'hello-hero';
+
+const PREVIEW_TWIN_CONTENT = `---
+title: Hello, cairn
+date: 2026-01-15
+description: The first showcase post, and a placeholder demonstrating the hero image, gallery, FAQ, and related-post fields together.
+image:
+  src: media:hello-hero.00112233445566aa
+  alt: A cairn of stacked stones on a misty ridge
+  caption: A waymark on the route.
+author: about
+topics:
+  - Svelte
+  - Markdown
+related:
+  - 2026-02-20-second
+faq:
+  - question: What is cairn?
+    answer: A markdown-first CMS that commits to GitHub.
+  - question: Who is it for?
+    answer: Small sites that want a calm editing surface.
+gallery:
+  - src: media:hello-hero.00112233445566aa
+    alt: A cairn of stacked stones on a misty ridge
+---
+This is the first post in the cairn showcase.
+
+See the [about page](cairn:pages/about) for more.
+
+:::alert{role=caution}
+[Heads up]
+
+This note proves the role default reaches the build.
+:::
+
+:::banner{message="New waymarks post to the trail log every Friday." expires="2999-01-01"}
+:::
+`;
+
+let previewTwinSeeded = false;
+
+/**
+ * Seed the preview twin-render fixture into the in-memory repo. Idempotent, like the other seeds.
+ * Must run AFTER seedMediaLibrary (which writes the whole content manifest and media.json), so this
+ * reads both back and appends to them rather than racing the rewrite, the same discipline
+ * seedFragments and seedVocabulary follow.
+ */
+export function seedPreviewTwin(): void {
+  if (previewTwinSeeded) return;
+  previewTwinSeeded = true;
+
+  const main = branches.get('main');
+  if (!main) return;
+
+  main.set(PREVIEW_TWIN_PATH, PREVIEW_TWIN_CONTENT);
+
+  const mediaRaw = main.get('src/content/.cairn/media.json');
+  if (mediaRaw) {
+    const media = JSON.parse(mediaRaw) as Record<string, unknown>;
+    // width/height deliberately differ from the real committed row (1200x630): the frontmatter
+    // hero projection this fixture exercises never emits either attribute, only slug/hash/ext feed
+    // the delivery path, so the mismatch is inert. A body-embedded `media:` reference would need
+    // exact dimensions too (they ride the rendered <img>), which is why this fixture keeps every
+    // `media:` token in frontmatter only, never inline in the body.
+    media[PREVIEW_TWIN_HERO_HASH] = mediaRow(
+      PREVIEW_TWIN_HERO_SLUG,
+      PREVIEW_TWIN_HERO_HASH,
+      'A cairn of stacked stones on a misty ridge',
+    );
+    main.set('src/content/.cairn/media.json', `${JSON.stringify(media, null, 2)}\n`);
+  }
+
+  const manifestRaw = main.get('src/content/.cairn/index.json');
+  if (manifestRaw) {
+    const manifest = JSON.parse(manifestRaw) as {
+      version: number;
+      entries: { id: string; concept: string; [key: string]: unknown }[];
+    };
+    manifest.entries.push({
+      id: PREVIEW_TWIN_ID,
+      concept: 'posts',
+      title: 'Hello, cairn',
+      date: '2026-01-15',
+      permalink: '/posts/hello',
+      summary: 'The first showcase post, and a placeholder demonstrating the hero image, gallery, FAQ, and related-post fields together.',
+      draft: false,
+      links: [],
+      mediaRefs: [PREVIEW_TWIN_HERO_HASH],
+    });
+    main.set('src/content/.cairn/index.json', `${JSON.stringify(manifest, null, 2)}\n`);
+  }
+  heads.set('main', nextSha());
+}
+
 /** The basename of a repo path: the segment after the last slash. */
 function basename(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1);

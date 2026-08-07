@@ -44,6 +44,10 @@ import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, Resolv
 import type { Editor } from '../auth/types.js';
 import type { ContentRoutesContext, AttentionItem } from './content-routes-context.js';
 import type { CairnEvent, HistoryData, HistoryEntry, RevertFailure } from './types.js';
+import { requireDb, requireOrigin } from '../env.js';
+import { deletePreviewTokens } from '../auth/preview-store.js';
+import { mintPreviewToken } from './preview.js';
+import { CairnError } from '../diagnostics/index.js';
 
 // The advisory notice types are defined alongside the cross-branch address index in the content
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
@@ -330,6 +334,19 @@ export interface CreateFailure {
 }
 
 /**
+ * A refused preview mint or revoke: `fail(400)` when a mint's entry carries no pending draft to
+ *  share, or `fail(500)` when `AUTH_DB` is missing the `preview_tokens` table
+ *  (migrations/0003_preview.sql not yet applied), an actionable message naming the fix rather
+ *  than a raw D1 error. Both `previewMintAction` and `previewRevokeAction` answer the missing-
+ *  table case with this same shape, since an upgraded, non-adopting site still ships the share
+ *  affordance to every editor.
+ */
+export interface PreviewMintFailure {
+  /** The one-line human summary the edit screen's share panel shows on a refused mint or revoke. */
+  error: string;
+}
+
+/**
  * Resolve the effective preview for one concept: its `byConcept` override wins per key, with
  *  nullish coalescing so an override key that is present but undefined keeps the top-level value.
  *  Stylesheets are always shared, and the `byConcept` map never reaches the client.
@@ -443,6 +460,50 @@ function requireEntryFromParams(runtime: CairnRuntime, event: CairnEvent): { edi
   const id = event.params.id ?? '';
   if (!isValidId(id)) throw error(400, 'Invalid entry id');
   return { editor, concept, id };
+}
+
+/** True for a D1 error whose message names a missing table (SQLite's own "no such table" text). */
+function isMissingTableError(err: unknown): boolean {
+  return /no such table/i.test(String(err));
+}
+
+/**
+ * Best-effort clear of every preview-token row for one entry, called after delete, discard, and
+ *  rename (keyed to the OLD id, since a rename changes the entry's address). Two-tier failure
+ *  handling: a missing `AUTH_DB` binding (a `CairnError` whose `conditionId` is
+ *  `config.bindings-missing`, the same narrowing `media-route.ts` uses) or a missing
+ *  `preview_tokens` table (a "no such table" D1 error) are the normal state for a site that has
+ *  not adopted the preview feature yet, since the migration is additive, so both are silent: a
+ *  site with neither loses no existing delete/rename/discard behavior over a table or binding it
+ *  may never need. Any OTHER failure (a transient D1 fault on a MIGRATED site with live tokens) is
+ *  still swallowed, since the primary action has already committed (or, for discard, proceeds
+ *  regardless) by the time this runs and failing it outright would be worse, but it logs
+ *  `preview.cleanup_failed` so a stale row, the exact id-reuse collision this cleanup exists to
+ *  close, is not silently invisible to an operator. The logged `reason` is the error's stringified
+ *  message; a store-level delete keyed by concept and id carries no token, so this cannot leak
+ *  one. Publish deliberately never calls this: the ended page needs the row to outlive the branch,
+ *  a stated coupling, not an oversight.
+ */
+async function clearPreviewTokens(event: CairnEvent, concept: ConceptDescriptor, id: string): Promise<void> {
+  try {
+    const db = requireDb(event.platform?.env ?? {});
+    await deletePreviewTokens(db, concept.id, id);
+  } catch (err) {
+    if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') return;
+    if (isMissingTableError(err)) return;
+    log.warn('preview.cleanup_failed', { concept: concept.id, id, reason: String(err) });
+  }
+}
+
+/**
+ * The actionable refusal both `previewMintAction` and `previewRevokeAction` answer when
+ *  `AUTH_DB` is missing the `preview_tokens` table (migrations/0003_preview.sql not yet applied),
+ *  naming the fix rather than surfacing a raw D1 error.
+ */
+function missingPreviewTableFailure(): ActionFailure<PreviewMintFailure> {
+  return fail(500, {
+    error: 'The preview_tokens table is missing. Apply migrations/0003_preview.sql to AUTH_DB, then try again.',
+  } satisfies PreviewMintFailure);
 }
 
 /**
@@ -1450,6 +1511,10 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if ((await backend.branchHead(branch)) === branchSha) {
       await backend.deleteBranch(branch);
     }
+    // Deliberately no clearPreviewTokens call here, unlike discard/rename/delete: the ended page
+    // (previewLoad) needs a published entry's outstanding rows to outlive the branch, so it can
+    // still answer a stale link with "this preview has ended" rather than a bare 404. This
+    // coupling is stated, not an oversight; do not "fix" it with a cleanup call later.
     throw redirect(303, `/admin/${concept.id}/${id}?published=1`);
   }
 
@@ -1576,6 +1641,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
     const onMain = await backend.readFile(`${concept.dir}/${filenameFromId(id)}`, backend.defaultBranch);
     if (onMain !== null) throw redirect(303, `/admin/${concept.id}/${id}?discarded=1`);
+    // Only a never-published entry's discard clears preview-token rows: the id is now free for an
+    // unrelated future entry to claim, the id-reuse collision the clear closes. Discarding an EDIT
+    // of a live entry leaves its rows alone (the same "publish does not clear" coupling), since the
+    // id still names the same, still-live entry and the ended page (previewLoad's own branch-gone,
+    // main-exists path) is the correct answer for an outstanding link, never a bare 404 implying the
+    // link never existed.
+    await clearPreviewTokens(event, concept, id);
     throw redirect(303, `/admin/${concept.id}`);
   }
 
@@ -1663,6 +1735,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if (onMain === null) {
       await backend.deleteBranch(pendingBranch(concept.id, id));
       log.info('entry.discarded', { concept: concept.id, id, editor: editor.email });
+      await clearPreviewTokens(event, concept, id);
       throw redirect(303, `/admin/${concept.id}`);
     }
 
@@ -1695,6 +1768,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     } catch {
       // The entry is gone from main; the straggler shows as a pending row until discarded.
     }
+    // The entry is gone from both main and its branch; any outstanding preview link would 404 on
+    // its own (branch_gone), but clearing here closes the id-reuse window instead of leaving it to
+    // that natural expiry. Deliberately run for both success exits above, and only from inside this
+    // shared core, so the list-initiated delete (listDeleteAction) cannot bypass it.
+    await clearPreviewTokens(event, concept, id);
     throw redirect(303, `/admin/${concept.id}`);
   }
 
@@ -1893,7 +1971,85 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         error: 'This file changed since you opened it. Reload and try again.',
       } satisfies RenameFailure);
     }
+    // Keyed to the OLD id: renaming refuses above while a pending branch exists, so a live preview
+    // link for this entry (if any survived an earlier discard/publish's own cleanup) would now
+    // resolve to whatever NEW draft later reuses the old id, an id-reuse collision closed here.
+    await clearPreviewTokens(event, concept, id);
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
+  }
+
+  /**
+   * Mint a public preview link for an entry's pending draft (spec part 3, "Public preview for a
+   *  non-editor"). Minting converts one editor's read on a concept into an unauthenticated public
+   *  read for anyone holding the URL, so it carries the full entry-scoped authorization every
+   *  other single-entry action carries: `requireEntryFromParams` is the FIRST statement, exactly
+   *  as `saveAction` and `publishAction` do. Without that call a signed-in `none`-capability
+   *  session, or one an access map denies, could mint a working preview of any draft, a clean
+   *  read bypass of the engine's own content authorization.
+   *
+   *  Returns the minted URL and expiry directly (no redirect), so the edit screen's share
+   *  affordance can show and copy it in place. Refuses on the page when the entry carries no
+   *  pending draft (there is nothing to share) or when `AUTH_DB` is missing the `preview_tokens`
+   *  table, naming the migration to apply rather than surfacing a raw D1 error.
+   */
+  async function previewMintAction(event: CairnEvent): Promise<ActionFailure<PreviewMintFailure> | { url: string; expiresAt: number }> {
+    const { editor, concept, id } = requireEntryFromParams(runtime, event);
+    const backend = ctx.resolveBackend(event);
+
+    // A preview shares a draft; without one there is nothing to share.
+    if ((await backend.branchHead(pendingBranch(concept.id, id))) === null) {
+      return fail(400, {
+        error: 'This entry has no unpublished draft to share. Save an edit first.',
+      } satisfies PreviewMintFailure);
+    }
+
+    const env = event.platform?.env ?? {};
+    const origin = requireOrigin(env);
+    const db = requireDb(env);
+
+    let token: string;
+    let expiresAt: number;
+    try {
+      ({ token, expiresAt } = await mintPreviewToken(db, ctx.deps.preview ?? {}, {
+        concept: concept.id,
+        entryId: id,
+        editor: editor.email,
+      }));
+    } catch (err) {
+      if (isMissingTableError(err)) return missingPreviewTableFailure();
+      throw err;
+    }
+
+    // The response body carries the bearer credential (the token, inside the URL); never let a
+    // shared cache or intermediary retain it.
+    event.setHeaders({ 'cache-control': 'no-store' });
+    log.info('preview.token.minted', { concept: concept.id, id, editor: editor.email, expiresAt });
+    // Built from the configured origin, never event.url.origin (host-header-controlled on
+    // Cloudflare): the token is never interpolated into anything but this return value, so it can
+    // never reach an error message.
+    return { url: `${origin}/preview/${token}`, expiresAt };
+  }
+
+  /**
+   * Revoke every outstanding preview link for an entry: one delete by concept and id, the
+   *  mis-shared-link remedy. Same entry-scoped authorization as minting, `requireEntryFromParams`
+   *  as the FIRST statement. Idempotent: revoking with no minted links succeeds with a count of
+   *  zero. The engine ships this affordance to every upgraded site's edit screen regardless of
+   *  adoption, so a missing `preview_tokens` table answers the same actionable refusal minting
+   *  does, naming the migration, rather than a raw D1 error.
+   */
+  async function previewRevokeAction(event: CairnEvent): Promise<ActionFailure<PreviewMintFailure> | { count: number }> {
+    const { editor, concept, id } = requireEntryFromParams(runtime, event);
+    const db = requireDb(event.platform?.env ?? {});
+    let count: number;
+    try {
+      count = await deletePreviewTokens(db, concept.id, id);
+    } catch (err) {
+      if (isMissingTableError(err)) return missingPreviewTableFailure();
+      throw err;
+    }
+    log.info('preview.token.revoked', { concept: concept.id, id, editor: editor.email, count });
+    return { count };
   }
 
   /**
@@ -2037,6 +2193,8 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     deleteAction,
     listDeleteAction,
     renameAction,
+    previewMintAction,
+    previewRevokeAction,
     revertAction,
   };
 }

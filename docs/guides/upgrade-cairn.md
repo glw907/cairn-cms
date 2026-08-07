@@ -176,9 +176,11 @@ Consumers must: nothing. If you mount the `createCairnAdmin` facade, the History
 `createContentRoutes`, its returned object now carries two additional members, `historyLoad` and
 `revertAction`, which you wire the same way you already wire `editLoad` and `saveAction` to reach
 the feature; leaving them unmounted costs you nothing else. `Backend`'s existing-branch collision
-on `createBranch` now throws a typed `BranchExistsError` instead of silently overwriting (a fix
-your own code only sees if you call `createBranch` directly against a custom `Backend`
-implementation).
+on `createBranch` now throws a typed `BranchExistsError`. The packaged dev backend used to
+silently overwrite the branch on a name collision and now throws instead. If you've implemented
+your own `Backend`, this window adds a required member, `listCommits(path, ref, limit)`, and
+changes `createBranch`'s return type from `Promise<void>` to `Promise<string>` (return the sha it
+created the branch at). Ordinary consumers who only use the packaged backends see neither change.
 
 ## 0.94.0-rc.2: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
 

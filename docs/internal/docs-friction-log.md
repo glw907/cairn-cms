@@ -257,6 +257,24 @@ line.
   altitude signal that turns it into engine work. Found on the `aksailingclub-org` `0.94.0-rc.1`
   migration (see [that report](./feedback/2026-08-05-aksailingclub-org-migration.md)).
 
+- **`developer`: the design spec's "reverted content is validated" paragraph names link/include
+  drift as a revert advisory, but the shipped advisory covers only retired fields and retired
+  vocabulary tags.** [The design spec](../superpowers/specs/2026-08-06-history-revert-preview-design.md)
+  (Part 2, "Reverted content is validated, warn-not-refuse") lists three things an old version can
+  carry that the current schema no longer recognizes: retired frontmatter fields, removed
+  vocabulary values, and "links or includes to since-deleted targets." `revertSchemaDrift` in
+  `content-routes-core.ts` builds only the first two into `retiredContentAdvisory`; a reverted
+  version whose body links or `::include`s a target deleted since that version was published gets
+  no warning at revert time, and the dangling reference surfaces only at the next build's
+  `verifyReferences` gate or as a live 404 if the editor publishes without rebuilding locally
+  first. The scope-out was deliberate for this pass, not an oversight: `revertAction` already
+  reuses save's `draftLinks`/`referenceWarnings` machinery for the *current* manifest, and wiring
+  the same body-link and reference-edge scan against the *reverted* version's own content, before
+  the branch exists to scan, was judged a larger, separable change. Candidate fix: run the same
+  `extractReferenceEdges`/body-link scan save already does against the parsed old version inside
+  `revertAction`, folding any absent or draft target into the same advisory channel, the next time
+  an editor hits this in practice.
+
 - **`developer`: `cairn-audit`'s `rendered.pages` replaces the default page list rather than
   merging with it, so a consumer that adds one screen of its own quietly stops auditing cairn's
   six core routes.** `loadConfig` passes `DEFAULT_RENDERED_PAGES` as the fallback for an absent

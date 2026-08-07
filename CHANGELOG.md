@@ -19,14 +19,17 @@
   when the default branch moved since the history page rendered; a reverted version carrying a
   since-retired field or vocabulary tag rides forward as a warn-only advisory rather than
   blocking the revert. `Backend.createBranch`'s existing-branch collision is now a typed
-  `BranchExistsError` (both backends throw it identically, closing a pre-existing save-vs-save
-  race that used to 500) instead of an unguarded overwrite. See
+  `BranchExistsError` (both backends throw it identically); the packaged dev backend used to
+  silently overwrite the branch on a name collision and now throws instead. See
   [SvelteKit](docs/reference/sveltekit.md), [the canonical admin
   mount](docs/reference/admin-routes.md), and [Publish and
   discard](docs/guides/publish-and-discard.md#see-an-entrys-history-and-restore-an-earlier-version).
-  Consumers must: nothing; this is purely additive, and a site that mounts the single-mount admin
-  facade picks up the History link with no code change. Undelete stays out of scope for this
-  release (see ROADMAP.md).
+  Consumers must: nothing, for a site that only imports the packaged backends and admin facade;
+  this is purely additive, and a site that mounts the single-mount admin facade picks up the
+  History link with no code change. A site implementing its own `Backend` must add the new
+  `listCommits(path, ref, limit)` member and change `createBranch`'s return type from
+  `Promise<void>` to `Promise<string>`, returning the sha it created the branch at. Undelete
+  stays out of scope for this release (see ROADMAP.md).
 
 ## 0.94.0-rc.2
 

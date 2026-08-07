@@ -19,7 +19,7 @@ count, the Prose/Wide posture pair, and the focus and typewriter toggles (the to
 persistent "?" carries Markdown help, design-arc D2).
 -->
 <script lang="ts">
-  import { flushSync, untrack, getContext } from 'svelte';
+  import { flushSync, untrack, getContext, tick } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { page } from '$app/state';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
@@ -93,9 +93,18 @@ persistent "?" carries Markdown help, design-arc D2).
     /** The last content action's failure: the save guard's broken links, the delete guard's
      *  inbound linkers, or a rename refusal, each carrying the shared `error` summary. */
     form?: ContentFormFailure | null;
+    /**
+     * Whether the mounting admin facade exposes the `previewMint`/`previewRevoke` actions (spec
+     *  part 3, "Public preview for a non-editor"), so the Share preview group renders in the
+     *  Details panel. Defaults to `true`: a site built on `createCairnAdmin`'s actions record
+     *  always carries both keys. A site holding the feature back (before applying
+     *  `migrations/0003_preview.sql`, say) passes `false` to keep the affordance off the edit
+     *  screen until it is ready, rather than showing a control whose every use fails.
+     */
+    previewMint?: boolean;
   }
 
-  let { data, registry, render, icons, form }: Props = $props();
+  let { data, registry, render, icons, form, previewMint = true }: Props = $props();
 
   /** One action row in an advisory notice: an `href` row renders a link, an `onAct` row a button. */
   type AdvisoryRow = { rowLabel?: string; rowCode?: boolean; label: string; href?: string; onAct?: () => void };
@@ -1061,6 +1070,129 @@ persistent "?" carries Markdown help, design-arc D2).
   function toggleDetails() {
     if (detailsOpen) closeDetails();
     else openDetails();
+  }
+
+  // The share-preview affordance (spec part 3, "Public preview for a non-editor"): mint posts to
+  // `?/previewMint` and shows the returned URL and expiry in place; revoke posts to
+  // `?/previewRevoke` and reports the count. Both are fetch-based JS actions over the same
+  // postFormAction round trip tidy uses, since neither carries a redirect. The minted URL is a
+  // bearer credential (anyone holding it can read the draft with no session), so it lives only in
+  // this transient state, never in localStorage or a query param, and a revoke clears it from view
+  // immediately: the row is gone from the store (hash-only at rest), so a lingering display would
+  // imply a link that no longer works is still good.
+  let shareBusy = $state(false);
+  let shareResult = $state<{ url: string; expiresAt: number } | null>(null);
+  let shareError = $state<string | null>(null);
+  let shareCopied = $state(false);
+  let shareUrlInput = $state<HTMLInputElement | null>(null);
+  let revokeBusy = $state(false);
+  let revokeCount = $state<number | null>(null);
+  let revokeError = $state<string | null>(null);
+
+  /** Render a preview link's millisecond expiry as a human date and time (the store's own unit,
+   *  per the round-3 amendment's epoch-ms `expires_at`). */
+  function formatExpiry(expiresAt: number): string {
+    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(expiresAt));
+  }
+
+  /** Mint a preview link for this entry's pending draft. A refusal (no draft to share, the
+   *  migration not yet applied) shows the server's own actionable message; a network failure or an
+   *  expired session shows a generic retry line. */
+  async function mintPreview() {
+    if (shareBusy) return;
+    shareBusy = true;
+    shareError = null;
+    try {
+      const outcome = await postFormAction<{ url?: unknown; expiresAt?: unknown }>(
+        `/admin/${data.conceptId}/${data.id}?/previewMint`,
+        {
+          method: 'POST',
+          redirect: 'manual',
+          headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+          body: '',
+        },
+      );
+      if (!outcome.ok) {
+        if (outcome.sessionExpired) {
+          shareError = 'Your session expired. Sign in again to share a preview link.';
+          return;
+        }
+        const failure = outcome.data as { error?: unknown } | undefined;
+        shareError =
+          typeof failure?.error === 'string' && failure.error !== 'csrf'
+            ? failure.error
+            : 'Could not create a preview link. Try again.';
+        return;
+      }
+      const url = typeof outcome.data.url === 'string' ? outcome.data.url : '';
+      const expiresAt = typeof outcome.data.expiresAt === 'number' ? outcome.data.expiresAt : 0;
+      if (!url) {
+        shareError = 'Could not create a preview link. Try again.';
+        return;
+      }
+      shareResult = { url, expiresAt };
+      shareCopied = false;
+      // Focus the URL field once it renders, so a keyboard or screen-reader author lands on the
+      // result without hunting for it.
+      void tick().then(() => shareUrlInput?.focus());
+    } catch {
+      shareError = 'Could not create a preview link. Try again.';
+    } finally {
+      shareBusy = false;
+    }
+  }
+
+  /** Copy the minted URL to the clipboard (the `copyReference` idiom, `CairnMediaLibrary.svelte`).
+   *  A denied or unavailable clipboard falls back to selecting the field's text, so a manual copy
+   *  still works. */
+  function copyShareUrl() {
+    if (!shareResult) return;
+    const url = shareResult.url;
+    void navigator.clipboard?.writeText(url).then(
+      () => (shareCopied = true),
+      () => shareUrlInput?.select(),
+    );
+  }
+
+  /** Revoke every outstanding preview link for this entry. Always clears any minted URL still on
+   *  screen, whether or not the count was zero: a revoked link cannot be recovered (the store
+   *  holds only its hash), so this affordance never leaves a stale URL implying otherwise. */
+  async function revokePreview() {
+    if (revokeBusy) return;
+    revokeBusy = true;
+    revokeError = null;
+    try {
+      const outcome = await postFormAction<{ count?: unknown }>(
+        `/admin/${data.conceptId}/${data.id}?/previewRevoke`,
+        {
+          method: 'POST',
+          redirect: 'manual',
+          headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+          body: '',
+        },
+      );
+      if (!outcome.ok) {
+        if (outcome.sessionExpired) {
+          revokeError = 'Your session expired. Sign in again to revoke preview links.';
+          return;
+        }
+        const failure = outcome.data as { error?: unknown } | undefined;
+        revokeError =
+          typeof failure?.error === 'string' && failure.error !== 'csrf'
+            ? failure.error
+            : 'Could not revoke preview links. Try again.';
+        return;
+      }
+      revokeCount = typeof outcome.data.count === 'number' ? outcome.data.count : 0;
+      // The store now holds nothing for this entry; drop any minted URL still on screen so the
+      // panel never shows a link the store can no longer stand behind.
+      shareResult = null;
+      shareCopied = false;
+    } catch {
+      revokeError = 'Could not revoke preview links. Try again.';
+    } finally {
+      revokeBusy = false;
+    }
   }
 
   // An overflow-menu pick runs its action, then dismisses the popover menu. Opening a modal
@@ -2333,6 +2465,60 @@ persistent "?" carries Markdown help, design-arc D2).
           </button>
         </div>
       </fieldset>
+      {#if previewMint}
+        <!-- Share preview (spec part 3, "Public preview for a non-editor"): mint a link so someone
+             who is not an editor can read the pending draft, and revoke every outstanding link in
+             one move. The minted URL is a bearer credential, so it lives only in shareResult, never
+             persisted; a revoke clears it from view immediately (never implying a dead link still
+             works). -->
+        <fieldset class="m-0 flex min-w-0 flex-col gap-label border-0 p-0">
+          <legend class={eyebrowClass}>Share preview</legend>
+          <p class="type-meta text-muted">
+            Share a private link so someone who is not an editor can read this draft before it publishes.
+          </p>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" class="btn btn-ghost btn-sm" disabled={shareBusy} onclick={mintPreview}>
+              {#if shareBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Minting…{:else}Share preview link{/if}
+            </button>
+            <button type="button" class="btn btn-ghost btn-sm" disabled={revokeBusy} onclick={revokePreview}>
+              {#if revokeBusy}<span class="loading loading-spinner loading-xs" aria-hidden="true"></span> Revoking…{:else}Revoke all links{/if}
+            </button>
+          </div>
+          <!-- One always-mounted role="status" region, so a later first result still announces
+               (the needs-alt notice's live-region rule). It carries both success confirmations;
+               errors below are separate role="alert" lines, following ComponentForm's inline
+               validation-message idiom. -->
+          <div role="status" aria-live="polite" class="flex flex-col gap-2">
+            {#if shareResult}
+              <div class="flex flex-col gap-1.5">
+                <label class="type-meta font-medium" for="cairn-preview-share-url">Preview link</label>
+                <div class="flex items-center gap-1.5">
+                  <input
+                    bind:this={shareUrlInput}
+                    id="cairn-preview-share-url"
+                    type="text"
+                    readonly
+                    class="input input-sm min-w-0 flex-1 font-mono type-meta"
+                    value={shareResult.url}
+                    onclick={(e) => (e.currentTarget as HTMLInputElement).select()}
+                  />
+                  <button type="button" class="btn btn-ghost btn-sm shrink-0" onclick={copyShareUrl}>
+                    {shareCopied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p class="type-meta text-muted">Expires {formatExpiry(shareResult.expiresAt)}.</p>
+              </div>
+            {/if}
+            {#if revokeCount !== null}
+              <p class="type-meta text-muted">
+                {revokeCount === 0 ? 'No preview links to revoke.' : `Revoked ${revokeCount} ${revokeCount === 1 ? 'link' : 'links'}.`}
+              </p>
+            {/if}
+          </div>
+          {#if shareError}<p role="alert" class="text-error type-meta">{shareError}</p>{/if}
+          {#if revokeError}<p role="alert" class="text-error type-meta">{revokeError}</p>{/if}
+        </fieldset>
+      {/if}
       {#if data.conceptId === FRAGMENTS_CONCEPT_ID}
         <!-- The where-used surface (spec section on reuse): a fragment's own edit screen names its
              consumers, the same data.inboundLinks the delete guard blocks on, so an author sees the

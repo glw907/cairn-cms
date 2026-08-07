@@ -1818,17 +1818,21 @@ describe('EditPage', () => {
     expect(menu.matches(':popover-open')).toBe(false);
   });
 
-  it('keeps the sidebar groups to the one Change URL action', async () => {
+  it('keeps the sidebar groups to Change URL plus the Share preview pair', async () => {
     const screen = render(EditPage, postProps({ pending: true }));
-    // The panel header adds a Close button; the field groups themselves still carry only the one
-    // Change URL action.
+    // The panel header adds a Close button; the field groups themselves carry Change URL plus the
+    // Share preview group's mint and revoke controls (spec part 3, "Public preview for a
+    // non-editor"), and no other action.
     const close = screen.container.querySelector('aside button[aria-label="Close details"]');
     expect(close).not.toBeNull();
     const groupButtons = Array.from(screen.container.querySelectorAll('aside button')).filter(
       (b) => b.getAttribute('aria-label') !== 'Close details',
     );
-    expect(groupButtons.length).toBe(1);
-    expect(groupButtons[0].textContent ?? '').toContain('Change URL');
+    expect(groupButtons.map((b) => b.textContent?.trim())).toEqual([
+      'Change URL',
+      'Share preview link',
+      'Revoke all links',
+    ]);
   });
 
   it('hoists the title input above the editor card inside the form', async () => {
@@ -1852,21 +1856,22 @@ describe('EditPage', () => {
     expect(screen.container.querySelector('input[name="title"]')).toBeNull();
   });
 
-  it('groups the sidebar under the Details, Visibility, and Address eyebrows', async () => {
+  it('groups the sidebar under the Details, Visibility, Address, and Share preview eyebrows', async () => {
     const screen = render(EditPage, postProps());
     const legends = Array.from(screen.container.querySelectorAll('aside legend')).map((l) =>
       l.textContent?.trim(),
     );
-    expect(legends).toEqual(['Details', 'Visibility', 'Address']);
+    expect(legends).toEqual(['Details', 'Visibility', 'Address', 'Share preview']);
   });
 
   it('omits Details without remaining fields and Visibility without a draft boolean', async () => {
-    // The page concept carries only the title field, which is hoisted, so Address stands alone.
+    // The page concept carries only the title field, which is hoisted, so Address and Share
+    // preview stand alone (Share preview renders regardless of concept, spec part 3).
     const screen = render(EditPage, pageProps());
     const legends = Array.from(screen.container.querySelectorAll('aside legend')).map((l) =>
       l.textContent?.trim(),
     );
-    expect(legends).toEqual(['Address']);
+    expect(legends).toEqual(['Address', 'Share preview']);
   });
 
   it("shows the fragment's own Included in group, listing the same consumers the delete guard names", async () => {

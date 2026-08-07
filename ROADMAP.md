@@ -203,6 +203,21 @@ The original decision framing, for the record:
 
 ## Now
 
+- **A stacked field beside an unlabelled sibling control leaves the row misaligned.** `0.92.0` made
+  the stacked register the default, so a field's label moves above its control and the control drops
+  by the label's height. A sibling in the same row that carries no label does not move, and the two
+  halves of the row stop lining up. Measured on `aksailingclub-org`'s `/admin/club/documents` season
+  picker, against CI-rendered baselines rather than a workstation capture: before the flip the
+  input's vertical centre sat at 145.0px and the `View` button's at 144.5px; after it, 157.0px
+  against an unmoved 144.5px. The 12.5px offset is identical at 390 and at 1440 and in both themes,
+  which makes it layout rather than a theme's spacing. This is a mechanic, not a site's design
+  choice: every consumer that puts a field beside a bare button gets it, and patching one site's
+  theme leaves the rest to rediscover it. Which element governs the row's alignment is a real
+  question, since the answer depends on whether the sibling reads as part of the field or as its own
+  control, so it wants an engine decision rather than a default nobody chose. Found 2026-08-06 by the
+  ASC `rc.2` verification; the evidence is the regenerated baselines in that repo's `873a3bb`, and
+  the site is holding its merge on Geoff's answer.
+
 - **Exercise a server-only subpath under real Wrangler in cairn's own CI.** The `0.94.0-rc.1`
   Workers blocker (a `browser` condition with no `worker` ahead of it, so the server bundle got the
   client stub and the Worker never started) shipped past every gate this repo runs, and the two

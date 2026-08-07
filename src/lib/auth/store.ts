@@ -136,12 +136,19 @@ export async function insertEditor(
     .run();
 }
 
-/** Remove an editor and cut their live access (sessions and any pending token go too). */
+/**
+ * Remove an editor and cut their live access: sessions, any pending token, and every preview
+ * link they minted go too. A removed editor's outstanding preview links die with their access,
+ * the same posture as the session and magic-token cascade; a mere role or access-map change,
+ * by contrast, does not retro-revoke a link, and the owner's remedy there is the revoke-all
+ * admin affordance.
+ */
 export async function deleteEditor(db: D1Database, email: string): Promise<void> {
   const key = normalizeEmail(email);
   await db.batch([
     db.prepare('DELETE FROM session WHERE email = ?').bind(key),
     db.prepare('DELETE FROM magic_token WHERE email = ?').bind(key),
+    db.prepare('DELETE FROM preview_tokens WHERE editor = ?').bind(key),
     db.prepare('DELETE FROM editor WHERE email = ?').bind(key),
   ]);
 }
@@ -152,7 +159,8 @@ export async function deleteEditor(db: D1Database, email: string): Promise<void>
  * allowlist below one owner. `ownerRoles` is the vocabulary's owner-capability name set (see
  * `ownerLevelRoles`), not the literal `'owner'` string, so a site with more than one owner-level
  * role name stays safe. Returns false (and writes nothing) when this is the last owner-capability
- * row. On success the editor's sessions and pending token go too.
+ * row. On success the editor's sessions, pending token, and minted preview links all go too (see
+ * {@link deleteEditor}).
  */
 export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerRoles: string[]): Promise<boolean> {
   if (ownerRoles.length === 0) return false;
@@ -170,6 +178,7 @@ export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerR
   await db.batch([
     db.prepare('DELETE FROM session WHERE email = ?').bind(key),
     db.prepare('DELETE FROM magic_token WHERE email = ?').bind(key),
+    db.prepare('DELETE FROM preview_tokens WHERE editor = ?').bind(key),
   ]);
   return true;
 }

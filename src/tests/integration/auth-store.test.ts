@@ -17,6 +17,7 @@ import {
   demoteOwnerIfNotLast,
   insertOwnerIfEmpty,
 } from '../../lib/auth/store.js';
+import { insertPreviewToken, findPreviewToken } from '../../lib/auth/preview-store.js';
 
 const db = env.AUTH_DB;
 
@@ -25,6 +26,7 @@ beforeEach(async () => {
   await db.batch([
     db.prepare('DELETE FROM session'),
     db.prepare('DELETE FROM magic_token'),
+    db.prepare('DELETE FROM preview_tokens'),
     db.prepare('DELETE FROM editor'),
   ]);
 });
@@ -176,6 +178,35 @@ describe('sessions (server-side, role read live)', () => {
     await createSession(db, 'sid-del', 'ed@x.dev', Date.now() + 10_000, Date.now());
     await deleteSession(db, 'sid-del');
     expect(await resolveSession(db, 'sid-del', Date.now())).toBeNull();
+  });
+});
+
+describe('preview-token cascade (the third credential class)', () => {
+  it('deleteEditor clears every preview link the removed editor minted', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    await insertPreviewToken(db, {
+      tokenHash: 'hash-1',
+      concept: 'posts',
+      entryId: 'e1',
+      editor: 'ed@x.dev',
+      expiresAt: Date.now() + 60_000,
+    });
+    await deleteEditor(db, 'ed@x.dev');
+    expect(await findPreviewToken(db, 'hash-1')).toBeNull();
+  });
+
+  it('removeOwnerIfNotLast clears the removed owner’s preview links when another owner remains', async () => {
+    await seedEditor('a@x.dev', 'A', 'owner');
+    await seedEditor('b@x.dev', 'B', 'owner');
+    await insertPreviewToken(db, {
+      tokenHash: 'hash-2',
+      concept: 'posts',
+      entryId: 'e1',
+      editor: 'a@x.dev',
+      expiresAt: Date.now() + 60_000,
+    });
+    expect(await removeOwnerIfNotLast(db, 'a@x.dev', ['owner'])).toBe(true);
+    expect(await findPreviewToken(db, 'hash-2')).toBeNull();
   });
 });
 

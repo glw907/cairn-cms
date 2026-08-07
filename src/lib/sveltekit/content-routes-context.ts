@@ -15,6 +15,7 @@ import { normalizePublishActions, type ResolvedPublishAction } from './publish-a
 import { logCommitFailed, commitFailure } from './commit-log.js';
 import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
+import type { PreviewTokenConfig } from './preview.js';
 // Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
 // imported only here (a Worker module no component imports statically), and the server-only-deps test
 // guards that boundary. The default export is the Anthropic client class; the structural TidyClient
@@ -126,6 +127,11 @@ export interface ContentRoutesOptions {
     editor: Editor;
     event: CairnEvent;
   }) => AttentionItem[] | Promise<AttentionItem[]>;
+  /**
+   * The preview-link lifetime `previewMintAction` mints against. Absent resolves to
+   *  {@link PreviewTokenConfig}'s own default (seven days).
+   */
+  preview?: PreviewTokenConfig;
 }
 
 /**

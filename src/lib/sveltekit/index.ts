@@ -14,6 +14,7 @@ export {
 } from './auth-routes.js';
 export { createEditorRoutes, type EditorRoutesOptions, type EditorRoutes, type EditorsData } from './editors-routes.js';
 export { createContentRoutes, type ContentRoutes } from './content-routes.js';
+export { mintPreviewToken, type PreviewTokenConfig } from './preview.js';
 export { createMediaRoute } from './media-route.js';
 export type {
   NavConcept,
@@ -35,6 +36,7 @@ export type {
   DeleteRefusal,
   RenameFailure,
   CreateFailure,
+  PreviewMintFailure,
   MediaDeleteRefusal,
   MediaUpdateFailure,
   MediaReplaceFailure,

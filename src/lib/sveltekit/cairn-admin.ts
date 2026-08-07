@@ -54,6 +54,11 @@ export interface CairnAdminOptions {
    *  `ContentRoutesOptions['attention']`.
    */
   attention?: ContentRoutesOptions['attention'];
+  /**
+   * Forwarded to the content routes verbatim: the preview-link lifetime `previewMint` mints
+   *  against. See `ContentRoutesOptions['preview']`.
+   */
+  preview?: ContentRoutesOptions['preview'];
 }
 
 /**
@@ -93,7 +98,12 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
     replyTo: runtime.sender.replyTo,
   };
   const auth = createAuthRoutes({ branding, send: deps.auth?.send, bootstrapOwner: deps.auth?.bootstrapOwner });
-  const content = createContentRoutes(runtime, { tidy: deps.tidy, navFilter: deps.navFilter, attention: deps.attention });
+  const content = createContentRoutes(runtime, {
+    tidy: deps.tidy,
+    navFilter: deps.navFilter,
+    attention: deps.attention,
+    preview: deps.preview,
+  });
   const editors = createEditorRoutes({ roles: runtime.roles });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes(runtime) : null;
@@ -273,6 +283,14 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    // Preview (spec part 3, "Public preview for a non-editor"): mint returns the minted URL and
+    // expiry directly (no redirect), so the edit screen's share panel can show and copy it in
+    // place; revoke deletes every outstanding link for the entry. Both gate on the edit view,
+    // where the share affordance lives.
+    previewMint: viewAction('previewMint', ['edit'], (event, view) =>
+      content.previewMintAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    previewRevoke: viewAction('previewRevoke', ['edit'], (event, view) =>
+      content.previewRevokeAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // Revert (spec "Part 2: revert"): starts a draft from an old publish. Gated to the history
     // view, where the revert forms live; concept/id are synthesized the same way every other
     // per-entry action's are.

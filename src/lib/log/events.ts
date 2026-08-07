@@ -21,6 +21,8 @@ export type CairnLogEvent =
   | 'taxonomy.unmarked_field'
   | 'entry.published'
   | 'entry.discarded'
+  | 'preview.token.minted'
+  | 'preview.token.revoked'
   | 'publish.failed'
   | 'publish.address_collision'
   | 'github.unreachable'

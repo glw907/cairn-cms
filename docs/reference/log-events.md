@@ -29,6 +29,8 @@ in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
 | `taxonomy.unmarked_field` | warn | A concept marks no `taxonomy: true` field yet declares a multiselect named `tags`, `freetags`, or `categories`, so the tag index reads empty. Fires once per index build. | `concept`, `field` |
 | `entry.published` | info | A pending entry's edits land on the default branch. | `concept`, `id`, `editor`, `batch` |
 | `entry.discarded` | info | A pending branch is deleted: a discard, or the delete of a never-published entry. | `concept`, `id`, `editor` |
+| `preview.token.minted` | info | `previewMint` issues a public preview link for an entry's pending draft. Never carries the token itself. | `concept`, `id`, `editor`, `expiresAt` |
+| `preview.token.revoked` | info | `previewRevoke` deletes every outstanding preview link for an entry. | `concept`, `id`, `editor`, `count` |
 | `publish.failed` | warn or error | A publish commit fails, with the `commit.failed` shape. | `concept`, `id`, `editor`, `reason` or `error` |
 | `publish.address_collision` | warn | A publish proceeds while another entry already resolves to the same address (last-write-wins, now visible). | `editor`, `address`, `displacedConcept`, `displacedId` |
 | `github.unreachable` | warn | GitHub fails to answer a best-effort read: the admin shell's pending-entries sidebar count (`scope: 'shell'`), the help screen's pending-entries list (`scope: 'help'`), or the publish-success advisories read (`scope: 'publish_advisories'`). Each degrades rather than failing the screen. | `scope` (`shell`, `help`, or `publish_advisories`), `error` |

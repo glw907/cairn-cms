@@ -94,7 +94,9 @@ describe('sveltekit barrel prune', () => {
     expect(memberNames).not.toContain('anthropic');
     expect(memberNames).not.toContain('tidyTimeoutMs');
     // navFilter is the per-request custom-navLayout filter seam, added alongside `tidy`; attention
-    // is the per-session pending-work seam (admin access-and-attention pass), added alongside it.
-    expect(memberNames).toEqual(['tidy', 'navFilter', 'attention']);
+    // is the per-session pending-work seam (admin access-and-attention pass), added alongside it;
+    // preview is the mint action's link-lifetime config (spec part 3, "Public preview for a
+    // non-editor").
+    expect(memberNames).toEqual(['tidy', 'navFilter', 'attention', 'preview']);
   });
 });

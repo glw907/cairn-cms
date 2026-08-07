@@ -24,6 +24,7 @@ export type CairnLogEvent =
   | 'preview.token.minted'
   | 'preview.token.revoked'
   | 'preview.cleanup_failed'
+  | 'preview.rejected'
   | 'publish.failed'
   | 'publish.address_collision'
   | 'github.unreachable'

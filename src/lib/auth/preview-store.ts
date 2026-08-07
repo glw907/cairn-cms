@@ -63,6 +63,23 @@ export async function findPreviewToken(db: D1Database, tokenHash: string): Promi
 }
 
 /**
+ * Look a preview token up by its hash with no expiry predicate, for `previewLoad`'s distinct
+ *  expired-versus-unknown refusal log: `findPreviewToken` already excludes an expired row (the
+ *  ordinary validity check every other caller wants), so a miss there cannot by itself tell "this
+ *  hash never existed" from "this hash expired". This reads the same row through the same key with
+ *  the predicate removed, so a caller that already knows `findPreviewToken` missed can compare the
+ *  returned row's `expiresAt` against the clock itself. `findPreviewToken` is unchanged and stays
+ *  the sole authority for "is this token currently valid".
+ */
+export async function findPreviewTokenAnyExpiry(db: D1Database, tokenHash: string): Promise<PreviewTokenRow | null> {
+  const row = await db
+    .prepare('SELECT concept, entry_id, editor, expires_at FROM preview_tokens WHERE token_hash = ?')
+    .bind(tokenHash)
+    .first<PreviewTokenCols>();
+  return row ? toPreviewTokenRow(row) : null;
+}
+
+/**
  * Delete every preview token minted for one entry (the revoke action, and the rename/delete/
  * discard lifecycle cleanup). Returns the number of rows removed.
  */

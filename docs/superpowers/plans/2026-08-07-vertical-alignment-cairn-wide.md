@@ -134,15 +134,35 @@ Geoff's before/after; the design-system section is in place; full per-task gate.
 - Modify: `docs/internal/public-design-system.md` (the same mechanics section, Waymark register)
 - Test: the site visual suite (`site-visual.spec.ts`, baselines regenerate on CI, the canonical
   renderer) plus `styleguide.spec.ts` if the styleguide's structure changes
+- Modify: `examples/showcase/e2e/site-visual.spec.ts` — WIDEN to the full five-viewport bar
+  (Geoff, 2026-08-07; see the amendment below)
 
 The engine's public *output* stays design-agnostic: these are chassis mechanics, never
 constraints on a consumer's own `render`. The five-viewport bar holds; composed at 320 and
 2560, never merely unbroken.
 
+**Amendment (Geoff, 2026-08-07): widen the site suite to all five viewports in this task.** The
+suite as committed does not meet the bar it is supposed to enforce: home covers 320, default,
+and 2560 in light plus one dark; article covers 320, 1920, and 2560 in light only; styleguide
+covers light and dark at the default width. Nothing covers 390 or 768, which is exactly where a
+re-composed icon row is most likely to break, so regenerating the nine existing baselines would
+prove the bar without testing it. Task 3 brings `site-visual.spec.ts` to 320/390/768/1440/2560
+across both themes for home, the representative article, and the styleguide. Baselines render on
+CI, the canonical renderer, never locally.
+
+**Deliverable count: six** (recipes, `(site)` chrome, styleguide demonstration, the Waymark doc
+section, the baseline move with its visual-fidelity read, and this suite widening). That is past
+the roughly-four bar and past the five task 2 is capped at, on a task the constraints already
+name as watched. The widening is the cleanest thing to shed if the inventory pushes task 3 over:
+it is chassis-adjacent and self-contained, so it can leave with the declared chassis long-tail
+follow-up without weakening the release-one gate, which rides on the npm-shipped machinery. Take
+that call at dispatch, against task 1's confirmed public-row count, not before.
+
 **Acceptance criteria:** the re-composed public rows measure within task 1's noise floor when
-the probe re-runs; site baselines regenerate on CI and the diffs pass the visual-fidelity read
-with Geoff's before/after; the styleguide demonstrates the recipes; the Waymark doc section is
-in place; full per-task gate.
+the probe re-runs; `site-visual.spec.ts` covers 320/390/768/1440/2560 in both themes for home,
+article, and styleguide; site baselines regenerate on CI and the diffs pass the visual-fidelity
+read with Geoff's before/after; the styleguide demonstrates the recipes; the Waymark doc section
+is in place; full per-task gate.
 
 ### Task 4: the tripwire (`cairn-audit` rendered rule)
 

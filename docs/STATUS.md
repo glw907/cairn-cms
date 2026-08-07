@@ -31,9 +31,13 @@ promotion branch and once on `main`; tag `v0.94.0` keeps the promotion commit al
 Geoff). The merge to that repo's `main` and the deploy run in ASC's own session per its
 STATUS; nothing in cairn waits on them.
 
-**Next consumer action:** migrate `907-life` and `ecxc-ski` off the recipe ASC's migration
-wrote, each resolving on its own caret, and bump `cairn-pub` off `rc.1` (its saves and
-publishes stay blocked on the GitHub App installation item below; the version bump is not).
+**The remaining consumer migrations WAIT for release one (Geoff, 2026-08-07).** The vertical
+alignment pass holds unpublished, so migrating now would make `907-life`, `ecxc-ski`, and
+`cairn-pub` cross twice (to `0.94.0`, then again for the fix). Order: vertical alignment pass
+→ release one → each site migrates ONCE, landing history/revert, preview, and the alignment
+machinery in a single crossing, with the upgrade guide's `0.92.0` geometry note and the audit
+tripwire in place when they cross the register flip. (cairn-pub's saves and publishes stay
+blocked on the GitHub App installation item below regardless; its migration is not.)
 
 **One finding came back with the verification**, filed to `ROADMAP.md`'s Now tier rather than left
 in a report: the stacked register drops a field's control by the label's height, so a bare sibling
@@ -53,18 +57,21 @@ the live admin smoke and its transcript are in the post-mortem). Both hold under
 the discard nuance, is
 [`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md).
 
-**RELEASE ONE now gates on one more pass: field-row vertical alignment** (Geoff, 2026-08-06:
-the beta does not ship with the alignment class unanswered). The plan is committed at
-[`2026-08-07-field-row-alignment.md`](superpowers/plans/2026-08-07-field-row-alignment.md); it
-answers BOTH halves of the one-class finding above (the structural `FieldRow` recipe + engine
-sweep + `cairn-audit` vertical rule, and the optical `text-box-trim` silent default), closes
-the ROADMAP both-axes entry, and adds the retroactive `0.92.0` geometry note to the upgrade
-guide. It runs on a fresh worktree off `main` in a fresh Opus 5 session, standard method.
-Resume prompt: "Execute the field-row alignment plan at
-docs/superpowers/plans/2026-08-07-field-row-alignment.md via cairn-pass; the plan is committed
-on main; work a fresh worktree off main. Task 1 moves the approved admin visual baseline
-(text-box-trim), so its diffs run through the visual-fidelity read with Geoff's before/after."
-The preview worktree (`.claude/worktrees/preview`) is merged and can be pruned.
+**RELEASE ONE gates on the vertical alignment pass, which is now the IMMEDIATE next action**
+(Geoff, 2026-08-06/07: the beta does not ship with the alignment class unanswered, and the
+class is more pervasive than field rows). The plan, widened 2026-08-07 from the earlier
+field-row draft, is
+[`2026-08-07-vertical-alignment.md`](superpowers/plans/2026-08-07-vertical-alignment.md): a
+MEASURED inventory across the admin's rendered screens first (glyph-box centers, not element
+boxes; every flex row, the icon-text and mixed-line-height classes included), then
+engine-owned recipes (`FieldRow`, whatever row classes the inventory confirms, the
+`text-box-trim` silent default), the generalized `cairn-audit` vertical rule, and the
+retroactive `0.92.0` geometry note. The inventory sizes the pass; the sizing rule applies
+from the first split. It runs on a fresh worktree off `main` in a fresh Opus 5 session,
+standard method. Resume prompt: "Execute the vertical alignment plan at
+docs/superpowers/plans/2026-08-07-vertical-alignment.md via cairn-pass; the plan is committed
+on main; work a fresh worktree off main. Task 2 moves the approved admin visual baseline, so
+its diffs run through the visual-fidelity read with Geoff's before/after."
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to

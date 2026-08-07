@@ -98,6 +98,17 @@ no gate short of a started Worker could give. The 60 remaining failures are all
 `toHaveScreenshot` diffs against baselines the branch could never regenerate while the Worker
 refused to start, and none is a startup or import failure.
 
+**Amendment, 2026-08-07: `0.94.0` stable published and the site moved to `^0.94.0`.** The exact
+rc.2 pin existed only because a caret range never resolves a prerelease. With stable on the
+registry as `latest`, the site flipped the pin (aksailingclub-org `8076b00`, merged in PR #3),
+regenerated the lockfile to resolve `0.94.0`, and verified a clean `npm ci` against the registry
+artifact: the installed exports still read `types > worker > browser > default` on both subpaths,
+and only the version-cut commit separates rc.2 from stable. Every gate re-ran green — `check`,
+2057 tests, `build`, the full Playwright suite against the CI-canonical baselines, rendered
+`cairn-audit` at 0 errors on 12 authenticated pages, `cairn-doctor` unchanged — and the site
+deployed to its dev host with a live smoke exercising both subpaths server-side on the deployed
+Worker. The walk this report records is complete.
+
 One shape the four seams do not cover, worth recording rather than filing: this site's
 `portalAction` wrapper guards `/my-account/**` writes for a **member** session, which is not a
 cairn editor at all. `createSectionAction` composes `adminAction`, so it serves the admin audience

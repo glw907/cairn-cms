@@ -230,3 +230,56 @@ scope and why.
 
 **Acceptance criteria:** all four doc gates green; the changelog entry carries
 `Consumers must: nothing` with the adopter-only framing; Vale clean on the published arms.
+
+---
+
+## Post-mortem (pass executed 2026-08-06)
+
+**Shipped, all additive, on worktree `history-revert`, sixteen commits.** `Backend.listCommits`
+plus `BackendCommit`; `BranchExistsError` thrown identically by both backends on a createBranch
+collision; `historyLoad` with `HistoryData`/`HistoryEntry` (grown by `head`, the revert form's
+staleness comparand); the facade `history` view and `CairnHistory` screen with its revert forms;
+`revertAction` with the full `RevertFailure` family; `commit.reverted`; docs across all four arms,
+the changelog's new `## Unreleased` window, and the ROADMAP updates (entry-history item consumed,
+undelete filed under Later).
+
+**Two review layers earned their keep.** The per-dispatch diff review caught the 422-to-collision
+mapping being too broad (only "already exists" bodies map now) and the `expectedHead` comparand
+drifting off the plan's wording (later strengthened again by the workflow gate to `createBranch`'s
+own returned sha, which is the correct anchor; the test double's ref-create had to be corrected to
+GitHub's real create-at-sha semantics to prove it). The adversarial workflow gate (4 Opus lenses,
+55 raw findings, 43 confirmed after per-finding adversarial verification, 12 refuted) found one
+true blocker the whole suite missed: every revert refusal was computed and never rendered, since
+`CairnHistory` took no `form` result. Four fix rounds landed: refusal rendering plus
+refuse-in-place for delete-commit shas; the createBranch-returns-sha race fix, orphan-branch
+cleanup, dev-backend sha replay, `commit.failed` logging, null-trailer hardening; the screen
+polish batch (per-row button names, the new-entry link guard, UTC pinning, mobile date stacking,
+"last saved" honesty, empty-state copy, the history breadcrumb leaf); and the changelog
+corrections (the save-race overclaim dropped, the custom-`Backend` implementor line added).
+
+**Decisions locked in execution.** `history_stale` compares the whole default-branch head, so any
+publish anywhere refuses a pending revert: reviewers flagged the breadth, but it is the ratified
+spec's own design and stands (an entry-scoped comparand is a future refinement if editors hit it).
+The draft row's `startedAt` field keeps its reserved name while every label says "last saved,"
+which is what the value is. The link/include revert advisory the spec's prose mentions was
+deliberately scoped out and is filed in the friction log with a candidate fix. Task 1's plan-time
+verification ran live: the commits API path filter works under an App installation token, and an
+unknown path answers 200 `[]`.
+
+**Verified.** Per-task and per-fix-round full gates; final tip: `npm run check` 0/0 (1588 files),
+`npm test` exit 0 (5090 tests), `check:comments`, `check:snippets`, `check:surface`,
+`check:reference:signatures` all green by name; from-scratch worktree showcase install, then the
+consumer build and `CI=1` e2e against this branch's engine, 122 passed. Live smoke against a real
+Worker: guard behavior (anon 303/login 200/authed 307), the history screen rendering with its own
+`History` title and breadcrumb, the corrected empty-state copy, the 404 body for an unknown id
+(HTTP status flattened to 200 by the known upstream kit#12987 carry-forward), and a live save
+through the new createBranch path. The in-browser revert click stays a user step per the smoke
+doc's own posture; the action's semantics are covered by 14 integration tests including the
+revert-then-publish round trip and both collision entry points.
+
+**For pass two (preview).** The `history-revert` merge carries `Backend.createBranch` returning
+its creation sha; preview's plan predates that and should consume it wherever it creates branches.
+The review-gate shape (find with pinned reviewer lenses, adversarially verify each finding, then
+grouped fix rounds) cost roughly one extra round trip and caught a blocker plus fourteen real
+issues; recommend the same shape, with pass two's mandatory pre-dispatch security round riding
+task 0 as planned.

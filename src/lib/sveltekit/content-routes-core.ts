@@ -47,6 +47,7 @@ import type { CairnEvent, HistoryData, HistoryEntry, RevertFailure } from './typ
 import { requireDb, requireOrigin } from '../env.js';
 import { deletePreviewTokens } from '../auth/preview-store.js';
 import { mintPreviewToken } from './preview.js';
+import { CairnError } from '../diagnostics/index.js';
 
 // The advisory notice types are defined alongside the cross-branch address index in the content
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
@@ -333,12 +334,15 @@ export interface CreateFailure {
 }
 
 /**
- * A refused preview mint: `fail(400)` when the entry carries no pending draft to share, or
- *  `fail(500)` when `AUTH_DB` is missing the `preview_tokens` table (migrations/0003_preview.sql
- *  not yet applied), an actionable message naming the fix rather than a raw D1 error.
+ * A refused preview mint or revoke: `fail(400)` when a mint's entry carries no pending draft to
+ *  share, or `fail(500)` when `AUTH_DB` is missing the `preview_tokens` table
+ *  (migrations/0003_preview.sql not yet applied), an actionable message naming the fix rather
+ *  than a raw D1 error. Both `previewMintAction` and `previewRevokeAction` answer the missing-
+ *  table case with this same shape, since an upgraded, non-adopting site still ships the share
+ *  affordance to every editor.
  */
 export interface PreviewMintFailure {
-  /** The one-line human summary the edit screen's share panel shows on a refused mint. */
+  /** The one-line human summary the edit screen's share panel shows on a refused mint or revoke. */
   error: string;
 }
 
@@ -460,22 +464,46 @@ function requireEntryFromParams(runtime: CairnRuntime, event: CairnEvent): { edi
 
 /**
  * Best-effort clear of every preview-token row for one entry, called after delete, discard, and
- *  rename (keyed to the OLD id, since a rename changes the entry's address). A site that has not
- *  wired `AUTH_DB` for this action's platform, or has not yet applied
- *  migrations/0003_preview.sql (the preview feature is additive), must not lose its existing
- *  delete/rename/discard behavior over a table or binding it may never need, so any failure here
- *  is swallowed, mirroring the best-effort branch-delete cleanup elsewhere in this module: the
- *  primary action has already committed (or, for discard, proceeds regardless) by the time this
- *  runs, so a straggler preview-token row is the lesser evil. Publish deliberately never calls
- *  this: the ended page needs the row to outlive the branch, a stated coupling, not an oversight.
+ *  rename (keyed to the OLD id, since a rename changes the entry's address). Two-tier failure
+ *  handling: a missing `AUTH_DB` binding (a `CairnError` whose `conditionId` is
+ *  `config.bindings-missing`, the same narrowing `media-route.ts` uses) or a missing
+ *  `preview_tokens` table (a "no such table" D1 error) are the normal state for a site that has
+ *  not adopted the preview feature yet, since the migration is additive, so both are silent: a
+ *  site with neither loses no existing delete/rename/discard behavior over a table or binding it
+ *  may never need. Any OTHER failure (a transient D1 fault on a MIGRATED site with live tokens) is
+ *  still swallowed, since the primary action has already committed (or, for discard, proceeds
+ *  regardless) by the time this runs and failing it outright would be worse, but it logs
+ *  `preview.cleanup_failed` so a stale row, the exact id-reuse collision this cleanup exists to
+ *  close, is not silently invisible to an operator. The logged `reason` is the error's stringified
+ *  message; a store-level delete keyed by concept and id carries no token, so this cannot leak
+ *  one. Publish deliberately never calls this: the ended page needs the row to outlive the branch,
+ *  a stated coupling, not an oversight.
  */
 async function clearPreviewTokens(event: CairnEvent, concept: ConceptDescriptor, id: string): Promise<void> {
   try {
     const db = requireDb(event.platform?.env ?? {});
     await deletePreviewTokens(db, concept.id, id);
-  } catch {
-    // Best-effort: see the doc comment above.
+  } catch (err) {
+    if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') return;
+    if (/no such table/i.test(String(err))) return;
+    log.warn('preview.cleanup_failed', { concept: concept.id, id, reason: String(err) });
   }
+}
+
+/** True for a D1 error whose message names a missing table (SQLite's own "no such table" text). */
+function isMissingTableError(err: unknown): boolean {
+  return /no such table/i.test(String(err));
+}
+
+/**
+ * The actionable refusal both `previewMintAction` and `previewRevokeAction` answer when
+ *  `AUTH_DB` is missing the `preview_tokens` table (migrations/0003_preview.sql not yet applied),
+ *  naming the fix rather than surfacing a raw D1 error.
+ */
+function missingPreviewTableFailure(): ActionFailure<PreviewMintFailure> {
+  return fail(500, {
+    error: 'The preview_tokens table is missing. Apply migrations/0003_preview.sql to AUTH_DB, then try again.',
+  } satisfies PreviewMintFailure);
 }
 
 /**
@@ -1985,11 +2013,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         editor: editor.email,
       }));
     } catch (err) {
-      if (/no such table/i.test(String(err))) {
-        return fail(500, {
-          error: 'The preview_tokens table is missing. Apply migrations/0003_preview.sql to AUTH_DB, then try again.',
-        } satisfies PreviewMintFailure);
-      }
+      if (isMissingTableError(err)) return missingPreviewTableFailure();
       throw err;
     }
 
@@ -2007,12 +2031,20 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    * Revoke every outstanding preview link for an entry: one delete by concept and id, the
    *  mis-shared-link remedy. Same entry-scoped authorization as minting, `requireEntryFromParams`
    *  as the FIRST statement. Idempotent: revoking with no minted links succeeds with a count of
-   *  zero.
+   *  zero. The engine ships this affordance to every upgraded site's edit screen regardless of
+   *  adoption, so a missing `preview_tokens` table answers the same actionable refusal minting
+   *  does, naming the migration, rather than a raw D1 error.
    */
-  async function previewRevokeAction(event: CairnEvent): Promise<{ count: number }> {
+  async function previewRevokeAction(event: CairnEvent): Promise<ActionFailure<PreviewMintFailure> | { count: number }> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const db = requireDb(event.platform?.env ?? {});
-    const count = await deletePreviewTokens(db, concept.id, id);
+    let count: number;
+    try {
+      count = await deletePreviewTokens(db, concept.id, id);
+    } catch (err) {
+      if (isMissingTableError(err)) return missingPreviewTableFailure();
+      throw err;
+    }
     log.info('preview.token.revoked', { concept: concept.id, id, editor: editor.email, count });
     return { count };
   }

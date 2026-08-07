@@ -17,6 +17,22 @@ import { defineAccess } from '../../lib/auth/access.js';
 import { runtime as baseRuntime, postsConcept, contentEvent, expectRedirect, expectHttpError } from '../unit/_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { PreviewMintFailure } from '../../lib/sveltekit/content-routes.js';
+import type { D1Database } from '@cloudflare/workers-types';
+
+/** A minimal D1Database double whose every prepared statement's `run()` throws `message`, for
+ *  proving clearPreviewTokens's two-tier catch against a non-benign D1 fault without corrupting
+ *  the real harness database. */
+function throwingDb(message: string): D1Database {
+  return {
+    prepare: () => ({
+      bind: () => ({
+        run: async () => {
+          throw new Error(message);
+        },
+      }),
+    }),
+  } as unknown as D1Database;
+}
 
 const db = env.AUTH_DB;
 
@@ -229,6 +245,63 @@ describe('previewRevokeAction', () => {
     const captured = await records(() => routes.previewRevokeAction(actionEvent(ID) as never));
     const record = captured.find((r) => r.event === 'preview.token.revoked');
     expect(record).toMatchObject({ concept: 'posts', id: ID, editor: 'ed@t', count: 1 });
+  });
+
+  it('answers the same actionable failure as mint when the table is missing (ships to every upgraded site)', async () => {
+    const routes = createContentRoutes(runtime());
+    await db.exec('DROP TABLE preview_tokens');
+    try {
+      const result = (await routes.previewRevokeAction(actionEvent(ID) as never)) as unknown as {
+        status: number;
+        data: PreviewMintFailure;
+      };
+      expect(result.status).toBe(500);
+      expect(result.data.error).toContain('migrations/0003_preview.sql');
+    } finally {
+      await db.exec(
+        'CREATE TABLE preview_tokens (token_hash TEXT PRIMARY KEY, concept TEXT NOT NULL, entry_id TEXT NOT NULL, editor TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL)',
+      );
+    }
+  });
+});
+
+describe('clearPreviewTokens (two-tier failure handling, discardAction as the vehicle)', () => {
+  function ghWithBranch(): GithubDouble {
+    return new GithubDouble({ main: {}, [BRANCH]: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody' } });
+  }
+
+  it('a missing-table error is silent: no preview.cleanup_failed record, and the action still succeeds', async () => {
+    ghWithBranch().install();
+    const routes = createContentRoutes(runtime());
+    const event = {
+      ...actionEvent(ID),
+      platform: { env: { AUTH_DB: throwingDb('no such table: preview_tokens'), PUBLIC_ORIGIN: ORIGIN } },
+    };
+    let location = '';
+    const captured = await records(async () => {
+      const result = await expectRedirect(() => routes.discardAction(event as never));
+      location = result.location;
+    });
+    expect(location).toBe('/admin/posts');
+    expect(captured.some((r) => r.event === 'preview.cleanup_failed')).toBe(false);
+  });
+
+  it('a non-benign D1 error logs preview.cleanup_failed, and the action still succeeds', async () => {
+    ghWithBranch().install();
+    const routes = createContentRoutes(runtime());
+    const event = {
+      ...actionEvent(ID),
+      platform: { env: { AUTH_DB: throwingDb('D1_ERROR: disk I/O error'), PUBLIC_ORIGIN: ORIGIN } },
+    };
+    let location = '';
+    const captured = await records(async () => {
+      const result = await expectRedirect(() => routes.discardAction(event as never));
+      location = result.location;
+    });
+    expect(location).toBe('/admin/posts');
+    const record = captured.find((r) => r.event === 'preview.cleanup_failed');
+    expect(record).toMatchObject({ concept: 'posts', id: ID });
+    expect(String(record?.reason)).toContain('disk I/O error');
   });
 });
 

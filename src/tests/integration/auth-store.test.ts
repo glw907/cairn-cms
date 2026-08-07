@@ -210,6 +210,36 @@ describe('preview-token cascade (the third credential class)', () => {
   });
 });
 
+describe('editor removal survives a site that has not applied migrations/0003_preview.sql', () => {
+  const RECREATE_PREVIEW_TOKENS =
+    'CREATE TABLE preview_tokens (token_hash TEXT PRIMARY KEY, concept TEXT NOT NULL, entry_id TEXT NOT NULL, editor TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL)';
+
+  it('deleteEditor still removes the editor and their session with preview_tokens missing', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    await createSession(db, 'sid-nomig', 'ed@x.dev', Date.now() + 10_000, Date.now());
+    await db.exec('DROP TABLE preview_tokens');
+    try {
+      await deleteEditor(db, 'ed@x.dev');
+      expect(await findEditor(db, 'ed@x.dev')).toBeNull();
+      expect(await resolveSession(db, 'sid-nomig', Date.now())).toBeNull();
+    } finally {
+      await db.exec(RECREATE_PREVIEW_TOKENS);
+    }
+  });
+
+  it('removeOwnerIfNotLast still removes the owner with preview_tokens missing', async () => {
+    await seedEditor('a@x.dev', 'A', 'owner');
+    await seedEditor('b@x.dev', 'B', 'owner');
+    await db.exec('DROP TABLE preview_tokens');
+    try {
+      expect(await removeOwnerIfNotLast(db, 'a@x.dev', ['owner'])).toBe(true);
+      expect(await findEditor(db, 'a@x.dev')).toBeNull();
+    } finally {
+      await db.exec(RECREATE_PREVIEW_TOKENS);
+    }
+  });
+});
+
 describe('email normalization (the store owns it)', () => {
   it('stores a mixed-case insert under its normalized email', async () => {
     await insertEditor(db, '  Backup@Site.COM ', 'Backup', 'editor', Date.now());

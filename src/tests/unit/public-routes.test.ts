@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { createPublicRoutes } from '../../lib/delivery/public-routes.js';
+import { createPublicRoutes, composeEntryData } from '../../lib/delivery/public-routes.js';
 import { log } from '../../lib/log/index.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
@@ -295,6 +295,102 @@ describe('createPublicRoutes entryLoad', () => {
     expect(data.html).toContain('Our address is 12 Harbor Way.');
     expect(data.html).not.toContain('cairn-fragment-boundary');
     expect(data.html).not.toContain('From “');
+  });
+});
+
+describe('composeEntryData', () => {
+  const config = {
+    site,
+    render: ({ body }: { body: string }) => Promise.resolve(`<r>${body.trim()}</r>`),
+    origin: 'https://example.com',
+    siteName: 'Test',
+    description: 'Test description.',
+  };
+
+  it('produces output identical to entryLoad when called with no overrides', async () => {
+    const routes = createPublicRoutes(config);
+    const entry = site.byPermalink('/2026/02/01/a')!;
+    const viaLoad = await routes.entryLoad({ url: new URL('https://example.com/2026/02/01/a') });
+    const viaCompose = await composeEntryData(config, entry);
+    expect(viaCompose).toEqual(viaLoad);
+  });
+
+  it('substitutes the link resolver override in place of the build-backed resolver', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const linkSite = createSiteResolver([
+      { descriptor: pages, index: createContentIndex([
+        { path: '/g/home.md', raw: '---\ntitle: Home\n---\n\n[about](cairn:pages/about)' },
+      ], pages) },
+    ]);
+    const linkConfig = {
+      site: linkSite,
+      render: ({ body, resolve, resolveMedia }: { body: string; resolve?: (ref: { concept: string; id: string }) => string | undefined; resolveMedia?: unknown }) =>
+        renderMarkdown(body, { resolve, resolveMedia: resolveMedia as never }),
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+    };
+    const home = linkSite.byPermalink('/home')!;
+
+    // The build-backed resolver throws on this dangling target; a marking override resolves it instead.
+    const data = await composeEntryData(linkConfig, home, {
+      resolveLink: () => '/about-overridden',
+    });
+    expect(data.html).toContain('href="/about-overridden"');
+  });
+
+  it('substitutes the fragment resolver override in place of the build-backed resolver', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const [fragments] = normalizeConcepts({
+      fragments: { dir: 'f', routing: 'embedded', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+    });
+    const fragmentSite = createSiteResolver([
+      { descriptor: pages, index: createContentIndex([
+        { path: '/g/about.md', raw: '---\ntitle: About\n---\n\n::include{fragment="address"}' },
+      ], pages) },
+      { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nAddress body.' }], fragments) },
+    ]);
+    const fragmentConfig = {
+      site: fragmentSite,
+      render: ({ body, resolveFragment }: { body: string; resolveFragment?: (id: string) => string | undefined }) =>
+        renderMarkdown(body, { resolveFragment }),
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+    };
+    const about = fragmentSite.byPermalink('/about')!;
+
+    const data = await composeEntryData(fragmentConfig, about, {
+      resolveFragment: (id) => (id === 'address' ? 'Overridden address body.' : undefined),
+    });
+    expect(data.html).toContain('Overridden address body.');
+  });
+
+  it('has the hero derivation consume the resolveMedia override, not config.resolveMedia', async () => {
+    const [heroPages] = normalizeConcepts({
+      pages: { dir: 'g', fields: fieldset({ image: fields.image({ label: 'Hero' }) }) },
+    });
+    const heroSite = createSiteResolver([
+      { descriptor: heroPages, index: createContentIndex([
+        { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: x\n---\n\nHero body.' },
+      ], heroPages) },
+    ]);
+    const heroConfig = {
+      site: heroSite,
+      render: ({ body }: { body: string }) => Promise.resolve(`<r>${body.trim()}</r>`),
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+      // config.resolveMedia never resolves this hash; the override does instead.
+      resolveMedia: () => undefined,
+    };
+    const hero = heroSite.byPermalink('/hero')!;
+
+    const data = await composeEntryData(heroConfig, hero, {
+      resolveMedia: (ref: { hash: string }) =>
+        ref.hash === '0123456789abcdef' ? '/media/overridden.webp' : undefined,
+    });
+    expect(data.heroImage?.url).toBe('/media/overridden.webp');
   });
 });
 

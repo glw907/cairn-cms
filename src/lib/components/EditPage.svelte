@@ -70,9 +70,8 @@ persistent "?" carries Markdown help, design-arc D2).
   import type { IconSet } from '../render/glyph.js';
   import type { ContentFormFailure, EditData } from '../sveltekit/content-routes.js';
   import type { SiteRender } from '../content/types.js';
-  import { manifestLinkResolver } from '../content/manifest.js';
+  import { manifestLinkResolver, manifestFragmentResolver } from '../content/manifest.js';
   import { manifestMediaResolver } from '../render/resolve-media.js';
-  import type { PreviewFragmentResolve } from '../render/resolve-include.js';
   import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
@@ -1432,15 +1431,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // to know this is the preview's own resolver (never the build's), so the spliced blocks gain the
   // preview-only boundary cue (ratified 4B). A resolver-not-found title falls back to the id inside
   // resolve-include.ts, not here, so both paths share the same fallback rule.
-  const resolveFragment = $derived.by(() => {
-    const targets = data.fragmentTargets;
-    if (!targets) return undefined;
-    const byId = new Map(targets.map((t) => [t.id, t.body]));
-    const titleById = new Map(targets.map((t) => [t.id, t.title]));
-    const resolve: PreviewFragmentResolve = (id: string) => byId.get(id);
-    resolve.previewTitle = (id: string) => titleById.get(id);
-    return resolve;
-  });
+  const resolveFragment = $derived(manifestFragmentResolver(data.fragmentTargets));
 
   // The picker's library, the committed projection merged with this session's uploaded records,
   // keyed by content hash. An uploaded record overrides a committed entry on a hash match (the same

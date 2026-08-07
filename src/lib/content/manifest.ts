@@ -12,6 +12,7 @@ import { extractReferenceEdges, type ReferenceEdge } from './references.js';
 import { extractIncludes } from './includes.js';
 import { resolveTaxonomyField, coerceTags } from './taxonomy.js';
 import type { ConceptDescriptor } from './types.js';
+import type { PreviewFragmentResolve } from '../render/resolve-include.js';
 
 /** One entry's projection: its identity, routing, draft flag, and outbound cairn: edges. */
 export interface ManifestEntry {
@@ -537,4 +538,25 @@ export function deriveTagUsage(manifest: Manifest, value: string): TagUsageRow[]
 export function manifestLinkResolver(targets: { concept: string; id: string; permalink: string }[]): LinkResolve {
   const byKey = new Map(targets.map((t) => [`${t.concept}/${t.id}`, t.permalink]));
   return (ref) => byKey.get(`${ref.concept}/${ref.id}`);
+}
+
+/**
+ * The fragment analog of {@link manifestLinkResolver}, for the admin preview's `::include`
+ *  resolution. `null` targets (nothing here can include a fragment: no fragments concept
+ *  declared, or this entry is itself a fragment) yields no resolver at all, leaving every
+ *  include directive unresolved, the same inert literal-prose fallback the build ships for
+ *  those bodies. A resolved fragment's raw markdown body is returned for a hit; a dangling id
+ *  returns undefined, which the render step turns into the missing-fragment notice. The
+ *  returned resolver's `previewTitle` looks up the same target's title for the preview-only
+ *  boundary cue (ratified 4B); the build-time resolver carries no such property.
+ */
+export function manifestFragmentResolver(
+  targets: { id: string; title: string; body: string }[] | null,
+): PreviewFragmentResolve | undefined {
+  if (!targets) return undefined;
+  const byId = new Map(targets.map((t) => [t.id, t.body]));
+  const titleById = new Map(targets.map((t) => [t.id, t.title]));
+  const resolve: PreviewFragmentResolve = (id: string) => byId.get(id);
+  resolve.previewTitle = (id: string) => titleById.get(id);
+  return resolve;
 }

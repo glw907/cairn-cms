@@ -823,7 +823,10 @@ declare class SiteConfigError extends Error {
 signals a branch-create collision: another editor's draft already holds the name, or a repeated
 attempt raced itself. Both the GitHub App backend and the packaged dev backend throw it identically
 from `Backend.createBranch`, so a caller (`revertAction` is the one built-in caller today) catches
-the collision as a typed refusal instead of a raw 500. `SiteConfigError`
+the collision as a typed refusal instead of a raw 500. `Backend.createBranch` resolves to the sha
+it created the branch at, so a caller that needs a fail-closed `commit` right after creation can
+pin `expectedHead` to that returned sha rather than a sha it read earlier, which the branch's
+own source ref may have moved past by the time the branch actually landed. `SiteConfigError`
 is thrown by `parseSiteConfig` on a malformed root, and its `conditionId` (always
 `config.site-config-invalid`) names the registered diagnostic condition the fault maps to.
 

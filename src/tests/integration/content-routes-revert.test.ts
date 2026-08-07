@@ -89,6 +89,50 @@ function injectDraftDuringBranchCreate(
   });
 }
 
+/** Stub fetch so a publish of an unrelated entry lands on main right between revertAction's own
+ *  staleness read of main's head (step 2) and `createBranch`'s internal re-read of that same ref
+ *  (several round trips later): the second GET for main's head is the one createBranch makes, so
+ *  landing the publish just before it resolves exercises the exact window the false-conflict bug
+ *  occupied. */
+function injectPublishDuringCreateBranchReread(gh: GithubDouble): void {
+  const double = globalThis.fetch;
+  let mainHeadReads = 0;
+  vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input);
+    const method = (init?.method ?? 'GET').toUpperCase();
+    if (method === 'GET' && /\/git\/ref\/heads\/main$/.test(new URL(url).pathname)) {
+      mainHeadReads++;
+      if (mainHeadReads === 2) gh.commit('main', 'src/content/posts/unrelated.md', 'an unrelated publish');
+    }
+    return double(input, init);
+  });
+}
+
+/** Stub fetch so the revert commit's own tree-create call fails with a plain 500, an unexpected
+ *  non-conflict failure rather than a lost-head race, right after `createBranch` has landed for
+ *  `branch`. Exercises the best-effort branch cleanup on a non-conflict commit failure. */
+function injectNonConflictCommitFailure(gh: GithubDouble, branch: string): void {
+  const double = globalThis.fetch;
+  let branchCreated = false;
+  let failed = false;
+  vi.stubGlobal('fetch', async (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input instanceof Request ? input.url : input);
+    const method = (init?.method ?? 'GET').toUpperCase();
+    const pathname = new URL(url).pathname;
+    if (!branchCreated && method === 'POST' && /\/git\/refs$/.test(pathname)) {
+      const raw = init?.body;
+      const parsed = typeof raw === 'string' && raw ? (JSON.parse(raw) as { ref?: string }) : undefined;
+      if (String(parsed?.ref ?? '').endsWith(branch)) branchCreated = true;
+      return double(input, init);
+    }
+    if (branchCreated && !failed && method === 'POST' && /\/git\/trees$/.test(pathname)) {
+      failed = true;
+      return new Response('Internal Server Error', { status: 500 });
+    }
+    return double(input, init);
+  });
+}
+
 afterEach(() => vi.restoreAllMocks());
 
 describe('revertAction', () => {
@@ -161,6 +205,43 @@ describe('revertAction', () => {
     expect(result.status).toBe(409);
     expect(result.data).toMatchObject({ reason: 'draft_exists', draftEditor: 'Racer' });
     expect((result.data as { draftStartedAt: string }).draftStartedAt).toBeTruthy();
+  });
+
+  it('does not falsely conflict when a publish lands between the staleness check and createBranch', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    gh.install();
+    const routes = createContentRoutes(echoRuntime());
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
+    const history = await routes.historyLoad(historyEvent(ID) as never);
+
+    injectPublishDuringCreateBranchReread(gh);
+
+    // createBranch's own internal re-read of main's head lands a moment after revertAction's own
+    // staleness read, so createBranch actually creates the branch at a NEWER main head than the
+    // one this request validated. That must not read back as a conflict: revertAction pins its
+    // fail-closed commit to the sha createBranch itself returned, not the stale earlier read.
+    const { location } = await expectRedirect(() =>
+      routes.revertAction(revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }) as never),
+    );
+    expect(location).toBe(`/admin/posts/${ID}?saved=1`);
+    expect(gh.read(BRANCH, ENTRY_PATH)).toContain('title: V1');
+  });
+
+  it('best-effort deletes the branch it just created when the revert commit fails for a reason other than conflict', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    gh.install();
+    const routes = createContentRoutes(echoRuntime());
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V1', body: 'version one' }) as never));
+    const history = await routes.historyLoad(historyEvent(ID) as never);
+
+    injectNonConflictCommitFailure(gh, BRANCH);
+
+    await expect(
+      routes.revertAction(revertEvent(ID, { ref: history.entries[0].ref, head: history.head! }) as never),
+    ).rejects.toThrow(/tree create failed/);
+
+    // No orphaned pending branch survives an unexpected, non-conflict commit failure.
+    expect(gh.branches.has(BRANCH)).toBe(false);
   });
 
   it('answers history_stale when main has moved since the history page rendered', async () => {
@@ -320,6 +401,30 @@ describe('revertAction', () => {
     const editData = await routesV2.editLoad(editEventAt(ID, location) as never);
     const notice = editData.advisories.find((a) => a.kind === 'reverted-schema-drift');
     expect(notice?.message).toContain('legacy');
+  });
+
+  it('carries no advisory for description, a builtin frontmatter key the schema never declares', async () => {
+    const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
+    gh.install();
+    const routes = createContentRoutes(echoRuntime());
+    const form = new URLSearchParams();
+    form.append('title', 'V1');
+    form.append('description', 'A hand-written excerpt');
+    form.append('body', 'version one');
+    await expectRedirect(() =>
+      routes.publishAction(
+        contentEvent({ url: `https://t.example/admin/posts/${ID}`, params: { concept: 'posts', id: ID }, form }) as never,
+      ),
+    );
+    await expectRedirect(() => routes.publishAction(actionEvent(ID, { title: 'V2', body: 'version two' }) as never));
+    const history = await routes.historyLoad(historyEvent(ID) as never);
+
+    // Revert to the version that carries `description`, a builtin frontmatter key `manifestEntryFromFile`
+    // and `summarize` both read directly rather than gating on a declared field: never "retired".
+    const { location } = await expectRedirect(() =>
+      routes.revertAction(revertEvent(ID, { ref: history.entries[1].ref, head: history.head! }) as never),
+    );
+    expect(location).toBe(`/admin/posts/${ID}?saved=1`);
   });
 
   it('carries no advisory query param on a plain revert with no schema drift', async () => {

@@ -24,6 +24,7 @@ import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest,
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
 import { isConflict, isBranchExists } from '../github/types.js';
+import { logCommitFailed } from './commit-log.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
@@ -366,9 +367,9 @@ function manifestRow(manifest: Manifest, conceptId: string, id: string): Manifes
  * The frontmatter keys every entry carries regardless of the site's own declared fields: the
  * engine reads these directly (`manifestEntryFromFile`, the list-row summarizer) rather than
  * gating them on a `NamedField`, so they are never "retired" even when a concept declares no
- * field of the same name.
+ * field of the same name. `description` feeds `deriveExcerpt` in both readers the same way.
  */
-const BUILTIN_FRONTMATTER_KEYS = new Set(['title', 'date', 'draft']);
+const BUILTIN_FRONTMATTER_KEYS = new Set(['title', 'date', 'draft', 'description']);
 
 /**
  * The revert schema-drift signals (spec "Part 2: revert", warn-not-refuse): frontmatter keys the
@@ -1060,12 +1061,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Who holds the open draft on `branch` and since when, read from its head commit: `branchHead`
-   * answers a sha and never metadata, so the author and date come from a one-row `listCommits` at
-   * the branch. Null when the branch has no head, and null rather than a throw when its head
-   * commit did not touch this file (unreachable in practice, since every save and revert commits
-   * it). Shared by `historyLoad`'s synthetic draft row and `revertAction`'s collision refusal, so
-   * a refused revert names the same person the history screen shows.
+   * Who holds the open draft on `branch` and since when: `branchHead` answers a sha and never
+   * metadata, so the author and date come from a one-row `listCommits` at the branch. Prefers the
+   * row whose sha matches the branch head exactly; when the head commit itself did not touch this
+   * file, falls back to the newest commit on the branch that did (for an ordinary draft, that is
+   * simply the last save). Null when the branch has no head, or when no commit on the branch ever
+   * touched the file. Shared by `historyLoad`'s synthetic draft row and `revertAction`'s collision
+   * refusal, so a refused revert names the same person the history screen shows.
    */
   async function draftFromBranchHead(
     backend: Backend,
@@ -1965,18 +1967,24 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if ((await backend.branchHead(branch)) !== null) {
       return draftExistsFailure(backend, path, branch);
     }
+    let createdAtSha: string;
     try {
-      await backend.createBranch(branch, backend.defaultBranch);
+      createdAtSha = await backend.createBranch(branch, backend.defaultBranch);
     } catch (err) {
       if (isBranchExists(err)) return draftExistsFailure(backend, path, branch);
       throw err;
     }
 
-    // (5) Fail-closed on the sha the branch was just created at: mainHead, already validated
-    // against the form. Re-reading branchHead here instead would reopen the race this guards
-    // (a save landing between createBranch and the re-read would be read back as the expected
-    // head and then silently overwritten); with mainHead as the comparand, any commit that
-    // sneaks onto the new branch makes this commit conflict, mapped to the collision refusal.
+    // (5) Fail-closed on the sha createBranch actually created the branch at, never the mainHead
+    // read back in (2): createBranch re-reads the default branch's own head internally, several
+    // round trips after (2)'s read, so a publish of any entry landing in that window can move main
+    // between the two reads and make mainHead stale by the time the branch exists. Using
+    // createBranch's own returned sha keeps this commit anchored to the branch's real starting
+    // point, so it never conflicts on a change createBranch itself already absorbed. Re-reading
+    // branchHead here instead would reopen the race this guards (a save landing between
+    // createBranch and the re-read would be read back as the expected head and then silently
+    // overwritten); any commit that sneaks onto the new branch after creation still makes this
+    // commit conflict, mapped to the collision refusal.
     const commitFields = { concept: concept.id, id, editor: editor.email, branch };
     let newSha: string;
     try {
@@ -1985,10 +1993,19 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         [{ path, content: raw }],
         { name: editor.displayName, email: editor.email },
         `Revert ${concept.label.toLowerCase()}: ${id} to ${ref.slice(0, 7)}`,
-        mainHead,
+        createdAtSha,
       );
     } catch (err) {
+      logCommitFailed(commitFields, err);
       if (isConflict(err)) return draftExistsFailure(backend, path, branch);
+      // A non-conflict failure means nothing else touched the branch this request just created;
+      // best-effort delete it so it never lingers as an authorless pending branch in the counts
+      // and publishAll. A failed cleanup swallows here, since the original error is what matters.
+      try {
+        await backend.deleteBranch(branch);
+      } catch {
+        // Best-effort: an orphaned branch is a lesser evil than masking the original error.
+      }
       throw err;
     }
 

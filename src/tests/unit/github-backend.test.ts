@@ -82,12 +82,12 @@ describe('makeGithubBackend live implementation', () => {
     expect(commitPost).toBeDefined();
   });
 
-  it('createBranch resolves the source head with a GET before the refs POST', async () => {
+  it('createBranch resolves the source head with a GET before the refs POST, and returns that sha', async () => {
     const gh = new GithubDouble({ main: { 'a.md': 'x' } });
     gh.install();
     const backend = makeGithubBackend(CONFIG, () => 'test-token');
 
-    await backend.createBranch('cairn/posts/hello', 'main');
+    const sha = await backend.createBranch('cairn/posts/hello', 'main');
 
     const getIdx = gh.calls.findIndex(
       (c) => c.method === 'GET' && /\/git\/ref\/heads\/main$/.test(c.url),
@@ -96,6 +96,7 @@ describe('makeGithubBackend live implementation', () => {
     expect(getIdx).toBeGreaterThanOrEqual(0);
     expect(postIdx).toBeGreaterThan(getIdx);
     expect(gh.branches.has('cairn/posts/hello')).toBe(true);
+    expect(sha).toBe(gh.headSha('cairn/posts/hello'));
   });
 
   it('createBranch throws CommitConflictError when the source branch has no head', async () => {

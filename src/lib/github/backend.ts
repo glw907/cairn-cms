@@ -55,12 +55,20 @@ export interface Backend {
   /**
    * A file's commit history at `ref`, newest first, one request capped at `limit + 1` entries so
    * the caller can set a truncation flag without a second read. A 404 or an empty log returns
-   * `[]`, never throws: an entry with no publish history is a state, not an error.
+   * `[]`, never throws: an entry with no publish history is a state, not an error. The GitHub
+   * provider bounds a page at 100 (the commits API's own `per_page` cap), so `limit` must stay
+   * below 99 there; the engine's own call sites stay far under that bound.
    */
   listCommits(path: string, ref: string, limit: number): Promise<BackendCommit[]>;
 
-  /** Create a branch at another branch's current head. Throws `BranchExistsError` on a collision. */
-  createBranch(name: string, fromBranch: string): Promise<void>;
+  /**
+   * Create a branch at another branch's current head; returns the sha it created the branch at.
+   * Throws `BranchExistsError` on a collision. A caller that needs a fail-closed `commit` right
+   * after creation should pin `expectedHead` to this returned sha rather than a sha it read
+   * earlier: `fromBranch`'s head is re-read inside this call, so an earlier read can be stale by
+   * the time the branch actually lands.
+   */
+  createBranch(name: string, fromBranch: string): Promise<string>;
 
   /** Delete a branch; a missing branch is success. */
   deleteBranch(name: string): Promise<void>;
@@ -137,6 +145,7 @@ export function makeGithubBackend(config: GithubAppConfig, getToken: () => strin
       // error the save path maps to its 500 rather than letting the createBranchRef POST fail raw.
       if (head === null) throw new CommitConflictError(`${fromBranch} (unreadable source)`);
       await createBranchRef(config, name, head, tok);
+      return head;
     },
     async deleteBranch(name) {
       await deleteBranch(config, name, await getToken());

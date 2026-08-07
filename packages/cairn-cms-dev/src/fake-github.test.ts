@@ -114,6 +114,28 @@ test('listCommits answers newest first, bounded at limit + 1, empty for a never-
   expect(await backend.listCommits('src/content/posts/2026-06-unrelated.md', 'main', 25)).toEqual([]);
 });
 
+test('readFile at a recorded commit sha replays that commit\'s content, even after a later commit moved the branch', async () => {
+  const backend = createDevBackend();
+  const path = 'src/content/posts/2026-06-historical-read.md';
+  const author = { name: 'History Editor', email: 'history@showcase.test' };
+
+  const firstSha = await backend.commit('main', [{ path, content: 'first version\n' }], author, 'first');
+  await backend.commit('main', [{ path, content: 'second version\n' }], author, 'second');
+
+  expect(await backend.readFile(path, firstSha)).toBe('first version\n');
+  // The branch head itself still reads the latest content.
+  expect(await backend.readFile(path, 'main')).toBe('second version\n');
+});
+
+test('createBranch resolves to the sha it created the branch at', async () => {
+  const backend = createDevBackend();
+  const branch = 'cairn/posts/2026-06-created-sha';
+
+  const sha = await backend.createBranch(branch, 'main');
+
+  expect(sha).toBe(await backend.branchHead(branch));
+});
+
 test('an empty change set rejects, mirroring the real commitFiles', async () => {
   const backend = createDevBackend();
   await expect(

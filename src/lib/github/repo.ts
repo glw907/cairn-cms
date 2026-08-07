@@ -96,12 +96,16 @@ export function commitsUrl(repo: RepoRef, path: string, ref: string, limit: numb
   return `${API}/repos/${repo.owner}/${repo.repo}/commits?${params.toString()}`;
 }
 
-/** The commits-API entry shape this package reads: the commit sha and its own author/committer trailers. */
+/**
+ * The commits-API entry shape this package reads: the commit sha and its own author/committer
+ * trailers. GitHub's schema types both trailers nullable (an odd, rare row with no recorded
+ * author or committer), so the mapping below degrades rather than reading through a null.
+ */
 interface CommitLogEntry {
   sha: string;
   commit: {
-    author: { name: string; email: string };
-    committer: { date: string };
+    author: { name: string; email: string } | null;
+    committer: { date: string } | null;
   };
 }
 
@@ -111,9 +115,11 @@ interface CommitLogEntry {
  * throws: an entry with no publish history is a state, not a failure to report.
  *
  * Field mapping is deliberate: the author comes from the commit's own author trailer
- * (`commit.author`), always present, never the top-level `author` (the matched GitHub account,
- * null for a magic-link editor, the common case); the date is `commit.committer.date`, when the
- * commit actually landed on `ref`.
+ * (`commit.author`), almost always present and never the top-level `author` (the matched GitHub
+ * account, null for a magic-link editor, the common case); the date is `commit.committer.date`,
+ * when the commit actually landed on `ref`. A null trailer degrades to an empty name, email, or
+ * date rather than throwing; `commitEditorName` (content-routes-core.ts) further degrades an
+ * empty name and email to "unknown" for display.
  */
 export async function fetchCommitLog(
   repo: RepoRef,
@@ -133,8 +139,8 @@ export async function fetchCommitLog(
   const body = (await res.json()) as CommitLogEntry[];
   return body.map((entry) => ({
     ref: entry.sha,
-    author: { name: entry.commit.author.name, email: entry.commit.author.email },
-    date: entry.commit.committer.date,
+    author: { name: entry.commit.author?.name ?? '', email: entry.commit.author?.email ?? '' },
+    date: entry.commit.committer?.date ?? '',
   }));
 }
 

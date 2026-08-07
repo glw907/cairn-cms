@@ -31,7 +31,8 @@ describe('commitsUrl', () => {
  * A recorded GitHub commits-API payload shape (list-commits endpoint), not a live call: two
  * entries, newest first as GitHub itself orders them. The first carries a null top-level `author`
  * (the matched GitHub account), the common case for a magic-link editor whose commit author email
- * has no linked GitHub account; the git trailer under `commit.author` is always present regardless.
+ * has no linked GitHub account; the git trailer under `commit.author` is present on both rows
+ * here, though GitHub's schema types it nullable (see the dedicated null-trailer test below).
  */
 const RECORDED_COMMITS_PAGE = [
   {
@@ -90,6 +91,26 @@ describe('fetchCommitLog', () => {
   it('throws on a non-OK, non-404 response', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('rate limited', { status: 403 }));
     await expect(fetchCommitLog(REPO, 'src/content/posts/hello.md', 'main', 25)).rejects.toThrow(/403/);
+  });
+
+  it('degrades a null commit.author and commit.committer to empty strings rather than throwing', async () => {
+    const payload = [
+      {
+        sha: 'sha-anon',
+        author: null,
+        committer: null,
+        commit: {
+          message: 'A commit with no recorded trailer',
+          author: null,
+          committer: null,
+        },
+      },
+    ];
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
+
+    const entries = await fetchCommitLog(REPO, 'src/content/posts/hello.md', 'main', 25);
+
+    expect(entries).toEqual([{ ref: 'sha-anon', author: { name: '', email: '' }, date: '' }]);
   });
 });
 

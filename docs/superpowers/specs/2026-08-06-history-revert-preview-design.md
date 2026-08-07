@@ -280,7 +280,11 @@ to `preview_tokens`, matching the session and magic-token cascade (an off-boarde
 outstanding links die with their access, while a mere role or access-map change deliberately
 does not retro-revoke, the revoke-all affordance being the remedy); and the missing-table
 state (binding wired, migration unapplied, the likeliest half-configuration) answers the same
-uniform 404 with its own log reason rather than a raw D1 500. The `preview.rejected` reason
+uniform 404 with its own log reason rather than a raw D1 500. One nuance surfaced at execution
+(task 5): "discard clears the entry's token rows" above holds only for a never-published entry,
+where the freed id is what makes the reuse collision possible. Discarding an EDIT of a live
+entry leaves its rows intact, because the ended page this same section requires cannot render
+without them, and no collision exists while the entry still owns its id on the default branch. The `preview.rejected` reason
 vocabulary grows accordingly: `unknown`, `expired`, `branch_gone`, plus `row_invalid` (stored
 concept or id no longer valid against the config), `draft_invalid` (the draft fails its
 descriptor's validation, a state revert-as-draft can legitimately produce, logged distinctly

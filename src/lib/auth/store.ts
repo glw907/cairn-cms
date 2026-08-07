@@ -137,22 +137,34 @@ export async function insertEditor(
 }
 
 /**
+ * The removal cascade's preview-token leg: every link one removed editor minted, keyed by their
+ * already-normalized address. Both {@link deleteEditor} and {@link removeOwnerIfNotLast} call it
+ * after their own session/magic-token batch.
+ *
+ * It runs as its own statement, deliberately outside that batch: `preview_tokens` is additive
+ * (migrations/0003_preview.sql), and every site with `AUTH_DB` wired but that migration unapplied
+ * (today, every consumer site) must still remove an editor cleanly. A single `db.batch()` fails
+ * the WHOLE batch on one statement's "no such table", which would regress that site's editor
+ * removal entirely; a separate statement confines that failure to the one table it names. A
+ * "no such table" here is silently swallowed (the un-migrated normal state has no rows to clear);
+ * any other error rethrows, since the caller's own removal has already committed and this module
+ * stays logger-free, so a genuine D1 fault surfaces to the caller rather than disappearing.
+ */
+async function deleteEditorPreviewTokens(db: D1Database, normalizedEmail: string): Promise<void> {
+  try {
+    await db.prepare('DELETE FROM preview_tokens WHERE editor = ?').bind(normalizedEmail).run();
+  } catch (err) {
+    if (!/no such table/i.test(String(err))) throw err;
+  }
+}
+
+/**
  * Remove an editor and cut their live access: sessions, any pending token, and every preview
  * link they minted go too. A removed editor's outstanding preview links die with their access,
  * the same posture as the session and magic-token cascade; a mere role or access-map change,
  * by contrast, does not retro-revoke a link, and the owner's remedy there is the revoke-all
- * admin affordance.
- *
- * The preview-token delete runs AFTER the session/magic-token/editor batch, as its own
- * statement, deliberately outside it: `preview_tokens` is additive
- * (migrations/0003_preview.sql), and every site with `AUTH_DB` wired but that migration unapplied
- * (today, every consumer site) must still remove an editor cleanly. A single `db.batch()` fails
- * the WHOLE batch on one statement's "no such table", which would regress that site's editor
- * removal entirely; running the delete separately confines that failure to the one table it
- * names. A "no such table" here is silently swallowed (the un-migrated normal state has no rows
- * to clear); any other error rethrows, since the removal above already committed and this
- * function stays logger-free, so a genuine D1 fault surfaces to the caller rather than
- * disappearing.
+ * admin affordance. See {@link deleteEditorPreviewTokens} for why that last delete sits outside
+ * the batch.
  */
 export async function deleteEditor(db: D1Database, email: string): Promise<void> {
   const key = normalizeEmail(email);
@@ -161,11 +173,7 @@ export async function deleteEditor(db: D1Database, email: string): Promise<void>
     db.prepare('DELETE FROM magic_token WHERE email = ?').bind(key),
     db.prepare('DELETE FROM editor WHERE email = ?').bind(key),
   ]);
-  try {
-    await db.prepare('DELETE FROM preview_tokens WHERE editor = ?').bind(key).run();
-  } catch (err) {
-    if (!/no such table/i.test(String(err))) throw err;
-  }
+  await deleteEditorPreviewTokens(db, key);
 }
 
 /**
@@ -174,11 +182,8 @@ export async function deleteEditor(db: D1Database, email: string): Promise<void>
  * allowlist below one owner. `ownerRoles` is the vocabulary's owner-capability name set (see
  * `ownerLevelRoles`), not the literal `'owner'` string, so a site with more than one owner-level
  * role name stays safe. Returns false (and writes nothing) when this is the last owner-capability
- * row. On success the editor's sessions, pending token, and minted preview links all go too (see
- * {@link deleteEditor}); the preview-token delete runs the same way deleteEditor's does, as its
- * own statement AFTER the session/magic-token batch, so a site with `preview_tokens` unmigrated
- * (today, every consumer site) still removes an owner cleanly (see {@link deleteEditor}'s doc for
- * the full reasoning).
+ * row. On success the editor's sessions, pending token, and minted preview links all go too, the
+ * same cascade {@link deleteEditor} runs.
  */
 export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerRoles: string[]): Promise<boolean> {
   if (ownerRoles.length === 0) return false;
@@ -197,11 +202,7 @@ export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerR
     db.prepare('DELETE FROM session WHERE email = ?').bind(key),
     db.prepare('DELETE FROM magic_token WHERE email = ?').bind(key),
   ]);
-  try {
-    await db.prepare('DELETE FROM preview_tokens WHERE editor = ?').bind(key).run();
-  } catch (err) {
-    if (!/no such table/i.test(String(err))) throw err;
-  }
+  await deleteEditorPreviewTokens(db, key);
   return true;
 }
 

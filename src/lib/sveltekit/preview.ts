@@ -172,6 +172,9 @@ function safeParseJson(raw: string | null): unknown {
   }
 }
 
+/** One includable fragment, as `manifestFragmentResolver` takes it: identity, title, raw body. */
+type FragmentBody = { id: string; title: string; body: string };
+
 /** The three resolvers `composeEntryData`'s `overrides` substitutes, built fresh per preview request. */
 interface PreviewResolvers {
   resolveLink: LinkResolve;
@@ -211,7 +214,7 @@ async function buildPreviewResolvers(
   if (fragmentsConcept && concept.id !== FRAGMENTS_CONCEPT_ID) {
     const rows = manifest.entries.filter((e) => e.concept === FRAGMENTS_CONCEPT_ID);
     const bodies = await Promise.all(
-      rows.map(async (row): Promise<{ id: string; title: string; body: string } | null> => {
+      rows.map(async (row): Promise<FragmentBody | null> => {
         try {
           const raw = await backend.readFile(`${fragmentsConcept.dir}/${filenameFromId(row.id)}`, backend.defaultBranch);
           if (raw === null) return null;
@@ -222,7 +225,7 @@ async function buildPreviewResolvers(
         }
       }),
     );
-    const targets = bodies.filter((b): b is { id: string; title: string; body: string } => b !== null);
+    const targets = bodies.filter((b): b is FragmentBody => b !== null);
     const fragmentResolver = manifestFragmentResolver(targets);
     // Never set previewTitle: that boundary cue is EditPage's own in-admin affordance (the
     // resolved fragment gets a quiet "From ..." eyebrow there), not a public-facing signal.

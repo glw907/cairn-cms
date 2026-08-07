@@ -63,6 +63,20 @@ export function createFakeAuthDb(): FakeAuthDb {
   // revoke/lifecycle-cleanup deletes by entry or by editor.
   const previewTokens = new Map<string, PreviewTokenRow>();
 
+  // The scan all three of the table's DELETE statements share (by expiry, by entry, by editor);
+  // each supplies only its own predicate, and the returned count is the D1 `meta.changes` the
+  // store reads back.
+  const deletePreviewTokensWhere = (match: (row: PreviewTokenRow) => boolean): number => {
+    let changes = 0;
+    for (const [hash, row] of previewTokens) {
+      if (match(row)) {
+        previewTokens.delete(hash);
+        changes++;
+      }
+    }
+    return changes;
+  };
+
   function execute(rawSql: string, args: unknown[]): FakeExecResult<FakeRow> {
     const sql = rawSql.replace(/\s+/g, ' ').trim();
     const none: FakeExecResult<FakeRow> = { row: null, rows: [], changes: 0 };
@@ -137,14 +151,7 @@ export function createFakeAuthDb(): FakeAuthDb {
     // insertPreviewToken's expiry sweep, the first statement of its batch.
     if (sql.startsWith('DELETE FROM preview_tokens WHERE expires_at <= ?')) {
       const now = Number(args[0]);
-      let changes = 0;
-      for (const [hash, row] of previewTokens) {
-        if (row.expires_at <= now) {
-          previewTokens.delete(hash);
-          changes++;
-        }
-      }
-      return { ...none, changes };
+      return { ...none, changes: deletePreviewTokensWhere((row) => row.expires_at <= now) };
     }
 
     // insertPreviewToken's own insert (args: tokenHash, concept, entryId, editor, expiresAt, createdAt).
@@ -175,29 +182,19 @@ export function createFakeAuthDb(): FakeAuthDb {
 
     // deletePreviewTokens: the revoke action and the rename/delete/discard lifecycle cleanup.
     if (sql.includes('DELETE FROM preview_tokens WHERE concept = ? AND entry_id = ?')) {
-      const [concept, entryId] = [String(args[0]), String(args[1])];
-      let changes = 0;
-      for (const [hash, row] of previewTokens) {
-        if (row.concept === concept && row.entry_id === entryId) {
-          previewTokens.delete(hash);
-          changes++;
-        }
-      }
-      return { ...none, changes };
+      const concept = String(args[0]);
+      const entryId = String(args[1]);
+      return {
+        ...none,
+        changes: deletePreviewTokensWhere((row) => row.concept === concept && row.entry_id === entryId),
+      };
     }
 
     // The editor-removal cascade's third statement (deleteEditor/removeOwnerIfNotLast, store.ts):
     // every preview link the removed editor minted.
     if (sql.includes('DELETE FROM preview_tokens WHERE editor = ?')) {
       const editor = String(args[0]);
-      let changes = 0;
-      for (const [hash, row] of previewTokens) {
-        if (row.editor === editor) {
-          previewTokens.delete(hash);
-          changes++;
-        }
-      }
-      return { ...none, changes };
+      return { ...none, changes: deletePreviewTokensWhere((row) => row.editor === editor) };
     }
 
     throw new Error(`fake-auth-db: unhandled SQL (extend the dispatch table): ${sql}`);

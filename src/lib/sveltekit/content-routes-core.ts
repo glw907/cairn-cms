@@ -462,6 +462,11 @@ function requireEntryFromParams(runtime: CairnRuntime, event: CairnEvent): { edi
   return { editor, concept, id };
 }
 
+/** True for a D1 error whose message names a missing table (SQLite's own "no such table" text). */
+function isMissingTableError(err: unknown): boolean {
+  return /no such table/i.test(String(err));
+}
+
 /**
  * Best-effort clear of every preview-token row for one entry, called after delete, discard, and
  *  rename (keyed to the OLD id, since a rename changes the entry's address). Two-tier failure
@@ -485,14 +490,9 @@ async function clearPreviewTokens(event: CairnEvent, concept: ConceptDescriptor,
     await deletePreviewTokens(db, concept.id, id);
   } catch (err) {
     if (err instanceof CairnError && err.conditionId === 'config.bindings-missing') return;
-    if (/no such table/i.test(String(err))) return;
+    if (isMissingTableError(err)) return;
     log.warn('preview.cleanup_failed', { concept: concept.id, id, reason: String(err) });
   }
-}
-
-/** True for a D1 error whose message names a missing table (SQLite's own "no such table" text). */
-function isMissingTableError(err: unknown): boolean {
-  return /no such table/i.test(String(err));
 }
 
 /**

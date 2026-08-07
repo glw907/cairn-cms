@@ -57,6 +57,14 @@ specificity fight required.
 </aside>
 
 <style>
+  /* Every colour below is a literal, not a palette token, and the four `token-colors`
+     suppressions that follow all rest on this one reason: PreviewBanner is the only component in
+     this barrel that renders on a PUBLIC page, where a site may load neither cairn-admin.css nor
+     Tailwind, so a token reference would resolve to nothing and ship an unstyled notice. The
+     literals are the component's own self-contained default, and each one is already a custom
+     property a site overrides from its own stylesheet. */
+
+  /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
   .cairn-preview-banner {
     --cairn-preview-radius: 0.5rem;
     --cairn-preview-bg: #fff6dd;
@@ -73,6 +81,7 @@ specificity fight required.
     font: 0.9375rem/1.4 system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
 
+  /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
   .cairn-preview-banner[data-state='published'] {
     --cairn-preview-bg: #eef0f2;
     --cairn-preview-border: #cdd3d9;
@@ -89,6 +98,7 @@ specificity fight required.
   }
 
   @media (prefers-color-scheme: dark) {
+    /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
     .cairn-preview-banner {
       --cairn-preview-bg: #3a2f12;
       --cairn-preview-border: #6b5420;
@@ -96,6 +106,7 @@ specificity fight required.
       --cairn-preview-link: #ffd066;
     }
 
+    /* cairn-audit-disable-next-line token-colors -- the public-page default palette, see above */
     .cairn-preview-banner[data-state='published'] {
       --cairn-preview-bg: #23262a;
       --cairn-preview-border: #444b52;

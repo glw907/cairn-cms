@@ -76,7 +76,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
-  import { postFormAction } from './client-action.js';
+  import { postFormAction, type ActionOutcome } from './client-action.js';
   import { arbitrateChecked } from './spellcheck.js';
   import type { DiagnosticCounts } from './editor-diagnostics-announcer.js';
 
@@ -1088,10 +1088,35 @@ persistent "?" carries Markdown help, design-arc D2).
   let revokeCount = $state<number | null>(null);
   let revokeError = $state<string | null>(null);
 
+  const MINT_FAILED = 'Could not create a preview link. Try again.';
+  const REVOKE_FAILED = 'Could not revoke preview links. Try again.';
+
   /** Render a preview link's millisecond expiry as a human date and time (the store's own unit,
    *  per the round-3 amendment's epoch-ms `expires_at`). */
   function formatExpiry(expiresAt: number): string {
     return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(expiresAt));
+  }
+
+  /** The POST both preview round trips make: an empty body, the CSRF header, and `redirect:
+   *  'manual'` so the guard's expired-session 303 arrives as `sessionExpired` instead of a
+   *  followed redirect (the tidy and dictionary calls above post the same way). */
+  function postPreviewAction<T>(action: 'previewMint' | 'previewRevoke'): Promise<ActionOutcome<T>> {
+    return postFormAction<T>(`/admin/${data.conceptId}/${data.id}?/${action}`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+      body: '',
+    });
+  }
+
+  /** The message a refused preview round trip shows: the expired-session line, else the server's
+   *  own actionable refusal when it sent one, else `generic`. A bare `'csrf'` is the guard's
+   *  diagnostic code rather than author-facing copy, so it falls through to `generic` too. */
+  function previewFailureMessage(outcome: { data?: unknown; sessionExpired?: boolean }, expired: string, generic: string): string {
+    if (outcome.sessionExpired) return expired;
+    const failure = outcome.data as { error?: unknown } | undefined;
+    if (typeof failure?.error === 'string' && failure.error !== 'csrf') return failure.error;
+    return generic;
   }
 
   /** Mint a preview link for this entry's pending draft. A refusal (no draft to share, the
@@ -1102,31 +1127,19 @@ persistent "?" carries Markdown help, design-arc D2).
     shareBusy = true;
     shareError = null;
     try {
-      const outcome = await postFormAction<{ url?: unknown; expiresAt?: unknown }>(
-        `/admin/${data.conceptId}/${data.id}?/previewMint`,
-        {
-          method: 'POST',
-          redirect: 'manual',
-          headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
-          body: '',
-        },
-      );
+      const outcome = await postPreviewAction<{ url?: unknown; expiresAt?: unknown }>('previewMint');
       if (!outcome.ok) {
-        if (outcome.sessionExpired) {
-          shareError = 'Your session expired. Sign in again to share a preview link.';
-          return;
-        }
-        const failure = outcome.data as { error?: unknown } | undefined;
-        shareError =
-          typeof failure?.error === 'string' && failure.error !== 'csrf'
-            ? failure.error
-            : 'Could not create a preview link. Try again.';
+        shareError = previewFailureMessage(
+          outcome,
+          'Your session expired. Sign in again to share a preview link.',
+          MINT_FAILED,
+        );
         return;
       }
       const url = typeof outcome.data.url === 'string' ? outcome.data.url : '';
       const expiresAt = typeof outcome.data.expiresAt === 'number' ? outcome.data.expiresAt : 0;
       if (!url) {
-        shareError = 'Could not create a preview link. Try again.';
+        shareError = MINT_FAILED;
         return;
       }
       shareResult = { url, expiresAt };
@@ -1135,7 +1148,7 @@ persistent "?" carries Markdown help, design-arc D2).
       // result without hunting for it.
       void tick().then(() => shareUrlInput?.focus());
     } catch {
-      shareError = 'Could not create a preview link. Try again.';
+      shareError = MINT_FAILED;
     } finally {
       shareBusy = false;
     }
@@ -1161,25 +1174,13 @@ persistent "?" carries Markdown help, design-arc D2).
     revokeBusy = true;
     revokeError = null;
     try {
-      const outcome = await postFormAction<{ count?: unknown }>(
-        `/admin/${data.conceptId}/${data.id}?/previewRevoke`,
-        {
-          method: 'POST',
-          redirect: 'manual',
-          headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
-          body: '',
-        },
-      );
+      const outcome = await postPreviewAction<{ count?: unknown }>('previewRevoke');
       if (!outcome.ok) {
-        if (outcome.sessionExpired) {
-          revokeError = 'Your session expired. Sign in again to revoke preview links.';
-          return;
-        }
-        const failure = outcome.data as { error?: unknown } | undefined;
-        revokeError =
-          typeof failure?.error === 'string' && failure.error !== 'csrf'
-            ? failure.error
-            : 'Could not revoke preview links. Try again.';
+        revokeError = previewFailureMessage(
+          outcome,
+          'Your session expired. Sign in again to revoke preview links.',
+          REVOKE_FAILED,
+        );
         return;
       }
       revokeCount = typeof outcome.data.count === 'number' ? outcome.data.count : 0;
@@ -1188,7 +1189,7 @@ persistent "?" carries Markdown help, design-arc D2).
       shareResult = null;
       shareCopied = false;
     } catch {
-      revokeError = 'Could not revoke preview links. Try again.';
+      revokeError = REVOKE_FAILED;
     } finally {
       revokeBusy = false;
     }

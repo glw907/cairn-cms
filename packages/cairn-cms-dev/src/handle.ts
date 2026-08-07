@@ -112,7 +112,10 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
       // the fakes below always win on a name collision: previewMintAction's `requireOrigin(env)`
       // is the first admin action that ever reads a var in dev, since every earlier one either
       // ignores it or, like the login flow, never runs at all under the owner-session bypass.
-      const existingEnv = (event.platform?.env ?? {}) as Record<string, unknown>;
+      // Read through the same cast the write below uses: inside this package `App.Platform` is the
+      // bare kit default (no consuming site's app.d.ts is in scope), so it declares no `env`.
+      const platform = event.platform as unknown as { env?: Record<string, unknown> } | undefined;
+      const existingEnv = platform?.env ?? {};
       event.platform = {
         env: {
           ...existingEnv,

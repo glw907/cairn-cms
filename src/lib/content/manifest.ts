@@ -554,9 +554,8 @@ export function manifestFragmentResolver(
   targets: { id: string; title: string; body: string }[] | null,
 ): PreviewFragmentResolve | undefined {
   if (!targets) return undefined;
-  const byId = new Map(targets.map((t) => [t.id, t.body]));
-  const titleById = new Map(targets.map((t) => [t.id, t.title]));
-  const resolve: PreviewFragmentResolve = (id: string) => byId.get(id);
-  resolve.previewTitle = (id: string) => titleById.get(id);
+  const byId = new Map(targets.map((t) => [t.id, t]));
+  const resolve: PreviewFragmentResolve = (id: string) => byId.get(id)?.body;
+  resolve.previewTitle = (id: string) => byId.get(id)?.title;
   return resolve;
 }

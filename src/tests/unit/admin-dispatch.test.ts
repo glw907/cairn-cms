@@ -76,6 +76,19 @@ describe('parseAdminPath', () => {
     expect(parseAdminPath('/admin/help', withHelp)).toEqual({ view: 'help' });
   });
 
+  it('parses a history view with a valid id, tolerating a trailing slash', () => {
+    expect(parseAdminPath('/admin/posts/2026-01-01-hello/history', concepts)).toEqual({
+      view: 'history',
+      concept: posts,
+      id: '2026-01-01-hello',
+    });
+    expect(parseAdminPath('/admin/pages/about/history/', concepts)).toEqual({
+      view: 'history',
+      concept: pages,
+      id: 'about',
+    });
+  });
+
   it('decodes each segment individually before matching', () => {
     expect(parseAdminPath('/admin/%70osts/%61bout', concepts)).toEqual({
       view: 'edit',
@@ -107,6 +120,13 @@ describe('parseAdminPath', () => {
     '/admin/posts/-hello',
     '/admin/posts/he/llo',
     '/admin/posts/he%2Fllo',
+    // A history path with an unknown concept, an invalid id, or a third segment other than
+    // the reserved `history` name.
+    '/admin/unknown/2026-01-01-hello/history',
+    '/admin/posts/Hello/history',
+    '/admin/posts/2026-01-01-hello/bogus',
+    // Four segments never resolve, even with a trailing history-shaped tail.
+    '/admin/posts/2026-01-01-hello/history/extra',
     // An encoded slash in the concept segment can never match a concept.
     '/admin/po%2Fsts',
     // Empty internal segments and a doubled trailing slash.

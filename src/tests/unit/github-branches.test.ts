@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { branchHeadSha, createBranch, deleteBranch, listBranches } from '../../lib/github/branches.js';
+import { BranchExistsError } from '../../lib/github/types.js';
 import type { RepoRef } from '../../lib/github/types.js';
 
 const repo: RepoRef = { owner: 'o', repo: 'r', branch: 'main' };
@@ -21,6 +22,15 @@ describe('branches transport', () => {
     expect(gh.read('cairn/posts/x', 'a.md')).toBe('A');
     expect(await listBranches(repo, 'cairn/', 't')).toEqual(['cairn/posts/x']);
     expect(await listBranches(repo, 'cairn/pages/', 't')).toEqual([]);
+  });
+
+  it('throws BranchExistsError, not a raw error, when the branch already exists', async () => {
+    const gh = new GithubDouble({ main: { 'a.md': 'A' } });
+    gh.createBranch('cairn/posts/x', 'main');
+    gh.install();
+    await expect(createBranch(repo, 'cairn/posts/x', gh.headSha('main'), 't')).rejects.toBeInstanceOf(
+      BranchExistsError,
+    );
   });
 
   it('deletes a branch and tolerates deleting a missing one', async () => {

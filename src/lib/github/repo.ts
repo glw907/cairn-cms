@@ -5,7 +5,7 @@
 // is not.
 import { idFromFilename } from '../content/ids.js';
 import { CommitConflictError } from './types.js';
-import type { CommitAuthor, RepoFile, RepoRef } from './types.js';
+import type { BackendCommit, CommitAuthor, RepoFile, RepoRef } from './types.js';
 
 const API = 'https://api.github.com';
 
@@ -84,6 +84,64 @@ export async function readRaw(repo: RepoRef, path: string, token?: string): Prom
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`GitHub read ${path} failed: ${res.status}`);
   return res.text();
+}
+
+/**
+ * The commits-API URL for a path filter at `ref`, capped at `limit + 1` so the caller can set a
+ * truncation flag from one request without a second read.
+ */
+export function commitsUrl(repo: RepoRef, path: string, ref: string, limit: number): string {
+  const clean = path.replace(/^\/+|\/+$/g, '');
+  const params = new URLSearchParams({ path: clean, sha: ref, per_page: String(limit + 1) });
+  return `${API}/repos/${repo.owner}/${repo.repo}/commits?${params.toString()}`;
+}
+
+/**
+ * The commits-API entry shape this package reads: the commit sha and its own author/committer
+ * trailers. GitHub's schema types both trailers nullable (an odd, rare row with no recorded
+ * author or committer), so the mapping below degrades rather than reading through a null.
+ */
+interface CommitLogEntry {
+  sha: string;
+  commit: {
+    author: { name: string; email: string } | null;
+    committer: { date: string } | null;
+  };
+}
+
+/**
+ * Fetch a file's commit history through the commits API's path filter, newest first (GitHub's own
+ * order), one request capped at `limit + 1` entries. A 404 or an empty log returns `[]`, never
+ * throws: an entry with no publish history is a state, not a failure to report.
+ *
+ * Field mapping is deliberate: the author comes from the commit's own author trailer
+ * (`commit.author`), almost always present and never the top-level `author` (the matched GitHub
+ * account, null for a magic-link editor, the common case); the date is `commit.committer.date`,
+ * when the commit actually landed on `ref`. A null trailer degrades to an empty name, email, or
+ * date rather than throwing; `commitEditorName` (content-routes-core.ts) further degrades an
+ * empty name and email to "unknown" for display.
+ */
+export async function fetchCommitLog(
+  repo: RepoRef,
+  path: string,
+  ref: string,
+  limit: number,
+  token?: string,
+): Promise<BackendCommit[]> {
+  const res = await fetch(commitsUrl(repo, path, ref, limit), {
+    headers: ghHeaders('application/vnd.github+json', token),
+  });
+  if (res.status === 404) {
+    await res.body?.cancel();
+    return [];
+  }
+  if (!res.ok) throw new Error(`GitHub commits ${path} failed: ${res.status} ${await res.text()}`);
+  const body = (await res.json()) as CommitLogEntry[];
+  return body.map((entry) => ({
+    ref: entry.sha,
+    author: { name: entry.commit.author?.name ?? '', email: entry.commit.author?.email ?? '' },
+    date: entry.commit.committer?.date ?? '',
+  }));
 }
 
 /** A path change for an atomic commit: write `content`, or delete the path when `content` is null. */

@@ -1657,6 +1657,20 @@ describe('EditPage', () => {
     expect(menu.textContent ?? '').not.toContain('Discard changes');
   });
 
+  it('hides the History link for a never-saved new entry, since historyLoad 404s with no main file and no branch', async () => {
+    const screen = render(EditPage, postProps({ isNew: true, published: false, pending: false }));
+    const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
+    expect(menu.textContent ?? '').not.toContain('History');
+  });
+
+  it('shows the History link for a published entry', async () => {
+    const screen = render(EditPage, postProps({ published: true }));
+    const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
+    const link = menu.querySelector('a[href="/admin/posts/2026-05-hello/history"]');
+    expect(link).not.toBeNull();
+    expect(link?.textContent).toBe('History');
+  });
+
   // Task 6: the desk controls live in the one header band, fed through the topbar context portal.
   it('renders the desk controls inside the one header band', async () => {
     const screen = render(EditPage, postProps({ pending: true }));

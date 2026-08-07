@@ -53,9 +53,9 @@ let { data, form, render, registry, icons }: {
 
 The single-mount admin page. Render it from the catch-all `/admin/[...path]` route with the
 discriminated `AdminData` that `createCairnAdmin`'s load returns, and it switches `data.view` to
-mount the right component: the sign-in and confirm pages, the list, edit, editors, and nav views,
-and the `'welcome'` view, the calm signed-in screen a none-capability role with no declared `home`
-lands on. It renders each view bare; the shared chrome rides the separate `/admin/+layout` shell
+mount the right component: the sign-in and confirm pages, the list, edit, history, editors, and nav
+views, and the `'welcome'` view, the calm signed-in screen a none-capability role with no declared
+`home` lands on. It renders each view bare; the shared chrome rides the separate `/admin/+layout` shell
 (see [`CairnAdminShell`](#cairnadminshell)), not `CairnAdmin`. The edit view reads its `siteName`
 from `page.data.shell`. `form` forwards the route's action result to whichever view rendered, so a
 blocked save reaches `EditPage` and a login outcome reaches `LoginPage` through the one prop.
@@ -240,7 +240,8 @@ per-route mounting it lives at `src/routes/admin/(app)/[concept]/[id]/+page.svel
 The page lays out in four zones. A sticky translucent header holds a breadcrumb back to the
 concept list, the entry's status badge (New, Edited, or Published, with a separate Hidden badge
 when the frontmatter `draft` flag is set), a save-state indicator reading "Unsaved changes" while
-the browser holds edits and "Saved" after a save lands, an overflow menu with Delete and, while
+the browser holds edits and "Saved" after a save lands, an overflow menu with a History link to
+`/admin/<concept>/<id>/history` ([`CairnHistory`](#cairnhistory)), Delete, and, while
 `data.pending`, Discard changes, and the lifecycle buttons rightmost: an outline Publish posting
 to `?/publish` (rendered only while `data.pending`) and a solid Save, which sleeps while an
 existing entry is clean. Both buttons sit outside the form element and tie to it through
@@ -290,6 +291,39 @@ web-link dialog.
   registry={cairn.rendering.components}
   icons={cairn.rendering.icons}
 />
+```
+
+### `CairnHistory`
+
+Stability tier: Unstable API.
+
+```ts
+let { data }: { data: HistoryData };
+```
+
+The per-entry publish-history screen, reachable from `EditPage`'s overflow menu. `data` is the
+`HistoryData` from `historyLoad`. A version is a publish: the table lists the entry's recent
+publishes newest first, the top row marked Current when it's the version live on the default
+branch right now. A synthetic Draft row pins above the list when the entry carries an open pending
+branch; it carries no revert affordance, since a draft isn't itself a publish. When `truncated` is
+set, a meta line under the "Recent versions" heading reads "Showing the most recent 25 versions."
+An entry with no publish yet and no open draft renders an empty state instead of the table. On the
+per-route mounting it lives at `src/routes/admin/(app)/[concept]/[id]/history/+page.svelte`.
+
+Each publish row's own Revert button submits a small form to `?/revert`, carrying two hidden
+fields: `ref`, the row's full commit sha, and `head`, `data.head`, the default branch's head sha
+this page rendered against. `revertAction` re-validates both against a fresh read, so the form
+carries only what the server needs to catch a stale page, never a trust of the rendered row.
+
+```svelte
+<script lang="ts">
+  import { CairnHistory } from '@glw907/cairn-cms/components';
+  import type { HistoryData } from '@glw907/cairn-cms/sveltekit';
+
+  let { data }: { data: HistoryData } = $props();
+</script>
+
+<CairnHistory {data} />
 ```
 
 ### `LoginPage`

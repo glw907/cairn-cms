@@ -371,9 +371,13 @@ discriminant, not the fields, gates the chrome).
   }
 
   // Path-derived breadcrumbs: the concept label (from the nav) then the entry id segment. Only the
-  // /admin/<concept>/<id> depth shows a trail; a bare concept list shows just the concept.
+  // /admin/<concept>/<id> depth shows a trail; a bare concept list shows just the concept. A fourth
+  // segment of 'history' is the entry's history screen, not the edit desk: the entry crumb then
+  // links back to the desk (it is no longer the current page) and a final 'History' leaf names
+  // where the trail actually ends, so pageTitle (the deepest crumb) reads "History" rather than
+  // reusing the edit desk's own title and trail.
   const crumbs = $derived.by<Crumb[]>(() => {
-    const segs = (shell?.pathname ?? '').split('/').filter(Boolean); // ['admin', concept, id?]
+    const segs = (shell?.pathname ?? '').split('/').filter(Boolean); // ['admin', concept, id?, 'history'?]
     if (segs.length < 2 || segs[0] !== 'admin') return [];
     const conceptId = segs[1];
     const concept = shell?.concepts.find((c) => c.id === conceptId);
@@ -383,7 +387,14 @@ discriminant, not the fields, gates the chrome).
     const out: Crumb[] = [
       { label: concept?.label ?? custom?.label ?? conceptId, href: `/admin/${conceptId}` },
     ];
-    if (segs[2]) out.push({ label: decodeURIComponent(segs[2]) });
+    if (segs[2]) {
+      const isHistory = segs[3] === 'history';
+      out.push({
+        label: decodeURIComponent(segs[2]),
+        href: isHistory ? `/admin/${conceptId}/${segs[2]}` : undefined,
+      });
+      if (isHistory) out.push({ label: 'History' });
+    }
     return out;
   });
 
@@ -398,9 +409,11 @@ discriminant, not the fields, gates the chrome).
   // depth alone as the signal wrongly receded the persistent desktop sidebar on that navigation (it
   // fell back to the mobile-drawer's toggle-controlled visibility, which read as the sidebar
   // sliding away, since only a genuine desk route needs that recede).
+  // Exactly three segments: the edit desk is /admin/<concept>/<id> and nothing else. A deeper
+  // concept path (the /history view) is an office screen again, so it keeps office chrome.
   const isDeskRoute = $derived.by(() => {
     const segs = (shell?.pathname ?? '').split('/').filter(Boolean);
-    return segs.length > 2 && segs[0] === 'admin' && (shell?.concepts.some((c) => c.id === segs[1]) ?? false);
+    return segs.length === 3 && segs[0] === 'admin' && (shell?.concepts.some((c) => c.id === segs[1]) ?? false);
   });
 
   // The topbar context portal: a reactive holder a descendant document fills with its desk snippet.

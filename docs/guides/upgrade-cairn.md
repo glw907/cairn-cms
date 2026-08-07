@@ -163,6 +163,25 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: entry history and revert (non-breaking)
+
+Every entry now carries a publish history and a revert-as-draft, reachable from the edit screen's
+overflow menu. Read [Publish and
+discard](./publish-and-discard.md#see-an-entrys-history-and-restore-an-earlier-version) for what
+your editors see, and [SvelteKit](../reference/sveltekit.md) for the underlying `historyLoad` and
+`revertAction` route members if you mount routes per-surface instead of the single-mount facade.
+
+Consumers must: nothing. If you mount the `createCairnAdmin` facade, the History link and the
+`history` view arrive automatically with the version bump. If you mount routes by hand through
+`createContentRoutes`, its returned object now carries two additional members, `historyLoad` and
+`revertAction`, which you wire the same way you already wire `editLoad` and `saveAction` to reach
+the feature; leaving them unmounted costs you nothing else. `Backend`'s existing-branch collision
+on `createBranch` now throws a typed `BranchExistsError`. The packaged dev backend used to
+silently overwrite the branch on a name collision and now throws instead. If you've implemented
+your own `Backend`, this window adds a required member, `listCommits(path, ref, limit)`, and
+changes `createBranch`'s return type from `Promise<void>` to `Promise<string>` (return the sha it
+created the branch at). Ordinary consumers who only use the packaged backends see neither change.
+
 ## 0.94.0-rc.2: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
 
 This is a release candidate on the `next` dist-tag, not a stable release. It's the largest

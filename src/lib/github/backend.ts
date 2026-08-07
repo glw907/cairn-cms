@@ -4,14 +4,18 @@
 // per request via connect(env), with the GitHub App installation token minted and cached behind
 // the seam. makeGithubBackend takes an injectable token getter so a test wires a literal token and
 // the in-memory fetch double intercepts the same GitHub URLs the production getter would reach.
-import { readRaw, listMarkdown, commitFiles } from './repo.js';
+import { readRaw, listMarkdown, commitFiles, fetchCommitLog } from './repo.js';
 import type { FileChange } from './repo.js';
 import { branchHeadSha, createBranch as createBranchRef, deleteBranch, listBranches } from './branches.js';
 import { appCredentials } from './credentials.js';
 import { cachedInstallationToken } from './signing.js';
 import { CommitConflictError } from './types.js';
-import type { CommitAuthor, RepoFile } from './types.js';
+import type { BackendCommit, CommitAuthor, RepoFile } from './types.js';
 import type { CairnEnv } from '../env.js';
+
+// The history row this seam answers with lives with the other GitHub data types; re-exported here
+// so `Backend` and its row keep one import site for a consumer.
+export type { BackendCommit } from './types.js';
 
 /**
  * A live, connected content store pinned to a default branch. The GitHub implementation already
@@ -48,8 +52,23 @@ export interface Backend {
     expectedHead?: string,
   ): Promise<string>;
 
-  /** Create a branch at another branch's current head. */
-  createBranch(name: string, fromBranch: string): Promise<void>;
+  /**
+   * A file's commit history at `ref`, newest first, one request capped at `limit + 1` entries so
+   * the caller can set a truncation flag without a second read. A 404 or an empty log returns
+   * `[]`, never throws: an entry with no publish history is a state, not an error. The GitHub
+   * provider bounds a page at 100 (the commits API's own `per_page` cap), so `limit` must stay
+   * below 99 there; the engine's own call sites stay far under that bound.
+   */
+  listCommits(path: string, ref: string, limit: number): Promise<BackendCommit[]>;
+
+  /**
+   * Create a branch at another branch's current head; returns the sha it created the branch at.
+   * Throws `BranchExistsError` on a collision. A caller that needs a fail-closed `commit` right
+   * after creation should pin `expectedHead` to this returned sha rather than a sha it read
+   * earlier: `fromBranch`'s head is re-read inside this call, so an earlier read can be stale by
+   * the time the branch actually lands.
+   */
+  createBranch(name: string, fromBranch: string): Promise<string>;
 
   /** Delete a branch; a missing branch is success. */
   deleteBranch(name: string): Promise<void>;
@@ -113,6 +132,9 @@ export function makeGithubBackend(config: GithubAppConfig, getToken: () => strin
     async listBranches(prefix) {
       return listBranches(config, prefix, await getToken());
     },
+    async listCommits(path, ref, limit) {
+      return fetchCommitLog({ ...config, branch: ref }, path, ref, limit, await getToken());
+    },
     async commit(branch, changes, author, message, expectedHead) {
       return commitFiles({ ...config, branch }, changes, { message, author }, await getToken(), expectedHead);
     },
@@ -123,6 +145,7 @@ export function makeGithubBackend(config: GithubAppConfig, getToken: () => strin
       // error the save path maps to its 500 rather than letting the createBranchRef POST fail raw.
       if (head === null) throw new CommitConflictError(`${fromBranch} (unreadable source)`);
       await createBranchRef(config, name, head, tok);
+      return head;
     },
     async deleteBranch(name) {
       await deleteBranch(config, name, await getToken());

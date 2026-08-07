@@ -14,6 +14,7 @@ export type AdminView =
   | { view: 'confirm' }
   | { view: 'list'; concept: ConceptDescriptor }
   | { view: 'edit'; concept: ConceptDescriptor; id: string }
+  | { view: 'history'; concept: ConceptDescriptor; id: string }
   | { view: 'editors' }
   | { view: 'nav' }
   | { view: 'media' }
@@ -88,6 +89,18 @@ export function parseAdminPath(
     const concept = findConcept(concepts, head);
     if (!concept || !isValidId(tail)) return null;
     return { view: 'edit', concept, id: tail };
+  }
+
+  if (segments.length === 3) {
+    // The reserved facade view name is exactly `history`; a third segment naming anything else
+    // (or a concept/id that fails the same checks the edit branch applies) is an unrecognized
+    // shape, not a history view.
+    const [head, tail, action] = segments;
+    if (action !== 'history') return null;
+    if (RESERVED_SEGMENTS.has(head)) return null;
+    const concept = findConcept(concepts, head);
+    if (!concept || !isValidId(tail)) return null;
+    return { view: 'history', concept, id: tail };
   }
 
   return null;

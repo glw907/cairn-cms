@@ -18,6 +18,7 @@ export { default as CairnMediaLibrary } from './CairnMediaLibrary.svelte';
 export { default as CairnTidySettings } from './CairnTidySettings.svelte';
 export { default as HelpHome } from './HelpHome.svelte';
 export { default as EditPage } from './EditPage.svelte';
+export { default as CairnHistory } from './CairnHistory.svelte';
 export { default as ManageEditors } from './ManageEditors.svelte';
 export { default as MarkdownEditor } from './MarkdownEditor.svelte';
 export { default as NavTree } from './NavTree.svelte';

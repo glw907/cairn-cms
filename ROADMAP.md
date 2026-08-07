@@ -262,41 +262,19 @@ The original decision framing, for the record:
     a `_dmarc` record already exists. Two of four sites kept pre-cairn `p=none` policies through
     onboarding.
 
-- **Entry history and revert (editor-facing revisions). PROMOTED (Geoff, 2026-08-01).** Surface the
-  version history cairn already writes: a per-entry history view over the backend's commit log (the
-  commit author is already the editor, so attribution is free), and revert implemented as a new
-  commit through the existing save/publish pipeline, so the per-entry branch and the deliberate
-  Publish gate hold unchanged. No new storage and no new actor. The strongest unbuilt in-charter
-  feature from the 2026-07-01 mission review: every competitor CMS has "revisions," cairn has
-  something better underneath, and the editor persona currently sees none of it. Promoted from Next
-  at the ASC-seams pass-one sitting as a named content of the "core-feature roadmap has landed" beta
-  checklist item; needs its own design sitting before a plan (the history view's shape, how far back
-  the list reads, what a revert of a published entry means for the draft branch). Gates the public
-  beta (Geoff, 2026-08-01): the beta does not cut until this ships. **Vocabulary reserved (C2
-  breaking-window pass, R11, 2026-08-02):** history is `historyLoad` as the route-factory member
-  and `history` as the facade view (`HistoryData`, `HistoryEntry`); revert is `revertAction` as
-  the member and `revert` as the facade key (`RevertFailure`, used as
-  `ActionFailure<RevertFailure>`), logging `commit.reverted` with `concept`, `id`, `editor`, and
-  the reverted-to ref. Every name derives from this pass's ratified grammars (R1 for members,
-  facade keys, and the closed suffix set; R6 for the log-event shape), reserved now precisely so
-  the feature arrives under rules made with it rather than inventing its own.
-
 - **Public preview for a non-editor (FILED at promotion, Geoff, 2026-08-01).** Let an editor hand a
   draft to someone who is not an editor: the per-entry `cairn/<concept>/<id>` branch already holds
-  the draft, so the artifact exists and only the surface is missing, the same signature as entry
-  history above. The shape to design, not yet decided: a time-limited signed preview URL rendering
-  that branch's entry through the site's own `render`, issued from the editor's screen, readable
-  without a session. Open questions for the sitting: where the render runs (the public route
-  factories know `render`; the admin knows the branch), the token's issue and expiry discipline
-  (`./auth-crypto` now exports the primitives), and whether a preview of a draft that references
-  unpublished media resolves. Gates the public beta alongside entry history and revert (Geoff,
-  2026-08-01): the beta does not cut until this ships. **Vocabulary reserved (C2 breaking-window
-  pass, R11, 2026-08-02):** `createPreviewRoute(runtime): RequestHandler`, following the ratified
-  `createMediaRoute` exception as its precedent (a kit `RequestHandler` return, not the engine's
-  own factory-return convention); `mintPreviewToken` and its `PreviewTokenConfig` bag; logging
-  `preview.token.minted` and `preview.rejected`, the latter with a snake_case `reason`. Every name
-  derives from R1's grammar and R6's log-event shape, reserved now for the same reason as history
-  and revert above.
+  the draft, so the artifact exists and only the surface is missing, the same signature entry
+  history and revert carried before they shipped. Gates the public beta on its own now that entry
+  history and revert have shipped (Geoff, 2026-08-01): the beta does not cut until this ships too.
+  Designed at the 2026-08-06 sitting alongside history and revert (see
+  `docs/superpowers/specs/2026-08-06-history-revert-preview-design.md`, "Part 3"), which revises the
+  originally reserved `createPreviewRoute(runtime): RequestHandler` shape to a site-mounted
+  `previewLoad` under R1's ordinary `Load`-suffix grammar; the rest of the reservation carries
+  unchanged into its own pass. **Vocabulary reserved (C2 breaking-window pass, R11, 2026-08-02):**
+  `mintPreviewToken` and its `PreviewTokenConfig` bag; logging `preview.token.minted` and
+  `preview.rejected`, the latter with a snake_case `reason`. Every name derives from R1's grammar
+  and R6's log-event shape, reserved now for the same reason history and revert's own names were.
 
 - **Help screen first-steps card overlap (pre-existing, found 2026-07-21).** The getting-started
   steps card on `/admin/help` renders its three step columns overlapping at desktop widths (the
@@ -1107,6 +1085,18 @@ the named human gates only):**
   exactly what SvelteKit did here.
 
 ## Later
+
+- **Undelete a recently-deleted entry (filed 2026-08-06, history/revert design sitting).** History
+  and revert both deliberately leave a deleted entry out of scope: `historyLoad` answers a 404 for
+  one exactly as `editLoad` does, so nothing in the admin can name a deleted id to restore it, and
+  the escape hatch today is a developer reading git directly. Undelete needs a surface this repo
+  doesn't have yet before it can exist at all: some way for an editor to see, and choose from, a
+  concept's recently-deleted entries, since a delete's commit removes both the manifest row and the
+  file, leaving nothing in the live corpus a screen could list. That recently-deleted surface, its
+  retention window, and how it's populated (a bounded read over the manifest's own git history, a
+  soft-delete flag, or something else) is itself a design question, deliberately left open rather
+  than answered here; it wants its own sitting once a real request for undelete lands, the way entry
+  history's own promotion did.
 
 - **A passkey layer on the auth-channel session model, post-1.0 (Geoff, 2026-08-04).** Returning
   members authenticate with a passkey instead of a fresh code, layered on top of

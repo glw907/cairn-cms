@@ -1,3 +1,36 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+### Added
+
+- Every entry gains a publish history and a revert-as-draft: the `history` admin view
+  (`/admin/<concept>/<id>/history`), reachable from the edit screen's overflow menu, lists the
+  entry's most recent 25 publishes off `Backend`'s new `listCommits(path, ref, limit)` member (a
+  new `BackendCommit` export; both the GitHub App backend and the packaged dev backend implement
+  it identically), each row naming who published it and when, plus a synthetic row for an open
+  draft. The list shows every publish that touched the file, including ones made outside cairn,
+  and its own label, "recent versions," never claims completeness: a rename restarts the commits
+  API's path filter cairn reads from. Choosing Revert beside a listed version starts a fresh
+  draft holding that version's content, through the unchanged Publish gate; nothing goes live at
+  revert time. Revert refuses fail-closed (a new `RevertFailure` union, `ActionFailure<RevertFailure>`
+  on the new `revert` facade action key gated to the `history` view) when a pending draft already
+  blocks the entry, when the posted target isn't a member of a freshly re-read history list, or
+  when the default branch moved since the history page rendered; a reverted version carrying a
+  since-retired field or vocabulary tag rides forward as a warn-only advisory rather than
+  blocking the revert. `Backend.createBranch`'s existing-branch collision is now a typed
+  `BranchExistsError` (both backends throw it identically); the packaged dev backend used to
+  silently overwrite the branch on a name collision and now throws instead. See
+  [SvelteKit](docs/reference/sveltekit.md), [the canonical admin
+  mount](docs/reference/admin-routes.md), and [Publish and
+  discard](docs/guides/publish-and-discard.md#see-an-entrys-history-and-restore-an-earlier-version).
+  Consumers must: nothing, for a site that only imports the packaged backends and admin facade;
+  this is purely additive, and a site that mounts the single-mount admin facade picks up the
+  History link with no code change. A site implementing its own `Backend` must add the new
+  `listCommits(path, ref, limit)` member and change `createBranch`'s return type from
+  `Promise<void>` to `Promise<string>`, returning the sha it created the branch at. Undelete
+  stays out of scope for this release (see ROADMAP.md).
+
 ## 0.94.0-rc.2
 
 <!-- release-size: minor -->

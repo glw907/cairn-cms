@@ -98,3 +98,93 @@ export interface HandleInput {
   event: CairnEvent;
   resolve(event: CairnEvent): Promise<Response> | Response;
 }
+
+/**
+ * One row in an entry's publish history, as `historyLoad` renders it: a version is a publish
+ * (spec "Part 1: entry history"). `editor` renders what git recorded, degrading to the raw
+ * commit-author name or its email, then to "unknown", rather than assuming a cairn editor: a
+ * file's log on the default branch can also hold commits made outside cairn (a direct edit, a
+ * migration).
+ */
+export interface HistoryEntry {
+  /** The commit's full sha, the exact value revert validates a target ref against. */
+  ref: string;
+  /** The commit author's name, degraded to email, then to "unknown" when git recorded neither. */
+  editor: string;
+  /** ISO 8601: when the version landed on the default branch. */
+  date: string;
+}
+
+/**
+ * `historyLoad`'s data: the entry's bounded recent-publish list plus its open draft, when one
+ * exists. The view's own label stays "recent versions", never a completeness claim: a rename
+ * restarts the commits API's path filter, so `entries` can be shorter than the entry's real
+ * lifetime even when `truncated` is false.
+ */
+export interface HistoryData {
+  /** The most recent publishes, newest first, capped at the module's history-read bound. */
+  entries: HistoryEntry[];
+  /**
+   * The pending branch's head commit, rendered as a synthetic top row, or null when the entry
+   * carries no open draft. Never derived from a save; a draft's save-by-save history is
+   * ephemeral by design and this field surfaces only its current head. `startedAt` names the
+   * head commit's own date, which moves on every save, so it reads as the draft's LAST SAVE,
+   * not when editing began; the field keeps its name for API stability, and the view renders it
+   * under a "last saved" label rather than "started".
+   */
+  draft: { editor: string; startedAt: string } | null;
+  /**
+   * True when the backend's `limit + 1` probe found more publishes than the bound holds, so the
+   * view can say "showing the most recent N" rather than paginating. An entry with exactly the
+   * bound's own count of publishes is NOT truncated.
+   */
+  truncated: boolean;
+  /**
+   * The default branch's head commit sha at load time. The history screen's revert form carries
+   * it as a hidden field alongside the target ref, so `revertAction` can refuse a stale revert
+   * (`main` moved since this page rendered) rather than silently reverting over a publish it
+   * never saw. Null only when the default branch itself carries no commits, a repository state
+   * this engine otherwise never produces.
+   */
+  head: string | null;
+}
+
+/**
+ * A refused revert (spec "Part 2: revert"): fail-closed, and stays on the page as an
+ * `ActionFailure`, never a force path. `draft_exists` and `history_stale` answer `fail(409, ...)`;
+ * `ref_unknown` answers `fail(404, ...)`. There is no fourth, "reverted content is invalid"
+ * reason: schema drift in the old version warns on the edit screen after a successful revert, it
+ * never refuses one.
+ */
+export type RevertFailure =
+  | {
+      /**
+       * A pending branch already blocks this entry, from `revertAction`'s own fast pre-check or
+       * from `createBranch`'s authoritative collision under a race with another save or revert.
+       */
+      reason: 'draft_exists';
+      /** Who last saved the blocking draft, degraded the same way {@link HistoryEntry.editor} is. */
+      draftEditor: string;
+      /**
+       * ISO 8601: when the blocking draft's branch head last landed, its most recent save, not
+       * when the draft began. The field keeps its name for API stability; the refusal message
+       * renders it under a "last saved" label.
+       */
+      draftStartedAt: string;
+    }
+  | {
+      /**
+       * The posted ref is not a member of a freshly re-read recent-publish list: it named a
+       * commit outside the bounded history window, or the window moved between page render and
+       * submit.
+       */
+      reason: 'ref_unknown';
+    }
+  | {
+      /**
+       * The default branch's head moved since the history page rendered (the posted `head`
+       * mismatches `branchHead(defaultBranch)`), so reverting now would silently undo a publish
+       * this request never saw.
+       */
+      reason: 'history_stale';
+    };

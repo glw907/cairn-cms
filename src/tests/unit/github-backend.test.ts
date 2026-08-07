@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { githubApp, makeGithubBackend } from '../../lib/github/backend.js';
 import { CairnError } from '../../lib/diagnostics/index.js';
+import { BranchExistsError } from '../../lib/github/types.js';
 import { GithubDouble } from './_github-double.js';
 
 const CONFIG = {
@@ -81,12 +82,12 @@ describe('makeGithubBackend live implementation', () => {
     expect(commitPost).toBeDefined();
   });
 
-  it('createBranch resolves the source head with a GET before the refs POST', async () => {
+  it('createBranch resolves the source head with a GET before the refs POST, and returns that sha', async () => {
     const gh = new GithubDouble({ main: { 'a.md': 'x' } });
     gh.install();
     const backend = makeGithubBackend(CONFIG, () => 'test-token');
 
-    await backend.createBranch('cairn/posts/hello', 'main');
+    const sha = await backend.createBranch('cairn/posts/hello', 'main');
 
     const getIdx = gh.calls.findIndex(
       (c) => c.method === 'GET' && /\/git\/ref\/heads\/main$/.test(c.url),
@@ -95,6 +96,7 @@ describe('makeGithubBackend live implementation', () => {
     expect(getIdx).toBeGreaterThanOrEqual(0);
     expect(postIdx).toBeGreaterThan(getIdx);
     expect(gh.branches.has('cairn/posts/hello')).toBe(true);
+    expect(sha).toBe(gh.headSha('cairn/posts/hello'));
   });
 
   it('createBranch throws CommitConflictError when the source branch has no head', async () => {
@@ -103,5 +105,14 @@ describe('makeGithubBackend live implementation', () => {
     const backend = makeGithubBackend(CONFIG, () => 'test-token');
 
     await expect(backend.createBranch('cairn/posts/x', 'missing')).rejects.toThrow(/unreadable source/);
+  });
+
+  it('createBranch throws BranchExistsError when the branch already exists', async () => {
+    const gh = new GithubDouble({ main: { 'a.md': 'x' } });
+    gh.createBranch('cairn/posts/hello', 'main');
+    gh.install();
+    const backend = makeGithubBackend(CONFIG, () => 'test-token');
+
+    await expect(backend.createBranch('cairn/posts/hello', 'main')).rejects.toBeInstanceOf(BranchExistsError);
   });
 });

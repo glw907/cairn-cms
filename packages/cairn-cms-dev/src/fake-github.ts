@@ -11,8 +11,8 @@
 // The store, the lastCommit recorder, and the committedFile/seed accessors are module-level
 // process singletons. createDevBackend returns a thin facade over that one shared store, so a
 // commit on one request is visible to the recorder route on the next.
-import type { Backend, FileChange, RepoFile, CommitAuthor } from '@glw907/cairn-cms';
-import { CommitConflictError } from '@glw907/cairn-cms';
+import type { Backend, BackendCommit, FileChange, RepoFile, CommitAuthor } from '@glw907/cairn-cms';
+import { BranchExistsError, CommitConflictError } from '@glw907/cairn-cms';
 
 /** The shape the E2E reads from /test/last-commit. */
 export interface RecordedCommit {
@@ -46,6 +46,26 @@ const branches = new Map<string, Tree>([
   ],
 ]);
 const heads = new Map<string, string>([['main', nextSha()]]);
+
+/**
+ * One committed change, recorded so listCommits can answer a path-filtered history query without
+ * a new fixture format: every real backend.commit() call appends here, and the fake's history read
+ * filters by branch and touched path, newest first, the same shape the real GitHub commits API's
+ * path filter returns. `contentByPath` additionally lets `readFile` replay a past commit's own
+ * content when `ref` names a recorded sha rather than a live branch (a revert's target read),
+ * mirroring the real GitHub contents API's `?ref=<sha>` form.
+ */
+interface RecordedCommitLogEntry {
+  branch: string;
+  paths: string[];
+  ref: string;
+  author: CommitAuthor;
+  date: string;
+  /** Each changed path's new content at this commit, `null` for a delete. */
+  contentByPath: Record<string, string | null>;
+}
+
+const commitLog: RecordedCommitLogEntry[] = [];
 
 /** Read back the last commit the fake recorded, or null before any commit lands. */
 export function lastRecordedCommit(): RecordedCommit | null {
@@ -570,8 +590,9 @@ function basename(path: string): string {
 /**
  * Build the dev `Backend`: a thin facade over the module-level in-memory store. Every instance
  * shares that one singleton store, so a commit on one request is visible to the recorder route on
- * the next. The seven methods mirror the GitHub backend's contract: an empty change set rejects,
- * and a supplied `expectedHead` makes the commit fail-closed on a moved head.
+ * the next. The methods mirror the GitHub backend's contract: an empty change set rejects, a
+ * supplied `expectedHead` makes the commit fail-closed on a moved head, and createBranch throws
+ * BranchExistsError on a name collision rather than overwriting.
  * @returns a {@link Backend} over the in-memory repo, with `main` as its default branch.
  */
 export function createDevBackend(): Backend {
@@ -579,7 +600,12 @@ export function createDevBackend(): Backend {
     defaultBranch: 'main',
 
     async readFile(path: string, ref: string): Promise<string | null> {
-      return branches.get(ref)?.get(path) ?? null;
+      const tree = branches.get(ref);
+      if (tree) return tree.get(path) ?? null;
+      // `ref` may name a recorded commit sha rather than a live branch (a revert's target read at
+      // a past commit, not the branch head); replay that commit's own change to the path.
+      const historical = commitLog.find((entry) => entry.ref === ref && entry.paths.includes(path));
+      return historical ? (historical.contentByPath[path] ?? null) : null;
     },
 
     async readEntries(dir: string, ref: string): Promise<RepoFile[]> {
@@ -631,6 +657,16 @@ export function createDevBackend(): Backend {
       }
       const sha = nextSha();
       heads.set(branch, sha);
+      const contentByPath: Record<string, string | null> = {};
+      for (const change of changes) contentByPath[change.path] = change.content;
+      commitLog.push({
+        branch,
+        paths: changes.map((c) => c.path),
+        ref: sha,
+        author,
+        date: new Date().toISOString(),
+        contentByPath,
+      });
 
       // Record the content file (the .md entry, not the manifest) so the E2E recorder route can
       // assert the author and the landing branch. The committer is left null: cairn never sets it,
@@ -644,11 +680,26 @@ export function createDevBackend(): Backend {
       return sha;
     },
 
-    async createBranch(name: string, fromBranch: string): Promise<void> {
+    async listCommits(path: string, ref: string, limit: number): Promise<BackendCommit[]> {
+      // filter() already copies, so reverse() rewrites that copy, never the shared commitLog.
+      return commitLog
+        .filter((entry) => entry.branch === ref && entry.paths.includes(path))
+        .reverse()
+        .slice(0, limit + 1)
+        .map((entry) => ({ ref: entry.ref, author: entry.author, date: entry.date }));
+    },
+
+    async createBranch(name: string, fromBranch: string): Promise<string> {
+      // A real ref-create POST is create-only: an existing name of the same branch answers 422,
+      // which the live backend maps to BranchExistsError. Mirror that here rather than silently
+      // overwriting, which would let a revert or a raced save destroy another editor's draft.
+      if (branches.has(name)) throw new BranchExistsError(name);
       const source = branches.get(fromBranch);
       if (!source) throw new CommitConflictError(`${fromBranch} (unreadable source)`);
       branches.set(name, new Map(source));
-      heads.set(name, nextSha());
+      const sha = nextSha();
+      heads.set(name, sha);
+      return sha;
     },
 
     async deleteBranch(name: string): Promise<void> {

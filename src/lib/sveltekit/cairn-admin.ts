@@ -24,7 +24,7 @@ import { createNavRoutes, type NavLoadData } from './nav-routes.js';
 import type { AuthRoutesConfig } from './auth-routes.js';
 import type { AuthBranding } from '../email.js';
 import type { CairnRuntime } from '../content/types.js';
-import type { CairnEvent } from './types.js';
+import type { CairnEvent, HistoryData } from './types.js';
 
 /**
  * Injectable dependencies, grouped into the two cohesive bags a site actually overrides. The
@@ -66,6 +66,7 @@ export type AdminData =
   | { view: 'confirm'; page: ConfirmData }
   | { view: 'list'; page: ListData }
   | { view: 'edit'; page: EditData }
+  | { view: 'history'; page: HistoryData }
   | { view: 'editors'; page: EditorsData }
   | { view: 'nav'; page: NavLoadData }
   | { view: 'media'; page: MediaLibraryData }
@@ -140,6 +141,10 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
       case 'edit': {
         const delegated = contentEvent(event, { concept: view.concept.id, id: view.id });
         return { view: 'edit', page: await content.editLoad(delegated) };
+      }
+      case 'history': {
+        const delegated = contentEvent(event, { concept: view.concept.id, id: view.id });
+        return { view: 'history', page: await content.historyLoad(delegated) };
       }
       case 'editors': {
         // editorsLoad gates itself with requireOwner, so the dispatcher adds no second gate.
@@ -231,9 +236,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
   // The shell posts publishAll from every authed admin page to the absolute /admin?/publishAll, which
   // parses to the index view, so 'index' is in the set alongside the per-view names; login and confirm
   // may not.
-  const authedViews = ['index', 'list', 'edit', 'editors', 'nav', 'media', 'settings', 'vocabulary', 'help'] as const;
+  const authedViews = ['index', 'list', 'edit', 'history', 'editors', 'nav', 'media', 'settings', 'vocabulary', 'help'] as const;
   // An editor signs out from wherever they are, so logout accepts any parsed view.
-  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media', 'settings', 'vocabulary', 'help'] as const;
+  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'history', 'editors', 'nav', 'media', 'settings', 'vocabulary', 'help'] as const;
 
   /**
    * The full admin action vocabulary, one named async function per action, so a site's
@@ -268,6 +273,10 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    // Revert (spec "Part 2: revert"): starts a draft from an old publish. Gated to the history
+    // view, where the revert forms live; concept/id are synthesized the same way every other
+    // per-entry action's are.
+    revert: viewAction('revert', ['history'], (event, view) => content.revertAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
     dictionaryAdd: viewAction('dictionaryAdd', ['edit'], (event, view) =>

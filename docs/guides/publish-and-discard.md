@@ -5,6 +5,7 @@ Every entry moves through the same cycle. You write, you save privately as often
 - [Save privately](#save-privately)
 - [Publish puts your draft on the live site](#publish-puts-your-draft-on-the-live-site)
 - [What each status means](#what-each-status-means)
+- [See an entry's history and restore an earlier version](#see-an-entrys-history-and-restore-an-earlier-version)
 - [Discard unpublished changes](#discard-unpublished-changes)
 - [Delete an entry](#delete-an-entry)
 - [Publish the whole site at once](#publish-the-whole-site-at-once)
@@ -47,6 +48,14 @@ Every entry list shows a status badge, and the three values track exactly where 
 | **Published** | Live exactly as written. Nothing is waiting. |
 
 The list's Pending edits filter gathers New and Edited together. That's the useful view when you're checking what still needs a decision. The Published filter shows the rest. A separate Hidden toggle narrows to entries kept off the site's public lists. Hidden is its own setting, and an entry in any of the three statuses can be hidden.
+
+## See an entry's history and restore an earlier version
+
+Every entry keeps a record of what went live and when. Open **History**, in the entry's overflow menu, to see it: every version of the file, newest first, including versions that reached the site some other way than cairn's editor, a developer's direct edit, or a site-wide update run across every entry at once. Each row names who made that version live and when.
+
+The list holds the most recent 25 published versions. If the entry has ever been renamed, the list only reaches back as far as the rename; an older name's own history doesn't carry forward into it. Cairn keeps no history for a deleted entry at all. If you need something the list doesn't reach, whether that's an older version past the 25 shown or something from before a delete, ask whoever manages your site's code: the full history lives in git, and a developer can look up anything that's ever been committed there.
+
+To bring an old version back, choose **Revert** beside the version you want. Revert doesn't publish anything by itself. It opens a new draft holding that version's words, the same way saving would, so you land in the ordinary editor with the old content ready to review, adjust, and publish, or set aside. If the entry already has an unpublished draft waiting, cairn refuses the revert and names who last saved that draft and when, so you can publish or discard it and try again. If something in the old version has since changed on the site, a tag that's been retired, say, cairn warns about it right on the draft rather than blocking the revert outright.
 
 ## Discard unpublished changes
 

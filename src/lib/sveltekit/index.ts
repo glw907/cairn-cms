@@ -106,7 +106,16 @@ export {
 } from './section-action.js';
 export { createCairnAdmin, type CairnAdminOptions, type CairnAdminRoutes, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
-export type { CairnEvent, CookieJar, HandleInput, PlatformContext, CookieSetOptions } from './types.js';
+export type {
+  CairnEvent,
+  CookieJar,
+  HandleInput,
+  PlatformContext,
+  CookieSetOptions,
+  HistoryData,
+  HistoryEntry,
+  RevertFailure,
+} from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { CairnEnv } from '../env.js';
 export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from '../email.js';

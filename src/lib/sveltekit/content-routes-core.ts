@@ -23,7 +23,8 @@ import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pe
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, stampFirstPublish, upsertEntry, removeEntry, inboundLinks, inboundReferences, inboundIncludes, type Manifest, type ManifestEntry, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
-import { isConflict } from '../github/types.js';
+import { isConflict, isBranchExists } from '../github/types.js';
+import { logCommitFailed } from './commit-log.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
@@ -42,7 +43,7 @@ import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor } from '../auth/types.js';
 import type { ContentRoutesContext, AttentionItem } from './content-routes-context.js';
-import type { CairnEvent } from './types.js';
+import type { CairnEvent, HistoryData, HistoryEntry, RevertFailure } from './types.js';
 
 // The advisory notice types are defined alongside the cross-branch address index in the content
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
@@ -360,6 +361,64 @@ function invalidIdMessage(concept: ConceptDescriptor): string {
  */
 function manifestRow(manifest: Manifest, conceptId: string, id: string): ManifestEntry | undefined {
   return manifest.entries.find((e) => e.concept === conceptId && e.id === id);
+}
+
+/**
+ * The frontmatter keys every entry carries regardless of the site's own declared fields: the
+ * engine reads these directly (`manifestEntryFromFile`, the list-row summarizer) rather than
+ * gating them on a `NamedField`, so they are never "retired" even when a concept declares no
+ * field of the same name. `description` feeds `deriveExcerpt` in both readers the same way.
+ */
+const BUILTIN_FRONTMATTER_KEYS = new Set(['title', 'date', 'draft', 'description']);
+
+/**
+ * The revert schema-drift signals (spec "Part 2: revert", warn-not-refuse): frontmatter keys the
+ * old version carries that the concept's current fields no longer declare, and taxonomy tags no
+ * longer in the configured vocabulary. Pure and read-only; the caller decides what to do with the
+ * result, since revert never refuses on it.
+ */
+function revertSchemaDrift(
+  concept: ConceptDescriptor,
+  frontmatter: Record<string, unknown>,
+  vocabValues: string[],
+): { retiredFields: string[]; retiredTags: string[] } {
+  const known = new Set(concept.fields.map((f) => f.name));
+  const retiredFields = Object.keys(frontmatter).filter((k) => !known.has(k) && !BUILTIN_FRONTMATTER_KEYS.has(k));
+  const taxField = resolveTaxonomyField(concept.fields);
+  const retiredTags =
+    vocabValues.length > 0 && taxField !== null ? unlistedTags(vocabValues, coerceTags(frontmatter[taxField])) : [];
+  return { retiredFields, retiredTags };
+}
+
+/**
+ * The revert schema-drift advisory (spec "Part 2: revert"): "this version predates a change to
+ * this content type," naming the fields and tags. Shared between `revertAction`, which derives
+ * the two lists from the old content it is about to commit, and `editLoad`, which rehydrates the
+ * same notice from the redirect's query params, the channel save's own advisories already ride.
+ * Null when neither list carries anything, so a plain revert adds no notice.
+ */
+function retiredContentAdvisory(retiredFields: string[], retiredTags: string[]): AdvisoryNotice | null {
+  if (retiredFields.length === 0 && retiredTags.length === 0) return null;
+  const parts: string[] = [];
+  if (retiredFields.length) {
+    parts.push(`the ${retiredFields.length === 1 ? 'field' : 'fields'} ${retiredFields.join(', ')}`);
+  }
+  if (retiredTags.length) {
+    parts.push(`the ${retiredTags.length === 1 ? 'tag' : 'tags'} ${retiredTags.join(', ')}`);
+  }
+  return {
+    kind: 'reverted-schema-drift',
+    severity: 'warn',
+    message: `This version predates a change to this content type: ${parts.join(' and ')} no longer belong to it. Saving keeps only what the current form shows.`,
+  };
+}
+
+/**
+ * Read a comma-joined query param as a list, dropping empty segments. An absent param and an
+ * empty one both read as no list, so a caller needs no separate presence check.
+ */
+function commaListParam(url: URL, name: string): string[] {
+  return (url.searchParams.get(name) ?? '').split(',').filter(Boolean);
 }
 
 /** Look up the concept named by the `[concept]` route param, or a 404. */
@@ -903,6 +962,17 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       }
     }
 
+    // The revert schema-drift advisory (spec "Part 2: revert"): revertAction carries its two
+    // retired-name lists on the redirect query, the same channel save's own draftLinks/
+    // referenceWarnings ride; this rehydrates them into the same advisories array the address-
+    // collision notice above already populates, so EditPage's one generic advisory region renders
+    // both with no separate code path.
+    const revertNotice = retiredContentAdvisory(
+      commaListParam(event.url, 'revertRetiredFields'),
+      commaListParam(event.url, 'revertRetiredTags'),
+    );
+    if (revertNotice) advisories = [...advisories, revertNotice];
+
     // Project the one committed media manifest read two ways: the minimal resolver triple the preview
     // needs (`mediaTargets`) and the picker's full human layer (`mediaLibrary`), both keyed by hash.
     // A corrupt committed file degrades both to empty, not a throw.
@@ -972,6 +1042,81 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       advisories,
       orphanTags,
     };
+  }
+
+  /**
+   * The most recent publishes `historyLoad` reads; a module constant, not a site config knob
+   * (the spec's plan-time call). `listCommits` is asked for one more than this, so the extra
+   * probe row sets `truncated` without a second read and is never itself rendered.
+   */
+  const HISTORY_LIMIT = 25;
+
+  /**
+   * Render what git recorded for a commit's author, degrading name to email to "unknown": the
+   * default branch's log can hold commits made outside cairn (a direct edit, a migration), so
+   * this never assumes a cairn editor produced the row.
+   */
+  function commitEditorName(author: { name: string; email: string }): string {
+    return author.name.trim() || author.email.trim() || 'unknown';
+  }
+
+  /**
+   * Who holds the open draft on `branch` and since when: `branchHead` answers a sha and never
+   * metadata, so the author and date come from a one-row `listCommits` at the branch. Prefers the
+   * row whose sha matches the branch head exactly; when the head commit itself did not touch this
+   * file, falls back to the newest commit on the branch that did (for an ordinary draft, that is
+   * simply the last save). Null when the branch has no head, or when no commit on the branch ever
+   * touched the file. Shared by `historyLoad`'s synthetic draft row and `revertAction`'s collision
+   * refusal, so a refused revert names the same person the history screen shows.
+   */
+  async function draftFromBranchHead(
+    backend: Backend,
+    path: string,
+    branch: string,
+    headSha: string | null,
+  ): Promise<HistoryData['draft']> {
+    if (headSha === null) return null;
+    const branchCommits = await backend.listCommits(path, branch, 1);
+    const head = branchCommits.find((c) => c.ref === headSha) ?? branchCommits[0];
+    return head ? { editor: commitEditorName(head.author), startedAt: head.date } : null;
+  }
+
+  /**
+   * Load one entry's publish history (spec "Part 1: entry history"): the default branch's
+   * bounded commit log for the entry's file, plus a synthetic draft row when a pending branch
+   * exists. Guarded exactly as `editLoad`: `requireEngineAccess` covers authentication and the
+   * per-concept capability boundary; this route enforces nothing else.
+   */
+  async function historyLoad(event: CairnEvent): Promise<HistoryData> {
+    const editor = requireEditor(event);
+    const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
+    const id = event.params.id ?? '';
+    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const backend = ctx.resolveBackend(event);
+    const path = `${concept.dir}/${filenameFromId(id)}`;
+    const branch = pendingBranch(concept.id, id);
+    const [commits, headSha, mainRaw, mainHead] = await Promise.all([
+      backend.listCommits(path, backend.defaultBranch, HISTORY_LIMIT),
+      backend.branchHead(branch),
+      backend.readFile(path, backend.defaultBranch),
+      // The default branch's own head sha, carried onto the page as HistoryData.head: the
+      // revert form's staleness comparand, unrelated to headSha above (the pending branch's own
+      // head, read for the draft row).
+      backend.branchHead(backend.defaultBranch),
+    ]);
+    // A deleted entry still has a commit log (git's path filter reads history, not presence), so
+    // existence is checked the way editLoad checks it: the file on the default branch, or an open
+    // draft. Absent both, history 404s like the edit view; undelete is deliberately out of scope.
+    if (mainRaw === null && headSha === null) throw error(404, 'Entry not found');
+    const truncated = commits.length > HISTORY_LIMIT;
+    const entries: HistoryEntry[] = commits.slice(0, HISTORY_LIMIT).map((c) => ({
+      ref: c.ref,
+      editor: commitEditorName(c.author),
+      date: c.date,
+    }));
+    const draft = await draftFromBranchHead(backend, path, branch, headSha);
+    return { entries, draft, truncated, head: mainHead };
   }
 
   /**
@@ -1751,6 +1896,132 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     throw redirect(303, `/admin/${concept.id}/${newId}?renamed=1`);
   }
 
+  /**
+   * The revert collision refusal (spec "Part 2: revert"): a pending branch already blocks this
+   * entry, from either entry point (`revertAction`'s own fast pre-check, or `createBranch`'s
+   * authoritative collision under a race). Re-reads the blocking draft through
+   * `draftFromBranchHead`, so the refusal names the same person the history screen shows rather
+   * than answering a bare 409. A branch that vanished between the collision and this re-read (an
+   * unlucky discard) degrades to "unknown" rather than throwing: the refusal still stands, since
+   * the caller's own attempt already failed.
+   */
+  async function draftExistsFailure(backend: Backend, path: string, branch: string): Promise<ActionFailure<RevertFailure>> {
+    const draft = await draftFromBranchHead(backend, path, branch, await backend.branchHead(branch));
+    return fail(409, {
+      reason: 'draft_exists',
+      draftEditor: draft?.editor ?? 'unknown',
+      draftStartedAt: draft?.startedAt ?? '',
+    } satisfies RevertFailure);
+  }
+
+  /**
+   * Revert an entry to an earlier publish (spec "Part 2: revert"): start a draft from an old
+   * version, never a time machine. In order: (1) the posted `ref` must be a member of a FRESH
+   * `listCommits` read (full-sha exact match), so only the listed recent publishes are revertable
+   * through the UI; (2) the posted `head` must still match `branchHead(defaultBranch)`, or someone
+   * published since the history page rendered; (3) the old content is read and inspected for
+   * schema drift, which only ever warns, never refuses; (4) a pending branch already blocking this
+   * entry refuses fail-closed, from the fast pre-check or from `createBranch`'s own typed
+   * collision under a race; (5) the old markdown commits onto the new branch with `expectedHead`
+   * set to the sha `createBranch` just made, so a save landing in that narrow window answers 409
+   * instead of being silently overwritten; (6) `commit.reverted` logs alongside the ordinary
+   * `commit.succeeded`; (7) the action lands on the edit screen's post-save redirect, carrying any
+   * schema-drift advisory the same way save's own advisories ride. There is no force path: every
+   * refusal here is a fail-closed `ActionFailure` that stays on the page.
+   */
+  async function revertAction(event: CairnEvent): Promise<ActionFailure<RevertFailure>> {
+    const { editor, concept, id } = requireEntryFromParams(runtime, event);
+    const backend = ctx.resolveBackend(event);
+    const path = `${concept.dir}/${filenameFromId(id)}`;
+    const branch = pendingBranch(concept.id, id);
+
+    const form = await event.request.formData();
+    const ref = String(form.get('ref') ?? '');
+    const head = String(form.get('head') ?? '');
+
+    // (1) Full-sha exact membership in a fresh read, not a trust of the posted row.
+    const commits = await backend.listCommits(path, backend.defaultBranch, HISTORY_LIMIT);
+    if (!commits.slice(0, HISTORY_LIMIT).some((c) => c.ref === ref)) {
+      return fail(404, { reason: 'ref_unknown' } satisfies RevertFailure);
+    }
+
+    // (2) main must not have moved since the history page rendered.
+    const mainHead = await backend.branchHead(backend.defaultBranch);
+    if (mainHead !== head) {
+      return fail(409, { reason: 'history_stale' } satisfies RevertFailure);
+    }
+
+    // (3) Read and inspect the old content; this never refuses the revert on schema drift, only
+    // carries an advisory forward, so an old version is never permanently unrevertable. A listed
+    // sha can still read as null, though: a delete commit touches the path (so listCommits offers
+    // it) but leaves nothing to read back. That refuses in place, the same as any other listed
+    // ref this action cannot honor, rather than escaping as a full 404 page.
+    const raw = await backend.readFile(path, ref);
+    if (raw === null) return fail(404, { reason: 'ref_unknown' } satisfies RevertFailure);
+    const { frontmatter } = parseMarkdown(raw);
+    const vocabValues = runtime.vocabulary.map((v) => v.value);
+    const { retiredFields, retiredTags } = revertSchemaDrift(concept, frontmatter, vocabValues);
+
+    // (4) The pre-check is a fast path for a friendly message; createBranch's typed collision,
+    // caught below, is the authoritative refusal for a race this pre-check cannot see.
+    if ((await backend.branchHead(branch)) !== null) {
+      return draftExistsFailure(backend, path, branch);
+    }
+    let createdAtSha: string;
+    try {
+      createdAtSha = await backend.createBranch(branch, backend.defaultBranch);
+    } catch (err) {
+      if (isBranchExists(err)) return draftExistsFailure(backend, path, branch);
+      throw err;
+    }
+
+    // (5) Fail-closed on the sha createBranch actually created the branch at, never the mainHead
+    // read back in (2): createBranch re-reads the default branch's own head internally, several
+    // round trips after (2)'s read, so a publish of any entry landing in that window can move main
+    // between the two reads and make mainHead stale by the time the branch exists. Using
+    // createBranch's own returned sha keeps this commit anchored to the branch's real starting
+    // point, so it never conflicts on a change createBranch itself already absorbed. Re-reading
+    // branchHead here instead would reopen the race this guards (a save landing between
+    // createBranch and the re-read would be read back as the expected head and then silently
+    // overwritten); any commit that sneaks onto the new branch after creation still makes this
+    // commit conflict, mapped to the collision refusal.
+    const commitFields = { concept: concept.id, id, editor: editor.email, branch };
+    let newSha: string;
+    try {
+      newSha = await backend.commit(
+        branch,
+        [{ path, content: raw }],
+        { name: editor.displayName, email: editor.email },
+        `Revert ${concept.label.toLowerCase()}: ${id} to ${ref.slice(0, 7)}`,
+        createdAtSha,
+      );
+    } catch (err) {
+      logCommitFailed(commitFields, err);
+      if (isConflict(err)) return draftExistsFailure(backend, path, branch);
+      // A non-conflict failure means nothing else touched the branch this request just created;
+      // best-effort delete it so it never lingers as an authorless pending branch in the counts
+      // and publishAll. A failed cleanup swallows here, since the original error is what matters.
+      try {
+        await backend.deleteBranch(branch);
+      } catch {
+        // Best-effort: an orphaned branch is a lesser evil than masking the original error.
+      }
+      throw err;
+    }
+
+    // (6) commit.succeeded mirrors every other commit path; commit.reverted is revert's own
+    // record, carrying the reverted-to ref and the branch sha the revert commit landed at.
+    log.info('commit.succeeded', commitFields);
+    log.info('commit.reverted', { concept: concept.id, id, editor: editor.email, ref, branchSha: newSha });
+
+    // (7) The edit screen's post-save redirect, carrying the schema-drift advisory (if any)
+    // through the same query-string channel save's draftLinks/referenceWarnings ride.
+    let query = 'saved=1';
+    if (retiredFields.length) query += `&revertRetiredFields=${encodeURIComponent(retiredFields.join(','))}`;
+    if (retiredTags.length) query += `&revertRetiredTags=${encodeURIComponent(retiredTags.join(','))}`;
+    throw redirect(303, `/admin/${concept.id}/${id}?${query}`);
+  }
+
   return {
     shellLoad,
     helpLoad,
@@ -1758,6 +2029,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     listLoad,
     createAction,
     editLoad,
+    historyLoad,
     saveAction,
     publishAction,
     publishAllAction,
@@ -1765,5 +2037,6 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     deleteAction,
     listDeleteAction,
     renameAction,
+    revertAction,
   };
 }

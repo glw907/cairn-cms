@@ -14,7 +14,34 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-06: `0.94.0-rc.2` is PUBLISHED; run the ASC verification session)
+## Immediate next action (2026-08-06: the ASC verification PASSED; mint stable `0.94.0`)
+
+**THE END-TO-END PROOF THIS RELEASE WAS WAITING ON HAS RUN, AND IT IS GREEN.** ASC repinned to
+`0.94.0-rc.2` from the registry on a clean `npm ci` (`node_modules` deleted first, so nothing of
+the diagnosis-time patch survived), and its Playwright suite **started a Worker and ran all 75
+specs**, where `rc.1` had allowed none of them to reach a request: zero `ERR_CONNECTION_REFUSED`,
+zero `is server-only`, zero `Workers runtime failed to start`. Every functional spec passed,
+including the authenticated admin session, both join paths, both member-portal sessions, all four
+waivers signing specs, and the two `.ics` feeds, which is what exercises both subpaths server-side
+under `workerd`. `check` 0/0, 2057 tests, `build` clean. **Nothing blocks the stable cut.**
+
+The remaining Playwright failures are pixel diffs against baselines ASC could not regenerate while
+the Worker refused to start; ASC has since regenerated them on its own branch and they are not a
+cairn concern. Geoff approved the stacked field register on 2026-08-06, so ASC's branch now waits
+only on this publish: it holds an exact `0.94.0-rc.2` pin that becomes `^0.94.0` the moment the
+stable lands.
+
+**One finding came back with the verification**, filed to `ROADMAP.md`'s Now tier rather than left
+in a report: the stacked register drops a field's control by the label's height, so a bare sibling
+control in the same row no longer aligns with it (12.5px on ASC's season picker, both widths, both
+themes). It sits beside the optical-centring default Geoff asked for on 2026-07-30, which was
+refiled at the same time after being lost in a closed plan's next-pass-seed paragraph. They are one
+class and are worth one pass.
+
+**Then:** migrate `907-life` and `ecxc-ski` off the recipe ASC's migration wrote, each resolving on
+its own caret, and bump `cairn-pub` off `rc.1`.
+
+### Superseded context (the RC window, kept until the stable cuts)
 
 **Both `aksailingclub-org` and `cairn-pub` have migrated to `0.94.0-rc.1` and filed their
 reports**: [ASC](internal/feedback/2026-08-05-aksailingclub-org-migration.md),

@@ -7,19 +7,28 @@
 //
 // 1. PAIR WITH THE LINE, NOT THE BLOCK. An icon beside a multi-line text block aligns with the
 //    block's FIRST LINE box. Comparing against the block reported 29 to 68px of phantom delta on
-//    rows that were composed correctly. `firstTextLeaf` plus `getClientRects()[0]` is the whole fix:
-//    the first rect a Range yields over a text run IS that run's first line box.
+//    rows that were composed correctly. {@link principalRun} plus `getClientRects()[0]` is the fix:
+//    the first rect a Range yields over a text run IS that run's first line box. The line is found
+//    by VISUAL position, never by document order, since `order`, `column-reverse`, an explicit
+//    `grid-row` and an absolutely positioned flag all put the first run in the DOM somewhere other
+//    than the top of the member.
 // 2. READ TYPE METRICS OFF THE ELEMENT THAT RENDERS THE LINE. Resolving font metrics from the text
 //    CONTAINER rather than the element that owns the line box returned -0.4px, "this row is fine",
 //    on the row whose icons visibly ride high. Every metric here comes from
-//    `getComputedStyle(lineOwner)`, where `lineOwner` is the text node's own parent element.
+//    `getComputedStyle(lineOwner)`, and `lineOwner` is the parent of the line's PRINCIPAL run, the
+//    biggest type on it. A small inline leading a heading ("DRAFT Winter schedule", "3. Publish the
+//    post") owns the first text node without owning any of the line's visual mass, and reading its
+//    face reproduces the same -0.4px answer with the sign free to invert.
 // 3. MEASURE INK, NOT ELEMENT BOXES. An SVG's element box centres while its drawn ink rides high:
 //    a 24x24 glyph whose art occupies rows 2 through 14 of its viewBox reads as centred by
-//    `getBoundingClientRect` and 4px high by its ink. Icon geometry is therefore `getBBox()` mapped
-//    through `getScreenCTM()`, and text geometry is the glyph box off a Range. An element box is
-//    used only where the border box IS the visual object (a control), or as an explicitly MARKED
-//    fallback for an icon that carries no SVG geometry (an `<img>`, a background-image tile), which
-//    a caller can tell apart through {@link MemberAnchor.geometry}.
+//    `getBoundingClientRect` and 4px high by its ink. Icon geometry is therefore per-shape
+//    `getBBox()` mapped through that shape's own `getScreenCTM()`, and text geometry is the glyph
+//    box off a Range. Ink is what PAINTS, which the root element's own bbox is not: a non-painting
+//    spacer path inflates it to the full viewBox, a stroked one-dimensional glyph measures zero
+//    tall inside it, and art that bleeds past the viewBox reads outside the drawn crop. An element
+//    box is used only where the border box IS the visual object (a control), or as an explicitly
+//    MARKED fallback for an icon that carries no reachable geometry (an `<img>`, a background-image
+//    tile), which a caller can tell apart through {@link MemberAnchor.geometry}.
 //
 // THE METRIC IS CHOSEN BY THE PAIR'S CLASS, and that split is not a refinement, it is the
 // difference between a useful rule and a rule nobody can leave on. A mixed-size text pair sharing a
@@ -38,11 +47,15 @@ import type { RenderedPage } from '../../rendered.js';
 export const VERTICAL_REPORTING_BAR_PX = 2;
 
 /**
- * The tallest a row member may be and still be measured as a row member. A vertical-alignment row
- * is a band of content sharing one line: a stacked field (label, gap, control) reaches about 57px
- * and a table cell about 49px, so 96px clears every composition this module is about while
- * excluding a page's layout columns, whose "alignment" is a layout question rather than a row one.
- * Pairs excluded this way are counted rather than dropped silently.
+ * The tallest a row member's own READING may be and still count as a row member. A stacked field
+ * (label, gap, control) reaches about 57px and a table cell about 49px, so 96px clears every
+ * composition this module is about while excluding a reading that is itself a layout object, a
+ * full-bleed image or a page-tall control.
+ *
+ * The cap applies to the anchor, never to the member's block box. A text member is read off its
+ * FIRST LINE (trap 1), so an icon beside a five-line paragraph is a row whatever the paragraph
+ * measures; capping the block instead made the module's own calibration shape vanish at one extra
+ * wrapped line. Pairs excluded this way are counted rather than dropped silently.
  */
 export const DEFAULT_ROW_ITEM_MAX_HEIGHT_PX = 96;
 
@@ -173,8 +186,14 @@ export interface VerticalMetricsDiagnostics {
   pairsSkippedTooTall: number;
   /** Row members whose visible content resolved to no anchor at all. */
   anchorsUnresolved: number;
-  /** Icon members measured by their element box because no SVG geometry was reachable. */
+  /** Icon members measured by their element box because no painting SVG geometry was reachable. */
   iconElementBoxFallbacks: number;
+  /**
+   * Painting shapes whose drawn extent a `mask` or an unresolvable `clip-path` makes unknowable.
+   * Their geometry box was used as the best available reading, so a caller seeing a non-zero count
+   * on a row it cares about should look at the crop before trusting the number.
+   */
+  iconInkClipsUnresolved: number;
   /** Text members whose font metrics the browser would not resolve, so no baseline was read. */
   textMetricsUnresolved: number;
   /** Pairs whose class had no reading on one member, so no delta exists. */
@@ -207,6 +226,12 @@ interface SvgInkGeometry {
   getScreenCTM(): { b: number; d: number; f: number } | null;
 }
 
+/** A vertical extent in whichever coordinate space its producer names. */
+interface VerticalBand {
+  top: number;
+  bottom: number;
+}
+
 /**
  * Walk `rootSelector`'s subtree and return every candidate sibling pair with both members' vertical
  * geometry resolved. Runs inside the page: Playwright serializes it by source, so every helper is
@@ -231,12 +256,22 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     'input, select, textarea, button, [role="button"], [role="checkbox"], [role="switch"], ' +
     '.btn, .input, .select, .textarea, .checkbox, .toggle, .radio';
   const ICON_SELECTOR = 'svg, img, [data-icon]';
+  // The SVG element kinds that put paint on the screen. `getBBox` answers for more than these, and
+  // for their definition-only containers too, so unioning everything reports geometry as ink.
+  const PAINTING_SVG_SELECTOR = 'path, rect, circle, ellipse, line, polyline, polygon, text, image, use';
+  const SVG_DEFINITION_SELECTOR = 'defs, clipPath, symbol, mask, marker, pattern';
+  // A bound on the runs one member's principal-line search reads, so a pathological subtree cannot
+  // turn the walk quadratic. Well past any real row; a member needing more is not a row member.
+  const MAX_TEXT_RUNS_PER_MEMBER = 200;
 
   const helpers = globalThis.__cairnAudit;
   const signature = (el: Element) => (helpers ? helpers.signature(el) : el.tagName.toLowerCase());
   const isVisible = (el: Element) => (helpers ? helpers.isVisible(el) : true);
   const paint = document.createElement('canvas').getContext('2d');
   const capHeightByFont = new Map<string, number>();
+  // Nested row containers mean the same member is asked for its principal run several times over
+  // one walk, and finding that run costs a subtree traversal plus a rect per run.
+  const principalRunByElement = new Map<Element, { node: Text; lineOwner: Element } | null>();
 
   const diagnostics: VerticalMetricsDiagnostics = {
     rowsWalked: 0,
@@ -244,12 +279,19 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     pairsSkippedTooTall: 0,
     anchorsUnresolved: 0,
     iconElementBoxFallbacks: 0,
+    iconInkClipsUnresolved: 0,
     textMetricsUnresolved: 0,
     pairsUnmeasurable: 0,
   };
 
   function round(value: number): number {
     return Math.round(value * 100) / 100;
+  }
+
+  /** A length off a computed style, falling back rather than propagating a `NaN` into geometry. */
+  function styleNumber(value: string, fallback: number): number {
+    const parsed = parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
   }
 
   function classesOf(el: Element): string {
@@ -328,12 +370,62 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     };
   }
 
-  /** An icon's drawn ink in client coordinates, or null where no SVG geometry is reachable. */
-  function inkBounds(el: Element): { top: number; bottom: number } | null {
-    // The one narrow cast in this module: the walk holds plain Elements, and only an SVG carries
-    // the two geometry methods. `Partial` keeps the presence check honest rather than asserting it.
-    const geometry = el as unknown as Partial<SvgInkGeometry>;
+  /** Whether `shape` and every ancestor up to `root` is itself painted at all. */
+  function paints(shape: Element, root: Element): boolean {
+    for (let node: Element | null = shape; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') return false;
+      // `opacity` does not inherit, so a fully transparent `<g>` has to be read on the group itself.
+      if (styleNumber(style.opacity, 1) <= 0) return false;
+      if (node === root) break;
+    }
+    return true;
+  }
+
+  /**
+   * The user-space band a `clip-path` confines `shape` to, or null when nothing clips it.
+   * `unresolved` means something clips it that this cannot compute (a mask's alpha, a basic-shape
+   * function, an object-bounding-box clip), which the caller counts rather than quietly trusting.
+   */
+  function clipBand(style: CSSStyleDeclaration): VerticalBand | 'unresolved' | null {
+    const mask = style.getPropertyValue('mask-image').trim();
+    if (mask !== '' && mask !== 'none') return 'unresolved';
+    const clip = style.clipPath.trim();
+    if (!clip || clip === 'none') return null;
+    const reference = /^url\(["']?#([^"')]+)["']?\)$/.exec(clip);
+    if (!reference) return 'unresolved';
+    const target = document.getElementById(reference[1]);
+    if (!target || target.tagName !== 'clipPath') return 'unresolved';
+    if ((target.getAttribute('clipPathUnits') ?? 'userSpaceOnUse') !== 'userSpaceOnUse') return 'unresolved';
+    let top = Infinity;
+    let bottom = -Infinity;
+    for (const child of Array.from(target.children)) {
+      const geometry = child as unknown as Partial<SvgInkGeometry>;
+      if (typeof geometry.getBBox !== 'function') continue;
+      try {
+        const box = geometry.getBBox();
+        top = Math.min(top, box.y);
+        bottom = Math.max(bottom, box.y + box.height);
+      } catch {
+        return 'unresolved';
+      }
+    }
+    return bottom > top ? { top, bottom } : 'unresolved';
+  }
+
+  /** One painting shape's drawn band in client coordinates, or null when it paints nothing. */
+  function shapeInk(shape: Element, root: Element): VerticalBand | null {
+    // The one narrow cast in this module: the walk holds plain Elements, and only an SVG shape
+    // carries the two geometry methods. `Partial` keeps the presence check honest.
+    const geometry = shape as unknown as Partial<SvgInkGeometry>;
     if (typeof geometry.getBBox !== 'function' || typeof geometry.getScreenCTM !== 'function') return null;
+    if (!paints(shape, root)) return null;
+    const style = getComputedStyle(shape);
+    const fills = style.fill !== 'none' && styleNumber(style.fillOpacity, 1) > 0;
+    const strokeWidth = styleNumber(style.strokeWidth, 0);
+    const strokes = style.stroke !== 'none' && strokeWidth > 0 && styleNumber(style.strokeOpacity, 1) > 0;
+    if (!fills && !strokes) return null;
+
     let box: { x: number; y: number; width: number; height: number };
     let ctm: { b: number; d: number; f: number } | null;
     try {
@@ -342,14 +434,81 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     } catch {
       return null;
     }
-    if (!ctm || !(box.width > 0) || !(box.height > 0)) return null;
+    if (!ctm) return null;
+
+    let left = box.x;
+    let right = box.x + box.width;
+    let top = box.y;
+    let bottom = box.y + box.height;
+    if (strokes) {
+      // `getBBox` is the GEOMETRY box and excludes the stroke, so a one-dimensional glyph measures
+      // zero tall while painting a stroke-width band: the three round-cap dots of an ellipsis icon
+      // read as no ink at all, and a vertical rule reads as no ink either. Half the stroke width
+      // each side is the drawn extent for a butt cap and understates a round or square cap only
+      // along the path's own direction, which leaves the CENTRE this module compares exact.
+      const half = strokeWidth / 2;
+      left -= half;
+      right += half;
+      top -= half;
+      bottom += half;
+    } else if (!(box.width > 0) || !(box.height > 0)) {
+      // A fill over a degenerate shape paints nothing at all.
+      return null;
+    }
+
+    const clip = clipBand(style);
+    if (clip === 'unresolved') diagnostics.iconInkClipsUnresolved += 1;
+    else if (clip) {
+      top = Math.max(top, clip.top);
+      bottom = Math.min(bottom, clip.bottom);
+      if (!(bottom > top)) return null;
+    }
+
     const ys = [
-      ctm.b * box.x + ctm.d * box.y + ctm.f,
-      ctm.b * (box.x + box.width) + ctm.d * box.y + ctm.f,
-      ctm.b * box.x + ctm.d * (box.y + box.height) + ctm.f,
-      ctm.b * (box.x + box.width) + ctm.d * (box.y + box.height) + ctm.f,
+      ctm.b * left + ctm.d * top + ctm.f,
+      ctm.b * right + ctm.d * top + ctm.f,
+      ctm.b * left + ctm.d * bottom + ctm.f,
+      ctm.b * right + ctm.d * bottom + ctm.f,
     ];
-    return { top: Math.min(...ys), bottom: Math.max(...ys) };
+    let inkTop = Math.min(...ys);
+    let inkBottom = Math.max(...ys);
+
+    // An `<svg>` clips to its own viewport by default, so art that bleeds past the viewBox is drawn
+    // cropped. Reading the geometry past that edge reported a 15px phantom on a mildly off row.
+    const viewport = shape.closest('svg');
+    if (viewport) {
+      const clips = getComputedStyle(viewport).overflow !== 'visible';
+      const rect = viewport.getBoundingClientRect();
+      if (clips && rect.height > 0) {
+        inkTop = Math.max(inkTop, rect.top);
+        inkBottom = Math.min(inkBottom, rect.bottom);
+      }
+    }
+    return inkBottom >= inkTop ? { top: inkTop, bottom: inkBottom } : null;
+  }
+
+  /**
+   * An icon's drawn ink in client coordinates, unioned over the shapes that actually paint, or
+   * null where no painting geometry is reachable (an `<img>`, a background-image tile).
+   *
+   * Unioning the shapes rather than reading the root's own bbox is what makes this INK. One
+   * `fill="none"` sizing path, the idiom Material Symbols ships on every glyph, inflates the root
+   * bbox to the whole viewBox and turns a 4px-high icon into a clean reading with nothing in the
+   * record to say so.
+   */
+  function inkBounds(el: Element): VerticalBand | null {
+    const shapes = Array.from(el.querySelectorAll(PAINTING_SVG_SELECTOR)).filter(
+      (shape) => !shape.closest(SVG_DEFINITION_SELECTOR)
+    );
+    let top = Infinity;
+    let bottom = -Infinity;
+    for (const shape of shapes) {
+      const band = shapeInk(shape, el);
+      if (!band) continue;
+      top = Math.min(top, band.top);
+      bottom = Math.max(bottom, band.bottom);
+    }
+    return top === Infinity ? null : { top, bottom };
   }
 
   function iconAnchor(el: Element): MemberAnchor | null {
@@ -399,24 +558,93 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     return Array.from(el.querySelectorAll(selector)).filter((node) => isVisible(node));
   }
 
-  /** The first non-whitespace text run inside `el`, in document order, that actually paints. */
-  function firstTextLeaf(el: Element): { node: Text; lineOwner: Element } | null {
+  /**
+   * Whether `lineOwner` sits outside `member`'s normal flow, so its run belongs beside the
+   * composition rather than in it. A floated price and an absolutely positioned "New" flag are
+   * both first in the DOM and neither is the line the eye pairs the row against.
+   */
+  function isOutOfFlow(lineOwner: Element, member: Element): boolean {
+    for (let node: Element | null = lineOwner; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (style.position === 'absolute' || style.position === 'fixed') return true;
+      if (style.cssFloat !== 'none') return true;
+      if (node === member) break;
+    }
+    return false;
+  }
+
+  /** One rendered text run inside a member, with what it takes to place and rank it on a line. */
+  interface TextRun {
+    node: Text;
+    lineOwner: Element;
+    /** The run's FIRST line box, the rect that decides which line the run belongs to. */
+    rect: DOMRect;
+    /** The line owner's own cap height, which ranks a run by the visual mass it puts on the line. */
+    capHeightPx: number;
+    outOfFlow: boolean;
+  }
+
+  /** Every non-whitespace run inside `el` that actually paints, in document order. */
+  function textRuns(el: Element): TextRun[] {
+    const runs: TextRun[] = [];
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    for (let node = walker.nextNode(); node && runs.length < MAX_TEXT_RUNS_PER_MEMBER; node = walker.nextNode()) {
       const text = node as Text;
-      if (!(text.textContent ?? '').trim()) continue;
       const lineOwner = text.parentElement;
       if (!lineOwner || !isVisible(lineOwner)) continue;
-      return { node: text, lineOwner };
+      const range = trimmedRange(text);
+      if (!range) continue;
+      const rects = Array.from(range.getClientRects()).filter((r) => r.width > 0.5 && r.height > 0.5);
+      range.detach();
+      if (rects.length === 0) continue;
+      runs.push({
+        node: text,
+        lineOwner,
+        rect: rects[0],
+        capHeightPx: capHeightFor(fontOf(lineOwner)),
+        outOfFlow: isOutOfFlow(lineOwner, el),
+      });
     }
-    return null;
+    return runs;
+  }
+
+  /**
+   * The run a row is composed against: the biggest type on `el`'s topmost in-flow line. Traps 1
+   * and 2 are the same question asked twice, WHICH run, and answering it by document order gets
+   * both wrong. A reordered column anchors the pair on a line that is not the first one (up to
+   * 23.5px of phantom delta on identical pixels), and a small inline leading a heading owns the
+   * first text node while owning none of the line's visual mass, which is the -0.4px "this row is
+   * fine" reading on a row whose icons visibly ride high.
+   */
+  function principalRun(el: Element): { node: Text; lineOwner: Element } | null {
+    const cached = principalRunByElement.get(el);
+    if (cached !== undefined) return cached;
+    const resolved = resolvePrincipalRun(el);
+    principalRunByElement.set(el, resolved);
+    return resolved;
+  }
+
+  function resolvePrincipalRun(el: Element): { node: Text; lineOwner: Element } | null {
+    const runs = textRuns(el);
+    if (runs.length === 0) return null;
+    const inFlow = runs.filter((run) => !run.outOfFlow);
+    // A member made entirely of out-of-flow runs still has to be readable, so the exclusion only
+    // applies where it leaves something behind.
+    const candidates = inFlow.length > 0 ? inFlow : runs;
+    const opener = candidates.reduce((best, next) => (next.rect.top < best.rect.top ? next : best));
+    const onFirstLine = candidates.filter((run) => {
+      const overlap = Math.min(opener.rect.bottom, run.rect.bottom) - Math.max(opener.rect.top, run.rect.top);
+      return overlap >= Math.min(opener.rect.height, run.rect.height) * 0.5;
+    });
+    const principal = onFirstLine.reduce((best, next) => (next.capHeightPx > best.capHeightPx ? next : best));
+    return { node: principal.node, lineOwner: principal.lineOwner };
   }
 
   /**
    * One row member's anchor. A bare control or icon anchors on itself; a composite carrying exactly
    * one control anchors on THAT control, which is the whole stacked-field case (the composite's own
-   * box centres correctly while the control inside it does not); anything else anchors on its first
-   * text run.
+   * box centres correctly while the control inside it does not); anything else anchors on its
+   * principal run.
    */
   function anchorFor(node: Node): MemberAnchor | null {
     if (node.nodeType === Node.TEXT_NODE) {
@@ -430,7 +658,7 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
 
     const controls = visibleMatches(el, CONTROL_SELECTOR);
     if (controls.length > 1) return null;
-    const leaf = firstTextLeaf(el);
+    const leaf = principalRun(el);
     if (controls.length === 1) {
       const anchor = controlAnchor(controls[0]);
       if (!anchor) return null;
@@ -475,35 +703,52 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       if (elementSelector && !el.matches(elementSelector)) continue;
       const style = getComputedStyle(el);
       if (style.position === 'absolute' || style.position === 'fixed') continue;
+      // `display: contents` generates no box of its own, so ITS children are the row's real
+      // members and the wrapper measures 0x0. Reading the wrapper dropped whole rows out of the
+      // walk with every diagnostic still reading zero, the showcase header's `contents md:flex`
+      // nav group among them.
+      if (style.display === 'contents') {
+        members.push(...rowMembers(el, elementSelector));
+        continue;
+      }
       if (!isVisible(el)) continue;
       members.push(el);
     }
     return members;
   }
 
-  /** Members sorted left to right and split into visual rows by vertical overlap. */
+  /**
+   * Members split into visual rows by vertical band, each row then ordered left to right.
+   *
+   * The band split runs FIRST. Sorting by `left` up front is what broke a wrapped flex row: a
+   * second-row member sharing the first member's left edge sorted between the two members of row
+   * one, every cluster came out a singleton, and the row reported clean with `rowsWalked` at zero.
+   */
   function clusterRows(members: Node[]): { node: Node; box: DOMRect }[][] {
     const boxed: { node: Node; box: DOMRect }[] = [];
     for (const node of members) {
       const box = itemBox(node);
       if (box) boxed.push({ node, box });
     }
-    boxed.sort((one, other) => one.box.left - other.box.left || one.box.top - other.box.top);
-    const clusters: { node: Node; box: DOMRect }[][] = [];
+    boxed.sort((one, other) => one.box.top - other.box.top || one.box.left - other.box.left);
+    const bands: { items: { node: Node; box: DOMRect }[]; top: number; bottom: number }[] = [];
     for (const item of boxed) {
-      const current = clusters[clusters.length - 1];
-      const previous = current?.[current.length - 1];
-      if (previous) {
-        const overlap = Math.min(previous.box.bottom, item.box.bottom) - Math.max(previous.box.top, item.box.top);
-        const smaller = Math.min(previous.box.height, item.box.height);
+      const current = bands[bands.length - 1];
+      if (current) {
+        const overlap = Math.min(current.bottom, item.box.bottom) - Math.max(current.top, item.box.top);
+        const smaller = Math.min(current.bottom - current.top, item.box.height);
         if (overlap >= smaller * 0.5) {
-          current.push(item);
+          current.items.push(item);
+          current.top = Math.min(current.top, item.box.top);
+          current.bottom = Math.max(current.bottom, item.box.bottom);
           continue;
         }
       }
-      clusters.push([item]);
+      bands.push({ items: [item], top: item.box.top, bottom: item.box.bottom });
     }
-    return clusters.filter((cluster) => cluster.length >= 2);
+    return bands
+      .filter((band) => band.items.length >= 2)
+      .map((band) => band.items.slice().sort((one, other) => one.box.left - other.box.left));
   }
 
   const pairs: RawPair[] = [];
@@ -514,21 +759,24 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     const containerStyle = getComputedStyle(container);
     for (const cluster of clusterRows(members)) {
       diagnostics.rowsWalked += 1;
-      const anchors = cluster.map((item) => {
-        if (item.box.height > maxItemHeightPx) return null;
+      const readings = cluster.map((item) => {
         const anchor = anchorFor(item.node);
-        if (!anchor) diagnostics.anchorsUnresolved += 1;
-        return anchor;
+        if (!anchor) {
+          diagnostics.anchorsUnresolved += 1;
+          return { anchor: null, tooTall: false };
+        }
+        // The cap reads the ANCHOR's extent, not the member's block box: a text member is read off
+        // one line, so a tall block is still a row member while a page-tall control is not.
+        return { anchor, tooTall: anchor.bottomPx - anchor.topPx > maxItemHeightPx };
       });
       for (let index = 1; index < cluster.length; index += 1) {
-        const left = anchors[index - 1];
-        const right = anchors[index];
-        if (!left || !right) {
-          if (cluster[index - 1].box.height > maxItemHeightPx || cluster[index].box.height > maxItemHeightPx) {
-            diagnostics.pairsSkippedTooTall += 1;
-          }
+        const left = readings[index - 1];
+        const right = readings[index];
+        if (left.tooTall || right.tooTall) {
+          diagnostics.pairsSkippedTooTall += 1;
           continue;
         }
+        if (!left.anchor || !right.anchor) continue;
         diagnostics.pairsFound += 1;
         pairs.push({
           rowKind,
@@ -541,8 +789,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
             leftPx: round(Math.min(cluster[index - 1].box.left, cluster[index].box.left)),
             rightPx: round(Math.max(cluster[index - 1].box.right, cluster[index].box.right)),
           },
-          a: left,
-          b: right,
+          a: left.anchor,
+          b: right.anchor,
         });
       }
     }
@@ -567,7 +815,7 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
   // uniform across every reading this module produces.
   for (const el of Array.from(root.querySelectorAll(opticalSelector))) {
     if (!isVisible(el)) continue;
-    const leaf = firstTextLeaf(el);
+    const leaf = principalRun(el);
     if (!leaf) continue;
     const glyph = textAnchor(leaf.node, leaf.lineOwner);
     if (!glyph) continue;

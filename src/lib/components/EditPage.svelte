@@ -1595,13 +1595,20 @@ persistent "?" carries Markdown help, design-arc D2).
           </li>
         {/if}
         <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
-        <!-- Recent versions is a plain navigation, not an action: it stays a link rather than a
-             pickAction button, so the popover's own light-dismiss (the browser's default anchor
-             click) is enough and no dialog or form needs opening first. -->
-        <li>
-          <a href={`/admin/${data.conceptId}/${data.id}/history`}>History</a>
-        </li>
-        <li class="menu-divider my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
+        {#if data.published || data.pending}
+          <!-- historyLoad 404s for an entry with neither a main file nor a branch, so a brand-new
+               entry that has never been saved hides this link rather than offering a dead one.
+               History is a plain navigation, not an action, so it stays a link rather than a
+               pickAction button: clicking it does not itself dismiss the popover (an anchor click
+               inside a popover carries no dismiss behavior of its own), but CairnAdmin's view-branch
+               swap unmounts EditPage, and this popover along with it, as part of that navigation.
+               A leave guard that cancels the navigation (an unsaved dirty edit) correctly leaves the
+               menu open, since nothing unmounted. -->
+          <li>
+            <a href={`/admin/${data.conceptId}/${data.id}/history`}>History</a>
+          </li>
+          <li class="menu-divider my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
+        {/if}
         {#if data.pending}
           <li>
             <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>

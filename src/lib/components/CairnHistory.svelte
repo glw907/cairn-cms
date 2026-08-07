@@ -13,7 +13,7 @@ landed after this page loaded. Failure mode: a stale `data` prop (a page rendere
 before a since-published revert) still renders a revert form whose `head` no longer matches
 `main`; `revertAction` is the authority that catches that, this screen only carries the value it
 was given. A refusal renders as an alert above the table, naming what blocked it: `draft_exists`
-names the blocking draft's author and start date, `history_stale` and `ref_unknown` each name
+names the blocking draft's author and last-save date, `history_stale` and `ref_unknown` each name
 what moved, and an unexpected failure falls back to its own bare message.
 -->
 <script lang="ts">
@@ -39,12 +39,18 @@ what moved, and an unexpected failure falls back to its own bare message.
    * Format a publish's ISO timestamp for a history row: a version is a moment an editor might
    * recall by time of day ("published just before lunch"), not only a calendar day, so this
    * keeps the time rather than routing through the admin toolkit's civil-date-only formatter.
+   * Pins `timeZone: 'UTC'`, matching the admin toolkit's own `formatTimestamp` default (its
+   * `timeZone` option defaults to `'UTC'` precisely so a shared formatter never assumes one
+   * consumer's zone): a Worker SSRs in UTC and a browser hydrates in its own local zone, so
+   * leaving the zone unpinned would render one text at SSR and a different one at hydration.
    * Falls back to the raw string when the value fails to parse.
    */
   function formatVersionDate(iso: string): string {
     const parsed = new Date(iso);
     if (Number.isNaN(parsed.getTime())) return iso;
-    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(parsed);
+    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(
+      parsed,
+    );
   }
 
   const rowCount = $derived(data.entries.length + (data.draft ? 1 : 0));
@@ -52,17 +58,17 @@ what moved, and an unexpected failure falls back to its own bare message.
 
   /**
    * The refused revert's message, naming the blocker: a `draft_exists` refusal names the
-   * draft's own author and start date and instructs the editor to publish or discard it first
-   * (spec "Part 2: revert"); `history_stale` and `ref_unknown` each name what moved out from
-   * under the posted form. `viewAction`'s generic `{ error }` catch-all falls through to its own
-   * message unchanged. Null when there is nothing to report (no `form`, or a bare-error shape
-   * this branch never reaches).
+   * draft's own author and last-save date and instructs the editor to publish or discard it
+   * first (spec "Part 2: revert"); `history_stale` and `ref_unknown` each name what moved out
+   * from under the posted form. `viewAction`'s generic `{ error }` catch-all falls through to
+   * its own message unchanged. Null when there is nothing to report (no `form`, or a bare-error
+   * shape this branch never reaches).
    */
   const revertRefusal = $derived.by(() => {
     if (!form || !('reason' in form)) return null;
     if (form.reason === 'draft_exists') {
-      const started = form.draftStartedAt ? `, started ${formatVersionDate(form.draftStartedAt)}` : '';
-      return `${form.draftEditor} has a draft in progress${started}. Publish or discard it before reverting.`;
+      const lastSaved = form.draftStartedAt ? `, last saved ${formatVersionDate(form.draftStartedAt)}` : '';
+      return `${form.draftEditor} has a draft in progress${lastSaved}. Publish or discard it before reverting.`;
     }
     if (form.reason === 'history_stale') {
       return 'The history changed since this page loaded. Reload and try again.';
@@ -76,7 +82,10 @@ what moved, and an unexpected failure falls back to its own bare message.
 </script>
 
 <div class="mx-auto w-full max-w-3xl">
-  <PageHeader title="Recent versions" meta={data.truncated ? 'Showing the most recent 25 versions.' : undefined} />
+  <PageHeader
+    title="Recent versions"
+    meta={data.truncated ? `Showing the most recent ${data.entries.length} versions.` : undefined}
+  />
 
   {#if revertRefusal}
     <div class="alert alert-error mb-4 type-body">{revertRefusal}</div>
@@ -85,9 +94,13 @@ what moved, and an unexpected failure falls back to its own bare message.
   {/if}
 
   {#if data.entries.length === 0 && !data.draft}
+    <!-- historyLoad 404s outright when the entry has neither a main file nor a branch, so this
+         branch renders only for an entry that DOES exist but whose commit read came back empty
+         (a degraded GitHub read, or a dev-backend seed with no recorded commits): never "publish
+         once and history will appear", which would be false here. -->
     <EmptyState
-      heading="No versions yet"
-      message="Publish this entry once, and its history will appear here."
+      heading="No versions found"
+      message="No published versions were found for this entry."
     />
   {:else}
     <div class="overflow-hidden card-shell card-shadow">
@@ -101,12 +114,19 @@ what moved, and an unexpected failure falls back to its own bare message.
         {#snippet children()}
           {#if data.draft}
             <!-- The synthetic draft row: an honest live element with no revert affordance, since
-                 it is not a publish. -->
+                 it is not a publish. Below sm the Date column hides, so its "Last saved" line
+                 stacks under the editor name instead, keeping the row's own date legible rather
+                 than dropping it. -->
             <tr>
               <td class="py-2 pl-6"><StatusChip tone="info" label="Draft" size="xs" /></td>
-              <td class="py-2 type-subtitle">{data.draft.editor}</td>
+              <td class="py-2 type-subtitle">
+                {data.draft.editor}
+                <span class="block type-meta text-muted sm:hidden">
+                  Last saved {formatVersionDate(data.draft.startedAt)}
+                </span>
+              </td>
               <td class="hidden py-2 type-subtitle text-muted sm:table-cell">
-                Started {formatVersionDate(data.draft.startedAt)}
+                Last saved {formatVersionDate(data.draft.startedAt)}
               </td>
               <td class="px-2 py-2 text-right"></td>
             </tr>
@@ -121,14 +141,23 @@ what moved, and an unexpected failure falls back to its own bare message.
                   <StatusChip tone="neutral" label="Current" size="xs" register="quiet" />
                 {/if}
               </td>
-              <td class="py-2 type-subtitle">{entry.editor}</td>
+              <td class="py-2 type-subtitle">
+                {entry.editor}
+                <span class="block type-meta text-muted sm:hidden">{formatVersionDate(entry.date)}</span>
+              </td>
               <td class="hidden py-2 type-subtitle text-muted sm:table-cell">{formatVersionDate(entry.date)}</td>
               <td class="px-2 py-2 text-right">
                 <form method="POST" action="?/revert">
                   <CsrfField />
                   <input type="hidden" name="ref" value={entry.ref} />
                   <input type="hidden" name="head" value={data.head ?? ''} />
-                  <button type="submit" class="btn btn-ghost btn-xs">Revert</button>
+                  <button
+                    type="submit"
+                    class="btn btn-ghost btn-xs"
+                    aria-label={`Revert to the version from ${formatVersionDate(entry.date)} by ${entry.editor}`}
+                  >
+                    Revert
+                  </button>
                 </form>
               </td>
             </tr>

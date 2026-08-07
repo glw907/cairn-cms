@@ -371,9 +371,13 @@ discriminant, not the fields, gates the chrome).
   }
 
   // Path-derived breadcrumbs: the concept label (from the nav) then the entry id segment. Only the
-  // /admin/<concept>/<id> depth shows a trail; a bare concept list shows just the concept.
+  // /admin/<concept>/<id> depth shows a trail; a bare concept list shows just the concept. A fourth
+  // segment of 'history' is the entry's history screen, not the edit desk: the entry crumb then
+  // links back to the desk (it is no longer the current page) and a final 'History' leaf names
+  // where the trail actually ends, so pageTitle (the deepest crumb) reads "History" rather than
+  // reusing the edit desk's own title and trail.
   const crumbs = $derived.by<Crumb[]>(() => {
-    const segs = (shell?.pathname ?? '').split('/').filter(Boolean); // ['admin', concept, id?]
+    const segs = (shell?.pathname ?? '').split('/').filter(Boolean); // ['admin', concept, id?, 'history'?]
     if (segs.length < 2 || segs[0] !== 'admin') return [];
     const conceptId = segs[1];
     const concept = shell?.concepts.find((c) => c.id === conceptId);
@@ -383,7 +387,14 @@ discriminant, not the fields, gates the chrome).
     const out: Crumb[] = [
       { label: concept?.label ?? custom?.label ?? conceptId, href: `/admin/${conceptId}` },
     ];
-    if (segs[2]) out.push({ label: decodeURIComponent(segs[2]) });
+    if (segs[2]) {
+      const isHistory = segs[3] === 'history';
+      out.push({
+        label: decodeURIComponent(segs[2]),
+        href: isHistory ? `/admin/${conceptId}/${segs[2]}` : undefined,
+      });
+      if (isHistory) out.push({ label: 'History' });
+    }
     return out;
   });
 

@@ -260,6 +260,24 @@ describe('CairnAdminShell', () => {
     await expect.element(screen.getByText('2026-05-hello')).toBeInTheDocument();
   });
 
+  it('links the entry crumb back to the desk and adds a History leaf on the history route', async () => {
+    const screen = render(CairnAdminShell, {
+      data: data(true, null, '/admin/posts/2026-05-hello/history'),
+      children: child,
+    });
+    const nav = screen.getByRole('navigation', { name: /breadcrumb/i });
+    await expect.element(nav).toBeInTheDocument();
+    const entryLink = nav.getByRole('link', { name: '2026-05-hello' });
+    await expect.element(entryLink).toBeInTheDocument();
+    await expect.element(entryLink).toHaveAttribute('href', '/admin/posts/2026-05-hello');
+    const crumbList = screen.container.querySelector('nav[aria-label="Breadcrumb"] ul')!;
+    // The final crumb names the current page (History) and carries no link, matching how every
+    // other crumb trail leaves its own current page unlinked.
+    const lastItem = crumbList.lastElementChild!;
+    expect(lastItem.textContent?.trim()).toBe('History');
+    expect(lastItem.querySelector('a')).toBeNull();
+  });
+
   it('renders the registered desk snippet in the band on a desk route', async () => {
     // A descendant document fills the topbar holder; the shell renders it after the breadcrumb on
     // a desk route (/admin/<concept>/<id>). DeskChild stands in for EditPage's registration.

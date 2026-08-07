@@ -127,7 +127,10 @@ export interface HistoryData {
   /**
    * The pending branch's head commit, rendered as a synthetic top row, or null when the entry
    * carries no open draft. Never derived from a save; a draft's save-by-save history is
-   * ephemeral by design and this field surfaces only its current head.
+   * ephemeral by design and this field surfaces only its current head. `startedAt` names the
+   * head commit's own date, which moves on every save, so it reads as the draft's LAST SAVE,
+   * not when editing began; the field keeps its name for API stability, and the view renders it
+   * under a "last saved" label rather than "started".
    */
   draft: { editor: string; startedAt: string } | null;
   /**
@@ -160,9 +163,13 @@ export type RevertFailure =
        * from `createBranch`'s authoritative collision under a race with another save or revert.
        */
       reason: 'draft_exists';
-      /** Who started the blocking draft, degraded the same way {@link HistoryEntry.editor} is. */
+      /** Who last saved the blocking draft, degraded the same way {@link HistoryEntry.editor} is. */
       draftEditor: string;
-      /** ISO 8601: when the blocking draft's branch head landed. */
+      /**
+       * ISO 8601: when the blocking draft's branch head last landed, its most recent save, not
+       * when the draft began. The field keeps its name for API stability; the refusal message
+       * renders it under a "last saved" label.
+       */
       draftStartedAt: string;
     }
   | {

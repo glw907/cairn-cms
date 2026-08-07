@@ -51,19 +51,26 @@ describe('CairnHistory', () => {
     expect(rows[1].querySelector('form[action="?/revert"]')).not.toBeNull();
   });
 
-  it('shows the "most recent 25" note only when truncated', async () => {
-    const truncated = render(CairnHistory, { data: data({ entries: [entry(1)], truncated: true }) });
-    await expect.element(page.getByText(/showing the most recent 25/i)).toBeInTheDocument();
+  it('shows the truncation note only when truncated, sized to the actual entry count rather than a hardcoded 25', async () => {
+    // truncated is only ever true when entries is exactly the HISTORY_LIMIT bound (25); the note
+    // derives its number from data.entries.length so it can never drift from that bound.
+    const many = Array.from({ length: 25 }, (_, i) => entry(i + 1, { date: '2026-01-01T12:00:00Z' }));
+    const truncated = render(CairnHistory, { data: data({ entries: many, truncated: true }) });
+    await expect.element(page.getByText('Showing the most recent 25 versions.')).toBeInTheDocument();
 
     const untruncated = render(CairnHistory, { data: data({ entries: [entry(1)], truncated: false }) });
-    expect(untruncated.container.textContent).not.toMatch(/showing the most recent 25/i);
+    expect(untruncated.container.textContent).not.toMatch(/showing the most recent/i);
     truncated.unmount();
     untruncated.unmount();
   });
 
-  it('renders the design system empty state for a never-published entry', async () => {
+  it('renders the design system empty state when the commit read comes back empty for an entry that exists', async () => {
+    // historyLoad 404s outright when the entry has neither a main file nor a branch, so this
+    // empty-array-and-no-draft state renders only for an entry that DOES exist but whose commit
+    // read came back empty (a degraded GitHub read, or a dev-backend seed).
     const screen = render(CairnHistory, { data: data({ entries: [], draft: null }) });
-    await expect.element(page.getByText('No versions yet')).toBeInTheDocument();
+    await expect.element(page.getByText('No versions found')).toBeInTheDocument();
+    await expect.element(page.getByText('No published versions were found for this entry.')).toBeInTheDocument();
     expect(screen.container.querySelector('table')).toBeNull();
   });
 
@@ -108,8 +115,47 @@ describe('CairnHistory', () => {
     expect(rows[2].textContent).not.toContain('Current');
   });
 
+  it('gives every Revert button a distinct accessible name naming its own row', async () => {
+    const screen = render(CairnHistory, {
+      data: data({
+        entries: [
+          entry(1, { editor: 'Editor One', date: '2026-01-01T12:00:00Z' }),
+          entry(2, { editor: 'Editor Two', date: '2026-01-02T12:00:00Z' }),
+        ],
+      }),
+    });
+    const buttons = Array.from(screen.container.querySelectorAll('button[type="submit"]')).filter(
+      (b) => b.textContent?.trim() === 'Revert',
+    );
+    expect(buttons).toHaveLength(2);
+    const names = buttons.map((b) => b.getAttribute('aria-label'));
+    expect(new Set(names).size).toBe(2);
+    expect(names[0]).toContain('Editor One');
+    expect(names[1]).toContain('Editor Two');
+    for (const name of names) expect(name).toMatch(/^Revert to the version from/);
+  });
+
+  it('stacks the date under the editor name below sm, keeping the separate Date column at sm and up', async () => {
+    const screen = render(CairnHistory, {
+      data: data({
+        entries: [entry(1, { editor: 'Editor One', date: '2026-01-01T12:00:00Z' })],
+        draft: { editor: 'Drafting Editor', startedAt: '2026-02-01T00:00:00Z' },
+      }),
+    });
+    const rows = screen.container.querySelectorAll('tbody tr');
+    for (const row of rows) {
+      const editorCell = row.querySelector('td:nth-child(2)')!;
+      const stacked = editorCell.querySelector('span.sm\\:hidden');
+      expect(stacked).not.toBeNull();
+      expect(stacked?.classList.contains('block')).toBe(true);
+      const dateColumn = row.querySelector('td:nth-child(3)')!;
+      expect(dateColumn.classList.contains('sm:table-cell')).toBe(true);
+      expect(dateColumn.classList.contains('hidden')).toBe(true);
+    }
+  });
+
   describe('a refused revert renders in place', () => {
-    it('names the blocking draft\'s author and start date for draft_exists', async () => {
+    it('names the blocking draft\'s author and last-save date for draft_exists', async () => {
       const form: RevertFailure = {
         reason: 'draft_exists',
         draftEditor: 'Blocking Editor',
@@ -119,6 +165,7 @@ describe('CairnHistory', () => {
       const banner = screen.container.querySelector('.alert-error');
       expect(banner?.textContent ?? '').toContain('Blocking Editor');
       expect(banner?.textContent ?? '').toMatch(/publish or discard/i);
+      expect(banner?.textContent ?? '').toMatch(/last saved/i);
     });
 
     it('says the history changed for history_stale', async () => {

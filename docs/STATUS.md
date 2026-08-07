@@ -69,10 +69,17 @@ each site's repo on its own clock; release one still waits for the whole pass, w
 npm-shipped machinery keeping the gate if the inventory forces a split. The ratified design is
 [`2026-08-07-vertical-alignment-cairn-wide-design.md`](superpowers/specs/2026-08-07-vertical-alignment-cairn-wide-design.md)
 (it carries the three measurement traps the probe walked into, binding on probe, rule, and
-fixtures). The rescoped plan is being written in the current Fable sitting via writing-plans;
-until it lands, there is nothing to execute. The `vertical-alignment` worktree sits clean at
-`main`'s tip and is reusable; the stopped dispatch's 802-line probe draft is salvaged (paths in
-the spec).
+fixtures). The rescoped plan is
+[`2026-08-07-vertical-alignment-cairn-wide.md`](superpowers/plans/2026-08-07-vertical-alignment-cairn-wide.md):
+one probe over two corpora (task 1, sizes the pass), admin-toolkit recipes (task 2), Waymark
+chassis recipes (task 3), the generalized `cairn-audit` rule off the shared measurement module
+(task 4), docs and the retroactive `0.92.0` note (task 5). Execution runs in a fresh Opus 5
+session from `~/Projects/cairn-cms`. Resume prompt: "Execute the vertical alignment plan at
+docs/superpowers/plans/2026-08-07-vertical-alignment-cairn-wide.md via cairn-pass; the plan is
+committed on main; reuse the `vertical-alignment` worktree after fast-forwarding it to main's
+tip, with a from-scratch showcase install. Tasks 2 and 3 move approved visual baselines, so
+their diffs run through the visual-fidelity read with Geoff's before/after." The stopped
+dispatch's 802-line probe draft is salvaged (paths in the spec); it predates traps 2 and 3.
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to

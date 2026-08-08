@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-07: stable `0.94.0` on `latest`; ASC adopted; the vertical-alignment pass is CLOSED, not merged, gating release one)
+## Immediate next action (2026-08-08: stable `0.94.0` on `latest`; ASC adopted; the vertical-alignment pass is CLOSED, not merged; the CLEANUP PASS runs next, ahead of release one)
 
 **Stable `0.94.0` published 2026-08-07**, the content-identical promotion of `0.94.0-rc.2`: same
 source, same exports, same breaking list, proven end-to-end by ASC's 75-spec Playwright run
@@ -34,11 +34,12 @@ adoption merged, deployed, and smoked. Nothing in cairn waits on ASC.
 
 **The remaining consumer migrations WAIT for release one (Geoff, 2026-08-07).** The vertical
 alignment pass holds unpublished, so migrating now would make `907-life`, `ecxc-ski`, and
-`cairn-pub` cross twice (to `0.94.0`, then again for the fix). Order: vertical alignment pass
-→ release one → each site migrates ONCE, landing history/revert, preview, and the alignment
-machinery in a single crossing, with the upgrade guide's `0.92.0` geometry note and the audit
-tripwire in place when they cross the register flip. (cairn-pub's saves and publishes stay
-blocked on the GitHub App installation item below regardless; its migration is not.)
+`cairn-pub` cross twice (to `0.94.0`, then again for the fix). Order, REVISED 2026-08-07 to put the
+cleanup pass ahead of the cut: vertical alignment pass → cleanup pass → release one → each site
+migrates ONCE, landing history/revert, preview, the alignment machinery and the settled package
+surface in a single crossing, with the upgrade guide's `0.92.0` geometry note and the advisory
+`icon-baseline-synthesis` rule in place when they cross the register flip. (cairn-pub's saves and
+publishes stay blocked on the GitHub App installation item below regardless; its migration is not.)
 
 **One finding came back with the verification**, filed to `ROADMAP.md`'s Now tier rather than left
 in a report: the stacked register drops a field's control by the label's height, so a bare sibling
@@ -75,20 +76,55 @@ the gate lessons (a passing visual baseline certifies stability never correctnes
 fan-out cannot find a wrong premise) are banked in
 [`2026-08-07-vertical-alignment-harvest-findings.md`](internal/2026-08-07-vertical-alignment-harvest-findings.md).
 
-**What remains before this can merge, all owed by the MAIN LOOP, none of it done yet:**
-1. Regenerate both moved visual baselines on CI (`gh workflow run e2e.yml -f
-   update_snapshots=true`): the admin suite's 18 existing baselines move (three recomposed rows),
-   and the widened site suite needs 25 of its 30 baselines from nothing.
-2. Read every regenerated crop against the visual-fidelity method and get Geoff's before/after;
-   nothing has been read yet.
-3. Rule on two open decisions the post-mortem names in detail: whether `icon-baseline-synthesis`'s
-   shipped precision (a later review round found several reproducible false-positive shapes after
-   the pass's own precision fix commit, none further fixed) clears the bar `error` tier demands
-   before it ships in a consumer's CI, and whether `.cairn-icon-label`'s wrapping-label gap
-   (measured +16.71px off a 3-line label's first-line cap centre) needs a recipe patch before the
-   rule prescribes it to consumers whose labels wrap.
-4. Only after 1 through 3: merge, then decide release one on its own clock per the standing
-   two-trigger rule.
+**Both open decisions the post-mortem raised are now RESOLVED, each with its own commit.**
+
+`icon-baseline-synthesis` ships at **`advisory`, not `error`** (commit `4503da4b`). An independent
+re-verification ran 59 probes and measured every disputed case in Chromium: five shapes that render
+at exactly 0.00px still fire, and the decisive one is an icon-only label, which fails the build while
+the prescribed `.cairn-icon-label` fix measures identically before and after, so a consumer cannot
+make it green by doing what the message says. Recall does not earn the tier back either, since a
+`flex` label is the identical defect at -1.75px and passes silent, and lucide's default-import
+spelling `<Check />` is invisible. The plan's task 4b permits exactly this outcome and requires it be
+stated plainly, so the reference, the upgrade guide and the changelog now carry the recall boundary
+instead of a tripwire claim. The four steps that would earn `error` later are filed in `ROADMAP.md`'s
+Next tier, deliberately NOT taken here. One correction rides with it: a `display:block` container was
+reported as a false positive and is not one (it measures -1.75px, a real defect); only the earlier
+finding's stated reason was wrong, and the rule carries a do-not-fix-this-away note.
+
+`.cairn-icon-label`'s wrapping-label gap is **fixed** (commit `524a76a8`): `align-self: start;
+min-height: 1lh` takes a 3-line label from +16.71px to -0.29px against the first line's cap centre,
+with the single-line case unchanged at a 0.00px baseline delta. `min-height`, not the reviewed
+`height`: cascade layers put `utilities` after `components`, so a `height` written in
+`@layer components` is a silent no-op against the glyph's own `h-3.5`. The same commit fixed the
+recipe's comment, which stated a mechanism measurement refutes, and gave `FieldRow` the `var()`
+fallback it needed to stop silently collapsing to `display: block` outside `[data-theme='cairn-admin']`.
+
+**What remains before this can merge, owed by the MAIN LOOP:**
+1. The CI baseline regeneration is IN FLIGHT (`gh workflow run e2e.yml -f update_snapshots=true
+   --ref vertical-alignment`, run `31245114459`). The admin suite's 18 existing baselines move
+   (three recomposed rows), and the widened site suite needs 25 of its 30 from nothing. CI commits
+   the PNGs straight back to this branch, so pull before pushing again.
+2. Read every regenerated crop against the visual-fidelity method and get Geoff's before/after.
+   Nothing has been read yet, and ~25 of these baselines will have been minted by a machine that
+   nobody has looked at, which is exactly what the one-check rule exists for.
+3. Rule on the one open ratification gap: the plan's rescope says `text-box: trim-both cap
+   alphabetic` ships, and it did not. The implementer declined it and a verifier independently
+   confirmed the evidence: it is inert where the spec wanted it (padded chip 23.00px unchanged,
+   `.btn btn-sm` 32.00px unchanged) and where it does bite it breaks the published grammar-tokens
+   contract (`type-chip` 13.00 to 7.14px, `type-label` 14.00 to 7.86px, against a test asserting
+   each type role's declaration "and nothing else"). The decline looks right and the plan text looks
+   wrong, but the rescope was ratified, so Geoff rules.
+4. Only after 1 through 3: merge.
+
+**THEN THE CLEANUP PASS, NOT RELEASE ONE (Geoff, 2026-08-07).** The ordering changed once the
+conflict surfaced: the cleanup pass settles whether `cairn-audit` is consumer product or engine
+apparatus, and that is the only part of it that can REMOVE exports. Shipping release one first would
+make `907-life`, `ecxc-ski` and `cairn-pub` cross once for release one and again for the surface
+change, which is the exact double-crossing the current wait exists to prevent. So: cleanup pass →
+release one → each site migrates once. The cleanup pass opens with a Fable-orchestrated brainstorm,
+since its central question is a positioning call rather than a code change; its entry, the measured
+baseline (2.5 MB packed, 7.0 MB unpacked, 739 files) and its three confirmed findings are in
+`ROADMAP.md`'s Now tier.
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to

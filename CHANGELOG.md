@@ -74,24 +74,10 @@
   `cairn-line-slot` (a one-line-tall slot that levels a painted chip on the line it labels). Three
   admin rows were re-composed onto the recipes: the tidy settings screen's three developer-tier
   rows (a 2.5px baseline miss), its "Set by your developer" pill (5px low against the heading it
-  labels), and the editor's Write tab glyph (2.33px above its own label's cap centre).
-  [`cairn-audit`](docs/reference/cairn-audit.md#the-static-rules) gains a tenth static rule,
-  `icon-baseline-synthesis`, which reports the icon-label shape structurally: an `inline-flex`
-  label with a leading icon inside a row declaring `items-baseline`. It ships at **advisory**
-  tier, not error, on measured evidence. An adversarial verification ran 59 Chromium probes
-  against it and reproduced five markup shapes that measure exactly 0.00px, the correct result,
-  and trip the rule anyway, because reading authored source cannot tell whether the icon is really
-  the first flex item (`position: absolute`, `display: none`, and `order-*` all move it) or where
-  a Svelte component applies a `class` it was handed. The decisive one is an icon-only label,
-  where the rule's own prescribed `.cairn-icon-label` fix measures identically before and after,
-  so an error tier would break a build over a finding the consumer cannot clear. Its recall is
-  correspondingly narrow, and the [reference](docs/reference/cairn-audit.md#the-static-rules)
-  states the boundary: the same defect spelled `flex`, an icon named anything but `*Icon`, and a
-  label one element deeper than a direct child are all silent. `ROADMAP.md` carries the four steps
-  that would earn error tier later. The mechanics, and the `text-box-trim` default that was
-  measured and declined, are written up in `docs/internal/admin-design-system.md`. Consumers must:
-  nothing. The new export, the two new classes, and the new audit rule are all additive, no
-  existing class or rule changed, and the new rule cannot fail a build.
+  labels), and the editor's Write tab glyph (2.33px above its own label's cap centre). The
+  mechanics, and the `text-box-trim` default that was measured and declined, are written up in
+  `docs/internal/admin-design-system.md`. Consumers must: nothing. The new export and the two new
+  classes are additive, and no existing class changed.
 
 ## 0.94.0
 

@@ -245,10 +245,9 @@ The original decision framing, for the record:
   defects and closed the two entries this replaces: the optical-centring engine default Geoff asked
   for on 2026-07-30, and the both-axes field-row defect found by ASC's `rc.2` verification. The
   admin toolkit's new `FieldRow` (`items-end`) ships the named composition for a stacked field
-  beside a bare control; the new `cairn-icon-label`/`cairn-line-slot` recipes and the
-  `icon-baseline-synthesis` static rule close the one confirmed icon-label mechanic; `text-box-trim`
-  was measured and explicitly declined (see `docs/internal/admin-design-system.md`, "Vertical
-  alignment mechanics"). The measured defect surface came in far smaller than either closed entry
+  beside a bare control; the new `cairn-icon-label`/`cairn-line-slot` recipes close the one
+  confirmed icon-label mechanic; `text-box-trim` was measured and explicitly declined (see
+  `docs/internal/admin-design-system.md`, "Vertical alignment mechanics"). The measured defect surface came in far smaller than either closed entry
   assumed; two things carry forward rather than a broader repair:
   - **The sub-bar `ConceptList` family:** fifteen rows reading exactly 1.55px, the same shape as the
     three confirmed defects but under the pass's 2px reporting bar. A firing threshold anywhere in
@@ -639,30 +638,6 @@ the named human gates only):**
   page, so a page mounting more than one is only partly checked, and its explicit-face exemption
   net misses variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
   and Tailwind 4's `font-(family-name:--x)` shorthand.
-
-- **Earn `error` tier for `icon-baseline-synthesis`** (vertical-alignment pass, 2026-08-07), filed
-  to the pre-beta pass that owns audit-rule breadth rather than taken here. The rule ships at
-  advisory because an adversarial verification measured 59 Chromium probes and reproduced five
-  markup shapes reading exactly 0.00px, the correct result, that trip it anyway. Four concrete
-  steps remove every measured false positive with recall unchanged, so they are a precision fix,
-  not a rewrite:
-  1. Skip a first child carrying `absolute`, `fixed`, `hidden`, or an `order-*` utility. Each one
-     means the icon is not the first flex item, which is the whole premise of the finding.
-  2. Skip a child whose node type is `Component`. A `class` on a component is a prop the component
-     may apply anywhere, and its slotted children need not be its DOM children, so the read is
-     unsound by construction rather than merely imprecise.
-  3. Require a non-icon rendered sibling inside the label. An icon-only label has no word to
-     expose, and the prescribed `.cairn-icon-label` measures identically before and after
-     (-4.00px both ways), so the message asks for a change that cannot clear the finding. This is
-     the disqualifier that decided the tier: an error tier breaks a consumer's build and owes that
-     consumer a fix that works.
-  4. Apply the existing `isReliablyDeclared` guard to direction tokens as well, and scope the two
-     label exemptions (`items-baseline`, `self-*`) by variant prefix, so a `sm:`-only opt-out stops
-     silencing the base breakpoint.
-  Broadening recall is separate work and does not gate the tier: reading the `flex` spelling (the
-  identical defect, measured -1.75px, silent today), and reaching icons named outside this tree's
-  `*Icon` convention (lucide's own default import, `<img>`, icon fonts). Evidence and the measured
-  numbers: `docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`.
 
 - **Three design-system gaps found in the same triage.** `Pagination`'s selected page
   (`src/lib/admin-toolkit/Pagination.svelte`) conveys its state by fill alone: `btn-active` swaps

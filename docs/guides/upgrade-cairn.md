@@ -214,20 +214,11 @@ the engine-owned fix rather than leaving each site to rediscover the recipe. A n
 that mixes a stacked field with a bare control (a button, a checkbox carrying no label of its own).
 Two new classes ship in the compiled admin sheet: `cairn-icon-label`, for a glyph-plus-word label
 inside a row declaring `items-baseline`, and `cairn-line-slot`, for a painted chip that needs to
-level on the text line beside it rather than on its block's top edge. `npx cairn-audit`'s static
-rules also grow to ten. The new `icon-baseline-synthesis` rule reports one spelling of the
-icon-label shape: an `inline-flex` label whose first child is an `<svg>` or an `*Icon` component,
-sitting directly inside a row that declares `items-baseline`. It ships at **advisory** tier, so it
-reports and never changes your exit code. Reading authored markup can't confirm the misalignment
-it names, and it can't confirm the absence of one either: the same defect written `flex`, or with
-an icon under any other spelling, or one element deeper in the tree, is silent. Treat a finding as
-a row worth looking at, not as a verdict, and treat a clean run as one shape checked rather than
-as vertical alignment cleared. The
-[full recall boundary](../reference/cairn-audit.md#the-static-rules) is in the reference. See also
+level on the text line beside it rather than on its block's top edge. See
 [The admin toolkit](../reference/admin-toolkit.md#fieldrow).
 
-Consumers must: nothing. `FieldRow`, the two classes, and the new audit rule are all additive;
-nothing already shipped changed shape, and the new rule can't fail a build.
+Consumers must: nothing. `FieldRow` and the two classes are additive, and nothing already shipped
+changed shape.
 
 ## 0.94.0: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
 

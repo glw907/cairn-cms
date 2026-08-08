@@ -37,9 +37,9 @@ alignment pass holds unpublished, so migrating now would make `907-life`, `ecxc-
 `cairn-pub` cross twice (to `0.94.0`, then again for the fix). Order, REVISED 2026-08-07 to put the
 cleanup pass ahead of the cut: vertical alignment pass → cleanup pass → release one → each site
 migrates ONCE, landing history/revert, preview, the alignment machinery and the settled package
-surface in a single crossing, with the upgrade guide's `0.92.0` geometry note and the advisory
-`icon-baseline-synthesis` rule in place when they cross the register flip. (cairn-pub's saves and
-publishes stay blocked on the GitHub App installation item below regardless; its migration is not.)
+surface in a single crossing, with the upgrade guide's `0.92.0` geometry note in place when they
+cross the register flip. (cairn-pub's saves and publishes stay blocked on the GitHub App
+installation item below regardless; its migration is not.)
 
 **One finding came back with the verification**, filed to `ROADMAP.md`'s Now tier rather than left
 in a report: the stacked register drops a field's control by the label's height, so a bare sibling
@@ -76,20 +76,18 @@ the gate lessons (a passing visual baseline certifies stability never correctnes
 fan-out cannot find a wrong premise) are banked in
 [`2026-08-07-vertical-alignment-harvest-findings.md`](internal/2026-08-07-vertical-alignment-harvest-findings.md).
 
-**Both open decisions the post-mortem raised are now RESOLVED, each with its own commit.**
+**Both open decisions the post-mortem raised are now RESOLVED.**
 
-`icon-baseline-synthesis` ships at **`advisory`, not `error`** (commit `4503da4b`). An independent
-re-verification ran 59 probes and measured every disputed case in Chromium: five shapes that render
-at exactly 0.00px still fire, and the decisive one is an icon-only label, which fails the build while
-the prescribed `.cairn-icon-label` fix measures identically before and after, so a consumer cannot
-make it green by doing what the message says. Recall does not earn the tier back either, since a
-`flex` label is the identical defect at -1.75px and passes silent, and lucide's default-import
-spelling `<Check />` is invisible. The plan's task 4b permits exactly this outcome and requires it be
-stated plainly, so the reference, the upgrade guide and the changelog now carry the recall boundary
-instead of a tripwire claim. The four steps that would earn `error` later are filed in `ROADMAP.md`'s
-Next tier, deliberately NOT taken here. One correction rides with it: a `display:block` container was
-reported as a false positive and is not one (it measures -1.75px, a real defect); only the earlier
-finding's stated reason was wrong, and the rule carries a do-not-fix-this-away note.
+**`icon-baseline-synthesis` is REMOVED (Geoff, 2026-08-08), after the pass closed.** What the pass
+ships is the recipes (`FieldRow`, `cairn-icon-label`, `cairn-line-slot`) and the vertical-alignment
+doctrine in `docs/internal/admin-design-system.md`. The rule detected the one markup shape the same
+pass eliminated: it fires on zero files across `src` and `examples/showcase/src`, and the showcase
+declares `items-baseline` on no element, so its precondition never occurs. It had already been
+demoted to advisory after failing `error` tier on five measured false positives. Under the charter
+that is pure shipped surface, so the rule, its tests, its reference entry, its changelog and
+upgrade-guide text, and the ROADMAP item for earning `error` tier are all deleted. The lesson is
+banked in
+[`2026-08-07-vertical-alignment-harvest-findings.md`](internal/2026-08-07-vertical-alignment-harvest-findings.md).
 
 `.cairn-icon-label`'s wrapping-label gap is **fixed** (commit `524a76a8`): `align-self: start;
 min-height: 1lh` takes a 3-line label from +16.71px to -0.29px against the first line's cap centre,

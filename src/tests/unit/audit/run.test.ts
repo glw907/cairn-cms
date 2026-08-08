@@ -55,9 +55,8 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 describe('the static rule registry', () => {
   // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules and
   // Task 9b's five CSS-family rules are the modules that have registered since, without touching
-  // run.ts. The vertical-alignment pass's Task 4b adds a tenth, icon-baseline-synthesis, the same
-  // way.
-  it('carries the ten static rules Tasks 9a, 9b and vertical-alignment 4b registered', () => {
+  // run.ts.
+  it('carries the nine static rules Tasks 9a and 9b registered', () => {
     expect(staticRules().map((rule) => rule.id)).toEqual([
       'no-uncompiled-class',
       'type-scale',
@@ -68,7 +67,6 @@ describe('the static rule registry', () => {
       'focus-parity',
       'motion-band',
       'reduced-motion',
-      'icon-baseline-synthesis',
     ]);
   });
 
@@ -117,7 +115,6 @@ describe('runStatic', () => {
       'focus-parity',
       'motion-band',
       'reduced-motion',
-      'icon-baseline-synthesis',
     ]);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);

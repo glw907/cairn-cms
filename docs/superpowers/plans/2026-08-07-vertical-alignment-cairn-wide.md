@@ -365,6 +365,18 @@ ROADMAP lists neither closed entry.
 
 ## Post-mortem (Pass A, closed 2026-08-07)
 
+> **Later note, 2026-08-08: `icon-baseline-synthesis` no longer exists.** Everything below about
+> the rule is the record of what this pass did, and it stands as written. After the pass merged,
+> Geoff ruled the rule out of the engine entirely, and it was deleted along with its tests, its
+> reference entry, its changelog and upgrade-guide text, and the ROADMAP item that would have
+> earned it `error` tier. The reasoning: the shape it detects is the one this pass fixed, so the
+> rule fired on zero files across `src` and `examples/showcase/src`, and the showcase declares
+> `items-baseline` on no element, so its precondition never occurs. cairn's charter makes a rule
+> that guards nothing pure shipped surface a developer pays for. The recipes (`FieldRow`,
+> `cairn-icon-label`, `cairn-line-slot`) and the doctrine in `docs/internal/admin-design-system.md`
+> are what this pass shipped. The durable lesson is banked in
+> [`2026-08-07-vertical-alignment-harvest-findings.md`](../../internal/2026-08-07-vertical-alignment-harvest-findings.md).
+
 ### What was built
 
 Task 1's inventory (5028 readings, 106 renders, 7 rows above the 2px bar) drove everything below

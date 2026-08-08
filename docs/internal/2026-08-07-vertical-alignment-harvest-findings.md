@@ -89,7 +89,8 @@ because a false positive breaks somebody else's build. `icon-baseline-synthesis`
 adversarial verification then measured 59 Chromium probes and found five markup shapes reading
 exactly 0.00px, the correct result, that the rule reports anyway: a first AST child that is not
 the first FLEX ITEM (`position: absolute`, `display: none`, an `order-*` utility), a `class` handed
-to a Svelte component, and an icon-only label. It shipped at advisory.
+to a Svelte component, and an icon-only label. It shipped at advisory, and was then DELETED
+outright (Geoff, 2026-08-08) rather than kept.
 
 **The decisive disqualifier was a finding whose own prescribed fix did not fix it.** Two of the
 five are precision problems, arguable against the value of a gate. The icon-only label is not: the
@@ -105,6 +106,18 @@ A `display: block` container was reported as a false positive and is not. It mea
 real defect, because an `inline-flex` box's baseline is icon-synthesised in an inline formatting
 context too. Only the stated REASON was wrong. Correcting a rule on a review's reasoning rather
 than on a measurement would have removed a true finding.
+
+**The rule was built and then removed, and the removal carries the larger lesson.** Task 4b was
+ratified before task 1's inventory came back, and that inventory found five admin rows and no
+public ones. Recomposing those rows onto the recipes took the shape the rule detects out of the
+tree, so the shipped rule fired on zero files across `src` and the showcase, which declares
+`items-baseline` on no element at all. Its precondition never occurred in the repo it shipped
+from. It went out anyway, at advisory, with a reference entry that had to spell out what it could
+not see, and Geoff deleted it on 2026-08-08 as shipped surface guarding nothing. The construction
+was sound; the premise was stale. **When a measurement collapses the problem a planned instrument
+was meant to guard, re-ask whether the instrument is still owed, before building it and again
+before shipping it.** A consumer pays for every rule in the registry, in reading and in trust,
+and cairn's charter makes "we don't need this one" a correct answer.
 
 ## The gate finding: a pixel tolerance has a defect-size floor
 

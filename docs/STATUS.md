@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-07: stable `0.94.0` on `latest`; ASC adopted; the vertical alignment pass gates release one)
+## Immediate next action (2026-08-07: stable `0.94.0` on `latest`; ASC adopted; the vertical-alignment pass is CLOSED, not merged, gating release one)
 
 **Stable `0.94.0` published 2026-08-07**, the content-identical promotion of `0.94.0-rc.2`: same
 source, same exports, same breaking list, proven end-to-end by ASC's 75-spec Playwright run
@@ -58,28 +58,37 @@ the live admin smoke and its transcript are in the post-mortem). Both hold under
 the discard nuance, is
 [`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md).
 
-**RELEASE ONE gates on the vertical alignment pass, RESCOPED CAIRN-WIDE 2026-08-07; the
-admin-only plan is superseded and must not be executed.** The first execution attempt (Opus
-session, same day) was stopped mid-task-1 when its own calibration work found the defect class
-live on a public surface (ASC's `/join` cards: icon ink 2.8 to 5.1px above title cap centre on
-all six cards) while the plan fenced the public side off. Geoff ratified the rescope: the pass
-delivers cairn-cms machinery on BOTH surfaces (admin toolkit recipes, Waymark chassis recipes,
-one generalized `cairn-audit` rule measuring any rendered page); consumer-site fixes run in
-each site's repo on its own clock; release one still waits for the whole pass, with the
-npm-shipped machinery keeping the gate if the inventory forces a split. The ratified design is
-[`2026-08-07-vertical-alignment-cairn-wide-design.md`](superpowers/specs/2026-08-07-vertical-alignment-cairn-wide-design.md)
-(it carries the three measurement traps the probe walked into, binding on probe, rule, and
-fixtures). The rescoped plan is
-[`2026-08-07-vertical-alignment-cairn-wide.md`](superpowers/plans/2026-08-07-vertical-alignment-cairn-wide.md):
-one probe over two corpora (task 1, sizes the pass), admin-toolkit recipes (task 2), Waymark
-chassis recipes (task 3), the generalized `cairn-audit` rule off the shared measurement module
-(task 4), docs and the retroactive `0.92.0` note (task 5). Execution runs in a fresh Opus 5
-session from `~/Projects/cairn-cms`. Resume prompt: "Execute the vertical alignment plan at
-docs/superpowers/plans/2026-08-07-vertical-alignment-cairn-wide.md via cairn-pass; the plan is
-committed on main; reuse the `vertical-alignment` worktree after fast-forwarding it to main's
-tip, with a from-scratch showcase install. Tasks 2 and 3 move approved visual baselines, so
-their diffs run through the visual-fidelity read with Geoff's before/after." The stopped
-dispatch's 802-line probe draft is salvaged (paths in the spec); it predates traps 2 and 3.
+**RELEASE ONE gates on the vertical-alignment pass. Pass A is CLOSED on the `vertical-alignment`
+branch (HEAD `4ed4d05f`), all tasks landed and gates green, but it is NOT merged, NOT released,
+and NOT visually verified.** Task 1's corrected inventory (5028 readings, 106 renders) found the
+defect surface far smaller than the ratified cairn-wide design assumed: 5 confirmed admin rows, 0
+public rows, 2 reviewed declines. Geoff's same-day rescope (recorded in the plan's own text) cut
+the pass to what that inventory actually supported: task 2 (admin recipes, reduced to the 5
+confirmed rows), the site-visual suite widened to the five-viewport bar as its own task, task 4
+(the rendered `cairn-audit` rule) dropped entirely in favor of a new task 4b (a static, browser-free
+guardrail for the one confirmed mechanic), and task 5 (docs). Full detail, including every
+verified measurement, the two mechanisms locked in, and the pass's own cost accounting, is the
+post-mortem appended to
+[`2026-08-07-vertical-alignment-cairn-wide.md`](superpowers/plans/2026-08-07-vertical-alignment-cairn-wide.md).
+The harvest, the "ink not boxes" lesson now folded into the `visual-fidelity` skill's trigger, and
+the gate lessons (a passing visual baseline certifies stability never correctness; a conformance
+fan-out cannot find a wrong premise) are banked in
+[`2026-08-07-vertical-alignment-harvest-findings.md`](internal/2026-08-07-vertical-alignment-harvest-findings.md).
+
+**What remains before this can merge, all owed by the MAIN LOOP, none of it done yet:**
+1. Regenerate both moved visual baselines on CI (`gh workflow run e2e.yml -f
+   update_snapshots=true`): the admin suite's 18 existing baselines move (three recomposed rows),
+   and the widened site suite needs 25 of its 30 baselines from nothing.
+2. Read every regenerated crop against the visual-fidelity method and get Geoff's before/after;
+   nothing has been read yet.
+3. Rule on two open decisions the post-mortem names in detail: whether `icon-baseline-synthesis`'s
+   shipped precision (a later review round found several reproducible false-positive shapes after
+   the pass's own precision fix commit, none further fixed) clears the bar `error` tier demands
+   before it ships in a consumer's CI, and whether `.cairn-icon-label`'s wrapping-label gap
+   (measured +16.71px off a 3-line label's first-line cap centre) needs a recipe patch before the
+   rule prescribes it to consumers whose labels wrap.
+4. Only after 1 through 3: merge, then decide release one on its own clock per the standing
+   two-trigger rule.
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to

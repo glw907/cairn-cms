@@ -13,36 +13,16 @@ inventory across the admin's and Waymark's rendered screens, engine-owned recipe
 composition class on each surface, one generalized `cairn-audit` tripwire that measures any
 rendered page, and honest upgrade notes for the consumers already exposed.
 
-## EXECUTION STATE (2026-08-07, mid-pass session close)
+## EXECUTION STATE (2026-08-07, pass closed, not merged)
 
-**TASK 1 IS DONE AND COMMITTED.** It ran as 1a (module and probe), 1b (block-versus-line
-correction) and 1c (metric-selection correction), condemned by independent audit after 1a and 1b
-and passed after 1c. Do NOT re-run it. Do NOT re-derive the inventory.
-
-Final measured result: 5028 readings over 106 renders, **7 rows above the 2px residual bar: 5
-confirmed admin defects, 0 public, 2 reviewed declines.** The closing grade verified it
-set-theoretically rather than narratively, extracting the prior emission's ten above-bar ids from
-git at `12f1f41f^` and confirming the current seven are a strict subset, the ten minus exactly the
-three condemned false positives, with nothing new entering.
-
-The five confirmed rows, which are task 2's whole scope:
-- `290376a5`, `24a343fe`, `c2ab4dc7`: ONE MECHANIC AT THREE CALL SITES,
-  `src/lib/components/CairnTidySettings.svelte` 367, 372 and 380. An `inline-flex` label wrapping
-  an icon and its word synthesises its baseline from the svg, so the row's declared
-  `sm:items-baseline` misses by 2.5px, a quarter of the 10px cap height both members measure.
-  **Fix at the recipe, not as three row fixes.**
-- `22a0e709`: a painted pill 5px low against the heading's first line box. **Level the pill's box
-  on that line box, NOT on the baseline**; it carries a deliberate `mt-0.5` under `items-start`, so
-  a baseline fix moves the wrong thing.
-- `76d4cd3e`: the Write tab's check icon at -2.33px against thirteen sibling icon-in-btn rows in
-  [-0.75, -0.5]. Real but MARGINAL, clearing the bar by 0.33px.
-
-Two rows are reviewed declines and need no work: `52225d2e` (`items-end`, bottom-flush as asked)
-and `a1f335e1` (a multi-row grid span, `self-center` by design).
-
-**NEXT ACTION: task 2**, then the suite widening, then task 4b, then task 5. Task 4 is DROPPED (see
-below). Owed at pass end: `code-simplifier` over the 1b and 1c commits, which the workflow agents
-could not dispatch.
+**Pass A is closed and committed on the `vertical-alignment` branch, HEAD `4ed4d05f`. It is NOT
+merged to `main`, NOT released, and NOT visually verified.** All five carried tasks (1c's finish,
+2, the suite widening, 4b, 5) landed, plus a `code-simplifier` pass over the whole diff. The full
+post-mortem is below. What the main loop still owes before this can merge: read the moved admin
+and site visual baselines against the visual-fidelity method (site baselines do not exist yet and
+regenerate on CI first), get Geoff's before/after, and rule on the two open decisions the
+post-mortem names (the static rule's shipped precision, and the `.cairn-icon-label` wrapping-label
+gap). Do not re-run task 1 or re-derive the inventory; it is done and its numbers are final.
 
 ## RESCOPE, ratified by Geoff 2026-08-07 (after task 1; supersedes the task list below)
 
@@ -382,3 +362,170 @@ patterns here; the pre-beta pass owns breadth.
 **Acceptance criteria:** the four doc gates plus `check:surface` with the regenerated snapshot;
 `check:reference` clean over the new export; the upgrade guide entries read as checklist items;
 ROADMAP lists neither closed entry.
+
+## Post-mortem (Pass A, closed 2026-08-07)
+
+### What was built
+
+Task 1's inventory (5028 readings, 106 renders, 7 rows above the 2px bar) drove everything below
+it; it is not repeated here. On top of it, this pass shipped:
+
+- **The `.cairn-icon-label` and `.cairn-line-slot` recipes** in `cairn-admin.css`, fixing the
+  three confirmed `CairnTidySettings.svelte` rows and the pill.
+- **A markup-only fix to `EditorToolbar.svelte`**, wrapping the Write-tab icon in an
+  `inline-flex` span so DaisyUI's button centres it the same way it centres every other
+  icon-in-button row.
+- **`FieldRow.svelte`**, a new `admin-toolkit` export (`items-end` composition for a stacked
+  field beside a bare control), and the `text-box: trim-both cap alphabetic` silent default,
+  which was measured and explicitly declined rather than shipped (see below).
+- **`icon-baseline-synthesis`**, a new static, browser-free `cairn-audit` rule at `error` tier,
+  detecting the one confirmed mechanic (an `inline-flex` label with a leading icon inside a
+  baseline row) as a structural markup pattern rather than a measurement.
+- **The site-visual suite widened** from ad hoc, uneven coverage to the full five-viewport bar
+  (320/390/768/1440/2560) in both color schemes, for three representative surfaces.
+- **Docs**: the admin and Waymark design-system sections, `CHANGELOG.md`, the upgrade guide's
+  retroactive `0.92.0` note, `ROADMAP.md` closed and re-filed, the harvest findings doc
+  (`docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`), and the friction-log entry
+  on `FieldLabel`'s missing pointer to `FieldRow`.
+- **A `code-simplifier` pass** over `vertical-metrics.ts`, `icon-baseline-synthesis.ts`, and their
+  tests, folding repeated shapes into shared helpers without touching any CSS, markup, or
+  component file, so no measured box moved after the fixes landed.
+
+### What was verified, with evidence
+
+Every task ran its own targeted test, `npm run check` at 0 errors/0 warnings, and `npm test` at
+exit 0; the final full-gate run (22 steps derived from `.github/workflows/test.yml`, everything
+except the Playwright e2e suite, which needs CI-regenerated baselines) exited 0 on all 22 at HEAD
+`4ed4d05f`: `npm run check` 1604 files, 0/0; `npm test` 414 files / 5282 tests, process exit 0
+(checked via `echo $?`, not inferred from the summary line); `npm run check:package`,
+`check:reference`, `check:reference:signatures`, `check:surface`, `check:custom-surface`,
+`check:snippets`, `check:docs`, `check:prose`, `check:comments`, and the showcase's own
+`svelte-check` (625 files, 0/0) all green.
+
+The icon-label and pill fixes were independently re-measured in headless Chromium 148 against the
+shipped dist sheet, not just asserted by the implementer: label-vs-value baseline moved from
+-2.50px to 0.00px on all three `CairnTidySettings.svelte` rows; the pill's padding-box centre moved
+from +5.00px to 0.00px against the heading's first line box; the Write-tab icon moved from -2.33px
+to -0.33px, matching the icon-in-button control to 0.5px. The three findings the pass's own review
+gate raised (the CSS comment misstating the mechanism, `text-box-trim`'s non-shipping, and the
+missing `FieldLabel` pointer) were each verified against real Chromium measurements or grep, not
+taken on the implementer's word. Task 4b's precision claim did not hold on first submission: an
+adversarial verification round reproduced five distinct false-positive shapes at error tier
+(self-declared baseline, self-* opt-out, column direction, a `class:` directive, a ternary) against
+real markup, all fixed in `f141e3ae`. A second, later review round found the fix incomplete; see
+"Open decisions" below, since that finding did not get a further fix commit in this pass.
+
+### Decisions locked in
+
+- **The icon-label mechanism**, as shipped: `align-items: baseline` on `.cairn-icon-label` plus
+  `align-self: center` on its `> svg`. Chromium synthesises a flex container's reported baseline
+  from its first BASELINE-PARTICIPATING item; pulling the icon out of that group with `align-self`
+  leaves the word as the only participant, so the container's baseline becomes the word's. Both
+  declarations are load-bearing and were measured independently: dropping the `align-self` line
+  does not reopen the 2.5px baseline miss (Chromium still resolves the container baseline to the
+  word either way), but it does reopen the icon's own vertical placement by about the same margin,
+  a regression of the identical size and shape as the defect just fixed. Do not read the CSS
+  comment as the source of truth for why the second declaration matters; it currently states the
+  wrong mechanism (see "Open decisions").
+- **The pill fix levels the padding box on the heading's line box, not on any baseline.** `.
+  cairn-line-slot` is `display: flex; align-items: center; height: 1lh`, sized off the same
+  `type-meta` role the heading itself carries, so `1lh` genuinely resolves to that line's leading
+  rather than an unrelated token. `1lh` degrades safely on browsers that do not support it (Chrome
+  <109, Safari <16.4, Firefox <120): `height` falls back to `auto` and the slot regains the pill's
+  own height, which reinstates the original 5px miss rather than overflowing or breaking layout.
+- **`icon-baseline-synthesis` ships at `error` tier**, per Geoff's ruling that a mechanical
+  guardrail that only reports and never gates is inert unless someone runs it and reads it, the
+  same class of intervention as prompting. The tier decision itself is not in question; what
+  remains open is whether the rule's actual precision, as shipped, clears the bar that tier
+  demands (see "Open decisions").
+- **`text-box: trim-both cap alphabetic` does not ship.** It was implemented, measured, and pulled
+  before commit. It does not inherit, so on a flex container the text becomes an anonymous flex
+  item and the declaration is inert exactly where the spec wanted it (a padded `inline-flex` chip
+  and a `.btn btn-sm` both stayed unchanged). Where it does bite, block containers and blockified
+  flex items, it shifted `type-chip` 13.00px to 7.14px and `type-label` 14.00px to 7.86px, roughly
+  6px across every block call site of those roles, silently re-ruling a `gap-*` scale calibrated
+  against untrimmed line boxes, and it fails `grammar-tokens.test.ts`'s assertion that a type role
+  is a size and a leading and nothing else, a published contract in
+  `docs/reference/admin-grammar-tokens.md`. `FieldRow` does ship; it has no measured backing (the
+  inventory found zero rows above the 2px bar it would address), and it composes correctly today
+  because the toolkit renders no error line under a field, a caveat documented at the component and
+  in `docs/reference/admin-toolkit.md`.
+
+### What was dropped, and why
+
+- **Task 4, the rendered `cairn-audit` rule, dropped entirely.** Complexity locally to build the
+  engine is fine; what ships to a developer should not carry a rendering measurement engine. The
+  reasoning and its cost (a consumer can no longer point `cairn-audit` at their own rendered pages
+  and get vertical-alignment findings sight unseen) are recorded in the "Task 4: DROPPED" section
+  above and in `ROADMAP.md`'s Now tier, which names the precomputed icon-ink table as the pre-beta
+  pass's replacement mechanism.
+- **Task 3, dissolved into task 2 and task 5.** The corrected inventory found zero public rows
+  above the 2px bar; there was no chassis recipe to write, no styleguide demonstration to add, and
+  no baseline to move on the public side beyond the widened suite's own new coverage. Its doc
+  section moved to task 5 and states plainly that the measured public corpus is clean.
+- **`vertical-metrics.ts` (the shared measurement module) stays where it is, not shipped-clean.**
+  It ships today as `dist/audit/rules/rendered/vertical-metrics.js` (confirmed at close: 68 KB,
+  unregistered in any rule index, unreachable from any documented export subpath, present only
+  because `svelte-package` emits everything reachable under `src/lib`). This pass carries a
+  co-located `WATCH:` comment rather than relocating it, on the grounds that moving it now means
+  moving it twice: once into whatever this pass invented and again into whatever structure the
+  authorized repo-organization cleanup pass settles on. That cleanup pass is filed in `ROADMAP.md`'s
+  Now tier with this file as its worked example.
+
+### Cost and process, stated plainly
+
+Task 1 is the sizing evidence for this whole pass, and it earns the honest accounting the sizing
+rule asks for. It was condemned by independent audit three times and split twice (1a the probe and
+module, 1b the block-versus-line correction, 1c the metric-selection correction) before its
+inventory could be trusted at all. Two splits is this plan's own declared trigger for a
+pass-split proposal; the proposal was made and Geoff answered it the same day, in five separate
+ratifying decisions recorded in this file's own text (the rescope, the suite-widening amendment,
+dropping task 4, targeting `error` tier, and adding task 4b). That is a genuinely large number of
+human interaction points for one plan, and it is what buying trustworthy measurement cost: three
+condemnation rounds on the inventory, plus a fourth on task 4b's rule precision after
+implementation, where the reviewer reproduced five real false-positive shapes at error tier that
+the implementer's own gate had not caught.
+
+The lesson for sizing a measurement-first pass: **the plan's assumption (broad two-surface defect
+classes) was wrong in the direction that helps, but the cost of finding that out was not smaller
+for it.** Verifying a null-ish result (five confirmed rows, zero public rows, against a plan
+budgeted for two full chassis-recipe tasks) still needed the same number of audit rounds a large
+finding would have needed, because the risk being managed was a wrong measurement passing as a
+clean one, not a large defect list. A measurement-first pass should be sized by the verification
+work its instrument demands, not by a guess at how much the instrument will find.
+
+### Open decisions, not resolved in this pass
+
+- **`icon-baseline-synthesis`'s shipped precision has a known gap the pass did not close.** The
+  `f141e3ae` fix commit closed five reproducible false-positive shapes. A later review round,
+  after that fix, reproduced several more against the code as it now stands: the rule never checks
+  that the container declares a live flex/grid `display` (it fires on `<tr class="items-baseline">`
+  and on `display: block` containers, where `align-items` does nothing); it matches only the label's
+  own `inline-flex` token and stays silent on the identical defect written as `flex` (CSS flexbox
+  baseline synthesis does not depend on inner-vs-outer display); it fires on an icon-only label with
+  no text sibling at all, where the prescribed `.cairn-icon-label` fix is inert because there is no
+  word to expose; and a `max-*` breakpoint variant on a direction utility is unrecognised by the
+  rule's breakpoint table and can tie-break on class order rather than on CSS cascade order.
+  `icon-baseline-synthesis`'s recall is also bound to this repo's own `*Icon` import-naming
+  convention (`import Check from '@lucide/svelte/icons/check'` renders `<Check />` and is invisible
+  to the rule), which the rule's own tree scan cannot expose, since cairn's tree happens to follow
+  the one convention the rule recognises. None of this was fixed after being found; it needs a
+  ruling before the rule is trusted at `error` tier in a consumer's CI, the same bar the amendment
+  that chose `error` set. `cairn-audit` is a separate CLI (`cairn-audit`, wired through the
+  package's own `bin`), not run in this repo's own CI, so the gap is real for a consumer without
+  yet having broken anything of cairn's own.
+- **The CSS comment on `.cairn-icon-label` states the wrong mechanism** (it claims dropping
+  `align-self: center` "synthesises the same wrong baseline again"; measurement shows the baseline
+  stays correct either way, and what actually breaks is the icon's own placement). Needs a one-line
+  correction before the next editor reads it and acts on the false claim.
+- **`.cairn-icon-label` centres the glyph on the label's full block height, not its first line.**
+  Correct for the pass's own non-wrapping call sites; measured at +16.71px off a 3-line label's
+  first-line cap centre in a synthetic case. `icon-baseline-synthesis`'s message prescribes this
+  recipe to any consumer, whose labels may wrap where cairn's own do not. Needs a ruling: patch the
+  recipe (`align-self: start; height: 1lh` on the `> svg` measured at -0.29px in the same synthetic
+  case) or document the non-wrapping assumption at the call site.
+- **Both visual baselines are unregenerated and unread.** The admin suite's 18 existing baselines
+  move (three rows recomposed) and have not been regenerated locally, per instruction; the widened
+  site suite needs 25 of its 30 baselines generated from nothing. Both are CI-canonical
+  (`gh workflow run e2e.yml -f update_snapshots=true`) and both need the visual-fidelity read with
+  Geoff's before/after before this branch merges.

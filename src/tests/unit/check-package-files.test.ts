@@ -4,6 +4,9 @@ import {
   checkDocsPacked,
   checkSkillPacked,
   checkWorkerCondition,
+  checkRuleReachability,
+  parseRelativeImportSpecifiers,
+  walkModuleGraph,
   parsePackFilePaths
 } from '../../../scripts/checks/check-package-files.mjs';
 
@@ -215,5 +218,94 @@ describe('parsePackFilePaths', () => {
 
   it('throws a diagnostic when no JSON array is present', () => {
     expect(() => parsePackFilePaths('src/lib -> dist\n')).toThrow('no JSON array');
+  });
+});
+
+// The anti-leak gate: `vertical-metrics` is the worked example (66.6 KB of dist, unregistered).
+// Every module under a packed rule directory must be reachable from that directory's registry
+// index, so an unregistered module can never ship again.
+describe('checkRuleReachability', () => {
+  it('passes a file list of only registered rules and the helpers they import', () => {
+    const result = checkRuleReachability(
+      ['dist/index.js', 'dist/audit/rules/static/index.js', 'dist/audit/rules/static/gap-scale.js'],
+      new Set(['index', 'gap-scale', 'utility']),
+      new Set(['index'])
+    );
+    expect(result).toEqual({ ok: true, count: 2 });
+  });
+
+  it('fails naming the offending file when a registry does not reach it', () => {
+    const result = checkRuleReachability(
+      ['dist/index.js', 'dist/audit/rules/rendered/one-filled-action.js', 'dist/audit/rules/rendered/vertical-metrics.js'],
+      new Set(['index']),
+      new Set(['index', 'one-filled-action'])
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('dist/audit/rules/rendered/vertical-metrics.js');
+    expect(result.error).toContain('register');
+  });
+
+  it('ignores files outside the two packed rule directories', () => {
+    expect(checkRuleReachability(['dist/index.js', 'CHANGELOG.md'], new Set(), new Set())).toEqual({
+      ok: true,
+      count: 0
+    });
+  });
+});
+
+// The graph walk that computes what a registry reaches, over a synthetic file map so it needs no
+// real filesystem to prove itself.
+describe('walkModuleGraph', () => {
+  it('reaches an entry file and every relative import from it, transitively', () => {
+    const files = new Map([
+      ['a/index.ts', "import { x } from './sibling.js';\nimport { y } from '../shared.js';\n"],
+      ['a/sibling.ts', "export const x = 1;\n"],
+      ['shared.ts', "export const y = 2;\n"],
+    ]);
+    const seen = walkModuleGraph('a/index.ts', (path) => files.get(path) ?? null);
+    expect(seen).toEqual(new Set(['a/index.ts', 'a/sibling.ts', 'shared.ts']));
+  });
+
+  it('does not reach a file nothing in the graph imports', () => {
+    const files = new Map([
+      ['a/index.ts', "import { x } from './sibling.js';\n"],
+      ['a/sibling.ts', "export const x = 1;\n"],
+      ['a/orphan.ts', "export const z = 3;\n"],
+    ]);
+    const seen = walkModuleGraph('a/index.ts', (path) => files.get(path) ?? null);
+    expect(seen.has('a/orphan.ts')).toBe(false);
+  });
+
+  it('does not loop forever on a cycle', () => {
+    const files = new Map([
+      ['a/one.ts', "import { b } from './two.js';\n"],
+      ['a/two.ts', "import { a } from './one.js';\n"],
+    ]);
+    const seen = walkModuleGraph('a/one.ts', (path) => files.get(path) ?? null);
+    expect(seen).toEqual(new Set(['a/one.ts', 'a/two.ts']));
+  });
+
+  it('ignores a non-relative package specifier', () => {
+    const files = new Map([['a/index.ts', "import { chromium } from 'playwright';\n"]]);
+    const seen = walkModuleGraph('a/index.ts', (path) => files.get(path) ?? null);
+    expect(seen).toEqual(new Set(['a/index.ts']));
+  });
+});
+
+describe('parseRelativeImportSpecifiers', () => {
+  it('extracts a relative specifier from a single-line import', () => {
+    expect(parseRelativeImportSpecifiers("import { x } from '../../rendered.js';\n")).toEqual([
+      '../../rendered.js'
+    ]);
+  });
+
+  it('extracts a relative specifier from a multi-line destructured import', () => {
+    const source = "import {\n  a,\n  b,\n} from './helpers.js';\n";
+    expect(parseRelativeImportSpecifiers(source)).toEqual(['./helpers.js']);
+  });
+
+  it('ignores a bare package specifier', () => {
+    expect(parseRelativeImportSpecifiers("import { chromium } from 'playwright';\n")).toEqual([]);
   });
 });

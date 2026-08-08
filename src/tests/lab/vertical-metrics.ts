@@ -3,17 +3,11 @@
 // (scripts/lab/probe-vertical-alignment.mjs), so the three measurement traps below are encoded once
 // rather than relearned per artifact.
 //
-// WATCH: this file is LAB APPARATUS and must stop shipping. It is cairn's own discovery instrument,
-// the thing that finds a composition defect worth encoding as a static rule, and a developer who
-// merely uses cairn should never receive it. Today it ships anyway, as
-// dist/audit/rules/rendered/vertical-metrics.js, because svelte-package emits everything reachable
-// under src/lib whether or not an export subpath names it. It sits here only because the rendered
-// `vertical-alignment` rule that was to consume it was dropped from the shipped surface before it
-// was written (2026-08-07); the planned relocation belongs to the repo-organization cleanup pass in
-// ROADMAP.md's Now tier, which draws the lab-versus-shipped boundary once across the whole repo
-// rather than improvising it for this one file. Moving it before then means moving it twice.
-// Whoever takes that pass: this module and the probe travel together, the tests come with them, and
-// `npm run check:package` is the proof, since `files` and the exports map both under-report.
+// This is cairn's own discovery instrument, the thing that finds a composition defect worth
+// encoding as a static rule, and a developer who merely uses cairn should never receive it. It
+// lives under src/tests/lab/, outside src/lib, so svelte-package cannot reach it; `npm run
+// check:package` gates that a module under a packed rule directory is reachable from that
+// directory's registry, which keeps this one from shipping again by accident.
 //
 // THE THREE TRAPS, each one a wrong answer a real probe already produced against a real screen.
 //
@@ -74,8 +68,8 @@
 // serializes an evaluated function by source, so it can reference nothing outside its own body,
 // and a module that computed the class in-page would have to keep a second copy of the rules.
 // Keeping the judgment on the Node side keeps it single, and unit-testable without a browser.
-import { ensurePageHelpers } from '../../rendered.js';
-import type { RenderedPage } from '../../rendered.js';
+import { ensurePageHelpers } from '../../lib/audit/rendered.js';
+import type { RenderedPage } from '../../lib/audit/rendered.js';
 
 /** The delta magnitude a pair must exceed, in its own metric, to be worth reporting at all. */
 export const VERTICAL_REPORTING_BAR_PX = 2;

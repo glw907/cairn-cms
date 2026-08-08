@@ -1,13 +1,12 @@
-#!/usr/bin/env node
+#!/usr/bin/env -S npx tsx
 // cairn-cms: the vertical-alignment inventory probe. It renders BOTH of the pass's corpora against
 // a running showcase preview, measures every candidate row pair through the shared measurement
 // module, and writes docs/internal/2026-08-vertical-alignment-inventory.md plus one screenshot crop
 // per reported row.
 //
-// IT MEASURES NOTHING ITSELF. Every number here comes from
-// src/lib/audit/rules/rendered/vertical-metrics.ts (through its packaged dist build), the same
-// module the rendered `vertical-alignment` rule imports. The three measurement traps and the
-// metric-by-class split are encoded there once; this file is the renderer, the walker, and the
+// IT MEASURES NOTHING ITSELF. Every number here comes from src/tests/lab/vertical-metrics.ts, the
+// same module the shared vertical-alignment recipes test drives. The three measurement traps and
+// the metric-by-class split are encoded there once; this file is the renderer, the walker, and the
 // report. A geometry helper appearing in this file would be the start of the drift the split
 // exists to prevent.
 //
@@ -48,7 +47,10 @@
 //   npm run package
 //   cd examples/showcase && VITE_CAIRN_E2E=1 npm run build
 //   CAIRN_DEV_BACKEND=1 npm run preview -- --port 4173
-//   node scripts/probe-vertical-alignment.mjs
+//   npx tsx scripts/lab/probe-vertical-alignment.mjs
+// The measurement module lives at src/tests/lab/vertical-metrics.ts, outside src/lib, so plain
+// `node` cannot import it without a build step; `tsx` (a devDependency) resolves the NodeNext
+// `.js`-suffixed imports back to their `.ts` sources the way vitest already does.
 // BASE_URL overrides the default http://localhost:4173.
 import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -63,12 +65,12 @@ import {
   calibrationMiss,
   isStartAlignment,
   measureVerticalMetrics,
-} from '../../dist/audit/rules/rendered/vertical-metrics.js';
+} from '../../src/tests/lab/vertical-metrics.ts';
 import { repoRoot } from '../repo-root.mjs';
 import { walk } from '../walk-files.mjs';
 
-/** @typedef {import('../../src/lib/audit/rules/rendered/vertical-metrics.js').MeasuredPair} MeasuredPair */
-/** @typedef {import('../../src/lib/audit/rules/rendered/vertical-metrics.js').VerticalCalibrationFixture} Fixture */
+/** @typedef {import('../../src/tests/lab/vertical-metrics.ts').MeasuredPair} MeasuredPair */
+/** @typedef {import('../../src/tests/lab/vertical-metrics.ts').VerticalCalibrationFixture} Fixture */
 
 const ROOT = repoRoot(import.meta.url);
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4173';

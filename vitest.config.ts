@@ -30,7 +30,11 @@ export default defineConfig({
         },
         test: {
           name: 'unit',
-          include: ['src/tests/unit/**/*.test.ts', 'packages/cairn-cms-dev/src/**/*.test.ts'],
+          include: [
+            'src/tests/unit/**/*.test.ts',
+            'src/tests/lab/**/*.test.ts',
+            'packages/cairn-cms-dev/src/**/*.test.ts'
+          ],
           // Both specs spawn a child process (npm pack, a plain Node resolver probe) against the
           // built dist. Under the full run's concurrent IO that spawn starves and flakes, so they
           // run in their own single-fork project below; exclude them here so they do not run twice.

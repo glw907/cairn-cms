@@ -8,7 +8,7 @@
 // module.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, posix as posixPath } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -163,6 +163,146 @@ export function checkWorkerCondition(exportsMap) {
   return { ok: true, count: checked };
 }
 
+// The anti-leak gate. `vertical-metrics` is the worked example: nothing named it in a registry, and
+// it shipped anyway at 66.6 KB of dist, because svelte-package emits everything reachable under
+// src/lib whether or not an export subpath names it. A registry index (rules/static/index.ts,
+// rules/rendered/index.ts) is the one place a rule module opts into shipping, so a module the walk
+// below cannot reach from either index is either an unregistered rule (add it to the registry) or
+// engine apparatus that has no business under src/lib at all (move it out).
+const RULE_REGISTRIES = {
+  static: { indexPath: 'src/lib/audit/rules/static/index.ts', distPrefix: 'dist/audit/rules/static/' },
+  rendered: { indexPath: 'src/lib/audit/rules/rendered/index.ts', distPrefix: 'dist/audit/rules/rendered/' },
+};
+
+// NodeNext specifiers name the emitted `.js`, never the `.ts` source they resolve to, so the walk
+// below rewrites the extension. A bare package specifier (no leading `./` or `../`) is never
+// followed: node_modules is not this walk's concern, and a bare specifier could collide with a
+// relative path that happens to share a basename.
+const IMPORT_SPECIFIER_RE = /from\s+['"](\.\.?\/[^'"]+)['"]/g;
+
+/**
+ * The relative import specifiers one TypeScript source names, verbatim (NodeNext `.js` suffix and
+ * all). A destructured import spanning several lines still matches, since `from '...'` itself is
+ * always on one line.
+ * @param {string} source a file's text
+ * @returns {string[]}
+ */
+export function parseRelativeImportSpecifiers(source) {
+  return [...source.matchAll(IMPORT_SPECIFIER_RE)].map((match) => match[1]);
+}
+
+/**
+ * Walk a module graph from one entry file, following relative imports, and return every file
+ * reached, the entry included. `readSource` is injected so the traversal is pure over whatever
+ * graph it is handed: a synthetic file map in a test, the real filesystem from {@link main}. Cycle-
+ * safe (a `seen` set), and silent on a path `readSource` cannot resolve, since a type-only import of
+ * an ambient `.d.ts` or a path this walk mis-resolves should not crash the gate.
+ * @param {string} entryPath a posix-style path relative to the repo root
+ * @param {(path: string) => string | null} readSource a file's text, or null if it has none
+ * @returns {Set<string>} every file path reached, in entryPath's own relative form
+ */
+export function walkModuleGraph(entryPath, readSource) {
+  const seen = new Set();
+  const stack = [entryPath];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (current === undefined || seen.has(current)) continue;
+    const source = readSource(current);
+    if (source === null) continue;
+    seen.add(current);
+    const dir = posixPath.dirname(current);
+    for (const specifier of parseRelativeImportSpecifiers(source)) {
+      const jsPath = posixPath.normalize(posixPath.join(dir, specifier));
+      stack.push(jsPath.replace(/\.js$/, '.ts'));
+    }
+  }
+  return seen;
+}
+
+/**
+ * The basenames of a walked graph's files that sit directly inside `dirPrefix` (no further
+ * subdirectory), stripped of their `.ts` extension. This is the set a packed `dist/.../<name>.js`
+ * is checked against, since the packed rule directories are flat.
+ * @param {Set<string>} seen every path {@link walkModuleGraph} reached
+ * @param {string} dirPrefix e.g. `'src/lib/audit/rules/static/'`
+ * @returns {Set<string>}
+ */
+function reachableBasenamesUnder(seen, dirPrefix) {
+  const basenames = new Set();
+  for (const path of seen) {
+    if (!path.startsWith(dirPrefix) || !path.endsWith('.ts')) continue;
+    const rest = path.slice(dirPrefix.length, -'.ts'.length);
+    if (!rest.includes('/')) basenames.add(rest);
+  }
+  return basenames;
+}
+
+/**
+ * Check a packed file list: every module under `dist/audit/rules/static/` or
+ * `dist/audit/rules/rendered/` must be reachable from its registry (the basenames
+ * {@link reachableBasenamesUnder} computed by walking that registry's index.ts). A registry index
+ * and any helper a registered rule imports, transitively, pass by construction; a module nothing in
+ * the registry reaches fails.
+ * @param {string[]} filePaths the paths npm would include in the tarball
+ * @param {Set<string>} reachableStaticBasenames basenames reachable from rules/static/index.ts
+ * @param {Set<string>} reachableRenderedBasenames basenames reachable from rules/rendered/index.ts
+ * @returns {{ ok: true, count: number } | { ok: false, error: string }}
+ */
+export function checkRuleReachability(filePaths, reachableStaticBasenames, reachableRenderedBasenames) {
+  const staticRe = new RegExp(`^${RULE_REGISTRIES.static.distPrefix}([^/]+)\\.js$`);
+  const renderedRe = new RegExp(`^${RULE_REGISTRIES.rendered.distPrefix}([^/]+)\\.js$`);
+  const offenders = [];
+  let checked = 0;
+  for (const path of filePaths) {
+    const staticMatch = staticRe.exec(path);
+    if (staticMatch) {
+      checked += 1;
+      if (!reachableStaticBasenames.has(staticMatch[1])) offenders.push(path);
+      continue;
+    }
+    const renderedMatch = renderedRe.exec(path);
+    if (renderedMatch) {
+      checked += 1;
+      if (!reachableRenderedBasenames.has(renderedMatch[1])) offenders.push(path);
+    }
+  }
+  if (offenders.length > 0) {
+    return {
+      ok: false,
+      error:
+        `the packed tarball ships ${offenders.join(', ')} from a rule directory with nothing in its ` +
+        'registry (rules/static/index.ts or rules/rendered/index.ts) reaching it; register the rule ' +
+        'there, or move the module out of src/lib if it is lab apparatus rather than a shipped rule',
+    };
+  }
+  return { ok: true, count: checked };
+}
+
+/**
+ * {@link checkRuleReachability}'s two reachable-basename sets, computed by walking the real
+ * filesystem from each registry's index.ts.
+ * @param {string} root the repo root
+ * @returns {{ static: Set<string>, rendered: Set<string> }}
+ */
+function reachableRuleBasenames(root) {
+  /** @param {string} relPath */
+  const readSource = (relPath) => {
+    try {
+      return readFileSync(resolve(root, relPath), 'utf8');
+    } catch {
+      return null;
+    }
+  };
+  /** @type {Record<string, Set<string>>} */
+  const result = {};
+  for (const [name, { indexPath, distPrefix }] of Object.entries(RULE_REGISTRIES)) {
+    const srcPrefix = distPrefix.replace(/^dist\//, 'src/lib/');
+    const seen = walkModuleGraph(indexPath, readSource);
+    result[name] = reachableBasenamesUnder(seen, srcPrefix);
+  }
+  return /** @type {{ static: Set<string>, rendered: Set<string> }} */ (result);
+}
+
 /**
  * Extract the packed file paths from `npm pack --json` stdout. The `prepare` lifecycle
  * (svelte-package, which prints `src/lib -> dist`) can leak onto stdout ahead of the JSON on some
@@ -211,6 +351,13 @@ function main() {
     process.exit(1);
   }
 
+  const reachable = reachableRuleBasenames(ROOT);
+  const reachabilityResult = checkRuleReachability(files, reachable.static, reachable.rendered);
+  if (!reachabilityResult.ok) {
+    console.error(`check-package-files: ${reachabilityResult.error}`);
+    process.exit(1);
+  }
+
   // The only check here that reads the exports map rather than the packed file list.
   const packageJson = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));
   const workerResult = checkWorkerCondition(packageJson.exports);
@@ -220,7 +367,7 @@ function main() {
   }
 
   console.log(
-    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the packaged skill packed, ${workerResult.count} browser-conditioned export(s) worker-gated)`
+    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the packaged skill packed, ${reachabilityResult.count} rule module(s) registry-reachable, ${workerResult.count} browser-conditioned export(s) worker-gated)`
   );
 }
 

@@ -253,11 +253,19 @@ offline from path data, so a static rule can know which icons ride high without 
 ASC has already fixed its own `/join` cards by hand, so the gap is future recurrence rather than a
 live defect. Record it in the pre-beta initiative as that pass's first target.
 
-**Relocate the instrument.** `vertical-metrics.ts` and `probe-vertical-alignment.mjs` are cairn's
-LAB APPARATUS, not engine code. They must not ship in the package: move the module out of the
-shipped tree beside the probe, keep its tests, and label both plainly as the discovery instrument
-that generates static rules. Their complexity is cairn's own and costs a developer nothing.
-Confirm with `npm run check:package` and `npm run check:surface` that neither reaches the package.
+**The instrument is LAB APPARATUS, and the CLEANUP PASS relocates it, not this pass** (revised
+2026-08-07, before the relocation was attempted). `vertical-metrics.ts` and
+`probe-vertical-alignment.mjs` are cairn's discovery instrument, not engine code, and
+`vertical-metrics` ships today (`dist/audit/rules/rendered/vertical-metrics.js`, verified). It must
+stop shipping. But moving it HERE means moving it twice, into whatever location this pass invents
+and again into whatever structure the cleanup pass settles on, and the lab-versus-shipped boundary
+is that pass's whole organizing principle rather than one file's problem.
+
+So this pass leaves both files where they are and marks the module with a co-located `// WATCH:`
+comment, the mechanism this repo's watch-item doctrine prescribes for a next-time-you-touch-X note.
+The cleanup pass draws the boundary once, across the whole repo, and confirms with
+`npm run check:package` and `npm run check:surface` that neither file reaches the package. Filed in
+`ROADMAP.md`'s Now tier as that pass's worked example.
 
 **Delete the census when task 2 consumes it.** `docs/internal/2026-08-vertical-alignment-inventory.md`
 is a point-in-time snapshot, already four corrections deep and stale the moment the fixes land. The

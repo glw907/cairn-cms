@@ -1,7 +1,19 @@
-// cairn-audit's vertical-alignment measurement module: the one place the geometry of "do these two
-// things in a row line up" is defined. Both callers share it, the standalone inventory probe
-// (scripts/probe-vertical-alignment.mjs) and the rendered `vertical-alignment` rule, so the three
-// measurement traps below are encoded once rather than relearned per artifact.
+// cairn's vertical-alignment measurement module: the one place the geometry of "do these two
+// things in a row line up" is defined. Its one caller is the standalone inventory probe
+// (scripts/probe-vertical-alignment.mjs), so the three measurement traps below are encoded once
+// rather than relearned per artifact.
+//
+// WATCH: this file is LAB APPARATUS and must stop shipping. It is cairn's own discovery instrument,
+// the thing that finds a composition defect worth encoding as a static rule, and a developer who
+// merely uses cairn should never receive it. Today it ships anyway, as
+// dist/audit/rules/rendered/vertical-metrics.js, because svelte-package emits everything reachable
+// under src/lib whether or not an export subpath names it. It sits here only because the rendered
+// `vertical-alignment` rule that was to consume it was dropped from the shipped surface before it
+// was written (2026-08-07); the planned relocation belongs to the repo-organization cleanup pass in
+// ROADMAP.md's Now tier, which draws the lab-versus-shipped boundary once across the whole repo
+// rather than improvising it for this one file. Moving it before then means moving it twice.
+// Whoever takes that pass: this module and the probe travel together, the tests come with them, and
+// `npm run check:package` is the proof, since `files` and the exports map both under-report.
 //
 // THE THREE TRAPS, each one a wrong answer a real probe already produced against a real screen.
 //

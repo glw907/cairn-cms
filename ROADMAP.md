@@ -216,9 +216,13 @@ The original decision framing, for the record:
   Baseline measured 2026-08-07, before any cleanup: **2.5 MB packed, 7.0 MB unpacked, 739 files.**
   Confirmed findings to start from, each verified against `dist`, not inferred:
   - `dist/audit/rules/rendered/vertical-metrics.{js,d.ts}` ships today and is pure lab apparatus,
-    the measurement module for a probe that no shipped rule consumes. The vertical-alignment pass
-    already relocates it (see that plan's task 4); it is listed here as the worked example of the
-    class, not as outstanding work.
+    the measurement module for a probe that no shipped rule consumes. **THIS PASS RELOCATES IT**,
+    together with `scripts/probe-vertical-alignment.mjs` and the module's tests, which travel as
+    one unit. The vertical-alignment pass deliberately left it in place with a co-located `// WATCH:`
+    comment rather than move it twice, since the lab-versus-shipped boundary is this pass's
+    organizing principle and not one file's problem. It is the worked example: nothing named it in
+    `files` or the exports map, and it shipped anyway, because svelte-package emits everything
+    reachable under `src/lib`.
   - `dist/audit` is 792 KB across 41 files, the second-largest shipped tree after `components`.
     Whether `cairn-audit` is consumer product or engine apparatus is a POSITIONING question this
     pass should settle rather than assume. Evidence both ways: the shipped `cairn-admin-screens`

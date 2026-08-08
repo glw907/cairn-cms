@@ -58,15 +58,35 @@ the live admin smoke and its transcript are in the post-mortem). Both hold under
 the discard nuance, is
 [`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md).
 
-**RELEASE ONE gates on the vertical alignment pass, RESCOPED CAIRN-WIDE 2026-08-07; the
-admin-only plan is superseded and must not be executed.** The first execution attempt (Opus
-session, same day) was stopped mid-task-1 when its own calibration work found the defect class
-live on a public surface (ASC's `/join` cards: icon ink 2.8 to 5.1px above title cap centre on
-all six cards) while the plan fenced the public side off. Geoff ratified the rescope: the pass
-delivers cairn-cms machinery on BOTH surfaces (admin toolkit recipes, Waymark chassis recipes,
-one generalized `cairn-audit` rule measuring any rendered page); consumer-site fixes run in
-each site's repo on its own clock; release one still waits for the whole pass, with the
-npm-shipped machinery keeping the gate if the inventory forces a split. The ratified design is
+**RELEASE ONE gates on the vertical alignment pass, which is MID-FLIGHT on the
+`vertical-alignment` worktree, NOT on `main`. TASK 1 IS DONE; do not re-run it.** Twelve commits
+sit on that branch, ahead of `main`, and `main` has none of the work. Resume there, not here:
+`cd /home/glw907/Projects/cairn-cms/.claude/worktrees/vertical-alignment`. Its showcase already
+has a from-scratch install whose `file:` deps resolve into the worktree, so do not reinstall.
+**Read that branch's copy of the plan, not `main`'s**: the branch carries an EXECUTION STATE
+header plus four ratified amendments that `main`'s copy does not have, and executing `main`'s copy
+would redo four rounds of measurement work and rebuild an artifact that has been dropped.
+
+The pass measured 5028 readings over 106 renders and found **7 rows above the bar: 5 confirmed
+admin defects, 0 public, 2 reviewed declines.** Task 1 took four rounds (1a, 1b, 1c) and two
+independent condemnations before its inventory passed a grade; the closing verification was
+set-theoretic, not narrative. Remaining: task 2 (the five rows, fixed at the recipe), the
+five-viewport site-suite widening, task 4b (the static guardrail), task 5 (docs). Owed at pass
+end: `code-simplifier` over the 1b and 1c commits.
+
+**Four rulings from Geoff, 2026-08-07, all recorded in the branch's plan.** The pass cuts short
+because the measured defect surface came in far smaller than assumed, and task 3 is dissolved (its
+only row was a false positive). The rendered `cairn-audit` rule is **DROPPED from the shipped
+surface**, reversing the ratified spec: complexity is welcome locally to build the engine, but a
+developer who just wants to use cairn receives none of it, and that rule was the only artifact
+that was both complex and shipped. The probe and `vertical-metrics` stay as LAB apparatus and must
+not ship. New **task 4b** ships the first browser-free guardrail, a static rule matching the one
+confirmed mechanic on the existing `svelte/compiler` substrate. A **repo-organization and
+shipped-surface cleanup pass** is authorized and filed in `ROADMAP.md`'s Now tier (baseline: 2.5 MB
+packed, 739 files).
+
+The superseded design below is retained for its reasoning only; where it and the branch's plan
+disagree, the branch's plan governs. The ratified design is
 [`2026-08-07-vertical-alignment-cairn-wide-design.md`](superpowers/specs/2026-08-07-vertical-alignment-cairn-wide-design.md)
 (it carries the three measurement traps the probe walked into, binding on probe, rule, and
 fixtures). The rescoped plan is

@@ -14,6 +14,20 @@ the toolkit's field primitives (merged from the retired `admin-fields` subpath, 
 pass, R3); compose it directly around a bare custom control when a site's own field needs the
 admin's label rhythm with no bundled primitive to match. `SelectInput` and `TextInput` both wrap it
 internally.
+
+WHAT `children` MAY HOLD: the control, and nothing that is not the control. This component renders
+a real `<label>` wrapping its content, so every piece of text inside it joins the field's
+accessible name. An action affordance therefore goes BESIDE the field, never in it: a button, a
+link, a clear or reset control, a unit switcher. Put one inside and a screen reader announces the
+field as "Instructor Add", and the affordance also inherits the label's own click-to-focus
+behavior. `FieldRow` is the composition for that pair. It levels a stacked field against a bare
+control on their bottom edges, which is the alignment the eye reads when the labelled child is a
+whole label taller than the affordance beside it.
+
+A hint or an error line is the same question with a different answer. It is content, not an
+affordance, so it may sit inside the label, but read `FieldRow`'s own note first: a field that
+renders a trailing line stops having its control as its bottom edge, and a row levelling on that
+edge then levels the wrong thing.
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

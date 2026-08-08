@@ -613,16 +613,39 @@
      CairnTidySettings.svelte, a quarter of the 10px cap height both members render.
 
      Baseline-aligning the label's own items is the fix. The word is the one item with a real
-     baseline, so it becomes the baseline the label reports, and `align-self: center` on the glyph
-     keeps the glyph out of that baseline group while still centring it on the line the word
-     draws. The two declarations are one recipe: drop the second and the glyph rejoins the group,
-     which synthesises the same wrong baseline again. */
+     baseline, so it becomes the baseline the label reports.
+
+     The two rules do DIFFERENT jobs, and the second is load-bearing for a reason worth reading
+     before deleting it. It is NOT holding the baseline. Neutralise the svg's `align-self` to
+     `auto` and the label-vs-value baseline delta still measures 0.00px, because Chromium aligns
+     the svg's synthesised baseline INTO the group rather than reporting it as the container's, so
+     the label's first baseline is the word's either way. What the second rule holds is the
+     GLYPH'S OWN PLACEMENT: drop it and the glyph rides 2.50px high (-0.29px to -2.79px against
+     the first line's cap centre), a new defect of exactly the size the first rule removes.
+
+     `align-self: start` plus `min-height: 1lh`, not `align-self: center`, because a centred glyph
+     levels on the flex line's cross size, which for this single-line container is the label's
+     WHOLE height. A label whose word wraps to three lines then floats its glyph to the middle of
+     the block, +16.71px below the first line's cap centre, contradicting the rule that an icon
+     beside a text block pairs with that block's FIRST line. Starting the glyph and giving it a
+     one-line-tall box puts its ink on that line instead: an svg with a viewBox centres its
+     drawing in the box it is given, so a 1lh box centres the ink on the line, the same mechanic
+     `.cairn-line-slot` below uses. It reads -0.29px whether the label wraps or not.
+
+     `min-height` rather than `height` is a cascade-layer fact, not a preference. A call site
+     sizes its glyph with a Tailwind `h-*` utility, and the utilities layer outranks this one
+     whatever the specificity, so a `height` here never applies: measured -1.79px, still outside
+     the 1px bar and a regression on the non-wrapping case. No size utility sets `min-height`, so
+     it wins by being a different property, and it only ever grows the box. A glyph taller than
+     the line keeps its authored size and reads exactly as it does today when the label does not
+     wrap. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-icon-label {
     display: inline-flex;
     align-items: baseline;
   }
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-icon-label > svg {
-    align-self: center;
+    align-self: start;
+    min-height: 1lh;
   }
 
   /* A PAINTED BOX LEVELS ON A LINE, NOT ON A BLOCK'S TOP EDGE (same inventory). A chip beside a

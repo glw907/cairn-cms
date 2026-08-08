@@ -21,6 +21,14 @@ that row itself.
 No measured defect drove this component. The 2026-08 vertical-alignment inventory measured the
 admin's rendered rows and found no misaligned field row to fix; this ships as the named
 composition for the shape, so a row that needs it stops being hand-rolled per screen.
+
+The three layout declarations live in the scoped `<style>` below rather than in Tailwind classes,
+per the admin-toolkit exception in cairn-admin.css's grammar-token header. This component ships on
+a public subpath, so a consumer can mount it outside the admin theme root, and none of the three
+classes survives out there: the compiled sheet scopes every rule under a theme root, and
+`gap-control` is a cairn-only `@utility` a consumer's own Tailwind build never even defines.
+Measured, the class-only form computed `display: block` outside the root, so the whole contract
+this component exists for was gone with nothing to see in the markup.
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
@@ -33,6 +41,17 @@ composition for the shape, so a row that needs it stops being hand-rolled per sc
   let { children }: Props = $props();
 </script>
 
-<div class="flex items-end gap-control">
+<div class="toolkit-field-row">
   {@render children()}
 </div>
+
+<style>
+  /* The gap carries the measured literal as a var() fallback, per the admin-toolkit exception in
+     cairn-admin.css's grammar-token header: --cairn-gap-control is undefined outside the admin
+     theme root, and 0.5rem is what it resolves to inside it. */
+  .toolkit-field-row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--cairn-gap-control, 0.5rem);
+  }
+</style>

@@ -966,7 +966,13 @@ alignment restates these rules rather than inventing its own.
   declares `items-baseline`. Without it the label reports the icon's bottom margin edge as its
   baseline, because a flex container synthesises a baseline from its first item when no item is
   baseline-aligned. The recipe baseline-aligns the label's own items so the word supplies the
-  baseline, and centres the glyph with `align-self`. Both declarations are load-bearing.
+  baseline, then gives the glyph `align-self: start` and `min-height: 1lh` so its ink centres on
+  the label's FIRST line. Both rules are load-bearing, for different reasons. The first fixes the
+  baseline the label reports; the second fixes where the glyph sits, and dropping it costs 2.50px
+  of glyph offset rather than the baseline (Chromium reads the word's baseline either way). Two
+  measured traps sit behind the second rule's exact wording: `align-self: center` levels the glyph
+  on the whole label, so a wrapping label floats it 16.71px down, and `height: 1lh` never applies,
+  because a call site's `h-*` utility outranks this components-layer rule whatever the specificity.
 - **`.cairn-line-slot`** (`cairn-admin.css`): a one-line-tall slot that centres a painted chip on
   the line it labels, so the chip levels on that line box instead of on the top edge of the block
   beside it. Give the slot the same type role as the line, since `1lh` is what sets its height.

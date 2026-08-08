@@ -50,7 +50,7 @@ function firstTextNode(el: Element): Text {
  * the half-leading term so it stays exact whether the engine hands back the font box (Chromium
  * today) or the line box.
  */
-function firstLine(el: Element): { baseline: number; capCentre: number } {
+function firstLine(el: Element): { baseline: number; capCentre: number; lines: number } {
   const node = firstTextNode(el);
   const owner = node.parentElement;
   if (!owner) throw new Error('a text node with no element to read metrics off');
@@ -58,14 +58,16 @@ function firstLine(el: Element): { baseline: number; capCentre: number } {
   const lead = node.data.length - node.data.trimStart().length;
   range.setStart(node, lead);
   range.setEnd(node, node.data.trimEnd().length);
-  const rect = range.getClientRects()[0];
+  // One client rect per rendered line, so the count is what proves a wrapping fixture wraps.
+  const rects = range.getClientRects();
+  const rect = rects[0];
   if (!rect) throw new Error('the first line rendered no client rect');
   paint.font = getComputedStyle(owner).font;
   const face = paint.measureText('Hxy');
   const fontBox = face.fontBoundingBoxAscent + face.fontBoundingBoxDescent;
   const capHeight = paint.measureText('H').actualBoundingBoxAscent;
   const baseline = rect.top + (rect.height - fontBox) / 2 + face.fontBoundingBoxAscent;
-  return { baseline, capCentre: baseline - capHeight / 2 };
+  return { baseline, capCentre: baseline - capHeight / 2, lines: rects.length };
 }
 
 /**
@@ -121,6 +123,29 @@ function settingsData(over: Partial<SettingsData> = {}): SettingsData {
   };
 }
 
+/**
+ * The glyph CairnTidySettings' three labels render, as raw markup. `.cairn-icon-label` is a sheet
+ * recipe rather than a component, and a consumer composes it from their own icon, so the fixture
+ * below is markup rather than a mounted screen. The size classes are the call sites' own.
+ */
+const iconLabelGlyph =
+  '<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 flex-none text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20 6 9 17l-5-5" /></svg>';
+
+/**
+ * A `.cairn-icon-label` holding `text`, mounted in a container `width` wide so the caller controls
+ * how many lines the word wraps to. Returns the mounted host for the caller to remove.
+ */
+function mountIconLabel(width: string, text: string) {
+  const host = document.createElement('div');
+  host.style.width = width;
+  host.innerHTML = `<span class="cairn-icon-label gap-1.5 type-meta font-medium">${iconLabelGlyph}${text}</span>`;
+  document.body.appendChild(host);
+  const label = host.querySelector('.cairn-icon-label');
+  const glyph = host.querySelector('svg');
+  if (!label || !glyph) throw new Error('the icon-label fixture did not render');
+  return { host, label, glyph };
+}
+
 /** The single element under `root` whose own text is exactly `text`. */
 function elementWithText(root: Element, text: string): HTMLElement {
   const found = Array.from(root.querySelectorAll<HTMLElement>('div, span, p')).filter(
@@ -161,10 +186,50 @@ describe('the icon-plus-word label exposes its own text baseline', () => {
         const value = label.nextElementSibling;
         if (!value) throw new Error('the row rendered no value beside its label');
         const delta = firstLine(label).baseline - firstLine(value).baseline;
-        expect(Math.abs(delta), `${label.textContent?.trim()} baseline delta`).toBeLessThanOrEqual(1);
+        // Exact, not the 1px bar the other rows carry. Label and value render the same type role
+        // off the same row, so a levelled row reads 0.00 and anything else is a real defect.
+        expect(Math.abs(delta), `${label.textContent?.trim()} baseline delta`).toBeLessThanOrEqual(
+          0.01,
+        );
       }
     });
   }
+});
+
+describe('an icon-plus-word label pairs its glyph with the FIRST line, wrapped or not', () => {
+  // Rule 1 again, this time against the recipe itself rather than a call site. cairn's own three
+  // labels never wrap (they sit under `sm:min-w-[8.5rem]`), but the recipe ships in the sheet and a
+  // consumer's label will, so the shipped contract is what these two measure.
+  it('holds the glyph on the first line of a label that wraps to three', () => {
+    const { host, label, glyph } = mountIconLabel('6rem', 'Tidy conventions for this site');
+    try {
+      const line = firstLine(label);
+      // The positive control: the fixture really wraps, so the reading exercises the trap rather
+      // than passing as a single-line label in disguise.
+      expect(line.lines).toBe(3);
+      expect(Math.abs(inkCentre(glyph) - line.capCentre)).toBeLessThanOrEqual(1);
+    } finally {
+      host.remove();
+    }
+  });
+
+  it('reads the same on a label that does not wrap', () => {
+    // The non-wrapping case the pass originally fixed. The two readings agreeing is the point: the
+    // glyph does not move when the label's word happens to wrap.
+    const wide = mountIconLabel('30rem', 'Tidy conventions for this site');
+    const narrow = mountIconLabel('6rem', 'Tidy conventions for this site');
+    try {
+      const wideLine = firstLine(wide.label);
+      expect(wideLine.lines).toBe(1);
+      const wideDelta = inkCentre(wide.glyph) - wideLine.capCentre;
+      const narrowDelta = inkCentre(narrow.glyph) - firstLine(narrow.label).capCentre;
+      expect(Math.abs(wideDelta)).toBeLessThanOrEqual(1);
+      expect(Math.abs(narrowDelta - wideDelta)).toBeLessThanOrEqual(0.5);
+    } finally {
+      wide.host.remove();
+      narrow.host.remove();
+    }
+  });
 });
 
 describe('a painted chip levels on the line box it labels', () => {
@@ -241,5 +306,26 @@ describe('FieldRow', () => {
     // The positive control: the labelled child really is the taller one, so the row exercises
     // bottom alignment rather than passing because both children happen to be the same height.
     expect(field.getBoundingClientRect().height).toBeGreaterThan(bare.getBoundingClientRect().height);
+  });
+
+  it('is still a row outside the admin theme root', async () => {
+    // FieldRow ships on /admin-toolkit, so a consumer can mount it anywhere. Every rule in the
+    // compiled sheet is scoped under a theme root, and `gap-control` is a cairn-only @utility a
+    // consumer's own Tailwind build never even defines, so class names alone leave the component
+    // computing as a stacked block: the whole contract, gone silently.
+    await page.viewport(1280, 720);
+    document.documentElement.removeAttribute('data-theme');
+    try {
+      const screen = render(FieldRowHarness, {});
+      const row = screen.container.querySelector('div');
+      if (!row) throw new Error('the harness rendered no row');
+
+      const style = getComputedStyle(row);
+      expect(style.display).toBe('flex');
+      expect(style.alignItems).toBe('flex-end');
+      expect(parseFloat(style.columnGap)).toBeGreaterThan(0);
+    } finally {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    }
   });
 });

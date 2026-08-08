@@ -19,7 +19,7 @@ import {
   isStartAlignment,
   measurePair,
   measureVerticalMetrics,
-  metricForPairClass,
+  metricForPair,
   pairsAboveBar,
   referenceForMetric,
   type MeasuredPair,
@@ -95,6 +95,8 @@ function anchor(kind: MemberKind, values: Partial<MemberAnchor> = {}): MemberAnc
     memberBottomPx: 10,
     baselinePx: kind === 'text' ? 8 : null,
     capCentrePx: kind === 'text' ? 4 : null,
+    // A bare run of type, which is what a text member is until its own element paints a box.
+    paintedBoxCentrePx: null,
     text: '',
     lineCount: kind === 'text' ? 1 : 0,
     blockLiftPx: 0,
@@ -134,11 +136,23 @@ describe('pair classification and the metric each class takes', () => {
   });
 
   it('measures two runs of text by baseline and everything else by visible content', () => {
-    expect(metricForPairClass('text-beside-text')).toBe('baseline');
-    expect(metricForPairClass('icon-beside-text')).toBe('content-centre');
-    expect(metricForPairClass('control-beside-text')).toBe('content-centre');
-    expect(metricForPairClass('control-beside-control')).toBe('content-centre');
-    expect(metricForPairClass('optical-suspect')).toBe('optical-centre');
+    const notCentred = { alignSelf: 'baseline' };
+    expect(metricForPair(rawPair(anchor('text', notCentred), anchor('text', notCentred)))).toBe('baseline');
+    expect(metricForPair(rawPair(anchor('icon'), anchor('text')))).toBe('content-centre');
+    expect(metricForPair(rawPair(anchor('control'), anchor('text')))).toBe('content-centre');
+    expect(metricForPair(rawPair(anchor('control'), anchor('control')))).toBe('content-centre');
+    expect(metricForPair(rawPair(anchor('text'), anchor('box')))).toBe('optical-centre');
+  });
+
+  it('measures two runs of text by centre where the row centres them, in any of the centre keywords', () => {
+    for (const alignment of ['center', 'safe center', 'middle']) {
+      const centred = { alignSelf: alignment };
+      expect(metricForPair(rawPair(anchor('text', centred), anchor('text', centred)))).toBe('content-centre');
+    }
+    // One member centred is not a centred row, the same condition the composition term applies.
+    expect(
+      metricForPair(rawPair(anchor('text', { alignSelf: 'center' }), anchor('text', { alignSelf: 'baseline' })))
+    ).toBe('baseline');
   });
 
   it('reads a text member by its cap centre under content-centre, not its glyph-box centre', () => {
@@ -146,6 +160,13 @@ describe('pair classification and the metric each class takes', () => {
     expect(referenceForMetric(text, 'content-centre')).toBe(4);
     expect(referenceForMetric(anchor('icon', { contentCentrePx: 7 }), 'content-centre')).toBe(7);
     expect(referenceForMetric(anchor('control', { contentCentrePx: 6 }), 'content-centre')).toBe(6);
+  });
+
+  it('reads a member whose run sits in a painted box by that box, since the box is the visual object', () => {
+    const chip = anchor('text', { capCentrePx: 4, paintedBoxCentrePx: 6 });
+    expect(referenceForMetric(chip, 'content-centre')).toBe(6);
+    // The baseline metric is unmoved by it: a box has no baseline to substitute for the run's.
+    expect(referenceForMetric(chip, 'baseline')).toBe(chip.baselinePx);
   });
 
   it('has no reading for a control under the baseline metric, so the pair is unmeasurable', () => {
@@ -238,10 +259,8 @@ describe('the composition term, and why the residual is the defect', () => {
   });
 
   it('signs the composition by which member wraps, so a wrapped left member reads the other way', () => {
-    const pair = measurePair(
-      rawPair(wrapped(3, { baselinePx: 8 }), anchor('text', { baselinePx: 28 }))
-    );
-    expect(pair).toMatchObject({ metric: 'baseline', deltaPx: -20, compositionPx: -20, residualPx: 0 });
+    const pair = measurePair(rawPair(wrapped(3, { capCentrePx: 4 }), anchor('text', { capCentrePx: 24 })));
+    expect(pair).toMatchObject({ metric: 'content-centre', deltaPx: -20, compositionPx: -20, residualPx: 0 });
   });
 
   it('always carries the term on an optical suspect, whose padding box spans every line by construction', () => {
@@ -754,9 +773,140 @@ describe('text beside text: the pair that must not fire', () => {
   });
 
   it('still catches two runs of text whose baselines genuinely disagree', async () => {
-    const broken = html.replace('align-items:baseline', 'align-items:center');
+    const broken = html.replace('line-height:1">24 published', 'line-height:1;position:relative;top:5px">24 published');
     const pair = (await measure(broken)).find((candidate) => candidate.pairClass === 'text-beside-text');
+    expect(pair?.metric).toBe('baseline');
     expect(pair?.magnitudePx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
+  });
+
+  // The converse of the trap above, and the one this file first got backwards. A mixed-size pair
+  // sharing a CENTRE has baselines that diverge by design, by exactly the cap-height ratio, so a
+  // baseline metric reports every correctly centred row as broken.
+  it('measures a centred mixed-size pair by centres, since a centred row asked for centres', async () => {
+    const centred = html.replace('align-items:baseline', 'align-items:center');
+    const pairs = await measure(centred);
+    const pair = pairs.find((candidate) => candidate.pairClass === 'text-beside-text');
+    expect(pair?.metric).toBe('content-centre');
+    expect(pair?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
+    // The reading the old metric took on these same pixels, kept as the assertion that would have
+    // fired: the two baselines sit further apart than the bar with nothing misconfigured.
+    const asBaselines = (pair?.a.baselinePx ?? 0) - (pair?.b.baselinePx ?? 0);
+    expect(Math.abs(asBaselines)).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
+  });
+
+  it('still catches a centred pair whose visible content genuinely sits apart', async () => {
+    const broken = html
+      .replace('align-items:baseline', 'align-items:center')
+      .replace('line-height:1">24 published', 'line-height:1;position:relative;top:5px">24 published');
+    const pair = (await measure(broken)).find((candidate) => candidate.pairClass === 'text-beside-text');
+    expect(pair?.metric).toBe('content-centre');
+    expect(pair?.magnitudePx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
+  });
+});
+
+// The headline defect of the third emission: three of ten inventoried rows were a padded chip beside
+// larger type, classed as two runs of text and scored on baselines. A chip is a BOX. Its background
+// and border draw the outline the eye levels against the run beside it, and the type inside it only
+// says where the optical rule should look.
+describe('a padded chip is a box, not a run of type', () => {
+  /** The admin shell's brand tile: a display wordmark with a small chip centred beside it. */
+  const brandTile = (rowAlign: string, chipStyle = '') =>
+    `<div class="brand-tile" style="display:flex;align-items:${rowAlign};gap:10px;font-family:sans-serif">
+      <span style="font-size:22px;line-height:28px;font-weight:600">Cairn</span>
+      <span class="brand-chip" style="display:inline-flex;align-items:center;border-radius:6px;
+            background:#dcd8d2;padding:1px 6px;font-size:11px;line-height:14px;${chipStyle}">CMS</span>
+    </div>`;
+
+  const chipPair = async (html: string) =>
+    (await measure(html)).find(
+      (pair) => pair.pairClass === 'text-beside-text' && pair.rowClasses.includes('brand-tile')
+    );
+
+  it('stays quiet on a chip whose box centres on the type beside it', async () => {
+    const pair = await chipPair(brandTile('center'));
+    expect(pair?.metric).toBe('content-centre');
+    expect(pair?.residualMagnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
+    // Levelling this pair on one baseline, which is what the previous emission prescribed, would
+    // drop the chip by the cap-height ratio off a centre it already hits.
+    expect(Math.abs((pair?.a.baselinePx ?? 0) - (pair?.b.baselinePx ?? 0))).toBeGreaterThan(
+      VERTICAL_REPORTING_BAR_PX
+    );
+  });
+
+  it('reads the chip at its painted box, leaving the glyph inside it to the optical rule', async () => {
+    const pair = await chipPair(brandTile('center'));
+    expect(pair?.b.paintedBoxCentrePx).not.toBeNull();
+    expect(pair?.b.paintedBoxCentrePx).toBeCloseTo(((pair?.b.memberTopPx ?? 0) + (pair?.b.memberBottomPx ?? 0)) / 2, 1);
+    expect(referenceForMetric(pair!.b, 'content-centre')).toBe(pair?.b.paintedBoxCentrePx);
+    // A bare run of type paints no box of its own, so it still reads its cap band.
+    expect(pair?.a.paintedBoxCentrePx).toBeNull();
+    expect(referenceForMetric(pair!.a, 'content-centre')).toBe(pair?.a.capCentrePx);
+  });
+
+  it('does not count a glyph riding high inside its own chip as a defect of the row', async () => {
+    // The chip's box still centres on the type beside it; its own label rides high INSIDE the chip,
+    // which is the optical reading's finding. Reading the chip at its cap band would report that
+    // one offset twice, once here and once there.
+    const pair = await chipPair(brandTile('center', 'padding:1px 6px 7px;'));
+    expect(pair?.residualMagnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
+    expect(Math.abs((pair?.a.capCentrePx ?? 0) - (pair?.b.capCentrePx ?? 0))).toBeGreaterThan(
+      VERTICAL_REPORTING_BAR_PX
+    );
+  });
+
+  it('reports a chip that does not centre on the type beside it', async () => {
+    const pair = await chipPair(brandTile('center', 'position:relative;top:4px;'));
+    expect(pair?.residualMagnitudePx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
+  });
+
+  it('keeps the baseline metric where the row declares a baseline or levels the tops', async () => {
+    // Neither row asked for centres, and under `flex-start` a centre reading collapses into the
+    // top-alignment term, so the baseline is the only relative reading these two members have.
+    for (const alignment of ['baseline', 'flex-start']) {
+      const pair = await chipPair(brandTile(alignment));
+      expect(pair?.metric).toBe('baseline');
+    }
+  });
+
+  it('does not read the row its members sit in as one member visual object', async () => {
+    // The Write tab: a painted button whose own label is a member of the row inside it. The button
+    // is the ground the row is drawn on, not a chip around one member.
+    const pairs = await measure(
+      `<div><button class="tab-btn" type="button"
+        style="display:inline-flex;align-items:center;gap:6px;border-radius:8px;background:#e5e2dd;
+               padding:4px 10px;font-size:13px;line-height:18px;font-family:sans-serif">
+        <svg width="16" height="16" viewBox="0 0 24 24" style="display:block">
+          <rect x="4" y="2" width="16" height="12" fill="currentColor"></rect></svg>Write</button></div>`
+    );
+    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
+    expect(pair?.b.paintedBoxCentrePx).toBeNull();
+    expect(pair?.residualMagnitudePx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
+  });
+
+  // A table cell is placed by `vertical-align`, never by `align-self`, and Chromium reports
+  // `normal` on every cell. Reading that as "no alignment declared" sent fifteen middle-aligned
+  // rows of one admin list to the baseline metric, where a status chip read 1.55px off.
+  it('reads a table cell by its `vertical-align`, so a middle-aligned row is a centred row', async () => {
+    const listRow = (valign: string) =>
+      `<table style="border-collapse:collapse;font-family:sans-serif"><tbody>
+        <tr class="list-row" style="vertical-align:${valign}">
+          <td style="padding:8px;font-size:13px;line-height:17px">Jun 9, 2026</td>
+          <td style="padding:8px"><span class="status-chip" style="display:inline-flex;align-items:center;
+              border-radius:999px;background:#dcd8d2;padding:2px 8px;font-size:10px;line-height:12px">
+              Published</span></td>
+        </tr></tbody></table>`;
+    const cellPair = async (valign: string) =>
+      (await measure(listRow(valign))).find(
+        (pair) => pair.rowKind === 'table-row' && pair.pairClass === 'text-beside-text'
+      );
+
+    const middle = await cellPair('middle');
+    expect(middle?.a.alignSelf).toBe('middle');
+    expect(middle?.metric).toBe('content-centre');
+    expect(middle?.residualMagnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
+
+    const baseline = await cellPair('baseline');
+    expect(baseline?.metric).toBe('baseline');
   });
 });
 

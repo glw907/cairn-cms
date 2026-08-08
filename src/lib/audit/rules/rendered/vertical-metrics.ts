@@ -30,10 +30,19 @@
 //    MARKED fallback for an icon that carries no reachable geometry (an `<img>`, a background-image
 //    tile), which a caller can tell apart through {@link MemberAnchor.geometry}.
 //
-// THE METRIC IS CHOSEN BY THE PAIR'S CLASS, and that split is not a refinement, it is the
-// difference between a useful rule and a rule nobody can leave on. A mixed-size text pair sharing a
-// baseline is CORRECT typography whose glyph centres diverge by design; measuring it by centre
-// reports every well-set heading-plus-eyebrow row as broken. See {@link metricForPairClass}.
+// THE METRIC IS CHOSEN BY THE PAIR'S KINDS AND BY WHAT THE ROW DECLARED, and that choice is not a
+// refinement, it is the difference between a useful rule and a rule nobody can leave on. Two runs
+// of type at different sizes cannot share both a baseline and a centre, so each reading is a defect
+// under one metric and correct typography under the other, and only the row says which. A pair
+// sharing a BASELINE has glyph centres that diverge by design; a pair sharing a CENTRE, which is
+// every padded chip beside a heading, has BASELINES that diverge by design. This module reported
+// the first as a defect in one emission and the second in another. See {@link metricForPair}.
+//
+// A PADDED CHIP IS NOT A TEXT RUN. A pill, a badge, a button: the background or border draws an
+// outline, the outline is what the row levels and the eye follows, and the type inside it only says
+// where the OPTICAL reading should look. Such a member is read at its painted box
+// ({@link MemberAnchor.paintedBoxCentrePx}), which keeps a glyph riding high inside its own chip
+// from being counted a second time as a row defect.
 //
 // TRAP 1 ANSWERS "WHICH LINE", NEVER "SHOULD THIS PAIR WITH A LINE AT ALL". Every reading is
 // therefore split into a COMPOSITION term, what that row's own alignment asks for, and a RESIDUAL,
@@ -111,9 +120,14 @@ export interface MemberAnchor {
    */
   tag: string;
   /**
-   * How this member is aligned in its row: its own `align-self`, resolved against the container's
-   * `align-items` when it computes to `auto` (which is what Chromium returns for an unset one).
-   * This is the property that decides whether a wrapped block was centred on purpose.
+   * The keyword that PLACED this member in its row: its own `align-self`, resolved against the
+   * container's `align-items` when it computes to `auto` (which is what Chromium returns for an
+   * unset one), or a table cell's `vertical-align`, which is the property that places a cell.
+   * Chromium reports `align-self: normal` on every cell whatever the row asked for, so reading
+   * `align-self` there says "nothing was declared" on a row that declared a centre.
+   *
+   * This is the property that decides what the row asked for: whether a wrapped block was centred
+   * on purpose, and whether a pair of runs was asked to share a baseline or a centre.
    */
   alignSelf: string;
   geometry: GeometrySource;
@@ -144,6 +158,20 @@ export interface MemberAnchor {
    * centres on, so the glyph box's own midpoint sits too low to compare an icon against.
    */
   capCentrePx: number | null;
+  /**
+   * The centre of the painted box that IS this member's visual object, a chip, pill, badge or
+   * button whose own background or border draws an outline the eye reads. Null on a member whose
+   * run paints no box of its own, which is every bare run of type.
+   *
+   * A PADDED CHIP IS NOT A TEXT RUN. Its baseline is an accident of the type inside it, while the
+   * thing the row levels against the run beside it is the box, so a pair holding one is read at
+   * centres and this is the centre it reads. Where the glyph sits INSIDE the box is the optical
+   * reading's question, and keeping the two apart is what stops one offset being counted twice.
+   *
+   * The row's own container never supplies it: a painted button holding an icon and its label is
+   * the ground that row is drawn on, not one member's object.
+   */
+  paintedBoxCentrePx: number | null;
   /** The member's text run, truncated, so a report can name a row a reader will recognize. */
   text: string;
   /** How many line bands of text this member renders, whatever kind it is. `0` on a bare icon. */
@@ -433,11 +461,73 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       memberBottomPx: round(inkBottom),
       baselinePx: round(baseline),
       capCentrePx: round(baseline - capHeightFor(font) / 2),
+      paintedBoxCentrePx: null,
       text: text.slice(0, 40),
       lineCount: 0,
       blockLiftPx: 0,
       stacked: false,
     };
+  }
+
+  /** Whether a computed colour puts anything on the screen, across every colour syntax Chromium emits. */
+  function opaqueEnough(colour: string): boolean {
+    const value = colour.trim();
+    if (!value || value === 'transparent' || value === 'none') return false;
+    const legacy = /^rgba?\(([^)]*)\)$/.exec(value);
+    if (legacy) {
+      const parts = legacy[1].split(/[,\s/]+/).filter(Boolean);
+      return parts.length < 4 || styleNumber(parts[3], 1) > 0;
+    }
+    // The modern syntaxes (`oklab`, `color`, `lab`) carry alpha after a slash and only when set.
+    const alpha = /\/\s*([0-9.]+)%?\s*\)$/.exec(value);
+    return alpha ? styleNumber(alpha[1], 1) > 0 : true;
+  }
+
+  /**
+   * Whether `el` draws a box around the run inside it: a chip, a pill, a badge, a button. It has to
+   * both PAINT (a background or a border the eye can see) and hold its content off that paint (a
+   * padding, a border, a rounded corner), which is what separates a chip from a highlighted word.
+   */
+  function paintsChipBox(el: Element): boolean {
+    const style = getComputedStyle(el);
+    const background =
+      (style.backgroundImage !== '' && style.backgroundImage !== 'none') || opaqueEnough(style.backgroundColor);
+    const border = [
+      [style.borderTopWidth, style.borderTopStyle, style.borderTopColor],
+      [style.borderRightWidth, style.borderRightStyle, style.borderRightColor],
+      [style.borderBottomWidth, style.borderBottomStyle, style.borderBottomColor],
+      [style.borderLeftWidth, style.borderLeftStyle, style.borderLeftColor],
+    ].some(
+      ([width, kind, colour]) =>
+        styleNumber(width, 0) > 0 && kind !== 'none' && kind !== 'hidden' && opaqueEnough(colour)
+    );
+    if (!background && !border) return false;
+    const inset =
+      styleNumber(style.paddingTop, 0) > 0 ||
+      styleNumber(style.paddingBottom, 0) > 0 ||
+      styleNumber(style.paddingLeft, 0) > 0 ||
+      styleNumber(style.paddingRight, 0) > 0 ||
+      styleNumber(style.borderTopLeftRadius, 0) > 0;
+    return border || inset;
+  }
+
+  /**
+   * The centre of the painted box that is this member's visual object, or null when its run paints
+   * no box. Searched from the element the reading came off out to the row member itself, so a chip
+   * nested in a table cell counts and the row's own painted ground does not.
+   */
+  function paintedBoxCentre(readingEl: Element | null, member: Node, container: Element | null): number | null {
+    if (!readingEl) return null;
+    const limit = member.nodeType === Node.ELEMENT_NODE ? (member as Element) : readingEl;
+    for (let node: Element | null = readingEl; node; node = node.parentElement) {
+      if (node === container) return null;
+      if (paintsChipBox(node)) {
+        const rect = node.getBoundingClientRect();
+        if (rect.bottom > rect.top) return round((rect.top + rect.bottom) / 2);
+      }
+      if (node === limit) return null;
+    }
+    return null;
   }
 
   /** Whether `shape` and every ancestor up to `root` is itself painted at all. */
@@ -603,6 +693,7 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       memberBottomPx: round(rect.bottom),
       baselinePx: null,
       capCentrePx: null,
+      paintedBoxCentrePx: null,
       text: '',
       lineCount: 0,
       blockLiftPx: 0,
@@ -634,6 +725,7 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       memberBottomPx: round(rect.bottom),
       baselinePx: null,
       capCentrePx: null,
+      paintedBoxCentrePx: null,
       text: (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 40),
       lineCount: 0,
       blockLiftPx: 0,
@@ -794,10 +886,16 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
    * How `member` is aligned inside a row whose container resolved `align-items` to
    * `containerAlignItems`. Chromium reports an unset `align-self` as `auto` rather than resolving
    * it, and an anonymous text item has no style of its own, so both fall back to the container.
+   *
+   * A TABLE CELL IS PLACED BY `vertical-align`, and Chromium reports `align-self: normal` on every
+   * cell whatever the row asked for. Reading `align-self` there answers "nothing was declared" on a
+   * `vertical-align: middle` row, which is a row that asked for centres.
    */
   function alignmentOf(member: Node, containerAlignItems: string): string {
     if (member.nodeType !== Node.ELEMENT_NODE) return containerAlignItems;
-    const self = getComputedStyle(member as Element).alignSelf;
+    const style = getComputedStyle(member as Element);
+    if (style.display === 'table-cell') return style.verticalAlign;
+    const self = style.alignSelf;
     return !self || self === 'auto' ? containerAlignItems : self;
   }
 
@@ -820,7 +918,13 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
    * icon centred in a tile and the one control inside a stacked composite are both read off
    * something smaller than the member the row placed.
    */
-  function withMemberContext(anchor: MemberAnchor, member: Node, containerAlignItems: string): MemberAnchor {
+  function withMemberContext(
+    anchor: MemberAnchor,
+    member: Node,
+    containerAlignItems: string,
+    container: Element | null,
+    readingEl: Element | null
+  ): MemberAnchor {
     const bands = lineBands(member);
     anchor.alignSelf = alignmentOf(member, containerAlignItems);
     anchor.lineCount = bands.length;
@@ -829,6 +933,9 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       anchor.memberTopPx = round(box.top);
       anchor.memberBottomPx = round(box.bottom);
     }
+    // Only a text member can be mistaken for a run of type it is not. An icon, a control and a
+    // padding box are already read as the objects they are.
+    anchor.paintedBoxCentrePx = anchor.kind === 'text' ? paintedBoxCentre(readingEl, member, container) : null;
     // Only a text member reads one line. An icon, a control, and a padding box are each read whole,
     // so a row centring them has already been given what it asked for.
     anchor.blockLiftPx = anchor.kind === 'text' ? blockLift(bands) : 0;
@@ -836,20 +943,25 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
   }
 
   /**
-   * One row member's anchor. A bare control or icon anchors on itself; a composite carrying exactly
-   * one control anchors on THAT control, which is the whole stacked-field case (the composite's own
-   * box centres correctly while the control inside it does not); anything else anchors on its
-   * principal run.
+   * One row member's anchor, with the element its reading came off. A bare control or icon anchors
+   * on itself; a composite carrying exactly one control anchors on THAT control, which is the whole
+   * stacked-field case (the composite's own box centres correctly while the control inside it does
+   * not); anything else anchors on its principal run.
+   *
+   * The reading's own element travels with the anchor because a member's visual object can sit
+   * between the two: the chip a table cell holds is neither the cell nor the run inside it.
    */
-  function anchorFor(node: Node): MemberAnchor | null {
+  function anchorFor(node: Node): { anchor: MemberAnchor; readingEl: Element | null } | null {
+    const resolved = (anchor: MemberAnchor | null, readingEl: Element | null) =>
+      anchor ? { anchor, readingEl } : null;
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node as Text;
-      return textAnchor(text, text.parentElement);
+      return resolved(textAnchor(text, text.parentElement), text.parentElement);
     }
     const el = node as Element;
     if (!isVisible(el)) return null;
-    if (el.matches(CONTROL_SELECTOR)) return controlAnchor(el);
-    if (el.matches(ICON_SELECTOR)) return iconAnchor(el);
+    if (el.matches(CONTROL_SELECTOR)) return resolved(controlAnchor(el), el);
+    if (el.matches(ICON_SELECTOR)) return resolved(iconAnchor(el), el);
 
     const controls = visibleMatches(el, CONTROL_SELECTOR);
     if (controls.length > 1) return null;
@@ -859,12 +971,12 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       if (!anchor) return null;
       const label = leaf && !controls[0].contains(leaf.node) ? textAnchor(leaf.node, leaf.lineOwner) : null;
       anchor.stacked = Boolean(label && label.bottomPx <= anchor.topPx + 1);
-      return anchor;
+      return resolved(anchor, controls[0]);
     }
     const icons = visibleMatches(el, ICON_SELECTOR);
-    if (!leaf && icons.length > 0) return iconAnchor(icons[0]);
+    if (!leaf && icons.length > 0) return resolved(iconAnchor(icons[0]), icons[0]);
     if (!leaf) return null;
-    return textAnchor(leaf.node, leaf.lineOwner);
+    return resolved(textAnchor(leaf.node, leaf.lineOwner), leaf.lineOwner);
   }
 
   /** What to call a member in the row's own member list when no anchor resolved for it. */
@@ -960,12 +1072,13 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     for (const cluster of clusterRows(members)) {
       diagnostics.rowsWalked += 1;
       const readings = cluster.map((item) => {
-        const anchor = anchorFor(item.node);
-        if (!anchor) {
+        const read = anchorFor(item.node);
+        if (!read) {
           diagnostics.anchorsUnresolved += 1;
           return { anchor: null, tooTall: false };
         }
-        withMemberContext(anchor, item.node, containerStyle.alignItems);
+        const { anchor } = read;
+        withMemberContext(anchor, item.node, containerStyle.alignItems, container, read.readingEl);
         // The cap reads the ANCHOR's extent, not the member's block box: a text member is read off
         // one line, so a tall block is still a row member while a page-tall control is not.
         return { anchor, tooTall: anchor.bottomPx - anchor.topPx > maxItemHeightPx };
@@ -1032,7 +1145,9 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     const padTop = rect.top + parseFloat(style.borderTopWidth || '0');
     const padBottom = rect.bottom - parseFloat(style.borderBottomWidth || '0');
     if (padBottom <= padTop) continue;
-    withMemberContext(glyph, el, style.alignItems);
+    // The optical pair reads the glyph against the box it sits in, so the box is the QUESTION here
+    // rather than the member's visual object: no container is excluded and no chip reading is taken.
+    withMemberContext(glyph, el, style.alignItems, el, null);
     const box: MemberAnchor = {
       kind: 'box',
       selector: signature(el),
@@ -1048,6 +1163,7 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       memberBottomPx: round(rect.bottom),
       baselinePx: null,
       capCentrePx: null,
+      paintedBoxCentrePx: null,
       text: '',
       lineCount: glyph.lineCount,
       blockLiftPx: 0,
@@ -1089,15 +1205,29 @@ export function classifyPair(a: MemberAnchor, b: MemberAnchor): PairClass {
 }
 
 /**
- * The metric a class is measured by. The split is the rule's whole credibility: two runs of text at
- * different sizes sharing one baseline is CORRECT typography whose glyph centres diverge by design,
- * so measuring that pair by centre reports every well-set row as a defect. Everything with an icon
- * or a control in it compares visible content, since a control has no baseline to share.
+ * The metric a pair is measured by, and the one decision this module has got wrong in both
+ * directions. TWO RUNS OF TEXT AT DIFFERENT SIZES CANNOT SHARE BOTH A BASELINE AND A CENTRE: the
+ * cap-height ratio sets them apart by design, so the row's own declaration is what says which of
+ * the two is the defect and which is the typography.
+ *
+ * A row that DECLARED A CENTRE asked for centres. Measuring that pair by baseline reported the
+ * cap-height ratio as a finding on three correctly composed rows, and the recipe it prescribed
+ * would have dropped a chip 3.5px off a centre it already hit.
+ *
+ * A row that declared anything else, a shared baseline or a levelled top, keeps the baseline: it is
+ * the only relative reading two runs of type have that no box geometry enters. Under `flex-start` a
+ * centre reading in particular collapses into the top-alignment composition term and says nothing
+ * at all (see {@link compositionPx}).
+ *
+ * Everything with an icon or a control in it compares visible content, since a control has no
+ * baseline to share.
  */
-export function metricForPairClass(pairClass: PairClass): PairMetric {
-  if (pairClass === 'text-beside-text') return 'baseline';
+export function metricForPair(pair: RawPair): PairMetric {
+  const pairClass = classifyPair(pair.a, pair.b);
   if (pairClass === 'optical-suspect') return 'optical-centre';
-  return 'content-centre';
+  if (pairClass !== 'text-beside-text') return 'content-centre';
+  const centred = isCentredAlignment(pair.a.alignSelf) && isCentredAlignment(pair.b.alignSelf);
+  return centred ? 'content-centre' : 'baseline';
 }
 
 /**
@@ -1106,18 +1236,25 @@ export function metricForPairClass(pairClass: PairClass): PairMetric {
  *
  * A text member reads its CAP centre under `content-centre`, not its glyph-box centre: a descender
  * hangs below the visual mass the eye centres an icon against, and the `/join` evidence this module
- * is calibrated on was measured icon ink centre against title cap centre.
+ * is calibrated on was measured icon ink centre against title cap centre. Unless the run sits in a
+ * painted box of its own, which is a chip: then the box is the visual object and its centre is the
+ * reading, because that outline is what the row levels and what the eye follows.
  */
 export function referenceForMetric(anchor: MemberAnchor, metric: PairMetric): number | null {
   if (metric === 'baseline') return anchor.baselinePx;
   if (metric === 'optical-centre') return anchor.kind === 'box' ? anchor.contentCentrePx : anchor.capCentrePx;
-  return anchor.kind === 'text' ? anchor.capCentrePx : anchor.contentCentrePx;
+  if (anchor.kind !== 'text') return anchor.contentCentrePx;
+  return anchor.paintedBoxCentrePx ?? anchor.capCentrePx;
 }
 
-/** Whether an alignment keyword centres a member on its own box inside its row. */
+/**
+ * Whether an alignment keyword centres a member on its own box inside its row. `middle` is here
+ * because a table cell is placed by `vertical-align`, and a middle-aligned cell is centred in
+ * exactly the sense a `center` flex item is.
+ */
 export function isCentredAlignment(alignment: string): boolean {
   const keyword = alignment.replace(/^(safe|unsafe)\s+/, '');
-  return keyword === 'center';
+  return keyword === 'center' || keyword === 'middle';
 }
 
 /**
@@ -1171,6 +1308,17 @@ function placedReadingPx(anchor: MemberAnchor, metric: PairMetric): number | nul
  *
  * A row where only one member takes the alignment carries no term at all, in either case.
  *
+ * WHAT THE TOP-ALIGNMENT BRANCH CANNOT SEE, stated because a residual of zero there is not a clean
+ * row. Subtract the term and the algebra leaves `inset(a) - inset(b)`, where a member's inset is
+ * how far its reading sits from the centre of its own member box. THE TWO MEMBERS' RELATIVE
+ * PLACEMENT DROPS OUT ENTIRELY. What survives is a member whose content does not sit where its own
+ * box puts it, which is real (it is the `/join` ink defect and the stacked-field drop), and nothing
+ * else. A control's inset is zero by construction, since its border box IS its reading, so
+ * `control-beside-text` under `flex-start` measures identically zero however the row is composed,
+ * and a text member's inset is zero for the same reason. The branch therefore judges ICON and
+ * STACKED members only, and a caller must not read its silence on any other pair as evidence: the
+ * inventory probe counts both populations per run rather than leaving that a caveat.
+ *
  * NOT MODELLED, and stated rather than silently folded in. An `end`-aligned row pairs with the
  * block's LAST line. A grid member spanning several rows centres on the span. Under top alignment
  * the term also absorbs generous leading: a small icon level with a text member whose first line
@@ -1184,7 +1332,7 @@ export function compositionPx(pair: RawPair): number {
   if (pair.rowKind === 'optical-suspect') return lift;
   if (isCentredAlignment(pair.a.alignSelf) && isCentredAlignment(pair.b.alignSelf)) return lift;
   if (isStartAlignment(pair.a.alignSelf) && isStartAlignment(pair.b.alignSelf)) {
-    const metric = metricForPairClass(classifyPair(pair.a, pair.b));
+    const metric = metricForPair(pair);
     if (metric !== 'content-centre') return 0;
     const a = placedReadingPx(pair.a, metric);
     const b = placedReadingPx(pair.b, metric);
@@ -1205,7 +1353,7 @@ export function compositionPx(pair: RawPair): number {
  */
 export function measurePair(pair: RawPair): MeasuredPair | null {
   const pairClass = classifyPair(pair.a, pair.b);
-  const metric = metricForPairClass(pairClass);
+  const metric = metricForPair(pair);
   const left = referenceForMetric(pair.a, metric);
   const right = referenceForMetric(pair.b, metric);
   if (left === null || right === null) return null;

@@ -61,6 +61,7 @@ import {
   VERTICAL_CALIBRATION_FIXTURES,
   VERTICAL_REPORTING_BAR_PX,
   calibrationMiss,
+  isStartAlignment,
   measureVerticalMetrics,
 } from '../dist/audit/rules/rendered/vertical-metrics.js';
 import { repoRoot } from './repo-root.mjs';
@@ -78,6 +79,15 @@ const DOC_PATH = resolve(ROOT, 'docs/internal/2026-08-vertical-alignment-invento
  * runs, so the absolute paths this doc prints mean the same thing to whoever re-runs the probe.
  */
 const ARTIFACT_DIR = process.env.CAIRN_VERTICAL_CROP_DIR || resolve(tmpdir(), 'cairn-vertical-alignment');
+
+/**
+ * The residual a row has to reach before it is worth a screenshot. Below the reporting bar on
+ * purpose: task 4 picks a threshold inside the window between the noise floor and the smallest
+ * confirmed defect, and it cannot size what sits down there without opening the crops. A run that
+ * cropped only what it inventories would leave that choice to be made from arithmetic alone, which
+ * is how a family of fifteen list rows spent an emission looking like latent work.
+ */
+const BAND_CROP_FLOOR_PX = 1;
 
 /** The admin visual suite, the file the admin corpus's routes are derived from rather than retyped. */
 const ADMIN_VISUAL_SPEC = 'examples/showcase/e2e/admin-visual.spec.ts';
@@ -572,18 +582,50 @@ function shapeOf(pair) {
  * A row whose key is absent takes its shape's default, so a composition that appears after a recipe
  * lands is still dispositioned rather than reported unknown.
  */
+const INLINE_FLEX_LABEL_MECHANIC =
+  'task 2 (admin toolkit), ONE MECHANIC AT THREE CALL SITES: the label is an `inline-flex` span ' +
+  'wrapping an icon and its word, and an inline-flex flex item synthesises its baseline from its ' +
+  'FIRST item, the svg, rather than from its text. The row does declare `sm:items-baseline`, so it ' +
+  'asked for the right thing and misses it by 2.5px, a quarter of the 10px cap height both members ' +
+  'measure; this is not a mixed-size artifact. Crop read, one crop per row: the label with its ' +
+  'check icon rides visibly high against the value beside it, on all three ("Tidy" against "On for ' +
+  'this site", "API key" against "Set, and kept on the server", "Model" against "Claude Sonnet"). ' +
+  'FIX IT AT THE RECIPE, not as three row fixes: the same span shape appears at ' +
+  'CairnTidySettings.svelte lines 367, 372 and 380, and a repeated local workaround is the signal ' +
+  'that the label-with-icon shape belongs in the toolkit.';
+
 const REVIEWED_DISPOSITIONS = {
   '52225d2e':
     'DECLINE (reviewed, a design call): the row declares `items-end` and bottom-aligns its trailing ' +
     "action against a three-line block on purpose, so the reading pairs the control with the block's " +
     'FIRST line while the composition pairs it with the last. `end` alignment is the case the ' +
     'composition term does not model, stated as a limitation rather than folded in. Crop read: the ' +
-    '"Turn off" control sits on the last line of the Fixes card, which is correct as built.',
+    '"Turn off" control sits about 11px BELOW the last line of the card body ("to." has ink rows ' +
+    '97 to 105 and baseline 106; "Turn off" has ink rows 107 to 116 and baseline 117), as a ' +
+    'bottom-right card action. It is bottom-flush with the block exactly as `items-end` asks, which ' +
+    'is what makes the reading composition rather than a defect.',
   a1f335e1:
     'DECLINE (reviewed, a design call): the delete control spans BOTH grid rows of the tag entry and ' +
     'centres on the pair, while the input occupies the first row alone. A multi-row grid span is the ' +
     'other case the composition term does not model. Crop read: the trash control sits between the ' +
     'input and the slug line, which is correct as built.',
+  '22a0e709':
+    'task 2 (admin toolkit): the pill sits low against the heading it labels, and low against every ' +
+    "candidate target: its box centre is 5px below the heading's cap centre, 5px below that " +
+    "heading's first line box (249 to 266px at 1440, centre 257.5) and its baseline is 4px below " +
+    "the heading's. LEVEL THE PILL'S BOX ON THE HEADING'S FIRST LINE BOX, which is the target the " +
+    'other chip rows already hit; do NOT set the two on one baseline. The row is `items-start` ' +
+    'against a 237px block and the pill carries a deliberate `mt-0.5`, so a baseline fix would move ' +
+    'the wrong thing.',
+  '76d4cd3e':
+    "task 2 (admin toolkit): the icon-beside-text row mechanic (pair the ink centre to the line's " +
+    'cap centre). REAL BUT MARGINAL, and it clears the bar by 0.33px: thirteen sibling icon-in-btn ' +
+    "rows across the admin cluster in [-0.75, -0.5], and lucide's check glyph carries about 0.33px " +
+    'of ink-bbox bias of its own, which leaves roughly 1.5px of genuine placement offset. Worth ' +
+    'fixing with the mechanic, not worth a bespoke nudge.',
+  '290376a5': INLINE_FLEX_LABEL_MECHANIC,
+  '24a343fe': INLINE_FLEX_LABEL_MECHANIC,
+  c2ab4dc7: INLINE_FLEX_LABEL_MECHANIC,
 };
 
 /**
@@ -861,7 +903,7 @@ async function measureRender(args) {
       }
     }
 
-    if (pair.residualMagnitudePx <= VERTICAL_REPORTING_BAR_PX || row.crop) continue;
+    if (pair.residualMagnitudePx <= BAND_CROP_FLOOR_PX || row.crop) continue;
     const name = `${id}-${slug(`${screen.id}-${pair.a.text || pair.b.text || pair.a.tag}`)}-${width}.png`;
     const scroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
     try {
@@ -948,6 +990,38 @@ function driftAcrossCompositions(record) {
     .sort((one, other) => other.px - one.px);
 }
 
+/**
+ * What the top-alignment composition term actually judged, and what it could not see.
+ *
+ * Subtract that term and the algebra leaves each member's own content-within-its-own-box offset;
+ * the two members' RELATIVE placement drops out. So the branch judges a member read off something
+ * INSIDE its box (an icon's ink in a tile, the one control in a stacked composite) and nothing
+ * else, and on every other pair its residual is zero whatever the row looks like. Counting both
+ * populations here keeps that a measured claim rather than a caveat.
+ * @param {object[]} record
+ * @returns {{ blind: number, blindNonZero: number, sighted: number, byClass: [string, number][] }}
+ */
+function topAlignmentCoverage(record) {
+  const inBranch = record.filter(
+    (entry) =>
+      entry.metric === 'content-centre' &&
+      isStartAlignment(entry.a.alignSelf) &&
+      isStartAlignment(entry.b.alignSelf)
+  );
+  const canSee = (entry) => [entry.a, entry.b].some((member) => member.kind === 'icon' || member.stacked);
+  const blind = inBranch.filter((entry) => !canSee(entry));
+  const sighted = inBranch.filter(canSee);
+  const byClass = new Map();
+  for (const entry of blind) byClass.set(entry.pairClass, (byClass.get(entry.pairClass) ?? 0) + 1);
+  return {
+    blind: blind.length,
+    blindNonZero: blind.filter((entry) => entry.residualPx !== 0).length,
+    sighted: sighted.length,
+    sightedNonZero: sighted.filter((entry) => entry.residualPx !== 0).length,
+    byClass: [...byClass.entries()].sort((one, other) => other[1] - one[1]),
+  };
+}
+
 /** The largest raw magnitude any of a row's readings reached. */
 function rawReachOf(row) {
   return [...row.readings.values()].reduce(
@@ -1011,11 +1085,56 @@ function renderDoc(run, corpora, index) {
   TRAPS.forEach((trap, position) => lines.push(`${position + 1}. ${trap}`));
   lines.push('');
   lines.push(
-    'The metric follows the pair\'s class: text-beside-text compares BASELINES (a mixed-size pair ' +
-      'sharing a baseline is correct typography whose glyph centres diverge by design, and this ' +
-      'class must not report such a pair as a defect); icon-beside-text and control-beside-text ' +
-      'compare visible-content (ink) centres; the optical suspects compare glyph centre against ' +
-      `padding-box centre. Reporting bar: ${VERTICAL_REPORTING_BAR_PX}px.`
+    'The metric follows the pair\'s kinds AND what the row declared. icon-beside-text and ' +
+      'control-beside-text compare visible-content (ink) centres; the optical suspects compare ' +
+      'glyph centre against padding-box centre; two runs of text compare BASELINES, unless the row ' +
+      `centred them, in which case they compare centres. Reporting bar: ${VERTICAL_REPORTING_BAR_PX}px.`
+  );
+  lines.push('');
+  lines.push('### The fourth trap: a padded chip is not a text run');
+  lines.push('');
+  lines.push(
+    'TWO RUNS OF TYPE AT DIFFERENT SIZES CANNOT SHARE BOTH A BASELINE AND A CENTRE. The cap-height ' +
+      'ratio sets one apart by exactly as much as the other holds together, so the same reading is a ' +
+      'defect under one metric and correct typography under the other, and only the row says which. ' +
+      'Trap 3 above states half of it, the half a previous emission got wrong: a mixed-size pair ' +
+      'sharing a BASELINE has centres that diverge by design. THE CONVERSE IS ALSO TRUE and this ' +
+      'emission is the first to hold it: a mixed-size pair sharing a CENTRE has BASELINES that ' +
+      'diverge by design.'
+  );
+  lines.push('');
+  lines.push(
+    'The shape that made it visible is a padded chip beside a heading. A CHIP IS A BOX, not a run ' +
+      'of type: its background and border draw the outline the row levels and the eye follows, and ' +
+      'the type inside it only says where the OPTICAL reading should look. The previous emission ' +
+      'classed three such rows as text-beside-text, scored them on baselines, and prescribed "set ' +
+      'them on one baseline" for each: applied, that recipe would have dropped the admin shell\'s ' +
+      'CMS chip 3.5px, the vocabulary count pill 2.5px and the public footer\'s nav links 2.8 to ' +
+      '4.4px off centres they already hit to within a pixel at every width in both themes.'
+  );
+  lines.push('');
+  lines.push('Two rules follow, both in the shared module rather than here:');
+  lines.push('');
+  lines.push(
+    '- A pair of runs is read at CENTRES where the row declared a centre, and at baselines ' +
+      'otherwise. A table cell counts: it is placed by `vertical-align`, and Chromium reports ' +
+      '`align-self: normal` on every cell whatever the row asked for, which read as "nothing was ' +
+      'declared" on middle-aligned rows that had asked for centres.'
+  );
+  lines.push(
+    '- A member whose run sits in a PAINTED BOX of its own (a background or a border, plus a ' +
+      'padding, a border or a rounded corner) is read at that box, not at its cap band. The row ' +
+      "container's own paint never counts: a painted button holding an icon and its label is the " +
+      'ground that row is drawn on, not one member\'s object. Keeping the two apart is also what ' +
+      'stops a glyph riding high INSIDE a chip being counted twice, once here and once in the ' +
+      'optical readings below.'
+  );
+  lines.push('');
+  lines.push(
+    'A row that top-aligns a chip beside a heading keeps its baseline reading. Under `flex-start` a ' +
+      'centre reading collapses into the top-alignment composition term and measures nothing at all ' +
+      '(see the coverage note below), so the baseline is the only relative reading two runs of type ' +
+      'have there. `22a0e709` is that row, and it survives this correction as a defect.'
   );
   lines.push('');
   lines.push('## How a reading is decomposed, and why the raw delta is not the defect');
@@ -1079,6 +1198,41 @@ function renderDoc(run, corpora, index) {
       'own column because it is what a reader sees on screen, not because it is evidence.'
   );
   lines.push('');
+  lines.push('### What the top-alignment branch cannot see');
+  lines.push('');
+  const coverage = topAlignmentCoverage(run.record);
+  lines.push(
+    'Stated rather than implied, because a residual of zero here is NOT a clean row. Subtract the ' +
+      "top-alignment term and the algebra leaves each member's own content-within-its-own-box " +
+      'offset: `residual = inset(a) - inset(b)`. THE TWO MEMBERS\' RELATIVE PLACEMENT DROPS OUT ' +
+      'ENTIRELY. What survives is a member read off something INSIDE the box the row placed, which ' +
+      'is real and is the defect this method was built on, and nothing else.'
+  );
+  lines.push('');
+  lines.push(
+    `- Readings this branch JUDGED (an icon's ink in its tile, a stacked composite's control): ` +
+      `${coverage.sighted}, of which ${coverage.sightedNonZero} measured anything other than exactly ` +
+      'zero. A zero here is a real verdict: the ink sits where its own box puts it.'
+  );
+  lines.push(
+    `- Readings where it is blind by construction (every member read exactly where its own box ` +
+      `puts it, so the inset is structurally zero): ${coverage.blind}, of which ` +
+      `${coverage.blindNonZero} measured anything other than exactly zero.` +
+      (coverage.byClass.length > 0
+        ? ` By class: ${coverage.byClass.map(([name, count]) => `${name} ${count}`).join(', ')}.`
+        : '')
+  );
+  lines.push('');
+  lines.push(
+    'A control is the clearest case: its border box IS its reading, so `control-beside-text` under ' +
+      '`flex-start` measures identically zero however the row is composed. The term is still taken ' +
+      'there, because without it the raw delta (a 32px button top-aligned with a 17px line reads ' +
+      '9px) is reported as a defect, which is the phantom the previous emission shipped. TASK 4 ' +
+      'INHERITS THIS HOLE: the choice is to keep the term and state that a top-aligned pair of ' +
+      'boxes is unjudged, or to narrow the branch and give those readings a third disposition that ' +
+      'is neither a finding nor a clean bill. This run does the first.'
+  );
+  lines.push('');
   lines.push('## Calibration (synthetic, and why)');
   lines.push('');
   lines.push(
@@ -1129,8 +1283,8 @@ function renderDoc(run, corpora, index) {
     `The full per-pair record, all ${run.measured} readings including every sub-bar one, is written ` +
       `to \`${resolve(ARTIFACT_DIR, 'measured-pairs.json')}\`. It carries each member's whole ` +
       'anchor (top, bottom, content centre, element centre, MEMBER BOX top and bottom, baseline, ' +
-      'cap centre, line count, block lift, `align-self`) alongside the delta, the composition and ' +
-      'the residual, so a ' +
+      'cap centre, PAINTED BOX centre, line count, block lift, the keyword that placed it) ' +
+      'alongside the delta, the composition and the residual, so a ' +
       'disagreement about any reading here is settled by reading that file rather than by re-running ' +
       'the probe against a live preview.'
   );
@@ -1219,6 +1373,17 @@ function renderDoc(run, corpora, index) {
       `Explicit declines: ${declines.length}.`
   );
   lines.push('');
+  if (publicRows.length === 0) {
+    lines.push(
+      'NO PUBLIC ROW CLEARS THE BAR, so task 3 (the Waymark chassis) inherits no measured row from ' +
+        'this inventory. That is a result rather than an omission, and it is worth saying out loud: ' +
+        "the one public row a previous emission carried was the footer masthead (`dabaf490`, the " +
+        'wordmark beside the nav links), and it left because the metric was corrected, not because ' +
+        'a recipe landed. Measured at centres it sits within a pixel of true at 390, 768, 1440 and ' +
+        '2560px in both themes.'
+    );
+    lines.push('');
+  }
   lines.push(
     'A decline is one of two things, and each row says which. A MECHANICAL decline is the ' +
       'measurement disqualifying its own reading (an icon with no reachable painting geometry, so ' +
@@ -1432,21 +1597,45 @@ function renderDoc(run, corpora, index) {
     lines.push('');
     lines.push(
       'Neither inventoried nor explained: their residual clears the floor and stays within the bar, ' +
-        'so no disposition above covers them. Several are the same shape as a confirmed row and are ' +
-        'plausibly real work. They are listed so a threshold below the bar is chosen with them in ' +
-        'view rather than discovered by the re-run.'
+        'so no disposition above covers them. They are listed so a threshold below the bar is chosen ' +
+        'with them in view rather than discovered by the re-run, and every row reaching ' +
+        `${BAND_CROP_FLOOR_PX}px carries a crop, so sizing one is a matter of opening it.`
     );
     lines.push('');
-    lines.push('| Id | Surface | Members | Component file | Worst residual (px) | Pair class | `align-items` |');
-    lines.push('| --- | --- | --- | --- | --- | --- | --- |');
+    lines.push(
+      'ONE FAMILY LEFT THIS TABLE AT THIS EMISSION, and how it left is the warning the next reader ' +
+        'needs. Fifteen `ConceptList` rows read EXACTLY 1.55px each, in one shape, which looked like ' +
+        'a family of latent work sitting just under the bar. They were the metric defect above: a ' +
+        'status chip beside a date cell in a `vertical-align: middle` row, scored on baselines, ' +
+        'where the 1.55px was the cap-height ratio between 10px chip type and 13px cell type and ' +
+        'nothing else. Read at centres they measure 0.05px, the chip box against the date\'s cap ' +
+        'band, and the crop shows the chip optically centred on the date. THEY ARE NOT THE SAME ' +
+        'DEFECT as the three `CairnTidySettings` rows above, which miss a baseline their own row ' +
+        'declared. A row sitting under the bar is not evidence of anything until its metric is right.'
+    );
+    lines.push('');
+    lines.push(
+      'ONE FAMILY ARRIVED IN THE SAME CORRECTION, and it is the honest cost of it. The eight ' +
+        '`CairnMediaLibrary` rows at the top of this table are an outlined status pill beside a ' +
+        'media title in a centred row, and reading the pill at its painted box is what made them ' +
+        'visible: the outline sits 1.88px below the title\'s cap band, because the pill is an ' +
+        '`inline-flex` on a 16px line box inside a 10px chip. Under the old metric they read as two ' +
+        'runs of text on a shared baseline and measured nothing. The crop at 5x shows the pill ' +
+        'sitting a touch low, which is what 1.88px looks like. They stay under the bar and stay ' +
+        'unsized here, but a threshold at 1.5px adopts all eight and they are one recipe, not eight.'
+    );
+    lines.push('');
+    lines.push('| Id | Surface | Members | Component file | Worst residual (px) | Pair class | `align-items` | Crop |');
+    lines.push('| --- | --- | --- | --- | --- | --- | --- | --- |');
     for (const row of unsized.slice(0, 25)) {
       row.attribution = attributeRow(index, row);
+      const crop = row.crop ? `\`${resolve(ARTIFACT_DIR, 'crops', row.crop)}\`` : 'none';
       lines.push(
         `| \`${row.id}\` | ${row.surface} | ${cell(row.rowMembers.join(' + '))} | ${cell(attributionCell(row))} | ` +
-          `${round(row.worst.worstResidualMagnitude)} | ${row.worst.pairClass} | ${row.alignItems} |`
+          `${round(row.worst.worstResidualMagnitude)} | ${row.worst.pairClass} | ${row.alignItems} | ${cell(crop)} |`
       );
     }
-    if (unsized.length > 25) lines.push(`| ... ${unsized.length - 25} more | | | | | | |`);
+    if (unsized.length > 25) lines.push(`| ... ${unsized.length - 25} more | | | | | | | |`);
     lines.push('');
   }
 

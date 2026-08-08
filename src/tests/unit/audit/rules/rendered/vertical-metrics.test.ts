@@ -15,6 +15,7 @@ import {
   VERTICAL_REPORTING_BAR_PX,
   calibrationMiss,
   classifyPair,
+  isCentredAlignment,
   measurePair,
   measureVerticalMetrics,
   metricForPairClass,
@@ -78,6 +79,10 @@ function anchor(kind: MemberKind, values: Partial<MemberAnchor> = {}): MemberAnc
     kind,
     selector: `${kind}-member`,
     classes: '',
+    tag: kind === 'icon' ? 'svg' : kind === 'control' ? 'button' : 'span',
+    // Neutral for the decomposition: a member centred on a block it renders one line of carries no
+    // composition term, so a pure test asserts the delta without also asserting a lift.
+    alignSelf: 'center',
     geometry: kind === 'text' ? 'glyph' : kind === 'icon' ? 'ink' : 'element-box',
     topPx: 0,
     bottomPx: 10,
@@ -86,20 +91,25 @@ function anchor(kind: MemberKind, values: Partial<MemberAnchor> = {}): MemberAnc
     baselinePx: kind === 'text' ? 8 : null,
     capCentrePx: kind === 'text' ? 4 : null,
     text: '',
+    lineCount: kind === 'text' ? 1 : 0,
+    blockLiftPx: 0,
     stacked: false,
     ...values,
   };
 }
 
-function rawPair(a: MemberAnchor, b: MemberAnchor): RawPair {
+function rawPair(a: MemberAnchor, b: MemberAnchor, values: Partial<RawPair> = {}): RawPair {
   return {
     rowKind: 'flex-grid-row',
     rowSelector: 'div.row',
     rowClasses: 'row',
+    rowTag: 'div',
+    rowMembers: [`${a.kind}:${a.text || a.tag}`, `${b.kind}:${b.text || b.tag}`],
     alignItems: 'center',
     rowBox: { topPx: 0, bottomPx: 20, leftPx: 0, rightPx: 100 },
     a,
     b,
+    ...values,
   };
 }
 
@@ -157,6 +167,86 @@ describe('pair classification and the metric each class takes', () => {
     const over = measurePair(rawPair(anchor('icon', { contentCentrePx: 5 }), anchor('text', { capCentrePx: 9 })));
     const pairs = [under, over].filter((pair): pair is MeasuredPair => pair !== null);
     expect(pairsAboveBar(pairs, VERTICAL_REPORTING_BAR_PX)).toEqual([over]);
+  });
+});
+
+// The premise check. Trap 1 answers WHICH LINE a member pairs with, and the failure this splits
+// out is the probe that then assumed the answer to a different question: whether the member should
+// pair with a line at all. On a centred row whose text wraps, it should not.
+describe('the composition term, and why the residual is the defect', () => {
+  /** A wrapped text member: three lines, the reading taken on the first, centred in its row. */
+  function wrapped(lines: number, values: Partial<MemberAnchor> = {}) {
+    // Line height 20, so a three-line block's centre sits 20px below its first line's centre.
+    return anchor('text', { lineCount: lines, blockLiftPx: ((lines - 1) * 20) / 2, ...values });
+  }
+
+  it('reads a centred row with a wrapped block as composition, leaving no residual', () => {
+    // The icon centres on the whole block: 20px below the first line's cap centre, which is
+    // exactly what a three-line block asks for.
+    const pair = measurePair(rawPair(anchor('icon', { contentCentrePx: 24 }), wrapped(3, { capCentrePx: 4 })));
+    expect(pair).toMatchObject({ deltaPx: 20, compositionPx: 20, residualPx: 0 });
+    expect(pairsAboveBar([pair as MeasuredPair])).toEqual([]);
+  });
+
+  it('scales the composition with the line count, which is what makes the raw delta a phantom', () => {
+    const twoLines = measurePair(rawPair(anchor('icon', { contentCentrePx: 14 }), wrapped(2, { capCentrePx: 4 })));
+    const fourLines = measurePair(rawPair(anchor('icon', { contentCentrePx: 34 }), wrapped(4, { capCentrePx: 4 })));
+    expect(twoLines?.deltaPx).toBe(10);
+    expect(fourLines?.deltaPx).toBe(30);
+    expect(twoLines?.residualPx).toBe(0);
+    expect(fourLines?.residualPx).toBe(0);
+  });
+
+  it('keeps an ink defect in the residual, so a wrapped block cannot hide one', () => {
+    // The same three-line row, with the icon's ink riding 4px high inside its own box: the /join
+    // defect. The composition still accounts for 20px and the 4px survives as the residual.
+    const pair = measurePair(rawPair(anchor('icon', { contentCentrePx: 20 }), wrapped(3, { capCentrePx: 4 })));
+    expect(pair).toMatchObject({ deltaPx: 16, compositionPx: 20, residualPx: -4 });
+    expect(pairsAboveBar([pair as MeasuredPair])).toHaveLength(1);
+  });
+
+  it('takes no composition term on a top-aligned or baseline-aligned row, where the line is the intent', () => {
+    for (const alignment of ['flex-start', 'start', 'baseline', 'stretch', 'normal', 'flex-end']) {
+      const pair = measurePair(
+        rawPair(anchor('icon', { contentCentrePx: 24, alignSelf: alignment }), wrapped(3, { capCentrePx: 4, alignSelf: alignment }))
+      );
+      expect(pair).toMatchObject({ deltaPx: 20, compositionPx: 0, residualPx: 20 });
+    }
+  });
+
+  it('takes no composition term when only one member is centred', () => {
+    const pair = measurePair(
+      rawPair(anchor('icon', { contentCentrePx: 24, alignSelf: 'flex-start' }), wrapped(3, { capCentrePx: 4 }))
+    );
+    expect(pair?.compositionPx).toBe(0);
+  });
+
+  it('reads a `safe center` row as centred, since the keyword only changes the overflow case', () => {
+    expect(isCentredAlignment('safe center')).toBe(true);
+    expect(isCentredAlignment('unsafe center')).toBe(true);
+    expect(isCentredAlignment('center')).toBe(true);
+    expect(isCentredAlignment('last baseline')).toBe(false);
+  });
+
+  it('signs the composition by which member wraps, so a wrapped left member reads the other way', () => {
+    const pair = measurePair(
+      rawPair(wrapped(3, { baselinePx: 8 }), anchor('text', { baselinePx: 28 }))
+    );
+    expect(pair).toMatchObject({ metric: 'baseline', deltaPx: -20, compositionPx: -20, residualPx: 0 });
+  });
+
+  it('always carries the term on an optical suspect, whose padding box spans every line by construction', () => {
+    const glyph = anchor('text', { capCentrePx: 4, lineCount: 3, blockLiftPx: 20, alignSelf: 'normal' });
+    const box = anchor('box', { contentCentrePx: 24, alignSelf: 'normal' });
+    const pair = measurePair(rawPair(glyph, box, { rowKind: 'optical-suspect' }));
+    expect(pair).toMatchObject({ pairClass: 'optical-suspect', deltaPx: -20, compositionPx: -20, residualPx: 0 });
+  });
+
+  it('gives a control and an icon of the same geometry the same term, so no ruling splits by kind', () => {
+    const control = measurePair(rawPair(anchor('control', { contentCentrePx: 24 }), wrapped(3, { capCentrePx: 4 })));
+    const icon = measurePair(rawPair(anchor('icon', { contentCentrePx: 24 }), wrapped(3, { capCentrePx: 4 })));
+    expect(control?.compositionPx).toBe(icon?.compositionPx);
+    expect(control?.residualPx).toBe(icon?.residualPx);
   });
 });
 
@@ -249,6 +339,34 @@ describe('the icon-card calibration fixture (the optical case, and trap 3)', () 
       // manufactured a delta an order of magnitude past the real one.
       expect(Math.abs((pair.b.capCentrePx ?? 0) - geometry.blockCentre)).toBeGreaterThan(15);
     });
+  });
+
+  // The decomposition against real layout rather than hand-set anchors, on the shape the pass
+  // widened for. Same markup, same defect, one property changed: the raw delta moves by a whole
+  // block and the residual does not move at all.
+  it('holds the ink defect at the same residual when the row centres the wrapped block', async () => {
+    const topAligned = fixturePair(await measure(spec.html), spec);
+    const centred = fixturePair(await measure(spec.html.replace('align-items:flex-start', 'align-items:center')), spec);
+
+    expect(topAligned.compositionPx).toBe(0);
+    expect(centred.compositionPx).toBeGreaterThan(15);
+    expect(centred.deltaPx).toBeGreaterThan(topAligned.deltaPx + 15);
+    expect(centred.residualPx).toBeCloseTo(topAligned.residualPx, 1);
+    expect(centred.residualMagnitudePx).toBeGreaterThanOrEqual(spec.minMagnitudePx);
+    expect(centred.b.lineCount).toBeGreaterThan(1);
+  });
+
+  // The phantom, stated as the assertion that would have failed. A centred wrapped block reads
+  // further apart the narrower the column gets, on pixels nobody should touch.
+  it('reads the same residual at two column widths where the raw delta swings by a line', async () => {
+    const narrow = fixturePair(
+      await measure(spec.html.replace('align-items:flex-start', 'align-items:center').replace('width:110px', 'width:70px')),
+      spec
+    );
+    const wide = fixturePair(await measure(spec.html.replace('align-items:flex-start', 'align-items:center')), spec);
+    expect(narrow.b.lineCount).toBeGreaterThan(wide.b.lineCount);
+    expect(Math.abs(narrow.deltaPx - wide.deltaPx)).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
+    expect(narrow.residualPx).toBeCloseTo(wide.residualPx, 1);
   });
 });
 

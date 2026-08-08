@@ -11,6 +11,15 @@
 // report. A geometry helper appearing in this file would be the start of the drift the split
 // exists to prevent.
 //
+// EVERY READING IS DECOMPOSED, AND THE DISPOSITION IS TAKEN ON THE RESIDUAL. A row that centres its
+// members and wraps its text has deliberately put the other member half a block below the line the
+// reading was taken on, so the raw delta on such a row grows with the line count and swings with the
+// viewport width on pixels nobody should touch. The module splits each delta into that composition
+// term and the residual left over (`compositionPx`), this probe reports both columns, and the
+// reporting bar applies to the residual. The first emission of this inventory did not: it reported
+// 37 rows, hand-declined 13 of them as "trap 1 doing its job", and dispositioned rows carrying the
+// identical arithmetic as defects because their member was an icon rather than a control.
+//
 // SELF-CALIBRATION IS BLOCKING. Before either corpus is touched, the probe renders the module's two
 // synthetic calibration fixtures and checks that it recovers the expected sign AND magnitude on
 // both. A miss refuses to emit and exits non-zero, naming the fixture and the reading. This is the
@@ -340,7 +349,8 @@ async function calibrate(browser) {
       }
       lines.push(
         `- \`${fixture.id}\` (${fixture.pairClass}): ${expected}; measured ` +
-          `${reading ? reading.deltaPx : 'nothing'}px. PASS.`
+          `${reading ? reading.residualPx : 'nothing'}px residual, ` +
+          `${reading ? reading.compositionPx : 'nothing'}px composition. PASS.`
       );
     } finally {
       await context.close();
@@ -361,10 +371,12 @@ function bestCalibrationReading(fixture, pairs) {
     (pair) => pair.pairClass === fixture.pairClass && pair.rowClasses.split(/\s+/).includes(fixture.rowClass)
   );
   if (candidates.length === 0) return null;
-  return candidates.reduce((best, next) => (next.magnitudePx > best.magnitudePx ? next : best));
+  return candidates.reduce((best, next) =>
+    next.residualMagnitudePx > best.residualMagnitudePx ? next : best
+  );
 }
 
-/** Every `.svelte` file a rendered row could have come from, read once for class attribution. */
+/** Every `.svelte` file a rendered row could have come from, read once for attribution. */
 function sourceIndex() {
   const entries = [];
   for (const dir of ['src/lib', 'examples/showcase/src']) {
@@ -376,26 +388,99 @@ function sourceIndex() {
   return entries;
 }
 
+/** @param {string} value */
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
- * The source file a row most likely came from, by matching the longest run of CONSECUTIVE class
- * tokens the element carries. A Tailwind-authored component writes its class list as one literal,
- * so a run of three or more consecutive tokens is a checkable signal; nothing shorter is claimed.
+ * The source file a row came from, resolved from the TEXT the row renders and verified by finding
+ * that text in exactly one file. A class run cannot do this: several components share a Tailwind
+ * literal, `index.find` returns whichever file the walk reached first, and the first emission of
+ * this inventory named the wrong component on at least three rows that way.
+ *
+ * The rendered text arrives truncated, and the source may wrap it across lines, so each run is
+ * matched word by word with `\s+` between. An attribution that resolves to more than one file says
+ * so rather than picking one.
+ * @param {{ file: string, text: string }[]} index
+ * @param {string[]} texts
+ * @returns {{ files: string[], how: string, verified: boolean } | null}
+ */
+function attributeByText(index, texts) {
+  for (const text of texts) {
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    if (words.length < 2 || text.trim().length < 8) continue;
+    const pattern = new RegExp(words.map(escapeRegExp).join('\\s+'));
+    const hits = index.filter((entry) => pattern.test(entry.text)).map((entry) => entry.file);
+    if (hits.length === 1) return { files: hits, how: `the rendered text "${text}"`, verified: true };
+    if (hits.length > 1) {
+      return { files: hits, how: `the rendered text "${text}", which appears in ${hits.length} files`, verified: false };
+    }
+  }
+  return null;
+}
+
+/**
+ * The fallback: the longest run of CONSECUTIVE class tokens the row's elements carry, narrowed to
+ * the files that ALSO render one of the row's own words. A Tailwind component writes its class list
+ * as one literal, so the run is a real signal, but several components share one and the first
+ * emission resolved that ambiguity by taking whichever file the walk reached first.
+ *
+ * A run that lands in exactly one file, or narrows to exactly one, is a checkable claim and reports
+ * as verified. Anything else lists every candidate rather than picking.
  * @param {{ file: string, text: string }[]} index
  * @param {string[]} classStrings
- * @returns {{ file: string, run: string } | null}
+ * @param {string[]} texts
+ * @returns {{ files: string[], how: string, verified: boolean } | null}
  */
-function attribute(index, classStrings) {
+function attributeByClassRun(index, classStrings, texts) {
+  const words = texts
+    .flatMap((text) => text.trim().split(/\s+/))
+    .filter((word) => word.replace(/[^\p{L}\p{N}]/gu, '').length >= 4);
   for (const classes of classStrings) {
     const tokens = classes.split(/\s+/).filter((token) => token && !token.startsWith('svelte-'));
     for (let length = Math.min(tokens.length, 8); length >= 3; length -= 1) {
       for (let start = 0; start + length <= tokens.length; start += 1) {
         const run = tokens.slice(start, start + length).join(' ');
-        const hit = index.find((entry) => entry.text.includes(run));
-        if (hit) return { file: hit.file, run };
+        const hits = index.filter((entry) => entry.text.includes(run));
+        if (hits.length === 0) continue;
+        if (hits.length === 1) {
+          return { files: [hits[0].file], how: `the class run \`${run}\`, in exactly one file`, verified: true };
+        }
+        for (const word of words) {
+          const pattern = new RegExp(`\\b${escapeRegExp(word)}`);
+          const narrowed = hits.filter((entry) => pattern.test(entry.text));
+          if (narrowed.length === 1) {
+            return {
+              files: [narrowed[0].file],
+              how: `the class run \`${run}\`, narrowed to the one file also rendering "${word}"`,
+              verified: true,
+            };
+          }
+        }
+        return { files: hits.map((entry) => entry.file), how: `the class run \`${run}\``, verified: false };
       }
     }
   }
   return null;
+}
+
+/**
+ * A row's source file: its own rendered text where that is checkable, a class run where it is not,
+ * and an explicit refusal where neither resolves.
+ * @param {{ file: string, text: string }[]} index
+ * @param {object} row
+ * @returns {{ files: string[], how: string, verified: boolean } | null}
+ */
+function attributeRow(index, row) {
+  const readings = [...row.readings.values()];
+  const texts = [...new Set(readings.flatMap((reading) => [reading.sample.a.text, reading.sample.b.text]))]
+    .filter(Boolean)
+    .sort((one, other) => other.length - one.length);
+  const byText = attributeByText(index, texts);
+  if (byText?.verified) return byText;
+  const classStrings = [...new Set(readings.flatMap((reading) => [reading.sample.a.classes, reading.sample.b.classes]))];
+  return attributeByClassRun(index, [...classStrings, row.rowClasses], texts) ?? byText;
 }
 
 /**
@@ -410,8 +495,38 @@ function shapeOf(pair) {
   if (pair.a.kind === 'icon' || pair.b.kind === 'icon') return 'icon beside text';
   if (pair.pairClass === 'text-beside-text') return 'text beside text';
   if (pair.rowKind === 'table-row') return 'control in a table cell';
+  if (pair.pairClass === 'control-beside-control') return 'control beside control';
   return 'control beside text';
 }
+
+/**
+ * The compositions a human read a crop of and ruled on, keyed by {@link rowId}. This table is the
+ * pass's JUDGMENT, and it is here rather than in the emitted doc because the probe overwrites that
+ * doc on every run: a ruling kept in the output would be erased by the re-run that is supposed to
+ * verify it.
+ *
+ * EVERY ENTRY HERE IS A DESIGN CALL THE ARITHMETIC CANNOT REACH, and each one says which shape it
+ * is. The composition term ({@link compositionPx}) now decides the mechanical cases, so a row whose
+ * reading is explained by its own alignment never reaches this table: it measures within the bar
+ * and drops out of the inventory. Sixteen of the first emission's twenty-one rulings were exactly
+ * that, and a ruling that restates a rule is where a hand list starts disagreeing with itself.
+ *
+ * A row whose key is absent takes its shape's default, so a composition that appears after a recipe
+ * lands is still dispositioned rather than reported unknown.
+ */
+const REVIEWED_DISPOSITIONS = {
+  '52225d2e':
+    'DECLINE (reviewed, a design call): the row declares `items-end` and bottom-aligns its trailing ' +
+    "action against a three-line block on purpose, so the reading pairs the control with the block's " +
+    'FIRST line while the composition pairs it with the last. `end` alignment is the case the ' +
+    'composition term does not model, stated as a limitation rather than folded in. Crop read: the ' +
+    '"Turn off" control sits on the last line of the Fixes card, which is correct as built.',
+  a1f335e1:
+    'DECLINE (reviewed, a design call): the delete control spans BOTH grid rows of the tag entry and ' +
+    'centres on the pair, while the input occupies the first row alone. A multi-row grid span is the ' +
+    'other case the composition term does not model. Crop read: the trash control sits between the ' +
+    'input and the slug line, which is correct as built.',
+};
 
 /**
  * Whether a row's reading rests on a marked element-box fallback rather than on ink. Such a row is
@@ -425,83 +540,27 @@ function restsOnElementBoxFallback(pair) {
 }
 
 /**
- * The compositions a human read a crop of and ruled on, keyed by {@link keyDigest} of the row's own
- * identity. This table is the pass's JUDGMENT, and it is here rather than in the emitted doc because
- * the probe overwrites that doc on every run: a ruling kept in the output would be erased by the
- * re-run that is supposed to verify it.
- *
- * A DECLINE is a composition the measurement reports correctly and a recipe should nonetheless
- * leave alone. Every one of them is the same underlying disagreement, stated per row: the module
- * pairs a member with the text block's FIRST LINE (trap 1, which is what makes a leading icon
- * measurable at all), while these compositions deliberately centre a trailing action or a decorative
- * glyph on the WHOLE block. Nothing in the geometry can tell those apart, which is exactly why the
- * ruling is a reviewed list and not another rule.
- *
- * A row whose key is absent takes its shape's default, so a composition that appears after a recipe
- * lands is still dispositioned rather than reported unknown.
- */
-const TRAILING_ACTION_DECLINE =
-  'DECLINE: a trailing action centred on the whole block it acts on, which is the correct ' +
-  'composition for this row. The reading is trap 1 doing its job (the control is paired with the ' +
-  "block's first line); no recipe should move it.";
-const OPTICAL_MULTI_LINE_DECLINE =
-  'DECLINE: the optical reading is taken on a MULTI-LINE paragraph, so the glyph is the first ' +
-  "line's cap centre while the padding box spans every line. Half a line of offset is arithmetic, " +
-  'not an optical defect. Input to task 4: scope the optical metric to a single-line glyph.';
-const CHIP_NOT_COPY_DECLINE =
-  'DECLINE: the right-hand member is a CHIP, a padded box optically centred against the line, not ' +
-  'a run of copy sharing its baseline, so the baseline metric is the wrong reading for it. Input ' +
-  'to task 4: a chip beside a run of text is not a text-beside-text pair.';
-
-const REVIEWED_DISPOSITIONS = {
-  '3cf1e40a':
-    'DECLINE: the row declares `items-end` and bottom-aligns a trailing action against a ' +
-    'multi-line heading block on purpose. Measured against the block first line by convention.',
-  '0fcf96df':
-    'DECLINE: a monogram avatar centred against the identity block beside it. The monogram is a ' +
-    'glyph inside a decorative circle, not a run of copy sharing the name line baseline.',
-  d302f1be:
-    'DECLINE: the delete control spans both grid rows of the tag entry and centres on the pair, ' +
-    'which is why it reads high against the input on the first row alone.',
-  '21db619c': TRAILING_ACTION_DECLINE,
-  d3c42eb8: TRAILING_ACTION_DECLINE,
-  cd9aaff2: TRAILING_ACTION_DECLINE,
-  '1a77b8c1': TRAILING_ACTION_DECLINE,
-  '8d2ca62d': TRAILING_ACTION_DECLINE,
-  '925d0196': TRAILING_ACTION_DECLINE,
-  edee3887: TRAILING_ACTION_DECLINE,
-  '4fa6315e': TRAILING_ACTION_DECLINE,
-  e4b61409: TRAILING_ACTION_DECLINE,
-  '81f6d9a1': TRAILING_ACTION_DECLINE,
-  f0c5cd3b: TRAILING_ACTION_DECLINE,
-  fb82873f: TRAILING_ACTION_DECLINE,
-  '59c31af6': TRAILING_ACTION_DECLINE,
-  '87d0cd4a': OPTICAL_MULTI_LINE_DECLINE,
-  '48eafe60': OPTICAL_MULTI_LINE_DECLINE,
-  '17caed5b': OPTICAL_MULTI_LINE_DECLINE,
-  '169c7ca8': CHIP_NOT_COPY_DECLINE,
-  dcd99e37: CHIP_NOT_COPY_DECLINE,
-};
-
-/**
  * The disposition for one row: the reviewed ruling if it has one, otherwise the recipe task that
  * owns its shape, otherwise an explicit decline with the reason. Every branch returns one of those,
  * which is what keeps "unknown" off the report.
- * @param {{ surface: string, pair: MeasuredPair, shape: string, key: string }} row
+ *
+ * The mechanical branches are blind to member kind by construction: an icon member and a control
+ * member with the same geometry reach the same branch, and the shape only picks which recipe
+ * sentence names the fix. Only the recipe wording differs, never the ruling.
+ * @param {object} row
  * @returns {string}
  */
 function disposition(row) {
-  const { surface, pair, shape, key } = row;
-  const reviewed = REVIEWED_DISPOSITIONS[keyDigest(key)];
+  const reviewed = REVIEWED_DISPOSITIONS[row.id];
   if (reviewed) return reviewed;
-  const task = surface === 'admin' ? 'task 2 (admin toolkit)' : 'task 3 (Waymark chassis)';
-  if (restsOnElementBoxFallback(pair)) {
+  const task = row.surface === 'admin' ? 'task 2 (admin toolkit)' : 'task 3 (Waymark chassis)';
+  if (restsOnElementBoxFallback(row.worst.sample)) {
     return (
       'DECLINE: the icon member carries no reachable painting geometry, so this reading is the ' +
       'marked element-box fallback, not ink. Not evidence a recipe should act on.'
     );
   }
-  switch (shape) {
+  switch (row.worst.shape) {
     case 'stacked-field row':
       return `${task}: compose with FieldRow / items-end; the control drops by the label band.`;
     case 'optical-suspect':
@@ -510,30 +569,52 @@ function disposition(row) {
       return `${task}: the icon-beside-text row mechanic (pair the ink centre to the line's cap centre).`;
     case 'control beside text':
       return `${task}: centre the control against the line it sits beside, not against the block.`;
+    case 'control beside control':
+      return `${task}: two controls in one row whose boxes do not centre on each other.`;
     case 'control in a table cell':
       return `${task}: the table-row cell treatment for a control beside its cell's text.`;
     case 'text beside text':
       return `${task}: the two runs share a row but not a baseline; set them on one baseline.`;
     default:
-      throw new Error(`no disposition rule for shape "${shape}"`);
+      throw new Error(`no disposition rule for shape "${row.worst.shape}"`);
   }
 }
 
 /**
- * A row's identity: the same container, the same two members, measured the same way. The SCREEN is
- * deliberately not part of it, so a chrome row that renders on eleven screens at three widths in two
- * themes is one composition carrying every place it was seen, not sixty-six rows. The inventory
- * sizes recipe work, and a recipe fixes a composition once.
+ * A ROW's identity, which is the identity a ruling is keyed by. Built from the things tasks 2 and 3
+ * do not change: the container's tag, and every member of the visual row named by kind and rendered
+ * text. The SCREEN is deliberately out of it, so a chrome row rendering on eleven screens at three
+ * widths in two themes is one composition carrying every place it was seen.
+ *
+ * CLASSES ARE OUT OF IT ON PURPOSE. The first emission keyed on `signature()`, which carries the
+ * first four classes, and tasks 2 and 3 change exactly those: the verification re-run would have
+ * dropped every ruling and re-reported each row as fresh recipe work. Text and tag survive a class
+ * change; a recipe that also rewrites the markup breaks the key, which is why an unresolved ruling
+ * is reported loudly rather than dropped.
+ *
+ * All the members, not the pair's two: a leading and a trailing member around one run of text are
+ * two READINGS of one row, and keying on the pair emitted that row twice with mirrored signs.
  * @param {MeasuredPair} pair
  * @returns {string}
  */
 function rowKey(pair) {
-  return [pair.rowSelector, pair.a.selector, pair.a.text, pair.b.selector, pair.b.text, pair.metric].join('|');
+  return [pair.rowKind, pair.rowTag, ...pair.rowMembers].join('|');
+}
+
+/** One reading inside a row: which two members, measured how. Also class-free, for the same reason. */
+function readingKey(pair) {
+  const name = (anchor) => `${anchor.kind}:${anchor.text || anchor.tag}`;
+  return [name(pair.a), name(pair.b), pair.metric].join('>');
 }
 
 /** A short stable name for `key`, so two rows sharing a selector cannot overwrite each other's crop. */
 function keyDigest(key) {
   return createHash('sha256').update(key).digest('hex').slice(0, 8);
+}
+
+/** @param {MeasuredPair} pair */
+function rowId(pair) {
+  return keyDigest(rowKey(pair));
 }
 
 /**
@@ -572,13 +653,36 @@ function cell(value) {
   return String(value).replace(/\|/g, '\\|');
 }
 
+/** One distribution, stated over every value rather than over a slice the bar already defines. */
+function distributionLine(label, values) {
+  const nonZero = values.filter((value) => value > 0);
+  const max = values.length > 0 ? Math.max(...values) : 0;
+  return (
+    `${label}: p50 ${round(percentile(values, 0.5))}px, p90 ${round(percentile(values, 0.9))}px, ` +
+    `p99 ${round(percentile(values, 0.99))}px, max ${round(max)}px ` +
+    `(${nonZero.length} of ${values.length} readings non-zero).`
+  );
+}
+
+/** One number when a reading held still across the run, its span when it did not. */
+function range(low, high) {
+  return low === high ? `${round(low)}` : `${round(low)} to ${round(high)}`;
+}
+
+/** What the Component file column says, including how the claim was checked. */
+function attributionCell(row) {
+  if (!row.attribution) return 'unattributed (no rendered text and no class run resolves to a file)';
+  const files = row.attribution.files.map((file) => `\`${file}\``).join(', ');
+  return row.attribution.verified ? files : `${files} (UNVERIFIED, matched on ${row.attribution.how})`;
+}
+
 /**
  * Measure one render and fold it into the run's accumulators.
  * @param {object} args
  * @returns {Promise<void>}
  */
 async function measureRender(args) {
-  const { page, surface, screen, theme, width, run, index } = args;
+  const { page, surface, screen, theme, width, run } = args;
   const { pairs, diagnostics } = await measureVerticalMetrics(page);
   run.renders += 1;
   for (const [key, value] of Object.entries(diagnostics)) {
@@ -589,9 +693,9 @@ async function measureRender(args) {
   // observed jitter rather than on an assumption about it.
   if (run.repeatability.length === 0) {
     const second = await measureVerticalMetrics(page);
-    const first = new Map(pairs.map((pair) => [rowKey(pair), pair.deltaPx]));
+    const first = new Map(pairs.map((pair) => [`${rowKey(pair)}|${readingKey(pair)}`, pair.deltaPx]));
     for (const pair of second.pairs) {
-      const before = first.get(rowKey(pair));
+      const before = first.get(`${rowKey(pair)}|${readingKey(pair)}`);
       if (before !== undefined) run.repeatability.push(round(Math.abs(before - pair.deltaPx)));
     }
   }
@@ -599,6 +703,11 @@ async function measureRender(args) {
   for (const pair of pairs) {
     run.measured += 1;
     run.magnitudes.push(pair.magnitudePx);
+    run.residualMagnitudes.push(pair.residualMagnitudePx);
+    const id = rowId(pair);
+    // The full anchor geometry, not a summary of it. The first emission persisted selectors and a
+    // delta, so no reading could be decomposed or disputed without re-running the whole probe
+    // against a live preview, which is the one thing a record exists to make unnecessary.
     run.record.push({
       surface,
       screen: screen.id,
@@ -606,45 +715,81 @@ async function measureRender(args) {
       state: screen.state,
       width,
       theme: theme.id,
+      rowId: id,
+      rowKind: pair.rowKind,
+      rowSelector: pair.rowSelector,
+      rowClasses: pair.rowClasses,
+      rowTag: pair.rowTag,
+      rowMembers: pair.rowMembers,
+      alignItems: pair.alignItems,
+      rowBox: pair.rowBox,
       pairClass: pair.pairClass,
       metric: pair.metric,
       deltaPx: pair.deltaPx,
-      rowSelector: pair.rowSelector,
-      rowClasses: pair.rowClasses,
-      a: pair.a.selector,
-      b: pair.b.selector,
+      compositionPx: pair.compositionPx,
+      residualPx: pair.residualPx,
+      a: pair.a,
+      b: pair.b,
     });
-    if (pair.magnitudePx <= VERTICAL_REPORTING_BAR_PX) continue;
 
-    const key = rowKey(pair);
-    const existing = run.rows.get(key);
-    if (existing) {
-      existing.screens.add(screen.id);
-      existing.widths.add(width);
-      existing.themes.add(theme.id);
-      existing.minDelta = Math.min(existing.minDelta, pair.deltaPx);
-      existing.maxDelta = Math.max(existing.maxDelta, pair.deltaPx);
-      continue;
+    // Every walked row is accumulated, not only the ones over the bar, so a row's full reading set
+    // is known when the report decides whether it is above the bar at all.
+    let row = run.rows.get(id);
+    if (!row) {
+      row = {
+        id,
+        key: rowKey(pair),
+        surface,
+        screen,
+        rowSelector: pair.rowSelector,
+        rowClasses: pair.rowClasses,
+        rowTag: pair.rowTag,
+        rowMembers: pair.rowMembers,
+        alignItems: pair.alignItems,
+        readings: new Map(),
+        screens: new Set(),
+        widths: new Set(),
+        themes: new Set(),
+        crop: null,
+      };
+      run.rows.set(id, row);
     }
-    const shape = shapeOf(pair);
-    const row = {
-      key,
-      surface,
-      screen,
-      pair,
-      shape,
-      screens: new Set([screen.id]),
-      widths: new Set([width]),
-      themes: new Set([theme.id]),
-      minDelta: pair.deltaPx,
-      maxDelta: pair.deltaPx,
-      attribution: attribute(index, [pair.a.classes, pair.b.classes, pair.rowClasses]),
-      crop: null,
-    };
-    row.disposition = disposition({ surface, pair, shape, key });
-    run.rows.set(key, row);
+    row.screens.add(screen.id);
+    row.widths.add(width);
+    row.themes.add(theme.id);
 
-    const name = `${keyDigest(key)}-${slug(`${screen.id}-${pair.a.text || pair.b.text || pair.a.selector}`)}-${width}.png`;
+    const readingId = readingKey(pair);
+    const reading = row.readings.get(readingId);
+    if (!reading) {
+      row.readings.set(readingId, {
+        id: readingId,
+        shape: shapeOf(pair),
+        pairClass: pair.pairClass,
+        metric: pair.metric,
+        minDelta: pair.deltaPx,
+        maxDelta: pair.deltaPx,
+        minComposition: pair.compositionPx,
+        maxComposition: pair.compositionPx,
+        minResidual: pair.residualPx,
+        maxResidual: pair.residualPx,
+        worstResidualMagnitude: pair.residualMagnitudePx,
+        sample: pair,
+      });
+    } else {
+      reading.minDelta = Math.min(reading.minDelta, pair.deltaPx);
+      reading.maxDelta = Math.max(reading.maxDelta, pair.deltaPx);
+      reading.minComposition = Math.min(reading.minComposition, pair.compositionPx);
+      reading.maxComposition = Math.max(reading.maxComposition, pair.compositionPx);
+      reading.minResidual = Math.min(reading.minResidual, pair.residualPx);
+      reading.maxResidual = Math.max(reading.maxResidual, pair.residualPx);
+      if (pair.residualMagnitudePx > reading.worstResidualMagnitude) {
+        reading.worstResidualMagnitude = pair.residualMagnitudePx;
+        reading.sample = pair;
+      }
+    }
+
+    if (pair.residualMagnitudePx <= VERTICAL_REPORTING_BAR_PX || row.crop) continue;
+    const name = `${id}-${slug(`${screen.id}-${pair.a.text || pair.b.text || pair.a.tag}`)}-${width}.png`;
     const scroll = await page.evaluate(() => ({ x: window.scrollX, y: window.scrollY }));
     try {
       await page.screenshot({
@@ -672,7 +817,7 @@ async function measureRender(args) {
  * @returns {Promise<void>}
  */
 async function sweep(args) {
-  const { browser, surface, screens, widths, themes, run, index } = args;
+  const { browser, surface, screens, widths, themes, run } = args;
   for (const screen of screens) {
     for (const theme of themes) {
       for (const width of widths) {
@@ -682,7 +827,7 @@ async function sweep(args) {
             run.unreached.push(`${screen.id} at ${width}px / ${theme.id}: state "${screen.state}" not reachable`);
             continue;
           }
-          await measureRender({ page, surface, screen, theme, width, run, index });
+          await measureRender({ page, surface, screen, theme, width, run });
         } finally {
           await context.close();
         }
@@ -691,23 +836,47 @@ async function sweep(args) {
   }
 }
 
+/** The largest raw magnitude any of a row's readings reached. */
+function rawReachOf(row) {
+  return [...row.readings.values()].reduce(
+    (best, reading) => Math.max(best, Math.abs(reading.minDelta), Math.abs(reading.maxDelta)),
+    0
+  );
+}
+
 /**
  * The inventory document.
  * @param {object} run
  * @param {object} corpora
+ * @param {{ file: string, text: string }[]} index
  * @returns {string}
  */
-function renderDoc(run, corpora) {
-  const rows = [...run.rows.values()].sort(
-    (a, b) =>
-      a.surface.localeCompare(b.surface) ||
-      Math.abs(b.maxDelta) - Math.abs(a.maxDelta) ||
-      a.screen.id.localeCompare(b.screen.id)
+function renderDoc(run, corpora, index) {
+  const walked = [...run.rows.values()];
+  for (const row of walked) {
+    row.worst = [...row.readings.values()].reduce((best, next) =>
+      next.worstResidualMagnitude > best.worstResidualMagnitude ? next : best
+    );
+  }
+  const rows = walked
+    .filter((row) => row.worst.worstResidualMagnitude > VERTICAL_REPORTING_BAR_PX)
+    .sort(
+      (a, b) =>
+        a.surface.localeCompare(b.surface) ||
+        b.worst.worstResidualMagnitude - a.worst.worstResidualMagnitude ||
+        a.screen.id.localeCompare(b.screen.id)
+    );
+  for (const row of rows) {
+    row.attribution = attributeRow(index, row);
+    row.disposition = disposition(row);
+  }
+  // The rows the first emission would have reported and this one does not: their raw delta clears
+  // the bar and their residual does not, which is the definition of a composition read as a defect.
+  const phantoms = walked.filter(
+    (row) => row.worst.worstResidualMagnitude <= VERTICAL_REPORTING_BAR_PX && rawReachOf(row) > VERTICAL_REPORTING_BAR_PX
   );
   const adminRows = rows.filter((row) => row.surface === 'admin');
   const publicRows = rows.filter((row) => row.surface === 'public');
-  const subBar = run.magnitudes.filter((value) => value <= VERTICAL_REPORTING_BAR_PX);
-  const nonZeroSubBar = subBar.filter((value) => value > 0);
   const jitter = run.repeatability.length > 0 ? Math.max(...run.repeatability) : 0;
   const declines = rows.filter((row) => row.disposition.startsWith('DECLINE'));
 
@@ -737,6 +906,40 @@ function renderDoc(run, corpora) {
       `padding-box centre. Reporting bar: ${VERTICAL_REPORTING_BAR_PX}px.`
   );
   lines.push('');
+  lines.push('## How a reading is decomposed, and why the raw delta is not the defect');
+  lines.push('');
+  lines.push(
+    'Trap 1 answers WHICH LINE a member pairs with. It does not answer whether the member should ' +
+      'pair with a line at all, and the first emission of this inventory assumed it did. Where a ' +
+      'row centres its members and its text block WRAPS, the row has deliberately centred the ' +
+      'other member on the whole block, so a reading taken against the first line is short by half ' +
+      "the block's extra height: a number that grows with the line count and swings with the " +
+      'viewport width on pixels nobody should touch.'
+  );
+  lines.push('');
+  lines.push('Every reading is therefore split, with no extra measurement:');
+  lines.push('');
+  lines.push('```');
+  lines.push('raw delta = composition + residual');
+  lines.push('composition = b.blockLift - a.blockLift   (the wrapped block the row chose to centre on)');
+  lines.push('blockLift   = (text extent centre) - (first line band centre), 0 on a single line');
+  lines.push('```');
+  lines.push('');
+  lines.push(
+    'The composition term is taken where the row asked for it and nowhere else: on an optical ' +
+      'suspect always, since its padding box spans every line by construction; on a row whose two ' +
+      'members both resolve `align-self` to `center`; on nothing else, because under `flex-start`, ' +
+      '`start`, `baseline` and `stretch` the first line IS what the row aligns to, and the raw ' +
+      'delta is already the defect. NOT MODELLED, and left to a reviewed ruling rather than folded ' +
+      'in silently: an `end`-aligned row pairs with the block\'s LAST line, and a grid member ' +
+      'spanning several rows centres on its span.'
+  );
+  lines.push('');
+  lines.push(
+    'THE BAR APPLIES TO THE RESIDUAL, and so does every disposition. The raw delta is kept in its ' +
+      'own column because it is what a reader sees on screen, not because it is evidence.'
+  );
+  lines.push('');
   lines.push('## Calibration (synthetic, and why)');
   lines.push('');
   lines.push(
@@ -748,6 +951,12 @@ function renderDoc(run, corpora) {
       'touches either corpus and refuses to emit if it misses either one on sign or magnitude.'
   );
   lines.push('');
+  lines.push(
+    'Both fixtures are composed so their composition term is zero, which makes this check the ' +
+      'guard on the decomposition as well: a rule that started explaining real defects away as ' +
+      'composition fails here rather than quietly emptying the inventory.'
+  );
+  lines.push('');
   for (const line of run.calibration) lines.push(line);
   lines.push('');
   lines.push('## The run');
@@ -755,15 +964,32 @@ function renderDoc(run, corpora) {
   lines.push(`- Admin corpus: ${corpora.admin.length} screens at ${ADMIN_WIDTHS.join(', ')}px, both themes.`);
   lines.push(`- Public corpus: ${corpora.public.length} screens at ${PUBLIC_WIDTHS.join(', ')}px, both themes.`);
   lines.push(`- Renders measured: ${run.renders}. Pairs measured: ${run.measured}.`);
-  lines.push(`- Visual rows walked: ${run.diagnostics.rowsWalked ?? 0}.`);
-  lines.push(`- Rows above the ${VERTICAL_REPORTING_BAR_PX}px bar: ${rows.length} (admin ${adminRows.length}, public ${publicRows.length}).`);
+  lines.push(`- Visual rows walked: ${run.diagnostics.rowsWalked ?? 0}. Distinct compositions: ${walked.length}.`);
+  lines.push(
+    `- Rows above the ${VERTICAL_REPORTING_BAR_PX}px bar ON THE RESIDUAL: ${rows.length} ` +
+      `(admin ${adminRows.length}, public ${publicRows.length}).`
+  );
+  lines.push(
+    `- Rows whose RAW delta clears the bar and whose residual does not: ${phantoms.length}. Their ` +
+      'composition explains them in full, and they are not inventoried.'
+  );
   lines.push(`- Crops and the full per-pair record: \`${ARTIFACT_DIR}\`.`);
   lines.push('');
   lines.push(
-    'A ROW HERE IS ONE DISTINCT COMPOSITION above the bar, not one render: the same pair seen at ' +
-      'several widths or in both themes is one row carrying every width and theme it was seen at. ' +
-      `The full per-pair record, all ${run.measured} readings including the sub-bar population, is ` +
-      `written to \`${resolve(ARTIFACT_DIR, 'measured-pairs.json')}\` rather than printed here.`
+    'A ROW HERE IS ONE VISUAL ROW, not one pair and not one render. A three-member row (a leading ' +
+      'icon, a run of text, a trailing control) is two READINGS of one row, both listed under one ' +
+      'entry: the first emission keyed on the pair and inventoried that row twice, with mirrored ' +
+      'signs and identical magnitudes. The same row seen at several widths or in both themes is ' +
+      'likewise one entry carrying every width and theme it was seen at.'
+  );
+  lines.push('');
+  lines.push(
+    `The full per-pair record, all ${run.measured} readings including every sub-bar one, is written ` +
+      `to \`${resolve(ARTIFACT_DIR, 'measured-pairs.json')}\`. It carries each member's whole ` +
+      'anchor (top, bottom, content centre, element centre, baseline, cap centre, line count, ' +
+      'block lift, `align-self`) alongside the delta, the composition and the residual, so a ' +
+      'disagreement about any reading here is settled by reading that file rather than by re-running ' +
+      'the probe against a live preview.'
   );
   lines.push('');
 
@@ -782,42 +1008,55 @@ function renderDoc(run, corpora) {
   lines.push('## Rows above the reporting bar');
   lines.push('');
   lines.push(
-    'Delta sign: NEGATIVE means the left-hand member rides HIGH against the right-hand member; on ' +
-      'an optical row, negative means the glyph rides high inside its own padding box. Every row ' +
-      'carries a disposition: a recipe task, or an explicit decline with its reason. No row reads ' +
-      '"unknown".'
+    'Sign: NEGATIVE means the left-hand member rides HIGH against the right-hand member; on an ' +
+      'optical row, negative means the glyph rides high inside its own padding box. The RESIDUAL ' +
+      'column is the reading each disposition rests on. Every row carries a disposition: a recipe ' +
+      'task, or an explicit decline with its reason. No row reads "unknown".'
   );
   lines.push('');
   if (rows.length === 0) {
-    lines.push('No pair on either corpus exceeded the reporting bar.');
+    lines.push('No row on either corpus carried a residual above the reporting bar.');
   } else {
     lines.push(
-      '| # | Id | Surface | Screens / routes | Viewport | Theme | Component file | Pair class | Delta (px) | Crop | Disposition |'
+      '| # | Id | Surface | Screens / routes | Viewport | Theme | Component file | Pair class | Raw delta (px) | Composition (px) | Residual (px) | Crop | Disposition |'
     );
-    lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+    lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
     rows.forEach((row, position) => {
       const screens = [...row.screens].sort().join(', ');
       const widths = [...row.widths].sort((a, b) => b - a).join(', ');
       const themes = [...row.themes].sort().join(', ');
-      const file = row.attribution ? `\`${row.attribution.file}\`` : 'utility classes only, unattributed';
-      const delta = row.minDelta === row.maxDelta ? `${row.maxDelta}` : `${row.minDelta} to ${row.maxDelta}`;
       const crop = row.crop ? `\`${resolve(ARTIFACT_DIR, 'crops', row.crop)}\`` : 'none (row off the captured page)';
       lines.push(
-        `| ${position + 1} | \`${keyDigest(row.key)}\` | ${row.surface} | ${cell(screens)} (\`${row.screen.path}\`) | ${widths} | ${themes} | ${cell(file)} | ${row.pair.pairClass} | ${delta} | ${cell(crop)} | ${cell(row.disposition)} |`
+        `| ${position + 1} | \`${row.id}\` | ${row.surface} | ${cell(screens)} (\`${row.screen.path}\`) | ${widths} | ${themes} | ${cell(attributionCell(row))} | ${row.worst.pairClass} | ${range(row.worst.minDelta, row.worst.maxDelta)} | ${range(row.worst.minComposition, row.worst.maxComposition)} | ${range(row.worst.minResidual, row.worst.maxResidual)} | ${cell(crop)} | ${cell(row.disposition)} |`
       );
     });
   }
   lines.push('');
   lines.push('### What each row is');
   lines.push('');
-  lines.push('| # | Id | Row container | Left member | Right member | Shape | `align-items` |');
-  lines.push('| --- | --- | --- | --- | --- | --- | --- |');
+  lines.push(
+    'One line per READING. A row with more than one line is one composition measured at more than ' +
+      'one pair of members, not more than one row. A row whose member list CHANGES with the viewport ' +
+      '(a member hidden below a breakpoint) is two compositions and reports as two rows, which is ' +
+      'why the same recipe can appear twice with different widths: the members column shows the ' +
+      'difference.'
+  );
+  lines.push('');
+  lines.push(
+    '| # | Id | Row container | Members | Reading | Left member | Right member | Shape | `align-items` |'
+  );
+  lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
   rows.forEach((row, position) => {
     const describe = (anchor) =>
-      `${anchor.kind}/${anchor.geometry} \`${anchor.selector}\`${anchor.text ? ` "${anchor.text}"` : ''}`;
-    lines.push(
-      `| ${position + 1} | \`${keyDigest(row.key)}\` | \`${cell(row.pair.rowSelector)}\` | ${cell(describe(row.pair.a))} | ${cell(describe(row.pair.b))} | ${row.shape} | ${row.pair.alignItems} |`
-    );
+      `${anchor.kind}/${anchor.geometry} \`${anchor.selector}\`${anchor.text ? ` "${anchor.text}"` : ''}` +
+      (anchor.lineCount > 1 ? ` (${anchor.lineCount} lines, lift ${anchor.blockLiftPx}px)` : '');
+    for (const reading of [...row.readings.values()].sort(
+      (one, other) => other.worstResidualMagnitude - one.worstResidualMagnitude
+    )) {
+      lines.push(
+        `| ${position + 1} | \`${row.id}\` | \`${cell(row.rowSelector)}\` | ${cell(row.rowMembers.join(' + '))} | ${range(reading.minResidual, reading.maxResidual)}px residual | ${cell(describe(reading.sample.a))} | ${cell(describe(reading.sample.b))} | ${reading.shape} | ${row.alignItems} |`
+      );
+    }
   });
   lines.push('');
 
@@ -838,12 +1077,67 @@ function renderDoc(run, corpora) {
   );
   lines.push('');
   lines.push(
-    'A decline is a REVIEWED ruling: someone read that row\'s crop and decided no recipe should ' +
-      'move it. The rulings live in the probe (`REVIEWED_DISPOSITIONS`), keyed by the Id column, ' +
-      'because a re-run overwrites this file and a ruling kept only here would be erased by the ' +
-      'run that is supposed to verify it. A row whose Id has no ruling takes its shape\'s default, ' +
-      'so a composition that appears later is dispositioned rather than reported unknown.'
+    'A decline is one of two things, and each row says which. A MECHANICAL decline is the ' +
+      'measurement disqualifying its own reading (an icon with no reachable painting geometry, so ' +
+      'the number is a border box rather than ink). A REVIEWED decline is a design call the ' +
+      'arithmetic cannot reach, ruled on after reading the crop. The reviewed rulings live in the ' +
+      'probe (`REVIEWED_DISPOSITIONS`), keyed by the Id column, because a re-run overwrites this ' +
+      'file and a ruling kept only here would be erased by the run that is supposed to verify it.'
   );
+  lines.push('');
+  lines.push(
+    'The Id is built from the row container\'s TAG and its members\' kinds and rendered text, never ' +
+      'from classes. Tasks 2 and 3 change classes, so a class-bearing key would silently drop every ' +
+      'ruling on the verification re-run and re-report those rows as fresh recipe work. A ruling ' +
+      'whose Id no longer resolves is reported below rather than dropped.'
+  );
+  lines.push('');
+  const unresolvedRulings = Object.keys(REVIEWED_DISPOSITIONS).filter((key) => !run.rows.has(key));
+  const spentRulings = Object.keys(REVIEWED_DISPOSITIONS).filter(
+    (key) => run.rows.has(key) && !rows.some((row) => row.id === key)
+  );
+  lines.push('### Ruling keys');
+  lines.push('');
+  if (Object.keys(REVIEWED_DISPOSITIONS).length === 0) {
+    lines.push('No reviewed ruling is in force: every row above the bar is dispositioned mechanically.');
+  } else if (unresolvedRulings.length === 0 && spentRulings.length === 0) {
+    lines.push(`All ${Object.keys(REVIEWED_DISPOSITIONS).length} reviewed rulings resolved to a row in this run.`);
+  } else {
+    for (const key of unresolvedRulings) {
+      lines.push(
+        `- \`${key}\`: RULING KEY NO LONGER RESOLVES. No row in this run carries it, so the ruling ` +
+          'is not in force and whatever row it described is being dispositioned by its shape. ' +
+          'Re-read the composition before trusting this run.'
+      );
+    }
+    for (const key of spentRulings) {
+      lines.push(
+        `- \`${key}\`: the row still exists and now measures within the bar, so the ruling is no ` +
+          'longer needed. Remove it once the recipe that made it unnecessary has landed.'
+      );
+    }
+  }
+  lines.push('');
+  lines.push('### Rows the composition explains in full');
+  lines.push('');
+  lines.push(
+    `${phantoms.length} rows carry a raw delta above the bar and a residual within it. Each one is ` +
+      'a row that centres its members on a block its text wraps, which is what the composition term ' +
+      'is for. They are listed rather than omitted, because the first emission reported them as ' +
+      'defects and a reader comparing the two documents is owed the reason they left.'
+  );
+  lines.push('');
+  if (phantoms.length > 0) {
+    lines.push('| Id | Surface | Members | Component file | Raw delta reach (px) | Worst residual (px) | `align-items` |');
+    lines.push('| --- | --- | --- | --- | --- | --- | --- |');
+    for (const row of phantoms.sort((one, other) => rawReachOf(other) - rawReachOf(one)).slice(0, 40)) {
+      row.attribution = attributeRow(index, row);
+      lines.push(
+        `| \`${row.id}\` | ${row.surface} | ${cell(row.rowMembers.join(' + '))} | ${cell(attributionCell(row))} | ${round(rawReachOf(row))} | ${round(row.worst.worstResidualMagnitude)} | ${row.alignItems} |`
+      );
+    }
+    if (phantoms.length > 40) lines.push(`| ... ${phantoms.length - 40} more | | | | | | |`);
+  }
   lines.push('');
 
   lines.push('## Optical readings, by recipe');
@@ -855,6 +1149,12 @@ function renderDoc(run, corpora) {
       'distribution matters as much as the outliers.'
   );
   lines.push('');
+  lines.push(
+    'Taken on the RESIDUAL. A recipe whose label wraps has a padding box spanning every line and a ' +
+      'glyph reading on the first, which reads as half a block of optical offset with nothing ' +
+      'misconfigured; that term is composition and is subtracted here.'
+  );
+  lines.push('');
   lines.push('| Recipe | Readings | Median offset (px) | Max magnitude (px) |');
   lines.push('| --- | --- | --- | --- |');
   const opticalByRecipe = new Map();
@@ -862,7 +1162,7 @@ function renderDoc(run, corpora) {
     if (entry.pairClass !== 'optical-suspect') continue;
     const recipe = entry.rowClasses.split(/\s+/).filter(Boolean).slice(0, 3).join(' ') || entry.rowSelector;
     const bucket = opticalByRecipe.get(recipe) ?? [];
-    bucket.push(entry.deltaPx);
+    bucket.push(entry.residualPx);
     opticalByRecipe.set(recipe, bucket);
   }
   const opticalRanked = [...opticalByRecipe.entries()]
@@ -883,18 +1183,73 @@ function renderDoc(run, corpora) {
   lines.push('');
   lines.push(
     'The rendered rule sets its firing threshold from THESE numbers, not from the placeholder 4px. ' +
-      'Two independent readings: run-to-run jitter (the same page measured twice in one session), ' +
-      'and the distribution of the sub-bar population.'
+      'The distribution is over the UNCENSORED population: every reading in the run, not the slice ' +
+      `at or under the ${VERTICAL_REPORTING_BAR_PX}px bar. The first emission reported "p99 ` +
+      `${VERTICAL_REPORTING_BAR_PX}px, max ${VERTICAL_REPORTING_BAR_PX}px" over a slice DEFINED as ` +
+      'at or under that bar, which is circular and supports no threshold at all.'
   );
   lines.push('');
   lines.push(
-    `- Repeatability: ${run.repeatability.length} pairs measured twice on one page, max delta-of-deltas ${jitter}px.`
+    `- Repeatability: ${run.repeatability.length} readings measured twice on one page, max ` +
+      `delta-of-deltas ${jitter}px. Nothing above that is measurement noise.`
   );
+  lines.push(`- Population: all ${run.residualMagnitudes.length} readings in the run.`);
+  lines.push(`- ${distributionLine('Raw magnitude', run.magnitudes)}`);
+  lines.push(`- ${distributionLine('Residual magnitude', run.residualMagnitudes)}`);
+  lines.push('');
+  lines.push('| Candidate threshold | Readings above it | Rows above it |');
+  lines.push('| --- | --- | --- |');
+  for (const candidate of [1, 1.5, 2, 2.5, 3, 4, 5]) {
+    const readings = run.residualMagnitudes.filter((value) => value > candidate).length;
+    const above = walked.filter((row) => row.worst.worstResidualMagnitude > candidate).length;
+    lines.push(`| ${candidate}px | ${readings} | ${above} |`);
+  }
+  lines.push('');
   lines.push(
-    `- Sub-bar population: ${subBar.length} pairs at or under ${VERTICAL_REPORTING_BAR_PX}px, ${nonZeroSubBar.length} of them non-zero.`
+    'NEITHER OF THOSE IS A NOISE FLOOR ON ITS OWN. The full distribution contains the defects, so ' +
+      'its own p99 is pulled up by them; and any statistic taken over "the readings under the bar" ' +
+      'is a statistic about the bar. The population that answers the question is the rows the ' +
+      'composition explains in full: they were selected by their RAW delta clearing the bar, which ' +
+      'is a different variable from the residual, so their residual spread is an estimate of how ' +
+      'close to zero this method lands on a row that is correct as built.'
   );
+  lines.push('');
+  const phantomIds = new Set(phantoms.map((row) => row.id));
+  const phantomResiduals = run.record
+    .filter((entry) => phantomIds.has(entry.rowId))
+    .map((entry) => Math.abs(entry.residualPx));
+  const phantomReach = phantoms.reduce((best, row) => Math.max(best, row.worst.worstResidualMagnitude), 0);
   lines.push(
-    `- Sub-bar distribution (non-zero): p50 ${round(percentile(nonZeroSubBar, 0.5))}px, p90 ${round(percentile(nonZeroSubBar, 0.9))}px, p99 ${round(percentile(nonZeroSubBar, 0.99))}px, max ${nonZeroSubBar.length > 0 ? round(Math.max(...nonZeroSubBar)) : 0}px.`
+    `- ${distributionLine(`Residual on the ${phantoms.length} composition-explained rows`, phantomResiduals)}`
+  );
+  const declinedReach = declines.reduce((best, row) => Math.max(best, row.worst.worstResidualMagnitude), 0);
+  const confirmedReach = rows
+    .filter((row) => !row.disposition.startsWith('DECLINE'))
+    .reduce((best, row) => Math.min(best, row.worst.worstResidualMagnitude), Infinity);
+  const floor = Math.max(jitter, phantomReach);
+  lines.push('');
+  lines.push(
+    `The floor this run supports is ${round(floor)}px: the larger of run-to-run jitter (${jitter}px) ` +
+      `and the worst residual on any row whose composition explains it in full (${round(phantomReach)}px). ` +
+      `For reference, the worst residual on a row this inventory declines by review is ` +
+      `${round(declinedReach)}px, and those two rows are compositions the term does not model rather ` +
+      'than measurement noise.'
+  );
+  lines.push('');
+  lines.push(
+    confirmedReach === Infinity
+      ? 'No confirmed defect remains above the bar, so this run sets no upper end on the window and ' +
+          'a threshold has to be argued from the calibration fixtures instead.'
+      : floor < confirmedReach
+        ? `The smallest confirmed defect measures ${round(confirmedReach)}px, so any threshold in ` +
+          `[${round(floor)}, ${round(confirmedReach)}) fires on every confirmed row and on nothing ` +
+          'this run explains away. That window is narrow, and it is narrow because the method lands ' +
+          'close to zero rather than because the defects are large: task 4 picks inside it and ' +
+          'records what a wider threshold would give up.'
+        : `The data does not support a threshold below ${round(floor)}px, and the smallest confirmed ` +
+          `defect measures ${round(confirmedReach)}px: the two overlap, so any threshold that fires ` +
+          'on every confirmed row also fires on something this inventory explains away. Task 4 has ' +
+          'to take that trade explicitly rather than pick a number.'
   );
   lines.push('');
 
@@ -943,6 +1298,7 @@ async function main() {
     measured: 0,
     rows: new Map(),
     magnitudes: [],
+    residualMagnitudes: [],
     record: [],
     repeatability: [],
     unreached: [],
@@ -966,7 +1322,6 @@ async function main() {
       widths: ADMIN_WIDTHS,
       themes: ADMIN_THEMES,
       run,
-      index,
     });
     await sweep({
       browser,
@@ -975,7 +1330,6 @@ async function main() {
       widths: PUBLIC_WIDTHS,
       themes: PUBLIC_THEMES,
       run,
-      index,
     });
   } finally {
     await browser.close();
@@ -983,10 +1337,23 @@ async function main() {
 
   writeFileSync(resolve(ARTIFACT_DIR, 'measured-pairs.json'), `${JSON.stringify(run.record, null, 2)}\n`, 'utf8');
   mkdirSync(dirname(DOC_PATH), { recursive: true });
-  writeFileSync(DOC_PATH, renderDoc(run, corpora), 'utf8');
+  const doc = renderDoc(run, corpora, index);
+  writeFileSync(DOC_PATH, doc, 'utf8');
+  const above = [...run.rows.values()].filter(
+    (row) => row.worst.worstResidualMagnitude > VERTICAL_REPORTING_BAR_PX
+  );
+  // A ruling that no longer resolves is the one failure a reader of the doc could miss, so it is
+  // said on the console too: the re-run that verifies tasks 2 and 3 is where this bites.
+  for (const key of Object.keys(REVIEWED_DISPOSITIONS)) {
+    if (run.rows.has(key)) continue;
+    console.error(
+      `probe-vertical-alignment: RULING KEY NO LONGER RESOLVES: ${key}. Its row is absent from ` +
+        'this run, so the ruling is not in force.'
+    );
+  }
   console.log(
-    `probe-vertical-alignment: ${run.measured} pairs measured over ${run.renders} renders; ` +
-      `${run.rows.size} rows above ${VERTICAL_REPORTING_BAR_PX}px`
+    `probe-vertical-alignment: ${run.measured} readings over ${run.renders} renders; ` +
+      `${run.rows.size} distinct compositions; ${above.length} rows above ${VERTICAL_REPORTING_BAR_PX}px on the residual`
   );
   console.log(`probe-vertical-alignment: wrote ${relative(ROOT, DOC_PATH)} and artifacts under ${ARTIFACT_DIR}`);
 }

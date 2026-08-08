@@ -35,6 +35,15 @@
 // baseline is CORRECT typography whose glyph centres diverge by design; measuring it by centre
 // reports every well-set heading-plus-eyebrow row as broken. See {@link metricForPairClass}.
 //
+// TRAP 1 ANSWERS "WHICH LINE", NEVER "SHOULD THIS PAIR WITH A LINE AT ALL". Pairing with the first
+// line is right where the row aligns its members by their tops or their baselines. Where the row
+// centres its members and the text block WRAPS, the composition deliberately centres the other
+// member on the WHOLE block, and the first-line reading is short by half the block's extra height:
+// a reading that grows with the line count and swings 3x between viewport widths on identical,
+// correctly composed pixels. Every reading is therefore split into a COMPOSITION term, what that
+// row's own alignment asks for, and a RESIDUAL, what is left over. See {@link compositionPx}: the
+// residual is the defect, and the raw delta is not.
+//
 // SPLIT BY DESIGN: {@link collectVerticalPairsInPage} runs inside the browser and only reads
 // geometry; classification and the delta are pure functions over what it returns. Playwright
 // serializes an evaluated function by source, so it can reference nothing outside its own body,
@@ -91,6 +100,18 @@ export interface MemberAnchor {
   selector: string;
   /** The element's `class` attribute verbatim, which the probe attributes back to a source file. */
   classes: string;
+  /**
+   * The tag the reading came off, lowercased. Kept beside {@link MemberAnchor.selector} because the
+   * selector carries classes, and a caller that has to name this member across a recipe change
+   * needs an identity the recipe does not rewrite.
+   */
+  tag: string;
+  /**
+   * How this member is aligned in its row: its own `align-self`, resolved against the container's
+   * `align-items` when it computes to `auto` (which is what Chromium returns for an unset one).
+   * This is the property that decides whether a wrapped block was centred on purpose.
+   */
+  alignSelf: string;
   geometry: GeometrySource;
   /** Top of the measured content: ink for an icon, glyph box for text, border box for a control. */
   topPx: number;
@@ -109,6 +130,17 @@ export interface MemberAnchor {
   capCentrePx: number | null;
   /** The member's text run, truncated, so a report can name a row a reader will recognize. */
   text: string;
+  /** How many line bands of text this member renders, whatever kind it is. `0` on a bare icon. */
+  lineCount: number;
+  /**
+   * How far this member's whole text extent sits BELOW its first line, centre to centre. Zero
+   * unless the member is a text member rendering more than one line, which makes it exactly the
+   * distance a centring row moves the member away from the line the reading was taken on.
+   *
+   * It is a displacement rather than a second reading on purpose: subtracting it from a delta
+   * leaves both sides of that delta in the same metric, so a baseline pair stays a baseline pair.
+   */
+  blockLiftPx: number;
   /**
    * The member is a composite whose label ink finishes above its control's box: the `0.92.0`
    * stacked-register shape. Read off rendered geometry rather than a class name, so it holds for
@@ -150,6 +182,15 @@ export interface RawPair {
   /** A selector naming the container the pair was found in, or the element itself for an optical pair. */
   rowSelector: string;
   rowClasses: string;
+  /** The container's tag, lowercased: the half of its identity a recipe change leaves alone. */
+  rowTag: string;
+  /**
+   * Every member of the visual row this pair was taken from, in left-to-right order, each named
+   * `kind:text` (or `kind:tag` where the member renders no text). A three-member row yields two
+   * pairs, and this is what lets a caller recognize them as two readings of ONE row rather than
+   * inventory the same row twice.
+   */
+  rowMembers: string[];
   /** The container's computed `align-items`, the property a recipe fix usually changes. */
   alignItems: string;
   /** The union box of both members, which the probe crops a screenshot from. */
@@ -174,8 +215,14 @@ export interface MeasuredPair extends RawPair {
    * centre, with the icon on the left.
    */
   deltaPx: number;
-  /** `Math.abs(deltaPx)`, which is what the reporting bar is applied to. */
+  /** `Math.abs(deltaPx)`. The RAW magnitude, which is not what the reporting bar is applied to. */
   magnitudePx: number;
+  /** The part of {@link MeasuredPair.deltaPx} this row's own composition asks for. {@link compositionPx} */
+  compositionPx: number;
+  /** `deltaPx` less the composition: the part no alignment choice explains, and the only defect. */
+  residualPx: number;
+  /** `Math.abs(residualPx)`, which is what the reporting bar is applied to. */
+  residualMagnitudePx: number;
 }
 
 /** What the in-page walk saw, so a caller can state its own coverage rather than imply it. */
@@ -272,6 +319,7 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
   // Nested row containers mean the same member is asked for its principal run several times over
   // one walk, and finding that run costs a subtree traversal plus a rect per run.
   const principalRunByElement = new Map<Element, { node: Text; lineOwner: Element } | null>();
+  const lineBandsByMember = new Map<Node, VerticalBand[]>();
 
   const diagnostics: VerticalMetricsDiagnostics = {
     rowsWalked: 0,
@@ -358,6 +406,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       kind: 'text',
       selector: signature(lineOwner),
       classes: classesOf(lineOwner),
+      tag: lineOwner.tagName.toLowerCase(),
+      alignSelf: '',
       geometry: 'glyph',
       topPx: round(inkTop),
       bottomPx: round(inkBottom),
@@ -366,6 +416,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       baselinePx: round(baseline),
       capCentrePx: round(baseline - capHeightFor(font) / 2),
       text: text.slice(0, 40),
+      lineCount: 0,
+      blockLiftPx: 0,
       stacked: false,
     };
   }
@@ -522,6 +574,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       kind: 'icon',
       selector: signature(el),
       classes: classesOf(el),
+      tag: el.tagName.toLowerCase(),
+      alignSelf: '',
       geometry: ink ? 'ink' : 'element-box',
       topPx: round(top),
       bottomPx: round(bottom),
@@ -530,11 +584,18 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       baselinePx: null,
       capCentrePx: null,
       text: '',
+      lineCount: 0,
+      blockLiftPx: 0,
       stacked: false,
     };
   }
 
-  /** A control's anchor. Its border box IS the visual object, the one case an element box is right. */
+  /**
+   * A control's anchor. Its border box IS the visual object, the one case an element box is right.
+   *
+   * Its label is carried as the member's text even though no reading is taken off it: a caller
+   * naming this member in a report or keying a ruling on it needs "Upload", not "button".
+   */
   function controlAnchor(el: Element): MemberAnchor | null {
     const rect = el.getBoundingClientRect();
     if (rect.height <= 0) return null;
@@ -542,6 +603,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       kind: 'control',
       selector: signature(el),
       classes: classesOf(el),
+      tag: el.tagName.toLowerCase(),
+      alignSelf: '',
       geometry: 'element-box',
       topPx: round(rect.top),
       bottomPx: round(rect.bottom),
@@ -549,7 +612,9 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       elementCentrePx: round((rect.top + rect.bottom) / 2),
       baselinePx: null,
       capCentrePx: null,
-      text: '',
+      text: (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 40),
+      lineCount: 0,
+      blockLiftPx: 0,
       stacked: false,
     };
   }
@@ -641,6 +706,95 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
   }
 
   /**
+   * Every line of text a row MEMBER puts on the screen, top to bottom, each band the union of the
+   * rects that share it. This is the member's whole block, not the one run the reading was taken
+   * off: a wrapped run contributes a rect per line, and a member made of a title plus a paragraph
+   * contributes bands from both.
+   *
+   * The out-of-flow exclusion {@link principalRun} makes applies here too, so an absolutely
+   * positioned flag does not read as an extra line of the block.
+   */
+  function lineBands(member: Node): VerticalBand[] {
+    const cached = lineBandsByMember.get(member);
+    if (cached) return cached;
+    const rects: VerticalBand[] = [];
+    const collect = (node: Text): void => {
+      const range = trimmedRange(node);
+      if (!range) return;
+      for (const rect of Array.from(range.getClientRects())) {
+        if (rect.width > 0.5 && rect.height > 0.5) rects.push({ top: rect.top, bottom: rect.bottom });
+      }
+      range.detach();
+    };
+    if (member.nodeType === Node.TEXT_NODE) {
+      collect(member as Text);
+    } else {
+      const el = member as Element;
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      let seen = 0;
+      for (let node = walker.nextNode(); node && seen < MAX_TEXT_RUNS_PER_MEMBER; node = walker.nextNode()) {
+        const text = node as Text;
+        const lineOwner = text.parentElement;
+        if (!lineOwner || !isVisible(lineOwner)) continue;
+        if (isOutOfFlow(lineOwner, el)) continue;
+        seen += 1;
+        collect(text);
+      }
+    }
+    rects.sort((one, other) => one.top - other.top);
+    const bands: VerticalBand[] = [];
+    for (const rect of rects) {
+      const current = bands[bands.length - 1];
+      if (current) {
+        const overlap = Math.min(current.bottom, rect.bottom) - Math.max(current.top, rect.top);
+        const smaller = Math.min(current.bottom - current.top, rect.bottom - rect.top);
+        if (overlap >= smaller * 0.5) {
+          current.top = Math.min(current.top, rect.top);
+          current.bottom = Math.max(current.bottom, rect.bottom);
+          continue;
+        }
+      }
+      bands.push({ top: rect.top, bottom: rect.bottom });
+    }
+    lineBandsByMember.set(member, bands);
+    return bands;
+  }
+
+  /** How far a member's whole text extent sits below its first line, centre to centre. */
+  function blockLift(bands: VerticalBand[]): number {
+    if (bands.length < 2) return 0;
+    const first = bands[0];
+    const last = bands[bands.length - 1];
+    return round((first.top + last.bottom) / 2 - (first.top + first.bottom) / 2);
+  }
+
+  /**
+   * How `member` is aligned inside a row whose container resolved `align-items` to
+   * `containerAlignItems`. Chromium reports an unset `align-self` as `auto` rather than resolving
+   * it, and an anonymous text item has no style of its own, so both fall back to the container.
+   */
+  function alignmentOf(member: Node, containerAlignItems: string): string {
+    if (member.nodeType !== Node.ELEMENT_NODE) return containerAlignItems;
+    const self = getComputedStyle(member as Element).alignSelf;
+    return !self || self === 'auto' ? containerAlignItems : self;
+  }
+
+  /**
+   * The fields that belong to the ROW MEMBER rather than to the element the reading came off. A
+   * text member's reading is one line of a block the row may have chosen to centre as a whole, and
+   * nothing at the reading's own element can see that.
+   */
+  function withMemberContext(anchor: MemberAnchor, member: Node, containerAlignItems: string): MemberAnchor {
+    const bands = lineBands(member);
+    anchor.alignSelf = alignmentOf(member, containerAlignItems);
+    anchor.lineCount = bands.length;
+    // Only a text member reads one line. An icon, a control, and a padding box are each read whole,
+    // so a row centring them has already been given what it asked for.
+    anchor.blockLiftPx = anchor.kind === 'text' ? blockLift(bands) : 0;
+    return anchor;
+  }
+
+  /**
    * One row member's anchor. A bare control or icon anchors on itself; a composite carrying exactly
    * one control anchors on THAT control, which is the whole stacked-field case (the composite's own
    * box centres correctly while the control inside it does not); anything else anchors on its
@@ -670,6 +824,11 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     if (!leaf && icons.length > 0) return iconAnchor(icons[0]);
     if (!leaf) return null;
     return textAnchor(leaf.node, leaf.lineOwner);
+  }
+
+  /** What to call a member in the row's own member list when no anchor resolved for it. */
+  function nameOf(node: Node): string {
+    return node.nodeType === Node.ELEMENT_NODE ? (node as Element).tagName.toLowerCase() : '#text';
   }
 
   function itemBox(node: Node): DOMRect | null {
@@ -765,9 +924,15 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
           diagnostics.anchorsUnresolved += 1;
           return { anchor: null, tooTall: false };
         }
+        withMemberContext(anchor, item.node, containerStyle.alignItems);
         // The cap reads the ANCHOR's extent, not the member's block box: a text member is read off
         // one line, so a tall block is still a row member while a page-tall control is not.
         return { anchor, tooTall: anchor.bottomPx - anchor.topPx > maxItemHeightPx };
+      });
+      const rowMembers = cluster.map((item, index) => {
+        const anchor = readings[index].anchor;
+        if (!anchor) return `unresolved:${nameOf(item.node)}`;
+        return `${anchor.kind}:${anchor.text || anchor.tag}`;
       });
       for (let index = 1; index < cluster.length; index += 1) {
         const left = readings[index - 1];
@@ -782,6 +947,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
           rowKind,
           rowSelector: signature(container),
           rowClasses: classesOf(container),
+          rowTag: container.tagName.toLowerCase(),
+          rowMembers,
           alignItems: containerStyle.alignItems,
           rowBox: {
             topPx: round(Math.min(cluster[index - 1].box.top, cluster[index].box.top)),
@@ -824,11 +991,32 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     const padTop = rect.top + parseFloat(style.borderTopWidth || '0');
     const padBottom = rect.bottom - parseFloat(style.borderBottomWidth || '0');
     if (padBottom <= padTop) continue;
+    withMemberContext(glyph, el, style.alignItems);
+    const box: MemberAnchor = {
+      kind: 'box',
+      selector: signature(el),
+      classes: classesOf(el),
+      tag: el.tagName.toLowerCase(),
+      alignSelf: alignmentOf(el, style.alignItems),
+      geometry: 'element-box',
+      topPx: round(padTop),
+      bottomPx: round(padBottom),
+      contentCentrePx: round((padTop + padBottom) / 2),
+      elementCentrePx: round((rect.top + rect.bottom) / 2),
+      baselinePx: null,
+      capCentrePx: null,
+      text: '',
+      lineCount: glyph.lineCount,
+      blockLiftPx: 0,
+      stacked: false,
+    };
     diagnostics.pairsFound += 1;
     pairs.push({
       rowKind: 'optical-suspect',
       rowSelector: signature(el),
       rowClasses: classesOf(el),
+      rowTag: el.tagName.toLowerCase(),
+      rowMembers: [`text:${glyph.text || glyph.tag}`, `box:${el.tagName.toLowerCase()}`],
       alignItems: style.alignItems,
       rowBox: {
         topPx: round(rect.top),
@@ -837,20 +1025,7 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
         rightPx: round(rect.right),
       },
       a: glyph,
-      b: {
-        kind: 'box',
-        selector: signature(el),
-        classes: classesOf(el),
-        geometry: 'element-box',
-        topPx: round(padTop),
-        bottomPx: round(padBottom),
-        contentCentrePx: round((padTop + padBottom) / 2),
-        elementCentrePx: round((rect.top + rect.bottom) / 2),
-        baselinePx: null,
-        capCentrePx: null,
-        text: '',
-        stacked: false,
-      },
+      b: box,
     });
   }
 
@@ -896,10 +1071,50 @@ export function referenceForMetric(anchor: MemberAnchor, metric: PairMetric): nu
   return anchor.kind === 'text' ? anchor.capCentrePx : anchor.contentCentrePx;
 }
 
+/** Whether an alignment keyword centres a member on its own box inside its row. */
+export function isCentredAlignment(alignment: string): boolean {
+  const keyword = alignment.replace(/^(safe|unsafe)\s+/, '');
+  return keyword === 'center';
+}
+
 /**
- * Classify `pair` and take its class's delta, or null when either member has no reading for that
- * metric. Pure over what the page already reported, so the sign convention and the metric split
- * live in one testable place.
+ * The part of a pair's delta the row's own composition asks for, which is therefore not a defect.
+ *
+ * A text member is read off its FIRST LINE (trap 1), so where the row centres its members and that
+ * member's text wraps, the row has deliberately put the OTHER member half a block lower than the
+ * line the reading was taken on. That distance is {@link MemberAnchor.blockLiftPx}, and it is the
+ * whole composition term: subtract it and what remains is the row failing to do what it asked for.
+ *
+ * Three cases, each a different answer:
+ *
+ * - An OPTICAL suspect always carries it. Its padding box spans every line by construction, while
+ *   its glyph reading is the first line, so a wrapped label reads half a block high with nothing
+ *   misconfigured.
+ * - A CENTRED row carries it, since centring a wrapped block on purpose is what produces it.
+ * - Any other row carries none. Under `flex-start`, `start` and `baseline`, pairing with the first
+ *   line IS the intent, so the expected reading is zero and the raw delta is already the defect.
+ *   Under `stretch` (and the `normal` that resolves to it) a definite-height member sits at the
+ *   row top, which is the same intent.
+ *
+ * NOT MODELLED, and stated rather than silently folded in: an `end`-aligned row pairs with the
+ * block's LAST line, and a grid member spanning several rows centres on the span. Both leave a
+ * composition term in the residual, which is why a caller keeps room for a reviewed ruling.
+ */
+export function compositionPx(pair: RawPair): number {
+  const lift = Math.round((pair.b.blockLiftPx - pair.a.blockLiftPx) * 100) / 100;
+  if (pair.rowKind === 'optical-suspect') return lift;
+  if (isCentredAlignment(pair.a.alignSelf) && isCentredAlignment(pair.b.alignSelf)) return lift;
+  return 0;
+}
+
+/**
+ * Classify `pair`, take its class's delta, and split that delta into the part its composition asks
+ * for and the part left over. Pure over what the page already reported, so the sign convention, the
+ * metric split, and the decomposition live in one testable place.
+ *
+ * The RESIDUAL is what a caller dispositions on. The raw delta answers "how far apart do these two
+ * readings sit", which on a centred row with a wrapped block is a number that grows with the line
+ * count and swings with the viewport on pixels nobody should touch.
  */
 export function measurePair(pair: RawPair): MeasuredPair | null {
   const pairClass = classifyPair(pair.a, pair.b);
@@ -908,12 +1123,28 @@ export function measurePair(pair: RawPair): MeasuredPair | null {
   const right = referenceForMetric(pair.b, metric);
   if (left === null || right === null) return null;
   const deltaPx = Math.round((left - right) * 100) / 100;
-  return { ...pair, pairClass, metric, deltaPx, magnitudePx: Math.abs(deltaPx) };
+  const composition = compositionPx(pair);
+  const residualPx = Math.round((deltaPx - composition) * 100) / 100;
+  return {
+    ...pair,
+    pairClass,
+    metric,
+    deltaPx,
+    magnitudePx: Math.abs(deltaPx),
+    compositionPx: composition,
+    residualPx,
+    residualMagnitudePx: Math.abs(residualPx),
+  };
 }
 
-/** Every pair whose own metric reads further apart than `barPx`, the caller's reporting bar. */
+/**
+ * Every pair whose RESIDUAL reads further apart than `barPx`, the caller's reporting bar. The bar
+ * is applied to the residual rather than the raw delta on purpose: a correctly composed row can
+ * carry an arbitrarily large raw delta, and reporting it is the phantom-defect failure this module
+ * exists to prevent.
+ */
 export function pairsAboveBar(pairs: MeasuredPair[], barPx: number = VERTICAL_REPORTING_BAR_PX): MeasuredPair[] {
-  return pairs.filter((pair) => pair.magnitudePx > barPx);
+  return pairs.filter((pair) => pair.residualMagnitudePx > barPx);
 }
 
 /**
@@ -1004,6 +1235,11 @@ export const VERTICAL_CALIBRATION_FIXTURES: VerticalCalibrationFixture[] = [
  * Why `fixture` failed to calibrate against `pairs`, or null when it calibrated. A caller that
  * measures a real corpus runs this first and refuses to emit on a non-null answer: a method that
  * cannot reproduce a known defect has no standing to report a screen clean.
+ *
+ * The verdict is taken on the RESIDUAL, the same number a caller dispositions on. Both fixtures
+ * are composed so that their composition term is zero, which makes this check the guard on the
+ * decomposition too: a rule that started explaining these two defects away as composition would
+ * fail here rather than quietly emptying the inventory.
  */
 export function calibrationMiss(fixture: VerticalCalibrationFixture, pairs: MeasuredPair[]): string | null {
   const candidates = pairs.filter(
@@ -1012,13 +1248,18 @@ export function calibrationMiss(fixture: VerticalCalibrationFixture, pairs: Meas
   if (candidates.length === 0) {
     return `${fixture.id}: no ${fixture.pairClass} pair was found in .${fixture.rowClass} at all.`;
   }
-  const pair = candidates.reduce((best, next) => (next.magnitudePx > best.magnitudePx ? next : best));
-  if (Math.sign(pair.deltaPx) !== fixture.expectedSign) {
-    return `${fixture.id}: measured ${pair.deltaPx}px, expected the sign to be ${fixture.expectedSign}.`;
+  const pair = candidates.reduce((best, next) =>
+    next.residualMagnitudePx > best.residualMagnitudePx ? next : best
+  );
+  if (pair.compositionPx !== 0) {
+    return `${fixture.id}: measured a composition term of ${pair.compositionPx}px, expected none.`;
   }
-  if (pair.magnitudePx < fixture.minMagnitudePx || pair.magnitudePx > fixture.maxMagnitudePx) {
+  if (Math.sign(pair.residualPx) !== fixture.expectedSign) {
+    return `${fixture.id}: measured ${pair.residualPx}px, expected the sign to be ${fixture.expectedSign}.`;
+  }
+  if (pair.residualMagnitudePx < fixture.minMagnitudePx || pair.residualMagnitudePx > fixture.maxMagnitudePx) {
     return (
-      `${fixture.id}: measured ${pair.magnitudePx}px, expected ` +
+      `${fixture.id}: measured ${pair.residualMagnitudePx}px, expected ` +
       `${fixture.minMagnitudePx} to ${fixture.maxMagnitudePx}px.`
     );
   }

@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-08: stable `0.94.0` on `latest`; ASC adopted; the vertical-alignment pass is CLOSED, not merged; the CLEANUP PASS runs next, ahead of release one)
+## Immediate next action (2026-08-08: stable `0.94.0` on `latest`; ASC adopted; the vertical-alignment pass is MERGED and unreleased; the CLEANUP PASS runs next, ahead of release one)
 
 **Stable `0.94.0` published 2026-08-07**, the content-identical promotion of `0.94.0-rc.2`: same
 source, same exports, same breaking list, proven end-to-end by ASC's 75-spec Playwright run
@@ -59,9 +59,9 @@ the live admin smoke and its transcript are in the post-mortem). Both hold under
 the discard nuance, is
 [`2026-08-06-history-revert-preview-design.md`](superpowers/specs/2026-08-06-history-revert-preview-design.md).
 
-**RELEASE ONE gates on the vertical-alignment pass. Pass A is CLOSED on the `vertical-alignment`
-branch (HEAD `4ed4d05f`), all tasks landed and gates green, but it is NOT merged, NOT released,
-and NOT visually verified.** Task 1's corrected inventory (5028 readings, 106 renders) found the
+**Pass A is MERGED to `main` (`f5b9a301`, 2026-08-08) and holds unreleased under `## Unreleased`.**
+Release one no longer gates on it; release one now follows the CLEANUP PASS, for the ordering
+reason recorded above. Task 1's corrected inventory (5028 readings, 106 renders) found the
 defect surface far smaller than the ratified cairn-wide design assumed: 5 confirmed admin rows, 0
 public rows, 2 reviewed declines. Geoff's same-day rescope (recorded in the plan's own text) cut
 the pass to what that inventory actually supported: task 2 (admin recipes, reduced to the 5
@@ -97,21 +97,23 @@ with the single-line case unchanged at a 0.00px baseline delta. `min-height`, no
 recipe's comment, which stated a mechanism measurement refutes, and gave `FieldRow` the `var()`
 fallback it needed to stop silently collapsing to `display: block` outside `[data-theme='cairn-admin']`.
 
-**What remains before this can merge, owed by the MAIN LOOP:**
-1. The CI baseline regeneration is IN FLIGHT (`gh workflow run e2e.yml -f update_snapshots=true
-   --ref vertical-alignment`, run `31245114459`). The admin suite's 18 existing baselines move
-   (three recomposed rows), and the widened site suite needs 25 of its 30 from nothing. CI commits
-   the PNGs straight back to this branch, so pull before pushing again.
-2. Read every regenerated crop against the visual-fidelity method and get Geoff's before/after.
-   Nothing has been read yet, and ~25 of these baselines will have been minted by a machine that
-   nobody has looked at, which is exactly what the one-check rule exists for.
-3. Rule on the one open ratification gap: the plan's rescope says `text-box: trim-both cap
-   alphabetic` ships, and it did not. The implementer declined it and a verifier independently
-   confirmed the evidence: it is inert where the spec wanted it (padded chip 23.00px unchanged,
-   `.btn btn-sm` 32.00px unchanged) and where it does bite it breaks the published grammar-tokens
-   contract (`type-chip` 13.00 to 7.14px, `type-label` 14.00 to 7.86px, against a test asserting
-   each type role's declaration "and nothing else"). The decline looks right and the plan text looks
-   wrong, but the rescope was ratified, so Geoff rules.
+**THE PASS IS MERGED.** `f5b9a301` on `main`, 2026-08-08, with the full gate verified on the merge
+commit itself (`npm run check` 0/0, `npm test` 414 files / 5300 tests exit 0). Run `npm run package`
+before `npm test` on a fresh checkout: several assertions read the BUILT package, and a stale `dist`
+produced six phantom failures on this very merge before the rebuild cleared them.
+
+CI regenerated both visual baselines on the canonical runner (run `31245114459`): 26 new site
+baselines written, and **zero admin baselines changed**. That result is not evidence the fixes
+failed, and the reason is the pass's most useful finding, recorded in ROADMAP's Now tier. The
+baselines were read at the extremes in both themes and hold the five-viewport bar.
+
+**One question is still open and it is Geoff's:** the plan's ratified rescope says
+`text-box: trim-both cap alphabetic` ships, and it did not. The implementer declined it and a
+verifier independently confirmed the evidence: it is inert where the spec wanted it (padded chip
+23.00px unchanged, `.btn btn-sm` 32.00px unchanged) and where it does bite it breaks the published
+grammar-tokens contract (`type-chip` 13.00 to 7.14px, `type-label` 14.00 to 7.86px, against a test
+asserting each type role's declaration "and nothing else"). The decline looks right and the plan
+text looks wrong, but the rescope was ratified, so Geoff rules. Nothing blocks on it.
 4. Only after 1 through 3: merge.
 
 **THEN THE CLEANUP PASS, NOT RELEASE ONE (Geoff, 2026-08-07).** The ordering changed once the

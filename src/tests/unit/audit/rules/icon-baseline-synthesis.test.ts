@@ -64,7 +64,7 @@ describe('icon-baseline-synthesis: the vacuous-pass guard', () => {
     expect(findings).toHaveLength(3);
     for (const finding of findings) {
       expect(finding.ruleId).toBe('icon-baseline-synthesis');
-      expect(finding.tier).toBe('error');
+      expect(finding.tier).toBe('advisory');
       expect(finding.message).toContain('items-baseline');
       expect(finding.message).toContain('cairn-icon-label');
     }
@@ -177,6 +177,103 @@ describe('icon-baseline-synthesis: silent cases', () => {
     const split = applySuppressions(check(file), [file]);
     expect(split.findings).toEqual([]);
     expect(split.suppressed.map((f) => f.ruleId)).toEqual(['icon-baseline-synthesis']);
+  });
+});
+
+// The tier is evidence-driven, so the evidence is pinned here rather than only described in the
+// rule's header. A 2026-08-07 adversarial verification measured 59 probes in Chromium: five markup
+// shapes that read exactly 0.00px, the correct result, still trip this rule, and the identical
+// defect in several adjacent spellings is silent. Neither set is a bug to fix at this tier; both
+// are the reason the tier is advisory, and a test is the only form of that claim that cannot rot.
+describe('icon-baseline-synthesis: the advisory boundary', () => {
+  it('registers at advisory tier and stamps every finding with it', () => {
+    expect(iconBaselineSynthesis.tier).toBe('advisory');
+    expect(check(fixture()).map((f) => f.tier)).toEqual(['advisory']);
+  });
+
+  it('hedges the claim, names both blind spots, and conditions the recipe on a word', () => {
+    const [finding] = check(fixture());
+    expect(finding.message).toContain('may synthesise');
+    expect(finding.message).toContain('Advisory');
+    expect(finding.message).toContain('position:absolute');
+    expect(finding.message).toContain('order-*');
+    expect(finding.message).toContain('component applies the class');
+    expect(finding.message).toContain('If a word sits beside the icon');
+    expect(finding.message).toContain('icon-only label the recipe');
+  });
+
+  describe('measured-correct shapes it still reports, which is why it does not gate', () => {
+    it('reports a first child taken out of flow by absolute positioning', () => {
+      expect(check(fixture({ children: '<CheckIcon class="absolute h-3 w-3" />Label' }))).toHaveLength(1);
+    });
+
+    it('reports a first child display:none removes from the flex item list entirely', () => {
+      expect(check(fixture({ children: '<CheckIcon class="hidden sm:block h-3 w-3" />Label' }))).toHaveLength(1);
+    });
+
+    it('reports a first child an order utility moves out of first position', () => {
+      expect(check(fixture({ children: '<CheckIcon class="order-last h-3 w-3" />Label' }))).toHaveLength(1);
+    });
+
+    it('reports a class handed to a component, which may apply it anywhere in its own markup', () => {
+      const file = parseComponent(
+        'Fixture.svelte',
+        '<div class="flex items-baseline gap-2">' +
+          '<Badge class="inline-flex items-center gap-1"><CheckIcon class="h-3 w-3" />Label</Badge>' +
+          '<span>Value</span>' +
+          '</div>\n'
+      );
+      expect(check(file)).toHaveLength(1);
+    });
+
+    it('reports an icon-only label, where the prescribed recipe measures identically either way', () => {
+      expect(check(fixture({ children: '<CheckIcon class="h-3 w-3" />' }))).toHaveLength(1);
+    });
+  });
+
+  describe('the identical defect in a spelling it does not read', () => {
+    it('is silent on a label spelled flex rather than inline-flex, measured at -1.75px', () => {
+      expect(check(fixture({ label: 'class="flex items-center gap-1"' }))).toEqual([]);
+    });
+
+    it('is silent on an <img> icon', () => {
+      expect(check(fixture({ children: '<img src="/check.svg" alt="" />Label' }))).toEqual([]);
+    });
+
+    it('is silent on an icon-font <i>', () => {
+      expect(check(fixture({ children: '<i class="fa fa-check"></i>Label' }))).toEqual([]);
+    });
+
+    it('is silent on an icon-font <span> carrying no child', () => {
+      expect(check(fixture({ children: '<span class="icon-check"></span>Label' }))).toEqual([]);
+    });
+
+    it('reads a max-* variant as unprefixed, so max-sm:flex-col silences the row everywhere', () => {
+      expect(check(fixture({ row: 'class="flex max-sm:flex-col items-baseline gap-2"' }))).toEqual([]);
+    });
+
+    it('is silent at every breakpoint once the label carries a single sm:self-* opt-out', () => {
+      expect(check(fixture({ label: 'class="inline-flex items-center gap-1 sm:self-center"' }))).toEqual([]);
+    });
+
+    it('is silent on a label one level below the row, since it reads direct AST children only', () => {
+      const file = parseComponent(
+        'Fixture.svelte',
+        '<div class="flex items-baseline gap-2">' +
+          '<div><span class="inline-flex items-center gap-1"><CheckIcon class="h-3 w-3" />Label</span></div>' +
+          '<span>Value</span>' +
+          '</div>\n'
+      );
+      expect(check(file)).toEqual([]);
+    });
+  });
+
+  // Corrected 2026-08-07 against an earlier review that filed this as a false positive. The rule
+  // is right here and only the earlier reason was wrong: an inline-flex box synthesises its
+  // baseline from the icon in an inline formatting context too, measured at -1.75px. Nothing here
+  // should acquire a flex-display precondition on the container.
+  it('reports the same label under a display:block container, a real -1.75px defect', () => {
+    expect(check(fixture({ row: 'class="block items-baseline gap-2"' }))).toHaveLength(1);
   });
 });
 

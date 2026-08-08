@@ -1,49 +1,80 @@
 // cairn-audit's icon-baseline-synthesis rule: a flex item whose OWN display is inline-flex, and
 // whose first rendered child is an icon, placed directly inside a container that declares
-// items-baseline (any breakpoint prefix), synthesises a flex baseline from the icon rather than
+// items-baseline (any breakpoint prefix), MAY synthesise a flex baseline from the icon rather than
 // from its own text. A flex container with no item that is itself baseline-aligned reports a
-// baseline from its FIRST item, so the icon (never the word beside it) supplies the row's
-// baseline, and the label's own text lands wherever the icon's cross-axis placement leaves it,
-// not on the row's shared text baseline (docs/internal/admin-design-system.md, "The recipes",
-// `.cairn-icon-label`). This is the mechanic the 2026-08 inventory confirmed at three call sites
-// in `CairnTidySettings.svelte`, fixed by giving the label `.cairn-icon-label` instead of a bare
-// `inline-flex`, before this rule existed to hold the fix.
+// baseline from its FIRST FLEX ITEM, so where that item is the icon (never the word beside it) it
+// supplies the row's baseline, and the label's own text lands wherever the icon's cross-axis
+// placement leaves it, not on the row's shared text baseline
+// (docs/internal/admin-design-system.md, "The recipes", `.cairn-icon-label`). This is the mechanic
+// the 2026-08 inventory confirmed at three call sites in `CairnTidySettings.svelte`, fixed by
+// giving the label `.cairn-icon-label` instead of a bare `inline-flex`, before this rule existed
+// to hold the fix.
 //
-// This is deliberately structural, never measured: the defect IS the markup shape, an inline-flex
-// wrapper that turns an icon-plus-word pair into its own flex context, so no rendered geometry is
-// needed to see it. That is the same authored-vs-rendered line that kept motion-band, gap-scale
-// and token-colors static after touch-targets and interactive-contrast graduated to rendered
-// because a regex could not read computed geometry; this mechanic never needed to measure
-// anything; the class list and the first child's tag name are the whole finding.
+// This is deliberately structural, never measured: the shape it reads is the markup shape, an
+// inline-flex wrapper that turns an icon-plus-word pair into its own flex context, so no rendered
+// geometry is needed to see it. That is the same authored-vs-rendered line that kept motion-band,
+// gap-scale and token-colors static after touch-targets and interactive-contrast graduated to
+// rendered because a regex could not read computed geometry.
 //
-// Four guards keep the structural read from becoming a false positive. (1) A label that carries
-// its own `items-baseline` has already applied the recipe's load-bearing half (the recipe
-// baseline-aligns the label's own items so the word, not the icon, supplies the label's baseline);
-// a label that opts out of the row's `align-items` entirely with a `self-*` utility is exempt for
-// the same reason a value never reaches the row's alignment in the first place. (2) A container
-// whose own effective flex-direction at the `items-baseline` token's breakpoint is `column`, not
-// `row`, never synthesises a baseline this way: `align-items: baseline` on a column-direction
-// container behaves as `flex-start` along the inline axis. (3) A class token sourced from a
-// Svelte `class:` directive, or one that shares its variant prefix with another member of the
-// same mutually exclusive utility group (two `display` values, two `align-items` values), is the
-// shape a conditional expression's two branches leave once `markup.ts` merges both into one
-// element's class set; such a token is read as unreliable rather than proof the class always
-// applies. All three only make the rule quieter, never louder: the finding withheld may still be
-// a real defect at runtime, which is the acceptable direction of error for an error-tier rule.
+// TIER: advisory, deliberately, and the evidence says so. A 2026-08-07 adversarial verification
+// measured 59 probes in Chromium and reproduced five markup shapes that measure exactly 0.00px,
+// the correct result, and still trip this rule. Three are structural and unreachable from source
+// alone: a first AST child that is not the first FLEX ITEM (`position:absolute`, `display:none`,
+// or an `order-*` utility all reorder or remove it, and `<Icon class="hidden sm:block"/>` is
+// ordinary markup); a `class` handed to a Svelte COMPONENT, which the component may apply to any
+// element it likes, with slotted children that need not be its DOM children; and an ICON-ONLY
+// label, where the prescribed `.cairn-icon-label` measures identically before and after, so the
+// message asks for a change that cannot make the finding go away. The last one is the decisive
+// disqualifier: an error tier breaks a consumer's build, and a rule that gates a build owes that
+// consumer a fix that works. Advisory reports the same shape without that debt. `ROADMAP.md`
+// carries the four concrete steps that would earn `error` later.
+//
+// RECALL, stated so the boundary is not mistaken for coverage. The rule sees ONE spelling of one
+// shape. It reads only a label spelled `inline-flex`, and the identical defect written `flex`
+// measures -1.75px and stays silent, since flexbox baseline synthesis does not depend on inner
+// versus outer display. It reads only an icon spelled `<svg>`, `*Icon`, `data-icon`, or a
+// single-child `span`/`div` around one of those, so lucide's own documented default-import
+// spelling (`import Check from '@lucide/svelte/icons/check'`, rendered `<Check />`), an `<img>`,
+// an `<i class="fa fa-check">` and an icon-font `<span>` are all invisible. It reads only a DIRECT
+// AST child of the row, so an intervening block or component boundary hides the label. And it
+// reads only Tailwind's six min-width breakpoint names, so `max-*`, `dark:` and `print:` all
+// resolve as base. A `sm:items-baseline` or a `sm:self-center` on the label silences it at every
+// breakpoint and state.
+//
+// Four guards keep the structural read quieter than it could be. (1) A label that carries its own
+// `items-baseline` has already applied the recipe's load-bearing half (the recipe baseline-aligns
+// the label's own items so the word, not the icon, supplies the label's baseline); a label that
+// opts out of the row's `align-items` entirely with a `self-*` utility is exempt for the same
+// reason a value never reaches the row's alignment in the first place. (2) A container whose own
+// effective flex-direction at the `items-baseline` token's breakpoint is `column`, not `row`,
+// never synthesises a baseline this way: `align-items: baseline` on a column-direction container
+// behaves as `flex-start` along the inline axis. (3) A class token sourced from a Svelte `class:`
+// directive, or one that shares its variant prefix with another member of the same mutually
+// exclusive utility group (two `display` values, two `align-items` values), is the shape a
+// conditional expression's two branches leave once `markup.ts` merges both into one element's
+// class set; such a token is read as unreliable rather than proof the class always applies.
 // (4) Icon detection also reads a bare sizing wrapper one level deep, a common way to give an icon
-// its own size box; it remains a naming and shape convention, never an import resolution, so an
-// icon imported under an alias that drops the `*Icon` suffix stays a documented miss, not a wrong
-// flag.
+// its own size box; it remains a naming and shape convention, never an import resolution.
+//
+// One case that looks like a false positive and is not: a `display:block` container. The rule
+// fires there, and the measurement agrees at -1.75px, because an `inline-flex` box's baseline is
+// icon-synthesised in an inline formatting context too. Do not add a flex-display precondition on
+// the container to "fix" it.
 import { utilityBase } from './utility.js';
 import type { ClassToken, ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 const MESSAGE =
   'this label is its own inline-flex flex context with an icon as its first child, inside a row ' +
-  'declaring items-baseline; a flex container with no baseline-aligned item synthesises the row\'s ' +
-  'baseline from its FIRST item, the icon, not from the label\'s own word, so the declared ' +
-  'items-baseline alignment cannot hold. Give the label .cairn-icon-label instead of inline-flex ' +
-  '(docs/internal/admin-design-system.md, "The recipes")';
+  'declaring items-baseline. A flex container with no baseline-aligned item takes its baseline ' +
+  'from its FIRST FLEX ITEM, so this label may synthesise the row\'s baseline from the icon ' +
+  'rather than from its own word, and the declared items-baseline alignment would not hold. ' +
+  'Advisory, because this is read from source and two things are invisible here: whether the icon ' +
+  'is really the first FLEX ITEM (position:absolute, display:none or an order-* utility moves it) ' +
+  'and, on a component, where that component applies the class it was handed. If a word sits ' +
+  'beside the icon, give the label .cairn-icon-label instead of inline-flex ' +
+  '(docs/internal/admin-design-system.md, "The recipes"); on an icon-only label the recipe ' +
+  'changes nothing, since there is no word for it to expose';
 
 const ICON_COMPONENT_NAME = /Icon$/;
 
@@ -172,7 +203,8 @@ function hasSamePrefixConflict(classes: Set<string>, token: ClassToken, group: S
 /**
  * Whether a class token is trustworthy enough to justify a finding. Skipping an unreliable token
  * only makes the rule quieter, never louder: the finding it withholds may still be a real defect
- * at runtime, which is the acceptable direction of error for a structural, error-tier rule.
+ * at runtime, which is the acceptable direction of error for a rule whose recall is already
+ * bounded to one spelling of one shape.
  */
 function isReliablyDeclared(
   node: SourceNode,
@@ -220,8 +252,9 @@ function firstRealChild(file: ParsedComponent, parent: SourceNode): SourceNode |
  * baseline. This is a naming and shape convention, never an import resolution: an icon imported
  * under an alias that drops the `*Icon` suffix (`import Check from '@lucide/svelte/icons/check'`,
  * rendered `<Check />`) reads as an ordinary component, since this substrate builds no import
- * table. That gap is a missed finding, not a wrong one, so it does not threaten the rule's
- * error-tier precision bar the way a false positive would.
+ * table. So do an `<img>`, an `<i class="fa fa-check">` and an icon-font `<span>`. Each is a
+ * missed finding rather than a wrong one, and together they are most of why this rule's recall is
+ * narrow enough to state at the top of the file.
  */
 function isIconNode(file: ParsedComponent, node: SourceNode): boolean {
   if (node.type === 'RegularElement' && node.name === 'svg') return true;
@@ -249,7 +282,7 @@ function tokensFor(file: ParsedComponent, elementStart: number, utility: string)
 
 export const iconBaselineSynthesis: StaticRule = {
   id: 'icon-baseline-synthesis',
-  tier: 'error',
+  tier: 'advisory',
   check(ctx) {
     const findings: Finding[] = [];
     for (const file of ctx.files) {
@@ -282,7 +315,7 @@ export const iconBaselineSynthesis: StaticRule = {
           if (hasSelfAlign(childClasses)) continue;
           findings.push({
             ruleId: 'icon-baseline-synthesis',
-            tier: 'error',
+            tier: 'advisory',
             file: file.file,
             line: inlineToken.line,
             start: inlineToken.start,

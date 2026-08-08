@@ -259,6 +259,19 @@ The original decision framing, for the record:
     rendering, so a static rule built on it reaches ASC's `/join` icon-card defect class the same way
     the dropped rendered `cairn-audit` rule would have, with no browser. ASC already fixed its own
     instance by hand, so this closes future recurrence rather than a live defect.
+  - **Three more `/admin-toolkit` components carry layout in Tailwind classes with no scoped
+    `<style>`, so they silently collapse outside `[data-theme='cairn-admin']`,** exactly as
+    `FieldRow` did before this pass fixed it. The compiled admin sheet scopes every rule under the
+    theme root, and a cairn-only `@utility` (`gap-label`, `gap-control`, the `type-*` roles) is not
+    even defined in a consumer's own Tailwind build, so an extending developer composing these in
+    a custom route outside the shell gets `display: block` and no gap. The three:
+    `FieldLabel`'s stacked register (`flex flex-col gap-label`, on the `$derived` class string at
+    line 52), `EmptyState.svelte:57`, and `OfficeList.svelte:37-38`. This is a live defect on
+    shipped consumer surface, not a documented gap. The convention to follow is a bespoke
+    `toolkit-*` class in a scoped `<style>` carrying the measured literal as a `var()` fallback,
+    and `ListToolbar.svelte:510` (`.toolkit-toolbar-band`) is the only real precedent in the
+    toolkit. An earlier review cited `FieldLabel.svelte:38` as a second precedent; that is wrong,
+    since `FieldLabel` carries no `<style>` block at all.
   Full measurement: `docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`.
 
 - **Exercise a server-only subpath under real Wrangler in cairn's own CI.** The `0.94.0-rc.1`
@@ -592,6 +605,30 @@ the named human gates only):**
   page, so a page mounting more than one is only partly checked, and its explicit-face exemption
   net misses variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
   and Tailwind 4's `font-(family-name:--x)` shorthand.
+
+- **Earn `error` tier for `icon-baseline-synthesis`** (vertical-alignment pass, 2026-08-07), filed
+  to the pre-beta pass that owns audit-rule breadth rather than taken here. The rule ships at
+  advisory because an adversarial verification measured 59 Chromium probes and reproduced five
+  markup shapes reading exactly 0.00px, the correct result, that trip it anyway. Four concrete
+  steps remove every measured false positive with recall unchanged, so they are a precision fix,
+  not a rewrite:
+  1. Skip a first child carrying `absolute`, `fixed`, `hidden`, or an `order-*` utility. Each one
+     means the icon is not the first flex item, which is the whole premise of the finding.
+  2. Skip a child whose node type is `Component`. A `class` on a component is a prop the component
+     may apply anywhere, and its slotted children need not be its DOM children, so the read is
+     unsound by construction rather than merely imprecise.
+  3. Require a non-icon rendered sibling inside the label. An icon-only label has no word to
+     expose, and the prescribed `.cairn-icon-label` measures identically before and after
+     (-4.00px both ways), so the message asks for a change that cannot clear the finding. This is
+     the disqualifier that decided the tier: an error tier breaks a consumer's build and owes that
+     consumer a fix that works.
+  4. Apply the existing `isReliablyDeclared` guard to direction tokens as well, and scope the two
+     label exemptions (`items-baseline`, `self-*`) by variant prefix, so a `sm:`-only opt-out stops
+     silencing the base breakpoint.
+  Broadening recall is separate work and does not gate the tier: reading the `flex` spelling (the
+  identical defect, measured -1.75px, silent today), and reaching icons named outside this tree's
+  `*Icon` convention (lucide's own default import, `<img>`, icon fonts). Evidence and the measured
+  numbers: `docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`.
 
 - **Three design-system gaps found in the same triage.** `Pagination`'s selected page
   (`src/lib/admin-toolkit/Pagination.svelte`) conveys its state by fill alone: `btn-active` swaps

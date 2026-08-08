@@ -60,6 +60,7 @@ export function checkSkillBudget(text, budget = SKILL_BUDGET_TOKENS) {
  */
 const TIER_MAP_SECTIONS = [
   { label: 'Static, error tier', mode: 'static', tier: 'error' },
+  { label: 'Static, advisory tier', mode: 'static', tier: 'advisory' },
   { label: 'Rendered, error tier', mode: 'rendered', tier: 'error' },
   { label: 'Rendered, advisory tier', mode: 'rendered', tier: 'advisory' },
 ];

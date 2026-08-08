@@ -83,6 +83,43 @@ ground truth and asked whether the code conformed. Only the auditor, asked wheth
 TRUSTWORTHY, caught it. Any verification fan-out needs at least one agent whose question is
 whether the whole thing is right rather than whether it matches the brief that produced it.
 
+**A static rule's precision bar is set by its TIER, and an error-tier rule cannot be sloppy,**
+because a false positive breaks somebody else's build. `icon-baseline-synthesis` was written to
+`error` on a ruling that an advisory guardrail is inert unless somebody runs it and reads it. An
+adversarial verification then measured 59 Chromium probes and found five markup shapes reading
+exactly 0.00px, the correct result, that the rule reports anyway: a first AST child that is not
+the first FLEX ITEM (`position: absolute`, `display: none`, an `order-*` utility), a `class` handed
+to a Svelte component, and an icon-only label. It shipped at advisory.
+
+**The decisive disqualifier was a finding whose own prescribed fix did not fix it.** Two of the
+five are precision problems, arguable against the value of a gate. The icon-only label is not: the
+message prescribes `.cairn-icon-label`, and the label measures -4.00px before the change and
+-4.00px after, because there is no word for the recipe to expose. A consumer handed that finding at
+error tier cannot make their build green by doing what the message says. That is the test to apply
+to any gating rule before its tier is chosen, and it is cheaper than a precision census: take the
+rule's own remedy, apply it to the finding, and measure. If the number does not move, the rule does
+not gate.
+
+The corollary the same round produced: a claimed false positive is not one until it is measured.
+A `display: block` container was reported as a false positive and is not. It measures -1.75px, a
+real defect, because an `inline-flex` box's baseline is icon-synthesised in an inline formatting
+context too. Only the stated REASON was wrong. Correcting a rule on a review's reasoning rather
+than on a measurement would have removed a true finding.
+
+## The cascade finding: `height` in `@layer components` is a silent no-op
+
+Layers beat specificity, and Tailwind's `utilities` layer comes after `components`, so a
+`height: 1lh` written in a `cairn-admin.css` `@layer components` rule never applies to an element
+carrying an `h-3.5` utility. It does not warn, it does not lose a specificity fight a developer can
+see in devtools; it simply does not apply, and the measurement reads as if the rule were never
+written (-1.79px, unchanged). The sibling recipe fix used `min-height` instead, which wins by
+being a DIFFERENT PROPERTY that no size utility sets, and which only ever grows the box, so an
+oversized glyph keeps its authored size.
+
+**Reach for the different property before reaching for `!important` or an unlayered rule.** The
+general shape: when an admin-sheet rule has to beat a utility, the durable move is a property the
+utility namespace does not write, not a stronger form of the same property.
+
 ## The method finding: the image settles what arithmetic cannot
 
 Three rounds of numeric correction moved the inventory from 37 above-bar rows to 13 to 10 without

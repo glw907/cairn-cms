@@ -35,14 +35,18 @@
 // baseline is CORRECT typography whose glyph centres diverge by design; measuring it by centre
 // reports every well-set heading-plus-eyebrow row as broken. See {@link metricForPairClass}.
 //
-// TRAP 1 ANSWERS "WHICH LINE", NEVER "SHOULD THIS PAIR WITH A LINE AT ALL". Pairing with the first
-// line is right where the row aligns its members by their tops or their baselines. Where the row
-// centres its members and the text block WRAPS, the composition deliberately centres the other
-// member on the WHOLE block, and the first-line reading is short by half the block's extra height:
-// a reading that grows with the line count and swings 3x between viewport widths on identical,
-// correctly composed pixels. Every reading is therefore split into a COMPOSITION term, what that
-// row's own alignment asks for, and a RESIDUAL, what is left over. See {@link compositionPx}: the
-// residual is the defect, and the raw delta is not.
+// TRAP 1 ANSWERS "WHICH LINE", NEVER "SHOULD THIS PAIR WITH A LINE AT ALL". Every reading is
+// therefore split into a COMPOSITION term, what that row's own alignment asks for, and a RESIDUAL,
+// what is left over. See {@link compositionPx}: the residual is the defect, and the raw delta is
+// not. Two alignments displace a reading, and reading either one as a defect is a phantom.
+// Where the row CENTRES its members and the text block wraps, the composition deliberately centres
+// the other member on the WHOLE block, and the first-line reading is short by half the block's
+// extra height: a reading that grows with the line count and swings 3x between viewport widths on
+// identical, correctly composed pixels. Where the row TOP-ALIGNS them, it levelled their boxes and
+// asked for nothing else, so a member read at its centre sits half its own box below the line
+// beside it: a reading that scales with that member's height, 11.5px on a 36px icon tile and 5.5px
+// on a 28px one, again with nothing to fix. What survives both terms is a member whose visible
+// content does not sit where its own box puts it, which is the defect this module was built on.
 //
 // SPLIT BY DESIGN: {@link collectVerticalPairsInPage} runs inside the browser and only reads
 // geometry; classification and the delta are pure functions over what it returns. Playwright
@@ -120,6 +124,18 @@ export interface MemberAnchor {
   contentCentrePx: number;
   /** Centre of the element's own border box, kept beside the content reading so a caller can show both. */
   elementCentrePx: number;
+  /**
+   * Top of the ROW MEMBER's own border box, which is the box the row's alignment placed. It differs
+   * from {@link MemberAnchor.topPx} whenever the reading was taken off something inside the member:
+   * an icon centred in a 36px tile, or the one control inside a stacked composite.
+   *
+   * This is the geometry a top-aligned row is judged against. Under `flex-start` the row put these
+   * boxes level and nothing else, so a reading taken at a member's CENTRE is displaced from a
+   * reading taken on a line by exactly the difference in where those two sit inside their own boxes.
+   */
+  memberTopPx: number;
+  /** Bottom of that same member box. */
+  memberBottomPx: number;
   /** The alphabetic baseline, or null on a member that renders no line box. */
   baselinePx: number | null;
   /**
@@ -413,6 +429,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       bottomPx: round(inkBottom),
       contentCentrePx: round((inkTop + inkBottom) / 2),
       elementCentrePx: round((elementRect.top + elementRect.bottom) / 2),
+      memberTopPx: round(inkTop),
+      memberBottomPx: round(inkBottom),
       baselinePx: round(baseline),
       capCentrePx: round(baseline - capHeightFor(font) / 2),
       text: text.slice(0, 40),
@@ -581,6 +599,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       bottomPx: round(bottom),
       contentCentrePx: round((top + bottom) / 2),
       elementCentrePx: round((rect.top + rect.bottom) / 2),
+      memberTopPx: round(rect.top),
+      memberBottomPx: round(rect.bottom),
       baselinePx: null,
       capCentrePx: null,
       text: '',
@@ -610,6 +630,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       bottomPx: round(rect.bottom),
       contentCentrePx: round((rect.top + rect.bottom) / 2),
       elementCentrePx: round((rect.top + rect.bottom) / 2),
+      memberTopPx: round(rect.top),
+      memberBottomPx: round(rect.bottom),
       baselinePx: null,
       capCentrePx: null,
       text: (el.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 40),
@@ -780,14 +802,33 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
   }
 
   /**
+   * The border box of the row member itself, which is the box the row's alignment placed. A text
+   * node member has no box of its own, so its line bands are its extent.
+   */
+  function memberBox(member: Node, bands: VerticalBand[]): VerticalBand | null {
+    if (member.nodeType === Node.ELEMENT_NODE) {
+      const rect = (member as Element).getBoundingClientRect();
+      return rect.bottom > rect.top ? { top: rect.top, bottom: rect.bottom } : null;
+    }
+    return bands.length > 0 ? { top: bands[0].top, bottom: bands[bands.length - 1].bottom } : null;
+  }
+
+  /**
    * The fields that belong to the ROW MEMBER rather than to the element the reading came off. A
    * text member's reading is one line of a block the row may have chosen to centre as a whole, and
-   * nothing at the reading's own element can see that.
+   * nothing at the reading's own element can see that. Nor can it see the box the row aligned: an
+   * icon centred in a tile and the one control inside a stacked composite are both read off
+   * something smaller than the member the row placed.
    */
   function withMemberContext(anchor: MemberAnchor, member: Node, containerAlignItems: string): MemberAnchor {
     const bands = lineBands(member);
     anchor.alignSelf = alignmentOf(member, containerAlignItems);
     anchor.lineCount = bands.length;
+    const box = memberBox(member, bands);
+    if (box) {
+      anchor.memberTopPx = round(box.top);
+      anchor.memberBottomPx = round(box.bottom);
+    }
     // Only a text member reads one line. An icon, a control, and a padding box are each read whole,
     // so a row centring them has already been given what it asked for.
     anchor.blockLiftPx = anchor.kind === 'text' ? blockLift(bands) : 0;
@@ -1003,6 +1044,8 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
       bottomPx: round(padBottom),
       contentCentrePx: round((padTop + padBottom) / 2),
       elementCentrePx: round((rect.top + rect.bottom) / 2),
+      memberTopPx: round(rect.top),
+      memberBottomPx: round(rect.bottom),
       baselinePx: null,
       capCentrePx: null,
       text: '',
@@ -1078,32 +1121,76 @@ export function isCentredAlignment(alignment: string): boolean {
 }
 
 /**
+ * Whether an alignment keyword puts a member's own box at the row's start edge, which is what makes
+ * a size difference between two members displace their centres by construction.
+ *
+ * `stretch` and the `normal` that resolves to it are deliberately NOT start alignments here. A
+ * stretched member's box is the row's own height, so its box centre says nothing about where its
+ * content was asked to sit, and a term built on it would be a term built on the row.
+ */
+export function isStartAlignment(alignment: string): boolean {
+  const keyword = alignment.replace(/^(safe|unsafe)\s+/, '');
+  return keyword === 'flex-start' || keyword === 'start' || keyword === 'self-start';
+}
+
+/**
+ * Where a member's reading sits when the row places its box at the start edge and nothing inside
+ * the member is misplaced, or null when the member carries no such reading.
+ *
+ * The two kinds answer differently because they are READ differently, not because of what they are.
+ * A member read WHOLE (an icon, a control, a padding box) is read at its centre, which top
+ * alignment puts half its own box below the row's start edge. A member read off ONE LINE (trap 1)
+ * is read near its own top, and top alignment put that line where the reading found it. This is the
+ * same asymmetry {@link MemberAnchor.blockLiftPx} already carries, for the same reason.
+ */
+function placedReadingPx(anchor: MemberAnchor, metric: PairMetric): number | null {
+  if (anchor.kind === 'text') return referenceForMetric(anchor, metric);
+  if (anchor.memberBottomPx <= anchor.memberTopPx) return null;
+  return (anchor.memberTopPx + anchor.memberBottomPx) / 2;
+}
+
+/**
  * The part of a pair's delta the row's own composition asks for, which is therefore not a defect.
+ * Two alignments displace a reading, and each gets its own term.
  *
- * A text member is read off its FIRST LINE (trap 1), so where the row centres its members and that
- * member's text wraps, the row has deliberately put the OTHER member half a block lower than the
- * line the reading was taken on. That distance is {@link MemberAnchor.blockLiftPx}, and it is the
- * whole composition term: subtract it and what remains is the row failing to do what it asked for.
+ * CENTRING, and the wrapped block. A text member is read off its FIRST LINE (trap 1), so where the
+ * row centres its members and that member's text wraps, the row has deliberately put the OTHER
+ * member half a block lower than the line the reading was taken on. That distance is
+ * {@link MemberAnchor.blockLiftPx}. An OPTICAL suspect always carries it, since its padding box
+ * spans every line by construction while its glyph reading is the first line.
  *
- * Three cases, each a different answer:
+ * TOP ALIGNMENT, and the taller box. Under `flex-start` the row put the members' own boxes level
+ * and asked for nothing else. A member read at its centre therefore sits half its own box below
+ * that edge, while a member read off one line sits a line's worth below it, so the two readings
+ * differ by exactly the difference in where each sits inside its own box: a 36px icon tile beside a
+ * 13px line reads 11.5px apart with the ink dead centre in the tile and nothing to fix. The term is
+ * that difference, so what survives it is a member whose visible content does NOT sit where its own
+ * box puts it, which is the `/join` ink defect this module was built on and which the `icon-card`
+ * fixture proves still survives the subtraction. It is taken only under `content-centre`: a
+ * baseline pair compares two baselines, which no box geometry enters.
  *
- * - An OPTICAL suspect always carries it. Its padding box spans every line by construction, while
- *   its glyph reading is the first line, so a wrapped label reads half a block high with nothing
- *   misconfigured.
- * - A CENTRED row carries it, since centring a wrapped block on purpose is what produces it.
- * - Any other row carries none. Under `flex-start`, `start` and `baseline`, pairing with the first
- *   line IS the intent, so the expected reading is zero and the raw delta is already the defect.
- *   Under `stretch` (and the `normal` that resolves to it) a definite-height member sits at the
- *   row top, which is the same intent.
+ * A row where only one member takes the alignment carries no term at all, in either case.
  *
- * NOT MODELLED, and stated rather than silently folded in: an `end`-aligned row pairs with the
- * block's LAST line, and a grid member spanning several rows centres on the span. Both leave a
- * composition term in the residual, which is why a caller keeps room for a reviewed ruling.
+ * NOT MODELLED, and stated rather than silently folded in. An `end`-aligned row pairs with the
+ * block's LAST line. A grid member spanning several rows centres on the span. Under top alignment
+ * the term also absorbs generous leading: a small icon level with a text member whose first line
+ * sits low inside its own line box reads clean here, because the row got the tops it asked for and
+ * choosing `items-center` instead is a design call rather than a measurement. Each leaves a
+ * composition in the residual or takes one out of it, which is why a caller keeps room for a
+ * reviewed ruling.
  */
 export function compositionPx(pair: RawPair): number {
   const lift = Math.round((pair.b.blockLiftPx - pair.a.blockLiftPx) * 100) / 100;
   if (pair.rowKind === 'optical-suspect') return lift;
   if (isCentredAlignment(pair.a.alignSelf) && isCentredAlignment(pair.b.alignSelf)) return lift;
+  if (isStartAlignment(pair.a.alignSelf) && isStartAlignment(pair.b.alignSelf)) {
+    const metric = metricForPairClass(classifyPair(pair.a, pair.b));
+    if (metric !== 'content-centre') return 0;
+    const a = placedReadingPx(pair.a, metric);
+    const b = placedReadingPx(pair.b, metric);
+    if (a === null || b === null) return 0;
+    return Math.round((a - b) * 100) / 100;
+  }
   return 0;
 }
 
@@ -1167,6 +1254,15 @@ export interface VerticalCalibrationFixture {
   expectedSign: 1 | -1;
   minMagnitudePx: number;
   maxMagnitudePx: number;
+  /**
+   * The largest composition term this shape's own alignment can honestly ask for. A term beyond it
+   * means the decomposition has started explaining the defect away rather than accounting for the
+   * row, which is the failure that would quietly empty an inventory.
+   *
+   * A fixture whose bound is above zero is a POSITIVE CONTROL on the term: the row takes a
+   * composition and the defect survives it. `icon-card` is one, since it top-aligns.
+   */
+  maxCompositionPx: number;
 }
 
 /**
@@ -1182,7 +1278,9 @@ export interface VerticalCalibrationFixture {
  * centre: an element-box reading lands under the 2px reporting bar while the ink reading does not,
  * which is the whole of trap 3 in one fixture. The title is one text node held to a narrow column
  * so it WRAPS rather than breaking on markup: trap 1 is about the first line box of a run, and a
- * run split by a `<br>` gives the walk a single-line node that would pass either way.
+ * run split by a `<br>` gives the walk a single-line node that would pass either way. It also
+ * TOP-ALIGNS, so it is the positive control on the top-alignment composition term: the row takes a
+ * term of about half a pixel and the 4px ink defect survives it whole.
  */
 export const VERTICAL_CALIBRATION_FIXTURES: VerticalCalibrationFixture[] = [
   {
@@ -1195,6 +1293,7 @@ export const VERTICAL_CALIBRATION_FIXTURES: VerticalCalibrationFixture[] = [
     expectedSign: 1,
     minMagnitudePx: 11.5,
     maxMagnitudePx: 13.5,
+    maxCompositionPx: 0,
     html: `<div class="cairn-calibration-season-row"
         style="display:flex;align-items:center;gap:8px;padding:16px;font-family:sans-serif">
   <label style="display:flex;flex-direction:column;gap:5px">
@@ -1216,6 +1315,7 @@ export const VERTICAL_CALIBRATION_FIXTURES: VerticalCalibrationFixture[] = [
     expectedSign: -1,
     minMagnitudePx: 2.8,
     maxMagnitudePx: 5.1,
+    maxCompositionPx: 1,
     html: `<div class="cairn-calibration-icon-card"
         style="display:flex;align-items:flex-start;gap:12px;width:320px;padding:16px;font-family:sans-serif">
   <span style="display:flex;align-items:center;flex:none;height:24px">
@@ -1236,10 +1336,12 @@ export const VERTICAL_CALIBRATION_FIXTURES: VerticalCalibrationFixture[] = [
  * measures a real corpus runs this first and refuses to emit on a non-null answer: a method that
  * cannot reproduce a known defect has no standing to report a screen clean.
  *
- * The verdict is taken on the RESIDUAL, the same number a caller dispositions on. Both fixtures
- * are composed so that their composition term is zero, which makes this check the guard on the
- * decomposition too: a rule that started explaining these two defects away as composition would
- * fail here rather than quietly emptying the inventory.
+ * The verdict is taken on the RESIDUAL, the same number a caller dispositions on, and the
+ * composition term is bounded by {@link VerticalCalibrationFixture.maxCompositionPx}, which makes
+ * this check the guard on the decomposition too: a rule that started explaining these two defects
+ * away as composition would fail here rather than quietly emptying the inventory. `icon-card`
+ * top-aligns, so it DOES take a term and the defect survives it, which is the one positive control
+ * the term has.
  */
 export function calibrationMiss(fixture: VerticalCalibrationFixture, pairs: MeasuredPair[]): string | null {
   const candidates = pairs.filter(
@@ -1251,8 +1353,11 @@ export function calibrationMiss(fixture: VerticalCalibrationFixture, pairs: Meas
   const pair = candidates.reduce((best, next) =>
     next.residualMagnitudePx > best.residualMagnitudePx ? next : best
   );
-  if (pair.compositionPx !== 0) {
-    return `${fixture.id}: measured a composition term of ${pair.compositionPx}px, expected none.`;
+  if (Math.abs(pair.compositionPx) > fixture.maxCompositionPx) {
+    return (
+      `${fixture.id}: measured a composition term of ${pair.compositionPx}px, expected at most ` +
+      `${fixture.maxCompositionPx}px.`
+    );
   }
   if (Math.sign(pair.residualPx) !== fixture.expectedSign) {
     return `${fixture.id}: measured ${pair.residualPx}px, expected the sign to be ${fixture.expectedSign}.`;

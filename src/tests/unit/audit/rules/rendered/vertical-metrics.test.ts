@@ -16,6 +16,7 @@ import {
   calibrationMiss,
   classifyPair,
   isCentredAlignment,
+  isStartAlignment,
   measurePair,
   measureVerticalMetrics,
   metricForPairClass,
@@ -88,6 +89,10 @@ function anchor(kind: MemberKind, values: Partial<MemberAnchor> = {}): MemberAnc
     bottomPx: 10,
     contentCentrePx: 5,
     elementCentrePx: 5,
+    // The member box the row placed, which defaults to the reading's own box: a member whose
+    // visible content fills the box the row aligned. A test about top alignment sets it apart.
+    memberTopPx: 0,
+    memberBottomPx: 10,
     baselinePx: kind === 'text' ? 8 : null,
     capCentrePx: kind === 'text' ? 4 : null,
     text: '',
@@ -205,12 +210,17 @@ describe('the composition term, and why the residual is the defect', () => {
     expect(pairsAboveBar([pair as MeasuredPair])).toHaveLength(1);
   });
 
-  it('takes no composition term on a top-aligned or baseline-aligned row, where the line is the intent', () => {
+  it('takes no wrapped-block term on a top-aligned or baseline-aligned row, where the line is the intent', () => {
     for (const alignment of ['flex-start', 'start', 'baseline', 'stretch', 'normal', 'flex-end']) {
       const pair = measurePair(
-        rawPair(anchor('icon', { contentCentrePx: 24, alignSelf: alignment }), wrapped(3, { capCentrePx: 4, alignSelf: alignment }))
+        rawPair(
+          // The member box matches the reading, so top alignment asks for nothing either: what is
+          // asserted here is that a wrapped block alone buys no term outside a centred row.
+          anchor('icon', { contentCentrePx: 24, memberTopPx: 20, memberBottomPx: 28, alignSelf: alignment }),
+          wrapped(3, { capCentrePx: 24, alignSelf: alignment })
+        )
       );
-      expect(pair).toMatchObject({ deltaPx: 20, compositionPx: 0, residualPx: 20 });
+      expect(pair).toMatchObject({ deltaPx: 0, compositionPx: 0, residualPx: 0 });
     }
   });
 
@@ -220,7 +230,6 @@ describe('the composition term, and why the residual is the defect', () => {
     );
     expect(pair?.compositionPx).toBe(0);
   });
-
   it('reads a `safe center` row as centred, since the keyword only changes the overflow case', () => {
     expect(isCentredAlignment('safe center')).toBe(true);
     expect(isCentredAlignment('unsafe center')).toBe(true);
@@ -248,6 +257,124 @@ describe('the composition term, and why the residual is the defect', () => {
     expect(control?.compositionPx).toBe(icon?.compositionPx);
     expect(control?.residualPx).toBe(icon?.residualPx);
   });
+});
+
+// The second premise check, and the second phantom. Trap 1 answers which line; the composition term
+// above answers whether a CENTRED row pairs with a line at all. Neither answers what a TOP-ALIGNED
+// row asked for, and the first corrected emission of the inventory assumed the raw delta was
+// already the defect there. It is not: top alignment levels the members' own boxes and asks for
+// nothing else, so a member read at its centre sits half its own box below the line beside it.
+describe('the top-alignment term, and the taller member that is not a defect', () => {
+  /** An icon of `ink` px of art, centred in a `box` px member tile whose top sits at `top`. */
+  function tiled(box: number, ink: number, top = 0, values: Partial<MemberAnchor> = {}) {
+    const centre = top + box / 2;
+    return anchor('icon', {
+      alignSelf: 'flex-start',
+      memberTopPx: top,
+      memberBottomPx: top + box,
+      topPx: centre - ink / 2,
+      bottomPx: centre + ink / 2,
+      contentCentrePx: centre,
+      elementCentrePx: centre,
+      ...values,
+    });
+  }
+
+  /** The line beside it: one line of 13px type whose cap centre sits 6.5px below the row top. */
+  function firstLine(values: Partial<MemberAnchor> = {}) {
+    return anchor('text', {
+      alignSelf: 'flex-start',
+      memberTopPx: 0,
+      memberBottomPx: 117,
+      topPx: 0,
+      bottomPx: 13,
+      capCentrePx: 6.5,
+      lineCount: 9,
+      blockLiftPx: 52,
+      ...values,
+    });
+  }
+
+  it('reads a top-aligned tile taller than the line beside it as composition, leaving no residual', () => {
+    // The admin's own shape: a 36px icon tile, ink dead centre, `items-start` beside a wrapped
+    // block. 11.5px apart on screen and nothing to fix.
+    const pair = measurePair(rawPair(tiled(36, 15), firstLine()));
+    expect(pair).toMatchObject({ deltaPx: 11.5, compositionPx: 11.5, residualPx: 0 });
+    expect(pairsAboveBar([pair as MeasuredPair])).toEqual([]);
+  });
+
+  it('scales the term with the member box, which is the signature that it is not an ink offset', () => {
+    // Two tiles, one recipe: 36px reads 11.5px and 28px reads 7.5px, both correct as built. A
+    // reading that tracks the TILE rather than the ink is composition by construction.
+    expect(measurePair(rawPair(tiled(36, 15), firstLine()))?.residualPx).toBe(0);
+    expect(measurePair(rawPair(tiled(28, 15), firstLine()))?.residualPx).toBe(0);
+    expect(measurePair(rawPair(tiled(28, 15), firstLine()))?.deltaPx).toBe(7.5);
+  });
+
+  it('keeps an ink defect in the residual, so a top-aligned row cannot hide one', () => {
+    // The `/join` shape: a 24px member box whose art rides 4px above its own centre. The term
+    // accounts for the box and the 4px survives, which is what stops this from emptying a report.
+    const pair = measurePair(rawPair(tiled(24, 12, 0, { contentCentrePx: 8, topPx: 2, bottomPx: 14 }), firstLine()));
+    expect(pair).toMatchObject({ compositionPx: 5.5, residualPx: -4 });
+    expect(pairsAboveBar([pair as MeasuredPair])).toHaveLength(1);
+  });
+
+  it('keeps the stacked-field defect in the residual, where the reading is not the member box', () => {
+    // The season row under `items-start`: the composite member is 57px and the control inside it
+    // sits in the bottom 32, so the reading is 12.5px below the member's own centre. The anchor
+    // drilled past the member on purpose, and the term must not put that back.
+    const field = anchor('control', {
+      alignSelf: 'flex-start',
+      memberTopPx: 0,
+      memberBottomPx: 57,
+      contentCentrePx: 41,
+      stacked: true,
+    });
+    const bare = anchor('control', { alignSelf: 'flex-start', memberTopPx: 0, memberBottomPx: 32, contentCentrePx: 16 });
+    expect(measurePair(rawPair(field, bare))).toMatchObject({ deltaPx: 25, compositionPx: 12.5, residualPx: 12.5 });
+  });
+
+  it('takes no term on a baseline pair, which no box geometry enters', () => {
+    const pair = measurePair(
+      rawPair(
+        anchor('text', { alignSelf: 'flex-start', baselinePx: 8, memberBottomPx: 60 }),
+        anchor('text', { alignSelf: 'flex-start', baselinePx: 11, memberBottomPx: 20 })
+      )
+    );
+    expect(pair).toMatchObject({ metric: 'baseline', deltaPx: -3, compositionPx: 0, residualPx: -3 });
+  });
+
+  it('takes no term under stretch, which sizes a member to the row rather than placing it', () => {
+    for (const alignment of ['stretch', 'normal', 'flex-end', 'baseline']) {
+      const pair = measurePair(
+        rawPair(tiled(36, 15, 0, { alignSelf: alignment }), firstLine({ alignSelf: alignment }))
+      );
+      expect(pair).toMatchObject({ compositionPx: 0, residualPx: 11.5 });
+    }
+  });
+
+  it('takes no term when only one member is top-aligned', () => {
+    const pair = measurePair(rawPair(tiled(36, 15), firstLine({ alignSelf: 'stretch' })));
+    expect(pair?.compositionPx).toBe(0);
+  });
+
+  it('reads `self-start` and `safe flex-start` as top alignment, since neither moves the box', () => {
+    expect(isStartAlignment('flex-start')).toBe(true);
+    expect(isStartAlignment('start')).toBe(true);
+    expect(isStartAlignment('self-start')).toBe(true);
+    expect(isStartAlignment('safe flex-start')).toBe(true);
+    expect(isStartAlignment('stretch')).toBe(false);
+    expect(isStartAlignment('normal')).toBe(false);
+    expect(isStartAlignment('center')).toBe(false);
+  });
+
+  it('gives a control and an icon of the same geometry the same term, so no ruling splits by kind', () => {
+    const asIcon = measurePair(rawPair(tiled(32, 32), firstLine()));
+    const asControl = measurePair(rawPair(tiled(32, 32, 0, { kind: 'control', geometry: 'element-box' }), firstLine()));
+    expect(asControl?.compositionPx).toBe(asIcon?.compositionPx);
+    expect(asControl?.residualPx).toBe(asIcon?.residualPx);
+  });
+
 });
 
 describe('the season-row calibration fixture (the structural case)', () => {
@@ -348,12 +475,55 @@ describe('the icon-card calibration fixture (the optical case, and trap 3)', () 
     const topAligned = fixturePair(await measure(spec.html), spec);
     const centred = fixturePair(await measure(spec.html.replace('align-items:flex-start', 'align-items:center')), spec);
 
-    expect(topAligned.compositionPx).toBe(0);
+    // The top-aligned row takes its own small term (the icon's 24px member box against a 24px line
+    // box), and the row it top-aligns against is a block, so the two terms are nothing alike.
+    expect(Math.abs(topAligned.compositionPx)).toBeLessThanOrEqual(spec.maxCompositionPx);
     expect(centred.compositionPx).toBeGreaterThan(15);
     expect(centred.deltaPx).toBeGreaterThan(topAligned.deltaPx + 15);
-    expect(centred.residualPx).toBeCloseTo(topAligned.residualPx, 1);
+    // The two rows ask different questions of the same ink (a centred row compares it with the
+    // line, a top-aligned row with the member's own box), so they agree to half a pixel rather than
+    // exactly, against a raw delta that moves by twenty.
+    expect(Math.abs(centred.residualPx - topAligned.residualPx)).toBeLessThanOrEqual(0.5);
     expect(centred.residualMagnitudePx).toBeGreaterThanOrEqual(spec.minMagnitudePx);
     expect(centred.b.lineCount).toBeGreaterThan(1);
+  });
+
+  // The positive control the top-alignment term needs, against real layout rather than hand-set
+  // anchors: this fixture DOES take a term and the defect it exists to catch survives it whole.
+  it('takes a top-alignment term and still reports the ink defect under it', async () => {
+    const pair = fixturePair(await measure(spec.html), spec);
+    expect(pair.a.alignSelf).toBe('flex-start');
+    expect(pair.compositionPx).not.toBe(0);
+    expect(pair.residualMagnitudePx).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
+    expect(pair.residualMagnitudePx).toBeGreaterThanOrEqual(pair.magnitudePx);
+  });
+
+  // The row this pass's inventory reported four times and should have reported zero times: an icon
+  // centred in a tile taller than the line it sits beside, top-aligned. The ink is where its own
+  // box puts it, so the reading is the tile's height and there is nothing to fix.
+  it('reads a tile taller than the line beside it as composition, and an off-centre one as a defect', async () => {
+    const row = (inner: string) =>
+      `<div class="tile-row" style="display:flex;align-items:flex-start;gap:12px;width:320px;font-family:sans-serif">
+        ${inner}
+        <div style="font-size:13px;line-height:17px">Tidy is set up for this site and runs on every save you make</div>
+      </div>`;
+    const tile = (align: string) =>
+      `<span style="display:flex;align-items:${align};justify-content:center;flex:none;height:36px;width:36px">
+        <svg width="20" height="20" viewBox="0 0 20 20" style="display:block">
+          <rect x="0" y="0" width="20" height="20" fill="currentColor"></rect>
+        </svg>
+      </span>`;
+    const inRow = (pairs: MeasuredPair[]) =>
+      pairs.find((pair) => pair.pairClass === 'icon-beside-text' && pair.rowClasses.includes('tile-row'));
+
+    const centred = inRow(await measure(row(tile('center'))));
+    expect(centred?.magnitudePx).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
+    expect(centred?.residualPx).toBeCloseTo(0, 1);
+
+    // The same tile with its art parked at the tile's own top: the box is where the row put it and
+    // the ink is not, which is the one thing a top-aligned row can get wrong.
+    const parked = inRow(await measure(row(tile('flex-start'))));
+    expect(parked?.residualMagnitudePx).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
   });
 
   // The phantom, stated as the assertion that would have failed. A centred wrapped block reads

@@ -11,14 +11,19 @@
 // report. A geometry helper appearing in this file would be the start of the drift the split
 // exists to prevent.
 //
-// EVERY READING IS DECOMPOSED, AND THE DISPOSITION IS TAKEN ON THE RESIDUAL. A row that centres its
-// members and wraps its text has deliberately put the other member half a block below the line the
-// reading was taken on, so the raw delta on such a row grows with the line count and swings with the
-// viewport width on pixels nobody should touch. The module splits each delta into that composition
-// term and the residual left over (`compositionPx`), this probe reports both columns, and the
-// reporting bar applies to the residual. The first emission of this inventory did not: it reported
-// 37 rows, hand-declined 13 of them as "trap 1 doing its job", and dispositioned rows carrying the
-// identical arithmetic as defects because their member was an icon rather than a control.
+// EVERY READING IS DECOMPOSED, AND THE DISPOSITION IS TAKEN ON THE RESIDUAL. Two alignments
+// displace a reading with nothing misconfigured, and each emission of this inventory has failed by
+// reading one of them as a defect. A row that CENTRES its members and wraps its text has
+// deliberately put the other member half a block below the line the reading was taken on, so the
+// raw delta grows with the line count and swings with the viewport width. A row that TOP-ALIGNS
+// them levelled their own boxes and asked for nothing else, so a member read at its centre sits
+// half its own box below the line beside it, and the reading scales with the member box. The module
+// splits each delta into both terms and the residual left over (`compositionPx`), this probe
+// reports both columns, and the reporting bar applies to the residual. The first emission reported
+// 37 rows, hand-declined 13 as "trap 1 doing its job", and called the identical arithmetic a defect
+// whenever the member was an icon. The second reported four top-aligned icon tiles and a
+// top-aligned page-header button as defects whose recipe would have lifted them clear of the blocks
+// they label.
 //
 // SELF-CALIBRATION IS BLOCKING. Before either corpus is touched, the probe renders the module's two
 // synthetic calibration fixtures and checks that it recovers the expected sign AND magnitude on
@@ -350,7 +355,8 @@ async function calibrate(browser) {
       lines.push(
         `- \`${fixture.id}\` (${fixture.pairClass}): ${expected}; measured ` +
           `${reading ? reading.residualPx : 'nothing'}px residual, ` +
-          `${reading ? reading.compositionPx : 'nothing'}px composition. PASS.`
+          `${reading ? reading.compositionPx : 'nothing'}px composition ` +
+          `(bound ${fixture.maxCompositionPx}px). PASS.`
       );
     } finally {
       await context.close();
@@ -421,6 +427,52 @@ function attributeByText(index, texts) {
 }
 
 /**
+ * Every run of consecutive class tokens in `classes`, longest first. A Tailwind component writes
+ * its class list as one literal, so a run that appears in a file is a real signal that the file
+ * authored that element.
+ * @param {string} classes
+ * @returns {string[]}
+ */
+function classRuns(classes) {
+  const tokens = classes.split(/\s+/).filter((token) => token && !token.startsWith('svelte-'));
+  const runs = [];
+  for (let length = Math.min(tokens.length, 8); length >= 3; length -= 1) {
+    for (let start = 0; start + length <= tokens.length; start += 1) {
+      runs.push(tokens.slice(start, start + length).join(' '));
+    }
+  }
+  return runs;
+}
+
+/**
+ * The file the ROW CONTAINER is authored in, resolved from the container's own class run.
+ *
+ * THE ROW'S RENDERED TEXT DELIBERATELY PLAYS NO PART. An alignment recipe lives with the container,
+ * and where that container is a shared toolkit component fed by props (`PageHeader`, used by every
+ * admin page), the text it renders lives in the CONSUMER. Resolving from text names the consumer on
+ * every such row, and an implementer dispatched from that name edits the wrong file and never sees
+ * the shared recipe. Narrowing a multi-file class run by the row's own words has the same defect for
+ * the same reason, so a run that lands in more than one file reports every candidate instead.
+ * @param {{ file: string, text: string }[]} index
+ * @param {string} classes
+ * @returns {{ files: string[], how: string, verified: boolean } | null}
+ */
+function attributeContainer(index, classes) {
+  for (const run of classRuns(classes)) {
+    const hits = index.filter((entry) => entry.text.includes(run)).map((entry) => entry.file);
+    if (hits.length === 1) return { files: hits, how: `the container class run \`${run}\``, verified: true };
+    if (hits.length > 1) {
+      return {
+        files: hits,
+        how: `the container class run \`${run}\`, which appears in ${hits.length} files`,
+        verified: false,
+      };
+    }
+  }
+  return null;
+}
+
+/**
  * The fallback: the longest run of CONSECUTIVE class tokens the row's elements carry, narrowed to
  * the files that ALSO render one of the row's own words. A Tailwind component writes its class list
  * as one literal, so the run is a real signal, but several components share one and the first
@@ -466,11 +518,16 @@ function attributeByClassRun(index, classStrings, texts) {
 }
 
 /**
- * A row's source file: its own rendered text where that is checkable, a class run where it is not,
- * and an explicit refusal where neither resolves.
+ * A row's source files: the container the alignment recipe lives in, and the file its text comes
+ * from, which are the same file on a row a component composes itself and different files on a row a
+ * shared toolkit component composes from a consumer's props.
+ *
+ * BOTH ARE REPORTED, container first. The first corrected emission printed one file per row,
+ * resolved from the rendered text, and named the media library on a row whose `sm:items-start`
+ * lives in `PageHeader` and is shared by every admin page.
  * @param {{ file: string, text: string }[]} index
  * @param {object} row
- * @returns {{ files: string[], how: string, verified: boolean } | null}
+ * @returns {{ container: object | null, text: object | null }}
  */
 function attributeRow(index, row) {
   const readings = [...row.readings.values()];
@@ -478,9 +535,10 @@ function attributeRow(index, row) {
     .filter(Boolean)
     .sort((one, other) => other.length - one.length);
   const byText = attributeByText(index, texts);
-  if (byText?.verified) return byText;
   const classStrings = [...new Set(readings.flatMap((reading) => [reading.sample.a.classes, reading.sample.b.classes]))];
-  return attributeByClassRun(index, [...classStrings, row.rowClasses], texts) ?? byText;
+  const container =
+    attributeContainer(index, row.rowClasses) ?? attributeByClassRun(index, classStrings, texts) ?? null;
+  return { container, text: byText };
 }
 
 /**
@@ -669,11 +727,26 @@ function range(low, high) {
   return low === high ? `${round(low)}` : `${round(low)} to ${round(high)}`;
 }
 
-/** What the Component file column says, including how the claim was checked. */
+/** One attribution, named by what it claims and how the claim was checked. */
+function attributionPart(label, claim) {
+  const files = claim.files.map((file) => `\`${file}\``).join(', ');
+  return claim.verified ? `${label} ${files}` : `${label} ${files} (UNVERIFIED, matched on ${claim.how})`;
+}
+
+/**
+ * What the Component file column says. The container comes first because that is where a recipe
+ * lands; the text file is named beside it only when the two differ, which is the signal that the
+ * row's composition is shared and its words are not.
+ */
 function attributionCell(row) {
-  if (!row.attribution) return 'unattributed (no rendered text and no class run resolves to a file)';
-  const files = row.attribution.files.map((file) => `\`${file}\``).join(', ');
-  return row.attribution.verified ? files : `${files} (UNVERIFIED, matched on ${row.attribution.how})`;
+  const { container, text } = row.attribution;
+  const parts = [];
+  if (container) parts.push(attributionPart('row container', container));
+  if (text && (!container || text.files.join() !== container.files.join())) {
+    parts.push(attributionPart('text from', text));
+  }
+  if (parts.length === 0) return 'unattributed (no class run and no rendered text resolves to a file)';
+  return parts.join('; ');
 }
 
 /**
@@ -836,6 +909,45 @@ async function sweep(args) {
   }
 }
 
+/**
+ * How far apart the wrapped and unwrapped renderings of ONE reading leave their residual, for every
+ * reading this run rendered both ways, largest first.
+ *
+ * This is the only population in the run that estimates the METHOD's error rather than a screen's.
+ * It is a within-reading comparison, so nothing selects it on either the raw delta or the residual:
+ * the same two members, the same metric, the same recipe, measured at a width where the text wraps
+ * (a composition term is taken) and at one where it does not (none is). The decomposition claims
+ * those leave the same residual, and this is how far off that claim lands.
+ *
+ * A row's own constant offset cancels, which is the point. The previous emission read the residual
+ * SPREAD of the composition-explained rows as a floor, and most of that spread was rows carrying a
+ * real 1 to 1.5px offset at every width, term or no term.
+ * @param {object[]} record
+ * @returns {{ px: number, rowId: string, reading: string, wrapped: number, plain: number, wrappedCount: number, plainCount: number }[]}
+ */
+function driftAcrossCompositions(record) {
+  const groups = new Map();
+  for (const entry of record) {
+    const key = `${entry.rowId}|${readingKey(entry)}`;
+    const group = groups.get(key) ?? { rowId: entry.rowId, reading: readingKey(entry), wrapped: [], plain: [] };
+    (entry.compositionPx === 0 ? group.plain : group.wrapped).push(Math.abs(entry.residualPx));
+    groups.set(key, group);
+  }
+  const mean = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  return [...groups.values()]
+    .filter((group) => group.wrapped.length > 0 && group.plain.length > 0)
+    .map((group) => ({
+      px: Math.abs(mean(group.wrapped) - mean(group.plain)),
+      rowId: group.rowId,
+      reading: group.reading,
+      wrapped: mean(group.wrapped),
+      plain: mean(group.plain),
+      wrappedCount: group.wrapped.length,
+      plainCount: group.plain.length,
+    }))
+    .sort((one, other) => other.px - one.px);
+}
+
 /** The largest raw magnitude any of a row's readings reached. */
 function rawReachOf(row) {
   return [...row.readings.values()].reduce(
@@ -909,30 +1021,57 @@ function renderDoc(run, corpora, index) {
   lines.push('## How a reading is decomposed, and why the raw delta is not the defect');
   lines.push('');
   lines.push(
-    'Trap 1 answers WHICH LINE a member pairs with. It does not answer whether the member should ' +
-      'pair with a line at all, and the first emission of this inventory assumed it did. Where a ' +
-      'row centres its members and its text block WRAPS, the row has deliberately centred the ' +
-      'other member on the whole block, so a reading taken against the first line is short by half ' +
-      "the block's extra height: a number that grows with the line count and swings with the " +
-      'viewport width on pixels nobody should touch.'
+    'Trap 1 answers WHICH LINE a member pairs with. It does not answer what the row asked for, and ' +
+      'two alignments displace a reading with nothing misconfigured. Reading either displacement as ' +
+      'a defect is a phantom, and the first two emissions of this inventory each reported one of ' +
+      'them.'
+  );
+  lines.push('');
+  lines.push(
+    'A CENTRED row whose text block WRAPS has deliberately centred the other member on the whole ' +
+      "block, so a reading taken against the first line is short by half the block's extra height: " +
+      'a number that grows with the line count and swings with the viewport width.'
+  );
+  lines.push('');
+  lines.push(
+    'A TOP-ALIGNED row levelled its members\' own boxes and asked for nothing else, so a member ' +
+      'read at its CENTRE sits half its own box below the line beside it: a 36px icon tile beside a ' +
+      '13px line reads 11.5px apart with its ink dead centre in the tile, and the same recipe in a ' +
+      '28px tile reads 5.5px. A reading that scales with the member box rather than with the ink is ' +
+      'the signature.'
   );
   lines.push('');
   lines.push('Every reading is therefore split, with no extra measurement:');
   lines.push('');
   lines.push('```');
   lines.push('raw delta = composition + residual');
-  lines.push('composition = b.blockLift - a.blockLift   (the wrapped block the row chose to centre on)');
-  lines.push('blockLift   = (text extent centre) - (first line band centre), 0 on a single line');
+  lines.push('centred row:     composition = b.blockLift - a.blockLift  (the wrapped block it centres on)');
+  lines.push('top-aligned row: composition = placed(a) - placed(b)      (the boxes it levelled)');
+  lines.push('blockLift = (text extent centre) - (first line band centre), 0 on a single line');
+  lines.push('placed(m) = m read whole ? centre of the MEMBER box : the reading itself');
   lines.push('```');
   lines.push('');
   lines.push(
-    'The composition term is taken where the row asked for it and nowhere else: on an optical ' +
-      'suspect always, since its padding box spans every line by construction; on a row whose two ' +
-      'members both resolve `align-self` to `center`; on nothing else, because under `flex-start`, ' +
-      '`start`, `baseline` and `stretch` the first line IS what the row aligns to, and the raw ' +
-      'delta is already the defect. NOT MODELLED, and left to a reviewed ruling rather than folded ' +
-      'in silently: an `end`-aligned row pairs with the block\'s LAST line, and a grid member ' +
-      'spanning several rows centres on its span.'
+    'The member box is the box the row placed, which is not always the box the reading came off: an ' +
+      'icon centred in a tile and the one control inside a stacked composite are both read off ' +
+      'something smaller. What survives the top-alignment term is therefore a member whose visible ' +
+      'content does not sit where its own box puts it, which is the `/join` ink defect this method ' +
+      'was built on, and the `icon-card` calibration fixture is the positive control: it top-aligns, ' +
+      'it takes a term of half a pixel, and its 4px defect survives whole.'
+  );
+  lines.push('');
+  lines.push(
+    'Each term is taken where the row asked for it and nowhere else. The wrapped-block term: on an ' +
+      'optical suspect always, since its padding box spans every line by construction, and on a row ' +
+      'whose two members both resolve `align-self` to `center`. The top-alignment term: on a row ' +
+      'whose two members both resolve to `flex-start`, `start` or `self-start`, and only under the ' +
+      '`content-centre` metric, since a baseline pair compares two baselines that no box geometry ' +
+      'enters. NOT MODELLED, and left to a reviewed ruling rather than folded in silently: an ' +
+      "`end`-aligned row pairs with the block's LAST line, and a grid member spanning several rows " +
+      'centres on its span. NOT REPORTED, and stated rather than implied: under `stretch` (and the ' +
+      '`normal` that resolves to it) a member box is the row\'s own height, so no term is taken; and ' +
+      'the top-alignment term absorbs generous leading, since a row that got the tops it asked for ' +
+      'is composed as written and choosing `items-center` instead is a design call, not a reading.'
   );
   lines.push('');
   lines.push(
@@ -952,9 +1091,12 @@ function renderDoc(run, corpora, index) {
   );
   lines.push('');
   lines.push(
-    'Both fixtures are composed so their composition term is zero, which makes this check the ' +
-      'guard on the decomposition as well: a rule that started explaining real defects away as ' +
-      'composition fails here rather than quietly emptying the inventory.'
+    'Each fixture declares the largest composition term its own alignment can honestly ask for, ' +
+      'which makes this check the guard on the decomposition as well: a rule that started ' +
+      'explaining real defects away as composition fails here rather than quietly emptying the ' +
+      'inventory. `season-row` centres and wraps nothing, so its bound is zero. `icon-card` ' +
+      'TOP-ALIGNS, so it is the one positive control on the live corpus: the row takes a term and ' +
+      'the defect survives it.'
   );
   lines.push('');
   for (const line of run.calibration) lines.push(line);
@@ -986,8 +1128,9 @@ function renderDoc(run, corpora, index) {
   lines.push(
     `The full per-pair record, all ${run.measured} readings including every sub-bar one, is written ` +
       `to \`${resolve(ARTIFACT_DIR, 'measured-pairs.json')}\`. It carries each member's whole ` +
-      'anchor (top, bottom, content centre, element centre, baseline, cap centre, line count, ' +
-      'block lift, `align-self`) alongside the delta, the composition and the residual, so a ' +
+      'anchor (top, bottom, content centre, element centre, MEMBER BOX top and bottom, baseline, ' +
+      'cap centre, line count, block lift, `align-self`) alongside the delta, the composition and ' +
+      'the residual, so a ' +
       'disagreement about any reading here is settled by reading that file rather than by re-running ' +
       'the probe against a live preview.'
   );
@@ -1121,10 +1264,11 @@ function renderDoc(run, corpora, index) {
   lines.push('### Rows the composition explains in full');
   lines.push('');
   lines.push(
-    `${phantoms.length} rows carry a raw delta above the bar and a residual within it. Each one is ` +
-      'a row that centres its members on a block its text wraps, which is what the composition term ' +
-      'is for. They are listed rather than omitted, because the first emission reported them as ' +
-      'defects and a reader comparing the two documents is owed the reason they left.'
+    `${phantoms.length} rows carry a raw delta above the bar and a residual within it: a row that ` +
+      'centres its members on a block its text wraps, or one that top-aligns a member taller than ' +
+      'the line beside it, which is what the two composition terms are for. The `align-items` ' +
+      'column says which. They are listed rather than omitted, because an earlier emission reported ' +
+      'each shape as a defect and a reader comparing the documents is owed the reason they left.'
   );
   lines.push('');
   if (phantoms.length > 0) {
@@ -1179,6 +1323,28 @@ function renderDoc(run, corpora, index) {
   if (opticalRanked.length > 20) lines.push(`| ... ${opticalRanked.length - 20} more recipes | | | |`);
   lines.push('');
 
+  // The decomposition's own landing error, measured rather than assumed. A reading this run
+  // rendered BOTH wrapped (a composition term is taken) and unwrapped (none is) is a within-reading
+  // control on the term: the decomposition claims both leave the same residual, so the distance
+  // between them is the method's error. No selection on either variable enters, which is what the
+  // previous emission's floor could not say.
+  const drift = driftAcrossCompositions(run.record);
+  const driftMax = drift.length > 0 ? drift[0].px : 0;
+  const floor = Math.max(jitter, driftMax);
+  const dispositioned = new Set([...rows.map((row) => row.id), ...phantoms.map((row) => row.id)]);
+  const confirmedReach = rows
+    .filter((row) => !row.disposition.startsWith('DECLINE'))
+    .reduce((best, row) => Math.min(best, row.worst.worstResidualMagnitude), Infinity);
+  const unsized = walked
+    .filter(
+      (row) =>
+        !dispositioned.has(row.id) &&
+        row.worst.worstResidualMagnitude > floor &&
+        row.worst.worstResidualMagnitude <= VERTICAL_REPORTING_BAR_PX
+    )
+    .sort((one, other) => other.worst.worstResidualMagnitude - one.worst.worstResidualMagnitude);
+  const undispositionedAboveFloor = unsized.length;
+
   lines.push('## Noise floor');
   lines.push('');
   lines.push(
@@ -1197,61 +1363,92 @@ function renderDoc(run, corpora, index) {
   lines.push(`- ${distributionLine('Raw magnitude', run.magnitudes)}`);
   lines.push(`- ${distributionLine('Residual magnitude', run.residualMagnitudes)}`);
   lines.push('');
-  lines.push('| Candidate threshold | Readings above it | Rows above it |');
-  lines.push('| --- | --- | --- |');
+  lines.push('| Candidate threshold | Readings above it | Rows above it | Rows above it this run does not disposition |');
+  lines.push('| --- | --- | --- | --- |');
+  // A row this run dispositions is one of the two the sections above name: inventoried above the
+  // bar, or explained in full by its composition. Anything else above a candidate threshold is work
+  // nobody has sized, which is exactly what a threshold below the bar would start reporting.
   for (const candidate of [1, 1.5, 2, 2.5, 3, 4, 5]) {
     const readings = run.residualMagnitudes.filter((value) => value > candidate).length;
-    const above = walked.filter((row) => row.worst.worstResidualMagnitude > candidate).length;
-    lines.push(`| ${candidate}px | ${readings} | ${above} |`);
+    const aboveRows = walked.filter((row) => row.worst.worstResidualMagnitude > candidate);
+    const undispositioned = aboveRows.filter((row) => !dispositioned.has(row.id)).length;
+    lines.push(`| ${candidate}px | ${readings} | ${aboveRows.length} | ${undispositioned} |`);
   }
   lines.push('');
   lines.push(
-    'NEITHER OF THOSE IS A NOISE FLOOR ON ITS OWN. The full distribution contains the defects, so ' +
-      'its own p99 is pulled up by them; and any statistic taken over "the readings under the bar" ' +
-      'is a statistic about the bar. The population that answers the question is the rows the ' +
-      'composition explains in full: they were selected by their RAW delta clearing the bar, which ' +
-      'is a different variable from the residual, so their residual spread is an estimate of how ' +
-      'close to zero this method lands on a row that is correct as built.'
+    'NEITHER DISTRIBUTION IS A NOISE FLOOR. The full distribution contains the defects, so its own ' +
+      'p99 is pulled up by them, and any statistic over "the readings under the bar" is a statistic ' +
+      'about the bar. Nor is the residual spread of the composition-explained rows a floor, which ' +
+      'is what the previous emission used: that set is defined as raw above the bar AND residual ' +
+      'within it, so its maximum is bounded by the bar BY CONSTRUCTION and is a lower bound rather ' +
+      'than an estimate of anything. Its largest readings are not method error either; they are ' +
+      'constant offsets that the same rows also read at the widths where nothing wraps and no term ' +
+      'is taken at all.'
   );
   lines.push('');
-  const phantomIds = new Set(phantoms.map((row) => row.id));
-  const phantomResiduals = run.record
-    .filter((entry) => phantomIds.has(entry.rowId))
-    .map((entry) => Math.abs(entry.residualPx));
-  const phantomReach = phantoms.reduce((best, row) => Math.max(best, row.worst.worstResidualMagnitude), 0);
   lines.push(
-    `- ${distributionLine(`Residual on the ${phantoms.length} composition-explained rows`, phantomResiduals)}`
+    'The population that does answer the question is a WITHIN-READING one, and it needs no ' +
+      'selection at all: any reading this run measured both wrapped (a composition term is taken) ' +
+      'and unwrapped (none is). The decomposition claims those two renderings leave the same ' +
+      'residual, so how far apart they land IS the method\'s own error, measured on the corpus ' +
+      'rather than assumed.'
   );
-  const declinedReach = declines.reduce((best, row) => Math.max(best, row.worst.worstResidualMagnitude), 0);
-  const confirmedReach = rows
-    .filter((row) => !row.disposition.startsWith('DECLINE'))
-    .reduce((best, row) => Math.min(best, row.worst.worstResidualMagnitude), Infinity);
-  const floor = Math.max(jitter, phantomReach);
+  lines.push('');
+  lines.push(
+    `- ${drift.length} readings render both ways in this run. Landing error, wrapped against ` +
+      `unwrapped: max ${round(driftMax)}px, median ${round(percentile(drift.map((entry) => entry.px), 0.5))}px.`
+  );
+  for (const entry of drift.slice(0, 3)) {
+    lines.push(
+      `  - \`${entry.rowId}\` ${cell(entry.reading)}: ${round(entry.wrapped)}px wrapped over ` +
+        `${entry.wrappedCount} readings, ${round(entry.plain)}px unwrapped over ${entry.plainCount}.`
+    );
+  }
   lines.push('');
   lines.push(
     `The floor this run supports is ${round(floor)}px: the larger of run-to-run jitter (${jitter}px) ` +
-      `and the worst residual on any row whose composition explains it in full (${round(phantomReach)}px). ` +
-      `For reference, the worst residual on a row this inventory declines by review is ` +
-      `${round(declinedReach)}px, and those two rows are compositions the term does not model rather ` +
-      'than measurement noise.'
+      `and the decomposition's own landing error (${round(driftMax)}px). Everything above that is a ` +
+      'REPRODUCIBLE offset rather than noise, including the 1 to 1.5px readings the previous ' +
+      'emission called a floor, which hold to the hundredth across five widths and both themes.'
   );
   lines.push('');
   lines.push(
     confirmedReach === Infinity
       ? 'No confirmed defect remains above the bar, so this run sets no upper end on the window and ' +
           'a threshold has to be argued from the calibration fixtures instead.'
-      : floor < confirmedReach
-        ? `The smallest confirmed defect measures ${round(confirmedReach)}px, so any threshold in ` +
-          `[${round(floor)}, ${round(confirmedReach)}) fires on every confirmed row and on nothing ` +
-          'this run explains away. That window is narrow, and it is narrow because the method lands ' +
-          'close to zero rather than because the defects are large: task 4 picks inside it and ' +
-          'records what a wider threshold would give up.'
-        : `The data does not support a threshold below ${round(floor)}px, and the smallest confirmed ` +
-          `defect measures ${round(confirmedReach)}px: the two overlap, so any threshold that fires ` +
-          'on every confirmed row also fires on something this inventory explains away. Task 4 has ' +
-          'to take that trade explicitly rather than pick a number.'
+      : `The smallest confirmed defect measures ${round(confirmedReach)}px, so the window a ` +
+        `threshold can sit in is [${round(floor)}, ${round(confirmedReach)}), which is wide. WHAT ` +
+        'CONSTRAINS THE CHOICE INSIDE IT IS POLICY, NOT PRECISION: whether an offset of one or two ' +
+        'pixels that holds at every width is worth a finding. The cost of each candidate is the ' +
+        'last column above, and it is not zero anywhere below the bar: ' +
+        `${undispositionedAboveFloor} rows in total sit between the floor and the ` +
+        `${VERTICAL_REPORTING_BAR_PX}px bar that this run neither inventories nor explains away, so ` +
+        'a threshold under the bar starts reporting work nobody has sized. Task 4 picks inside the ' +
+        'window and records what it gives up at the top and takes on at the bottom.'
   );
   lines.push('');
+  if (unsized.length > 0) {
+    lines.push('### Rows between the floor and the bar, unsized');
+    lines.push('');
+    lines.push(
+      'Neither inventoried nor explained: their residual clears the floor and stays within the bar, ' +
+        'so no disposition above covers them. Several are the same shape as a confirmed row and are ' +
+        'plausibly real work. They are listed so a threshold below the bar is chosen with them in ' +
+        'view rather than discovered by the re-run.'
+    );
+    lines.push('');
+    lines.push('| Id | Surface | Members | Component file | Worst residual (px) | Pair class | `align-items` |');
+    lines.push('| --- | --- | --- | --- | --- | --- | --- |');
+    for (const row of unsized.slice(0, 25)) {
+      row.attribution = attributeRow(index, row);
+      lines.push(
+        `| \`${row.id}\` | ${row.surface} | ${cell(row.rowMembers.join(' + '))} | ${cell(attributionCell(row))} | ` +
+          `${round(row.worst.worstResidualMagnitude)} | ${row.worst.pairClass} | ${row.alignItems} |`
+      );
+    }
+    if (unsized.length > 25) lines.push(`| ... ${unsized.length - 25} more | | | | | | |`);
+    lines.push('');
+  }
 
   lines.push('## Unmeasured');
   lines.push('');

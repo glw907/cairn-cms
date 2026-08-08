@@ -274,6 +274,40 @@ The original decision framing, for the record:
     since `FieldLabel` carries no `<style>` block at all.
   Full measurement: `docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`.
 
+- **The showcase visual suite cannot see a vertical-alignment regression, and its admin corpus is
+  missing the screen most of them landed on (measured 2026-08-07, off the same pass).** Two
+  independent gaps. Either one alone would have hidden every fix this pass made from every baseline,
+  and together they explain why CI's regeneration changed zero admin baselines while the fixes were
+  real.
+
+  **The tolerance floor.** `examples/showcase/playwright.config.ts` sets
+  `expect.toHaveScreenshot.maxDiffPixels: 120` for the whole suite. Replicating the `admin edit
+  page — 1440` test exactly, the shipped render against itself differs by 0 pixels, so the render is
+  deterministic, and the fixed render against the pre-fix one differs by 51 pixels, all inside
+  x 1027-1038 by y 245-254, which is the check glyph and nothing else. The comparison passes and the
+  baseline is never rewritten. 120 is roughly 2.4x the entire pixel footprint of a 1.5px shift on a
+  16px icon, so this defect class sits wholly under the floor, and a passing visual suite is not
+  evidence that alignment is intact. Changing the number was deliberately left out of the closing
+  pass: it touches every existing baseline and every unrelated test, and 120 is presumably where it
+  is because a much lower allowance goes flaky on font antialiasing. Options worth costing, rather
+  than a number to pick: a per-test tolerance for the captures that watch a small control, a mask no
+  wider than the control being watched, or leaving the tolerance alone and treating the real-layout
+  component tests as the net for this class. Today that net is
+  `src/tests/component/vertical-alignment-recipes.test.ts`, which renders the real components and
+  reads geometry directly, so it has the resolution the screenshot lacks. The general form of the
+  finding, which outlives this pass: a pixel-tolerance gate has a defect-size floor, and any defect
+  class smaller than that floor needs a measuring gate rather than a screenshot.
+
+  **The corpus gap.** `examples/showcase/e2e/admin-visual.spec.ts` holds 18 tests over 7 routes:
+  `/admin/posts`, `/admin/vocabulary`, `/admin/login`, `/admin/auth/confirm`, `/admin/editors`,
+  `/admin/posts/2026-06-hello`, and `/admin/media`. `/admin/settings` is absent, and that is where
+  `CairnTidySettings` renders, so four of this pass's five fixed rows are captured nowhere in the
+  admin corpus and could not have moved a baseline at any tolerance. Adding the captures needs a CI
+  regeneration and a human read of the new baselines, which is why they did not ride the closing
+  pass. The asymmetry is the part worth carrying: the same pass widened the public site suite to the
+  five-viewport bar as its own task, while the admin suite's own route coverage went unexamined, and
+  nobody asked which admin screens the corpus actually contains.
+
 - **Exercise a server-only subpath under real Wrangler in cairn's own CI.** The `0.94.0-rc.1`
   Workers blocker (a `browser` condition with no `worker` ahead of it, so the server bundle got the
   client stub and the Worker never started) shipped past every gate this repo runs, and the two

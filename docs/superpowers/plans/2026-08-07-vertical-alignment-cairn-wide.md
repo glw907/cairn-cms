@@ -406,10 +406,14 @@ The icon-label and pill fixes were independently re-measured in headless Chromiu
 shipped dist sheet, not just asserted by the implementer: label-vs-value baseline moved from
 -2.50px to 0.00px on all three `CairnTidySettings.svelte` rows; the pill's padding-box centre moved
 from +5.00px to 0.00px against the heading's first line box; the Write-tab icon moved from -2.33px
-to -0.33px, matching the icon-in-button control to 0.5px. The three findings the pass's own review
-gate raised (the CSS comment misstating the mechanism, `text-box-trim`'s non-shipping, and the
-missing `FieldLabel` pointer) were each verified against real Chromium measurements or grep, not
-taken on the implementer's word. Task 4b's precision claim did not hold on first submission: an
+to -0.83px, matching the icon-in-button control to 0.5px. A later measurement on the real rendered
+page corrected that post-fix figure from the -0.33px first reported. Commit `68d622a1`'s message
+carries the wrong number and stays as written history. The pre-fix -2.33px is exact, and the
+component tests never contradicted -0.83px, since they assert absolute deltas within 1px and within
+0.5px of the icon-in-button control. The three findings the pass's own review gate raised (the CSS
+comment misstating the mechanism, `text-box-trim`'s non-shipping, and the missing `FieldLabel`
+pointer) were each verified against real Chromium measurements or grep, not taken on the
+implementer's word. Task 4b's precision claim did not hold on first submission: an
 adversarial verification round reproduced five distinct false-positive shapes at error tier
 (self-declared baseline, self-* opt-out, column direction, a `class:` directive, a ternary) against
 real markup, all fixed in `f141e3ae`. A second, later review round found the fix incomplete; see

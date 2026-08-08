@@ -106,6 +106,40 @@ real defect, because an `inline-flex` box's baseline is icon-synthesised in an i
 context too. Only the stated REASON was wrong. Correcting a rule on a review's reasoning rather
 than on a measurement would have removed a true finding.
 
+## The gate finding: a pixel tolerance has a defect-size floor
+
+`examples/showcase/playwright.config.ts` sets `maxDiffPixels: 120` for every `toHaveScreenshot`
+comparison in the suite. Measured after the fixes landed, replicating the `admin edit page — 1440`
+test exactly (same viewport, session cookie, colour scheme, `fullPage`, `.cm-content` mask): the
+shipped render against itself differs by 0 pixels, so the render is deterministic; the fixed render
+against the pre-fix one differs by 51 pixels, all of them inside x 1027-1038 by y 245-254, which is
+the check glyph and nothing else.
+
+51 is under 120, so the comparison passes and the baseline is never rewritten. That is why CI's
+regeneration changed zero admin baselines while the fix was real.
+
+The tolerance is roughly 2.4x the entire pixel footprint of a 1.5px shift on a 16px icon. Every
+defect this pass fixed sits under it, and so does every future reintroduction of one. **The visual
+baseline is not a regression net for this defect class and never was. A passing visual suite must
+not be cited as evidence that alignment is intact.**
+
+The general form: a pixel-tolerance gate has a defect-size floor, and a defect class whose whole
+footprint falls under that floor needs a gate that measures geometry rather than one that compares
+images. This pass's real regression net is
+[`src/tests/component/vertical-alignment-recipes.test.ts`](../../src/tests/component/vertical-alignment-recipes.test.ts),
+which renders the real components and reads ink and cap centres directly, so it has the resolution
+the screenshot lacks.
+
+A second gap compounds the first. Four of the five fixed rows render on `/admin/settings`, and the
+admin visual corpus does not capture that route at all, so those four could not have moved a
+baseline at any tolerance. The 51-pixel measurement above is the fifth row, the only one the corpus
+can see.
+
+The tolerance itself was left alone here. Lowering it touches every existing baseline and every
+unrelated test, and 120 is presumably where it is because a much lower number goes flaky on font
+antialiasing. That is a decision with its own evaluation, filed in `ROADMAP.md` together with the
+corpus gap.
+
 ## The cascade finding: `height` in `@layer components` is a silent no-op
 
 Layers beat specificity, and Tailwind's `utilities` layer comes after `components`, so a

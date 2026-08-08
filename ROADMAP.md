@@ -207,6 +207,35 @@ The original decision framing, for the record:
 
 ## Now
 
+- **A cleanup pass: split the repo along engine-development versus consumer-facing, and stop
+  shipping the sausage-making. AUTHORIZED as its own pass (Geoff, 2026-08-07).** The ruling that
+  governs it: complexity is welcome locally to help build the engine, and contributors should keep
+  every tool they need in the repo, but a developer who just wants to USE cairn should receive none
+  of it. The repo should be organized along that line, and the packed surface should reflect it.
+
+  Baseline measured 2026-08-07, before any cleanup: **2.5 MB packed, 7.0 MB unpacked, 739 files.**
+  Confirmed findings to start from, each verified against `dist`, not inferred:
+  - `dist/audit/rules/rendered/vertical-metrics.{js,d.ts}` ships today and is pure lab apparatus,
+    the measurement module for a probe that no shipped rule consumes. The vertical-alignment pass
+    already relocates it (see that plan's task 4); it is listed here as the worked example of the
+    class, not as outstanding work.
+  - `dist/audit` is 792 KB across 41 files, the second-largest shipped tree after `components`.
+    Whether `cairn-audit` is consumer product or engine apparatus is a POSITIONING question this
+    pass should settle rather than assume. Evidence both ways: the shipped `cairn-admin-screens`
+    skill points a consumer's agent at cairn-audit's checks, which reads as product; several rules
+    audit cairn's own design-system conformance and need a generated norms manifest, which reads
+    as apparatus. A split (consumer rules ship, engine-conformance rules do not) is the likely
+    answer and should be decided on evidence.
+  - `@anthropic-ai/sdk` is a RUNTIME dependency, statically imported at the top of
+    `src/lib/sveltekit/content-routes-context.ts`, so every consumer installs the whole SDK
+    whether or not they use the tidy action. This is product rather than sausage-making, so it
+    does not belong in the same bucket, but it is the single heaviest thing an install pulls for
+    one optional feature and a lazy import is worth costing.
+
+  Method note: `npm pack --dry-run` is the honest instrument. `files` in `package.json` and the
+  exports map both under-report, since a module ships whenever anything reachable imports it.
+  Success is measured as the packed baseline above moving down, with no export subpath lost.
+
 - **Optical centring of text in a padded box wants an engine default. REFILED 2026-08-06 after
   being lost.** Geoff asked for this on 2026-07-30, off the `CURRENT PLAN` chip on ASC's
   `/my-account/renew`, and his framing was the finding: there should be a global way to manage

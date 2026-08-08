@@ -255,6 +255,46 @@ reviewed declines)**; the shipped tier is a stated decision with its evidence; g
 swept engine and showcase; the task 1 probe re-run reports zero rows above threshold across both
 corpora, or each survivor is a documented decline; full per-task gate.
 
+### Task 4b: the static guardrail (no browser), NEW (Geoff, 2026-08-07)
+
+Geoff's ruling: mechanical guardrails beat training the agent, and the guardrail should not need
+Playwright. This task ships the first one. Beta blocks on the full capability; this pass ships the
+narrow, working half so release one is not held for the architecture.
+
+**Files:**
+- Create: a static rule under `src/lib/audit/rules/static/`, registered like `motion-band`,
+  `gap-scale` and `token-colors`, using the same `svelte/compiler` substrate
+- Test: fixtures beside the existing static-rule tests
+
+**What it detects:** the ONE mechanic this pass confirmed, as a STRUCTURAL PATTERN rather than a
+measurement. A flex item whose own display is `inline-flex` and whose first child is an icon,
+inside a container declaring `items-baseline` (any breakpoint prefix). Such a label synthesises its
+baseline from the icon, never from its text, so the row's declared baseline alignment cannot hold.
+Confirmed at `src/lib/components/CairnTidySettings.svelte` 367, 372 and 380.
+
+**Why static works HERE and not in general.** The dividing line is authored versus rendered, and
+this repo has already paid to learn it: `touch-targets` and `interactive-contrast` were graduated
+FROM static TO rendered because a regex could not read computed geometry or an oklch color, and
+interactive-contrast had plausibly been passing VACUOUSLY for its whole life. The static rules that
+survived (`motion-band`, `gap-scale`, `token-colors`) all check an authored value against a scale.
+This mechanic is likewise authored: the defect IS the markup shape, so no rendering is needed to
+see it. Do not extend this rule to anything that requires a measured threshold; that is the mistake
+the graduation history records.
+
+**The vacuous-pass guard is mandatory**, and it is what the interactive-contrast lesson demands: a
+fixture the rule MUST trip, asserted to trip, so a rule that silently matches nothing fails its own
+test rather than reporting clean. Same discipline as the probe's calibration refusal, one layer
+down.
+
+**Acceptance criteria:** fires on all three confirmed call sites; silent on a baseline row whose
+label is not `inline-flex`, on an `inline-flex` label with no leading icon, and on the same label
+under a non-baseline container (fixtures prove each non-firing); the must-trip fixture is asserted;
+runs in `npm run check` with NO browser, NO server and NO Playwright; ships at a stated tier with
+its reasoning; full per-task gate.
+
+**Deliverable count: one.** It is deliberately one pattern on an existing substrate. Resist adding
+patterns here; the pre-beta pass owns breadth.
+
 ### Task 5: docs, changelog, upgrade notes, roadmap
 
 **Files:**

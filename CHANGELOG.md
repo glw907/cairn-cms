@@ -74,10 +74,14 @@
   `cairn-line-slot` (a one-line-tall slot that levels a painted chip on the line it labels). Three
   admin rows were re-composed onto the recipes: the tidy settings screen's three developer-tier
   rows (a 2.5px baseline miss), its "Set by your developer" pill (5px low against the heading it
-  labels), and the editor's Write tab glyph (2.33px above its own label's cap centre). The
-  mechanics, and the `text-box-trim` default that was measured and declined, are written up in
-  `docs/internal/admin-design-system.md`. Consumers must: nothing. The new export and the two new
-  classes are additive, and no existing class changed.
+  labels), and the editor's Write tab glyph (2.33px above its own label's cap centre).
+  [`cairn-audit`](docs/reference/cairn-audit.md#the-static-rules) gains a tenth static rule,
+  `icon-baseline-synthesis`, at error tier: it catches the icon-label shape structurally, an
+  `inline-flex` label with a leading icon inside a row declaring `items-baseline`, so a future
+  instance of it fails a build instead of waiting for another measured pass. The mechanics, and the
+  `text-box-trim` default that was measured and declined, are written up in
+  `docs/internal/admin-design-system.md`. Consumers must: nothing. The new export, the two new
+  classes, and the new audit rule are all additive, and no existing class or rule changed.
 
 ## 0.94.0
 

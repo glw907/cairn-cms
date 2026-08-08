@@ -47,7 +47,7 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Nine rules run, all error tier.
+Ten rules run, all error tier.
 
 | ID | What it checks |
 |---|---|
@@ -60,6 +60,7 @@ Nine rules run, all error tier.
 | `focus-parity` | Every hand-authored `:hover` selector has a sibling selector in the same source that swaps `:hover` for `:focus-visible`, or for `:focus-within` when a container's wash acknowledges a descendant gaining focus. Tailwind's `hover:` variant classes are deliberately out of scope: their keyboard affordance is the admin's blanket focus ring, a real guarantee of a different shape |
 | `motion-band` | Every transition or animation duration lands in the admin's `150ms` to `250ms` band, and `transition: all` never ships. A declaration inside a `prefers-reduced-motion: reduce` guard is exempt, since collapsing a duration toward zero is what that guard is for |
 | `reduced-motion` | Every selector that declares motion is named again inside an `@media (prefers-reduced-motion: reduce)` guard in the same source |
+| `icon-baseline-synthesis` | A label whose own `display` is `inline-flex`, whose first rendered child is an icon, sits directly inside a row declaring `items-baseline` (any breakpoint prefix). Such a container has no baseline-aligned item of its own, so it synthesises the row's baseline from the icon rather than from the label's word, and the row's declared alignment cannot hold. Give the label `cairn-icon-label` instead |
 
 ### Suppressing a finding
 
@@ -85,7 +86,7 @@ The counting contract is the other half. A suppressed finding leaves the exit-co
 the report: the summary line always prints a suppression total, including when it's zero.
 
 ```text
-12 files scanned, 9 rules run
+12 files scanned, 10 rules run
 0 errors, 0 advisories, 5 suppressed
 ```
 

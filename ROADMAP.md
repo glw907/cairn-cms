@@ -240,45 +240,26 @@ The original decision framing, for the record:
   exports map both under-report, since a module ships whenever anything reachable imports it.
   Success is measured as the packed baseline above moving down, with no export subpath lost.
 
-- **Optical centring of text in a padded box wants an engine default. REFILED 2026-08-06 after
-  being lost.** Geoff asked for this on 2026-07-30, off the `CURRENT PLAN` chip on ASC's
-  `/my-account/renew`, and his framing was the finding: there should be a global way to manage
-  vertical centring so it is easy and correct by default, and it belongs in the engine rather than
-  in each site's component sheet. The measured evidence, so this is not re-derived a third time: on
-  ASC's events-page chip (13.12px uppercase, `padding: 0.1rem 0.5rem`, ambient line-height) the ink
-  sits **1.0px LOW**, 6.59px above the cap line against 4.59px below the baseline. `line-height: 1`
-  gets it to 0.43px low but shrinks the pill from 23.19px to 18.31px; `line-height: 1.5` measures
-  best at 0.15px low. The descender-space explanation predicts the opposite direction and does not
-  survive measurement, so reason from readings. The mechanism to evaluate first is CSS
-  `text-box-trim`/`text-box-edge` (`text-box: trim-both cap alphabetic`), applied once in the token
-  or component layer, with a support check and fallback since consuming sites are public. Full
-  finding, including the measurement method worth having in cairn:
-  `aksailingclub-org/docs/2026-07-30-assets-substrate-harvest-findings.md`, finding 1.
-  **Why this is being refiled rather than worked**: it was written into the design-ratchet plan's
-  "next pass seed" paragraph, that plan closed 2026-07-31, and the seed never reached this file. The
-  same paragraph's other half (the `.list-row` `grid-row-start` pin) survived only because T7 had
-  already filed it here. A seed in a closed plan doc is not a queue, and the `0.94` window ran
-  straight past this one.
-
-- **The field register has now produced an alignment defect on BOTH axes, and the mechanical net
-  covers one.** `cairn-audit`'s `field-edge-alignment` rule exists because the `inline` register
-  staircased controls' LEFT edges, found by ASC's Assets-trial harvest. `0.92.0` made `stacked` the
-  default and produced the vertical counterpart, which no rule catches: the label takes a line above
-  the control, so the control sits in the lower half of the field's block, and a bare sibling
-  control in the same row aligns to the block rather than to the control. A row written
-  `flex items-center` therefore hangs its button half a label-height above the input it acts on.
-  Measured on ASC's `/admin/club/documents` season picker against CI baselines: the input's vertical
-  centre went 145.0px → 157.0px across the flip while the `View` button stayed at 144.5px, a 12.5px
-  offset identical at 390 and 1440 and in both themes. The correct composition is `items-end`.
-  **The evidence that this is not discoverable from the component is inside one repo**: ASC writes
-  this row three times, and `admin/club/settings` had `items-end` right since 2026-07-14 while
-  `documents` and `money` both had `items-center` wrong, fixed 2026-08-06. Same shape, same repo,
-  two of three wrong, and nothing in `FieldLabel`'s contract says which to reach for. Two responses
-  worth taking together: say it in `FieldLabel`'s own `@component` block and the admin design
-  system's form-row section, since a stacked field changes what the row around it must do; and add
-  the vertical counterpart rule to `cairn-audit`, where a control inside a stacked field whose
-  vertical centre differs from a sibling control's in the same flex row is the detectable shape.
-  Found 2026-08-06 by the ASC `rc.2` verification.
+- **Vertical alignment's declared follow-up, filed off the cairn-wide pass (2026-08-07).** A
+  cairn-wide inventory measured both the admin and the public surface for vertical-alignment
+  defects and closed the two entries this replaces: the optical-centring engine default Geoff asked
+  for on 2026-07-30, and the both-axes field-row defect found by ASC's `rc.2` verification. The
+  admin toolkit's new `FieldRow` (`items-end`) ships the named composition for a stacked field
+  beside a bare control; the new `cairn-icon-label`/`cairn-line-slot` recipes and the
+  `icon-baseline-synthesis` static rule close the one confirmed icon-label mechanic; `text-box-trim`
+  was measured and explicitly declined (see `docs/internal/admin-design-system.md`, "Vertical
+  alignment mechanics"). The measured defect surface came in far smaller than either closed entry
+  assumed; two things carry forward rather than a broader repair:
+  - **The sub-bar `ConceptList` family:** fifteen rows reading exactly 1.55px, the same shape as the
+    three confirmed defects but under the pass's 2px reporting bar. A firing threshold anywhere in
+    that window either adopts all fifteen in one step or leaves a visible family untouched, so this
+    is a decision to take deliberately, not a number to pick when a future rule graduates.
+  - **A precomputed icon-ink table, filed as the pre-beta pass's first target.** An icon's ink offset
+    inside its own viewBox is a property of the icon FILE, computable offline from path data with no
+    rendering, so a static rule built on it reaches ASC's `/join` icon-card defect class the same way
+    the dropped rendered `cairn-audit` rule would have, with no browser. ASC already fixed its own
+    instance by hand, so this closes future recurrence rather than a live defect.
+  Full measurement: `docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`.
 
 - **Exercise a server-only subpath under real Wrangler in cairn's own CI.** The `0.94.0-rc.1`
   Workers blocker (a `browser` condition with no `worker` ahead of it, so the server bundle got the

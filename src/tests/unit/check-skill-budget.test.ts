@@ -8,7 +8,7 @@ import {
   estimateTokens,
   parseTierMap,
   SKILL_BUDGET_TOKENS
-} from '../../../scripts/check-skill-budget.mjs';
+} from '../../../scripts/checks/check-skill-budget.mjs';
 import { staticRules } from '../../lib/audit/rules/static/index.js';
 import { renderedRules } from '../../lib/audit/rules/rendered/index.js';
 

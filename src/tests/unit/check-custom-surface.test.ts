@@ -4,7 +4,7 @@ import {
   componentsLayerSelectorCount,
   retiredTokenHits,
   evaluate,
-} from '../../../scripts/check-custom-surface.mjs';
+} from '../../../scripts/checks/check-custom-surface.mjs';
 
 describe('pinnedUnlayeredRules', () => {
   it('finds exactly the two sanctioned unlayered rules', () => {

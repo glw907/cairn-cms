@@ -27,7 +27,7 @@ jobs:
           echo "engine=$ENGINE_TGZ" >> "$GITHUB_OUTPUT"
           echo "dev=$DEV_TGZ" >> "$GITHUB_OUTPUT"
       - name: Emit the scaffolded template
-        run: node scripts/emit-template.mjs /tmp/cairn-emitted "file:${{ steps.pack.outputs.engine }}" "file:${{ steps.pack.outputs.dev }}" emitted-site
+        run: node scripts/build/emit-template.mjs /tmp/cairn-emitted "file:${{ steps.pack.outputs.engine }}" "file:${{ steps.pack.outputs.dev }}" emitted-site
       - name: Install, typecheck, and build the emitted template
         working-directory: /tmp/cairn-emitted
         run: |
@@ -43,7 +43,7 @@ jobs:
         run: |
           rm -rf /tmp/dev-fold-default
           npx wrangler deploy --dry-run --outdir=/tmp/dev-fold-default
-          if grep -rlF -f "$GITHUB_WORKSPACE/scripts/dev-fold-markers.txt" /tmp/dev-fold-default 2>/dev/null; then
+          if grep -rlF -f "$GITHUB_WORKSPACE/scripts/checks/dev-fold-markers.txt" /tmp/dev-fold-default 2>/dev/null; then
             echo "FAIL: dev-backend artifact in the emitted Worker"; exit 1
           fi
           echo "OK: no dev-backend artifact in the emitted Worker"
@@ -57,7 +57,7 @@ jobs:
           rm -rf /tmp/dev-fold-flagged
           VITE_CAIRN_E2E=1 npm run build
           npx wrangler deploy --dry-run --outdir=/tmp/dev-fold-flagged
-          if ! grep -rlF -f "$GITHUB_WORKSPACE/scripts/dev-fold-markers.txt" /tmp/dev-fold-flagged 2>/dev/null; then
+          if ! grep -rlF -f "$GITHUB_WORKSPACE/scripts/checks/dev-fold-markers.txt" /tmp/dev-fold-flagged 2>/dev/null; then
             echo "FAIL: gate self-test: no dev-fold marker matched a flagged emitted build's deployable bundle"; exit 1
           fi
           echo "OK: gate self-test: markers present in the flagged emitted build's deployable bundle"

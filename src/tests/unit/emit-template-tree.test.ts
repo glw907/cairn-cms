@@ -1,4 +1,4 @@
-// cairn-cms: the emitter does not read comments, and scripts/emit-template.mjs copies the
+// cairn-cms: the emitter does not read comments, and scripts/build/emit-template.mjs copies the
 // showcase verbatim minus its .cairn-template.json exclusions, so an unguarded members fixture
 // would ship a code-readback OTP oracle into every scaffolded site (spec
 // docs/superpowers/specs/2026-08-04-auth-channel-consumer-proof-design.md, "The acceptance
@@ -11,7 +11,7 @@ import { readFile, mkdtemp, rm, readdir } from 'node:fs/promises';
 import { readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, join, relative } from 'node:path';
-import { emitTemplate } from '../../../scripts/emit-template.mjs';
+import { emitTemplate } from '../../../scripts/build/emit-template.mjs';
 import { walk } from '../../../scripts/walk-files.mjs';
 
 const ROOT = resolve(__dirname, '../../..');

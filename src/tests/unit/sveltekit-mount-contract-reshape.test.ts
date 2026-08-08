@@ -3,7 +3,7 @@ import ts from 'typescript';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { enumerateExports, moduleExports } from '../../../scripts/reference-coverage.mjs';
+import { enumerateExports, moduleExports } from '../../../scripts/checks/reference-coverage.mjs';
 import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/index.js';
 
 const SVELTEKIT_DTS = resolve(fileURLToPath(new URL('../../../dist/sveltekit/index.d.ts', import.meta.url)));

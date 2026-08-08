@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { enumerateExports } from '../../../scripts/reference-coverage.mjs';
+import { enumerateExports } from '../../../scripts/checks/reference-coverage.mjs';
 
 // The 72 names the surface-pruning pass demotes from the root barrel (Task 1), plus the
 // `ResolvedReference` reshape (its home becomes `/delivery` only) and `RoutingRule` (Task 5,

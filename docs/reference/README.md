@@ -9,7 +9,7 @@ export's real type through the TypeScript compiler and compares it against the d
 signature on the page, so a signature that drifts from the code fails the build. Copy a declared
 signature from the real export type rather than hand-writing it. A page that deliberately summarizes
 a large signature (an actions record shown as `Record<string, ...>`, say) names itself in the
-`ALLOWLIST` at the top of `scripts/check-reference-signatures.mjs`, keyed `${subpath}#${name}` with a
+`ALLOWLIST` at the top of `scripts/checks/check-reference-signatures.mjs`, keyed `${subpath}#${name}` with a
 reason.
 
 ## Stability tiers
@@ -18,7 +18,7 @@ Every export carries exactly one stability tier, marked either inline on its own
 (`Stability tier: <tier> API.`) or as the Stability column of a Types table row. `check:reference`
 enforces this both ways: every enumerated export must carry a tier, and a name that appears in a
 Types table row, a bare export heading, or a `declare` signature but is no longer a real export
-anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
+anywhere in the package fails as stale prose (`scripts/checks/reference-coverage.mjs`).
 
 - **Extension API.** The frozen contract: the adapter and schema constructors, the composed
   runtime's read surface, the single-mount facade, and the components a site mounts directly.

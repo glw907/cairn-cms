@@ -1,4 +1,4 @@
-// This module carries no runtime logic. It exists so scripts/admin-css.input.css's `@source
+// This module carries no runtime logic. It exists so scripts/build/admin-css.input.css's `@source
 // "../src/lib/components/**/*.{svelte,ts,js}"` glob scans it: Tailwind only compiles a class it can
 // find as literal text somewhere in the scanned tree, so a daisyUI class with no shipped admin
 // component reference (a "dead daisy class") never reaches the compiled cairn-admin.css and silently
@@ -101,7 +101,7 @@ export const ADMIN_CSS_SAFELIST = [
   // tree in favor of the two chip registers (`cairn-chip-bounded`/`cairn-chip-quiet` in
   // cairn-admin.css, StatusChip's own `register` prop), and a new toolkit screen should reach for
   // those, not the stock modifier. It still ships in the compiled sheet, through the separate
-  // compatibility safelist in scripts/admin-css.input.css (issue #12, 0.91.1): a consumer's own
+  // compatibility safelist in scripts/build/admin-css.input.css (issue #12, 0.91.1): a consumer's own
   // admin markup may still ride `badge-ghost` even after cairn's own tree moved on, since the
   // shipped sheet's class inventory is a de facto public API.
   'badge-soft',

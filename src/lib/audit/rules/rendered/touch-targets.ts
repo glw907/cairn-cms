@@ -2,7 +2,7 @@
 // `[role="button"]`) renders at least 24x24 CSS px at a 390px viewport. That floor is DERIVED from
 // WCAG 2.2's SC 2.5.8, Target Size (Minimum), and is not an implementation of it: the rule enforces
 // a strict superset, so a red run is a house-bar failure and never, on its own, an AA failure. See
-// the exception list below for what is missing. Graduates scripts/check-touch-targets.mjs and closes the
+// the exception list below for what is missing. Graduates scripts/checks/check-touch-targets.mjs and closes the
 // one gap the source probe carried: that script measures only a control's own visual box, so a
 // control deliberately shrunk to its intended small size and widened only through an `::before`
 // inset hit area (the `.nav-caret` finding) reads as a violation the fix itself had already closed.

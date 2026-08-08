@@ -1,6 +1,6 @@
 // cairn's vertical-alignment measurement module: the one place the geometry of "do these two
 // things in a row line up" is defined. Its one caller is the standalone inventory probe
-// (scripts/probe-vertical-alignment.mjs), so the three measurement traps below are encoded once
+// (scripts/lab/probe-vertical-alignment.mjs), so the three measurement traps below are encoded once
 // rather than relearned per artifact.
 //
 // WATCH: this file is LAB APPARATUS and must stop shipping. It is cairn's own discovery instrument,

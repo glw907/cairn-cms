@@ -1,4 +1,4 @@
-// cairn-cms: scripts/dev-fold-markers.txt feeds `grep -F -f` in e2e.yml and scaffold.yml. Under
+// cairn-cms: scripts/checks/dev-fold-markers.txt feeds `grep -F -f` in e2e.yml and scaffold.yml. Under
 // GNU grep, a blank line in a -f pattern file matches every line, which would turn the dev-fold
 // gate red on every run (spec docs/superpowers/specs/2026-08-04-auth-channel-consumer-proof-design.md,
 // "Fold markers: two lists, two propositions"). A `#`-prefixed line would also grep literally
@@ -11,14 +11,14 @@ import { resolve } from 'node:path';
 const ROOT = resolve(__dirname, '../../..');
 
 function markerLines(): string[] {
-  const raw = readFileSync(resolve(ROOT, 'scripts/dev-fold-markers.txt'), 'utf-8');
+  const raw = readFileSync(resolve(ROOT, 'scripts/checks/dev-fold-markers.txt'), 'utf-8');
   const lines = raw.split('\n');
   // The file's own trailing newline, not an empty pattern line: grep does not read it as one.
   if (lines.at(-1) === '') lines.pop();
   return lines;
 }
 
-describe('scripts/dev-fold-markers.txt', () => {
+describe('scripts/checks/dev-fold-markers.txt', () => {
   it('has no empty lines', () => {
     const lines = markerLines();
     expect(lines.length).toBeGreaterThan(0);

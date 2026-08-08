@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 // The build script is plain ESM under scripts/; the unit project runs in Node.
-import { buildAdminCss } from '../../../scripts/build-admin-css.mjs';
+import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { parseSheet, type CompiledSheet } from '../../lib/audit/sheet.js';
 
 // CONTRACT (ASC Assets-trial harvest finding 2): `cairn-admin-screens`'s own reference docs
@@ -168,7 +168,7 @@ describe("the skill's own exemplars compile", () => {
         ...lines,
         '',
         'either the recipe is deliberate (join the labeled compatibility safelist in',
-        'scripts/admin-css.input.css, naming the reference doc) or the exemplar needs a class',
+        'scripts/build/admin-css.input.css, naming the reference doc) or the exemplar needs a class',
         'that actually compiles.',
       ].join('\n')
     );

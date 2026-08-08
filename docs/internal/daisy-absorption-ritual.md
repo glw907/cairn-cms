@@ -2,7 +2,7 @@
 
 The admin (`cairn-admin.css`) and the admin toolkit (`@glw907/cairn-cms/admin-toolkit`) both
 assemble their markup from a curated blessed set of daisyUI 5 classes, compiled once by
-`scripts/build-admin-css.mjs` from `src/lib/components/admin-css-safelist.ts` plus whatever class
+`scripts/build/build-admin-css.mjs` from `src/lib/components/admin-css-safelist.ts` plus whatever class
 the `.svelte` sources themselves reference. A daisy release can rename a class, drop one, or
 change what a class renders, and the admin has no other signal that happened: a class the build
 no longer compiles simply stops styling anything, silently, with no error. This ritual is the

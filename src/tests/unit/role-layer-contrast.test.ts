@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse, converter, interpolate } from 'culori';
-import { dualGamutRatio } from '../../../scripts/check-public-tokens.mjs';
+import { dualGamutRatio } from '../../../scripts/checks/check-public-tokens.mjs';
 
 const toRgb = converter('rgb');
 

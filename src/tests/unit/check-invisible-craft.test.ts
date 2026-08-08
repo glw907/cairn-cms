@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { CSS_FILES, SCAN_SCOPE } from '../../../scripts/check-invisible-craft.mjs';
+import { CSS_FILES, SCAN_SCOPE } from '../../../scripts/checks/check-invisible-craft.mjs';
 
 // The rule fixtures for motion-band, gap-scale, and token-colors (the three rules this gate
 // graduated into) already carry their own exhaustive behavioral coverage under

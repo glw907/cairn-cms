@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { diffSurface } from '../../../scripts/check-surface.mjs';
+import { diffSurface } from '../../../scripts/checks/check-surface.mjs';
 
 const SNAPSHOT = resolve(
   fileURLToPath(new URL('../../../docs/internal/api-surface.md', import.meta.url)),

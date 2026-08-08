@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { collectCmTokens, evaluate } from '../../../scripts/check-cm-internals.mjs';
+import { collectCmTokens, evaluate } from '../../../scripts/checks/check-cm-internals.mjs';
 
 const allow = {
   writingSurface: ['.cm-content', '.cm-lintRange-info'],

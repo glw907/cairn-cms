@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { transform, Features } from 'lightningcss';
 // The build script is plain ESM under scripts/; this unit project runs in Node.
-import { buildAdminCss } from '../../../scripts/build-admin-css.mjs';
+import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { parseSheet } from '../../lib/audit/sheet.js';
 import type { SheetDeclaration } from '../../lib/audit/sheet.js';
 

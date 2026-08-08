@@ -217,7 +217,7 @@ The original decision framing, for the record:
   Confirmed findings to start from, each verified against `dist`, not inferred:
   - `dist/audit/rules/rendered/vertical-metrics.{js,d.ts}` ships today and is pure lab apparatus,
     the measurement module for a probe that no shipped rule consumes. **THIS PASS RELOCATES IT**,
-    together with `scripts/probe-vertical-alignment.mjs` and the module's tests, which travel as
+    together with `scripts/lab/probe-vertical-alignment.mjs` and the module's tests, which travel as
     one unit. The vertical-alignment pass deliberately left it in place with a co-located `// WATCH:`
     comment rather than move it twice, since the lab-versus-shipped boundary is this pass's
     organizing principle and not one file's problem. It is the worked example: nothing named it in
@@ -945,7 +945,7 @@ the named human gates only):**
   a bundler cannot tree-shake away the module-level throw that makes `./auth-crypto` and `./cloudflare`
   server-only in practice. Nothing tests it, and the glob is depth-fixed, so the next server-only subpath
   at a different depth silently reopens the hole while its reference page still promises the throw. Add
-  an assertion to `scripts/check-package-files.mjs` (already run by `check:package`) that every
+  an assertion to `scripts/checks/check-package-files.mjs` (already run by `check:package`) that every
   `dist/**/browser.js` the package emits is matched by at least one `sideEffects` glob, failing with the
   offending path. This is a watch converted into a gate, which is the form that cannot be forgotten.
 - **Extend `cairn-doctor`'s `config.dependency-floors` check beyond svelte and kit (filed by the

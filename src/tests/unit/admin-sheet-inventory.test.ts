@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 // The build script is plain ESM under scripts/; the unit project runs in Node.
-import { buildAdminCss } from '../../../scripts/build-admin-css.mjs';
+import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { parseSheet } from '../../lib/audit/sheet.js';
 
 // CONTRACT (issue #12): the shipped sheet's class inventory is a de facto public API. A consumer's
@@ -11,7 +11,7 @@ import { parseSheet } from '../../lib/audit/sheet.js';
 // diffs it against the committed fixture below; either direction of drift is a failure. A class may
 // only ever leave the shipped sheet as a deliberate act carried in CHANGELOG.md, never as a side
 // effect of cairn's own tree moving off it (0.91.0's silent loss of nineteen classes, restored here
-// as a labeled compatibility safelist in scripts/admin-css.input.css). When a change intentionally
+// as a labeled compatibility safelist in scripts/build/admin-css.input.css). When a change intentionally
 // adds or drops a shipped class, update CHANGELOG.md first, then regenerate the fixture with
 // `npm run update-admin-sheet-inventory`.
 //

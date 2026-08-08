@@ -5,7 +5,7 @@ import {
   checkSkillPacked,
   checkWorkerCondition,
   parsePackFilePaths
-} from '../../../scripts/check-package-files.mjs';
+} from '../../../scripts/checks/check-package-files.mjs';
 
 // The gate's core comparison, against synthetic file lists. The script's main() wires the same
 // function to the real `npm pack --dry-run` output.

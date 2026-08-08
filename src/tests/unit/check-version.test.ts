@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkVersion, compareVersions } from '../../../scripts/check-version.mjs';
+import { checkVersion, compareVersions } from '../../../scripts/checks/check-version.mjs';
 
 // The marker the rule reserves for a deliberate minor or major release.
 const MINOR_MARK = '<!-- release-size: minor -->';

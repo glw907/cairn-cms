@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 // The build script is plain ESM under scripts/; the unit project runs in Node.
-import { buildAdminCss } from '../../../scripts/build-admin-css.mjs';
+import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 
 describe('admin css build', () => {
   // Compile the sheet once and share it across the assertions. Each case used to run its own full

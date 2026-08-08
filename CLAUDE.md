@@ -272,7 +272,7 @@ The symlink half is not: reinstall before trusting a worktree e2e, or rely on CI
 
 Vite 8 / Rolldown parses dist `.svelte` `<script lang="ts">` as JavaScript before the consumer's
 Svelte plugin runs, so shipped TypeScript fails the consumer build. The post-package step
-`scripts/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>` body and
+`scripts/build/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>` body and
 KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse). Do not remove
 the step or strip `lang="ts"`. The showcase `package-lock.json` stays committed and CI uses `npm ci`
 so the toolchain is reproducible. Full post-mortem:

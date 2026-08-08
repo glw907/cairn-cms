@@ -1,5 +1,5 @@
 // cairn-audit's norms manifest: the admin's measured design norms as data, derived from a rendered
-// admin rather than asserted from a doc. The generator (scripts/generate-norms-manifest.mjs) drives
+// admin rather than asserted from a doc. The generator (scripts/lab/generate-norms-manifest.mjs) drives
 // a browser and produces raw observations; this module owns everything that is not the browser: the
 // role vocabulary the generator queries, the band derivation, the provenance rules, the three
 // honesty disciplines, the load, and the query the bin's `norms` subcommand prints.

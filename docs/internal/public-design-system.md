@@ -211,10 +211,10 @@ gates prove it: `check:public-tokens` (no literals, dual-gamut AA, token resolut
 
 ## Accessibility
 
-- The **dual-gamut contrast gate** (`scripts/check-public-tokens.mjs`): every role/`-content` pair, the
+- The **dual-gamut contrast gate** (`scripts/checks/check-public-tokens.mjs`): every role/`-content` pair, the
   on-surface inks, and `accent`/`accent-content` clear AA in both sRGB and P3 via culori. The
   **token-resolution gate** fails on a dangling `var()`. The **re-skin fixture**
-  (`scripts/reskin-fixture.mjs`) proves a hue rotation holds AA and the prose has no second color source.
+  (`scripts/lab/reskin-fixture.mjs`) proves a hue rotation holds AA and the prose has no second color source.
 - A consistent `:focus-visible` language (2px `primary`, 2px offset) across the chrome, the reading
   surface, and the styleguide, with the `base-100` halo on tinted grounds. `scroll-padding-top` for the
   sticky header. The skip link plus `<main tabindex="-1">`.
@@ -317,5 +317,5 @@ measure it, rather than trusting the read.
   `examples/showcase/src/lib/prose.css`. The chrome: `examples/showcase/src/lib/components/`.
 - The live demo: `/styleguide`. The criteria and the settled design: the design bar
   ([`2026-06-25-cairn-b2-design-bar.md`](../superpowers/specs/2026-06-25-cairn-b2-design-bar.md)).
-- The gates: `scripts/check-public-tokens.mjs`, `scripts/reskin-fixture.mjs`, and the `design.yml`
+- The gates: `scripts/checks/check-public-tokens.mjs`, `scripts/lab/reskin-fixture.mjs`, and the `design.yml`
   workflow. The engine highlighter: `src/lib/render/highlight.ts`.

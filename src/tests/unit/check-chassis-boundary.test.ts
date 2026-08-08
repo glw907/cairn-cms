@@ -4,7 +4,7 @@ import {
   parseSeams,
   referencesChassis,
   reachInsInSource,
-} from '../../../scripts/check-chassis-boundary.mjs';
+} from '../../../scripts/checks/check-chassis-boundary.mjs';
 
 describe('seamBaseName', () => {
   it('strips a single trailing extension, including from a dotted filename', () => {

@@ -7,7 +7,7 @@ import {
   findBrokenLinks,
   hasUnreleasedHeading,
   unreleasedParityMismatch,
-} from '../../../scripts/docs-links.mjs';
+} from '../../../scripts/checks/docs-links.mjs';
 import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
 

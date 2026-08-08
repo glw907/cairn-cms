@@ -14,7 +14,19 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-08: stable `0.94.0` on `latest`; ASC adopted; the vertical-alignment pass is MERGED and unreleased; the CLEANUP PASS runs next, ahead of release one)
+## Immediate next action (2026-08-08: stable `0.94.0` on `latest`; ASC adopted; the vertical-alignment pass is MERGED and unreleased; the CLEANUP PASS is SPECCED AND PLANNED, execution next, ahead of release one)
+
+**The cleanup pass is ready to execute (2026-08-08, the Fable brainstorm sitting).** The spec is
+[`2026-08-08-cleanup-pass-design.md`](superpowers/specs/2026-08-08-cleanup-pass-design.md) and the
+plan is [`2026-08-08-cleanup-pass.md`](superpowers/plans/2026-08-08-cleanup-pass.md), both
+committed. The sitting's rulings: **cairn-audit ships whole as consumer product** (the
+hypothesized rule split dissolved on evidence: all 23 registered rules audit the `/admin` surface,
+and a consumer's admin IS cairn's admin toolkit); the lab apparatus evicts from `src/lib` with a
+registry-reachability gate in `check:package`; `@anthropic-ai/sdk` becomes an optional peer (the
+pass's one `Consumers must:` line, batching into release one); and all three scope edges are in
+(legacy/history pruning, theme-port relocation to a private `glw907/cairn-themes`, the SDK move).
+**Execution runs in a fresh Opus 5 session**: launch in `~/Projects/cairn-cms`, invoke
+`cairn-pass`, and execute the plan task-by-task on a feature worktree. Then release one.
 
 **Stable `0.94.0` published 2026-08-07**, the content-identical promotion of `0.94.0-rc.2`: same
 source, same exports, same breaking list, proven end-to-end by ASC's 75-spec Playwright run

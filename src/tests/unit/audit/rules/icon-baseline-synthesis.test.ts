@@ -18,6 +18,22 @@ function check(...files: ParsedComponent[]) {
   return iconBaselineSynthesis.check({ files, sheet: SHEET, config: CONFIG });
 }
 
+/**
+ * The shape the rule is about, as one parsed component: a row container holding an icon-plus-word
+ * label beside a plain value. The defaults are the flagged case, so each test overrides only the
+ * attribute or the children its own case turns on, and what varies is what it is testing.
+ */
+function fixture(over: { row?: string; label?: string; children?: string; value?: string } = {}): ParsedComponent {
+  const row = over.row ?? 'class="flex items-baseline gap-2"';
+  const label = over.label ?? 'class="inline-flex items-center gap-1"';
+  const children = over.children ?? '<CheckIcon class="h-3 w-3" />Label';
+  const value = over.value ?? 'Value';
+  return parseComponent(
+    'Fixture.svelte',
+    `<div ${row}><span ${label}>${children}</span><span>${value}</span></div>\n`
+  );
+}
+
 // The pre-fix `CairnTidySettings.svelte` shape, verbatim: three sibling rows, each declaring
 // `sm:items-baseline`, each labeled with a bare `inline-flex` span whose first child is a lucide
 // icon. Task 2 of this pass (commit 68d622a1) replaced `inline-flex items-center` with
@@ -55,72 +71,36 @@ describe('icon-baseline-synthesis: the vacuous-pass guard', () => {
   });
 
   it('flags a bare, unprefixed items-baseline row the same way', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-baseline gap-2">' +
-        '<span class="inline-flex items-center gap-1"><CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toHaveLength(1);
+    expect(check(fixture())).toHaveLength(1);
   });
 
   it('flags an inline <svg> icon the same way a lucide *Icon component is flagged', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-baseline gap-2">' +
-        '<span class="inline-flex items-center gap-1"><svg aria-hidden="true"></svg>Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toHaveLength(1);
+    expect(check(fixture({ children: '<svg aria-hidden="true"></svg>Label' }))).toHaveLength(1);
   });
 
   it('flags an icon wrapped one level deep in a bare sizing span', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-baseline gap-2">' +
-        '<span class="inline-flex items-center gap-1">' +
-        '<span class="flex-none"><CheckIcon class="h-3 w-3" /></span>Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toHaveLength(1);
+    const wrapped = '<span class="flex-none"><CheckIcon class="h-3 w-3" /></span>Label';
+    expect(check(fixture({ children: wrapped }))).toHaveLength(1);
   });
 });
 
 describe('icon-baseline-synthesis: silent cases', () => {
   it('is silent on the fixed cairn-icon-label recipe: baseline row, label not inline-flex', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-2">' +
-        '<span class="cairn-icon-label gap-1.5 sm:min-w-[8.5rem]"><CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />Tidy</span>' +
-        '<span>On for this site</span>' +
-        '</div>\n'
-    );
+    const file = fixture({
+      row: 'class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-2"',
+      label: 'class="cairn-icon-label gap-1.5 sm:min-w-[8.5rem]"',
+      children: '<CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />Tidy',
+      value: 'On for this site',
+    });
     expect(check(file)).toEqual([]);
   });
 
   it('is silent on an inline-flex label with no leading icon', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-baseline gap-2">' +
-        '<span class="inline-flex items-center gap-1">Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    expect(check(fixture({ children: 'Label' }))).toEqual([]);
   });
 
   it('is silent on the same inline-flex-plus-icon label under a non-baseline container', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-start gap-2">' +
-        '<span class="inline-flex items-center gap-1"><CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    expect(check(fixture({ row: 'class="flex items-start gap-2"' }))).toEqual([]);
   });
 
   // A documented structural limitation, not a false negative this rule claims to close: a label
@@ -141,92 +121,37 @@ describe('icon-baseline-synthesis: silent cases', () => {
   });
 
   it('is silent when the label opts out of the row alignment with self-center', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-baseline gap-2">' +
-        '<span class="inline-flex items-center gap-1 self-center"><CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    expect(check(fixture({ label: 'class="inline-flex items-center gap-1 self-center"' }))).toEqual([]);
   });
 
   it('is silent when the label opts out of the row alignment with self-start', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-baseline gap-2">' +
-        '<span class="inline-flex items-center gap-1 self-start"><CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    expect(check(fixture({ label: 'class="inline-flex items-center gap-1 self-start"' }))).toEqual([]);
   });
 
   it('is silent when the label declares its own items-baseline, the recipe\'s load-bearing half', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-baseline gap-2">' +
-        '<span class="inline-flex items-baseline gap-1"><CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    expect(check(fixture({ label: 'class="inline-flex items-baseline gap-1"' }))).toEqual([]);
   });
 
   it('is silent under a column-direction container, where items-baseline behaves as flex-start', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex flex-col items-baseline gap-2">' +
-        '<span class="inline-flex items-center gap-1"><CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    expect(check(fixture({ row: 'class="flex flex-col items-baseline gap-2"' }))).toEqual([]);
   });
 
   it('is silent on a row-then-column responsive container: unprefixed flex-row overridden by sm:flex-col', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex flex-row sm:flex-col sm:items-baseline gap-2">' +
-        '<span class="inline-flex items-center gap-1"><CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    expect(check(fixture({ row: 'class="flex flex-row sm:flex-col sm:items-baseline gap-2"' }))).toEqual([]);
   });
 
   it('is silent when the container declares items-baseline only through a class: directive', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex gap-2" class:items-baseline={dense}>' +
-        '<span class="inline-flex items-center gap-1"><CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    expect(check(fixture({ row: 'class="flex gap-2" class:items-baseline={dense}' }))).toEqual([]);
   });
 
   it('is silent when the container alignment is a ternary between items-baseline and items-center', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class={dense ? "flex items-baseline gap-2" : "flex items-center gap-2"}>' +
-        '<span class="inline-flex items-center gap-1"><CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    const row = 'class={dense ? "flex items-baseline gap-2" : "flex items-center gap-2"}';
+    expect(check(fixture({ row }))).toEqual([]);
   });
 
   it('is silent when the label inline-flex is a ternary against a flex alternate', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-baseline gap-2">' +
-        '<span class={dense ? "inline-flex items-center gap-1" : "flex items-center gap-1"}>' +
-        '<CheckIcon class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    const label = 'class={dense ? "inline-flex items-center gap-1" : "flex items-center gap-1"}';
+    expect(check(fixture({ label }))).toEqual([]);
   });
 
   // A documented structural limitation, not a false negative the icon-wrapper widening closes:
@@ -234,14 +159,7 @@ describe('icon-baseline-synthesis: silent cases', () => {
   // under an alias that drops the *Icon convention reads as an ordinary component. Resolving it
   // needs an import table this substrate does not build; the rule's own header names the gap.
   it('is silent on an icon imported under a non-Icon-suffixed binding, a documented convention gap', () => {
-    const file = parseComponent(
-      'Fixture.svelte',
-      '<div class="flex items-baseline gap-2">' +
-        '<span class="inline-flex items-center gap-1"><Check class="h-3 w-3" />Label</span>' +
-        '<span>Value</span>' +
-        '</div>\n'
-    );
-    expect(check(file)).toEqual([]);
+    expect(check(fixture({ children: '<Check class="h-3 w-3" />Label' }))).toEqual([]);
   });
 
   it('is suppressed by a directive naming the rule, and counted', () => {

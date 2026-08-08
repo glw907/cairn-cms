@@ -23,8 +23,10 @@ import {
   pairsAboveBar,
   referenceForMetric,
   type MeasuredPair,
+  type GeometrySource,
   type MemberAnchor,
   type MemberKind,
+  type PairClass,
   type RawPair,
   type VerticalCalibrationFixture,
 } from '../../../../../lib/audit/rules/rendered/vertical-metrics.js';
@@ -59,6 +61,14 @@ async function measure(html: string): Promise<MeasuredPair[]> {
   });
 }
 
+/**
+ * The first pair of `pairClass` the module measures on `html`. Undefined rather than thrown, so a
+ * test asserting the pair exists says so itself instead of relying on a helper to have done it.
+ */
+async function measureFirst(html: string, pairClass: PairClass): Promise<MeasuredPair | undefined> {
+  return (await measure(html)).find((pair) => pair.pairClass === pairClass);
+}
+
 function fixture(id: VerticalCalibrationFixture['id']): VerticalCalibrationFixture {
   const found = VERTICAL_CALIBRATION_FIXTURES.find((candidate) => candidate.id === id);
   if (!found) throw new Error(`no calibration fixture named ${id}`);
@@ -74,17 +84,33 @@ function fixturePair(pairs: MeasuredPair[], spec: VerticalCalibrationFixture): M
   return found;
 }
 
+/** The tag a member of each kind is read off in the real walk, so a fixture names a plausible one. */
+const TAG_BY_KIND: Record<MemberKind, string> = {
+  text: 'span',
+  icon: 'svg',
+  control: 'button',
+  box: 'span',
+};
+
+/** Where each kind's reading comes from, which the walk resolves and a pure fixture only restates. */
+const GEOMETRY_BY_KIND: Record<MemberKind, GeometrySource> = {
+  text: 'glyph',
+  icon: 'ink',
+  control: 'element-box',
+  box: 'element-box',
+};
+
 /** A member anchor with only the fields a pure test cares about set, the rest at neutral values. */
 function anchor(kind: MemberKind, values: Partial<MemberAnchor> = {}): MemberAnchor {
   return {
     kind,
     selector: `${kind}-member`,
     classes: '',
-    tag: kind === 'icon' ? 'svg' : kind === 'control' ? 'button' : 'span',
+    tag: TAG_BY_KIND[kind],
     // Neutral for the decomposition: a member centred on a block it renders one line of carries no
     // composition term, so a pure test asserts the delta without also asserting a lift.
     alignSelf: 'center',
-    geometry: kind === 'text' ? 'glyph' : kind === 'icon' ? 'ink' : 'element-box',
+    geometry: GEOMETRY_BY_KIND[kind],
     topPx: 0,
     bottomPx: 10,
     contentCentrePx: 5,
@@ -573,23 +599,22 @@ describe('trap 1: the first line is the visually first one, not the first in the
   // Same rendered pixels, two DOM orders. Reading document order anchored the pair on the line
   // BELOW the one the icon sits on and manufactured 23.5px of phantom delta.
   it('reads a column reordered by `order` the same as the identical column in visual order', async () => {
-    const reordered = await measure(
-      column(`<h3 style="order:2;margin:0;font-size:18px;line-height:24px">Club Boats</h3>`, `<span style="order:1;font-size:12px;line-height:24px">MEMBERSHIP</span>`)
+    const one = await measureFirst(
+      column(`<h3 style="order:2;margin:0;font-size:18px;line-height:24px">Club Boats</h3>`, `<span style="order:1;font-size:12px;line-height:24px">MEMBERSHIP</span>`),
+      'icon-beside-text'
     );
-    const plain = await measure(column(eyebrow, title));
-    const one = reordered.find((pair) => pair.pairClass === 'icon-beside-text');
-    const other = plain.find((pair) => pair.pairClass === 'icon-beside-text');
+    const other = await measureFirst(column(eyebrow, title), 'icon-beside-text');
     expect(one?.b.text).toBe('MEMBERSHIP');
     expect(one?.deltaPx).toBe(other?.deltaPx);
     expect(one?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
   });
 
   it('reads a `column-reverse` column off the run that renders on top', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div style="display:flex;align-items:flex-start;gap:12px;font-family:sans-serif">${icon}
-        <div style="display:flex;flex-direction:column-reverse">${title}${eyebrow}</div></div>`
+        <div style="display:flex;flex-direction:column-reverse">${title}${eyebrow}</div></div>`,
+      'icon-beside-text'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
     expect(pair?.b.text).toBe('MEMBERSHIP');
     expect(pair?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
   });
@@ -597,23 +622,23 @@ describe('trap 1: the first line is the visually first one, not the first in the
   // An out-of-flow run sits BESIDE the composition rather than in it, so it is not the line the
   // eye pairs the icon against. Anchoring on one both fired falsely and named the wrong element.
   it('ignores an absolutely positioned flag and names the title the row is composed against', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div style="display:flex;align-items:flex-start;gap:12px;font-family:sans-serif">${icon}
         <div style="position:relative;width:200px;height:60px">
-          <span style="position:absolute;bottom:0;left:0;font-size:11px">New</span>${title}</div></div>`
+          <span style="position:absolute;bottom:0;left:0;font-size:11px">New</span>${title}</div></div>`,
+      'icon-beside-text'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
     expect(pair?.b.selector).toBe('h3');
     expect(pair?.b.text).toBe('Club Boats');
     expect(pair?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
   });
 
   it('ignores a floated price on the title line', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div style="display:flex;align-items:flex-start;gap:12px;font-family:sans-serif">${icon}
-        <div><span style="float:right;font-size:12px;line-height:16px">$20</span>${title}</div></div>`
+        <div><span style="float:right;font-size:12px;line-height:16px">$20</span>${title}</div></div>`,
+      'icon-beside-text'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
     expect(pair?.b.selector).toBe('h3');
     expect(pair?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
   });
@@ -627,10 +652,8 @@ describe('who counts as a row member', () => {
       `<div style="display:flex;align-items:center;gap:8px;font-family:sans-serif">
         <span style="font-size:20px;line-height:24px;position:relative;top:6px">Showcase</span>
         <div style="display:${wrapper}"><button style="width:44px;height:44px"></button></div></div>`;
-    const hoisted = (await measure(header('contents'))).find(
-      (pair) => pair.pairClass === 'control-beside-text'
-    );
-    const plain = (await measure(header('flex'))).find((pair) => pair.pairClass === 'control-beside-text');
+    const hoisted = await measureFirst(header('contents'), 'control-beside-text');
+    const plain = await measureFirst(header('flex'), 'control-beside-text');
     expect(hoisted).toBeDefined();
     expect(hoisted?.deltaPx).toBe(plain?.deltaPx);
     expect(hoisted?.magnitudePx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
@@ -700,14 +723,14 @@ describe('trap 2: type metrics come off the element that renders the line', () =
   // without owning any of its visual mass. Reading that face returned -1.5px, under the reporting
   // bar, on a row whose icon sits 3px off the heading it is composed against.
   it('reads the heading a leading inline flag shares its line with, not the flag', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div style="display:flex;align-items:center;gap:12px;font-family:sans-serif">
         <svg width="24" height="24" viewBox="0 0 24 24" style="display:block">
           <rect x="0" y="0" width="24" height="24" fill="currentColor"></rect></svg>
         <h2 style="margin:0;font-size:24px;line-height:32px;font-weight:600">
-          <span style="font-size:10px">DRAFT</span> Winter schedule</h2></div>`
+          <span style="font-size:10px">DRAFT</span> Winter schedule</h2></div>`,
+      'icon-beside-text'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
     expect(pair?.b.selector).toBe('h2');
     expect(pair?.b.text).toBe('Winter schedule');
     expect(pair?.magnitudePx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
@@ -716,15 +739,15 @@ describe('trap 2: type metrics come off the element that renders the line', () =
   // Same shape, and this one inverted the SIGN: the module said the icon rode high by 2.5px while
   // it in fact sat low by 3, which sends a fixer the wrong way.
   it('signs the delta off the principal run, so a numbered heading reads the icon as sitting low', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div style="display:flex;align-items:center;gap:12px;font-family:sans-serif">
         <span style="display:flex;flex:none;align-items:center;height:28px">
           <svg width="28" height="28" viewBox="0 0 28 28" style="display:block">
             <rect x="0" y="0" width="28" height="28" fill="currentColor"></rect></svg></span>
         <h3 style="margin:0;font-size:28px;line-height:36px;font-weight:600">
-          <small style="font-size:11px">3.</small> Publish the post</h3></div>`
+          <small style="font-size:11px">3.</small> Publish the post</h3></div>`,
+      'icon-beside-text'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
     expect(pair?.b.selector).toBe('h3');
     expect(pair?.deltaPx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
   });
@@ -732,15 +755,15 @@ describe('trap 2: type metrics come off the element that renders the line', () =
   // The inverse defect, and the false-alarm direction: the member's own first text node is a small
   // run whose parent is the CONTAINER, which is trap 2 verbatim. The row is composed exactly right.
   it('stays quiet on a row whose visual mass is a larger inline inside a small container', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div style="display:flex;align-items:center;gap:12px;font-family:sans-serif">
         <span style="display:flex;flex:none;align-items:center;height:30px">
           <svg width="30" height="30" viewBox="0 0 30 30" style="display:block">
             <rect x="0" y="0" width="30" height="30" fill="currentColor"></rect></svg></span>
         <div style="font-size:11px;line-height:16px">for
-          <span style="font-size:30px;line-height:36px;font-weight:700">Winter 2026</span></div></div>`
+          <span style="font-size:30px;line-height:36px;font-weight:700">Winter 2026</span></div></div>`,
+      'icon-beside-text'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
     expect(pair?.b.text).toBe('Winter 2026');
     expect(pair?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
   });
@@ -765,8 +788,7 @@ describe('text beside text: the pair that must not fire', () => {
   });
 
   it('would have fired on that same pair under a centre metric, which is why the split exists', async () => {
-    const pairs = await measure(html);
-    const pair = pairs.find((candidate) => candidate.pairClass === 'text-beside-text');
+    const pair = await measureFirst(html, 'text-beside-text');
     const asCentres =
       (referenceForMetric(pair!.a, 'content-centre') ?? 0) - (referenceForMetric(pair!.b, 'content-centre') ?? 0);
     expect(Math.abs(asCentres)).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
@@ -774,7 +796,7 @@ describe('text beside text: the pair that must not fire', () => {
 
   it('still catches two runs of text whose baselines genuinely disagree', async () => {
     const broken = html.replace('line-height:1">24 published', 'line-height:1;position:relative;top:5px">24 published');
-    const pair = (await measure(broken)).find((candidate) => candidate.pairClass === 'text-beside-text');
+    const pair = await measureFirst(broken, 'text-beside-text');
     expect(pair?.metric).toBe('baseline');
     expect(pair?.magnitudePx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
   });
@@ -784,8 +806,7 @@ describe('text beside text: the pair that must not fire', () => {
   // baseline metric reports every correctly centred row as broken.
   it('measures a centred mixed-size pair by centres, since a centred row asked for centres', async () => {
     const centred = html.replace('align-items:baseline', 'align-items:center');
-    const pairs = await measure(centred);
-    const pair = pairs.find((candidate) => candidate.pairClass === 'text-beside-text');
+    const pair = await measureFirst(centred, 'text-beside-text');
     expect(pair?.metric).toBe('content-centre');
     expect(pair?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
     // The reading the old metric took on these same pixels, kept as the assertion that would have
@@ -798,7 +819,7 @@ describe('text beside text: the pair that must not fire', () => {
     const broken = html
       .replace('align-items:baseline', 'align-items:center')
       .replace('line-height:1">24 published', 'line-height:1;position:relative;top:5px">24 published');
-    const pair = (await measure(broken)).find((candidate) => candidate.pairClass === 'text-beside-text');
+    const pair = await measureFirst(broken, 'text-beside-text');
     expect(pair?.metric).toBe('content-centre');
     expect(pair?.magnitudePx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
   });
@@ -871,14 +892,14 @@ describe('a padded chip is a box, not a run of type', () => {
   it('does not read the row its members sit in as one member visual object', async () => {
     // The Write tab: a painted button whose own label is a member of the row inside it. The button
     // is the ground the row is drawn on, not a chip around one member.
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div><button class="tab-btn" type="button"
         style="display:inline-flex;align-items:center;gap:6px;border-radius:8px;background:#e5e2dd;
                padding:4px 10px;font-size:13px;line-height:18px;font-family:sans-serif">
         <svg width="16" height="16" viewBox="0 0 24 24" style="display:block">
-          <rect x="4" y="2" width="16" height="12" fill="currentColor"></rect></svg>Write</button></div>`
+          <rect x="4" y="2" width="16" height="12" fill="currentColor"></rect></svg>Write</button></div>`,
+      'icon-beside-text'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
     expect(pair?.b.paintedBoxCentrePx).toBeNull();
     expect(pair?.residualMagnitudePx ?? 0).toBeGreaterThan(VERTICAL_REPORTING_BAR_PX);
   });
@@ -918,16 +939,14 @@ describe('control beside text', () => {
   </div>`;
 
   it('stays quiet on a control optically centred against its label', async () => {
-    const pair = (await measure(row(''))).find((candidate) => candidate.pairClass === 'control-beside-text');
+    const pair = await measureFirst(row(''), 'control-beside-text');
     expect(pair).toBeDefined();
     expect(pair?.metric).toBe('content-centre');
     expect(pair?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
   });
 
   it('reports a control lifted off its label, signed as the left member riding high', async () => {
-    const pair = (await measure(row('position:relative;top:-6px'))).find(
-      (candidate) => candidate.pairClass === 'control-beside-text'
-    );
+    const pair = await measureFirst(row('position:relative;top:-6px'), 'control-beside-text');
     expect(pair?.deltaPx ?? 0).toBeLessThan(-VERTICAL_REPORTING_BAR_PX);
     expect(pair?.magnitudePx ?? 0).toBeCloseTo(6, 0);
   });
@@ -935,12 +954,12 @@ describe('control beside text', () => {
 
 describe('the optical suspects', () => {
   it('measures a label recipe glyph against its own padding box', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div><button class="btn" type="button"
         style="display:inline-flex;align-items:center;border:0;padding:12px 16px 4px;font-size:14px;line-height:20px">
-        Publish</button></div>`
+        Publish</button></div>`,
+      'optical-suspect'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'optical-suspect');
     expect(pair).toBeDefined();
     expect(pair?.metric).toBe('optical-centre');
     expect(pair?.rowKind).toBe('optical-suspect');
@@ -949,12 +968,12 @@ describe('the optical suspects', () => {
   });
 
   it('stays quiet on a label recipe whose padding is symmetric', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div><button class="btn" type="button"
         style="display:inline-flex;align-items:center;border:0;padding:8px 16px;font-size:14px;line-height:20px">
-        Publish</button></div>`
+        Publish</button></div>`,
+      'optical-suspect'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'optical-suspect');
     expect(pair).toBeDefined();
     expect(pair?.magnitudePx ?? 99).toBeLessThanOrEqual(VERTICAL_REPORTING_BAR_PX);
   });
@@ -962,12 +981,12 @@ describe('the optical suspects', () => {
   // The optical path takes the same principal run as everything else. Measuring a recipe by a
   // small nested count reported a label riding 6px high inside its own box as centred.
   it('measures the recipe by its own label, not by a small nested count beside it', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div><button class="btn" type="button"
         style="display:inline-flex;align-items:baseline;gap:6px;border:0;padding:6px 16px 12px;font-size:24px;line-height:28px;font-family:sans-serif"><span
-        style="font-size:9px">99</span>Publish</button></div>`
+        style="font-size:9px">99</span>Publish</button></div>`,
+      'optical-suspect'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'optical-suspect');
     expect(pair?.a.text).toBe('Publish');
     expect(pair?.deltaPx ?? 0).toBeLessThan(-VERTICAL_REPORTING_BAR_PX);
   });
@@ -1025,8 +1044,8 @@ describe('trap 3: ink is what paints, which an element bbox is not', () => {
              stroke-width="2" stroke-linecap="round" style="display:block">
           <path d="M5 6h.01"/><path d="M12 6h.01"/><path d="${last}"/></svg>
         <span style="font-size:14px;line-height:20px">More actions</span></div>`;
-    const flat = (await measure(ellipsis('M19 6h.01'))).find((pair) => pair.pairClass === 'icon-beside-text');
-    const upright = (await measure(ellipsis('M19 6v.01'))).find((pair) => pair.pairClass === 'icon-beside-text');
+    const flat = await measureFirst(ellipsis('M19 6h.01'), 'icon-beside-text');
+    const upright = await measureFirst(ellipsis('M19 6v.01'), 'icon-beside-text');
     expect(flat?.a.geometry).toBe('ink');
     expect(flat?.a.contentCentrePx).toBeCloseTo((flat?.a.elementCentrePx ?? 0) - 6, 1);
     expect(flat?.deltaPx ?? 0).toBeLessThan(-VERTICAL_REPORTING_BAR_PX);
@@ -1035,13 +1054,13 @@ describe('trap 3: ink is what paints, which an element bbox is not', () => {
   });
 
   it('reads a zero-width stroked rule by its stroke band', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div style="display:flex;align-items:center;gap:8px;font-family:sans-serif">
         <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="display:block">
           <line x1="12" y1="2" x2="12" y2="14"/></svg>
-        <span style="font-size:14px;line-height:20px">More actions</span></div>`
+        <span style="font-size:14px;line-height:20px">More actions</span></div>`,
+      'icon-beside-text'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
     expect(pair?.a.geometry).toBe('ink');
     expect(pair?.a.contentCentrePx).toBeCloseTo((pair?.a.elementCentrePx ?? 0) - 4, 1);
     expect(pair?.deltaPx ?? 0).toBeLessThan(-VERTICAL_REPORTING_BAR_PX);
@@ -1085,13 +1104,13 @@ describe('trap 3: ink is what paints, which an element bbox is not', () => {
   // identity and dropping it entirely changes no number. The corpus's dominant idiom is not:
   // `class="h-4 w-4" viewBox="0 0 24 24"` scales by two thirds.
   it('maps ink through the screen CTM, so a scaled glyph reads at its rendered size', async () => {
-    const pairs = await measure(
+    const pair = await measureFirst(
       `<div style="display:flex;align-items:center;gap:8px;font-family:sans-serif">
         <svg width="16" height="16" viewBox="0 0 24 24" style="display:block">
           <rect x="4" y="2" width="16" height="12" fill="currentColor"></rect></svg>
-        <span style="font-size:14px;line-height:20px">Scaled</span></div>`
+        <span style="font-size:14px;line-height:20px">Scaled</span></div>`,
+      'icon-beside-text'
     );
-    const pair = pairs.find((candidate) => candidate.pairClass === 'icon-beside-text');
     expect(pair?.a.geometry).toBe('ink');
     // The art's user-space centre is 4 units above the viewBox centre, which renders at two thirds
     // of that. Reading the bbox without the CTM would put the ink centre on the element centre.

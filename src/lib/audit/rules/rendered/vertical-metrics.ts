@@ -392,6 +392,17 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     return Math.round(value * 100) / 100;
   }
 
+  /**
+   * Whether two vertical extents sit on one line band: they overlap by at least half the shorter
+   * one. Three separate questions reduce to this one (which runs share a member's first line,
+   * which rects make up a member's line bands, which members make up a visual row), so it is
+   * defined once rather than restated with three chances to drift.
+   */
+  function sharesBand(one: VerticalBand, other: VerticalBand): boolean {
+    const overlap = Math.min(one.bottom, other.bottom) - Math.max(one.top, other.top);
+    return overlap >= Math.min(one.bottom - one.top, other.bottom - other.top) * 0.5;
+  }
+
   /** A length off a computed style, falling back rather than propagating a `NaN` into geometry. */
   function styleNumber(value: string, fallback: number): number {
     const parsed = parseFloat(value);
@@ -823,10 +834,7 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     // applies where it leaves something behind.
     const candidates = inFlow.length > 0 ? inFlow : runs;
     const opener = candidates.reduce((best, next) => (next.rect.top < best.rect.top ? next : best));
-    const onFirstLine = candidates.filter((run) => {
-      const overlap = Math.min(opener.rect.bottom, run.rect.bottom) - Math.max(opener.rect.top, run.rect.top);
-      return overlap >= Math.min(opener.rect.height, run.rect.height) * 0.5;
-    });
+    const onFirstLine = candidates.filter((run) => sharesBand(opener.rect, run.rect));
     const principal = onFirstLine.reduce((best, next) => (next.capHeightPx > best.capHeightPx ? next : best));
     return { node: principal.node, lineOwner: principal.lineOwner };
   }
@@ -871,14 +879,10 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     const bands: VerticalBand[] = [];
     for (const rect of rects) {
       const current = bands[bands.length - 1];
-      if (current) {
-        const overlap = Math.min(current.bottom, rect.bottom) - Math.max(current.top, rect.top);
-        const smaller = Math.min(current.bottom - current.top, rect.bottom - rect.top);
-        if (overlap >= smaller * 0.5) {
-          current.top = Math.min(current.top, rect.top);
-          current.bottom = Math.max(current.bottom, rect.bottom);
-          continue;
-        }
+      if (current && sharesBand(current, rect)) {
+        current.top = Math.min(current.top, rect.top);
+        current.bottom = Math.max(current.bottom, rect.bottom);
+        continue;
       }
       bands.push({ top: rect.top, bottom: rect.bottom });
     }
@@ -1058,15 +1062,11 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
     const bands: { items: { node: Node; box: DOMRect }[]; top: number; bottom: number }[] = [];
     for (const item of boxed) {
       const current = bands[bands.length - 1];
-      if (current) {
-        const overlap = Math.min(current.bottom, item.box.bottom) - Math.max(current.top, item.box.top);
-        const smaller = Math.min(current.bottom - current.top, item.box.height);
-        if (overlap >= smaller * 0.5) {
-          current.items.push(item);
-          current.top = Math.min(current.top, item.box.top);
-          current.bottom = Math.max(current.bottom, item.box.bottom);
-          continue;
-        }
+      if (current && sharesBand(current, item.box)) {
+        current.items.push(item);
+        current.top = Math.min(current.top, item.box.top);
+        current.bottom = Math.max(current.bottom, item.box.bottom);
+        continue;
       }
       bands.push({ items: [item], top: item.box.top, bottom: item.box.bottom });
     }
@@ -1095,7 +1095,9 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
         // one line, so a tall block is still a row member while a page-tall control is not.
         return { anchor, tooTall: anchor.bottomPx - anchor.topPx > maxItemHeightPx };
       });
-      const rowMembers = cluster.map((item, index) => {
+      // Named apart from the `rowMembers` function above: this is what to CALL each member, and a
+      // local shadowing that function would leave the two a rename apart from silently swapping.
+      const memberNames = cluster.map((item, index) => {
         const anchor = readings[index].anchor;
         if (!anchor) return `unresolved:${nameOf(item.node)}`;
         return `${anchor.kind}:${anchor.text || anchor.tag}`;
@@ -1114,7 +1116,7 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
           rowSelector: signature(container),
           rowClasses: classesOf(container),
           rowTag: container.tagName.toLowerCase(),
-          rowMembers,
+          rowMembers: memberNames,
           alignItems: containerStyle.alignItems,
           rowBox: {
             topPx: round(Math.min(cluster[index - 1].box.top, cluster[index].box.top)),
@@ -1204,6 +1206,23 @@ export function collectVerticalPairsInPage(args: Required<VerticalMetricsArgs>):
 }
 
 /**
+ * A CSS-pixel reading rounded to the hundredth, the precision every number this module reports is
+ * carried at. The in-page walk rounds its own geometry the same way; this is the Node side's copy,
+ * since a serialized function reaches nothing outside its own body.
+ */
+function roundPx(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/**
+ * An alignment keyword with the overflow qualifier stripped, which is the half that says where a
+ * member sits. `safe` and `unsafe` only change what happens when the row overflows.
+ */
+function alignmentKeyword(alignment: string): string {
+  return alignment.replace(/^(safe|unsafe)\s+/, '');
+}
+
+/**
  * The class of a pair of members. Pure, so both callers classify identically and a unit test can
  * exercise every branch without a browser.
  *
@@ -1265,7 +1284,7 @@ export function referenceForMetric(anchor: MemberAnchor, metric: PairMetric): nu
  * exactly the sense a `center` flex item is.
  */
 export function isCentredAlignment(alignment: string): boolean {
-  const keyword = alignment.replace(/^(safe|unsafe)\s+/, '');
+  const keyword = alignmentKeyword(alignment);
   return keyword === 'center' || keyword === 'middle';
 }
 
@@ -1278,7 +1297,7 @@ export function isCentredAlignment(alignment: string): boolean {
  * content was asked to sit, and a term built on it would be a term built on the row.
  */
 export function isStartAlignment(alignment: string): boolean {
-  const keyword = alignment.replace(/^(safe|unsafe)\s+/, '');
+  const keyword = alignmentKeyword(alignment);
   return keyword === 'flex-start' || keyword === 'start' || keyword === 'self-start';
 }
 
@@ -1340,7 +1359,7 @@ function placedReadingPx(anchor: MemberAnchor, metric: PairMetric): number | nul
  * reviewed ruling.
  */
 export function compositionPx(pair: RawPair): number {
-  const lift = Math.round((pair.b.blockLiftPx - pair.a.blockLiftPx) * 100) / 100;
+  const lift = roundPx(pair.b.blockLiftPx - pair.a.blockLiftPx);
   if (pair.rowKind === 'optical-suspect') return lift;
   if (isCentredAlignment(pair.a.alignSelf) && isCentredAlignment(pair.b.alignSelf)) return lift;
   if (isStartAlignment(pair.a.alignSelf) && isStartAlignment(pair.b.alignSelf)) {
@@ -1349,7 +1368,7 @@ export function compositionPx(pair: RawPair): number {
     const a = placedReadingPx(pair.a, metric);
     const b = placedReadingPx(pair.b, metric);
     if (a === null || b === null) return 0;
-    return Math.round((a - b) * 100) / 100;
+    return roundPx(a - b);
   }
   return 0;
 }
@@ -1369,9 +1388,9 @@ export function measurePair(pair: RawPair): MeasuredPair | null {
   const left = referenceForMetric(pair.a, metric);
   const right = referenceForMetric(pair.b, metric);
   if (left === null || right === null) return null;
-  const deltaPx = Math.round((left - right) * 100) / 100;
+  const deltaPx = roundPx(left - right);
   const composition = compositionPx(pair);
-  const residualPx = Math.round((deltaPx - composition) * 100) / 100;
+  const residualPx = roundPx(deltaPx - composition);
   return {
     ...pair,
     pairClass,

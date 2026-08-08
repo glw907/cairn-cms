@@ -143,8 +143,8 @@ function effectiveDirectionAt(classes: Set<string>, atPrefix: string): 'row' | '
 }
 
 /** Whether `token` was written as a `class:<utility>` directive rather than inside `class="..."`. */
-function isDirectiveSourced(node: SourceNode, token: ClassToken, utility: string): boolean {
-  const name = `class:${utility}`;
+function isDirectiveSourced(node: SourceNode, token: ClassToken): boolean {
+  const name = `class:${utilityBase(token.value)}`;
   return (node.attributes ?? []).some(
     (attr) => attr.name === name && token.start >= attr.start && token.start < attr.end
   );
@@ -178,10 +178,9 @@ function isReliablyDeclared(
   node: SourceNode,
   classes: Set<string>,
   token: ClassToken,
-  utility: string,
   group: Set<string>
 ): boolean {
-  if (isDirectiveSourced(node, token, utility)) return false;
+  if (isDirectiveSourced(node, token)) return false;
   return !hasSamePrefixConflict(classes, token, group);
 }
 
@@ -237,17 +236,14 @@ function isIconNode(file: ParsedComponent, node: SourceNode): boolean {
   return false;
 }
 
-/** Every `inline-flex` class token written on one element, in document order. */
-function inlineFlexTokens(file: ParsedComponent, elementStart: number): ClassToken[] {
+/**
+ * Every class token on one element that resolves, variant prefix stripped, to `utility`, in
+ * document order. An element can carry the same utility at several breakpoints, and each such
+ * token is its own claim about a breakpoint, which is why this returns them all.
+ */
+function tokensFor(file: ParsedComponent, elementStart: number, utility: string): ClassToken[] {
   return file.classTokens.filter(
-    (token) => token.elementStart === elementStart && utilityBase(token.value) === 'inline-flex'
-  );
-}
-
-/** Every `items-baseline` class token written on one element, in document order. */
-function baselineTokens(file: ParsedComponent, elementStart: number): ClassToken[] {
-  return file.classTokens.filter(
-    (token) => token.elementStart === elementStart && utilityBase(token.value) === 'items-baseline'
+    (token) => token.elementStart === elementStart && utilityBase(token.value) === utility
   );
 }
 
@@ -262,9 +258,9 @@ export const iconBaselineSynthesis: StaticRule = {
         const container = nodeAt(file, elementStart);
         if (!container) continue;
 
-        const reliableRowBaseline = baselineTokens(file, elementStart).some(
+        const reliableRowBaseline = tokensFor(file, elementStart, 'items-baseline').some(
           (token) =>
-            isReliablyDeclared(container, classes, token, 'items-baseline', ALIGN_ITEMS_GROUP) &&
+            isReliablyDeclared(container, classes, token, ALIGN_ITEMS_GROUP) &&
             effectiveDirectionAt(classes, variantPrefix(token.value)) === 'row'
         );
         if (!reliableRowBaseline) continue;
@@ -273,8 +269,8 @@ export const iconBaselineSynthesis: StaticRule = {
           if (child.type !== 'RegularElement' && child.type !== 'Component') continue;
           const childClasses = byElement.get(child.start);
           if (!childClasses) continue;
-          const inlineToken = inlineFlexTokens(file, child.start).find((token) =>
-            isReliablyDeclared(child, childClasses, token, 'inline-flex', DISPLAY_GROUP)
+          const inlineToken = tokensFor(file, child.start, 'inline-flex').find((token) =>
+            isReliablyDeclared(child, childClasses, token, DISPLAY_GROUP)
           );
           if (!inlineToken) continue;
           const first = firstRealChild(file, child);

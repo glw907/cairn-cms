@@ -201,7 +201,39 @@ article, and styleguide; site baselines regenerate on CI and the diffs pass the 
 read with Geoff's before/after; the styleguide demonstrates the recipes; the Waymark doc section
 is in place; full per-task gate.
 
-### Task 4: the tripwire (`cairn-audit` rendered rule)
+### Task 4: DROPPED (Geoff, 2026-08-07). The lab keeps the instrument; nothing new ships.
+
+**The ruling:** complexity locally to build the engine is fine; what ships to a developer must be as
+simple and clean as it can be. The rendered rule was the only artifact in this pass that is BOTH
+complex AND shipped, so it does not ship. This reverses the ratified spec's "one generalized
+`cairn-audit` rule measuring any rendered page"; the spec's reasoning is superseded, not forgotten.
+
+**What that removes, and this is the point.** No sixteenth rendered rule on the audit surface. No
+firing threshold, so the fifteen `ConceptList` rows at exactly 1.55px stop being a decision and
+become an observation. No tier question. No false-positive fixture burden for the brand tile, the
+count pill and the footer masthead. No measurement engine in the shipped package.
+
+**What it costs, stated plainly.** A consumer can no longer point `cairn-audit` at their own pages
+and get vertical-alignment findings on markup cairn has never seen. The spec named that as the
+mechanism that would catch ASC's `/join` icon-card class site-side. That class is NOT covered again
+until the pre-beta pass ships the precomputed icon-ink table, which reaches the same defect
+statically: an icon's ink offset inside its own viewBox is a property of the icon FILE, computable
+offline from path data, so a static rule can know which icons ride high without rendering anything.
+ASC has already fixed its own `/join` cards by hand, so the gap is future recurrence rather than a
+live defect. Record it in the pre-beta initiative as that pass's first target.
+
+**Relocate the instrument.** `vertical-metrics.ts` and `probe-vertical-alignment.mjs` are cairn's
+LAB APPARATUS, not engine code. They must not ship in the package: move the module out of the
+shipped tree beside the probe, keep its tests, and label both plainly as the discovery instrument
+that generates static rules. Their complexity is cairn's own and costs a developer nothing.
+Confirm with `npm run check:package` and `npm run check:surface` that neither reaches the package.
+
+**Delete the census when task 2 consumes it.** `docs/internal/2026-08-vertical-alignment-inventory.md`
+is a point-in-time snapshot, already four corrections deep and stale the moment the fixes land. The
+durable lesson lives in `2026-08-07-vertical-alignment-harvest-findings.md`. Keeping a stale census
+contradicts the same complete-or-move rule the friction log runs on.
+
+### Task 4 (superseded, retained for the reasoning only): the tripwire (`cairn-audit` rendered rule)
 
 **Files:**
 - Create: `src/lib/audit/rules/rendered/vertical-alignment.ts`, registered in

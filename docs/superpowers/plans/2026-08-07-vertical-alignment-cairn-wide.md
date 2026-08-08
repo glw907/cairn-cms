@@ -13,6 +13,37 @@ inventory across the admin's and Waymark's rendered screens, engine-owned recipe
 composition class on each surface, one generalized `cairn-audit` tripwire that measures any
 rendered page, and honest upgrade notes for the consumers already exposed.
 
+## EXECUTION STATE (2026-08-07, mid-pass session close)
+
+**TASK 1 IS DONE AND COMMITTED.** It ran as 1a (module and probe), 1b (block-versus-line
+correction) and 1c (metric-selection correction), condemned by independent audit after 1a and 1b
+and passed after 1c. Do NOT re-run it. Do NOT re-derive the inventory.
+
+Final measured result: 5028 readings over 106 renders, **7 rows above the 2px residual bar: 5
+confirmed admin defects, 0 public, 2 reviewed declines.** The closing grade verified it
+set-theoretically rather than narratively, extracting the prior emission's ten above-bar ids from
+git at `12f1f41f^` and confirming the current seven are a strict subset, the ten minus exactly the
+three condemned false positives, with nothing new entering.
+
+The five confirmed rows, which are task 2's whole scope:
+- `290376a5`, `24a343fe`, `c2ab4dc7`: ONE MECHANIC AT THREE CALL SITES,
+  `src/lib/components/CairnTidySettings.svelte` 367, 372 and 380. An `inline-flex` label wrapping
+  an icon and its word synthesises its baseline from the svg, so the row's declared
+  `sm:items-baseline` misses by 2.5px, a quarter of the 10px cap height both members measure.
+  **Fix at the recipe, not as three row fixes.**
+- `22a0e709`: a painted pill 5px low against the heading's first line box. **Level the pill's box
+  on that line box, NOT on the baseline**; it carries a deliberate `mt-0.5` under `items-start`, so
+  a baseline fix moves the wrong thing.
+- `76d4cd3e`: the Write tab's check icon at -2.33px against thirteen sibling icon-in-btn rows in
+  [-0.75, -0.5]. Real but MARGINAL, clearing the bar by 0.33px.
+
+Two rows are reviewed declines and need no work: `52225d2e` (`items-end`, bottom-flush as asked)
+and `a1f335e1` (a multi-row grid span, `self-center` by design).
+
+**NEXT ACTION: task 2**, then the suite widening, then task 4b, then task 5. Task 4 is DROPPED (see
+below). Owed at pass end: `code-simplifier` over the 1b and 1c commits, which the workflow agents
+could not dispatch.
+
 ## RESCOPE, ratified by Geoff 2026-08-07 (after task 1; supersedes the task list below)
 
 **The measured defect surface came in far smaller than this plan assumed, and the pass is cut

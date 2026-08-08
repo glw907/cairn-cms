@@ -147,11 +147,11 @@ line and `ListToolbar`'s count line both route their own `itemLabel` prop throug
 The field primitives a site's own custom `/admin/` screen composes, such as an events or members
 editor. They render with the admin's own label and control rhythm, matching the built-in content
 editor's fields. Merged here from the retired `admin-fields` subpath (C2 breaking-window pass, R3):
-the set is small today, `TextInput`, `SelectInput`, and `FieldLabel`; new field types land as new
-consumers need them.
+the set is small today, `TextInput`, `SelectInput`, `FieldLabel`, and `FieldRow`; new field types
+land as new consumers need them.
 
 ```ts
-import { TextInput, SelectInput, FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
+import { TextInput, SelectInput, FieldLabel, FieldRow } from '@glw907/cairn-cms/admin-toolkit';
 import type { SelectInputOption } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
@@ -269,6 +269,39 @@ own `<label>` (visually hidden if the row's own layout already reads clearly) or
 <FieldLabel label="Instructor">
   <input class="input input-sm" name="instructor" />
 </FieldLabel>
+```
+
+### `FieldRow`
+
+Stability tier: Extension API.
+
+```ts
+let { children }: {
+  children: Snippet;
+};
+```
+
+One flex row that levels its children on their bottom edges. Use it for a row that mixes a
+stacked field with a bare control, such as a button or a checkbox that carries no label of its
+own: the labelled child stands a whole label taller than the bare one, and only their controls
+belong on one line. `FieldRow` lines those controls up. For children of equal height it changes
+nothing, so a row doesn't have to know which case it has.
+
+One composition it gets wrong: a field that renders an error line or a hint *below* its control
+no longer ends at that control, so the row levels the trailing line against the bare control
+instead. No field in this subpath renders one, so compose such a row yourself.
+
+```svelte
+<script lang="ts">
+  import { FieldRow, TextInput } from '@glw907/cairn-cms/admin-toolkit';
+
+  let instructor = $state('');
+</script>
+
+<FieldRow>
+  <TextInput label="Instructor" name="instructor" bind:value={instructor} />
+  <button type="button" class="btn btn-sm">Add</button>
+</FieldRow>
 ```
 
 ---

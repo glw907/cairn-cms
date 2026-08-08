@@ -21,7 +21,7 @@
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-active:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])",
           "[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):hover"
         ],
-        "componentsLayerCap": 16,
+        "componentsLayerCap": 19,
         "retiredTokenBudget": 0
       }
     },

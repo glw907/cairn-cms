@@ -603,6 +603,46 @@
     margin-block: -0.25rem;
     padding-block: 0.25rem;
   }
+
+  /* AN ICON-PLUS-WORD LABEL EXPOSES ITS TEXT BASELINE (2026-08 vertical-alignment inventory).
+     A label that wraps a glyph and a word in an `inline-flex` box hands its row the wrong
+     baseline. A flex container reports the baseline of the first item that is itself
+     baseline-aligned, and where no item is, it synthesises one from the first item outright. That
+     item is the svg, which draws no line box, so the browser takes its bottom margin edge, and a
+     row declaring `items-baseline` levels the WORD 2.5px high: measured at three call sites in
+     CairnTidySettings.svelte, a quarter of the 10px cap height both members render.
+
+     Baseline-aligning the label's own items is the fix. The word is the one item with a real
+     baseline, so it becomes the baseline the label reports, and `align-self: center` on the glyph
+     keeps the glyph out of that baseline group while still centring it on the line the word
+     draws. The two declarations are one recipe: drop the second and the glyph rejoins the group,
+     which synthesises the same wrong baseline again. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-icon-label {
+    display: inline-flex;
+    align-items: baseline;
+  }
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-icon-label > svg {
+    align-self: center;
+  }
+
+  /* A PAINTED BOX LEVELS ON A LINE, NOT ON A BLOCK'S TOP EDGE (same inventory). A chip beside a
+     heading is read as a box, because its border and fill draw ink at its own edges: what the eye
+     levels is its padding-box centre against the centre of the line it labels. A row that
+     top-aligns the two instead leaves the chip low by half the difference in their heights, 5px
+     for the 23px "Set by your developer" pill against the 17px heading line beside it. Levelling
+     the two on a BASELINE is the wrong repair for the same reason: the chip's own baseline is an
+     accident of the type inside it.
+
+     This slot is one line box tall and centres whatever it holds on that line, letting a taller
+     chip overflow it symmetrically. The height comes from `1lh` rather than a token so it follows
+     whatever leading the slot's own type role resolves to, which means the caller gives the slot
+     the SAME type role as the line it levels on; nothing about the block beside it is reachable
+     from here. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-line-slot {
+    display: flex;
+    align-items: center;
+    height: 1lh;
+  }
 }
 
 /* DaisyUI v5's .menu quiets keyboard focus on its items (`outline-style: none` on

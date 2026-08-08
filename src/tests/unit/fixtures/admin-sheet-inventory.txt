@@ -136,6 +136,8 @@ cairn-chip-quiet
 cairn-doc-title
 cairn-doc-title-dim
 cairn-field-stacked
+cairn-icon-label
+cairn-line-slot
 capitalize
 card
 card-shadow

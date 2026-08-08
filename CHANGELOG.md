@@ -65,6 +65,20 @@
   but minting produces a working link only once the route is mounted and the migration is
   applied.
 
+- Vertical alignment is now an engine-owned mechanic on the admin surface, off a measured
+  inventory of every admin screen at three widths in both themes. Three recipes land: a new
+  [`FieldRow`](docs/reference/admin-toolkit.md#fieldrow) export on `/admin-toolkit` that levels a
+  row mixing a stacked field with a bare control on their bottom edges, and two new classes in the
+  shipped admin sheet, `cairn-icon-label` (a glyph-plus-word label that reports its own text
+  baseline, so a row declaring `items-baseline` levels the word rather than the icon) and
+  `cairn-line-slot` (a one-line-tall slot that levels a painted chip on the line it labels). Three
+  admin rows were re-composed onto the recipes: the tidy settings screen's three developer-tier
+  rows (a 2.5px baseline miss), its "Set by your developer" pill (5px low against the heading it
+  labels), and the editor's Write tab glyph (2.33px above its own label's cap centre). The
+  mechanics, and the `text-box-trim` default that was measured and declined, are written up in
+  `docs/internal/admin-design-system.md`. Consumers must: nothing. The new export and the two new
+  classes are additive, and no existing class changed.
+
 ## 0.94.0
 
 <!-- release-size: minor -->

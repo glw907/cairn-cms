@@ -205,6 +205,30 @@ members, `previewMintAction`/`previewRevokeAction` (and the facade's `actions` g
 `previewMint`/`previewRevoke`); leaving them unwired costs you nothing else, the same way an
 unwired `historyLoad`/`revertAction` costs nothing.
 
+## Unreleased: vertical alignment recipes for the admin toolkit (non-breaking)
+
+A measured pass over every admin screen found three composition classes reading more than 2px off
+the alignment they declared, all in the settings screen's tidy-conventions panel, and cairn ships
+the engine-owned fix rather than leaving each site to rediscover the recipe. A new
+[`FieldRow`](../reference/admin-toolkit.md#fieldrow) export on `/admin-toolkit` bottom-aligns a row
+that mixes a stacked field with a bare control (a button, a checkbox carrying no label of its own).
+Two new classes ship in the compiled admin sheet: `cairn-icon-label`, for a glyph-plus-word label
+inside a row declaring `items-baseline`, and `cairn-line-slot`, for a painted chip that needs to
+level on the text line beside it rather than on its block's top edge. `npx cairn-audit`'s static
+rules also grow to ten. The new `icon-baseline-synthesis` rule reports one spelling of the
+icon-label shape: an `inline-flex` label whose first child is an `<svg>` or an `*Icon` component,
+sitting directly inside a row that declares `items-baseline`. It ships at **advisory** tier, so it
+reports and never changes your exit code. Reading authored markup can't confirm the misalignment
+it names, and it can't confirm the absence of one either: the same defect written `flex`, or with
+an icon under any other spelling, or one element deeper in the tree, is silent. Treat a finding as
+a row worth looking at, not as a verdict, and treat a clean run as one shape checked rather than
+as vertical alignment cleared. The
+[full recall boundary](../reference/cairn-audit.md#the-static-rules) is in the reference. See also
+[The admin toolkit](../reference/admin-toolkit.md#fieldrow).
+
+Consumers must: nothing. `FieldRow`, the two classes, and the new audit rule are all additive;
+nothing already shipped changed shape, and the new rule can't fail a build.
+
 ## 0.94.0: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
 
 A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the
@@ -786,6 +810,14 @@ later release, see that section above).
 **Consumers must:** pass `register="inline"` on any `FieldLabel`, `TextField`, or `SelectField`
 call whose label-beside-control layout should survive the upgrade. Every other call renders the
 new stacked default. Nothing else here requires action.
+
+**Retroactive note, added 2026-08 (still non-breaking).** Check any flex row that pairs a stacked
+`FieldLabel`/`TextInput`/`SelectInput` with a bare control carrying no label of its own, a button,
+a checkbox. The preceding stacked default drops a labeled field's control by the label's own line
+height, so a naive `items-center` row misaligns the bare control against it by that same offset
+(measured 12.5px on a real site, identical at every width and in both themes). Compose the row
+with the admin toolkit's [`FieldRow`](../reference/admin-toolkit.md#fieldrow) instead, or apply
+`items-end` yourself if you built the row by hand.
 
 ## 0.91.1: the admin sheet classes `0.91.0` dropped come back (non-breaking)
 

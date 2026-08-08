@@ -207,45 +207,106 @@ The original decision framing, for the record:
 
 ## Now
 
-- **Optical centring of text in a padded box wants an engine default. REFILED 2026-08-06 after
-  being lost.** Geoff asked for this on 2026-07-30, off the `CURRENT PLAN` chip on ASC's
-  `/my-account/renew`, and his framing was the finding: there should be a global way to manage
-  vertical centring so it is easy and correct by default, and it belongs in the engine rather than
-  in each site's component sheet. The measured evidence, so this is not re-derived a third time: on
-  ASC's events-page chip (13.12px uppercase, `padding: 0.1rem 0.5rem`, ambient line-height) the ink
-  sits **1.0px LOW**, 6.59px above the cap line against 4.59px below the baseline. `line-height: 1`
-  gets it to 0.43px low but shrinks the pill from 23.19px to 18.31px; `line-height: 1.5` measures
-  best at 0.15px low. The descender-space explanation predicts the opposite direction and does not
-  survive measurement, so reason from readings. The mechanism to evaluate first is CSS
-  `text-box-trim`/`text-box-edge` (`text-box: trim-both cap alphabetic`), applied once in the token
-  or component layer, with a support check and fallback since consuming sites are public. Full
-  finding, including the measurement method worth having in cairn:
-  `aksailingclub-org/docs/2026-07-30-assets-substrate-harvest-findings.md`, finding 1.
-  **Why this is being refiled rather than worked**: it was written into the design-ratchet plan's
-  "next pass seed" paragraph, that plan closed 2026-07-31, and the seed never reached this file. The
-  same paragraph's other half (the `.list-row` `grid-row-start` pin) survived only because T7 had
-  already filed it here. A seed in a closed plan doc is not a queue, and the `0.94` window ran
-  straight past this one.
+- **A cleanup pass: split the repo along engine-development versus consumer-facing, and stop
+  shipping the sausage-making. AUTHORIZED as its own pass (Geoff, 2026-08-07).** The ruling that
+  governs it: complexity is welcome locally to help build the engine, and contributors should keep
+  every tool they need in the repo, but a developer who just wants to USE cairn should receive none
+  of it. The repo should be organized along that line, and the packed surface should reflect it.
 
-- **The field register has now produced an alignment defect on BOTH axes, and the mechanical net
-  covers one.** `cairn-audit`'s `field-edge-alignment` rule exists because the `inline` register
-  staircased controls' LEFT edges, found by ASC's Assets-trial harvest. `0.92.0` made `stacked` the
-  default and produced the vertical counterpart, which no rule catches: the label takes a line above
-  the control, so the control sits in the lower half of the field's block, and a bare sibling
-  control in the same row aligns to the block rather than to the control. A row written
-  `flex items-center` therefore hangs its button half a label-height above the input it acts on.
-  Measured on ASC's `/admin/club/documents` season picker against CI baselines: the input's vertical
-  centre went 145.0px → 157.0px across the flip while the `View` button stayed at 144.5px, a 12.5px
-  offset identical at 390 and 1440 and in both themes. The correct composition is `items-end`.
-  **The evidence that this is not discoverable from the component is inside one repo**: ASC writes
-  this row three times, and `admin/club/settings` had `items-end` right since 2026-07-14 while
-  `documents` and `money` both had `items-center` wrong, fixed 2026-08-06. Same shape, same repo,
-  two of three wrong, and nothing in `FieldLabel`'s contract says which to reach for. Two responses
-  worth taking together: say it in `FieldLabel`'s own `@component` block and the admin design
-  system's form-row section, since a stacked field changes what the row around it must do; and add
-  the vertical counterpart rule to `cairn-audit`, where a control inside a stacked field whose
-  vertical centre differs from a sibling control's in the same flex row is the detectable shape.
-  Found 2026-08-06 by the ASC `rc.2` verification.
+  Baseline measured 2026-08-07, before any cleanup: **2.5 MB packed, 7.0 MB unpacked, 739 files.**
+  Confirmed findings to start from, each verified against `dist`, not inferred:
+  - `dist/audit/rules/rendered/vertical-metrics.{js,d.ts}` ships today and is pure lab apparatus,
+    the measurement module for a probe that no shipped rule consumes. **THIS PASS RELOCATES IT**,
+    together with `scripts/probe-vertical-alignment.mjs` and the module's tests, which travel as
+    one unit. The vertical-alignment pass deliberately left it in place with a co-located `// WATCH:`
+    comment rather than move it twice, since the lab-versus-shipped boundary is this pass's
+    organizing principle and not one file's problem. It is the worked example: nothing named it in
+    `files` or the exports map, and it shipped anyway, because svelte-package emits everything
+    reachable under `src/lib`.
+  - `dist/audit` is 792 KB across 41 files, the second-largest shipped tree after `components`.
+    Whether `cairn-audit` is consumer product or engine apparatus is a POSITIONING question this
+    pass should settle rather than assume. Evidence both ways: the shipped `cairn-admin-screens`
+    skill points a consumer's agent at cairn-audit's checks, which reads as product; several rules
+    audit cairn's own design-system conformance and need a generated norms manifest, which reads
+    as apparatus. A split (consumer rules ship, engine-conformance rules do not) is the likely
+    answer and should be decided on evidence.
+  - `@anthropic-ai/sdk` is a RUNTIME dependency, statically imported at the top of
+    `src/lib/sveltekit/content-routes-context.ts`, so every consumer installs the whole SDK
+    whether or not they use the tidy action. This is product rather than sausage-making, so it
+    does not belong in the same bucket, but it is the single heaviest thing an install pulls for
+    one optional feature and a lazy import is worth costing.
+
+  Method note: `npm pack --dry-run` is the honest instrument. `files` in `package.json` and the
+  exports map both under-report, since a module ships whenever anything reachable imports it.
+  Success is measured as the packed baseline above moving down, with no export subpath lost.
+
+- **Vertical alignment's declared follow-up, filed off the cairn-wide pass (2026-08-07).** A
+  cairn-wide inventory measured both the admin and the public surface for vertical-alignment
+  defects and closed the two entries this replaces: the optical-centring engine default Geoff asked
+  for on 2026-07-30, and the both-axes field-row defect found by ASC's `rc.2` verification. The
+  admin toolkit's new `FieldRow` (`items-end`) ships the named composition for a stacked field
+  beside a bare control; the new `cairn-icon-label`/`cairn-line-slot` recipes and the
+  `icon-baseline-synthesis` static rule close the one confirmed icon-label mechanic; `text-box-trim`
+  was measured and explicitly declined (see `docs/internal/admin-design-system.md`, "Vertical
+  alignment mechanics"). The measured defect surface came in far smaller than either closed entry
+  assumed; two things carry forward rather than a broader repair:
+  - **The sub-bar `ConceptList` family:** fifteen rows reading exactly 1.55px, the same shape as the
+    three confirmed defects but under the pass's 2px reporting bar. A firing threshold anywhere in
+    that window either adopts all fifteen in one step or leaves a visible family untouched, so this
+    is a decision to take deliberately, not a number to pick when a future rule graduates.
+  - **A precomputed icon-ink table, filed as the pre-beta pass's first target.** An icon's ink offset
+    inside its own viewBox is a property of the icon FILE, computable offline from path data with no
+    rendering, so a static rule built on it reaches ASC's `/join` icon-card defect class the same way
+    the dropped rendered `cairn-audit` rule would have, with no browser. ASC already fixed its own
+    instance by hand, so this closes future recurrence rather than a live defect.
+  - **Three more `/admin-toolkit` components carry layout in Tailwind classes with no scoped
+    `<style>`, so they silently collapse outside `[data-theme='cairn-admin']`,** exactly as
+    `FieldRow` did before this pass fixed it. The compiled admin sheet scopes every rule under the
+    theme root, and a cairn-only `@utility` (`gap-label`, `gap-control`, the `type-*` roles) is not
+    even defined in a consumer's own Tailwind build, so an extending developer composing these in
+    a custom route outside the shell gets `display: block` and no gap. The three:
+    `FieldLabel`'s stacked register (`flex flex-col gap-label`, on the `$derived` class string at
+    line 52), `EmptyState.svelte:57`, and `OfficeList.svelte:37-38`. This is a live defect on
+    shipped consumer surface, not a documented gap. The convention to follow is a bespoke
+    `toolkit-*` class in a scoped `<style>` carrying the measured literal as a `var()` fallback,
+    and `ListToolbar.svelte:510` (`.toolkit-toolbar-band`) is the only real precedent in the
+    toolkit. An earlier review cited `FieldLabel.svelte:38` as a second precedent; that is wrong,
+    since `FieldLabel` carries no `<style>` block at all.
+  Full measurement: `docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`.
+
+- **The showcase visual suite cannot see a vertical-alignment regression, and its admin corpus is
+  missing the screen most of them landed on (measured 2026-08-07, off the same pass).** Two
+  independent gaps. Either one alone would have hidden every fix this pass made from every baseline,
+  and together they explain why CI's regeneration changed zero admin baselines while the fixes were
+  real.
+
+  **The tolerance floor.** `examples/showcase/playwright.config.ts` sets
+  `expect.toHaveScreenshot.maxDiffPixels: 120` for the whole suite. Replicating the `admin edit
+  page — 1440` test exactly, the shipped render against itself differs by 0 pixels, so the render is
+  deterministic, and the fixed render against the pre-fix one differs by 51 pixels, all inside
+  x 1027-1038 by y 245-254, which is the check glyph and nothing else. The comparison passes and the
+  baseline is never rewritten. 120 is roughly 2.4x the entire pixel footprint of a 1.5px shift on a
+  16px icon, so this defect class sits wholly under the floor, and a passing visual suite is not
+  evidence that alignment is intact. Changing the number was deliberately left out of the closing
+  pass: it touches every existing baseline and every unrelated test, and 120 is presumably where it
+  is because a much lower allowance goes flaky on font antialiasing. Options worth costing, rather
+  than a number to pick: a per-test tolerance for the captures that watch a small control, a mask no
+  wider than the control being watched, or leaving the tolerance alone and treating the real-layout
+  component tests as the net for this class. Today that net is
+  `src/tests/component/vertical-alignment-recipes.test.ts`, which renders the real components and
+  reads geometry directly, so it has the resolution the screenshot lacks. The general form of the
+  finding, which outlives this pass: a pixel-tolerance gate has a defect-size floor, and any defect
+  class smaller than that floor needs a measuring gate rather than a screenshot.
+
+  **The corpus gap.** `examples/showcase/e2e/admin-visual.spec.ts` holds 18 tests over 7 routes:
+  `/admin/posts`, `/admin/vocabulary`, `/admin/login`, `/admin/auth/confirm`, `/admin/editors`,
+  `/admin/posts/2026-06-hello`, and `/admin/media`. `/admin/settings` is absent, and that is where
+  `CairnTidySettings` renders, so four of this pass's five fixed rows are captured nowhere in the
+  admin corpus and could not have moved a baseline at any tolerance. Adding the captures needs a CI
+  regeneration and a human read of the new baselines, which is why they did not ride the closing
+  pass. The asymmetry is the part worth carrying: the same pass widened the public site suite to the
+  five-viewport bar as its own task, while the admin suite's own route coverage went unexamined, and
+  nobody asked which admin screens the corpus actually contains.
 
 - **Exercise a server-only subpath under real Wrangler in cairn's own CI.** The `0.94.0-rc.1`
   Workers blocker (a `browser` condition with no `worker` ahead of it, so the server bundle got the
@@ -578,6 +639,30 @@ the named human gates only):**
   page, so a page mounting more than one is only partly checked, and its explicit-face exemption
   net misses variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
   and Tailwind 4's `font-(family-name:--x)` shorthand.
+
+- **Earn `error` tier for `icon-baseline-synthesis`** (vertical-alignment pass, 2026-08-07), filed
+  to the pre-beta pass that owns audit-rule breadth rather than taken here. The rule ships at
+  advisory because an adversarial verification measured 59 Chromium probes and reproduced five
+  markup shapes reading exactly 0.00px, the correct result, that trip it anyway. Four concrete
+  steps remove every measured false positive with recall unchanged, so they are a precision fix,
+  not a rewrite:
+  1. Skip a first child carrying `absolute`, `fixed`, `hidden`, or an `order-*` utility. Each one
+     means the icon is not the first flex item, which is the whole premise of the finding.
+  2. Skip a child whose node type is `Component`. A `class` on a component is a prop the component
+     may apply anywhere, and its slotted children need not be its DOM children, so the read is
+     unsound by construction rather than merely imprecise.
+  3. Require a non-icon rendered sibling inside the label. An icon-only label has no word to
+     expose, and the prescribed `.cairn-icon-label` measures identically before and after
+     (-4.00px both ways), so the message asks for a change that cannot clear the finding. This is
+     the disqualifier that decided the tier: an error tier breaks a consumer's build and owes that
+     consumer a fix that works.
+  4. Apply the existing `isReliablyDeclared` guard to direction tokens as well, and scope the two
+     label exemptions (`items-baseline`, `self-*`) by variant prefix, so a `sm:`-only opt-out stops
+     silencing the base breakpoint.
+  Broadening recall is separate work and does not gate the tier: reading the `flex` spelling (the
+  identical defect, measured -1.75px, silent today), and reaching icons named outside this tree's
+  `*Icon` convention (lucide's own default import, `<img>`, icon fonts). Evidence and the measured
+  numbers: `docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`.
 
 - **Three design-system gaps found in the same triage.** `Pagination`'s selected page
   (`src/lib/admin-toolkit/Pagination.svelte`) conveys its state by fill alone: `btn-active` swaps

@@ -17,8 +17,8 @@ component usually measure" as data instead of inference from a screenshot.
 ## Tier map
 
 `cairn-audit` (static: `npx cairn-audit`; rendered: `npx cairn-audit --rendered`, against a
-running dev server, both themes) runs twenty-three rules across two modes: nine static, all
-error tier, and fourteen rendered, five error and nine advisory. Full descriptions live in
+running dev server, both themes) runs twenty-four rules across two modes: ten static, nine error
+and one advisory, and fourteen rendered, five error and nine advisory. Full descriptions live in
 [`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md)
 (the installed package's copy, reached from where this skill lives once `cairn-doctor --fix`
 installs it at `.claude/skills/cairn-admin-screens/`).
@@ -26,6 +26,11 @@ installs it at `.claude/skills/cairn-admin-screens/`).
 **Static, error tier:** `no-uncompiled-class`, `type-scale`, `gap-scale`,
 `stock-default-hazards`, `token-colors`, `grammar-boundary`, `focus-parity`, `motion-band`,
 `reduced-motion`.
+
+**Static, advisory tier** (reported, never gating): `icon-baseline-synthesis`. It reads source
+order, so it cannot tell whether the icon is really the first flex item, or where a component
+applies a class it was handed; and it reads one spelling of one shape, so the same defect written
+with plain flex, or with an icon this tree's Icon-suffixed naming does not cover, stays silent.
 
 **Rendered, error tier:** `one-filled-action`, `focus-renders`, `interactive-contrast`,
 `touch-targets`, `viewport-overflow`.

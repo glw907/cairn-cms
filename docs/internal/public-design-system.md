@@ -250,6 +250,67 @@ application; until it runs, these are the standard new theme work is held to:
   measured-ruler device), never adjectives; the owner picks from rendered evidence. Pattern:
   the arc's `design-candidates/` pages.
 
+## Vertical alignment mechanics
+
+The same doctrine as the admin's own (`docs/internal/admin-design-system.md`, "Vertical alignment
+mechanics"), stated here in Waymark's register because it governs a public row the same way it
+governs an admin one. These are chassis mechanics: how a row's declared alignment resolves in the
+browser, never a constraint on a consumer's own `render`.
+
+**The measured public corpus found ZERO rows above the 2px bar.** The 2026-08 cairn-wide inventory
+rendered the `(site)` chrome, the representative article page, and `/styleguide` at all five
+viewports in both themes and found nothing to fix. What follows is doctrine for the next theme
+port, not a record of repairs: hold it while building a new chassis surface, the same way the
+admin's own recipes hold it today.
+
+### The two-class diagnosis
+
+Ask one question about a row before touching it: is this pair two runs of type, or is it something
+else beside a run of type?
+
+- **Two runs of type share a BASELINE.** A mixed-size pair that shares a baseline has centres that
+  diverge by exactly the cap-height ratio, and that divergence is correct typography, not a defect.
+  Levelling such a pair on centres is the bug.
+- **Anything else beside a run of type shares an INK CENTRE.** An icon, a control, or a painted
+  chip has no baseline worth sharing; what levels it is its visible content against the text's cap
+  centre. The converse holds too: a pair the row deliberately centred has baselines that diverge by
+  design, and levelling those baselines is equally a bug.
+
+A padded chip is a BOX, not a run of type, so its padding-box centre is the reading. An icon beside
+a text block pairs with that block's FIRST LINE, never the block, because the eye reads the icon
+against the line it sits beside.
+
+### Metric by pair class
+
+| Pair | Metric | Read it off |
+| --- | --- | --- |
+| text beside text | alphabetic baseline | the element that renders the line, never its container |
+| text beside text, in a row that declared a centre | cap centre | as above |
+| icon beside text | ink centre against cap centre | SVG ink through the screen CTM, not the `<svg>` box |
+| control beside text | border box centre against cap centre | the control's own border box |
+| chip or badge beside text | padding-box centre against the line box | the painted box, not the type inside it |
+| glyph inside a button or chip | cap centre against padding-box centre | the glyph and its own container |
+
+### The four measurement traps
+
+Reasoning about vertical alignment from source markup does not work. Horizontal alignment is
+box-level, and CSS talks about boxes, so reasoning from source lands close to reality; vertical
+alignment is ink-level, and the eye centres a glyph's visual mass while CSS centres its line box.
+Four traps caught the tooling that measured this corpus, and they bind any future measurement of a
+Waymark surface:
+
+1. Pair an icon with a multi-line block's FIRST LINE, never the block.
+2. Read type metrics off the element that renders the line, never a wrapping container.
+3. Measure ink, not element boxes: `getBBox()` through the screen CTM for an SVG, `getClientRects()`
+   on a `Range` for text. An element box is acceptable only for a control whose border box is the
+   visual object.
+4. A padded chip is a box, not a text run: scoring it text-beside-text and comparing baselines
+   manufactures a delta equal to the cap-height ratio.
+
+No doubt signal fires while authoring a row like this, because `items-center` reads as its own
+confirmation, which is why the class survives review even when it is wrong. Compose the row, then
+measure it, rather than trusting the read.
+
 ## Pointers
 
 - The theme and the re-skin recipe: `examples/showcase/src/lib/theme.css`. The reading surface:

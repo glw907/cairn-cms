@@ -10,74 +10,59 @@ async function waitForImagesToLoad(page: Page): Promise<void> {
 	);
 }
 
-// The starter-template visual baseline (the Phase-2 zero-pixel floor). The public (site) surface selects
-// its theme by prefers-color-scheme, not a cookie, so emulateMedia is the lever (the same as
-// styleguide.spec.ts). A template-track phase that intentionally shifts a surface updates the committed
-// snapshot in the same commit, the reviewed record of intended drift. The home exercises the chrome
-// (SiteHeader and SiteFooter via the (site) layout) and the masthead and CTA; the styleguide is the
-// template's analog of the admin's live-components bar, showing every token, the type scale, the reading
-// surface, and the component set. Both schemes are captured because the dark theme is a separate token set.
-test('site home — light', async ({ page }) => {
-	await page.emulateMedia({ colorScheme: 'light' });
-	await page.goto('/');
-	await expect(page).toHaveScreenshot('site-home-light.png', { fullPage: true });
-});
+// The five-viewport responsive bar (the family-wide standard: 320, 390, 768, 1440, 2560), in both
+// color schemes, over the three surfaces that stand in for the whole public (site) template: the
+// home page (the chrome: masthead, nav, footer, and the lead CTA), the reading-surface article (the
+// richest content page: figures, a table, a pull-quote), and the styleguide (the template's analog
+// of the admin's live-components bar, showing every token, the type scale and the component set).
+// Both schemes are captured because the dark theme is a separate token set, not a filter over the
+// light one, and the narrow/mid widths catch the masthead's flex-wrap and any icon-row recomposition
+// that the default 1280px project viewport never renders. Expressed as one matrix, not thirty
+// hand-written tests, so a future surface or width joins by extending an array, not by hand-copying
+// a test body.
+const VIEWPORT_WIDTHS = [320, 390, 768, 1440, 2560];
+const COLOR_SCHEMES = ['light', 'dark'] as const;
 
-test('site home — dark', async ({ page }) => {
-	await page.emulateMedia({ colorScheme: 'dark' });
-	await page.goto('/');
-	await expect(page).toHaveScreenshot('site-home-dark.png', { fullPage: true });
-});
+for (const colorScheme of COLOR_SCHEMES) {
+	for (const width of VIEWPORT_WIDTHS) {
+		test(`site home — ${colorScheme} — ${width}px`, async ({ page }) => {
+			await page.setViewportSize({ width, height: 800 });
+			await page.emulateMedia({ colorScheme });
+			await page.goto('/');
+			await expect(page).toHaveScreenshot(`site-home-${colorScheme}-${width}.png`, { fullPage: true });
+		});
 
-test('styleguide — light', async ({ page }) => {
-	await page.emulateMedia({ colorScheme: 'light' });
-	await page.goto('/styleguide');
-	// The masthead heading anchors the page; wait for it so the screenshot captures the settled DOM.
-	await expect(page.getByRole('heading', { level: 1, name: 'Styleguide' })).toBeVisible();
-	await expect(page).toHaveScreenshot('styleguide-light.png', { fullPage: true });
-});
+		test(`reading-surface article — ${colorScheme} — ${width}px`, async ({ page }) => {
+			await page.setViewportSize({ width, height: 800 });
+			await page.emulateMedia({ colorScheme });
+			await page.goto('/posts/the-reading-surface');
+			await expect(page.getByRole('heading', { level: 1, name: 'The reading surface' })).toBeVisible();
+			await waitForImagesToLoad(page);
+			await expect(page).toHaveScreenshot(`site-article-${colorScheme}-${width}.png`, {
+				fullPage: true,
+				timeout: 20000,
+			});
+		});
 
-test('styleguide — dark', async ({ page }) => {
-	await page.emulateMedia({ colorScheme: 'dark' });
-	await page.goto('/styleguide');
-	await expect(page.getByRole('heading', { level: 1, name: 'Styleguide' })).toBeVisible();
-	await expect(page).toHaveScreenshot('styleguide-dark.png', { fullPage: true });
-});
-
-// The responsive-extremes matrix. Three Waymark-audit fixes (the masthead's flex-wrap at the phone
-// floor, the fluid root-scale clamp at the ultrawide ceiling, and the table's own scroll container)
-// only show at a width the default 1280px project viewport never renders, so this block pins the two
-// ends of that range on light theme: 320px, the narrowest real phone class, and 2560px, the clamp's
-// scaled ceiling. It covers both the home page (the chrome: masthead, nav, footer) and the
-// reading-surface article (the richest content page: figures, a table, a pull-quote). A future width
-// change to either surface is deliberate only if it also updates one of these baselines.
-//
-// Widen this matrix sparingly: every added width is a baseline to regenerate and eyeball by hand.
-// One mid-width addition earns its runtime, on the article only: the root clamp is a continuous
-// `vw` interpolation between 1440px (flat 1rem, the same as 320px) and ~2200px (flat ~1.125rem, the
-// same as 2560px), so the two extremes alone only prove the clamp's floor and its cap, never the
-// slope between them. A 1920px baseline sits inside that active range, where a formula regression
-// (a changed intercept or slope) would move every rem-sized measure and line break on the page while
-// still leaving both endpoint screenshots unchanged. The article, not home, gets this baseline: its
-// long paragraphs re-wrap visibly on a font-size drift, a sharper signal than the home page's cards.
-for (const width of [320, 2560]) {
-	test(`site home — light — ${width}px`, async ({ page }) => {
-		await page.setViewportSize({ width, height: 800 });
-		await page.emulateMedia({ colorScheme: 'light' });
-		await page.goto('/');
-		await expect(page).toHaveScreenshot(`site-home-light-${width}.png`, { fullPage: true });
-	});
-
-	test(`reading-surface article — light — ${width}px`, async ({ page }) => {
-		await page.setViewportSize({ width, height: 800 });
-		await page.emulateMedia({ colorScheme: 'light' });
-		await page.goto('/posts/the-reading-surface');
-		await expect(page.getByRole('heading', { level: 1, name: 'The reading surface' })).toBeVisible();
-		await waitForImagesToLoad(page);
-		await expect(page).toHaveScreenshot(`site-article-light-${width}.png`, { fullPage: true, timeout: 20000 });
-	});
+		test(`styleguide — ${colorScheme} — ${width}px`, async ({ page }) => {
+			await page.setViewportSize({ width, height: 800 });
+			await page.emulateMedia({ colorScheme });
+			await page.goto('/styleguide');
+			// The masthead heading anchors the page; wait for it so the screenshot captures the settled DOM.
+			await expect(page.getByRole('heading', { level: 1, name: 'Styleguide' })).toBeVisible();
+			await expect(page).toHaveScreenshot(`styleguide-${colorScheme}-${width}.png`, { fullPage: true });
+		});
+	}
 }
 
+// The clamp-slope check, beyond the five-viewport bar. The root clamp is a continuous `vw`
+// interpolation between 1440px (flat 1rem, the same as 320px and the bar's own 1440 baseline) and
+// ~2200px (flat ~1.125rem, the same as 2560px), so the bar's own widths alone only prove the clamp's
+// floor and its cap, never the slope between them. A 1920px baseline sits inside that active range,
+// where a formula regression (a changed intercept or slope) would move every rem-sized measure and
+// line break on the page while still leaving every bar baseline unchanged. The article, not home,
+// gets this baseline: its long paragraphs re-wrap visibly on a font-size drift, a sharper signal
+// than the home page's cards.
 test('reading-surface article — light — 1920px (mid, active clamp slope)', async ({ page }) => {
 	await page.setViewportSize({ width: 1920, height: 800 });
 	await page.emulateMedia({ colorScheme: 'light' });

@@ -134,6 +134,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EmptyStateHeadingLevel`: "p" | "h1" | "h2" | "h3"
 - `ExpandableRow`: $$IsomorphicComponent
 - `FieldLabel`: Component<Props, {}, "">
+- `FieldRow`: Component<Props, {}, "">
 - `formatCivilDate`: (iso: string | null | undefined, options?: FormatCivilDateOptions) => string
 - `FormatCivilDateOptions`: { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }
 - `formatMoney`: (cents: number | null | undefined, options?: FormatMoneyOptions) => string

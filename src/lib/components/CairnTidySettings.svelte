@@ -362,14 +362,17 @@ bespoke (ruling 7): a single-use control, not a repeated device.
           Your developer turned tidy on and chose how it runs. You cannot change these here.
         </div>
         <!-- Below sm each row stacks (label above value, label muted); at sm+ the label sits
-             inline before the value at a fixed column width, today's composition. -->
+             inline before the value at a fixed column width, today's composition. Each label is a
+             glyph plus a word, so it carries cairn-icon-label rather than a bare inline-flex: the
+             recipe is what makes the label report its own TEXT baseline to the sm+ row above,
+             instead of the icon's bottom edge (cairn-admin.css carries the mechanic). -->
         <div class="mt-2.5 flex flex-col gap-1.5">
           <div class="flex flex-col gap-1 type-meta sm:flex-row sm:items-baseline sm:gap-2">
-            <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Tidy</span>
+            <span class="cairn-icon-label gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Tidy</span>
             <span>On for this site</span>
           </div>
           <div class="flex flex-col gap-1 type-meta sm:flex-row sm:items-baseline sm:gap-2">
-            <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />API key</span>
+            <span class="cairn-icon-label gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />API key</span>
             <span>
               {#if data.keyStatus === 'valid'}Set, and Anthropic confirms it works
               {:else}Set, and kept on the server<span class="text-muted"> &middot; could not verify it just now</span>
@@ -377,7 +380,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             </span>
           </div>
           <div class="flex flex-col gap-1 type-meta sm:flex-row sm:items-baseline sm:gap-2">
-            <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Model</span>
+            <span class="cairn-icon-label gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Model</span>
             <span>{data.modelLabel} <span class="text-muted">&middot; the careful default for a light copy-edit</span></span>
           </div>
         </div>
@@ -393,8 +396,14 @@ bespoke (ruling 7): a single-use control, not a repeated device.
           </div>
         </div>
       </div>
-      <!-- The sm+ head-row copy of the pill; hidden below sm, where the copy above renders instead. -->
-      <span class="mt-0.5 hidden flex-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 type-chip font-semibold text-muted sm:inline-flex"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
+      <!-- The sm+ head-row copy of the pill; hidden below sm, where the copy above renders instead.
+           The pill is a painted box in a top-aligned row against a block several lines deep, so it
+           sits in a one-line-tall slot carrying the heading's own type role: that levels the pill's
+           padding box on the heading's first line box, which is what the eye reads. Levelling the
+           two on a baseline instead would move the wrong thing (cairn-admin.css carries why). -->
+      <span class="cairn-line-slot type-meta hidden flex-none sm:flex">
+        <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 type-chip font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
+      </span>
     </div>
 
     <!-- THE GENERATED SUMMARY LINE, inside the live region. Rendered unconditionally so it can

@@ -47,7 +47,7 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Nine rules run, all error tier.
+Ten rules run: nine at error tier, one at advisory.
 
 | ID | What it checks |
 |---|---|
@@ -60,6 +60,34 @@ Nine rules run, all error tier.
 | `focus-parity` | Every hand-authored `:hover` selector has a sibling selector in the same source that swaps `:hover` for `:focus-visible`, or for `:focus-within` when a container's wash acknowledges a descendant gaining focus. Tailwind's `hover:` variant classes are deliberately out of scope: their keyboard affordance is the admin's blanket focus ring, a real guarantee of a different shape |
 | `motion-band` | Every transition or animation duration lands in the admin's `150ms` to `250ms` band, and `transition: all` never ships. A declaration inside a `prefers-reduced-motion: reduce` guard is exempt, since collapsing a duration toward zero is what that guard is for |
 | `reduced-motion` | Every selector that declares motion is named again inside an `@media (prefers-reduced-motion: reduce)` guard in the same source |
+
+The tenth is advisory. It reports and never changes the exit code.
+
+| ID | What it checks |
+|---|---|
+| `icon-baseline-synthesis` | A label whose own `display` is `inline-flex`, whose first rendered child is an icon, sits directly inside a row declaring `items-baseline` (any breakpoint prefix). Such a label can take the row's baseline from the icon rather than from its own word, in which case the row's declared alignment doesn't hold. Where a word sits beside the icon, `cairn-icon-label` is the fix; on an icon-only label the class changes nothing |
+
+`icon-baseline-synthesis` is advisory because it reads authored source and can't confirm the
+synthesis it names. Two things stay invisible to it. It can't see a first child that isn't the
+first *flex item*, because `position: absolute`, `display: none`, or an `order-*` utility moved
+it. And when the label is a Svelte component, it can't see where that component puts the `class`,
+which the component may apply to any element it likes. Chromium measures both shapes at 0.00px,
+the correct result, and the rule reports them anyway.
+
+Its recall is narrow in the same way, so read a clean run as one shape checked rather than as
+vertical alignment cleared. The rule finds:
+
+- Only a label spelled `inline-flex`. The identical defect written `flex` measures the same and
+  reports nothing.
+- Only an icon spelled `<svg>`, a component named `*Icon`, a `data-icon` marker, or a single-child
+  `span`/`div` around one of those. An `<img>`, an icon font, and lucide's own default-import
+  spelling (`import Check from '@lucide/svelte/icons/check'`, rendered `<Check />`) are all silent.
+- Only a direct child of the row. An intervening element, block, or component hides the label.
+- Only Tailwind's six min-width breakpoint names. The rule reads a `max-*`, `dark:`, or `print:`
+  variant as unprefixed.
+
+A `sm:items-baseline` or a `sm:self-*` utility on the label silences the rule at every breakpoint.
+[ROADMAP](../../ROADMAP.md) carries the work that would earn this rule an error tier.
 
 ### Suppressing a finding
 
@@ -85,7 +113,7 @@ The counting contract is the other half. A suppressed finding leaves the exit-co
 the report: the summary line always prints a suppression total, including when it's zero.
 
 ```text
-12 files scanned, 9 rules run
+12 files scanned, 10 rules run
 0 errors, 0 advisories, 5 suppressed
 ```
 

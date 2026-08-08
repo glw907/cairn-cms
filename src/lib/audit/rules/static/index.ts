@@ -4,6 +4,7 @@
 import { focusParity } from './focus-parity.js';
 import { gapScale } from './gap-scale.js';
 import { grammarBoundary } from './grammar-boundary.js';
+import { iconBaselineSynthesis } from './icon-baseline-synthesis.js';
 import { motionBand } from './motion-band.js';
 import { noUncompiledClass } from './no-uncompiled-class.js';
 import { reducedMotion } from './reduced-motion.js';
@@ -24,5 +25,6 @@ export function staticRules(): StaticRule[] {
     focusParity,
     motionBand,
     reducedMotion,
+    iconBaselineSynthesis,
   ];
 }

@@ -603,6 +603,69 @@
     margin-block: -0.25rem;
     padding-block: 0.25rem;
   }
+
+  /* AN ICON-PLUS-WORD LABEL EXPOSES ITS TEXT BASELINE (2026-08 vertical-alignment inventory).
+     A label that wraps a glyph and a word in an `inline-flex` box hands its row the wrong
+     baseline. A flex container reports the baseline of the first item that is itself
+     baseline-aligned, and where no item is, it synthesises one from the first item outright. That
+     item is the svg, which draws no line box, so the browser takes its bottom margin edge, and a
+     row declaring `items-baseline` levels the WORD 2.5px high: measured at three call sites in
+     CairnTidySettings.svelte, a quarter of the 10px cap height both members render.
+
+     Baseline-aligning the label's own items is the fix. The word is the one item with a real
+     baseline, so it becomes the baseline the label reports.
+
+     The two rules do DIFFERENT jobs, and the second is load-bearing for a reason worth reading
+     before deleting it. It is NOT holding the baseline. Neutralise the svg's `align-self` to
+     `auto` and the label-vs-value baseline delta still measures 0.00px, because Chromium aligns
+     the svg's synthesised baseline INTO the group rather than reporting it as the container's, so
+     the label's first baseline is the word's either way. What the second rule holds is the
+     GLYPH'S OWN PLACEMENT: drop it and the glyph rides 2.50px high (-0.29px to -2.79px against
+     the first line's cap centre), a new defect of exactly the size the first rule removes.
+
+     `align-self: start` plus `min-height: 1lh`, not `align-self: center`, because a centred glyph
+     levels on the flex line's cross size, which for this single-line container is the label's
+     WHOLE height. A label whose word wraps to three lines then floats its glyph to the middle of
+     the block, +16.71px below the first line's cap centre, contradicting the rule that an icon
+     beside a text block pairs with that block's FIRST line. Starting the glyph and giving it a
+     one-line-tall box puts its ink on that line instead: an svg with a viewBox centres its
+     drawing in the box it is given, so a 1lh box centres the ink on the line, the same mechanic
+     `.cairn-line-slot` below uses. It reads -0.29px whether the label wraps or not.
+
+     `min-height` rather than `height` is a cascade-layer fact, not a preference. A call site
+     sizes its glyph with a Tailwind `h-*` utility, and the utilities layer outranks this one
+     whatever the specificity, so a `height` here never applies: measured -1.79px, still outside
+     the 1px bar and a regression on the non-wrapping case. No size utility sets `min-height`, so
+     it wins by being a different property, and it only ever grows the box. A glyph taller than
+     the line keeps its authored size and reads exactly as it does today when the label does not
+     wrap. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-icon-label {
+    display: inline-flex;
+    align-items: baseline;
+  }
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-icon-label > svg {
+    align-self: start;
+    min-height: 1lh;
+  }
+
+  /* A PAINTED BOX LEVELS ON A LINE, NOT ON A BLOCK'S TOP EDGE (same inventory). A chip beside a
+     heading is read as a box, because its border and fill draw ink at its own edges: what the eye
+     levels is its padding-box centre against the centre of the line it labels. A row that
+     top-aligns the two instead leaves the chip low by half the difference in their heights, 5px
+     for the 23px "Set by your developer" pill against the 17px heading line beside it. Levelling
+     the two on a BASELINE is the wrong repair for the same reason: the chip's own baseline is an
+     accident of the type inside it.
+
+     This slot is one line box tall and centres whatever it holds on that line, letting a taller
+     chip overflow it symmetrically. The height comes from `1lh` rather than a token so it follows
+     whatever leading the slot's own type role resolves to, which means the caller gives the slot
+     the SAME type role as the line it levels on; nothing about the block beside it is reachable
+     from here. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-line-slot {
+    display: flex;
+    align-items: center;
+    height: 1lh;
+  }
 }
 
 /* DaisyUI v5's .menu quiets keyboard focus on its items (`outline-style: none` on

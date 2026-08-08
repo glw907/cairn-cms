@@ -296,3 +296,16 @@ line.
   that declares (or consumes by fallback) its own `--cairn-*` palette be a declared palette
   site, the standing exclusion `cairn-admin.css` and `theme.css` already get, rather than a
   suppression cluster? Raised by the code-simplifier on the preview pass, 2026-08-07.
+
+- **`developer`: `FieldLabel`'s own `@component` block says nothing about the row it sits in,
+  even though the vertical-alignment pass's whole finding is that the row is where this
+  composition goes wrong.** `FieldRow` (`/admin-toolkit`) now ships the fix, an `items-end` row for
+  a stacked field beside a bare control, but `FieldLabel` itself, the component a developer opens
+  first when composing that row, carries no pointer to it. A developer reads `FieldLabel`'s doc,
+  composes a plain `flex items-center` row around it and a bare button, and gets the same
+  12.5px-offset defect ASC hit twice in one repo, with nothing in the component they are looking at
+  to warn them off. The vertical-alignment pass's task 2 deliberately left `FieldLabel`'s block
+  untouched (a judgment call, not an oversight: the plan's global constraints bar changing
+  `FieldLabel`'s markup, and the doc addition is a smaller, separable edit than the plan's own
+  scope). Candidate fix: one sentence in `FieldLabel`'s `@component` block, pointing at `FieldRow`
+  for a row that mixes it with a bare control.

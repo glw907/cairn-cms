@@ -2,8 +2,15 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
 	// CI's renderer produces run-to-run anti-aliasing jitter of a few dozen pixels;
-	// baselines are CI-canonical (the regen dispatch), and this allowance sits two orders
-	// of magnitude below any real layout change.
+	// baselines are CI-canonical (the regen dispatch), and a much lower allowance would go
+	// flaky on that jitter. The cost is a defect-size floor, and the floor is easy to
+	// underestimate: a 1.5px shift on a 16px icon measured 51 differing pixels, which
+	// passes at 120 and never rewrites the baseline (measured 2026-08-07 on the admin edit
+	// page at 1440). So a green screenshot run is not evidence that a small-footprint
+	// defect class is absent. A defect whose whole footprint fits under the floor needs a
+	// gate that measures geometry; for vertical alignment that gate is the library's
+	// src/tests/component/vertical-alignment-recipes.test.ts. Re-costing this number is a
+	// ROADMAP item, since it moves every baseline decision in the suite at once.
 	expect: { toHaveScreenshot: { maxDiffPixels: 120 } },
   testDir: 'e2e',
   // The dev backend (the fake-github recorder, the fake R2 bucket) is module-level singleton state

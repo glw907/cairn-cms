@@ -919,6 +919,99 @@ alongside the component recipes above and below it.
   detail and rationale: `docs/internal/design/2026-06-14-fold-gutter-mockup.html` and the spec
   `docs/superpowers/specs/2026-06-14-fold-gutter-design.md`.
 
+## Vertical alignment mechanics
+
+A row's vertical alignment cannot be judged by reading its markup. The 2026-08 inventory rendered
+every admin screen at three widths in both themes, took 5028 readings, and found seven rows above a
+2px bar, five of them real. Two of those five were rows that had already declared the correct
+alignment and still missed, because the property the browser aligned on was not the property the
+eye reads. What follows is what that measurement established.
+
+### The two-class diagnosis
+
+Ask one question about a row before touching it: **is this pair two runs of type, or is it
+something else beside a run of type?**
+
+- **Two runs of type share a BASELINE.** A mixed-size pair that shares a baseline has centres that
+  diverge by exactly the cap-height ratio, and that divergence is correct typography, not a defect.
+  Levelling such a pair on centres is the bug.
+- **Anything else beside a run of type shares an INK CENTRE.** An icon, a control, or a painted
+  chip has no baseline worth sharing, so what levels it is its visible content against the text's
+  cap centre. The converse of the rule above holds too: a pair the row deliberately centred has
+  baselines that diverge by design, and levelling those baselines is equally a bug.
+
+Two consequences that catch people out. A padded chip is a BOX, not a run of type: its border and
+fill draw ink at its own edges, so its padding-box centre is the reading, and the type inside it is
+a separate optical question. And an icon beside a text BLOCK pairs with that block's first line,
+never with the block, because the eye reads the icon against the line it sits beside.
+
+### Metric by pair class
+
+| Pair | Metric | Read it off |
+| --- | --- | --- |
+| text beside text | alphabetic baseline | the element that renders the line, never its container |
+| text beside text, in a row that declared a centre | cap centre | as above |
+| icon beside text | ink centre against cap centre | SVG ink through the screen CTM, not the `<svg>` box |
+| control beside text | border box centre against cap centre | the control's own border box |
+| chip or badge beside text | padding-box centre against the line box | the painted box, not the type inside it |
+| glyph inside a button or chip | cap centre against padding-box centre | the glyph and its own container |
+
+`src/lib/audit/rules/rendered/vertical-metrics.ts` is the executable form of this table. It is lab
+apparatus rather than shipped engine code, and it stays the single definition: a test that measures
+alignment restates these rules rather than inventing its own.
+
+### The recipes
+
+- **`.cairn-icon-label`** (`cairn-admin.css`): a label that is a glyph plus a word, for a row that
+  declares `items-baseline`. Without it the label reports the icon's bottom margin edge as its
+  baseline, because a flex container synthesises a baseline from its first item when no item is
+  baseline-aligned. The recipe baseline-aligns the label's own items so the word supplies the
+  baseline, then gives the glyph `align-self: start` and `min-height: 1lh` so its ink centres on
+  the label's FIRST line. Both rules are load-bearing, for different reasons. The first fixes the
+  baseline the label reports; the second fixes where the glyph sits, and dropping it costs 2.50px
+  of glyph offset rather than the baseline (Chromium reads the word's baseline either way). Two
+  measured traps sit behind the second rule's exact wording: `align-self: center` levels the glyph
+  on the whole label, so a wrapping label floats it 16.71px down, and `height: 1lh` never applies,
+  because a call site's `h-*` utility outranks this components-layer rule whatever the specificity.
+- **`.cairn-line-slot`** (`cairn-admin.css`): a one-line-tall slot that centres a painted chip on
+  the line it labels, so the chip levels on that line box instead of on the top edge of the block
+  beside it. Give the slot the same type role as the line, since `1lh` is what sets its height.
+- **An icon in a button is a flex item, never an inline box.** Put the `<svg>` straight into the
+  button, or into an `inline-flex` wrapper when a wrapper is needed for something else. A bare
+  `<span>` around the glyph makes it an inline box that sits on the wrapper's text baseline, which
+  rides it about half an icon height above the label's cap centre. That is the whole of the Write
+  tab defect: 2.33px high, against thirteen sibling icon-in-button rows at 0.5 to 0.75px.
+- **`FieldRow`** (`/admin-toolkit`): a flex row that levels its children on their bottom edges, for
+  a row mixing a stacked field with a bare control. **No measured defect drove this.** The
+  inventory found no misaligned field row anywhere in the admin. It ships as the named composition
+  for a shape the toolkit could otherwise only hand-roll, and its one caveat is documented on the
+  component: a field rendering an error line below its control breaks bottom alignment.
+### `text-box: trim-both cap alphabetic`, measured and NOT landed
+
+The 2026-08 spec declared this trim as a silent default on the label-like recipes (`type-label`,
+`type-chip`, the button recipes), with no measured defect behind it. It is not in the sheet, and
+three measurements are why. Reopen it as its own decision, not as a rider.
+
+1. **It is inert exactly where the spec wanted it.** `text-box-trim` does not inherit, and the text
+   inside a flex container lives in an anonymous flex item. A padded `inline-flex` chip and a
+   daisyUI `.btn` are both flex containers, so a declaration on either computes and trims nothing.
+   Measured with the declaration live: the developer pill stayed 23.00px, a `.btn btn-sm` stayed
+   32.00px, and the button's cap centre did not move.
+2. **Where it does bite, it is not silent.** It applies to a block container, and a flex item is
+   blockified into one. A `type-chip` block went 13.00px to 7.14px and a `type-label` block went
+   14.00px to 7.86px, about six pixels per instance across roughly 25 block-level call sites plus
+   every label-sized span that happens to be a flex item. The `gap-*` scale was ratified against
+   the untrimmed line boxes, so this quietly re-rules the admin's spacing.
+3. **It breaks a documented contract.** A type role is a size and its leading and nothing else,
+   stated in Grammar tokens above, published in
+   [Admin grammar tokens](../reference/admin-grammar-tokens.md), and pinned by
+   `grammar-tokens.test.ts` asserting each role's whole declaration text. Adding a third property
+   to `type-label` fails that test, and routing the same declaration through another layer to keep
+   the test green would be the same change with the evidence hidden.
+
+If the trim is still wanted, it belongs on a component recipe that owns its own padding, and it
+needs the spacing scale re-measured beside it.
+
 ## Icons
 
 Lucide via `@lucide/svelte` (per-icon imports). `admin-icons.ts` is the chrome glyph set; import nav and
@@ -1012,7 +1105,9 @@ The split is recorded token by token in the admin custom-surface ledger
 Tier 1 (the theme), Tier 2 (the documented floor), and Tier 3 (the folded remainder, now at zero). The
 `check:custom-surface` gate holds the line: it caps the `@layer components` rules, pins the unlayered set
 by whole-selector equality, and keeps the retired-token budget at zero, so a new arbitrary
-`text-[var(--color-muted)]` bracket in the admin markup fails the build.
+`text-[var(--color-muted)]` bracket in the admin markup fails the build. The cap is a ratchet, not a
+ceiling nobody may touch: raising it is a deliberate act carried in the commit that adds the rules, which
+is what the three vertical-alignment recipe selectors did (16 to 19, 2026-08).
 
 ## The starter template's design
 

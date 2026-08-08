@@ -297,7 +297,13 @@ stays pinned at the row's right end, reachable at every width.
          identical across the swap, matching this tab's own widest (glyph-plus-label) state at
          rest. Invisible rather than removed, so the reserved space survives and a screen reader
          still skips it (the icon inside already carries its own aria-hidden). -->
-    <span class:invisible={mode !== m}>
+    <!-- The wrapper is inline-flex, never a bare span (2026-08 vertical-alignment inventory): a
+         bare span makes the glyph an INLINE box, which sits on the wrapper's own text baseline
+         rather than on the row, and the icon rode 2.33px above the label's cap centre against
+         thirteen sibling icon-in-button rows at -0.5 to -0.75px. A flex wrapper is the same
+         geometry as putting the glyph straight into the button, which is what every one of those
+         siblings does; the wrapper only exists to carry the visibility toggle. -->
+    <span class="inline-flex" class:invisible={mode !== m}>
       {@render strokeIcon(checkPaths)}
     </span>
     {label}

@@ -378,9 +378,13 @@ it; it is not repeated here. On top of it, this pass shipped:
 - **`FieldRow.svelte`**, a new `admin-toolkit` export (`items-end` composition for a stacked
   field beside a bare control), and the `text-box: trim-both cap alphabetic` silent default,
   which was measured and explicitly declined rather than shipped (see below).
-- **`icon-baseline-synthesis`**, a new static, browser-free `cairn-audit` rule at `error` tier,
-  detecting the one confirmed mechanic (an `inline-flex` label with a leading icon inside a
-  baseline row) as a structural markup pattern rather than a measurement.
+- **`icon-baseline-synthesis`**, a new static, browser-free `cairn-audit` rule shipped at
+  `advisory` tier (commit `4503da4b`, after two rounds targeting `error`), detecting the one
+  confirmed mechanic (an `inline-flex` label with a leading icon inside a baseline row) as a
+  structural markup pattern rather than a measurement. A 59-probe re-verification found five
+  shapes that render at 0.00px and still fire, decisively an icon-only label whose prescribed fix
+  measures identically before and after, so a consumer could not make that build green by obeying
+  the message. The four steps that would earn `error` are filed in `ROADMAP.md`, not taken here.
 - **The site-visual suite widened** from ad hoc, uneven coverage to the full five-viewport bar
   (320/390/768/1440/2560) in both color schemes, for three representative surfaces.
 - **Docs**: the admin and Waymark design-system sections, `CHANGELOG.md`, the upgrade guide's
@@ -421,27 +425,41 @@ real markup, all fixed in `f141e3ae`. A second, later review round found the fix
 
 ### Decisions locked in
 
-- **The icon-label mechanism**, as shipped: `align-items: baseline` on `.cairn-icon-label` plus
-  `align-self: center` on its `> svg`. Chromium synthesises a flex container's reported baseline
-  from its first BASELINE-PARTICIPATING item; pulling the icon out of that group with `align-self`
-  leaves the word as the only participant, so the container's baseline becomes the word's. Both
-  declarations are load-bearing and were measured independently: dropping the `align-self` line
-  does not reopen the 2.5px baseline miss (Chromium still resolves the container baseline to the
-  word either way), but it does reopen the icon's own vertical placement by about the same margin,
-  a regression of the identical size and shape as the defect just fixed. Do not read the CSS
-  comment as the source of truth for why the second declaration matters; it currently states the
-  wrong mechanism (see "Open decisions").
+- **The icon-label mechanism**, as shipped after the review gate (commit `524a76a8`):
+  `align-items: baseline` on `.cairn-icon-label` plus `align-self: start; min-height: 1lh` on its
+  `> svg`. Chromium synthesises a flex container's reported baseline from its first
+  BASELINE-PARTICIPATING item; pulling the icon out of that group leaves the word as the only
+  participant, so the container's baseline becomes the word's. Both declarations are load-bearing
+  and were measured independently: dropping the second does not reopen the 2.5px baseline miss
+  (Chromium resolves the container baseline to the word either way), but it does reopen the icon's
+  own vertical placement by about the same margin, a regression of the identical size and shape as
+  the defect just fixed. The CSS comment stated that mechanism wrongly and was corrected in the
+  same commit.
+
+  The pass first shipped `align-self: center`, which a reviewer then measured at +16.71px on a
+  WRAPPING three-line label, since `center` levels the glyph on the flex line's cross size, which
+  for a single-line flex container is the label's full height. That contradicts this pass's own
+  doctrine that an icon beside a text block pairs with the block's FIRST LINE. `min-height`, not
+  the reviewer's prescribed `height`: cascade layers put `utilities` after `components`, so a
+  `height` written in `@layer components` is a silent no-op against the glyph's own `h-3.5`, and
+  the reviewed value measured -1.79px when injected as a real layered rule.
 - **The pill fix levels the padding box on the heading's line box, not on any baseline.** `.
   cairn-line-slot` is `display: flex; align-items: center; height: 1lh`, sized off the same
   `type-meta` role the heading itself carries, so `1lh` genuinely resolves to that line's leading
   rather than an unrelated token. `1lh` degrades safely on browsers that do not support it (Chrome
   <109, Safari <16.4, Firefox <120): `height` falls back to `auto` and the slot regains the pill's
   own height, which reinstates the original 5px miss rather than overflowing or breaking layout.
-- **`icon-baseline-synthesis` ships at `error` tier**, per Geoff's ruling that a mechanical
-  guardrail that only reports and never gates is inert unless someone runs it and reads it, the
-  same class of intervention as prompting. The tier decision itself is not in question; what
-  remains open is whether the rule's actual precision, as shipped, clears the bar that tier
-  demands (see "Open decisions").
+- **`icon-baseline-synthesis` ships at `advisory` tier** (commit `4503da4b`), reversing this
+  pass's earlier `error`-tier decision. Geoff's ruling stands as written: a guardrail that only
+  reports and never gates is inert unless someone runs it and reads it. The evidence simply would
+  not carry it. A 59-probe re-verification measured five markup shapes that render at exactly
+  0.00px and still fire, and the decisive one is an icon-only label, which fails the build while
+  the prescribed `.cairn-icon-label` fix measures identically before and after, leaving the author
+  no way to comply. Recall does not earn the tier back either: a `flex` label is the same defect
+  at -1.75px and passes silent, and lucide's default-import spelling `<Check />` is invisible. The
+  reference, the upgrade guide and the changelog now state the recall boundary instead of a
+  tripwire claim, per the task's own instruction that a rule quietly shipped advisory while
+  described as a tripwire is the failure to avoid.
 - **`text-box: trim-both cap alphabetic` does not ship.** It was implemented, measured, and pulled
   before commit. It does not inherit, so on a flex container the text becomes an anonymous flex
   item and the declaration is inert exactly where the spec wanted it (a padded `inline-flex` chip

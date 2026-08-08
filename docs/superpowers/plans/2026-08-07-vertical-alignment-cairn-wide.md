@@ -13,6 +13,43 @@ inventory across the admin's and Waymark's rendered screens, engine-owned recipe
 composition class on each surface, one generalized `cairn-audit` tripwire that measures any
 rendered page, and honest upgrade notes for the consumers already exposed.
 
+## RESCOPE, ratified by Geoff 2026-08-07 (after task 1; supersedes the task list below)
+
+**The measured defect surface came in far smaller than this plan assumed, and the pass is cut
+short accordingly.** Task 1 ran, was condemned by audit three times, and split twice (1a the probe
+and module, 1b the block-versus-line correction, 1c the metric-selection correction). Two splits is
+this plan's own trigger for a pass-split proposal, and the proposal was made and answered.
+
+What the corrected inventory actually found, against an expectation of broad two-surface defect
+classes: **one admin mechanic at three call sites** (`CairnTidySettings.svelte` 367/372/380: an
+`inline-flex` label containing an icon synthesises its baseline from the icon, so the row's own
+declared `sm:items-baseline` misses by 2.5px), **one chip genuinely low** (`22a0e709`), **one
+marginal icon row** (`76d4cd3e`, −2.33px against thirteen siblings at −0.5 to −0.75px), and **zero
+public rows**. Task 3's only candidate was a false positive. This is not a measurement failure: the
+`/join` evidence that drove the cairn-wide rescope lives on a consumer site, and the boundary
+decision keeps consumer fixes in consumer repos, so cairn's own corpora cannot contain it. The
+pass's public deliverable is the tripwire that catches it site-side, plus the doctrine.
+
+**This pass (Pass A) carries, and keeps the release-one gate:**
+
+1. Task 1c, finishing (the metric-selection correction and its independent grade).
+2. **Task 2, reduced** to the confirmed admin work: the one three-call-site mechanic, `22a0e709`
+   levelled on the heading's line box (NOT its baseline), and `76d4cd3e`. `FieldRow` and the
+   `text-box: trim-both` silent defaults still ship as spec-declared enhancements, stated plainly
+   as having no measured backing (the inventory found zero optical defects).
+3. **The five-viewport site-suite widening as its own task**, separated from task 3. It is coverage
+   hygiene independent of alignment, and it stands whether or not a chassis recipe ever lands.
+4. Task 4, the `cairn-audit` tripwire.
+5. Task 5, the docs, changelog, and upgrade notes, **now also carrying the Waymark mechanics doc
+   section** that task 3 was to have written.
+
+**Task 3 is dissolved.** Its recipe work is empty, its doc section moves to task 5, and its
+styleguide demonstration drops, since there are no new public recipes to demonstrate.
+
+**The follow-up pass carries** the sub-bar `ConceptList` family (fifteen rows at exactly 1.55px,
+the same shape as the three confirmed defects, sitting below the 2px bar) and whatever the shipped
+tripwire finds once consumers cross it. It is not the old "chassis long tail", which measured empty.
+
 **Architecture:** one probe, two corpora. The measurement method is the correctness-critical
 asset and stays singular: a shared metric-by-class measurement module drives both the probe
 (task 1) and the audit rule (task 4), so the three traps are encoded once. Recipes land where

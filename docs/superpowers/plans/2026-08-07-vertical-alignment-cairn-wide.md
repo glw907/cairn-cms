@@ -220,11 +220,40 @@ always-recommends-stacked message). If ink/glyph measurement proves too flaky fo
 border-box half and record the optical half as probe-script-only in the inventory doc, stated
 plainly.
 
+**Amendment (Geoff, 2026-08-07): TARGET `error` TIER, and treat precision as the deliverable.**
+Geoff's ruling is that mechanical guardrails in the system beat training Claude to be more
+effective on its own, and that ranking demotes every advisory or agent-facing channel. An
+advisory rule reports and never gates, so it is inert unless someone runs it AND reads it, which
+makes it the same class of intervention as prompting. The guardrail is a rule that FAILS THE
+BUILD.
+
+Do not copy `field-edge-alignment`'s `tier: 'advisory'` by default. Design for `error` and state
+the reasoning either way.
+
+This raises the precision bar rather than lowering it, and that is the point. An advisory rule is
+allowed to be sloppy, because a false positive only adds noise to a report. An error-tier rule
+cannot be, because a false positive fails a CONSUMER'S build on a correctly composed row. Shipped
+at error tier off task 1's first inventory, this rule would have broken builds on the admin brand
+tile across eleven screens and on the public footer masthead at every viewport, every one of them
+composed correctly. The three condemnation rounds bought the precision this tier requires.
+
+The threshold decision is therefore load-bearing, not a footnote. The fifteen `ConceptList` rows
+at exactly 1.55px carry the same shape as the three confirmed defects, so any threshold in the
+window either adopts them or excludes them, and at error tier that choice fails builds or misses
+a family. Size it before picking, and record the choice as a decision.
+
+**If the evidence will not support `error`, say so plainly and ship advisory with the reason
+stated.** A rule quietly shipped advisory and described as a tripwire is the failure this
+amendment exists to prevent.
+
 **Acceptance criteria:** fires on both task 1 calibration fixtures; silent on `FieldRow`
 compositions, same-height rows, validated top-aligned layouts, and the baseline-aligned
-mixed-size text pair (fixtures prove each non-firing); green over the swept engine and
-showcase; the task 1 probe re-run reports zero rows above threshold across both corpora, or
-each survivor is a documented decline; full per-task gate.
+mixed-size text pair (fixtures prove each non-firing); **zero false positives across both
+corpora, proven by fixtures for each confirmed-correct composition the pass identified
+(`1728754a` the brand tile, `689c8adb` the count pill, `dabaf490` the footer masthead, plus both
+reviewed declines)**; the shipped tier is a stated decision with its evidence; green over the
+swept engine and showcase; the task 1 probe re-run reports zero rows above threshold across both
+corpora, or each survivor is a documented decline; full per-task gate.
 
 ### Task 5: docs, changelog, upgrade notes, roadmap
 

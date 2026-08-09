@@ -13,13 +13,16 @@ import path from 'node:path';
 // shipping it to the server. The SDK is a bare package import, so any static `from '@anthropic-ai/sdk'`
 // on a client-reachable module is the leak we guard.
 
-const SDK = '@anthropic-ai/sdk';
-
 // A static (non-dynamic) import of @anthropic-ai/sdk, value or type. We forbid both on the client: a
 // type-only import is erased, but a client module should not even name the server SDK, and forbidding
 // the bare specifier is the simplest robust rule.
 const STATIC_SDK =
   /(?:^|\s)import\s[^(][\s\S]*?from\s+['"]@anthropic-ai\/sdk['"]|(?:^|\s)import\s+['"]@anthropic-ai\/sdk['"]/m;
+
+// A dynamic `import('@anthropic-ai/sdk')`, the only form allowed to reach the SDK. The immediate
+// `(` is what keeps it out of STATIC_SDK above, whose two branches both require whitespace after
+// `import`.
+const DYNAMIC_SDK = /import\s*\(\s*['"]@anthropic-ai\/sdk['"]\s*\)/;
 
 // A static relative VALUE import's specifier, captured from a `from '...'` clause or a side-effect
 // `import '...'`. The span between `import` and `from` forbids a quote or semicolon (`[^'";]*?`) so it
@@ -32,14 +35,26 @@ const STATIC_SDK =
 const STATIC_RELATIVE =
   /(?:^|\s)import\s+(?!type\b)(?:[^('";]?[^'";]*?from\s+)?['"](\.[^'"]+)['"]/g;
 
-function componentFiles(dir: string): string[] {
+// Every file under `dir`, recursively, whose basename `keep` accepts.
+function filesUnder(dir: string, keep: (name: string) => boolean): string[] {
   const out: string[] = [];
   for (const name of readdirSync(dir)) {
     const full = path.join(dir, name);
-    if (statSync(full).isDirectory()) out.push(...componentFiles(full));
-    else if (name.endsWith('.svelte')) out.push(full);
+    if (statSync(full).isDirectory()) out.push(...filesUnder(full, keep));
+    else if (keep(name)) out.push(full);
   }
   return out;
+}
+
+// The seed set for the client-bundle walk: every admin component.
+function componentFiles(dir: string): string[] {
+  return filesUnder(dir, (name) => name.endsWith('.svelte'));
+}
+
+// Every shipped source file, whatever its extension: svelte-package ships all of src/lib, so this is
+// the set a consumer's build actually resolves.
+function sourceFiles(dir: string): string[] {
+  return filesUnder(dir, (name) => name.endsWith('.ts') || name.endsWith('.svelte'));
 }
 
 // Resolve a relative import specifier (carrying the NodeNext `.js`/`.svelte` extension) to a real file
@@ -84,14 +99,28 @@ describe('server-only deps stay off the client', () => {
     expect(offenders).toEqual([]);
   });
 
-  it('the SDK is reachable only from the server action module', () => {
+  it('the SDK is reachable only from the server action module, and only dynamically', () => {
     // The whole point of the dep: it lives in content-routes-context.ts (the content-routes factory's
     // shared closure context), a Worker module no component imports statically. This asserts the
     // positive too, so the guard fails loudly if the import is ever moved somewhere a component can
     // reach (and the first assertion would then also fire).
     const importer = 'src/lib/sveltekit/content-routes-context.ts';
-    expect(STATIC_SDK.test(readFileSync(importer, 'utf8'))).toBe(true);
+    expect(DYNAMIC_SDK.test(readFileSync(importer, 'utf8'))).toBe(true);
     const graph = reachable(componentFiles('src/lib/components'));
     expect(graph.has(path.resolve(importer))).toBe(false);
+  });
+
+  it('no shipped module statically imports the SDK, which is what keeps the peer optional', () => {
+    // The SDK is an OPTIONAL peerDependency: a site that never tidies never installs it. That holds
+    // only while nothing under src/lib names the specifier statically, since a static import (value
+    // OR type) is a build-time resolution every consumer would have to satisfy. The dynamic import in
+    // the module above is the one permitted form, and it fails at call time into the tidy action's
+    // install-instruction refusal instead.
+    //
+    // This sweeps all of src/lib, so it already covers the client-reachable subgraph the first test
+    // walks. That one stays because it guards a different promise (nothing in a browser bundle) and
+    // fails naming the offending client-reachable module, which is the faster diagnosis.
+    const offenders = sourceFiles('src/lib').filter((file) => STATIC_SDK.test(readFileSync(file, 'utf8')));
+    expect(offenders).toEqual([]);
   });
 });

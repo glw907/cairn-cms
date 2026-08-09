@@ -79,6 +79,22 @@
   `docs/internal/admin-design-system.md`. Consumers must: nothing. The new export and the two new
   classes are additive, and no existing class changed.
 
+### Changed
+
+- `@anthropic-ai/sdk` is now an optional peer dependency instead of a plain dependency, and the
+  tidy action reaches it through a dynamic import at call time rather than a static import at
+  module load. A site that never turns tidy on stops installing the SDK and its six transitive
+  packages, 13 MB and roughly 1,980 files off a production install. A site that does use tidy
+  behaves exactly as before once the package is present, and the injectable
+  `ContentRoutesOptions.tidy.client` seam keeps its signature, so an injected client (the packaged
+  dev backend's deterministic stub included) is untouched. With tidy enabled and the SDK absent,
+  the action answers `fail(503)` naming the package and the install command instead of failing the
+  build, and logs `tidy.failed` with a new `reason: 'sdk_missing'`; the key-health cache stays
+  untouched, since no key was ever tried. See [Log events](docs/reference/log-events.md).
+  Consumers must: a site using the tidy action adds `@anthropic-ai/sdk` to its own dependencies
+  (`npm install @anthropic-ai/sdk`), because npm does not auto-install an optional peer; a site not
+  using tidy does nothing, and its install gets lighter.
+
 ## 0.94.0
 
 <!-- release-size: minor -->

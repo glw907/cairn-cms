@@ -104,14 +104,21 @@ export function dependencyFloorsResult(
 /**
  * The engine's own declared peer ranges, read from the installed package.json at runtime so the
  * floors are declared exactly once. The self-reference resolves through the consumer's
- * node_modules in a real install and through the repo root during development.
+ * node_modules in a real install and through the repo root during development. Peers marked
+ * optional in `peerDependenciesMeta` are left out: a site that never uses the feature behind one
+ * legitimately does not install it, and an absent dependency reads as a skip here, which would
+ * mask the framework verdict this check exists to give.
  */
 export function readEnginePeers(): Record<string, string> {
   const require = createRequire(import.meta.url);
   const pkg = require('@glw907/cairn-cms/package.json') as {
     peerDependencies?: Record<string, string>;
+    peerDependenciesMeta?: Record<string, { optional?: boolean } | undefined>;
   };
-  return pkg.peerDependencies ?? {};
+  const meta = pkg.peerDependenciesMeta ?? {};
+  return Object.fromEntries(
+    Object.entries(pkg.peerDependencies ?? {}).filter(([dep]) => meta[dep]?.optional !== true)
+  );
 }
 
 export const configDependencyFloors: DoctorCheck = {

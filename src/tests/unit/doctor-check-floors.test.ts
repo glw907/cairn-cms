@@ -141,6 +141,13 @@ describe('readEnginePeers', () => {
     expect(peers.svelte).toBe('^5.56.3');
     expect(peers['@sveltejs/kit']).toBe('^2.12');
   });
+
+  it('leaves out an optional peer, whose absence is a site choice rather than an unmet floor', () => {
+    // @anthropic-ai/sdk is optional: only a site using the tidy action installs it. Counting it
+    // would turn every other site's verdict into a skip on the missing lockfile entry, hiding the
+    // svelte and kit answer this check exists to give.
+    expect(readEnginePeers()).not.toHaveProperty('@anthropic-ai/sdk');
+  });
 });
 
 describe('config.dependency-floors', () => {

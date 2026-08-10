@@ -1,7 +1,8 @@
-// The composable scaffold core. It builds the Action list from every module Tasks 2-7 landed
-// (the template copy, the package rename, the substitution pass, the out-of-scaffold state save)
-// and hands it to the shared action runner, so bin.mjs's job is only argument plumbing and
-// printing: --dry-run stays a property of runActions' frame, never a branch repeated here.
+// The composable scaffold core. It builds the Action list from the separately tested modules
+// beside it (the template copy, the package rename, the substitution pass, the out-of-scaffold
+// state save) and hands it to the shared action runner, so bin.mjs's job is only argument
+// plumbing and printing: --dry-run stays a property of runActions' frame, never a branch
+// repeated here.
 //
 // Two guards run before any action is built, not just before it runs: an unbaked template (a git
 // checkout never carries one; only `npm run prepack` does) and a non-empty target directory. Both
@@ -135,7 +136,9 @@ export function dryRunNotice({ dir }) {
  */
 export function handoverText({ dir, platform }) {
   const devCommand =
-    platform === 'win32' ? '$env:CAIRN_DEV_BACKEND=1; npm run dev' : 'CAIRN_DEV_BACKEND=1 npm run dev';
+    platform === 'win32'
+      ? '$env:CAIRN_DEV_BACKEND=1; npm run dev'
+      : 'CAIRN_DEV_BACKEND=1 npm run dev';
   // path.isAbsolute guards the "./<dir>" copy against a doubled slash when --dir was given as an
   // absolute path (an absolute --dir is a legitimate answer, not just a test convenience).
   const location = path.isAbsolute(dir) ? dir : `./${dir}`;

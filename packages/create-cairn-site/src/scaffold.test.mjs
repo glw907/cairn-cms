@@ -5,6 +5,11 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { scaffold, handoverText, dryRunNotice } from './scaffold.mjs';
 
+// Every scaffold test answers identically: the name is what the slug and the substitution
+// assertions key on, and both optional answers stay empty. Frozen so a scaffold run that ever
+// mutated its answers would fail here rather than leak into the next test.
+const ANSWERS = Object.freeze({ name: 'Alpine Club', tagline: '', brandColor: '' });
+
 /**
  * Make a temporary directory that is removed when the test that asked for it finishes.
  * @param {import('node:test').TestContext} t the running test's context
@@ -63,10 +68,10 @@ test('dry run creates nothing and lists every action', async (t) => {
   const lines = [];
   await scaffold({
     templateDir: await templateFixture(t),
-    answers: { name: 'Alpine Club', tagline: '', brandColor: '' },
+    answers: ANSWERS,
     dir,
     dryRun: true,
-    log: (l) => lines.push(l),
+    log: (line) => lines.push(line),
   });
   await assert.rejects(() => access(dir));
   assert.ok(lines.length >= 3);
@@ -78,7 +83,7 @@ test('real run scaffolds, renames, substitutes, and saves state outside the scaf
   const dir = path.join(outDir, 'site');
   await scaffold({
     templateDir: await templateFixture(t),
-    answers: { name: 'Alpine Club', tagline: '', brandColor: '' },
+    answers: ANSWERS,
     dir,
     dryRun: false,
     log: () => {},
@@ -98,7 +103,7 @@ test('a missing template directory fails with a message naming the bake', async 
   await assert.rejects(
     () => scaffold({
       templateDir: missingTemplate,
-      answers: { name: 'Alpine Club', tagline: '', brandColor: '' },
+      answers: ANSWERS,
       dir,
       dryRun: false,
       log: () => {},
@@ -118,7 +123,7 @@ test('a non-empty target directory is refused before any file is written', async
   await assert.rejects(
     () => scaffold({
       templateDir: fixtureDir,
-      answers: { name: 'Alpine Club', tagline: '', brandColor: '' },
+      answers: ANSWERS,
       dir,
       dryRun: false,
       log: () => {},
@@ -136,7 +141,7 @@ test('an existing empty target directory is fine', async (t) => {
   await mkdir(dir, { recursive: true });
   await scaffold({
     templateDir: await templateFixture(t),
-    answers: { name: 'Alpine Club', tagline: '', brandColor: '' },
+    answers: ANSWERS,
     dir,
     dryRun: false,
     log: () => {},

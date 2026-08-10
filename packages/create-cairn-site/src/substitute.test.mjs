@@ -123,3 +123,20 @@ test('a bare number and an oklch(...) string are both accepted as brandColor', a
   assert.match(cssOklch, /--color-primary: oklch\(45% 0\.1 200\);/);
   await rm(dirOklch, { recursive: true, force: true });
 });
+
+// Regression: the pass threw only when ZERO declarations matched, so a template that drifted
+// half-way (two of the four rewritten into a form the pattern misses) would rotate the light
+// block, leave the dark block on the old brand hue, and report success.
+test('partial drift throws rather than rotating only some declarations', async () => {
+  const dir = await fixture();
+  const themePath = path.join(dir, 'src/theme/theme.css');
+  const partial = (await readFile(themePath, 'utf8')).replace(
+    '--color-primary: oklch(74% 0.1 248);',
+    '--color-primary: oklch(0.74 0.1 248);',
+  );
+  await writeFile(themePath, partial);
+  await assert.rejects(
+    () => applySubstitutions(dir, { name: 'X', tagline: '', brandColor: '#0000ff' }),
+    /matched 3/,
+  );
+});

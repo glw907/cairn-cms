@@ -22,6 +22,13 @@ const SITE_NAME_LINE = 'siteName: Waymark';
 // time, which would silently drift from the template's own numbers.
 const OKLCH_DECLARATION = /(--color-primary(?:-content)?:[ \t]*oklch\([^%\n]+%[ \t]+\S+[ \t]+)(\d+(?:\.\d+)?)([ \t]*\);)/g;
 
+// The light and dark blocks each declare a primary and a primary-content token, so a healthy
+// template matches exactly four. Asserting the count, rather than merely "at least one", is what
+// catches partial drift: if the showcase restyles two of the four into a form this pattern misses
+// (an oklch() written without a percent lightness, say), rotating only the survivors would ship a
+// scaffold whose dark mode still wears the old brand hue, and no test would notice.
+const EXPECTED_BRAND_DECLARATIONS = 4;
+
 /**
  * Convert one sRGB channel (0-255) to linear light, the first step of the CSS Color 4
  * sRGB-to-OKLCH conversion.
@@ -155,9 +162,10 @@ export async function applySubstitutions(dir, { name, tagline, brandColor }) {
       replacements += 1;
       return `${prefix}${hue}${suffix}`;
     });
-    if (replacements === 0) {
+    if (replacements !== EXPECTED_BRAND_DECLARATIONS) {
       throw new Error(
-        `substitute: expected to find a --color-primary declaration in ${THEME_CSS_RELATIVE}, but it is missing`,
+        `substitute: expected ${EXPECTED_BRAND_DECLARATIONS} --color-primary declarations in ` +
+          `${THEME_CSS_RELATIVE}, but matched ${replacements}`,
       );
     }
     await writeFile(themeCssPath, rotated);

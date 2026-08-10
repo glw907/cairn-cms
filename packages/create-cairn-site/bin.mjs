@@ -1,8 +1,15 @@
 #!/usr/bin/env node
-// The create-cairn-site CLI entry. Argument parsing and --version are wired; the scaffold flow
-// (pre-flight, prompts, template bake) arrives in a later task.
+// The create-cairn-site CLI entry: parse args, pre-flight the machine, collect the site's
+// identity, scaffold it (honoring --dry-run), and print the hand-over block. Every branch below
+// prints a next step before it stops, including the failure ones, per the plan's global
+// constraint against a bare stack-trace termination.
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { parseArgs } from './src/args.mjs';
+import { runPreflight } from './src/preflight.mjs';
+import { collectAnswers } from './src/prompts.mjs';
+import { scaffold, handoverText } from './src/scaffold.mjs';
 
 let flags;
 try {
@@ -13,14 +20,36 @@ try {
   process.exit(1);
 }
 
-// Both paths fall off the end rather than calling process.exit(0), which can cut off a buffered
-// stdout write when the output is piped. Only the failure path above exits explicitly.
+// Every success path below falls off the end rather than calling process.exit(0), which can cut
+// off a buffered stdout write when the output is piped. Only a failure path exits explicitly.
 if (flags.version) {
   const pkg = JSON.parse(await readFile(new URL('./package.json', import.meta.url), 'utf8'));
   console.log(pkg.version);
 } else {
-  // A plan task number is not user-facing copy, and this package is not published yet, so the
-  // placeholder says what the reader can actually act on.
-  console.log('create-cairn-site: this build carries no scaffold command yet.');
-  console.log('Next step: watch https://github.com/glw907/cairn-cms for the first release.');
+  const findings = await runPreflight();
+  for (const finding of findings) {
+    console.log(`[${finding.ok ? 'ok' : 'fail'}] ${finding.check}: ${finding.remedy}`);
+  }
+  const failure = findings.find((finding) => !finding.ok);
+  if (failure) {
+    console.error(`Next step: ${failure.remedy}`);
+    process.exit(1);
+  } else {
+    try {
+      const answers = await collectAnswers(flags);
+      const templateDir = path.join(path.dirname(fileURLToPath(import.meta.url)), 'template');
+      await scaffold({
+        templateDir,
+        answers,
+        dir: answers.dir,
+        dryRun: flags.dryRun,
+        log: (line) => console.log(line),
+      });
+      console.log(handoverText({ dir: answers.dir, platform: process.platform }));
+    } catch (err) {
+      console.error(err.message);
+      console.error('Next step: fix the problem above and run the command again.');
+      process.exit(1);
+    }
+  }
 }

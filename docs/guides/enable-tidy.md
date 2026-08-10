@@ -1,14 +1,28 @@
 # Enable tidy
 
 Tidy is cairn's optional AI copy-edit, built on [Claude](https://www.anthropic.com/claude). Turning
-tidy on is a developer task: add a `tidy` block to `site.config.yaml` and set an Anthropic API key
-as a Worker secret. Editors then work with tidy from the toolbar. See
+tidy on is a developer task: install its SDK dependency, add a `tidy` block to `site.config.yaml`,
+and set an Anthropic API key as a Worker secret. Editors then work with tidy from the toolbar. See
 [Write in the editor](./write-in-the-editor.md#tidy) for that side.
 
 If you haven't declared your adapter yet, start with
 [Define an adapter and schema](./define-an-adapter-and-schema.md). Tidy is off by default, and
 turning it on is a deliberate per-site choice: every call it makes is a real, billed request to
 Anthropic's API, so there's no "just try it" setting to leave on by accident.
+
+## Install the SDK dependency
+
+`@anthropic-ai/sdk` is an optional peer dependency of cairn, not a plain dependency, so a site that
+never turns tidy on never installs it. Install it once, before enabling tidy:
+
+```bash
+npm install @anthropic-ai/sdk
+```
+
+npm doesn't install an optional peer on your behalf, so skipping this step leaves the tidy action
+unable to reach the model even with `tidy.enabled: true` and a valid API key. With the SDK absent,
+tidy answers `fail(503)` naming the package and this install command, and logs `tidy.failed` with
+`reason: 'sdk_missing'`. See [Log events](../reference/log-events.md).
 
 ## Turn tidy on in the site config
 

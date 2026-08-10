@@ -207,39 +207,6 @@ The original decision framing, for the record:
 
 ## Now
 
-- **A cleanup pass: split the repo along engine-development versus consumer-facing, and stop
-  shipping the sausage-making. AUTHORIZED as its own pass (Geoff, 2026-08-07).** The ruling that
-  governs it: complexity is welcome locally to help build the engine, and contributors should keep
-  every tool they need in the repo, but a developer who just wants to USE cairn should receive none
-  of it. The repo should be organized along that line, and the packed surface should reflect it.
-
-  Baseline measured 2026-08-07, before any cleanup: **2.5 MB packed, 7.0 MB unpacked, 739 files.**
-  Confirmed findings to start from, each verified against `dist`, not inferred:
-  - `dist/audit/rules/rendered/vertical-metrics.{js,d.ts}` ships today and is pure lab apparatus,
-    the measurement module for a probe that no shipped rule consumes. **THIS PASS RELOCATES IT**,
-    together with `scripts/lab/probe-vertical-alignment.mjs` and the module's tests, which travel as
-    one unit. The vertical-alignment pass deliberately left it in place with a co-located `// WATCH:`
-    comment rather than move it twice, since the lab-versus-shipped boundary is this pass's
-    organizing principle and not one file's problem. It is the worked example: nothing named it in
-    `files` or the exports map, and it shipped anyway, because svelte-package emits everything
-    reachable under `src/lib`.
-  - `dist/audit` is 792 KB across 41 files, the second-largest shipped tree after `components`.
-    Whether `cairn-audit` is consumer product or engine apparatus is a POSITIONING question this
-    pass should settle rather than assume. Evidence both ways: the shipped `cairn-admin-screens`
-    skill points a consumer's agent at cairn-audit's checks, which reads as product; several rules
-    audit cairn's own design-system conformance and need a generated norms manifest, which reads
-    as apparatus. A split (consumer rules ship, engine-conformance rules do not) is the likely
-    answer and should be decided on evidence.
-  - `@anthropic-ai/sdk` is a RUNTIME dependency, statically imported at the top of
-    `src/lib/sveltekit/content-routes-context.ts`, so every consumer installs the whole SDK
-    whether or not they use the tidy action. This is product rather than sausage-making, so it
-    does not belong in the same bucket, but it is the single heaviest thing an install pulls for
-    one optional feature and a lazy import is worth costing.
-
-  Method note: `npm pack --dry-run` is the honest instrument. `files` in `package.json` and the
-  exports map both under-report, since a module ships whenever anything reachable imports it.
-  Success is measured as the packed baseline above moving down, with no export subpath lost.
-
 - **Vertical alignment's declared follow-up, filed off the cairn-wide pass (2026-08-07).** A
   cairn-wide inventory measured both the admin and the public surface for vertical-alignment
   defects and closed the two entries this replaces: the optical-centring engine default Geoff asked
@@ -445,6 +412,13 @@ the named human gates only):**
   review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
+
+- **`npm test` can hang rather than fail (found on the cleanup pass, 2026-08-08).** A run stalled
+  for roughly three hours in the browser (component) project instead of exiting non-zero. This is
+  distinct from the documented "Browser connection was closed" flake, which fails fast and is
+  already a known retry case. Any long-running background gate needs a liveness check rather than
+  trusting it to terminate: a stalled run today reads as "still running" indefinitely, costing
+  attended time rather than failing loud.
 
 - **A Cloudflare provisioning script, and its token preflight (Geoff, 2026-08-03).** One script that
   creates what a cairn site needs on Cloudflare, instead of a developer assembling it by hand.
@@ -1378,6 +1352,14 @@ the named human gates only):**
 
 ## Considering
 
+- **Whether `expectTypeOf` assertions should run where they appear to run (found on the cleanup
+  pass, 2026-08-08; deliberately left open).** 48 `expectTypeOf` assertions across 9 test files are
+  runtime no-ops under `npm test`, because `vitest.config.ts` configures no typecheck project. They
+  are not dead: `tsconfig.json` includes `src/tests`, so `npm run check` type-checks them, and a
+  real mismatch there is a compile error rather than a silent pass. The open question is whether to
+  enable vitest's typecheck project so these assertions run under the test command they visually
+  sit inside, or to leave the current split and document what they are, so a reader isn't misled by
+  where the assertion lives. No trigger yet; take this up only if the split causes a real miss.
 - **Migrate the engine's own editor default from magic-link to codes.** The auth-channel factory
   design (`docs/superpowers/specs/2026-08-03-auth-channel-factory-design.md`, decision 6) named
   this out of scope on purpose: `magic_token` and the editor magic-link flow are untouched by

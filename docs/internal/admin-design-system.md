@@ -956,9 +956,9 @@ never with the block, because the eye reads the icon against the line it sits be
 | chip or badge beside text | padding-box centre against the line box | the painted box, not the type inside it |
 | glyph inside a button or chip | cap centre against padding-box centre | the glyph and its own container |
 
-`src/lib/audit/rules/rendered/vertical-metrics.ts` is the executable form of this table. It is lab
-apparatus rather than shipped engine code, and it stays the single definition: a test that measures
-alignment restates these rules rather than inventing its own.
+`src/tests/lab/vertical-metrics.ts` is the executable form of this table. It is lab apparatus
+rather than shipped engine code, and it stays the single definition: a test that measures alignment
+restates these rules rather than inventing its own.
 
 ### The recipes
 

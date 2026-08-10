@@ -220,6 +220,18 @@ level on the text line beside it rather than on its block's top edge. See
 Consumers must: nothing. `FieldRow` and the two classes are additive, and nothing already shipped
 changed shape.
 
+## Unreleased: `@anthropic-ai/sdk` becomes an optional peer dependency (non-breaking)
+
+`@anthropic-ai/sdk` moves from a plain dependency to an optional peer, and the tidy action reaches
+it through a dynamic import at call time rather than a static import at module load. A site that
+never turns tidy on stops installing the SDK and its transitive packages, roughly 13 MB and 1,980
+files off a production install. A site that does use tidy behaves exactly as before once the
+package is present. See [Enable tidy](./enable-tidy.md#install-the-sdk-dependency).
+
+Consumers must: a site using the tidy action adds `@anthropic-ai/sdk` to its own dependencies
+(`npm install @anthropic-ai/sdk`), because npm does not auto-install an optional peer; a site not
+using tidy does nothing, and its install gets lighter.
+
 ## 0.94.0: an auth-channel export, a cloudflare export, an AI posture, a packaged audit sink, and a breaking convergence of the event, locals, role, nav, and refusal seams
 
 A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the

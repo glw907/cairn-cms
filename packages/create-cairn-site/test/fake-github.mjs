@@ -402,7 +402,8 @@ function createBlobHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' }); // SPIKE: provisional status
+    // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, blobs included.
+    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
     const sha = randomSha();
     entry.blobs.set(sha, body?.content ?? '');
     sendJson(res, 201, { sha, url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/blobs/${sha}` });
@@ -413,7 +414,8 @@ function createTreeHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' }); // SPIKE: provisional status
+    // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, trees included.
+    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
     const sha = randomSha();
     entry.trees.set(sha, body?.tree ?? []);
     sendJson(res, 201, { sha, url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/trees/${sha}` });
@@ -424,7 +426,8 @@ function createCreateCommitHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' }); // SPIKE: provisional status
+    // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, commit creation included.
+    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
     const sha = randomSha();
     const message = body?.message ?? '';
     entry.commits.set(sha, { sha, message });
@@ -446,7 +449,8 @@ function createUpdateRefHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' }); // SPIKE: provisional status
+    // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, the ref update included.
+    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
     entry.refs.set('heads/main', body?.sha);
     sendJson(res, 200, { ref: 'refs/heads/main', object: { sha: body?.sha, type: 'commit' } });
   };
@@ -456,7 +460,8 @@ function createGetRefHandler(ctx) {
   return async (_req, res, params) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
-    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' }); // SPIKE: provisional status
+    // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, the ref read included.
+    if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
     const sha = entry.refs.get('heads/main');
     sendJson(res, 200, { ref: 'refs/heads/main', object: { sha, type: 'commit' } });
   };
@@ -468,7 +473,8 @@ function createCreateRefHandler(ctx) {
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     const refName = String(body?.ref ?? '').replace(/^refs\//, '');
     if (entry.refs.has(refName)) {
-      sendJson(res, 422, { message: 'Reference already exists' }); // SPIKE: provisional status
+      // spike-confirmed 2026-08-10: a duplicate ref create returns 422 "Reference already exists".
+      sendJson(res, 422, { message: 'Reference already exists' });
       return;
     }
     entry.refs.set(refName, body?.sha);

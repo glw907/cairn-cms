@@ -54,6 +54,15 @@ package's.
 - Comments follow the repo's TSDoc-shaped JSDoc style visible in `src/*.mjs`; no em dashes
   in comments. Every commit runs the package suite
   (`npm --prefix packages/create-cairn-site test`) green before it lands.
+- **[review] Never key an idempotence check on a value the untouched source can legitimately
+  hold.** This pass shipped the same bug twice before it was caught in review, in Task 6's
+  `finalizeGithubIdentity` (keyed on the owner, and `showcase` is a real GitHub login) and
+  Task 5's `nameWranglerResources` (keyed on the worker name, and "Cairn Showcase" slugs to
+  the template's own name). Both read a completely unprocessed file as already finished and
+  silently skipped their real work. Key on something **only this function produces**: the
+  whole rewritten literal, or the absence of a placeholder only it removes. Every remaining
+  task with a resume or skip path (7, 8, 9, 10, 11) applies this, and tests the collision
+  case where the real value equals the placeholder.
 - Worktree: `worktree-t3-cloudflare-chapter` (this plan's worktree, off `main`). Remember
   the durable gotcha: worktree edits target the worktree path.
 
@@ -457,7 +466,11 @@ seed-failed:
   stdin; the state record afterwards has **no `pem` key** while `appId`, `clientSecret`,
   and the rest survive (the deep-merge survival assertion); a second call makes zero
   wrangler invocations; a failing put leaves the PEM in state (assert present) and maps to
-  `secret-put-failed`.
+  `secret-put-failed`. **[review]** Also pin the piped-input-plus-unavailable-wrangler pair,
+  which only this caller produces: with `CAIRN_WRANGLER_BIN` set to a path that cannot be
+  spawned, the call must reject with `wrangler-unavailable` and leave the PEM in state, with
+  no unhandled stream error from the stdin write to a child that never started. The seam
+  already behaves this way (verified in review), so this test pins it rather than changes it.
 - [ ] **Step 2-4: Fail, implement, green.**
 - [ ] **Step 5: Commit** (`feat: move the App key from local state to a Worker secret`).
 

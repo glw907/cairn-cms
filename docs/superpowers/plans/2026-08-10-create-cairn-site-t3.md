@@ -89,10 +89,24 @@ resume key):
 }
 ```
 
-The runtime order is finalize-config (inside T2's push) → login → install → build → deploy
+The runtime order is finalize-config (inside T2's push) → install → login → build → deploy
 → origin write → migrations → redeploy → secret move → seed → open confirm. `updateSite`'s
 deep merge only covers `github`; the chapter writes `cloudflare` whole per hop, which is
 safe because each hop rewrites every field it knows.
+
+> **Amended by Task 1's spike (2026-08-10).** The verdict doc is
+> [`docs/internal/2026-08-10-t3-cloudflare-spike.md`](../../internal/2026-08-10-t3-cloudflare-spike.md);
+> read it before Tasks 3, 4, 7, 9, and 10. The six changes it forces, each marked **[spike]**
+> at the task it changes:
+> 1. **No id write-back.** Wrangler provisions id-less bindings by name and writes nothing back
+>    into `wrangler.jsonc`, and every later command (migrations, redeploy, a re-run meeting
+>    existing resources) resolves by name anyway. Task 7 parses no ids and writes none.
+> 2. **`--command` takes several statements.** Task 9 drops its `--file` fallback entirely.
+> 3. **Migrations take the binding name.** Task 7 needs no `names` param.
+> 4. **Install before login** (see 6 below), so the runtime order above changed.
+> 5. **`wrangler-unavailable` is an exit-1 from npx, not an `ENOENT`.** The seam owns it and
+>    raises the catalogue row, so Task 4 is dispatched **before** Task 3.
+> 6. **A missing `node_modules` breaks a login-first order**, which is why 4 exists.
 
 ---
 
@@ -194,18 +208,25 @@ confirm, for the consent copy's wording.
     `.cmd` (the T2 `open.mjs` precedent).
   - stdout/stderr are captured **and** mirrored line-by-line through `log` as they arrive,
     which is the heartbeat rule made structural: a long child is never silent.
-  - Non-zero exit does **not** throw (callers map it through the catalogue); a spawn-level
-    failure (ENOENT) rejects with an error naming the binary and ending in a `Next step:`
-    line (for the unset-seam default: `run npm install in <cwd> so the site's own wrangler
-    is available, then re-run npx create-cairn-site --dir <dir>`).
-- Consumes: nothing above Node built-ins.
+  - Non-zero exit does **not** throw (callers map it through the catalogue), with one
+    exception the spike forced. **[spike]** "Could not run wrangler at all" is distinct from
+    "wrangler ran and failed", and it is not an `ENOENT`: with no `node_modules`, `npx
+    --no-install wrangler` exits **1** with `npx canceled due to missing packages and no YES
+    option` on stderr. `runWrangler` recognizes that stderr and a spawn `ENOENT` as the same
+    condition and rejects with `cloudflareError('wrangler-unavailable', { dir })`; every other
+    non-zero exit still comes back as `{ code }`. Every command failure a caller can
+    interpret stays the caller's to map.
+- Consumes: Task 4's `cloudflareError` **[spike]**, and nothing else above Node built-ins.
 - Consumed by Tasks 6-10.
 
 - [ ] **Step 1: Write the failing tests** against Task 2 fake bins: argv and cwd land in the
   invocation log; `input` arrives as the logged stdin; a `respond` non-zero code comes back
   as `{ code }` without throwing; stdout is both captured and mirrored to the injected
   `log`; the env seams are read at call time (set inside the test, not at import); an
-  ENOENT bin path rejects with a message containing `Next step:`.
+  ENOENT bin path rejects with a `wrangler-unavailable` catalogue error; **[spike]** a fake
+  bin replying exit 1 with `npx canceled due to missing packages and no YES option` on
+  stderr rejects with the same row, while an ordinary exit 1 with other stderr returns
+  `{ code: 1 }` without throwing (the two cases must be separable, not merged).
 - [ ] **Step 2: Run to fail.** **Step 3: Implement.** **Step 4: Run green.**
 - [ ] **Step 5: Commit** (`feat: add the Cloudflare chapter's spawn seam`).
 
@@ -223,6 +244,10 @@ confirm, for the consent copy's wording.
   `build-failed`, `deploy-failed`, `subdomain-unregistered`, `migrations-failed`,
   `secret-put-failed`, `seed-failed`. Rows carrying child output take a `detail` param (the
   child's trailing stderr lines) rendered above the `Next:` line.
+- **[spike]** This task is dispatched **before Task 3**, which consumes it: the seam raises
+  `wrangler-unavailable` itself. That row's copy names the real cause the spike found (the
+  site's dependencies are not installed, so its own wrangler is not on disk) and its `Next:`
+  line is `run npm install in {dir}, then re-run npx create-cairn-site --dir {dir}`.
 
 Three examples set the register; the implementer writes the rest to match (every message
 names what happened, what it means, and ends with a `Next:` line):
@@ -359,28 +384,36 @@ seed-failed:
     `runWrangler(['login'])`, which drives its own browser and local callback; non-zero →
     `login-abandoned`. (The tool opens no browser itself here; wrangler owns this trip.)
   - `deployWorker({ dir, log }) -> Promise<{ url }>` — heartbeat, then
-    `runWrangler(['deploy'])`; non-zero → `deploy-failed`, except stderr matching
-    `/subdomain/i` → `subdomain-unregistered` (spike (c) refines the match). The url is
-    parsed from stdout by the spike-(e)-pinned pattern
-    (`/https:\/\/[^\s]+\.workers\.dev/`, first match); no match on a zero exit →
-    `deploy-failed` with a detail saying the deploy output carried no URL.
+    `runWrangler(['deploy'])`; non-zero → `deploy-failed`, except stderr naming the
+    subdomain → `subdomain-unregistered`. **[spike]** Match on `workers.dev subdomain` or
+    the API code `10063`, the strings wrangler actually prints, not the plan's original
+    `/subdomain/i`. The url is parsed from stdout by the spike-(e)-pinned pattern
+    (`/https:\/\/[^\s]+\.workers\.dev/`, first match), **after stripping ANSI escapes**:
+    **[spike]** wrangler emits them even when stdout is a pipe. No match on a zero exit →
+    `deploy-failed` with a detail saying the deploy output carried no URL. **[spike]** No id
+    parsing and no write-back into `wrangler.jsonc`: wrangler binds id-less resources by
+    name, on the first deploy and on every later one.
   - `applyMigrations({ dir, log })` — `runWrangler(['d1', 'migrations', 'apply', 'AUTH_DB',
-    '--remote'])` then the same for `APP_DB` (spike (d) confirms binding-name form; if
-    only database names are accepted, pass `<slug>-auth`/`<slug>-app` threaded via a
-    `names` param). Failure → `migrations-failed` naming which database.
-- Consumed by Task 10 in the order: ensureLogin → ensureInstalled → buildSite →
+    '--remote'])` then the same for `APP_DB`. **[spike]** The binding-name form is confirmed
+    against an id-less config, so there is no `names` param and no database-name fallback.
+    Failure → `migrations-failed` naming which database.
+- Consumed by Task 10 in the order: **[spike]** ensureInstalled → ensureLogin → buildSite →
   deployWorker → writePublicOrigin → applyMigrations → deployWorker again (the origin
   redeploy; its url must equal the first, asserted, since a changed url would mean the
-  worker name moved between deploys).
+  worker name moved between deploys). The install comes first because the chapter shells out
+  through the site's OWN wrangler devDependency, which does not exist until `npm install`
+  has run; the login stays ahead of the build so the admin's one browser moment lands before
+  the long step rather than after it.
 
 - [ ] **Step 1: Failing tests** with fake bins: `ensureInstalled` skips when node_modules
   exists (zero npm invocations) and runs `install` when absent; `buildSite` failure maps to
   `build-failed` with the fake's stderr in the message; `ensureLogin` with a whoami reply
   carrying an account makes zero further calls, and a failing login maps to
   `login-abandoned`; `deployWorker` parses the url out of a realistic deploy stdout
-  (fixture text from the spike), maps a subdomain stderr to `subdomain-unregistered`, and a
-  urlless success to `deploy-failed`; `applyMigrations` invokes both databases in order and
-  names the failing one.
+  (**[spike]** use the verdict doc's real sample, ANSI escapes included, so the strip is
+  proven rather than assumed), maps a `workers.dev subdomain` stderr to
+  `subdomain-unregistered`, and a urlless success to `deploy-failed`; `applyMigrations`
+  invokes both databases in order, by binding name, and names the failing one.
 - [ ] **Step 2-4: Fail, implement, green.**
 - [ ] **Step 5: Commit** (`feat: add install, build, deploy, and migrations for the chapter`).
 
@@ -447,9 +480,10 @@ INSERT INTO magic_token (token_hash, email, expires_at, created_at)
      display name defaults to the email's local part; the admin edits it later in the
      admin. The `session` table is never touched; the confirm click mints the session
      through the engine.)
-  4. `runWrangler(['d1', 'execute', 'AUTH_DB', '--remote', '--command', sql])` (spike (d);
-     the `--file` fallback writes under `os.tmpdir()`, never the project, and removes the
-     file in a `finally`). Non-zero → `seed-failed`.
+  4. `runWrangler(['d1', 'execute', 'AUTH_DB', '--remote', '--command', sql])`. **[spike]**
+     Multi-statement `--command` is confirmed accepted (all three statements ran as one
+     invocation), so the `--file` fallback is **dropped**: no temp file, no `finally`
+     cleanup, no branch. Non-zero → `seed-failed`.
   5. Return `{ confirmPath: '/admin/auth/confirm?token=' + encodeURIComponent(token) }`.
      The raw token is returned only inside this path string and is never written to disk
      or state.
@@ -495,9 +529,13 @@ INSERT INTO magic_token (token_hash, email, expires_at, created_at)
   2. **Owner prompt.** `text` for the sign-in email, prefilled from `--owner-email`;
      validation: must contain `@` with a non-empty local and domain part; re-prompt
      otherwise. Persist immediately: `updateSite(siteId, { ownerEmail })`.
-  3. **Actions**, in order, catalogue errors propagating to bin.mjs's existing printer:
+  3. **Actions**, in order, catalogue errors propagating to bin.mjs's existing printer.
+     **[spike]** The install action comes FIRST, ahead of the login: the chapter shells out
+     through the site's own wrangler devDependency, and on a fresh scaffold `node_modules`
+     does not exist yet, so a login-first order fails on every fresh run.
+     - `Install your site's dependencies` → `ensureInstalled`.
      - `Sign in to Cloudflare` → `ensureLogin`.
-     - `Install and build your site` → `ensureInstalled`, `buildSite`.
+     - `Build your site` → `buildSite`.
      - `Deploy to workers.dev` → `deployWorker` → `writePublicOrigin(dir, url)` →
        `applyMigrations` → `deployWorker` again (assert same url) → `updateSite(siteId,
        { step: 'deployed', cloudflare: { url, workerName: slug } })`.
@@ -532,8 +570,10 @@ INSERT INTO magic_token (token_hash, email, expires_at, created_at)
   fields, `flags: { yes: true, deploy: true, ownerEmail: 'T3@Example.com ' }`: the happy
   path returns `'live'`; the state walks `pushed → deployed → live` with `cloudflare.url`
   set, `ownerEmail` normalized on insert (the SQL shows lowercase), and `github.pem` gone
-  at `'live'` while `appId` survives; the fake wrangler log shows the exact order login →
-  (npm install, build) → deploy → migrations ×2 → deploy → secret put → d1 execute; the
+  at `'live'` while `appId` survives; **[spike]** the fake bins' logs show the exact order
+  npm install → wrangler whoami → npm run build → deploy → migrations ×2 → deploy → secret
+  put → d1 execute, with the install strictly before the first wrangler call (the assertion
+  that keeps the spike's ordering defect from coming back); the
   second deploy's url mismatch case throws with a `Next step:`; `--yes` without `--deploy`
   skips with the re-run line and zero spawns; declining the interactive consent returns
   `'declined'`; dry-run makes **zero** fake-bin invocations (the instrument) and prints
@@ -587,8 +627,12 @@ After Tasks 2-11 are green. One sitting on the glw907 account; Geoff's moments a
   pattern), run the T1+T2+T3 flow end to end (`--yes --github --deploy` with flags for the
   names) against real GitHub and real Cloudflare. Verify: the site loads at its
   workers.dev URL; `/admin` redirects to login; the bootstrap confirm click signs in (this
-  is Geoff's click); the pushed repo's `cairn.config.ts` carries the real identity; the
-  deployed `wrangler.jsonc` gained written-back ids; `wrangler secret list` shows
+  is Geoff's click). **[spike]** If any part of the confirm is scripted rather than clicked,
+  post to `?/confirm` (the bare path 404s) and send a browser-like `Accept` header, or
+  SvelteKit returns its action-result envelope under HTTP 200 instead of the 303. Also
+  verify: the pushed repo's `cairn.config.ts` carries the real identity; **[spike]** the
+  deployed `wrangler.jsonc` is UNCHANGED and still id-less (wrangler writes nothing back,
+  and the bindings resolve by name anyway); `wrangler secret list` shows
   `GITHUB_APP_PRIVATE_KEY_B64`; the state record is at `'live'`, mode 0600, with no PEM
   and no token material; a save in the signed-in admin commits to the repo through the
   App (the whole chain proven).
@@ -596,8 +640,12 @@ After Tasks 2-11 are green. One sitting on the glw907 account; Geoff's moments a
   it resumes without re-deploying (watch the output for the skip) and completes to
   `'live'`.
 - [ ] **Step 3: Tear down** both runs' artifacts: Workers, D1 pairs, buckets, the GitHub
-  repos and Apps (App deletion is by hand on github.com, the T2 lesson). Verify with
-  `wrangler d1 list` and the dashboard.
+  repos and Apps (App deletion is by hand on github.com, the T2 lesson). Verify by listing,
+  never by assuming. **[spike]** `wrangler delete` deletes the Worker and then fails on the
+  way out (`Unable to get membership roles`), because the standing estate token lacks
+  `User->Memberships->Read`; `DELETE /accounts/{id}/workers/scripts/{name}?force=true` is
+  the clean path and the token covers it. Confirm the `workers.dev` hostname 404s, since the
+  edge serves the deleted Worker for a short while after.
 - [ ] **Step 4: Record the evidence** (commands, statuses, Geoff-moment count, teardown)
   in the post-mortem. Any divergence between the fake bins and real tools is a Task 2/3
   bug to fix in this pass, with the fakes corrected and the suite re-run.

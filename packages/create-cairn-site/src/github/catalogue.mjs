@@ -134,9 +134,9 @@ const ROWS = {
     kind: 'act',
     build(params) {
       return (
-        'The push to GitHub was interrupted before it finished.\n' +
-        `Next: re-run npx create-cairn-site --dir ${params.dir}; git blobs are content-addressed, ` +
-        'so the re-run is safe and will not duplicate anything already pushed.'
+        'The push to GitHub was interrupted before it finished. Nothing is lost or ' +
+        'duplicated; the re-run picks the push up safely.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir}.`
       );
     }
   }

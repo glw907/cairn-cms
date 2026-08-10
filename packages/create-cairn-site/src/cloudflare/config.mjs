@@ -12,6 +12,13 @@ import { slugify } from '../slug.mjs';
 const WRANGLER_CONFIG_RELATIVE = 'wrangler.jsonc';
 
 /**
+ * The auth database's placeholder id line, as the baked template carries it. Nothing but
+ * `nameWranglerResources` removes it, which is what makes its absence a trustworthy "this file
+ * has already been personalized" signal, unlike the worker name a site can legitimately share.
+ */
+const PLACEHOLDER_AUTH_DATABASE_ID = '"database_id": "00000000-0000-0000-0000-000000000000"';
+
+/**
  * The fallback slug create-cairn-site already uses everywhere a display name might slug to
  * nothing: scaffold.mjs's package rename and the GitHub chapter's App/repo naming
  * (src/github/chapter.mjs). Reusing it here, rather than a fresh literal, is what keeps a
@@ -74,7 +81,16 @@ function replaceExact(content, target, replacement, relativePath) {
 export async function nameWranglerResources(dir, slug) {
   const configPath = path.join(dir, WRANGLER_CONFIG_RELATIVE);
   const content = await readFile(configPath, 'utf8');
-  if (content.includes(`"name": "${slug}"`)) return;
+  // Both halves are required, because the name alone cannot tell the two states apart. A site
+  // named "Cairn Showcase" slugs to the very name the template already carries, so a name-only
+  // check reads the untouched template as finished and leaves the placeholder ids in place; the
+  // deploy then binds two databases whose ids belong to nothing. Only this function removes
+  // those id lines, so their absence is the reliable signal that it has already run. Keeping the
+  // name check alongside it preserves the rot gate: a drifted showcase still reaches the
+  // replaceExact throws rather than silently returning.
+  const alreadyNamed =
+    content.includes(`"name": "${slug}"`) && !content.includes(PLACEHOLDER_AUTH_DATABASE_ID);
+  if (alreadyNamed) return;
 
   let next = replaceExact(
     content,

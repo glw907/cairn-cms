@@ -125,6 +125,22 @@ test('a second call is a no-op', async (t) => {
   assert.equal(twice, once);
 });
 
+test('a site whose slug is cairn-showcase still has both placeholder database ids dropped', async (t) => {
+  // "Cairn Showcase" is a thoroughly plausible name for a site someone builds while trying
+  // cairn out, and it slugs to exactly the name the template already carries. Keying
+  // idempotence on the name alone reads the untouched template as already personalized and
+  // leaves both placeholder ids in place, and a deploy then binds two databases whose ids
+  // (00000000-...) belong to nothing at all.
+  const dir = await fixtureDir(t);
+
+  await nameWranglerResources(dir, 'cairn-showcase');
+
+  const content = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
+  assert.ok(!content.includes('"database_id"'), `no database_id may survive: ${content}`);
+  assert.ok(content.includes('"name": "cairn-showcase"'));
+  assert.ok(content.includes('"database_name": "cairn-showcase-auth"'));
+});
+
 test('a doctored fixture missing a target throws naming the file and the string', async (t) => {
   const doctored = BAKED_WRANGLER_JSONC.replace(
     '"bucket_name": "cairn-showcase-media"',

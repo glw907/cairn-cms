@@ -14,7 +14,60 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-09, evening: the ADMIN-SETUP + DOCS RESET umbrella is APPROVED; execute Pass T1 in a fresh Opus session)
+## Immediate next action (2026-08-09, night: Pass T1 tasks 1-7 LANDED on `create-cairn-site`; tasks 8-10 are BLOCKED on Geoff's baseline walk)
+
+**Pass T1's local half is built and green, and the pass deliberately stops short of its own
+finish line.** Tasks 1 through 7 are landed on the `create-cairn-site` branch (worktree at
+`.claude/worktrees/create-cairn-site`), unpushed and unmerged. Tasks 8, 9's workflow half, and 10
+remain, and **Task 8 is blocked by design**: the plan makes it wait on the un-agented baseline
+walk, whose ranked drag points are supposed to reorder and reword the command's printed next
+steps. Geoff ruled at pass start that he walks it himself. The protocol shell is committed at
+[`2026-08-unagented-setup-baseline.md`](internal/2026-08-unagented-setup-baseline.md); it needs
+his log filled in and committed before Task 8 is dispatched.
+
+**Resume prompt** (fresh Opus session, launch directory `~/Projects/cairn-cms`): "Finish the
+create-cairn-site T1 plan at `docs/superpowers/plans/2026-08-09-create-cairn-site-t1.md`. Tasks
+1-7 are landed on the `create-cairn-site` branch; Tasks 8, 9, and 10 remain. The recorded baseline
+walk is at `docs/internal/2026-08-unagented-setup-baseline.md`; fold its ranked drag points into
+Task 8's printed next steps before dispatching. Task 9's `test.yml` half is done; its
+`create-site.yml` half remains. Work on the existing `create-cairn-site` worktree, not a new one.
+Start with the cairn-pass skill."
+
+**What landed:** a new `packages/create-cairn-site` (unscoped npm name `create-cairn-site`,
+verified free), plain ESM `.mjs` on `node:test`, 43 tests green. Argument parsing; the action
+runner that makes `--dry-run` a property of the frame; the out-of-scaffold state store
+(`~/.config/cairn/sites/<id>.json`, mode `0600`, chmod'd after every write so an overwrite cannot
+leave it loose); credential-free pre-flight; the pack-time template bake; and the fail-loud
+substitution pass.
+
+**Four plan assumptions were wrong and are corrected in the code, not just noted.** The
+`site.config.yaml` target lives at `src/theme/site.config.yaml`, not the scaffold root, and
+carries no `tagline:` key. `--color-primary` is **four** declarations (light and dark, primary and
+primary-content), so the brand substitution rotates the hue and holds each declaration's own
+lightness and chroma, per the theme file's own re-skin recipe; substituting one literal color, as
+the plan implied, would have destroyed dark-mode contrast. The Node floor is `>=22`, not the
+plan's `>=20.19` fallback. And `@clack/prompts` is at `1.x`, not the plan's `^0.11.0`.
+
+**The release-one blocker this pass found: `@glw907/cairn-cms-dev` is unpublished** (npm 404,
+version `0.0.0`). A scaffolded site needs it for the local `/admin` value moment, and the
+ROADMAP's own 2026-07-02 scaffolder finding says a standalone scaffold without it fails the
+**build**, since Rolldown cannot resolve the absent specifier even behind the dev gate. So release
+one must publish the dev backend alongside the engine, `create-cairn-site`, and the template repo.
+The bake refuses to run while the spec resolves to `^0.0.0`, naming the package and the fix, so
+this cannot be forgotten at the cut.
+
+**A second defect, in the shared emitter, is fixed here:** the template carried showcase-only
+material into every scaffolded site, including seven tracked `.claude/agent-memory` notes, the
+showcase README whose relative links point back into the engine repo, a design-lab script, and the
+Playwright scripts and devDependencies. `.cairn-template.json` now excludes the three paths, and
+the bake prunes the package.json lines a path exclusion cannot reach, behind a rot gate that throws
+when an expected key has already been renamed away.
+
+**Also wired: two node:test suites CI never ran.** `npm run test:emit` (nine tests over the
+emitter) existed in `package.json` but appeared in no workflow, and the new package's suite is new.
+Both now run in `test.yml`.
+
+## Superseded: the pass-start entry (2026-08-09, evening)
 
 **The docs-refactor brainstorm ran with Fable at the helm and became a larger, approved
 initiative.** The umbrella design is
@@ -25,15 +78,10 @@ the **admin** (technical non-developer) first-class; a two-chapter `create-cairn
 provisioner; a public template repo as a second door; a four-track docs reset (`admin/`,
 `editors/`, `extend/`, shared `reference/`, split `internal/`) with a full-corpus prune.
 
-**NEXT: execute Pass T1** (the tool's local half) from
-[`2026-08-09-create-cairn-site-t1.md`](superpowers/plans/2026-08-09-create-cairn-site-t1.md), in
-a fresh Opus 5 session, on a feature worktree per convention, dispatching tasks to
-`cairn-implementer`. Resume prompt: "Execute the create-cairn-site T1 plan at
-docs/superpowers/plans/2026-08-09-create-cairn-site-t1.md; start with the cairn-pass skill."
-Launch directory: `~/Projects/cairn-cms`. Task 1 carries the pass's one Geoff question (who
-walks the un-agented baseline); ask it at pass start, and note Task 8 is blocked on the
-recorded walk. Then T2 (GitHub chapter), T3 (Cloudflare + the two doors), Pass D (the docs
-reset, plan written just-in-time against the tool's real UX).
+**The queue after T1 finishes** is unchanged: T2 (the GitHub chapter), T3 (Cloudflare plus the two
+doors), Pass D (the docs reset, planned just-in-time against the tool's real UX), then release one.
+T2's plan is not written; that session opens with brainstorming against Part 1 step 4 of the
+umbrella spec, not with execution.
 
 **The cleanup pass landed on `cleanup` and holds under `## Unreleased`.** All seven tasks plus one
 scope addition Geoff made mid-pass. The plan, with its full post-mortem, is

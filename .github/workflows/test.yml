@@ -20,6 +20,11 @@ jobs:
       # The component test project runs in real Chromium via @vitest/browser-playwright.
       - run: npx playwright install --with-deps chromium
       - run: npm test
+      # Two node:test suites vitest does not reach. The emitter's own tests were never wired into
+      # any workflow; the create-cairn-site package is new. Both gate the scaffolded output, so a
+      # break here ships a broken first-run experience while every vitest project stays green.
+      - run: npm run test:emit
+      - run: npm --prefix packages/create-cairn-site test
       - run: npm run check:package
       - run: npm run check:reference
       - run: npm run check:reference:signatures

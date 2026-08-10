@@ -147,10 +147,13 @@ async function waitForCallbackSignal({ loopback, maxWaitMs, landingHtml }) {
  * Poll GET /app/installations (App JWT auth) for an installation covering `owner`, running
  * alongside the browser callback wait (see this module's own header comment) rather than only
  * after it times out, so a completed install is detected within about one `pollIntervalMs`
- * instead of after the full `maxWaitMs` callback wait. Checks immediately (an install completed
- * minutes ago, on a resumed run whose redirect can never land, is found on the first try), then
- * re-checks every `pollIntervalMs` until `maxWaitMs` elapses or `cancelled` is flipped true by
- * the caller (the callback won the race instead).
+ * instead of after the full `maxWaitMs` callback wait. The FIRST check happens only after one
+ * `pollIntervalMs` has elapsed, not immediately: an in-flight `request_oauth_on_install` callback
+ * already carries the OAuth code and needs no second browser bounce, so on a fresh run it should
+ * win the race when both signals are genuinely close, and the initial delay gives it that window.
+ * A resumed run (the case this poll actually exists for) never has a callback in flight at all, so
+ * the delay costs it nothing. Re-checks every `pollIntervalMs` after that until `maxWaitMs`
+ * elapses or `cancelled` is flipped true by the caller (the callback won the race instead).
  * @param {PollForInstallationSignalInput} input the poll's inputs
  * @param {{ value: boolean }} cancelled a mutable flag; the caller sets `value` true to stop
  *  polling early
@@ -160,13 +163,13 @@ async function pollForInstallationSignal({ appId, pem, owner, dir, pollIntervalM
   const deadline = Date.now() + maxWaitMs;
   let attempt = 0;
   for (;;) {
+    if (cancelled.value || Date.now() >= deadline) return { found: false };
+    await sleep(Math.min(pollIntervalMs, deadline - Date.now()));
     if (cancelled.value) return { found: false };
     const found = await findInstallation({ appId, pem, owner, dir });
     if (found) return { found: true, installation: found };
     attempt += 1;
     if (attempt % POLL_HEARTBEAT_EVERY === 0) log(POLL_HEARTBEAT_MESSAGE);
-    if (cancelled.value || Date.now() >= deadline) return { found: false };
-    await sleep(Math.min(pollIntervalMs, deadline - Date.now()));
   }
 }
 

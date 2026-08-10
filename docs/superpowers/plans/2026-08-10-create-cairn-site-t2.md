@@ -1046,7 +1046,10 @@ commit at head. All repos API-deleted in the sitting; Apps and the scratch org d
 (GitHub has no App-deletion API). One product defect surfaced live and was fixed in-pass: the
 resumed install redirect targets the dead original port, and the code waited the full ten-minute
 callback window before polling; install.mjs now races the callback wait against the JWT poll
-concurrently, first signal wins (the live run had proven the recovery path itself works).
+concurrently, first signal wins (the live run had proven the recovery path itself works). That
+race fix itself shipped a CI-only test race, since the happy-path drivers could not play the
+reauthorize branch when the poll won; the merge-blocking CI round caught it, and the fix was
+URL-branching drivers plus a one-`pollIntervalMs` initial poll delay.
 
 **Sitting count honesty:** the plan said two Geoff sittings; reality was one long, interrupted
 spike sitting (two 45-minute-to-8-hour windows lapsed unattended before it started, plus two

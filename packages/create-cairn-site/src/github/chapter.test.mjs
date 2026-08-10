@@ -54,13 +54,19 @@ async function fixtureScaffoldDir(t) {
 }
 
 /**
- * Build an `openBrowser` fake that drives the fake GitHub through both browser trips the happy
- * path makes: the manifest step (which opens the shared loopback's own root page) and the
+ * Build an `openBrowser` fake that drives the fake GitHub through every browser trip the happy
+ * path can make: the manifest step (which opens the shared loopback's own root page), the
  * install step (which opens GitHub's real install page and, on completion, redirects back to
- * that SAME loopback). Reusing the URL captured from the first call for the second call's
- * redirect is what proves the two steps share one loopback: if chapter.mjs ever went back to
- * giving each step its own loopback, the first one would already be closed by the time the
- * second call fires, and this callback fetch would fail instead of completing the install.
+ * that SAME loopback), and, when the install step's concurrent installation poll wins its race
+ * against the browser callback, the reauthorize step that follows (which opens GitHub's plain
+ * authorize page and redirects back to its OWN fresh loopback). Branching on the URL rather than
+ * the call count is what makes this fake robust to either side of that race winning: on a slow
+ * machine the poll can see a just-pushed installation row before the callback fetch below lands,
+ * and the driver has to be able to play GitHub's part for whichever branch install.mjs actually
+ * takes. Reusing the URL captured from the manifest call for the install callback's redirect is
+ * what proves the two steps share one loopback: if chapter.mjs ever went back to giving each step
+ * its own loopback, the first one would already be closed by the time the install call fires, and
+ * this callback fetch would fail instead of completing the install.
  * @param {import('../../test/fake-github.mjs').FakeGithub} github the running fake
  * @param {{ installOwner?: string }} [options] the account login the pushed installation covers
  * @returns {{ openBrowser: Function, opened: string[] }} the fake and every URL it opened
@@ -70,17 +76,28 @@ function makeHappyPathOpenBrowser(github, { installOwner = 'fake-owner' } = {}) 
   let manifestLoopbackUrl;
   const openBrowser = async (url) => {
     opened.push(url);
-    if (opened.length === 1) {
-      manifestLoopbackUrl = url;
-      setTimeout(async () => {
-        const state = await readManifestFormState(url);
-        fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
+    if (url.includes('/installations/new')) {
+      setTimeout(() => {
+        github.state.installations.push({ id: 99, account: { login: installOwner } });
+        fetch(`${manifestLoopbackUrl}/callback?code=fake-code&installation_id=99`).catch(() => {});
       }, 0);
       return;
     }
-    setTimeout(() => {
-      github.state.installations.push({ id: 99, account: { login: installOwner } });
-      fetch(`${manifestLoopbackUrl}/callback?code=fake-code&installation_id=99`).catch(() => {});
+    if (url.includes('/login/oauth/authorize')) {
+      // The reauthorize bounce, reached only when install.mjs's concurrent installation poll won
+      // the race: it opens its own fresh loopback, distinct from the shared one above, and the
+      // redirect_uri is already baked into `url`, so fetch(url) alone follows the fake's redirect
+      // straight back to it with the state echoed (the same pattern oauth.test.mjs uses).
+      setTimeout(() => {
+        fetch(url).catch(() => {});
+      }, 0);
+      return;
+    }
+    // The manifest step: url is the shared loopback's own root page.
+    manifestLoopbackUrl = url;
+    setTimeout(async () => {
+      const state = await readManifestFormState(url);
+      fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
     }, 0);
   };
   return { openBrowser, opened };
@@ -312,9 +329,20 @@ test('runGithubChapter: resume at app-created skips the manifest action, reachin
   const logs = [];
   const openBrowser = async (url) => {
     logs.push(`opened ${url}`);
-    // The heartbeat line carrying the loopback URL is logged AFTER openBrowser resolves, so
-    // this driver polls for it rather than assuming one timer tick is enough; assuming made
-    // the suite rarely exit 1 via an uncaught TypeError after the tests had all passed.
+    if (url.includes('/login/oauth/authorize')) {
+      // Reached only when install.mjs's concurrent installation poll wins the race against the
+      // browser callback below: it falls through to reauthorize, which opens its own fresh
+      // loopback with the redirect_uri already baked into `url`, so fetch(url) alone follows the
+      // fake's redirect straight back to it, with the state echoed.
+      setTimeout(() => {
+        fetch(url).catch(() => {});
+      }, 0);
+      return;
+    }
+    // The install page. The heartbeat line carrying the loopback URL is logged AFTER openBrowser
+    // resolves, so this driver polls for it rather than assuming one timer tick is enough;
+    // assuming made the suite rarely exit 1 via an uncaught TypeError after the tests had all
+    // passed.
     const driveCallback = () => {
       const heartbeat = logs.find((line) => line.includes('This machine is listening for'));
       if (!heartbeat) {

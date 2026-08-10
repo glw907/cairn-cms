@@ -128,7 +128,11 @@ const match = responses.find((entry) => joined.includes(entry.matcher));
 if (match) {
   if (match.stdout) process.stdout.write(match.stdout);
   if (match.stderr) process.stderr.write(match.stderr);
-  process.exit(match.code ?? 0);
 }
-process.exit(0);
+// process.exitCode, never process.exit(): the seam that spawns this fake captures stdout, so
+// stdout is always a pipe, and process.exit() abandons whatever is still buffered on one. A
+// canned reply larger than the pipe buffer would arrive truncated, and the caller would read
+// that as its own parsing bug. bin.mjs avoids process.exit() on its success paths for the same
+// reason. Setting the code and falling off the end lets Node drain the write first.
+process.exitCode = match?.code ?? 0;
 `;

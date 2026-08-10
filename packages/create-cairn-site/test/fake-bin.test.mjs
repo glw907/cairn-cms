@@ -98,6 +98,22 @@ test('a call with no piped stdin does not block, and logs an empty stdin', async
   assert.equal(invocation.stdin, '');
 });
 
+test('a canned reply larger than the pipe buffer arrives whole', async (t) => {
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+
+  // Above the ~146KB a pipe holds before a writer must wait, measured on this platform. The
+  // fake answers with process.exitCode rather than process.exit() precisely so a reply this
+  // size drains instead of being cut off; at 1MB, process.exit() loses roughly 85% of it.
+  const huge = 'x'.repeat(1_000_000);
+  await fake.respond('deploy', { code: 0, stdout: huge });
+
+  const result = await run(fake.binPath, ['deploy'], { input: '' });
+
+  assert.equal(result.code, 0);
+  assert.equal(result.stdout.length, huge.length);
+});
+
 test('invocations is empty before any call is made', async (t) => {
   const fake = await makeFakeBin('wrangler');
   t.after(() => fake.close());

@@ -734,17 +734,41 @@ is for, that the CLI's output builds; the specs a published bake writes are cove
 own unit tests. One risk was checked before writing the workflow rather than after: the package's
 `.gitignore` lists `template`, and `files` wins, so the baked template does ship (90 entries).
 
+### The new gate caught a real defect on its first run
+
+`create-site.yml` went red immediately, and on something no other gate in this repo could have
+found. **Every scaffolded site given a tagline failed to build.** The substitution pass, landed in
+this pass's first half, inserted a `tagline:` key into `src/theme/site.config.yaml`; the engine
+validates its top-level keys and throws on unknown ones (`src/lib/nav/site-config.ts:293`, `:337`),
+so `cairn-manifest` refused the config at build time.
+
+**Why every other gate missed it is the lesson.** The substitution pass has thorough unit tests, and
+they pass, because they substitute into synthetic fixtures and never build. The plan's own Task 7
+specified the behavior ("add the key if the template carries none"), so the implementer built what
+was asked. The real-template smoke this pass ran by hand checked that the key appeared, not that the
+result compiled. A fixture proves a string was written; only a build proves the string was allowed.
+
+Fixed by using the key the engine already has rather than adding one for the CLI's benefit: the flag
+is `--description`, the prompt asks for a description, and the value lands in the site config's
+existing `description` field. Adding `tagline` to the engine schema would have been engine surface
+grown to serve a prompt, which the charter rules out. The rename cost nothing because the package is
+unpublished.
+
 ### Verification
 
 Beyond the suites, a real end-to-end scaffold ran against the actual baked template, which no test
 covers, since the fixtures are synthetic. It renamed the package, inserted the site name and
-tagline, and rotated all four `--color-primary` declarations to the requested hue while each held
-its own lightness (45% light, 74% dark), so the dark-mode contrast trap the first half of this pass
-fixed stays fixed. State landed in the store, nothing under the scaffold.
+description, and rotated all four `--color-primary` declarations to the requested hue while each
+held its own lightness (45% light, 74% dark), so the dark-mode contrast trap the first half of this
+pass fixed stays fixed. State landed in the store, nothing under the scaffold. After the fix, a
+scaffolded site was installed against locally packed engine and dev tarballs and **built clean**,
+which is the check whose absence let the `tagline` defect ship in the first place.
 
 Package suite 52 passing, exit 0. Root `npm run check` 1601 files, 0 errors, 0 warnings. Root
-`npm test` 412 files / 5273 tests, exit 0. All five CI checks green on the tasks 1-7 window; the new
-`create-site.yml` gate ran on the tasks 8-10 push.
+`npm test` 412 files / 5274 tests, exit 0. All nine repo gates green, including the four CI-only
+ones the local ritual skips (`check:comments`, `check:reference:signatures`, `check:surface`,
+`check:snippets`). On CI, `test`, `e2e`, `design`, and `scaffold` passed; `create-site` failed on
+the defect above and is green after the fix.
 
 ### Sizing note
 

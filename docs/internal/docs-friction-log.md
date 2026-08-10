@@ -343,3 +343,15 @@ line.
   does not currently carry, or a small shipped shim), and the opt-in is deliberately a runtime
   variable so no build can fold it, which is what keeps the dev package out of a deployed Worker.
   Weigh a template dependency against a printed flag before T2 picks one.
+
+- **[developer] `SiteConfig`'s doc comment says unknown keys are ignored; the parser throws on
+  them.** `src/lib/nav/site-config.ts:75` reads "Unknown keys are ignored so the file can grow
+  without an engine change," and the interface carries an `[key: string]: unknown` index signature
+  that says the same thing. Fifty lines later, `KNOWN_TOP_LEVEL_KEYS` (`:293`) and the check at
+  `:337` throw `unrecognized key` on anything not in the set. The strict behavior looks deliberate,
+  since it catches a typo and an adapter setting written into the wrong file, and it has its own
+  `ADAPTER_MISPLACEMENTS` table for exactly that. So the comment and the index signature are the
+  stale half. This is not academic: it is what let the scaffolder ship a `tagline:` key that broke
+  every scaffolded site's build, since the shape a reader consults says the key would be ignored.
+  Fix the comment and weigh dropping the index signature, which advertises openness the parser does
+  not honor.

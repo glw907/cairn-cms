@@ -107,6 +107,23 @@ export async function startFakeGithub() {
 }
 
 /**
+ * Point both GitHub base-URL env seams at a fake server for the duration of one test, and
+ * register their cleanup with `t.after` so a later test never inherits a closed server's URL.
+ * Lives beside the fake rather than in each suite because every module under test reads the two
+ * seams at call time, so pointing them at the fake is the one setup step they all share.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @param {{ apiBase: string, webBase: string }} github the fake server to point the seams at
+ */
+export function pointAtFake(t, github) {
+  process.env.CAIRN_GITHUB_API_BASE = github.apiBase;
+  process.env.CAIRN_GITHUB_WEB_BASE = github.webBase;
+  t.after(() => {
+    delete process.env.CAIRN_GITHUB_API_BASE;
+    delete process.env.CAIRN_GITHUB_WEB_BASE;
+  });
+}
+
+/**
  * Compile a `/foo/:bar/baz` path pattern into an anchored regex with named capture groups.
  * @param {string} pattern the path pattern; a `:name` segment becomes a `(?<name>[^/]+)` group
  * @returns {RegExp} the anchored regex

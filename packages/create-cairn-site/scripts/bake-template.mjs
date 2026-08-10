@@ -193,9 +193,9 @@ export async function bake({ to, engineSpec, devSpec }) {
   await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
   await writeFile(path.join(emitted, 'README.md'), SITE_README);
   // scripts/ is excluded from the copy, so the bake creates it fresh to hold the dev shim.
-  const scriptsDir = path.join(emitted, 'scripts');
-  await mkdir(scriptsDir, { recursive: true });
-  await writeFile(path.join(scriptsDir, 'dev.mjs'), DEV_SHIM);
+  const emittedScriptsDir = path.join(emitted, 'scripts');
+  await mkdir(emittedScriptsDir, { recursive: true });
+  await writeFile(path.join(emittedScriptsDir, 'dev.mjs'), DEV_SHIM);
   return emitted;
 }
 

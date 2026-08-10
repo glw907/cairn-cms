@@ -6,7 +6,8 @@
 // detail and touches neither the network nor the state store; the user access token collected
 // during the install trip is a local variable that spans install through push and is never
 // written anywhere.
-import { confirm, select, text, isCancel, cancel } from '@clack/prompts';
+import { confirm, select, text, isCancel } from '@clack/prompts';
+import { exitOnCancel, resolveField } from '../prompts.mjs';
 import { defineAction, runActions } from '../runner.mjs';
 import { updateSite, loadSite, siteStateDir } from '../state.mjs';
 import { slugify } from '../slug.mjs';
@@ -31,35 +32,6 @@ const PERMISSION_COST =
   "including deleting it. GitHub does not allow an App's permissions to be reduced later, so " +
   'this stays for as long as the App exists. This is what lets the tool create and publish to ' +
   'the repository for you.';
-
-/**
- * End the process after a cancelled prompt, printing a next step rather than letting the
- * cancellation surface as an unhandled rejection. Mirrors prompts.mjs's own exitOnCancel: a
- * mid-chapter Ctrl+C is no different from a mid-scaffold one.
- * @returns {never}
- */
-function exitOnCancel() {
-  cancel('Cancelled. Run create-cairn-site again when you are ready to continue.');
-  process.exit(1);
-}
-
-/**
- * Resolve one field: the flag value when supplied (an explicit flag always wins, even under
- * --yes), the given default under --yes, or the interactively prompted answer otherwise. Mirrors
- * prompts.mjs's own resolveField.
- * @param {string | undefined} flagValue the value already supplied on the command line
- * @param {boolean} yes whether --yes was passed
- * @param {string} fallback the default to use under --yes
- * @param {() => Promise<string | symbol>} prompt the @clack/prompts call to run interactively
- * @returns {Promise<string>} the resolved answer
- */
-async function resolveField(flagValue, yes, fallback, prompt) {
-  if (flagValue !== undefined) return flagValue;
-  if (yes) return fallback;
-  const answer = await prompt();
-  if (isCancel(answer)) exitOnCancel();
-  return answer;
-}
 
 /**
  * Resolve the organization login for the org branch: `--org` when given, else an interactive

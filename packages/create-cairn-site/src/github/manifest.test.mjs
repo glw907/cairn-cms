@@ -1,23 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { startFakeGithub } from '../../test/fake-github.mjs';
+import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
 import { startLoopback } from './loopback.mjs';
 import { buildManifest, manifestFormHtml, manifestTarget, runManifestFlow } from './manifest.mjs';
-
-/**
- * Set both GitHub base-URL env seams to a fake server for the duration of a test, and register
- * their cleanup with `t.after` so a later test never inherits a closed server's URL.
- * @param {import('node:test').TestContext} t the running test's context
- * @param {{ apiBase: string, webBase: string }} github the fake server to point the seams at
- */
-function pointAtFake(t, github) {
-  process.env.CAIRN_GITHUB_API_BASE = github.apiBase;
-  process.env.CAIRN_GITHUB_WEB_BASE = github.webBase;
-  t.after(() => {
-    delete process.env.CAIRN_GITHUB_API_BASE;
-    delete process.env.CAIRN_GITHUB_WEB_BASE;
-  });
-}
 
 test('buildManifest: the personal branch carries exactly the base permission pair', () => {
   const manifest = buildManifest({

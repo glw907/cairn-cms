@@ -4,6 +4,10 @@
 // unanswered, so a fully-flagged or fully---yes invocation runs end to end with no interactive
 // prompt. Validation lives here, not in substitute.mjs: this is the last chance to reject a bad
 // answer before any file gets written.
+//
+// This module also owns the two prompt primitives every chapter shares, `exitOnCancel` and
+// `resolveField`, so the order a field resolves in and the Ctrl+C exit behave identically wherever
+// the tool asks a question. The GitHub chapter (src/github/chapter.mjs) imports both.
 import { intro, outro, text, isCancel, cancel } from '@clack/prompts';
 import { slugify } from './slug.mjs';
 import { resolveHue } from './substitute.mjs';
@@ -15,10 +19,10 @@ const BRAND_COLOR_HINT = 'Enter a hex color, an oklch(...) string, or a number 0
  * End the process after a cancelled prompt (the user pressing Ctrl+C), printing a next step
  * rather than letting the cancellation surface as an unhandled rejection or a bare stack trace.
  * Every exit path in this tool prints one, per the plan's global constraint; a mid-prompt cancel
- * is no exception.
+ * is no exception, and a mid-chapter one is no different from a mid-scaffold one.
  * @returns {never}
  */
-function exitOnCancel() {
+export function exitOnCancel() {
   cancel('Cancelled. Run create-cairn-site again when you are ready to continue.');
   process.exit(1);
 }
@@ -48,7 +52,7 @@ function brandColorError(value) {
  * @param {() => Promise<string | symbol>} prompt the @clack/prompts call to run interactively
  * @returns {Promise<string>} the resolved answer
  */
-async function resolveField(flagValue, yes, fallback, prompt) {
+export async function resolveField(flagValue, yes, fallback, prompt) {
   if (flagValue !== undefined) return flagValue;
   if (yes) return fallback;
   const answer = await prompt();

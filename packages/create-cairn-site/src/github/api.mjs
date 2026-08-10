@@ -75,14 +75,14 @@ export async function githubRequest(method, path, { token, jwt, body, accept = '
     throw new Error(`github: could not reach ${url} (${cause.code ?? cause.message})`, { cause });
   }
 
+  // An empty body and a malformed one both land in the same catch, so there is deliberately no
+  // separate empty-string check: a 204 parses to null by the same path a non-JSON body does.
   const raw = await response.text();
-  let json = null;
-  if (raw) {
-    try {
-      json = JSON.parse(raw);
-    } catch {
-      json = null;
-    }
+  let json;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    json = null;
   }
   return { status: response.status, json };
 }

@@ -61,8 +61,13 @@ export async function finalizeGithubIdentity(dir, identity) {
     throw cause;
   }
 
-  const ownerMarker = `owner: '${identity.owner}'`;
-  if (content.includes(ownerMarker)) return;
+  // Idempotence keys on the WHOLE rewritten call, never the owner alone. An owner login of
+  // `showcase` is a legal GitHub account and collides with the placeholder's own owner, so an
+  // owner-only check would read the untouched template as already finalized and push a scaffold
+  // still carrying repo 'demo' and appId '1'. Matching the full literal cannot collide: it is
+  // equal to the template only when the real identity is the template, which is already correct.
+  const realLiteral = buildRealLiteral(identity);
+  if (content.includes(realLiteral)) return;
 
   const index = content.indexOf(TEMPLATE_GITHUB_APP_LITERAL);
   if (index === -1) {
@@ -71,7 +76,6 @@ export async function finalizeGithubIdentity(dir, identity) {
     );
   }
 
-  const realLiteral = buildRealLiteral(identity);
   const rewritten =
     content.slice(0, index) + realLiteral + content.slice(index + TEMPLATE_GITHUB_APP_LITERAL.length);
   await writeFile(configPath, rewritten);

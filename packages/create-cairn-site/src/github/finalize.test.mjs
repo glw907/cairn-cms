@@ -76,6 +76,30 @@ test('finalizeGithubIdentity is a no-op on a second call', async (t) => {
   assert.equal(secondPass, firstPass);
 });
 
+test('finalizeGithubIdentity still rewrites when the real owner is literally "showcase"', async (t) => {
+  // An owner login of `showcase` collides with the placeholder's own owner. Keying idempotence
+  // on the owner alone would read the untouched template as already finalized and return, and
+  // the site would be pushed carrying repo 'demo' and appId '1': a scaffold that cannot commit,
+  // failing silently at the one moment it matters.
+  const dir = await fixtureScaffoldDir(t, TEMPLATE_GITHUB_APP_LITERAL);
+
+  await finalizeGithubIdentity(dir, {
+    owner: 'showcase',
+    repo: 'alpine-club',
+    appId: 12345,
+    installationId: 67890,
+  });
+
+  const content = await readFile(path.join(dir, CONFIG_RELATIVE), 'utf8');
+  assert.ok(
+    content.includes(
+      "githubApp({ owner: 'showcase', repo: 'alpine-club', branch: 'main', appId: '12345', installationId: '67890' })",
+    ),
+    `the real repo and ids must be written even when the owner matches the placeholder: ${content}`,
+  );
+  assert.ok(!content.includes("repo: 'demo'"));
+});
+
 test('finalizeGithubIdentity throws naming the file and the missing string when the template has drifted', async (t) => {
   const dir = await fixtureScaffoldDir(
     t,

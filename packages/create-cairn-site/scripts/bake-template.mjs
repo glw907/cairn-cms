@@ -7,6 +7,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 import { emitTemplate } from '../../../scripts/build/emit-template.mjs';
 
 const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
@@ -77,32 +78,18 @@ export function pruneShowcaseOnlyPackageFields(pkg) {
   }
 }
 
+const ENGINE_PACKAGE_JSON = path.join(repoRoot, 'package.json');
+const DEV_PACKAGE_JSON = path.join(repoRoot, 'packages', 'cairn-cms-dev', 'package.json');
+
 /**
- * Read a package's version from its package.json.
- * @param {string} packageJsonPath absolute path to the package.json
- * @returns {Promise<string>} the version field
+ * Resolve a dependency spec from a package's own version, so the baked template tracks what the
+ * monorepo currently holds rather than a number written down a second time here.
+ * @param {string} packageJsonPath absolute path to the package.json to read
+ * @returns {Promise<string>} a caret spec, `^<version>`
  */
-async function readVersion(packageJsonPath) {
+async function caretSpecFrom(packageJsonPath) {
   const pkg = JSON.parse(await readFile(packageJsonPath, 'utf8'));
-  return pkg.version;
-}
-
-/**
- * Resolve the default engine dependency spec from the repo root's own published version.
- * @returns {Promise<string>} a caret spec, `^<version>`
- */
-export async function resolveEngineSpec() {
-  const version = await readVersion(path.join(repoRoot, 'package.json'));
-  return `^${version}`;
-}
-
-/**
- * Resolve the default dev-backend dependency spec from packages/cairn-cms-dev's own version.
- * @returns {Promise<string>} a caret spec, `^<version>`
- */
-export async function resolveDevSpec() {
-  const version = await readVersion(path.join(repoRoot, 'packages', 'cairn-cms-dev', 'package.json'));
-  return `^${version}`;
+  return `^${pkg.version}`;
 }
 
 /**
@@ -144,8 +131,8 @@ export function assertInstallableSpec(packageName, spec) {
  */
 export async function bake({ to, engineSpec, devSpec }) {
   if (!to) throw new Error('bake: "to" is required');
-  const resolvedEngineSpec = engineSpec ?? (await resolveEngineSpec());
-  const resolvedDevSpec = devSpec ?? (await resolveDevSpec());
+  const resolvedEngineSpec = engineSpec ?? (await caretSpecFrom(ENGINE_PACKAGE_JSON));
+  const resolvedDevSpec = devSpec ?? (await caretSpecFrom(DEV_PACKAGE_JSON));
   assertInstallableSpec('@glw907/cairn-cms', resolvedEngineSpec);
   assertInstallableSpec('@glw907/cairn-cms-dev', resolvedDevSpec);
   const emitted = await emitTemplate({
@@ -164,28 +151,32 @@ export async function bake({ to, engineSpec, devSpec }) {
 
 // CLI: node scripts/bake-template.mjs --to <dir> [--engine-spec <spec>] [--dev-spec <spec>]
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const args = process.argv.slice(2);
-  /** @type {{ to?: string, engineSpec?: string, devSpec?: string }} */
-  const opts = {};
-  for (let i = 0; i < args.length; i += 1) {
-    const flag = args[i];
-    const value = args[i + 1];
-    if (flag === '--to') opts.to = value;
-    else if (flag === '--engine-spec') opts.engineSpec = value;
-    else if (flag === '--dev-spec') opts.devSpec = value;
-    else {
-      console.error(`bake-template: unknown flag ${flag}`);
-      process.exit(1);
-    }
-    i += 1;
+  const USAGE = 'usage: bake-template.mjs --to <dir> [--engine-spec <spec>] [--dev-spec <spec>]';
+  let values;
+  try {
+    ({ values } = parseArgs({
+      args: process.argv.slice(2),
+      options: {
+        to: { type: 'string' },
+        'engine-spec': { type: 'string' },
+        'dev-spec': { type: 'string' },
+      },
+      strict: true,
+    }));
+  } catch (err) {
+    console.error(`bake-template: ${err.message}`);
+    console.error(USAGE);
+    process.exit(1);
   }
-  if (!opts.to) {
-    console.error('usage: bake-template.mjs --to <dir> [--engine-spec <spec>] [--dev-spec <spec>]');
+  if (!values.to) {
+    console.error(USAGE);
     process.exit(1);
   }
   try {
-    const to = path.resolve(packageDir, '..', opts.to);
-    await bake({ to, engineSpec: opts.engineSpec, devSpec: opts.devSpec });
+    // Relative to the package, so `--to template` lands on the `template/` directory the package
+    // gitignores and ships through its own `files` list.
+    const to = path.resolve(packageDir, values.to);
+    await bake({ to, engineSpec: values['engine-spec'], devSpec: values['dev-spec'] });
     console.log(`baked template to ${to}`);
   } catch (err) {
     console.error(err.message);

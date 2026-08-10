@@ -10,6 +10,7 @@ import { mkdir, writeFile, readFile, chmod } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { homedir } from 'node:os';
 import path from 'node:path';
+import { slugify } from './slug.mjs';
 
 /**
  * The directory site state files are written under.
@@ -20,28 +21,13 @@ export function siteStateDir() {
 }
 
 /**
- * Slug a site name for use in its id: lowercase, non-alphanumeric runs collapsed to a single
- * dash, leading and trailing dashes trimmed. Falls back to `site` when the name slugs to
- * nothing, so a name like `!!!` never produces an id with a leading dash.
- * @param {string} name the site name to slug
- * @returns {string} the slug, never empty
- */
-function slugify(name) {
-  const slug = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return slug.length > 0 ? slug : 'site';
-}
-
-/**
  * Build a new site id: a slug of `name` plus a six-character random suffix.
  * @param {string} name the site's display name, as answered at the name prompt
  * @returns {string} an id matching `<slug>-<six lowercase alphanumeric characters>`
  */
 export function newSiteId(name) {
   const suffix = randomBytes(6).toString('hex').slice(0, 6);
-  return `${slugify(name)}-${suffix}`;
+  return `${slugify(name, 'site')}-${suffix}`;
 }
 
 /**

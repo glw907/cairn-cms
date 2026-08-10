@@ -32,11 +32,11 @@ const EXPECTED_BRAND_DECLARATIONS = 4;
 /**
  * Convert one sRGB channel (0-255) to linear light, the first step of the CSS Color 4
  * sRGB-to-OKLCH conversion.
- * @param {number} c the channel value, 0-255
+ * @param {number} channel the channel value, 0-255
  * @returns {number} the linear-light channel value, 0-1
  */
-function srgbToLinear(c) {
-  c /= 255;
+function srgbToLinear(channel) {
+  const c = channel / 255;
   return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 }
 
@@ -47,16 +47,19 @@ function srgbToLinear(c) {
  * @returns {number} the hue in degrees, `[0, 360)`
  */
 export function hexToOklchHue(hex) {
-  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
-  if (!m) throw new Error(`not a hex color: ${hex}`);
-  let h = m[1];
-  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
-  const [r, g, b] = [0, 2, 4].map((i) => srgbToLinear(parseInt(h.slice(i, i + 2), 16)));
+  const match = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) throw new Error(`not a hex color: ${hex}`);
+  // Expand a three-digit shorthand so every channel is read as a two-digit pair below.
+  const digits =
+    match[1].length === 3 ? match[1].replace(/./g, (digit) => digit + digit) : match[1];
+  const [r, g, b] = [0, 2, 4].map((i) => srgbToLinear(parseInt(digits.slice(i, i + 2), 16)));
+  // The OKLab long, medium, and short cone responses, then its two opponent axes. The axes keep
+  // their capitals because the lowercase `b` is the blue channel above.
   const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
-  const m2 = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
   const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
-  const A = 1.9779984951 * l - 2.4285922050 * m2 + 0.4505937099 * s;
-  const B = 0.0259040371 * l + 0.7827717662 * m2 - 0.8086757660 * s;
+  const A = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+  const B = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
   return ((Math.atan2(B, A) * 180 / Math.PI) % 360 + 360) % 360;
 }
 
@@ -85,7 +88,7 @@ export function resolveHue(brandColor) {
   // that also happen to parse as three-digit hex, so the '#' prefix is what disambiguates a
   // hex color from a number, not the character class alone.
   if (/^\d+(?:\.\d+)?$/.test(trimmed)) return Number(trimmed);
-  if (/^#/.test(trimmed)) return hexToOklchHue(trimmed);
+  if (trimmed.startsWith('#')) return hexToOklchHue(trimmed);
   throw new Error(`brandColor is not a hex color, an oklch(...) string, or a bare number: ${brandColor}`);
 }
 
@@ -140,17 +143,15 @@ export async function applySubstitutions(dir, { name, tagline, brandColor }) {
   const changed = [];
 
   const siteConfigPath = path.join(dir, SITE_CONFIG_RELATIVE);
-  let siteConfig = await readTarget(siteConfigPath, SITE_CONFIG_RELATIVE);
-  siteConfig = replaceExact(siteConfig, SITE_NAME_LINE, `siteName: ${name}`, SITE_CONFIG_RELATIVE);
-  if (tagline) {
-    siteConfig = replaceExact(
-      siteConfig,
-      `siteName: ${name}\n`,
-      `siteName: ${name}\ntagline: ${tagline}\n`,
-      SITE_CONFIG_RELATIVE,
-    );
-  }
-  await writeFile(siteConfigPath, siteConfig);
+  const siteConfig = await readTarget(siteConfigPath, SITE_CONFIG_RELATIVE);
+  // A tagline rides along in this one replacement rather than a second lookup for the line just
+  // written: the template's own `siteName:` line is the only string worth gating on, and looking
+  // up a line this function itself produced would gate on nothing.
+  const siteNameBlock = tagline ? `siteName: ${name}\ntagline: ${tagline}` : `siteName: ${name}`;
+  await writeFile(
+    siteConfigPath,
+    replaceExact(siteConfig, SITE_NAME_LINE, siteNameBlock, SITE_CONFIG_RELATIVE),
+  );
   changed.push(SITE_CONFIG_RELATIVE);
 
   if (brandColor) {

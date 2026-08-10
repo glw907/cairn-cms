@@ -149,13 +149,11 @@ export async function runPreflight({
   nodeVersion = process.versions.node,
   platform = process.platform
 } = {}) {
-  const findings = [await checkNode(nodeVersion), await checkLoopback()];
-
-  const proxyFinding = checkProxy();
-  if (proxyFinding) findings.push(proxyFinding);
-
-  const psFinding = checkPowerShellExecutionPolicy(platform);
-  if (psFinding) findings.push(psFinding);
-
-  return findings;
+  // The last two checks apply only on some machines and return null on the rest.
+  const conditional = [checkProxy(), checkPowerShellExecutionPolicy(platform)];
+  return [
+    await checkNode(nodeVersion),
+    await checkLoopback(),
+    ...conditional.filter((finding) => finding !== null),
+  ];
 }

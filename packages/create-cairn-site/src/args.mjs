@@ -32,13 +32,14 @@ export function parseArgs(argv) {
       { cause },
     );
   }
+  // The boolean flags carry their default in OPTIONS, so parseArgs has already filled them in.
   return {
-    dryRun: values['dry-run'] ?? false,
-    yes: values.yes ?? false,
+    dryRun: values['dry-run'],
+    yes: values.yes,
     name: values.name,
     tagline: values.tagline,
     brandColor: values['brand-color'],
     dir: values.dir,
-    version: values.version ?? false,
+    version: values.version,
   };
 }

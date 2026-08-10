@@ -5,20 +5,11 @@
 // prompt. Validation lives here, not in substitute.mjs: this is the last chance to reject a bad
 // answer before any file gets written.
 import { intro, outro, text, isCancel, cancel } from '@clack/prompts';
+import { slugify } from './slug.mjs';
 import { resolveHue } from './substitute.mjs';
 
 const DEFAULTS = { name: 'Waymark', tagline: '', brandColor: '' };
-
-/**
- * Slug a display name into a directory-safe name: lowercase, non-alphanumeric runs collapsed to
- * a single dash, leading and trailing dashes trimmed.
- * @param {string} name the display name to slug
- * @returns {string} the slug, falling back to "cairn-site" when the name slugs to nothing
- */
-function slugify(name) {
-  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  return slug.length > 0 ? slug : 'cairn-site';
-}
+const BRAND_COLOR_HINT = 'Enter a hex color, an oklch(...) string, or a number 0-360.';
 
 /**
  * End the process after a cancelled prompt (the user pressing Ctrl+C), printing a next step
@@ -30,6 +21,22 @@ function slugify(name) {
 function exitOnCancel() {
   cancel('Cancelled. Run create-cairn-site again when you are ready to continue.');
   process.exit(1);
+}
+
+/**
+ * Check a brand color answer without throwing, since @clack/prompts' validate callback reports a
+ * message rather than an exception. The failure itself is returned, not a boolean, so the
+ * post-prompt check can still throw with resolveHue's own reason as its cause.
+ * @param {string} value the answered brand color
+ * @returns {Error | undefined} the resolveHue failure, or undefined when the value resolves
+ */
+function brandColorError(value) {
+  try {
+    resolveHue(value);
+    return undefined;
+  } catch (error) {
+    return error;
+  }
 }
 
 /**
@@ -76,23 +83,17 @@ export async function collectAnswers(flags) {
       placeholder: 'Leave blank for the Waymark default',
       validate: (value) => {
         if (!value) return undefined;
-        try {
-          resolveHue(value);
-          return undefined;
-        } catch {
-          return 'Enter a hex color, an oklch(...) string, or a number 0-360.';
-        }
+        return brandColorError(value) ? BRAND_COLOR_HINT : undefined;
       },
     }));
-  if (brandColor) {
-    try {
-      resolveHue(brandColor);
-    } catch (cause) {
-      throw new Error(`collectAnswers: brandColor "${brandColor}" is not valid`, { cause });
-    }
+  const brandColorFailure = brandColor ? brandColorError(brandColor) : undefined;
+  if (brandColorFailure) {
+    throw new Error(`collectAnswers: brandColor "${brandColor}" is not valid`, {
+      cause: brandColorFailure,
+    });
   }
 
-  const dirDefault = slugify(name);
+  const dirDefault = slugify(name, 'cairn-site');
   const dir = await resolveField(flags.dir, flags.yes, dirDefault, () =>
     text({ message: 'Directory', placeholder: dirDefault, defaultValue: dirDefault }));
 

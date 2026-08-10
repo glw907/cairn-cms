@@ -5,30 +5,43 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { bake, assertInstallableSpec, PRUNED_SCRIPTS, PRUNED_DEV_DEPENDENCIES, pruneShowcaseOnlyPackageFields } from './bake-template.mjs';
 
-test('bake emits the template with published-engine specs when both specs are given', async () => {
+// Published specs, so a bake under test never depends on what the monorepo's own versions
+// happen to be. The unresolvable defaults have their own test below.
+const PUBLISHED_SPECS = { engineSpec: '^0.94.0', devSpec: '^0.1.0' };
+
+/**
+ * Make a temporary emit target that is removed when the test that asked for it finishes.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @returns {Promise<string>} the directory's absolute path
+ */
+async function tempTarget(t) {
   const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
-  await bake({ to, engineSpec: '^0.94.0', devSpec: '^0.1.0' });
+  t.after(() => rm(to, { recursive: true, force: true }));
+  return to;
+}
+
+test('bake emits the template with published-engine specs when both specs are given', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
   const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
   assert.match(pkg.dependencies['@glw907/cairn-cms'], /^\^\d+\.\d+\.\d+$/);
   assert.ok(!JSON.stringify(pkg).includes('file:'), 'no workspace-relative specs survive');
-  await rm(to, { recursive: true, force: true });
 });
 
-test('bake emits a real tree, not just a rewritten package.json', async () => {
-  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
-  await bake({ to, engineSpec: '^0.94.0', devSpec: '^0.1.0' });
+test('bake emits a real tree, not just a rewritten package.json', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
   await access(path.join(to, 'package.json'));
   await access(path.join(to, 'src'));
   await access(path.join(to, 'wrangler.jsonc'));
-  await rm(to, { recursive: true, force: true });
 });
 
 // @glw907/cairn-cms-dev is unpublished (version 0.0.0 in packages/cairn-cms-dev/package.json)
 // as of this writing, so bake() cannot resolve a usable default devSpec and must throw rather
 // than emit a scaffold whose devDependency install fails. Once the dev backend is published,
 // update this test to assert the resolved default matches /^\^\d+\.\d+\.\d+$/ instead.
-test('bake with no overrides throws naming the unpublished dev backend', async () => {
-  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
+test('bake with no overrides throws naming the unpublished dev backend', async (t) => {
+  const to = await tempTarget(t);
   await assert.rejects(
     () => bake({ to }),
     (err) => {
@@ -37,19 +50,17 @@ test('bake with no overrides throws naming the unpublished dev backend', async (
       return true;
     },
   );
-  await rm(to, { recursive: true, force: true });
 });
 
-test('an explicit file: devSpec throws naming the file: spec', async () => {
-  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
+test('an explicit file: devSpec throws naming the file: spec', async (t) => {
+  const to = await tempTarget(t);
   await assert.rejects(
-    () => bake({ to, engineSpec: '^0.94.0', devSpec: 'file:../whatever' }),
+    () => bake({ to, ...PUBLISHED_SPECS, devSpec: 'file:../whatever' }),
     (err) => {
       assert.match(err.message, /file:/);
       return true;
     },
   );
-  await rm(to, { recursive: true, force: true });
 });
 
 // Regression: the unpublished-version check tested the spec as a substring, so `^10.0.0` and
@@ -63,9 +74,9 @@ test('a high major version is not mistaken for an unpublished 0.0.0', () => {
   }
 });
 
-test('bake prunes showcase-only scripts and devDependencies, keeping the rest', async () => {
-  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
-  await bake({ to, engineSpec: '^0.94.0', devSpec: '^0.1.0' });
+test('bake prunes showcase-only scripts and devDependencies, keeping the rest', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
   const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
   for (const script of PRUNED_SCRIPTS) {
     assert.ok(!(script in pkg.scripts), `expected ${script} to be pruned from scripts`);
@@ -77,24 +88,21 @@ test('bake prunes showcase-only scripts and devDependencies, keeping the rest', 
   assert.ok('build' in pkg.scripts);
   assert.ok('check' in pkg.scripts);
   assert.ok('cairn:manifest' in pkg.scripts);
-  await rm(to, { recursive: true, force: true });
 });
 
-test('bake emits a tree with no showcase-only .claude or scripts directory', async () => {
-  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
-  await bake({ to, engineSpec: '^0.94.0', devSpec: '^0.1.0' });
+test('bake emits a tree with no showcase-only .claude or scripts directory', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
   await assert.rejects(() => access(path.join(to, '.claude')));
   await assert.rejects(() => access(path.join(to, 'scripts')));
-  await rm(to, { recursive: true, force: true });
 });
 
-test('bake writes a site README that is not the showcase README', async () => {
-  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
-  await bake({ to, engineSpec: '^0.94.0', devSpec: '^0.1.0' });
+test('bake writes a site README that is not the showcase README', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
   const readme = await readFile(path.join(to, 'README.md'), 'utf8');
   assert.ok(!readme.includes('cairn showcase'));
   assert.ok(!readme.includes('../../docs'));
-  await rm(to, { recursive: true, force: true });
 });
 
 // The rot gate: pruneShowcaseOnlyPackageFields must fail loud when the showcase drops or renames

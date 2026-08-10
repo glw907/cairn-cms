@@ -108,6 +108,21 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
 }
 
 /**
+ * Build the closing line for a dry run, which must never read as though a site now exists. The
+ * hand-over block opens "Your site is scaffolded at ...", true only after a real run; printing it
+ * after a dry run would claim a directory the run deliberately did not create.
+ * @param {{ dir: string }} options `dir` is the scaffold target the run only described
+ * @returns {string} the dry-run closing text, ready to print as-is
+ */
+export function dryRunNotice({ dir }) {
+  return [
+    `Dry run: nothing was written, and ${dir} was not created.`,
+    '',
+    'Run the same command without --dry-run to scaffold the site.',
+  ].join('\n');
+}
+
+/**
  * Build the printed hand-over block: the terminal script that starts a working local admin, and
  * what T1 does and does not yet cover. Its wording is fixed by the recorded baseline walk
  * (docs/internal/2026-08-unagented-setup-baseline.md), which found a plain `npm run dev` never

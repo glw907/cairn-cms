@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, readdir, access, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { scaffold, handoverText } from './scaffold.mjs';
+import { scaffold, handoverText, dryRunNotice } from './scaffold.mjs';
 
 /**
  * Make a temporary directory that is removed when the test that asked for it finishes.
@@ -161,6 +161,13 @@ test('an absolute --dir prints without a doubled leading slash', () => {
   const text = handoverText({ dir: '/tmp/alpine-dry', platform: 'linux' });
   assert.ok(text.startsWith('Your site is scaffolded at /tmp/alpine-dry.'));
   assert.ok(!text.includes('.//tmp'));
+});
+
+test('a dry run closes by saying nothing was created, never that the site is scaffolded', () => {
+  const text = dryRunNotice({ dir: '/tmp/alpine-dry' });
+  assert.match(text, /nothing was written/);
+  assert.ok(text.includes('/tmp/alpine-dry'));
+  assert.ok(!text.includes('Your site is scaffolded'));
 });
 
 test('the win32 branch prints the PowerShell form instead of the env-prefix form', () => {

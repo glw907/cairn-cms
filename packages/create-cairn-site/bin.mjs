@@ -9,7 +9,7 @@ import path from 'node:path';
 import { parseArgs } from './src/args.mjs';
 import { runPreflight } from './src/preflight.mjs';
 import { collectAnswers } from './src/prompts.mjs';
-import { scaffold, handoverText } from './src/scaffold.mjs';
+import { scaffold, handoverText, dryRunNotice } from './src/scaffold.mjs';
 
 let flags;
 try {
@@ -45,7 +45,11 @@ if (flags.version) {
         dryRun: flags.dryRun,
         log: (line) => console.log(line),
       });
-      console.log(handoverText({ dir: answers.dir, platform: process.platform }));
+      console.log(
+        flags.dryRun
+          ? dryRunNotice({ dir: answers.dir })
+          : handoverText({ dir: answers.dir, platform: process.platform }),
+      );
     } catch (err) {
       console.error(err.message);
       console.error('Next step: fix the problem above and run the command again.');

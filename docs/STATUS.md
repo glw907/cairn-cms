@@ -69,6 +69,22 @@ Playwright scripts and devDependencies. `.cairn-template.json` now excludes the 
 the bake prunes the package.json lines a path exclusion cannot reach, behind a rot gate that throws
 when an expected key has already been renamed away.
 
+**The spec's open platform spikes are RESOLVED and written up** in
+[`2026-08-09-tool-passes-platform-spikes.md`](internal/2026-08-09-tool-passes-platform-spikes.md),
+so T2 and T3 are planned against verified premises. The two that move a plan: **wrangler's OAuth
+session carries `zone:read` only and no registrar scope at all**, so chapter 2's domain half
+requires the self-managed OAuth client or token prefill rather than riding wrangler (chapter 1
+stays fully inside wrangler's scopes, so the zero-credential quickstart holds); and the **GitHub
+installation-token format migration already completed** in late June 2026, so treating tokens as
+opaque is a T2 requirement, not a watch item. Workers Builds turns out fully API-driven, including
+repo connections and a `config_autofill` endpoint, so T3's step 10 is cheaper than budgeted.
+
+**One Geoff action is queued, and it gates nothing until T3 plans chapter 2:** mint a
+Registrar-scoped Cloudflare API token. The standing `CLOUDFLARE_API_TOKEN` is valid but refuses
+every Registrar endpoint, including the read-only ones, so whether the Registrar API's curated TLD
+subset covers `.ski` and `.life` cannot be answered without one. With that token it is a single
+no-cost `domain-check` call. Worth recording in the estate inventory as a gap.
+
 **Also wired: two node:test suites CI never ran.** `npm run test:emit` (nine tests over the
 emitter) existed in `package.json` but appeared in no workflow, and the new package's suite is new.
 Both now run in `test.yml`.

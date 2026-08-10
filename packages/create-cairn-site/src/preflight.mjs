@@ -60,12 +60,15 @@ async function checkNode(nodeVersion) {
   const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   const floorSpec = pkg.engines.node;
   const ok = compareVersions(nodeVersion, floorSpec) >= 0;
+  // The floor is a range (`>=22`), so the prose quotes the bare major instead: "Node.js >=22 or
+  // later is required" reads as a typo to the admin this message exists for.
+  const floorMajor = parseVersionParts(floorSpec)[0];
   return {
     check: 'node',
     ok,
     remedy: ok
-      ? `Node.js ${nodeVersion} meets the ${floorSpec} floor create-cairn-site requires.`
-      : `Node.js ${floorSpec} or later is required (found ${nodeVersion}). Install a current ` +
+      ? `Node.js ${nodeVersion} meets the Node ${floorMajor} or later that create-cairn-site requires.`
+      : `Node.js ${floorMajor} or later is required (found ${nodeVersion}). Install a current ` +
         'release from https://nodejs.org, or upgrade with your version manager (nvm, fnm, ' +
         'volta), then retry.'
   };

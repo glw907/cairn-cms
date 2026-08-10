@@ -14,23 +14,24 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-10: Pass T1 is COMPLETE on `create-cairn-site`, PR #25 open; next is Pass T2)
+## Immediate next action (2026-08-10: Pass T1 is COMPLETE and MERGED to `main`; next is Pass T2)
 
-**Pass T1 is done, all ten tasks.** The work sits on the `create-cairn-site` branch (worktree at
-`.claude/worktrees/create-cairn-site`), pushed, with **[PR #25](https://github.com/glw907/cairn-cms/pull/25)
-open and not merged**. Opening the PR is what first ran CI against this branch: every gating
-workflow fires on `push` only for `main` and `rebuild`, plus `pull_request`, so the whole window had
-been CI-unproven. All five checks passed on the tasks 1-7 window, including the two `test.yml` steps
-and the `.cairn-template.json` exclusions that change what `scaffold.yml` emits.
+**Pass T1 is done, all ten tasks, merged to `main`** through
+[PR #25](https://github.com/glw907/cairn-cms/pull/25) with all five CI checks green. Opening that PR
+is what first ran CI against the branch: every gating workflow fires on `push` only for `main` and
+`rebuild`, plus `pull_request`, so the whole window had been CI-unproven until then. **T2 branches
+from `main`**, which now carries the package and its gate; the `create-cairn-site` worktree has
+served its purpose and can be removed. The window holds under `## Unreleased`; nothing is published.
 
-**Resume prompt** (fresh Opus session, launch directory `~/Projects/cairn-cms`): "Plan and execute
-Pass T2 of the create-cairn-site umbrella, the GitHub chapter. Pass T1 is complete on the
-`create-cairn-site` branch (PR #25, unmerged); read its post-mortem in
-`docs/superpowers/plans/2026-08-09-create-cairn-site-t1.md` and the recorded baseline walk at
-`docs/internal/2026-08-unagented-setup-baseline.md` first. Start with the cairn-pass skill."
-**Decide the merge first**: T2 either branches from `main` after merging #25, or continues on this
-branch. A cold session branches from `main` by default and would build against an engine that has
-none of T1.
+**Resume prompt** (launch directory `~/Projects/cairn-cms`; a planning sitting, so Fable, ending at
+plan approval, with execution in a fresh Opus session): "Plan Pass T2 of the create-cairn-site
+umbrella, the GitHub chapter. Start with the cairn-pass skill, then brainstorm before writing the
+plan. Pass T1 is complete and merged to `main` (PR #25). Read `docs/STATUS.md`, the approved
+umbrella spec `docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`, both
+post-mortems in `docs/superpowers/plans/2026-08-09-create-cairn-site-t1.md`, the recorded walk at
+`docs/internal/2026-08-unagented-setup-baseline.md`, and the resolved platform questions in
+`docs/internal/2026-08-09-tool-passes-platform-spikes.md`. Two items T1 filed for T2 specifically
+are in `docs/internal/docs-friction-log.md`. Work on a new worktree off `main`."
 
 **The baseline walk is recorded, and Geoff changed how it was run.** He first ruled he would walk it
 himself, then revised the same day: "a well-tuned persona agent run several times fresh from several

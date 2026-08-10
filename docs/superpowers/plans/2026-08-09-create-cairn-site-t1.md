@@ -580,3 +580,84 @@ the localhost console (T3 polish; T1's UX is the terminal and that is acceptable
 half), the agent-brief skill (rides T3 with the assistant-path work), and all docs-track work
 (Pass D). Type consistency: `Finding`, `Action`, `scaffold`'s options object, and the state
 shape are each defined once above and consumed by name.
+
+---
+
+## Post-mortem, part 1 (2026-08-09, Tasks 1-7)
+
+**Status: partial by design.** Tasks 1 through 7 landed on `create-cairn-site`. Task 8 is blocked
+on the recorded baseline walk exactly as the plan specified, and Tasks 9 and 10 follow it. Geoff
+ruled at pass start that he walks the baseline himself; the protocol shell is committed and waits
+for his log.
+
+### What was built
+
+A new `packages/create-cairn-site` (unscoped npm name verified free), plain ESM `.mjs` on
+`node:test`, 43 tests. Argument parsing; the action runner that keeps `--dry-run` a property of the
+frame; the out-of-scaffold state store at mode `0600`; credential-free pre-flight; the pack-time
+template bake; and the fail-loud substitution pass. Task 9's `test.yml` half landed early, since it
+does not depend on Task 8.
+
+### Four plan assumptions were wrong
+
+All four were caught by reading the code before dispatching, and all four are corrected in the
+implementation rather than only noted.
+
+1. `site.config.yaml` is at `src/theme/site.config.yaml`, not the scaffold root, and carries no
+   `tagline:` key, so a tagline is an insertion.
+2. `--color-primary` is **four** declarations, a light and a dark block each with a primary and a
+   primary-content token. The plan's literal substitution would have written one color into both
+   blocks and destroyed dark-mode contrast in every scaffolded site, with every test still green.
+   The corrected pass rotates the hue and holds each declaration's own lightness and chroma,
+   following the theme file's own documented re-skin recipe.
+3. The Node floor is `>=22` (the engine's own), not the plan's `>=20.19` fallback.
+4. `@clack/prompts` is at `1.x`, not the plan's `^0.11.0`.
+
+The lesson generalizes past this plan: a plan's concrete paths and versions rot on the same clock
+as its build mechanisms, and the existing "verify a plan's locked build assumptions" rule should be
+read to cover them.
+
+### Two defects found outside the plan's scope
+
+**The shared emitter shipped showcase-only material into every scaffolded site**: seven tracked
+`.claude/agent-memory` notes, the showcase README (whose relative links point back into the engine
+repo), a design-lab script, and the Playwright scripts and devDependencies. Fixed as Task 6b
+(a split of the plan's Task 6): three path exclusions in `.cairn-template.json`, plus package.json
+pruning in the bake behind a rot gate, since a path exclusion cannot reach a line inside a kept
+file. This affected `scaffold.yml`'s output too, so it predates this pass.
+
+**`npm run test:emit` ran in no CI workflow.** Nine tests over the emitter existed and were never
+gated. Wired into `test.yml` alongside the new package's suite.
+
+### The release-one blocker
+
+`@glw907/cairn-cms-dev` is unpublished (npm 404, version `0.0.0`). A scaffolded site needs it for
+the local `/admin` value moment, and the ROADMAP's own 2026-07-02 scaffolder finding records that a
+standalone scaffold without it fails the **build**, since Rolldown cannot resolve the absent
+specifier even behind the dev gate. Release one must therefore publish the dev backend alongside
+the engine, the tool, and the template repo. The bake refuses to run while the spec resolves to
+`^0.0.0`, naming the package and the fix, so the cut cannot silently skip it.
+
+### Review findings folded
+
+The main loop caught and fixed four defects in dispatched work before committing: `parseArgs`
+naming the first dash-token rather than the offending flag; a pre-flight remedy rendering as
+"Node.js >=22 or later is required"; `assertInstallableSpec` matching `0.0.0` as a substring, so
+`^10.0.0` and `^20.0.0` failed a gate they should pass; and the brand substitution throwing only
+when *zero* declarations matched, so half-drift would have rotated the light block alone. The
+`code-simplifier` pass caught a fifth: the bake CLI resolved `--to template` to `packages/template`,
+outside the package that must ship it, unobservable only because `prepack` dies earlier on the
+unpublished dev backend.
+
+### Gate
+
+Package suite 43 passing, exit 0. Root `npm run check` 0 errors 0 warnings. Root `npm test` 412
+files / 5273 tests. `test:emit` 9 passing. All nine repo gates green, including the four CI-only
+ones the local ritual skips (`check:comments`, `check:reference:signatures`, `check:surface`,
+`check:snippets`).
+
+### Sizing note
+
+One task split (Task 6 into 6a and 6b), which is the first of the pass and below the threshold that
+would argue for splitting the pass. The pass stopping at Task 7 is the plan's own design, not
+accretion.

@@ -355,3 +355,11 @@ line.
   every scaffolded site's build, since the shape a reader consults says the key would be ignored.
   Fix the comment and weigh dropping the index signature, which advertises openness the parser does
   not honor.
+
+- **[developer] `create-cairn-site`'s empty-directory guard is check-then-copy, not atomic.**
+  `assertTargetDirEmpty` reads the target, then the copy action writes it, so two concurrent runs
+  against the same `--dir` can both pass the guard and collide inside `cp`, surfacing a raw fs
+  error instead of the guard's crafted message. Verified at the T1 review gate and deliberately not
+  fixed there: it needs an exclusive-create sentinel or an atomic `mkdir` claim, which is real work
+  for an exotic case (a user running two scaffolds at the same target simultaneously). Fix it when
+  the tool grows a resume path, since that is when a half-written target stops being hypothetical.

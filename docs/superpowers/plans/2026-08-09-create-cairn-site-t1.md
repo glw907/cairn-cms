@@ -764,11 +764,44 @@ pass fixed stays fixed. State landed in the store, nothing under the scaffold. A
 scaffolded site was installed against locally packed engine and dev tarballs and **built clean**,
 which is the check whose absence let the `tagline` defect ship in the first place.
 
-Package suite 52 passing, exit 0. Root `npm run check` 1601 files, 0 errors, 0 warnings. Root
+Package suite 55 passing, exit 0. Root `npm run check` 1601 files, 0 errors, 0 warnings. Root
 `npm test` 412 files / 5274 tests, exit 0. All nine repo gates green, including the four CI-only
 ones the local ritual skips (`check:comments`, `check:reference:signatures`, `check:surface`,
 `check:snippets`). On CI, `test`, `e2e`, `design`, and `scaffold` passed; `create-site` failed on
 the defect above and is green after the fix.
+
+### The review gate found the same defect a third time
+
+None of the four standing reviewer agents fits a Node CLI, so the gate ran as an adversarial
+find-and-verify over three lenses: correctness and failure modes, "does it lie?", and "can the CI
+gate pass vacuously?". Seven findings, five confirmed after a skeptical verification pass that
+defaulted to refuting.
+
+**The "does it lie?" lens was aimed at this pass's own record, and it paid.** Its single finding was
+that `SITE_README`, the README baked into every scaffolded site, still told the reader `npm run dev`
+would give them a working `/admin`. The CLI's printed block and the package's own README had both
+been corrected; the copy that ships inside the product had not. Three instances of one defect in one
+pass, each in a different file, is the argument for running a lens at the class rather than
+re-reading the diff.
+
+**The gate lens caught an assertion that could never fail.** Both the new CI job and one of Task 8's
+tests asserted that `.cairn-state.json` does not exist inside the scaffold. `state.mjs` writes
+`<state dir>/<slug>-<random>.json` and can never produce that name, so the check passed regardless,
+including if state really had landed in the scaffold. This is the second time this repo has shipped
+a check that cannot match; `scaffold.yml` carries a "Gate self-test" step and a comment about the
+first. Both are replaced with an assertion that pins `CAIRN_STATE_DIR`, then proves both halves: the
+record exists there, and no file of that name exists anywhere under the scaffold. The implementer
+confirmed it is not vacuous by deliberately leaking a state file into the scaffold and watching the
+new assertion fail.
+
+Also folded: a failing state save aborted a scaffold that had actually succeeded, and the retry then
+hit the non-empty-directory guard and told the user to delete a working site. The record is
+bookkeeping, so its failure is now a warning and the run completes. And a `--dir` pointing at a file
+leaked a raw `ENOTDIR` instead of the crafted guidance its sibling guards give.
+
+One verified finding is deliberately not fixed: the check-then-copy between the empty-directory
+guard and the copy is not atomic, so two concurrent invocations against one `--dir` can both pass
+the guard and collide. Real, exotic, and filed rather than fixed.
 
 ### Sizing note
 

@@ -25,17 +25,40 @@
   the site it produced. Consumers must: nothing. The engine's own `files` array, exports, and
   tarball are untouched, and this package ships separately.
 
-  The printed hand-over block is the output of a recorded setup walk rather than a guess. It prints
-  `CAIRN_DEV_BACKEND=1 npm run dev`, branching to the PowerShell form on Windows, because the
-  scaffolded `dev` script is bare `vite dev` and the dev backend needs that variable at runtime on
-  top of its build-time define: a bare `npm run dev` starts a server whose `/admin` does not work.
-  It says in those terms that the local admin is a stand-in that touches no GitHub repository and
-  sends no real email, and it names what going live will cost, including the Workers Paid plan that
-  arbitrary-recipient sign-in email requires. A test locks the switch into the copy.
+  The printed hand-over block is the output of a recorded setup walk rather than a guess. That
+  walk found a bare `npm run dev` never reached the admin, because the scaffolded `dev` script was
+  bare `vite dev` and the dev backend needed `CAIRN_DEV_BACKEND=1` at runtime on top of its
+  build-time define. A later fix in this same entry, below, closes that gap at its source. The
+  block also says, in the walk's own terms, that the local admin is a stand-in that touches no
+  GitHub repository and sends no real email, and it names what going live will cost, including the
+  Workers Paid plan that arbitrary-recipient sign-in email requires. A test locks the switch into
+  the copy.
 
   The bake refuses to run while `@glw907/cairn-cms-dev` is unpublished, naming the package and
   the fix, rather than emit a template whose devDependency reads `^0.0.0`. A scaffolded site needs
   the dev backend to build at all, so publishing it is a prerequisite for shipping the tool.
+
+  The scaffold now leads into a GitHub chapter. It is manifest-first: each site's admin gets their
+  own GitHub App, created through GitHub's manifest flow, so there is no shared or standing OAuth
+  client and nothing to register ahead of time. The whole flow takes two browser trips. The
+  manifest page creates the App, and the install page, visited once more, both installs it and
+  authorizes it via `request_oauth_on_install`. The chapter creates a private repository, links it
+  to the App's installation, and pushes the scaffold as one commit on top of GitHub's own
+  `auto_init` seed. No `git` binary is used; every call goes through the REST and Git Data APIs
+  behind one fetch wrapper, and the suite exercises the whole flow against a fake GitHub server.
+  Every hop's result, the App's credentials, the installation, the repository, is saved to the
+  site's local state record as soon as it lands, so a later `create-cairn-site --dir <the same
+  dir>` resumes from the next unfinished hop instead of repeating it, and `--start-over` sets a
+  previous run's record aside and starts the chapter over. An organization that requires an
+  owner's approval before installing a new App parks the run instead of failing it: the tool saves
+  its progress and exits cleanly, and the next run picks up where it left off once an owner
+  approves. The scaffold's target-directory claim is now atomic, using an exclusive `wx` write, so
+  two concurrent runs against the same directory fail loudly instead of racing, and a run
+  interrupted mid-scaffold leaves a directory the next run recognizes and recovers instead of
+  treating as a stray non-empty directory. `npm run dev` now reaches the scaffolded site's local
+  admin with no environment variable, because the scaffold's own `dev` script sets the dev
+  backend's runtime flag itself. Consumers must: nothing (the tool is unpublished; no engine
+  surface changed).
 
 - Every entry gains a publish history and a revert-as-draft: the `history` admin view
   (`/admin/<concept>/<id>/history`), reachable from the edit screen's overflow menu, lists the

@@ -1,0 +1,98 @@
+name: create-site
+
+# The create-cairn-site rot gate: prove the CLI's OUTPUT builds, from packed artifacts, on a clean
+# checkout. scaffold.yml proves the same for the emitter it wraps; this workflow proves the path a
+# real user takes, which is a different path. It packs the CLI, installs that tarball into a scratch
+# directory, runs the command, and then installs, typechecks, and builds the site it produced.
+#
+# It also exercises the substitution pass against the REAL template rather than a test fixture. The
+# brand rotation asserts it finds exactly four --color-primary declarations, so a showcase theme
+# refactor that splits or renames them fails here instead of shipping a site whose dark mode lost
+# its contrast.
+
+on:
+  push:
+    branches: [main, rebuild]
+  pull_request:
+
+jobs:
+  create-site:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run package
+      - name: Pack the engine and dev backend
+        id: pack
+        # npm pack runs the engine's `prepare` build hook, whose stdout banners precede the tarball
+        # name; --silent does not suppress lifecycle stdout, so take the last line as the filename.
+        run: |
+          ENGINE_TGZ="$PWD/$(npm pack --silent | tail -n1)"
+          DEV_TGZ="$PWD/$(npm pack --silent ./packages/cairn-cms-dev | tail -n1)"
+          echo "engine=$ENGINE_TGZ" >> "$GITHUB_OUTPUT"
+          echo "dev=$DEV_TGZ" >> "$GITHUB_OUTPUT"
+      - name: Bake the template and pack the CLI
+        id: create-pack
+        working-directory: packages/create-cairn-site
+        # The bake refuses a `file:` spec and refuses a 0.0.0 version, by design: both name something
+        # no registry can install, and a published tarball carrying either would be broken on
+        # arrival. That makes `prepack`'s own default path unrunnable until @glw907/cairn-cms-dev
+        # publishes, so bake here with the engine's real version standing in for both specs and pack
+        # with --ignore-scripts. The specs a published bake writes are covered by the bake's own unit
+        # tests; what this job proves is that the scaffolded tree builds, and the rewrite below
+        # points it at the freshly packed tarballs anyway.
+        run: |
+          VERSION="$(node -p "require('../../package.json').version")"
+          node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
+          CREATE_TGZ="$PWD/$(npm pack --ignore-scripts --silent | tail -n1)"
+          echo "create=$CREATE_TGZ" >> "$GITHUB_OUTPUT"
+      - name: Install the CLI from its tarball and scaffold a site
+        # Installed into a scratch package rather than run from the checkout, so the run resolves the
+        # packed `template/` the way a user's install does. A brand color is passed deliberately: it
+        # is what exercises the four-declaration rot gate against the real theme file.
+        run: |
+          mkdir -p /tmp/create-scratch
+          cd /tmp/create-scratch
+          npm init -y > /dev/null
+          npm install --no-save "${{ steps.create-pack.outputs.create }}"
+          npx create-cairn-site --yes --name "CI Site" --tagline "Built by CI" \
+            --brand-color "#2f6fdb" --dir /tmp/ci-site
+      - name: Point the scaffolded site at the packed tarballs
+        # The same substitution scaffold.yml performs through the emitter's arguments, applied after
+        # the fact here because the CLI bakes its specs at pack time.
+        env:
+          ENGINE: ${{ steps.pack.outputs.engine }}
+          DEV: ${{ steps.pack.outputs.dev }}
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const file = "/tmp/ci-site/package.json";
+            const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
+            pkg.dependencies["@glw907/cairn-cms"] = "file:" + process.env.ENGINE;
+            pkg.devDependencies["@glw907/cairn-cms-dev"] = "file:" + process.env.DEV;
+            fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + "\n");
+          '
+      - name: Assert the scaffold is personalized and carries no showcase-only material
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const assert = require("node:assert");
+            const pkg = JSON.parse(fs.readFileSync("/tmp/ci-site/package.json", "utf8"));
+            assert.equal(pkg.name, "ci-site", "package.json name was not renamed to the site slug");
+            const config = fs.readFileSync("/tmp/ci-site/src/theme/site.config.yaml", "utf8");
+            assert.match(config, /siteName: CI Site/, "site name was not substituted");
+            assert.match(config, /tagline: Built by CI/, "tagline was not inserted");
+            assert.ok(!fs.existsSync("/tmp/ci-site/.cairn-state.json"), "tool state landed in the scaffold");
+            for (const leftover of ["e2e", "playwright.config.ts", ".claude", "scripts"]) {
+              assert.ok(!fs.existsSync("/tmp/ci-site/" + leftover), leftover + " shipped into the scaffold");
+            }
+          '
+      - name: Install, typecheck, and build the scaffolded site
+        working-directory: /tmp/ci-site
+        run: |
+          npm install
+          npm run check
+          npm run build

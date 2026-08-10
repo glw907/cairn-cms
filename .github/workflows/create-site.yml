@@ -117,16 +117,21 @@ jobs:
       - name: Dev server reaches the admin
         working-directory: /tmp/ci-site
         run: |
-          setsid npm run dev -- --port 4173 --strictPort &
-          DEV_PGID=$!
+          # --host 127.0.0.1 pins the bind to the address the probe talks to; vite's default
+          # host is localhost, which the runner can resolve to ::1 while curl speaks IPv4.
+          # Output goes to a file so no background child holds the step's stdout open.
+          setsid npm run dev -- --port 4173 --strictPort --host 127.0.0.1 >/tmp/ci-dev.log 2>&1 &
           code=000
           for i in $(seq 1 60); do
             code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4173/admin || true)
             [ "$code" = "200" ] && break
             sleep 1
           done
-          kill -- -"$DEV_PGID" 2>/dev/null || true
+          pkill -f 'scripts/dev.mjs' 2>/dev/null || true
+          pkill -f 'vite' 2>/dev/null || true
           if [ "$code" != "200" ]; then
             echo "the scaffolded site's /admin returned '$code', not 200"
+            echo '--- dev server log ---'
+            cat /tmp/ci-dev.log
             exit 1
           fi

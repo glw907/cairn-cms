@@ -9,7 +9,9 @@
 //   - The install redirect (a later chapter step) uses the FIRST registered callback URL
 //     verbatim. callback_urls therefore carries this run's own ported loopback URL first, and
 //     the portless 'http://127.0.0.1/callback' second only as a resume fallback (port 80 is
-//     unbindable by an unprivileged process, so it can never be the primary path).
+//     unbindable by an unprivileged process, so it can never be the primary path). This is why
+//     the chapter orchestrator (chapter.mjs) shares ONE loopback across the manifest trip and the
+//     install trip: the install redirect needs this same port still open when it fires.
 //   - hook_attributes.url is required by the manifest schema even for an App with no events;
 //     omitting it produces GitHub's unhelpful "We didn't find an App Manifest" page rather than
 //     a validation error. active: false keeps GitHub from ever calling the placeholder hook.
@@ -117,9 +119,9 @@ export function manifestTarget({ ownerType, org }) {
 }
 
 /**
- * Run the manifest flow end to end: serve the auto-submit form on a fresh loopback, open the
- * admin's browser to it, wait for GitHub's redirect back with the exchange code, and trade that
- * code for the new App's credentials.
+ * Run the manifest flow end to end: serve the auto-submit form on a loopback, open the admin's
+ * browser to it, wait for GitHub's redirect back with the exchange code, and trade that code for
+ * the new App's credentials.
  * @param {object} input the flow's inputs
  * @param {string} input.appName the App's display name
  * @param {string} input.siteName the site's display name, used only in printed copy
@@ -128,12 +130,19 @@ export function manifestTarget({ ownerType, org }) {
  * @param {(url: string, log: (line: string) => void) => Promise<void>} input.openBrowser opens
  *  the admin's browser to the given URL
  * @param {(line: string) => void} input.log receives one printed line per call
+ * @param {string} input.dir the `--dir` value, interpolated into every raised error's message
  * @param {number} [input.timeoutMs] overrides the loopback wait's timeout; defaults to
  *  `startLoopback`'s own ten-minute default, and exists so a test can force a fast timeout
+ * @param {import('./loopback.mjs').Loopback} [input.loopback] a loopback to reuse rather than
+ *  starting a fresh one; given by the chapter orchestrator, which shares one loopback across the
+ *  manifest and install trips (see this module's own header comment for why). When given, this
+ *  function does not close it; the caller owns that. Absent, this function starts and closes its
+ *  own, for a caller (or a test) that only needs the manifest step in isolation.
  * @returns {Promise<ManifestCredentials>} the created App's credentials
  */
-export async function runManifestFlow({ appName, siteName, ownerType, org, openBrowser, log, timeoutMs }) {
-  const loopback = await startLoopback();
+export async function runManifestFlow({ appName, siteName, ownerType, org, openBrowser, log, dir, timeoutMs, loopback: givenLoopback }) {
+  const loopback = givenLoopback ?? (await startLoopback());
+  const ownsLoopback = !givenLoopback;
   try {
     const manifest = buildManifest({ appName, siteName, ownerType, loopbackUrl: loopback.url });
     const targetUrl = manifestTarget({ ownerType, org });
@@ -164,7 +173,7 @@ export async function runManifestFlow({ appName, siteName, ownerType, org, openB
       });
     } catch (err) {
       if (err.code === 'LOOPBACK_TIMEOUT') {
-        throw chapterError('browser-step-abandoned', { step: 'manifest', appName, webBase: webBase() });
+        throw chapterError('browser-step-abandoned', { step: 'manifest', appName, webBase: webBase(), dir });
       }
       throw err;
     }
@@ -172,7 +181,7 @@ export async function runManifestFlow({ appName, siteName, ownerType, org, openB
     const code = params.get('code');
     const { status, json } = await githubRequest('POST', `/app-manifests/${code}/conversions`);
     if (status === 404) {
-      throw chapterError('manifest-window-expired', { appName, webBase: webBase() });
+      throw chapterError('manifest-window-expired', { appName, webBase: webBase(), dir });
     }
 
     return {
@@ -185,6 +194,6 @@ export async function runManifestFlow({ appName, siteName, ownerType, org, openB
       owner: json.owner.login,
     };
   } finally {
-    await loopback.close();
+    if (ownsLoopback) await loopback.close();
   }
 }

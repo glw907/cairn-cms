@@ -68,3 +68,35 @@ test('loadSite throws on malformed JSON rather than returning null', async (t) =
   await writeFile(path.join(dir, 'broken.json'), '{ not valid json');
   await assert.rejects(() => loadSite('broken'));
 });
+
+test('updateSite creates a record when none exists yet', async (t) => {
+  await freshStateDir(t);
+  const { updateSite, loadSite } = await import('./state.mjs');
+  const next = await updateSite('new-site', { name: 'Alpine Club', step: 'scaffolded' });
+  assert.deepEqual(next, { name: 'Alpine Club', step: 'scaffolded', github: {} });
+  assert.deepEqual(await loadSite('new-site'), { name: 'Alpine Club', step: 'scaffolded', github: {} });
+});
+
+test('updateSite deep-merges github so credentials written at the first hop survive every later hop', async (t) => {
+  await freshStateDir(t);
+  const { updateSite, loadSite } = await import('./state.mjs');
+  await updateSite('alpine-site', { name: 'Alpine Club', step: 'scaffolded' });
+  await updateSite('alpine-site', { step: 'app-created', github: { appId: 1, pem: 'PEM-DATA' } });
+  await updateSite('alpine-site', { step: 'installed', github: { installationId: 42 } });
+  const final = await updateSite('alpine-site', { step: 'repo-created', github: { repo: { repo: 'alpine-club' } } });
+
+  assert.equal(final.step, 'repo-created');
+  assert.equal(final.github.appId, 1, 'the App id from the first hop must survive');
+  assert.equal(final.github.pem, 'PEM-DATA', 'the pem from the first hop must survive');
+  assert.equal(final.github.installationId, 42, 'the installation id from the second hop must survive');
+  assert.deepEqual(final.github.repo, { repo: 'alpine-club' });
+  assert.deepEqual(await loadSite('alpine-site'), final);
+});
+
+test('updateSite leaves the saved file at 0600', async (t) => {
+  const dir = await freshStateDir(t);
+  const { updateSite } = await import('./state.mjs');
+  await updateSite('mode-check', { step: 'scaffolded' });
+  const mode = (await stat(path.join(dir, 'mode-check.json'))).mode & 0o777;
+  assert.equal(mode, 0o600);
+});

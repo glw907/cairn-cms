@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
 import { startFakeGithub } from '../../test/fake-github.mjs';
+import { startLoopback } from './loopback.mjs';
 import { installUrl, installAndAuthorize } from './install.mjs';
 
 /**
@@ -237,6 +238,45 @@ test('installAndAuthorize: an installation appearing during the post-timeout pol
   assert.equal(result.userToken, 'fake-user-token');
   assert.equal(result.installationId, 7);
   assert.equal(opened.length, 2);
+});
+
+test('installAndAuthorize: a given loopback is reused, not closed, and its port matches the opened install callback', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  const pem = registerFakeApp(github, { id: 1, clientId: 'fake-client-1' });
+
+  const loopback = await startLoopback();
+  t.after(() => loopback.close());
+
+  const opened = [];
+  const result = await installAndAuthorize({
+    appId: 1,
+    appSlug: 'alpine-club-cms-1',
+    appName: 'Alpine Club CMS',
+    clientId: 'fake-client-1',
+    clientSecret: 'fake-secret',
+    pem,
+    owner: 'fake-owner',
+    ownerType: 'user',
+    dir: '/tmp/alpine-club',
+    loopback,
+    openBrowser: async (url) => {
+      opened.push(url);
+      setTimeout(() => {
+        github.state.installations.push({ id: 99, account: { login: 'fake-owner' } });
+        fetch(`${loopback.url}/callback?code=fake-code&installation_id=99`).catch(() => {});
+      }, 0);
+    },
+    log: () => {},
+  });
+
+  assert.equal(result.installationId, 99);
+  assert.match(opened[0], /\/installations\/new$/);
+  // Proof the loopback was not closed by installAndAuthorize: a second request against it still
+  // gets a response (a 404 for an unmatched path) rather than a connection refusal.
+  const stillOpen = await fetch(`${loopback.url}/anything`);
+  assert.equal(stillOpen.status, 404);
 });
 
 test('installAndAuthorize: a JWT that fails to verify surfaces a plain Next step error, no infinite loop', async (t) => {

@@ -30,3 +30,25 @@ test('a valid option before the bad one does not steal the blame', () => {
 test('a missing option value is reported as such, not as an unknown option', () => {
   assert.throws(() => parseArgs(['--name']), /argument missing/);
 });
+
+test('parses the GitHub chapter flags and their defaults', () => {
+  const defaults = parseArgs([]);
+  assert.equal(defaults.appName, undefined);
+  assert.equal(defaults.org, undefined);
+  assert.equal(defaults.repoName, undefined);
+  assert.equal(defaults.github, false);
+  assert.equal(defaults.startOver, false);
+
+  const a = parseArgs([
+    '--app-name', 'cairn-alpine-club',
+    '--org', 'alpine-org',
+    '--repo-name', 'alpine-site',
+    '--github',
+    '--start-over',
+  ]);
+  assert.equal(a.appName, 'cairn-alpine-club');
+  assert.equal(a.org, 'alpine-org');
+  assert.equal(a.repoName, 'alpine-site');
+  assert.equal(a.github, true);
+  assert.equal(a.startOver, true);
+});

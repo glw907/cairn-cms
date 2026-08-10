@@ -65,3 +65,24 @@ export async function loadSite(id) {
   }
   return JSON.parse(raw);
 }
+
+/**
+ * Create or update a site's state, deep-merging the `github` key rather than replacing it: the
+ * GitHub chapter persists one hop at a time (app-created, installed, repo-created, pushed), and
+ * each hop's patch carries only the fields it learned, so a shallow merge would drop the
+ * credentials an earlier hop already saved. Never throws on a missing record: a record can go
+ * missing only from an operator error outside this tool's control, and raising here after a
+ * GitHub App or repository already exists would orphan a globally-unique App name with no way to
+ * recover it (see scaffold.mjs's own warn-don't-abort comment on `saveSite` for the same class of
+ * failure).
+ * @param {string} id the site id
+ * @param {object} patch the fields to merge in; `patch.github` merges into `current.github`
+ *  rather than replacing it
+ * @returns {Promise<object>} the merged state, already saved
+ */
+export async function updateSite(id, patch) {
+  const current = (await loadSite(id)) ?? {};
+  const next = { ...current, ...patch, github: { ...current.github, ...patch.github } };
+  await saveSite(id, next);
+  return next;
+}

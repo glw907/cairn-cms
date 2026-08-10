@@ -117,6 +117,36 @@ test('real run scaffolds, renames, substitutes, and saves state outside the scaf
   );
 });
 
+test('scaffold returns the siteId the state record was saved under', async (t) => {
+  const stateDir = await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  const result = await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+  assert.match(result.siteId, /^alpine-club-[a-z0-9]{6}$/);
+  const stateFiles = await readdir(stateDir);
+  assert.ok(stateFiles.includes(`${result.siteId}.json`), 'expected the state record to be saved under the returned siteId');
+});
+
+test('scaffold returns a siteId even under --dry-run, though nothing is saved', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  const result = await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: true,
+    log: () => {},
+  });
+  assert.match(result.siteId, /^alpine-club-[a-z0-9]{6}$/);
+});
+
 test('a failing state save reports a warning but leaves the scaffold complete', async (t) => {
   const outDir = await tempDir(t);
   // Point CAIRN_STATE_DIR at a path that already exists as a plain file, so state.mjs's own

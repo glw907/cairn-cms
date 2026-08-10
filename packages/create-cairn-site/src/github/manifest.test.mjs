@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { startFakeGithub } from '../../test/fake-github.mjs';
+import { startLoopback } from './loopback.mjs';
 import { buildManifest, manifestFormHtml, manifestTarget, runManifestFlow } from './manifest.mjs';
 
 /**
@@ -191,6 +192,7 @@ test('runManifestFlow: an abandoned browser step raises browser-step-abandoned f
         siteName: 'Alpine Club',
         ownerType: 'user',
         org: undefined,
+        dir: '/tmp/alpine-club',
         timeoutMs: 50,
         openBrowser: async () => {
           // Never hits the loopback; the wait must time out on its own.
@@ -203,9 +205,71 @@ test('runManifestFlow: an abandoned browser step raises browser-step-abandoned f
       // name-already-taken recovery, which is how the test pins step: 'manifest'.
       assert.match(err.message, /App name is already taken/);
       assert.match(err.message, /Alpine Club CMS/);
+      assert.match(err.message, /\/tmp\/alpine-club/);
+      assert.ok(!err.message.includes('undefined'), `message must not contain "undefined": ${err.message}`);
       return true;
     },
   );
+});
+
+test('runManifestFlow: an expired manifest window names the passed dir, no literal undefined', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  await assert.rejects(
+    () =>
+      runManifestFlow({
+        appName: 'Alpine Club CMS',
+        siteName: 'Alpine Club',
+        ownerType: 'user',
+        org: undefined,
+        dir: '/tmp/alpine-club',
+        openBrowser: async (url) => {
+          setTimeout(() => {
+            fetch(`${url}/manifest?code=expired`).catch(() => {});
+          }, 0);
+        },
+        log: () => {},
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'manifest-window-expired');
+      assert.match(err.message, /\/tmp\/alpine-club/);
+      assert.ok(!err.message.includes('undefined'), `message must not contain "undefined": ${err.message}`);
+      return true;
+    },
+  );
+});
+
+test('runManifestFlow: a given loopback is reused, not closed, and stays open for the caller', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const loopback = await startLoopback();
+  t.after(() => loopback.close());
+
+  const credentials = await runManifestFlow({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    org: undefined,
+    dir: '/tmp/alpine-club',
+    loopback,
+    openBrowser: async (url) => {
+      assert.equal(url, loopback.url, 'the given loopback\'s own URL must be what opens');
+      setTimeout(() => {
+        fetch(`${url}/manifest?code=goodcode`).catch(() => {});
+      }, 0);
+    },
+    log: () => {},
+  });
+
+  assert.equal(typeof credentials.appId, 'number');
+  // Proof the loopback was not closed by runManifestFlow: a second request against it (the
+  // form page) still gets a response rather than a connection refusal.
+  const stillOpen = await fetch(loopback.url);
+  assert.equal(stillOpen.status, 200);
 });
 
 test('runManifestFlow: the pre-open log line covers opening the create-App page and signing in first', async (t) => {

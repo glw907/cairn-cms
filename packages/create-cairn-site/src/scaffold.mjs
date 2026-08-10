@@ -74,7 +74,10 @@ async function assertTargetDirEmpty(dir) {
  *  dir: string, dryRun: boolean, log: (line: string) => void }} options `templateDir` is the baked
  *  template to copy from; `dir` is the scaffold target; `answers` are collectAnswers' result;
  *  `dryRun` and `log` pass straight through to runActions
- * @returns {Promise<{ executed: number, skipped: number }>} the action runner's result
+ * @returns {Promise<{ executed: number, skipped: number, siteId: string }>} the action runner's
+ *  result, plus the site id the state record was (or, under --dry-run, would be) saved under; the
+ *  id is generated up front rather than inside the state action so a caller (bin.mjs, wiring the
+ *  GitHub chapter) has it even when the state-save action itself was skipped
  */
 export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
   await assertTemplateBaked(templateDir);
@@ -82,6 +85,7 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
 
   const slug = slugify(answers.name, 'cairn-site');
   const packageJsonPath = path.join(dir, 'package.json');
+  const siteId = newSiteId(answers.name);
 
   const actions = [
     defineAction({
@@ -118,7 +122,7 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
       // perfectly good site.
       execute: async () => {
         try {
-          await saveSite(newSiteId(answers.name), { name: answers.name, dir, step: 'scaffolded' });
+          await saveSite(siteId, { name: answers.name, dir, step: 'scaffolded' });
         } catch (cause) {
           log(
             `Warning: could not save the site record at ${siteStateDir()} (${cause.message}). ` +
@@ -129,7 +133,8 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
     }),
   ];
 
-  return runActions(actions, { dryRun, log });
+  const result = await runActions(actions, { dryRun, log });
+  return { ...result, siteId };
 }
 
 /**

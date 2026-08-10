@@ -17,7 +17,10 @@
 // can never be reached. Poll-first is exactly how this module avoids that: a completed
 // installation is detected here, before the install page is ever opened, and the resume instead
 // goes through reauthorize's portless second callback entry, whose port-only loopback leniency
-// (spike-confirmed) tolerates a fresh port on every run.
+// (spike-confirmed) tolerates a fresh port on every run. On a FRESH run, the chapter orchestrator
+// (chapter.mjs) closes that gap the other way: it shares one loopback across the manifest trip
+// and this module's own install trip, so the port the App's manifest registered is still the
+// port this module is listening on when the install redirect fires.
 import { startLoopback } from './loopback.mjs';
 import { githubRequest, webBase } from './api.mjs';
 import { appJwt } from './jwt.mjs';
@@ -144,6 +147,11 @@ async function pollUntilInstalled({
  * @property {number} [maxWaitMs] the browser callback wait's own timeout, and (independently) the
  *  post-timeout JWT poll fallback's own budget; defaults to ten minutes (five was too short for
  *  a first-time admin meeting a 2FA prompt partway through)
+ * @property {import('./loopback.mjs').Loopback} [loopback] a loopback to reuse rather than
+ *  starting a fresh one; given by the chapter orchestrator, which shares one loopback across the
+ *  manifest and install trips (see this module's own header comment for why). When given, this
+ *  function does not close it; the caller owns that. Absent, this function starts and closes its
+ *  own, for a caller (or a test) that only needs the install step in isolation.
  */
 
 /**
@@ -168,6 +176,7 @@ export async function installAndAuthorize({
   log,
   pollIntervalMs = 3000,
   maxWaitMs = 600000,
+  loopback: givenLoopback,
 }) {
   const existing = await findInstallation({ appId, pem, owner, dir });
   if (existing) {
@@ -175,7 +184,8 @@ export async function installAndAuthorize({
     return { userToken, installationId: existing.id };
   }
 
-  const loopback = await startLoopback();
+  const loopback = givenLoopback ?? (await startLoopback());
+  const ownsLoopback = !givenLoopback;
   try {
     log(`Your browser will open GitHub's install page for ${appName}; choose where to install it and approve.`);
     await openBrowser(installUrl(appSlug), log);
@@ -215,6 +225,6 @@ export async function installAndAuthorize({
     const userToken = await exchangeCode({ clientId, clientSecret, code, dir });
     return { userToken, installationId };
   } finally {
-    await loopback.close();
+    if (ownsLoopback) await loopback.close();
   }
 }

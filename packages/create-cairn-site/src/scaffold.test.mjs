@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, readdir, access, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { scaffold, handoverText, dryRunNotice } from './scaffold.mjs';
+import { scaffold, handoverText, dryRunNotice, SCAFFOLD_SENTINEL } from './scaffold.mjs';
 
 // Every scaffold test answers identically: the name is what the slug and the substitution
 // assertions key on, and both optional answers stay empty. Frozen so a scaffold run that ever
@@ -250,6 +250,70 @@ test('an existing empty target directory is fine', async (t) => {
   });
   const pkg = JSON.parse(await readFile(path.join(dir, 'package.json'), 'utf8'));
   assert.equal(pkg.name, 'alpine-club');
+});
+
+test('a target directory holding only the sentinel fails with the interrupted-run message', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, SCAFFOLD_SENTINEL), '12345');
+
+  const fixtureDir = await templateFixture(t);
+  await assert.rejects(
+    () => scaffold({
+      templateDir: fixtureDir,
+      answers: ANSWERS,
+      dir,
+      dryRun: false,
+      log: () => {},
+    }),
+    /was interrupted while scaffolding/,
+  );
+});
+
+test('a successful scaffold leaves no sentinel behind', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+  await assert.rejects(() => access(path.join(dir, SCAFFOLD_SENTINEL)));
+});
+
+test('--dir with un-created parent directories scaffolds (mkdir recursive)', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'sites', 'my-site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+  const pkg = JSON.parse(await readFile(path.join(dir, 'package.json'), 'utf8'));
+  assert.equal(pkg.name, 'alpine-club');
+});
+
+test('a dry run creates neither the target directory nor the sentinel', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: true,
+    log: () => {},
+  });
+  await assert.rejects(() => access(dir));
+  await assert.rejects(() => access(path.join(dir, SCAFFOLD_SENTINEL)));
 });
 
 test('the hand-over block prints the bare install/dev sequence and never mentions CAIRN_DEV_BACKEND', () => {

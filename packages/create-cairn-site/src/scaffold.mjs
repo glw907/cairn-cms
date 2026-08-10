@@ -8,7 +8,7 @@
 // checkout never carries one; only `npm run prepack` does) and a non-empty target directory. Both
 // would otherwise surface as a raw ENOENT or a silently overwritten file deep inside the copy
 // action, so each is checked up front and fails with a message naming the fix.
-import { access, cp, readFile, readdir, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { defineAction, runActions } from './runner.mjs';
 import { applySubstitutions } from './substitute.mjs';
@@ -45,7 +45,10 @@ async function assertTemplateBaked(templateDir) {
 
 /**
  * Fail when the target directory already exists and holds files, naming the directory and the
- * two ways forward. An existing empty directory is fine, since the recursive copy fills it in.
+ * two ways forward. An existing empty directory is fine, since the recursive copy fills it in. A
+ * directory whose only entry is the atomic-claim sentinel is a distinct case, an earlier run that
+ * crashed mid-copy, so it gets its own, more specific message and recovery instruction rather than
+ * the generic "not empty" refusal.
  * @param {string} dir the target scaffold directory
  * @returns {Promise<void>}
  */
@@ -59,6 +62,12 @@ async function assertTargetDirEmpty(dir) {
       throw new Error(`scaffold: ${dir} is a file, not a directory. Choose a different --dir.`);
     }
     throw cause;
+  }
+  if (entries.length === 1 && entries[0] === SCAFFOLD_SENTINEL) {
+    throw new Error(
+      `scaffold: a previous create-cairn-site run was interrupted while scaffolding ${dir}. ` +
+        'Remove the directory and run the command again.',
+    );
   }
   if (entries.length > 0) {
     throw new Error(
@@ -91,8 +100,30 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
     defineAction({
       title: `Create ${dir} from the template`,
       detail: `Copies the baked template into ${dir}.`,
+      // Claim the directory atomically before copying into it, so two runs racing on the same
+      // --dir (the early assertTargetDirEmpty check above cannot close this window by itself)
+      // fail one of them loudly instead of interleaving two copies. `wx` is the load-bearing
+      // flag: it is the write that either creates the sentinel or fails with EEXIST, never both
+      // succeeding for two concurrent callers.
       execute: async () => {
-        await cp(templateDir, dir, { recursive: true });
+        await mkdir(dir, { recursive: true });
+        const sentinelPath = path.join(dir, SCAFFOLD_SENTINEL);
+        try {
+          await writeFile(sentinelPath, String(process.pid), { flag: 'wx' });
+        } catch (cause) {
+          if (cause.code === 'EEXIST') {
+            throw new Error(
+              `scaffold: another create-cairn-site run is already scaffolding ${dir}. Wait for ` +
+                'it to finish, or if it crashed, remove the directory and run the command again.',
+            );
+          }
+          throw cause;
+        }
+        try {
+          await cp(templateDir, dir, { recursive: true });
+        } finally {
+          await rm(sentinelPath, { force: true });
+        }
       },
     }),
     defineAction({

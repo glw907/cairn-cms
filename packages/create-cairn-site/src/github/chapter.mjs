@@ -8,7 +8,7 @@
 // written anywhere.
 import { confirm, select, text, isCancel, cancel } from '@clack/prompts';
 import { defineAction, runActions } from '../runner.mjs';
-import { updateSite, siteStateDir } from '../state.mjs';
+import { updateSite, loadSite, siteStateDir } from '../state.mjs';
 import { slugify } from '../slug.mjs';
 import { startLoopback } from './loopback.mjs';
 import { githubRequest } from './api.mjs';
@@ -16,6 +16,15 @@ import { runManifestFlow } from './manifest.mjs';
 import { installAndAuthorize } from './install.mjs';
 import { createRepo, verifyInstallationCovers, pushScaffold } from './repo.mjs';
 import { openBrowser as defaultOpenBrowser } from './open.mjs';
+
+/**
+ * The site record `step` values past which the App already exists, so a re-entrant chapter run
+ * must never repeat the manifest action (it would try to create a second, colliding App and open
+ * a browser the admin has no reason to see again). Every one of these steps has `github.appId`,
+ * `github.clientId`, `github.clientSecret`, and `github.pem` already saved from the first run's
+ * manifest hop.
+ */
+const RESUMABLE_PAST_MANIFEST = ['app-created', 'awaiting-org-approval', 'installed', 'repo-created'];
 
 const PERMISSION_COST =
   "The App will be able to write this site's content and manage the repository's settings, " +
@@ -120,6 +129,15 @@ async function runStep(frame, title, detail, execute) {
  * Run the GitHub chapter: create a GitHub App for this site, install and authorize it, create a
  * private repository, and push the scaffold into it. Every hop is persisted to the site's state
  * record before the next one starts, so a later re-run resumes rather than repeats.
+ *
+ * Re-entry reads the site's own saved record (never a caller-supplied flag) and picks up after
+ * whatever hop it last completed: a record past `app-created` skips the manifest action entirely
+ * (its credentials, already saved, are reused rather than re-created, which would otherwise try
+ * to register a second, colliding App) and the consent/account-name prompts along with it, since
+ * both are meaningless once the App already exists. A record at `repo-created` additionally skips
+ * `createRepo` (the repository already exists) but still re-enters the install step for a fresh
+ * user token, since the one collected on an earlier run is never persisted, and still re-runs
+ * `verifyInstallationCovers` and `pushScaffold`, both idempotent, as its own resumed final hop.
  * @param {RunGithubChapterInput} input the chapter's inputs
  * @returns {Promise<'pushed' | 'parked' | 'declined'>} `'pushed'` once the scaffold has landed on
  *  GitHub; `'parked'` when an organization owner's approval is pending (a success state, not a
@@ -142,16 +160,50 @@ export async function runGithubChapter({
   const frame = { dryRun, log };
   const slug = slugify(siteName, 'cairn-site');
 
+  // A dry run never resumes: it reports every step's title/detail as if starting fresh, since it
+  // never touches the state store either way. A failure reading the record here (an unwritable
+  // state dir, a stray file where it should be) is swallowed rather than raised: the very next
+  // step, "Check the local progress store", makes the same call through updateSite and turns the
+  // same failure into a proper next-step message, so this exploratory read only ever needs to
+  // answer "is there something to resume", never "is the store healthy".
+  let record = null;
+  if (!dryRun) {
+    try {
+      record = await loadSite(siteId);
+    } catch {
+      record = null;
+    }
+  }
+  const resumeStep = record?.step;
+  const savedGithub = record?.github ?? {};
+  const resuming = RESUMABLE_PAST_MANIFEST.includes(resumeStep);
+
   const ctx = {
     appName: flags.appName ?? `cairn-${slug}`,
     repoName: flags.repoName ?? slug,
-    ownerType: flags.org !== undefined ? 'org' : 'user',
+    ownerType: flags.org !== undefined ? 'org' : (savedGithub.ownerType ?? 'user'),
     org: flags.org,
-    credentials: null,
+    credentials: resuming
+      ? {
+          appId: savedGithub.appId,
+          appSlug: savedGithub.appSlug,
+          clientId: savedGithub.clientId,
+          clientSecret: savedGithub.clientSecret,
+          pem: savedGithub.pem,
+          webhookSecret: savedGithub.webhookSecret,
+          owner: savedGithub.owner,
+        }
+      : null,
     userToken: null,
-    installationId: null,
-    repo: null,
+    installationId: savedGithub.installationId ?? null,
+    repo: savedGithub.repo ?? null,
   };
+  // repoName is only ever a proposal before the repo actually exists; once it does, the record's
+  // real name replaces it, so later copy (the push step's title, its printed detail) names the
+  // repository that is actually there rather than what --repo-name happened to say this time.
+  if (resumeStep === 'repo-created' && ctx.repo) {
+    ctx.repoName = ctx.repo.repo;
+  }
 
   if (!dryRun) {
     await runStep(
@@ -172,65 +224,69 @@ export async function runGithubChapter({
     );
   }
 
-  const consentDetail =
-    `This step creates a GitHub App named ${ctx.appName} that only this site uses, a private ` +
-    `repository named ${ctx.repoName}, and needs two trips to your browser.\n\n${PERMISSION_COST}`;
+  if (resuming) {
+    log(`Resuming ${siteName}'s GitHub chapter at ${resumeStep}.`);
+  } else {
+    const consentDetail =
+      `This step creates a GitHub App named ${ctx.appName} that only this site uses, a private ` +
+      `repository named ${ctx.repoName}, and needs two trips to your browser.\n\n${PERMISSION_COST}`;
 
-  let consented = false;
-  await runStep(frame, 'Confirm the GitHub App and repository', consentDetail, async () => {
-    log(consentDetail);
-    if (flags.yes && !flags.github) {
-      log(
-        'Skipping the GitHub chapter. Re-run with --github to create the App and repository ' +
-          '(add --yes too for a fully unattended run).',
-      );
-      consented = false;
-      return;
+    let consented = false;
+    await runStep(frame, 'Confirm the GitHub App and repository', consentDetail, async () => {
+      log(consentDetail);
+      if (flags.yes && !flags.github) {
+        log(
+          'Skipping the GitHub chapter. Re-run with --github to create the App and repository ' +
+            '(add --yes too for a fully unattended run).',
+        );
+        consented = false;
+        return;
+      }
+      if (flags.yes && flags.github) {
+        consented = true;
+        return;
+      }
+      const answer = await confirm({ message: 'Create the GitHub App and repository now?' });
+      if (isCancel(answer)) exitOnCancel();
+      consented = answer;
+    });
+    if (!dryRun && !consented) {
+      return 'declined';
     }
-    if (flags.yes && flags.github) {
-      consented = true;
-      return;
-    }
-    const answer = await confirm({ message: 'Create the GitHub App and repository now?' });
-    if (isCancel(answer)) exitOnCancel();
-    consented = answer;
-  });
-  if (!dryRun && !consented) {
-    return 'declined';
-  }
 
-  await runStep(
-    frame,
-    'Choose the GitHub account and names',
-    `Uses ${ctx.ownerType === 'org' ? 'an organization' : 'your personal account'}, App name ` +
-      `${ctx.appName}, repository name ${ctx.repoName}.`,
-    async () => {
-      if (flags.org === undefined) {
-        if (flags.yes) {
-          ctx.ownerType = 'user';
-        } else {
-          const answer = await select({
-            message: 'Where should the GitHub App and repository live?',
-            options: [
-              { value: 'user', label: 'My personal account' },
-              { value: 'org', label: 'An organization' },
-            ],
-          });
-          if (isCancel(answer)) exitOnCancel();
-          ctx.ownerType = answer;
+    await runStep(
+      frame,
+      'Choose the GitHub account and names',
+      `Uses ${ctx.ownerType === 'org' ? 'an organization' : 'your personal account'}, App name ` +
+        `${ctx.appName}, repository name ${ctx.repoName}.`,
+      async () => {
+        if (flags.org === undefined) {
+          if (flags.yes) {
+            ctx.ownerType = 'user';
+          } else {
+            const answer = await select({
+              message: 'Where should the GitHub App and repository live?',
+              options: [
+                { value: 'user', label: 'My personal account' },
+                { value: 'org', label: 'An organization' },
+              ],
+            });
+            if (isCancel(answer)) exitOnCancel();
+            ctx.ownerType = answer;
+          }
         }
-      }
 
-      if (ctx.ownerType === 'org') {
-        ctx.org = await resolveOrgLogin({ flags, log });
-      }
+        if (ctx.ownerType === 'org') {
+          ctx.org = await resolveOrgLogin({ flags, log });
+        }
 
-      ctx.repoName = await resolveField(flags.repoName, flags.yes, ctx.repoName, () =>
-        text({ message: 'Repository name', placeholder: ctx.repoName, defaultValue: ctx.repoName }));
-      ctx.appName = await resolveField(flags.appName, flags.yes, ctx.appName, () =>
-        text({ message: 'GitHub App name', placeholder: ctx.appName, defaultValue: ctx.appName }));
-    },
-  );
+        ctx.repoName = await resolveField(flags.repoName, flags.yes, ctx.repoName, () =>
+          text({ message: 'Repository name', placeholder: ctx.repoName, defaultValue: ctx.repoName }));
+        ctx.appName = await resolveField(flags.appName, flags.yes, ctx.appName, () =>
+          text({ message: 'GitHub App name', placeholder: ctx.appName, defaultValue: ctx.appName }));
+      },
+    );
+  }
 
   let parked = false;
   let loopback = null;
@@ -239,29 +295,31 @@ export async function runGithubChapter({
       loopback = await startLoopback();
     }
 
-    await runStep(
-      frame,
-      'Create your GitHub App',
-      `Opens GitHub's "Create GitHub App" page for ${ctx.appName} and waits for it to be created.`,
-      async () => {
-        const credentials = await runManifestFlow({
-          appName: ctx.appName,
-          siteName,
-          ownerType: ctx.ownerType,
-          org: ctx.org,
-          openBrowser,
-          log,
-          dir,
-          loopback,
-          timeoutMs: manifestTimeoutMs,
-        });
-        ctx.credentials = credentials;
-        await updateSite(siteId, {
-          step: 'app-created',
-          github: { ...credentials, ownerType: ctx.ownerType },
-        });
-      },
-    );
+    if (!resuming) {
+      await runStep(
+        frame,
+        'Create your GitHub App',
+        `Opens GitHub's "Create GitHub App" page for ${ctx.appName} and waits for it to be created.`,
+        async () => {
+          const credentials = await runManifestFlow({
+            appName: ctx.appName,
+            siteName,
+            ownerType: ctx.ownerType,
+            org: ctx.org,
+            openBrowser,
+            log,
+            dir,
+            loopback,
+            timeoutMs: manifestTimeoutMs,
+          });
+          ctx.credentials = credentials;
+          await updateSite(siteId, {
+            step: 'app-created',
+            github: { ...credentials, ownerType: ctx.ownerType },
+          });
+        },
+      );
+    }
 
     await runStep(
       frame,
@@ -287,7 +345,11 @@ export async function runGithubChapter({
           });
           ctx.userToken = result.userToken;
           ctx.installationId = result.installationId;
-          await updateSite(siteId, { step: 'installed', github: { installationId: result.installationId } });
+          // A resume already past repo-created must never write its step backward: this hop only
+          // re-collects a user token (the one an earlier run held was never persisted), it does
+          // not undo the repository that already exists.
+          const step = resumeStep === 'repo-created' ? 'repo-created' : 'installed';
+          await updateSite(siteId, { step, github: { installationId: result.installationId } });
         } catch (err) {
           if (err.catalogue?.code === 'org-approval-pending') {
             await updateSite(siteId, { step: 'awaiting-org-approval' });
@@ -306,53 +368,69 @@ export async function runGithubChapter({
     return 'parked';
   }
 
-  await runStep(
-    frame,
-    `Create the private repository ${ctx.repoName}`,
-    `Creates ${ctx.repoName} under ${ctx.ownerType === 'org' ? ctx.org : 'your account'} and ` +
-      'confirms the App can commit to it.',
-    async () => {
-      const { status: userStatus, json: userJson } = await githubRequest('GET', '/user', { token: ctx.userToken });
-      if (userStatus !== 200) {
-        throw new Error(
-          `github: GET /user returned ${userStatus} while creating the repository.\n` +
-            `Next step: re-run npx create-cairn-site --dir ${dir}.`,
-        );
-      }
-      log(`Signed in as ${userJson.login}`);
-
-      if (ctx.ownerType === 'org') {
-        const { status: memberStatus } = await githubRequest(
-          'GET',
-          `/orgs/${ctx.org}/memberships/${userJson.login}`,
-          { token: ctx.userToken },
-        );
-        if (memberStatus !== 200) {
+  if (resumeStep === 'repo-created') {
+    await runStep(
+      frame,
+      `Verify access to ${ctx.repoName}`,
+      `Confirms the App's installation still covers ${ctx.repoName}.`,
+      async () => {
+        await verifyInstallationCovers(ctx.userToken, {
+          installationId: ctx.installationId,
+          owner: ctx.repo.owner,
+          repo: ctx.repo.repo,
+          dir,
+        });
+      },
+    );
+  } else {
+    await runStep(
+      frame,
+      `Create the private repository ${ctx.repoName}`,
+      `Creates ${ctx.repoName} under ${ctx.ownerType === 'org' ? ctx.org : 'your account'} and ` +
+        'confirms the App can commit to it.',
+      async () => {
+        const { status: userStatus, json: userJson } = await githubRequest('GET', '/user', { token: ctx.userToken });
+        if (userStatus !== 200) {
           throw new Error(
-            `github: could not confirm your membership in ${ctx.org} (status ${memberStatus}).\n` +
-              `Next step: confirm you are a member of ${ctx.org}, then re-run npx create-cairn-site ` +
-              `--dir ${dir}.`,
+            `github: GET /user returned ${userStatus} while creating the repository.\n` +
+              `Next step: re-run npx create-cairn-site --dir ${dir}.`,
           );
         }
-      }
+        log(`Signed in as ${userJson.login}`);
 
-      const created = await createRepo(ctx.userToken, {
-        name: ctx.repoName,
-        ownerType: ctx.ownerType,
-        org: ctx.org,
-        dir,
-        appName: ctx.appName,
-      });
-      await verifyInstallationCovers(ctx.userToken, {
-        installationId: ctx.installationId,
-        owner: created.owner,
-        repo: created.repo,
-        dir,
-      });
-      ctx.repo = created;
-      await updateSite(siteId, { step: 'repo-created', github: { repo: created } });
-    },
-  );
+        if (ctx.ownerType === 'org') {
+          const { status: memberStatus } = await githubRequest(
+            'GET',
+            `/orgs/${ctx.org}/memberships/${userJson.login}`,
+            { token: ctx.userToken },
+          );
+          if (memberStatus !== 200) {
+            throw new Error(
+              `github: could not confirm your membership in ${ctx.org} (status ${memberStatus}).\n` +
+                `Next step: confirm you are a member of ${ctx.org}, then re-run npx create-cairn-site ` +
+                `--dir ${dir}.`,
+            );
+          }
+        }
+
+        const created = await createRepo(ctx.userToken, {
+          name: ctx.repoName,
+          ownerType: ctx.ownerType,
+          org: ctx.org,
+          dir,
+          appName: ctx.appName,
+        });
+        await verifyInstallationCovers(ctx.userToken, {
+          installationId: ctx.installationId,
+          owner: created.owner,
+          repo: created.repo,
+          dir,
+        });
+        ctx.repo = created;
+        await updateSite(siteId, { step: 'repo-created', github: { repo: created } });
+      },
+    );
+  }
 
   await runStep(
     frame,

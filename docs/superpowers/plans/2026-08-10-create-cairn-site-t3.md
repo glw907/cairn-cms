@@ -683,7 +683,18 @@ After Tasks 2-11 are green. One sitting on the glw907 account; Geoff's moments a
   changed).
 - [ ] **Step 3: Friction log.** Complete-or-move per the log's header **if** this pass
   touched the files its hardening entry names; otherwise leave it, untouched, for the pass
-  that does.
+  that does. **File this pass's own finding**, measured during Task 4 and deliberately not
+  fixed here: `npm run check:comments` runs `eslint src/lib` and nothing else, so
+  `packages/create-cairn-site` has **no comment gate at all**, even though this plan's
+  Global Constraints bind its `.mjs` files to the TSDoc style and the em-dash ban.
+  `eslint.config.js`'s own `COMMENT_GLOBS` also declares `packages/cairn-cms-dev/src/**/*.ts`,
+  which the script never invokes, so that glob is dead too. Not closed in T3 for a reason
+  worth recording: pointing the existing ruleset at the package reports **1588 errors**,
+  almost all `jsdoc/no-types` and TSDoc-syntax complaints about `@param {string}`, which is
+  the *correct* idiom for plain `.mjs` where no signature carries the types. The gate that
+  belongs here is the language-agnostic half (the em-dash ban) over `**/*.mjs`, not the
+  TypeScript ruleset. The package is currently clean of em dashes, so this is a latent gap,
+  not a live defect. Route it to the pass that owns tooling.
 - [ ] **Step 4: ROADMAP.** Mark the T3 slice done in place; record the three-pass split
   (T4 chapter 2 + Builds, T5 the browser door) where the create-cairn-site item lives, so
   the spec's briefs have a roadmap home.

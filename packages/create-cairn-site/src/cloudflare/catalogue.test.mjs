@@ -93,7 +93,7 @@ test('wrangler-unavailable names the real cause and its exact Next: command', ()
   assert.match(err.message, /not installed/);
   assert.equal(
     err.catalogue.next,
-    'run npm install in ./alpine, then re-run npx create-cairn-site --dir ./alpine'
+    'run npm install in ./alpine, then re-run npx create-cairn-site --dir ./alpine.'
   );
 });
 

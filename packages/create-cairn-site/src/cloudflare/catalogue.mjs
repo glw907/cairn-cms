@@ -38,7 +38,7 @@ const ROWS = {
       return (
         "The tool could not run wrangler at all, because this site's dependencies are not " +
         "installed, so its own wrangler is not on disk.\n" +
-        `Next: run npm install in ${params.dir}, then re-run npx create-cairn-site --dir ${params.dir}`
+        `Next: run npm install in ${params.dir}, then re-run npx create-cairn-site --dir ${params.dir}.`
       );
     }
   },

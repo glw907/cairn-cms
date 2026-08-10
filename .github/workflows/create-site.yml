@@ -121,16 +121,24 @@ jobs:
           # host is localhost, which the runner can resolve to ::1 while curl speaks IPv4.
           # Output goes to a file so no background child holds the step's stdout open.
           setsid npm run dev -- --port 4173 --strictPort --host 127.0.0.1 >/tmp/ci-dev.log 2>&1 &
-          code=000
+          # A healthy signed-in admin 307s /admin to its first concept view; a broken shim's
+          # auth guard 303s to /admin/login, which itself renders 200. So the probe follows
+          # redirects and requires BOTH a final 200 AND a final URL that is not the login
+          # page, which keeps a broken shim red and a dead server (000) red.
+          ok=0
+          result=000
           for i in $(seq 1 60); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4173/admin || true)
-            [ "$code" = "200" ] && break
+            result=$(curl -sL -o /dev/null -w '%{http_code} %{url_effective}' http://127.0.0.1:4173/admin || true)
+            case "$result" in
+              "200 "*"/admin/login"*) ;;
+              "200 "*) ok=1; break ;;
+            esac
             sleep 1
           done
           pkill -f 'scripts/dev.mjs' 2>/dev/null || true
           pkill -f 'vite' 2>/dev/null || true
-          if [ "$code" != "200" ]; then
-            echo "the scaffolded site's /admin returned '$code', not 200"
+          if [ "$ok" != "1" ]; then
+            echo "the scaffolded site's /admin probe ended at '$result', not a signed-in 200"
             echo '--- dev server log ---'
             cat /tmp/ci-dev.log
             exit 1

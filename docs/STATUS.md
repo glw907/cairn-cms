@@ -14,47 +14,44 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-10 night: T2 is DONE; next is the T3 planning sitting)
+## Immediate next action (2026-08-10 late night: T3 is PLANNED; next is executing it, fresh Opus session)
 
-**Pass T2 (the GitHub chapter) is complete and merged through
-[PR #26](https://github.com/glw907/cairn-cms/pull/26), all six CI workflows green.**
-`create-cairn-site` now takes a scaffolded site to a pushed private repo covered by an App the
-admin owns: manifest-first (the admin's own App is the OAuth client; no standing credential), two
-browser trips via `request_oauth_on_install`, repo create with verify-only installation coverage,
-the no-git-binary Git Data push, a resume frame with `--start-over`, the atomic scaffold claim,
-and the dev shim making bare `npm run dev` reach the local admin (CI-probed). The live e2e is
-recorded in the plan's post-mortem: personal, org, and interrupted-resume runs all green on real
-GitHub, artifacts torn down. The spike verdict that reshaped the plan mid-pass (hook_attributes,
-ported-first callbacks, port-only leniency, the refuted repo-link PUT) is
-[`2026-08-10-t2-own-app-spike.md`](internal/2026-08-10-t2-own-app-spike.md). The pass-close
-adversarial workflow confirmed and fixed six high findings; the unverified tail is parked in the
-friction log's hardening entry. The window holds under `## Unreleased`; nothing is published.
+**The T3 planning sitting ran (Fable, brainstorm-first) and made three rulings, recorded in the
+spec's decisions section.** (1) The old T3 charge ("Cloudflare plus the two doors", ~10
+deliverables) **split three ways**: **T3** is the Cloudflare chapter through chapter 1's finish
+line (deploy, D1, the PEM's move to a Worker secret, the bootstrap sign-in); **T4** is chapter 2
+(money, domain, email) plus Builds connect; **T5** is the browser door (the public template repo,
+the Deploy button, C3 `--template`). Pass D follows T5; release one after D, unchanged. (2) The
+localhost console grows where the waits live: T3 stays terminal-primary, the console takes its
+full form in T4. (3) T4 plans around **token-prefill** for the beyond-wrangler API surface (zone
+create, DNS writes); the self-managed OAuth client is rejected without a spike. The T4/T5 briefs
+live at the end of the T3 spec. Two engine facts the sitting verified: the bootstrap needs no
+engine change (the tool seeds the D1 `editor` row and a hashed `magic_token` row, then rides the
+engine's own confirm page; one click, no email), and the App identity is source-carried
+(`backend.ts`), so T3 adds a pre-push finalize to the T2 chapter and the repo is born with a
+working `cairn.config.ts`.
 
-**Next: the T3 planning sitting (Fable, brainstorm-first; NOT an execution session).** T3 is the
-Cloudflare chapter plus the two doors: wrangler.jsonc emission, the workers.dev deploy, D1
-provisioning, moving the PEM from the local state store to a Worker secret (the umbrella's rule,
-named in the T2 spec's out-of-scope list), the bootstrap session, the hand-over console, and the
-template-repo second door. Open against Part 1 of the umbrella spec
-([`2026-08-09-admin-setup-and-docs-reset-design.md`](superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md))
-plus the platform-spikes doc
-([`2026-08-09-tool-passes-platform-spikes.md`](internal/2026-08-09-tool-passes-platform-spikes.md)).
-Known planning inputs: chapter 1 stays inside wrangler's OAuth scopes (zero-credential quickstart
-holds); the domain half cannot ride wrangler (no registrar scope), and **Geoff ruled at the T2
-close that `.ski`/`.life` Registrar coverage is not worth chasing ("oddball domains, don't worry
-about them"), so the Registrar-token action is RETIRED, not queued**: T3 plans the domain half
-for the general case (a domain the admin already owns anywhere, pointed at Cloudflare), and
-Registrar-purchase support is out of scope until a real admin asks; Workers Builds is fully
-API-driven. T2 adds: the
-desktop-side-effect test constraint (no suite may spawn a browser; PATH-empty pattern), the
-friction-log hardening entry to triage when T3 touches those files, and the scratch org
-`t2-scratch-org` (kept or deleted at Geoff's option) for live org checks.
+**Next: execute the T3 plan
+([`2026-08-10-create-cairn-site-t3.md`](superpowers/plans/2026-08-10-create-cairn-site-t3.md); the
+spec is
+[`2026-08-10-create-cairn-site-t3-design.md`](superpowers/specs/2026-08-10-create-cairn-site-t3-design.md))
+in a fresh Opus session** on the existing worktree `worktree-t3-cloudflare-chapter`
+(`.claude/worktrees/t3-cloudflare-chapter`, branched off `main` after the T2 merge). Method:
+`cairn-pass` start ritual; Task 1 is a main-loop spike against the glw907 account (the standing
+`CLOUDFLARE_API_TOKEN` makes wrangler non-interactive; no Geoff browser needed) and is the
+decision gate for Tasks 5-10; Tasks 2-11 dispatch to `cairn-implementer` test-first with the full
+gate per task; Task 12 (live e2e) needs Geoff for at most `wrangler login` and one confirm click.
+Standing constraints carried from T2: the desktop-side-effect rule (no suite spawns a browser, a
+real wrangler, or a real npm; the fake-bin pattern), the friction-log hardening entry to triage
+if T3 touches the files it names, and the scratch org `t2-scratch-org` (T3 does not need it;
+kept or deleted at Geoff's option).
 
-**Resume prompt** (launch directory `~/Projects/cairn-cms`, on `main` after the merge): "Plan Pass
-T3 of the create-cairn-site umbrella (Cloudflare plus the two doors). Start with the cairn-pass
-skill and superpowers:brainstorming against Part 1 of the umbrella spec
-(`docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`), reading `docs/STATUS.md`,
-the platform-spikes doc, and the T2 post-mortem
-(`docs/superpowers/plans/2026-08-10-create-cairn-site-t2.md`) first."
+**Resume prompt** (launch directory
+`~/Projects/cairn-cms/.claude/worktrees/t3-cloudflare-chapter`): "Execute Pass T3 of the
+create-cairn-site umbrella (the Cloudflare chapter):
+`docs/superpowers/plans/2026-08-10-create-cairn-site-t3.md`. Start with the cairn-pass skill;
+read the plan in full and the T3 spec first. Task 1 (the spike) runs in the main loop before any
+dispatch."
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 

@@ -66,10 +66,13 @@ and detail and executes nothing.
    worker name and the database and bucket names to the site slug, and to **drop the
    placeholder `database_id`s** so deploy auto-provisions the resources and writes the real
    ids back (the umbrella's id-less claim, re-verified by this pass's spike). The App's
-   non-secret identity lands as `vars`: `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID`
-   (the engine's env contract, `src/lib/env.ts`; the doctor reads the same names). The plan
-   verifies how the template's adapter sources that identity and amends the substitution if
-   it is source-carried rather than env-read.
+   non-secret identity is **source-carried by the engine's design**
+   (`src/lib/github/backend.ts`: the adapter holds owner/repo/appId/installationId in
+   `cairn.config.ts`; only the PEM is env-read, as the Worker secret), and all four values
+   are known by T2's `repo-created` hop, so a new idempotent finalize step writes them into
+   the scaffold's config **before the T2 push** and the repo is born correct. The
+   deploy-learned values (written-back ids, `PUBLIC_ORIGIN`) still exist only locally after
+   T3; reconciling them into the repo is a named T4 open item, where Builds forces it.
 5. **Deploy, then migrate.** `wrangler deploy` first (creates the D1s and the bucket),
    then `wrangler d1 migrations apply --remote` for **both** databases (each has its own
    `migrations_dir`; the deploy-first ordering is the umbrella's). The live URL comes from
@@ -169,7 +172,10 @@ that sitting: whether Builds connect rides `workers:write` or needs the prefille
 too (spike B left it unconfirmed); the domain half's live-e2e strategy (the production
 domains are untouchable; a scratch domain or fake-only proof is the fork); the prefill
 URL's exact parameter shape; the existing-records carry-over UX (the umbrella's
-MX-preserving confirmation gate). The Registrar stays retired unless a real admin asks.
+MX-preserving confirmation gate); and reconciling the deploy-learned config (written-back
+database ids, `PUBLIC_ORIGIN`) into the repo, which Builds forces, since a Builds deploy
+builds from the repo, not the admin's disk. The Registrar stays retired unless a real
+admin asks.
 
 ## The T5 brief (dated 2026-08-10, for its own sitting)
 

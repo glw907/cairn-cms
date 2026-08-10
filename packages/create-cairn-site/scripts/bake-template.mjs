@@ -9,8 +9,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { emitTemplate } from '../../../scripts/build/emit-template.mjs';
 
-const packageDir = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.resolve(packageDir, '../../..');
+const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
+const packageDir = path.resolve(scriptsDir, '..');
+const repoRoot = path.resolve(packageDir, '../..');
 
 /**
  * Read a package's version from its package.json.
@@ -55,7 +56,11 @@ export function assertInstallableSpec(packageName, spec) {
         `Pass an explicit spec for ${packageName} before packing create-cairn-site.`,
     );
   }
-  if (/0\.0\.0/.test(spec)) {
+  // Compare the parsed version, never the spec as a substring: `^10.0.0` and `^20.0.0` both
+  // contain the literal "0.0.0" and would fail a substring test even though both are perfectly
+  // installable.
+  const version = spec.replace(/^[\^~>=<\s]+/, '');
+  if (/^0\.0\.0(?:$|[-+])/.test(version)) {
     throw new Error(
       `bake: ${packageName} resolves to ${spec}, which no registry can install. ` +
         `Publish the dev backend (or pass devSpec) before packing create-cairn-site.`,

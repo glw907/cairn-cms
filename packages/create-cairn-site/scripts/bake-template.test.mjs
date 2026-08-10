@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { bake } from './bake-template.mjs';
+import { bake, assertInstallableSpec } from './bake-template.mjs';
 
 test('bake emits the template with published-engine specs when both specs are given', async () => {
   const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
@@ -50,4 +50,15 @@ test('an explicit file: devSpec throws naming the file: spec', async () => {
     },
   );
   await rm(to, { recursive: true, force: true });
+});
+
+// Regression: the unpublished-version check tested the spec as a substring, so `^10.0.0` and
+// `^20.0.0` both contained the literal "0.0.0" and failed a gate they should pass.
+test('a high major version is not mistaken for an unpublished 0.0.0', () => {
+  for (const spec of ['^10.0.0', '^20.0.0', '^1.0.0', '^0.94.0']) {
+    assert.doesNotThrow(() => assertInstallableSpec('@glw907/cairn-cms', spec), spec);
+  }
+  for (const spec of ['^0.0.0', '0.0.0', '^0.0.0-rc.1']) {
+    assert.throws(() => assertInstallableSpec('@glw907/cairn-cms-dev', spec), /0\.0\.0/, spec);
+  }
 });

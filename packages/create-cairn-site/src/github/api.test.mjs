@@ -45,14 +45,16 @@ test('a 422 comes back as a status without throwing', async (t) => {
 test('a 204 yields a null json body', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());
-  github.state.installations.push({ id: 7, app_id: 1, account: { login: 'acme' }, repositories: [] });
-  github.state.repos.push({ id: 42, name: 'site', full_name: 'acme/site', owner: { login: 'acme' }, default_branch: 'main' });
 
   process.env.CAIRN_GITHUB_API_BASE = github.apiBase;
   t.after(() => {
     delete process.env.CAIRN_GITHUB_API_BASE;
   });
 
+  // No fake route 204s by default (the one that used to, PUT .../repositories/:rid, was
+  // amended to the observed 403 refusal for a user token); arm a one-shot 204 to test
+  // githubRequest's own empty-body handling in isolation from any particular route's status.
+  github.failNext('link', 204, undefined);
   const { status, json } = await githubRequest('PUT', '/user/installations/7/repositories/42', { token: 'a-token' });
   assert.equal(status, 204);
   assert.equal(json, null);

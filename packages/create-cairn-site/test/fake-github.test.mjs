@@ -163,6 +163,58 @@ test('git data 409s before auto_init seeding and works after', async (t) => {
   assert.equal(dupRef.status, 422);
 });
 
+test('a created repo is auto-added to its covering installation, and suppressAutoLink skips it once', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  github.state.installations.push({ id: 1, app_id: 1, account: { login: 'fake-admin' }, repositories: [] });
+
+  const created = await fetch(`${github.apiBase}/user/repos`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'auto-linked', auto_init: true })
+  });
+  const repo = await created.json();
+
+  const linked = await fetch(`${github.apiBase}/user/installations/1/repositories`);
+  const linkedBody = await linked.json();
+  assert.ok(linkedBody.repositories.some((candidate) => candidate.id === repo.id));
+
+  github.state.suppressAutoLink = true;
+  await fetch(`${github.apiBase}/user/repos`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'not-linked', auto_init: true })
+  });
+  const stillOnlyOne = await fetch(`${github.apiBase}/user/installations/1/repositories`);
+  const stillOnlyOneBody = await stillOnlyOne.json();
+  assert.equal(stillOnlyOneBody.repositories.length, 1);
+
+  // The seam is one-shot: a third create auto-adds again.
+  await fetch(`${github.apiBase}/user/repos`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'linked-again', auto_init: true })
+  });
+  const backToTwo = await fetch(`${github.apiBase}/user/installations/1/repositories`);
+  const backToTwoBody = await backToTwo.json();
+  assert.equal(backToTwoBody.repositories.length, 2);
+});
+
+test('PUT install/repositories link is refused for a user token by default, and failNext can still override it', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  github.state.installations.push({ id: 1, app_id: 1, account: { login: 'fake-admin' }, repositories: [] });
+
+  const refused = await fetch(`${github.apiBase}/user/installations/1/repositories/99`, { method: 'PUT' });
+  assert.equal(refused.status, 403);
+  const refusedBody = await refused.json();
+  assert.equal(refusedBody.message, 'Resource not accessible by integration');
+
+  github.failNext('link', 204, {});
+  const overridden = await fetch(`${github.apiBase}/user/installations/1/repositories/99`, { method: 'PUT' });
+  assert.equal(overridden.status, 204);
+});
+
 test('GET /app/installations verifies the App JWT against the registered PEM', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());

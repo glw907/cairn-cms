@@ -18,6 +18,14 @@ import { slugify } from './slug.mjs';
 const ADMIN_URL = 'http://localhost:5173/admin';
 
 /**
+ * The name of the atomic-claim marker file a scaffolded directory carries until the GitHub
+ * chapter finishes pushing it. Defined here (rather than in the GitHub chapter's own module)
+ * so `src/github/repo.mjs`'s tree walk can skip it without an import cycle; Task 11 builds the
+ * claim mechanism that writes and clears it.
+ */
+export const SCAFFOLD_SENTINEL = '.cairn-scaffold-claim';
+
+/**
  * Fail with a message naming the missing template directory and the bake command that creates
  * it, rather than let cp's raw ENOENT surface from inside the copy action or, worse, let a
  * scaffold proceed against an empty template.

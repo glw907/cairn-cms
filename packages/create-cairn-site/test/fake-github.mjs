@@ -16,7 +16,9 @@ import { generateKeyPairSync, randomBytes, createVerify } from 'node:crypto';
  * @typedef {object} FakeGithub
  * @property {string} apiBase the fake api.github.com base URL, `http://127.0.0.1:<port>`
  * @property {string} webBase the fake github.com base URL, `http://127.0.0.1:<port>`
- * @property {object} state mutable fixture state: apps, repos, installations, gitObjects, orgs
+ * @property {object} state mutable fixture state: apps, repos, installations, gitObjects, orgs;
+ *  `state.suppressAutoLink = true` makes the next created repo skip the normal auto-add to its
+ *  covering installation, for testing the otherwise-unreachable not-covered case
  * @property {Array<{ method: string, pathname: string, authorization: string | null }>} requests
  *  every request received by either server, in arrival order; append-only, never reset except
  *  by starting a new server
@@ -61,8 +63,8 @@ export async function startFakeGithub() {
       { method: 'POST', regex: compile('/app-manifests/:code/conversions'), route: 'conversions', handler: createConversionsHandler(ctx) },
       { method: 'POST', regex: compile('/user/repos'), route: 'user_repos', handler: createRepoHandler(() => 'fake-admin', ctx) },
       { method: 'POST', regex: compile('/orgs/:org/repos'), route: 'org_repos', handler: createRepoHandler((params) => params.org, ctx) },
-      { method: 'PUT', regex: compile('/user/installations/:iid/repositories/:rid'), route: 'link', handler: createLinkHandler(ctx) },
-      { method: 'GET', regex: compile('/user/installations/:iid/repositories'), route: 'link', handler: createListLinkedReposHandler(ctx) },
+      { method: 'PUT', regex: compile('/user/installations/:iid/repositories/:rid'), route: 'link', handler: createLinkHandler() },
+      { method: 'GET', regex: compile('/user/installations/:iid/repositories'), route: 'installation_repos', handler: createListLinkedReposHandler(ctx) },
       { method: 'POST', regex: compile('/repos/:owner/:repo/git/blobs'), route: 'blobs', handler: createBlobHandler(ctx) },
       { method: 'POST', regex: compile('/repos/:owner/:repo/git/trees'), route: 'trees', handler: createTreeHandler(ctx) },
       { method: 'POST', regex: compile('/repos/:owner/:repo/git/commits'), route: 'commits', handler: createCreateCommitHandler(ctx) },
@@ -226,7 +228,7 @@ function slugify(name) {
 /** Seed a repo's git object store with a root commit on `heads/main`. */
 function seedRepo(entry) {
   const sha = randomSha();
-  entry.commits.set(sha, { sha, message: 'Initial commit' });
+  entry.commits.set(sha, { sha, message: 'Initial commit', parents: [], tree: null });
   entry.refs.set('heads/main', sha);
   entry.seeded = true;
 }
@@ -342,6 +344,13 @@ function createConversionsHandler(ctx) {
  * to create a repo before the admin has finished the browser install, and this fake models "an
  * installation exists" rather than threading a specific app's identity through the OAuth token,
  * since a bare user token carries no app identity for a fake to check against.
+ *
+ * spike-confirmed 2026-08-10: a repo created via the user token is auto-added to the
+ * installation that covers its owner, including under "Only select repositories". Model that
+ * here so `GET /user/installations/:iid/repositories` lists the new repo with no separate link
+ * call. `state.suppressAutoLink` is a one-shot test seam: when true, the next created repo is
+ * NOT auto-added, so the otherwise-unreachable not-covered branch of verifyInstallationCovers
+ * can still be exercised.
  */
 function createRepoHandler(getOwner, ctx) {
   return async (_req, res, params, _url, body) => {
@@ -366,21 +375,29 @@ function createRepoHandler(getOwner, ctx) {
     const gitEntry = { seeded: false, blobs: new Map(), trees: new Map(), commits: new Map(), refs: new Map() };
     ctx.state.gitObjects.set(repo.full_name, gitEntry);
     if (body?.auto_init === true) seedRepo(gitEntry);
+    if (ctx.state.suppressAutoLink) {
+      ctx.state.suppressAutoLink = false;
+    } else {
+      const installation =
+        ctx.state.installations.find((candidate) => candidate.account?.login === owner) ?? ctx.state.installations[0];
+      installation.repositories = installation.repositories ?? [];
+      installation.repositories.push(id);
+    }
     sendJson(res, 201, repo);
   };
 }
 
-function createLinkHandler(ctx) {
-  return async (_req, res, params) => {
-    const installation = ctx.state.installations.find((candidate) => String(candidate.id) === params.iid);
-    if (!installation) {
-      sendJson(res, 404, { message: 'Not Found' });
-      return;
-    }
-    installation.repositories = installation.repositories ?? [];
-    installation.repositories.push(params.rid);
-    res.writeHead(204);
-    res.end();
+/**
+ * Build the PUT /user/installations/:iid/repositories/:rid handler. spike-confirmed
+ * 2026-08-10: this endpoint refuses a user access token in both an all-repositories and a
+ * selected-repositories install, always with a 403 "Resource not accessible by integration".
+ * The route stays only to document that refusal (repo.mjs's verifyInstallationCovers never
+ * calls it, and the auto-add above makes it unnecessary); `failNext('link', ...)` still lets a
+ * test override the default response.
+ */
+function createLinkHandler() {
+  return async (_req, res) => {
+    sendJson(res, 403, { message: 'Resource not accessible by integration' });
   };
 }
 
@@ -430,8 +447,19 @@ function createCreateCommitHandler(ctx) {
     if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
     const sha = randomSha();
     const message = body?.message ?? '';
-    entry.commits.set(sha, { sha, message });
-    sendJson(res, 201, { sha, message, url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/commits/${sha}` });
+    // parents/tree are carried in state (and echoed back), not just message: task 8's push
+    // test asserts the created commit's parent is the seed sha, which needs somewhere to read
+    // it back from, matching the real Git Data API's own commit response shape.
+    const parents = Array.isArray(body?.parents) ? body.parents : [];
+    const tree = body?.tree ?? null;
+    entry.commits.set(sha, { sha, message, parents, tree });
+    sendJson(res, 201, {
+      sha,
+      message,
+      parents,
+      tree,
+      url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/commits/${sha}`
+    });
   };
 }
 
@@ -441,7 +469,7 @@ function createGetCommitHandler(ctx) {
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     const commit = entry.commits.get(params.sha);
     if (!commit) return sendJson(res, 404, { message: 'Not Found' });
-    sendJson(res, 200, { sha: commit.sha, message: commit.message });
+    sendJson(res, 200, { sha: commit.sha, message: commit.message, parents: commit.parents ?? [], tree: commit.tree ?? null });
   };
 }
 

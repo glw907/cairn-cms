@@ -4,6 +4,39 @@
 
 ### Added
 
+- A new `create-cairn-site` package (`packages/create-cairn-site`, published separately from the
+  engine) carries the local half of the scaffolding tool: argument parsing, an action runner that
+  makes `--dry-run` a property of the frame rather than a per-feature flag, an out-of-scaffold
+  state store at `~/.config/cairn/sites/<id>.json` (mode `0600`, so no tool state or secret ever
+  lands under a project directory), credential-free pre-flight checks (Node floor, loopback
+  bindability, proxy detection, a Windows execution-policy note), a pack-time bake of the Waymark
+  template through the existing emitter, and a fail-loud substitution pass that personalizes the
+  site name, description, and brand color. The description is written under `site.config.yaml`'s
+  own `description` key rather than an invented `tagline` key, since the engine validates its
+  top-level keys and rejects an unrecognized one. The brand substitution rotates the hue of all
+  four `--color-primary` declarations and holds each one's lightness and chroma, following the
+  theme file's own re-skin recipe, so a scaffolded site keeps the contrast both its light and dark
+  blocks were tuned for. The command is wired end to end: pre-flight, prompts, a copy of the baked
+  template, the package rename, the substitution pass, and a state save, all through the action
+  runner, so `--dry-run` describes the whole run and performs none of it. It refuses before writing
+  anything when the target directory exists and holds files, or when the template was never baked,
+  and every exit path prints a next step. A new `create-site.yml` workflow packs the CLI, installs
+  that tarball into a scratch directory, runs the command, and then installs, typechecks, and builds
+  the site it produced. Consumers must: nothing. The engine's own `files` array, exports, and
+  tarball are untouched, and this package ships separately.
+
+  The printed hand-over block is the output of a recorded setup walk rather than a guess. It prints
+  `CAIRN_DEV_BACKEND=1 npm run dev`, branching to the PowerShell form on Windows, because the
+  scaffolded `dev` script is bare `vite dev` and the dev backend needs that variable at runtime on
+  top of its build-time define: a bare `npm run dev` starts a server whose `/admin` does not work.
+  It says in those terms that the local admin is a stand-in that touches no GitHub repository and
+  sends no real email, and it names what going live will cost, including the Workers Paid plan that
+  arbitrary-recipient sign-in email requires. A test locks the switch into the copy.
+
+  The bake refuses to run while `@glw907/cairn-cms-dev` is unpublished, naming the package and
+  the fix, rather than emit a template whose devDependency reads `^0.0.0`. A scaffolded site needs
+  the dev backend to build at all, so publishing it is a prerequisite for shipping the tool.
+
 - Every entry gains a publish history and a revert-as-draft: the `history` admin view
   (`/admin/<concept>/<id>/history`), reachable from the edit screen's overflow menu, lists the
   entry's most recent 25 publishes off `Backend`'s new `listCommits(path, ref, limit)` member (a
@@ -80,6 +113,17 @@
   classes are additive, and no existing class changed.
 
 ### Changed
+
+- The template emitter no longer copies showcase-only material into a scaffolded site. Three paths
+  join `.cairn-template.json`'s exclude list (`.claude`, which carried seven tracked agent-memory
+  notes, `scripts`, a design-lab tool, and the showcase's own `README.md`, whose relative links
+  point back into the engine repo), and the `create-cairn-site` bake additionally prunes the
+  `pretest:e2e`, `test:e2e`, and `design:probe` scripts and the two Playwright devDependencies,
+  which survived the path exclusions because the manifest can drop files but not lines inside a
+  kept `package.json`. The prune is a rot gate: it throws when an expected key is already gone, so
+  a rename in the showcase surfaces here instead of silently shipping. `cairn:manifest` is
+  deliberately kept, since a real site runs it. Consumers must: nothing. This changes the
+  scaffolded output only, never the installed package.
 
 - `@anthropic-ai/sdk` is now an optional peer dependency instead of a plain dependency, and the
   tidy action reaches it through a dynamic import at call time rather than a static import at

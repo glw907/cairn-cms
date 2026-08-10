@@ -5,6 +5,9 @@
     "src/routes/members",
     "migrations-members",
     "e2e",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    ".claude",
+    "scripts",
+    "README.md"
   ]
 }

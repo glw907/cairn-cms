@@ -143,18 +143,15 @@ export function dryRunNotice({ dir }) {
  * Build the printed hand-over block: the terminal script that starts a working local admin, and
  * what T1 does and does not yet cover. Its wording is fixed by the recorded baseline walk
  * (docs/internal/2026-08-unagented-setup-baseline.md), which found a plain `npm run dev` never
- * reaches the admin (the dev backend needs `CAIRN_DEV_BACKEND=1` at runtime on top of its
+ * reached the admin (the dev backend needed `CAIRN_DEV_BACKEND=1` at runtime on top of its
  * build-time define) and that a scaffolded reader has no idea the admin they land on is a local
- * stand-in. Both facts are load-bearing here, not phrasing to simplify away.
- * @param {{ dir: string, platform: string }} options `dir` is the scaffolded directory to `cd`
- *  into; `platform` selects the shell form of the dev command (`process.platform`)
+ * stand-in. The second fact is still load-bearing; the first is now fixed at the source, by the
+ * scaffold's own `npm run dev` (a shim baked into `scripts/dev.mjs`, see bake-template.mjs),
+ * so this text prints the plain command rather than teach a variable it no longer needs.
+ * @param {{ dir: string }} options `dir` is the scaffolded directory to `cd` into
  * @returns {string} the hand-over text, ready to print as-is
  */
-export function handoverText({ dir, platform }) {
-  const devCommand =
-    platform === 'win32'
-      ? '$env:CAIRN_DEV_BACKEND=1; npm run dev'
-      : 'CAIRN_DEV_BACKEND=1 npm run dev';
+export function handoverText({ dir }) {
   // path.isAbsolute guards the "./<dir>" copy against a doubled slash when --dir was given as an
   // absolute path (an absolute --dir is a legitimate answer, not just a test convenience).
   const location = path.isAbsolute(dir) ? dir : `./${dir}`;
@@ -165,13 +162,13 @@ export function handoverText({ dir, platform }) {
     '',
     `  cd ${dir}`,
     '  npm install',
-    `  ${devCommand}`,
+    '  npm run dev',
     '',
     `Then open ${ADMIN_URL} (vite prints the URL it actually used).`,
     '',
     'That admin runs against a local stand-in. It signs you in without an email loop, and nothing',
     'you write there touches GitHub or sends real email. Write a post, save it, publish it, and',
-    'watch it appear on the site. CAIRN_DEV_BACKEND=1 is the switch that turns the stand-in on.',
+    "watch it appear on the site. The scaffold's own dev script turns the stand-in on.",
     '',
     'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
     '',

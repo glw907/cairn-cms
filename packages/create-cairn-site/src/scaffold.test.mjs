@@ -222,20 +222,16 @@ test('an existing empty target directory is fine', async (t) => {
   assert.equal(pkg.name, 'alpine-club');
 });
 
-test('the hand-over block names CAIRN_DEV_BACKEND and never prints a bare npm run dev line', () => {
-  const text = handoverText({ dir: 'alpine-club', platform: 'linux' });
-  assert.match(text, /CAIRN_DEV_BACKEND=1/);
-  assert.ok(text.includes('CAIRN_DEV_BACKEND=1 npm run dev'));
-  for (const line of text.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed === 'npm run dev') {
-      assert.fail('found a bare "npm run dev" line unaccompanied by the CAIRN_DEV_BACKEND switch');
-    }
-  }
+test('the hand-over block prints the bare install/dev sequence and never mentions CAIRN_DEV_BACKEND', () => {
+  const text = handoverText({ dir: 'alpine-club' });
+  assert.ok(text.includes('cd alpine-club'));
+  assert.ok(text.includes('npm install'));
+  assert.ok(text.includes('npm run dev'));
+  assert.ok(!text.includes('CAIRN_DEV_BACKEND'), 'the scaffold\'s own dev script now sets it at runtime');
 });
 
 test('an absolute --dir prints without a doubled leading slash', () => {
-  const text = handoverText({ dir: '/tmp/alpine-dry', platform: 'linux' });
+  const text = handoverText({ dir: '/tmp/alpine-dry' });
   assert.ok(text.startsWith('Your site is scaffolded at /tmp/alpine-dry.'));
   assert.ok(!text.includes('.//tmp'));
 });
@@ -247,8 +243,9 @@ test('a dry run closes by saying nothing was created, never that the site is sca
   assert.ok(!text.includes('Your site is scaffolded'));
 });
 
-test('the win32 branch prints the PowerShell form instead of the env-prefix form', () => {
-  const text = handoverText({ dir: 'alpine-club', platform: 'win32' });
-  assert.ok(text.includes('$env:CAIRN_DEV_BACKEND=1; npm run dev'));
-  assert.ok(!text.includes('CAIRN_DEV_BACKEND=1 npm run dev'));
+test('handoverText takes no platform parameter', () => {
+  assert.ok(
+    !handoverText.toString().includes('platform'),
+    'handoverText\'s source must not reference a platform parameter',
+  );
 });

@@ -101,9 +101,12 @@ jobs:
             const scaffoldFileNames = fs.readdirSync("/tmp/ci-site", { recursive: true }).map((entry) => path.basename(entry));
             assert.ok(!scaffoldFileNames.includes(stateFileName), "state record " + stateFileName + " landed inside the scaffold");
 
-            for (const leftover of ["e2e", "playwright.config.ts", ".claude", "scripts"]) {
+            for (const leftover of ["e2e", "playwright.config.ts", ".claude"]) {
               assert.ok(!fs.existsSync("/tmp/ci-site/" + leftover), leftover + " shipped into the scaffold");
             }
+
+            const scriptsEntries = fs.readdirSync("/tmp/ci-site/scripts");
+            assert.deepEqual(scriptsEntries, ["dev.mjs"], "scripts/ must hold exactly the baked dev shim");
           '
       - name: Install, typecheck, and build the scaffolded site
         working-directory: /tmp/ci-site
@@ -111,3 +114,19 @@ jobs:
           npm install
           npm run check
           npm run build
+      - name: Dev server reaches the admin
+        working-directory: /tmp/ci-site
+        run: |
+          setsid npm run dev -- --port 4173 --strictPort &
+          DEV_PGID=$!
+          code=000
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4173/admin || true)
+            [ "$code" = "200" ] && break
+            sleep 1
+          done
+          kill -- -"$DEV_PGID" 2>/dev/null || true
+          if [ "$code" != "200" ]; then
+            echo "the scaffolded site's /admin returned '$code', not 200"
+            exit 1
+          fi

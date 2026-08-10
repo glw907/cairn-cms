@@ -56,7 +56,7 @@ async function main() {
     console.log(
       flags.dryRun
         ? dryRunNotice({ dir: answers.dir })
-        : handoverText({ dir: answers.dir, platform: process.platform }),
+        : handoverText({ dir: answers.dir }),
     );
   } catch (err) {
     console.error(err.message);

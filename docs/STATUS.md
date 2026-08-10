@@ -14,7 +14,26 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-09: the CLEANUP PASS is DONE and unreleased; the DOCS REFACTOR pass is next, Fable at the helm, AHEAD of release one)
+## Immediate next action (2026-08-09, evening: the ADMIN-SETUP + DOCS RESET umbrella is APPROVED; execute Pass T1 in a fresh Opus session)
+
+**The docs-refactor brainstorm ran with Fable at the helm and became a larger, approved
+initiative.** The umbrella design is
+[`2026-08-09-admin-setup-and-docs-reset-design.md`](superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md)
+(adversarially reviewed by three agents, findings folded, Geoff approved). Four audiences with
+the **admin** (technical non-developer) first-class; a two-chapter `create-cairn-site` journey
+(live and signed in on free workers.dev before any money, domain, or email); wrangler as the
+provisioner; a public template repo as a second door; a four-track docs reset (`admin/`,
+`editors/`, `extend/`, shared `reference/`, split `internal/`) with a full-corpus prune.
+
+**NEXT: execute Pass T1** (the tool's local half) from
+[`2026-08-09-create-cairn-site-t1.md`](superpowers/plans/2026-08-09-create-cairn-site-t1.md), in
+a fresh Opus 5 session, on a feature worktree per convention, dispatching tasks to
+`cairn-implementer`. Resume prompt: "Execute the create-cairn-site T1 plan at
+docs/superpowers/plans/2026-08-09-create-cairn-site-t1.md; start with the cairn-pass skill."
+Launch directory: `~/Projects/cairn-cms`. Task 1 carries the pass's one Geoff question (who
+walks the un-agented baseline); ask it at pass start, and note Task 8 is blocked on the
+recorded walk. Then T2 (GitHub chapter), T3 (Cloudflare + the two doors), Pass D (the docs
+reset, plan written just-in-time against the tool's real UX).
 
 **The cleanup pass landed on `cleanup` and holds under `## Unreleased`.** All seven tasks plus one
 scope addition Geoff made mid-pass. The plan, with its full post-mortem, is
@@ -40,33 +59,17 @@ contributor guide. It has consequences this pass deliberately did NOT take: the 
 "closely held"/pre-beta language across `ROADMAP.md`, `CLAUDE.md`, and the docs register, and the
 front-door positioning. Those belong to their own initiative.
 
-**NEXT: the docs refactor pass, brainstormed with Fable at the helm, BEFORE release one (Geoff,
-2026-08-09).** Geoff is not in a hurry for the waiting sites, so the three of them cross once after
-both. The pre-brainstorm brief is committed as
-[`2026-08-09-docs-refactor-brief.md`](superpowers/specs/2026-08-09-docs-refactor-brief.md) and is
-the sitting's input. Its framing: cairn serves FOUR audiences, not three
-(Geoff amended this 2026-08-09). Beside the engine developer and the user/editor, the "developer
-building a site" splits into a **setter-upper** (technical, comfortable with npm/wrangler/D1/DNS,
-writes NO Svelte, wants the default CMS on the Waymark template) and an **extender** (Svelte-fluent,
-writes adapters, admin screens, islands). **Geoff judges the setter-upper the MORE significant of
-the two**, which is consistent with what cairn already ships: the scaffolder, Waymark, and
-`cairn-doctor` all serve someone who never opens a `.svelte` file. The sharp question is which
-audience has a STRUCTURAL problem versus a ROUTING one. On the brief's own evidence
-the editor has a placement question the Topo migration will force anyway, and the engine contributor
-has a structural problem sitting entirely in unshipped `docs/internal/`, where no gate, consumer, or
-external link constrains the fix. **The brief's finding that "the site developer has neither
-problem" does NOT survive the amendment** and must be re-derived: it treated one persona where there
-are two, and a flat `docs/guides/` that mixes "apply this D1 migration" with "write a custom admin
-screen" is exactly the wading problem, hitting the largest audience. The sitting's first task is
-re-classifying the 28 developer guides into setter-upper and extender FROM THE TEXTS, not filenames. Two corrections
-the brief makes to an argument raised in the pass, so the sitting does not inherit them: editor
-guides shipping via `files` is the RATIFIED delivery mechanism (cairn-pub reads the tree from
-`node_modules/@glw907/cairn-cms/docs` and serves `/help`), not content stranded where editors
-cannot reach it; and Diátaxis's own complex-hierarchies guidance is permissive toward audience
-partitions rather than against them. Six open decisions are listed at the end of the brief.
+**The brainstorm's paper trail:** the pre-brainstorm brief
+([`2026-08-09-docs-refactor-brief.md`](superpowers/specs/2026-08-09-docs-refactor-brief.md)) is
+superseded by the umbrella spec above, which carries the re-derived guide classification (7 admin
+setup / 4 admin operations / 17 extender, a **post-tool** truth: five of the seven setup guides
+today teach hand-authoring and get rewritten, not moved), the two current-docs research sweeps,
+and the three-agent adversarial fold.
 
-**THEN release one**, which rolls this window plus the history/revert and preview passes and the
-vertical-alignment pass. Invoke `cairn-release`; verify the next number is free first.
+**THEN release one, AFTER Pass D** (amended ordering, Geoff 2026-08-09): it rolls this window
+plus the history/revert, preview, vertical-alignment, and cleanup passes plus the docs reset, and
+**`create-cairn-site` and the template repo publish in the same cut** so no shipped page
+describes an uninstallable tool. Invoke `cairn-release`; verify the next number is free first.
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to

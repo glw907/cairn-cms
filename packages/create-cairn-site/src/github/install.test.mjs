@@ -192,7 +192,7 @@ test('installAndAuthorize: a user owner with no installation ever appearing rais
   );
 });
 
-test('installAndAuthorize: an installation appearing during the post-timeout poll still resolves via reauthorize', async (t) => {
+test('installAndAuthorize: an installation appearing while the browser callback is still pending resolves via reauthorize', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());
   pointAtFake(t, github);
@@ -201,7 +201,7 @@ test('installAndAuthorize: an installation appearing during the post-timeout pol
   const opened = [];
   setTimeout(() => {
     github.state.installations.push({ id: 7, account: { login: 'fake-owner' } });
-  }, 55);
+  }, 30);
 
   const result = await installAndAuthorize({
     appId: 1,
@@ -222,7 +222,7 @@ test('installAndAuthorize: an installation appearing during the post-timeout pol
     },
     log: () => {},
     pollIntervalMs: 10,
-    maxWaitMs: 40,
+    maxWaitMs: 500,
   });
 
   assert.equal(result.userToken, 'fake-user-token');
@@ -230,21 +230,115 @@ test('installAndAuthorize: an installation appearing during the post-timeout pol
   assert.equal(opened.length, 2);
 });
 
-test('installAndAuthorize: the post-timeout poll fallback logs a heartbeat on entry and again every ~10 polls', async (t) => {
+test('installAndAuthorize: the installation poll wins the race when the callback never arrives, resolving well before maxWaitMs', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());
   pointAtFake(t, github);
   const pem = registerFakeApp(github, { id: 1, clientId: 'fake-client-1', callbackUrls: ['http://127.0.0.1/callback'] });
 
-  // Each poll signs a fresh App JWT (real RSA, ~10-20ms) and round-trips it, which dominates a
-  // near-zero pollIntervalMs. maxWaitMs below gates BOTH the initial browser-callback wait (which
-  // always times out here, since openBrowser never completes it) and the fallback poll's own
-  // budget, so the installation is scheduled to appear only after the browser wait has already
-  // elapsed, comfortably inside the fallback's own window, with enough polls (well over 10)
-  // happening before it is found.
+  // Nothing ever drives the loopback: this is the finding's exact shape, a resumed run whose
+  // install redirect lands on a dead port from an earlier run and can never reach this run's own
+  // loopback. The poll must find the installation and win the race well inside maxWaitMs, not
+  // only after the callback wait's own timeout.
   setTimeout(() => {
     github.state.installations.push({ id: 7, account: { login: 'fake-owner' } });
-  }, 1300);
+  }, 30);
+
+  const logs = [];
+  const start = Date.now();
+  const result = await installAndAuthorize({
+    appId: 1,
+    appSlug: 'alpine-club-cms-1',
+    appName: 'Alpine Club CMS',
+    clientId: 'fake-client-1',
+    clientSecret: 'fake-secret',
+    pem,
+    owner: 'fake-owner',
+    ownerType: 'user',
+    dir: '/tmp/alpine-club',
+    openBrowser: async (url) => {
+      if (url.includes('/installations/new')) return; // the install redirect never lands
+      setTimeout(() => {
+        fetch(url).catch(() => {});
+      }, 0); // the reauthorize trip that follows the detected install does complete
+    },
+    log: (line) => logs.push(line),
+    pollIntervalMs: 10,
+    maxWaitMs: 600000,
+  });
+  const elapsed = Date.now() - start;
+
+  assert.equal(result.userToken, 'fake-user-token');
+  assert.equal(result.installationId, 7);
+  assert.ok(elapsed < 600000 / 3, `expected the poll to win well before maxWaitMs, took ${elapsed}ms`);
+  assert.ok(
+    logs.some((line) => line.includes('installation is complete')),
+    `expected a detected-install log line, got: ${logs.join(' | ')}`,
+  );
+});
+
+test('installAndAuthorize: a poll-first win with a shared loopback never produces an unhandled rejection once the callback wait later times out', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  const pem = registerFakeApp(github, { id: 1, clientId: 'fake-client-1', callbackUrls: ['http://127.0.0.1/callback'] });
+
+  const loopback = await startLoopback();
+  t.after(() => loopback.close());
+
+  const rejections = [];
+  const onUnhandledRejection = (err) => rejections.push(err);
+  process.on('unhandledRejection', onUnhandledRejection);
+  t.after(() => process.removeListener('unhandledRejection', onUnhandledRejection));
+
+  setTimeout(() => {
+    github.state.installations.push({ id: 7, account: { login: 'fake-owner' } });
+  }, 20);
+
+  const result = await installAndAuthorize({
+    appId: 1,
+    appSlug: 'alpine-club-cms-1',
+    appName: 'Alpine Club CMS',
+    clientId: 'fake-client-1',
+    clientSecret: 'fake-secret',
+    pem,
+    owner: 'fake-owner',
+    ownerType: 'user',
+    dir: '/tmp/alpine-club',
+    loopback,
+    openBrowser: async (url) => {
+      if (url.includes('/installations/new')) return; // the install redirect never lands
+      setTimeout(() => {
+        fetch(url).catch(() => {});
+      }, 0);
+    },
+    log: () => {},
+    pollIntervalMs: 5,
+    maxWaitMs: 100,
+  });
+
+  assert.equal(result.installationId, 7);
+
+  // The loopback is SHARED (this test's own, not installAndAuthorize's to close), so its
+  // /callback wait's own timer is still pending after the poll already won. Give it time to
+  // actually fire in the background: this is the exact moment the pre-fix code path would have
+  // produced an unhandled rejection.
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  assert.equal(rejections.length, 0, `expected no unhandled rejections, got: ${rejections.map((e) => e.message)}`);
+});
+
+test('installAndAuthorize: the concurrent installation poll logs a periodic waiting line while it runs', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  const pem = registerFakeApp(github, { id: 1, clientId: 'fake-client-1', callbackUrls: ['http://127.0.0.1/callback'] });
+
+  // Each poll signs a fresh App JWT (real RSA, a few ms) and round-trips it, which dominates a
+  // near-zero pollIntervalMs. The installation is scheduled to appear well inside maxWaitMs, but
+  // late enough that well over 10 polls have already happened by then.
+  setTimeout(() => {
+    github.state.installations.push({ id: 7, account: { login: 'fake-owner' } });
+  }, 300);
 
   const logs = [];
   const result = await installAndAuthorize({
@@ -265,7 +359,7 @@ test('installAndAuthorize: the post-timeout poll fallback logs a heartbeat on en
     },
     log: (line) => logs.push(line),
     pollIntervalMs: 1,
-    maxWaitMs: 1000,
+    maxWaitMs: 3000,
   });
 
   assert.equal(result.installationId, 7);
@@ -273,8 +367,8 @@ test('installAndAuthorize: the post-timeout poll fallback logs a heartbeat on en
     line.includes('Still waiting for GitHub to report the installation'),
   );
   assert.ok(
-    heartbeats.length >= 2,
-    `expected at least 2 heartbeat lines (entry plus at least one periodic), got ${heartbeats.length}: ${logs.join(' | ')}`,
+    heartbeats.length >= 1,
+    `expected at least 1 periodic heartbeat line, got ${heartbeats.length}: ${logs.join(' | ')}`,
   );
 });
 

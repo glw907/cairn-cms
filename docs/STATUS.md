@@ -14,24 +14,43 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-10: Pass T1 is COMPLETE and MERGED to `main`; next is Pass T2)
+## Immediate next action (2026-08-10 evening: the T2 plan is APPROVED; next is executing it)
+
+**Pass T2 (the GitHub chapter) is planned and approved, ready to execute.** The Fable planning
+sitting ran 2026-08-10: brainstorm (three forks locked: the admin's own App as the OAuth client, a
+shipped dev shim, live e2e on personal + scratch org), spec approved, plan written, then a
+three-lens adversarial review (admin-journey, platform-correctness, plan-integrity) whose verified
+findings were folded into both documents, and Geoff approved the amended set. Spec:
+[`2026-08-10-create-cairn-site-t2-design.md`](superpowers/specs/2026-08-10-create-cairn-site-t2-design.md).
+Plan: [`2026-08-10-create-cairn-site-t2.md`](superpowers/plans/2026-08-10-create-cairn-site-t2.md)
+(14 tasks; its revision note summarizes what the fold changed).
+
+**Resume prompt** (launch directory `~/Projects/cairn-cms`; an execution session, so Opus, per the
+plan-approval model boundary): "Execute Pass T2 of the create-cairn-site umbrella
+(`docs/superpowers/plans/2026-08-10-create-cairn-site-t2.md`). Start with the cairn-pass skill.
+Read `docs/STATUS.md` and the spec
+(`docs/superpowers/specs/2026-08-10-create-cairn-site-t2-design.md`) first. Work on a new worktree
+off `main`, dispatching tasks to cairn-implementer with the full gate between dispatches. Task 1 is
+a main-loop spike needing one Geoff browser sitting and it GATES Tasks 7-9's architecture; run it
+first and honor its decision gate. Task 13 is the second Geoff sitting, late. Task 12's create-site
+gate is CI-only; push and confirm it green before closing."
+
+**What execution must know, beyond the plan:** the chapter is TWO browser trips
+(`request_oauth_on_install` folds install and authorize into one page whose redirect carries the
+OAuth code and the installation id); the manifest registers the PORTLESS loopback callback (the
+port-leniency exception requires it, and the callback is frozen at manifest time); install comes
+BEFORE repo create (a user token only reaches accounts where the App is installed); the repo is
+created `auto_init: true` (Git Data 409s on empty repos) then linked into the installation and
+verified. The fake GitHub server's SPIKE-marked status codes must be corrected to Task 1's observed
+values before Tasks 6-10 dispatch. T1's `create-cairn-site` worktree served its purpose and can be
+removed; the window holds under `## Unreleased`; nothing is published.
+
+## Superseded: Pass T1 complete and merged (2026-08-10, morning)
 
 **Pass T1 is done, all ten tasks, merged to `main`** through
 [PR #25](https://github.com/glw907/cairn-cms/pull/25) with all five CI checks green. Opening that PR
 is what first ran CI against the branch: every gating workflow fires on `push` only for `main` and
-`rebuild`, plus `pull_request`, so the whole window had been CI-unproven until then. **T2 branches
-from `main`**, which now carries the package and its gate; the `create-cairn-site` worktree has
-served its purpose and can be removed. The window holds under `## Unreleased`; nothing is published.
-
-**Resume prompt** (launch directory `~/Projects/cairn-cms`; a planning sitting, so Fable, ending at
-plan approval, with execution in a fresh Opus session): "Plan Pass T2 of the create-cairn-site
-umbrella, the GitHub chapter. Start with the cairn-pass skill, then brainstorm before writing the
-plan. Pass T1 is complete and merged to `main` (PR #25). Read `docs/STATUS.md`, the approved
-umbrella spec `docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`, both
-post-mortems in `docs/superpowers/plans/2026-08-09-create-cairn-site-t1.md`, the recorded walk at
-`docs/internal/2026-08-unagented-setup-baseline.md`, and the resolved platform questions in
-`docs/internal/2026-08-09-tool-passes-platform-spikes.md`. Two items T1 filed for T2 specifically
-are in `docs/internal/docs-friction-log.md`. Work on a new worktree off `main`."
+`rebuild`, plus `pull_request`, so the whole window had been CI-unproven until then.
 
 **The baseline walk is recorded, and Geoff changed how it was run.** He first ruled he would walk it
 himself, then revised the same day: "a well-tuned persona agent run several times fresh from several

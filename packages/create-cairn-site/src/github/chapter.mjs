@@ -16,6 +16,7 @@ import { githubRequest } from './api.mjs';
 import { runManifestFlow } from './manifest.mjs';
 import { installAndAuthorize } from './install.mjs';
 import { createRepo, verifyInstallationCovers, pushScaffold } from './repo.mjs';
+import { finalizeGithubIdentity } from './finalize.mjs';
 import { openBrowser as defaultOpenBrowser } from './open.mjs';
 
 /**
@@ -415,6 +416,17 @@ export async function runGithubChapter({
     'Push your site to GitHub',
     `Pushes ${dir} into ${ctx.repoName}.`,
     async () => {
+      // The scaffold's backend config is finalized with the real App identity before it is
+      // pushed, so the tree lands on GitHub already able to commit through the App rather than
+      // carrying the showcase's placeholder owner/repo/appId/installationId. Idempotent, so a
+      // resumed run at repo-created re-runs it harmlessly ahead of pushScaffold's own
+      // already-pushed check.
+      await finalizeGithubIdentity(dir, {
+        owner: ctx.repo.owner,
+        repo: ctx.repo.repo,
+        appId: ctx.credentials.appId,
+        installationId: ctx.installationId,
+      });
       await pushScaffold(ctx.userToken, {
         owner: ctx.repo.owner,
         repo: ctx.repo.repo,

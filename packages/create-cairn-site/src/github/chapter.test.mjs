@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
 import { runGithubChapter } from './chapter.mjs';
+import { createRepo, pushScaffold } from './repo.mjs';
+import { finalizeGithubIdentity } from './finalize.mjs';
 import { loadSite } from '../state.mjs';
 
 /**
@@ -40,7 +42,9 @@ async function freshStateDir(t) {
 
 /**
  * Build a fixture scaffold directory: a couple of real files, so pushScaffold has something to
- * ship and the secret-scan test has something to walk.
+ * ship and the secret-scan test has something to walk, plus a `cairn.config.ts` carrying the
+ * showcase's own placeholder `githubApp(...)` call, so the push step's finalizeGithubIdentity
+ * hop has a real target to rewrite rather than throwing its rot-gate error on every test.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the fixture directory's absolute path
  */
@@ -50,7 +54,35 @@ async function fixtureScaffoldDir(t) {
   await writeFile(path.join(dir, 'README.md'), '# Alpine Club\n');
   await mkdir(path.join(dir, 'posts'), { recursive: true });
   await writeFile(path.join(dir, 'posts/hello.md'), '# Hello\n');
+  await mkdir(path.join(dir, 'src/theme'), { recursive: true });
+  await writeFile(
+    path.join(dir, 'src/theme/cairn.config.ts'),
+    "import { defineAdapter, githubApp } from '@glw907/cairn-cms';\n\n" +
+      'export default defineAdapter({\n' +
+      "  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),\n" +
+      '});\n',
+  );
   return dir;
+}
+
+/**
+ * Decode a pushed file's content out of the fake GitHub's git object store, following the
+ * commit on the given ref through its tree to the blob for `relativePath`.
+ * @param {import('../../test/fake-github.mjs').FakeGithub} github the running fake
+ * @param {string} owner the pushed repository's owner login
+ * @param {string} repo the pushed repository's name
+ * @param {string} relativePath the file's path within the pushed tree
+ * @param {string} [branch] the ref to read from
+ * @returns {string} the file's decoded utf8 content
+ */
+function readPushedFile(github, owner, repo, relativePath, branch = 'main') {
+  const gitEntry = github.state.gitObjects.get(`${owner}/${repo}`);
+  const commitSha = gitEntry.refs.get(`heads/${branch}`);
+  const commit = gitEntry.commits.get(commitSha);
+  const tree = gitEntry.trees.get(commit.tree);
+  const entry = tree.find((candidate) => candidate.path === relativePath);
+  if (!entry) throw new Error(`${relativePath} was not found in the pushed tree`);
+  return Buffer.from(gitEntry.blobs.get(entry.sha), 'base64').toString('utf8');
 }
 
 /**
@@ -139,6 +171,125 @@ test('runGithubChapter: the happy path returns pushed, walks the state hops, and
   assert.ok(heartbeat, 'expected the install step\'s loopback heartbeat log line');
   const installLoopbackUrl = heartbeat.match(/http:\/\/127\.0\.0\.1:\d+/)[0];
   assert.equal(new URL(installLoopbackUrl).port, new URL(opened[0]).port);
+});
+
+test('runGithubChapter: the pushed cairn.config.ts carries the real identity, not the showcase placeholder', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+
+  const { openBrowser } = makeHappyPathOpenBrowser(github);
+  const outcome = await runGithubChapter({
+    siteId: 'alpine-club-finalize',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, github: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser,
+  });
+  assert.equal(outcome, 'pushed');
+
+  const state = await loadSite('alpine-club-finalize');
+  const pushedConfig = readPushedFile(
+    github,
+    state.github.repo.owner,
+    state.github.repo.repo,
+    'src/theme/cairn.config.ts',
+  );
+
+  assert.ok(!pushedConfig.includes("owner: 'showcase'"), 'the pushed config must not keep the showcase owner');
+  assert.ok(
+    pushedConfig.includes(`owner: '${state.github.repo.owner}'`),
+    'the pushed config must carry the real repo owner',
+  );
+  assert.ok(
+    pushedConfig.includes(`repo: '${state.github.repo.repo}'`),
+    'the pushed config must carry the real repo name',
+  );
+  assert.ok(
+    pushedConfig.includes(`appId: '${state.github.appId}'`),
+    'the pushed config must carry the real App id',
+  );
+  assert.ok(
+    pushedConfig.includes(`installationId: '${state.github.installationId}'`),
+    'the pushed config must carry the real installation id',
+  );
+});
+
+test('runGithubChapter: a resumed run at repo-created re-runs finalize as a no-op and makes zero additional Git Data POSTs on an already-pushed repo', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+
+  // Seed a state as though an earlier run reached repo-created, then locally finalized and
+  // pushed the scaffold before being interrupted right before its final state write (the
+  // saved step still reads repo-created). seedFakeApp's registered callback_urls include the
+  // portless resume fallback, which is what lets this run's re-authorize hop actually complete.
+  const appJson = await seedFakeApp(github);
+  github.state.installations.push({ id: 77, account: { login: appJson.owner.login } });
+  const created = await createRepo('fake-user-token', { name: 'alpine-club', ownerType: 'user', dir });
+  await finalizeGithubIdentity(dir, {
+    owner: created.owner,
+    repo: created.repo,
+    appId: appJson.id,
+    installationId: 77,
+  });
+  await pushScaffold('fake-user-token', { owner: created.owner, repo: created.repo, dir, log: () => {} });
+
+  const { updateSite } = await import('../state.mjs');
+  await updateSite('alpine-club-repush', {
+    name: 'Alpine Club',
+    dir,
+    step: 'repo-created',
+    github: {
+      appId: appJson.id,
+      appSlug: appJson.slug,
+      clientId: appJson.client_id,
+      clientSecret: appJson.client_secret,
+      pem: appJson.pem,
+      webhookSecret: appJson.webhook_secret,
+      owner: appJson.owner.login,
+      ownerType: 'user',
+      installationId: 77,
+      repo: created,
+    },
+  });
+
+  const gitDataPostsBefore = github.requests.filter(
+    (r) => r.method === 'POST' && r.pathname.includes('/git/'),
+  ).length;
+
+  const resumedOutcome = await runGithubChapter({
+    siteId: 'alpine-club-repush',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, github: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser: async (url) => {
+      setTimeout(() => {
+        fetch(url).catch(() => {});
+      }, 0);
+    },
+  });
+
+  assert.equal(resumedOutcome, 'pushed');
+  const gitDataPostsAfter = github.requests.filter(
+    (r) => r.method === 'POST' && r.pathname.includes('/git/'),
+  ).length;
+  assert.equal(
+    gitDataPostsAfter,
+    gitDataPostsBefore,
+    'a re-push of an already-pushed repo must create zero new Git Data objects',
+  );
+
+  const pushedConfig = readPushedFile(github, created.owner, created.repo, 'src/theme/cairn.config.ts');
+  assert.ok(!pushedConfig.includes("owner: 'showcase'"));
 });
 
 test('runGithubChapter: the state record contains the pem but never the user access token', async (t) => {

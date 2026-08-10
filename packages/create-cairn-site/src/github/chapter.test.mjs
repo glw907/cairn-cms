@@ -8,6 +8,22 @@ import { runGithubChapter } from './chapter.mjs';
 import { loadSite } from '../state.mjs';
 
 /**
+ * Read the manifest form served at the loopback's root and pull the `state` nonce out of its
+ * action URL, the way a real browser carrying the form to GitHub (and GitHub echoing it back on
+ * the redirect) would. Every driver below that simulates GitHub's /manifest redirect must echo
+ * this same nonce, since runManifestFlow now rejects a mismatched one.
+ * @param {string} loopbackUrl the loopback's base URL
+ * @returns {Promise<string | null>} the state nonce, or null when the form carries none
+ */
+async function readManifestFormState(loopbackUrl) {
+  const html = await (await fetch(loopbackUrl)).text();
+  const match = html.match(/action="([^"]*)"/);
+  if (!match) return null;
+  const action = new URL(match[1].replace(/&amp;/g, '&'));
+  return action.searchParams.get('state');
+}
+
+/**
  * Point CAIRN_STATE_DIR at a fresh temporary directory for the duration of one test.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the state directory's absolute path
@@ -56,8 +72,9 @@ function makeHappyPathOpenBrowser(github, { installOwner = 'fake-owner' } = {}) 
     opened.push(url);
     if (opened.length === 1) {
       manifestLoopbackUrl = url;
-      setTimeout(() => {
-        fetch(`${url}/manifest?code=goodcode`).catch(() => {});
+      setTimeout(async () => {
+        const state = await readManifestFormState(url);
+        fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
       }, 0);
       return;
     }
@@ -170,8 +187,9 @@ test('runGithubChapter: the org branch parks when no installation ever appears',
     calls += 1;
     if (calls === 1) {
       // The manifest step completes normally; only the install page is never finished.
-      setTimeout(() => {
-        fetch(`${url}/manifest?code=goodcode`).catch(() => {});
+      setTimeout(async () => {
+        const state = await readManifestFormState(url);
+        fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
       }, 0);
     }
   };
@@ -382,6 +400,62 @@ test('runGithubChapter: resume at awaiting-org-approval, once installed, complet
     opened.every((url) => !url.includes('installations/new')),
     'the install page must never open once an installation already exists',
   );
+});
+
+test('runGithubChapter: resume at awaiting-org-approval with no --org on the re-run still completes to pushed, using the saved org login', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  github.state.orgs.push({ login: 'alpine-org' });
+
+  const appJson = await seedFakeApp(github);
+  // The org owner approved the install since the last run: the installation now exists, so
+  // install.mjs's own poll-first check must find it before ever opening a browser.
+  github.state.installations.push({ id: 77, account: { login: 'alpine-org' } });
+
+  const { updateSite } = await import('../state.mjs');
+  await updateSite('alpine-org-resume-park-no-org-flag', {
+    name: 'Alpine Club',
+    dir,
+    step: 'awaiting-org-approval',
+    github: {
+      appId: appJson.id,
+      appSlug: appJson.slug,
+      clientId: appJson.client_id,
+      clientSecret: appJson.client_secret,
+      pem: appJson.pem,
+      webhookSecret: appJson.webhook_secret,
+      // An org-owned App's saved owner is the org login itself; this is the only place the
+      // resumed run can recover it from once the re-run carries no --org.
+      owner: 'alpine-org',
+      ownerType: 'org',
+    },
+  });
+
+  const opened = [];
+  const openBrowser = async (url) => {
+    opened.push(url);
+    setTimeout(() => {
+      fetch(url).catch(() => {});
+    }, 0);
+  };
+
+  const outcome = await runGithubChapter({
+    siteId: 'alpine-org-resume-park-no-org-flag',
+    siteName: 'Alpine Club',
+    dir,
+    // No --org here: the whole point of this test is a bare re-run.
+    flags: { yes: true, github: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser,
+  });
+
+  assert.equal(outcome, 'pushed');
+  const state = await loadSite('alpine-org-resume-park-no-org-flag');
+  assert.equal(state.github.repo.owner, 'alpine-org');
 });
 
 test('runGithubChapter: after a stale record is retired (the --start-over path), the same siteId runs a full fresh chapter', async (t) => {

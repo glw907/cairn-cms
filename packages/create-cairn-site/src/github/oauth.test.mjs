@@ -44,6 +44,51 @@ test('exchangeCode: bad_verification_code raises code-expired with the passed di
   );
 });
 
+test('exchangeCode: an error other than bad_verification_code throws naming the error code and the dir, never returns undefined', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  github.failNext('access_token', 200, { error: 'incorrect_client_credentials' });
+
+  await assert.rejects(
+    () =>
+      exchangeCode({
+        clientId: 'fake-client-1',
+        clientSecret: 'fake-secret',
+        code: 'fake-code',
+        dir: '/tmp/alpine-club',
+      }),
+    (err) => {
+      assert.match(err.message, /incorrect_client_credentials/);
+      assert.match(err.message, /\/tmp\/alpine-club/);
+      assert.ok(!err.catalogue, 'an unmapped OAuth error is a plain Error, not a catalogue error');
+      return true;
+    },
+  );
+});
+
+test('exchangeCode: a body with neither error nor access_token still throws rather than returning undefined', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  github.failNext('access_token', 200, {});
+
+  await assert.rejects(
+    () =>
+      exchangeCode({
+        clientId: 'fake-client-1',
+        clientSecret: 'fake-secret',
+        code: 'fake-code',
+        dir: '/tmp/alpine-club',
+      }),
+    (err) => {
+      assert.match(err.message, /no access token in the response/);
+      assert.match(err.message, /\/tmp\/alpine-club/);
+      return true;
+    },
+  );
+});
+
 test('authorizeUrl: encodes redirect_uri and carries client_id and state', async (t) => {
   process.env.CAIRN_GITHUB_WEB_BASE = 'http://127.0.0.1:9999';
   t.after(() => delete process.env.CAIRN_GITHUB_WEB_BASE);

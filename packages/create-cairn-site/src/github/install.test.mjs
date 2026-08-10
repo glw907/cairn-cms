@@ -1,9 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
+import { readdir, readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
 import { startLoopback } from './loopback.mjs';
 import { installUrl, installAndAuthorize } from './install.mjs';
+
+const githubSrcDir = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Generate a real RSA keypair and register it as an App in the fake, so `GET
@@ -225,6 +230,54 @@ test('installAndAuthorize: an installation appearing during the post-timeout pol
   assert.equal(opened.length, 2);
 });
 
+test('installAndAuthorize: the post-timeout poll fallback logs a heartbeat on entry and again every ~10 polls', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  const pem = registerFakeApp(github, { id: 1, clientId: 'fake-client-1', callbackUrls: ['http://127.0.0.1/callback'] });
+
+  // Each poll signs a fresh App JWT (real RSA, ~10-20ms) and round-trips it, which dominates a
+  // near-zero pollIntervalMs. maxWaitMs below gates BOTH the initial browser-callback wait (which
+  // always times out here, since openBrowser never completes it) and the fallback poll's own
+  // budget, so the installation is scheduled to appear only after the browser wait has already
+  // elapsed, comfortably inside the fallback's own window, with enough polls (well over 10)
+  // happening before it is found.
+  setTimeout(() => {
+    github.state.installations.push({ id: 7, account: { login: 'fake-owner' } });
+  }, 1300);
+
+  const logs = [];
+  const result = await installAndAuthorize({
+    appId: 1,
+    appSlug: 'alpine-club-cms-1',
+    appName: 'Alpine Club CMS',
+    clientId: 'fake-client-1',
+    clientSecret: 'fake-secret',
+    pem,
+    owner: 'fake-owner',
+    ownerType: 'user',
+    dir: '/tmp/alpine-club',
+    openBrowser: async (url) => {
+      if (url.includes('/installations/new')) return; // never completes the install callback
+      setTimeout(() => {
+        fetch(url).catch(() => {});
+      }, 0); // the later reauthorize trip does complete
+    },
+    log: (line) => logs.push(line),
+    pollIntervalMs: 1,
+    maxWaitMs: 1000,
+  });
+
+  assert.equal(result.installationId, 7);
+  const heartbeats = logs.filter((line) =>
+    line.includes('Still waiting for GitHub to report the installation'),
+  );
+  assert.ok(
+    heartbeats.length >= 2,
+    `expected at least 2 heartbeat lines (entry plus at least one periodic), got ${heartbeats.length}: ${logs.join(' | ')}`,
+  );
+});
+
 test('installAndAuthorize: a given loopback is reused, not closed, and its port matches the opened install callback', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());
@@ -297,8 +350,21 @@ test('installAndAuthorize: a JWT that fails to verify surfaces a plain Next step
       assert.ok(!err.catalogue, 'a bad-credentials error is a plain Error, not a catalogue error');
       assert.match(err.message, /401/);
       assert.match(err.message, /Next step/);
+      assert.match(err.message, /--start-over/);
+      assert.ok(!err.message.includes('--app-id'), 'the recovery must never name a flag that does not exist');
       return true;
     },
   );
   assert.ok(Date.now() - start < 5000, 'a bad JWT must fail fast, not fall into a poll loop');
+});
+
+test('src/github/: no implementation file names the nonexistent --app-id flag', async () => {
+  const nonexistentFlag = ['-', '-app-id'].join('-');
+  const entries = await readdir(githubSrcDir, { withFileTypes: true });
+  for (const entry of entries) {
+    // Excludes this suite itself: its own assertions name the flag to prove it is gone.
+    if (!entry.isFile() || entry.name.endsWith('.test.mjs')) continue;
+    const content = await readFile(path.join(githubSrcDir, entry.name), 'utf8');
+    assert.ok(!content.includes(nonexistentFlag), `${entry.name} must not name the nonexistent ${nonexistentFlag} flag`);
+  }
 });

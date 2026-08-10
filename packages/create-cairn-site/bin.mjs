@@ -150,7 +150,13 @@ async function main() {
     }
   } catch (err) {
     console.error(err.message);
-    console.error('Next step: fix the problem above and run the command again.');
+    // A catalogue error's message already ends with its own "Next:" line, and every plain Error
+    // this tool raises writes its own "Next step:" line too; printing the generic line on top of
+    // either duplicates (and can contradict) the specific one. Only an error that names neither
+    // gets this fallback.
+    if (!err.catalogue && !err.message.includes('Next')) {
+      console.error('Next step: fix the problem above and run the command again.');
+    }
     process.exit(1);
   }
 }

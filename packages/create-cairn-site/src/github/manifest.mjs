@@ -15,6 +15,7 @@
 //   - hook_attributes.url is required by the manifest schema even for an App with no events;
 //     omitting it produces GitHub's unhelpful "We didn't find an App Manifest" page rather than
 //     a validation error. active: false keeps GitHub from ever calling the placeholder hook.
+import { randomBytes } from 'node:crypto';
 import { startLoopback } from './loopback.mjs';
 import { githubRequest, webBase } from './api.mjs';
 import { chapterError } from './catalogue.mjs';
@@ -144,9 +145,14 @@ export async function runManifestFlow({ appName, siteName, ownerType, org, openB
   const loopback = givenLoopback ?? (await startLoopback());
   const ownsLoopback = !givenLoopback;
   try {
+    // A per-run nonce on the form target, echoed back by GitHub on the redirect to redirect_url
+    // (the /manifest hit below), so a process that can merely reach this loopback (not the
+    // browser this run actually opened) cannot hand it a code for an App of its own creation.
+    const state = randomBytes(16).toString('hex');
     const manifest = buildManifest({ appName, siteName, ownerType, loopbackUrl: loopback.url });
-    const targetUrl = manifestTarget({ ownerType, org });
-    loopback.serveForm(manifestFormHtml(manifest, targetUrl));
+    const target = new URL(manifestTarget({ ownerType, org }));
+    target.searchParams.set('state', state);
+    loopback.serveForm(manifestFormHtml(manifest, target.toString()));
 
     log(
       `Your browser will open GitHub's "Create GitHub App" page for ${siteName}; click the ` +
@@ -178,10 +184,24 @@ export async function runManifestFlow({ appName, siteName, ownerType, org, openB
       throw err;
     }
 
+    if (params.get('state') !== state) {
+      throw new Error(
+        'The browser step returned a different state value than the one this run sent, which ' +
+          'can mean the manifest link was intercepted or reused; nothing was collected.\n' +
+          `Next step: re-run npx create-cairn-site --dir ${dir}.`,
+      );
+    }
+
     const code = params.get('code');
     const { status, json } = await githubRequest('POST', `/app-manifests/${code}/conversions`);
     if (status === 404) {
       throw chapterError('manifest-window-expired', { appName, webBase: webBase(), dir });
+    }
+    if (status !== 201) {
+      throw new Error(
+        `github: creating the App failed (status ${status}).\n` +
+          `Next step: re-run npx create-cairn-site --dir ${dir}.`,
+      );
     }
 
     return {

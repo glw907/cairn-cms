@@ -40,6 +40,9 @@ function mentionsSso(json) {
  * @property {number} id the repository's numeric id
  * @property {string} owner the owning account's login
  * @property {string} repo the repository name
+ * @property {string} defaultBranch the repository's default branch, as GitHub itself named it
+ *  (an organization can set a default other than `main`); pushScaffold's every ref path uses
+ *  this rather than assuming `main`
  */
 
 /**
@@ -49,7 +52,7 @@ function mentionsSso(json) {
  * 2026-08-10), which is why there is no separate link call here.
  * @param {string} token a user access token
  * @param {CreateRepoInput} input the repository to create
- * @returns {Promise<CreatedRepo>} the created repository's id, owner login, and name
+ * @returns {Promise<CreatedRepo>} the created repository's id, owner login, name, and default branch
  */
 export async function createRepo(token, { name, ownerType, org, dir, appName }) {
   const requestPath = ownerType === 'org' ? `/orgs/${org}/repos` : '/user/repos';
@@ -59,7 +62,7 @@ export async function createRepo(token, { name, ownerType, org, dir, appName }) 
   });
 
   if (status === 201) {
-    return { id: json.id, owner: json.owner.login, repo: json.name };
+    return { id: json.id, owner: json.owner.login, repo: json.name, defaultBranch: json.default_branch };
   }
 
   if (status === 422 && Array.isArray(json?.errors) && json.errors.some((error) => error.field === 'name')) {
@@ -135,20 +138,83 @@ async function pushStep(call, dir) {
 }
 
 /**
+ * @typedef {object} GitignoreRule
+ * @property {string} name the literal name a path segment must equal to match
+ * @property {boolean} anchored whether the rule only matches at the scaffold root (a leading
+ *  `/` in the source line), rather than at any depth
+ */
+
+/**
+ * Parse a scaffold's own `.gitignore` into pushScaffold's small rule set. This is deliberately
+ * not a full gitignore engine: the scaffold's own `.gitignore` is simple and tool-authored (a
+ * flat list of directory and file names, at most a trailing `/*` glob), so a literal-name
+ * matcher covers every line it actually writes. A comment line, a blank line, and a negation
+ * (`!...`, which this tool never emits and does not attempt to un-ignore) are all skipped.
+ * @param {string} content the raw `.gitignore` text
+ * @returns {GitignoreRule[]} the parsed rules
+ */
+export function parseGitignore(content) {
+  const rules = [];
+  for (const rawLine of content.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#') || line.startsWith('!')) continue;
+    const anchored = line.startsWith('/');
+    const name = (anchored ? line.slice(1) : line).replace(/\/\*$/, '').replace(/\/$/, '');
+    if (!name) continue;
+    rules.push({ name, anchored });
+  }
+  return rules;
+}
+
+/**
+ * True when a forward-slash, scaffold-root-relative path is ignored by `rules`: an anchored rule
+ * matches only the root-level entry named `name`; an unanchored rule matches an entry (file or
+ * directory) named `name` at any depth, so `.wrangler` also ignores everything under it.
+ * @param {string} relativePath the path to test
+ * @param {GitignoreRule[]} rules the parsed rules
+ * @returns {boolean} whether the path is ignored
+ */
+export function isGitignored(relativePath, rules) {
+  const segments = relativePath.split('/');
+  return rules.some(({ name, anchored }) => (anchored ? segments[0] === name : segments.includes(name)));
+}
+
+/**
+ * Load and parse the scaffold's own `.gitignore`, when present.
+ * @param {string} dir the scaffold directory to check for `.gitignore`
+ * @returns {Promise<GitignoreRule[]>} the parsed rules, empty when no `.gitignore` exists
+ */
+async function loadGitignoreRules(dir) {
+  let content;
+  try {
+    content = await readFile(path.join(dir, '.gitignore'), 'utf8');
+  } catch (cause) {
+    if (cause.code === 'ENOENT') return [];
+    throw cause;
+  }
+  return parseGitignore(content);
+}
+
+/**
  * Walk `dir` recursively for the files pushScaffold ships, skipping dependency trees, VCS
- * metadata, and the scaffold's own atomic-claim marker.
+ * metadata, the scaffold's own atomic-claim marker, and, when a `.gitignore` exists at `dir`'s
+ * root, anything it ignores. The `.gitignore` check matters most on a resumed run: an admin who
+ * ran `npm install` or `npm run dev` between runs has local secret material (`.wrangler/`,
+ * `.dev.vars`, `dist/`) on disk that the hardcoded skip list alone would upload to GitHub.
  * @param {string} dir the scaffold directory to walk
  * @returns {Promise<Array<{ absolutePath: string, relativePath: string }>>} every file to push,
  *  with a forward-slash relative path suitable for a Git tree entry
  */
 async function collectFiles(dir) {
+  const gitignoreRules = await loadGitignoreRules(dir);
   const files = [];
   async function walk(currentDir, relativePrefix) {
     const entries = await readdir(currentDir, { withFileTypes: true });
     for (const entry of entries) {
       if (SKIPPED_ENTRIES.has(entry.name)) continue;
-      const absolutePath = path.join(currentDir, entry.name);
       const relativePath = relativePrefix ? `${relativePrefix}/${entry.name}` : entry.name;
+      if (isGitignored(relativePath, gitignoreRules)) continue;
+      const absolutePath = path.join(currentDir, entry.name);
       if (entry.isDirectory()) {
         await walk(absolutePath, relativePath);
       } else if (entry.isFile()) {
@@ -166,6 +232,10 @@ async function collectFiles(dir) {
  * @property {string} repo the repository name
  * @property {string} dir the scaffold directory to push
  * @property {(line: string) => void} log receives one printed line per call
+ * @property {string} [defaultBranch] the repository's default branch; defaults to `main` for a
+ *  saved record from before this field existed, but a freshly created repository always passes
+ *  the branch GitHub itself reported (createRepo's own `defaultBranch`), since an organization
+ *  can set a default other than `main`
  */
 
 /**
@@ -177,12 +247,13 @@ async function collectFiles(dir) {
  * content-addressed but a repeated commit and ref update are not free operations to redo.
  * @param {string} token a user access token
  * @param {PushScaffoldInput} input the push's inputs
- * @returns {Promise<{ commitSha: string }>} the sha of the commit now on `heads/main`
+ * @returns {Promise<{ commitSha: string }>} the sha of the commit now on `heads/<defaultBranch>`
  */
-export async function pushScaffold(token, { owner, repo, dir, log }) {
+export async function pushScaffold(token, { owner, repo, dir, log, defaultBranch = 'main' }) {
   const repoPath = `/repos/${owner}/${repo}`;
+  const refPath = `${repoPath}/git/refs/heads/${defaultBranch}`;
 
-  const refResponse = await pushStep(() => githubRequest('GET', `${repoPath}/git/ref/heads/main`, { token }), dir);
+  const refResponse = await pushStep(() => githubRequest('GET', `${repoPath}/git/ref/heads/${defaultBranch}`, { token }), dir);
   const seedSha = refResponse.json.object.sha;
 
   const seedCommitResponse = await pushStep(() => githubRequest('GET', `${repoPath}/git/commits/${seedSha}`, { token }), dir);
@@ -216,7 +287,7 @@ export async function pushScaffold(token, { owner, repo, dir, log }) {
   );
 
   await pushStep(
-    () => githubRequest('PATCH', `${repoPath}/git/refs/heads/main`, { token, body: { sha: commitResponse.json.sha } }),
+    () => githubRequest('PATCH', refPath, { token, body: { sha: commitResponse.json.sha } }),
     dir
   );
 

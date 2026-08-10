@@ -41,6 +41,13 @@ export async function exchangeCode({ clientId, clientSecret, code, redirectUri, 
   if (json.error === 'bad_verification_code') {
     throw chapterError('code-expired', { dir });
   }
+  if (!json.access_token) {
+    throw new Error(
+      `github: the sign-in code exchange failed (${json.error ?? 'no access token in the response'}).\n` +
+        `Next step: re-run npx create-cairn-site --dir ${dir}; if this repeats, run it with ` +
+        '--start-over to begin the GitHub setup again.',
+    );
+  }
   return json.access_token;
 }
 

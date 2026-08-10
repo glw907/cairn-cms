@@ -63,10 +63,10 @@ async function findInstallation({ appId, pem, owner, dir }) {
   const { status, json } = await githubRequest('GET', '/app/installations', { jwt });
   if (status !== 200) {
     throw new Error(
-      `github: GET /app/installations returned ${status}, which usually means the App id or its ` +
-        'saved private key does not match a registered App.\n' +
-        `Next step: verify --app-id and the saved private key, then re-run npx create-cairn-site ` +
-        `--dir ${dir}.`,
+      `github: GET /app/installations returned ${status}, which usually means this site's saved ` +
+        "GitHub App identity is broken (a stale or corrupted App id and private key).\n" +
+        `Next step: re-run npx create-cairn-site --dir ${dir} --start-over to set the broken ` +
+        'record aside and register a new App.',
     );
   }
   return (Array.isArray(json) ? json : []).find((installation) => installation.account?.login === owner) ?? null;
@@ -88,6 +88,13 @@ async function findInstallation({ appId, pem, owner, dir }) {
  * @property {number} pollIntervalMs how long to wait between poll attempts
  * @property {number} maxWaitMs this phase's own poll budget
  */
+
+/** The fallback poll's own heartbeat: printed once on entry (so a silent multi-minute wait never
+ * looks hung) and again every POLL_HEARTBEAT_EVERY attempts, since a poll interval short enough
+ * for a test can otherwise print nothing for the whole run. */
+const POLL_HEARTBEAT_MESSAGE =
+  'Still waiting for GitHub to report the installation; checking every few seconds. Leave this running.';
+const POLL_HEARTBEAT_EVERY = 10;
 
 /**
  * Fall back to JWT polling once the browser callback wait has timed out: this covers an admin
@@ -113,12 +120,16 @@ async function pollUntilInstalled({
   maxWaitMs,
 }) {
   const deadline = Date.now() + maxWaitMs;
+  log(POLL_HEARTBEAT_MESSAGE);
+  let attempt = 0;
   for (;;) {
     const found = await findInstallation({ appId, pem, owner, dir });
     if (found) {
       const userToken = await reauthorize({ clientId, clientSecret, dir, appName, openBrowser, log });
       return { userToken, installationId: found.id };
     }
+    attempt += 1;
+    if (attempt % POLL_HEARTBEAT_EVERY === 0) log(POLL_HEARTBEAT_MESSAGE);
     if (Date.now() >= deadline) break;
     await sleep(Math.min(pollIntervalMs, deadline - Date.now()));
   }

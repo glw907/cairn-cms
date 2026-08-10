@@ -150,11 +150,17 @@ export async function runGithubChapter({
   const savedGithub = record?.github ?? {};
   const resuming = RESUMABLE_PAST_MANIFEST.includes(resumeStep);
 
+  const ownerType = flags.org !== undefined ? 'org' : (savedGithub.ownerType ?? 'user');
+  // A resumed org run is re-run bare (no --org), since the org login was already settled on the
+  // first run. flags.org is then undefined, and the only other source is the record saved at the
+  // app-created hop: savedGithub.owner holds the login of the account the App was created under,
+  // which for an org-owned App is the org itself. Without this fallback ctx.org stays undefined
+  // and every later request (the membership check, createRepo) hits /orgs/undefined/... forever.
   const ctx = {
     appName: flags.appName ?? `cairn-${slug}`,
     repoName: flags.repoName ?? slug,
-    ownerType: flags.org !== undefined ? 'org' : (savedGithub.ownerType ?? 'user'),
-    org: flags.org,
+    ownerType,
+    org: resuming && ownerType === 'org' ? (flags.org ?? savedGithub.owner) : flags.org,
     credentials: resuming
       ? {
           appId: savedGithub.appId,
@@ -409,7 +415,13 @@ export async function runGithubChapter({
     'Push your site to GitHub',
     `Pushes ${dir} into ${ctx.repoName}.`,
     async () => {
-      await pushScaffold(ctx.userToken, { owner: ctx.repo.owner, repo: ctx.repo.repo, dir, log });
+      await pushScaffold(ctx.userToken, {
+        owner: ctx.repo.owner,
+        repo: ctx.repo.repo,
+        dir,
+        log,
+        defaultBranch: ctx.repo.defaultBranch,
+      });
       await updateSite(siteId, { step: 'pushed' });
     },
   );

@@ -18,7 +18,10 @@ import { generateKeyPairSync, randomBytes, createVerify } from 'node:crypto';
  * @property {string} webBase the fake github.com base URL, `http://127.0.0.1:<port>`
  * @property {object} state mutable fixture state: apps, repos, installations, gitObjects, orgs;
  *  `state.suppressAutoLink = true` makes the next created repo skip the normal auto-add to its
- *  covering installation, for testing the otherwise-unreachable not-covered case
+ *  covering installation, for testing the otherwise-unreachable not-covered case;
+ *  `state.nextDefaultBranch = '<name>'` is a one-shot: the next repo the fake creates reports
+ *  that name as its `default_branch` (instead of the usual `main`), for testing a client's
+ *  handling of an organization-set default other than `main`
  * @property {Array<{ method: string, pathname: string, authorization: string | null }>} requests
  *  every request received by either server, in arrival order; append-only, never reset except
  *  by starting a new server
@@ -69,8 +72,8 @@ export async function startFakeGithub() {
       { method: 'POST', regex: compile('/repos/:owner/:repo/git/trees'), route: 'trees', handler: createTreeHandler(ctx) },
       { method: 'POST', regex: compile('/repos/:owner/:repo/git/commits'), route: 'commits', handler: createCreateCommitHandler(ctx) },
       { method: 'GET', regex: compile('/repos/:owner/:repo/git/commits/:sha'), route: 'commits', handler: createGetCommitHandler(ctx) },
-      { method: 'PATCH', regex: compile('/repos/:owner/:repo/git/refs/heads/main'), route: 'refs', handler: createUpdateRefHandler(ctx) },
-      { method: 'GET', regex: compile('/repos/:owner/:repo/git/ref/heads/main'), route: 'refs', handler: createGetRefHandler(ctx) },
+      { method: 'PATCH', regex: compile('/repos/:owner/:repo/git/refs/heads/:branch'), route: 'refs', handler: createUpdateRefHandler(ctx) },
+      { method: 'GET', regex: compile('/repos/:owner/:repo/git/ref/heads/:branch'), route: 'refs', handler: createGetRefHandler(ctx) },
       { method: 'POST', regex: compile('/repos/:owner/:repo/git/refs'), route: 'refs', handler: createCreateRefHandler(ctx) },
       { method: 'GET', regex: compile('/app/installations'), route: 'installations', handler: createListInstallationsHandler(ctx) },
       { method: 'GET', regex: compile('/user'), route: 'user', handler: createGetUserHandler() },
@@ -242,11 +245,11 @@ function slugify(name) {
   return slug || 'fake-app';
 }
 
-/** Seed a repo's git object store with a root commit on `heads/main`. */
-function seedRepo(entry) {
+/** Seed a repo's git object store with a root commit on `heads/<branch>`. */
+function seedRepo(entry, branch = 'main') {
   const sha = randomSha();
   entry.commits.set(sha, { sha, message: 'Initial commit', parents: [], tree: null });
-  entry.refs.set('heads/main', sha);
+  entry.refs.set(`heads/${branch}`, sha);
   entry.seeded = true;
 }
 
@@ -387,11 +390,13 @@ function createRepoHandler(getOwner, ctx) {
     }
     const id = ctx.counters.nextRepoId;
     ctx.counters.nextRepoId += 1;
-    const repo = { id, name, full_name: `${owner}/${name}`, owner: { login: owner }, default_branch: 'main' };
+    const defaultBranch = ctx.state.nextDefaultBranch ?? 'main';
+    ctx.state.nextDefaultBranch = undefined;
+    const repo = { id, name, full_name: `${owner}/${name}`, owner: { login: owner }, default_branch: defaultBranch };
     ctx.state.repos.push(repo);
     const gitEntry = { seeded: false, blobs: new Map(), trees: new Map(), commits: new Map(), refs: new Map() };
     ctx.state.gitObjects.set(repo.full_name, gitEntry);
-    if (body?.auto_init === true) seedRepo(gitEntry);
+    if (body?.auto_init === true) seedRepo(gitEntry, defaultBranch);
     if (ctx.state.suppressAutoLink) {
       ctx.state.suppressAutoLink = false;
     } else {
@@ -496,8 +501,8 @@ function createUpdateRefHandler(ctx) {
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, the ref update included.
     if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
-    entry.refs.set('heads/main', body?.sha);
-    sendJson(res, 200, { ref: 'refs/heads/main', object: { sha: body?.sha, type: 'commit' } });
+    entry.refs.set(`heads/${params.branch}`, body?.sha);
+    sendJson(res, 200, { ref: `refs/heads/${params.branch}`, object: { sha: body?.sha, type: 'commit' } });
   };
 }
 
@@ -507,8 +512,8 @@ function createGetRefHandler(ctx) {
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, the ref read included.
     if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
-    const sha = entry.refs.get('heads/main');
-    sendJson(res, 200, { ref: 'refs/heads/main', object: { sha, type: 'commit' } });
+    const sha = entry.refs.get(`heads/${params.branch}`);
+    sendJson(res, 200, { ref: `refs/heads/${params.branch}`, object: { sha, type: 'commit' } });
   };
 }
 

@@ -39,9 +39,12 @@ template-repo second door. Open against Part 1 of the umbrella spec
 plus the platform-spikes doc
 ([`2026-08-09-tool-passes-platform-spikes.md`](internal/2026-08-09-tool-passes-platform-spikes.md)).
 Known planning inputs: chapter 1 stays inside wrangler's OAuth scopes (zero-credential quickstart
-holds); the domain half cannot ride wrangler (no registrar scope) and **still waits on Geoff's
-queued action: mint a Registrar-scoped Cloudflare API token** (then one no-cost `domain-check`
-call answers the `.ski`/`.life` TLD question); Workers Builds is fully API-driven. T2 adds: the
+holds); the domain half cannot ride wrangler (no registrar scope), and **Geoff ruled at the T2
+close that `.ski`/`.life` Registrar coverage is not worth chasing ("oddball domains, don't worry
+about them"), so the Registrar-token action is RETIRED, not queued**: T3 plans the domain half
+for the general case (a domain the admin already owns anywhere, pointed at Cloudflare), and
+Registrar-purchase support is out of scope until a real admin asks; Workers Builds is fully
+API-driven. T2 adds: the
 desktop-side-effect test constraint (no suite may spawn a browser; PATH-empty pattern), the
 friction-log hardening entry to triage when T3 touches those files, and the scratch org
 `t2-scratch-org` (kept or deleted at Geoff's option) for live org checks.

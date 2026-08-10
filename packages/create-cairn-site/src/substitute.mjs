@@ -1,5 +1,5 @@
 // The exact-string, fail-loud substitution pass. It personalizes the baked Waymark template
-// with the answered name, tagline, and brand color. Every target string below is verified
+// with the answered name, description, and brand color. Every target string below is verified
 // against the real showcase (examples/showcase/src/theme/), not the plan's stale guess at a
 // root-level site.config.yaml with a single --color-primary line: the template's actual layout
 // has both files under src/theme/, and theme.css carries four brand declarations (a light and a
@@ -129,25 +129,31 @@ async function readTarget(absolutePath, relativePath) {
 }
 
 /**
- * Personalize a scaffolded site: the display name and optional tagline in
+ * Personalize a scaffolded site: the display name and optional description in
  * `src/theme/site.config.yaml`, and (only when a brand color is given) the hue of all four
  * `--color-primary`/`--color-primary-content` declarations in `src/theme/theme.css`. Every
  * lookup is exact-string and fails loud, naming the file and the missing string, so the
  * template drifting out from under this module surfaces immediately rather than shipping a
  * scaffold with unpersonalized fields.
+ *
+ * The description is written under the `description` key, the engine's own known top-level
+ * site-config field (see `KNOWN_TOP_LEVEL_KEYS` in `src/lib/nav/site-config.ts`), not an
+ * invented `tagline` key the engine would reject at build time.
  * @param {string} dir the scaffold root
- * @param {{ name: string, tagline?: string, brandColor?: string }} answers the collected answers
+ * @param {{ name: string, description?: string, brandColor?: string }} answers the collected answers
  * @returns {Promise<string[]>} the repo-relative paths this pass changed
  */
-export async function applySubstitutions(dir, { name, tagline, brandColor }) {
+export async function applySubstitutions(dir, { name, description, brandColor }) {
   const changed = [];
 
   const siteConfigPath = path.join(dir, SITE_CONFIG_RELATIVE);
   const siteConfig = await readTarget(siteConfigPath, SITE_CONFIG_RELATIVE);
-  // A tagline rides along in this one replacement rather than a second lookup for the line just
-  // written: the template's own `siteName:` line is the only string worth gating on, and looking
-  // up a line this function itself produced would gate on nothing.
-  const siteNameBlock = tagline ? `siteName: ${name}\ntagline: ${tagline}` : `siteName: ${name}`;
+  // A description rides along in this one replacement rather than a second lookup for the line
+  // just written: the template's own `siteName:` line is the only string worth gating on, and
+  // looking up a line this function itself produced would gate on nothing.
+  const siteNameBlock = description
+    ? `siteName: ${name}\ndescription: ${description}`
+    : `siteName: ${name}`;
   await writeFile(
     siteConfigPath,
     replaceExact(siteConfig, SITE_NAME_LINE, siteNameBlock, SITE_CONFIG_RELATIVE),

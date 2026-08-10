@@ -59,7 +59,7 @@ async function assertTargetDirEmpty(dir) {
 
 /**
  * Build the scaffold's action list and run it through the shared action runner.
- * @param {{ templateDir: string, answers: { name: string, tagline?: string, brandColor?: string },
+ * @param {{ templateDir: string, answers: { name: string, description?: string, brandColor?: string },
  *  dir: string, dryRun: boolean, log: (line: string) => void }} options `templateDir` is the baked
  *  template to copy from; `dir` is the scaffold target; `answers` are collectAnswers' result;
  *  `dryRun` and `log` pass straight through to runActions
@@ -91,7 +91,7 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
     }),
     defineAction({
       title: 'Personalize the site',
-      detail: 'Writes the site name, tagline, and brand color into the template.',
+      detail: 'Writes the site name, description, and brand color into the template.',
       execute: async () => {
         await applySubstitutions(dir, answers);
       },

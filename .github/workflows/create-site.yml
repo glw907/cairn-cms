@@ -58,7 +58,7 @@ jobs:
           cd /tmp/create-scratch
           npm init -y > /dev/null
           npm install --no-save "${{ steps.create-pack.outputs.create }}"
-          npx create-cairn-site --yes --name "CI Site" --tagline "Built by CI" \
+          npx create-cairn-site --yes --name "CI Site" --description "Built by CI" \
             --brand-color "#2f6fdb" --dir /tmp/ci-site
       - name: Point the scaffolded site at the packed tarballs
         # The same substitution scaffold.yml performs through the emitter's arguments, applied after
@@ -84,7 +84,7 @@ jobs:
             assert.equal(pkg.name, "ci-site", "package.json name was not renamed to the site slug");
             const config = fs.readFileSync("/tmp/ci-site/src/theme/site.config.yaml", "utf8");
             assert.match(config, /siteName: CI Site/, "site name was not substituted");
-            assert.match(config, /tagline: Built by CI/, "tagline was not inserted");
+            assert.match(config, /description: Built by CI/, "description was not inserted");
             assert.ok(!fs.existsSync("/tmp/ci-site/.cairn-state.json"), "tool state landed in the scaffold");
             for (const leftover of ["e2e", "playwright.config.ts", ".claude", "scripts"]) {
               assert.ok(!fs.existsSync("/tmp/ci-site/" + leftover), leftover + " shipped into the scaffold");

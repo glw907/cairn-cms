@@ -10,7 +10,7 @@ const OPTIONS = {
   'dry-run': { type: 'boolean', default: false },
   yes: { type: 'boolean', default: false },
   name: { type: 'string' },
-  tagline: { type: 'string' },
+  description: { type: 'string' },
   'brand-color': { type: 'string' },
   dir: { type: 'string' },
   version: { type: 'boolean', default: false },
@@ -19,7 +19,7 @@ const OPTIONS = {
 /**
  * Parse the CLI's argv into the answers the scaffold flow consumes.
  * @param {string[]} argv the argument vector, without the node/script entries
- * @returns {{ dryRun: boolean, yes: boolean, name?: string, tagline?: string, brandColor?: string, dir?: string, version: boolean }}
+ * @returns {{ dryRun: boolean, yes: boolean, name?: string, description?: string, brandColor?: string, dir?: string, version: boolean }}
  *  the parsed flags; the string options are undefined, not empty, when absent
  */
 export function parseArgs(argv) {
@@ -37,7 +37,7 @@ export function parseArgs(argv) {
     dryRun: values['dry-run'],
     yes: values.yes,
     name: values.name,
-    tagline: values.tagline,
+    description: values.description,
     brandColor: values['brand-color'],
     dir: values.dir,
     version: values.version,

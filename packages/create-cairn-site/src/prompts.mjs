@@ -1,5 +1,5 @@
-// A thin @clack/prompts wrapper collecting the site's name, tagline, and brand color. Every flag
-// from parseArgs short-circuits its own prompt (a caller who already answered on the command
+// A thin @clack/prompts wrapper collecting the site's name, description, and brand color. Every
+// flag from parseArgs short-circuits its own prompt (a caller who already answered on the command
 // line is never asked again), and --yes fills in the Waymark defaults for whatever is still
 // unanswered, so a fully-flagged or fully---yes invocation runs end to end with no interactive
 // prompt. Validation lives here, not in substitute.mjs: this is the last chance to reject a bad
@@ -8,7 +8,7 @@ import { intro, outro, text, isCancel, cancel } from '@clack/prompts';
 import { slugify } from './slug.mjs';
 import { resolveHue } from './substitute.mjs';
 
-const DEFAULTS = { name: 'Waymark', tagline: '', brandColor: '' };
+const DEFAULTS = { name: 'Waymark', description: '', brandColor: '' };
 const BRAND_COLOR_HINT = 'Enter a hex color, an oklch(...) string, or a number 0-360.';
 
 /**
@@ -57,12 +57,12 @@ async function resolveField(flagValue, yes, fallback, prompt) {
 }
 
 /**
- * Collect the scaffold's answers: the site name, an optional tagline, an optional brand color,
- * and the target directory. Each already-supplied flag short-circuits its own prompt; --yes
- * fills in the Waymark defaults for anything still unanswered.
- * @param {{ yes: boolean, name?: string, tagline?: string, brandColor?: string, dir?: string }} flags
+ * Collect the scaffold's answers: the site name, an optional description, an optional brand
+ * color, and the target directory. Each already-supplied flag short-circuits its own prompt;
+ * --yes fills in the Waymark defaults for anything still unanswered.
+ * @param {{ yes: boolean, name?: string, description?: string, brandColor?: string, dir?: string }} flags
  *  the parsed CLI flags, as returned by parseArgs
- * @returns {Promise<{ name: string, tagline: string, brandColor: string, dir: string }>} the
+ * @returns {Promise<{ name: string, description: string, brandColor: string, dir: string }>} the
  *  validated answers
  */
 export async function collectAnswers(flags) {
@@ -74,8 +74,8 @@ export async function collectAnswers(flags) {
     throw new Error('collectAnswers: name must be non-empty');
   }
 
-  const tagline = await resolveField(flags.tagline, flags.yes, DEFAULTS.tagline, () =>
-    text({ message: 'Tagline (optional)', placeholder: 'Leave blank for none' }));
+  const description = await resolveField(flags.description, flags.yes, DEFAULTS.description, () =>
+    text({ message: 'Short description (optional), one line', placeholder: 'Leave blank for none' }));
 
   const brandColor = await resolveField(flags.brandColor, flags.yes, DEFAULTS.brandColor, () =>
     text({
@@ -98,5 +98,5 @@ export async function collectAnswers(flags) {
     text({ message: 'Directory', placeholder: dirDefault, defaultValue: dirDefault }));
 
   outro('Answers collected.');
-  return { name, tagline: tagline ?? '', brandColor: brandColor ?? '', dir };
+  return { name, description: description ?? '', brandColor: brandColor ?? '', dir };
 }

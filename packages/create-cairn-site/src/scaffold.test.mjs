@@ -8,7 +8,7 @@ import { scaffold, handoverText, dryRunNotice } from './scaffold.mjs';
 // Every scaffold test answers identically: the name is what the slug and the substitution
 // assertions key on, and both optional answers stay empty. Frozen so a scaffold run that ever
 // mutated its answers would fail here rather than leak into the next test.
-const ANSWERS = Object.freeze({ name: 'Alpine Club', tagline: '', brandColor: '' });
+const ANSWERS = Object.freeze({ name: 'Alpine Club', description: '', brandColor: '' });
 
 /**
  * Make a temporary directory that is removed when the test that asked for it finishes.

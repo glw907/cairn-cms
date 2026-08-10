@@ -11,9 +11,11 @@
   lands under a project directory), credential-free pre-flight checks (Node floor, loopback
   bindability, proxy detection, a Windows execution-policy note), a pack-time bake of the Waymark
   template through the existing emitter, and a fail-loud substitution pass that personalizes the
-  site name, tagline, and brand color. The brand substitution rotates the hue of all four
-  `--color-primary` declarations and holds each one's lightness and chroma, following the theme
-  file's own re-skin recipe, so a scaffolded site keeps the contrast both its light and dark
+  site name, description, and brand color. The description is written under `site.config.yaml`'s
+  own `description` key rather than an invented `tagline` key, since the engine validates its
+  top-level keys and rejects an unrecognized one. The brand substitution rotates the hue of all
+  four `--color-primary` declarations and holds each one's lightness and chroma, following the
+  theme file's own re-skin recipe, so a scaffolded site keeps the contrast both its light and dark
   blocks were tuned for. The command is wired end to end: pre-flight, prompts, a copy of the baked
   template, the package rename, the substitution pass, and a state save, all through the action
   runner, so `--dry-run` describes the whole run and performs none of it. It refuses before writing

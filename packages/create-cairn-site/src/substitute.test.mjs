@@ -23,7 +23,7 @@ async function tempDir(t) {
 
 /**
  * Build a fixture directory reproducing the real showcase's substitution targets:
- * `src/theme/site.config.yaml` with the bare `siteName:` line and no `tagline:` key, and
+ * `src/theme/site.config.yaml` with the bare `siteName:` line and no `description:` key, and
  * `src/theme/theme.css` with both the light and dark brand blocks.
  * @param {import('node:test').TestContext} t the running test's context
  * @returns {Promise<string>} the fixture directory's absolute path
@@ -52,29 +52,29 @@ async function fixture(t) {
 
 test('substitutes the site name in src/theme/site.config.yaml', async (t) => {
   const dir = await fixture(t);
-  const changed = await applySubstitutions(dir, { name: 'Alpine Club', tagline: '', brandColor: '' });
+  const changed = await applySubstitutions(dir, { name: 'Alpine Club', description: '', brandColor: '' });
   const yaml = await readFile(path.join(dir, 'src/theme/site.config.yaml'), 'utf8');
   assert.match(yaml, /^siteName: Alpine Club$/m);
   assert.ok(changed.includes('src/theme/site.config.yaml'));
 });
 
-test('a nonempty tagline is inserted after the siteName line; an empty one inserts nothing', async (t) => {
+test('a nonempty description is inserted after the siteName line; an empty one inserts nothing', async (t) => {
   const dir = await fixture(t);
-  await applySubstitutions(dir, { name: 'Alpine Club', tagline: 'Notes from the range', brandColor: '' });
-  const withTagline = await readFile(path.join(dir, 'src/theme/site.config.yaml'), 'utf8');
-  const lines = withTagline.split('\n');
+  await applySubstitutions(dir, { name: 'Alpine Club', description: 'Notes from the range', brandColor: '' });
+  const withDescription = await readFile(path.join(dir, 'src/theme/site.config.yaml'), 'utf8');
+  const lines = withDescription.split('\n');
   const nameIndex = lines.findIndex((l) => l === 'siteName: Alpine Club');
-  assert.equal(lines[nameIndex + 1], 'tagline: Notes from the range');
+  assert.equal(lines[nameIndex + 1], 'description: Notes from the range');
 
   const dir2 = await fixture(t);
-  await applySubstitutions(dir2, { name: 'Alpine Club', tagline: '', brandColor: '' });
-  const withoutTagline = await readFile(path.join(dir2, 'src/theme/site.config.yaml'), 'utf8');
-  assert.ok(!withoutTagline.includes('tagline:'));
+  await applySubstitutions(dir2, { name: 'Alpine Club', description: '', brandColor: '' });
+  const withoutDescription = await readFile(path.join(dir2, 'src/theme/site.config.yaml'), 'utf8');
+  assert.ok(!withoutDescription.includes('description:'));
 });
 
 test('a brand color rotates the hue of all four declarations, holding lightness and chroma', async (t) => {
   const dir = await fixture(t);
-  const changed = await applySubstitutions(dir, { name: 'Alpine Club', tagline: '', brandColor: '#0000ff' });
+  const changed = await applySubstitutions(dir, { name: 'Alpine Club', description: '', brandColor: '#0000ff' });
   const css = await readFile(path.join(dir, 'src/theme/theme.css'), 'utf8');
   assert.match(css, /--color-primary: oklch\(45% 0\.1 264\.05\);/);
   assert.match(css, /--color-primary-content: oklch\(99% 0\.01 264\.05\);/);
@@ -86,7 +86,7 @@ test('a brand color rotates the hue of all four declarations, holding lightness 
 test('no brandColor leaves theme.css byte-identical and absent from changed', async (t) => {
   const dir = await fixture(t);
   const before = await readFile(path.join(dir, 'src/theme/theme.css'), 'utf8');
-  const changed = await applySubstitutions(dir, { name: 'Alpine Club', tagline: '', brandColor: '' });
+  const changed = await applySubstitutions(dir, { name: 'Alpine Club', description: '', brandColor: '' });
   const after = await readFile(path.join(dir, 'src/theme/theme.css'), 'utf8');
   assert.equal(after, before);
   assert.ok(!changed.includes('src/theme/theme.css'));
@@ -96,7 +96,7 @@ test('a missing target string throws naming the file and the missing string', as
   const dir = await fixture(t);
   await writeFile(path.join(dir, 'src/theme/site.config.yaml'), 'title: nope\n');
   await assert.rejects(
-    () => applySubstitutions(dir, { name: 'X', tagline: '', brandColor: '' }),
+    () => applySubstitutions(dir, { name: 'X', description: '', brandColor: '' }),
     /site\.config\.yaml/,
   );
 });
@@ -104,7 +104,7 @@ test('a missing target string throws naming the file and the missing string', as
 test('a missing target file throws naming it', async (t) => {
   const dir = await tempDir(t);
   await assert.rejects(
-    () => applySubstitutions(dir, { name: 'X', tagline: '', brandColor: '' }),
+    () => applySubstitutions(dir, { name: 'X', description: '', brandColor: '' }),
     /site\.config\.yaml/,
   );
 });
@@ -117,12 +117,12 @@ test('hexToOklchHue matches the verified CSS Color 4 vectors', () => {
 
 test('a bare number and an oklch(...) string are both accepted as brandColor', async (t) => {
   const dirNumber = await fixture(t);
-  await applySubstitutions(dirNumber, { name: 'X', tagline: '', brandColor: '120' });
+  await applySubstitutions(dirNumber, { name: 'X', description: '', brandColor: '120' });
   const cssNumber = await readFile(path.join(dirNumber, 'src/theme/theme.css'), 'utf8');
   assert.match(cssNumber, /--color-primary: oklch\(45% 0\.1 120\);/);
 
   const dirOklch = await fixture(t);
-  await applySubstitutions(dirOklch, { name: 'X', tagline: '', brandColor: 'oklch(50% 0.2 200)' });
+  await applySubstitutions(dirOklch, { name: 'X', description: '', brandColor: 'oklch(50% 0.2 200)' });
   const cssOklch = await readFile(path.join(dirOklch, 'src/theme/theme.css'), 'utf8');
   assert.match(cssOklch, /--color-primary: oklch\(45% 0\.1 200\);/);
 });
@@ -139,7 +139,7 @@ test('partial drift throws rather than rotating only some declarations', async (
   );
   await writeFile(themePath, partial);
   await assert.rejects(
-    () => applySubstitutions(dir, { name: 'X', tagline: '', brandColor: '#0000ff' }),
+    () => applySubstitutions(dir, { name: 'X', description: '', brandColor: '#0000ff' }),
     /matched 3/,
   );
 });

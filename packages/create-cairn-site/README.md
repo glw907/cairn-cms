@@ -9,8 +9,8 @@ theme and run it locally.
 npm create cairn-site
 ```
 
-The command asks for the site's name, tagline, brand color, and target directory, then writes a
-ready-to-run SvelteKit site. Node.js 22 or later is required, tracking the `@glw907/cairn-cms`
+The command asks for the site's name, description, brand color, and target directory, then writes
+a ready-to-run SvelteKit site. Node.js 22 or later is required, tracking the `@glw907/cairn-cms`
 engine's own floor.
 
 Answer any prompt ahead of time with a flag, and the command skips it:
@@ -18,7 +18,7 @@ Answer any prompt ahead of time with a flag, and the command skips it:
 | Flag | Effect |
 | --- | --- |
 | `--name` | The site's name, written into `site.config.yaml`. |
-| `--tagline` | The site's tagline. Omit for none. |
+| `--description` | A short, one-line description of the site. Omit for none. |
 | `--brand-color` | A hex color, an `oklch(...)` string, or a bare hue. Rotates the theme's brand accent. |
 | `--dir` | Where to create the site. Defaults to a slug of the name. |
 | `--yes` | Accept the defaults for anything not given by a flag. |

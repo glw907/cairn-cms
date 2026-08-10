@@ -1,7 +1,7 @@
 // cairn-audit's interactive-contrast rule: an interactive element's own text color has to read
 // against whatever actually paints behind it, not the white the browser falls back to when nothing
 // upstream declares a background. This graduates the numeric probe from
-// scripts/check-interactive-contrast.mjs (the 2026-07-17 Waymark final design review audit's
+// scripts/checks/check-interactive-contrast.mjs (the 2026-07-17 Waymark final design review audit's
 // invisible-CTA lesson: a control that technically renders but reads as blank against its own
 // ground until hovered or selected). The floor, 1.5, is deliberately looser than the WCAG text
 // floor (4.5 normal text, 3.0 large text): this rule is not proving legibility, only that a control

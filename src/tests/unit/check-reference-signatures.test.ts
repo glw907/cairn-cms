@@ -3,7 +3,7 @@ import {
   normalizeSignature,
   compareSignature,
   declaredSignature,
-} from '../../../scripts/check-reference-signatures.mjs';
+} from '../../../scripts/checks/check-reference-signatures.mjs';
 
 describe('normalizeSignature', () => {
   it('reduces the declare-function form and the arrow form to the same string', () => {

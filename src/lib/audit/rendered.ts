@@ -11,7 +11,7 @@
 // never imports Playwright at the top level: `import('playwright')` is dynamic and resolves from
 // wherever this file executes, which is cairn's own devDependency during cairn's own tests but a
 // CONSUMER's install once this ships in dist and a site's own audit run imports it. That is the
-// deliberate difference from scripts/generate-norms-manifest.mjs, which imports the ROOT
+// deliberate difference from scripts/lab/generate-norms-manifest.mjs, which imports the ROOT
 // `playwright` because it is cairn's own build tool pinned by cairn's own lockfile; do not
 // "harmonize" the two import styles, they serve different trees on purpose.
 import { renderedRules } from './rules/rendered/index.js';

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { enumerateExports } from '../../../scripts/reference-coverage.mjs';
+import { enumerateExports } from '../../../scripts/checks/reference-coverage.mjs';
 
 // The four names the surface-pruning pass demotes from the /components barrel (Task 3), verbatim
 // from `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md` and the audit verdicts doc's

@@ -17,6 +17,21 @@ memory. The packaged `cairn-admin-screens` skill names them by rule id and defer
 the details. [`cairn-doctor --fix`](./doctor.md#the---fix-skill-install) installs and
 freshness-checks the skill in a consumer repo.
 
+## What ships
+
+`cairn-audit` ships whole, as consumer product: every registered rule, the static and rendered
+rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 23
+registered rules audit the `/admin` surface, and a consumer's admin IS cairn's own admin toolkit,
+so conformance to cairn's design system is exactly the product being audited, not apparatus that
+measures the engine from outside.
+
+Two things stay engine-side, both apparatus for producing the manifest the CLI ships rather than
+part of the audit a consumer runs: the norms generator that renders the admin and derives the
+manifest ([Regenerating the manifest](#regenerating-the-manifest)), and the probe scripts that
+back a rule's own development. A module under the packed rule directories that no rule registry
+reaches fails `check:package`, so the shipped rule set and the registries the tables above
+document can't drift apart.
+
 ## Tiers and exit codes
 
 Every finding carries a tier. An error-tier finding gates: it exits the command nonzero, and only a

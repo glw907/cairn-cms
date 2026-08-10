@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 // The build script is plain ESM under scripts/; the unit project runs in Node.
-import { buildAdminCss } from '../../../scripts/build-admin-css.mjs';
+import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { GRAMMAR_TOKENS } from '../../lib/design/grammar-tokens.js';
 
 // One compile for the whole file, and deliberately the PLAIN build, byte-identical to what `npm run
@@ -131,7 +131,7 @@ describe('grammar tokens', () => {
   }
 
   // Asserting theme-invariance against the COMPILED sheet is meaningless: the build's scoper
-  // (scripts/build-admin-css.mjs) rewrites every rule, including a bare `:root` grammar-token
+  // (scripts/build/build-admin-css.mjs) rewrites every rule, including a bare `:root` grammar-token
   // block, so it lands under BOTH `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])`
   // at compile time regardless of where it started. The invariant "grammar tokens are declared
   // once, outside either theme's own block" only exists in the SOURCE file, so this reads the
@@ -150,7 +150,7 @@ describe('grammar tokens', () => {
 // component writes a named role (type-body, gap-control), never a pixel value or a bracketed
 // var() wrapper. A type-* utility carries font-size and its role's ruled line-height; a gap-*
 // utility carries gap. Neither carries anything more, and in particular no weight, case, tracking,
-// font family, or color (the block comment in scripts/admin-css.input.css has why a full recipe
+// font family, or color (the block comment in scripts/build/admin-css.input.css has why a full recipe
 // would strand most of the 66 real call sites).
 describe('grammar-token role utilities', () => {
   const typeUtilities: Record<string, string> = {
@@ -300,7 +300,7 @@ describe('container role utilities (card-shell, card-shadow)', () => {
   });
 });
 
-// CONTRACT: the `@source inline(...)` safelist line in scripts/admin-css.input.css, and the two
+// CONTRACT: the `@source inline(...)` safelist line in scripts/build/admin-css.input.css, and the two
 // hand-written prose counts that describe it (that file's own comment, and
 // docs/reference/admin-grammar-tokens.md), are all numbers a human bumps by hand whenever a role
 // utility is added. grammar-tokens.test.ts already guards the utility CLASSES themselves against
@@ -309,7 +309,7 @@ describe('container role utilities (card-shell, card-shadow)', () => {
 // container-role set now fails a test here instead of leaving a stale number in either file.
 describe('safelist token count stays in sync with GRAMMAR_TOKENS and its own prose', () => {
   const inputCssSource = readFileSync(
-    new URL('../../../scripts/admin-css.input.css', import.meta.url),
+    new URL('../../../scripts/build/admin-css.input.css', import.meta.url),
     'utf8',
   );
   const docsSource = readFileSync(
@@ -352,23 +352,23 @@ describe('safelist token count stays in sync with GRAMMAR_TOKENS and its own pro
 
   it("matches the @source inline(...) safelist's own token count", () => {
     const match = inputCssSource.match(/@source inline\("([^"]+)"\)/);
-    expect(match, 'expected an @source inline(...) line in scripts/admin-css.input.css').not.toBeNull();
+    expect(match, 'expected an @source inline(...) line in scripts/build/admin-css.input.css').not.toBeNull();
     const tokenCount = match![1].trim().split(/\s+/).length;
     expect(
       tokenCount,
-      `expected the @source inline(...) safelist in scripts/admin-css.input.css to carry ${expectedCount} tokens (GRAMMAR_TOKENS' ${utilityCountFromGrammarTokens(GRAMMAR_TOKENS)} role utilities plus ${CONTAINER_ROLE_COUNT} container roles); scripts/admin-css.input.css and docs/reference/admin-grammar-tokens.md both state this count in prose and must move together`,
+      `expected the @source inline(...) safelist in scripts/build/admin-css.input.css to carry ${expectedCount} tokens (GRAMMAR_TOKENS' ${utilityCountFromGrammarTokens(GRAMMAR_TOKENS)} role utilities plus ${CONTAINER_ROLE_COUNT} container roles); scripts/build/admin-css.input.css and docs/reference/admin-grammar-tokens.md both state this count in prose and must move together`,
     ).toBe(expectedCount);
   });
 
-  it("matches scripts/admin-css.input.css's own prose count", () => {
+  it("matches scripts/build/admin-css.input.css's own prose count", () => {
     const match = inputCssSource.match(
       /The (\w+) grammar and container role utilities are safelisted/,
     );
-    expect(match, 'expected the safelist comment in scripts/admin-css.input.css').not.toBeNull();
-    const parsed = parseCount(match![1], 'scripts/admin-css.input.css');
+    expect(match, 'expected the safelist comment in scripts/build/admin-css.input.css').not.toBeNull();
+    const parsed = parseCount(match![1], 'scripts/build/admin-css.input.css');
     expect(
       parsed,
-      `scripts/admin-css.input.css states "${match![1]}" (${parsed}) grammar and container role utilities but GRAMMAR_TOKENS plus the container roles total ${expectedCount}; update the count in scripts/admin-css.input.css and the matching count in docs/reference/admin-grammar-tokens.md`,
+      `scripts/build/admin-css.input.css states "${match![1]}" (${parsed}) grammar and container role utilities but GRAMMAR_TOKENS plus the container roles total ${expectedCount}; update the count in scripts/build/admin-css.input.css and the matching count in docs/reference/admin-grammar-tokens.md`,
     ).toBe(expectedCount);
   });
 
@@ -381,7 +381,7 @@ describe('safelist token count stays in sync with GRAMMAR_TOKENS and its own pro
     const parsed = parseCount(match![1], 'docs/reference/admin-grammar-tokens.md');
     expect(
       parsed,
-      `docs/reference/admin-grammar-tokens.md states its full set closes at "${match![1]}" (${parsed}) but GRAMMAR_TOKENS plus the container roles total ${expectedCount}; update the count in docs/reference/admin-grammar-tokens.md and the matching comment in scripts/admin-css.input.css`,
+      `docs/reference/admin-grammar-tokens.md states its full set closes at "${match![1]}" (${parsed}) but GRAMMAR_TOKENS plus the container roles total ${expectedCount}; update the count in docs/reference/admin-grammar-tokens.md and the matching comment in scripts/build/admin-css.input.css`,
     ).toBe(expectedCount);
   });
 });

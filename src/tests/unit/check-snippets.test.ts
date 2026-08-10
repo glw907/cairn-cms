@@ -8,7 +8,7 @@ import {
   svelteScript,
   isDeclarationOnly,
   typecheckUnits,
-} from '../../../scripts/check-snippets.mjs';
+} from '../../../scripts/checks/check-snippets.mjs';
 
 describe('extractBlocks', () => {
   it('extracts a fenced ts block with its 1-based fence line', () => {

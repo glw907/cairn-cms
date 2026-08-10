@@ -7,7 +7,7 @@ import { log } from '../log/index.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { validateCsrfHeader } from './csrf.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
-import { tidyClientErrorStatus } from './content-routes-context.js';
+import { tidyClientErrorStatus, TidySdkMissingError } from './content-routes-context.js';
 import { markKeyHealthy, markKeyUnhealthy } from './tidy-key-health.js';
 import type { ContentRoutesContext, TidyClient } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
@@ -25,11 +25,12 @@ export interface TidyResult {
 
 /**
  * A refused tidy: `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled, the API
- * key is missing, or Anthropic rejects the key outright (401/403, a non-retryable auth failure,
- * distinct from the retryable model errors below), `fail(413)` for an over-long body, `fail(502)`
- * for a deadline overrun, an abort, or a model error (rate limit, overload, 5xx, network; all
- * retryable), `fail(422)` for a model refusal, `fail(400)` for a malformed body. Just the one-line
- * summary; the action commits nothing, so a refusal can never corrupt the entry.
+ * key is missing, the optional `@anthropic-ai/sdk` peer is not installed, or Anthropic rejects the
+ * key outright (401/403, a non-retryable auth failure, distinct from the retryable model errors
+ * below), `fail(413)` for an over-long body, `fail(502)` for a deadline overrun, an abort, or a
+ * model error (rate limit, overload, 5xx, network; all retryable), `fail(422)` for a model
+ * refusal, `fail(400)` for a malformed body. Just the one-line summary; the action commits
+ * nothing, so a refusal can never corrupt the entry.
  */
 export interface TidyFailure {
   error: string;
@@ -67,13 +68,15 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *  failed, aborted, or refused tidy can never corrupt the entry; the diff is computed on the client
    *  (Task 12), so the server stays a thin model-call boundary.
    *
-   *  A model-call failure classifies into one of two voices (save-500-honest-errors, Task 4): an
-   *  auth/permission failure (401/403) is not retryable, since the key itself is the problem, so it
-   *  returns the calm non-retry copy naming the site developer and marks the shared key-health cache
-   *  unhealthy (Task 5), which hides the Tidy button on the next edit load rather than offering a
-   *  control that will fail again. Everything else (a deadline overrun, another abort, a model error)
-   *  stays the retryable "Try again." copy, with the log's `reason` field (`timeout`/`abort`/`model`)
-   *  naming which.
+   *  A throw out of the client call classifies into one of two voices (save-500-honest-errors,
+   *  Task 4). Not retryable, and so answered without the "Try again." copy: an auth/permission
+   *  failure (401/403), where the key itself is the problem, which returns the calm copy naming
+   *  the site developer and marks the shared key-health cache unhealthy (Task 5) so the next edit
+   *  load hides the Tidy button rather than offering a control that will fail again; and a missing
+   *  `@anthropic-ai/sdk`, where the optional peer was never installed, which returns the install
+   *  command and leaves the cache alone. Everything else (a deadline overrun, another abort, a
+   *  model error) stays the retryable "Try again." copy, with the log's `reason` field
+   *  (`timeout`/`abort`/`model`) naming which.
    */
   async function tidyAction(event: CairnEvent): Promise<ActionFailure<TidyFailure> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
@@ -150,6 +153,16 @@ export function createTidyActions(ctx: ContentRoutesContext) {
         { signal: controller.signal },
       );
     } catch (err) {
+      if (err instanceof TidySdkMissingError) {
+        // First, because this error carries no `status`: the branches below would read it as a
+        // transient model failure and hand the editor "Try again.", which reinstalling is the only
+        // thing that fixes. No key was ever tried either, so the key-health cache stays untouched
+        // and the answer is the one command that resolves it.
+        log.warn('tidy.failed', { editor: editor.email, model, reason: 'sdk_missing' });
+        return fail(503, {
+          error: 'Tidy is not configured: this site does not have @anthropic-ai/sdk installed. Run npm install @anthropic-ai/sdk.',
+        } satisfies TidyFailure);
+      }
       const status = tidyClientErrorStatus(err);
       if (status === 401 || status === 403) {
         // An auth/permission failure is not retryable: the key itself is the problem, not a transient

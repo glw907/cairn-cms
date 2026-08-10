@@ -38,7 +38,7 @@ export const DEFAULT_SHEET_CANDIDATES = [
 export const DEFAULT_PALETTE_CSS_FILES = ['src/lib/components/cairn-admin.css'];
 
 // The core admin routes rendered mode visits absent a configured page list. Mirrors the norms
-// generator's own page set (scripts/generate-norms-manifest.mjs): both are "the core admin routes"
+// generator's own page set (scripts/lab/generate-norms-manifest.mjs): both are "the core admin routes"
 // in the same sense, and `/admin` is deliberately absent from both since it renders the same office
 // as `/admin/posts`, so including it would double a route rather than add one.
 export const DEFAULT_RENDERED_PAGES = [

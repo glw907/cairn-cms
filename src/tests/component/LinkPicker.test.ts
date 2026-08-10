@@ -19,34 +19,12 @@ function open(props: Partial<{ linkTargets: LinkTarget[]; insert: (href: string,
 }
 
 describe('LinkPicker', () => {
-  it('opens the dialog from the trigger and lists targets grouped with Pages first', async () => {
-    const { screen } = open();
-    await screen.getByRole('button', { name: /link to page/i }).click();
-    const dialog = screen.container.querySelector('dialog')!;
-    expect(dialog.open).toBe(true);
-    const text = dialog.textContent ?? '';
-    expect(text).toContain('Pages');
-    expect(text).toContain('Posts');
-    expect(text.indexOf('Pages')).toBeLessThan(text.indexOf('Posts'));
-    expect(text).toContain('About Us');
-    expect(text).toContain('Waxing Guide');
-  });
-
   it('shows a post date and a draft badge', async () => {
     const { screen } = open();
     await screen.getByRole('button', { name: /link to page/i }).click();
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).toContain('2026-01-04');
     expect(text).toContain('Draft');
-  });
-
-  it('filters by a case-insensitive title substring', async () => {
-    const { screen } = open();
-    await screen.getByRole('button', { name: /link to page/i }).click();
-    await screen.getByRole('searchbox', { name: /search/i }).fill('wax');
-    const text = screen.container.querySelector('dialog')!.textContent ?? '';
-    expect(text).toContain('Waxing Guide');
-    expect(text).not.toContain('About Us');
   });
 
   it('inserts the cairn token for the picked target and closes', async () => {

@@ -97,7 +97,7 @@ describe('the admin sheet base reset layer', () => {
     textarea.remove();
   });
 
-  // Fix A2 item (5): scripts/admin-css.input.css declares the layer order up front, but a bare
+  // Fix A2 item (5): scripts/build/admin-css.input.css declares the layer order up front, but a bare
   // `@layer name, name, ...;` ordering statement with no rules never survives the
   // Tailwind/lightningcss pipeline, so the statement is dropped and precedence then rides on
   // lightningcss's own emission order for the populated blocks. That order also includes an

@@ -291,3 +291,101 @@ skill, not per this plan.
   re-measure and record the baseline.
 - [ ] **Step 4:** Vale clean on touched published pages; full gate; commit (docs-only, no
   simplifier).
+
+---
+
+## Post-mortem (2026-08-09)
+
+**Status: all seven tasks landed on `cleanup`, plus one scope addition Geoff made mid-pass.**
+No version bump, no publish, per the pass rules. Nine commits, `d6ce6c13` through the docs close.
+
+### What shipped
+
+Tasks 1 through 7 as planned, with `CONTRIBUTING.md` added mid-pass when Geoff ruled that a
+developer working in the repo needs a map and does not have his `CLAUDE.md`. That reverses the
+spec's explicit decline of "a maintained repo map", so it is recorded here rather than left to
+look like drift. cairn is also moving to beta, which is what made a real contribution guide
+appropriate; the themes repo `glw907/cairn-themes` is public for the same reason.
+
+### Measured outcomes, honestly
+
+| Instrument | Before | After |
+|---|---|---|
+| Packed tarball | 2.5 MB / 7.0 MB unpacked / 741 files | 2.5 MB / 6.9 MB / 739 files |
+| `docs/superpowers` + `docs/internal` | 29.6 MB | 11.3 MB |
+| Consumer production install (tidy unused) | baseline | **-13 MB, ~-1,980 files** |
+| Test suite | 5,266 tests / 413 files | 5,273 tests / 412 files |
+
+**The packed baseline barely moved, and the spec's success criterion was written around it.**
+Only Task 2's eviction touches the tarball, about 66 KB of 2.5 MB. Nothing in `examples/`,
+`docs/superpowers/`, `docs/internal/`, or `legacy/` was ever in the `files` array, so pruning
+them is repo hygiene rather than package weight. The pass's real consumer win is the SDK peer
+move, which is an order of magnitude larger than everything else combined and was listed as a
+scope edge rather than the headline. A future pass aiming at "the shipped package is lean"
+should measure install weight, not `npm pack`.
+
+**The spec's theme sizes were wrong by an order of magnitude.** It recorded 26 MB / 27 MB / 11 MB
+for the three theme ports; the git-tracked content is 436 KB / 520 KB / 2.9 MB. The larger
+figures were measured against working directories with dependencies installed. The relocation was
+still right on its organizational argument, but it recovered 3.9 MB, not 64 MB.
+
+**The test suite went UP, then down by 8.** Task 2 added 10 gate tests and Task 3 added the tidy
+refusal tests; the authorized cleanup then removed 8. Net `+7` against pass start.
+
+### Decisions locked
+
+- **cairn-audit ships whole**, as consumer product. All 23 registered rules audit the `/admin`
+  surface, and a consumer's admin is cairn's admin toolkit.
+- **The lab home is `src/tests/lab/`**, outside `src/lib` so svelte-package cannot reach it, and
+  inside vitest's collection because the unit project's `include` was widened to reach it.
+- **`@anthropic-ai/sdk` is an optional peer**, reached by dynamic import behind a synchronous
+  seam. The pass's one `Consumers must:` line.
+- **`scripts/lab/` does not mean "never runs in CI".** `design.yml` runs `test:reskin` and
+  `norms.yml` runs `norms:check`, both from `lab/`. Lab means apparatus a human or a pass drives.
+- **`live-probe-support.mjs` is a check, not lab**, correcting the plan: its only two importers
+  are the `check-interactive-contrast` and `check-touch-targets` gates, and a gate must not
+  depend on lab apparatus.
+- **The docs refactor runs BEFORE release one** (Geoff, 2026-08-09). The three waiting consumer
+  sites cross once, after both.
+
+### Defects found in this plan, for the next planner
+
+1. **The lab test path would have silently dropped 79 assertions.** Task 2 specified
+   `src/tests/lab/vertical-metrics.test.ts`, but vitest collects only `unit/`, `integration/`,
+   and `component/`. That path matches no project, and vitest exits 0 on an empty match, so the
+   loss would have looked exactly like a successful file move. Caught before dispatch; the fix
+   was widening the unit project's `include`, proven by asserting the count was 79 before and
+   after rather than trusting a green exit.
+2. **Task 3 asserted two things that cannot both hold.** It required a dynamic import AND that
+   the synchronous `anthropicClient` seam keep its signature. You cannot await inside a sync
+   factory. Resolved with a lazy `TidyClient` whose methods resolve the SDK on first call.
+3. **The dead-test criteria produced a zero.** See the revision block appended to the spec; the
+   short version is that "safe to delete" and "useless" are different questions, and a threshold
+   prompt returns nothing while a forced ranking returns something judgeable.
+
+### Process lessons
+
+- **Two subagents returned non-answers** ("I'll stop polling and wait…") while their work sat
+  uncommitted. In one case the orchestrator's own gate run found the suite RED at 411/413 files.
+  It proved to be a real-browser flake, confirmed by re-running the component project clean, but
+  the agent's report would have been trusted without that check. **Run the gate yourself before
+  accepting a task as done.**
+- **`npm test` can HANG rather than fail.** One run stalled about three hours in the browser
+  project instead of exiting non-zero, which is distinct from the documented fast-failing
+  "Browser connection was closed" flake. A long background gate needs a liveness check.
+- **CI is four workflows, not one.** `test.yml`, `e2e.yml`, `design.yml`, and `scaffold.yml` all
+  carry `pull_request:` triggers. The `cairn-ci-only-gates` memory said to derive the gate list
+  from `test.yml` alone, and has been corrected.
+- **An inventory that greps basenames misses directory-level references.** The artifact sweep
+  marked three chip-register captures prunable although `docs/internal/admin-design-system.md`
+  and the shipped `CHANGELOG.md` both cite their containing directory as measured evidence.
+- **Parallel worktrees off one commit worked well.** Tasks 3, 4, 5 and the contributor guide ran
+  concurrently in separate worktrees and merged with zero conflicts, which kept the
+  one-executor-per-worktree rule intact while still parallelising.
+
+### Deliberately unresolved
+
+**The `expectTypeOf` question.** 48 assertions across 9 test files are runtime no-ops under
+`npm test` because `vitest.config.ts` configures no typecheck project. They are NOT dead:
+`tsconfig.json` includes `src/tests`, so `npm run check` enforces them. Two agents concluded
+"delete" and were wrong. Geoff held the question; it is filed in `ROADMAP.md`.

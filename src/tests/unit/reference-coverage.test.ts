@@ -6,7 +6,7 @@ import {
   hasTierMarker,
   untaggedNames,
   staleNames,
-} from '../../../scripts/reference-coverage.mjs';
+} from '../../../scripts/checks/reference-coverage.mjs';
 
 const fixture = (name: string) => resolve(__dirname, 'fixtures/reference-coverage', name);
 

@@ -33,33 +33,33 @@
     "markdown"
   ],
   "scripts": {
-    "package": "svelte-package && node scripts/build-admin-css.mjs && node scripts/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/doctor/bin.js dist/media-seed/bin.js dist/audit/bin.js",
-    "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error && node scripts/check-package-files.mjs && node scripts/check-skill-budget.mjs",
-    "check:reference": "npm run package && node scripts/reference-coverage.mjs",
-    "check:reference:signatures": "npm run package && node scripts/check-reference-signatures.mjs",
-    "check:surface": "npm run package && node scripts/check-surface.mjs",
-    "check:readiness": "npm run package && node scripts/check-readiness.mjs",
-    "check:docs": "node scripts/docs-links.mjs",
-    "check:arm-indexes": "node scripts/check-arm-indexes.mjs",
-    "check:snippets": "npm run package && node scripts/check-snippets.mjs",
-    "check:version": "node scripts/check-version.mjs",
-    "check:prose": "node scripts/check-admin-prose.mjs",
-    "check:public-tokens": "node scripts/check-public-tokens.mjs",
-    "check:custom-surface": "npm run package && node scripts/check-custom-surface.mjs",
-    "check:chassis-boundary": "node scripts/check-chassis-boundary.mjs",
-    "check:cm-internals": "node scripts/check-cm-internals.mjs",
-    "check:invisible-craft": "npm run package && node scripts/check-invisible-craft.mjs",
-    "check:admin-css-classes": "npm run package && node scripts/check-admin-css-classes.mjs",
-    "update-admin-sheet-inventory": "npm run package && node scripts/update-admin-sheet-inventory.mjs",
-    "check:interactive-contrast": "node scripts/check-interactive-contrast.mjs",
-    "check:touch-targets": "node scripts/check-touch-targets.mjs",
-    "test:reskin": "node scripts/reskin-fixture.mjs",
-    "norms:generate": "npm run package && node scripts/generate-norms-manifest.mjs",
-    "norms:check": "npm run package && node scripts/generate-norms-manifest.mjs --check",
+    "package": "svelte-package && node scripts/build/build-admin-css.mjs && node scripts/build/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/doctor/bin.js dist/media-seed/bin.js dist/audit/bin.js",
+    "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error && node scripts/checks/check-package-files.mjs && node scripts/checks/check-skill-budget.mjs",
+    "check:reference": "npm run package && node scripts/checks/reference-coverage.mjs",
+    "check:reference:signatures": "npm run package && node scripts/checks/check-reference-signatures.mjs",
+    "check:surface": "npm run package && node scripts/checks/check-surface.mjs",
+    "check:readiness": "npm run package && node scripts/checks/check-readiness.mjs",
+    "check:docs": "node scripts/checks/docs-links.mjs",
+    "check:arm-indexes": "node scripts/checks/check-arm-indexes.mjs",
+    "check:snippets": "npm run package && node scripts/checks/check-snippets.mjs",
+    "check:version": "node scripts/checks/check-version.mjs",
+    "check:prose": "node scripts/checks/check-admin-prose.mjs",
+    "check:public-tokens": "node scripts/checks/check-public-tokens.mjs",
+    "check:custom-surface": "npm run package && node scripts/checks/check-custom-surface.mjs",
+    "check:chassis-boundary": "node scripts/checks/check-chassis-boundary.mjs",
+    "check:cm-internals": "node scripts/checks/check-cm-internals.mjs",
+    "check:invisible-craft": "npm run package && node scripts/checks/check-invisible-craft.mjs",
+    "check:admin-css-classes": "npm run package && node scripts/checks/check-admin-css-classes.mjs",
+    "update-admin-sheet-inventory": "npm run package && node scripts/build/update-admin-sheet-inventory.mjs",
+    "check:interactive-contrast": "node scripts/checks/check-interactive-contrast.mjs",
+    "check:touch-targets": "node scripts/checks/check-touch-targets.mjs",
+    "test:reskin": "node scripts/lab/reskin-fixture.mjs",
+    "norms:generate": "npm run package && node scripts/lab/generate-norms-manifest.mjs",
+    "norms:check": "npm run package && node scripts/lab/generate-norms-manifest.mjs --check",
     "lint": "eslint src/lib",
-    "check:comments": "bash scripts/check-comments.sh",
-    "check:dev-package": "node scripts/check-dev-package.mjs",
-    "check:consumers": "npm run package && node scripts/check-consumers.mjs",
+    "check:comments": "bash scripts/checks/check-comments.sh",
+    "check:dev-package": "node scripts/checks/check-dev-package.mjs",
+    "check:consumers": "npm run package && node scripts/checks/check-consumers.mjs",
     "prepare": "npm run package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
@@ -67,9 +67,9 @@
     "test:unit": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "test:component": "vitest run --project component",
-    "emit-template": "node scripts/emit-template.mjs",
-    "test:emit": "node --test scripts/emit-template.test.mjs",
-    "design:mockup-css": "npm run package && node scripts/build-mockup-css.mjs"
+    "emit-template": "node scripts/build/emit-template.mjs",
+    "test:emit": "node --test scripts/build/emit-template.test.mjs",
+    "design:mockup-css": "npm run package && node scripts/build/build-mockup-css.mjs"
   },
   "exports": {
     ".": {
@@ -169,11 +169,16 @@
     "docs/tutorial"
   ],
   "peerDependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
     "@sveltejs/kit": "^2.12",
     "svelte": "^5.56.3"
   },
+  "peerDependenciesMeta": {
+    "@anthropic-ai/sdk": {
+      "optional": true
+    }
+  },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.105.0",
     "@codemirror/autocomplete": "^6.20.2",
     "@codemirror/commands": "^6.10.3",
     "@codemirror/lang-markdown": "^6.5.0",
@@ -213,6 +218,7 @@
     "yaml": "^2"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
     "@arethetypeswrong/cli": "^0.18.3",
     "@cloudflare/vitest-pool-workers": "^0.16",
     "@cloudflare/workers-types": "^4.20260501.0",
@@ -237,6 +243,7 @@
     "svelte": "^5.56.3",
     "svelte-check": "^4",
     "tailwindcss": "^4.3.2",
+    "tsx": "^4.23.11",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.62.0",
     "vite": "^8.0",

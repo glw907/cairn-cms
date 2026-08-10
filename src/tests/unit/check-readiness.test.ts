@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { checkReadiness } from '../../../scripts/check-readiness.mjs';
+import { checkReadiness } from '../../../scripts/checks/check-readiness.mjs';
 
 // The gate's core comparison, against fixture markdown. The script's main() wires the same
 // function to the real registry (from dist) and the real checklist doc.

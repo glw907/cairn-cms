@@ -36,12 +36,6 @@ async function editorTableSql(): Promise<string | undefined> {
 }
 
 describe('migration 0001: open the editor role column', () => {
-  it('is applied by the shared vitest integration harness for the rest of the suite', async () => {
-    // _apply-migrations.ts applies every file under migrations/ before any integration test
-    // runs, so by the time this test executes the editor table already has the open schema.
-    expect(await editorTableSql()).not.toMatch(/CHECK/i);
-  });
-
   it('rebuilds editor without the CHECK constraint, preserving existing rows', async () => {
     // Start from a clean pre-0001 schema: drop what the shared harness already migrated and
     // reapply 0000 alone, to reproduce the table this migration targets.

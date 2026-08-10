@@ -30,7 +30,7 @@ eyebrow and page-heading recipes in `docs/internal/admin-design-system.md`, alre
 `OfficeList.svelte`'s header and `ConceptList.svelte`'s own `mb-10` rhythm value.
 
 A scan-scope note this comment used to state the other way round: `src/lib/admin-toolkit` is
-INSIDE `scripts/admin-css.input.css`'s `@source` roots, so a utility class used only here does
+INSIDE `scripts/build/admin-css.input.css`'s `@source` roots, so a utility class used only here does
 compile into the shipped sheet. It was outside when this component was minted on 2026-07-20, and
 joined the roots a day later in `c21ac3b8` once the gap was found. The h1's even-line-rag balancing
 (absorbed from `HelpHome.svelte`'s own sentence-length masthead title, so a long title's line rags

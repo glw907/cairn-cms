@@ -1,5 +1,5 @@
 // culori ships JSDoc types in its source but no .d.ts, and its package.json declares no `types`
-// entry, so NodeNext sees it as an untyped module. scripts/check-public-tokens.mjs imports it, and
+// entry, so NodeNext sees it as an untyped module. scripts/checks/check-public-tokens.mjs imports it, and
 // role-layer-contrast.test.ts pulls that script (and culori directly) into the svelte-check program,
 // so this ambient declaration keeps the check at 0 errors. Only the members the type-checked files
 // use are declared, with the shapes those call sites rely on.

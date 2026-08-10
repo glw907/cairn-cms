@@ -7,7 +7,7 @@ import {
   applyThemeOverlay,
   parseThemeTokens,
   checkThemeContrastTokens,
-} from '../../../scripts/check-public-tokens.mjs';
+} from '../../../scripts/checks/check-public-tokens.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '../../..');
 

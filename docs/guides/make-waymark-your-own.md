@@ -104,5 +104,5 @@ same edit as any other token. Two things make a font swap different in practice 
 [`examples/cairn-theme/README.md`](../../examples/cairn-theme/README.md) is the short pointer
 to the working example. The [public design system reference](../internal/public-design-system.md)
 covers the full token inventory and the load-bearing rules an agent editing the theme needs to
-know. `scripts/check-public-tokens.mjs` and `scripts/reskin-fixture.mjs` are the two gates a
+know. `scripts/checks/check-public-tokens.mjs` and `scripts/lab/reskin-fixture.mjs` are the two gates a
 re-skin must clear.

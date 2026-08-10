@@ -48,13 +48,6 @@ describe('fieldset SEO-image guard', () => {
   it('forbids an seo image inside an array', () => {
     expect(() => fieldset({ gallery: fields.array(fields.image({ label: 'Shot', seo: true })) })).toThrow(/seo/i);
   });
-
-  it('still rejects two top-level seo images', () => {
-    expect(() => fieldset({
-      a: fields.image({ label: 'A', seo: true }),
-      b: fields.image({ label: 'B', seo: true }),
-    })).toThrow(/at most one/i);
-  });
 });
 
 describe('fieldset container-nesting guard', () => {

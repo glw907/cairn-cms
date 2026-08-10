@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { extractTsCopy, scan } from '../../../scripts/check-admin-prose.mjs';
+import { extractTsCopy, scan } from '../../../scripts/checks/check-admin-prose.mjs';
 
 // A planted `.ts` copy module body carrying a known marketing tell in a string literal, plus
 // template-literal copy. The gate must lift both kinds of literal out and scan them.

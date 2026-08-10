@@ -274,6 +274,63 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
   });
 });
 
+describe('tidy action: the optional @anthropic-ai/sdk peer (cleanup pass, Task 3)', () => {
+  // The SDK is an OPTIONAL peer: a site that never tidies never installs it. The default client
+  // therefore reaches it through a dynamic import at call time, and an absent install must land as
+  // an actionable refusal rather than a module-resolution crash. `vi.doMock` (not the hoisted
+  // `vi.mock`) is what models absence here: it registers for the NEXT import of the specifier, which
+  // is exactly the runtime import the default factory performs, and it leaves the rest of this file
+  // running against the real registry.
+  //
+  // The mock is load-bearing, not decoration: the SDK is a devDependency of this repo and imports
+  // cleanly under the workerd pool, so without it these specs reach the real client and fail on a
+  // network error (fail(502)) instead of the refusal below.
+  function sdkAbsent(): void {
+    vi.doMock('@anthropic-ai/sdk', () => {
+      throw new Error("Cannot find package '@anthropic-ai/sdk'");
+    });
+  }
+
+  afterEach(() => {
+    vi.doUnmock('@anthropic-ai/sdk');
+    vi.resetModules();
+  });
+
+  it('refuses fail(503) naming the package and the install command when the SDK is absent', async () => {
+    sdkAbsent();
+    // No injected client, so the action resolves the default factory: the path a real site takes.
+    // The short deadline bounds the call regardless of how the resolution fails.
+    const routes = createContentRoutes(runtime(), { tidy: { timeoutMs: 200 } });
+    const warn = vi.spyOn(log, 'warn');
+    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+
+    expect(res.status).toBe(503);
+    expect(res.data?.error).toContain('@anthropic-ai/sdk');
+    expect(res.data?.error).toContain('npm install @anthropic-ai/sdk');
+    // Not the retryable voice: reinstalling is the fix, and "Try again." would be a false promise.
+    expect(res.data?.error).not.toMatch(/try again/i);
+    expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'sdk_missing' }));
+  });
+
+  it('never marks the key unhealthy when the SDK is absent (the key was never tried)', async () => {
+    sdkAbsent();
+    const routes = createContentRoutes(runtime(), { tidy: { timeoutMs: 200 } });
+    await routes.tidyAction(tidyEvent());
+
+    expect(keyKnownUnhealthy()).toBe(false);
+  });
+
+  it('an injected client still succeeds unchanged with the SDK absent', async () => {
+    sdkAbsent();
+    const create = vi.fn<TidyClient['messages']['create']>(async () => cannedMessage('the cat'));
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
+    const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
+
+    expect(res.corrected).toBe('the cat');
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () => {
   it('marks the key unhealthy on a 401', async () => {
     const create = vi.fn(async () => {

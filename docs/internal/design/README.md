@@ -48,7 +48,7 @@ python3 -m http.server 4180 -d docs/internal/design
 # open http://localhost:4180/<your-mockup>.html
 ```
 
-While iterating on a mockup's markup, rerun only `node scripts/build-mockup-css.mjs` to recompile without
+While iterating on a mockup's markup, rerun only `node scripts/build/build-mockup-css.mjs` to recompile without
 repackaging. The compiled sheet and the copied fonts stay untracked (`.gitignore` beside this file); only
 the mockup HTML and the design-reference markdown are the record.
 

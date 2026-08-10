@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { scopeReport } from '../../../scripts/audit-gate.mjs';
+import { scopeReport } from '../../../scripts/checks/audit-gate.mjs';
 import type { AuditReport } from '../../lib/audit/types.js';
 
 // Each rule's own behavioral coverage lives under src/tests/unit/audit/rules/. What is specific to

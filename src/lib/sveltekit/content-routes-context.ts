@@ -16,12 +16,11 @@ import { logCommitFailed, commitFailure } from './commit-log.js';
 import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
 import type { PreviewTokenConfig } from './preview.js';
-// Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
-// imported only here (a Worker module no component imports statically), and the server-only-deps test
-// guards that boundary. The default export is the Anthropic client class; the structural TidyClient
-// type below keeps the action's surface small and the test seam injectable, so the SDK's deep types
-// never leak into a public signature.
-import Anthropic from '@anthropic-ai/sdk';
+// Deliberately absent from the imports above: @anthropic-ai/sdk. It is server-only (it carries the
+// API-key path and must never reach a browser bundle), and it is an OPTIONAL peer dependency, so a
+// static import here would be a build-time resolution every consumer had to satisfy whether or not
+// their site ever tidies. The one permitted reach is the dynamic import inside lazyAnthropicClient
+// below, and the server-only-deps test guards both halves of that boundary.
 
 /**
  * The minimal Anthropic client surface the tidy action uses, typed structurally so the SDK's deep
@@ -59,6 +58,54 @@ export interface TidyClient {
    */
   models?: {
     list(params?: { limit?: number }, options?: { signal?: AbortSignal }): Promise<unknown>;
+  };
+}
+
+/**
+ * Thrown by the default tidy client when `@anthropic-ai/sdk` cannot be imported, which on a real
+ *  site means the optional peer is not installed. It stays distinct from every other tidy failure
+ *  because the remedy differs: an auth or model error is the site's key or Anthropic's problem,
+ *  while this one is a missing install the developer fixes with one command, so the tidy action
+ *  answers it with its own refusal rather than the retryable "try again" voice. Engine-internal
+ *  (no package subpath re-exports it), so the action's `instanceof` test is sound: only this
+ *  module ever constructs one.
+ */
+export class TidySdkMissingError extends Error {
+  constructor(cause: unknown) {
+    super('@anthropic-ai/sdk is not installed.', { cause });
+    this.name = 'TidySdkMissingError';
+  }
+}
+
+/**
+ * The default tidy client: the real SDK client, reached lazily so an uninstalled optional peer
+ *  surfaces as a refusal at call time instead of a module-resolution failure at build time. The
+ *  returned object satisfies {@link TidyClient} synchronously, which is what keeps
+ *  `ContentRoutesContext.anthropicClient` a plain synchronous factory and an injected fake
+ *  interchangeable with this default. Each method awaits the import and builds a client from the
+ *  key, so nothing is constructed until a call actually arrives. A failed import becomes
+ *  {@link TidySdkMissingError}, which the tidy action maps to its install-instruction refusal and
+ *  `probeTidyKey` degrades to an 'unknown' key verdict.
+ */
+function lazyAnthropicClient(opts: { apiKey: string }): TidyClient {
+  async function connect(): Promise<Required<TidyClient>> {
+    // The rejection handler wraps the import expression alone, never the construction below, so it
+    // cannot be widened by accident: a constructor failure from a real, installed SDK is not a
+    // missing install and must keep its own error for tidyClientErrorStatus to classify.
+    const { default: Anthropic } = await import('@anthropic-ai/sdk').catch((err: unknown) => {
+      throw new TidySdkMissingError(err);
+    });
+    // The SDK client satisfies TidyClient structurally; the cast names that to the compiler, and
+    // Required marks the `models` probe surface the real client always carries.
+    return new Anthropic({ apiKey: opts.apiKey }) as unknown as Required<TidyClient>;
+  }
+  return {
+    messages: {
+      create: async (body, options) => (await connect()).messages.create(body, options),
+    },
+    models: {
+      list: async (params, options) => (await connect()).models.list(params, options),
+    },
   };
 }
 
@@ -257,11 +304,10 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
     return event.locals.cairnBackend ?? runtime.backend.connect(event.platform?.env ?? {});
   }
 
-  // The default Anthropic factory builds the real SDK client from the resolved key. Tests inject a fake
-  // (deps.tidy.client) so messages.create is stubbed and no network call or real key is ever needed. The
-  // SDK client satisfies TidyClient structurally; the cast names that to the compiler.
-  const anthropicClient =
-    deps.tidy?.client ?? ((opts: { apiKey: string }) => new Anthropic({ apiKey: opts.apiKey }) as unknown as TidyClient);
+  // Tests (and the packaged dev backend's deterministic stub) inject a fake through
+  // deps.tidy.client, so messages.create is stubbed and no network call or real key is ever needed.
+  // Absent one, the default above resolves the SDK lazily, on the first call rather than at import.
+  const anthropicClient = deps.tidy?.client ?? lazyAnthropicClient;
   const tidyTimeoutMs = deps.tidy?.timeoutMs ?? DEFAULT_TIDY_TIMEOUT_MS;
 
   /**

@@ -84,7 +84,7 @@ realized the writing-surface/chrome rule for the spellcheck and objective-error 
   neutralizes it (`border: none`, transparent background, no padding) so the recipe DOM owns the surface.
   Everything else under `.cairn-cm-suggest*` is cairn's own class, not a CodeMirror internal.
 - **The coupling floor is enforced, not just documented.** `npm run check:cm-internals`
-  (`scripts/check-cm-internals.mjs`, wired into CI) reads an allowlist of writing-surface content classes
+  (`scripts/checks/check-cm-internals.mjs`, wired into CI) reads an allowlist of writing-surface content classes
   plus the single `.cm-tooltip` chrome floor, and fails on any other `.cm-*` chrome class or a dynamically
   composed one. Any file under `src/lib/components` that mentions `.cm-` must be enumerated in the
   allowlist, so a new chrome touch cannot slip in silently.

@@ -14,7 +14,7 @@ the markup, then the tokens, the type system, and the component recipes. Match t
 them per component.
 
 The admin is self-styled: the engine ships a scoped stylesheet (`dist/components/cairn-admin.css`,
-compiled from `cairn-admin.css` plus DaisyUI/Tailwind by `scripts/build-admin-css.mjs`) so the admin
+compiled from `cairn-admin.css` plus DaisyUI/Tailwind by `scripts/build/build-admin-css.mjs`) so the admin
 looks identical on any host with no host CSS. DaisyUI v5, Tailwind v4, Svelte 5 runes.
 
 ## The design charter (Geoff, 2026-07-15; grades every admin design decision)
@@ -174,7 +174,7 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   the active state, the primary action, links-on-hover, the brand. `primary-content` reverses out on it.
 - Secondary text: `--color-muted` (labels, dates, hints) and `--color-subtle` (nav item text). Subtle is
   the stronger of the two. Reference them through the named role utilities `text-muted` / `text-subtle`,
-  never an arbitrary bracket wrapper. The utilities are defined in `scripts/admin-css.input.css` and are
+  never an arbitrary bracket wrapper. The utilities are defined in `scripts/build/admin-css.input.css` and are
   the frozen role interface; they resolve to the two vars. A standing test (`admin-css-build.test.ts`)
   keeps them compiled and pointing at their vars, so the admin markup writes the utility, not the token.
 - Radii: `--radius-field: 0.625rem` (inputs, buttons, badges), `--radius-box: 1rem` (cards, modals).
@@ -281,7 +281,7 @@ site reads, and this section is where an agent extending the admin meets the sam
 alongside the component recipes above and below it.
 
 - **Markup writes the role utility, never the token or a pixel value.** Eleven named utilities in
-  `scripts/admin-css.input.css` (`type-title`, `type-heading`, `type-subtitle`, `type-body`,
+  `scripts/build/admin-css.input.css` (`type-title`, `type-heading`, `type-subtitle`, `type-body`,
   `type-meta`, `type-label`, `type-chip`, `gap-control`, `gap-label`, `gap-group`, `gap-section`)
   are the only
   supported way to reach a grammar token from a template. A `type-*` utility sets `font-size` and
@@ -956,9 +956,9 @@ never with the block, because the eye reads the icon against the line it sits be
 | chip or badge beside text | padding-box centre against the line box | the painted box, not the type inside it |
 | glyph inside a button or chip | cap centre against padding-box centre | the glyph and its own container |
 
-`src/lib/audit/rules/rendered/vertical-metrics.ts` is the executable form of this table. It is lab
-apparatus rather than shipped engine code, and it stays the single definition: a test that measures
-alignment restates these rules rather than inventing its own.
+`src/tests/lab/vertical-metrics.ts` is the executable form of this table. It is lab apparatus
+rather than shipped engine code, and it stays the single definition: a test that measures alignment
+restates these rules rather than inventing its own.
 
 ### The recipes
 
@@ -1040,12 +1040,12 @@ This covers button labels, headings, empty states, hints, confirmations, and the
 engine serves outside the components (the guard's HTTPS-required page in `https-required-page.ts`).
 
 The component copy ships compiled inside the published package, so a consuming site's `prose-guard` hook
-never sees it. It is guarded here instead by `npm run check:prose` (`scripts/check-admin-prose.mjs`),
+never sees it. It is guarded here instead by `npm run check:prose` (`scripts/checks/check-admin-prose.mjs`),
 which extracts the user-facing strings from `src/lib/components/*.svelte` and runs the blocking tells
 from the `writing-voice` standard over them. It runs in CI alongside the other `check:*` gates. The
 mechanical rules catch the lexical and structural class (marketing words, banned phrases, the
 antithesis frame, and the like); they cannot catch a judgment-level tell such as a tacked-on closer, so
-run `node scripts/check-admin-prose.mjs --list` for a release-time read of all admin copy at once. The
+run `node scripts/checks/check-admin-prose.mjs --list` for a release-time read of all admin copy at once. The
 non-component surfaces (the standalone pages) sit outside that gate, so read them by hand against this
 same bar.
 
@@ -1075,7 +1075,7 @@ The contract is three things:
   (`--radius-field`, `--radius-box`). A screen reads them the DaisyUI way, through `bg-base-100`,
   `text-primary`, and the rest, so it recolors with the theme.
 - **The `text-muted` / `text-subtle` role utilities.** The two named secondary-text roles, defined in
-  `scripts/admin-css.input.css` and frozen as the role interface. Use them for labels, dates, hints
+  `scripts/build/admin-css.input.css` and frozen as the role interface. Use them for labels, dates, hints
   (`text-muted`) and nav-item text (`text-subtle`). A standing test keeps them compiled and pointing at
   their vars.
 - **The documented component recipes.** The card, the eyebrow, the active nav item, the empty state, the

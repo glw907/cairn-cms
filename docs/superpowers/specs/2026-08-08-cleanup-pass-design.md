@@ -99,6 +99,36 @@ Inventory the 422 test files and classify each against conservative criteria:
   test. Demonstrably means named: the surviving test is identified, not presumed.
 - **Lives:** everything else. When in doubt, the test stays.
 
+> **REVISED AT EXECUTION (2026-08-08), because the criteria above produced a worthless result.**
+> A fan-out applying them verbatim scanned 404 test files and proposed ZERO deletions. Geoff
+> judged that not credible, and he was right. The criteria above describe what is **safe to
+> delete**, which is a much narrower question than what is **useless**. They have no category
+> for a tautology, a test of framework behavior rather than cairn's, a cluster of six near
+> identical cases where two would do, or an assertion so over-specified it only ever fails on
+> intentional change. Redundancy spread across a cluster is structurally invisible to a rule
+> that demands a single named survivor.
+>
+> Two changes made the second run productive, and both should be the default next time:
+>
+> 1. **Ask for a forced ranking, never a threshold.** An agent asked "find tests below a bar"
+>    returns nothing, especially when primed toward caution, because an empty list is the
+>    cheapest defensible answer. An agent asked "rank your partition's five weakest, quoting the
+>    assertion" must produce something a human can judge. The second run surfaced 30 candidates,
+>    15 of which survived an independent adversarial defender.
+> 2. **Grade the recommendation, do not force delete-or-keep.** The useful verdicts were
+>    `shrink-cluster` and `tighten`, not `delete`. Of the seven changes finally authorized, four
+>    were shrinks rather than deletions.
+>
+> The weakness taxonomy that worked: tautological, vacuous, third-party, implementation-coupled,
+> redundant-in-cluster, over-specified. Pair the finder with a defender told explicitly that
+> saving everything is as useless as proposing nothing, and require both to quote real code.
+>
+> Two standing cautions the run also earned. Partition the corpus from its real inventory:
+> the first run silently missed `packages/cairn-cms-dev`'s six test files because no partition
+> named them. And read the raw findings rather than a verdict: the agents concluded that
+> `expectTypeOf` assertions were dead weight, which is wrong, since `tsconfig.json` includes
+> `src/tests` and `npm run check` enforces them even though `npm test` does not.
+
 Gates: the full suite exits 0 after the sweep, and the surface gates (`check:surface`,
 `check:reference`, `check:package`) are unchanged. This task is shaped for an adversarial
 find-and-verify workflow (finder fan-out, a skeptic per proposed deletion); the plan offers

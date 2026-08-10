@@ -4,7 +4,7 @@
 // repo's own package.json versions keeps the baked template honest: it fails loud rather than
 // emit a devDependency spec no registry can install, which is exactly the unpublished state of
 // @glw907/cairn-cms-dev today.
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -35,20 +35,14 @@ Install the dependencies:
 npm install
 \`\`\`
 
-Start the dev server against a local stand-in backend:
+Start the dev server:
 
 \`\`\`
-CAIRN_DEV_BACKEND=1 npm run dev
+npm run dev
 \`\`\`
 
-On Windows PowerShell, use this instead:
-
-\`\`\`
-$env:CAIRN_DEV_BACKEND=1; npm run dev
-\`\`\`
-
-Open the printed URL and visit \`/admin\`. The stand-in signs you in without an email loop,
-and nothing you write there touches GitHub or sends real email.
+This runs a local admin stand-in. Open the printed URL and visit \`/admin\`. The stand-in signs you
+in without an email loop, and nothing you write there touches GitHub or sends real email.
 
 ## Build it
 
@@ -58,6 +52,52 @@ npm run build
 
 This produces the deployable Worker output.
 `;
+
+// scripts/ is excluded from the showcase-to-template copy (.cairn-template.json), so this shim is
+// not copied, it is written by the bake itself, the same way SITE_README is. CAIRN_DEV_BACKEND=1
+// is deliberately a runtime variable, not a build define: no production build can fold the dev
+// backend into a deployed Worker, so plain `npm run dev` needs this shim to set it on any platform
+// without the reader setting it by hand.
+const DEV_SHIM = `// scripts/dev.mjs: start the dev server with the local admin's backend enabled.
+// CAIRN_DEV_BACKEND=1 is the runtime half of the dev-backend gate. It is deliberately a
+// runtime variable, not a build define, so no production build can fold the dev backend
+// into a deployed Worker; this shim exists so plain \`npm run dev\` works on any platform
+// without setting the variable by hand.
+import { spawn } from 'node:child_process';
+
+const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const child = spawn(npx, ['--no-install', 'vite', 'dev', ...process.argv.slice(2)], {
+  stdio: 'inherit',
+  shell: process.platform === 'win32',
+  env: { ...process.env, CAIRN_DEV_BACKEND: '1' },
+});
+child.on('error', (cause) => {
+  console.error(\`could not start the dev server: \${cause.message}\`);
+  console.error('Next step: run "npm install" in this directory, then "npm run dev" again.');
+  process.exit(1);
+});
+child.on('exit', (code) => process.exit(code ?? 1));
+`;
+
+const SHOWCASE_DEV_SCRIPT = 'vite dev';
+
+/**
+ * Rewrite an emitted package.json's `scripts.dev` in place to run the baked dev shim instead of
+ * plain `vite dev`. Throws naming the showcase's actual dev script when it is not the exact
+ * string expected, so a future showcase change to that script surfaces here rather than silently
+ * clobbering an unrelated command.
+ * @param {{ scripts?: Record<string, string> }} pkg the parsed, emitted package.json
+ * @returns {void}
+ */
+export function rewriteDevScript(pkg) {
+  const current = pkg.scripts?.dev;
+  if (current !== SHOWCASE_DEV_SCRIPT) {
+    throw new Error(
+      `bake: expected the showcase dev script to be "${SHOWCASE_DEV_SCRIPT}", found "${current}"`,
+    );
+  }
+  pkg.scripts.dev = 'node scripts/dev.mjs';
+}
 
 /**
  * Remove the showcase-only scripts and devDependencies from an emitted package.json object,
@@ -148,9 +188,14 @@ export async function bake({ to, engineSpec, devSpec }) {
   });
   const packageJsonPath = path.join(emitted, 'package.json');
   const pkg = JSON.parse(await readFile(packageJsonPath, 'utf8'));
+  rewriteDevScript(pkg);
   pruneShowcaseOnlyPackageFields(pkg);
   await writeFile(packageJsonPath, JSON.stringify(pkg, null, 2) + '\n');
   await writeFile(path.join(emitted, 'README.md'), SITE_README);
+  // scripts/ is excluded from the copy, so the bake creates it fresh to hold the dev shim.
+  const emittedScriptsDir = path.join(emitted, 'scripts');
+  await mkdir(emittedScriptsDir, { recursive: true });
+  await writeFile(path.join(emittedScriptsDir, 'dev.mjs'), DEV_SHIM);
   return emitted;
 }
 

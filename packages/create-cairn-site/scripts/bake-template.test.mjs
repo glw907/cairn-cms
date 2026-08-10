@@ -1,9 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { access, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { bake, assertInstallableSpec, PRUNED_SCRIPTS, PRUNED_DEV_DEPENDENCIES, pruneShowcaseOnlyPackageFields } from './bake-template.mjs';
+import {
+  bake,
+  assertInstallableSpec,
+  PRUNED_SCRIPTS,
+  PRUNED_DEV_DEPENDENCIES,
+  pruneShowcaseOnlyPackageFields,
+  rewriteDevScript,
+} from './bake-template.mjs';
 
 // Published specs, so a bake under test never depends on what the monorepo's own versions
 // happen to be. The unresolvable defaults have their own test below.
@@ -90,11 +97,36 @@ test('bake prunes showcase-only scripts and devDependencies, keeping the rest', 
   assert.ok('cairn:manifest' in pkg.scripts);
 });
 
-test('bake emits a tree with no showcase-only .claude or scripts directory', async (t) => {
+test('bake emits a tree with no showcase-only .claude directory, and scripts/ holds exactly dev.mjs', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
   await assert.rejects(() => access(path.join(to, '.claude')));
-  await assert.rejects(() => access(path.join(to, 'scripts')));
+  const scriptsEntries = await readdir(path.join(to, 'scripts'));
+  assert.deepEqual(scriptsEntries, ['dev.mjs']);
+});
+
+test('the dev shim names CAIRN_DEV_BACKEND', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const shim = await readFile(path.join(to, 'scripts', 'dev.mjs'), 'utf8');
+  assert.match(shim, /CAIRN_DEV_BACKEND/);
+});
+
+test('bake rewrites package.json.scripts.dev to run the shim', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
+  assert.equal(pkg.scripts.dev, 'node scripts/dev.mjs');
+});
+
+// The rot gate: rewriteDevScript must fail loud when the showcase's own dev script is not the
+// exact string it expects to replace, rather than silently overwrite an unrelated command.
+test('rewriteDevScript throws naming an unexpected showcase dev script', () => {
+  const pkg = { scripts: { dev: 'vite dev --host' } };
+  assert.throws(
+    () => rewriteDevScript(pkg),
+    /expected the showcase dev script to be "vite dev", found "vite dev --host"/,
+  );
 });
 
 test('bake writes a site README that is not the showcase README', async (t) => {
@@ -105,20 +137,15 @@ test('bake writes a site README that is not the showcase README', async (t) => {
   assert.ok(!readme.includes('../../docs'));
 });
 
-// Regression: the baked README once told the reader to run a bare `npm run dev`, which never
-// reaches the admin (the dev backend needs CAIRN_DEV_BACKEND=1 at runtime). Mirrors the same
-// check the CLI's own printed hand-over text carries in scaffold.test.mjs.
-test('the baked README names CAIRN_DEV_BACKEND and never prints a bare npm run dev line', async (t) => {
+// The scaffold's own dev script now sets CAIRN_DEV_BACKEND at runtime (scripts/dev.mjs), so the
+// README teaches plain `npm run dev` and must never mention the variable or a PowerShell branch.
+test('the baked README teaches plain npm run dev and never mentions CAIRN_DEV_BACKEND', async (t) => {
   const to = await tempTarget(t);
   await bake({ to, ...PUBLISHED_SPECS });
   const readme = await readFile(path.join(to, 'README.md'), 'utf8');
-  assert.match(readme, /CAIRN_DEV_BACKEND=1/);
-  for (const line of readme.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed === 'npm run dev') {
-      assert.fail('found a bare "npm run dev" line unaccompanied by the CAIRN_DEV_BACKEND switch');
-    }
-  }
+  assert.match(readme, /npm run dev/);
+  assert.ok(!readme.includes('CAIRN_DEV_BACKEND'));
+  assert.ok(!readme.includes('$env:'));
 });
 
 // The rot gate: pruneShowcaseOnlyPackageFields must fail loud when the showcase drops or renames

@@ -1,0 +1,391 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
+import { startLoopback } from './loopback.mjs';
+import { buildManifest, manifestFormHtml, manifestTarget, runManifestFlow } from './manifest.mjs';
+
+/**
+ * Read the manifest form served at the loopback's root and pull the `state` nonce out of its
+ * action URL, the way a real browser carrying the form to GitHub (and GitHub echoing it back on
+ * the redirect) would, rather than reading runManifestFlow's own nonce out of band.
+ * @param {string} loopbackUrl the loopback's base URL
+ * @returns {Promise<string | null>} the state nonce, or null when the form carries none
+ */
+async function readManifestFormState(loopbackUrl) {
+  const html = await (await fetch(loopbackUrl)).text();
+  const match = html.match(/action="([^"]*)"/);
+  if (!match) return null;
+  const action = new URL(match[1].replace(/&amp;/g, '&'));
+  return action.searchParams.get('state');
+}
+
+test('buildManifest: the personal branch carries exactly the base permission pair', () => {
+  const manifest = buildManifest({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    loopbackUrl: 'http://127.0.0.1:5555',
+  });
+  assert.deepEqual(manifest.default_permissions, { contents: 'write', administration: 'write' });
+  assert.equal(manifest.public, false);
+  assert.equal(manifest.request_oauth_on_install, true);
+  assert.deepEqual(manifest.default_events, []);
+  assert.equal(manifest.name, 'Alpine Club CMS');
+});
+
+test('buildManifest: the org branch adds members read', () => {
+  const manifest = buildManifest({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'org',
+    loopbackUrl: 'http://127.0.0.1:5555',
+  });
+  assert.deepEqual(manifest.default_permissions, {
+    contents: 'write',
+    administration: 'write',
+    members: 'read',
+  });
+});
+
+test('buildManifest: callback_urls carries the ported loopback entry first, portless second', () => {
+  const manifest = buildManifest({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    loopbackUrl: 'http://127.0.0.1:5555',
+  });
+  assert.deepEqual(manifest.callback_urls, [
+    'http://127.0.0.1:5555/callback',
+    'http://127.0.0.1/callback',
+  ]);
+});
+
+test('buildManifest: hook_attributes is present with active false and a non-empty url', () => {
+  const manifest = buildManifest({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    loopbackUrl: 'http://127.0.0.1:5555',
+  });
+  assert.ok(manifest.hook_attributes);
+  assert.equal(manifest.hook_attributes.active, false);
+  assert.ok(manifest.hook_attributes.url.length > 0);
+});
+
+test('manifestFormHtml escapes the manifest JSON', () => {
+  const manifest = buildManifest({
+    appName: `Alpine's "Club" <CMS> & Co`,
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    loopbackUrl: 'http://127.0.0.1:5555',
+  });
+  const html = manifestFormHtml(manifest, 'http://127.0.0.1:9999/settings/apps/new');
+  assert.ok(!html.includes(`Alpine's "Club" <CMS> & Co`), 'the raw unescaped name must not appear');
+  assert.ok(html.includes('&#39;'));
+  assert.ok(html.includes('&quot;'));
+  assert.ok(html.includes('&lt;CMS&gt;'));
+  assert.ok(html.includes('&amp;'));
+});
+
+test('manifestTarget: personal branch', () => {
+  process.env.CAIRN_GITHUB_WEB_BASE = 'http://127.0.0.1:9999';
+  try {
+    assert.equal(
+      manifestTarget({ ownerType: 'user' }),
+      'http://127.0.0.1:9999/settings/apps/new',
+    );
+  } finally {
+    delete process.env.CAIRN_GITHUB_WEB_BASE;
+  }
+});
+
+test('manifestTarget: org branch', () => {
+  process.env.CAIRN_GITHUB_WEB_BASE = 'http://127.0.0.1:9999';
+  try {
+    assert.equal(
+      manifestTarget({ ownerType: 'org', org: 'alpine-club' }),
+      'http://127.0.0.1:9999/organizations/alpine-club/settings/apps/new',
+    );
+  } finally {
+    delete process.env.CAIRN_GITHUB_WEB_BASE;
+  }
+});
+
+test('runManifestFlow: the happy path returns the full credential set', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const logs = [];
+  const opened = [];
+  const credentials = await runManifestFlow({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    org: undefined,
+    openBrowser: async (url) => {
+      opened.push(url);
+      // Simulate the admin's browser landing back on the loopback's /manifest redirect after
+      // GitHub converts the manifest. Deferred to a macrotask so runManifestFlow has already
+      // armed waitFor('/manifest', ...) by the time this fires.
+      setTimeout(async () => {
+        const state = await readManifestFormState(url);
+        fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
+      }, 0);
+    },
+    log: (line) => logs.push(line),
+  });
+
+  assert.equal(opened.length, 1);
+  assert.deepEqual(Object.keys(credentials).sort(), [
+    'appId',
+    'appSlug',
+    'clientId',
+    'clientSecret',
+    'owner',
+    'pem',
+    'webhookSecret',
+  ].sort());
+  assert.equal(typeof credentials.appId, 'number');
+  assert.equal(typeof credentials.appSlug, 'string');
+  assert.equal(typeof credentials.clientId, 'string');
+  assert.equal(typeof credentials.clientSecret, 'string');
+  assert.ok(credentials.pem.includes('PRIVATE KEY'));
+  assert.equal(typeof credentials.webhookSecret, 'string');
+  assert.equal(credentials.owner, 'fake-owner');
+});
+
+test('runManifestFlow: an expired code raises manifest-window-expired', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  await assert.rejects(
+    () =>
+      runManifestFlow({
+        appName: 'Alpine Club CMS',
+        siteName: 'Alpine Club',
+        ownerType: 'user',
+        org: undefined,
+        openBrowser: async (url) => {
+          setTimeout(async () => {
+            const state = await readManifestFormState(url);
+            fetch(`${url}/manifest?code=expired&state=${state}`).catch(() => {});
+          }, 0);
+        },
+        log: () => {},
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'manifest-window-expired');
+      return true;
+    },
+  );
+});
+
+test('runManifestFlow: an abandoned browser step raises browser-step-abandoned for step manifest', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  await assert.rejects(
+    () =>
+      runManifestFlow({
+        appName: 'Alpine Club CMS',
+        siteName: 'Alpine Club',
+        ownerType: 'user',
+        org: undefined,
+        dir: '/tmp/alpine-club',
+        timeoutMs: 50,
+        openBrowser: async () => {
+          // Never hits the loopback; the wait must time out on its own.
+        },
+        log: () => {},
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'browser-step-abandoned');
+      // The manifest branch's wording (not the install branch's) names the App and its
+      // name-already-taken recovery, which is how the test pins step: 'manifest'.
+      assert.match(err.message, /App name is already taken/);
+      assert.match(err.message, /Alpine Club CMS/);
+      assert.match(err.message, /\/tmp\/alpine-club/);
+      assert.ok(!err.message.includes('undefined'), `message must not contain "undefined": ${err.message}`);
+      return true;
+    },
+  );
+});
+
+test('runManifestFlow: an expired manifest window names the passed dir, no literal undefined', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  await assert.rejects(
+    () =>
+      runManifestFlow({
+        appName: 'Alpine Club CMS',
+        siteName: 'Alpine Club',
+        ownerType: 'user',
+        org: undefined,
+        dir: '/tmp/alpine-club',
+        openBrowser: async (url) => {
+          setTimeout(async () => {
+            const state = await readManifestFormState(url);
+            fetch(`${url}/manifest?code=expired&state=${state}`).catch(() => {});
+          }, 0);
+        },
+        log: () => {},
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'manifest-window-expired');
+      assert.match(err.message, /\/tmp\/alpine-club/);
+      assert.ok(!err.message.includes('undefined'), `message must not contain "undefined": ${err.message}`);
+      return true;
+    },
+  );
+});
+
+test('runManifestFlow: a given loopback is reused, not closed, and stays open for the caller', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const loopback = await startLoopback();
+  t.after(() => loopback.close());
+
+  const credentials = await runManifestFlow({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    org: undefined,
+    dir: '/tmp/alpine-club',
+    loopback,
+    openBrowser: async (url) => {
+      assert.equal(url, loopback.url, 'the given loopback\'s own URL must be what opens');
+      setTimeout(async () => {
+        const state = await readManifestFormState(url);
+        fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
+      }, 0);
+    },
+    log: () => {},
+  });
+
+  assert.equal(typeof credentials.appId, 'number');
+  // Proof the loopback was not closed by runManifestFlow: a second request against it (the
+  // form page) still gets a response rather than a connection refusal.
+  const stillOpen = await fetch(loopback.url);
+  assert.equal(stillOpen.status, 200);
+});
+
+test('runManifestFlow: the pre-open log line covers opening the create-App page and signing in first', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  const logs = [];
+  await runManifestFlow({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    org: undefined,
+    openBrowser: async (url) => {
+      setTimeout(async () => {
+        const state = await readManifestFormState(url);
+        fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
+      }, 0);
+    },
+    log: (line) => logs.push(line),
+  });
+
+  const preOpen = logs.find(
+    (line) => line.includes('Create GitHub App') || line.includes("Create a GitHub App"),
+  );
+  assert.ok(preOpen, 'expected a log line about GitHub\'s Create GitHub App page');
+  assert.match(preOpen, /sign in to GitHub/i);
+});
+
+test('runManifestFlow: the served form\'s action carries a state nonce', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  let capturedState;
+  await runManifestFlow({
+    appName: 'Alpine Club CMS',
+    siteName: 'Alpine Club',
+    ownerType: 'user',
+    org: undefined,
+    openBrowser: async (url) => {
+      setTimeout(async () => {
+        capturedState = await readManifestFormState(url);
+        fetch(`${url}/manifest?code=goodcode&state=${capturedState}`).catch(() => {});
+      }, 0);
+    },
+    log: () => {},
+  });
+
+  assert.ok(capturedState, 'expected the form action to carry a non-empty state value');
+  assert.match(capturedState, /^[0-9a-f]{32}$/, 'expected a 16-byte hex nonce');
+});
+
+test('runManifestFlow: a mismatched state on the /manifest redirect throws, naming a possible interception', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+
+  await assert.rejects(
+    () =>
+      runManifestFlow({
+        appName: 'Alpine Club CMS',
+        siteName: 'Alpine Club',
+        ownerType: 'user',
+        org: undefined,
+        dir: '/tmp/alpine-club',
+        openBrowser: async (url) => {
+          // Bypass reading the served form's own nonce, as an attacker who can merely reach this
+          // loopback (but never saw the real form) would.
+          setTimeout(() => {
+            fetch(`${url}/manifest?code=goodcode&state=tampered-value`).catch(() => {});
+          }, 0);
+        },
+        log: () => {},
+      }),
+    (err) => {
+      assert.match(err.message, /intercepted or reused/);
+      assert.match(err.message, /Next step/);
+      assert.match(err.message, /\/tmp\/alpine-club/);
+      assert.ok(!err.catalogue, 'a mismatched state is a plain Error, not a catalogue error');
+      return true;
+    },
+  );
+});
+
+test('runManifestFlow: a conversions status other than 201 or 404 raises a plain Error naming the status', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  github.failNext('conversions', 500, {});
+
+  await assert.rejects(
+    () =>
+      runManifestFlow({
+        appName: 'Alpine Club CMS',
+        siteName: 'Alpine Club',
+        ownerType: 'user',
+        org: undefined,
+        dir: '/tmp/alpine-club',
+        openBrowser: async (url) => {
+          setTimeout(async () => {
+            const state = await readManifestFormState(url);
+            fetch(`${url}/manifest?code=goodcode&state=${state}`).catch(() => {});
+          }, 0);
+        },
+        log: () => {},
+      }),
+    (err) => {
+      assert.match(err.message, /status 500/);
+      assert.match(err.message, /\/tmp\/alpine-club/);
+      assert.ok(!err.catalogue, 'an unmapped conversions status is a plain Error, not a catalogue error');
+      return true;
+    },
+  );
+});

@@ -331,19 +331,6 @@ line.
   unfilled `<!-- SCREENSHOT: -->` comments, and `PUBLIC_ORIGIN` disagrees with `ORIGIN` on which
   localhost port is meant.
 
-- **[developer] The scaffolded `dev` script cannot start a working admin on its own, so the tool
-  has to print an internal flag name.** The dev backend needs `CAIRN_DEV_BACKEND=1` at runtime on
-  top of its build-time define (`examples/showcase/src/chassis/dev-gate.ts:26`), and the emitted
-  template's script is bare `vite dev`. T1 handles this honestly, by printing
-  `CAIRN_DEV_BACKEND=1 npm run dev` and branching to the PowerShell form on Windows, but every
-  walker who saw it said the same thing: a reader who may not be a developer should never be shown
-  a flag that exists for the bundler's benefit. The fix belongs to the template, not the printed
-  copy, and it is a real design question rather than a one-liner. Setting the variable inside the
-  scaffolded `dev` script needs a cross-platform mechanism (a `cross-env` dependency the template
-  does not currently carry, or a small shipped shim), and the opt-in is deliberately a runtime
-  variable so no build can fold it, which is what keeps the dev package out of a deployed Worker.
-  Weigh a template dependency against a printed flag before T2 picks one.
-
 - **[developer] `SiteConfig`'s doc comment says unknown keys are ignored; the parser throws on
   them.** `src/lib/nav/site-config.ts:75` reads "Unknown keys are ignored so the file can grow
   without an engine change," and the interface carries an `[key: string]: unknown` index signature
@@ -356,10 +343,17 @@ line.
   Fix the comment and weigh dropping the index signature, which advertises openness the parser does
   not honor.
 
-- **[developer] `create-cairn-site`'s empty-directory guard is check-then-copy, not atomic.**
-  `assertTargetDirEmpty` reads the target, then the copy action writes it, so two concurrent runs
-  against the same `--dir` can both pass the guard and collide inside `cp`, surfacing a raw fs
-  error instead of the guard's crafted message. Verified at the T1 review gate and deliberately not
-  fixed there: it needs an exclusive-create sentinel or an atomic `mkdir` claim, which is real work
-  for an exotic case (a user running two scaffolds at the same target simultaneously). Fix it when
-  the tool grows a resume path, since that is when a half-written target stops being hypothetical.
+- **[developer] `create-cairn-site` hardening candidates from the T2 review's unverified tail.**
+  The T2 pass-close adversarial review confirmed and fixed six findings; these unverified ones
+  survived a first read as plausible and small, parked here rather than fixed blind
+  (`docs/superpowers/plans/2026-08-10-create-cairn-site-t2.md` post-mortem has the full list):
+  the loopback receiver accepts any pathname hit without validating it looks like the expected
+  redirect and never re-arms after a bogus hit consumes a wait; `verifyInstallationCovers`
+  ignores the response status (an auth failure reads as "not covered") and does not paginate past
+  the first page; the state store's only copy of the App PEM is written non-atomically with a
+  brief mode window; the shipped CLI honors `CAIRN_GITHUB_API_BASE`/`WEB_BASE` unconditionally,
+  which a hostile environment could point at another host (weigh gating the seams on
+  `NODE_ENV=test` or documenting them as a deliberate operator surface); several inner error
+  messages still leak raw HTTP verbs and status codes into admin-facing copy; and `bin.mjs` has
+  no test file, so its resume wiring is proven only by the T2 live e2e. Triage when T3 touches
+  these files.

@@ -14,164 +14,49 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-10 evening: the T2 plan is APPROVED; next is executing it)
+## Immediate next action (2026-08-10 night: T2 is DONE; next is the T3 planning sitting)
 
-**Pass T2 (the GitHub chapter) is planned and approved, ready to execute.** The Fable planning
-sitting ran 2026-08-10: brainstorm (three forks locked: the admin's own App as the OAuth client, a
-shipped dev shim, live e2e on personal + scratch org), spec approved, plan written, then a
-three-lens adversarial review (admin-journey, platform-correctness, plan-integrity) whose verified
-findings were folded into both documents, and Geoff approved the amended set. Spec:
-[`2026-08-10-create-cairn-site-t2-design.md`](superpowers/specs/2026-08-10-create-cairn-site-t2-design.md).
-Plan: [`2026-08-10-create-cairn-site-t2.md`](superpowers/plans/2026-08-10-create-cairn-site-t2.md)
-(14 tasks; its revision note summarizes what the fold changed).
+**Pass T2 (the GitHub chapter) is complete and merged through
+[PR #26](https://github.com/glw907/cairn-cms/pull/26), all six CI workflows green.**
+`create-cairn-site` now takes a scaffolded site to a pushed private repo covered by an App the
+admin owns: manifest-first (the admin's own App is the OAuth client; no standing credential), two
+browser trips via `request_oauth_on_install`, repo create with verify-only installation coverage,
+the no-git-binary Git Data push, a resume frame with `--start-over`, the atomic scaffold claim,
+and the dev shim making bare `npm run dev` reach the local admin (CI-probed). The live e2e is
+recorded in the plan's post-mortem: personal, org, and interrupted-resume runs all green on real
+GitHub, artifacts torn down. The spike verdict that reshaped the plan mid-pass (hook_attributes,
+ported-first callbacks, port-only leniency, the refuted repo-link PUT) is
+[`2026-08-10-t2-own-app-spike.md`](internal/2026-08-10-t2-own-app-spike.md). The pass-close
+adversarial workflow confirmed and fixed six high findings; the unverified tail is parked in the
+friction log's hardening entry. The window holds under `## Unreleased`; nothing is published.
 
-**Resume prompt** (launch directory `~/Projects/cairn-cms`; an execution session, so Opus, per the
-plan-approval model boundary): "Execute Pass T2 of the create-cairn-site umbrella
-(`docs/superpowers/plans/2026-08-10-create-cairn-site-t2.md`). Start with the cairn-pass skill.
-Read `docs/STATUS.md` and the spec
-(`docs/superpowers/specs/2026-08-10-create-cairn-site-t2-design.md`) first. Work on a new worktree
-off `main`, dispatching tasks to cairn-implementer with the full gate between dispatches. Task 1 is
-a main-loop spike needing one Geoff browser sitting and it GATES Tasks 7-9's architecture; run it
-first and honor its decision gate. Task 13 is the second Geoff sitting, late. Task 12's create-site
-gate is CI-only; push and confirm it green before closing."
+**Next: the T3 planning sitting (Fable, brainstorm-first; NOT an execution session).** T3 is the
+Cloudflare chapter plus the two doors: wrangler.jsonc emission, the workers.dev deploy, D1
+provisioning, moving the PEM from the local state store to a Worker secret (the umbrella's rule,
+named in the T2 spec's out-of-scope list), the bootstrap session, the hand-over console, and the
+template-repo second door. Open against Part 1 of the umbrella spec
+([`2026-08-09-admin-setup-and-docs-reset-design.md`](superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md))
+plus the platform-spikes doc
+([`2026-08-09-tool-passes-platform-spikes.md`](internal/2026-08-09-tool-passes-platform-spikes.md)).
+Known planning inputs: chapter 1 stays inside wrangler's OAuth scopes (zero-credential quickstart
+holds); the domain half cannot ride wrangler (no registrar scope), and **Geoff ruled at the T2
+close that `.ski`/`.life` Registrar coverage is not worth chasing ("oddball domains, don't worry
+about them"), so the Registrar-token action is RETIRED, not queued**: T3 plans the domain half
+for the general case (a domain the admin already owns anywhere, pointed at Cloudflare), and
+Registrar-purchase support is out of scope until a real admin asks; Workers Builds is fully
+API-driven. T2 adds: the
+desktop-side-effect test constraint (no suite may spawn a browser; PATH-empty pattern), the
+friction-log hardening entry to triage when T3 touches those files, and the scratch org
+`t2-scratch-org` (kept or deleted at Geoff's option) for live org checks.
 
-**What execution must know, beyond the plan:** the chapter is TWO browser trips
-(`request_oauth_on_install` folds install and authorize into one page whose redirect carries the
-OAuth code and the installation id); the manifest registers the PORTLESS loopback callback (the
-port-leniency exception requires it, and the callback is frozen at manifest time); install comes
-BEFORE repo create (a user token only reaches accounts where the App is installed); the repo is
-created `auto_init: true` (Git Data 409s on empty repos) then linked into the installation and
-verified. The fake GitHub server's SPIKE-marked status codes must be corrected to Task 1's observed
-values before Tasks 6-10 dispatch. T1's `create-cairn-site` worktree served its purpose and can be
-removed; the window holds under `## Unreleased`; nothing is published.
+**Resume prompt** (launch directory `~/Projects/cairn-cms`, on `main` after the merge): "Plan Pass
+T3 of the create-cairn-site umbrella (Cloudflare plus the two doors). Start with the cairn-pass
+skill and superpowers:brainstorming against Part 1 of the umbrella spec
+(`docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`), reading `docs/STATUS.md`,
+the platform-spikes doc, and the T2 post-mortem
+(`docs/superpowers/plans/2026-08-10-create-cairn-site-t2.md`) first."
 
-## Superseded: Pass T1 complete and merged (2026-08-10, morning)
-
-**Pass T1 is done, all ten tasks, merged to `main`** through
-[PR #25](https://github.com/glw907/cairn-cms/pull/25) with all five CI checks green. Opening that PR
-is what first ran CI against the branch: every gating workflow fires on `push` only for `main` and
-`rebuild`, plus `pull_request`, so the whole window had been CI-unproven until then.
-
-**The baseline walk is recorded, and Geoff changed how it was run.** He first ruled he would walk it
-himself, then revised the same day: "a well-tuned persona agent run several times fresh from several
-vantage points is probably more effective than I'll be." Five blind persona walks ran (owner-nondev,
-dev-new-to-stack, going-live, recovery, wayfinding), every finding carrying a `file:line` quote,
-ranked by how many independent walks raised it. The record is
-[`2026-08-unagented-setup-baseline.md`](internal/2026-08-unagented-setup-baseline.md). Its
-documentation half is Pass D's work list and is filed in the friction log; nothing there is lost.
-
-**The walk changed the product, not just the docs.** Unanimously, all five walks stopped at the same
-place: the tutorial's payoff milestone installs `@glw907/cairn-cms-dev`, which is not on npm. Two
-walks caught something the plan had wrong, and it was then verified directly in code rather than
-taken on trust: a bare `npm run dev` never reaches the admin, because the dev backend needs
-`CAIRN_DEV_BACKEND=1` at runtime on top of its build-time define
-(`examples/showcase/src/chassis/dev-gate.ts:26`) while the scaffolded script is bare `vite dev`. The
-plan's specified hand-over block would have printed a command that does not work. Task 8 prints the
-working form instead, branches to PowerShell on Windows, says plainly that the local admin is a
-stand-in touching no GitHub repo and sending no real email, and names the Workers Paid plan that
-real sign-in email needs. A test locks the switch into the copy so it cannot be simplified away.
-**Filed for T2**: the fix belongs in the scaffolded `dev` script, not the printed copy, and it needs
-a cross-platform mechanism the template does not carry yet (friction log).
-
-**What landed:** a new `packages/create-cairn-site` (unscoped npm name `create-cairn-site`,
-verified free), plain ESM `.mjs` on `node:test`, 52 tests green. The wired command; a
-`create-site.yml` CI gate that packs the CLI, installs that tarball into a scratch directory, runs
-it, and then installs, typechecks, and builds the site it produced, passing a brand color so the run
-exercises the four-declaration rot gate against the real theme file. Argument parsing; the action
-runner that makes `--dry-run` a property of the frame; the out-of-scaffold state store
-(`~/.config/cairn/sites/<id>.json`, mode `0600`, chmod'd after every write so an overwrite cannot
-leave it loose); credential-free pre-flight; the pack-time template bake; and the fail-loud
-substitution pass.
-
-**Four plan assumptions were wrong and are corrected in the code, not just noted.** The
-`site.config.yaml` target lives at `src/theme/site.config.yaml`, not the scaffold root, and
-carries no `tagline:` key. `--color-primary` is **four** declarations (light and dark, primary and
-primary-content), so the brand substitution rotates the hue and holds each declaration's own
-lightness and chroma, per the theme file's own re-skin recipe; substituting one literal color, as
-the plan implied, would have destroyed dark-mode contrast. The Node floor is `>=22`, not the
-plan's `>=20.19` fallback. And `@clack/prompts` is at `1.x`, not the plan's `^0.11.0`.
-
-**The release-one blocker this pass found: `@glw907/cairn-cms-dev` is unpublished** (npm 404,
-version `0.0.0`). A scaffolded site needs it for the local `/admin` value moment, and the
-ROADMAP's own 2026-07-02 scaffolder finding says a standalone scaffold without it fails the
-**build**, since Rolldown cannot resolve the absent specifier even behind the dev gate. So release
-one must publish the dev backend alongside the engine, `create-cairn-site`, and the template repo.
-The bake refuses to run while the spec resolves to `^0.0.0`, naming the package and the fix, so
-this cannot be forgotten at the cut.
-
-**A second defect, in the shared emitter, is fixed here:** the template carried showcase-only
-material into every scaffolded site, including seven tracked `.claude/agent-memory` notes, the
-showcase README whose relative links point back into the engine repo, a design-lab script, and the
-Playwright scripts and devDependencies. `.cairn-template.json` now excludes the three paths, and
-the bake prunes the package.json lines a path exclusion cannot reach, behind a rot gate that throws
-when an expected key has already been renamed away.
-
-**The spec's open platform spikes are RESOLVED and written up** in
-[`2026-08-09-tool-passes-platform-spikes.md`](internal/2026-08-09-tool-passes-platform-spikes.md),
-so T2 and T3 are planned against verified premises. The two that move a plan: **wrangler's OAuth
-session carries `zone:read` only and no registrar scope at all**, so chapter 2's domain half
-requires the self-managed OAuth client or token prefill rather than riding wrangler (chapter 1
-stays fully inside wrangler's scopes, so the zero-credential quickstart holds); and the **GitHub
-installation-token format migration already completed** in late June 2026, so treating tokens as
-opaque is a T2 requirement, not a watch item. Workers Builds turns out fully API-driven, including
-repo connections and a `config_autofill` endpoint, so T3's step 10 is cheaper than budgeted.
-
-**One Geoff action is queued, and it gates nothing until T3 plans chapter 2:** mint a
-Registrar-scoped Cloudflare API token. The standing `CLOUDFLARE_API_TOKEN` is valid but refuses
-every Registrar endpoint, including the read-only ones, so whether the Registrar API's curated TLD
-subset covers `.ski` and `.life` cannot be answered without one. With that token it is a single
-no-cost `domain-check` call. Worth recording in the estate inventory as a gap.
-
-**Also wired: two node:test suites CI never ran.** `npm run test:emit` (nine tests over the
-emitter) existed in `package.json` but appeared in no workflow, and the new package's suite is new.
-Both now run in `test.yml`.
-
-## Superseded: the pass-start entry (2026-08-09, evening)
-
-**The docs-refactor brainstorm ran with Fable at the helm and became a larger, approved
-initiative.** The umbrella design is
-[`2026-08-09-admin-setup-and-docs-reset-design.md`](superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md)
-(adversarially reviewed by three agents, findings folded, Geoff approved). Four audiences with
-the **admin** (technical non-developer) first-class; a two-chapter `create-cairn-site` journey
-(live and signed in on free workers.dev before any money, domain, or email); wrangler as the
-provisioner; a public template repo as a second door; a four-track docs reset (`admin/`,
-`editors/`, `extend/`, shared `reference/`, split `internal/`) with a full-corpus prune.
-
-**The queue after T1 finishes** is unchanged: T2 (the GitHub chapter), T3 (Cloudflare plus the two
-doors), Pass D (the docs reset, planned just-in-time against the tool's real UX), then release one.
-T2's plan is not written; that session opens with brainstorming against Part 1 step 4 of the
-umbrella spec, not with execution.
-
-**The cleanup pass landed on `cleanup` and holds under `## Unreleased`.** All seven tasks plus one
-scope addition Geoff made mid-pass. The plan, with its full post-mortem, is
-[`2026-08-08-cleanup-pass.md`](superpowers/plans/2026-08-08-cleanup-pass.md); the spec, with an
-appended revision explaining why its dead-test criteria produced a worthless first result, is
-[`2026-08-08-cleanup-pass-design.md`](superpowers/specs/2026-08-08-cleanup-pass-design.md).
-
-What changed: `scripts/` regrouped into `checks/`/`build/`/`lab/`; `legacy/` deleted; the
-unregistered `vertical-metrics` lab module evicted from `src/lib` to `src/tests/lab/` behind a new
-`check:package` reachability gate so no unregistered module under the packed rule directories can
-ship again; `@anthropic-ai/sdk` converted to an OPTIONAL PEER reached by dynamic import; the three
-example theme ports relocated to **https://github.com/glw907/cairn-themes (public)**; 84 binary
-artifacts pruned; seven redundant or non-behavioral tests removed; and `CONTRIBUTING.md` added.
-
-**Measured, and the honest read: the packed tarball barely moved.** 2.5 MB / 7.0 MB / 741 files to
-2.5 MB / 6.9 MB / 739 files, because only the eviction touches the tarball. `docs/superpowers` plus
-`docs/internal` went 29.6 MB to 11.3 MB. **The real consumer win is the SDK peer move: about 13 MB
-and 1,980 files off a production install that never enables tidy**, which is the pass's one
-`Consumers must:` line. Suite: 5,273 tests / 412 files.
-
-**cairn is MOVING TO BETA (Geoff, 2026-08-08).** That unblocked the public themes repo and a real
-contributor guide. It has consequences this pass deliberately did NOT take: the version scheme, the
-"closely held"/pre-beta language across `ROADMAP.md`, `CLAUDE.md`, and the docs register, and the
-front-door positioning. Those belong to their own initiative.
-
-**The brainstorm's paper trail:** the pre-brainstorm brief
-([`2026-08-09-docs-refactor-brief.md`](superpowers/specs/2026-08-09-docs-refactor-brief.md)) is
-superseded by the umbrella spec above, which carries the re-derived guide classification (7 admin
-setup / 4 admin operations / 17 extender, a **post-tool** truth: five of the seven setup guides
-today teach hand-authoring and get rewritten, not moved), the two current-docs research sweeps,
-and the three-agent adversarial fold.
+## Standing state (release ordering, consumers, open items, carry-forwards)
 
 **THEN release one, AFTER Pass D** (amended ordering, Geoff 2026-08-09): it rolls this window
 plus the history/revert, preview, vertical-alignment, and cleanup passes plus the docs reset, and
@@ -223,6 +108,7 @@ in that repo on its own clock.
 ## Archives
 
 Superseded entries live under `docs/internal/history/`:
+`STATUS-archive-2026-08-09-to-2026-08-10.md` (the T1 completion and docs-refactor pass-start entries),
 `STATUS-archive-2026-05-to-2026-07.md`, `STATUS-archive-2026-07-02-to-2026-07-16.md`,
 `STATUS-archive-2026-07-17-to-2026-07-18.md` (the cairn.pub step-5 launch and the Waymark
 final-review entries), `STATUS-archive-2026-07-19-to-2026-07-20.md` (the chassis-nav pass and the

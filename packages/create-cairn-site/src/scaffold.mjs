@@ -8,7 +8,7 @@
 // checkout never carries one; only `npm run prepack` does) and a non-empty target directory. Both
 // would otherwise surface as a raw ENOENT or a silently overwritten file deep inside the copy
 // action, so each is checked up front and fails with a message naming the fix.
-import { access, cp, readFile, readdir, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { defineAction, runActions } from './runner.mjs';
 import { applySubstitutions } from './substitute.mjs';
@@ -16,6 +16,14 @@ import { newSiteId, saveSite, siteStateDir } from './state.mjs';
 import { slugify } from './slug.mjs';
 
 const ADMIN_URL = 'http://localhost:5173/admin';
+
+/**
+ * The name of the atomic-claim marker file a scaffolded directory carries until the GitHub
+ * chapter finishes pushing it. Defined here (rather than in the GitHub chapter's own module)
+ * so `src/github/repo.mjs`'s tree walk can skip it without an import cycle; Task 11 builds the
+ * claim mechanism that writes and clears it.
+ */
+export const SCAFFOLD_SENTINEL = '.cairn-scaffold-claim';
 
 /**
  * Fail with a message naming the missing template directory and the bake command that creates
@@ -37,7 +45,10 @@ async function assertTemplateBaked(templateDir) {
 
 /**
  * Fail when the target directory already exists and holds files, naming the directory and the
- * two ways forward. An existing empty directory is fine, since the recursive copy fills it in.
+ * two ways forward. An existing empty directory is fine, since the recursive copy fills it in. A
+ * directory whose only entry is the atomic-claim sentinel is a distinct case, an earlier run that
+ * crashed mid-copy, so it gets its own, more specific message and recovery instruction rather than
+ * the generic "not empty" refusal.
  * @param {string} dir the target scaffold directory
  * @returns {Promise<void>}
  */
@@ -51,6 +62,12 @@ async function assertTargetDirEmpty(dir) {
       throw new Error(`scaffold: ${dir} is a file, not a directory. Choose a different --dir.`);
     }
     throw cause;
+  }
+  if (entries.length === 1 && entries[0] === SCAFFOLD_SENTINEL) {
+    throw new Error(
+      `scaffold: a previous create-cairn-site run was interrupted while scaffolding ${dir}. ` +
+        'Remove the directory and run the command again.',
+    );
   }
   if (entries.length > 0) {
     throw new Error(
@@ -66,7 +83,10 @@ async function assertTargetDirEmpty(dir) {
  *  dir: string, dryRun: boolean, log: (line: string) => void }} options `templateDir` is the baked
  *  template to copy from; `dir` is the scaffold target; `answers` are collectAnswers' result;
  *  `dryRun` and `log` pass straight through to runActions
- * @returns {Promise<{ executed: number, skipped: number }>} the action runner's result
+ * @returns {Promise<{ executed: number, skipped: number, siteId: string }>} the action runner's
+ *  result, plus the site id the state record was (or, under --dry-run, would be) saved under; the
+ *  id is generated up front rather than inside the state action so a caller (bin.mjs, wiring the
+ *  GitHub chapter) has it even when the state-save action itself was skipped
  */
 export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
   await assertTemplateBaked(templateDir);
@@ -74,13 +94,36 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
 
   const slug = slugify(answers.name, 'cairn-site');
   const packageJsonPath = path.join(dir, 'package.json');
+  const siteId = newSiteId(answers.name);
 
   const actions = [
     defineAction({
       title: `Create ${dir} from the template`,
       detail: `Copies the baked template into ${dir}.`,
+      // Claim the directory atomically before copying into it, so two runs racing on the same
+      // --dir (the early assertTargetDirEmpty check above cannot close this window by itself)
+      // fail one of them loudly instead of interleaving two copies. `wx` is the load-bearing
+      // flag: it is the write that either creates the sentinel or fails with EEXIST, never both
+      // succeeding for two concurrent callers.
       execute: async () => {
-        await cp(templateDir, dir, { recursive: true });
+        await mkdir(dir, { recursive: true });
+        const sentinelPath = path.join(dir, SCAFFOLD_SENTINEL);
+        try {
+          await writeFile(sentinelPath, String(process.pid), { flag: 'wx' });
+        } catch (cause) {
+          if (cause.code === 'EEXIST') {
+            throw new Error(
+              `scaffold: another create-cairn-site run is already scaffolding ${dir}. Wait for ` +
+                'it to finish, or if it crashed, remove the directory and run the command again.',
+            );
+          }
+          throw cause;
+        }
+        try {
+          await cp(templateDir, dir, { recursive: true });
+        } finally {
+          await rm(sentinelPath, { force: true });
+        }
       },
     }),
     defineAction({
@@ -110,7 +153,7 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
       // perfectly good site.
       execute: async () => {
         try {
-          await saveSite(newSiteId(answers.name), { name: answers.name, dir, step: 'scaffolded' });
+          await saveSite(siteId, { name: answers.name, dir, step: 'scaffolded' });
         } catch (cause) {
           log(
             `Warning: could not save the site record at ${siteStateDir()} (${cause.message}). ` +
@@ -121,7 +164,8 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
     }),
   ];
 
-  return runActions(actions, { dryRun, log });
+  const result = await runActions(actions, { dryRun, log });
+  return { ...result, siteId };
 }
 
 /**
@@ -143,18 +187,15 @@ export function dryRunNotice({ dir }) {
  * Build the printed hand-over block: the terminal script that starts a working local admin, and
  * what T1 does and does not yet cover. Its wording is fixed by the recorded baseline walk
  * (docs/internal/2026-08-unagented-setup-baseline.md), which found a plain `npm run dev` never
- * reaches the admin (the dev backend needs `CAIRN_DEV_BACKEND=1` at runtime on top of its
+ * reached the admin (the dev backend needed `CAIRN_DEV_BACKEND=1` at runtime on top of its
  * build-time define) and that a scaffolded reader has no idea the admin they land on is a local
- * stand-in. Both facts are load-bearing here, not phrasing to simplify away.
- * @param {{ dir: string, platform: string }} options `dir` is the scaffolded directory to `cd`
- *  into; `platform` selects the shell form of the dev command (`process.platform`)
+ * stand-in. The second fact is still load-bearing; the first is now fixed at the source, by the
+ * scaffold's own `npm run dev` (a shim baked into `scripts/dev.mjs`, see bake-template.mjs),
+ * so this text prints the plain command rather than teach a variable it no longer needs.
+ * @param {{ dir: string }} options `dir` is the scaffolded directory to `cd` into
  * @returns {string} the hand-over text, ready to print as-is
  */
-export function handoverText({ dir, platform }) {
-  const devCommand =
-    platform === 'win32'
-      ? '$env:CAIRN_DEV_BACKEND=1; npm run dev'
-      : 'CAIRN_DEV_BACKEND=1 npm run dev';
+export function handoverText({ dir }) {
   // path.isAbsolute guards the "./<dir>" copy against a doubled slash when --dir was given as an
   // absolute path (an absolute --dir is a legitimate answer, not just a test convenience).
   const location = path.isAbsolute(dir) ? dir : `./${dir}`;
@@ -165,13 +206,13 @@ export function handoverText({ dir, platform }) {
     '',
     `  cd ${dir}`,
     '  npm install',
-    `  ${devCommand}`,
+    '  npm run dev',
     '',
     `Then open ${ADMIN_URL} (vite prints the URL it actually used).`,
     '',
     'That admin runs against a local stand-in. It signs you in without an email loop, and nothing',
     'you write there touches GitHub or sends real email. Write a post, save it, publish it, and',
-    'watch it appear on the site. CAIRN_DEV_BACKEND=1 is the switch that turns the stand-in on.',
+    "watch it appear on the site. The scaffold's own dev script turns the stand-in on.",
     '',
     'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
     '',

@@ -68,8 +68,11 @@ Readiness checklist:
   showcase. (Weigh whether this gates 1.0 or rides the first 1.x.) Running as Passes T1 to T3 under the
   admin-setup umbrella. **Pass T1 is complete**: the package, the dry-run action frame, the state
   store, pre-flight, the pack-time template bake, the substitution pass, the wired command, and a CI
-  gate that builds the site the CLI actually produces. T2 (GitHub) and T3 (Cloudflare, and the two
-  doors) remain. **The baseline walk is recorded** at
+  gate that builds the site the CLI actually produces. **Pass T2 is complete**: the GitHub chapter
+  (manifest-first own-App creation, one-trip install and authorize, repo create with coverage
+  verify, the no-git-binary push, the resume frame with `--start-over`, the dev shim making bare
+  `npm run dev` reach the local admin), proven by a recorded live e2e on a personal account and a
+  scratch org. T3 (Cloudflare, and the two doors) remains. **The baseline walk is recorded** at
   [`docs/internal/2026-08-unagented-setup-baseline.md`](docs/internal/2026-08-unagented-setup-baseline.md).
   It measured the path no one had measured, the tutorial's `wrangler`-plus-dashboard setup walked cold,
   since every site so far was provisioned by an agent holding account-wide access (Geoff, 2026-08-05,

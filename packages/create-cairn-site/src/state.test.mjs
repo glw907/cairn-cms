@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, stat, writeFile, chmod, rm } from 'node:fs/promises';
+import { mkdtemp, stat, writeFile, chmod, rm, utimes, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -67,4 +67,103 @@ test('loadSite throws on malformed JSON rather than returning null', async (t) =
   const { loadSite } = await import('./state.mjs');
   await writeFile(path.join(dir, 'broken.json'), '{ not valid json');
   await assert.rejects(() => loadSite('broken'));
+});
+
+test('updateSite creates a record when none exists yet', async (t) => {
+  await freshStateDir(t);
+  const { updateSite, loadSite } = await import('./state.mjs');
+  const next = await updateSite('new-site', { name: 'Alpine Club', step: 'scaffolded' });
+  assert.deepEqual(next, { name: 'Alpine Club', step: 'scaffolded', github: {} });
+  assert.deepEqual(await loadSite('new-site'), { name: 'Alpine Club', step: 'scaffolded', github: {} });
+});
+
+test('updateSite deep-merges github so credentials written at the first hop survive every later hop', async (t) => {
+  await freshStateDir(t);
+  const { updateSite, loadSite } = await import('./state.mjs');
+  await updateSite('alpine-site', { name: 'Alpine Club', step: 'scaffolded' });
+  await updateSite('alpine-site', { step: 'app-created', github: { appId: 1, pem: 'PEM-DATA' } });
+  await updateSite('alpine-site', { step: 'installed', github: { installationId: 42 } });
+  const final = await updateSite('alpine-site', { step: 'repo-created', github: { repo: { repo: 'alpine-club' } } });
+
+  assert.equal(final.step, 'repo-created');
+  assert.equal(final.github.appId, 1, 'the App id from the first hop must survive');
+  assert.equal(final.github.pem, 'PEM-DATA', 'the pem from the first hop must survive');
+  assert.equal(final.github.installationId, 42, 'the installation id from the second hop must survive');
+  assert.deepEqual(final.github.repo, { repo: 'alpine-club' });
+  assert.deepEqual(await loadSite('alpine-site'), final);
+});
+
+test('updateSite leaves the saved file at 0600', async (t) => {
+  const dir = await freshStateDir(t);
+  const { updateSite } = await import('./state.mjs');
+  await updateSite('mode-check', { step: 'scaffolded' });
+  const mode = (await stat(path.join(dir, 'mode-check.json'))).mode & 0o777;
+  assert.equal(mode, 0o600);
+});
+
+test('findSiteByDir returns the record whose saved dir matches, and null when none does', async (t) => {
+  await freshStateDir(t);
+  const { saveSite, findSiteByDir } = await import('./state.mjs');
+  await saveSite('alpine-club-abc123', { name: 'Alpine Club', dir: '/tmp/alpine-club', step: 'scaffolded' });
+
+  const found = await findSiteByDir('/tmp/alpine-club');
+  assert.deepEqual(found, {
+    id: 'alpine-club-abc123',
+    data: { name: 'Alpine Club', dir: '/tmp/alpine-club', step: 'scaffolded' },
+  });
+
+  assert.equal(await findSiteByDir('/tmp/no-such-site'), null);
+});
+
+test('findSiteByDir returns null against an empty (never-written) state dir', async (t) => {
+  await freshStateDir(t);
+  const { findSiteByDir } = await import('./state.mjs');
+  assert.equal(await findSiteByDir('/tmp/anything'), null);
+});
+
+test('findSiteByDir tolerates a malformed record, skipping it rather than throwing', async (t) => {
+  const dir = await freshStateDir(t);
+  const { saveSite, findSiteByDir } = await import('./state.mjs');
+  await writeFile(path.join(dir, 'broken-record-000000.json'), '{ not valid json');
+  await saveSite('alpine-club-abc123', { name: 'Alpine Club', dir: '/tmp/alpine-club', step: 'scaffolded' });
+
+  const found = await findSiteByDir('/tmp/alpine-club');
+  assert.equal(found.id, 'alpine-club-abc123');
+});
+
+test('findSiteByDir never returns a retired record', async (t) => {
+  await freshStateDir(t);
+  const { saveSite, retireSite, findSiteByDir } = await import('./state.mjs');
+  await saveSite('alpine-club-abc123', { name: 'Alpine Club', dir: '/tmp/alpine-club', step: 'scaffolded' });
+  await retireSite('alpine-club-abc123');
+
+  assert.equal(await findSiteByDir('/tmp/alpine-club'), null);
+});
+
+test('findSiteByDir picks the newest-mtime record when two share the same dir', async (t) => {
+  const dir = await freshStateDir(t);
+  const { saveSite, findSiteByDir } = await import('./state.mjs');
+  await saveSite('alpine-club-aaaaaa', { name: 'Older Attempt', dir: '/tmp/alpine-club', step: 'scaffolded' });
+  await saveSite('alpine-club-bbbbbb', { name: 'Newer Attempt', dir: '/tmp/alpine-club', step: 'app-created' });
+
+  const older = new Date(Date.now() - 60_000);
+  const newer = new Date();
+  await utimes(path.join(dir, 'alpine-club-aaaaaa.json'), older, older);
+  await utimes(path.join(dir, 'alpine-club-bbbbbb.json'), newer, newer);
+
+  const found = await findSiteByDir('/tmp/alpine-club');
+  assert.equal(found.id, 'alpine-club-bbbbbb');
+});
+
+test('retireSite renames the record rather than deleting it', async (t) => {
+  const dir = await freshStateDir(t);
+  const { saveSite, retireSite } = await import('./state.mjs');
+  await saveSite('alpine-club-abc123', { name: 'Alpine Club', dir: '/tmp/alpine-club', step: 'scaffolded' });
+
+  await retireSite('alpine-club-abc123');
+
+  const entries = await readdir(dir);
+  assert.ok(!entries.includes('alpine-club-abc123.json'), 'the original filename must be gone');
+  const retired = entries.find((name) => name.startsWith('alpine-club-abc123.retired-'));
+  assert.ok(retired, 'expected a renamed retired-*.json file');
 });

@@ -6,6 +6,21 @@
 > per task, orchestrated by the main loop, except Tasks 1 and 13, which are main-loop tasks
 > needing Geoff's browser.
 
+**Spike amendments (2026-08-10, post-Task 1):** the spike ran (verdict:
+`docs/internal/2026-08-10-t2-own-app-spike.md`) and the design STANDS, with four observed
+corrections folded into the task briefs below: (1) the manifest requires
+`hook_attributes: { url, active: false }` even with no events, and a signed-out admin
+dead-ends the manifest POST, so the pre-open copy says sign in first; (2) the install
+redirect uses the registered callback verbatim (a portless registration dead-ends on
+unbindable port 80), and with two registered callbacks it uses the FIRST, so the tool binds
+its loopback before minting the manifest and registers `[<ported>/callback,
+http://127.0.0.1/callback]`; port-only leniency (path exact) is proven and backs any-port
+resume against the portless second entry; (3) the repo-link PUT is refused for user tokens
+(403 `Resource not accessible by integration`) and unnecessary (UAT-created repos are
+auto-added to the installation, selected-mode included), so Task 8 verifies coverage by GET
+instead of linking; (4) every SPIKE-marked fake status was confirmed as guessed, and the
+fake additionally models the PUT refusal and the auto-add.
+
 **Revision note (2026-08-10):** this plan was rewritten after a three-agent adversarial fold
 (admin-journey, platform-correctness, plan-integrity) against the first committed version.
 The architecture-level changes: install rides the manifest redirect
@@ -422,15 +437,23 @@ kind: ask-someone
 **Interfaces:**
 - Consumes: `startLoopback` (3), `githubRequest`/`webBase` (4), `chapterError` (5),
   `slugify` (T1).
-- Produces: `buildManifest({ appName, siteName, ownerType, redirectUrl }) -> object`:
-  `{ name: appName, url: 'https://github.com/glw907/cairn-cms', redirect_url: redirectUrl,
-  callback_urls: ['http://127.0.0.1/callback'], request_oauth_on_install: true,
-  public: false, default_permissions: { contents: 'write', administration: 'write',
+- Produces (amended by the spike): `buildManifest({ appName, siteName, ownerType,
+  loopbackUrl }) -> object`:
+  `{ name: appName, url: 'https://github.com/glw907/cairn-cms',
+  redirect_url: <loopbackUrl>/manifest,
+  callback_urls: [<loopbackUrl>/callback, 'http://127.0.0.1/callback'],
+  hook_attributes: { url: 'https://github.com/glw907/cairn-cms', active: false },
+  request_oauth_on_install: true, public: false,
+  default_permissions: { contents: 'write', administration: 'write',
   ...(ownerType === 'org' ? { members: 'read' } : {}) }, default_events: [] }`.
-  The callback registration is **portless by design** (the spec's loopback-exception rule);
-  a test pins it so nobody "fixes" it to carry a port. (Verify at implementation time
-  whether `members` sits under a separate `organization_permissions`-style key in the
-  manifest schema; the spike's App settings page shows the result either way.)
+  The ported entry comes FIRST (the install redirect uses the first registered callback,
+  verbatim); the portless second entry backs any-port resume via the proven port-only
+  leniency. `hook_attributes` is required by the manifest schema even with no events;
+  `active: false` keeps GitHub from calling it. A test pins the two-entry order and the
+  hook_attributes presence so nobody "simplifies" either away. The loopback therefore binds
+  BEFORE the manifest is built. (Verify at implementation time whether `members` sits under
+  a separate `organization_permissions`-style key in the manifest schema; the spike's App
+  settings page shows the result either way.)
 - Produces: `manifestFormHtml(manifest, targetUrl) -> string` (auto-submit form, value
   HTML-escaped); `manifestTarget({ ownerType, org }) -> string` (`<web>/settings/apps/new`
   or `<web>/organizations/<org>/settings/apps/new`); `runManifestFlow({ appName, siteName,
@@ -496,12 +519,14 @@ kind: ask-someone
     auto_init: true }` (`auto_init` seeds the repo so the Git Data API works; an empty repo
     409s it). 422 name-exists → `chapterError('repo-name-collision', ...)`; 403 with a
     SAML/SSO indicator → `chapterError('sso-blocked', ...)`.
-  - `linkRepoToInstallation(token, { installationId, repoId, owner, repo }) ->
-    Promise<void>` — `PUT /user/installations/<installationId>/repositories/<repoId>`,
-    then verifies via `GET /user/installations/<installationId>/repositories` that
-    `<owner>/<repo>` is present; a failed PUT or absent repo →
-    `chapterError('installation-not-covering-repo', ...)` (next step: the install URL with
-    "choose Only select repositories and add <repo>", then the re-run).
+  - `verifyInstallationCovers(token, { installationId, owner, repo }) -> Promise<void>`
+    (amended by the spike; replaces the planned PUT + verify) — the PUT is refused for user
+    tokens (403 `Resource not accessible by integration`) and unnecessary, since a repo
+    created with the App's own user token is auto-added to the installation, selected-mode
+    included. So: `GET /user/installations/<installationId>/repositories` must list
+    `<owner>/<repo>`; absence → `chapterError('installation-not-covering-repo', ...)`
+    (next step: the install URL with "choose Only select repositories and add <repo>",
+    then the re-run).
   - `pushScaffold(token, { owner, repo, dir, log }) -> Promise<{ commitSha }>` — reads the
     seed ref (`GET git/ref/heads/main`), walks `dir` recursively skipping `node_modules`,
     `.git`, and `SCAFFOLD_SENTINEL` (imported from `scaffold.mjs`; if Task 11 has not
@@ -519,8 +544,9 @@ kind: ask-someone
 
 - [ ] **Step 1: Failing tests** against the fake: create (both owner types) fails 404
   without an installation (seed one in `state`), succeeds with one, and seeds the fake's
-  git state; collision and SSO rows via `failNext`; the link PUT + verify happy path, and
-  `failNext('link', 403, {})` → `installation-not-covering-repo`; a push lands blobs, a
+  git state; collision and SSO rows via `failNext`; the coverage-verify happy path (the
+  fake auto-adds a UAT-created repo to the installation, per the spike) and a seeded
+  not-covered case → `installation-not-covering-repo`; a push lands blobs, a
   tree, a commit whose parent is the seed sha, and a PATCHed ref, with every fixture file
   present and `node_modules/junk` absent; **the re-push test is falsifiable by request
   count**: after a completed push, a second `pushScaffold` returns the same sha and the
@@ -952,3 +978,110 @@ the landing-order note); `updateSite`/`findSiteByDir`/`retireSite` (10/11) consi
 T1's `saveSite`/`loadSite`; the step enum (header) matches Task 10's hops and Task 11's
 resumable list; `FakeGithub.failNext` route names used in 6-10 match Task 2's list;
 `requests` (2) consumed by 8, 10, 11.
+
+---
+
+## Post-mortem (2026-08-10, pass complete)
+
+**All fourteen tasks landed in one day on the `t2-github-chapter` worktree, PR #26, all six CI
+workflows green on the final head.** The chapter works end to end on real GitHub: three recorded
+live runs (personal, org, interrupted-then-resumed) each ended with a private repo holding the
+auto_init seed plus one tool commit, covered by an installed App the account owns, in two browser
+trips, with no git binary and no secret under the project directory.
+
+### What the spike changed (Task 1, the decision gate)
+
+The spike ran as two browser rounds in one Geoff sitting and rewrote four premises; the verdict
+doc is `docs/internal/2026-08-10-t2-own-app-spike.md` and the plan's task briefs were amended
+before Tasks 6-10 dispatched. The design stood (`POST /user/repos` with the installed App's user
+token returns 201; no fallback built). The corrections: `hook_attributes.url` is required by the
+manifest schema even with no events (its absence produces GitHub's unhelpful "We didn't find an
+App Manifest" page, as does a signed-out form POST, which the pre-open copy now warns about); the
+install redirect uses the FIRST registered callback verbatim with no port awareness, so the spec's
+portless-only registration was refuted (port 80 is unbindable, EACCES observed) and the tool now
+registers the run's ported loopback first with portless second; GitHub's loopback leniency is
+port-only and path-exact, proven live, which is what lets a resume reauthorize from any fresh
+port against the portless entry; and the repo-link PUT is refused for user tokens (403 "Resource
+not accessible by integration") while being unnecessary, since a UAT-created repo is auto-added
+to the installation even under "Only select repositories", so Task 8 shipped verify-only coverage.
+Every SPIKE-guessed fake-server status was confirmed by observation (empty-repo 409 "Git
+Repository is empty." including blobs; duplicate-ref 422; conversion 201; repo DELETE 204).
+
+### Execution shape
+
+Tasks 2-5 (fake server, loopback, JWT/API, catalogue) ran before the spike verdict, as
+verdict-independent foundations, after two spike windows lapsed unattended; Tasks 6-10 stayed
+gated and dispatched only after the verdict. Task 12 ran out of order (verdict-independent) and
+needed three CI rounds: the admin probe first read a healthy server as dead (vite bound IPv6
+localhost while curl spoke IPv4; fixed with --host 127.0.0.1) and then as broken (a signed-in
+admin 307s /admin to its first concept view, so the probe now follows redirects and requires a
+final 200 that is not /admin/login, which keeps a broken shim red). Implementers flagged two seam
+defects mid-train, both fixed at the orchestration layer (Task 10): a shared loopback across the
+manifest and install trips (the install redirect targets the manifest-time port) and `dir`
+threading into catalogue errors so no printed Next line says `undefined`.
+
+### The pass-close workflow and the review round
+
+Pass close ran as a Workflow on Geoff's opt-in: gates (all ten green), push, a three-lens
+adversarial find-and-verify (correctness, auth-security via web-auth-security-reviewer, printed
+copy), docs prep, CI watch; about 1.04M subagent tokens, 13 agents. Twenty-one findings deduped;
+the top six were adversarially verified and ALL six confirmed, all high: the resumed org run lost
+the saved org login (dead-ended on /orgs/undefined forever); the push walk ignored the scaffold's
+.gitignore (a resumed run after npm install would have pushed .dev.vars and .wrangler to GitHub);
+exchangeCode returned undefined on every OAuth error but the one tested code; the manifest
+callback carried no state nonce; an error message named a nonexistent --app-id flag; and bin
+printed two conflicting next-step lines. One fix batch closed all six plus three same-file riders
+(conversion catch-all, poll-fallback heartbeat, default-branch threading for org branch
+policies). The fifteen unverified findings are parked in the friction log's hardening entry.
+
+### The live e2e (Task 13) and what it caught
+
+Runs: personal (glw907/t2-live), org (t2-scratch-org/t2-org-live, Members: read confirmed on the
+real install page, the org login validated at the prompt including a live 404-refusal when the
+org did not exist yet), and the resume run (killed after app-created; the relaunch printed
+"Resuming T2 Resume at app-created", minted no second App, kept App id 4551178, and completed on
+one install click). The verifier proved per run: state at `pushed`, mode 0600, PEM present, no
+token material, no secret under the scaffold, repo private with exactly two commits and the tool
+commit at head. All repos API-deleted in the sitting; Apps and the scratch org deleted by hand
+(GitHub has no App-deletion API). One product defect surfaced live and was fixed in-pass: the
+resumed install redirect targets the dead original port, and the code waited the full ten-minute
+callback window before polling; install.mjs now races the callback wait against the JWT poll
+concurrently, first signal wins (the live run had proven the recovery path itself works). That
+race fix itself shipped a CI-only test race, since the happy-path drivers could not play the
+reauthorize branch when the poll won; the merge-blocking CI round caught it, and the fix was
+URL-branching drivers plus a one-`pollIntervalMs` initial poll delay.
+
+**Sitting count honesty:** the plan said two Geoff sittings; reality was one long, interrupted
+spike sitting (two 45-minute-to-8-hour windows lapsed unattended before it started, plus two
+mid-sitting corrections), one e2e sitting, and two unplanned pulls (a test that opened the real
+browser during the suite, twice, and the dead-port page during the resume run). The spawn-proof
+rule is now in the tests; the desktop-side-effect class goes to the T3 plan as a standing
+constraint.
+
+### Plan assumptions corrected in code (the T1 tradition continues)
+
+The manifest schema (hook_attributes), the portless callback design, the repo-link PUT, the CI
+probe's 200-at-/admin claim (both the bind family and the redirect semantics), and Task 9's
+sequential-then-poll shape all differed from reality and are corrected in code with tests, not
+noted. The spike script itself needed two live corrections (sign-in-first, hook_attributes)
+before the flow completed, both of which became product copy or manifest content.
+
+### Budgets
+
+Subagent tokens: ~1.9M across thirteen cairn-implementer dispatches, ~0.18M code-simplifier,
+~1.04M the pass-close workflow; main loop on Fable on top (session total not separately metered
+here). Geoff interaction points: two planned sittings' worth of browser work (about 14 clicks
+total), two org-name messages, the workflow opt-in, and four defect reports that pulled him in
+(the browser flashes twice, the flashing URL, the spike's two error pages); the spike's lapsed
+windows cost most of the calendar day. The unplanned pulls were all defects by the pass's own
+standard; the browser-flash class now has a structural fix, and the spike's paste-fallback and
+port-80 instrumentation meant no lapsed-window ever wasted a click that had already happened.
+
+### Locked in / carried forward
+
+Locked: manifest-first own-App with the two-entry callback registration; verify-only coverage;
+the concurrent callback/poll race; tokens opaque and memory-only; the 0600 store as the PEM's
+home until T3's Worker secret exists. Carried: the friction log's hardening entry (unverified
+review tail plus bin.test.mjs coverage); `@glw907/cairn-cms-dev` still unpublished (release-one
+blocker, unchanged); the scratch org may be kept for T3's live checks or deleted; the Registrar
+token remains Geoff's queued action gating T3's domain half.

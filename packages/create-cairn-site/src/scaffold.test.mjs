@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, readdir, access, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { scaffold, handoverText, dryRunNotice } from './scaffold.mjs';
+import { scaffold, handoverText, dryRunNotice, SCAFFOLD_SENTINEL } from './scaffold.mjs';
 
 // Every scaffold test answers identically: the name is what the slug and the substitution
 // assertions key on, and both optional answers stay empty. Frozen so a scaffold run that ever
@@ -117,6 +117,36 @@ test('real run scaffolds, renames, substitutes, and saves state outside the scaf
   );
 });
 
+test('scaffold returns the siteId the state record was saved under', async (t) => {
+  const stateDir = await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  const result = await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+  assert.match(result.siteId, /^alpine-club-[a-z0-9]{6}$/);
+  const stateFiles = await readdir(stateDir);
+  assert.ok(stateFiles.includes(`${result.siteId}.json`), 'expected the state record to be saved under the returned siteId');
+});
+
+test('scaffold returns a siteId even under --dry-run, though nothing is saved', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  const result = await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: true,
+    log: () => {},
+  });
+  assert.match(result.siteId, /^alpine-club-[a-z0-9]{6}$/);
+});
+
 test('a failing state save reports a warning but leaves the scaffold complete', async (t) => {
   const outDir = await tempDir(t);
   // Point CAIRN_STATE_DIR at a path that already exists as a plain file, so state.mjs's own
@@ -222,20 +252,80 @@ test('an existing empty target directory is fine', async (t) => {
   assert.equal(pkg.name, 'alpine-club');
 });
 
-test('the hand-over block names CAIRN_DEV_BACKEND and never prints a bare npm run dev line', () => {
-  const text = handoverText({ dir: 'alpine-club', platform: 'linux' });
-  assert.match(text, /CAIRN_DEV_BACKEND=1/);
-  assert.ok(text.includes('CAIRN_DEV_BACKEND=1 npm run dev'));
-  for (const line of text.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed === 'npm run dev') {
-      assert.fail('found a bare "npm run dev" line unaccompanied by the CAIRN_DEV_BACKEND switch');
-    }
-  }
+test('a target directory holding only the sentinel fails with the interrupted-run message', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, SCAFFOLD_SENTINEL), '12345');
+
+  const fixtureDir = await templateFixture(t);
+  await assert.rejects(
+    () => scaffold({
+      templateDir: fixtureDir,
+      answers: ANSWERS,
+      dir,
+      dryRun: false,
+      log: () => {},
+    }),
+    /was interrupted while scaffolding/,
+  );
+});
+
+test('a successful scaffold leaves no sentinel behind', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+  await assert.rejects(() => access(path.join(dir, SCAFFOLD_SENTINEL)));
+});
+
+test('--dir with un-created parent directories scaffolds (mkdir recursive)', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'sites', 'my-site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+  const pkg = JSON.parse(await readFile(path.join(dir, 'package.json'), 'utf8'));
+  assert.equal(pkg.name, 'alpine-club');
+});
+
+test('a dry run creates neither the target directory nor the sentinel', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: true,
+    log: () => {},
+  });
+  await assert.rejects(() => access(dir));
+  await assert.rejects(() => access(path.join(dir, SCAFFOLD_SENTINEL)));
+});
+
+test('the hand-over block prints the bare install/dev sequence and never mentions CAIRN_DEV_BACKEND', () => {
+  const text = handoverText({ dir: 'alpine-club' });
+  assert.ok(text.includes('cd alpine-club'));
+  assert.ok(text.includes('npm install'));
+  assert.ok(text.includes('npm run dev'));
+  assert.ok(!text.includes('CAIRN_DEV_BACKEND'), 'the scaffold\'s own dev script now sets it at runtime');
 });
 
 test('an absolute --dir prints without a doubled leading slash', () => {
-  const text = handoverText({ dir: '/tmp/alpine-dry', platform: 'linux' });
+  const text = handoverText({ dir: '/tmp/alpine-dry' });
   assert.ok(text.startsWith('Your site is scaffolded at /tmp/alpine-dry.'));
   assert.ok(!text.includes('.//tmp'));
 });
@@ -247,8 +337,9 @@ test('a dry run closes by saying nothing was created, never that the site is sca
   assert.ok(!text.includes('Your site is scaffolded'));
 });
 
-test('the win32 branch prints the PowerShell form instead of the env-prefix form', () => {
-  const text = handoverText({ dir: 'alpine-club', platform: 'win32' });
-  assert.ok(text.includes('$env:CAIRN_DEV_BACKEND=1; npm run dev'));
-  assert.ok(!text.includes('CAIRN_DEV_BACKEND=1 npm run dev'));
+test('handoverText takes no platform parameter', () => {
+  assert.ok(
+    !handoverText.toString().includes('platform'),
+    'handoverText\'s source must not reference a platform parameter',
+  );
 });

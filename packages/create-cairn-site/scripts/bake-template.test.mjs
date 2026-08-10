@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { bake, assertInstallableSpec } from './bake-template.mjs';
+import { bake, assertInstallableSpec, PRUNED_SCRIPTS, PRUNED_DEV_DEPENDENCIES, pruneShowcaseOnlyPackageFields } from './bake-template.mjs';
 
 test('bake emits the template with published-engine specs when both specs are given', async () => {
   const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
@@ -61,4 +61,63 @@ test('a high major version is not mistaken for an unpublished 0.0.0', () => {
   for (const spec of ['^0.0.0', '0.0.0', '^0.0.0-rc.1']) {
     assert.throws(() => assertInstallableSpec('@glw907/cairn-cms-dev', spec), /0\.0\.0/, spec);
   }
+});
+
+test('bake prunes showcase-only scripts and devDependencies, keeping the rest', async () => {
+  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
+  await bake({ to, engineSpec: '^0.94.0', devSpec: '^0.1.0' });
+  const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
+  for (const script of PRUNED_SCRIPTS) {
+    assert.ok(!(script in pkg.scripts), `expected ${script} to be pruned from scripts`);
+  }
+  for (const dep of PRUNED_DEV_DEPENDENCIES) {
+    assert.ok(!(dep in pkg.devDependencies), `expected ${dep} to be pruned from devDependencies`);
+  }
+  assert.ok('dev' in pkg.scripts);
+  assert.ok('build' in pkg.scripts);
+  assert.ok('check' in pkg.scripts);
+  assert.ok('cairn:manifest' in pkg.scripts);
+  await rm(to, { recursive: true, force: true });
+});
+
+test('bake emits a tree with no showcase-only .claude or scripts directory', async () => {
+  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
+  await bake({ to, engineSpec: '^0.94.0', devSpec: '^0.1.0' });
+  await assert.rejects(() => access(path.join(to, '.claude')));
+  await assert.rejects(() => access(path.join(to, 'scripts')));
+  await rm(to, { recursive: true, force: true });
+});
+
+test('bake writes a site README that is not the showcase README', async () => {
+  const to = await mkdtemp(path.join(tmpdir(), 'cairn-bake-'));
+  await bake({ to, engineSpec: '^0.94.0', devSpec: '^0.1.0' });
+  const readme = await readFile(path.join(to, 'README.md'), 'utf8');
+  assert.ok(!readme.includes('cairn showcase'));
+  assert.ok(!readme.includes('../../docs'));
+  await rm(to, { recursive: true, force: true });
+});
+
+// The rot gate: pruneShowcaseOnlyPackageFields must fail loud when the showcase drops or renames
+// one of the fields it expects to remove, rather than silently doing nothing.
+test('pruneShowcaseOnlyPackageFields throws naming a missing expected script', () => {
+  const pkg = {
+    scripts: { dev: 'vite dev', 'test:e2e': 'playwright test', 'design:probe': 'node scripts/design-probe.mjs' },
+    devDependencies: { '@playwright/test': '^1.60.0', '@axe-core/playwright': '^4.10.0' },
+  };
+  // pretest:e2e is missing from scripts.
+  assert.throws(() => pruneShowcaseOnlyPackageFields(pkg), /pretest:e2e/);
+});
+
+test('pruneShowcaseOnlyPackageFields throws naming a missing expected devDependency', () => {
+  const pkg = {
+    scripts: {
+      dev: 'vite dev',
+      'pretest:e2e': 'npm --prefix ../.. run package',
+      'test:e2e': 'playwright test',
+      'design:probe': 'node scripts/design-probe.mjs',
+    },
+    devDependencies: { '@playwright/test': '^1.60.0' },
+  };
+  // @axe-core/playwright is missing from devDependencies.
+  assert.throws(() => pruneShowcaseOnlyPackageFields(pkg), /@axe-core\/playwright/);
 });

@@ -294,12 +294,20 @@ test('runGithubChapter: resume at app-created skips the manifest action, reachin
   const logs = [];
   const openBrowser = async (url) => {
     logs.push(`opened ${url}`);
-    setTimeout(() => {
-      github.state.installations.push({ id: 99, account: { login: appJson.owner.login } });
+    // The heartbeat line carrying the loopback URL is logged AFTER openBrowser resolves, so
+    // this driver polls for it rather than assuming one timer tick is enough; assuming made
+    // the suite rarely exit 1 via an uncaught TypeError after the tests had all passed.
+    const driveCallback = () => {
       const heartbeat = logs.find((line) => line.includes('This machine is listening for'));
+      if (!heartbeat) {
+        setTimeout(driveCallback, 5);
+        return;
+      }
+      github.state.installations.push({ id: 99, account: { login: appJson.owner.login } });
       const loopbackUrl = heartbeat.match(/http:\/\/127\.0\.0\.1:\d+/)[0];
       fetch(`${loopbackUrl}/callback?code=fake-code&installation_id=99`).catch(() => {});
-    }, 0);
+    };
+    setTimeout(driveCallback, 0);
   };
 
   // seedFakeApp above already hit /conversions once, standing in for an earlier run's own

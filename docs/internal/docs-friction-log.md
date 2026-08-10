@@ -309,3 +309,37 @@ line.
   `FieldLabel`'s markup, and the doc addition is a smaller, separable edit than the plan's own
   scope). Candidate fix: one sentence in `FieldLabel`'s `@component` block, pointing at `FieldRow`
   for a row that mixes it with a bare control.
+
+- **[developer, admin] The setup docs were walked cold from five vantages, and the findings are a
+  Pass D work list, not a doc-by-doc polish.** The record, with every finding evidenced by
+  `file:line` and ranked by how many independent walks raised it, is
+  [`2026-08-unagented-setup-baseline.md`](./2026-08-unagented-setup-baseline.md); read it there
+  rather than restating it here. Four classes need a decision Pass D cannot duck. **Prerequisites
+  arrive last**: a domain, a Cloudflare zone, `wrangler login`, a GitHub account with owner access
+  on the target repo, and the Workers Paid plan for arbitrary-recipient email are each stated at
+  the step that needs them, so a reader meets an unbudgeted decision after nine milestones of
+  work. **The tutorial has drifted from its own toolchain**: current `sv create` sets the adapter
+  in `vite.config.ts`, so the `svelte.config.js` edit at milestone 1 is a no-op that
+  `adapter-auto` silently overrides, and the same drift breaks doctor's `config.csrf-disable`
+  text heuristic. Two walkers reproduced this live. **Troubleshooting is scoped to live sites**,
+  which `guides/README.md:72` states outright, so the entire setup phase has no recovery surface;
+  every symptom in the table keys on a runtime log event. **The front door buries the first
+  command** behind five sections of positioning, and `docs/README.md:10` tells the reader to keep
+  `examples/showcase` open, which a reader who arrived through the README's own quickstart does
+  not have. Smaller items in the record: `base64 -w0` is GNU-only and fails on macOS, `.dev.vars`
+  is missing from the scaffold's `.gitignore`, the GitHub App guide's three visual aids are
+  unfilled `<!-- SCREENSHOT: -->` comments, and `PUBLIC_ORIGIN` disagrees with `ORIGIN` on which
+  localhost port is meant.
+
+- **[developer] The scaffolded `dev` script cannot start a working admin on its own, so the tool
+  has to print an internal flag name.** The dev backend needs `CAIRN_DEV_BACKEND=1` at runtime on
+  top of its build-time define (`examples/showcase/src/chassis/dev-gate.ts:26`), and the emitted
+  template's script is bare `vite dev`. T1 handles this honestly, by printing
+  `CAIRN_DEV_BACKEND=1 npm run dev` and branching to the PowerShell form on Windows, but every
+  walker who saw it said the same thing: a reader who may not be a developer should never be shown
+  a flag that exists for the bundler's benefit. The fix belongs to the template, not the printed
+  copy, and it is a real design question rather than a one-liner. Setting the variable inside the
+  scaffolded `dev` script needs a cross-platform mechanism (a `cross-env` dependency the template
+  does not currently carry, or a small shipped shim), and the opt-in is deliberately a runtime
+  variable so no build can fold it, which is what keeps the dev package out of a deployed Worker.
+  Weigh a template dependency against a printed flag before T2 picks one.

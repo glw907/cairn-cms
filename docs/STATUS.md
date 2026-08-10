@@ -14,33 +14,50 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-09, night: Pass T1 tasks 1-7 LANDED on `create-cairn-site`; tasks 8-10 are BLOCKED on Geoff's baseline walk)
+## Immediate next action (2026-08-10: Pass T1 is COMPLETE on `create-cairn-site`, PR #25 open; next is Pass T2)
 
-**Pass T1's local half is built and green, and the pass deliberately stops short of its own
-finish line.** Tasks 1 through 7 are landed on the `create-cairn-site` branch (worktree at
-`.claude/worktrees/create-cairn-site`), **pushed to `origin` and tracking, not merged, and with no
-PR open**. No CI has ever run against this branch: every gating workflow (`test`, `scaffold`,
-`e2e`, `design`) fires on `push` only for `main` and `rebuild`, plus `pull_request`. Two changes in
-this window are therefore CI-unproven, and both are the kind CI exists to catch: the
-`.cairn-template.json` exclusions change what `scaffold.yml` emits, installs, typechecks, and
-builds, and the two steps added to `test.yml` have never executed there. Opening a PR runs all
-four, and Task 9 needs one anyway. Tasks 8, 9's workflow half, and 10
-remain, and **Task 8 is blocked by design**: the plan makes it wait on the un-agented baseline
-walk, whose ranked drag points are supposed to reorder and reword the command's printed next
-steps. Geoff ruled at pass start that he walks it himself. The protocol shell is committed at
-[`2026-08-unagented-setup-baseline.md`](internal/2026-08-unagented-setup-baseline.md); it needs
-his log filled in and committed before Task 8 is dispatched.
+**Pass T1 is done, all ten tasks.** The work sits on the `create-cairn-site` branch (worktree at
+`.claude/worktrees/create-cairn-site`), pushed, with **[PR #25](https://github.com/glw907/cairn-cms/pull/25)
+open and not merged**. Opening the PR is what first ran CI against this branch: every gating
+workflow fires on `push` only for `main` and `rebuild`, plus `pull_request`, so the whole window had
+been CI-unproven. All five checks passed on the tasks 1-7 window, including the two `test.yml` steps
+and the `.cairn-template.json` exclusions that change what `scaffold.yml` emits.
 
-**Resume prompt** (fresh Opus session, launch directory `~/Projects/cairn-cms`): "Finish the
-create-cairn-site T1 plan at `docs/superpowers/plans/2026-08-09-create-cairn-site-t1.md`. Tasks
-1-7 are landed on the `create-cairn-site` branch; Tasks 8, 9, and 10 remain. The recorded baseline
-walk is at `docs/internal/2026-08-unagented-setup-baseline.md`; fold its ranked drag points into
-Task 8's printed next steps before dispatching. Task 9's `test.yml` half is done; its
-`create-site.yml` half remains. Work on the existing `create-cairn-site` worktree, not a new one.
-Start with the cairn-pass skill."
+**Resume prompt** (fresh Opus session, launch directory `~/Projects/cairn-cms`): "Plan and execute
+Pass T2 of the create-cairn-site umbrella, the GitHub chapter. Pass T1 is complete on the
+`create-cairn-site` branch (PR #25, unmerged); read its post-mortem in
+`docs/superpowers/plans/2026-08-09-create-cairn-site-t1.md` and the recorded baseline walk at
+`docs/internal/2026-08-unagented-setup-baseline.md` first. Start with the cairn-pass skill."
+**Decide the merge first**: T2 either branches from `main` after merging #25, or continues on this
+branch. A cold session branches from `main` by default and would build against an engine that has
+none of T1.
+
+**The baseline walk is recorded, and Geoff changed how it was run.** He first ruled he would walk it
+himself, then revised the same day: "a well-tuned persona agent run several times fresh from several
+vantage points is probably more effective than I'll be." Five blind persona walks ran (owner-nondev,
+dev-new-to-stack, going-live, recovery, wayfinding), every finding carrying a `file:line` quote,
+ranked by how many independent walks raised it. The record is
+[`2026-08-unagented-setup-baseline.md`](internal/2026-08-unagented-setup-baseline.md). Its
+documentation half is Pass D's work list and is filed in the friction log; nothing there is lost.
+
+**The walk changed the product, not just the docs.** Unanimously, all five walks stopped at the same
+place: the tutorial's payoff milestone installs `@glw907/cairn-cms-dev`, which is not on npm. Two
+walks caught something the plan had wrong, and it was then verified directly in code rather than
+taken on trust: a bare `npm run dev` never reaches the admin, because the dev backend needs
+`CAIRN_DEV_BACKEND=1` at runtime on top of its build-time define
+(`examples/showcase/src/chassis/dev-gate.ts:26`) while the scaffolded script is bare `vite dev`. The
+plan's specified hand-over block would have printed a command that does not work. Task 8 prints the
+working form instead, branches to PowerShell on Windows, says plainly that the local admin is a
+stand-in touching no GitHub repo and sending no real email, and names the Workers Paid plan that
+real sign-in email needs. A test locks the switch into the copy so it cannot be simplified away.
+**Filed for T2**: the fix belongs in the scaffolded `dev` script, not the printed copy, and it needs
+a cross-platform mechanism the template does not carry yet (friction log).
 
 **What landed:** a new `packages/create-cairn-site` (unscoped npm name `create-cairn-site`,
-verified free), plain ESM `.mjs` on `node:test`, 43 tests green. Argument parsing; the action
+verified free), plain ESM `.mjs` on `node:test`, 52 tests green. The wired command; a
+`create-site.yml` CI gate that packs the CLI, installs that tarball into a scratch directory, runs
+it, and then installs, typechecks, and builds the site it produced, passing a brand color so the run
+exercises the four-declaration rot gate against the real theme file. Argument parsing; the action
 runner that makes `--dry-run` a property of the frame; the out-of-scaffold state store
 (`~/.config/cairn/sites/<id>.json`, mode `0600`, chmod'd after every write so an overwrite cannot
 leave it loose); credential-free pre-flight; the pack-time template bake; and the fail-loud

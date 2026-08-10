@@ -14,9 +14,22 @@
   site name, tagline, and brand color. The brand substitution rotates the hue of all four
   `--color-primary` declarations and holds each one's lightness and chroma, following the theme
   file's own re-skin recipe, so a scaffolded site keeps the contrast both its light and dark
-  blocks were tuned for. The command itself is not wired yet; scaffolding arrives with the next
-  pass. Consumers must: nothing. The engine's own `files` array, exports, and tarball are
-  untouched, and this package ships separately.
+  blocks were tuned for. The command is wired end to end: pre-flight, prompts, a copy of the baked
+  template, the package rename, the substitution pass, and a state save, all through the action
+  runner, so `--dry-run` describes the whole run and performs none of it. It refuses before writing
+  anything when the target directory exists and holds files, or when the template was never baked,
+  and every exit path prints a next step. A new `create-site.yml` workflow packs the CLI, installs
+  that tarball into a scratch directory, runs the command, and then installs, typechecks, and builds
+  the site it produced. Consumers must: nothing. The engine's own `files` array, exports, and
+  tarball are untouched, and this package ships separately.
+
+  The printed hand-over block is the output of a recorded setup walk rather than a guess. It prints
+  `CAIRN_DEV_BACKEND=1 npm run dev`, branching to the PowerShell form on Windows, because the
+  scaffolded `dev` script is bare `vite dev` and the dev backend needs that variable at runtime on
+  top of its build-time define: a bare `npm run dev` starts a server whose `/admin` does not work.
+  It says in those terms that the local admin is a stand-in that touches no GitHub repository and
+  sends no real email, and it names what going live will cost, including the Workers Paid plan that
+  arbitrary-recipient sign-in email requires. A test locks the switch into the copy.
 
   The bake refuses to run while `@glw907/cairn-cms-dev` is unpublished, naming the package and
   the fix, rather than emit a template whose devDependency reads `^0.0.0`. A scaffolded site needs

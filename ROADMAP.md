@@ -66,13 +66,17 @@ Readiness checklist:
   native, not bespoke, and the developer-facing design vocabulary is a documented, versioned seam.
 - [ ] **`create-cairn-site` ships**, so a new consumer starts from a scaffold rather than hand-copying the
   showcase. (Weigh whether this gates 1.0 or rides the first 1.x.) Running as Passes T1 to T3 under the
-  admin-setup umbrella. **T1's local half is landed** (the package, the dry-run action frame, the state
-  store, pre-flight, the pack-time template bake, and the substitution pass); the command wiring waits
-  on the un-agented baseline walk, whose protocol is recorded at
+  admin-setup umbrella. **Pass T1 is complete**: the package, the dry-run action frame, the state
+  store, pre-flight, the pack-time template bake, the substitution pass, the wired command, and a CI
+  gate that builds the site the CLI actually produces. T2 (GitHub) and T3 (Cloudflare, and the two
+  doors) remain. **The baseline walk is recorded** at
   [`docs/internal/2026-08-unagented-setup-baseline.md`](docs/internal/2026-08-unagented-setup-baseline.md).
-  That walk measures the path no one has measured: the tutorial's `wrangler`-plus-dashboard setup, cold
-  and un-agented, since every site so far was provisioned by an agent holding account-wide access
-  (Geoff, 2026-08-05, the harvest sitting). Geoff walks it himself (ruled 2026-08-09).
+  It measured the path no one had measured, the tutorial's `wrangler`-plus-dashboard setup walked cold,
+  since every site so far was provisioned by an agent holding account-wide access (Geoff, 2026-08-05,
+  the harvest sitting). Geoff first ruled he would walk it himself, then revised that the same day: a
+  persona agent run several times fresh from several vantage points beats one human walk, because
+  independent runs buy agreement. Five blind walks ran; their findings are triaged in the friction log,
+  and the documentation half is Pass D's work list.
   **`@glw907/cairn-cms-dev` must publish in the same cut as the tool**: a scaffolded site cannot build
   without it, and the bake refuses to run while it sits unpublished at `0.0.0`.
 - [ ] **The core-feature roadmap has landed** to the point the author opens the project up: the intro's

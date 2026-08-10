@@ -661,3 +661,94 @@ ones the local ritual skips (`check:comments`, `check:reference:signatures`, `ch
 One task split (Task 6 into 6a and 6b), which is the first of the pass and below the threshold that
 would argue for splitting the pass. The pass stopping at Task 7 is the plan's own design, not
 accretion.
+
+---
+
+## Post-mortem, part 2 (2026-08-10, Tasks 8-10)
+
+**Status: the pass is complete.** All ten tasks landed on `create-cairn-site`, PR #25 open and
+unmerged. The pass ran on the existing worktree, per its resume prompt, and never branched again.
+
+### The baseline walk, and the ruling that changed it
+
+Task 1's record was still an empty protocol shell at resume: `git log --all` showed one commit ever
+touching the path, and the Log, ranked, and hard-walls sections were blank. The resume prompt
+assumed a recorded walk, so this was the pass's one genuine unknown. Rather than block with nothing
+delivered, the session ran a labeled provisional agent walk as a substitute input and said so.
+
+Geoff then made the ruling that mattered: "a well-tuned persona agent run several times fresh from
+several vantage points is probably more effective than I'll be." Task 1's own third option allows
+exactly this, on the condition it is labeled. Five blind persona walks ran (owner-nondev,
+dev-new-to-stack, going-live, recovery, wayfinding), each required to evidence every finding with a
+`file:line` quote and barred from reading `docs/superpowers/`. Two of them went beyond reading and
+reproduced steps live against the real registry and the current toolchain.
+
+**The method earned its keep in a way one walk could not.** Ranking by agreement, not by any one
+reader's taste, is what made the record actionable: five of five stopped at the unpublished
+`@glw907/cairn-cms-dev`, four of five raised the Workers Paid plan surfacing three guides deep, and
+three of six raised `base64 -w0` failing on macOS. The two live reproductions found a defect
+invisible to a reader: current `sv create` sets the adapter in `vite.config.ts`, so the tutorial's
+`svelte.config.js` edit is a no-op that `adapter-auto` silently overrides. That belongs to Pass D,
+and it would not have surfaced from a careful read at all.
+
+### The walk changed the plan, which is what it was for
+
+The plan specified Task 8's hand-over block as `cd <dir> && npm install && npm run dev` pointing at
+`/admin`. Two walks flagged that the tutorial itself never runs bare `npm run dev`. Verified in code
+rather than taken on trust: the dev backend needs `CAIRN_DEV_BACKEND=1` at runtime
+(`examples/showcase/src/chassis/dev-gate.ts:26`) on top of the build-time define
+(`examples/showcase/src/hooks.server.ts:18`), and the emitted `dev` script is bare `vite dev`. **The
+plan's own copy would have shipped a command that does not work.** Corrected on three counts: the
+working command, branched to the PowerShell form on Windows; the local admin named as a stand-in
+that touches no GitHub repo and sends no real email; and the deferral split, since a domain, a
+Cloudflare zone, and a paid plan for email is different news from "more setup exists." A test locks
+the switch into the copy, so a later simplification back to the bare command fails loudly.
+
+The cleaner fix, setting the variable inside the scaffolded `dev` script, is deliberately NOT in
+this pass. It belongs to the template rather than the printed copy, needs a cross-platform mechanism
+the template does not carry, and the opt-in is a runtime variable precisely so no build can fold it,
+which is what keeps the dev package out of a deployed Worker. Filed to the friction log for T2.
+
+### Defects found in dispatched work
+
+One, caught in main-loop diff review: after a `--dry-run` the CLI still printed "Your site is
+scaffolded at ...", having created nothing. It was visible in the implementer's own pasted smoke
+output and reported as a pass. The same class of lie the walk had just corrected in the block's
+other lines, so it got the same treatment: a `dryRunNotice` that says what actually happened, and a
+test asserting it never claims otherwise.
+
+The implementer also corrected two things on its own initiative, both right: the plan's Task 8 test
+fixture wrote `site.config.yaml` at the fixture root, where `applySubstitutions` reads
+`src/theme/site.config.yaml`, and it fixed the fixture rather than bending the code to it. And an
+absolute `--dir` would have printed `.//tmp/alpine-dry` through the literal `./<dir>` form.
+
+### Task 9's shape was not what the plan assumed
+
+The plan said to pack `create-cairn-site` with `npm pack`, running `prepack`'s bake. That cannot
+work today and the reason is by design: the bake refuses a `file:` spec and refuses a `0.0.0`
+version, both of which name something no registry can install, and `@glw907/cairn-cms-dev` is still
+unpublished. So `prepack`'s default path is unrunnable until the dev backend publishes, and CI bakes
+explicitly with the engine's real version standing in for both specs, packs with `--ignore-scripts`,
+and rewrites the scaffolded site's specs to the packed tarballs afterward. The gate proves what it
+is for, that the CLI's output builds; the specs a published bake writes are covered by the bake's
+own unit tests. One risk was checked before writing the workflow rather than after: the package's
+`.gitignore` lists `template`, and `files` wins, so the baked template does ship (90 entries).
+
+### Verification
+
+Beyond the suites, a real end-to-end scaffold ran against the actual baked template, which no test
+covers, since the fixtures are synthetic. It renamed the package, inserted the site name and
+tagline, and rotated all four `--color-primary` declarations to the requested hue while each held
+its own lightness (45% light, 74% dark), so the dark-mode contrast trap the first half of this pass
+fixed stays fixed. State landed in the store, nothing under the scaffold.
+
+Package suite 52 passing, exit 0. Root `npm run check` 1601 files, 0 errors, 0 warnings. Root
+`npm test` 412 files / 5273 tests, exit 0. All five CI checks green on the tasks 1-7 window; the new
+`create-site.yml` gate ran on the tasks 8-10 push.
+
+### Sizing note
+
+Two task splits across the whole pass (Task 6 into 6a/6b in part 1, none in part 2), below the
+threshold that would argue for splitting the pass. The pass carried one addition its plan did not
+name, the friction-log and ROADMAP entries for what the walk found, which is Task 10's own
+documentation dimension rather than new scope.

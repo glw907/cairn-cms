@@ -6,6 +6,21 @@
 > per task, orchestrated by the main loop, except Tasks 1 and 13, which are main-loop tasks
 > needing Geoff's browser.
 
+**Spike amendments (2026-08-10, post-Task 1):** the spike ran (verdict:
+`docs/internal/2026-08-10-t2-own-app-spike.md`) and the design STANDS, with four observed
+corrections folded into the task briefs below: (1) the manifest requires
+`hook_attributes: { url, active: false }` even with no events, and a signed-out admin
+dead-ends the manifest POST, so the pre-open copy says sign in first; (2) the install
+redirect uses the registered callback verbatim (a portless registration dead-ends on
+unbindable port 80), and with two registered callbacks it uses the FIRST, so the tool binds
+its loopback before minting the manifest and registers `[<ported>/callback,
+http://127.0.0.1/callback]`; port-only leniency (path exact) is proven and backs any-port
+resume against the portless second entry; (3) the repo-link PUT is refused for user tokens
+(403 `Resource not accessible by integration`) and unnecessary (UAT-created repos are
+auto-added to the installation, selected-mode included), so Task 8 verifies coverage by GET
+instead of linking; (4) every SPIKE-marked fake status was confirmed as guessed, and the
+fake additionally models the PUT refusal and the auto-add.
+
 **Revision note (2026-08-10):** this plan was rewritten after a three-agent adversarial fold
 (admin-journey, platform-correctness, plan-integrity) against the first committed version.
 The architecture-level changes: install rides the manifest redirect
@@ -422,15 +437,23 @@ kind: ask-someone
 **Interfaces:**
 - Consumes: `startLoopback` (3), `githubRequest`/`webBase` (4), `chapterError` (5),
   `slugify` (T1).
-- Produces: `buildManifest({ appName, siteName, ownerType, redirectUrl }) -> object`:
-  `{ name: appName, url: 'https://github.com/glw907/cairn-cms', redirect_url: redirectUrl,
-  callback_urls: ['http://127.0.0.1/callback'], request_oauth_on_install: true,
-  public: false, default_permissions: { contents: 'write', administration: 'write',
+- Produces (amended by the spike): `buildManifest({ appName, siteName, ownerType,
+  loopbackUrl }) -> object`:
+  `{ name: appName, url: 'https://github.com/glw907/cairn-cms',
+  redirect_url: <loopbackUrl>/manifest,
+  callback_urls: [<loopbackUrl>/callback, 'http://127.0.0.1/callback'],
+  hook_attributes: { url: 'https://github.com/glw907/cairn-cms', active: false },
+  request_oauth_on_install: true, public: false,
+  default_permissions: { contents: 'write', administration: 'write',
   ...(ownerType === 'org' ? { members: 'read' } : {}) }, default_events: [] }`.
-  The callback registration is **portless by design** (the spec's loopback-exception rule);
-  a test pins it so nobody "fixes" it to carry a port. (Verify at implementation time
-  whether `members` sits under a separate `organization_permissions`-style key in the
-  manifest schema; the spike's App settings page shows the result either way.)
+  The ported entry comes FIRST (the install redirect uses the first registered callback,
+  verbatim); the portless second entry backs any-port resume via the proven port-only
+  leniency. `hook_attributes` is required by the manifest schema even with no events;
+  `active: false` keeps GitHub from calling it. A test pins the two-entry order and the
+  hook_attributes presence so nobody "simplifies" either away. The loopback therefore binds
+  BEFORE the manifest is built. (Verify at implementation time whether `members` sits under
+  a separate `organization_permissions`-style key in the manifest schema; the spike's App
+  settings page shows the result either way.)
 - Produces: `manifestFormHtml(manifest, targetUrl) -> string` (auto-submit form, value
   HTML-escaped); `manifestTarget({ ownerType, org }) -> string` (`<web>/settings/apps/new`
   or `<web>/organizations/<org>/settings/apps/new`); `runManifestFlow({ appName, siteName,
@@ -496,12 +519,14 @@ kind: ask-someone
     auto_init: true }` (`auto_init` seeds the repo so the Git Data API works; an empty repo
     409s it). 422 name-exists → `chapterError('repo-name-collision', ...)`; 403 with a
     SAML/SSO indicator → `chapterError('sso-blocked', ...)`.
-  - `linkRepoToInstallation(token, { installationId, repoId, owner, repo }) ->
-    Promise<void>` — `PUT /user/installations/<installationId>/repositories/<repoId>`,
-    then verifies via `GET /user/installations/<installationId>/repositories` that
-    `<owner>/<repo>` is present; a failed PUT or absent repo →
-    `chapterError('installation-not-covering-repo', ...)` (next step: the install URL with
-    "choose Only select repositories and add <repo>", then the re-run).
+  - `verifyInstallationCovers(token, { installationId, owner, repo }) -> Promise<void>`
+    (amended by the spike; replaces the planned PUT + verify) — the PUT is refused for user
+    tokens (403 `Resource not accessible by integration`) and unnecessary, since a repo
+    created with the App's own user token is auto-added to the installation, selected-mode
+    included. So: `GET /user/installations/<installationId>/repositories` must list
+    `<owner>/<repo>`; absence → `chapterError('installation-not-covering-repo', ...)`
+    (next step: the install URL with "choose Only select repositories and add <repo>",
+    then the re-run).
   - `pushScaffold(token, { owner, repo, dir, log }) -> Promise<{ commitSha }>` — reads the
     seed ref (`GET git/ref/heads/main`), walks `dir` recursively skipping `node_modules`,
     `.git`, and `SCAFFOLD_SENTINEL` (imported from `scaffold.mjs`; if Task 11 has not
@@ -519,8 +544,9 @@ kind: ask-someone
 
 - [ ] **Step 1: Failing tests** against the fake: create (both owner types) fails 404
   without an installation (seed one in `state`), succeeds with one, and seeds the fake's
-  git state; collision and SSO rows via `failNext`; the link PUT + verify happy path, and
-  `failNext('link', 403, {})` → `installation-not-covering-repo`; a push lands blobs, a
+  git state; collision and SSO rows via `failNext`; the coverage-verify happy path (the
+  fake auto-adds a UAT-created repo to the installation, per the spike) and a seeded
+  not-covered case → `installation-not-covering-repo`; a push lands blobs, a
   tree, a commit whose parent is the seed sha, and a PATCHed ref, with every fixture file
   present and `node_modules/junk` absent; **the re-push test is falsifiable by request
   count**: after a completed push, a second `pushScaffold` returns the same sha and the

@@ -1,7 +1,9 @@
 // Parse the create-cairn-site CLI's argv into a plain answers object. node:util's parseArgs
 // does the token-level work; this module adds the flag-to-key mapping and a fail-loud error
-// that names the offending flag, since the raw ERR_PARSE_ARGS_UNKNOWN_OPTION message is not
-// guaranteed to carry it in every Node release.
+// that names the offending flag. Node's own message already quotes that flag and distinguishes
+// an unknown option from a missing or surplus value, so this wraps it rather than re-deriving
+// it: scanning argv for the first dash-token names the wrong flag whenever a valid option
+// precedes the bad one.
 import { parseArgs as nodeParseArgs } from 'node:util';
 
 const OPTIONS = {
@@ -25,9 +27,8 @@ export function parseArgs(argv) {
   try {
     ({ values } = nodeParseArgs({ args: argv, options: OPTIONS, strict: true }));
   } catch (cause) {
-    const flag = argv.find((token) => token.startsWith('-')) ?? '(unknown)';
     throw new Error(
-      `create-cairn-site: unrecognized option ${flag}. Run with --version to check the install, or see the README for the supported flags.`,
+      `create-cairn-site: ${cause.message}. See the README for the supported flags.`,
       { cause },
     );
   }

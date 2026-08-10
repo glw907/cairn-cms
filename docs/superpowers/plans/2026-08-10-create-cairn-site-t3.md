@@ -308,8 +308,22 @@ seed-failed:
   since after a resume the old value may already be a workers.dev URL, not localhost);
   used by Task 7.
 - Modify `scaffold.mjs`: the existing personalize action's execute calls
-  `nameWranglerResources(dir, slugify(answers.name, 'site'))` after `applySubstitutions`;
-  its `detail` grows one sentence naming the wrangler config personalization.
+  `nameWranglerResources(dir, workerNameFor(answers.name))` after `applySubstitutions`; its
+  `detail` grows one sentence naming the wrangler config personalization.
+- **[review]** Two corrections to the brief as first written, both caught before dispatch:
+  - It said `slugify(answers.name, 'site')`, but `scaffold.mjs` already slugs the package
+    name with the fallback `'cairn-site'` and `src/github/chapter.mjs:133` slugs the App and
+    repo names the same way. A third fallback would make a site whose name slugs to nothing
+    (`!!!`) carry a worker named `site` while its repo is named `cairn-site` and Task 10
+    records `workerName: 'cairn-site'`. Use **`'cairn-site'`**, the value already in use.
+  - The worker name becomes a **DNS label** in the `workers.dev` hostname, so Cloudflare
+    caps it at **63 characters** and forbids a leading or trailing dash. `slugify` handles
+    the character set and the dashes but not the length, so a long site name would slug to a
+    name the deploy rejects. Produce the name through one small exported helper,
+    `workerNameFor(name)`, that slugs with the `'cairn-site'` fallback, truncates to 63, and
+    re-trims any trailing dash the cut created. Task 10 imports the same helper rather than
+    slugging again, so the consent copy, the config, and `cloudflare.workerName` cannot
+    disagree. Test the 63-character boundary and the truncated-to-a-trailing-dash case.
 - Consumed by: Task 7; the T2 push (which now pushes a correctly named config, for free,
   because scaffolding precedes the GitHub chapter).
 
@@ -538,7 +552,9 @@ INSERT INTO magic_token (token_hash, email, expires_at, created_at)
      - `Build your site` → `buildSite`.
      - `Deploy to workers.dev` → `deployWorker` → `writePublicOrigin(dir, url)` →
        `applyMigrations` → `deployWorker` again (assert same url) → `updateSite(siteId,
-       { step: 'deployed', cloudflare: { url, workerName: slug } })`.
+       { step: 'deployed', cloudflare: { url, workerName } })`, where `workerName` comes from
+       Task 5's exported `workerNameFor(siteName)` **[review]**, never a second slug call, so
+       the consent copy, `wrangler.jsonc`, and the state record cannot disagree.
      - `Protect your site's App key` → `movePemToWorkerSecret`.
      - `Sign you in` → `seedOwnerAndToken` (email from state) → open
        `<url><confirmPath>` via `openBrowser` with the printed-URL fallback → print "A

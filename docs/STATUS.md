@@ -18,7 +18,13 @@ library's own development proves changes against `examples/showcase`.
 
 **Pass T1's local half is built and green, and the pass deliberately stops short of its own
 finish line.** Tasks 1 through 7 are landed on the `create-cairn-site` branch (worktree at
-`.claude/worktrees/create-cairn-site`), unpushed and unmerged. Tasks 8, 9's workflow half, and 10
+`.claude/worktrees/create-cairn-site`), **pushed to `origin` and tracking, not merged, and with no
+PR open**. No CI has ever run against this branch: every gating workflow (`test`, `scaffold`,
+`e2e`, `design`) fires on `push` only for `main` and `rebuild`, plus `pull_request`. Two changes in
+this window are therefore CI-unproven, and both are the kind CI exists to catch: the
+`.cairn-template.json` exclusions change what `scaffold.yml` emits, installs, typechecks, and
+builds, and the two steps added to `test.yml` have never executed there. Opening a PR runs all
+four, and Task 9 needs one anyway. Tasks 8, 9's workflow half, and 10
 remain, and **Task 8 is blocked by design**: the plan makes it wait on the un-agented baseline
 walk, whose ranked drag points are supposed to reorder and reword the command's printed next
 steps. Geoff ruled at pass start that he walks it himself. The protocol shell is committed at

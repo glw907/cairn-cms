@@ -35,15 +35,20 @@ Install the dependencies:
 npm install
 \`\`\`
 
-Start the dev server:
+Start the dev server against a local stand-in backend:
 
 \`\`\`
-npm run dev
+CAIRN_DEV_BACKEND=1 npm run dev
 \`\`\`
 
-Open the printed URL in your browser. The admin interface lives at \`/admin\` and runs
-against a local dev backend, so you can sign in and edit content without touching your
-live site.
+On Windows PowerShell, use this instead:
+
+\`\`\`
+$env:CAIRN_DEV_BACKEND=1; npm run dev
+\`\`\`
+
+Open the printed URL and visit \`/admin\`. The stand-in signs you in without an email loop,
+and nothing you write there touches GitHub or sends real email.
 
 ## Build it
 

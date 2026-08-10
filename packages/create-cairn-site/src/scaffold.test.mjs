@@ -77,8 +77,20 @@ test('dry run creates nothing and lists every action', async (t) => {
   assert.ok(lines.length >= 3);
 });
 
+/**
+ * List every file's basename found anywhere under `dir`, recursively. Used to prove a state
+ * record's filename did not also land inside the scaffold tree, wherever it might have been
+ * written, rather than checking one hardcoded (and wrong) name.
+ * @param {string} dir the directory to walk
+ * @returns {Promise<string[]>} every entry's basename, files and directories alike
+ */
+async function allFileNamesUnder(dir) {
+  const entries = await readdir(dir, { recursive: true });
+  return entries.map((entry) => path.basename(entry));
+}
+
 test('real run scaffolds, renames, substitutes, and saves state outside the scaffold', async (t) => {
-  await withStateDir(t);
+  const stateDir = await withStateDir(t);
   const outDir = await tempDir(t);
   const dir = path.join(outDir, 'site');
   await scaffold({
@@ -91,8 +103,49 @@ test('real run scaffolds, renames, substitutes, and saves state outside the scaf
   const pkg = JSON.parse(await readFile(path.join(dir, 'package.json'), 'utf8'));
   assert.equal(pkg.name, 'alpine-club');
   assert.match(await readFile(path.join(dir, 'src/theme/site.config.yaml'), 'utf8'), /Alpine Club/);
-  await assert.rejects(() => access(path.join(dir, '.cairn-state.json')), undefined,
-    'no state under the scaffold');
+
+  // Prove the save actually happened (one record in the state dir) AND that it did not also
+  // land inside the scaffold. A check for the literal filename ".cairn-state.json" would pass
+  // no matter what, since state.mjs never writes that name; this checks both halves for real.
+  const stateFiles = (await readdir(stateDir)).filter((name) => name.endsWith('.json'));
+  assert.equal(stateFiles.length, 1, 'expected exactly one saved state record');
+  const [stateFileName] = stateFiles;
+  const scaffoldFileNames = await allFileNamesUnder(dir);
+  assert.ok(
+    !scaffoldFileNames.includes(stateFileName),
+    `state record ${stateFileName} must not also exist inside the scaffold`,
+  );
+});
+
+test('a failing state save reports a warning but leaves the scaffold complete', async (t) => {
+  const outDir = await tempDir(t);
+  // Point CAIRN_STATE_DIR at a path that already exists as a plain file, so state.mjs's own
+  // mkdir fails, standing in for an unwritable ~/.config or a stray file where the state
+  // directory should be.
+  const previous = process.env.CAIRN_STATE_DIR;
+  const blockedStatePath = path.join(outDir, 'blocked-state');
+  await writeFile(blockedStatePath, 'not a directory\n');
+  process.env.CAIRN_STATE_DIR = blockedStatePath;
+  t.after(() => {
+    if (previous === undefined) delete process.env.CAIRN_STATE_DIR;
+    else process.env.CAIRN_STATE_DIR = previous;
+  });
+
+  const dir = path.join(outDir, 'site');
+  const lines = [];
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: false,
+    log: (line) => lines.push(line),
+  });
+  const pkg = JSON.parse(await readFile(path.join(dir, 'package.json'), 'utf8'));
+  assert.equal(pkg.name, 'alpine-club');
+  assert.ok(
+    lines.some((line) => line.includes('Warning') && line.includes(blockedStatePath)),
+    'expected a warning naming the blocked state path',
+  );
 });
 
 test('a missing template directory fails with a message naming the bake', async (t) => {
@@ -132,6 +185,25 @@ test('a non-empty target directory is refused before any file is written', async
   );
   // The refusal runs before any action, including the out-of-scaffold state save.
   assert.deepEqual(await readdir(stateDir), []);
+});
+
+test('a --dir pointing at an existing file fails naming it, not a raw ENOTDIR', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const filePath = path.join(outDir, 'notes.txt');
+  await writeFile(filePath, 'not a directory\n');
+  const fixtureDir = await templateFixture(t);
+
+  await assert.rejects(
+    () => scaffold({
+      templateDir: fixtureDir,
+      answers: ANSWERS,
+      dir: filePath,
+      dryRun: false,
+      log: () => {},
+    }),
+    /is a file, not a directory/,
+  );
 });
 
 test('an existing empty target directory is fine', async (t) => {

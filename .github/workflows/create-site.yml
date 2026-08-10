@@ -52,9 +52,14 @@ jobs:
       - name: Install the CLI from its tarball and scaffold a site
         # Installed into a scratch package rather than run from the checkout, so the run resolves the
         # packed `template/` the way a user's install does. A brand color is passed deliberately: it
-        # is what exercises the four-declaration rot gate against the real theme file.
+        # is what exercises the four-declaration rot gate against the real theme file. CAIRN_STATE_DIR
+        # points the state save at a known, empty directory, so the next step can assert the record
+        # actually landed there and nowhere inside the scaffold, instead of checking a filename
+        # state.mjs never writes.
+        env:
+          CAIRN_STATE_DIR: /tmp/ci-site-state
         run: |
-          mkdir -p /tmp/create-scratch
+          mkdir -p /tmp/create-scratch "$CAIRN_STATE_DIR"
           cd /tmp/create-scratch
           npm init -y > /dev/null
           npm install --no-save "${{ steps.create-pack.outputs.create }}"
@@ -76,16 +81,26 @@ jobs:
             fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + "\n");
           '
       - name: Assert the scaffold is personalized and carries no showcase-only material
+        # The state assertion checks both halves, not just the filename that can never appear:
+        # exactly one record exists in CAIRN_STATE_DIR (proving the save happened) and its name
+        # is absent anywhere under the scaffold tree (proving it did not also land inside).
         run: |
           node -e '
             const fs = require("node:fs");
+            const path = require("node:path");
             const assert = require("node:assert");
             const pkg = JSON.parse(fs.readFileSync("/tmp/ci-site/package.json", "utf8"));
             assert.equal(pkg.name, "ci-site", "package.json name was not renamed to the site slug");
             const config = fs.readFileSync("/tmp/ci-site/src/theme/site.config.yaml", "utf8");
             assert.match(config, /siteName: CI Site/, "site name was not substituted");
             assert.match(config, /description: Built by CI/, "description was not inserted");
-            assert.ok(!fs.existsSync("/tmp/ci-site/.cairn-state.json"), "tool state landed in the scaffold");
+
+            const stateFiles = fs.readdirSync("/tmp/ci-site-state").filter((name) => name.endsWith(".json"));
+            assert.equal(stateFiles.length, 1, "expected exactly one saved state record");
+            const [stateFileName] = stateFiles;
+            const scaffoldFileNames = fs.readdirSync("/tmp/ci-site", { recursive: true }).map((entry) => path.basename(entry));
+            assert.ok(!scaffoldFileNames.includes(stateFileName), "state record " + stateFileName + " landed inside the scaffold");
+
             for (const leftover of ["e2e", "playwright.config.ts", ".claude", "scripts"]) {
               assert.ok(!fs.existsSync("/tmp/ci-site/" + leftover), leftover + " shipped into the scaffold");
             }

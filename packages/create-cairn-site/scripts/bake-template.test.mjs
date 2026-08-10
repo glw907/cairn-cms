@@ -105,6 +105,22 @@ test('bake writes a site README that is not the showcase README', async (t) => {
   assert.ok(!readme.includes('../../docs'));
 });
 
+// Regression: the baked README once told the reader to run a bare `npm run dev`, which never
+// reaches the admin (the dev backend needs CAIRN_DEV_BACKEND=1 at runtime). Mirrors the same
+// check the CLI's own printed hand-over text carries in scaffold.test.mjs.
+test('the baked README names CAIRN_DEV_BACKEND and never prints a bare npm run dev line', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const readme = await readFile(path.join(to, 'README.md'), 'utf8');
+  assert.match(readme, /CAIRN_DEV_BACKEND=1/);
+  for (const line of readme.split('\n')) {
+    const trimmed = line.trim();
+    if (trimmed === 'npm run dev') {
+      assert.fail('found a bare "npm run dev" line unaccompanied by the CAIRN_DEV_BACKEND switch');
+    }
+  }
+});
+
 // The rot gate: pruneShowcaseOnlyPackageFields must fail loud when the showcase drops or renames
 // one of the fields it expects to remove, rather than silently doing nothing.
 test('pruneShowcaseOnlyPackageFields throws naming a missing expected script', () => {

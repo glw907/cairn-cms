@@ -12,7 +12,7 @@ import { access, cp, readFile, readdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { defineAction, runActions } from './runner.mjs';
 import { applySubstitutions } from './substitute.mjs';
-import { newSiteId, saveSite } from './state.mjs';
+import { newSiteId, saveSite, siteStateDir } from './state.mjs';
 import { slugify } from './slug.mjs';
 
 const ADMIN_URL = 'http://localhost:5173/admin';
@@ -47,6 +47,9 @@ async function assertTargetDirEmpty(dir) {
     entries = await readdir(dir);
   } catch (cause) {
     if (cause.code === 'ENOENT') return;
+    if (cause.code === 'ENOTDIR') {
+      throw new Error(`scaffold: ${dir} is a file, not a directory. Choose a different --dir.`);
+    }
     throw cause;
   }
   if (entries.length > 0) {
@@ -99,8 +102,21 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
     defineAction({
       title: 'Save the site record',
       detail: `Records the scaffold in the state store, outside ${dir}.`,
+      // The site is already fully written by the time this action runs. The state record is
+      // bookkeeping, not the product, so a failure here (an unwritable state dir, a stray file
+      // where it should be, a full disk) is reported and swallowed rather than rejecting the
+      // whole run: a rejection here would abort a scaffold that actually succeeded, and the
+      // retry would then hit the non-empty-directory guard and tell the user to remove a
+      // perfectly good site.
       execute: async () => {
-        await saveSite(newSiteId(answers.name), { name: answers.name, dir, step: 'scaffolded' });
+        try {
+          await saveSite(newSiteId(answers.name), { name: answers.name, dir, step: 'scaffolded' });
+        } catch (cause) {
+          log(
+            `Warning: could not save the site record at ${siteStateDir()} (${cause.message}). ` +
+              'The site itself is complete; only this bookkeeping record failed.',
+          );
+        }
       },
     }),
   ];

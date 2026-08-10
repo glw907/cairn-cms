@@ -290,3 +290,56 @@ rather than content stranded in `node_modules`; `docs/README.md` does carry a bu
 engine-contributor pointer; `CONTRIBUTING.md` is committed on the cleanup branch (`fa000874`)
 and should be confirmed merged; and Diátaxis's complex-hierarchies guidance permits audience
 partitioning rather than warning against it, with the citation needing a fresh URL.
+
+---
+
+## Amendment (Geoff, 2026-08-09): a fourth audience, and it may be the biggest
+
+Geoff, after reading the brief above:
+
+> There's probably an additional audience, and that's a website admin who just wants to set up
+> cairn for default CMS usage. This is probably a fairly different profile than a Svelte developer
+> who wants to use it. This might be a technical person who has no significant Svelte/SvelteKit
+> knowledge. That is probably a more significant audience than the developer who wants to install
+> cairn and extend it.
+
+**This breaks the brief's central conclusion, so do not carry that conclusion into the sitting
+unexamined.** The brief above concluded that "the site developer has neither a structural nor a
+routing problem." That rests on treating the site developer as one persona. Split in two, the
+conclusion is unsafe:
+
+- **The setter-upper.** Technical, comfortable with npm, wrangler, DNS, a D1 migration and a
+  GitHub App. Wants a working CMS on the default template. Writes no Svelte. Their path is the
+  scaffolder, Waymark, `cairn-doctor`, `configure-auth-and-d1`, `set-up-the-github-app`,
+  `deploy-to-cloudflare`, `cloudflare-readiness`.
+- **The extender.** Svelte-fluent. Writes adapters, custom admin screens, islands, a `render`.
+  Their path is `define-an-adapter-and-schema`, `add-a-custom-admin-screen`, `add-an-island`,
+  `configure-rendering`, `give-a-role-its-own-admin-area`.
+
+Geoff's ordering claim, that the setter-upper is the **more significant** audience, is consistent
+with what cairn already ships and says about itself. `README.md` says a scaffolded site begins as
+exactly the live Waymark site and that "for many basic sites, that's the finish line." The
+scaffolder, the template, and `cairn-doctor` all exist to serve someone who never opens a `.svelte`
+file. The engine's product story already centres this persona; the question is whether the docs do.
+
+**Three consequences for the sitting.**
+
+1. **`docs/guides/` may be serving four audiences, not two.** The brief counted 28 developer
+   guides and 6 editor guides. That developer bucket needs re-classifying into setter-upper and
+   extender before any structural option is priced, because a single flat arm mixing "apply this D1
+   migration" with "write a custom admin screen" is precisely the wading problem, and it hits the
+   audience Geoff judges largest. **Do this classification from the guide texts, not from the
+   filename**, and report the real split.
+2. **Open decision 6 was misframed.** It asked whether the friction log's `operator` tag should
+   become a named sub-audience of the developer or retire into `developer:`. That tag is very
+   likely this audience already showing up and being filed as a sub-case. Reframe it: is the
+   operator/setter-upper a first-class audience with its own entry point?
+3. **The skill floor, not the arm, may be the real axis.** The setter-upper and the extender want
+   the same Diátaxis modes (a tutorial, task guides, reference) at different assumed knowledge. That
+   is an argument for sequencing and entry points, and possibly for a second tutorial track, rather
+   than for a new top-level directory. Weigh it against the audience-arm options above.
+
+**Also revisit the "site developer has neither problem" finding against the tutorial.**
+`docs/tutorial/build-your-first-cairn-site.md` and `build-a-theme.md` are the two places a newcomer
+starts. Which persona does each actually assume, and does a setter-upper reach a working site
+without being asked to write Svelte?

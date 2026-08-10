@@ -44,12 +44,21 @@ front-door positioning. Those belong to their own initiative.
 2026-08-09).** Geoff is not in a hurry for the waiting sites, so the three of them cross once after
 both. The pre-brainstorm brief is committed as
 [`2026-08-09-docs-refactor-brief.md`](superpowers/specs/2026-08-09-docs-refactor-brief.md) and is
-the sitting's input. Its framing: cairn now serves three audiences
-(developers building a site on the engine, developers working on the engine, and user/editors), and
-the sharp question is which audience has a STRUCTURAL problem versus a ROUTING one. On the evidence
-the site developer has neither, the editor has a placement question the Topo migration will force
-anyway, and **the engine contributor has the only structural problem, sitting entirely in unshipped
-`docs/internal/`, where no gate, consumer, or external link constrains the fix.** Two corrections
+the sitting's input. Its framing: cairn serves FOUR audiences, not three
+(Geoff amended this 2026-08-09). Beside the engine developer and the user/editor, the "developer
+building a site" splits into a **setter-upper** (technical, comfortable with npm/wrangler/D1/DNS,
+writes NO Svelte, wants the default CMS on the Waymark template) and an **extender** (Svelte-fluent,
+writes adapters, admin screens, islands). **Geoff judges the setter-upper the MORE significant of
+the two**, which is consistent with what cairn already ships: the scaffolder, Waymark, and
+`cairn-doctor` all serve someone who never opens a `.svelte` file. The sharp question is which
+audience has a STRUCTURAL problem versus a ROUTING one. On the brief's own evidence
+the editor has a placement question the Topo migration will force anyway, and the engine contributor
+has a structural problem sitting entirely in unshipped `docs/internal/`, where no gate, consumer, or
+external link constrains the fix. **The brief's finding that "the site developer has neither
+problem" does NOT survive the amendment** and must be re-derived: it treated one persona where there
+are two, and a flat `docs/guides/` that mixes "apply this D1 migration" with "write a custom admin
+screen" is exactly the wading problem, hitting the largest audience. The sitting's first task is
+re-classifying the 28 developer guides into setter-upper and extender FROM THE TEXTS, not filenames. Two corrections
 the brief makes to an argument raised in the pass, so the sitting does not inherit them: editor
 guides shipping via `files` is the RATIFIED delivery mechanism (cairn-pub reads the tree from
 `node_modules/@glw907/cairn-cms/docs` and serves `/help`), not content stranded where editors

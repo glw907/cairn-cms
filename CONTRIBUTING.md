@@ -36,9 +36,11 @@ Locally, `npm test` and `npm run check` catch most failures, and each `check:*` 
 
 ## Conventions a change is held to
 
-- Write the failing test first. Tests live under `src/tests/{unit,integration,component}/`;
-  the vitest config globs only those directories, so a test co-located with its source
-  silently never runs.
+- Write the failing test first. Tests live under `src/tests/{unit,integration,component}/`,
+  with `src/tests/lab/` for engine apparatus and co-located tests inside
+  `packages/cairn-cms-dev/src/`. `vitest.config.ts` names each of those globs explicitly, so
+  check it before putting a test anywhere else: a path it does not glob runs zero tests and
+  still exits 0, which looks exactly like success.
 - Code comments follow [TSDoc](https://tsdoc.org/), enforced by `npm run check:comments` over
   `src/lib`. Write the contract and the why, never a paraphrase of the code. The em dash is
   banned in comments.

@@ -839,3 +839,80 @@ Type consistency: `runWrangler`/`runNpm` (3) consumed by 7-9; `cloudflareError` 
 `seedOwnerAndToken` (9) by 10; `FakeBin` (2) by every cloudflare test; the step enum
 (header) matches Task 10's hops and Task 11's re-entry list; flags `deploy`/`ownerEmail`/
 `signIn` consistent across args, chapter, and bin.
+
+---
+
+## Post-mortem (2026-08-11)
+
+**What shipped.** All eleven implementation tasks, in 27 commits over 38 files and roughly 5,900
+added lines. `create-cairn-site` now carries a site from its pushed GitHub state to live on the
+admin's own free `workers.dev` hostname with them signed in to its admin, needing no payment
+method, no domain, and no email. The chapter installs, signs wrangler in, builds, deploys,
+provisions and migrates two D1 databases and an R2 bucket from an id-less `wrangler.jsonc`, moves
+the GitHub App's private key from local state into a Worker secret, and seeds an owner row plus a
+ten-minute magic-link token straight into the deployed database so the first sign-in is one click.
+A pre-push finalize writes the App's real identity into the scaffold, so the repository is born
+able to publish.
+
+**What was verified, and how.**
+
+- 272 package tests; thirteen local gates; all six CI checks green on PR #27, including
+  `create-site`, which packs the CLI and builds a real scaffolded site from the real baked template.
+- **A live end-to-end run of the Cloudflare half through the packaged CLI** against the glw907
+  account: scaffold, deploy, provisioning, both migrations, the key move, the bootstrap sign-in,
+  then a `deployed` resume proving zero redeploys and zero re-migrations. Every resource torn down
+  and verified gone by listing, not by assumption.
+- The GitHub half of the live e2e is **not** done and needs a browser: GitHub has no API for
+  creating an App, which is why the manifest flow exists. The unproven link is a save in the
+  signed-in admin committing through the App.
+
+**The spike paid for itself twice over.** It confirmed the design's central premise, that an
+id-less config provisions by name and needs no write-back, which deleted a planned task rather than
+implementing it. It also contradicted the plan in two places that would have broken every fresh
+run: the login came before the install, and the missing-wrangler failure is an npx exit 1 rather
+than the `ENOENT` the seam assumed. Both were cheap to find by hand and would have been expensive
+to find later.
+
+**Every defect this pass produced was silent.** That is the through-line worth carrying forward. A
+skipped rewrite that read an untouched template as finished, a `process.exit()` truncating a pipe,
+an action order that failed only on a fresh machine, an owner insert granting more than it should,
+an unhandled `EPIPE`. None failed loudly at the moment it went wrong; each would have surfaced later
+as something else's fault. **All of them passed a green suite.** The gate that caught them was
+reading diffs and running things for real, not running tests.
+
+**Two defects were the orchestrator's own**, and both came from the same habit of fixing the
+adjacent thing rather than the actual one. The plan's 63-character bound went on the worker name
+while the derived database and bucket names extend past it, so an ordinary site name produced a
+65-character bucket wrangler rejects. And an earlier probe of the piped-stdin crash tested a
+nonexistent binary, which fails at spawn before stdin is connected, so it reported clean on a case
+it never exercised. The suite's own test has the identical flaw. **A probe that cannot fail proves
+nothing**, which is this repo's existing rule about falsifiable gates, applied here to a
+verification rather than a test.
+
+**The idempotence bug arrived twice before it became a rule.** Task 6 keyed "already done" on the
+owner name (`showcase` is a real GitHub login) and Task 5 on the worker name ("Cairn Showcase" slugs
+to the template's own). Both read a completely unprocessed file as finished. After the second, the
+rule went into the plan's Global Constraints rather than into a third review comment, and no later
+task repeated it.
+
+**Process notes.**
+
+- Dispatching two implementers into one worktree failed in a way file-disjointness did not predict:
+  they share the **gate**, so one's `npm test` picked up the other's half-written files and reported
+  a spurious failure. Serialize, or give each a worktree.
+- Worse, mid-flight, the orchestrator ran a whole-worktree `git stash` while an implementer had
+  uncommitted work. It was recovered by SHA, but the safe rule is simply never to stash with a live
+  executor in the tree.
+- The memory recording which workflows gate a PR was **stale within two days**: it said four, and
+  `create-site.yml` had been added, which is the single most relevant gate for a pass touching the
+  scaffold. Re-derive with `grep -l pull_request .github/workflows/*.yml` at every close-out. The
+  memory's own rule was right; only its number had rotted.
+- Pushing a feature branch runs **nothing**: the workflows trigger on `pull_request` and on pushes
+  to `main`/`rebuild`. CI needs the PR open.
+
+**Carried forward, with reasons in the review-gate section above:** Windows `.cmd` spawning (needs a
+machine this session did not have), Cloudflare multi-account selection, worker-name collisions
+between identically-named sites, the four wrangler output strings this chapter parses against a
+floating `^4`, and a cross-package contract test to stop the engine's token rules drifting away from
+the CLI's copy of them. The missing comment gate on this package and two flaky pieces of T2 test
+infrastructure are recorded in STATUS.

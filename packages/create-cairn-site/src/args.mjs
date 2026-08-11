@@ -19,6 +19,9 @@ const OPTIONS = {
   'repo-name': { type: 'string' },
   github: { type: 'boolean', default: false },
   'start-over': { type: 'boolean', default: false },
+  'owner-email': { type: 'string' },
+  deploy: { type: 'boolean', default: false },
+  'sign-in': { type: 'boolean', default: false },
 };
 
 /**
@@ -26,7 +29,8 @@ const OPTIONS = {
  * @param {string[]} argv the argument vector, without the node/script entries
  * @returns {{ dryRun: boolean, yes: boolean, name?: string, description?: string, brandColor?: string,
  *  dir?: string, version: boolean, appName?: string, org?: string, repoName?: string, github: boolean,
- *  startOver: boolean }} the parsed flags; the string options are undefined, not empty, when absent
+ *  startOver: boolean, ownerEmail?: string, deploy: boolean, signIn: boolean }} the parsed flags; the
+ *  string options are undefined, not empty, when absent
  */
 export function parseArgs(argv) {
   let values;
@@ -52,5 +56,8 @@ export function parseArgs(argv) {
     repoName: values['repo-name'],
     github: values.github,
     startOver: values['start-over'],
+    ownerEmail: values['owner-email'],
+    deploy: values.deploy,
+    signIn: values['sign-in'],
   };
 }

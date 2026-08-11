@@ -11,34 +11,70 @@ import { runPreflight } from './src/preflight.mjs';
 import { collectAnswers } from './src/prompts.mjs';
 import { scaffold, handoverText, dryRunNotice } from './src/scaffold.mjs';
 import { runGithubChapter } from './src/github/chapter.mjs';
+import { runCloudflareChapter } from './src/cloudflare/chapter.mjs';
+import { seedOwnerAndToken } from './src/cloudflare/bootstrap.mjs';
 import { loadSite, findSiteByDir, retireSite } from './src/state.mjs';
 import { webBase } from './src/github/api.mjs';
+import { openBrowser } from './src/github/open.mjs';
 
-/** Every step a resumed run can still finish the GitHub chapter from. `pushed` is handled
- * separately (the chapter is already done); anything else is not a record this tool ever wrote. */
-const RESUMABLE_STEPS = ['scaffolded', 'app-created', 'awaiting-org-approval', 'installed', 'repo-created'];
+/** Every step a resumed run can still finish the GitHub chapter from. */
+const GITHUB_RESUMABLE_STEPS = ['scaffolded', 'app-created', 'awaiting-org-approval', 'installed', 'repo-created'];
+
+/** Every step a resumed run can still finish the Cloudflare chapter from, with no GitHub work
+ * left to redo. */
+const CLOUDFLARE_RESUMABLE_STEPS = ['pushed', 'deployed'];
+
+/** Every step a resumed run can still finish from. `live` is handled separately (the whole
+ * chapter is already done); anything else is not a record this tool ever wrote. */
+const RESUMABLE_STEPS = [...GITHUB_RESUMABLE_STEPS, ...CLOUDFLARE_RESUMABLE_STEPS];
 
 /**
- * Print the block that names the finished site's GitHub repository and App once the chapter has
- * pushed, shared by the fresh-run and resumed-run paths so the two forms of "the chapter is done"
- * end on identical copy.
- * @param {string} siteId the site's state-store id, already at step `pushed`
+ * Print the block that names the finished site's GitHub repository and App, and, once the
+ * Cloudflare chapter has reached its own hops, the live URL and what exists on Cloudflare. Shared
+ * by the fresh-run and resumed-run paths so every form of "the chapter is done" ends on identical
+ * copy.
+ * @param {string} siteId the site's state-store id, already at step `pushed` or later
  * @returns {Promise<void>}
  */
 async function printLiveInfo(siteId) {
   const state = await loadSite(siteId);
   const repoUrl = `${webBase()}/${state.github.repo.owner}/${state.github.repo.repo}`;
   const appUrl = `${webBase()}/apps/${state.github.appSlug}`;
+  const lines = ['', `Your site is live on GitHub: ${repoUrl}`, `The App that publishes for you: ${appUrl}`];
+
+  if (state.cloudflare?.url) {
+    lines.push(
+      '',
+      `Your site is live at: ${state.cloudflare.url}`,
+      `Sign in at: ${state.cloudflare.url}/admin`,
+      '',
+      'What exists now: one Worker, two databases, one storage bucket, and the GitHub App\'s ' +
+        'private key, stored as a Worker secret.',
+      '',
+      'Your domain and email arrive with the next chapter.',
+    );
+  } else {
+    lines.push('', 'Deploying it to the internet arrives with the next chapter.');
+  }
+
+  lines.push('', 'Run `npx cairn-doctor` any time to check what is set up and what is still missing.');
+  console.log(lines.join('\n'));
+}
+
+/**
+ * Reseed the owner's bootstrap sign-in token and reopen the confirm page, without touching the
+ * deploy: the `--sign-in` recovery for a token that already expired on an already-live site.
+ * @param {{ dir: string, ownerEmail?: string, cloudflare?: { url?: string } }} state the site's
+ *  current state record, already at step `live`
+ * @param {(line: string) => void} log receives one printed line per call
+ * @returns {Promise<void>}
+ */
+async function reseedAndOpen(state, log) {
+  const { confirmPath } = await seedOwnerAndToken({ dir: state.dir, email: state.ownerEmail, log });
+  await openBrowser(`${state.cloudflare.url}${confirmPath}`, log);
   console.log(
-    [
-      '',
-      `Your site is live on GitHub: ${repoUrl}`,
-      `The App that publishes for you: ${appUrl}`,
-      '',
-      'Deploying it to the internet arrives with the next chapter.',
-      '',
-      'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
-    ].join('\n'),
+    'A sign-in page just opened; click Sign in there. The link works for ten minutes; if it ' +
+      'expires, re-run with --sign-in for a fresh one.',
   );
 }
 
@@ -89,8 +125,11 @@ async function main() {
       priorRecord = null;
     }
 
-    if (priorRecord && priorRecord.data.step === 'pushed') {
-      console.log(`${priorRecord.data.name}'s GitHub chapter is already complete.`);
+    if (priorRecord && priorRecord.data.step === 'live') {
+      console.log(`${priorRecord.data.name} is already live.`);
+      if (flags.signIn) {
+        await reseedAndOpen(priorRecord.data, log);
+      }
       await printLiveInfo(priorRecord.id);
       return;
     }
@@ -108,16 +147,35 @@ async function main() {
           : '';
       console.log(`Resuming ${priorRecord.data.name} at ${priorRecord.data.step}${overrideNote}.`);
 
-      const outcome = await runGithubChapter({
-        siteId: priorRecord.id,
-        siteName: priorRecord.data.name,
-        dir: priorRecord.data.dir,
-        flags,
-        log,
-        dryRun: flags.dryRun,
-      });
-      if (outcome === 'pushed') {
-        await printLiveInfo(priorRecord.id);
+      // A record already past the GitHub chapter (pushed or deployed) skips runGithubChapter
+      // entirely: there is no GitHub work left to redo, and re-entering it would try to reuse an
+      // App/repo context this branch never rebuilds.
+      let pushed = CLOUDFLARE_RESUMABLE_STEPS.includes(priorRecord.data.step);
+      if (!pushed) {
+        const githubOutcome = await runGithubChapter({
+          siteId: priorRecord.id,
+          siteName: priorRecord.data.name,
+          dir: priorRecord.data.dir,
+          flags,
+          log,
+          dryRun: flags.dryRun,
+        });
+        pushed = githubOutcome === 'pushed';
+      }
+
+      if (pushed) {
+        const cloudflareOutcome = await runCloudflareChapter({
+          siteId: priorRecord.id,
+          siteName: priorRecord.data.name,
+          dir: priorRecord.data.dir,
+          flags,
+          log,
+          dryRun: flags.dryRun,
+        });
+        if (cloudflareOutcome === 'live') {
+          console.log('This site is set up end to end.');
+          await printLiveInfo(priorRecord.id);
+        }
       }
       return;
     }
@@ -137,7 +195,7 @@ async function main() {
         : handoverText({ dir: answers.dir }),
     );
 
-    const outcome = await runGithubChapter({
+    const githubOutcome = await runGithubChapter({
       siteId,
       siteName: answers.name,
       dir: answers.dir,
@@ -145,8 +203,32 @@ async function main() {
       log,
       dryRun: flags.dryRun,
     });
-    if (outcome === 'pushed') {
-      await printLiveInfo(siteId);
+
+    if (flags.dryRun) {
+      // runGithubChapter always reports 'declined' under --dry-run, since nothing is ever
+      // actually created; the Cloudflare chapter's own dry run runs unconditionally here, which
+      // is the only way the whole chapter's actions all print in one dry run.
+      await runCloudflareChapter({
+        siteId,
+        siteName: answers.name,
+        dir: answers.dir,
+        flags,
+        log,
+        dryRun: true,
+      });
+    } else if (githubOutcome === 'pushed') {
+      const cloudflareOutcome = await runCloudflareChapter({
+        siteId,
+        siteName: answers.name,
+        dir: answers.dir,
+        flags,
+        log,
+        dryRun: false,
+      });
+      if (cloudflareOutcome === 'live') {
+        console.log('This site is set up end to end.');
+        await printLiveInfo(siteId);
+      }
     }
   } catch (err) {
     console.error(err.message);

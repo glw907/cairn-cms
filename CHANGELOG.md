@@ -60,6 +60,30 @@
   backend's runtime flag itself. Consumers must: nothing (the tool is unpublished; no engine
   surface changed).
 
+  A Cloudflare chapter now follows the GitHub one and takes the site the rest of the way to live.
+  It installs the site's dependencies, signs wrangler in, builds, and deploys to the admin's free
+  `workers.dev` hostname, creating one Worker, two D1 databases, and one R2 bucket on their own
+  account; the free plan covers all of it and the tool asks for no payment method. The chapter
+  holds no Cloudflare credential of its own, riding wrangler's own session, which a spike against
+  the real API confirmed reaches every call chapter one makes. The scaffold's `wrangler.jsonc` is
+  named after the site and ships **without** `database_id`s, because a deploy provisions an id-less
+  binding by name and binds it by name on every later deploy, so nothing has to be written back
+  into the file and a re-run that meets existing resources reuses them. Both databases are migrated
+  by binding name after the first deploy, and a second deploy follows so the running site carries
+  its own real origin. The GitHub App's private key then moves from the local state record into a
+  Worker secret and is deleted locally, but only once Cloudflare confirms the upload, so a failed
+  upload leaves the only recoverable copy where it was; after that hop the key lives in exactly one
+  place. Finally the tool seeds the owner's row and one ten-minute magic-link token straight into
+  the deployed database and opens the site's own confirm page, so the first sign-in takes one click
+  and needs no email at all. This rides the engine's own tables, hashing, and confirm route with no
+  engine change. The App's own identity (owner, repo, app id, installation id) is written into the
+  scaffold's `cairn.config.ts` before the GitHub chapter pushes it, so the repository is born able
+  to publish rather than carrying the showcase's placeholder. New flags: `--deploy` to opt in
+  unattended, `--owner-email` for the sign-in address, and `--sign-in` to issue a fresh link for a
+  site that is already live. Every hop persists, so a resumed run skips the deploy it already did,
+  and `--dry-run` still prints the whole chapter while spawning nothing. Consumers must: nothing
+  (the tool is unpublished; no engine surface changed).
+
 - Every entry gains a publish history and a revert-as-draft: the `history` admin view
   (`/admin/<concept>/<id>/history`), reachable from the edit screen's overflow menu, lists the
   entry's most recent 25 publishes off `Backend`'s new `listCommits(path, ref, limit)` member (a

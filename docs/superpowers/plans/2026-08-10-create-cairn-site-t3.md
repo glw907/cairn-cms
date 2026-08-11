@@ -634,12 +634,28 @@ INSERT INTO magic_token (token_hash, email, expires_at, created_at)
   state file for `PRIVATE KEY`, the base64 PEM prefix, and the raw bootstrap token; all
   three must be absent (the state's PEM was deleted at the key move; the token was never
   written).
+- **[review] Two traps Task 10's shipped code walks into the moment the deploy group is
+  skipped. Both are this task's to close, and each needs its own test.**
+  1. **`deployUrl` goes undefined.** `chapter.mjs` holds the deploy URL in a local set
+     inside the deploy action, and the sign-in action opens `` `${deployUrl}${confirmPath}` ``.
+     Skipping the deploy group on a `'deployed'` resume leaves that local unset, so the
+     admin's browser opens `undefined/admin/auth/confirm?token=...`. Seed it from
+     `record.cloudflare.url` whenever the group is skipped, and assert the opened URL is
+     the real one, not a string starting `undefined`.
+  2. **`--sign-in` on a record with no `ownerEmail`.** `bin.mjs`'s `reseedAndOpen` passes
+     `state.ownerEmail` straight into `seedOwnerAndToken`, which calls `.trim()` on it. A
+     record missing that field (hand-edited, or written by a version that did not persist
+     it) raises a bare `TypeError`, which violates the every-exit-prints-a-next-step rule.
+     Fail with a catalogue-shaped message naming `--owner-email` as the fix.
 
 - [ ] **Step 1: Failing tests**: the `'deployed'` re-entry (fake-bin log shows zero
   deploy invocations, one secret/no-op line, one seed); the `'pushed'` re-entry with saved
   `ownerEmail` prompts nothing (inject a prompt fake that throws if called); `--sign-in`
   at `'live'` reseeds (exactly one `d1 execute` invocation, no deploys) and reopens the
-  browser (injected opener called once); the secret sweep passes on the happy path and is
+  browser (injected opener called once); **[review]** the opened URL on a `'deployed'`
+  re-entry is the record's real `cloudflare.url`, asserted not to begin `undefined`;
+  **[review]** `--sign-in` on a record with no `ownerEmail` prints a next step instead of
+  raising a `TypeError`; the secret sweep passes on the happy path and is
   falsifiable (doctor a state file to contain `PRIVATE KEY` and assert the sweep's helper
   catches it, so the assertion is proven able to fail).
 - [ ] **Step 2-4: Fail, implement, green.**

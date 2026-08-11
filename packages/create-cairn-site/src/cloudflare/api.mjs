@@ -209,19 +209,6 @@ function throwCatalogued(code, params, token) {
 }
 
 /**
- * Throw a mapped catalogued error when `status`/`json` is not a success; otherwise return.
- * @param {number} status
- * @param {unknown} json
- * @param {string} operationCode
- * @param {string} dir
- * @param {string} token
- */
-function ensureSuccess(status, json, operationCode, dir, token) {
-  if (isSuccess(status, json)) return;
-  throwMapped(status, json, operationCode, dir, token);
-}
-
-/**
  * Build the Cloudflare API client chapter 2 calls against. Every method reads
  * `CAIRN_CLOUDFLARE_API_BASE` at call time via `apiBase()`, never cached, so a test can point it
  * at a fake after this client is already built.
@@ -253,6 +240,19 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
   }
 
   /**
+   * Throw a mapped catalogued error when `status`/`json` is not a success; otherwise return.
+   * Closes over this client's `dir` and `token`, which every mapped row needs and which never
+   * vary per call.
+   * @param {number} status
+   * @param {unknown} json
+   * @param {string} operationCode
+   */
+  function ensureSuccess(status, json, operationCode) {
+    if (isSuccess(status, json)) return;
+    throwMapped(status, json, operationCode, dir, token);
+  }
+
+  /**
    * Traverse every page of a v4 list route (via `result_info`) and return the concatenated
    * `result` arrays. A seam that reads only the first page fails against the fake, which
    * paginates for real.
@@ -263,7 +263,7 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
     for (;;) {
       const qs = buildQuery({ ...query, page });
       const { status, json } = await get(`${basePath}${qs}`);
-      ensureSuccess(status, json, operationCode, dir, token);
+      ensureSuccess(status, json, operationCode);
       results.push(...(json.result ?? []));
       const info = json.result_info;
       if (!info || page >= info.total_pages || results.length >= info.total_count) break;
@@ -275,13 +275,13 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
   return {
     async createZone(name) {
       const { status, json } = await write('POST', '/zones', { name, account: { id: accountId } });
-      ensureSuccess(status, json, OPERATION_CODES.zone, dir, token);
+      ensureSuccess(status, json, OPERATION_CODES.zone);
       return json.result;
     },
 
     async getZone(zoneId) {
       const { status, json } = await get(`/zones/${zoneId}`);
-      ensureSuccess(status, json, OPERATION_CODES.zone, dir, token);
+      ensureSuccess(status, json, OPERATION_CODES.zone);
       return json.result;
     },
 
@@ -291,7 +291,7 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
 
     async createDnsRecord(zoneId, record) {
       const { status, json } = await write('POST', `/zones/${zoneId}/dns_records`, record);
-      ensureSuccess(status, json, OPERATION_CODES.dnsRecord, dir, token);
+      ensureSuccess(status, json, OPERATION_CODES.dnsRecord);
       return json.result;
     },
 
@@ -306,7 +306,7 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
         service,
         environment,
       });
-      ensureSuccess(status, json, OPERATION_CODES.customDomain, dir, token);
+      ensureSuccess(status, json, OPERATION_CODES.customDomain);
       return json.result;
     },
 

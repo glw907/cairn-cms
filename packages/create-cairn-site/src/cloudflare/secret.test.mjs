@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, readdir, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { makeFakeBin } from '../../test/fake-bin.mjs';
+import { makeFakeBin, clearAmbientAccountId } from '../../test/fake-bin.mjs';
 
 /** An obviously fake PEM, never a real key, standing in for the App's private key. */
 const FAKE_PEM =
@@ -132,13 +132,7 @@ test('called with no accountId shows no CLOUDFLARE_ACCOUNT_ID in the recorded en
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
 
-  // Guarded against the operator's own shell, the same way exec.test.mjs's env-absence test is.
-  const ambient = process.env.CLOUDFLARE_ACCOUNT_ID;
-  delete process.env.CLOUDFLARE_ACCOUNT_ID;
-  t.after(() => {
-    if (ambient === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
-    else process.env.CLOUDFLARE_ACCOUNT_ID = ambient;
-  });
+  clearAmbientAccountId(t);
 
   const { movePemToWorkerSecret } = await import('./secret.mjs');
   await movePemToWorkerSecret({ siteId: 'alpine-club-000006', dir: scaffoldDir, log: () => {} });

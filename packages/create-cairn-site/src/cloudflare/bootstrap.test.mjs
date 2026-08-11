@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { makeFakeBin } from '../../test/fake-bin.mjs';
+import { makeFakeBin, clearAmbientAccountId } from '../../test/fake-bin.mjs';
 
 /**
  * Build a `wrangler d1 execute --json` style result array: one entry per statement, in the
@@ -168,13 +168,7 @@ test('called with no accountId shows no CLOUDFLARE_ACCOUNT_ID in the recorded en
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
 
-  // Guarded against the operator's own shell, the same way exec.test.mjs's env-absence test is.
-  const ambient = process.env.CLOUDFLARE_ACCOUNT_ID;
-  delete process.env.CLOUDFLARE_ACCOUNT_ID;
-  t.after(() => {
-    if (ambient === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
-    else process.env.CLOUDFLARE_ACCOUNT_ID = ambient;
-  });
+  clearAmbientAccountId(t);
 
   const { seedOwnerAndToken } = await import('./bootstrap.mjs');
   await seedOwnerAndToken({ dir: scaffoldDir, email: 'owner@example.com', log: () => {}, now: 9500 });

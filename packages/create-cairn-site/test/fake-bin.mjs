@@ -106,6 +106,25 @@ export async function makeFakeBin(name, { exitBeforeReadingStdin = false } = {})
   };
 }
 
+/**
+ * Clear `CLOUDFLARE_ACCOUNT_ID` for one test, restoring whatever the operator's shell had when
+ * the test ends. Every test that asserts the variable is ABSENT from a recorded invocation needs
+ * this to be measuring the caller's env option and nothing else: a developer working on
+ * Cloudflare plausibly exports `CLOUDFLARE_ACCOUNT_ID` already, and a child inherits the parent
+ * environment whenever no env option is passed to spawn, so without it such an assertion passes
+ * on a bare CI runner and fails on that developer's machine.
+ * @param {import('node:test').TestContext} t the test context whose `after` restores the value
+ * @returns {void}
+ */
+export function clearAmbientAccountId(t) {
+  const ambient = process.env.CLOUDFLARE_ACCOUNT_ID;
+  delete process.env.CLOUDFLARE_ACCOUNT_ID;
+  t.after(() => {
+    if (ambient === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    else process.env.CLOUDFLARE_ACCOUNT_ID = ambient;
+  });
+}
+
 // The fake's own body, written out verbatim as the spawned script. It reads stdin to EOF first
 // (an empty or already-closed stream resolves immediately, so a caller that never writes
 // anything never hangs it), logs the call, then answers from responses.json. Kept as one inline

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
-import { makeFakeBin } from '../../test/fake-bin.mjs';
+import { makeFakeBin, clearAmbientAccountId } from '../../test/fake-bin.mjs';
 
 const cwd = tmpdir();
 
@@ -112,16 +112,7 @@ test('a call made without an env option shows no CLOUDFLARE_ACCOUNT_ID in the re
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
 
-  // This is the falsifiable half of the pair above, so it has to be measuring the env option and
-  // nothing else. A developer working on Cloudflare plausibly has CLOUDFLARE_ACCOUNT_ID exported
-  // in their own shell, and the child inherits the parent environment whenever no env option is
-  // given, so without this the assertion would fail on their machine and pass on a bare CI runner.
-  const ambient = process.env.CLOUDFLARE_ACCOUNT_ID;
-  delete process.env.CLOUDFLARE_ACCOUNT_ID;
-  t.after(() => {
-    if (ambient === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
-    else process.env.CLOUDFLARE_ACCOUNT_ID = ambient;
-  });
+  clearAmbientAccountId(t);
 
   const { runWrangler } = await import('./exec.mjs');
   await runWrangler(['whoami'], { cwd, log: () => {} });

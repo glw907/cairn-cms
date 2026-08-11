@@ -3,7 +3,7 @@
 // secret is written, so a failed put can never leave the key with no recoverable home. Only a
 // successful put earns the state deletion.
 import { loadSite, updateSite } from '../state.mjs';
-import { runWrangler } from './exec.mjs';
+import { runWrangler, accountEnv } from './exec.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
 
 /**
@@ -33,7 +33,7 @@ export async function movePemToWorkerSecret({ siteId, dir, log, accountId }) {
     cwd: dir,
     log,
     input,
-    ...(accountId ? { env: { CLOUDFLARE_ACCOUNT_ID: accountId } } : {}),
+    ...accountEnv(accountId),
   });
   if (result.code !== 0) {
     throw cloudflareError('secret-put-failed', { dir, detail: trailingStderr(result.stderr) });

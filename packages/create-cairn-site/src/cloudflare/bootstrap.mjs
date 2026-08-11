@@ -13,7 +13,7 @@
 // allowlist grants nothing, the same trust `src/lib/sveltekit/auth-routes.ts` describes for the
 // engine's own bootstrap path.
 import { randomBytes, createHash } from 'node:crypto';
-import { runWrangler } from './exec.mjs';
+import { runWrangler, accountEnv } from './exec.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
 
 /** The engine's own magic-token lifetime (`TOKEN_TTL_MS` in `src/lib/auth/crypto.ts`). */
@@ -113,11 +113,7 @@ export async function seedOwnerAndToken({ dir, email, log, now = Date.now(), acc
   // the admin. A no-op log keeps all three raw result objects out of the terminal.
   const result = await runWrangler(
     ['d1', 'execute', 'AUTH_DB', '--remote', '--command', sql, '--json'],
-    {
-      cwd: dir,
-      log: () => {},
-      ...(accountId ? { env: { CLOUDFLARE_ACCOUNT_ID: accountId } } : {}),
-    },
+    { cwd: dir, log: () => {}, ...accountEnv(accountId) },
   );
   if (result.code !== 0) {
     throw cloudflareError('seed-failed', { dir, detail: trailingStderr(result.stderr) });

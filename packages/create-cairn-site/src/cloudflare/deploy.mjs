@@ -10,7 +10,7 @@
 // fallback either.
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
-import { runWrangler, runNpm } from './exec.mjs';
+import { runWrangler, runNpm, accountEnv } from './exec.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
 
 /**
@@ -148,11 +148,7 @@ function findWorkersDevOrigin(strippedStdout) {
  */
 export async function deployWorker({ dir, log, accountId }) {
   log('Deploying to Cloudflare; this can take a few minutes.');
-  const result = await runWrangler(['deploy'], {
-    cwd: dir,
-    log,
-    ...(accountId ? { env: { CLOUDFLARE_ACCOUNT_ID: accountId } } : {}),
-  });
+  const result = await runWrangler(['deploy'], { cwd: dir, log, ...accountEnv(accountId) });
 
   if (result.code !== 0) {
     if (
@@ -195,7 +191,7 @@ export async function applyMigrations({ dir, log, accountId }) {
     const result = await runWrangler(['d1', 'migrations', 'apply', database, '--remote'], {
       cwd: dir,
       log,
-      ...(accountId ? { env: { CLOUDFLARE_ACCOUNT_ID: accountId } } : {}),
+      ...accountEnv(accountId),
     });
     if (result.code !== 0) {
       throw cloudflareError('migrations-failed', {

@@ -122,6 +122,21 @@ function resolveBin(override, defaultBin, defaultArgs) {
 }
 
 /**
+ * The options fragment that points one wrangler call at a specific Cloudflare account, meant to
+ * be spread into a `runWrangler` options object. It carries the one env var name wrangler reads
+ * for this, so the four callers that pass an account through (the deploy, the migrations, the
+ * secret put, and the seed) never spell it out themselves.
+ *
+ * An absent `accountId` yields an empty fragment rather than an empty `env`, so the call keeps
+ * spawn's plain inherit-the-parent-environment path described in `runCommand`.
+ * @param {string} [accountId] the Cloudflare account id, when one has been resolved
+ * @returns {{ env?: Record<string, string> }} the fragment to spread
+ */
+export function accountEnv(accountId) {
+  return accountId ? { env: { CLOUDFLARE_ACCOUNT_ID: accountId } } : {};
+}
+
+/**
  * Run wrangler with `args`, resolving the binary from `CAIRN_WRANGLER_BIN` (read at call time)
  * or, when unset, from the scaffold's own `wrangler` devDependency via `npx --no-install`.
  * @param {string[]} args the wrangler subcommand and its arguments

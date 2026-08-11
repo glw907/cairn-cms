@@ -273,18 +273,8 @@ test('a DNS-record failure reports through its own row, not the zone row', async
 // --- 429 handling --------------------------------------------------------------------------
 
 test('a 429 on a GET waits out Retry-After once via the injected sleep, then succeeds', async (t) => {
-  const cloudflare = await startFakeCloudflare();
-  t.after(() => cloudflare.close());
-  process.env.CAIRN_CLOUDFLARE_API_BASE = cloudflare.apiBase;
-  t.after(() => {
-    delete process.env.CAIRN_CLOUDFLARE_API_BASE;
-  });
-
   const sleepCalls = [];
-  const api = makeApi({
-    token: 'fake-token',
-    accountId: 'acct-1',
-    dir: '/tmp/site',
+  const { cloudflare, api } = await setup(t, {
     sleep: async (ms) => {
       sleepCalls.push(ms);
     },
@@ -307,22 +297,13 @@ test('a 429 on a GET waits out Retry-After once via the injected sleep, then suc
 });
 
 test('a second consecutive 429 on a GET reports rather than looping', async (t) => {
-  const cloudflare = await startFakeCloudflare();
-  t.after(() => cloudflare.close());
-  process.env.CAIRN_CLOUDFLARE_API_BASE = cloudflare.apiBase;
-  t.after(() => {
-    delete process.env.CAIRN_CLOUDFLARE_API_BASE;
-  });
-
   const rateLimited = { success: false, errors: [{ code: 10013, message: 'Rate limited' }], messages: [], result: null };
   let sleepCallCount = 0;
-  const api = makeApi({
-    token: 'fake-token',
-    accountId: 'acct-1',
-    dir: '/tmp/site',
+  const { cloudflare, api } = await setup(t, {
     // Re-arms the SAME one-shot override from inside the injected sleep, so the retried
     // request also comes back 429. This proves the seam does not loop past a single retry,
-    // and keeps the test fast since the injected sleep never really waits.
+    // and keeps the test fast since the injected sleep never really waits. `cloudflare` is
+    // only read once this sleep actually runs, well after the destructuring above assigns it.
     sleep: async () => {
       sleepCallCount += 1;
       cloudflare.failNext('zone_get', 429, rateLimited);

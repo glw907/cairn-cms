@@ -455,13 +455,8 @@ export const CATALOGUE_CODES = Object.keys(ROWS);
 
 /**
  * Build a printable, catalogued error for one of the Cloudflare chapter's recoverable failures.
- * @param {string} code one of the catalogue's codes: wrangler-unavailable, login-abandoned,
- *  install-failed, build-failed, deploy-failed, subdomain-unregistered, migrations-failed,
- *  secret-put-failed, seed-failed, account-ambiguous, account-lookup-failed, token-invalid, token-scope-missing,
- *  zone-already-exists, zone-create-failed, records-read-failed, dns-record-failed,
- *  carry-over-declined,
- *  delegation-pending, delegation-wrong-nameservers, hostname-propagating, hostname-not-serving,
- *  custom-domain-failed, or cutover-deploy-failed
+ * @param {string} code one of the catalogue's codes, the keys of `ROWS` above and of the
+ *  exported `CATALOGUE_CODES`; anything else throws
  * @param {Record<string, string | string[]>} [params] the values to interpolate into the row's
  *  message; which keys are required depends on `code` (for example `dir` on every row, `detail`
  *  on the rows that carry child or API output, `database` on migrations-failed, `reason` and

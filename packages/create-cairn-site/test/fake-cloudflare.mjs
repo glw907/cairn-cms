@@ -66,7 +66,6 @@ export async function startFakeCloudflare({ zoneStatus = 'pending' } = {}) {
     dnsRecords: new Map(),
     customDomains: [],
   };
-  const counters = { nextRecordSeq: 1 };
   const assignedNameServerPairs = new Set();
 
   let dispatcher = (_req, res) => sendJson(res, 503, { message: 'fake-cloudflare: not ready yet' });
@@ -74,7 +73,7 @@ export async function startFakeCloudflare({ zoneStatus = 'pending' } = {}) {
 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const apiBase = `http://127.0.0.1:${server.address().port}/client/v4`;
-  const ctx = { state, counters, zoneStatus, assignedNameServerPairs };
+  const ctx = { state, zoneStatus, assignedNameServerPairs };
 
   dispatcher = makeHandler(
     [
@@ -377,7 +376,6 @@ function createDnsRecordCreateHandler(ctx) {
     if (body?.priority !== undefined) record.priority = body.priority;
     if (type === 'CAA' && body?.data !== undefined) record.data = body.data;
     ctx.state.dnsRecords.get(zoneId).push(record);
-    ctx.counters.nextRecordSeq += 1;
     sendSuccess(res, 200, record);
   };
 }

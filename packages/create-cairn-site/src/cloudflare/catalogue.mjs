@@ -303,6 +303,28 @@ const ROWS = {
       );
     }
   },
+  'dns-record-failed': {
+    kind: 'act',
+    build(params) {
+      if (params.detail) {
+        return (
+          'Copying your DNS records into the new Cloudflare zone did not finish. Cloudflare ' +
+          `reported:\n${params.detail}\n` +
+          'Some records may have been copied and others not, so the new zone is incomplete. ' +
+          'Your site is untouched and still working.\n' +
+          'Next: fix what Cloudflare reported above, then re-run npx create-cairn-site --dir ' +
+          `${params.dir}; the tool shows you the records again before it writes anything.`
+        );
+      }
+      return (
+        'Copying your DNS records into the new Cloudflare zone did not finish.\n' +
+        'Some records may have been copied and others not, so the new zone is incomplete. ' +
+        'Your site is untouched and still working.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir}; the tool shows you the records ` +
+        'again before it writes anything.'
+      );
+    }
+  },
   'carry-over-declined': {
     kind: 'act',
     build(params) {
@@ -423,7 +445,8 @@ export const CATALOGUE_CODES = Object.keys(ROWS);
  * @param {string} code one of the catalogue's codes: wrangler-unavailable, login-abandoned,
  *  install-failed, build-failed, deploy-failed, subdomain-unregistered, migrations-failed,
  *  secret-put-failed, seed-failed, account-ambiguous, token-invalid, token-scope-missing,
- *  zone-already-exists, zone-create-failed, records-read-failed, carry-over-declined,
+ *  zone-already-exists, zone-create-failed, records-read-failed, dns-record-failed,
+ *  carry-over-declined,
  *  delegation-pending, delegation-wrong-nameservers, hostname-propagating, hostname-not-serving,
  *  custom-domain-failed, or cutover-deploy-failed
  * @param {Record<string, string | string[]>} [params] the values to interpolate into the row's

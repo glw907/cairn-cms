@@ -247,6 +247,29 @@ test('anything else unmapped falls through to the operation\'s own row with the 
   );
 });
 
+test('a DNS-record failure reports through its own row, not the zone row', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const zone = await api.createZone('testsite.example');
+  cloudflare.failNext('dns_record_create', 500, {
+    success: false,
+    errors: [{ code: 1000, message: 'internal error, try again' }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.createDnsRecord(zone.id, { type: 'MX', name: 'testsite.example', content: 'mx.example', priority: 10 }),
+    (err) => {
+      // The distinction is the whole point of the separate row: a half-written carry-over is a
+      // different situation from a zone that never got created, and the admin reads the copy.
+      assert.equal(err.catalogue.code, 'dns-record-failed');
+      assert.match(err.message, /Copying your DNS records/);
+      assert.doesNotMatch(err.message, /Creating the Cloudflare zone/);
+      return true;
+    },
+  );
+});
+
 // --- 429 handling --------------------------------------------------------------------------
 
 test('a 429 on a GET waits out Retry-After once via the injected sleep, then succeeds', async (t) => {

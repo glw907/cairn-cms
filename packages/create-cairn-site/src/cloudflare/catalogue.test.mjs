@@ -23,6 +23,7 @@ const EXPECTED_KIND = {
   'zone-already-exists': 'act',
   'zone-create-failed': 'act',
   'records-read-failed': 'act',
+  'dns-record-failed': 'act',
   'carry-over-declined': 'act',
   'delegation-pending': 'wait',
   'delegation-wrong-nameservers': 'act',
@@ -52,6 +53,7 @@ const SAMPLE_PARAMS = {
   'zone-already-exists': { dir: './alpine', domain: 'example.com' },
   'zone-create-failed': { dir: './alpine', detail: '500: Internal Server Error' },
   'records-read-failed': { dir: './alpine' },
+  'dns-record-failed': { dir: './alpine', detail: 'some API detail' },
   'carry-over-declined': { dir: './alpine' },
   'delegation-pending': {
     dir: './alpine',

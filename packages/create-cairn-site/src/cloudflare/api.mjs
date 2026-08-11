@@ -19,11 +19,9 @@
 //
 // Only two catalogue rows accept a `detail` param for a Cloudflare-reported message
 // (zone-create-failed, custom-domain-failed); no dedicated row exists yet for a DNS-record
-// call. A DNS record only exists inside a zone this chapter is setting up, so the DNS-record
-// methods below share zone-create-failed's row rather than invent one outside this task's file
-// list. This is a known imprecision (the printed copy says "Creating the Cloudflare zone" even
-// for a DNS-record failure) worth a dedicated row in a later pass; flagged here rather than
-// silently living with it. See OPERATION_CODES.
+// call, so a DNS-record failure reports through dns-record-failed rather than borrowing the
+// zone row: a partly written carry-over is a different situation from a zone that never got
+// created, and the copy has to say so. See OPERATION_CODES.
 //
 // Retrying is GET-only, deliberately. A failed POST or PUT is reported to the caller and never
 // retried automatically: a create or an attach that failed partway may or may not have taken
@@ -38,12 +36,11 @@
 import { cloudflareError } from './catalogue.mjs';
 
 /**
- * The catalogue code an unmapped failure falls through to, per operation family. See the header
- * comment above for why the DNS-record family shares the zone family's row.
+ * The catalogue code an unmapped failure falls through to, per operation family.
  */
 const OPERATION_CODES = {
   zone: 'zone-create-failed',
-  dnsRecord: 'zone-create-failed',
+  dnsRecord: 'dns-record-failed',
   customDomain: 'custom-domain-failed',
 };
 

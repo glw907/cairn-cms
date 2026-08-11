@@ -91,9 +91,11 @@ export async function runCloudflareChapter({
   let ownerEmail = flags.ownerEmail?.trim() || record?.ownerEmail;
   let deployUrl = record?.cloudflare?.url;
 
-  if (resumingAtDeployed) {
-    log(`Resuming ${siteName} at deployed.`);
-  } else {
+  // No resume line is printed here. bin.mjs announces every resume before it dispatches, and its
+  // line also names any flag overriding a saved answer, so a second line from this module said
+  // strictly less and printed directly beneath the first. A live run is where that showed up;
+  // both modules' own tests were happy.
+  if (!resumingAtDeployed) {
     const consentDetail =
       "The tool will now install your site's dependencies, build it, and deploy it to " +
       `Cloudflare's free workers.dev hosting on your account: one Worker named ${workerName} ` +

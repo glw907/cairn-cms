@@ -507,7 +507,13 @@ test('runCloudflareChapter: a record at deployed skips consent and the deploy gr
   });
 
   assert.equal(outcome, 'live');
-  assert.ok(logs.includes('Resuming Alpine Club at deployed.'));
+  // The chapter prints no resume line of its own: bin.mjs announces the resume before it
+  // dispatches, and a second line here duplicated it in a real run.
+  assert.equal(
+    logs.some((line) => line.startsWith('Resuming ')),
+    false,
+    'bin.mjs owns the resume announcement; a line here duplicates it',
+  );
   assert.ok(
     logs.some((line) => line.includes("The App's key is already a Worker secret.")),
     'expected the key move to log its no-op line',

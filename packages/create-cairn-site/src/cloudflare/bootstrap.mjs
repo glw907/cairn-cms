@@ -7,24 +7,20 @@
 // session through the engine's own code path.
 import { randomBytes, createHash } from 'node:crypto';
 import { runWrangler } from './exec.mjs';
-import { cloudflareError } from './catalogue.mjs';
+import { cloudflareError, trailingStderr } from './catalogue.mjs';
 
 /** The engine's own magic-token lifetime (`TOKEN_TTL_MS` in `src/lib/auth/crypto.ts`). */
 const TOKEN_TTL_MS = 10 * 60 * 1000;
 
 /**
- * Reduce a child's stderr to its last few non-empty lines, for the catalogue's `detail` param.
- * @param {string} stderr the child's captured stderr
- * @param {number} [maxLines] how many trailing lines to keep
- * @returns {string} the trailing lines, joined back with newlines; '' when stderr was empty
+ * What to print once a seeded sign-in link has been opened. Both callers that open one (the
+ * chapter's own sign-in action and bin.mjs's `--sign-in` recovery) print this, and it lives
+ * beside the lifetime it quotes so a change to `TOKEN_TTL_MS` cannot leave one of them promising
+ * the old number.
  */
-function trailingStderr(stderr, maxLines = 8) {
-  const lines = stderr
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .filter((line) => line.length > 0);
-  return lines.slice(-maxLines).join('\n');
-}
+export const SIGN_IN_OPENED_NOTICE =
+  'A sign-in page just opened; click Sign in there. The link works for ten minutes; if it ' +
+  'expires, re-run with --sign-in for a fresh one.';
 
 /**
  * Escape a value for embedding in a single-quoted SQL string literal, by doubling any single

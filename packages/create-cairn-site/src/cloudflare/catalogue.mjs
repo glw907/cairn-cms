@@ -17,6 +17,29 @@
  */
 
 /**
+ * How many trailing stderr lines a `detail` param carries. The full stderr of a failed `npm
+ * install` can run to hundreds of lines; the admin needs the lines that name the actual failure,
+ * not the whole scroll.
+ */
+const DETAIL_MAX_LINES = 8;
+
+/**
+ * Reduce a child's stderr to its last few non-empty lines, the form every row's `detail` param
+ * takes. Lives here, beside the rows that print it, so the chapter's four failing-child callers
+ * (deploy, migrations, secret put, seed) all shape their detail identically.
+ * @param {string} stderr the child's captured stderr
+ * @returns {string} the trailing non-empty lines, joined back with newlines; '' when stderr held
+ *  nothing but whitespace
+ */
+export function trailingStderr(stderr) {
+  const lines = stderr
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter((line) => line.length > 0);
+  return lines.slice(-DETAIL_MAX_LINES).join('\n');
+}
+
+/**
  * Pull the text of a message's "Next:" line, with the label stripped, for `catalogue.next`.
  * @param {string} message the full printed text built by a row's `build`
  * @returns {string} the trimmed text following "Next:"

@@ -15,7 +15,7 @@ import { updateSite, loadSite } from '../state.mjs';
 import { workerNameFor, writePublicOrigin } from './config.mjs';
 import { ensureInstalled, ensureLogin, buildSite, deployWorker, applyMigrations } from './deploy.mjs';
 import { movePemToWorkerSecret } from './secret.mjs';
-import { seedOwnerAndToken } from './bootstrap.mjs';
+import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './bootstrap.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
 
 /** Matches an email with a non-empty local part and a non-empty domain part. */
@@ -83,14 +83,9 @@ export async function runCloudflareChapter({
   const frame = { dryRun, log };
   const workerName = workerNameFor(siteName);
 
-  let record = null;
-  if (!dryRun) {
-    try {
-      record = await loadSite(siteId);
-    } catch {
-      record = null;
-    }
-  }
+  // A dry run never reads the state store, and a record this run cannot read is treated as no
+  // record at all: the chapter then runs from its first action, which is what a fresh site wants.
+  const record = dryRun ? null : await loadSite(siteId).catch(() => null);
 
   const resumingAtDeployed = record?.step === 'deployed';
   let ownerEmail = flags.ownerEmail?.trim() || record?.ownerEmail;
@@ -137,25 +132,27 @@ export async function runCloudflareChapter({
         'your progress record.',
       async () => {
         if (flags.yes) {
-          if (!ownerEmail || !EMAIL_PATTERN.test(ownerEmail)) {
+          if (!EMAIL_PATTERN.test(ownerEmail ?? '')) {
             throw new Error(
               'A sign-in email is needed to finish this chapter, and --yes leaves no way to ask ' +
                 'for one.\nNext step: re-run with --owner-email <you@example.com>.',
             );
           }
         } else {
-          for (;;) {
-            if (ownerEmail === undefined) {
-              const answer = await text({
-                message: 'Sign-in email (you will use this to sign in to your own site)',
-                placeholder: 'you@example.com',
-              });
-              if (isCancel(answer)) exitOnCancel();
-              ownerEmail = answer;
+          // An address already in hand (from --owner-email or the saved record) is validated
+          // before anything is asked, so a good one never reaches the prompt at all.
+          while (!EMAIL_PATTERN.test(ownerEmail ?? '')) {
+            if (ownerEmail !== undefined) {
+              log('That does not look like an email address (needs an @ with something on both sides).');
             }
-            if (EMAIL_PATTERN.test(ownerEmail)) break;
-            log('That does not look like an email address (needs an @ with something on both sides).');
-            ownerEmail = undefined;
+            const answer = await text({
+              message: 'Sign-in email (you will use this to sign in to your own site)',
+              placeholder: 'you@example.com',
+            });
+            if (isCancel(answer)) exitOnCancel();
+            // An empty submit becomes '', never undefined, so the next pass prints the nudge
+            // above rather than silently re-prompting.
+            ownerEmail = answer ?? '';
           }
         }
         await updateSite(siteId, { ownerEmail });
@@ -177,12 +174,14 @@ export async function runCloudflareChapter({
       () => ensureLogin({ dir, log }),
     );
 
-    await runStep(frame, 'Build your site', `Runs npm run build in ${dir}.`, () => buildSite({ dir, log }));
+    await runStep(frame, 'Build your site', `Runs npm run build in ${dir}.`, () =>
+      buildSite({ dir, log }),
+    );
 
     await runStep(
       frame,
       'Deploy to workers.dev',
-      'Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies both databases\' migrations, ' +
+      "Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies both databases' migrations, " +
         'then deploys again so the running site carries its own real origin.',
       async () => {
         const first = await deployWorker({ dir, log });
@@ -217,10 +216,7 @@ export async function runCloudflareChapter({
     async () => {
       const { confirmPath } = await seedOwnerAndToken({ dir, email: ownerEmail, log });
       await openBrowser(`${deployUrl}${confirmPath}`, log);
-      log(
-        'A sign-in page just opened; click Sign in there. The link works for ten minutes; if it ' +
-          'expires, re-run with --sign-in for a fresh one.',
-      );
+      log(SIGN_IN_OPENED_NOTICE);
       await updateSite(siteId, { step: 'live' });
     },
   );

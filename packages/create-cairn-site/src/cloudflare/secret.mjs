@@ -4,21 +4,7 @@
 // successful put earns the state deletion.
 import { loadSite, updateSite } from '../state.mjs';
 import { runWrangler } from './exec.mjs';
-import { cloudflareError } from './catalogue.mjs';
-
-/**
- * Reduce a child's stderr to its last few non-empty lines, for the catalogue's `detail` param.
- * @param {string} stderr the child's captured stderr
- * @param {number} [maxLines] how many trailing lines to keep
- * @returns {string} the trailing lines, joined back with newlines; '' when stderr was empty
- */
-function trailingStderr(stderr, maxLines = 8) {
-  const lines = stderr
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .filter((line) => line.length > 0);
-  return lines.slice(-maxLines).join('\n');
-}
+import { cloudflareError, trailingStderr } from './catalogue.mjs';
 
 /**
  * Move the App's private key out of local state and into a Worker secret named

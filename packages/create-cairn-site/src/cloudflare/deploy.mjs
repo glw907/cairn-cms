@@ -11,7 +11,7 @@
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { runWrangler, runNpm } from './exec.mjs';
-import { cloudflareError } from './catalogue.mjs';
+import { cloudflareError, trailingStderr } from './catalogue.mjs';
 
 /**
  * CSI-style ANSI escape sequences (color, cursor movement) the way wrangler emits them even when
@@ -40,22 +40,6 @@ const SUBDOMAIN_UNREGISTERED_CODE = '10063';
 const LOGGED_IN_PATTERN = /you are logged in/i;
 
 /**
- * Reduce a child's stderr to its last few non-empty lines, for the catalogue's `detail` param.
- * The full stderr of a failed `npm install` can run to hundreds of lines; the admin needs the
- * lines that name the actual failure, not the whole scroll.
- * @param {string} stderr the child's captured stderr
- * @param {number} [maxLines] how many trailing lines to keep
- * @returns {string} the trailing lines, joined back with newlines; '' when stderr was empty
- */
-function trailingStderr(stderr, maxLines = 8) {
-  const lines = stderr
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .filter((line) => line.length > 0);
-  return lines.slice(-maxLines).join('\n');
-}
-
-/**
  * Install the site's own dependencies, skipping when they are already on disk (the resume path,
  * and what makes a second run of the chapter cheap).
  * @param {object} args
@@ -66,7 +50,7 @@ function trailingStderr(stderr, maxLines = 8) {
 export async function ensureInstalled({ dir, log }) {
   try {
     await access(join(dir, 'node_modules'));
-    log("Dependencies are already installed; skipping npm install.");
+    log('Dependencies are already installed; skipping npm install.');
     return;
   } catch {
     // node_modules does not exist yet; fall through to installing it.

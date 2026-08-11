@@ -12,11 +12,16 @@ import { slugify } from '../slug.mjs';
 const WRANGLER_CONFIG_RELATIVE = 'wrangler.jsonc';
 
 /**
- * The auth database's placeholder id line, as the baked template carries it. Nothing but
+ * The auth database's placeholder id, as the baked template carries it. Nothing but
  * `nameWranglerResources` removes it, which is what makes its absence a trustworthy "this file
  * has already been personalized" signal, unlike the worker name a site can legitimately share.
+ * The idempotence check and the removal below are both built from this one constant, so neither
+ * can drift away from the other.
  */
 const PLACEHOLDER_AUTH_DATABASE_ID = '"database_id": "00000000-0000-0000-0000-000000000000"';
+
+/** The app database's placeholder id, removed the same way and by the same function. */
+const PLACEHOLDER_APP_DATABASE_ID = '"database_id": "00000000-0000-0000-0000-000000000001"';
 
 /**
  * The fallback slug create-cairn-site already uses everywhere a display name might slug to
@@ -72,8 +77,10 @@ function replaceExact(content, target, replacement, relativePath) {
  * placeholder `database_id` lines whole (id-less bindings resolve by name; wrangler provisions
  * and binds them without ever writing an id back into this file). `PUBLIC_ORIGIN` and both
  * `migrations_dir` entries are left untouched: Task 7 owns the origin, once the site has a real
- * deploy URL. Idempotent: when the file already carries `"name": "<slug>"`, this returns without
- * touching it, so a resumed run does not trip the rot gate on its own output.
+ * deploy URL. Idempotent: a file that already carries `"name": "<slug>"` **and** has lost its
+ * placeholder database ids is one this function has already rewritten, so it returns without
+ * touching it and a resumed run does not trip the rot gate on its own output. Both halves are
+ * load-bearing; the comment on the check itself says why the name alone is not enough.
  * @param {string} dir the scaffold root
  * @param {string} slug the site's worker name, from `workerNameFor`
  * @returns {Promise<void>}
@@ -92,42 +99,21 @@ export async function nameWranglerResources(dir, slug) {
     content.includes(`"name": "${slug}"`) && !content.includes(PLACEHOLDER_AUTH_DATABASE_ID);
   if (alreadyNamed) return;
 
-  let next = replaceExact(
-    content,
-    '"name": "cairn-showcase"',
-    `"name": "${slug}"`,
-    WRANGLER_CONFIG_RELATIVE,
-  );
-  next = replaceExact(
-    next,
-    '"database_name": "cairn-showcase-auth"',
-    `"database_name": "${slug}-auth"`,
-    WRANGLER_CONFIG_RELATIVE,
-  );
-  next = replaceExact(
-    next,
-    '      "database_id": "00000000-0000-0000-0000-000000000000",\n',
-    '',
-    WRANGLER_CONFIG_RELATIVE,
-  );
-  next = replaceExact(
-    next,
-    '"database_name": "cairn-showcase-app"',
-    `"database_name": "${slug}-app"`,
-    WRANGLER_CONFIG_RELATIVE,
-  );
-  next = replaceExact(
-    next,
-    '      "database_id": "00000000-0000-0000-0000-000000000001",\n',
-    '',
-    WRANGLER_CONFIG_RELATIVE,
-  );
-  next = replaceExact(
-    next,
-    '"bucket_name": "cairn-showcase-media"',
-    `"bucket_name": "${slug}-media"`,
-    WRANGLER_CONFIG_RELATIVE,
-  );
+  // Every rewrite this function makes, in file order. An id line is removed whole, indentation
+  // and trailing comma included, so the JSONC that survives is still valid.
+  const rewrites = [
+    ['"name": "cairn-showcase"', `"name": "${slug}"`],
+    ['"database_name": "cairn-showcase-auth"', `"database_name": "${slug}-auth"`],
+    [`      ${PLACEHOLDER_AUTH_DATABASE_ID},\n`, ''],
+    ['"database_name": "cairn-showcase-app"', `"database_name": "${slug}-app"`],
+    [`      ${PLACEHOLDER_APP_DATABASE_ID},\n`, ''],
+    ['"bucket_name": "cairn-showcase-media"', `"bucket_name": "${slug}-media"`],
+  ];
+
+  let next = content;
+  for (const [target, replacement] of rewrites) {
+    next = replaceExact(next, target, replacement, WRANGLER_CONFIG_RELATIVE);
+  }
 
   await writeFile(configPath, next);
 }

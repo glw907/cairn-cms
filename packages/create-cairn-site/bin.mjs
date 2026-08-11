@@ -12,7 +12,7 @@ import { collectAnswers } from './src/prompts.mjs';
 import { scaffold, handoverText, dryRunNotice } from './src/scaffold.mjs';
 import { runGithubChapter } from './src/github/chapter.mjs';
 import { runCloudflareChapter } from './src/cloudflare/chapter.mjs';
-import { seedOwnerAndToken } from './src/cloudflare/bootstrap.mjs';
+import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './src/cloudflare/bootstrap.mjs';
 import { loadSite, updateSite, findSiteByDir, retireSite } from './src/state.mjs';
 import { webBase } from './src/github/api.mjs';
 import { openBrowser } from './src/github/open.mjs';
@@ -20,8 +20,10 @@ import { openBrowser } from './src/github/open.mjs';
 /** Every step a resumed run can still finish the GitHub chapter from. */
 const GITHUB_RESUMABLE_STEPS = ['scaffolded', 'app-created', 'awaiting-org-approval', 'installed', 'repo-created'];
 
-/** Every step a resumed run can still finish the Cloudflare chapter from, with no GitHub work
- * left to redo. */
+/**
+ * Every step a resumed run can still finish the Cloudflare chapter from, with no GitHub work left
+ * to redo.
+ */
 const CLOUDFLARE_RESUMABLE_STEPS = ['pushed', 'deployed'];
 
 /** Every step a resumed run can still finish from. `live` is handled separately (the whole
@@ -48,7 +50,7 @@ async function printLiveInfo(siteId) {
       `Your site is live at: ${state.cloudflare.url}`,
       `Sign in at: ${state.cloudflare.url}/admin`,
       '',
-      'What exists now: one Worker, two databases, one storage bucket, and the GitHub App\'s ' +
+      "What exists now: one Worker, two databases, one storage bucket, and the GitHub App's " +
         'private key, stored as a Worker secret.',
       '',
       'Your domain and email arrive with the next chapter.',
@@ -86,10 +88,25 @@ async function reseedAndOpen({ siteId, state, ownerEmailOverride, log }) {
   }
   const { confirmPath } = await seedOwnerAndToken({ dir: state.dir, email: ownerEmail, log });
   await openBrowser(`${state.cloudflare.url}${confirmPath}`, log);
-  console.log(
-    'A sign-in page just opened; click Sign in there. The link works for ten minutes; if it ' +
-      'expires, re-run with --sign-in for a fresh one.',
-  );
+  console.log(SIGN_IN_OPENED_NOTICE);
+}
+
+/**
+ * Run the Cloudflare chapter for one site and, when it carries the site all the way to live,
+ * print the closing block. Shared by the fresh-run and resumed-run paths so a change to what
+ * "finished" prints can never land on one and miss the other. A dry run always reports
+ * `'declined'`, so it prints its actions and stops short of the closing block, same as a chapter
+ * the admin declined.
+ * @param {{ siteId: string, siteName: string, dir: string, flags: object,
+ *  log: (line: string) => void, dryRun: boolean }} args the chapter's inputs
+ * @returns {Promise<void>}
+ */
+async function runCloudflareAndReport({ siteId, siteName, dir, flags, log, dryRun }) {
+  const outcome = await runCloudflareChapter({ siteId, siteName, dir, flags, log, dryRun });
+  if (outcome === 'live') {
+    console.log('This site is set up end to end.');
+    await printLiveInfo(siteId);
+  }
 }
 
 /**
@@ -184,7 +201,7 @@ async function main() {
       }
 
       if (pushed) {
-        const cloudflareOutcome = await runCloudflareChapter({
+        await runCloudflareAndReport({
           siteId: priorRecord.id,
           siteName: priorRecord.data.name,
           dir: priorRecord.data.dir,
@@ -192,10 +209,6 @@ async function main() {
           log,
           dryRun: flags.dryRun,
         });
-        if (cloudflareOutcome === 'live') {
-          console.log('This site is set up end to end.');
-          await printLiveInfo(priorRecord.id);
-        }
       }
       return;
     }
@@ -224,31 +237,18 @@ async function main() {
       dryRun: flags.dryRun,
     });
 
-    if (flags.dryRun) {
-      // runGithubChapter always reports 'declined' under --dry-run, since nothing is ever
-      // actually created; the Cloudflare chapter's own dry run runs unconditionally here, which
-      // is the only way the whole chapter's actions all print in one dry run.
-      await runCloudflareChapter({
+    // runGithubChapter always reports 'declined' under --dry-run, since nothing is ever actually
+    // created; the Cloudflare chapter's own dry run runs unconditionally, which is the only way
+    // the whole chapter's actions all print in one dry run.
+    if (flags.dryRun || githubOutcome === 'pushed') {
+      await runCloudflareAndReport({
         siteId,
         siteName: answers.name,
         dir: answers.dir,
         flags,
         log,
-        dryRun: true,
+        dryRun: flags.dryRun,
       });
-    } else if (githubOutcome === 'pushed') {
-      const cloudflareOutcome = await runCloudflareChapter({
-        siteId,
-        siteName: answers.name,
-        dir: answers.dir,
-        flags,
-        log,
-        dryRun: false,
-      });
-      if (cloudflareOutcome === 'live') {
-        console.log('This site is set up end to end.');
-        await printLiveInfo(siteId);
-      }
     }
   } catch (err) {
     console.error(err.message);

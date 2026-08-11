@@ -13,16 +13,18 @@ import { makeFakeBin } from '../../test/fake-bin.mjs';
  * @param {number} ownerChanges rows changed by the owner insert
  * @param {number} deleteChanges rows changed by the magic_token delete
  * @param {number} tokenChanges rows changed by the token insert
- * @returns {string} the JSON text, as it would appear on wrangler's stdout
+ * @returns {string} the JSON text pretty-printed and newline-terminated, real wrangler's shape
  */
 function d1JsonStdout(ownerChanges, deleteChanges, tokenChanges) {
-  return JSON.stringify(
-    [ownerChanges, deleteChanges, tokenChanges].map((changes) => ({
-      results: [],
-      success: true,
-      meta: { changes }
-    }))
-  );
+  // Keep the pretty-printed, newline-terminated shape. The compact single-line form this helper
+  // first used ended without a newline, so the exec seam's line mirror held it back as an
+  // incomplete line and no log assertion could see the payload real wrangler streams.
+  const statementResults = [ownerChanges, deleteChanges, tokenChanges].map((changes) => ({
+    results: [],
+    success: true,
+    meta: { changes }
+  }));
+  return JSON.stringify(statementResults, null, 2) + '\n';
 }
 
 /** The stdout of a seed against a genuinely empty allowlist: owner inserted, token inserted. */
@@ -199,6 +201,33 @@ test('an address that is already an editor gets a token but no second owner row'
   });
 
   assert.ok(confirmPath.startsWith('/admin/auth/confirm?token='));
+});
+
+test("the child's JSON payload is parsed, never streamed to log", async (t) => {
+  const scaffoldDir = await mkdtemp(path.join(tmpdir(), 'cairn-scaffold-'));
+  t.after(() => rm(scaffoldDir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  await fake.respond('d1 execute', { code: 0, stdout: EMPTY_ALLOWLIST_STDOUT });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const lines = [];
+  const { seedOwnerAndToken } = await import('./bootstrap.mjs');
+  await seedOwnerAndToken({
+    dir: scaffoldDir,
+    email: 'owner@example.com',
+    log: (line) => lines.push(line),
+    now: 1000
+  });
+
+  // The payload belongs to the row-count check alone, so no log line may carry any of it.
+  assert.ok(lines.length > 0, 'expected the step to announce itself');
+  assert.ok(
+    lines.every((line) => !line.includes('"success"') && !line.includes('"meta"')),
+    `expected no raw D1 JSON in log lines, got: ${lines.join('\n')}`
+  );
 });
 
 test('the raw token never lands under the scaffold dir or CAIRN_STATE_DIR', async (t) => {

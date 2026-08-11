@@ -107,9 +107,11 @@ export async function seedOwnerAndToken({ dir, email, log, now = Date.now() }) {
     `  WHERE EXISTS (SELECT 1 FROM editor WHERE email = '${escapedEmail}');`;
 
   log("Writing your sign-in row to the site's database.");
+  // The `--json` payload on this command's stdout belongs to the row-count check below, not to
+  // the admin. A no-op log keeps all three raw result objects out of the terminal.
   const result = await runWrangler(
     ['d1', 'execute', 'AUTH_DB', '--remote', '--command', sql, '--json'],
-    { cwd: dir, log },
+    { cwd: dir, log: () => {} },
   );
   if (result.code !== 0) {
     throw cloudflareError('seed-failed', { dir, detail: trailingStderr(result.stderr) });

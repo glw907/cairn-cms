@@ -1,17 +1,19 @@
-// The Cloudflare chapter's error catalogue. A run that hits one of these nine recoverable
-// failures should never surface a raw fetch error or stack trace: it prints through
-// cloudflareError, which names what happened, what it means, and the one concrete command the
-// admin should run next. Every row here is kind: act, since nothing in this chapter waits on a
-// third party the way the GitHub chapter's org-approval row does.
+// The Cloudflare chapter's error catalogue. A run that hits one of these recoverable failures
+// should never surface a raw fetch error or stack trace: it prints through cloudflareError,
+// which names what happened, what it means, and the one concrete command the admin should run
+// next.
 
 /**
- * @typedef {'act'} ErrorKind
+ * @typedef {'wait' | 'act' | 'ask-someone'} ErrorKind
  */
 
 /**
  * @typedef {object} ChapterErrorInfo
  * @property {string} code the catalogue code that produced this error
- * @property {ErrorKind} kind always 'act' in this catalogue
+ * @property {ErrorKind} kind decides the exit code: 'wait' means nothing is wrong and something
+ *  just takes time, so the caller returns this row and exits 0; 'act' means the admin does
+ *  something themselves and re-runs, thrown and exits 1; 'ask-someone' means another person
+ *  must act first, thrown and exits 1
  * @property {string} next the concrete next command or action, with the leading "Next:" label
  *  stripped
  */
@@ -207,18 +209,229 @@ const ROWS = {
         'will be skipped, and the sign-in step starts fresh.'
       );
     }
+  },
+  'account-ambiguous': {
+    kind: 'act',
+    build(params) {
+      return (
+        'The Cloudflare sign-in found more than one account on it, and this run is not ' +
+        'interactive, so it cannot ask which one to use. Nothing was changed, and this run has ' +
+        'saved its progress.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir} without --yes, so the tool can ` +
+        'ask which account to use.'
+      );
+    }
+  },
+  'token-invalid': {
+    kind: 'act',
+    build(params) {
+      if (params.detail) {
+        return (
+          'The Cloudflare API token you pasted was not accepted. Cloudflare reported:\n' +
+          `${params.detail}\n` +
+          'Your site is untouched and still working.\n' +
+          `Next: re-run npx create-cairn-site --dir ${params.dir} and paste a new token when asked.`
+        );
+      }
+      return (
+        'The Cloudflare API token you pasted was not accepted. It may be mistyped, expired, or ' +
+        'revoked.\n' +
+        'Your site is untouched and still working.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir} and paste a new token when asked.`
+      );
+    }
+  },
+  'token-scope-missing': {
+    kind: 'act',
+    build(params) {
+      if (params.permission) {
+        return (
+          'The Cloudflare API token you pasted works, but it is missing one permission: ' +
+          `${params.permission}. Your site is untouched and still working.\n` +
+          'Next: create a new token with that permission included, then re-run npx ' +
+          `create-cairn-site --dir ${params.dir} and paste it in.`
+        );
+      }
+      return (
+        'The Cloudflare API token you pasted works, but it is missing a permission this step ' +
+        'needs. Your site is untouched and still working.\n' +
+        'Next: create a new token with the full permission set the tool asked for, then re-run ' +
+        `npx create-cairn-site --dir ${params.dir} and paste it in.`
+      );
+    }
+  },
+  'zone-already-exists': {
+    kind: 'act',
+    build(params) {
+      return (
+        `The domain ${params.domain} is already set up as a Cloudflare zone, so this tool could ` +
+        'not create it again. Your site is untouched and still working.\n' +
+        `Next: check https://dash.cloudflare.com for a zone named ${params.domain}. If it is on ` +
+        'your own account, remove it there first. If it belongs to someone else, an agency or a ' +
+        `previous developer, ask them to remove it. Then re-run npx create-cairn-site --dir ` +
+        `${params.dir}.`
+      );
+    }
+  },
+  'zone-create-failed': {
+    kind: 'act',
+    build(params) {
+      if (params.detail) {
+        return (
+          'Creating the Cloudflare zone for your domain did not finish. Cloudflare reported:\n' +
+          `${params.detail}\n` +
+          'Your site is untouched and still working.\n' +
+          'Next: fix what Cloudflare reported above, then re-run npx create-cairn-site --dir ' +
+          `${params.dir}.`
+        );
+      }
+      return (
+        'Creating the Cloudflare zone for your domain did not finish.\n' +
+        'Your site is untouched and still working.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'records-read-failed': {
+    kind: 'act',
+    build(params) {
+      return (
+        "Looking up your domain's current DNS records did not finish. The lookup itself " +
+        'failed, so the tool cannot tell what records your domain has and will not guess. ' +
+        'Your site is untouched and still working.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'carry-over-declined': {
+    kind: 'act',
+    build(params) {
+      return (
+        "You chose not to copy your domain's existing DNS records into the new Cloudflare " +
+        'zone. That choice is recorded, and your site is untouched and still working.\n' +
+        `Next: if you change your mind, re-run npx create-cairn-site --dir ${params.dir} before ` +
+        'the domain switches over, and the tool will offer to copy them again.'
+      );
+    }
+  },
+  'delegation-pending': {
+    kind: 'wait',
+    build(params) {
+      const pair = params.nameServers.join(' and ');
+      return (
+        `Your domain ${params.domain} still points at its old nameservers, so the switch to ` +
+        'Cloudflare has not happened yet. This is normal: it happens after you change the ' +
+        "nameservers at your domain's registrar, and can take anywhere from a few minutes to " +
+        '48 hours. Your site is untouched and still working.\n' +
+        `Next: once you have set ${params.domain}'s nameservers to ${pair} at your registrar, ` +
+        `re-run npx create-cairn-site --dir ${params.dir} to check again.`
+      );
+    }
+  },
+  'delegation-wrong-nameservers': {
+    kind: 'act',
+    build(params) {
+      const assigned = params.nameServers.join(' and ');
+      const found = params.actual.join(' and ');
+      return (
+        `Your domain ${params.domain} is delegated to Cloudflare, but not to this account. ` +
+        `This account's nameservers are ${assigned}, and ${params.domain} currently points at ` +
+        `${found} instead. A Cloudflare account is assigned one nameserver pair, shared by ` +
+        'every domain on it, so this means the domain is set up under a different Cloudflare ' +
+        "account (perhaps an agency's or a previous developer's), not that the nameservers " +
+        'were mistyped. Your site is untouched and still working.\n' +
+        `Next: ask whoever controls that account to remove ${params.domain} from it, then ` +
+        `re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'hostname-propagating': {
+    kind: 'wait',
+    build(params) {
+      return (
+        'Your domain now resolves, but the new certificate or DNS record has not finished ' +
+        'propagating yet. This is a normal step, and usually finishes within a few minutes to ' +
+        'a few hours. Your site keeps answering on its workers.dev address the whole time.\n' +
+        `Next: wait a bit, then re-run npx create-cairn-site --dir ${params.dir} to check again.`
+      );
+    }
+  },
+  'hostname-not-serving': {
+    kind: 'act',
+    build(params) {
+      return (
+        `Your domain ${params.domain} resolves and answers, but what answers is not your ` +
+        'site. It may be a parked page or an older site still using that address. Your site ' +
+        'itself is untouched and still working on its workers.dev address.\n' +
+        `Next: check what is set up at ${params.domain} (a leftover DNS record, or the wrong ` +
+        `Cloudflare zone), fix it, then re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'custom-domain-failed': {
+    kind: 'act',
+    build(params) {
+      if (params.detail) {
+        return (
+          'Attaching your site to your domain did not finish. Cloudflare reported:\n' +
+          `${params.detail}\n` +
+          'Your site is untouched and still working on its workers.dev address.\n' +
+          'Next: fix what Cloudflare reported above, then re-run npx create-cairn-site --dir ' +
+          `${params.dir}.`
+        );
+      }
+      return (
+        'Attaching your site to your domain did not finish.\n' +
+        'Your site is untouched and still working on its workers.dev address.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'cutover-deploy-failed': {
+    kind: 'act',
+    build(params) {
+      if (params.detail) {
+        return (
+          'Redeploying your site after pointing it at your domain did not finish. wrangler ' +
+          'reported:\n' +
+          `${params.detail}\n` +
+          "The tool already restored your site's address on disk back to its workers.dev one, " +
+          'so your site is still working there and nothing is half-changed.\n' +
+          `Next: fix what wrangler reported above, then re-run npx create-cairn-site --dir ` +
+          `${params.dir}.`
+        );
+      }
+      return (
+        'Redeploying your site after pointing it at your domain did not finish.\n' +
+        "The tool already restored your site's address on disk back to its workers.dev one, " +
+        'so your site is still working there and nothing is half-changed.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
   }
 };
+
+/**
+ * Every code the catalogue has a row for, so a test suite can assert coverage against the
+ * module itself rather than a copy of the list that can drift.
+ * @type {string[]}
+ */
+export const CATALOGUE_CODES = Object.keys(ROWS);
 
 /**
  * Build a printable, catalogued error for one of the Cloudflare chapter's recoverable failures.
  * @param {string} code one of the catalogue's codes: wrangler-unavailable, login-abandoned,
  *  install-failed, build-failed, deploy-failed, subdomain-unregistered, migrations-failed,
- *  secret-put-failed, or seed-failed
- * @param {Record<string, string>} [params] the values to interpolate into the row's message;
- *  which keys are required depends on `code` (for example `dir` on every row, `detail` on the
- *  rows that carry child output, `database` on migrations-failed, `reason` and `email` on
- *  seed-failed's not-allowlisted case)
+ *  secret-put-failed, seed-failed, account-ambiguous, token-invalid, token-scope-missing,
+ *  zone-already-exists, zone-create-failed, records-read-failed, carry-over-declined,
+ *  delegation-pending, delegation-wrong-nameservers, hostname-propagating, hostname-not-serving,
+ *  custom-domain-failed, or cutover-deploy-failed
+ * @param {Record<string, string | string[]>} [params] the values to interpolate into the row's
+ *  message; which keys are required depends on `code` (for example `dir` on every row, `detail`
+ *  on the rows that carry child or API output, `database` on migrations-failed, `reason` and
+ *  `email` on seed-failed's not-allowlisted case, `permission` on token-scope-missing, `domain`
+ *  on the domain and hostname rows, and `nameServers`/`actual`, both string arrays, on the
+ *  delegation rows)
  * @returns {Error & { catalogue: ChapterErrorInfo }} an Error whose message is the full printed
  *  text (ending in a "Next:" line) and whose `catalogue` property carries `{ code, kind, next }`
  */

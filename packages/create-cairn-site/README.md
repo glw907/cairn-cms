@@ -91,6 +91,58 @@ the tool prints that GitHub has already notified the owners, saves its progress,
 cleanly. Nothing is lost. Running the command again, once an owner approves, picks up exactly
 where it left off.
 
+## The Cloudflare chapter
+
+Once the site is on GitHub, the command offers to put it on the internet. Like the GitHub
+chapter, this step is interactive by default. `--yes` alone skips it; add `--deploy` to opt in
+without a prompt.
+
+### What gets created, and what it costs
+
+The chapter deploys your site to Cloudflare's free `workers.dev` hosting, on your own Cloudflare
+account. It creates one Worker named after your site, two databases (`<site>-auth` for sign-ins
+and `<site>-app` for the site's own data), and one storage bucket for media. Cloudflare's free
+plan covers all of it. Nothing in this step costs money, and the tool never asks for a payment
+method.
+
+Deploying again later updates the same Worker rather than making a second one.
+
+### One browser trip, then one click
+
+If wrangler is not already signed in to Cloudflare, it opens your browser to Cloudflare's own
+sign-in and waits. The tool holds no Cloudflare credential of its own; it works entirely through
+wrangler's session.
+
+At the end, the tool opens your new site's sign-in page with a link already in it. You click
+**Sign in** once and you are in your own admin. No email is sent, and none needs to arrive. The
+link is good for ten minutes; if it expires, `--sign-in` issues a fresh one.
+
+### Your App's private key moves off your machine
+
+The GitHub chapter saves the App's private key locally so it can push your site. As soon as the
+Worker exists, this chapter uploads that key to the Worker as a secret and **deletes the local
+copy**. After this step the key lives in exactly one place, your Worker, and the tool cannot read
+it back. If it is ever lost, regenerate it at the App's settings page on github.com and run the
+command again.
+
+The key is only deleted locally after Cloudflare confirms the upload, so an upload that fails
+leaves your copy where it was.
+
+### Flags
+
+| Flag | Effect |
+| --- | --- |
+| `--deploy` | Opt into the Cloudflare chapter without an interactive prompt. Pair with `--yes` for a fully unattended run. |
+| `--owner-email` | The address you will sign in with. Required with `--yes`, since there is no way to ask for it. |
+| `--sign-in` | Issue a fresh sign-in link for a site that is already live, and open it. |
+
+### Resuming
+
+Each hop is saved as it completes, the same as the GitHub chapter. A run interrupted after the
+deploy picks up at the key move rather than deploying again, and one interrupted before it
+re-runs the deploy, which is safe: Cloudflare binds the databases and bucket by name, so a second
+deploy finds what the first one made instead of creating more.
+
 ## Running the site
 
 ```
@@ -105,9 +157,13 @@ own `dev` script turns the stand-in on, so no environment variable is needed.
 
 ## Status
 
-The local scaffold and the GitHub chapter both exist today. The command does not yet provision
-Cloudflare or configure email, so the site cannot be deployed to the internet. Those steps arrive
-in a later release.
+The local scaffold, the GitHub chapter, and the Cloudflare chapter all exist today, so the
+command takes a site from nothing to live on `workers.dev` with you signed in to its admin. What
+it does not do yet is the second half of going live: your own domain, and email so people other
+than you can be invited to edit. Those arrive in a later release.
 
 Scaffolding writes nothing outside the site directory except one record of the site under
-`~/.config/cairn/sites/`, mode `0600`. No secret is ever written into the project.
+`~/.config/cairn/sites/`, mode `0600`. No secret is ever written into the project. The App's
+private key lives in that record only until the Worker exists, and then only in the Worker; the
+record itself is not secret-free even after that move, since it still carries the App's client
+secret and webhook secret, which this tool never relocates anywhere else.

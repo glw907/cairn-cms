@@ -11,6 +11,7 @@ import {
   pruneShowcaseOnlyPackageFields,
   rewriteDevScript,
 } from './bake-template.mjs';
+import { TEMPLATE_GITHUB_APP_LITERAL } from '../src/github/finalize.mjs';
 
 // Published specs, so a bake under test never depends on what the monorepo's own versions
 // happen to be. The unresolvable defaults have their own test below.
@@ -41,6 +42,20 @@ test('bake emits a real tree, not just a rewritten package.json', async (t) => {
   await access(path.join(to, 'package.json'));
   await access(path.join(to, 'src'));
   await access(path.join(to, 'wrangler.jsonc'));
+});
+
+// The rot gate: finalizeGithubIdentity (src/github/finalize.mjs) rewrites this exact literal in
+// a pushed scaffold's cairn.config.ts, verified against the showcase directly. Pinning it here
+// too means showcase drift that changes the backend line's shape fails this fast bake test,
+// rather than surfacing only inside a live create-cairn-site run against real GitHub.
+test('the baked template\'s cairn.config.ts carries the exact githubApp(...) literal finalizeGithubIdentity targets', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  const config = await readFile(path.join(to, 'src/theme/cairn.config.ts'), 'utf8');
+  assert.ok(
+    config.includes(TEMPLATE_GITHUB_APP_LITERAL),
+    `expected the baked cairn.config.ts to contain "${TEMPLATE_GITHUB_APP_LITERAL}"`,
+  );
 });
 
 // @glw907/cairn-cms-dev is unpublished (version 0.0.0 in packages/cairn-cms-dev/package.json)

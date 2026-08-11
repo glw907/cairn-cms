@@ -5,6 +5,32 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { scaffold, handoverText, dryRunNotice, SCAFFOLD_SENTINEL } from './scaffold.mjs';
 
+/**
+ * A minimal but real wrangler.jsonc, carrying every string nameWranglerResources targets (the
+ * showcase's own name, both database names and ids, and the bucket name), so a real scaffold run
+ * exercises the actual rewrite rather than a fixture that happens to have nothing to find.
+ */
+const WRANGLER_JSONC_FIXTURE = `{
+  "name": "cairn-showcase",
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "cairn-showcase-auth",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    },
+    {
+      "binding": "APP_DB",
+      "database_name": "cairn-showcase-app",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations-app"
+    }
+  ],
+  "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "cairn-showcase-media" }],
+  "vars": { "PUBLIC_ORIGIN": "http://localhost:4173" }
+}
+`;
+
 // Every scaffold test answers identically: the name is what the slug and the substitution
 // assertions key on, and both optional answers stay empty. Frozen so a scaffold run that ever
 // mutated its answers would fail here rather than leak into the next test.
@@ -58,6 +84,7 @@ async function templateFixture(t) {
     path.join(dir, 'src/theme/theme.css'),
     '--color-primary: oklch(45% 0.15 30);\n',
   );
+  await writeFile(path.join(dir, 'wrangler.jsonc'), WRANGLER_JSONC_FIXTURE);
   return dir;
 }
 
@@ -115,6 +142,25 @@ test('real run scaffolds, renames, substitutes, and saves state outside the scaf
     !scaffoldFileNames.includes(stateFileName),
     `state record ${stateFileName} must not also exist inside the scaffold`,
   );
+});
+
+test('a real scaffold run names its wrangler.jsonc resources after the slug and drops both database ids', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+  const wrangler = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
+  assert.ok(wrangler.includes('"name": "alpine-club"'));
+  assert.ok(wrangler.includes('"database_name": "alpine-club-auth"'));
+  assert.ok(wrangler.includes('"database_name": "alpine-club-app"'));
+  assert.ok(wrangler.includes('"bucket_name": "alpine-club-media"'));
+  assert.ok(!wrangler.includes('database_id'), 'both database_id lines must be gone');
 });
 
 test('scaffold returns the siteId the state record was saved under', async (t) => {

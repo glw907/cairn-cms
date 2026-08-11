@@ -52,3 +52,15 @@ test('parses the GitHub chapter flags and their defaults', () => {
   assert.equal(a.github, true);
   assert.equal(a.startOver, true);
 });
+
+test('parses the Cloudflare chapter flags and their defaults', () => {
+  const defaults = parseArgs([]);
+  assert.equal(defaults.ownerEmail, undefined);
+  assert.equal(defaults.deploy, false);
+  assert.equal(defaults.signIn, false);
+
+  const a = parseArgs(['--owner-email', 'owner@example.com', '--deploy', '--sign-in']);
+  assert.equal(a.ownerEmail, 'owner@example.com');
+  assert.equal(a.deploy, true);
+  assert.equal(a.signIn, true);
+});

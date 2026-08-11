@@ -14,6 +14,7 @@ import { defineAction, runActions } from './runner.mjs';
 import { applySubstitutions } from './substitute.mjs';
 import { newSiteId, saveSite, siteStateDir } from './state.mjs';
 import { slugify } from './slug.mjs';
+import { nameWranglerResources, workerNameFor } from './cloudflare/config.mjs';
 
 const ADMIN_URL = 'http://localhost:5173/admin';
 
@@ -137,9 +138,12 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
     }),
     defineAction({
       title: 'Personalize the site',
-      detail: 'Writes the site name, description, and brand color into the template.',
+      detail:
+        'Writes the site name, description, and brand color into the template, and names its ' +
+        "wrangler.jsonc resources after the site's slug.",
       execute: async () => {
         await applySubstitutions(dir, answers);
+        await nameWranglerResources(dir, workerNameFor(answers.name));
       },
     }),
     defineAction({

@@ -14,47 +14,52 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-10 night: T2 is DONE; next is the T3 planning sitting)
+## Immediate next action (2026-08-11: T3 is BUILT and locally green; next is Geoff's GitHub-half e2e, then T4 planning)
 
-**Pass T2 (the GitHub chapter) is complete and merged through
-[PR #26](https://github.com/glw907/cairn-cms/pull/26), all six CI workflows green.**
-`create-cairn-site` now takes a scaffolded site to a pushed private repo covered by an App the
-admin owns: manifest-first (the admin's own App is the OAuth client; no standing credential), two
-browser trips via `request_oauth_on_install`, repo create with verify-only installation coverage,
-the no-git-binary Git Data push, a resume frame with `--start-over`, the atomic scaffold claim,
-and the dev shim making bare `npm run dev` reach the local admin (CI-probed). The live e2e is
-recorded in the plan's post-mortem: personal, org, and interrupted-resume runs all green on real
-GitHub, artifacts torn down. The spike verdict that reshaped the plan mid-pass (hook_attributes,
-ported-first callbacks, port-only leniency, the refuted repo-link PUT) is
-[`2026-08-10-t2-own-app-spike.md`](internal/2026-08-10-t2-own-app-spike.md). The pass-close
-adversarial workflow confirmed and fixed six high findings; the unverified tail is parked in the
-friction log's hardening entry. The window holds under `## Unreleased`; nothing is published.
+**Pass T3 (the Cloudflare chapter) is complete on `worktree-t3-cloudflare-chapter`, unpushed at
+the time of writing.** The tool now takes a site from `pushed` to live on the admin's own free
+`workers.dev` hostname with them signed in to its admin: it installs, signs wrangler in, builds,
+deploys, provisions and migrates both D1 databases and the R2 bucket from an **id-less**
+`wrangler.jsonc`, moves the GitHub App's key from local state into a Worker secret, and seeds an
+owner row plus a ten-minute magic-link token straight into the deployed database so the first
+sign-in is one click and no email. It also writes the App's real identity into the scaffold before
+the T2 push, so the repository is born able to publish. Thirteen local gates pass, including the
+four a local ritual usually skips.
 
-**Next: the T3 planning sitting (Fable, brainstorm-first; NOT an execution session).** T3 is the
-Cloudflare chapter plus the two doors: wrangler.jsonc emission, the workers.dev deploy, D1
-provisioning, moving the PEM from the local state store to a Worker secret (the umbrella's rule,
-named in the T2 spec's out-of-scope list), the bootstrap session, the hand-over console, and the
-template-repo second door. Open against Part 1 of the umbrella spec
-([`2026-08-09-admin-setup-and-docs-reset-design.md`](superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md))
-plus the platform-spikes doc
-([`2026-08-09-tool-passes-platform-spikes.md`](internal/2026-08-09-tool-passes-platform-spikes.md)).
-Known planning inputs: chapter 1 stays inside wrangler's OAuth scopes (zero-credential quickstart
-holds); the domain half cannot ride wrangler (no registrar scope), and **Geoff ruled at the T2
-close that `.ski`/`.life` Registrar coverage is not worth chasing ("oddball domains, don't worry
-about them"), so the Registrar-token action is RETIRED, not queued**: T3 plans the domain half
-for the general case (a domain the admin already owns anywhere, pointed at Cloudflare), and
-Registrar-purchase support is out of scope until a real admin asks; Workers Builds is fully
-API-driven. T2 adds: the
-desktop-side-effect test constraint (no suite may spawn a browser; PATH-empty pattern), the
-friction-log hardening entry to triage when T3 touches those files, and the scratch org
-`t2-scratch-org` (kept or deleted at Geoff's option) for live org checks.
+**The one thing Geoff still owns.** The live e2e's Cloudflare half ran end to end through the
+**packaged** CLI against the real account (deploy, migrations, key move, bootstrap, the
+`deployed`-resume with zero redeploys, full teardown verified by listing). The **GitHub half needs
+a browser**: creating a GitHub App goes through GitHub's manifest flow and has no API, so the last
+unproven link is *a save in the signed-in admin committing to the repo through the App*. Run the
+full `--github --deploy` flow once, click through the two GitHub trips, then save a post in the
+admin. Everything else in Task 12 is already evidenced in the plan's post-mortem.
 
-**Resume prompt** (launch directory `~/Projects/cairn-cms`, on `main` after the merge): "Plan Pass
-T3 of the create-cairn-site umbrella (Cloudflare plus the two doors). Start with the cairn-pass
-skill and superpowers:brainstorming against Part 1 of the umbrella spec
-(`docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`), reading `docs/STATUS.md`,
-the platform-spikes doc, and the T2 post-mortem
-(`docs/superpowers/plans/2026-08-10-create-cairn-site-t2.md`) first."
+**Read the spike before touching T4.** `docs/internal/2026-08-10-t3-cloudflare-spike.md` records,
+with observed output, that wrangler provisions id-less bindings by name and **writes nothing
+back**, that migrations take the binding name, that multi-statement `d1 execute --command` works,
+and that `wrangler delete` needs a permission the standing estate token lacks. It also corrects
+this repo's `CLAUDE.md` gotcha about Email Sending, which predates the rename to Cloudflare Email
+Service; T4 owns re-reading that against current docs.
+
+**Two carry-forwards this pass raised and deliberately did not fix.** (1) `npm run check:comments`
+runs `eslint src/lib` and nothing else, so `packages/create-cairn-site` has **no comment gate at
+all** despite its plan binding it to one; pointing the existing ruleset at it reports 1588 errors,
+almost all complaints about `@param {type}`, which is the correct idiom for plain `.mjs`. The gate
+that belongs there is the em-dash ban alone over `**/*.mjs`, and the package is currently clean of
+them, so this is latent. It goes to a pass that owns tooling. (2) `src/github/install.test.mjs`'s
+reauthorize race is **flaky**, hit twice this pass by different implementers; and `test/fake-github.mjs`
+cannot recover `callback_urls` for an App made through the real manifest flow, so a test that builds
+one that way hangs until its timeout. Both are T2 test infrastructure, worked around rather than
+fixed, and both will keep costing an implementer a debugging round.
+
+**Resume prompt for the next session** (launch directory
+`~/Projects/cairn-cms/.claude/worktrees/t3-cloudflare-chapter` for the e2e, or
+`~/Projects/cairn-cms` once T3 has merged): "T3 is built and green. Run the GitHub half of its
+live e2e (`--github --deploy` end to end, two browser trips, then save a post in the signed-in
+admin to prove the App commit path), append the evidence to
+`docs/superpowers/plans/2026-08-10-create-cairn-site-t3.md`'s post-mortem, then merge T3 and open
+the T4 planning sitting from the brief at the end of the T3 spec." Note the branch topology: T4
+branches off `main` **after** T3 merges, not off the T3 worktree.
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 

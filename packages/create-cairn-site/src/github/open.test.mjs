@@ -30,3 +30,70 @@ test('openBrowser resolves even when nothing on PATH can open a browser', async 
     process.env.PATH = previousPath;
   }
 });
+
+test('openBrowser with secret:true still logs the full URL at an interactive terminal', async () => {
+  const previousPath = process.env.PATH;
+  process.env.PATH = '';
+  const previousTTY = process.stdout.isTTY;
+  process.stdout.isTTY = true;
+  try {
+    const logs = [];
+    await openBrowser(
+      'http://127.0.0.1:5555/admin/auth/confirm?token=SUPER-SECRET-TOKEN',
+      (line) => logs.push(line),
+      { secret: true },
+    );
+    assert.ok(
+      logs.some((line) => line.includes('SUPER-SECRET-TOKEN')),
+      `expected the full URL at a TTY, got: ${JSON.stringify(logs)}`,
+    );
+  } finally {
+    process.env.PATH = previousPath;
+    process.stdout.isTTY = previousTTY;
+  }
+});
+
+test('openBrowser with secret:true keeps the token out of a non-interactive log', async () => {
+  const previousPath = process.env.PATH;
+  process.env.PATH = '';
+  const previousTTY = process.stdout.isTTY;
+  process.stdout.isTTY = false;
+  try {
+    const logs = [];
+    await openBrowser(
+      'http://127.0.0.1:5555/admin/auth/confirm?token=SUPER-SECRET-TOKEN',
+      (line) => logs.push(line),
+      { secret: true },
+    );
+    assert.ok(
+      !logs.some((line) => line.includes('SUPER-SECRET-TOKEN')),
+      `expected no line to carry the token, got: ${JSON.stringify(logs)}`,
+    );
+    assert.ok(
+      logs.some((line) => line.includes('http://127.0.0.1:5555')),
+      `expected the origin to still print, got: ${JSON.stringify(logs)}`,
+    );
+    assert.ok(
+      logs.some((line) => line.includes('--sign-in')),
+      `expected a re-run hint naming --sign-in, got: ${JSON.stringify(logs)}`,
+    );
+  } finally {
+    process.env.PATH = previousPath;
+    process.stdout.isTTY = previousTTY;
+  }
+});
+
+test('openBrowser without secret:true (the GitHub chapter shape) always logs the full URL, TTY or not', async () => {
+  const previousPath = process.env.PATH;
+  process.env.PATH = '';
+  const previousTTY = process.stdout.isTTY;
+  process.stdout.isTTY = false;
+  try {
+    const logs = [];
+    await openBrowser('http://127.0.0.1:5555/manifest', (line) => logs.push(line));
+    assert.ok(logs.some((line) => line.includes('http://127.0.0.1:5555/manifest')));
+  } finally {
+    process.env.PATH = previousPath;
+    process.stdout.isTTY = previousTTY;
+  }
+});

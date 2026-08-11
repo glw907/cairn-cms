@@ -16,9 +16,11 @@ import { cloudflareError, trailingStderr } from './catalogue.mjs';
  * @param {string} args.siteId the site's state id
  * @param {string} args.dir the scaffold root, used as the wrangler invocation's cwd
  * @param {(line: string) => void} args.log receives progress lines
+ * @param {string} [args.accountId] the Cloudflare account the Worker lives in, from
+ *  `ensureAccountId`; when given, it is passed to wrangler as `CLOUDFLARE_ACCOUNT_ID`
  * @returns {Promise<void>}
  */
-export async function movePemToWorkerSecret({ siteId, dir, log }) {
+export async function movePemToWorkerSecret({ siteId, dir, log, accountId }) {
   const state = await loadSite(siteId);
   const pem = state?.github?.pem;
   if (!pem) {
@@ -30,7 +32,8 @@ export async function movePemToWorkerSecret({ siteId, dir, log }) {
   const result = await runWrangler(['secret', 'put', 'GITHUB_APP_PRIVATE_KEY_B64'], {
     cwd: dir,
     log,
-    input
+    input,
+    ...(accountId ? { env: { CLOUDFLARE_ACCOUNT_ID: accountId } } : {}),
   });
   if (result.code !== 0) {
     throw cloudflareError('secret-put-failed', { dir, detail: trailingStderr(result.stderr) });

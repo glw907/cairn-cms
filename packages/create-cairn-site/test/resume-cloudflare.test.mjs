@@ -214,6 +214,13 @@ test('bin.mjs resumes a pushed record and notes an --owner-email override in the
   const fake = await makeFakeBin('resume-pushed-override');
   t.after(() => fake.close());
   await fake.respond('whoami', { code: 0, stdout: 'You are logged in with an API Token\n' });
+  await fake.respond('whoami --json', {
+    code: 0,
+    stdout: JSON.stringify({
+      loggedIn: true,
+      accounts: [{ id: 'test-account-id', name: 'Test Account' }],
+    }),
+  });
   await fake.respond('deploy', {
     code: 0,
     stdout: 'Deployed thing triggers (0.1 sec)\n  https://alpine-club.glw907.workers.dev\n',

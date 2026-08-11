@@ -8,12 +8,13 @@
 // Per the T3 spike, the install action runs FIRST, ahead of the login: the chapter shells out
 // through the site's own wrangler devDependency, which does not exist on a fresh scaffold until
 // npm install has run, so a login-first order fails on every fresh run.
-import { confirm as clackConfirm, text as clackText, isCancel } from '@clack/prompts';
+import { confirm as clackConfirm, text as clackText, select as clackSelect, isCancel } from '@clack/prompts';
 import { exitOnCancel } from '../prompts.mjs';
 import { defineAction, runActions } from '../runner.mjs';
 import { updateSite, loadSite } from '../state.mjs';
 import { workerNameFor, writePublicOrigin } from './config.mjs';
 import { ensureInstalled, ensureLogin, buildSite, deployWorker, applyMigrations } from './deploy.mjs';
+import { ensureAccountId } from './account.mjs';
 import { movePemToWorkerSecret } from './secret.mjs';
 import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './bootstrap.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
@@ -50,6 +51,8 @@ async function runStep(frame, title, detail, execute) {
  *  @clack/prompts' own, the way GitHub chapter tests inject openBrowser to keep a real browser
  *  trip out of the suite
  * @property {typeof clackText} [text] the free-text prompt; the same kind of test seam as `confirm`
+ * @property {typeof clackSelect} [select] the account picker prompt `ensureAccountId` uses on a
+ *  multi-account session; the same kind of test seam as `confirm` and `text`
  */
 
 /**
@@ -83,6 +86,7 @@ export async function runCloudflareChapter({
   openBrowser = defaultOpenBrowser,
   confirm = clackConfirm,
   text = clackText,
+  select = clackSelect,
 }) {
   const frame = { dryRun, log };
   const workerName = workerNameFor(siteName);
@@ -193,6 +197,25 @@ export async function runCloudflareChapter({
     () => ensureLogin({ dir, log }),
   );
 
+  // Hoisted out of the resume conditional for the same reason as install and login above: the
+  // key move and the sign-in seed both need an account id too, so this must resolve before
+  // either of those, not just before the deploy group. A session must already exist (the login
+  // step above), which is why this runs after it and not before.
+  let accountId = record?.cloudflare?.accountId;
+  await runStep(
+    frame,
+    'Find your Cloudflare account',
+    'Looks up the Cloudflare account attached to your sign-in, asking which one to use if your ' +
+      'sign-in has more than one.',
+    async () => {
+      const result = await ensureAccountId({ record, dir, yes: flags.yes, prompt: select, log });
+      accountId = result.accountId;
+      if (result.learned) {
+        await updateSite(siteId, { cloudflare: { accountId } });
+      }
+    },
+  );
+
   if (!resumingAtDeployed) {
     await runStep(frame, 'Build your site', `Runs npm run build in ${dir}.`, () =>
       buildSite({ dir, log }),
@@ -204,10 +227,10 @@ export async function runCloudflareChapter({
       "Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies both databases' migrations, " +
         'then deploys again so the running site carries its own real origin.',
       async () => {
-        const first = await deployWorker({ dir, log });
+        const first = await deployWorker({ dir, log, accountId });
         await writePublicOrigin(dir, first.url);
-        await applyMigrations({ dir, log });
-        const second = await deployWorker({ dir, log });
+        await applyMigrations({ dir, log, accountId });
+        const second = await deployWorker({ dir, log, accountId });
         if (second.url !== first.url) {
           throw new Error(
             `The redeploy came back with a different URL (${second.url}) than the first deploy ` +
@@ -225,7 +248,7 @@ export async function runCloudflareChapter({
     frame,
     "Protect your site's App key",
     "Moves the GitHub App's private key from local state into a Worker secret.",
-    () => movePemToWorkerSecret({ siteId, dir, log }),
+    () => movePemToWorkerSecret({ siteId, dir, log, accountId }),
   );
 
   await runStep(
@@ -234,7 +257,7 @@ export async function runCloudflareChapter({
     'Writes your owner row and a ten-minute sign-in link straight into the deployed database, ' +
       'then opens it.',
     async () => {
-      const { confirmPath } = await seedOwnerAndToken({ dir, email: ownerEmail, log });
+      const { confirmPath } = await seedOwnerAndToken({ dir, email: ownerEmail, log, accountId });
       await openBrowser(`${deployUrl}${confirmPath}`, log, { secret: true });
       log(SIGN_IN_OPENED_NOTICE);
       await updateSite(siteId, { step: 'live' });

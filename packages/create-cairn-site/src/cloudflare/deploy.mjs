@@ -141,11 +141,18 @@ function findWorkersDevOrigin(strippedStdout) {
  * @param {object} args
  * @param {string} args.dir the scaffold root
  * @param {(line: string) => void} args.log receives progress lines
+ * @param {string} [args.accountId] the Cloudflare account to deploy to, from `ensureAccountId`;
+ *  when given, it is passed to wrangler as `CLOUDFLARE_ACCOUNT_ID` so a multi-account session
+ *  never falls back to whatever account wrangler defaults to
  * @returns {Promise<{ url: string }>} the deployed site's workers.dev origin
  */
-export async function deployWorker({ dir, log }) {
+export async function deployWorker({ dir, log, accountId }) {
   log('Deploying to Cloudflare; this can take a few minutes.');
-  const result = await runWrangler(['deploy'], { cwd: dir, log });
+  const result = await runWrangler(['deploy'], {
+    cwd: dir,
+    log,
+    ...(accountId ? { env: { CLOUDFLARE_ACCOUNT_ID: accountId } } : {}),
+  });
 
   if (result.code !== 0) {
     if (
@@ -178,14 +185,17 @@ const MIGRATION_DATABASES = ['AUTH_DB', 'APP_DB'];
  * @param {object} args
  * @param {string} args.dir the scaffold root
  * @param {(line: string) => void} args.log receives progress lines
+ * @param {string} [args.accountId] the Cloudflare account to migrate against, from
+ *  `ensureAccountId`; when given, it is passed to wrangler as `CLOUDFLARE_ACCOUNT_ID`
  * @returns {Promise<void>}
  */
-export async function applyMigrations({ dir, log }) {
+export async function applyMigrations({ dir, log, accountId }) {
   for (const database of MIGRATION_DATABASES) {
     log(`Applying database migrations to ${database}.`);
     const result = await runWrangler(['d1', 'migrations', 'apply', database, '--remote'], {
       cwd: dir,
-      log
+      log,
+      ...(accountId ? { env: { CLOUDFLARE_ACCOUNT_ID: accountId } } : {}),
     });
     if (result.code !== 0) {
       throw cloudflareError('migrations-failed', {

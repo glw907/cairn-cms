@@ -80,10 +80,12 @@ function parseD1JsonResults(stdout) {
  * @param {(line: string) => void} args.log receives progress lines
  * @param {number} [args.now] the current time in epoch milliseconds, injectable for tests;
  *  defaults to `Date.now()`
+ * @param {string} [args.accountId] the Cloudflare account the deployed database lives in, from
+ *  `ensureAccountId`; when given, it is passed to wrangler as `CLOUDFLARE_ACCOUNT_ID`
  * @returns {Promise<{ confirmPath: string }>} the site-relative confirm URL carrying the raw
  *  token; the token exists only in this returned string and is never written to disk or state
  */
-export async function seedOwnerAndToken({ dir, email, log, now = Date.now() }) {
+export async function seedOwnerAndToken({ dir, email, log, now = Date.now(), accountId }) {
   const normalizedEmail = normalizeEmail(email);
   const displayName = normalizedEmail.slice(0, normalizedEmail.indexOf('@'));
   const escapedEmail = escapeSqlString(normalizedEmail);
@@ -111,7 +113,11 @@ export async function seedOwnerAndToken({ dir, email, log, now = Date.now() }) {
   // the admin. A no-op log keeps all three raw result objects out of the terminal.
   const result = await runWrangler(
     ['d1', 'execute', 'AUTH_DB', '--remote', '--command', sql, '--json'],
-    { cwd: dir, log: () => {} },
+    {
+      cwd: dir,
+      log: () => {},
+      ...(accountId ? { env: { CLOUDFLARE_ACCOUNT_ID: accountId } } : {}),
+    },
   );
   if (result.code !== 0) {
     throw cloudflareError('seed-failed', { dir, detail: trailingStderr(result.stderr) });

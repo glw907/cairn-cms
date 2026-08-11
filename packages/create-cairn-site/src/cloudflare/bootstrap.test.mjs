@@ -139,6 +139,50 @@ test('an email with a quote is escaped by doubling and does not break the SQL', 
   assert.doesNotMatch(sql, /[^']o'brien/);
 });
 
+test('passes accountId through as CLOUDFLARE_ACCOUNT_ID', async (t) => {
+  const scaffoldDir = tmpdir();
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  await fake.respond('d1 execute', { code: 0, stdout: EMPTY_ALLOWLIST_STDOUT });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const { seedOwnerAndToken } = await import('./bootstrap.mjs');
+  await seedOwnerAndToken({
+    dir: scaffoldDir,
+    email: 'owner@example.com',
+    log: () => {},
+    now: 9000,
+    accountId: 'planted-account-id',
+  });
+
+  const [invocation] = await fake.invocations();
+  assert.equal(invocation.env.CLOUDFLARE_ACCOUNT_ID, 'planted-account-id');
+});
+
+test('called with no accountId shows no CLOUDFLARE_ACCOUNT_ID in the recorded env', async (t) => {
+  const scaffoldDir = tmpdir();
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  await fake.respond('d1 execute', { code: 0, stdout: EMPTY_ALLOWLIST_STDOUT });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  // Guarded against the operator's own shell, the same way exec.test.mjs's env-absence test is.
+  const ambient = process.env.CLOUDFLARE_ACCOUNT_ID;
+  delete process.env.CLOUDFLARE_ACCOUNT_ID;
+  t.after(() => {
+    if (ambient === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    else process.env.CLOUDFLARE_ACCOUNT_ID = ambient;
+  });
+
+  const { seedOwnerAndToken } = await import('./bootstrap.mjs');
+  await seedOwnerAndToken({ dir: scaffoldDir, email: 'owner@example.com', log: () => {}, now: 9500 });
+
+  const [invocation] = await fake.invocations();
+  assert.equal(invocation.env.CLOUDFLARE_ACCOUNT_ID, undefined);
+});
+
 test('a failing execute rejects with the seed-failed catalogue error', async (t) => {
   const scaffoldDir = tmpdir();
   const fake = await makeFakeBin('wrangler');

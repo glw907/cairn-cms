@@ -72,9 +72,12 @@ async function seedPushedSite(siteId, dir, overrides = {}) {
 }
 
 /**
- * Arm the whoami reply every happy-path test needs: a zero exit whose stdout carries the
+ * Arm the whoami replies every happy-path test needs: a zero exit whose stdout carries the
  * "you are logged in" sentence ensureLogin looks for, so the chapter never tries `wrangler
- * login` (which would need a real browser trip).
+ * login` (which would need a real browser trip), and a `whoami --json` reply carrying exactly
+ * one account, so ensureAccountId resolves without ever needing the injected prompt.
+ * `fake.respond` unshifts, so arming the more specific `whoami --json` matcher second makes it
+ * win over the plain `whoami` matcher for a call whose argv actually carries `--json`.
  * @param {import('../../test/fake-bin.mjs').FakeBin} fake the fake wrangler bin
  * @returns {Promise<void>}
  */
@@ -82,6 +85,26 @@ async function armLoggedIn(fake) {
   await fake.respond('whoami', {
     code: 0,
     stdout: 'You are logged in with an API Token, associated with the email test@example.com\n',
+  });
+  await armSingleAccount(fake);
+}
+
+/**
+ * Arm the `whoami --json` reply ensureAccountId needs on its own: a zero exit whose stdout
+ * carries exactly one account, so the account step resolves without ever needing the injected
+ * prompt. `armLoggedIn` calls this too; a test that wants only the account resolution (and
+ * relies on the fake's own unarmed default for the plain `whoami`/`login` calls) can call this
+ * alone.
+ * @param {import('../../test/fake-bin.mjs').FakeBin} fake the fake wrangler bin
+ * @returns {Promise<void>}
+ */
+async function armSingleAccount(fake) {
+  await fake.respond('whoami --json', {
+    code: 0,
+    stdout: JSON.stringify({
+      loggedIn: true,
+      accounts: [{ id: 'test-account-id', name: 'Test Account' }],
+    }),
   });
 }
 
@@ -164,7 +187,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 const counterPath = ${JSON.stringify(counterPath)};
 const urls = ${JSON.stringify(urls)};
 const argv = process.argv.slice(2);
-if (argv[0] === 'whoami') {
+if (argv[0] === 'whoami' && argv[1] === '--json') {
+  process.stdout.write(JSON.stringify({
+    loggedIn: true,
+    accounts: [{ id: 'test-account-id', name: 'Test Account' }],
+  }));
+} else if (argv[0] === 'whoami') {
   process.stdout.write('You are logged in with an API Token\\n');
 } else if (argv[0] === 'deploy') {
   const n = parseInt(await readFile(counterPath, 'utf8'), 10);
@@ -221,6 +249,7 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
   assert.equal(state.step, 'live');
   assert.equal(state.cloudflare.url, 'https://alpine-club.glw907.workers.dev');
   assert.equal(state.cloudflare.workerName, 'alpine-club');
+  assert.equal(state.cloudflare.accountId, 'test-account-id', 'a learned account id must be persisted');
   assert.equal(state.ownerEmail, 'T3@Example.com');
   assert.equal('pem' in state.github, false, 'the pem must be gone once the key move succeeds');
   assert.equal(state.github.appId, 42, 'sibling github fields must survive the key move');
@@ -233,6 +262,7 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
   assert.deepEqual(shapes, [
     'install',
     'whoami',
+    'whoami --json',
     'run build',
     'deploy',
     'd1 migrations',
@@ -246,18 +276,33 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
     [
       ['install'],
       ['whoami'],
+      ['whoami', '--json'],
       ['run', 'build'],
       ['deploy'],
       ['d1', 'migrations', 'apply', 'AUTH_DB', '--remote'],
       ['d1', 'migrations', 'apply', 'APP_DB', '--remote'],
       ['deploy'],
       ['secret', 'put', 'GITHUB_APP_PRIVATE_KEY_B64'],
-      invocations[8].argv,
+      invocations[9].argv,
     ],
   );
-  assert.deepEqual(invocations[8].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
-  assert.equal(invocations[8].argv[4], '--command');
-  assert.match(invocations[8].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
+  assert.deepEqual(invocations[9].argv.slice(0, 4), ['d1', 'execute', 'AUTH_DB', '--remote']);
+  assert.equal(invocations[9].argv[4], '--command');
+  assert.match(invocations[9].argv[5], /'t3@example\.com'/, 'the seeded SQL must carry the lowercased email');
+
+  // Every wrangler call made after the account was resolved must carry it as
+  // CLOUDFLARE_ACCOUNT_ID: both deploys, both migrations, the secret put, and the seed. install
+  // and run build are npm, not wrangler, and the two whoami calls resolve the account rather
+  // than needing it, so all four are exempt.
+  const ACCOUNT_EXEMPT_SHAPES = new Set(['install', 'run build', 'whoami', 'whoami --json']);
+  const accountScoped = invocations.filter(
+    (i) => !ACCOUNT_EXEMPT_SHAPES.has(i.argv.slice(0, 2).join(' ')),
+  );
+  assert.equal(accountScoped.length, 6, 'expected six account-scoped wrangler calls');
+  assert.ok(
+    accountScoped.every((i) => i.env.CLOUDFLARE_ACCOUNT_ID === 'test-account-id'),
+    'expected every account-scoped wrangler call to carry the resolved account id',
+  );
 
   const installIndex = invocations.findIndex((i) => i.argv[0] === 'install');
   const firstWranglerIndex = invocations.findIndex((i) => i.argv[0] !== 'install' && i.argv[0] !== 'run');
@@ -415,6 +460,7 @@ test('runCloudflareChapter: a dry run makes zero fake-bin invocations and prints
   assert.deepEqual(await fake.invocations(), []);
   assert.ok(logs.some((line) => line.includes("Install your site's dependencies")));
   assert.ok(logs.some((line) => line.includes('Sign in to Cloudflare')));
+  assert.ok(logs.some((line) => line.includes('Find your Cloudflare account')));
   assert.ok(logs.some((line) => line.includes('Build your site')));
   assert.ok(logs.some((line) => line.includes('Deploy to workers.dev')));
   assert.ok(logs.some((line) => line.includes("Protect your site's App key")));
@@ -576,9 +622,14 @@ test('runCloudflareChapter: a record at deployed skips consent and the deploy gr
     'expected zero migrations invocations',
   );
   assert.equal(
-    invocations.filter((i) => i.argv[0] === 'whoami').length,
+    invocations.filter((i) => i.argv.length === 1 && i.argv[0] === 'whoami').length,
     1,
     'expected the login check to actually invoke wrangler whoami',
+  );
+  assert.equal(
+    invocations.filter((i) => i.argv.slice(0, 2).join(' ') === 'whoami --json').length,
+    1,
+    'expected the account step to actually invoke wrangler whoami --json',
   );
   assert.equal(
     invocations.filter((i) => i.argv.slice(0, 2).join(' ') === 'd1 execute').length,
@@ -587,8 +638,8 @@ test('runCloudflareChapter: a record at deployed skips consent and the deploy gr
   );
   assert.equal(
     invocations.length,
-    2,
-    'the key move must still no-op with no wrangler call, leaving only whoami and the seed',
+    3,
+    'the key move must still no-op with no wrangler call, leaving only the two whoami calls and the seed',
   );
 
   const state = await loadSite('alpine-club-deployed');
@@ -615,6 +666,7 @@ test('runCloudflareChapter: a deployed resume opens the record\'s real url, not 
 
   const fake = await makeFakeBin('cloudflare-tools-resume-deployed-url');
   t.after(() => fake.close());
+  await armSingleAccount(fake);
   await armSeedSuccess(fake);
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   process.env.CAIRN_NPM_BIN = fake.binPath;
@@ -670,6 +722,7 @@ test('runCloudflareChapter: a deployed resume validates and persists an --owner-
 
   const fake = await makeFakeBin('cloudflare-tools-deployed-override');
   t.after(() => fake.close());
+  await armSingleAccount(fake);
   await armSeedSuccess(fake);
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   process.env.CAIRN_NPM_BIN = fake.binPath;
@@ -774,4 +827,73 @@ test('runCloudflareChapter: a pushed re-entry with a saved ownerEmail prompts no
   });
 
   assert.equal(outcome, 'live');
+});
+
+test('runCloudflareChapter: a multi-account session with no saved accountId prompts through the injected select seam', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedPushedSite('alpine-club-multi-account', dir, { ownerEmail: 'owner@example.com' });
+
+  const fake = await makeFakeBin('cloudflare-tools-multi-account');
+  t.after(() => fake.close());
+  // Arm the plain 'whoami' matcher first, then the more specific 'whoami --json' one: respond
+  // unshifts, so the later, more specific matcher is checked first and wins for the --json call,
+  // the same ordering armLoggedIn relies on.
+  await fake.respond('whoami', {
+    code: 0,
+    stdout: 'You are logged in with an API Token, associated with the email test@example.com\n',
+  });
+  await fake.respond('whoami --json', {
+    code: 0,
+    stdout: JSON.stringify({
+      loggedIn: true,
+      accounts: [
+        { id: 'account-one', name: 'First Account' },
+        { id: 'account-two', name: 'Second Account' },
+      ],
+    }),
+  });
+  await armSeedSuccess(fake);
+  await fake.respond('deploy', {
+    code: 0,
+    stdout: 'Deployed thing triggers (0.1 sec)\n  https://alpine-club.glw907.workers.dev\n',
+  });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  process.env.CAIRN_NPM_BIN = fake.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  let selectCalls = 0;
+  const select = async (options) => {
+    selectCalls += 1;
+    assert.deepEqual(options.options, [
+      { value: 'account-one', label: 'First Account' },
+      { value: 'account-two', label: 'Second Account' },
+    ]);
+    return 'account-two';
+  };
+
+  const outcome = await runCloudflareChapter({
+    siteId: 'alpine-club-multi-account',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: false, deploy: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser: async () => {},
+    confirm: async () => true,
+    select,
+  });
+
+  assert.equal(outcome, 'live');
+  assert.equal(selectCalls, 1, 'expected the select seam to be called exactly once');
+
+  const state = await loadSite('alpine-club-multi-account');
+  assert.equal(state.cloudflare.accountId, 'account-two');
+
+  const invocations = await fake.invocations();
+  const deployInvocation = invocations.find((i) => i.argv[0] === 'deploy');
+  assert.equal(deployInvocation.env.CLOUDFLARE_ACCOUNT_ID, 'account-two');
 });

@@ -244,6 +244,87 @@ test('applyMigrations invokes both databases in order, by binding name', async (
   ]);
 });
 
+test('deployWorker passes accountId through as CLOUDFLARE_ACCOUNT_ID', async (t) => {
+  const dir = tmpdir();
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  await fake.respond('deploy', { code: 0, stdout: DEPLOY_STDOUT_SAMPLE });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const { deployWorker } = await import('./deploy.mjs');
+  await deployWorker({ dir, log: () => {}, accountId: 'planted-account-id' });
+
+  const [invocation] = await fake.invocations();
+  assert.equal(invocation.env.CLOUDFLARE_ACCOUNT_ID, 'planted-account-id');
+});
+
+test('deployWorker called with no accountId shows no CLOUDFLARE_ACCOUNT_ID in the recorded env', async (t) => {
+  const dir = tmpdir();
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  await fake.respond('deploy', { code: 0, stdout: DEPLOY_STDOUT_SAMPLE });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  // Guarded against the operator's own shell, the same way exec.test.mjs's env-absence test is:
+  // a developer working on Cloudflare plausibly has CLOUDFLARE_ACCOUNT_ID exported already, and
+  // the child inherits the parent environment whenever no env option is passed to spawn.
+  const ambient = process.env.CLOUDFLARE_ACCOUNT_ID;
+  delete process.env.CLOUDFLARE_ACCOUNT_ID;
+  t.after(() => {
+    if (ambient === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    else process.env.CLOUDFLARE_ACCOUNT_ID = ambient;
+  });
+
+  const { deployWorker } = await import('./deploy.mjs');
+  await deployWorker({ dir, log: () => {} });
+
+  const [invocation] = await fake.invocations();
+  assert.equal(invocation.env.CLOUDFLARE_ACCOUNT_ID, undefined);
+});
+
+test('applyMigrations passes accountId through as CLOUDFLARE_ACCOUNT_ID on both databases', async (t) => {
+  const dir = tmpdir();
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const { applyMigrations } = await import('./deploy.mjs');
+  await applyMigrations({ dir, log: () => {}, accountId: 'planted-account-id' });
+
+  const invocations = await fake.invocations();
+  assert.deepEqual(
+    invocations.map((i) => i.env.CLOUDFLARE_ACCOUNT_ID),
+    ['planted-account-id', 'planted-account-id'],
+  );
+});
+
+test('applyMigrations called with no accountId shows no CLOUDFLARE_ACCOUNT_ID in the recorded env', async (t) => {
+  const dir = tmpdir();
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const ambient = process.env.CLOUDFLARE_ACCOUNT_ID;
+  delete process.env.CLOUDFLARE_ACCOUNT_ID;
+  t.after(() => {
+    if (ambient === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    else process.env.CLOUDFLARE_ACCOUNT_ID = ambient;
+  });
+
+  const { applyMigrations } = await import('./deploy.mjs');
+  await applyMigrations({ dir, log: () => {} });
+
+  const invocations = await fake.invocations();
+  assert.deepEqual(
+    invocations.map((i) => i.env.CLOUDFLARE_ACCOUNT_ID),
+    [undefined, undefined],
+  );
+});
+
 test('applyMigrations names the failing database in migrations-failed', async (t) => {
   const dir = tmpdir();
   const fake = await makeFakeBin('wrangler');

@@ -5,9 +5,12 @@ against a stale one. Every claim below carries the date it was observed and the 
 observed from. Response bodies the chapter will consume are captured verbatim in the appendix,
 and Task 3's fixtures are copied from there, never written from memory.
 
-**Status: partially blocked.** Steps 1, 3, and 5 are answered. Steps 2 and 4 need a credential
-and a domain this workstation does not have, both named under "The blocked half" below. Every
-task the answered steps gate is cleared for dispatch; the tasks the blocked steps gate are not.
+**Status: mostly answered, one thin blocked seam.** Steps 1, 3, and 5 are answered outright.
+Steps 2 and 4 are answered on mechanism and shape by reading existing estate resources, which is
+what a `GET` can prove without the ability to create anything; what remains blocked is narrow and
+listed under "The blocked half" below. Eight amendments to the plan follow from the findings, and
+two of them (the Custom Domain correction and the wrong-scope error code) would have shipped a
+defect had the tasks been dispatched against the plan as written.
 
 ## Step 1: account enumeration before any token (ANSWERED)
 
@@ -70,10 +73,39 @@ rather than ignored:
 **Gate for Tasks 2 and 6: cleared**, with one correction to Task 6 (read `whoami --json`, parse
 from the first brace; do not parse the table).
 
-## Step 2: zone creation (PARTIALLY ANSWERED, two bodies blocked)
+## Step 2: zone creation (MOSTLY ANSWERED, one body blocked)
 
-The success body and the 1061 zone-already-exists body are blocked (see below). Two error
-bodies were captured, and one of them corrects the plan.
+The 1061 zone-already-exists body is blocked (see below). Two error bodies were captured, one of
+which corrects the plan, and **the zone object itself was captured verbatim from a `GET`**, which
+is the same object `POST /zones` returns under `result`. That retires most of this step's
+blockage: Task 3's fixtures can be copied from a real zone object rather than written from memory.
+
+**The zone object, captured from `GET /zones?per_page=2&page=1` on 2026-08-11** (full body in the
+appendix). The fields the chapter reads:
+
+- `name_servers`: the assigned pair, `["burt.ns.cloudflare.com", "carlane.ns.cloudflare.com"]`.
+- `original_name_servers`: the pre-delegation pair, here four `cloudns.net` servers. The
+  delegation check can compare the live lookup against BOTH lists, which distinguishes "still at
+  the registrar" from "wrong Cloudflare pair" without guessing.
+- `original_registrar`: `"pdr ltd. d/b/a publicdomainreg (id: 303)"`. **This is a finding the plan
+  did not anticipate: Cloudflare tells the tool who the registrar is**, so
+  `registrarInstructions` can key off the zone object rather than asking the admin to name their
+  registrar. The value is a free-text vendor string with an id suffix, so the table matches on a
+  normalized substring, and the generic fallback stays for anything unmatched.
+- `status`: `"active"` here. The `pending` and `initializing` values in the plan come from the
+  vendor's own docs and were not observed live, since every zone on this account is long since
+  active.
+- `plan.name`: `"Free Website"`, which is the evidence for the chapter's "this costs nothing"
+  admission copy.
+- `permissions`: an in-band list of what the calling token may do on that zone
+  (`"#dns_records:edit"` and friends). Useful as a cheap scope check after the paste, though it
+  cannot speak to account-level zone creation.
+
+Pagination on the list route, captured from the same call:
+
+```json
+{ "page": 1, "per_page": 2, "total_pages": 5, "count": 2, "total_count": 9 }
+```
 
 **The wrong-scope refusal is NOT 403/9109, which is what the plan assumed.** Attempting
 `POST /zones` with the estate token returned HTTP 403 with `errors[0].code` of **0** and a
@@ -159,6 +191,62 @@ list may show more than the admin created.
 
 **Gate for Task 8: cleared**, with the CAA translation and the wildcard caveat added.
 
+## Step 4: routes and the cutover (MECHANISM ANSWERED, call bodies blocked)
+
+**The plan's premise is wrong, and the family's own production sites are the evidence.** The plan
+says the cutover creates a Workers **Route**. Every cairn site in production is attached by a
+Workers **Custom Domain** instead. Captured live from
+`GET /accounts/:id/workers/domains` on 2026-08-11:
+
+| hostname | service | zone |
+|---|---|---|
+| `907.life` | `907-life` | `907.life` |
+| `ecxc.ski` | `ecxc` | `ecxc.ski` |
+| `cairn.pub` | `cairn-pub` | `cairn.pub` |
+| `dev.aksailingclub.org` | `asc-site` | `aksailingclub.org` |
+| `staging.aksailingclub.org` | `asc-staging` | `aksailingclub.org` |
+
+The object's keys: `id`, `zone_id`, `zone_name`, `hostname`, `service`, `environment`, `cert_id`,
+`previews_enabled`, `enabled`.
+
+The distinction matters because a plain Workers Route does not make a hostname resolve. A route is
+a pattern match applied to traffic that already arrives at Cloudflare, so a route alone, with no
+DNS record for the hostname, resolves to nothing and the cutover's confirm can never pass. The
+plan's ordered flow (create the route, then confirm the deployment answers on the new hostname)
+cannot work as written. A Custom Domain is the mechanism that matches the intent: per Cloudflare's
+docs, "after you set up a Custom Domain for your Worker, Cloudflare will create DNS records and
+issue necessary certificates on your behalf," which is exactly the missing half. The `cert_id` on
+each row above is that certificate.
+
+**Task 9 re-plans onto Custom Domains.** Two implementations are available and the choice is a
+real design call:
+
+1. **Through wrangler**, by writing `routes: [{ pattern: <domain>, custom_domain: true }]` into
+   `wrangler.jsonc` and deploying. One mechanism, already spawned by this tool, no new token
+   scope. Costs a second deploy, since attaching requires a deploy and the origin rewrite requires
+   another.
+2. **Through the API**, `PUT /accounts/:id/workers/domains`. Preserves the spec's ordering exactly
+   (attach, confirm, write origin, redeploy once) at the cost of a token scope.
+
+**Recommendation: the API.** It keeps the spec's rollback-safe ordering intact, which is the whole
+point of that ordering, and one redeploy is the honest cost of the cutover.
+
+**The credential split is settled, and it is cleaner than the plan assumed.** The wrangler OAuth
+session's granted scopes, read from this workstation's own session file, include
+`workers_routes:write`, `zone:read`, `ssl_certs:write`, and `workers:write`, but **not** zone
+creation and **not** DNS writes. So the pasted token carries exactly what the session lacks: zone
+creation and DNS editing. Whether the Custom Domain attach also needs a scope on the pasted token
+(rather than riding the session) is the one open question, and it is blocked.
+
+**What a hostname with no Worker serves, observed partially.** `mail.aksailingclub.org` is proxied
+and answers HTTP 200; `autodiscover.aksailingclub.org` answers 200 with a SiteGround
+"default server vhost" page. Neither is a Cloudflare error page, because both proxy to a real
+origin, so these do not answer the exact question. They do establish the load-bearing point for
+the confirm: **a 200 is not evidence the site is serving.** The marker pair the plan specifies
+(`/` 200 AND `/admin` 303 to `/admin/login`) is necessary, and a status-only check would pass on
+either hostname above. The clean observation, a proxied hostname on a zone with no matching Worker
+at all, needs the scratch domain.
+
 ## Step 5: the prefill URL (FORMAT ANSWERED, contents pending Step 4)
 
 The template-URL format is documented by Cloudflare, so the tool links the vendor rather than
@@ -186,9 +274,10 @@ scope set is expressible in it.
 
 ## The blocked half, and what unblocks it
 
-Steps 2 (the success and 1061 bodies) and 4 (routes, and what a proxied hostname with no matching
-route serves) cannot be observed from this workstation. Two things are missing, and neither is
-recoverable without Geoff:
+What remains unobservable from this workstation is the set of calls that CREATE something: a
+zone's birth state, the duplicate-zone error, and the Custom Domain attach. Reading the estate
+answered every shape question; only the write paths are left. Two things are missing, and neither
+is recoverable without Geoff:
 
 1. **A token that can create zones.** The estate token deliberately cannot. The canonical scope
    record (`~/.claude/docs/cloudflare-estate-inventory.md`) lists zone read, Zone.DNS Edit, and
@@ -201,9 +290,27 @@ recoverable without Geoff:
    are untouchable by the plan's own global constraint. **This is a correction to the plan, which
    named the scratch domain as a Task 13 prerequisite only: it is a Task 1 prerequisite too.**
 
-Both collapse into one browser sitting: Geoff registers the scratch domain, then opens a prefilled
-create-token URL (which validates Step 5's format in the same trip) and pastes back a token scoped
-to create zones and edit DNS on that account.
+Both collapse into one browser sitting: Geoff registers the scratch domain, then opens the
+prefilled create-token URL below (which validates Step 5's format in the same trip) and pastes
+back a token scoped to create zones and edit DNS on that account.
+
+**The spike's token URL, deliberately broader than the shipped one will be.** It asks for `zone`,
+`dns`, `workers_scripts`, and `ssl_certs` at edit, because the point of the remaining spike work
+is to discover which of those the chapter actually needs. The shipped prefill URL carries only the
+proven minimum, and this spike token is deleted afterward.
+
+```
+https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22zone%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22dns%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22ssl_certs%22%2C%22type%22%3A%22edit%22%7D%5D&accountId=%2A&zoneId=all&name=cairn+T4a+spike+%28delete+after%29
+```
+
+Opening that URL is itself the first observation Step 5 needs: whether the dashboard honors the
+prefill, and which fields the admin still has to click. Record what it shows.
+
+**Where the token goes when it comes back.** Per the workstation's secrets rule, a new long-lived
+secret originates in the age store, never a loose file. This one is deliberately short-lived (it
+exists to answer three questions and is then deleted), so it should be handed over in the session
+rather than installed, and revoked at the dashboard as soon as the spike's remaining steps are
+captured.
 
 ## Amendments this spike makes to the plan
 
@@ -222,6 +329,18 @@ to create zones and edit DNS on that account.
    gains the wildcard caveat alongside ruling 4's incompleteness caveat.
 5. **Task 1's prerequisites** include the scratch domain and a zone-create-capable token, not just
    Task 13's.
+6. **Task 9 attaches a Workers Custom Domain, not a Workers Route** (Step 4). A route alone does
+   not make a hostname resolve, so the plan's ordered flow could not have worked as written. The
+   recommended implementation is `PUT /accounts/:id/workers/domains`, which preserves the spec's
+   rollback-safe ordering with a single redeploy. The catalogue rows rename with it:
+   `route-create-failed` becomes `custom-domain-failed`, and `route-not-serving` keeps its meaning
+   but should be worded about the hostname rather than the route.
+7. **Task 8's registrar instructions read `original_registrar` off the zone object** rather than
+   asking the admin who their registrar is (Step 2). The value is free text with an id suffix, so
+   the table matches a normalized substring and the generic fallback stays.
+8. **The delegation check compares against `original_name_servers` as well as `name_servers`**
+   (Step 2), which distinguishes "still at the registrar" from "some other Cloudflare pair" from
+   evidence rather than inference.
 
 ## Appendix: captured bodies
 
@@ -295,12 +414,105 @@ Recorded in Step 3 above: MX with `priority` and `type`, TXT as `string[][]` wit
 `[255, 155]` chunked DKIM value, CAA as `{ critical, type, issue }`, and `ENODATA` for every
 absent record.
 
+### The zone object (HTTP 200), from `GET /zones?per_page=2&page=1`
+
+This is the same object `POST /zones` returns under `result`, and it is what Task 3's zone
+fixtures copy from.
+
+```json
+{
+  "id": "a7c2b9103ec7d835d72f356489072e5b",
+  "name": "907.life",
+  "status": "active",
+  "paused": false,
+  "type": "full",
+  "development_mode": 0,
+  "name_servers": ["burt.ns.cloudflare.com", "carlane.ns.cloudflare.com"],
+  "original_name_servers": ["ns41.cloudns.net", "ns42.cloudns.net", "ns43.cloudns.net", "ns44.cloudns.net"],
+  "original_registrar": "pdr ltd. d/b/a publicdomainreg (id: 303)",
+  "original_dnshost": null,
+  "modified_on": "2026-02-04T23:00:31.318867Z",
+  "created_on": "2026-01-30T07:32:40.063286Z",
+  "activated_on": "2026-01-31T16:41:53.359542Z",
+  "vanity_name_servers": [],
+  "vanity_name_servers_ips": null,
+  "meta": { "step": 2, "custom_certificate_quota": 0, "page_rule_quota": 3, "phishing_detected": false },
+  "owner": { "id": null, "type": "user", "email": null },
+  "account": { "id": "120c269ad6d3dfbe6d63a0bb53758ca0", "name": "glw907" },
+  "tenant": { "id": null, "name": null },
+  "tenant_unit": { "id": null },
+  "permissions": ["#zone:read", "#zone_settings:read", "#worker:edit", "#worker:read", "#dns_records:edit", "#dns_records:read"],
+  "plan": {
+    "id": "0feeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "name": "Free Website", "price": 0, "currency": "USD", "frequency": "",
+    "is_subscribed": false, "can_subscribe": false,
+    "legacy_id": "free", "legacy_discount": false, "externally_managed": false
+  }
+}
+```
+
+With `result_info`:
+
+```json
+{ "page": 1, "per_page": 2, "total_pages": 5, "count": 2, "total_count": 9 }
+```
+
+### A Workers Custom Domain (HTTP 200), from `GET /accounts/:id/workers/domains`
+
+```json
+{
+  "id": "c377079217e7e9ca15d3ec295b6d8cef9e7e2b56",
+  "zone_id": "a7c2b9103ec7d835d72f356489072e5b",
+  "zone_name": "907.life",
+  "hostname": "907.life",
+  "service": "907-life",
+  "environment": "production",
+  "cert_id": "6dcb2140-79a8-4295-8b23-f8e743556577",
+  "previews_enabled": false,
+  "enabled": true
+}
+```
+
+### A DNS record (HTTP 200), from `GET /zones/:id/dns_records?per_page=3`
+
+```json
+{
+  "id": "b06a10399a71d15a4a5e1bc884493277",
+  "name": "fm1._domainkey.907.life",
+  "type": "CNAME",
+  "content": "fm1.907.life.dkim.fmhosted.com",
+  "proxiable": true,
+  "proxied": false,
+  "ttl": 1,
+  "settings": { "flatten_cname": false },
+  "meta": {},
+  "comment": null,
+  "tags": [],
+  "created_on": "2026-01-30T07:32:48.595511Z",
+  "modified_on": "2026-02-04T17:29:51.308199Z"
+}
+```
+
+With `result_info`:
+
+```json
+{ "page": 1, "per_page": 3, "count": 3, "total_count": 16, "total_pages": 6 }
+```
+
+Two notes the carry-over depends on. `ttl: 1` is Cloudflare's "automatic", which is the value to
+write for a carried record unless the source had an explicit TTL. And this record is a **DKIM
+selector published as a CNAME**, not a TXT: Fastmail delegates DKIM that way where Google
+publishes a TXT. The probe list must therefore query both TXT and CNAME for every selector, which
+the spike's own probe script did and which Task 8 must keep.
+
 ### Pending capture (blocked)
 
-- `POST /zones` success body: `name_servers`, `original_name_servers`, `status` vocabulary
-  including `initializing`, `account.id`, `type`.
+- `POST /zones` success body. **Mostly retired**: the `result` object's shape is captured above
+  from a `GET`. What is still unobserved is the `status` value a brand-new zone carries
+  (`pending` or `initializing`) and whether `name_servers` is populated at creation or only after
+  activation. Task 8's delegation check depends on the second of those.
 - `POST /zones` for a name the account already holds (the 1061 body), and specifically whether
   1061 distinguishes same-account ownership from foreign-account ownership. If it does not,
   Task 8's adopt-versus-error branch re-plans onto a zone-list lookup.
-- The route-creation call, its duplicate-route error, and what a proxied hostname with no
-  matching route serves.
+- The Custom Domain attach call (`PUT /accounts/:id/workers/domains`), its duplicate error, which
+  credential covers it, and what a proxied hostname with no matching Worker serves.

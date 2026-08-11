@@ -400,7 +400,9 @@ seed-failed:
     a few minutes.") and `runNpm(['install'])`. Failure → `install-failed`.
   - `buildSite({ dir, log })` — heartbeat, `runNpm(['run', 'build'])`. Failure →
     `build-failed`.
-  - `ensureLogin({ dir, log, openBrowser }) -> Promise<void>` — `runWrangler(['whoami'])`;
+  - `ensureLogin({ dir, log }) -> Promise<void>` **[built]** (the brief listed an `openBrowser`
+    param that contradicted its own prose two lines down; wrangler owns this browser trip, so
+    the tool passes no opener and Task 10 must not wire one) — `runWrangler(['whoami'])`;
     a zero exit whose stdout carries an account line means logged in (also satisfied by a
     `CLOUDFLARE_API_TOKEN` env, which wrangler honors). Otherwise print the pre-open line
     ("Your browser will open Cloudflare's sign-in; approve wrangler's access") and run

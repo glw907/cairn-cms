@@ -1,9 +1,16 @@
 // A fake executable standing in for wrangler or npm in the Cloudflare chapter's tests. It logs
-// every call it receives (argv, cwd, and whatever arrived on stdin) as one JSON line to an
-// `invocations.jsonl` file beside itself, then answers from a `responses.json` control file: the
-// first entry whose `matcher` (a plain substring) appears in the joined argv supplies the exit
+// every call it receives (argv, cwd, whatever arrived on stdin, and its env) as one JSON line to
+// an `invocations.jsonl` file beside itself, then answers from a `responses.json` control file:
+// the first entry whose `matcher` (a plain substring) appears in the joined argv supplies the exit
 // code and output, and no match exits 0 with nothing printed. This is what keeps the chapter's
 // spawn-seam tests free of a real wrangler or npm process.
+//
+// The logged env is filtered to variables whose names start with `CAIRN_` or `CLOUDFLARE_`, the
+// two namespaces this tool's own env-passing seam ever sets. A test spawns the fake with its own
+// process's full environment merged in (spawn's default, or exec.mjs's own env-merge behavior),
+// so logging every variable verbatim would write whatever real secrets happen to sit in the
+// operator's shell into a fake's log file on disk. Recording only the two namespaces this tool
+// controls is enough to prove the env seam works without ever capturing anything unrelated.
 //
 // Everything lives under one fresh mkdtemp directory per fake, so parallel tests never collide,
 // and `close()` removes it. `respond` PREPENDS its new entry so a later, more specific matcher
@@ -25,6 +32,11 @@ import { join } from 'node:path';
  * @property {string[]} argv the arguments the fake was called with, excluding the binary itself
  * @property {string} cwd the child process's working directory at call time
  * @property {string} stdin everything read from stdin before the fake replied
+ * @property {Record<string, string>} env the fake's own environment, filtered to only the
+ *  variables whose names start with `CAIRN_` or `CLOUDFLARE_`; every other variable the fake
+ *  actually received (including whatever it inherited from the operator's shell) is left out of
+ *  the log on purpose, so a test asserting on this field never writes an unrelated real secret to
+ *  disk
  */
 
 /**
@@ -118,9 +130,14 @@ function readStdin() {
 }
 
 const stdin = await readStdin();
+const env = Object.fromEntries(
+  Object.entries(process.env).filter(
+    ([key]) => key.startsWith('CAIRN_') || key.startsWith('CLOUDFLARE_')
+  )
+);
 await appendFile(
   join(here, 'invocations.jsonl'),
-  JSON.stringify({ argv, cwd: process.cwd(), stdin }) + '\\n',
+  JSON.stringify({ argv, cwd: process.cwd(), stdin, env }) + '\\n',
   'utf8'
 );
 
@@ -149,8 +166,9 @@ process.exitCode = match?.code ?? 0;
 // A variant that never reads stdin at all, so the process can exit while a caller is still
 // writing (or has yet to start writing) its piped input, the shape that raises an unhandled
 // EPIPE on the write side when the caller attaches no 'error' listener of its own. Everything
-// else matches FAKE_BIN_SCRIPT: same invocation log, same matcher lookup, same reply shape;
-// the logged \`stdin\` is always \`null\`, since this fake deliberately leaves it unread.
+// else matches FAKE_BIN_SCRIPT: same invocation log (including the filtered env), same matcher
+// lookup, same reply shape; the logged \`stdin\` is always \`null\`, since this fake deliberately
+// leaves it unread.
 const FAKE_BIN_SCRIPT_EXIT_BEFORE_STDIN = `#!/usr/bin/env node
 import { appendFile, readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -159,9 +177,14 @@ import { dirname, join } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
 
+const env = Object.fromEntries(
+  Object.entries(process.env).filter(
+    ([key]) => key.startsWith('CAIRN_') || key.startsWith('CLOUDFLARE_')
+  )
+);
 await appendFile(
   join(here, 'invocations.jsonl'),
-  JSON.stringify({ argv, cwd: process.cwd(), stdin: null }) + '\\n',
+  JSON.stringify({ argv, cwd: process.cwd(), stdin: null, env }) + '\\n',
   'utf8'
 );
 

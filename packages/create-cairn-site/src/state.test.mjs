@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, stat, writeFile, chmod, rm, utimes, readdir } from 'node:fs/promises';
+import { mkdtemp, stat, writeFile, readFile, chmod, rm, utimes, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -73,8 +73,13 @@ test('updateSite creates a record when none exists yet', async (t) => {
   await freshStateDir(t);
   const { updateSite, loadSite } = await import('./state.mjs');
   const next = await updateSite('new-site', { name: 'Alpine Club', step: 'scaffolded' });
-  assert.deepEqual(next, { name: 'Alpine Club', step: 'scaffolded', github: {} });
-  assert.deepEqual(await loadSite('new-site'), { name: 'Alpine Club', step: 'scaffolded', github: {} });
+  assert.deepEqual(next, { name: 'Alpine Club', step: 'scaffolded', github: {}, cloudflare: {} });
+  assert.deepEqual(await loadSite('new-site'), {
+    name: 'Alpine Club',
+    step: 'scaffolded',
+    github: {},
+    cloudflare: {},
+  });
 });
 
 test('updateSite deep-merges github so credentials written at the first hop survive every later hop', async (t) => {
@@ -91,6 +96,128 @@ test('updateSite deep-merges github so credentials written at the first hop surv
   assert.equal(final.github.installationId, 42, 'the installation id from the second hop must survive');
   assert.deepEqual(final.github.repo, { repo: 'alpine-club' });
   assert.deepEqual(await loadSite('alpine-site'), final);
+});
+
+test('updateSite deep-merges cloudflare so a field written at one hop survives the next hop, alongside pre-existing url and workerName', async (t) => {
+  await freshStateDir(t);
+  const { saveSite, updateSite, loadSite } = await import('./state.mjs');
+  await saveSite('alpine-site', {
+    name: 'Alpine Club',
+    step: 'deployed',
+    cloudflare: { url: 'https://alpine-club.pages.dev', workerName: 'alpine-club' },
+  });
+
+  await updateSite('alpine-site', { step: 'domain-account', cloudflare: { accountId: 'a1' } });
+  const final = await updateSite('alpine-site', { step: 'domain-zone', cloudflare: { zoneId: 'z1' } });
+
+  assert.deepEqual(final.cloudflare, {
+    url: 'https://alpine-club.pages.dev',
+    workerName: 'alpine-club',
+    accountId: 'a1',
+    zoneId: 'z1',
+  });
+  assert.deepEqual(await loadSite('alpine-site'), final);
+});
+
+test('saveSite removes a key a merge could never express: rebuilding without cloudflare.apiToken and saving', async (t) => {
+  const dir = await freshStateDir(t);
+  const { saveSite, loadSite } = await import('./state.mjs');
+  const id = 'alpine-site';
+  await saveSite(id, {
+    name: 'Alpine Club',
+    cloudflare: { accountId: 'a1', apiToken: 'planted-token-value' },
+  });
+
+  const current = await loadSite(id);
+  const { apiToken, ...cloudflareWithoutToken } = current.cloudflare;
+  await saveSite(id, { ...current, cloudflare: cloudflareWithoutToken });
+
+  const reread = await loadSite(id);
+  assert.deepEqual(reread.cloudflare, { accountId: 'a1' });
+  assert.equal('apiToken' in reread.cloudflare, false);
+
+  const file = path.join(dir, `${id}.json`);
+  const raw = await readFile(file, 'utf8');
+  assert.equal(raw.includes('planted-token-value'), false);
+
+  const mode = (await stat(file)).mode & 0o777;
+  assert.equal(mode, 0o600);
+});
+
+test('retireSite scrubs a saved cloudflare.apiToken from the retired file', async (t) => {
+  const dir = await freshStateDir(t);
+  const { saveSite, retireSite } = await import('./state.mjs');
+  const id = 'alpine-site';
+  await saveSite(id, {
+    name: 'Alpine Club',
+    dir: '/tmp/alpine-club',
+    cloudflare: { accountId: 'a1', apiToken: 'planted-token-value' },
+  });
+
+  await retireSite(id);
+
+  const entries = await readdir(dir);
+  assert.ok(!entries.includes(`${id}.json`), 'the original filename must be gone');
+  const retiredName = entries.find((name) => name.startsWith(`${id}.retired-`));
+  assert.ok(retiredName, 'expected a renamed retired-*.json file');
+
+  const retiredPath = path.join(dir, retiredName);
+  const mode = (await stat(retiredPath)).mode & 0o777;
+  assert.equal(mode, 0o600);
+
+  const raw = await readFile(retiredPath, 'utf8');
+  assert.equal(raw.includes('planted-token-value'), false);
+
+  const data = JSON.parse(raw);
+  assert.equal(data.name, 'Alpine Club');
+  assert.equal(data.dir, '/tmp/alpine-club');
+  assert.equal(data.cloudflare.accountId, 'a1');
+  assert.equal('apiToken' in data.cloudflare, false);
+});
+
+test('retireSite on a record with no token: other fields survive unchanged and the file is still renamed', async (t) => {
+  const dir = await freshStateDir(t);
+  const { saveSite, retireSite } = await import('./state.mjs');
+  const id = 'alpine-site';
+  await saveSite(id, { name: 'Alpine Club', dir: '/tmp/alpine-club', step: 'deployed' });
+
+  await retireSite(id);
+
+  const entries = await readdir(dir);
+  assert.ok(!entries.includes(`${id}.json`));
+  const retiredName = entries.find((name) => name.startsWith(`${id}.retired-`));
+  assert.ok(retiredName);
+  const data = JSON.parse(await readFile(path.join(dir, retiredName), 'utf8'));
+  assert.deepEqual(data, { name: 'Alpine Club', dir: '/tmp/alpine-club', step: 'deployed' });
+});
+
+test('retireSite falls back to a plain rename when the record cannot be parsed', async (t) => {
+  const dir = await freshStateDir(t);
+  const { retireSite } = await import('./state.mjs');
+  const id = 'broken-record';
+  await writeFile(path.join(dir, `${id}.json`), '{ not valid json', { mode: 0o600 });
+
+  await retireSite(id);
+
+  const entries = await readdir(dir);
+  assert.ok(!entries.includes(`${id}.json`), 'the original filename must be gone');
+  const retiredName = entries.find((name) => name.startsWith(`${id}.retired-`));
+  assert.ok(retiredName, 'expected the unparseable file to still be renamed aside');
+  assert.equal(await readFile(path.join(dir, retiredName), 'utf8'), '{ not valid json');
+});
+
+test('retireSite scrubbing still keeps findSiteByDir from returning the retired record', async (t) => {
+  await freshStateDir(t);
+  const { saveSite, retireSite, findSiteByDir } = await import('./state.mjs');
+  await saveSite('alpine-club-abc123', {
+    name: 'Alpine Club',
+    dir: '/tmp/alpine-club',
+    cloudflare: { apiToken: 'planted-token-value' },
+  });
+
+  await retireSite('alpine-club-abc123');
+
+  assert.equal(await findSiteByDir('/tmp/alpine-club'), null);
 });
 
 test('updateSite leaves the saved file at 0600', async (t) => {

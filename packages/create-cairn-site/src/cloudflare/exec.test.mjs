@@ -89,6 +89,68 @@ test('the env seam is read at call time, not cached at module load', async (t) =
   delete process.env.CAIRN_WRANGLER_BIN;
 });
 
+test('runWrangler passes an env option through to the spawned child', async (t) => {
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const { runWrangler } = await import('./exec.mjs');
+  await runWrangler(['whoami'], {
+    cwd,
+    log: () => {},
+    env: { CLOUDFLARE_ACCOUNT_ID: 'planted-value' },
+  });
+
+  const [invocation] = await fake.invocations();
+  assert.equal(invocation.env.CLOUDFLARE_ACCOUNT_ID, 'planted-value');
+});
+
+test('a call made without an env option shows no CLOUDFLARE_ACCOUNT_ID in the recorded env', async (t) => {
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  // This is the falsifiable half of the pair above, so it has to be measuring the env option and
+  // nothing else. A developer working on Cloudflare plausibly has CLOUDFLARE_ACCOUNT_ID exported
+  // in their own shell, and the child inherits the parent environment whenever no env option is
+  // given, so without this the assertion would fail on their machine and pass on a bare CI runner.
+  const ambient = process.env.CLOUDFLARE_ACCOUNT_ID;
+  delete process.env.CLOUDFLARE_ACCOUNT_ID;
+  t.after(() => {
+    if (ambient === undefined) delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    else process.env.CLOUDFLARE_ACCOUNT_ID = ambient;
+  });
+
+  const { runWrangler } = await import('./exec.mjs');
+  await runWrangler(['whoami'], { cwd, log: () => {} });
+
+  const [invocation] = await fake.invocations();
+  assert.equal(invocation.env.CLOUDFLARE_ACCOUNT_ID, undefined);
+});
+
+test('the env option merges over process.env rather than replacing it: a parent-set var is still visible', async (t) => {
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  process.env.CAIRN_TEST_PARENT_VAR = 'parent-value';
+  t.after(() => { delete process.env.CAIRN_TEST_PARENT_VAR; });
+
+  const { runWrangler } = await import('./exec.mjs');
+  await runWrangler(['whoami'], {
+    cwd,
+    log: () => {},
+    env: { CLOUDFLARE_ACCOUNT_ID: 'planted-value' },
+  });
+
+  const [invocation] = await fake.invocations();
+  assert.equal(invocation.env.CAIRN_TEST_PARENT_VAR, 'parent-value');
+  assert.equal(invocation.env.CLOUDFLARE_ACCOUNT_ID, 'planted-value');
+});
+
 test('runNpm reads CAIRN_NPM_BIN at call time and spawns it', async (t) => {
   const fake = await makeFakeBin('npm');
   t.after(() => fake.close());

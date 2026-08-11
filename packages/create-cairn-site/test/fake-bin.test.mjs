@@ -7,15 +7,20 @@ import { makeFakeBin } from './fake-bin.mjs';
 /**
  * Spawn a fake bin and collect its exit code, stdout, and stderr. `input`, when given, is
  * written to the child's stdin and the stream is then ended; when omitted, stdin is ended
- * immediately with nothing written, mirroring a caller that passes no input.
+ * immediately with nothing written, mirroring a caller that passes no input. `env`, when given,
+ * is merged OVER `process.env` for the child, mirroring how exec.mjs's own spawn seam merges its
+ * `env` option rather than replacing the parent environment outright.
  * @param {string} binPath the fake's executable script path
  * @param {string[]} args the arguments to invoke it with
- * @param {{ input?: string, cwd?: string }} [options]
+ * @param {{ input?: string, cwd?: string, env?: Record<string, string> }} [options]
  * @returns {Promise<{ code: number, stdout: string, stderr: string }>}
  */
-function run(binPath, args, { input, cwd } = {}) {
+function run(binPath, args, { input, cwd, env } = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(binPath, args, { cwd });
+    const child = spawn(binPath, args, {
+      cwd,
+      ...(env ? { env: { ...process.env, ...env } } : {}),
+    });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk) => { stdout += chunk; });
@@ -37,6 +42,25 @@ test('a spawned fake bin logs its argv, cwd, and piped stdin', async (t) => {
   assert.deepEqual(invocation.argv, ['deploy', '--dry-run']);
   assert.equal(invocation.cwd, process.cwd());
   assert.equal(invocation.stdin, 'hello from stdin');
+});
+
+test('a spawned fake bin records only CAIRN_ and CLOUDFLARE_ prefixed env vars, not the whole environment', async (t) => {
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+
+  await run(fake.binPath, ['whoami'], {
+    cwd: process.cwd(),
+    env: {
+      CAIRN_TEST_VALUE: 'kept',
+      CLOUDFLARE_TEST_VALUE: 'also-kept',
+      UNRELATED_SECRET: 'dropped',
+    },
+  });
+
+  const [invocation] = await fake.invocations();
+  assert.equal(invocation.env.CAIRN_TEST_VALUE, 'kept');
+  assert.equal(invocation.env.CLOUDFLARE_TEST_VALUE, 'also-kept');
+  assert.equal(invocation.env.UNRELATED_SECRET, undefined);
 });
 
 test('respond drives the reply for a matching call', async (t) => {

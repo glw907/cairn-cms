@@ -6,7 +6,7 @@
 // `git init` or a site's build could pick it up. Read the env var at call time in every export,
 // never cache it at module load, so a test that sets it before importing (and any later task
 // that sets it per run) sees its own directory rather than a value baked in at first import.
-import { mkdir, writeFile, readFile, chmod, readdir, stat, rename } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, chmod, readdir, stat, rename, unlink } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { homedir } from 'node:os';
 import path from 'node:path';
@@ -42,6 +42,12 @@ export function newSiteId(name) {
  * are chmod'd explicitly after writing: `fs.writeFile`'s own `mode` option only takes effect
  * when it creates the file and is masked by the process umask, so an overwrite of an
  * already-loosened file would otherwise keep the looser mode.
+ *
+ * This is the whole-record write: `data` replaces whatever was on disk rather than merging into
+ * it. That is what makes it the path for removing a key `updateSite`'s merge can never express
+ * (for example the Cloudflare chapter dropping a saved API token at completion): a caller that
+ * needs a key gone rebuilds the record without it and calls this directly, rather than patching
+ * through `updateSite`.
  * @param {string} id the site id, as returned by newSiteId
  * @param {object} data the state to persist; serialized as pretty-printed JSON
  * @returns {Promise<void>}
@@ -74,22 +80,32 @@ export async function loadSite(id) {
 }
 
 /**
- * Create or update a site's state, deep-merging the `github` key rather than replacing it: the
- * GitHub chapter persists one hop at a time (app-created, installed, repo-created, pushed), and
- * each hop's patch carries only the fields it learned, so a shallow merge would drop the
- * credentials an earlier hop already saved. Never throws on a missing record: a record can go
- * missing only from an operator error outside this tool's control, and raising here after a
- * GitHub App or repository already exists would orphan a globally-unique App name with no way to
- * recover it (see scaffold.mjs's own warn-don't-abort comment on `saveSite` for the same class of
- * failure).
+ * Create or update a site's state, deep-merging the `github` and `cloudflare` keys rather than
+ * replacing them: both the GitHub and Cloudflare chapters persist one hop at a time (GitHub:
+ * app-created, installed, repo-created, pushed; Cloudflare: accountId, then zoneId, then domain),
+ * and each hop's patch carries only the fields it learned, so a shallow merge would drop the
+ * fields an earlier hop already saved. Never throws on a missing record: a record can go missing
+ * only from an operator error outside this tool's control, and raising here after a GitHub App or
+ * repository already exists would orphan a globally-unique App name with no way to recover it
+ * (see scaffold.mjs's own warn-don't-abort comment on `saveSite` for the same class of failure).
+ *
+ * A merge can only add or overwrite a field, never remove one: there is no patch shape that
+ * expresses "and drop this key". A caller that needs a key gone (the Cloudflare chapter scrubbing
+ * a saved API token, for one) must rebuild the whole record without that key and call `saveSite`
+ * directly.
  * @param {string} id the site id
- * @param {object} patch the fields to merge in; `patch.github` merges into `current.github`
- *  rather than replacing it
+ * @param {object} patch the fields to merge in; `patch.github` merges into `current.github` and
+ *  `patch.cloudflare` merges into `current.cloudflare`, rather than replacing them
  * @returns {Promise<object>} the merged state, already saved
  */
 export async function updateSite(id, patch) {
   const current = (await loadSite(id)) ?? {};
-  const next = { ...current, ...patch, github: { ...current.github, ...patch.github } };
+  const next = {
+    ...current,
+    ...patch,
+    github: { ...current.github, ...patch.github },
+    cloudflare: { ...current.cloudflare, ...patch.cloudflare },
+  };
   await saveSite(id, next);
   return next;
 }
@@ -139,9 +155,16 @@ export async function findSiteByDir(dir) {
 }
 
 /**
- * Retire a site record by renaming it out of the way rather than deleting it, so a crashed or
+ * Retire a site record by moving it out of the way rather than deleting it, so a crashed or
  * abandoned run's history stays on disk for a developer to inspect. `findSiteByDir` never returns
  * a retired record, since its renamed stem no longer matches the site id shape.
+ *
+ * A retired record must never carry the pasted Cloudflare API token: the record is kept around
+ * for a developer to inspect, not to hand them a live credential, so a saved `cloudflare.apiToken`
+ * is dropped before the retired file is written. That means retiring is a read-scrub-write rather
+ * than a plain rename, except when the record cannot even be read: a malformed or already
+ * unreadable file has nothing to scrub, so retirement falls back to the plain rename this function
+ * always did, keeping the file moved aside rather than raising.
  * @param {string} id the site id to retire
  * @returns {Promise<void>}
  */
@@ -149,5 +172,21 @@ export async function retireSite(id) {
   const dir = siteStateDir();
   const from = path.join(dir, `${id}.json`);
   const to = path.join(dir, `${id}.retired-${Date.now()}.json`);
-  await rename(from, to);
+
+  let data;
+  try {
+    data = JSON.parse(await readFile(from, 'utf8'));
+  } catch {
+    await rename(from, to);
+    return;
+  }
+
+  if (data && typeof data === 'object' && data.cloudflare && 'apiToken' in data.cloudflare) {
+    const { apiToken, ...cloudflareWithoutToken } = data.cloudflare;
+    data = { ...data, cloudflare: cloudflareWithoutToken };
+  }
+
+  await writeFile(to, JSON.stringify(data, null, 2) + '\n', { mode: 0o600 });
+  await chmod(to, 0o600);
+  await unlink(from);
 }

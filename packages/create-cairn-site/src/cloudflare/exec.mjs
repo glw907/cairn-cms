@@ -26,6 +26,9 @@ const NPX_CANCELED_STDERR = 'npx canceled due to missing packages';
  * @property {(line: string) => void} log receives each stdout and stderr line as it arrives
  * @property {string} [input] text written to the child's stdin, then the stream is ended; when
  *  omitted, stdin is ended immediately with nothing written
+ * @property {Record<string, string>} [env] variables merged OVER `process.env` for the child;
+ *  when omitted, the child inherits the parent environment exactly as it always has (spawn's own
+ *  default when no `env` option is given at all)
  */
 
 /**
@@ -59,9 +62,18 @@ function lineMirror(log) {
  * @returns {Promise<CommandResult>} resolves with the exit code and full captured output; a
  *  spawn-level failure (for example ENOENT) rejects instead
  */
-function runCommand(command, args, { cwd, log, input }) {
+function runCommand(command, args, { cwd, log, input, env }) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { cwd, shell: false });
+    // Only pass an explicit `env` option to spawn when a caller supplied one. Node's own default,
+    // used whenever `env` is absent from the options object at all, is to inherit `process.env`
+    // unchanged; passing `env: { ...process.env }` unconditionally would be equivalent in every
+    // case tested here, but omitting the key entirely when there is nothing to merge keeps the
+    // no-env path byte-identical to the spawn call this module made before `env` existed.
+    const child = spawn(command, args, {
+      cwd,
+      shell: false,
+      ...(env ? { env: { ...process.env, ...env } } : {}),
+    });
 
     let stdout = '';
     let stderr = '';

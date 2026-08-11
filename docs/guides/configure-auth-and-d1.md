@@ -163,6 +163,27 @@ owner-gated: an `editor`-role account can sign in and write content but never se
 cairn also refuses to let the allowlist reach zero owner-capability rows, so removing or demoting
 the last one through the admin fails closed rather than locking everyone out.
 
+## Choose a Workers plan
+
+Run a production cairn site on the Workers Paid plan. Magic-link email is the only way an editor
+reaches the admin, and Cloudflare Email Sending delivers to arbitrary recipients only on the paid
+plan. Your editors are arbitrary recipients: you add an address to the allowlist, and cairn mails
+whoever you added.
+
+The free tier delivers only to addresses you register as verified destinations, and that doesn't
+fit an editor roster. Each recipient has to click a Cloudflare verification link before you can
+mail them at all. Cloudflare caps that list per account. The sending domain also has to run
+Cloudflare Email Routing, which takes over the domain's root MX records, so a domain that receives
+mail through Google Workspace or a similar provider loses it.
+
+For current prices and included volumes, read [Email Service
+pricing](https://developers.cloudflare.com/email-service/platform/pricing/) and [Workers
+pricing](https://developers.cloudflare.com/workers/platform/pricing/).
+
+To stay on the free plan, replace the delivery path rather than the plan. cairn's send seam takes
+any function matching `SendMagicLink`, so you can deliver through another provider's API and leave
+the rest of auth unchanged. The [core reference](../reference/core.md) carries its signature.
+
 ## Onboard your sending domain
 
 Cloudflare Email Sending is the delivery path for every magic link, and it needs its own one-time
@@ -170,8 +191,7 @@ setup separate from the `EMAIL` binding you just wired: onboard a sending domain
 the account before the binding can reach an inbox. Do this once, from **Compute > Email
 Service > Email Sending** in the Cloudflare dashboard, choosing the domain your `email.from`
 address lives on. Cloudflare adds the SPF, DKIM, and DMARC records for you, and they typically
-propagate in minutes. Arbitrary-recipient sending also requires the Workers Paid plan; the free
-tier only reaches addresses you've separately verified as destinations.
+propagate in minutes.
 
 An unboarded domain doesn't fail loudly. The request-a-link form still returns its neutral "check
 your inbox" response (cairn never reveals allowlist membership through that response), and the

@@ -161,6 +161,19 @@
 
 ### Changed
 
+- The docs now say plainly that a production site belongs on the Workers Paid plan, and why. A new
+  "Choose a Workers plan" section in [Configure auth and D1](docs/guides/configure-auth-and-d1.md)
+  states that Cloudflare Email Sending reaches arbitrary recipients only on the paid plan, that
+  every editor is an arbitrary recipient, and that the free tier's verified-destination path does
+  not fit an editor roster, since each recipient has to click a Cloudflare verification link and the
+  sending domain has to run Email Routing, which takes over the domain's root MX records. It also
+  names the way out for a site that would rather not upgrade: the `SendMagicLink` seam takes any
+  delivery function, so another provider's API can carry the mail with the rest of auth unchanged.
+  The readiness guide and the tutorial's prerequisites both point at it, so the cost surfaces where
+  a reader decides rather than only where a send fails. Prices stay linked to Cloudflare rather than
+  copied, per this repo's rule that a vendor's specifics go stale on the vendor's schedule.
+  Consumers must: nothing, though a site relying on magic-link sign-in should confirm its account's
+  plan.
 - The template emitter no longer copies showcase-only material into a scaffolded site. Three paths
   join `.cairn-template.json`'s exclude list (`.claude`, which carried seven tracked agent-memory
   notes, `scripts`, a design-lab tool, and the showcase's own `README.md`, whose relative links

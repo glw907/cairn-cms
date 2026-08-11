@@ -4,7 +4,7 @@ This tutorial builds a working cairn site from an empty directory: a public site
 
 If you'd rather see a cairn site run before building one, the [showcase](../../examples/showcase/README.md) is this tutorial's finished result: clone the repo, `npm install` in `examples/showcase`, and `npm run dev`.
 
-You'll need Node (see the [supported toolchain](../reference/supported-toolchain.md) for the version) and a free [Cloudflare](https://www.cloudflare.com/) account for the final milestone. Nothing else: the admin runs locally against a development backend, so you need no GitHub App, no database, and no email setup to run the editor locally. Those arrive when you take a site to production, and the closing milestone points at the guides that wire them.
+You'll need Node (see the [supported toolchain](../reference/supported-toolchain.md) for the version) and a free [Cloudflare](https://www.cloudflare.com/) account for the final milestone. Nothing else: the admin runs locally against a development backend, so you need no GitHub App, no database, and no email setup to run the editor locally. Those arrive when you take a site to production, and the closing milestone points at the guides that wire them. Sending magic-link email to your editors needs a paid Cloudflare plan. [Choose a Workers plan](../guides/configure-auth-and-d1.md#choose-a-workers-plan) explains why, and what to do instead.
 
 ## Milestone 0: What you will build
 

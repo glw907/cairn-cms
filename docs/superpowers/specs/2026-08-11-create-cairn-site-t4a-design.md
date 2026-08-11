@@ -10,17 +10,21 @@ unchanged; nothing here re-litigates them.
 
 ## Rulings made this sitting (amend the T3 spec's T4 brief)
 
-1. **The T4 charge splits into three passes, cut by the adversarial gate's arithmetic.**
+1. **The T4 charge splits into four passes: three at the adversarial gate, one more the same day.**
    The first cut (T4a domain-and-email, T4b Builds) moved two deliverables of nine and left
    the condemned count in place; the reviewers caught it. The standing cut: **T4a** is the
    domain half alone, ending at a complete story (the site serving on the admin's own
    domain, records carried, `workers.dev` still answering), with terminal-only parks;
-   **T4b** is email plus the console plus the money framing, including the umbrella's
-   doctor-check and admin test-send commitments; **T4c** is Builds connect plus deploy-config
-   reconciliation (the brief formerly labeled T4b). The queue becomes T4a, T4b, T4c, T5,
-   Pass D. The T3 spec's ruling 2 ("the console takes its full form in T4") lands in T4b,
-   whose console renders both long waits, T4a's delegation wait included, from the same
-   state record.
+   **T4b** is email plus the money framing, including the umbrella's doctor-check and admin
+   test-send commitments; **T4c** is Builds connect plus deploy-config reconciliation (the
+   brief formerly labeled T4b); **T4d** is the localhost console. The queue becomes T4a,
+   T4b, T4c, T4d, T5, Pass D.
+
+   **Amended the same day (Geoff, 2026-08-11): the console left T4b and became T4d.** T4b's
+   research found the email chapter has no long wait to watch, so the console was serving
+   chapter 2's delegation wait from inside a chapter that did not need it. The T3 spec's
+   ruling 2 ("the console takes its full form in T4") therefore lands in T4d, and the wait it
+   renders first is T4a's delegation park.
 2. **T4a takes exactly one item from the inherited defect list**, the one its own path
    leans on: account selection (the prefill URL carries the account id, so a multi-account
    user blocks this chapter's spine). Because chapter 2 starts at `live`, fixing chapter 1's
@@ -63,10 +67,10 @@ domain: zone created under a prefilled pasted token, discovered records shown an
 over behind an explicit confirmation, nameservers delegated with the park re-detected on
 re-run, and the custom-hostname cutover with `workers.dev` still answering. This chapter
 costs the admin no money: the zone and the cutover ride the free plan, and the money
-question belongs to T4b, where email raises it. Out of scope: email onboarding, the
-console, and the money framing (T4b); Builds connect and repo reconciliation (T4c); the
-template repo and button (T5); the Registrar (retired); any change to the engine's public
-API; and the deferred defect list (ruling 2).
+question belongs to T4b, where email raises it. Out of scope: email onboarding and the
+money framing (T4b); Builds connect and repo reconciliation (T4c); the localhost console
+(T4d); the template repo and button (T5); the Registrar (retired); any change to the
+engine's public API; and the deferred defect list (ruling 2).
 
 ## The chapter's flow
 
@@ -171,24 +175,42 @@ shell-outs and zero network; every catalogue row triggered by a test; a multi-ac
 user deploying successfully in chapter 1 with the saved account id. The runtime library
 is untouched.
 
-## The T4b brief (dated 2026-08-11, for its own sitting)
+## The T4b brief (dated 2026-08-11, revised the same day: email plus the money framing)
 
-Email plus the console plus the money framing. The spike re-reads the current Email
-Service docs and answers ruling 4 of the first draft of this spec: can a site send
-magic-link mail to verified editor addresses on the free plan, and what does an onboarded
-sending domain require; the admission copy and the `CLAUDE.md` gotcha rewrite both come
-from that answer, and the answer also names the e2e's plan prerequisite before dispatch.
+**The console left this pass** (Geoff, 2026-08-11). It is now T4d, for the reason recorded
+in that brief below. What stays here is email and the money question it raises.
+
+**The spike ran ahead of the sitting** and its findings are banked at
+`docs/internal/2026-08-11-t4b-email-console-cost-research.md`, so this pass starts from
+evidence. It answered ruling 4 of this spec's first draft, and the answer is **no**: a
+site cannot send magic-link mail to its editors on the free plan. Cloudflare Email Sending
+reaches arbitrary recipients only on Workers Paid, and every editor is an arbitrary
+recipient. The free verified-destination path was examined and refuted on three grounds,
+the binding one being that it requires Email Routing, which takes over the domain's root
+MX records and so breaks mail the owner already receives. **The admission copy therefore
+states a real cost**, and the umbrella's "this costs nothing" framing stops being true at
+this chapter. The published docs already carry the recommendation, added 2026-08-11 ahead
+of the pass ("Choose a Workers plan" in `docs/guides/configure-auth-and-d1.md`, with
+pointers from the readiness guide and the tutorial), so this pass extends that rather than
+introducing it.
+
 Email onboarding is deep-link plus a single poll per run, park-and-resume, with an
 exhaustive status mapping whose default is an act row printing the raw status, never a
-park; the umbrella's doctor-check bound and the admin test-send land here (the umbrella
-demoted email delivery to exactly those two). The console takes its full form here (the
-T3 spec's ruling 2): server-rendered pages on a loopback whose lifecycle the chapter
-owns, at an unguessable path with a Host guard, rendering both long waits from the state
-record, T4a's delegation wait included, with the CI probe in the create-site workflow and
-the test glob carrying the new directory. The console serves during a run only, and both
-the page and the park's last line say so. Open for that sitting: which credential the
-onboarding status poll rides; whether the console retrofits the GitHub chapter's pages
-(only if free). T4b follows T4a and precedes T4c.
+park. **The research narrows this**: there is no status enum, only `enabled: boolean`, so
+the mapping is smaller than the plan assumed and must not invent a state machine. A real
+`wrangler email sending` command group exists (open beta, absent from the public commands
+reference), which the rendered docs contradict; pin a wrangler range and re-check `--help`
+before relying on it. The umbrella's doctor-check bound and the admin test-send land here
+(the umbrella demoted email delivery to exactly those two). The `CLAUDE.md` gotcha rewrite
+comes from the research's Routing-versus-Sending correction, which found the durable note
+substantially right.
+
+Open for that sitting: which credential the onboarding status poll rides; the default
+from-address; and what the chapter does when the owner declines the paid plan, since it can
+either refuse to proceed or finish and leave sign-in broken with an honest explanation. The
+research's own "what the pass must not assume" section lists the mechanisms that need a live
+check first, and names the execution prerequisites, including a Workers Paid test account and
+a scratch domain whose inbound mail is expendable. T4b follows T4a and precedes T4c.
 
 ## The T4c brief (dated 2026-08-11, for its own sitting; formerly the T4b brief)
 
@@ -202,4 +224,35 @@ flag name is reserved for this pass. Open for that sitting: whether Builds conne
 the wrangler session's `workers:write` or needs a prefilled token (T3 spike B left it
 unconfirmed); how the reconcile commit lands (through the site's own App, the natural
 candidate, or as an admin instruction); and whether the chapter verifies a first Builds
-deploy end to end or stops at the connected trigger. T4c follows T4b and precedes T5.
+deploy end to end or stops at the connected trigger. T4c follows T4b and precedes T4d.
+
+## The T4d brief (dated 2026-08-11, split out of T4b): the localhost console
+
+**Why it is its own pass** (Geoff, 2026-08-11). The console rode with email because the email
+chapter was assumed to carry a long wait worth watching. T4b's research killed that premise:
+onboarding a sending domain that already sits on Cloudflare DNS is documented in minutes, so the
+email chapter has no wait a console would serve. The wait that earns a console is **chapter 2's
+nameserver delegation**, which runs from minutes to 48 hours and belongs to T4a. A surface serving
+a wait in one chapter, bundled into a different chapter because the two are adjacent in the queue,
+is accretion by adjacency, which is the failure mode the workstation's pass-sizing rule names.
+
+**Why it sits after T4c.** The console improves a flow that already works: T4a's parks are terminal,
+exit 0, and print the re-entry command, so an admin is never stuck without it. Builds closes a real
+capability gap instead, including the `PUBLIC_ORIGIN` reconciliation defect that fails silently
+today. Value ordering, not dependency; nothing in T4d needs T4c.
+
+**The shape** (carried from the T3 spec's ruling 2, unchanged by the split): server-rendered pages
+on a loopback whose lifecycle the chapter owns, at an unguessable path with a Host guard, rendering
+the long waits from the state record with T4a's delegation wait as the first and primary one. The
+CI probe goes in the create-site workflow and the test glob carries the new directory. The console
+serves during a run only, and both the page and the park's last line say so.
+
+**Build on `loopback.mjs`, do not reinvent it.** The GitHub chapter already binds a loopback port,
+keeps its path secret, and shuts itself down; the research brief enumerates precisely what it does
+and what a console needs on top, which is a routing layer it does not have. Extract the shared part
+rather than copying it, since a third copy of the fake-server plumbing is already a live
+carry-forward in STATUS.
+
+Open for that sitting: whether the console retrofits the GitHub chapter's one-shot pages, which the
+research recommends against as cosmetic; and whether the delegation view polls or asks the admin to
+refresh. T4d follows T4c and precedes T5.

@@ -112,6 +112,11 @@ redeploy; the domain has to match the address your site actually sends from. A s
 a different reason (a bad binding, a delivery error) surfaces the same way at runtime as the
 `auth.link.send_failed` log event, whose `code` and `error` fields name the real cause.
 
+Onboarding the domain is necessary but not sufficient: mailing your editors also needs the Workers
+Paid plan, because Cloudflare Email Sending reaches arbitrary recipients only there. See
+[Choose a Workers plan](./configure-auth-and-d1.md#choose-a-workers-plan) for what the free tier
+does and doesn't reach, and for the seam that swaps in another provider instead.
+
 ## Force HTTPS at the edge
 
 Always Use HTTPS needs to be on for the zone. cairn's guard intercepts any admin request reaching

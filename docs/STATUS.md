@@ -53,7 +53,11 @@ the plan's Spike amendments section and post-mortem part one, plus
 loop against the scratch domain before dispatching Task 7." The scratch domain's name and the
 spike token are the two inputs to ask for.
 
-**T4b research is banked ahead of its sitting** (see the T4b line under Standing state).
+**T4b research is banked ahead of its sitting** (see the T4b line under Standing state), and
+**the console is now its own pass, T4d** (Geoff, 2026-08-11), so the queue reads **T4a 7-13 → T4b
+(email + money) → T4c (Builds + reconcile) → T4d (console) → T5 → Pass D**. The reasoning is in
+the ROADMAP item and the T4d brief at the end of the T4a spec: the email chapter turned out to
+have no long wait for a console to serve, and the wait that earns one is T4a's delegation park.
 
 **Carry-forwards raised by T3 and its e2e, deliberately not fixed.** (1) The engine's
 committer-attribution drift (`src/lib/github/repo.ts` says an omitted committer attributes to the
@@ -78,8 +82,8 @@ T4a's Task 10 owns deciding whether its orchestration treats a decline as a clea
 (7) `test/fake-cloudflare.mjs` copied its HTTP plumbing from `test/fake-github.mjs`, so `compile`,
 `readRawBody`, and `sendJson` are now byte-identical in both, with `makeHandler` a near-copy. The
 fix is a shared `test/fake-http.mjs`, which means editing `fake-github.mjs`, a file T4a never
-touched. **The trigger is T4b: if its email or console work needs a third fake, extract first
-rather than making it a third copy.** Also unextracted, and older: the `makeFakeBin` plus
+touched. **The trigger is whichever of T4b or T4d first needs a third fake: extract then, rather
+than making it a third copy.** Also unextracted, and older: the `makeFakeBin` plus
 `CAIRN_WRANGLER_BIN` setup repeats roughly sixty times, where `fake-github.mjs` already solved the
 same problem with `pointAtFake`.
 
@@ -97,10 +101,10 @@ CMS mails whoever the owner adds as an editor. So chapter 3 has a real cost admi
 the umbrella's "this costs nothing" framing stops being true there. **(2) The free
 verified-destination path does not fit cairn** on three independent grounds, the worst being that it
 requires Email Routing, which seizes the domain's root MX records and would break mail the owner
-already receives. **(3) The brief recommends splitting the pass**: email plus the cost framing in
-one, the console in its own, on the grounds that the console's justifying long wait is chapter 2's
-nameserver delegation rather than anything in the email chapter, so bundling it is accretion by
-adjacency. That recommendation is unratified and is Geoff's call at the sitting. The brief also
+already receives. **(3) The console split out into T4d** (Geoff ratified this 2026-08-11), because the
+console's justifying long wait is chapter 2's nameserver delegation rather than anything in the
+email chapter, so bundling it with email was accretion by adjacency. It sits after Builds because
+it improves a flow that already works through terminal parks. The brief also
 lists its own execution prerequisites, including a Workers Paid test account and a scratch domain
 whose inbound mail is expendable.
 

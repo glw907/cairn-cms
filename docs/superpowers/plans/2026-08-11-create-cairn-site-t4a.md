@@ -51,6 +51,48 @@ rulings govern; the umbrella's chapter 2 section is the parent.
   "unknown" re-plans its dependent task before dispatch, never "implement against the
   closest guess."
 
+## Spike amendments (2026-08-11, from Task 1)
+
+The spike (`docs/internal/2026-08-11-t4a-domain-spike.md`) ran in the main loop and corrected
+eight premises below. Two of them would have shipped a defect: the cutover mechanism and the
+wrong-scope error code. Read the spike doc before dispatching any task marked **[spike]**.
+
+1. **Task 9 attaches a Workers Custom Domain, not a Workers Route.** A route alone does not make
+   a hostname resolve, so the ordered flow as written could never have confirmed. Every cairn site
+   in production (`907.life`, `ecxc.ski`, `cairn.pub`, two ASC subdomains) is attached by Custom
+   Domain. Recommended call: `PUT /accounts/:id/workers/domains`, which keeps the spec's
+   rollback-safe ordering with one redeploy. Rows rename: `route-create-failed` becomes
+   `custom-domain-failed`; `route-not-serving` keeps its meaning, worded about the hostname.
+2. **Task 5 maps insufficient scope on HTTP 403 regardless of `errors[].code`.** The
+   account-scoped zone-create refusal reports code **0**, not 9109, with the missing permission
+   named in the message; 9109 appears on other resources. Surface the permission name in the
+   `token-scope-missing` row. Handle `error_chain` nesting (400/6003 wraps 6111).
+3. **Task 6 reads `wrangler whoami --json`** (the flag exists; it exits non-zero when not
+   authenticated) and parses from the first `{`, because the command prints non-JSON preamble
+   lines before its JSON. Do not parse the ASCII table. `CLOUDFLARE_ACCOUNT_ID` in the spawn env
+   is confirmed honored.
+4. **Task 8 translates CAA** between `node:dns`'s `{ critical, type, issue }` and Cloudflare's
+   `data: { flags, tag, value }`; the shapes do not line up. It probes **both TXT and CNAME** for
+   every DKIM selector (Google publishes TXT, Fastmail publishes CNAME). TXT values reassemble
+   with `join('')`: a real DKIM value arrived chunked `[255, 155]`. `ENODATA` and `ENOTFOUND` are
+   authoritative absence; any other code is `records-read-failed`.
+5. **Task 8's registrar instructions read `original_registrar` off the zone object** rather than
+   asking the admin. The delegation check compares the live NS lookup against both
+   `name_servers` and `original_name_servers`.
+6. **Task 8's carry-over gate copy gains a second caveat.** On a domain answering with a
+   wildcard, every probed subdomain resolves, so the probe can list records the admin never
+   created. The gate says the list may be both incomplete and overcomplete.
+7. **Task 3's fixtures are copied from the spike appendix**, which now carries the zone object,
+   `result_info` pagination, a DNS record, a Custom Domain, and three error bodies, all verbatim.
+   The fake's random per-zone `name_servers` pair stays as a **test device**: real assignment is
+   account-stable (three zones on one account share a pair), and the doc block should say the
+   randomness exists so a wrong-nameserver test can fail.
+8. **Task 1's prerequisites include the scratch domain and a zone-create-capable token.** The
+   estate token deliberately cannot create zones or mint tokens. Three captures remain blocked on
+   that credential: a new zone's birth `status` and whether `name_servers` is populated at
+   creation, the 1061 duplicate body and whether it distinguishes same-account from
+   foreign-account ownership, and the Custom Domain attach call with its duplicate error.
+
 ## File Structure
 
 ```

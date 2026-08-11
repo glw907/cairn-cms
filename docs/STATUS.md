@@ -80,6 +80,22 @@ T4a's Task 10 owns deciding whether its orchestration treats a decline as a clea
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 
+**T4b's research is BANKED ahead of its sitting:**
+`docs/internal/2026-08-11-t4b-email-console-cost-research.md`, from a nine-agent workflow whose
+adversarial half refuted or corrected six of eight verified claims. Three things the sitting starts
+from rather than re-deriving. **(1) Magic-link email needs Workers Paid, $5/month** (3,000 emails
+included, then $0.35/1,000): "Sending to arbitrary recipients requires the Workers Paid plan", and a
+CMS mails whoever the owner adds as an editor. So chapter 3 has a real cost admission to make, and
+the umbrella's "this costs nothing" framing stops being true there. **(2) The free
+verified-destination path does not fit cairn** on three independent grounds, the worst being that it
+requires Email Routing, which seizes the domain's root MX records and would break mail the owner
+already receives. **(3) The brief recommends splitting the pass**: email plus the cost framing in
+one, the console in its own, on the grounds that the console's justifying long wait is chapter 2's
+nameserver delegation rather than anything in the email chapter, so bundling it is accretion by
+adjacency. That recommendation is unratified and is Geoff's call at the sitting. The brief also
+lists its own execution prerequisites, including a Workers Paid test account and a scratch domain
+whose inbound mail is expendable.
+
 **THEN release one, AFTER Pass D** (amended ordering, Geoff 2026-08-09): it rolls this window
 plus the history/revert, preview, vertical-alignment, and cleanup passes plus the docs reset, and
 **`create-cairn-site` and the template repo publish in the same cut** so no shipped page

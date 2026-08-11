@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, chmod, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, readdir, chmod, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { makeFakeBin } from '../../test/fake-bin.mjs';
@@ -86,6 +86,44 @@ async function armLoggedIn(fake) {
 }
 
 /**
+ * Recursively read every file under `root` and return their concatenated text, for scanning a
+ * scaffold directory or the state directory for a secret that should never have landed there.
+ * @param {string} root the directory to walk
+ * @returns {Promise<string>} the joined contents of every file found
+ */
+async function readAllFiles(root) {
+  let text = '';
+  for (const entry of await readdir(root, { withFileTypes: true })) {
+    const full = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      text += await readAllFiles(full);
+    } else {
+      text += await readFile(full, 'utf8');
+    }
+  }
+  return text;
+}
+
+/**
+ * Scan every file under each of `roots` for any of `needles`, recursively, returning the first
+ * one found. Proven falsifiable in its own test with a doctored fixture, so a sweep elsewhere
+ * that comes back clean can be trusted to mean the secret really is absent, not that the scan
+ * has a blind spot.
+ * @param {string[]} roots the directories to scan
+ * @param {string[]} needles the literal strings to search for
+ * @returns {Promise<string | null>} the first needle found in any scanned file, or null when none matched
+ */
+async function findLeakedSecret(roots, needles) {
+  for (const root of roots) {
+    const text = await readAllFiles(root);
+    for (const needle of needles) {
+      if (text.includes(needle)) return needle;
+    }
+  }
+  return null;
+}
+
+/**
  * Build a small wrangler stand-in, independent of the shared fake-bin factory, whose `deploy`
  * reply changes between its first and second call. The shared fake-bin's matcher model has no
  * way to answer the same command differently on successive calls, and this is the one seam in
@@ -122,7 +160,7 @@ process.exitCode = 0;
 }
 
 test('runCloudflareChapter: the happy path returns live, walks the state hops, and calls the tools in order', async (t) => {
-  await freshStateDir(t);
+  const stateDir = await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   await seedPushedSite('alpine-club-000000', dir);
 
@@ -203,6 +241,31 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
   const installIndex = invocations.findIndex((i) => i.argv[0] === 'install');
   const firstWranglerIndex = invocations.findIndex((i) => i.argv[0] !== 'install' && i.argv[0] !== 'run');
   assert.ok(installIndex < firstWranglerIndex, 'npm install must run strictly before the first wrangler call');
+
+  // The no-secret sweep: neither the PEM's own marker, its base64 form, nor the raw bootstrap
+  // token (recovered here from the opened confirm URL) may appear anywhere under the scaffold
+  // directory or the state store. The state's own PEM deletion and the token's already-asserted
+  // in-memory-only lifetime are what should make this always come back clean; the sweep is the
+  // check that proves it, rather than trusting either mechanism by inspection.
+  const rawToken = decodeURIComponent(opened[0].slice(opened[0].indexOf('token=') + 'token='.length));
+  const pemBase64Prefix = Buffer.from(FAKE_PEM).toString('base64').slice(0, 24);
+  const leaked = await findLeakedSecret([dir, stateDir], ['PRIVATE KEY', pemBase64Prefix, rawToken]);
+  assert.equal(leaked, null, `expected no secret under the scaffold or state directories, found: ${leaked}`);
+});
+
+test('findLeakedSecret: a doctored file containing PRIVATE KEY is caught, proving the sweep can fail', async (t) => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-cf-chapter-doctored-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await writeFile(
+    path.join(dir, 'stray.json'),
+    JSON.stringify({ note: '-----BEGIN PRIVATE KEY-----\nleaked\n-----END PRIVATE KEY-----' }),
+  );
+
+  const found = await findLeakedSecret([dir], ['PRIVATE KEY']);
+  assert.equal(found, 'PRIVATE KEY', 'the sweep must catch a needle actually present in a scanned file');
+
+  const clean = await findLeakedSecret([dir], ['SOMETHING THAT IS NOT THERE']);
+  assert.equal(clean, null);
 });
 
 test('runCloudflareChapter: a redeploy URL that differs from the first throws with a Next step', async (t) => {
@@ -397,4 +460,172 @@ test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-
 
   const invocations = await fake.invocations();
   assert.equal(invocations.filter((i) => i.argv[0] === 'install').length, 1, 'install must run exactly once total');
+});
+
+test('runCloudflareChapter: a record at deployed skips consent and the deploy group, running only the key move and sign-in', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedPushedSite('alpine-club-deployed', dir, {
+    step: 'deployed',
+    ownerEmail: 'owner@example.com',
+    // No `pem` here: the key move already succeeded before this run was interrupted, so the
+    // resumed key-move action must find nothing to move and log its no-op line.
+    github: {
+      appId: 42,
+      appSlug: 'cairn-alpine-club',
+      clientSecret: 'fake-client-secret',
+      owner: 'alpine-club-owner',
+      installationId: 77,
+    },
+    cloudflare: { url: 'https://alpine-club.glw907.workers.dev', workerName: 'alpine-club' },
+  });
+
+  const fake = await makeFakeBin('cloudflare-tools-resume-deployed');
+  t.after(() => fake.close());
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  process.env.CAIRN_NPM_BIN = fake.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  const opened = [];
+  const logs = [];
+  const throwingPrompt = async () => {
+    throw new Error('a prompt must never be called when resuming at deployed');
+  };
+  const outcome = await runCloudflareChapter({
+    siteId: 'alpine-club-deployed',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, deploy: true },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    openBrowser: async (url) => { opened.push(url); },
+    confirm: throwingPrompt,
+    text: throwingPrompt,
+  });
+
+  assert.equal(outcome, 'live');
+  assert.ok(logs.includes('Resuming Alpine Club at deployed.'));
+  assert.ok(
+    logs.some((line) => line.includes("The App's key is already a Worker secret.")),
+    'expected the key move to log its no-op line',
+  );
+  assert.equal(logs.some((line) => line.includes('Deploy your site to Cloudflare')), false);
+  assert.equal(logs.some((line) => line.includes("Install your site's dependencies")), false);
+  assert.equal(logs.some((line) => line.includes('Build your site')), false);
+  assert.equal(logs.some((line) => line.includes('Deploy to workers.dev')), false);
+
+  const invocations = await fake.invocations();
+  assert.equal(invocations.filter((i) => i.argv[0] === 'deploy').length, 0, 'expected zero deploy invocations');
+  assert.equal(
+    invocations.filter((i) => i.argv.slice(0, 2).join(' ') === 'd1 migrations').length,
+    0,
+    'expected zero migrations invocations',
+  );
+  assert.equal(
+    invocations.filter((i) => i.argv.slice(0, 2).join(' ') === 'd1 execute').length,
+    1,
+    'expected exactly one seed invocation',
+  );
+  assert.equal(invocations.length, 1, 'the key move must no-op with no wrangler call, leaving only the seed');
+
+  const state = await loadSite('alpine-club-deployed');
+  assert.equal(state.step, 'live');
+
+  assert.equal(opened.length, 1);
+  assert.equal(
+    opened[0].startsWith('https://alpine-club.glw907.workers.dev/admin/auth/confirm?token='),
+    true,
+  );
+});
+
+test('runCloudflareChapter: a deployed resume opens the record\'s real url, not a URL starting undefined', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  // The PEM is still present here, unlike the previous test: the key move must actually run and
+  // succeed, proving deployUrl is seeded from the record even when every other resumed action
+  // (not just the no-op key move) executes for real.
+  await seedPushedSite('alpine-club-deployed-url', dir, {
+    step: 'deployed',
+    ownerEmail: 'owner@example.com',
+    cloudflare: { url: 'https://alpine-club.glw907.workers.dev', workerName: 'alpine-club' },
+  });
+
+  const fake = await makeFakeBin('cloudflare-tools-resume-deployed-url');
+  t.after(() => fake.close());
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  process.env.CAIRN_NPM_BIN = fake.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  const opened = [];
+  const outcome = await runCloudflareChapter({
+    siteId: 'alpine-club-deployed-url',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, deploy: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser: async (url) => { opened.push(url); },
+  });
+
+  assert.equal(outcome, 'live');
+  assert.equal(opened.length, 1);
+  assert.equal(opened[0].startsWith('undefined'), false, 'the opened URL must never start with undefined');
+  assert.equal(
+    opened[0].startsWith('https://alpine-club.glw907.workers.dev/admin/auth/confirm?token='),
+    true,
+    'the opened URL must be built from the record\'s real cloudflare.url',
+  );
+
+  const invocations = await fake.invocations();
+  assert.equal(invocations.filter((i) => i.argv[0] === 'deploy').length, 0, 'expected zero deploy invocations');
+  assert.equal(
+    invocations.some((i) => i.argv.slice(0, 2).join(' ') === 'secret put'),
+    true,
+    'the key move must actually run since this record still carries a pem',
+  );
+});
+
+test('runCloudflareChapter: a pushed re-entry with a saved ownerEmail prompts nothing for the email', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedPushedSite('alpine-club-prompt', dir, { ownerEmail: 'owner@example.com' });
+
+  const fake = await makeFakeBin('cloudflare-tools-prompt');
+  t.after(() => fake.close());
+  await armLoggedIn(fake);
+  await fake.respond('deploy', {
+    code: 0,
+    stdout: 'Deployed thing triggers (0.1 sec)\n  https://alpine-club.glw907.workers.dev\n',
+  });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  process.env.CAIRN_NPM_BIN = fake.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  const outcome = await runCloudflareChapter({
+    siteId: 'alpine-club-prompt',
+    siteName: 'Alpine Club',
+    dir,
+    // yes: false drives the interactive branch of every step, so a real prompt call for the
+    // email would surface here; confirm still answers normally, since consent is asked for
+    // every pushed re-entry, and only the email prompt is under test.
+    flags: { yes: false, deploy: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser: async () => {},
+    confirm: async () => true,
+    text: async () => {
+      throw new Error('text must never be called when the owner email is already saved');
+    },
+  });
+
+  assert.equal(outcome, 'live');
 });

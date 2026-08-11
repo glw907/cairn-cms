@@ -13,7 +13,7 @@ import { scaffold, handoverText, dryRunNotice } from './src/scaffold.mjs';
 import { runGithubChapter } from './src/github/chapter.mjs';
 import { runCloudflareChapter } from './src/cloudflare/chapter.mjs';
 import { seedOwnerAndToken } from './src/cloudflare/bootstrap.mjs';
-import { loadSite, findSiteByDir, retireSite } from './src/state.mjs';
+import { loadSite, updateSite, findSiteByDir, retireSite } from './src/state.mjs';
 import { webBase } from './src/github/api.mjs';
 import { openBrowser } from './src/github/open.mjs';
 
@@ -64,13 +64,27 @@ async function printLiveInfo(siteId) {
 /**
  * Reseed the owner's bootstrap sign-in token and reopen the confirm page, without touching the
  * deploy: the `--sign-in` recovery for a token that already expired on an already-live site.
- * @param {{ dir: string, ownerEmail?: string, cloudflare?: { url?: string } }} state the site's
- *  current state record, already at step `live`
- * @param {(line: string) => void} log receives one printed line per call
+ * `ownerEmailOverride` takes precedence over the saved `state.ownerEmail` and, when it differs,
+ * is persisted back to the record so a later plain `--sign-in` reuses it. A record with neither
+ * (hand-edited, or written by a version that never persisted the field) fails loud here rather
+ * than reaching `seedOwnerAndToken`, whose own `.trim()` would otherwise raise a bare TypeError
+ * that names no next step.
+ * @param {{ siteId: string, state: { dir: string, ownerEmail?: string, cloudflare?: { url?: string } },
+ *  ownerEmailOverride?: string, log: (line: string) => void }} args
  * @returns {Promise<void>}
  */
-async function reseedAndOpen(state, log) {
-  const { confirmPath } = await seedOwnerAndToken({ dir: state.dir, email: state.ownerEmail, log });
+async function reseedAndOpen({ siteId, state, ownerEmailOverride, log }) {
+  const ownerEmail = ownerEmailOverride?.trim() || state.ownerEmail;
+  if (!ownerEmail) {
+    throw new Error(
+      'This site has no saved sign-in email, so --sign-in has nothing to send the link to.\n' +
+        'Next step: re-run with --owner-email <you@example.com> to set one.',
+    );
+  }
+  if (ownerEmail !== state.ownerEmail) {
+    await updateSite(siteId, { ownerEmail });
+  }
+  const { confirmPath } = await seedOwnerAndToken({ dir: state.dir, email: ownerEmail, log });
   await openBrowser(`${state.cloudflare.url}${confirmPath}`, log);
   console.log(
     'A sign-in page just opened; click Sign in there. The link works for ten minutes; if it ' +
@@ -128,7 +142,12 @@ async function main() {
     if (priorRecord && priorRecord.data.step === 'live') {
       console.log(`${priorRecord.data.name} is already live.`);
       if (flags.signIn) {
-        await reseedAndOpen(priorRecord.data, log);
+        await reseedAndOpen({
+          siteId: priorRecord.id,
+          state: priorRecord.data,
+          ownerEmailOverride: flags.ownerEmail,
+          log,
+        });
       }
       await printLiveInfo(priorRecord.id);
       return;
@@ -139,6 +158,7 @@ async function main() {
         ['org', '--org'],
         ['repoName', '--repo-name'],
         ['appName', '--app-name'],
+        ['ownerEmail', '--owner-email'],
       ];
       const overridden = overridable.filter(([key]) => flags[key] !== undefined).map(([, flag]) => flag);
       const overrideNote =

@@ -56,6 +56,14 @@ async function runStep(frame, title, detail, execute) {
  * Run the Cloudflare chapter: install, sign in, build, deploy, migrate, move the App's key to a
  * Worker secret, and seed the owner's first sign-in. Every hop is persisted to the site's state
  * record before the next one starts.
+ *
+ * Re-entry reads the site's own saved record and picks up after whatever hop it last completed,
+ * mirroring the GitHub chapter's own resume convention. A record already at `'deployed'` has
+ * finished every action up through the deploy: there is nothing left to ask consent for, install,
+ * sign in to, build, or deploy, so resuming here skips straight to the key move and the sign-in
+ * action, printing one resume line instead of re-running the earlier steps. `deployUrl` and
+ * `ownerEmail`, which the skipped actions would otherwise have set, are seeded from the saved
+ * record instead, so the sign-in action never opens a URL built from an unset local.
  * @param {RunCloudflareChapterInput} input the chapter's inputs
  * @returns {Promise<'live' | 'declined'>} `'live'` once the admin's sign-in link has been opened
  *  and the record reaches its final step; `'declined'` when the admin declined consent, chose to
@@ -84,109 +92,115 @@ export async function runCloudflareChapter({
     }
   }
 
-  const consentDetail =
-    "The tool will now install your site's dependencies, build it, and deploy it to " +
-    `Cloudflare's free workers.dev hosting on your account: one Worker named ${workerName} ` +
-    `(deploying again later updates it), two databases (${workerName}-auth, ${workerName}-app), ` +
-    `and one storage bucket (${workerName}-media). The free plan is enough; nothing in this ` +
-    'step costs money. One browser trip to sign in to Cloudflare if you are not already, then ' +
-    'one click to sign in to your own site.';
-
-  let consented = false;
-  await runStep(frame, 'Deploy your site to Cloudflare', consentDetail, async () => {
-    log(consentDetail);
-    if (flags.yes && !flags.deploy) {
-      log(
-        'Skipping the Cloudflare chapter. Re-run with --deploy to install, build, and deploy ' +
-          'your site (add --yes too for a fully unattended run).',
-      );
-      consented = false;
-      return;
-    }
-    if (flags.yes && flags.deploy) {
-      consented = true;
-      return;
-    }
-    const answer = await confirm({ message: 'Install, build, and deploy your site now?' });
-    if (isCancel(answer)) exitOnCancel();
-    consented = answer;
-  });
-  if (!dryRun && !consented) {
-    return 'declined';
-  }
-
+  const resumingAtDeployed = record?.step === 'deployed';
   let ownerEmail = flags.ownerEmail?.trim() || record?.ownerEmail;
-  await runStep(
-    frame,
-    'Enter your sign-in email',
-    'Asks for the email you will sign in with (for example, you@example.com), and saves it to ' +
-      'your progress record.',
-    async () => {
-      if (flags.yes) {
-        if (!ownerEmail || !EMAIL_PATTERN.test(ownerEmail)) {
+  let deployUrl = record?.cloudflare?.url;
+
+  if (resumingAtDeployed) {
+    log(`Resuming ${siteName} at deployed.`);
+  } else {
+    const consentDetail =
+      "The tool will now install your site's dependencies, build it, and deploy it to " +
+      `Cloudflare's free workers.dev hosting on your account: one Worker named ${workerName} ` +
+      `(deploying again later updates it), two databases (${workerName}-auth, ${workerName}-app), ` +
+      `and one storage bucket (${workerName}-media). The free plan is enough; nothing in this ` +
+      'step costs money. One browser trip to sign in to Cloudflare if you are not already, then ' +
+      'one click to sign in to your own site.';
+
+    let consented = false;
+    await runStep(frame, 'Deploy your site to Cloudflare', consentDetail, async () => {
+      log(consentDetail);
+      if (flags.yes && !flags.deploy) {
+        log(
+          'Skipping the Cloudflare chapter. Re-run with --deploy to install, build, and deploy ' +
+            'your site (add --yes too for a fully unattended run).',
+        );
+        consented = false;
+        return;
+      }
+      if (flags.yes && flags.deploy) {
+        consented = true;
+        return;
+      }
+      const answer = await confirm({ message: 'Install, build, and deploy your site now?' });
+      if (isCancel(answer)) exitOnCancel();
+      consented = answer;
+    });
+    if (!dryRun && !consented) {
+      return 'declined';
+    }
+
+    await runStep(
+      frame,
+      'Enter your sign-in email',
+      'Asks for the email you will sign in with (for example, you@example.com), and saves it to ' +
+        'your progress record.',
+      async () => {
+        if (flags.yes) {
+          if (!ownerEmail || !EMAIL_PATTERN.test(ownerEmail)) {
+            throw new Error(
+              'A sign-in email is needed to finish this chapter, and --yes leaves no way to ask ' +
+                'for one.\nNext step: re-run with --owner-email <you@example.com>.',
+            );
+          }
+        } else {
+          for (;;) {
+            if (ownerEmail === undefined) {
+              const answer = await text({
+                message: 'Sign-in email (you will use this to sign in to your own site)',
+                placeholder: 'you@example.com',
+              });
+              if (isCancel(answer)) exitOnCancel();
+              ownerEmail = answer;
+            }
+            if (EMAIL_PATTERN.test(ownerEmail)) break;
+            log('That does not look like an email address (needs an @ with something on both sides).');
+            ownerEmail = undefined;
+          }
+        }
+        await updateSite(siteId, { ownerEmail });
+      },
+    );
+
+    await runStep(
+      frame,
+      "Install your site's dependencies",
+      `Runs npm install in ${dir} if its dependencies are not already installed.`,
+      () => ensureInstalled({ dir, log }),
+    );
+
+    await runStep(
+      frame,
+      'Sign in to Cloudflare',
+      "Confirms wrangler has a signed-in Cloudflare account, driving wrangler's own browser " +
+        'sign-in when it does not.',
+      () => ensureLogin({ dir, log }),
+    );
+
+    await runStep(frame, 'Build your site', `Runs npm run build in ${dir}.`, () => buildSite({ dir, log }));
+
+    await runStep(
+      frame,
+      'Deploy to workers.dev',
+      'Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies both databases\' migrations, ' +
+        'then deploys again so the running site carries its own real origin.',
+      async () => {
+        const first = await deployWorker({ dir, log });
+        await writePublicOrigin(dir, first.url);
+        await applyMigrations({ dir, log });
+        const second = await deployWorker({ dir, log });
+        if (second.url !== first.url) {
           throw new Error(
-            'A sign-in email is needed to finish this chapter, and --yes leaves no way to ask ' +
-              'for one.\nNext step: re-run with --owner-email <you@example.com>.',
+            `The redeploy came back with a different URL (${second.url}) than the first deploy ` +
+              `(${first.url}); the worker name may have changed between the two deploys.\n` +
+              `Next step: re-run npx create-cairn-site --dir ${dir}.`,
           );
         }
-      } else {
-        for (;;) {
-          if (ownerEmail === undefined) {
-            const answer = await text({
-              message: 'Sign-in email (you will use this to sign in to your own site)',
-              placeholder: 'you@example.com',
-            });
-            if (isCancel(answer)) exitOnCancel();
-            ownerEmail = answer;
-          }
-          if (EMAIL_PATTERN.test(ownerEmail)) break;
-          log('That does not look like an email address (needs an @ with something on both sides).');
-          ownerEmail = undefined;
-        }
-      }
-      await updateSite(siteId, { ownerEmail });
-    },
-  );
-
-  await runStep(
-    frame,
-    "Install your site's dependencies",
-    `Runs npm install in ${dir} if its dependencies are not already installed.`,
-    () => ensureInstalled({ dir, log }),
-  );
-
-  await runStep(
-    frame,
-    'Sign in to Cloudflare',
-    "Confirms wrangler has a signed-in Cloudflare account, driving wrangler's own browser " +
-      'sign-in when it does not.',
-    () => ensureLogin({ dir, log }),
-  );
-
-  await runStep(frame, 'Build your site', `Runs npm run build in ${dir}.`, () => buildSite({ dir, log }));
-
-  let deployUrl;
-  await runStep(
-    frame,
-    'Deploy to workers.dev',
-    'Deploys the Worker, writes its URL as PUBLIC_ORIGIN, applies both databases\' migrations, ' +
-      'then deploys again so the running site carries its own real origin.',
-    async () => {
-      const first = await deployWorker({ dir, log });
-      await writePublicOrigin(dir, first.url);
-      await applyMigrations({ dir, log });
-      const second = await deployWorker({ dir, log });
-      if (second.url !== first.url) {
-        throw new Error(
-          `The redeploy came back with a different URL (${second.url}) than the first deploy ` +
-            `(${first.url}); the worker name may have changed between the two deploys.\n` +
-            `Next step: re-run npx create-cairn-site --dir ${dir}.`,
-        );
-      }
-      deployUrl = second.url;
-      await updateSite(siteId, { step: 'deployed', cloudflare: { url: deployUrl, workerName } });
-    },
-  );
+        deployUrl = second.url;
+        await updateSite(siteId, { step: 'deployed', cloudflare: { url: deployUrl, workerName } });
+      },
+    );
+  }
 
   await runStep(
     frame,

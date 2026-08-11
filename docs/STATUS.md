@@ -44,18 +44,32 @@ attached this way). And an insufficient-scope refusal reports `errors[].code` **
 with the missing permission named in the message. Eight amendments in total are folded into the
 plan's own "Spike amendments" section; the post-mortem's part one carries the full account.
 
+**T4B'S DESIGN SITTING AMENDED TWO T4A TASKS (2026-08-11). Both ride the same browser sitting
+that unblocks T4a, and both are cheap only while Tasks 7 and 10 remain unbuilt.**
+
+1. **Task 7's prefill URL gains the Email Sending permission**, so chapter 2 asks for one token
+   rather than two. T4b's onboarding poll rides this same pasted token, and Task 7 authors the
+   URL last precisely so a late-discovered scope can still land. Read the permission group's
+   exact dashboard name off a minted token during the sitting; it is also T4b's only remaining
+   spike question.
+2. **Task 10's token deletion moves from `domain-live` to a terminal-state rule.** Chapter 2 no
+   longer ends at `domain-live`, so deleting there is wrong. The rule: a park keeps the token; a
+   terminal state deletes it, and the terminal states are `email-live` and a recorded decline of
+   the paid plan. Without this, an owner who declines leaves a live credential on disk
+   indefinitely. It is a condition change, not new code.
+
 **Resume prompt once Geoff has both** (a fresh Opus session; launch directory
 `~/Projects/cairn-cms/.claude/worktrees/t3-cloudflare-chapter`, branch `t4a-domain-chapter`,
 already checked out): "Resume Pass T4a of the create-cairn-site umbrella at Task 7:
 `docs/superpowers/plans/2026-08-11-create-cairn-site-t4a.md`. Tasks 1 through 6 are landed; read
 the plan's Spike amendments section and post-mortem part one, plus
-`docs/internal/2026-08-11-t4a-domain-spike.md`, first. Finish spike steps 2 and 4 in the main
-loop against the scratch domain before dispatching Task 7." The scratch domain's name and the
-spike token are the two inputs to ask for.
+`docs/internal/2026-08-11-t4a-domain-spike.md`, first, and carry STATUS's two T4b amendments into
+Tasks 7 and 10. Finish spike steps 2 and 4 in the main loop against the scratch domain before
+dispatching Task 7." The scratch domain's name and the spike token are the two inputs to ask for.
 
-**T4b research is banked ahead of its sitting** (see the T4b line under Standing state), and
-**the console is now its own pass, T4d** (Geoff, 2026-08-11), so the queue reads **T4a 7-13 → T4b
-(email + money) → T4c (Builds + reconcile) → T4d (console) → T5 → Pass D**. The reasoning is in
+**T4b's design sitting is DONE and its plan is approved** (see the T4b line under Standing
+state), and **the console is now its own pass, T4d** (Geoff, 2026-08-11), so the queue reads
+**T4a 7-13 → T4b (email + money) → T4c (Builds + reconcile) → T4d (console) → T5 → Pass D**. The reasoning is in
 the ROADMAP item and the T4d brief at the end of the T4a spec: the email chapter turned out to
 have no long wait for a console to serve, and the wait that earns one is T4a's delegation park.
 
@@ -76,14 +90,18 @@ hardening pass owns them). Note T4a retired the `wrangler whoami` half of the ou
 by moving to `--json`. (5) The umbrella's resume table (one row per step: persisted key, expiry,
 partial-state detection, re-entry) is a standing debt no tool pass has carried; noted for Pass D.
 (6) `carry-over-declined` is an `act` row, so an admin who declines the DNS carry-over exits 1.
-There is no kind for "done, by choice", and inventing one for a single row is over-abstraction;
-T4a's Task 10 owns deciding whether its orchestration treats a decline as a clean stop.
+**RESOLVED by T4b's design sitting, and closing in T4b's Task 2 rather than T4a's Task 10.** The
+objection was that inventing a kind for one row is over-abstraction. A second row of the same
+shape arrived, `paid-plan-declined`, so the kind earns itself: the catalogue gains `declined`
+(nothing is wrong, the owner chose this, exit 0, no re-run urgency) and both rows convert.
 
 (7) `test/fake-cloudflare.mjs` copied its HTTP plumbing from `test/fake-github.mjs`, so `compile`,
 `readRawBody`, and `sendJson` are now byte-identical in both, with `makeHandler` a near-copy. The
 fix is a shared `test/fake-http.mjs`, which means editing `fake-github.mjs`, a file T4a never
 touched. **The trigger is whichever of T4b or T4d first needs a third fake: extract then, rather
-than making it a third copy.** Also unextracted, and older: the `makeFakeBin` plus
+than making it a third copy. T4b does NOT trip it** and its plan says so: T4b extends
+`fake-cloudflare.mjs` with three email routes, which is not a third fake, so this stays filed for
+T4d. Also unextracted, and older: the `makeFakeBin` plus
 `CAIRN_WRANGLER_BIN` setup repeats roughly sixty times, where `fake-github.mjs` already solved the
 same problem with `pointAtFake`.
 
@@ -92,21 +110,39 @@ same problem with `pointAtFake`.
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 
-**T4b's research is BANKED ahead of its sitting:**
-`docs/internal/2026-08-11-t4b-email-console-cost-research.md`, from a nine-agent workflow whose
-adversarial half refuted or corrected six of eight verified claims. Three things the sitting starts
-from rather than re-deriving. **(1) Magic-link email needs Workers Paid, $5/month** (3,000 emails
-included, then $0.35/1,000): "Sending to arbitrary recipients requires the Workers Paid plan", and a
-CMS mails whoever the owner adds as an editor. So chapter 3 has a real cost admission to make, and
-the umbrella's "this costs nothing" framing stops being true there. **(2) The free
-verified-destination path does not fit cairn** on three independent grounds, the worst being that it
-requires Email Routing, which seizes the domain's root MX records and would break mail the owner
-already receives. **(3) The console split out into T4d** (Geoff ratified this 2026-08-11), because the
-console's justifying long wait is chapter 2's nameserver delegation rather than anything in the
-email chapter, so bundling it with email was accretion by adjacency. It sits after Builds because
-it improves a flow that already works through terminal parks. The brief also
-lists its own execution prerequisites, including a Workers Paid test account and a scratch domain
-whose inbound mail is expendable.
+**T4b's spec and plan are BANKED and APPROVED** (Geoff, 2026-08-11):
+`docs/superpowers/specs/2026-08-11-create-cairn-site-t4b-design.md` and
+`docs/superpowers/plans/2026-08-11-create-cairn-site-t4b.md`, sitting from the nine-agent
+research at `docs/internal/2026-08-11-t4b-email-console-cost-research.md` (whose adversarial half
+refuted or corrected six of eight verified claims). Ten tasks, eight dispatchable, five
+deliverables. **The pass is email plus the money framing only; the console is T4d.**
+
+Four things a resuming session should not re-derive. **(1) The three open questions are
+answered.** The onboarding poll rides T4a's pasted API token through the existing REST seam, and
+cairn never invokes the `wrangler email sending` beta command group, which retires the
+pin-a-wrangler-range worry outright. The scaffold sends from `no-reply@<domain>`, no prompt. A
+declined paid plan is a clean recorded stop, exit 0, token deleted, with `--sign-in` named as the
+owner's own way back in (the 30-day `SESSION_TTL_MS` means it is not urgent), which makes
+`paid-plan-declined` the second "done, by choice" row after `carry-over-declined` and **retires
+carry-forward 6 below** by earning the catalogue a fourth `declined` kind.
+
+**(2) Four research unknowns closed live against the account during the sitting**, so the spike
+shrank to one browser sitting: the sending-subdomain response shape and its apex naming, the
+`cf-bounce` record placement, the `p=reject` DMARC default (confirmed on `ecxc.ski`, which also
+carries an unrelated SES sender under that same policy), and the fact that the engine doctor's
+existing `s.name === domain` predicate is already correct, so no engine fix is owed. What
+survives for the spike: the Email Sending permission group's dashboard name, a Workers Paid
+confirmation, the Advanced Certificate Manager billing glance, and fixture capture.
+
+**(3) The money admission opens the tool, before the scaffold** (Geoff's call, over a
+lighter-touch recommendation): the owner learns the whole cost picture before typing a site name.
+Chapter 1's consent copy keeps its true "nothing in this step costs money" claim and simply stops
+carrying the whole story alone. **(4) The admin test-send left the pass** and files to ROADMAP as
+engine work; the doctor half of the umbrella's commitment already ships and was verified in code.
+
+Execution prerequisites the plan names: T4a landed through Task 14, the scratch domain left
+delegated and active, the account on Workers Paid (strong evidence glw907 already is), the
+billing glance, the permission name, and a real inbox for the test send.
 
 **THEN release one, AFTER Pass D** (amended ordering, Geoff 2026-08-09): it rolls this window
 plus the history/revert, preview, vertical-alignment, and cleanup passes plus the docs reset, and

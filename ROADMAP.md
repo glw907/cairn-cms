@@ -77,13 +77,15 @@ Readiness checklist:
   bucket from an id-less config, moves the GitHub App's key out of local state into a Worker
   secret, and seeds a bootstrap sign-in so the first login is one click with no email. It also
   writes the App's real identity into the scaffold before the push, so the repository is born able
-  to publish. **The old T3 charge split three ways** at its planning sitting, since "Cloudflare plus
-  the two doors" was roughly ten deliverables: **T4** is chapter 2 (money, domain, email) plus
-  Workers Builds connect, the first work needing a credential wrangler's session cannot mint, and it
-  is where the localhost console takes its full form; **T5** is the browser door (the public
-  template repo, the Deploy button, C3 `--template` compatibility). Pass D follows T5, and the tool
-  and template publish in the same cut as release one. Both briefs are dated at the end of
-  [`docs/superpowers/specs/2026-08-10-create-cairn-site-t3-design.md`](docs/superpowers/specs/2026-08-10-create-cairn-site-t3-design.md).
+  to publish. **The remaining charge is cut into four passes** (re-cut 2026-08-11 at the T4a
+  sitting, after an adversarial review of the first cut's arithmetic): **T4a** is the domain half
+  of chapter 2 (token-prefill, zone and DNS behind the MX-preserving carry-over gate, delegation
+  park-and-resume, the custom-hostname cutover); **T4b** is email plus the localhost console's
+  full form plus the money framing; **T4c** is Workers Builds connect plus deploy-config
+  reconciliation; **T5** is the browser door (the public template repo, the Deploy button, C3
+  `--template` compatibility). Pass D follows T5, and the tool and template publish in the same
+  cut as release one. The T4a spec carries the T4b and T4c briefs:
+  [`docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`](docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md).
   **The baseline walk is recorded** at
   [`docs/internal/2026-08-unagented-setup-baseline.md`](docs/internal/2026-08-unagented-setup-baseline.md).
   It measured the path no one had measured, the tutorial's `wrangler`-plus-dashboard setup walked cold,

@@ -14,47 +14,69 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-11: T3 merged and fully e2e-proven; next is EXECUTING the T4a plan)
+## Immediate next action (2026-08-11: T4a's offline half is LANDED; the rest is BLOCKED on Geoff)
 
-**T3 is MERGED (PR #27) and its live e2e is complete, GitHub half included.** A save in the
-signed-in admin of a freshly scaffolded, freshly deployed site committed through its own GitHub
-App (`commit.succeeded` in Workers Logs, the `cairn/posts/...` branch in the repo). Evidence:
-the T3 plan's post-mortem addendum. Two e2e findings: the seed's raw-JSON passthrough (fixed
-in-pass; the fake now emits real wrangler's pretty-printed shape) and the engine's
-committer-attribution drift (`src/lib/github/repo.ts` says an omitted committer attributes to
-the App; the real API falls back to the author, contra spec §7.4; carried forward below). One
-open hand step: Geoff deletes the e2e's App at github.com (`cairn-t3-live-71d37c`).
+**T4a Tasks 1 (partial), 2, 3, 4, 5, and 6 are done, committed, and pushed on
+`t4a-domain-chapter`** (branched off `main` at `1415f48e`, in the `t3-cloudflare-chapter`
+worktree). Suite: **342 pass, 0 fail, exit 0** in `packages/create-cairn-site`. No PR yet, since
+the pass is half-done. What exists now: the spawn seam carries `env`, `updateSite` deep-merges
+`cloudflare`, `retireSite` scrubs a saved token, `test/fake-cloudflare.mjs` serves the REST
+routes from verbatim spike fixtures, the catalogue carries `wait`/`act`/`ask-someone` and
+seventeen new rows, `src/cloudflare/api.mjs` is the REST seam with token redaction, and
+`ensureAccountId` fixes chapter 1's multi-account defect across four wrangler call sites.
 
-**The T4 planning sitting ran 2026-08-11 (Fable) and produced the next plan.** A three-agent
-adversarial review of the draft spec and plan forced a three-pass re-cut and ~30 folded
-corrections (recorded in the plan's review-gate section): **T4a** is the domain half of chapter
-2 (token-prefill, zone create, the MX-preserving carry-over gate over best-effort DNS
-discovery, four-state delegation park-and-resume, the rollback-safe custom-hostname cutover,
-account selection with the chapter-1 env fix); **T4b** is email + the console + the money
-framing; **T4c** is Builds connect + reconciliation. Queue: T4a → T4b → T4c → T5 → Pass D.
-Briefs for T4b and T4c ride at the end of the T4a spec.
+**Two blockers, both needing Geoff, both satisfied in one browser sitting.** Tasks 7 through 13
+cannot start without them.
 
-**Resume prompt for the next session** (a fresh Opus session; launch directory
-`~/Projects/cairn-cms`, then a worktree off `main`): "Execute Pass T4a of the create-cairn-site
-umbrella (the domain half of chapter 2):
-`docs/superpowers/plans/2026-08-11-create-cairn-site-t4a.md`. Start with the cairn-pass skill;
-read the plan in full and the T4a spec
-(`docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`) first. Task 1 (the spike)
-runs in the main loop before any dispatch; its prerequisite is a scratch domain Geoff registers,
-seeded with an MX and a DKIM-shaped TXT." The e2e (Task 13) needs that domain; ask Geoff for its
-name at pass start.
+1. **A Cloudflare API token that can create zones.** The estate token deliberately cannot create
+   zones and deliberately cannot mint tokens, so it cannot self-extend (that refusal is correct
+   and should stay). A prefilled create-token URL for a deliberately broad, short-lived **spike**
+   token sits in `docs/internal/2026-08-11-t4a-domain-spike.md`; the shipped prefill URL will
+   carry only the minimum the spike proves necessary.
+2. **The scratch domain**, registered at any external registrar and **seeded with an MX record
+   and a DKIM-shaped TXT** before the run. This corrects the plan, which named it as a Task 13
+   prerequisite only: spike step 4 needs an active zone under our control, so it gates Task 1 too.
+
+**The spike corrected two plan premises that would otherwise have shipped a defect.** The cutover
+attaches a Workers **Custom Domain**, not a Workers Route (a route does not make a hostname
+resolve, so the planned confirm could never have passed; every cairn site in production is
+attached this way). And an insufficient-scope refusal reports `errors[].code` **0**, not 9109,
+with the missing permission named in the message. Eight amendments in total are folded into the
+plan's own "Spike amendments" section; the post-mortem's part one carries the full account.
+
+**Resume prompt once Geoff has both** (a fresh Opus session; launch directory
+`~/Projects/cairn-cms/.claude/worktrees/t3-cloudflare-chapter`, branch `t4a-domain-chapter`,
+already checked out): "Resume Pass T4a of the create-cairn-site umbrella at Task 7:
+`docs/superpowers/plans/2026-08-11-create-cairn-site-t4a.md`. Tasks 1 through 6 are landed; read
+the plan's Spike amendments section and post-mortem part one, plus
+`docs/internal/2026-08-11-t4a-domain-spike.md`, first. Finish spike steps 2 and 4 in the main
+loop against the scratch domain before dispatching Task 7." The scratch domain's name and the
+spike token are the two inputs to ask for.
+
+**T4b research is banked ahead of its sitting** (see the T4b line under Standing state).
 
 **Carry-forwards raised by T3 and its e2e, deliberately not fixed.** (1) The engine's
-committer-attribution drift above (engine-side; a pass that touches `src/lib/github` owns
-aligning code, comment, and spec §7.4). (2) `npm run check:comments` covers `src/lib` only, so
-`packages/create-cairn-site` has no comment gate; the right gate there is the em-dash ban alone
-over `**/*.mjs` (currently clean, latent). Goes to a pass that owns tooling. (3)
-`src/github/install.test.mjs`'s reauthorize race is flaky and `test/fake-github.mjs` cannot
-recover `callback_urls` for a real-manifest App; both T2 test infrastructure. (4) The deferred
-defect list per the T4a spec's ruling 2: slug collisions, wrangler output-string pinning,
-Windows `.cmd` spawning, the cross-package token contract test (a hardening pass owns them).
-(5) The umbrella's resume table (one row per step: persisted key, expiry, partial-state
-detection, re-entry) is a standing debt no tool pass has carried; noted for Pass D.
+committer-attribution drift (`src/lib/github/repo.ts` says an omitted committer attributes to the
+App; the real API falls back to the author, contra spec §7.4). Engine-side; a pass that touches
+`src/lib/github` owns aligning code, comment, and spec. (2) `packages/create-cairn-site` has
+**neither a comment gate nor a type gate**: `check:comments` covers `src/lib` only, and the root
+`tsconfig.json` includes `src/lib` only, so root `npm run check` never type-checks this package's
+`.mjs` at all. `npm test` inside the package is its only real gate. Sharpened by T4a, which
+verified the tsconfig scope; goes to a pass that owns tooling. (3)
+`src/github/install.test.mjs`'s reauthorize race is flaky (it tripped once under load across
+roughly a dozen T4a suite runs; only its timing assertion is load-sensitive) and
+`test/fake-github.mjs` cannot recover `callback_urls` for a real-manifest App; both T2 test
+infrastructure. (4) The deferred defect list per the T4a spec's ruling 2: slug collisions,
+wrangler output-string pinning, Windows `.cmd` spawning, the cross-package token contract test (a
+hardening pass owns them). Note T4a retired the `wrangler whoami` half of the output-string risk
+by moving to `--json`. (5) The umbrella's resume table (one row per step: persisted key, expiry,
+partial-state detection, re-entry) is a standing debt no tool pass has carried; noted for Pass D.
+(6) `carry-over-declined` is an `act` row, so an admin who declines the DNS carry-over exits 1.
+There is no kind for "done, by choice", and inventing one for a single row is over-abstraction;
+T4a's Task 10 owns deciding whether its orchestration treats a decline as a clean stop.
+
+**One open hand step from T3:** Geoff deletes the e2e's GitHub App at github.com
+(`cairn-t3-live-71d37c`).
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 

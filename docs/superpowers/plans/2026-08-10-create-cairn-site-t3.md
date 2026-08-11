@@ -916,3 +916,65 @@ between identically-named sites, the four wrangler output strings this chapter p
 floating `^4`, and a cross-package contract test to stop the engine's token rules drifting away from
 the CLI's copy of them. The missing comment gate on this package and two flaky pieces of T2 test
 infrastructure are recorded in STATUS.
+
+## Post-mortem addendum: the GitHub half of the live e2e (2026-08-10)
+
+The last unproven link is proven. A save in the signed-in admin of a freshly scaffolded,
+freshly deployed site committed to its repository through its own GitHub App, with the App's
+key living only in the Worker's secret store.
+
+**The run.** From a scratch directory, the packed CLI (the CI tarball pattern) ran the whole
+T1+T2+T3 flow against real GitHub and the real glw907 Cloudflare account: site
+`t3-live-71d37c`, App `cairn-t3-live-71d37c` (id 4553988, installation 152808242), private
+repo `glw907/t3-live-71d37c`, 91 files pushed, then deploy, provisioning, both migrations,
+the key move, and the bootstrap seed, exit 0 end to end. One deliberate divergence from a
+single invocation: `@glw907/cairn-cms-dev` is unpublished, so the scaffold's install can only
+resolve it from a packed tarball. The run therefore split at the chapter boundary, exactly
+where CI splits: the GitHub chapter ran first (`--yes --github`), the two specs were rewritten
+to the tarballs, and a second invocation (`--yes --github --deploy`) resumed from `pushed`
+into the Cloudflare chapter, printing the resume line and honoring the `--owner-email`
+override. Once the tool publishes, a single invocation needs no such seam.
+
+**Verified, with the method named.**
+
+- The pushed repo's `src/theme/cairn.config.ts` carries the real identity (read back through
+  the GitHub API, not from local disk): `githubApp({ owner: 'glw907', repo: 't3-live-71d37c',
+  ... appId: '4553988', installationId: '152808242' })`. The pre-push finalize works live.
+- `wrangler.jsonc` after the deploy: zero `database_id` anywhere, still id-less; the only
+  change is the tool's own `PUBLIC_ORIGIN` rewrite. No write-back, as the spike found.
+- The live site: `/` 200, `/admin` 303 to `/admin/login`. `wrangler secret list` shows exactly
+  `GITHUB_APP_PRIVATE_KEY_B64`. The state record ended at `live`, mode 0600, with no PEM and
+  no token material (checked by content scan, not by filename).
+- The first bootstrap token expired unclicked (the admin stepped away past its ten minutes);
+  `--sign-in` reseeded and reopened exactly as designed, and the recovery is now e2e-proven
+  too. The confirm click landed the signed-in admin.
+- **The save:** editing a post and saving produced `commit.succeeded` in the Worker's own
+  structured logs (watched live through `wrangler tail`), branch
+  `cairn/posts/2026-07-03-trail-mix`, commit `68ad2a5c`, author
+  `geoff-login <geoff-login@907.life>`. The Worker holds no GitHub credential except the App's
+  key, so the commit can only have gone through the App.
+- Human-moment count: four in the flow (the manifest click, the install approval, the confirm
+  click, the save), plus one re-open after the token expiry, plus the by-hand App deletion at
+  teardown. No typing beyond what the flow states.
+
+**Two divergences surfaced, one fixed here, one filed.**
+
+1. **The seed streamed wrangler's raw `--json` payload into the admin's terminal**, three
+   result objects of it, in the chapter run and again under `--sign-in`. The suite never saw
+   it because the fake's stdout was compact single-line JSON with no trailing newline, which
+   the exec seam's line mirror never emits (no complete line), while real wrangler
+   pretty-prints across many lines. Fixed in this pass on both sides, per Task 12's own rule:
+   the seed no longer streams that command's output (the payload belongs to the row-count
+   check alone), and the fake now emits the real pretty-printed shape. The new test was proven
+   able to fail against the pre-fix code before the fix was restored; the package suite is
+   273/273.
+2. **The engine's commit attribution does not match its own comment.** `src/lib/github/repo.ts`
+   says an omitted committer means GitHub attributes the commit to the App; the real API's
+   fallback for an omitted committer is the author, and the live commit confirms it (committer
+   reads `geoff-login`, not the App's bot). Spec §7.4's "committer is left to the App" is not
+   what happens. Cosmetic attribution only, engine-side, so it is filed as a carry-forward
+   rather than fixed in a pass whose contract leaves the runtime library untouched.
+
+**Teardown, verified by listing:** the account lists no `t3-live` Worker, D1 database, or R2
+bucket; the repo resolves to not-found; the `workers.dev` hostname already 404s. The App's
+deletion is the standing by-hand step at its settings page.

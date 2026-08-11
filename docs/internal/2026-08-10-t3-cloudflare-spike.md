@@ -229,6 +229,14 @@ User->Memberships->Read permission?`. The deletion itself lands; only the confir
 fails. `DELETE /accounts/{id}/workers/scripts/{name}?force=true` is the clean alternative and is
 covered by the token as it stands. Worth recording in the estate inventory as a token gap.
 
+## Addendum from the live e2e (2026-08-10)
+
+One output-shape note to add to (d): `d1 execute --json` pretty-prints its result array across
+many lines, with a trailing newline. The suite's fake had modeled it as compact single-line
+JSON, which the exec seam's line mirror never emits, so the fake hid a real behavior (the seed
+streaming the whole payload to the terminal) that the live run exposed. The fake now emits the
+real shape; details in the T3 plan's post-mortem addendum.
+
 ## Sources
 
 - Every command above, run against account `glw907` (`120c269ad6d3dfbe6d63a0bb53758ca0`) on

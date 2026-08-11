@@ -741,6 +741,77 @@ After Tasks 2-11 are green. One sitting on the glw907 account; Geoff's moments a
 
 ---
 
+## Review-gate findings (2026-08-11)
+
+Two reviewers ran at the pass-end gate, `web-auth-security-reviewer` over the bootstrap and key
+move and `cloudflare-workers-reviewer` over the whole chapter. Both found real defects in shipped
+code. What follows is the triage, with the verification each verdict rests on.
+
+**Fixed in this pass, each verified by the orchestrator before dispatch:**
+
+- **The seeded SQL did not encode the engine's own trust model.** The owner insert used
+  `ON CONFLICT(email) DO NOTHING`, which guards only against duplicating that one address, so
+  `--sign-in --owner-email <anyone>` against a live site added a **new owner**, and against an
+  existing editor's address minted a login token **for that person**. The engine's
+  `insertOwnerIfEmpty` (`src/lib/auth/store.ts:215`) uses `WHERE NOT EXISTS (SELECT 1 FROM editor)`,
+  and `auth-routes.ts:111` claims that guard "encodes exactly the trust the hand-seed SQL already
+  encodes". Ours did not. The caller already holds D1 write access, so no boundary was crossed, but
+  a one-time bootstrap should not stay an owner factory.
+- **The raw sign-in token was printed to stdout unconditionally** (`src/github/open.mjs`), in
+  exactly the unattended run this package's own README documents.
+- **Derived resource names exceeded Cloudflare's limits.** `workerNameFor` bounded the worker name
+  at 63 characters, then the config appended `-auth`, `-app`, and `-media` past it. Measured: "The
+  Anchorage Nordic Ski Club Newsletter and Events Archive" slugs to 59 characters and produces a
+  **65-character bucket name**, which fails wrangler's own `isValidR2BucketName` regex and stops the
+  deploy at config parse. **This was the plan's own `[review]` amendment bounding the wrong string.**
+- **An unhandled `EPIPE` crashed the CLI with a raw stack** on the one call that pipes input, the App
+  key. Reproduced: a child that spawns successfully and exits without draining stdin raises
+  `UNCAUGHT EXCEPTION: EPIPE`. **The orchestrator's earlier probe of this missed it**, and so does
+  the suite's own test, for the same reason: both used a nonexistent binary path, which fails at
+  spawn before stdin is ever connected. Reachable, because a `deployed` resume skips
+  `ensureInstalled`.
+- Smaller, all verified: the deploy-URL regex was unanchored and greedy (it could splice two URLs
+  into the origin the token is then sent to); the token's entropy was unpinned (the existing
+  assertion holds for SHA-256 of anything); `--owner-email` was unvalidated and unpersisted on the
+  resume and `--sign-in` paths; `reseedAndOpen` dereferenced `cloudflare.url` unguarded *after*
+  writing a token to the production database.
+
+**Filed, not fixed, with the reason:**
+
+- **Windows is likely broken end to end.** Spawning `npx.cmd`/`npm.cmd` with `shell: false` throws
+  `EINVAL` on every Node this package supports, since the CVE-2024-27980 fix. Credible and precise,
+  but unverifiable from Linux, and `preflight.mjs` shows Windows is a supported target. **This needs
+  a real Windows check before the tool ships.**
+- **A Cloudflare user with more than one account cannot deploy.** Because stdout is always piped,
+  wrangler is always non-interactive, and `getOrSelectAccountId` throws rather than prompting. The
+  spike could not see this: its token resolves to exactly one account. Needs an account-selection
+  step and its own catalogue row.
+- **Two sites whose names slug identically silently share resources.** The worker name is a pure
+  function of the display name with no uniqueness element, and a deploy meeting existing named
+  resources reuses them (spike (h)), so the second site adopts the first's databases and media.
+  Design decision: name after the site id, probe before deploying, or say so in the consent copy.
+- **`wrangler: ^4` floats while four output-string contracts are parsed** (`NPX_CANCELED_STDERR`,
+  `LOGGED_IN_PATTERN`, `WORKERS_DEV_URL_PATTERN`, the subdomain match). A wording change fails
+  silently. Wants a tested floor plus a scheduled watch, per the watch-item convention.
+- **The engine's token contract is duplicated with nothing tying the two together.** The round-trip
+  test is a closed loop: it hashes the CLI's token with the CLI's algorithm and compares to the
+  CLI's SQL, so it would stay green if the engine changed `hashToken` or `TOKEN_TTL_MS`. The right
+  fix is a cross-package contract test, this repo's own gold standard for a watch item.
+- `PUBLIC_ORIGIN` is not reconciled into the pushed repo. Already a named T4 item in the spec; both
+  reviewers raised it independently, and the second added that `requireOrigin` permits `http://` for
+  localhost, so a Builds-driven deploy would fail **silently** rather than loudly.
+- Lower: the token reaches `xdg-open`'s argv (bounded by the ten-minute TTL); `clientSecret` and
+  `webhookSecret` stay in the state record forever; a bootstrap sign-in leaves an
+  `auth.token.confirmed` with no preceding `auth.token.minted`, which is a useful detection signal
+  worth documenting rather than hiding; `runCommand` sets no stream encoding, so multi-byte
+  characters split across chunks render as mojibake.
+
+**What the two reviewers agreed was sound**, stated because it is the part most worth keeping: the
+SQL escaping is complete for SQLite (quote-doubling, no backslash escapes, no shell anywhere), the
+key-move ordering cannot lose the key under any failure direction, the `session` table is never
+touched so the engine mints every session through its own path, and the seeded token is
+byte-equivalent in strength, encoding, hashing, and lifetime to one the engine would issue.
+
 ## Self-review notes
 
 Spec coverage: consent with free-plan framing and named resources (Task 10.1, spec flow 1);

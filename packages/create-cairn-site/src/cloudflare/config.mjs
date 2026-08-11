@@ -137,5 +137,8 @@ export async function writePublicOrigin(dir, url) {
       `writePublicOrigin: expected to find a "PUBLIC_ORIGIN" entry in ${WRANGLER_CONFIG_RELATIVE}, but it is missing`,
     );
   }
-  await writeFile(configPath, content.replace(PUBLIC_ORIGIN_PATTERN, `"PUBLIC_ORIGIN": "${url}"`));
+  await writeFile(
+    configPath,
+    content.replace(PUBLIC_ORIGIN_PATTERN, `"PUBLIC_ORIGIN": ${JSON.stringify(url)}`)
+  );
 }

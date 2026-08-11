@@ -21,8 +21,16 @@ import { cloudflareError, trailingStderr } from './catalogue.mjs';
  */
 const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
 
-/** The pattern the T3 spike pinned for the deploy's workers.dev URL line. */
-const WORKERS_DEV_URL_PATTERN = /https:\/\/[^\s]+\.workers\.dev/;
+/**
+ * The pattern the T3 spike pinned for the deploy's workers.dev URL line, anchored to a whole
+ * trimmed line rather than searched unanchored across the deploy's full stdout: an unanchored
+ * `[^\s]+` is greedy, so a line carrying two URLs back to back with no whitespace between them
+ * (a redirect target embedded in a query string, say) would match from the first `https://` all
+ * the way to the LAST `.workers.dev`, splicing the two together into one string that is neither
+ * URL. Anchoring to one line at a time means a line that is not a single, bare URL simply does
+ * not match, rather than matching too much.
+ */
+const WORKERS_DEV_URL_LINE_PATTERN = /^https:\/\/\S+$/;
 
 /**
  * The stderr text wrangler's `deploy` prints when the account has no workers.dev subdomain yet,
@@ -102,6 +110,33 @@ export async function ensureLogin({ dir, log }) {
 }
 
 /**
+ * Find the deploy's workers.dev URL, one already-ANSI-stripped line at a time. Each candidate
+ * line is both pattern-matched and parsed with `new URL()`, so a line that merely looks like a
+ * bare URL but is not a valid one (or is `https` to some other host) is rejected rather than
+ * silently accepted.
+ * @param {string} strippedStdout the deploy's stdout, with ANSI escapes already removed
+ * @returns {string | null} the workers.dev origin (no path, no query), or null when no line
+ *  qualifies
+ */
+function findWorkersDevOrigin(strippedStdout) {
+  for (const rawLine of strippedStdout.split('\n')) {
+    const line = rawLine.trim();
+    if (!WORKERS_DEV_URL_LINE_PATTERN.test(line)) continue;
+
+    let parsed;
+    try {
+      parsed = new URL(line);
+    } catch {
+      continue;
+    }
+    if (parsed.protocol === 'https:' && parsed.hostname.endsWith('.workers.dev')) {
+      return parsed.origin;
+    }
+  }
+  return null;
+}
+
+/**
  * Deploy the Worker and parse its workers.dev URL out of wrangler's output.
  * @param {object} args
  * @param {string} args.dir the scaffold root
@@ -123,14 +158,14 @@ export async function deployWorker({ dir, log }) {
   }
 
   const stripped = result.stdout.replace(ANSI_ESCAPE_PATTERN, '');
-  const match = stripped.match(WORKERS_DEV_URL_PATTERN);
-  if (!match) {
+  const url = findWorkersDevOrigin(stripped);
+  if (!url) {
     throw cloudflareError('deploy-failed', {
       dir,
       detail: 'wrangler exited successfully, but its deploy output carried no workers.dev URL.'
     });
   }
-  return { url: match[0] };
+  return { url };
 }
 
 /** The bindings, in the order migrations run, matching wrangler.jsonc's binding names. */

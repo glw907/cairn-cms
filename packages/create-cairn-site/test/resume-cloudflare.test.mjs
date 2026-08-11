@@ -23,6 +23,16 @@ const execFileAsync = promisify(execFile);
 const BIN_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'bin.mjs');
 
 /**
+ * The `--json` stdout of a seed run against a genuinely empty allowlist: the owner insert and
+ * the token insert both report one changed row, matching bootstrap.mjs's own trust check.
+ */
+const SEED_SUCCESS_STDOUT = JSON.stringify([
+  { results: [], success: true, meta: { changes: 1 } },
+  { results: [], success: true, meta: { changes: 0 } },
+  { results: [], success: true, meta: { changes: 1 } },
+]);
+
+/**
  * Point CAIRN_STATE_DIR at a fresh temporary directory for the duration of one test, so
  * `saveSite` here and the spawned CLI's own state reads agree on where records live.
  * @param {import('node:test').TestContext} t the running test's context
@@ -113,6 +123,7 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
 
   const fake = await makeFakeBin('resume-sign-in');
   t.after(() => fake.close());
+  await fake.respond('d1 execute', { code: 0, stdout: SEED_SUCCESS_STDOUT });
   const fakeOpenerDir = await makeFakeOpenerDir(t);
 
   await seedLiveSite('alpine-club-abcdef', dir);
@@ -120,11 +131,20 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
   const result = await runCli(['--dir', dir, '--sign-in'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
 
   assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  // This run's stdout is piped rather than a TTY (execFile always pipes), so the sign-in URL's raw
+  // token must never appear in it: only the site's origin and a re-run hint print instead.
+  assert.equal(
+    result.stdout.includes('token='),
+    false,
+    `expected no token-bearing link in this non-interactive run's stdout, got: ${result.stdout}`,
+  );
   assert.ok(
-    result.stdout.includes(
-      'Open this link if the browser did not open: https://alpine-club.glw907.workers.dev/admin/auth/confirm?token=',
-    ),
-    `expected the opener's fallback link in stdout, got: ${result.stdout}`,
+    result.stdout.includes('Your site is at: https://alpine-club.glw907.workers.dev'),
+    `expected the site's origin in stdout, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('--sign-in'),
+    `expected a re-run hint naming --sign-in, got: ${result.stdout}`,
   );
 
   const invocations = await fake.invocations();
@@ -135,6 +155,28 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
     'expected exactly one seed invocation',
   );
   assert.equal(invocations.length, 1, '--sign-in must touch wrangler only for the reseed');
+});
+
+test('bin.mjs --sign-in on a record with no saved Cloudflare URL fails loud before seeding', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-resume-scaffold-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('resume-sign-in-no-url');
+  t.after(() => fake.close());
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+
+  await seedLiveSite('alpine-club-nourl1', dir, { cloudflare: undefined });
+
+  const result = await runCli(['--dir', dir, '--sign-in'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
+
+  assert.equal(result.code, 1, `expected exit 1, got ${result.code}. stdout: ${result.stdout}`);
+  assert.ok(
+    result.stderr.includes('Next step:'),
+    `expected a next step, got: ${result.stderr}`,
+  );
+  assert.equal(result.stderr.includes('TypeError'), false, `expected no raw TypeError, got: ${result.stderr}`);
+  assert.deepEqual(await fake.invocations(), [], 'seedOwnerAndToken must never be reached with no saved url');
 });
 
 test('bin.mjs --sign-in on a record with no ownerEmail prints a next step, not a bare TypeError', async (t) => {
@@ -176,6 +218,7 @@ test('bin.mjs resumes a pushed record and notes an --owner-email override in the
     code: 0,
     stdout: 'Deployed thing triggers (0.1 sec)\n  https://alpine-club.glw907.workers.dev\n',
   });
+  await fake.respond('d1 execute', { code: 0, stdout: SEED_SUCCESS_STDOUT });
 
   await saveSite('alpine-club-pushd1', {
     name: 'Alpine Club',

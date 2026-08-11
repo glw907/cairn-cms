@@ -126,41 +126,48 @@ export async function runCloudflareChapter({
     if (!dryRun && !consented) {
       return 'declined';
     }
+  }
 
-    await runStep(
-      frame,
-      'Enter your sign-in email',
-      'Asks for the email you will sign in with (for example, you@example.com), and saves it to ' +
-        'your progress record.',
-      async () => {
-        if (flags.yes) {
-          if (!EMAIL_PATTERN.test(ownerEmail ?? '')) {
-            throw new Error(
-              'A sign-in email is needed to finish this chapter, and --yes leaves no way to ask ' +
-                'for one.\nNext step: re-run with --owner-email <you@example.com>.',
-            );
-          }
-        } else {
-          // An address already in hand (from --owner-email or the saved record) is validated
-          // before anything is asked, so a good one never reaches the prompt at all.
-          while (!EMAIL_PATTERN.test(ownerEmail ?? '')) {
-            if (ownerEmail !== undefined) {
-              log('That does not look like an email address (needs an @ with something on both sides).');
-            }
-            const answer = await text({
-              message: 'Sign-in email (you will use this to sign in to your own site)',
-              placeholder: 'you@example.com',
-            });
-            if (isCancel(answer)) exitOnCancel();
-            // An empty submit becomes '', never undefined, so the next pass prints the nudge
-            // above rather than silently re-prompting.
-            ownerEmail = answer ?? '';
-          }
+  // Validated and persisted unconditionally, even on a `deployed` resume: an --owner-email
+  // supplied on that resume must still be checked and saved, since the sign-in action below reads
+  // `ownerEmail` regardless of which branch ran. A value already valid (the common resume case,
+  // read from the saved record with no override) passes the pattern test immediately and prompts
+  // nothing.
+  await runStep(
+    frame,
+    'Enter your sign-in email',
+    'Asks for the email you will sign in with (for example, you@example.com), and saves it to ' +
+      'your progress record.',
+    async () => {
+      if (flags.yes) {
+        if (!EMAIL_PATTERN.test(ownerEmail ?? '')) {
+          throw new Error(
+            'A sign-in email is needed to finish this chapter, and --yes leaves no way to ask ' +
+              'for one.\nNext step: re-run with --owner-email <you@example.com>.',
+          );
         }
-        await updateSite(siteId, { ownerEmail });
-      },
-    );
+      } else {
+        // An address already in hand (from --owner-email or the saved record) is validated
+        // before anything is asked, so a good one never reaches the prompt at all.
+        while (!EMAIL_PATTERN.test(ownerEmail ?? '')) {
+          if (ownerEmail !== undefined) {
+            log('That does not look like an email address (needs an @ with something on both sides).');
+          }
+          const answer = await text({
+            message: 'Sign-in email (you will use this to sign in to your own site)',
+            placeholder: 'you@example.com',
+          });
+          if (isCancel(answer)) exitOnCancel();
+          // An empty submit becomes '', never undefined, so the next pass prints the nudge
+          // above rather than silently re-prompting.
+          ownerEmail = answer ?? '';
+        }
+      }
+      await updateSite(siteId, { ownerEmail });
+    },
+  );
 
+  if (!resumingAtDeployed) {
     await runStep(
       frame,
       "Install your site's dependencies",
@@ -217,7 +224,7 @@ export async function runCloudflareChapter({
       'then opens it.',
     async () => {
       const { confirmPath } = await seedOwnerAndToken({ dir, email: ownerEmail, log });
-      await openBrowser(`${deployUrl}${confirmPath}`, log);
+      await openBrowser(`${deployUrl}${confirmPath}`, log, { secret: true });
       log(SIGN_IN_OPENED_NOTICE);
       await updateSite(siteId, { step: 'live' });
     },

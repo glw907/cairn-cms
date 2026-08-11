@@ -70,7 +70,9 @@ async function printLiveInfo(siteId) {
  * is persisted back to the record so a later plain `--sign-in` reuses it. A record with neither
  * (hand-edited, or written by a version that never persisted the field) fails loud here rather
  * than reaching `seedOwnerAndToken`, whose own `.trim()` would otherwise raise a bare TypeError
- * that names no next step.
+ * that names no next step. The same guard covers a record with no saved `cloudflare.url`: without
+ * it, the seed would already have written a live token to the database before a bare dereference
+ * of `state.cloudflare.url` threw, leaving no way to reach the link it minted.
  * @param {{ siteId: string, state: { dir: string, ownerEmail?: string, cloudflare?: { url?: string } },
  *  ownerEmailOverride?: string, log: (line: string) => void }} args
  * @returns {Promise<void>}
@@ -83,11 +85,17 @@ async function reseedAndOpen({ siteId, state, ownerEmailOverride, log }) {
         'Next step: re-run with --owner-email <you@example.com> to set one.',
     );
   }
+  if (!state.cloudflare?.url) {
+    throw new Error(
+      'This site has no saved Cloudflare URL, so --sign-in has nowhere to open the sign-in link.\n' +
+        `Next step: re-run npx create-cairn-site --dir ${state.dir} to finish deploying first.`,
+    );
+  }
   if (ownerEmail !== state.ownerEmail) {
     await updateSite(siteId, { ownerEmail });
   }
   const { confirmPath } = await seedOwnerAndToken({ dir: state.dir, email: ownerEmail, log });
-  await openBrowser(`${state.cloudflare.url}${confirmPath}`, log);
+  await openBrowser(`${state.cloudflare.url}${confirmPath}`, log, { secret: true });
   console.log(SIGN_IN_OPENED_NOTICE);
 }
 

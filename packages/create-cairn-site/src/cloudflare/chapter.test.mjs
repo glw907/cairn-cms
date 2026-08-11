@@ -86,6 +86,26 @@ async function armLoggedIn(fake) {
 }
 
 /**
+ * The `--json` stdout of a seed run against a genuinely empty allowlist: the owner insert and
+ * the token insert both report one changed row, matching bootstrap.mjs's own trust check.
+ */
+const SEED_SUCCESS_STDOUT = JSON.stringify([
+  { results: [], success: true, meta: { changes: 1 } },
+  { results: [], success: true, meta: { changes: 0 } },
+  { results: [], success: true, meta: { changes: 1 } },
+]);
+
+/**
+ * Arm the `d1 execute` reply every happy-path test needs, so the sign-in action's own trust
+ * check (bootstrap.mjs) finds a token it can report as actually written.
+ * @param {import('../../test/fake-bin.mjs').FakeBin} fake the fake wrangler bin
+ * @returns {Promise<void>}
+ */
+async function armSeedSuccess(fake) {
+  await fake.respond('d1 execute', { code: 0, stdout: SEED_SUCCESS_STDOUT });
+}
+
+/**
  * Recursively read every file under `root` and return their concatenated text, for scanning a
  * scaffold directory or the state directory for a secret that should never have landed there.
  * @param {string} root the directory to walk
@@ -171,6 +191,7 @@ test('runCloudflareChapter: the happy path returns live, walks the state hops, a
   const fake = await makeFakeBin('cloudflare-tools');
   t.after(() => fake.close());
   await armLoggedIn(fake);
+  await armSeedSuccess(fake);
   await fake.respond('deploy', {
     code: 0,
     stdout: 'Deployed thing triggers (0.1 sec)\n  https://alpine-club.glw907.workers.dev\n',
@@ -408,6 +429,7 @@ test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-
   const fake = await makeFakeBin('cloudflare-tools-retry');
   t.after(() => fake.close());
   await armLoggedIn(fake);
+  await armSeedSuccess(fake);
   await fake.respond('deploy', { code: 1, stderr: 'A network request to the Cloudflare API failed.' });
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   process.env.CAIRN_NPM_BIN = fake.binPath;
@@ -482,6 +504,7 @@ test('runCloudflareChapter: a record at deployed skips consent and the deploy gr
 
   const fake = await makeFakeBin('cloudflare-tools-resume-deployed');
   t.after(() => fake.close());
+  await armSeedSuccess(fake);
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   process.env.CAIRN_NPM_BIN = fake.binPath;
   t.after(() => {
@@ -561,6 +584,7 @@ test('runCloudflareChapter: a deployed resume opens the record\'s real url, not 
 
   const fake = await makeFakeBin('cloudflare-tools-resume-deployed-url');
   t.after(() => fake.close());
+  await armSeedSuccess(fake);
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   process.env.CAIRN_NPM_BIN = fake.binPath;
   t.after(() => {
@@ -597,6 +621,90 @@ test('runCloudflareChapter: a deployed resume opens the record\'s real url, not 
   );
 });
 
+test('runCloudflareChapter: a deployed resume validates and persists an --owner-email override', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedPushedSite('alpine-club-deployed-override', dir, {
+    step: 'deployed',
+    ownerEmail: 'old@example.com',
+    github: {
+      appId: 42,
+      appSlug: 'cairn-alpine-club',
+      clientSecret: 'fake-client-secret',
+      owner: 'alpine-club-owner',
+      installationId: 77,
+    },
+    cloudflare: { url: 'https://alpine-club.glw907.workers.dev', workerName: 'alpine-club' },
+  });
+
+  const fake = await makeFakeBin('cloudflare-tools-deployed-override');
+  t.after(() => fake.close());
+  await armSeedSuccess(fake);
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  process.env.CAIRN_NPM_BIN = fake.binPath;
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  const outcome = await runCloudflareChapter({
+    siteId: 'alpine-club-deployed-override',
+    siteName: 'Alpine Club',
+    dir,
+    flags: { yes: true, deploy: true, ownerEmail: 'new@example.com' },
+    log: () => {},
+    dryRun: false,
+    openBrowser: async () => {},
+  });
+
+  assert.equal(outcome, 'live');
+  const state = await loadSite('alpine-club-deployed-override');
+  assert.equal(state.ownerEmail, 'new@example.com', 'a deployed resume must persist an --owner-email override');
+
+  const invocations = await fake.invocations();
+  const seedInvocation = invocations.find((i) => i.argv.slice(0, 2).join(' ') === 'd1 execute');
+  assert.match(seedInvocation.argv[5], /'new@example\.com'/, 'the seeded SQL must use the overridden email');
+});
+
+test('runCloudflareChapter: an invalid --owner-email on a deployed resume throws instead of silently seeding', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedPushedSite('alpine-club-deployed-bad-email', dir, {
+    step: 'deployed',
+    ownerEmail: 'old@example.com',
+    cloudflare: { url: 'https://alpine-club.glw907.workers.dev', workerName: 'alpine-club' },
+  });
+
+  process.env.CAIRN_WRANGLER_BIN = '/no/such/wrangler-binary-anywhere';
+  process.env.CAIRN_NPM_BIN = '/no/such/npm-binary-anywhere';
+  t.after(() => {
+    delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
+  });
+
+  await assert.rejects(
+    () =>
+      runCloudflareChapter({
+        siteId: 'alpine-club-deployed-bad-email',
+        siteName: 'Alpine Club',
+        dir,
+        flags: { yes: true, deploy: true, ownerEmail: 'not-an-email' },
+        log: () => {},
+        dryRun: false,
+        openBrowser: async () => {
+          throw new Error('openBrowser must never be called when the owner email fails validation');
+        },
+      }),
+    (err) => {
+      assert.match(err.message, /sign-in email/);
+      return true;
+    },
+  );
+
+  const state = await loadSite('alpine-club-deployed-bad-email');
+  assert.equal(state.ownerEmail, 'old@example.com', 'a rejected override must never overwrite the saved email');
+});
+
 test('runCloudflareChapter: a pushed re-entry with a saved ownerEmail prompts nothing for the email', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
@@ -605,6 +713,7 @@ test('runCloudflareChapter: a pushed re-entry with a saved ownerEmail prompts no
   const fake = await makeFakeBin('cloudflare-tools-prompt');
   t.after(() => fake.close());
   await armLoggedIn(fake);
+  await armSeedSuccess(fake);
   await fake.respond('deploy', {
     code: 0,
     stdout: 'Deployed thing triggers (0.1 sec)\n  https://alpine-club.glw907.workers.dev\n',

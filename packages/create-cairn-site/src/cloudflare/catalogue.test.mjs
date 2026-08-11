@@ -127,6 +127,18 @@ test('subdomain-unregistered matches the plan-specified text exactly', () => {
   );
 });
 
+test('seed-failed names the address and the allowlist when the reason is not-allowlisted', () => {
+  const err = cloudflareError('seed-failed', {
+    dir: './alpine',
+    reason: 'not-allowlisted',
+    email: 'stray@example.com'
+  });
+  assert.match(err.message, /stray@example\.com/);
+  assert.match(err.message, /allowlist/);
+  assert.match(err.message, /not on it/);
+  assert.match(err.message, /--sign-in/);
+});
+
 test('seed-failed matches the plan-specified text exactly', () => {
   const err = cloudflareError('seed-failed', { dir: './alpine', detail: 'D1_ERROR: UNIQUE constraint failed' });
   assert.equal(

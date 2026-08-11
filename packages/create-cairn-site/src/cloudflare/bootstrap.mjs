@@ -5,6 +5,13 @@
 // the same ten-minute TTL, so the confirm page's own lookup (`src/lib/auth/store.ts`) finds
 // exactly what this seed wrote. The `session` table is never touched; the confirm click mints the
 // session through the engine's own code path.
+//
+// The seed's SQL encodes the same trust the engine does: the owner insert only ever fires on a
+// genuinely empty allowlist (`insertOwnerIfEmpty` in `src/lib/auth/store.ts`), and the token
+// insert only ever fires for an address the editor table already carries, whether it was already
+// there or the owner insert just added it. A non-matching email against an already-populated
+// allowlist grants nothing, the same trust `src/lib/sveltekit/auth-routes.ts` describes for the
+// engine's own bootstrap path.
 import { randomBytes, createHash } from 'node:crypto';
 import { runWrangler } from './exec.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
@@ -45,6 +52,26 @@ function normalizeEmail(email) {
 }
 
 /**
+ * Parse a `wrangler d1 execute --json` stdout into its array of per-statement results. Some
+ * wrangler versions print a notice line ahead of the JSON (an agent-skills banner, observed on
+ * this machine's toolchain for other `--json` subcommands), so this slices from the first `[`
+ * rather than trusting the whole stdout to already be JSON.
+ * @param {string} stdout the child's captured stdout
+ * @returns {Array<{ meta?: { changes?: number } }> | null} the parsed array, or null when the
+ *  output carried nothing that parses as one
+ */
+function parseD1JsonResults(stdout) {
+  const start = stdout.indexOf('[');
+  if (start === -1) return null;
+  try {
+    const parsed = JSON.parse(stdout.slice(start));
+    return Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Seed the owner's `editor` row and one bootstrap magic-link token directly into the deployed
  * AUTH_DB, so opening the returned confirm path signs the admin in with no email round trip.
  * @param {object} args
@@ -66,21 +93,38 @@ export async function seedOwnerAndToken({ dir, email, log, now = Date.now() }) {
   const tokenHash = createHash('sha256').update(token).digest('hex');
   const expiresAt = now + TOKEN_TTL_MS;
 
+  // The owner insert fires only when the allowlist is empty (WHERE NOT EXISTS), mirroring
+  // insertOwnerIfEmpty exactly, and the token insert fires only for an address the editor table
+  // already carries (WHERE EXISTS), whether it was already there or the insert above just added
+  // it. An address that is neither the sole owner-to-be nor an existing editor gets nothing.
   const sql =
     `INSERT INTO editor (email, display_name, role, created_at)\n` +
-    `  VALUES ('${escapedEmail}', '${escapedDisplayName}', 'owner', ${now})\n` +
-    `  ON CONFLICT(email) DO NOTHING;\n` +
+    `  SELECT '${escapedEmail}', '${escapedDisplayName}', 'owner', ${now}\n` +
+    `  WHERE NOT EXISTS (SELECT 1 FROM editor);\n` +
     `DELETE FROM magic_token WHERE email = '${escapedEmail}';\n` +
     `INSERT INTO magic_token (token_hash, email, expires_at, created_at)\n` +
-    `  VALUES ('${tokenHash}', '${escapedEmail}', ${expiresAt}, ${now});`;
+    `  SELECT '${tokenHash}', '${escapedEmail}', ${expiresAt}, ${now}\n` +
+    `  WHERE EXISTS (SELECT 1 FROM editor WHERE email = '${escapedEmail}');`;
 
   log("Writing your sign-in row to the site's database.");
-  const result = await runWrangler(['d1', 'execute', 'AUTH_DB', '--remote', '--command', sql], {
-    cwd: dir,
-    log
-  });
+  const result = await runWrangler(
+    ['d1', 'execute', 'AUTH_DB', '--remote', '--command', sql, '--json'],
+    { cwd: dir, log },
+  );
   if (result.code !== 0) {
     throw cloudflareError('seed-failed', { dir, detail: trailingStderr(result.stderr) });
+  }
+
+  // A zero exit can still have granted nothing: the WHERE EXISTS guard above makes the token
+  // insert itself conditional, so a seed against an already-populated allowlist that does not
+  // carry this address writes no row at all. Handing back a confirm link in that case would be a
+  // dead link the admin has no way to diagnose, so this checks the token insert's own row count
+  // (the last of the three statements) rather than trusting the exit code alone.
+  const results = parseD1JsonResults(result.stdout);
+  const tokenInsertResult = results?.[results.length - 1];
+  const tokenWasWritten = (tokenInsertResult?.meta?.changes ?? 0) > 0;
+  if (!tokenWasWritten) {
+    throw cloudflareError('seed-failed', { dir, reason: 'not-allowlisted', email: normalizedEmail });
   }
 
   return { confirmPath: '/admin/auth/confirm?token=' + encodeURIComponent(token) };

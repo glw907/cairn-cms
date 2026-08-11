@@ -17,6 +17,15 @@ const DEPLOY_STDOUT_SAMPLE =
   '  \x1b[1;36mhttps://t3-spike-a570e2.glw907.workers.dev\x1b[0m\n' +
   'Current Version ID: 851dd846-9968-4752-82d4-563f72c0c2d2\n';
 
+/**
+ * A stdout line carrying two URLs run together with no whitespace between them (an embedded
+ * redirect target, the shape an unanchored greedy regex would splice), used to prove the anchored
+ * per-line parse never hands back a spliced string.
+ */
+const REDIRECT_STYLE_STDOUT =
+  'Deployed thing triggers (0.1 sec)\n' +
+  '  https://real-worker.glw907.workers.dev/?next=https://evil.attacker.workers.dev\n';
+
 /** The subdomain-missing error text wrangler prints, per the spike's section (c). */
 const SUBDOMAIN_STDERR =
   'You need a workers.dev subdomain in order to proceed. Please go to the dashboard and open ' +
@@ -150,6 +159,49 @@ test('deployWorker maps a workers.dev subdomain stderr to subdomain-unregistered
     () => deployWorker({ dir, log: () => {} }),
     (err) => {
       assert.equal(err.catalogue.code, 'subdomain-unregistered');
+      return true;
+    }
+  );
+});
+
+test('deployWorker never splices two URLs on one line: it returns only the real host\'s origin', async (t) => {
+  const dir = tmpdir();
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  await fake.respond('deploy', { code: 0, stdout: REDIRECT_STYLE_STDOUT });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const { deployWorker } = await import('./deploy.mjs');
+  const result = await deployWorker({ dir, log: () => {} });
+
+  // The correct origin, with no path or query, and never the spliced string an unanchored
+  // greedy match would have produced (the whole line, up to the LAST .workers.dev).
+  assert.equal(result.url, 'https://real-worker.glw907.workers.dev');
+  assert.doesNotMatch(result.url, /evil/);
+});
+
+test('deployWorker treats two separate bare URLs on one line as no match, never a splice', async (t) => {
+  const dir = tmpdir();
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  await fake.respond('deploy', {
+    code: 0,
+    stdout:
+      'Deployed thing triggers (0.1 sec)\n' +
+      '  see https://old-worker.example.com and https://new-worker.glw907.workers.dev\n',
+  });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const { deployWorker } = await import('./deploy.mjs');
+
+  // Neither the correct origin nor a spliced string: the line carries surrounding prose, so the
+  // whole-line anchor rejects it outright rather than guessing which URL was meant.
+  await assert.rejects(
+    () => deployWorker({ dir, log: () => {} }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'deploy-failed');
       return true;
     }
   );

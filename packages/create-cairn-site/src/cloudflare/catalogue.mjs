@@ -182,6 +182,16 @@ const ROWS = {
   'seed-failed': {
     kind: 'act',
     build(params) {
+      if (params.reason === 'not-allowlisted') {
+        return (
+          `The site deployed, but ${params.email} was not granted a sign-in: this site's ` +
+          'allowlist already carries at least one editor, and that address is not on it, so no ' +
+          'owner row and no sign-in link were written.\n' +
+          `Next: add ${params.email} to the allowlist (through the admin, signed in as an ` +
+          'existing editor, or with wrangler d1 execute), then re-run npx create-cairn-site ' +
+          `--dir ${params.dir} --sign-in.`
+        );
+      }
       if (params.detail) {
         return (
           'The site deployed, but writing your sign-in row to its database did not finish. ' +
@@ -207,7 +217,8 @@ const ROWS = {
  *  secret-put-failed, or seed-failed
  * @param {Record<string, string>} [params] the values to interpolate into the row's message;
  *  which keys are required depends on `code` (for example `dir` on every row, `detail` on the
- *  rows that carry child output, `database` on migrations-failed)
+ *  rows that carry child output, `database` on migrations-failed, `reason` and `email` on
+ *  seed-failed's not-allowlisted case)
  * @returns {Error & { catalogue: ChapterErrorInfo }} an Error whose message is the full printed
  *  text (ending in a "Next:" line) and whose `catalogue` property carries `{ code, kind, next }`
  */

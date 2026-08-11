@@ -164,4 +164,6 @@ than you can be invited to edit. Those arrive in a later release.
 
 Scaffolding writes nothing outside the site directory except one record of the site under
 `~/.config/cairn/sites/`, mode `0600`. No secret is ever written into the project. The App's
-private key lives in that record only until the Worker exists, and then only in the Worker.
+private key lives in that record only until the Worker exists, and then only in the Worker; the
+record itself is not secret-free even after that move, since it still carries the App's client
+secret and webhook secret, which this tool never relocates anywhere else.

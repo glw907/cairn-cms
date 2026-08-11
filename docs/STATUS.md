@@ -75,6 +75,14 @@ partial-state detection, re-entry) is a standing debt no tool pass has carried; 
 There is no kind for "done, by choice", and inventing one for a single row is over-abstraction;
 T4a's Task 10 owns deciding whether its orchestration treats a decline as a clean stop.
 
+(7) `test/fake-cloudflare.mjs` copied its HTTP plumbing from `test/fake-github.mjs`, so `compile`,
+`readRawBody`, and `sendJson` are now byte-identical in both, with `makeHandler` a near-copy. The
+fix is a shared `test/fake-http.mjs`, which means editing `fake-github.mjs`, a file T4a never
+touched. **The trigger is T4b: if its email or console work needs a third fake, extract first
+rather than making it a third copy.** Also unextracted, and older: the `makeFakeBin` plus
+`CAIRN_WRANGLER_BIN` setup repeats roughly sixty times, where `fake-github.mjs` already solved the
+same problem with `pointAtFake`.
+
 **One open hand step from T3:** Geoff deletes the e2e's GitHub App at github.com
 (`cairn-t3-live-71d37c`).
 

@@ -222,6 +222,19 @@ const ROWS = {
       );
     }
   },
+  'account-lookup-failed': {
+    kind: 'act',
+    build(params) {
+      return (
+        'The tool is signed in to Cloudflare, but it could not read the list of accounts on that ' +
+        'login. wrangler answered without the account list this step needs, which usually means ' +
+        'a wrangler version behaving differently than expected. Your site is untouched and still ' +
+        'working.\n' +
+        `Next: run npx wrangler whoami --json in ${params.dir} to see what it prints, then ` +
+        `re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
   'token-invalid': {
     kind: 'act',
     build(params) {
@@ -444,7 +457,7 @@ export const CATALOGUE_CODES = Object.keys(ROWS);
  * Build a printable, catalogued error for one of the Cloudflare chapter's recoverable failures.
  * @param {string} code one of the catalogue's codes: wrangler-unavailable, login-abandoned,
  *  install-failed, build-failed, deploy-failed, subdomain-unregistered, migrations-failed,
- *  secret-put-failed, seed-failed, account-ambiguous, token-invalid, token-scope-missing,
+ *  secret-put-failed, seed-failed, account-ambiguous, account-lookup-failed, token-invalid, token-scope-missing,
  *  zone-already-exists, zone-create-failed, records-read-failed, dns-record-failed,
  *  carry-over-declined,
  *  delegation-pending, delegation-wrong-nameservers, hostname-propagating, hostname-not-serving,

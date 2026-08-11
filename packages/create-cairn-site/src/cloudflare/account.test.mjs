@@ -139,6 +139,28 @@ test('a preamble line ahead of the JSON still parses correctly', async (t) => {
   assert.deepEqual(result, { accountId: '120c269ad6d3dfbe6d63a0bb53758ca0', learned: true });
 });
 
+test('an unreadable whoami body reports a lookup failure, not an abandoned sign-in', async (t) => {
+  const fake = await makeFakeBin('wrangler');
+  t.after(() => fake.close());
+  // Exit 0 means wrangler considers this session authenticated ("--json exits non-zero if not
+  // authenticated"), so the sign-in is fine and the account list is what is missing. Sending this
+  // admin back to the browser would point them at a thing that is not broken.
+  await fake.respond('whoami', { code: 0, stdout: 'not json at all\n' });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const { ensureAccountId } = await import('./account.mjs');
+
+  await assert.rejects(
+    () => ensureAccountId({ record: null, dir, yes: false, prompt: throwingPrompt, log: () => {} }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'account-lookup-failed');
+      assert.doesNotMatch(err.message, /sign-in was not completed/);
+      return true;
+    },
+  );
+});
+
 test('a non-zero whoami exit surfaces a catalogue error, not a raw parse crash', async (t) => {
   const fake = await makeFakeBin('wrangler');
   t.after(() => fake.close());

@@ -18,6 +18,7 @@ const EXPECTED_KIND = {
   'secret-put-failed': 'act',
   'seed-failed': 'act',
   'account-ambiguous': 'act',
+  'account-lookup-failed': 'act',
   'token-invalid': 'act',
   'token-scope-missing': 'act',
   'zone-already-exists': 'act',

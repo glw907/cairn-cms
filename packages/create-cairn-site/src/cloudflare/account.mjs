@@ -59,10 +59,19 @@ export async function ensureAccountId({ record, dir, yes, prompt, log }) {
   }
 
   const result = await runWrangler(['whoami', '--json'], { cwd: dir, log: () => {} });
-  const parsed = result.code === 0 ? parseWhoamiJson(result.stdout) : null;
-  const accounts = parsed?.accounts;
-  if (result.code !== 0 || !Array.isArray(accounts) || accounts.length === 0) {
+
+  // A non-zero exit and an unreadable body are different failures and must not share a row.
+  // `whoami --json` documents that it "exits with a non-zero status if not authenticated", so a
+  // non-zero exit really is the sign-in problem login-abandoned describes. Exiting 0 while
+  // carrying no readable account list is something else entirely, and telling that admin to redo
+  // a browser sign-in would send them to fix a thing that is not broken.
+  if (result.code !== 0) {
     throw cloudflareError('login-abandoned', { dir });
+  }
+
+  const accounts = parseWhoamiJson(result.stdout)?.accounts;
+  if (!Array.isArray(accounts) || accounts.length === 0) {
+    throw cloudflareError('account-lookup-failed', { dir });
   }
 
   if (accounts.length === 1) {

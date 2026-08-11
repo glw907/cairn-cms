@@ -80,6 +80,15 @@ function runCommand(command, args, { cwd, log, input }) {
     child.on('error', reject);
     child.on('close', (code) => resolve({ code, stdout, stderr }));
 
+    // A child that spawns successfully and then exits before draining stdin (the T3 review's
+    // finding: npx canceled due to missing packages exits immediately, ahead of the App-key
+    // move's large piped input) raises an 'error' event on the stdin stream itself, separate
+    // from the child-level 'error' handled above. With no listener here, that is an unhandled
+    // EPIPE that crashes the whole CLI with a raw stack. The child's exit code and stderr already
+    // carry the real failure (mapped to a catalogue row by the caller), so swallowing this stream
+    // error loses no information.
+    child.stdin.on('error', () => {});
+
     if (input) child.stdin.write(input);
     child.stdin.end();
   });

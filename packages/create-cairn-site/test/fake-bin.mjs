@@ -42,9 +42,14 @@ import { join } from 'node:path';
  * Build a fake executable under a fresh temp directory.
  * @param {string} name a readable label folded into the temp directory and script names; purely
  *  for a legible path in a failure message, never behavior
+ * @param {{ exitBeforeReadingStdin?: boolean }} [options] `exitBeforeReadingStdin` makes the fake
+ *  answer and exit without ever reading its stdin, reproducing the race a caller's stdin write
+ *  can lose to: a child that exits before the piped input drains raises an EPIPE on the write
+ *  side. The ordinary fake always drains stdin to EOF first, so this is the one shape it cannot
+ *  otherwise produce.
  * @returns {Promise<FakeBin>} the running fake, ready to be spawned by its `binPath`
  */
-export async function makeFakeBin(name) {
+export async function makeFakeBin(name, { exitBeforeReadingStdin = false } = {}) {
   const label = String(name).replace(/[^a-zA-Z0-9-]+/g, '-') || 'bin';
   const dir = await mkdtemp(join(tmpdir(), `cairn-fake-bin-${label}-`));
   const binPath = join(dir, `${label}.mjs`);
@@ -52,7 +57,11 @@ export async function makeFakeBin(name) {
   const invocationsPath = join(dir, 'invocations.jsonl');
 
   await writeFile(responsesPath, '[]', 'utf8');
-  await writeFile(binPath, FAKE_BIN_SCRIPT, 'utf8');
+  await writeFile(
+    binPath,
+    exitBeforeReadingStdin ? FAKE_BIN_SCRIPT_EXIT_BEFORE_STDIN : FAKE_BIN_SCRIPT,
+    'utf8',
+  );
   await chmod(binPath, 0o755);
 
   return {
@@ -134,5 +143,41 @@ if (match) {
 // canned reply larger than the pipe buffer would arrive truncated, and the caller would read
 // that as its own parsing bug. bin.mjs avoids process.exit() on its success paths for the same
 // reason. Setting the code and falling off the end lets Node drain the write first.
+process.exitCode = match?.code ?? 0;
+`;
+
+// A variant that never reads stdin at all, so the process can exit while a caller is still
+// writing (or has yet to start writing) its piped input, the shape that raises an unhandled
+// EPIPE on the write side when the caller attaches no 'error' listener of its own. Everything
+// else matches FAKE_BIN_SCRIPT: same invocation log, same matcher lookup, same reply shape;
+// the logged \`stdin\` is always \`null\`, since this fake deliberately leaves it unread.
+const FAKE_BIN_SCRIPT_EXIT_BEFORE_STDIN = `#!/usr/bin/env node
+import { appendFile, readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const argv = process.argv.slice(2);
+
+await appendFile(
+  join(here, 'invocations.jsonl'),
+  JSON.stringify({ argv, cwd: process.cwd(), stdin: null }) + '\\n',
+  'utf8'
+);
+
+let responses = [];
+try {
+  responses = JSON.parse(await readFile(join(here, 'responses.json'), 'utf8'));
+} catch {
+  responses = [];
+}
+
+const joined = argv.join(' ');
+const match = responses.find((entry) => joined.includes(entry.matcher));
+
+if (match) {
+  if (match.stdout) process.stdout.write(match.stdout);
+  if (match.stderr) process.stderr.write(match.stderr);
+}
 process.exitCode = match?.code ?? 0;
 `;

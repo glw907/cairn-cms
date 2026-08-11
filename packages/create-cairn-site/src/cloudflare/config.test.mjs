@@ -179,24 +179,61 @@ test('workerNameFor slugs the name with the cairn-site fallback, matching scaffo
   assert.equal(workerNameFor('!!!'), 'cairn-site');
 });
 
-test('workerNameFor holds a name that slugs to exactly 63 characters unchanged', () => {
-  const name = 'a'.repeat(63);
+test('workerNameFor holds a name that slugs to exactly 57 characters unchanged', () => {
+  const name = 'a'.repeat(57);
   const result = workerNameFor(name);
-  assert.equal(result.length, 63);
+  assert.equal(result.length, 57);
   assert.equal(result, name);
 });
 
-test('workerNameFor truncates past 63 characters and re-trims a trailing dash the cut created', () => {
-  // "a" x62 then a space then "b" slugs to 62 a's, a dash, and a b: 64 characters. Slicing the
-  // first 63 leaves the dash as the last character, which must not survive.
-  const name = `${'a'.repeat(62)} b`;
+test('workerNameFor truncates past 57 characters and re-trims a trailing dash the cut created', () => {
+  // "a" x56 then a space then "b" slugs to 56 a's, a dash, and a b: 58 characters. Slicing the
+  // first 57 leaves the dash as the last character, which must not survive.
+  const name = `${'a'.repeat(56)} b`;
   const result = workerNameFor(name);
   assert.ok(!result.endsWith('-'), `expected no trailing dash, got ${JSON.stringify(result)}`);
-  assert.equal(result, 'a'.repeat(62));
+  assert.equal(result, 'a'.repeat(56));
 });
 
-test('workerNameFor truncates a long dash-free name to 63 characters', () => {
+test('workerNameFor truncates a long dash-free name to 57 characters', () => {
   const result = workerNameFor('a'.repeat(70));
-  assert.equal(result.length, 63);
-  assert.equal(result, 'a'.repeat(63));
+  assert.equal(result.length, 57);
+  assert.equal(result, 'a'.repeat(57));
+});
+
+/**
+ * Wrangler's own client-side validation for an R2 bucket name (`isValidR2BucketName` in the
+ * wrangler source): 3-63 characters, lowercase alphanumeric and dashes, never starting or ending
+ * with a dash. Used as the oracle below so the assertion is about Cloudflare's actual rule, not
+ * about this package's own arithmetic agreeing with itself.
+ */
+const R2_BUCKET_NAME_PATTERN = /^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/;
+
+test('a base slug of exactly 57 characters keeps every derived resource name within Cloudflare\'s limits', async (t) => {
+  const slug = workerNameFor('a'.repeat(57));
+  assert.equal(slug.length, 57);
+
+  const dir = await fixtureDir(t);
+  await nameWranglerResources(dir, slug);
+  const parsed = parseJsonc(await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8'));
+
+  assert.ok(parsed.name.length <= 63);
+  assert.ok(parsed.d1_databases[0].database_name.length <= 63);
+  assert.ok(parsed.d1_databases[1].database_name.length <= 63);
+  assert.ok(parsed.r2_buckets[0].bucket_name.length <= 63, `bucket name too long: ${parsed.r2_buckets[0].bucket_name}`);
+  assert.match(parsed.r2_buckets[0].bucket_name, R2_BUCKET_NAME_PATTERN);
+});
+
+test('a display name slugging to 58 characters is bounded before any derived resource name is built', async (t) => {
+  const slug = workerNameFor('a'.repeat(58));
+  assert.equal(slug.length, 57, 'workerNameFor must bound the base slug, not just the worker name');
+
+  const dir = await fixtureDir(t);
+  await nameWranglerResources(dir, slug);
+  const parsed = parseJsonc(await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8'));
+
+  assert.ok(parsed.d1_databases[0].database_name.length <= 63);
+  assert.ok(parsed.d1_databases[1].database_name.length <= 63);
+  assert.ok(parsed.r2_buckets[0].bucket_name.length <= 63, `bucket name too long: ${parsed.r2_buckets[0].bucket_name}`);
+  assert.match(parsed.r2_buckets[0].bucket_name, R2_BUCKET_NAME_PATTERN);
 });

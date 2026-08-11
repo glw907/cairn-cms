@@ -484,9 +484,12 @@ test('runCloudflareChapter: a deploy-failed run leaves step at pushed, and a re-
   assert.equal(invocations.filter((i) => i.argv[0] === 'install').length, 1, 'install must run exactly once total');
 });
 
-test('runCloudflareChapter: a record at deployed skips consent and the deploy group, running only the key move and sign-in', async (t) => {
+test('runCloudflareChapter: a record at deployed skips consent and the deploy group, running only install, login, the key move, and sign-in', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
+  // node_modules already on disk, as a real resumed run's would be: proves ensureInstalled still
+  // checks for it (and skips cheaply) rather than that the check never ran.
+  await mkdir(path.join(dir, 'node_modules'));
   await seedPushedSite('alpine-club-deployed', dir, {
     step: 'deployed',
     ownerEmail: 'owner@example.com',
@@ -504,6 +507,7 @@ test('runCloudflareChapter: a record at deployed skips consent and the deploy gr
 
   const fake = await makeFakeBin('cloudflare-tools-resume-deployed');
   t.after(() => fake.close());
+  await armLoggedIn(fake);
   await armSeedSuccess(fake);
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
   process.env.CAIRN_NPM_BIN = fake.binPath;
@@ -542,23 +546,50 @@ test('runCloudflareChapter: a record at deployed skips consent and the deploy gr
     'expected the key move to log its no-op line',
   );
   assert.equal(logs.some((line) => line.includes('Deploy your site to Cloudflare')), false);
-  assert.equal(logs.some((line) => line.includes("Install your site's dependencies")), false);
+  // Install and login are hoisted out of the resume conditional: both the key move and the
+  // sign-in seed below shell out to wrangler, so a deployed resume must still check for them.
+  assert.ok(
+    logs.some((line) => line.includes("Install your site's dependencies")),
+    'expected the install step to still run on a deployed resume',
+  );
+  assert.ok(
+    logs.some((line) => line.includes('Dependencies are already installed')),
+    'expected the install step to actually check for node_modules, not just print its title',
+  );
+  assert.ok(
+    logs.some((line) => line.includes('Sign in to Cloudflare')),
+    'expected the login step to still run on a deployed resume',
+  );
+  assert.ok(
+    logs.some((line) => line.includes('Already signed in to Cloudflare.')),
+    'expected the login step to actually check wrangler whoami, not just print its title',
+  );
   assert.equal(logs.some((line) => line.includes('Build your site')), false);
   assert.equal(logs.some((line) => line.includes('Deploy to workers.dev')), false);
 
   const invocations = await fake.invocations();
   assert.equal(invocations.filter((i) => i.argv[0] === 'deploy').length, 0, 'expected zero deploy invocations');
+  assert.equal(invocations.filter((i) => i.argv[0] === 'install').length, 0, 'node_modules already existed');
   assert.equal(
     invocations.filter((i) => i.argv.slice(0, 2).join(' ') === 'd1 migrations').length,
     0,
     'expected zero migrations invocations',
   );
   assert.equal(
+    invocations.filter((i) => i.argv[0] === 'whoami').length,
+    1,
+    'expected the login check to actually invoke wrangler whoami',
+  );
+  assert.equal(
     invocations.filter((i) => i.argv.slice(0, 2).join(' ') === 'd1 execute').length,
     1,
     'expected exactly one seed invocation',
   );
-  assert.equal(invocations.length, 1, 'the key move must no-op with no wrangler call, leaving only the seed');
+  assert.equal(
+    invocations.length,
+    2,
+    'the key move must still no-op with no wrangler call, leaving only whoami and the seed',
+  );
 
   const state = await loadSite('alpine-club-deployed');
   assert.equal(state.step, 'live');

@@ -32,22 +32,29 @@ const PLACEHOLDER_APP_DATABASE_ID = '"database_id": "00000000-0000-0000-0000-000
  */
 const FALLBACK_SLUG = 'cairn-site';
 
-// The worker name becomes a DNS label in the workers.dev hostname, which Cloudflare caps at 63
-// characters and never allows to start or end with a dash.
-const MAX_WORKER_NAME_LENGTH = 63;
+// This slug is the base every derived Cloudflare resource name extends: the worker name itself,
+// and, through nameWranglerResources, three suffixed names (-auth, -app, -media). Bounding it
+// per-resource would let the worker name reach the 63-character workers.dev DNS label limit while
+// the bucket name (the base plus the 6-character "-media" suffix, the longest of the three) ran
+// past R2's own 63-character cap. The tightest limit among all four resources is that 63-character
+// R2 bound, so capping the base itself at 57 (63 minus the "-media" suffix) is the one number that
+// keeps every derived name within Cloudflare's limits, since none of the other three suffixes is
+// longer.
+const MAX_BASE_SLUG_LENGTH = 57;
 
 /**
- * Derive a site's Cloudflare Worker name from its display name: the same slug the scaffold and
- * the GitHub chapter already derive (fallback `cairn-site`), truncated to the 63-character DNS
- * label limit `workers.dev` imposes, with any trailing dash the truncation created trimmed away.
- * Every caller that needs this name (the config here, the chapter's consent copy, and the state
- * record) calls this one function, so none of them can disagree.
+ * Derive a site's Cloudflare resource base name from its display name: the same slug the
+ * scaffold and the GitHub chapter already derive (fallback `cairn-site`), truncated so that the
+ * worker name and every suffixed name nameWranglerResources derives from it (`-auth`, `-app`,
+ * `-media`) stay within Cloudflare's limits, with any trailing dash the truncation created
+ * trimmed away. Every caller that needs this name (the config here, the chapter's consent copy,
+ * and the state record) calls this one function, so none of them can disagree.
  * @param {string} name the site's display name (the scaffold's `answers.name`)
- * @returns {string} the worker name: 1-63 characters, never starting or ending with a dash
+ * @returns {string} the base name: 1-57 characters, never starting or ending with a dash
  */
 export function workerNameFor(name) {
   const slug = slugify(name, FALLBACK_SLUG);
-  return slug.slice(0, MAX_WORKER_NAME_LENGTH).replace(/-+$/, '');
+  return slug.slice(0, MAX_BASE_SLUG_LENGTH).replace(/-+$/, '');
 }
 
 /**

@@ -59,11 +59,15 @@ async function runStep(frame, title, detail, execute) {
  *
  * Re-entry reads the site's own saved record and picks up after whatever hop it last completed,
  * mirroring the GitHub chapter's own resume convention. A record already at `'deployed'` has
- * finished every action up through the deploy: there is nothing left to ask consent for, install,
- * sign in to, build, or deploy, so resuming here skips straight to the key move and the sign-in
- * action, printing one resume line instead of re-running the earlier steps. `deployUrl` and
- * `ownerEmail`, which the skipped actions would otherwise have set, are seeded from the saved
- * record instead, so the sign-in action never opens a URL built from an unset local.
+ * finished every action up through the deploy: there is nothing left to ask consent for, build,
+ * or deploy, so resuming here skips consent and the build/deploy group and runs only the install
+ * and login checks, the key move, and the sign-in action, printing one resume line instead of
+ * re-running the earlier steps. Install and login still run on this path, not just the fresh one:
+ * the key move and the sign-in seed both shell out to wrangler, so both need it installed and
+ * signed in, which a resume from a fresh clone or an expired session cannot assume. `deployUrl`
+ * and `ownerEmail`, which the skipped consent and deploy actions would otherwise have set, are
+ * seeded from the saved record instead, so the sign-in action never opens a URL built from an
+ * unset local.
  * @param {RunCloudflareChapterInput} input the chapter's inputs
  * @returns {Promise<'live' | 'declined'>} `'live'` once the admin's sign-in link has been opened
  *  and the record reaches its final step; `'declined'` when the admin declined consent, chose to
@@ -167,22 +171,29 @@ export async function runCloudflareChapter({
     },
   );
 
+  // Hoisted out of the resume conditional below: the two steps that still run on a `deployed`
+  // resume (the key move and the sign-in seed) both shell out to wrangler, so both need a
+  // signed-in session, and the key move needs the site's own wrangler devDependency on disk. A
+  // resume from a fresh clone or a wiped node_modules, or one with an expired Cloudflare session,
+  // needs these to run just as much as a fresh 'pushed' run does. Both are already idempotent and
+  // cheap on the common case: ensureInstalled short-circuits when node_modules exists, ensureLogin
+  // when whoami already reports a session.
+  await runStep(
+    frame,
+    "Install your site's dependencies",
+    `Runs npm install in ${dir} if its dependencies are not already installed.`,
+    () => ensureInstalled({ dir, log }),
+  );
+
+  await runStep(
+    frame,
+    'Sign in to Cloudflare',
+    "Confirms wrangler has a signed-in Cloudflare account, driving wrangler's own browser " +
+      'sign-in when it does not.',
+    () => ensureLogin({ dir, log }),
+  );
+
   if (!resumingAtDeployed) {
-    await runStep(
-      frame,
-      "Install your site's dependencies",
-      `Runs npm install in ${dir} if its dependencies are not already installed.`,
-      () => ensureInstalled({ dir, log }),
-    );
-
-    await runStep(
-      frame,
-      'Sign in to Cloudflare',
-      "Confirms wrangler has a signed-in Cloudflare account, driving wrangler's own browser " +
-        'sign-in when it does not.',
-      () => ensureLogin({ dir, log }),
-    );
-
     await runStep(frame, 'Build your site', `Runs npm run build in ${dir}.`, () =>
       buildSite({ dir, log }),
     );

@@ -140,6 +140,47 @@ test('the npx-canceled exit 1 rejects with the same wrangler-unavailable row', a
   );
 });
 
+test('a fake that exits before reading a large piped stdin does not raise an unhandled EPIPE', async (t) => {
+  // Reproduces the review-gate finding: a child that spawns successfully and exits before
+  // draining stdin (npx canceled due to missing packages exits this way, immediately) raises an
+  // 'error' event on the stdin stream itself. Without a listener on that stream, node treats it
+  // as an uncaught exception; a large input makes the write straddle the child's exit reliably.
+  const fake = await makeFakeBin('wrangler', { exitBeforeReadingStdin: true });
+  t.after(() => fake.close());
+  await fake.respond('secret', {
+    code: 1,
+    stderr: 'npm error npx canceled due to missing packages and no YES option: ["wrangler@4.120.1"]',
+  });
+  process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  t.after(() => { delete process.env.CAIRN_WRANGLER_BIN; });
+
+  const uncaught = [];
+  const onUncaughtException = (err) => uncaught.push(err);
+  process.on('uncaughtException', onUncaughtException);
+  t.after(() => process.removeListener('uncaughtException', onUncaughtException));
+
+  const { runWrangler } = await import('./exec.mjs');
+  const largeInput = 'x'.repeat(200 * 1024);
+
+  await assert.rejects(
+    () =>
+      runWrangler(['secret', 'put', 'GITHUB_APP_PRIVATE_KEY_B64'], {
+        cwd,
+        log: () => {},
+        input: largeInput,
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'wrangler-unavailable');
+      return true;
+    },
+  );
+
+  // Give any deferred, unhandled stdin 'error' a turn to surface before asserting its absence:
+  // proof the crash is gone, not merely that the promise it raced against happened to settle.
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(uncaught, [], 'expected no uncaught exception from the piped stdin write');
+});
+
 test('an ordinary exit 1 with unrelated stderr returns { code: 1 } and does not throw', async (t) => {
   const fake = await makeFakeBin('wrangler');
   t.after(() => fake.close());

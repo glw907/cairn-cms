@@ -321,10 +321,16 @@ captured.
    message. It also handles `error_chain` nesting.
 3. **Task 3's fake** reproduces `error_chain`, the code-0 403 shape, and the 9109 shape. Its
    random per-zone `name_servers` pair stays, but as a **test device rather than a platform
-   truth**: the three zones observed on this account (`aksailingclub.org`, `907.life`,
-   `cairn.pub`) all carry the same pair, `burt.ns.cloudflare.com` / `carlane.ns.cloudflare.com`, so
-   Cloudflare's assignment is account-stable in practice. The fake randomizes so that a
-   wrong-nameserver test can fail; the doc block should say that is why.
+   truth**. All **nine** zones on this account carry the identical pair,
+   `burt.ns.cloudflare.com` / `carlane.ns.cloudflare.com`, across registrations spanning January
+   to August 2026, so Cloudflare's assignment is account-stable rather than per-zone. The fake
+   randomizes so that a wrong-nameserver test can fail; the doc block should say that is why.
+
+   This changes what `delegation-wrong-nameservers` means in the field. It is not "you copied the
+   wrong pair from the same account", since an account has one pair. It is "these are Cloudflare
+   nameservers belonging to some other account", which is what happens when the domain sat on an
+   agency's or a friend's Cloudflare before. The row's copy should say that, because the fix is
+   different: the admin has to move the domain, not retype two hostnames.
 4. **Task 8** translates CAA between node's shape and Cloudflare's, and the carry-over gate copy
    gains the wildcard caveat alongside ruling 4's incompleteness caveat.
 5. **Task 1's prerequisites** include the scratch domain and a zone-create-capable token, not just

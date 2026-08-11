@@ -85,8 +85,10 @@ wrong-scope error code. Read the spike doc before dispatching any task marked **
 7. **Task 3's fixtures are copied from the spike appendix**, which now carries the zone object,
    `result_info` pagination, a DNS record, a Custom Domain, and three error bodies, all verbatim.
    The fake's random per-zone `name_servers` pair stays as a **test device**: real assignment is
-   account-stable (three zones on one account share a pair), and the doc block should say the
-   randomness exists so a wrong-nameserver test can fail.
+   account-stable (all nine zones on this account share one pair), and the doc block should say
+   the randomness exists so a wrong-nameserver test can fail. Because an account has exactly one
+   pair, `delegation-wrong-nameservers` means "Cloudflare nameservers belonging to another
+   account", so its copy tells the admin to move the domain rather than to retype two hostnames.
 8. **Task 1's prerequisites include the scratch domain and a zone-create-capable token.** The
    estate token deliberately cannot create zones or mint tokens. Three captures remain blocked on
    that credential: a new zone's birth `status` and whether `name_servers` is populated at

@@ -547,3 +547,86 @@ boundary) carries over.
   `check:surface` (no engine change expected; a flag is a leak to understand); push,
   PR, re-derive the CI workflow list with `grep -l pull_request`, confirm green; append
   the post-mortem; update STATUS (T4a done, T4b sitting next); prep the context clear.
+
+---
+
+## Post-mortem, part one (2026-08-11): the offline half landed, the live half is blocked
+
+**Status: Tasks 1 (partial), 2, 3, 4, 5, and 6 are done and committed on `t4a-domain-chapter`.
+Tasks 7 through 13 are blocked on two things only Geoff can supply. Task 14 waits for them.**
+
+### What landed
+
+| Task | What it built | Evidence |
+|---|---|---|
+| 1 | The spike, `docs/internal/2026-08-11-t4a-domain-spike.md` | Steps 1, 3, 5 answered outright; 2 and 4 answered on shape and mechanism by reading estate resources; eight amendments folded into this plan |
+| 2 | `cloudflare` deep-merge, token scrub on retire, `env` through the spawn seam, fake-bin `env` capture | falsifiable env pair proven failing then passing |
+| 3 | `test/fake-cloudflare.mjs`, fixtures copied verbatim from the spike appendix | 13 self-tests |
+| 4 | The catalogue widened to `wait`/`act`/`ask-someone`, fifteen new rows | per-row kind table with a coverage guard derived from the module |
+| 5 | `src/cloudflare/api.mjs`, the REST seam | 21 tests; redaction proven failing before it was implemented |
+| 6 | `ensureAccountId` plus the chapter-1 multi-account fix across four wrangler call sites | preamble-parse proven failing then passing |
+
+Final suite: **342 pass, 0 fail, exit 0** in `packages/create-cairn-site`.
+
+### The two corrections that would have shipped a defect
+
+**The cutover mechanism was wrong in the plan.** Task 9 was written to create a Workers Route.
+A route does not make a hostname resolve, so the ordered flow (create the route, then confirm the
+deployment answers on the new hostname) could never have confirmed. Every cairn site in production
+is attached by a Workers **Custom Domain**, which creates the DNS record and certificate on the
+tool's behalf. Found by listing the estate's own custom domains rather than by reasoning about it.
+
+**The wrong-scope error code was wrong in the plan.** Task 5 was written to map insufficient scope
+on HTTP 403 with `errors[].code` 9109. The account-scoped zone-create refusal reports code **0**,
+with the missing permission named in the message. Keying on the code would have missed the case
+chapter 2 hits most, and the message turns out to carry the most useful thing in the whole failure.
+
+A third correction is smaller but still load-bearing: `wrangler whoami --json` prints non-JSON
+preamble lines before its JSON, so `JSON.parse(stdout)` throws on real output.
+
+### Three defects the main loop caught in diff review
+
+Each was folded with its own test rather than filed for later.
+
+1. **An environment-dependent test.** The `CLOUDFLARE_ACCOUNT_ID`-absence assertion measured the
+   operator's own shell, so it would fail for anyone who exports that variable and pass on a bare
+   runner. Verified failing before the guard and passing after.
+2. **A DNS-record failure printed the zone row**, telling an admin whose carry-over broke midway
+   that "Creating the Cloudflare zone for your domain did not finish". Now has its own row.
+3. **An account-lookup failure printed the abandoned-sign-in row**, sending an admin to redo a
+   browser sign-in that would not have helped. Split: a non-zero `whoami` exit really is the
+   sign-in problem, since `--json` documents a non-zero exit as "not authenticated", but exiting 0
+   with no readable account list is a different failure and now says so.
+
+### What blocks the rest, precisely
+
+Tasks 7 through 13 need two things, and neither is recoverable from this workstation:
+
+1. **A Cloudflare API token that can create zones.** The estate token deliberately cannot, and
+   deliberately cannot mint tokens either, so it cannot self-extend. That refusal is correct and
+   should stay; it just means the spike cannot mint its own. Observed live, not inferred:
+   `POST /zones` returns 403 and `GET /user/tokens` returns 9109.
+2. **The scratch domain**, registered at an external registrar and seeded with an MX record and a
+   DKIM-shaped TXT before the run. **This is a correction to the plan, which named it as a Task 13
+   prerequisite only.** Spike step 4 needs an active zone under our control to observe the Custom
+   Domain attach and to see what a proxied hostname with no matching Worker serves, so it is a
+   Task 1 prerequisite too.
+
+Both collapse into one browser sitting, and the spike doc carries the prefilled create-token URL
+for it. Three captures stay open until then: a new zone's birth `status` and whether `name_servers`
+is populated at creation; the 1061 duplicate body and whether it distinguishes same-account from
+foreign-account ownership; and the Custom Domain attach call with its duplicate error.
+
+### Carried into the resumed pass
+
+- **`carry-over-declined` is an `act` row, so declining exits 1.** A deliberate choice by the admin
+  arguably deserves a clean exit, but there is no kind for "done, by choice" and inventing one for a
+  single row is the over-abstraction the charter warns against. Task 10 owns the call: its
+  orchestration can treat a decline as a clean stop without a fourth kind.
+- `npm run check` at the root does **not** type-check this package (the root tsconfig covers
+  `src/lib` only), and `check:comments` covers `src/lib` only too. `npm test` inside the package is
+  the real gate for `create-cairn-site` work. This sharpens STATUS carry-forward 2 from "no comment
+  gate" to "no comment gate and no type gate".
+- `src/github/install.test.mjs`'s timing flake tripped once under load across roughly a dozen suite
+  runs. Only its timing assertion is load-sensitive; the state tests added this pass are
+  deterministic filesystem checks and cannot flake. Already STATUS carry-forward 3.

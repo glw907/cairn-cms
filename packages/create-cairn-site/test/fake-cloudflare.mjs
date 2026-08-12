@@ -49,8 +49,11 @@ import { randomBytes, randomUUID } from 'node:crypto';
  *  zone objects), `state.dnsRecords` (a `Map` from zone id to its array of record objects, MX
  *  `priority` included), `state.customDomains` (array of Workers Custom Domain objects),
  *  `state.emailSubdomains` (a `Map` from zone id to its array of Email Sending subdomain objects)
- * @property {Array<{ method: string, path: string, body: unknown }>} requests every request
- *  received, in arrival order; append-only, never reset except by starting a new server
+ * @property {Array<{ method: string, path: string, body: unknown, headers: { authorization:
+ *  string | undefined } }>} requests every request received, in arrival order; append-only,
+ *  never reset except by starting a new server. `headers.authorization` carries the request's
+ *  raw `Authorization` value (`Bearer <token>`), so a test can prove which bearer a call
+ *  actually signed with, not just that a call happened.
  * @property {(route: string, status: number, body: unknown) => void} failNext arm a one-shot
  *  status/body override for the next request matching `route` (`zone_create`, `zone_list`,
  *  `zone_get`, `dns_record_create`, `dns_record_list`, `workers_domain_attach`,
@@ -175,7 +178,12 @@ function makeHandler(routes, { requests, failNextMap }) {
       const raw = await readRawBody(req);
       body = parseJson(raw);
     }
-    requests.push({ method: req.method, path: url.pathname + url.search, body });
+    requests.push({
+      method: req.method,
+      path: url.pathname + url.search,
+      body,
+      headers: { authorization: req.headers.authorization },
+    });
 
     let match = null;
     let params = {};

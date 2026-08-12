@@ -28,6 +28,17 @@
 // and deletes the token at the moment it happens, and a LATER re-entry at that same terminal step
 // (this module's own top-of-function short-circuit) re-offers with the row's reoffered copy
 // rather than returning silently, since a decline is a choice an owner can still reconsider.
+//
+// T4b.1 adds a SCOPE-FAILURE half to the same lifecycle: a saved token that still passes
+// validateToken's read (prefill.mjs's own listZones probe) but lacks a write permission was
+// otherwise a dead end, since nothing ever cleared it once a later WRITE call came back
+// token-scope-missing or token-invalid. From the token step onward, this function's own body runs
+// inside one try/catch; either of those two exact codes deletes the saved token before the error
+// surfaces, so the re-run the row already tells the owner to do actually re-collects one instead
+// of silently reusing the bad one. Every other thrown row (a park, a decline, any other act row)
+// is untouched. The catalogue survives only on `error.cause` here: runActions (runner.mjs) rewraps
+// a thrown error with its action's title before it reaches this catch, the same rewrap this
+// module's own tests already work around by asserting on the message rather than `err.catalogue`.
 import { confirm as clackConfirm, text as clackText, select as clackSelect, isCancel } from '@clack/prompts';
 import { resolveNs as systemResolveNs } from 'node:dns/promises';
 import { exitOnCancel, promptSecret } from '../prompts.mjs';
@@ -323,384 +334,401 @@ export async function runChapter2({
     },
   );
 
-  // --- Token: resolved (and, if needed, re-prefilled) on every invocation, including a resumed
-  // one, so a re-entry at `domain-live` still leaves a working credential for T4b's email half.
-  await runStep(
-    frame,
-    'Get a Cloudflare API token',
-    "Opens Cloudflare's create-token page with the permissions this chapter needs already " +
-      'filled in, and asks you to paste the token back.',
-    async () => {
-      token = await ensureApiToken({ record, log, openBrowser, yes: args.yes, promptSecretFn, env, argv });
-      if (!dryRun && token !== record?.cloudflare?.apiToken) {
-        await updateSite(siteId, { cloudflare: { apiToken: token } });
+  // Wrapped in one try/catch from the token step onward (T4b.1): every call in this block
+  // that can raise token-scope-missing or token-invalid, starting with the token step itself,
+  // must clear the saved token before the error surfaces. A plain try/catch, not an extracted
+  // function, so every `return` below still returns from runChapter2 itself.
+  try {
+    // --- Token: resolved (and, if needed, re-prefilled) on every invocation, including a resumed
+    // one, so a re-entry at `domain-live` still leaves a working credential for T4b's email half.
+    await runStep(
+      frame,
+      'Get a Cloudflare API token',
+      "Opens Cloudflare's create-token page with the permissions this chapter needs already " +
+        'filled in, and asks you to paste the token back.',
+      async () => {
+        token = await ensureApiToken({ record, log, openBrowser, yes: args.yes, promptSecretFn, env, argv });
+        if (!dryRun && token !== record?.cloudflare?.apiToken) {
+          await updateSite(siteId, { cloudflare: { apiToken: token } });
+        }
+      },
+    );
+
+    const api = makeApiFn({ token, accountId, dir });
+
+    // --- Zone create: only from `live`/pre-`zone-created`; a resumed record already carries
+    // zoneId/nameServers.
+    if (!hasReached(record?.step, 'zone-created')) {
+      await runStep(
+        frame,
+        'Create your Cloudflare zone',
+        'Creates a Cloudflare zone for your domain, or reuses one this account already holds.',
+        async () => {
+          const result = await ensureZone({ record: { dir, cloudflare: { domain } }, api, log });
+          zoneId = result.zoneId;
+          nameServers = result.nameServers;
+          alreadyActive = result.alreadyActive;
+        },
+      );
+      if (!dryRun) {
+        await updateSite(siteId, {
+          step: 'zone-created',
+          cloudflare: { domain, zoneId, nameServers, alreadyActive },
+        });
       }
-    },
-  );
-
-  const api = makeApiFn({ token, accountId, dir });
-
-  // --- Zone create: only from `live`/pre-`zone-created`; a resumed record already carries
-  // zoneId/nameServers.
-  if (!hasReached(record?.step, 'zone-created')) {
-    await runStep(
-      frame,
-      'Create your Cloudflare zone',
-      'Creates a Cloudflare zone for your domain, or reuses one this account already holds.',
-      async () => {
-        const result = await ensureZone({ record: { dir, cloudflare: { domain } }, api, log });
-        zoneId = result.zoneId;
-        nameServers = result.nameServers;
-        alreadyActive = result.alreadyActive;
-      },
-    );
-    if (!dryRun) {
-      await updateSite(siteId, {
-        step: 'zone-created',
-        cloudflare: { domain, zoneId, nameServers, alreadyActive },
-      });
     }
-  }
 
-  // --- Records read + carry-over gate: only from `zone-created`. A decline is recorded by its
-  // own printed copy and never silently advances; the next invocation re-shows the same gate.
-  // When the zone arrived already active (the Cloudflare-registrar path, or any domain this
-  // account already holds and serves), there is nothing to carry over: the zone's own records
-  // already ARE the admin's records. readCurrentRecords refuses to run past that point anyway
-  // (its own guard: a probe would read this tool's own writes), so this skips both the read and
-  // the gate entirely rather than letting that refusal surface as a developer-facing exception.
-  if (!hasReached(record?.step, 'records-carried')) {
-    let declined = false;
-    // carryOver.outcome is 'carried' when records were copied, or 'not-needed' when the zone
-    // arrived already active. A decline leaves this undefined: that path returns before reaching
-    // updateSite, so the gate re-shows on the next invocation instead.
-    let carryOver;
-    await runStep(
-      frame,
-      'Copy your current DNS records',
-      alreadyActive ? ALREADY_ACTIVE_DETAIL : CARRY_OVER_DETAIL,
-      async () => {
-        if (alreadyActive) {
-          log(ALREADY_ACTIVE_DETAIL);
-          carryOver = { outcome: 'not-needed', at: new Date().toISOString() };
-          return;
-        }
-        const { records, lowConfidence } = await readCurrentRecords({ domain, dir, resolve });
-        const result = await carryOverRecords({
-          api,
-          zoneId,
-          records,
-          lowConfidence,
-          confirm: async (message) => {
-            log(message);
-            if (args.yes) {
-              // An unattended run copies the list, because NOT copying is what breaks an admin's
-              // mail once the domain switches over. It refuses only when the read itself was
-              // unreliable: a recursive resolver can answer "no such record" from a cache that
-              // has not expired yet, and a list quietly missing its MX rows looks exactly like a
-              // domain with no mail. Copying that without a human reading it first would break
-              // mail and report success, which is the failure this whole gate exists to prevent.
-              if (lowConfidence) throw cloudflareError('records-unverified', { dir, domain });
-              log('Unattended run: copying the records found above automatically.');
-              return true;
-            }
-            const answer = await confirm({ message: 'Copy these records into the new zone?' });
-            if (isCancel(answer)) exitOnCancel();
-            return answer;
-          },
-          log,
-        });
-        if (result.outcome === 'declined') {
-          declined = true;
-          log(cloudflareError('carry-over-declined', { dir }).message);
-          return;
-        }
-        carryOver = {
-          outcome: 'carried',
-          at: new Date().toISOString(),
-          count: result.count,
-          types: result.types,
-        };
-      },
-    );
-    if (!dryRun && declined) {
-      return { outcome: 'carry-over-declined' };
+    // --- Records read + carry-over gate: only from `zone-created`. A decline is recorded by its
+    // own printed copy and never silently advances; the next invocation re-shows the same gate.
+    // When the zone arrived already active (the Cloudflare-registrar path, or any domain this
+    // account already holds and serves), there is nothing to carry over: the zone's own records
+    // already ARE the admin's records. readCurrentRecords refuses to run past that point anyway
+    // (its own guard: a probe would read this tool's own writes), so this skips both the read and
+    // the gate entirely rather than letting that refusal surface as a developer-facing exception.
+    if (!hasReached(record?.step, 'records-carried')) {
+      let declined = false;
+      // carryOver.outcome is 'carried' when records were copied, or 'not-needed' when the zone
+      // arrived already active. A decline leaves this undefined: that path returns before reaching
+      // updateSite, so the gate re-shows on the next invocation instead.
+      let carryOver;
+      await runStep(
+        frame,
+        'Copy your current DNS records',
+        alreadyActive ? ALREADY_ACTIVE_DETAIL : CARRY_OVER_DETAIL,
+        async () => {
+          if (alreadyActive) {
+            log(ALREADY_ACTIVE_DETAIL);
+            carryOver = { outcome: 'not-needed', at: new Date().toISOString() };
+            return;
+          }
+          const { records, lowConfidence } = await readCurrentRecords({ domain, dir, resolve });
+          const result = await carryOverRecords({
+            api,
+            zoneId,
+            records,
+            lowConfidence,
+            confirm: async (message) => {
+              log(message);
+              if (args.yes) {
+                // An unattended run copies the list, because NOT copying is what breaks an admin's
+                // mail once the domain switches over. It refuses only when the read itself was
+                // unreliable: a recursive resolver can answer "no such record" from a cache that
+                // has not expired yet, and a list quietly missing its MX rows looks exactly like a
+                // domain with no mail. Copying that without a human reading it first would break
+                // mail and report success, which is the failure this whole gate exists to prevent.
+                if (lowConfidence) throw cloudflareError('records-unverified', { dir, domain });
+                log('Unattended run: copying the records found above automatically.');
+                return true;
+              }
+              const answer = await confirm({ message: 'Copy these records into the new zone?' });
+              if (isCancel(answer)) exitOnCancel();
+              return answer;
+            },
+            log,
+          });
+          if (result.outcome === 'declined') {
+            declined = true;
+            log(cloudflareError('carry-over-declined', { dir }).message);
+            return;
+          }
+          carryOver = {
+            outcome: 'carried',
+            at: new Date().toISOString(),
+            count: result.count,
+            types: result.types,
+          };
+        },
+      );
+      if (!dryRun && declined) {
+        return { outcome: 'carry-over-declined' };
+      }
+      if (!dryRun) {
+        await updateSite(siteId, { step: 'records-carried', cloudflare: { carryOver } });
+      }
     }
-    if (!dryRun) {
-      await updateSite(siteId, { step: 'records-carried', cloudflare: { carryOver } });
-    }
-  }
 
-  // --- Delegation: only from `records-carried`. Pending or still-propagating parks with the
-  // instructions printed; wrong nameservers is an act row, thrown; only `active` advances.
-  if (!hasReached(record?.step, 'delegated')) {
-    let delegationOutcome;
-    let waitError;
-    await runStep(
-      frame,
-      'Wait for your domain to switch to Cloudflare',
-      "Checks whether your domain's nameservers have switched to Cloudflare yet, and shows the " +
-        'pair to set at your registrar if not.',
-      async () => {
-        const state = await checkDelegation({
-          record: { cloudflare: { zoneId, nameServers, domain, alreadyActive } },
-          api,
-          resolveNs,
-        });
-        if (state === 'active') {
-          delegationOutcome = 'active';
-          return;
-        }
-        if (state === 'propagating') {
-          // Distinct from delegation-pending, and deliberately not given the registrar
-          // instructions: the nameservers are already correct here, so the admin has nothing to
-          // do. Printing "go change your nameservers" would send someone who did the work
-          // correctly back to undo it.
-          waitError = cloudflareError('delegation-propagating', { dir, domain, nameServers });
+    // --- Delegation: only from `records-carried`. Pending or still-propagating parks with the
+    // instructions printed; wrong nameservers is an act row, thrown; only `active` advances.
+    if (!hasReached(record?.step, 'delegated')) {
+      let delegationOutcome;
+      let waitError;
+      await runStep(
+        frame,
+        'Wait for your domain to switch to Cloudflare',
+        "Checks whether your domain's nameservers have switched to Cloudflare yet, and shows the " +
+          'pair to set at your registrar if not.',
+        async () => {
+          const state = await checkDelegation({
+            record: { cloudflare: { zoneId, nameServers, domain, alreadyActive } },
+            api,
+            resolveNs,
+          });
+          if (state === 'active') {
+            delegationOutcome = 'active';
+            return;
+          }
+          if (state === 'propagating') {
+            // Distinct from delegation-pending, and deliberately not given the registrar
+            // instructions: the nameservers are already correct here, so the admin has nothing to
+            // do. Printing "go change your nameservers" would send someone who did the work
+            // correctly back to undo it.
+            waitError = cloudflareError('delegation-propagating', { dir, domain, nameServers });
+            log(waitError.message);
+            delegationOutcome = state;
+            return;
+          }
+          if (state === 'wrong-nameservers') {
+            // checkDelegation already did its own NS lookup to reach this state but reports only
+            // the state name, not what it found (zone.mjs's own contract); a second lookup here is
+            // the cost of naming the actual pair in the row's copy rather than leaving it blank.
+            const actual = await resolveNs(domain).catch(() => []);
+            throw cloudflareError('delegation-wrong-nameservers', { dir, domain, nameServers, actual });
+          }
+          // 'pending': the domain has not been repointed yet, so this is the one delegation state
+          // where the admin still has work to do at their registrar. delegationInstructions prints
+          // the how-to; the row's own message (logged next) carries the re-run next step.
+          log(delegationInstructions(nameServers));
+          waitError = cloudflareError('delegation-pending', { dir, domain, nameServers });
           log(waitError.message);
           delegationOutcome = state;
-          return;
-        }
-        if (state === 'wrong-nameservers') {
-          // checkDelegation already did its own NS lookup to reach this state but reports only
-          // the state name, not what it found (zone.mjs's own contract); a second lookup here is
-          // the cost of naming the actual pair in the row's copy rather than leaving it blank.
-          const actual = await resolveNs(domain).catch(() => []);
-          throw cloudflareError('delegation-wrong-nameservers', { dir, domain, nameServers, actual });
-        }
-        // 'pending': the domain has not been repointed yet, so this is the one delegation state
-        // where the admin still has work to do at their registrar. delegationInstructions prints
-        // the how-to; the row's own message (logged next) carries the re-run next step.
-        log(delegationInstructions(nameServers));
-        waitError = cloudflareError('delegation-pending', { dir, domain, nameServers });
-        log(waitError.message);
-        delegationOutcome = state;
-      },
-    );
-    if (!dryRun && delegationOutcome !== 'active') {
-      return {
-        // The park names the row the admin actually saw, so a pending wait and a propagating one
-        // are distinguishable by a caller and in a log, not just in the printed copy.
-        outcome: waitError?.catalogue?.code ?? 'delegation-pending',
-        domain,
-        state: delegationOutcome,
-        message: waitError?.message,
-      };
+        },
+      );
+      if (!dryRun && delegationOutcome !== 'active') {
+        return {
+          // The park names the row the admin actually saw, so a pending wait and a propagating one
+          // are distinguishable by a caller and in a log, not just in the printed copy.
+          outcome: waitError?.catalogue?.code ?? 'delegation-pending',
+          domain,
+          state: delegationOutcome,
+          message: waitError?.message,
+        };
+      }
+      if (!dryRun) {
+        await updateSite(siteId, { step: 'delegated' });
+      }
     }
-    if (!dryRun) {
-      await updateSite(siteId, { step: 'delegated' });
-    }
-  }
 
-  // --- Cutover: only from `delegated`. Still-propagating or certificate-pending parks; anything
-  // else that is not `live` (resolved-but-wrong-site, the attach itself, the redeploy) throws.
-  if (!hasReached(record?.step, 'domain-live')) {
-    let cutoverOutcome;
-    await runStep(
-      frame,
-      'Connect your domain to your site',
-      'Connects your domain to your already-deployed site, confirms it answers there, then ' +
-        "switches your site's own address over and redeploys once.",
-      async () => {
-        const result = await cutOverHostname({
-          record: {
-            dir,
-            cloudflare: {
-              domain,
-              zoneId,
-              workerName: record?.cloudflare?.workerName,
-              accountId,
-              url: record?.cloudflare?.url,
+    // --- Cutover: only from `delegated`. Still-propagating or certificate-pending parks; anything
+    // else that is not `live` (resolved-but-wrong-site, the attach itself, the redeploy) throws.
+    if (!hasReached(record?.step, 'domain-live')) {
+      let cutoverOutcome;
+      await runStep(
+        frame,
+        'Connect your domain to your site',
+        'Connects your domain to your already-deployed site, confirms it answers there, then ' +
+          "switches your site's own address over and redeploys once.",
+        async () => {
+          const result = await cutOverHostname({
+            record: {
+              dir,
+              cloudflare: {
+                domain,
+                zoneId,
+                workerName: record?.cloudflare?.workerName,
+                accountId,
+                url: record?.cloudflare?.url,
+              },
             },
-          },
-          api,
-          fetchImpl,
-          log,
-        });
-        cutoverOutcome = result.outcome;
-      },
-    );
-    if (!dryRun && cutoverOutcome !== 'live') {
-      // cutOverHostname itself returns only the outcome name, the same pure-step contract every
-      // other producer in this chapter follows; this is the one place that turns a wait outcome
-      // into the row an admin actually reads, the same way the delegation park above does.
-      const parkError = cloudflareError(cutoverOutcome, { dir, domain });
-      log(parkError.message);
-      return { outcome: cutoverOutcome, domain, message: parkError.message };
-    }
-    if (!dryRun) {
-      await updateSite(siteId, { step: 'domain-live' });
-    }
-  }
-
-  // --- Domain completion: reached once the cutover just succeeded or a resumed record was
-  // already at `domain-live`. domain-live is not terminal (TERMINAL_STEPS above): execution below
-  // continues straight into the email half's own admission rather than stopping here.
-  await runStep(
-    frame,
-    'Finish connecting your domain',
-    'Prints your domain and its admin sign-in link.',
-    async () => {
-      log(
-        `${domain} is now live and connected to your site. Sign in at https://${domain}/admin. ` +
-          'Your workers.dev address keeps working too.',
+            api,
+            fetchImpl,
+            log,
+          });
+          cutoverOutcome = result.outcome;
+        },
       );
-    },
-  );
-
-  // --- Email admission: the price, restated at the moment of the ask (T4b ruling 6). Only asked
-  // while step has not yet reached email-onboarded; once onboarding has actually succeeded, this
-  // is never re-asked. A decline writes the terminal step directly (rather than going through
-  // TERMINAL_STEPS' own short-circuit, which only fires on a LATER re-entry) and deletes the
-  // token at the point it happens, per the terminal-state token rule.
-  if (!hasReached(record?.step, 'email-onboarded')) {
-    let emailConsented = false;
-    const reoffered = Boolean(record?.cloudflare?.emailDeclinedAt);
-    await runStep(frame, 'Turn on email sign-in', EMAIL_ADMISSION_DETAIL, async () => {
-      log(EMAIL_ADMISSION_DETAIL);
-      if (args.yes && !args.email) {
-        log(
-          'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
-            'it on unattended, or without --yes to be asked.',
-        );
-        emailConsented = false;
-        return;
+      if (!dryRun && cutoverOutcome !== 'live') {
+        // cutOverHostname itself returns only the outcome name, the same pure-step contract every
+        // other producer in this chapter follows; this is the one place that turns a wait outcome
+        // into the row an admin actually reads, the same way the delegation park above does.
+        const parkError = cloudflareError(cutoverOutcome, { dir, domain });
+        log(parkError.message);
+        return { outcome: cutoverOutcome, domain, message: parkError.message };
       }
-      if (args.yes && args.email) {
-        emailConsented = true;
-        return;
+      if (!dryRun) {
+        await updateSite(siteId, { step: 'domain-live' });
       }
-      const answer = await confirm({
-        message: "Turn on Cloudflare's Workers Paid plan now, so anyone besides you can sign in?",
-      });
-      if (isCancel(answer)) exitOnCancel();
-      emailConsented = Boolean(answer);
-    });
-    if (!dryRun && !emailConsented) {
-      const declineErr = cloudflareError('paid-plan-declined', { dir, reoffered });
-      log(declineErr.message);
-      await updateSite(siteId, {
-        step: 'paid-plan-declined',
-        cloudflare: { emailDeclinedAt: new Date().toISOString() },
-      });
-      await deleteApiToken(siteId);
-      return { outcome: 'paid-plan-declined' };
     }
-  }
 
-  // --- Onboard the sending domain, then poll once. Only from before email-onboarded; a resumed
-  // record past it already carries emailOnboardedAt, read below regardless of which run set it.
-  let onboardedAt = record?.cloudflare?.emailOnboardedAt;
-  if (!hasReached(record?.step, 'email-onboarded')) {
-    let onboardEnabled = false;
+    // --- Domain completion: reached once the cutover just succeeded or a resumed record was
+    // already at `domain-live`. domain-live is not terminal (TERMINAL_STEPS above): execution below
+    // continues straight into the email half's own admission rather than stopping here.
     await runStep(
       frame,
-      'Onboard your domain for email',
-      'Turns on Cloudflare Email Sending for your domain, reading first so a resumed run never ' +
-        'onboards it twice.',
+      'Finish connecting your domain',
+      'Prints your domain and its admin sign-in link.',
       async () => {
-        const result = await ensureSendingDomain({ api, zoneId, domain, record });
-        onboardEnabled = result.enabled;
-        if (result.enabled) {
-          onboardedAt = result.onboardedAt;
-          return;
-        }
-        log(cloudflareError('email-not-ready', { dir, domain }).message);
+        log(
+          `${domain} is now live and connected to your site. Sign in at https://${domain}/admin. ` +
+            'Your workers.dev address keeps working too.',
+        );
       },
     );
-    if (!dryRun && !onboardEnabled) {
-      return { outcome: 'email-not-ready', domain };
-    }
-    if (!dryRun) {
-      await updateSite(siteId, { step: 'email-onboarded', cloudflare: { emailOnboardedAt: onboardedAt } });
-    }
-  }
 
-  // --- Test send: proves the sending path before the redeploy, on purpose, since a redeploy is
-  // pointless when the sender path itself is broken. Unconditional past this point: a resumed
-  // record repeats this call every time, which is both cheap and the point, proving delivery
-  // again on every re-run rather than only the first.
-  const from = defaultFromAddress(domain);
-  let sendWaitError;
-  await runStep(
-    frame,
-    'Send a test sign-in email',
-    `Sends one message from ${from} to your saved sign-in address, proving delivery works.`,
-    async () => {
-      try {
-        await sendTestMessage({ api, from, to: ownerEmail, onboardedAt });
-      } catch (err) {
-        // email.mjs classifies a send failure with no `dir` in hand (its own interface omits it
-        // and `record`); this rebuilds each of its three reclassified rows with this chapter's
-        // real `dir` (and `domain`, where the row takes one) before it is ever printed or
-        // returned, the same "classify now, name later" split hostname.mjs's own wait outcomes
-        // already use. Anything else (including api.mjs's own email-send-failed fall-through,
-        // which already carries the real dir since api.mjs built it) is rethrown as-is.
-        const code = err?.catalogue?.code;
-        if (code === 'email-sender-propagating' || code === 'email-daily-limit') {
-          sendWaitError = cloudflareError(code, { dir });
-          log(sendWaitError.message);
+    // --- Email admission: the price, restated at the moment of the ask (T4b ruling 6). Only asked
+    // while step has not yet reached email-onboarded; once onboarding has actually succeeded, this
+    // is never re-asked. A decline writes the terminal step directly (rather than going through
+    // TERMINAL_STEPS' own short-circuit, which only fires on a LATER re-entry) and deletes the
+    // token at the point it happens, per the terminal-state token rule.
+    if (!hasReached(record?.step, 'email-onboarded')) {
+      let emailConsented = false;
+      const reoffered = Boolean(record?.cloudflare?.emailDeclinedAt);
+      await runStep(frame, 'Turn on email sign-in', EMAIL_ADMISSION_DETAIL, async () => {
+        log(EMAIL_ADMISSION_DETAIL);
+        if (args.yes && !args.email) {
+          log(
+            'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
+              'it on unattended, or without --yes to be asked.',
+          );
+          emailConsented = false;
           return;
         }
-        if (code === 'email-sender-unavailable') {
-          throw cloudflareError(code, { dir, domain });
+        if (args.yes && args.email) {
+          emailConsented = true;
+          return;
         }
-        throw err;
+        const answer = await confirm({
+          message: "Turn on Cloudflare's Workers Paid plan now, so anyone besides you can sign in?",
+        });
+        if (isCancel(answer)) exitOnCancel();
+        emailConsented = Boolean(answer);
+      });
+      if (!dryRun && !emailConsented) {
+        const declineErr = cloudflareError('paid-plan-declined', { dir, reoffered });
+        log(declineErr.message);
+        await updateSite(siteId, {
+          step: 'paid-plan-declined',
+          cloudflare: { emailDeclinedAt: new Date().toISOString() },
+        });
+        await deleteApiToken(siteId);
+        return { outcome: 'paid-plan-declined' };
       }
-    },
-  );
-  if (!dryRun && sendWaitError) {
-    return { outcome: sendWaitError.catalogue.code, domain, message: sendWaitError.message };
-  }
+    }
 
-  // --- Sender address, then one deploy. Both skip when the address is already correct, so a
-  // park-and-resume never buys a second deploy; cairn.config.ts is bundled at build time (unlike
-  // writePublicOrigin's wrangler.jsonc var, which is read at runtime), so the redeploy needs a
-  // fresh build first.
-  let addressChanged = false;
-  await runStep(
-    frame,
-    'Update your sign-in email address',
-    `Writes ${from} into your site's config as its sign-in sender, then builds and redeploys so ` +
-      'the running site carries it. Skipped once the address is already correct.',
-    async () => {
-      addressChanged = await writeEmailFrom(dir, from);
-      if (!addressChanged) return;
-      await buildSite({ dir, log });
-      await deployWorker({ dir, log, accountId });
-    },
-  );
-  if (!dryRun) {
-    await updateSite(siteId, { cloudflare: { emailFrom: from } });
-  }
-
-  // --- Completion: email-live is recorded and the token is deleted, the terminal step this
-  // chapter was building toward.
-  await runStep(
-    frame,
-    'Finish setting up email',
-    'Prints your sign-in sender address and how to check it again later.',
-    async () => {
-      log(
-        `Your site now sends its own sign-in email, from ${from}. Change it any time by editing ` +
-          "email: { from: '...' } in src/theme/cairn.config.ts and redeploying.\n" +
-          `Onboarding also wrote a DMARC policy at _dmarc.${domain}, set to reject mail that ` +
-          "isn't from Cloudflare's own sending infrastructure. That record stays in place even " +
-          'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
-          'to this domain later, add it to that record too, or its mail will be rejected.\n' +
-          `Run npx cairn-doctor --from ${from} --send-test <you@example.com> any time to re-prove ` +
-          'delivery without running this installer again.',
+    // --- Onboard the sending domain, then poll once. Only from before email-onboarded; a resumed
+    // record past it already carries emailOnboardedAt, read below regardless of which run set it.
+    let onboardedAt = record?.cloudflare?.emailOnboardedAt;
+    if (!hasReached(record?.step, 'email-onboarded')) {
+      let onboardEnabled = false;
+      await runStep(
+        frame,
+        'Onboard your domain for email',
+        'Turns on Cloudflare Email Sending for your domain, reading first so a resumed run never ' +
+          'onboards it twice.',
+        async () => {
+          const result = await ensureSendingDomain({ api, zoneId, domain, record });
+          onboardEnabled = result.enabled;
+          if (result.enabled) {
+            onboardedAt = result.onboardedAt;
+            return;
+          }
+          log(cloudflareError('email-not-ready', { dir, domain }).message);
+        },
       );
-    },
-  );
+      if (!dryRun && !onboardEnabled) {
+        return { outcome: 'email-not-ready', domain };
+      }
+      if (!dryRun) {
+        await updateSite(siteId, { step: 'email-onboarded', cloudflare: { emailOnboardedAt: onboardedAt } });
+      }
+    }
 
-  if (!dryRun) {
-    await updateSite(siteId, { step: 'email-live' });
-    await deleteApiToken(siteId);
-  }
+    // --- Test send: proves the sending path before the redeploy, on purpose, since a redeploy is
+    // pointless when the sender path itself is broken. Unconditional past this point: a resumed
+    // record repeats this call every time, which is both cheap and the point, proving delivery
+    // again on every re-run rather than only the first.
+    const from = defaultFromAddress(domain);
+    let sendWaitError;
+    await runStep(
+      frame,
+      'Send a test sign-in email',
+      `Sends one message from ${from} to your saved sign-in address, proving delivery works.`,
+      async () => {
+        try {
+          await sendTestMessage({ api, from, to: ownerEmail, onboardedAt });
+        } catch (err) {
+          // email.mjs classifies a send failure with no `dir` in hand (its own interface omits it
+          // and `record`); this rebuilds each of its three reclassified rows with this chapter's
+          // real `dir` (and `domain`, where the row takes one) before it is ever printed or
+          // returned, the same "classify now, name later" split hostname.mjs's own wait outcomes
+          // already use. Anything else (including api.mjs's own email-send-failed fall-through,
+          // which already carries the real dir since api.mjs built it) is rethrown as-is.
+          const code = err?.catalogue?.code;
+          if (code === 'email-sender-propagating' || code === 'email-daily-limit') {
+            sendWaitError = cloudflareError(code, { dir });
+            log(sendWaitError.message);
+            return;
+          }
+          if (code === 'email-sender-unavailable') {
+            throw cloudflareError(code, { dir, domain });
+          }
+          throw err;
+        }
+      },
+    );
+    if (!dryRun && sendWaitError) {
+      return { outcome: sendWaitError.catalogue.code, domain, message: sendWaitError.message };
+    }
 
-  if (dryRun) {
-    return { outcome: 'dry-run' };
+    // --- Sender address, then one deploy. Both skip when the address is already correct, so a
+    // park-and-resume never buys a second deploy; cairn.config.ts is bundled at build time (unlike
+    // writePublicOrigin's wrangler.jsonc var, which is read at runtime), so the redeploy needs a
+    // fresh build first.
+    let addressChanged = false;
+    await runStep(
+      frame,
+      'Update your sign-in email address',
+      `Writes ${from} into your site's config as its sign-in sender, then builds and redeploys so ` +
+        'the running site carries it. Skipped once the address is already correct.',
+      async () => {
+        addressChanged = await writeEmailFrom(dir, from);
+        if (!addressChanged) return;
+        await buildSite({ dir, log });
+        await deployWorker({ dir, log, accountId });
+      },
+    );
+    if (!dryRun) {
+      await updateSite(siteId, { cloudflare: { emailFrom: from } });
+    }
+
+    // --- Completion: email-live is recorded and the token is deleted, the terminal step this
+    // chapter was building toward.
+    await runStep(
+      frame,
+      'Finish setting up email',
+      'Prints your sign-in sender address and how to check it again later.',
+      async () => {
+        log(
+          `Your site now sends its own sign-in email, from ${from}. Change it any time by editing ` +
+            "email: { from: '...' } in src/theme/cairn.config.ts and redeploying.\n" +
+            `Onboarding also wrote a DMARC policy at _dmarc.${domain}, set to reject mail that ` +
+            "isn't from Cloudflare's own sending infrastructure. That record stays in place even " +
+            'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
+            'to this domain later, add it to that record too, or its mail will be rejected.\n' +
+            `Run npx cairn-doctor --from ${from} --send-test <you@example.com> any time to re-prove ` +
+            'delivery without running this installer again.',
+        );
+      },
+    );
+
+    if (!dryRun) {
+      await updateSite(siteId, { step: 'email-live' });
+      await deleteApiToken(siteId);
+    }
+
+    if (dryRun) {
+      return { outcome: 'dry-run' };
+    }
+    return { outcome: 'email-live', domain };
+  } catch (error) {
+    // The catalogue survives only on `error.cause`: runActions (runner.mjs) rewraps a thrown
+    // error with its action's title before it ever reaches this catch (this module's own tests
+    // already work around the same rewrap by asserting on the message, not `err.catalogue`).
+    const code = error?.cause?.catalogue?.code;
+    if (!dryRun && (code === 'token-scope-missing' || code === 'token-invalid')) {
+      // A re-run re-collects a token instead of silently reusing one that fails the same way
+      // again; every other thrown row (a park, a decline, any other act row) is untouched.
+      await deleteApiToken(siteId);
+    }
+    throw error;
   }
-  return { outcome: 'email-live', domain };
 }

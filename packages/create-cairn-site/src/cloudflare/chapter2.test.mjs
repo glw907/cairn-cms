@@ -245,6 +245,28 @@ function dailyLimitBody() {
   };
 }
 
+/** The v4 403 envelope with no extractable permission, matching api.test.mjs's own fixture. */
+const GENERIC_SCOPE_MISSING_BODY = {
+  success: false,
+  errors: [{ code: 9109, message: 'Unauthorized to access requested resource' }],
+  messages: [],
+  result: null,
+};
+
+/** The v4 400 envelope api.mjs maps onto token-invalid, matching api.test.mjs's own fixture. */
+const TOKEN_INVALID_BODY = {
+  success: false,
+  errors: [
+    {
+      code: 6003,
+      message: 'Invalid request headers',
+      error_chain: [{ code: 6111, message: 'Invalid format for Authorization header' }],
+    },
+  ],
+  messages: [],
+  result: null,
+};
+
 // --- Admission ----------------------------------------------------------------------------
 
 // The domain gate is answered yes; the email gate (the only other confirm this run reaches) is
@@ -1589,4 +1611,188 @@ test('amendment 13: email-sender-unavailable carries the real --dir, never the s
       return true;
     },
   );
+});
+
+// --- T4b.1: a scope failure clears the saved token; a park (or an unrelated act row) keeps it --
+//
+// The live defect this repairs: a saved token that passes validateToken's read (listZones) but
+// lacks a write permission could never be replaced, because nothing cleared it once a later WRITE
+// call (zone create, DNS, the attach) came back token-scope-missing or token-invalid. The row
+// already tells the owner to re-run; this makes the re-run actually re-collect a token instead of
+// silently reusing the bad one.
+
+test('token lifecycle: a token-scope-missing failure creating the zone clears the saved token and rethrows unchanged', async (t) => {
+  await freshStateDir(t);
+  const stateDir = process.env.CAIRN_STATE_DIR;
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const plantedToken = 'planted-scope-secret-71a2f930';
+  await seedLiveSite('site-token-scope', dir, {
+    cloudflare: { url: WORKERS_DEV_URL, workerName: 'cairn-domain-site', accountId: 'acct-1', apiToken: plantedToken },
+  });
+  cloudflare.failNext('zone_create', 403, GENERIC_SCOPE_MISSING_BODY);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  await assert.rejects(
+    async () =>
+      runChapter2({
+        openBrowser: neverOpensBrowser,
+        siteId: 'site-token-scope',
+        record: await loadSite('site-token-scope'),
+        dir,
+        args: { yes: true, domain: 'token-scope-test.example' },
+        log: () => {},
+        dryRun: false,
+        confirm: mustNotBeCalled('confirm'),
+        text: mustNotBeCalled('text'),
+        env: {},
+      }),
+    (err) => {
+      assert.equal(err.cause?.catalogue?.code, 'token-scope-missing');
+      return true;
+    },
+  );
+
+  const state = await loadSite('site-token-scope');
+  assert.equal('apiToken' in state.cloudflare, false, 'a re-run must re-collect a token, not reuse the bad one');
+  assert.equal(state.cloudflare.url, WORKERS_DEV_URL, 'sibling fields must survive the scrub');
+  assert.equal(state.cloudflare.accountId, 'acct-1', 'sibling fields must survive the scrub');
+
+  const rawFile = await readFile(path.join(stateDir, 'site-token-scope.json'), 'utf8');
+  assert.doesNotMatch(rawFile, new RegExp(plantedToken), 'the raw bytes must not carry the token either');
+
+  // Falsifiable: the same regex against a haystack that DOES carry the planted token must match.
+  assert.match(`${rawFile}\n${plantedToken}`, new RegExp(plantedToken));
+});
+
+test('token lifecycle: a token-invalid failure creating the zone clears the saved token and rethrows unchanged', async (t) => {
+  await freshStateDir(t);
+  const stateDir = process.env.CAIRN_STATE_DIR;
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const plantedToken = 'planted-invalid-secret-9c40e812';
+  await seedLiveSite('site-token-invalid', dir, {
+    cloudflare: { url: WORKERS_DEV_URL, workerName: 'cairn-domain-site', accountId: 'acct-1', apiToken: plantedToken },
+  });
+  cloudflare.failNext('zone_create', 400, TOKEN_INVALID_BODY);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  await assert.rejects(
+    async () =>
+      runChapter2({
+        openBrowser: neverOpensBrowser,
+        siteId: 'site-token-invalid',
+        record: await loadSite('site-token-invalid'),
+        dir,
+        args: { yes: true, domain: 'token-invalid-test.example' },
+        log: () => {},
+        dryRun: false,
+        confirm: mustNotBeCalled('confirm'),
+        text: mustNotBeCalled('text'),
+        env: {},
+      }),
+    (err) => {
+      assert.equal(err.cause?.catalogue?.code, 'token-invalid');
+      return true;
+    },
+  );
+
+  const state = await loadSite('site-token-invalid');
+  assert.equal('apiToken' in state.cloudflare, false, 'a re-run must re-collect a token, not reuse the bad one');
+  assert.equal(state.cloudflare.url, WORKERS_DEV_URL, 'sibling fields must survive the scrub');
+
+  const rawFile = await readFile(path.join(stateDir, 'site-token-invalid.json'), 'utf8');
+  assert.doesNotMatch(rawFile, new RegExp(plantedToken), 'the raw bytes must not carry the token either');
+  assert.match(`${rawFile}\n${plantedToken}`, new RegExp(plantedToken));
+});
+
+// The widen guard: an unrelated thrown act row (here, email-sender-unavailable, reused from
+// amendment 13's own fixture above) must never cost the owner a working token. Only the two exact
+// codes clear it.
+test('token lifecycle: an unrelated act-row failure (email-sender-unavailable) does not clear the saved token', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const domain = 'unrelated-act-row.example';
+  const plantedToken = 'planted-unrelated-secret-4b0e2f17';
+  await seedLiveSite('site-unrelated-act', dir, {
+    step: 'email-onboarded',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: plantedToken,
+      domain,
+      alreadyActive: true,
+      // Well past PROPAGATION_WINDOW_MS, same as amendment 13's own unavailable case above, so
+      // classification falls to the "did not take" act row rather than a park.
+      emailOnboardedAt: new Date(0).toISOString(),
+    },
+  });
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  await assert.rejects(
+    async () =>
+      runChapter2({
+        openBrowser: neverOpensBrowser,
+        siteId: 'site-unrelated-act',
+        record: await loadSite('site-unrelated-act'),
+        dir,
+        args: { yes: false },
+        log: () => {},
+        dryRun: false,
+        confirm: mustNotBeCalled('confirm'),
+        text: mustNotBeCalled('text'),
+      }),
+    (err) => {
+      assert.equal(err.cause?.catalogue?.code, 'email-sender-unavailable');
+      return true;
+    },
+  );
+
+  const state = await loadSite('site-unrelated-act');
+  assert.equal(state.cloudflare.apiToken, plantedToken, 'an unrelated act row must never cost the token');
+});
+
+// The regression guard on the untouched half of the rule: a propagation park (a returned
+// outcome, never thrown) must still keep the token. This mirrors the pre-existing "a park at
+// email-onboarded keeps the token" coverage above, restated here as the direct T4b.1 guard.
+test('token lifecycle: a propagation park still keeps the token', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const domain = 'park-still-keeps-token.example';
+  const plantedToken = 'planted-still-parked-secret-2e91';
+  await seedLiveSite('site-still-parked', dir, {
+    step: 'email-onboarded',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: plantedToken,
+      domain,
+      alreadyActive: true,
+      emailOnboardedAt: new Date().toISOString(),
+    },
+  });
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-still-parked',
+    record: await loadSite('site-still-parked'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(outcome.outcome, 'email-sender-propagating');
+
+  const state = await loadSite('site-still-parked');
+  assert.equal(state.cloudflare.apiToken, plantedToken, 'a park must keep the token');
 });

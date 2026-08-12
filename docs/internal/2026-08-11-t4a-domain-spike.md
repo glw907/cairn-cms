@@ -523,7 +523,7 @@ the spike's own probe script did and which Task 8 must keep.
 - The Custom Domain attach call (`PUT /accounts/:id/workers/domains`), its duplicate error, which
   credential covers it, and what a proxied hostname with no matching Worker serves.
 
-## Addendum: the minted spike token (2026-08-11, later the same day)
+## Addendum: the minted spike token (2026-08-11 local, 2026-08-12 UTC)
 
 Geoff minted the spike token in one sitting. Four observations follow, all made against the live
 account with the token in hand. The scratch domain had not arrived yet, so the calls below are
@@ -607,7 +607,10 @@ Unchanged from the blocked half above: the `POST /zones` success body (specifica
 its duplicate error, which credential covers the attach, and what a proxied hostname with no
 matching Worker serves.
 
-## Addendum 2: the scratch domain (`carin-test.org`, 2026-08-12 UTC)
+## Addendum 2: the scratch domain (`carin-test.org`, 2026-08-11 local, 2026-08-12 UTC)
+
+Both addenda cover one sitting that straddled UTC midnight. Dates in this doc are local unless
+marked UTC, and the two are one evening apart, not two days.
 
 The scratch domain arrived registered **at Cloudflare Registrar**, not at an external one. That is
 not what the plan assumed, and it changes what this spike can and cannot prove. Everything below

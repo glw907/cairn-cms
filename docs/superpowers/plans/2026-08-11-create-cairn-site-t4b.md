@@ -48,6 +48,103 @@ re-derive.
   banned in comments.
 - Production domains are untouchable. The live e2e uses only the scratch domain.
 
+## Spike amendments (2026-08-12, from Task 1)
+
+Task 1 ran and closed six of its seven steps without a browser. Full evidence:
+`docs/internal/2026-08-11-t4b-email-spike.md`. The amendments below **supersede the task text
+where they conflict**, and the dependent tasks are cleared to dispatch.
+
+1. **There are no `E_` codes on the REST surface, and Tasks 4 and 5 are re-planned onto what is
+   really there.** The send returns a v4 envelope carrying a numeric `code` and a dotted
+   identifier: `{ "code": 10203, "message": "email.sending.error.email.sending_disabled" }`, HTTP
+   403. The `E_SENDER_*` strings belong to the Workers **binding** surface that
+   `src/lib/email.ts` parses, not to this REST call. Accordingly:
+   - Task 4's `sendErrorCode(json)` extracts Cloudflare's `errors[0].code` (a number) and its
+     `message` identifier, not an `E_` prefix. Name it for what it returns.
+   - Task 5 classifies on `10203` plus the clock. Its instruction to preserve a bare-string check
+     on `not a verified address` **does not apply to this pass**: that check guards the binding
+     path in `src/lib/email.ts`, which this pass does not touch. Do not add it to `email.mjs`.
+2. **The propagation window is the only discriminator, and that is now load-bearing rather than
+   belt-and-braces.** A never-onboarded send and a send 25 seconds after onboarding return the
+   **identical** code. Nothing in the body separates them. `onboardedAt` plus
+   `PROPAGATION_WINDOW_MS` is the whole classification, exactly as Task 5 designed it; only the
+   code table changes.
+3. **The create returns `enabled: true` immediately** (Step 6 answered), so no fallback to
+   `wrangler email sending enable` is needed and Task 5's interfaces stand. It also means
+   `email-not-ready` is **hard to reach on an active zone**, the same shape as T4a's
+   already-active short-circuit. Keep the row and its fixture-driven test, and do not expect the
+   live run to hit it.
+4. **`preview_enabled` is not a constant.** A fresh create returned `true`; `ecxc.ski` reports
+   `false`. No fixture may assert it as a fixed value.
+5. **The success body differs from Cloudflare's documented example.** Live, a success returns
+   `result: { message_id, delivered: [], queued: [], permanent_bounces: [] }`, with the arrays
+   empty rather than naming the recipient. Task 6's fixtures copy the captured body.
+6. **Task 9's teardown changes.** The zone cannot be deleted, because the scratch domain is at
+   Cloudflare Registrar (T4a post-mortem, divergence 2). Teardown is
+   `DELETE /zones/{id}/email/sending/subdomains/{id}`, **then** deleting the residual `_dmarc`
+   record by hand, because the subdomain delete leaves it behind at `p=reject`. Both verified.
+7. **Task 9 Step 3 proves the propagation park, not the disabled-subdomain state**, per
+   amendment 3. The propagation park is reachable and this spike hit it twice.
+8. **The entitlement condition is unreachable on this account** (it is on Workers Paid, Step 2
+   answered). Task 4's `paid-plan-missing` mapping keys on the entitlement wording, and its test
+   name says the condition was not observed live. Task 2's `paid-plan-missing` copy must not
+   claim a distinct error identifies it.
+9. **The closing copy's DMARC disclosure gains a second half.** Removing Email Sending does not
+   remove the `p=reject` record, so the policy outlives the feature. Task 8 Step 4's copy and
+   Task 10's guide correction both carry this.
+10. **Measured propagation: between 47 and 107 seconds** on an already-active zone, against
+    Cloudflare's documented 5 to 15 minutes. Owner-facing copy quotes the vendor's range, which is
+    the promise; the measurement is why the park will rarely be seen. Task 9 Step 6's measurement
+    is already taken.
+11. **Task 9's prerequisite is bigger than the plan says, and it costs a browser moment.** The
+    plan assumes "a site at `domain-live`". No such site exists: T4a's teardown retired its state
+    record and deleted the Worker, both D1 databases, the R2 bucket, the Custom Domain, and the
+    repository, and `~/.config/cairn/sites` is empty. Task 9 therefore runs chapters 1 and 2 from
+    scratch, which means **creating and installing a third GitHub App** and paying chapter 1's two
+    browser moments. Two mitigations: the scratch zone is already active, so chapter 2's domain
+    half takes T4a's adopt short-circuit and is fast; and the scratch domain's sending
+    configuration was restored to its pre-onboarding baseline by this spike, so the run exercises
+    the create path honestly rather than an already-onboarded one.
+
+    Related housekeeping, for the pass-end report rather than for a task: `cairn-t3-live-71d37c`
+    and `cairn-t4a-live-596b84` are both still registered at github.com awaiting deletion, and
+    Task 9 will add a third.
+12. **The seam's blanket 403 rule collides with the email routes, and Task 4 must break the tie.**
+    `throwMapped` in `src/cloudflare/api.mjs` maps **every** HTTP 403 to `token-scope-missing`
+    before it reaches the operation fall-through. The email send's refusal is HTTP 403 with code
+    `10203`. Left alone, an owner whose DNS is still settling is told their API token is missing a
+    permission, which is both wrong and unactionable, and the propagation park can never fire.
+
+    Task 4 therefore adds a discriminator ahead of the generic 403 branch: a 403 carrying an email
+    operation code is classified by `sendErrorCode` rather than by the token rule. Keep the
+    generic rule intact for every other route, since a genuinely underscoped token still has to
+    reach `token-scope-missing`, and note that an underscoped token hitting an email route now
+    lands on an email row instead. That trade is correct, because `10203` is the only 403 the send
+    has been observed to return, and the run cannot reach the send at all without a token that
+    already passed `validateToken`.
+
+    **Test both sides:** a 403 on a non-email route still maps to `token-scope-missing`, and a 403
+    on an email route maps to the propagation or fall-through row. This is the kind of assertion
+    the suite would otherwise never make, because no existing test sends a 403 down an email path.
+
+### The T4a handoff is already carried, and one T4a carry-forward is stale
+
+The plan's closing "T4a handoff" section is written for a T4a that had not yet been built. T4a is
+built. Both amendments are already in the code, and neither is work for this pass:
+
+- **Amendment 1 (the prefill URL gains Email Sending) is DONE.** `src/cloudflare/prefill.mjs`
+  ships `{ key: 'email_sending', type: 'edit' }`, verified against the live dashboard on
+  2026-08-11 by a second probe that loaded all five keys and reported five filled.
+- **Amendment 2 (terminal-state token deletion) is DONE**, recorded in T4a's post-mortem
+  divergence 3: `domain-live` is not terminal, so the token survived the live run.
+- **Spike Step 1 was answered by T4a's spike, not this one.** The dashboard name is
+  `Account > Email Sending > Edit`; the template key is `email_sending`, and Cloudflare documents
+  no template key for it, so it is known to work only because it was tried.
+- **Stale carry-forward:** T4a's post-mortem lists "the prefill URL's keys are still unverified
+  against the live dashboard" as open. For `email_sending` and `ssl_and_certificates` that is no
+  longer true, per the doc block in `prefill.mjs`. Task 10 corrects the carry-forward rather than
+  repeating it into STATUS.
+
 ## File Structure
 
 ```
@@ -94,28 +191,35 @@ its answers into this plan as an amendments section before any dependent task go
 response shape, the apex naming, the `cf-bounce` record placement, the `p=reject` DMARC
 default, and the correctness of the engine doctor's existing predicate.
 
-- [ ] **Step 1: Mint a scoped token in the dashboard** and record the Email Sending permission
+- [x] **Step 1: Mint a scoped token in the dashboard** and record the Email Sending permission
   group's exact displayed name, plus whether it is account-scoped, zone-scoped, or both. This
   is the pass's only true unknown and it feeds the T4a handoff below.
-- [ ] **Step 2: Confirm the account's Workers Paid status** in the same sitting. Evidence says
+  **ANSWERED by T4a's spike, no browser needed:** `Account > Email Sending > Edit`, template key
+  `email_sending`, already shipped and verified in `prefill.mjs`.
+- [x] **Step 2: Confirm the account's Workers Paid status** in the same sitting. Evidence says
   it is already on: `ecxc.ski` has Email Sending enabled and delivers to arbitrary editors,
   which the free plan does not allow. Confirm rather than assume.
+  **ANSWERED yes:** a live send from `ecxc.ski` returned HTTP 200 with a `message_id`.
 - [ ] **Step 3: The billing glance.** Given four Workers Custom Domains on Free-plan zones on
   this account, does an Advanced Certificate Manager line item appear? Record yes or no. This
   is the last unresolved number in the cost copy.
-- [ ] **Step 4: Capture verbatim response bodies** against the scratch domain, for Task 6's
+  **STILL OPEN, and the pass's only remaining browser question.** The estate token is refused by
+  the subscriptions, billing-profile, and certificate-pack endpoints (code 9109).
+- [x] **Step 4: Capture verbatim response bodies** against the scratch domain, for Task 6's
   fixtures: a create (`POST /zones/{id}/email/sending/subdomains`), a list immediately after,
   a list once enabled, and a successful send (`POST /accounts/{id}/email/sending/send`).
-- [ ] **Step 5: Capture the failure bodies that can be reached**, at minimum a send from a
+- [x] **Step 5: Capture the failure bodies that can be reached**, at minimum a send from a
   domain that is not onboarded. Record the exact error envelope and whether the `E_` codes
   arrive as a `code`, inside a `message`, or neither. **Decision gate for Task 4:** if the
   REST send returns something other than a v4 envelope, Task 4's error mapping is re-planned
   before dispatch.
-- [ ] **Step 6: Confirm the create endpoint sets the zone flag** as the SDK comment claims,
+  **GATE PASSED (it is a v4 envelope), but the `E_` premise is refuted:** see amendment 1.
+- [x] **Step 6: Confirm the create endpoint sets the zone flag** as the SDK comment claims,
   by checking the zone reports sending enabled after a create with no dashboard visit.
   **Decision gate for Task 5:** if it does not, the onboarding step falls back to
   `wrangler email sending enable` and Task 5's interfaces change.
-- [ ] **Step 7: Write the spike doc**, with every finding dated, and fold the amendments into
+  **GATE PASSED:** the create returns `enabled: true` immediately. Task 5's interfaces stand.
+- [x] **Step 7: Write the spike doc**, with every finding dated, and fold the amendments into
   this plan.
 
 ### Task 2: The catalogue: the `declined` kind and the email rows

@@ -569,7 +569,7 @@ that appendix, never written from memory.** A spike question that answers "no" o
   `packages/create-cairn-site/test/resume-cloudflare.test.mjs` (or a sibling
   `resume-chapter2.test.mjs` if it would outgrow its shape)
 
-- [ ] **Step 1: Failing dispatcher tests** (the T3 discrete-resume-case pattern,
+- [x] **Step 1: Failing dispatcher tests** (the T3 discrete-resume-case pattern,
   spawning `bin.mjs` with the fake bins, the fake API's env seam, and a fake-opener
   PATH): a record at each new step (`zone-created`, `records-carried`, `delegated`)
   enters chapter 2 and **never reaches `scaffold`** (the re-scaffold fallthrough is the
@@ -578,7 +578,7 @@ that appendix, never written from memory.** A spike question that answers "no" o
   copy; a park exits 0; a thrown row exits 1; `--start-over` from a chapter-2 step
   refuses with a next step naming the zone, records, and Worker that exist (no retire,
   no re-scaffold).
-- [ ] **Step 2: Implement**: extend the resumable-step list, reopen the `live` branch,
+- [x] **Step 2: Implement**: extend the resumable-step list, reopen the `live` branch,
   add the terminal branch, the `--start-over` refusal, and update `printLiveInfo`'s
   stale "domain and email arrive with the next chapter" copy. Suite green; commit.
 
@@ -750,3 +750,70 @@ foreign-account ownership; and the Custom Domain attach call with its duplicate 
 - `src/github/install.test.mjs`'s timing flake tripped once under load across roughly a dozen suite
   runs. Only its timing assertion is load-sensitive; the state tests added this pass are
   deterministic filesystem checks and cannot flake. Already STATUS carry-forward 3.
+
+## Post-mortem, part two (2026-08-11 evening): Tasks 11 and 12
+
+**Status: Tasks 11 and 12 are done and committed on `t4a-domain-chapter`. Task 13 still needs
+Geoff, a fresh zone-create-capable token, and the scratch domain. Task 14 follows it.**
+
+Suite: **437 pass, 0 fail, exit 0** in `packages/create-cairn-site`. Four commits: `043f3ba6`
+(the dispatcher), `422b95b0` and `0fa7b95a` (review findings), `f1ec501e` (the browser guard),
+`a9fe89f1` (the safety net).
+
+### Rulings the main loop settled before dispatching
+
+The plan left four questions open that the implementer would otherwise have guessed at.
+
+1. **The `live` branch reopens for every run, not only one carrying `--domain`.** Chapter 1
+   reaching `live` now continues into chapter 2's admission gate, which already handles
+   interactive consent, `--yes --domain`, and `--yes` alone. Task 13's own first step assumes
+   that path exists.
+2. **`domain-live` is terminal in `bin.mjs`**, which prints the closing copy and never re-enters
+   chapter 2. `runChapter2`'s documented re-entry stays live for T4b to reopen.
+3. **Park copy belongs in `chapter2.mjs`.** Two park paths printed nothing actionable: the
+   delegation parks built a row and returned its message without logging it, and
+   `cutOverHostname` returned `hostname-propagating` or `certificate-pending` with no row at all.
+   Both violated this pass's own constraint that a park prints its re-entry command.
+4. **No DNS or probe env seam gets added to production code**, which is what moved Task 12
+   in-process (recorded at the task itself).
+
+### The defect that reached the operator's desk
+
+**A full suite run opened five real browser tabs, and had been doing so since Task 10.**
+`ensureApiToken`'s interactive path calls `openBrowser(PREFILL_URL)` before prompting for the
+paste, and `chapter2.test.mjs` never passed the `openBrowser` seam, which defaults to the real
+platform opener. Across repeated agent runs that reached roughly fifty tabs before Geoff said so.
+
+Three things made it survive a passing gate. `openBrowser` swallows its own spawn errors by
+design, so nothing failed. On CI there is no opener binary to find, so the leak is invisible
+there and lands only on a workstation. And the seam is opt-in: a test that omits it gets the real
+opener rather than an error.
+
+The fix is both layers. Every `runChapter2` call site passes a stub, and `test/no-desktop.mjs`
+loads through `--import` from the test script so it reaches every process the runner spawns,
+putting no-op stand-ins for `xdg-open`, `open`, and `cmd` first on PATH. The stand-ins record
+what they intercepted rather than silently swallowing it, so the count is auditable: five before,
+zero after, attributed per file.
+
+### Four more caught in diff review, each folded with its own test
+
+1. **`--sign-in` fell into the domain prompt.** The reopened `live` branch continued into
+   chapter 2 unconditionally, so a recovery run for an expired sign-in link asked a mid-browser
+   admin to connect a domain. The implementer met this as a test hang and worked around it by
+   adding `--yes` to the affected test, which hid the behavior rather than fixing it.
+2. **Stopping `--sign-in` before chapter 2 then dropped its closing block**, losing the repo and
+   App links and the doctor line that every other already-live run prints.
+3. **The admission-gate assertions matched a prefix of the wrong string.** `printLiveInfo`'s
+   reworded hint opens on "Connect your own domain any time", so a negative assertion on the hop
+   title fired on the closing block it was meant to permit. Both assertions now match the
+   admission detail's opening words.
+4. **The spawned-CLI tests hung instead of failing.** `runCli` passed no `input` and no
+   `timeout`, so any regression reaching a real prompt blocked forever. Closing stdin did not
+   make `@clack` abort, so the 60-second backstop is what converts a hang into a readable
+   failure. A future prompt regression costs a minute per affected test.
+
+### Verified rather than taken on report
+
+Task 12's agent was stopped mid-flight to halt the tabs and never filed its report, so its
+claims were checked directly instead: breaking `hasReached` fails five of its nine cases, which
+is what proves the no-repeat assertions detect a repeated hop rather than merely passing.

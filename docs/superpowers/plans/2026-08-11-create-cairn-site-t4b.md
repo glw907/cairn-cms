@@ -575,8 +575,13 @@ task that owns it.
 ## Post-mortem, part one (2026-08-12): the offline half, and what the spike overturned
 
 **Status: Tasks 1 through 8 and 10 are done. Task 9, the live e2e, has not run** and is the whole
-of what remains. The suite is green and the runtime library is untouched, as the pass's global
-constraint required.
+of what remains. The runtime library is untouched, as the pass's global constraint required.
+
+Final gate, all green: `npm test` in the package at **523 passing, exit 0**; the root `npm run
+check` at 0 errors and 0 warnings over 1601 files; the root `npm test` at 5274 passing across 412
+files; and all four CI-only gates plus the rest, `check:reference`, `check:reference:signatures`,
+`check:package`, `check:docs`, `check:surface`, `check:comments`, `check:version`, and
+`check:snippets`.
 
 ### The spike was supposed to be one browser sitting, and it needed none
 
@@ -699,3 +704,50 @@ why the park will rarely be seen.
   on an account already on Workers Paid, and a plan-less account may return the same `10203` as every
   other refusal.
 - **The duplicated fake HTTP plumbing**, restored to STATUS, still filed for T4d.
+
+
+## Post-mortem, part two (2026-08-12): the close-out, and a third seam defect
+
+Three things happened after part one was written that change its conclusions.
+
+### The decline was a trap, and the pass nearly shipped it
+
+Task 8b's implementer reported that `catalogue.mjs`'s decline copy promises a plain re-run
+re-offers the plan, while the `bin.mjs` change it had just been told to make guaranteed the
+opposite. It was right, and the instruction it was given was mine. My Task 8b dispatch said "a
+record at `email-live` or `paid-plan-declined` does not call `runChapter2`", which conflated two
+meanings of terminal.
+
+The resulting behavior: an owner who declined read copy telling them to re-run when ready, the
+re-run printed a closing block and returned, and `--start-over` refused because the record carries
+real Cloudflare resources. **There was no path to enable email, ever.** A choice the spec called a
+clean stop was a dead end.
+
+Fixed in `2cba39eb` and recorded as amendment 14. A decline is terminal for the **token** (deleted)
+and for the **exit code** (0, nothing is wrong), and deliberately not terminal for **re-entry**.
+
+This is the third defect this pass caught at a seam between two individually correct modules, after
+the 403 collision and the dir-less rows. All three shared a shape: each module's own suite was
+green, and the defect lived in what one module assumed about another. All three were surfaced by an
+implementer reporting a conflict rather than implementing its instruction and leaving the
+contradiction for someone else. **That is the practice to keep, and it is worth more than the three
+fixes.**
+
+### Two verification claims were checked rather than accepted
+
+Task 8a reported its three amendment-13 tests as falsifiable "by reading the code path, not by
+breaking it live". That is not the standard. The rebuild was deleted, the amendment-13 test went red
+along with three others, and the file was restored byte-identical and re-run green. Same for the new
+decline re-entry test: the early return was restored, the test went red, the fix was restored, green.
+Both are now proven able to fail rather than assumed to be.
+
+### Dead surface, created by a mid-pass correction
+
+`code-simplifier` observed that `sendErrorInfo` had no production caller. It was built by Task 4 to
+the dispatch's specification, and then orphaned hours later when the seam began carrying the dotted
+identifier on the thrown error and Task 5 was redirected to `err.api.id`. Nobody was wrong at any
+step; the surface was simply left behind by a correction. Removed with its tests.
+
+Worth noticing as a pattern: **a mid-pass interface change should end by asking what it just
+orphaned.** The redirect was recorded in the plan as amendment 13 and relayed to the implementer,
+and still nothing went back to check what the old path left stranded.

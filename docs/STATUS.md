@@ -37,16 +37,16 @@ the plan: the saved-token lock (owner-stranding), the zone hop's write-before-re
 Plan: `docs/superpowers/plans/2026-08-12-create-cairn-site-t4b1.md`. Small pass, five tasks, no
 new surface.
 
+**The stack is MERGED to `main`** (ff-only, 2026-08-12, `main` at `210c3bda`, the exact tree
+every gate passed), retiring the branch-topology warning this section carried since T4a. The
+release itself still holds per the standing order (after Pass D).
+
 **Resume prompt for the next session** (a fresh Opus session; launch directory
 `~/Projects/cairn-cms`): "Execute Pass T4b.1 of the create-cairn-site umbrella (the T4b live
-run's defect harvest): `docs/superpowers/plans/2026-08-12-create-cairn-site-t4b1.md`. Start with
-the cairn-pass skill; read the plan in full first, plus the T4b plan's post-mortem part three for
-the evidence behind each fix. **First step before any dispatch: fast-forward merge the green
-stack to `main`** (`main` is at `1415f48e`, `t4b-email-chapter` is a direct descendant, so the
-merge is ff-only and lands the exact tree every gate passed), then work on a fresh worktree off
-`main`. The merge was recommended at the T4b close and not vetoed; it removes the branch-topology
-trap this section has had to carry since T4a. Hold the release itself per the standing order
-(after Pass D)."
+run's defect harvest): `docs/superpowers/plans/2026-08-12-create-cairn-site-t4b1.md`, on a fresh
+worktree off `main`. Start with the cairn-pass skill; read the plan in full first, plus the T4b
+plan's post-mortem part three for the evidence behind each fix. The plan's four rulings are
+committed; do not re-derive them."
 
 Queue after T4b.1: T4c planning sitting (Fable; Builds connect + reconciliation, brief in the
 T4a spec) -> T4d (the localhost console) -> T5 -> Pass D -> release one -> site walk -> P.

@@ -29,19 +29,16 @@ import { makeApi } from './api.mjs';
  * minted spike token"). Do not add a key here without opening the resulting URL and confirming
  * Cloudflare actually filled it in; the dashboard gives no error for a key it does not recognize.
  *
- * - `zone`, `dns`, `workers_scripts`: observed to resolve correctly.
- * - `ssl_and_certificates`: the vendor's own documented key for the Zone-scoped "SSL and
- *   Certificates" permission
- *   (https://developers.cloudflare.com/fundamentals/api/how-to/account-owned-token-template/),
- *   carried here on the strength of that documentation; not yet independently observed to
- *   resolve. A shorter, plausible-looking alternative key was tried live instead and rendered
- *   the empty, unresolved control; it is deliberately never used here (see the spike doc's
- *   "Addendum: the minted spike token" for the exact key and the observation).
+ * Every key here has been opened in the dashboard and seen to fill its row. `zone`, `dns`, and
+ * `workers_scripts` were confirmed 2026-08-11; `ssl_and_certificates` and `email_sending` were
+ * confirmed by a second probe the same day, which loaded all five plus two controls and reported
+ * five filled.
  *
- * Email Sending, which this chapter's second half needs, is deliberately absent: the dashboard
- * offers it as an Account-scope permission group (its name confirmed live, 2026-08-11), but
- * Cloudflare documents no template key for it, so the URL cannot prefill it. EMAIL_SENDING_HINT
- * below tells the admin to add it by hand instead.
+ * Two keys are deliberately absent because they were observed NOT to resolve, and both rendered
+ * an empty control rather than any error: `ssl_certs`, a plausible-looking guess at the SSL
+ * permission whose real key is `ssl_and_certificates`, and `email`, a guess at the Email Sending
+ * permission whose real key is `email_sending`. Cloudflare documents no template key for Email
+ * Sending at all; `email_sending` is known to work only because it was tried.
  * @type {Array<{ key: string, type: 'edit' }>}
  */
 export const PREFILL_PERMISSION_KEYS = [
@@ -49,6 +46,7 @@ export const PREFILL_PERMISSION_KEYS = [
   { key: 'dns', type: 'edit' },
   { key: 'workers_scripts', type: 'edit' },
   { key: 'ssl_and_certificates', type: 'edit' },
+  { key: 'email_sending', type: 'edit' },
 ];
 
 /** The name Cloudflare pre-fills into the create-token page's own "Token name" field. */
@@ -71,15 +69,6 @@ export const PREFILL_URL = (() => {
   });
   return `https://dash.cloudflare.com/profile/api-tokens?${params.toString()}`;
 })();
-
-/**
- * Printed alongside the prefill link: Cloudflare's template mechanism has no key for the Email
- * Sending permission group this chapter's second half needs, so the admin has to add it by hand.
- */
-export const EMAIL_SENDING_HINT =
-  "Cloudflare's link cannot pre-select the Email Sending permission this site will need later, " +
-  'so before you create the token, also add Account > Email Sending > Edit in the permission ' +
-  'picker.';
 
 /** The question the first paste and the retry both ask, so the retry reads as the same request. */
 const PASTE_PROMPT = 'Paste your Cloudflare API token';
@@ -214,7 +203,6 @@ export async function ensureApiToken({
   }
 
   await openBrowser(PREFILL_URL, log);
-  log(EMAIL_SENDING_HINT);
 
   const pasted = await promptSecretFn(PASTE_PROMPT);
   const firstTry = await validateToken(pasted, scope);

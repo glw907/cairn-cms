@@ -353,6 +353,7 @@ test('the prefill permission key list is pinned', async () => {
     { key: 'dns', type: 'edit' },
     { key: 'workers_scripts', type: 'edit' },
     { key: 'ssl_and_certificates', type: 'edit' },
+    { key: 'email_sending', type: 'edit' },
   ]);
 });
 
@@ -365,7 +366,18 @@ test('the prefill URL carries every pinned key at edit, plus the all-accounts/al
   assert.equal(url.searchParams.get('zoneId'), 'all');
 });
 
-test('ssl_certs, the key observed NOT to resolve, appears nowhere in the module', async () => {
-  const source = await readFile(new URL('./prefill.mjs', import.meta.url), 'utf8');
-  assert.doesNotMatch(source, /ssl_certs\b/);
+// Both keys below were opened in the live dashboard and rendered an empty control rather than
+// any error, which is the whole hazard: a wrong key is invisible until the admin's token turns
+// out to be underscoped. `ssl_certs` may appear in the module's prose as the cautionary example,
+// so this pins the shipped key list rather than sweeping the source text.
+test('the keys observed NOT to resolve are absent from the shipped key list', async () => {
+  const { PREFILL_PERMISSION_KEYS, PREFILL_URL } = await import('./prefill.mjs');
+  const shipped = PREFILL_PERMISSION_KEYS.map((entry) => entry.key);
+  for (const dead of ['ssl_certs', 'email']) {
+    assert.ok(!shipped.includes(dead), `${dead} must not be requested`);
+    assert.doesNotMatch(
+      new URL(PREFILL_URL).searchParams.get('permissionGroupKeys'),
+      new RegExp(`"${dead}"`),
+    );
+  }
 });

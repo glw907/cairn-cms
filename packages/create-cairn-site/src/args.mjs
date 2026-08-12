@@ -22,6 +22,11 @@ const OPTIONS = {
   'owner-email': { type: 'string' },
   deploy: { type: 'boolean', default: false },
   'sign-in': { type: 'boolean', default: false },
+  // Carries both the value and chapter 2's unattended opt-in in one flag: `--yes --domain
+  // example.com` connects that domain with no prompt, while `--yes` alone (no --domain) skips
+  // chapter 2 with a hint rather than guessing at a domain the admin never named. `--connect`
+  // stays reserved for a later pass (T4c, Builds).
+  domain: { type: 'string' },
 };
 
 /**
@@ -29,8 +34,8 @@ const OPTIONS = {
  * @param {string[]} argv the argument vector, without the node/script entries
  * @returns {{ dryRun: boolean, yes: boolean, name?: string, description?: string, brandColor?: string,
  *  dir?: string, version: boolean, appName?: string, org?: string, repoName?: string, github: boolean,
- *  startOver: boolean, ownerEmail?: string, deploy: boolean, signIn: boolean }} the parsed flags; the
- *  string options are undefined, not empty, when absent
+ *  startOver: boolean, ownerEmail?: string, deploy: boolean, signIn: boolean, domain?: string }} the
+ *  parsed flags; the string options are undefined, not empty, when absent
  */
 export function parseArgs(argv) {
   let values;
@@ -59,5 +64,6 @@ export function parseArgs(argv) {
     ownerEmail: values['owner-email'],
     deploy: values.deploy,
     signIn: values['sign-in'],
+    domain: values.domain,
   };
 }

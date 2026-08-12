@@ -372,6 +372,36 @@ const ROWS = {
       );
     }
   },
+  'records-unverified': {
+    kind: 'act',
+    build(params) {
+      return (
+        `The list of DNS records for ${params.domain} could not be read reliably. Reaching your ` +
+        "domain's own nameservers did not work, so the lookup fell back to a public resolver, " +
+        'and a public resolver can keep answering "no such record" for a few minutes after a ' +
+        'record is added. The list may therefore be missing records that really exist.\n' +
+        'This run is unattended, so nothing was copied: copying a list that is quietly missing ' +
+        'your mail records would break mail once the domain switches over, and nobody would see ' +
+        'it happen. Your site is untouched and still working.\n' +
+        `Next: run npx create-cairn-site --dir ${params.dir} without --yes, so you can read the ` +
+        'list yourself before anything is copied. Waiting a few minutes first makes the read ' +
+        'more likely to succeed.'
+      );
+    }
+  },
+  'delegation-propagating': {
+    kind: 'wait',
+    build(params) {
+      const pair = params.nameServers.join(' and ');
+      return (
+        `${params.domain} is pointed at ${pair}, which is correct, and the change is still ` +
+        'making its way across the internet. Nothing is wrong and there is nothing to fix. This ' +
+        'usually takes a few minutes and can take up to 48 hours. Your site is untouched and ' +
+        'still working.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir} in a few minutes to check again.`
+      );
+    }
+  },
   'delegation-pending': {
     kind: 'wait',
     build(params) {

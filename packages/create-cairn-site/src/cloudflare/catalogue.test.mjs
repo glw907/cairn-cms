@@ -28,6 +28,8 @@ const EXPECTED_KIND = {
   'records-read-failed': 'act',
   'dns-record-failed': 'act',
   'carry-over-declined': 'act',
+  'records-unverified': 'act',
+  'delegation-propagating': 'wait',
   'delegation-pending': 'wait',
   'delegation-wrong-nameservers': 'act',
   'hostname-propagating': 'wait',
@@ -61,6 +63,12 @@ const SAMPLE_PARAMS = {
   'records-read-failed': { dir: './alpine' },
   'dns-record-failed': { dir: './alpine', detail: 'some API detail' },
   'carry-over-declined': { dir: './alpine' },
+  'records-unverified': { dir: './alpine', domain: 'example.com' },
+  'delegation-propagating': {
+    dir: './alpine',
+    domain: 'example.com',
+    nameServers: ['ada.ns.cloudflare.com', 'walt.ns.cloudflare.com']
+  },
   'delegation-pending': {
     dir: './alpine',
     domain: 'example.com',

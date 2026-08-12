@@ -64,3 +64,9 @@ test('parses the Cloudflare chapter flags and their defaults', () => {
   assert.equal(a.deploy, true);
   assert.equal(a.signIn, true);
 });
+
+// Chapter 2's own flag: carries both the domain value and its unattended opt-in.
+test('parses --domain, undefined when absent', () => {
+  assert.equal(parseArgs([]).domain, undefined);
+  assert.equal(parseArgs(['--domain', 'example.com']).domain, 'example.com');
+});

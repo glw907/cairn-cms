@@ -72,6 +72,19 @@ function zoneCreateCode(err) {
 }
 
 /**
+ * Look the domain up among this account's zones by exact name. Cloudflare's `name` filter is the
+ * server-side narrowing, and the exact-name find is the client-side confirmation, since a filtered
+ * list is not a promise of an exact match.
+ * @param {ReturnType<typeof import('./api.mjs').makeApi>} api the Cloudflare API client
+ * @param {string} domain the domain to look for
+ * @returns {Promise<{ id: string, name: string } | undefined>} the matching zone, or undefined
+ */
+async function findZoneByName(api, domain) {
+  const matches = await api.listZones({ name: domain });
+  return matches.find((zone) => zone.name === domain);
+}
+
+/**
  * Resolve the zone id for the domain: list zones by name first and adopt on a hit, or create the
  * zone when the list misses. The list is the primary door, mirroring email.mjs's
  * ensureSendingDomain, since a create is a non-idempotent write and a token that cannot create
@@ -87,12 +100,15 @@ function zoneCreateCode(err) {
  * @returns {Promise<string>} the found, created, or adopted zone's id
  */
 async function createOrAdoptZone({ api, domain, dir, log }) {
-  const matches = await api.listZones({ name: domain });
-  const hit = matches.find((zone) => zone.name === domain);
-  if (hit) {
+  // Both doors below (the list-first hit and the race guard) end the same way, so the line the
+  // owner reads on an adopt is written once.
+  function adopt(zone) {
     log(`${domain} is already a Cloudflare zone on this account; using it.`);
-    return hit.id;
+    return zone.id;
   }
+
+  const hit = await findZoneByName(api, domain);
+  if (hit) return adopt(hit);
 
   try {
     const created = await api.createZone(domain);
@@ -104,11 +120,9 @@ async function createOrAdoptZone({ api, domain, dir, log }) {
         // create won a race in the gap between that list and this create, not that the list was
         // wrong. The 1061 body still names the zone and nothing else, so ownership still comes
         // from a lookup, kept here purely as the race guard rather than the main door.
-        const raceMatches = await api.listZones({ name: domain });
-        const raceHit = raceMatches.find((zone) => zone.name === domain);
+        const raceHit = await findZoneByName(api, domain);
         if (!raceHit) throw cloudflareError('zone-already-exists', { dir, domain });
-        log(`${domain} is already a Cloudflare zone on this account; using it.`);
-        return raceHit.id;
+        return adopt(raceHit);
       }
       case ZONE_CREATE_CODES.zoneHold:
         throw cloudflareError('zone-hold', { dir, domain });

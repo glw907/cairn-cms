@@ -49,6 +49,15 @@ export const PROPAGATION_WINDOW_MS = 30 * 60 * 1000;
 const DAILY_LIMIT_PATTERN = /daily_limit/i;
 
 /**
+ * The send-refusal codes that mean the sender is not ready yet, classified as one family on
+ * purpose (ruling 4, T4b.1). SENDER_NOT_CONFIGURED_CODE (10204) was never observed live on a
+ * domain that had just been onboarded, only on never-onboarded ones and not consistently even
+ * there, so its membership here is a reasoned classification from the two dotted identifiers'
+ * shared meaning, not a measured fact.
+ */
+const SENDER_NOT_READY_CODES = new Set([SENDING_DISABLED_CODE, SENDER_NOT_CONFIGURED_CODE]);
+
+/**
  * Derive a site's default sign-in sender address from its domain. The one place this address is
  * built, so config.mjs's writeEmailFrom and chapter 2's orchestrator both derive it the same way.
  * @param {string} domain the site's apex, including a subdomain when the site is on one
@@ -104,12 +113,7 @@ export async function ensureSendingDomain({ api, zoneId, domain, record: _record
 function classifySendFailure(err, from, onboardedAt, now) {
   if (err?.catalogue?.code !== 'email-send-failed') return;
 
-  // Both codes join this branch on purpose (ruling 4, T4b.1): SENDING_DISABLED_CODE (10203) and
-  // SENDER_NOT_CONFIGURED_CODE (10204) both describe the sender-not-ready family. 10204 was never
-  // observed on a domain that had just been onboarded live, only on never-onboarded ones and not
-  // consistently even there, so this is a reasoned classification from the identifiers' shared
-  // meaning, not a measured fact.
-  if (err.api?.code === SENDING_DISABLED_CODE || err.api?.code === SENDER_NOT_CONFIGURED_CODE) {
+  if (SENDER_NOT_READY_CODES.has(err.api?.code)) {
     const elapsedMs = now() - Date.parse(onboardedAt);
     if (elapsedMs <= PROPAGATION_WINDOW_MS) {
       throw cloudflareError('email-sender-propagating', {});

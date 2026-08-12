@@ -150,19 +150,22 @@ async function validateToken(token, { dir, accountId }) {
  * Try a saved token, validating it against the live API. Returns `{ ok: true, token }` for one
  * that still validates, or `{ ok: false }`, after logging the "no longer works" line, for no
  * saved token or one that no longer does; either shape tells the caller whether to fall through
- * to its own next source.
+ * to its own next source. A failure carries the validation error, so a caller holding the same
+ * string from another source can throw it rather than spend a second round trip proving it again.
  * @param {string | undefined} saved the saved token, if any
  * @param {{ dir: string | undefined, accountId: string | undefined }} scope forwarded to
  *  validateToken
  * @param {(line: string) => void} log receives the "no longer works" line when validation fails
- * @returns {Promise<{ ok: true, token: string } | { ok: false }>}
+ * @returns {Promise<{ ok: true, token: string } | { ok: false, error?: Error & { catalogue: object } }>}
+ *  `error` is set whenever a saved token was present and failed validation, absent when there was
+ *  no saved token to try
  */
 async function trySavedToken(saved, scope, log) {
   if (!saved) return { ok: false };
   const result = await validateToken(saved, scope);
   if (result.ok) return { ok: true, token: saved };
   log('Your saved Cloudflare API token no longer works; you will need to create a new one.');
-  return { ok: false };
+  return { ok: false, error: result.error };
 }
 
 /**
@@ -212,6 +215,8 @@ export async function ensureApiToken({
       if (!result.ok) throw result.error;
       return fromEnv;
     }
+    // Past the branch above, CAIRN_CF_API_TOKEN is either unset or the same string as the saved
+    // token, so this one validation covers both sources.
     const savedResult = await trySavedToken(saved, scope, log);
     if (savedResult.ok) return savedResult.token;
     if (!fromEnv) {
@@ -222,9 +227,9 @@ export async function ensureApiToken({
           'create-token page asks for, then re-run.',
       );
     }
-    const result = await validateToken(fromEnv, scope);
-    if (!result.ok) throw result.error;
-    return fromEnv;
+    // The env value is that same rejected string, so its own validation is already spent: throw
+    // what it produced rather than asking Cloudflare the identical question twice.
+    throw savedResult.error;
   }
 
   const savedResult = await trySavedToken(saved, scope, log);

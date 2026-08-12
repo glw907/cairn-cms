@@ -14,99 +14,65 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-11: T4a's offline half is LANDED; the rest is BLOCKED on Geoff)
+## Immediate next action (2026-08-11 evening: T4a Tasks 1-10 are LANDED; next is Task 11)
 
-**T4a Tasks 1 (partial), 2, 3, 4, 5, and 6 are done, committed, and pushed on
-`t4a-domain-chapter`** (branched off `main` at `1415f48e`, in the `t3-cloudflare-chapter`
-worktree). Suite: **342 pass, 0 fail, exit 0** in `packages/create-cairn-site`. No PR yet, since
-the pass is half-done. What exists now: the spawn seam carries `env`, `updateSite` deep-merges
-`cloudflare`, `retireSite` scrubs a saved token, `test/fake-cloudflare.mjs` serves the REST
-routes from verbatim spike fixtures, the catalogue carries `wait`/`act`/`ask-someone` and
-seventeen new rows, `src/cloudflare/api.mjs` is the REST seam with token redaction, and
-`ensureAccountId` fixes chapter 1's multi-account defect across four wrangler call sites.
+**T4a Tasks 1 through 10 are done, committed, and pushed on `t4a-domain-chapter`** (in the
+`t3-cloudflare-chapter` worktree). Suite: **421 pass, 0 fail, exit 0** in
+`packages/create-cairn-site`; `npm run check` 0 errors / 0 warnings. No PR yet.
 
-**Two blockers, both needing Geoff, both satisfied in one browser sitting.** Tasks 7 through 13
-cannot start without them.
+**Both blockers cleared in one sitting.** Geoff minted a spike token, ran a second dashboard
+probe, and registered the scratch domain; the token is now revoked and the local copy shredded.
+The spike doc carries two addenda with every capture, and the plan carries eight new amendments
+in "Spike amendments, part two".
 
-1. **A Cloudflare API token that can create zones.** The estate token deliberately cannot create
-   zones and deliberately cannot mint tokens, so it cannot self-extend (that refusal is correct
-   and should stay). A prefilled create-token URL for a deliberately broad, short-lived **spike**
-   token sits in `docs/internal/2026-08-11-t4a-domain-spike.md`; the shipped prefill URL will
-   carry only the minimum the spike proves necessary.
-2. **The scratch domain**, registered at any external registrar and **seeded with an MX record
-   and a DKIM-shaped TXT** before the run. This corrects the plan, which named it as a Task 13
-   prerequisite only: spike step 4 needs an active zone under our control, so it gates Task 1 too.
+**Geoff's ruling on the external-registrar path (2026-08-12):** do not buy a domain outside
+Cloudflare. The external case ships **general instructions**, which cut the per-registrar table
+outright. What that leaves unobserved is narrow and handled in code, not prose: no externally
+registered domain ever went through `POST /zones`, so Task 8 re-reads the zone rather than
+trusting the create response to populate `name_servers`, and treats the birth `status` as unknown.
 
-**The spike corrected two plan premises that would otherwise have shipped a defect.** The cutover
-attaches a Workers **Custom Domain**, not a Workers Route (a route does not make a hostname
-resolve, so the planned confirm could never have passed; every cairn site in production is
-attached this way). And an insufficient-scope refusal reports `errors[].code` **0**, not 9109,
-with the missing permission named in the message. Eight amendments in total are folded into the
-plan's own "Spike amendments" section; the post-mortem's part one carries the full account.
+**What the live half changed, beyond what the plan already carried.** The prefill link now
+carries **five** verified keys, including `email_sending`, for which Cloudflare documents no
+template key at all; it is known to work only because it was tried, and a wrong key renders an
+empty control with no error. `api.mjs` now carries the raw status and `errors[0].code` on a thrown
+error, so callers branch on the numeric code rather than Cloudflare's prose. The cutover confirm
+falls back to HTTP when HTTPS fails at the transport level, because a newly attached custom domain
+fails the TLS handshake while serving fine, and the plan's ordered flow would otherwise have
+failed on every new zone.
 
-**T4B'S DESIGN SITTING AMENDED TWO T4A TASKS (2026-08-11). Both ride the same browser sitting
-that unblocks T4a, and both are cheap only while Tasks 7 and 10 remain unbuilt.**
+**The defect this pass exists to have caught:** a stale negative DNS cache reads exactly like an
+absent record, per record type, in the window this chapter runs in. It returns an EMPTY list,
+which is what a domain with no mail legitimately looks like. `readCurrentRecords` prefers the
+authoritative nameservers and flags `lowConfidence` on the recursive fallback; an unattended run
+refuses to copy a low-confidence list (`records-unverified`) rather than writing a set quietly
+missing the admin's MX rows and reporting success.
 
-1. **Task 7's prefill URL gains the Email Sending permission**, so chapter 2 asks for one token
-   rather than two. T4b's onboarding poll rides this same pasted token, and Task 7 authors the
-   URL last precisely so a late-discovered scope can still land. Read the permission group's
-   exact dashboard name off a minted token during the sitting; it is also T4b's only remaining
-   spike question.
-2. **Task 10's token deletion moves from `domain-live` to a terminal-state rule.** Chapter 2 no
-   longer ends at `domain-live`, so deleting there is wrong. The rule: a park keeps the token; a
-   terminal state deletes it, and the terminal states are `email-live` and a recorded decline of
-   the paid plan. Without this, an owner who declines leaves a live credential on disk
-   indefinitely. It is a condition change, not new code.
-
-**Resume prompt once Geoff has both** (a fresh Opus session; launch directory
+**Resume prompt** (a fresh Opus session; launch directory
 `~/Projects/cairn-cms/.claude/worktrees/t3-cloudflare-chapter`, branch `t4a-domain-chapter`,
-already checked out): "Resume Pass T4a of the create-cairn-site umbrella at Task 7:
-`docs/superpowers/plans/2026-08-11-create-cairn-site-t4a.md`. Tasks 1 through 6 are landed; read
-the plan's Spike amendments section and post-mortem part one, plus
-`docs/internal/2026-08-11-t4a-domain-spike.md`, first, and carry STATUS's two T4b amendments into
-Tasks 7 and 10. Finish spike steps 2 and 4 in the main loop against the scratch domain before
-dispatching Task 7." The scratch domain's name and the spike token are the two inputs to ask for.
+already checked out): "Resume Pass T4a of the create-cairn-site umbrella at Task 11:
+`docs/superpowers/plans/2026-08-11-create-cairn-site-t4a.md`. Tasks 1-10 are landed and pushed.
+Read both Spike amendments sections and the two addenda in
+`docs/internal/2026-08-11-t4a-domain-spike.md` first. Tasks 11 and 12 are dispatchable; Task 13
+needs Geoff."
 
-**T4b's design sitting is DONE and its plan is approved** (see the T4b line under Standing
-state), and **the console is now its own pass, T4d** (Geoff, 2026-08-11), so the queue reads
-**T4a 7-13 → T4b (email + money) → T4c (Builds + reconcile) → T4d (console) → T5 → Pass D**. The reasoning is in
-the ROADMAP item and the T4d brief at the end of the T4a spec: the email chapter turned out to
-have no long wait for a console to serve, and the wait that earns one is T4a's delegation park.
+**Task 13 needs Geoff, and needs a NEW token.** The live e2e wants a zone-create-capable
+Cloudflare API token (the spike one is revoked by design), the scratch domain in its seeded state,
+and Geoff's own moments. Tasks 11 and 12 run unattended before it.
 
-**Carry-forwards raised by T3 and its e2e, deliberately not fixed.** (1) The engine's
-committer-attribution drift (`src/lib/github/repo.ts` says an omitted committer attributes to the
-App; the real API falls back to the author, contra spec §7.4). Engine-side; a pass that touches
-`src/lib/github` owns aligning code, comment, and spec. (2) `packages/create-cairn-site` has
-**neither a comment gate nor a type gate**: `check:comments` covers `src/lib` only, and the root
-`tsconfig.json` includes `src/lib` only, so root `npm run check` never type-checks this package's
-`.mjs` at all. `npm test` inside the package is its only real gate. Sharpened by T4a, which
-verified the tsconfig scope; goes to a pass that owns tooling. (3)
-`src/github/install.test.mjs`'s reauthorize race is flaky (it tripped once under load across
-roughly a dozen T4a suite runs; only its timing assertion is load-sensitive) and
-`test/fake-github.mjs` cannot recover `callback_urls` for a real-manifest App; both T2 test
-infrastructure. (4) The deferred defect list per the T4a spec's ruling 2: slug collisions,
-wrangler output-string pinning, Windows `.cmd` spawning, the cross-package token contract test (a
-hardening pass owns them). Note T4a retired the `wrangler whoami` half of the output-string risk
-by moving to `--json`. (5) The umbrella's resume table (one row per step: persisted key, expiry,
-partial-state detection, re-entry) is a standing debt no tool pass has carried; noted for Pass D.
-(6) `carry-over-declined` is an `act` row, so an admin who declines the DNS carry-over exits 1.
-**RESOLVED by T4b's design sitting, and closing in T4b's Task 2 rather than T4a's Task 10.** The
-objection was that inventing a kind for one row is over-abstraction. A second row of the same
-shape arrived, `paid-plan-declined`, so the kind earns itself: the catalogue gains `declined`
-(nothing is wrong, the owner chose this, exit 0, no re-run urgency) and both rows convert.
+**Scratch resources still live on the account, deliberately left for Task 13's e2e** and torn down
+with everything else it creates: the domain `carin-test.org` (registered at Cloudflare Registrar,
+so its zone arrived active), two MX records, an SPF TXT, a 437-byte DKIM TXT that splits across
+two chunks, a proxied A for `nothing.carin-test.org` with no Worker behind it, the scratch Worker
+`cairn-t4a-spike`, and the apex Custom Domain attached to it.
 
-(7) `test/fake-cloudflare.mjs` copied its HTTP plumbing from `test/fake-github.mjs`, so `compile`,
-`readRawBody`, and `sendJson` are now byte-identical in both, with `makeHandler` a near-copy. The
-fix is a shared `test/fake-http.mjs`, which means editing `fake-github.mjs`, a file T4a never
-touched. **The trigger is whichever of T4b or T4d first needs a third fake: extract then, rather
-than making it a third copy. T4b does NOT trip it** and its plan says so: T4b extends
-`fake-cloudflare.mjs` with three email routes, which is not a third fake, so this stays filed for
-T4d. Also unextracted, and older: the `makeFakeBin` plus
-`CAIRN_WRANGLER_BIN` setup repeats roughly sixty times, where `fake-github.mjs` already solved the
-same problem with `pointAtFake`.
-
-**One open hand step from T3:** Geoff deletes the e2e's GitHub App at github.com
-(`cairn-t3-live-71d37c`).
+**New carry-forward from this pass:** `runActions` re-wraps a thrown error with its action label
+and does not carry the `catalogue` property across, so a row thrown inside an action loses its
+`kind` and `code` upstream and only the message survives. Chapter 1 depends on the same runner, so
+changing it is its own piece of work. The `packages/create-cairn-site` tooling gap is now three
+deep (no comment gate, no type gate, and no `--experimental-test-module-mocks`, which is what
+leaves `promptSecret`'s cancel path untested); `npm test` inside the package remains its only real
+gate. The `src/github/install.test.mjs` timing flake reproduced again under load, twice, and
+isolates clean when re-run alone.
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 

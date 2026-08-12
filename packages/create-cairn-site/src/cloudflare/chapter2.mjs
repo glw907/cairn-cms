@@ -704,16 +704,16 @@ export async function runChapter2({
           `Cloudflare accepted a real test message sent from ${from}, your site's own sign-in ` +
             "sender. Change that address any time by editing email: { from: '...' } in " +
             'src/theme/cairn.config.ts and redeploying.\n' +
-            'A domain this new has no sending history yet. As of 2026-08-12, a brand-new domain ' +
-            'can take a while before mail providers trust it enough to deliver its first ' +
-            'messages. That trust builds on its own as the domain keeps sending. If a sign-in ' +
-            'link does not arrive yet, this warm-up period is the usual reason.\n' +
+            'A domain this new has no sending history yet. As of 2026-08-12, that means mail ' +
+            'providers can take a while to trust it enough to deliver its first messages. That ' +
+            'trust builds on its own as the domain keeps sending. If a sign-in link does not ' +
+            'arrive yet, this warm-up period is the usual reason.\n' +
             `Onboarding also wrote a DMARC policy at _dmarc.${domain}, set to reject mail that ` +
             "isn't from Cloudflare's own sending infrastructure. That record stays in place even " +
             'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
             'to this domain later, add it to that record too, or its mail will be rejected.\n' +
-            `Run npx cairn-doctor --from ${from} --send-test <you@example.com> any time to check ` +
-            'the sending path again without running this installer again.',
+            `Run npx cairn-doctor --from ${from} --send-test <you@example.com> to check the ` +
+            'sending path any time, without running this installer.',
         );
       },
     );

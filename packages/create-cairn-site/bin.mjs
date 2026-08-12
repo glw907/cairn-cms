@@ -14,6 +14,7 @@ import { runGithubChapter } from './src/github/chapter.mjs';
 import { runCloudflareChapter } from './src/cloudflare/chapter.mjs';
 import { runChapter2 } from './src/cloudflare/chapter2.mjs';
 import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './src/cloudflare/bootstrap.mjs';
+import { printCostPreamble } from './src/money.mjs';
 import { loadSite, updateSite, findSiteByDir, retireSite } from './src/state.mjs';
 import { webBase } from './src/github/api.mjs';
 import { openBrowser } from './src/github/open.mjs';
@@ -246,6 +247,12 @@ async function main() {
     // interactive run with no --dir has no directory to look up yet, so it always takes the
     // fresh path below, same as before this task.
     let priorRecord = flags.dir !== undefined && !flags.dryRun ? await findSiteByDir(flags.dir) : null;
+
+    // The cost preamble opens the whole tool: an owner learns the money picture before typing a
+    // site name, not at the moment a bill arrives. isFreshRun rides the same lookup above rather
+    // than a second one, so this can never disagree with the resume branches below about whether
+    // this run has already seen this directory before.
+    printCostPreamble({ log, isFreshRun: !priorRecord });
 
     if (priorRecord && flags.startOver && [...CHAPTER2_RESUMABLE_STEPS, 'domain-live'].includes(priorRecord.data.step)) {
       // A record this far into chapter 2 has real Cloudflare resources connected to it: retiring

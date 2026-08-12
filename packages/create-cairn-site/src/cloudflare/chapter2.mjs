@@ -130,6 +130,16 @@ const ADMISSION_DETAIL =
   'anywhere from a few minutes to 48 hours to take effect. Your site keeps working at its ' +
   'workers.dev address the whole time.';
 
+const CARRY_OVER_DETAIL =
+  "Looks up your domain's current DNS records and, once you confirm, copies them into the new " +
+  'zone so nothing already working (like your mail) breaks when you switch over.';
+
+/** The carry-over hop's copy on the already-active path, printed in place of CARRY_OVER_DETAIL. */
+const ALREADY_ACTIVE_DETAIL =
+  "Your domain's nameservers already point at Cloudflare in this zone, so there's nothing to " +
+  'copy: whatever DNS records this zone already serves are your existing records, and they ' +
+  'stay untouched.';
+
 /**
  * @typedef {object} RunChapter2Input
  * @property {string} siteId the site's state-store id; the only id this module ever writes under
@@ -307,15 +317,27 @@ export async function runChapter2({
 
   // --- Records read + carry-over gate: only from `zone-created`. A decline is recorded by its
   // own printed copy and never silently advances; the next invocation re-shows the same gate.
+  // When the zone arrived already active (the Cloudflare-registrar path, or any domain this
+  // account already holds and serves), there is nothing to carry over: the zone's own records
+  // already ARE the admin's records. readCurrentRecords refuses to run past that point anyway
+  // (its own guard: a probe would read this tool's own writes), so this skips both the read and
+  // the gate entirely rather than letting that refusal surface as a developer-facing exception.
   if (!hasReached(record?.step, 'records-carried')) {
     let declined = false;
+    // carryOver.outcome is 'carried' when records were copied, or 'not-needed' when the zone
+    // arrived already active. A decline leaves this undefined: that path returns before reaching
+    // updateSite, so the gate re-shows on the next invocation instead.
     let carryOver;
     await runStep(
       frame,
       'Copy your current DNS records',
-      "Looks up your domain's current DNS records and, once you confirm, copies them into the " +
-        'new zone so nothing already working (like your mail) breaks when you switch over.',
+      alreadyActive ? ALREADY_ACTIVE_DETAIL : CARRY_OVER_DETAIL,
       async () => {
+        if (alreadyActive) {
+          log(ALREADY_ACTIVE_DETAIL);
+          carryOver = { outcome: 'not-needed', at: new Date().toISOString() };
+          return;
+        }
         const { records, lowConfidence } = await readCurrentRecords({ domain, dir, resolve });
         const result = await carryOverRecords({
           api,

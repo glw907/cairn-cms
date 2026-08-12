@@ -567,6 +567,86 @@ test('resume: a declined carry-over gate never silently advances', async (t) => 
   assert.equal('carryOver' in state.cloudflare, false);
 });
 
+// --- Already-active zone: nothing to carry over ----------------------------------------------
+
+test('records: an already-active zone skips the read and gate entirely, and persists not-needed', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t, { zoneStatus: 'active' });
+  await setupWrangler(t);
+  await seedLiveSite('site-already-active', dir);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-already-active',
+    record: await loadSite('site-already-active'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: confirmAnswering(true),
+    text: async () => 'already-active-domain.example',
+    promptSecretFn: async () => 'pasted-token-value',
+    // readCurrentRecords refuses to run once a domain is already delegated to Cloudflare (its
+    // own guard, records.mjs). This seam stands in for that exact refusal so the test does not
+    // need to fabricate a real matching nameserver pair; the already-active hop must skip the
+    // read entirely rather than let it throw, so a call here is the failure being pinned.
+    resolve: () => {
+      throw new Error(
+        'readCurrentRecords refuses to run: must not be called once the zone arrived already active',
+      );
+    },
+    fetchImpl: alwaysMatchingFetch(),
+  });
+
+  assert.equal(outcome.outcome, 'domain-live');
+
+  const state = await loadSite('site-already-active');
+  assert.equal(state.step, 'domain-live');
+  assert.equal(state.cloudflare.carryOver.outcome, 'not-needed');
+
+  const dnsWrites = cloudflare.requests.filter(
+    (r) => r.method === 'POST' && r.path.includes('/dns_records'),
+  );
+  assert.equal(dnsWrites.length, 0, 'an already-active zone must never write DNS records');
+});
+
+// The falsifiability control for the test above: a zone that is NOT already active must still
+// read and carry over records through the ordinary gate, proving the new guard is not simply
+// disabling the hop for everyone.
+test('records: a zone that is not already active still reads and carries records through the gate', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await setupCloudflare(t); // default zoneStatus: 'pending'
+  await setupWrangler(t);
+  await seedLiveSite('site-not-active', dir);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-not-active',
+    record: await loadSite('site-not-active'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: confirmAnswering(true),
+    text: async () => 'not-active-domain.example',
+    promptSecretFn: async () => 'pasted-token-value',
+    resolve: authoritativeResolve('not-active-domain.example'),
+  });
+
+  // The zone stays pending on this fake (it never activates), so the run parks at delegation
+  // rather than reaching domain-live; the load-bearing proof is that the records gate ran and
+  // recorded a real outcome before that park, not the delegation park itself.
+  assert.equal(outcome.outcome, 'delegation-pending');
+
+  const state = await loadSite('site-not-active');
+  assert.equal(state.step, 'records-carried');
+  assert.equal(state.cloudflare.carryOver.outcome, 'carried');
+});
+
 // --- --dry-run ------------------------------------------------------------------------------
 
 test('--dry-run prints every hop, with zero shell-outs and zero fake-API requests', async (t) => {

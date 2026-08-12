@@ -354,7 +354,9 @@ function toApiRecord(record) {
 
 /**
  * @typedef {object} CarryOverResult
- * @property {'carried' | 'declined'} outcome whether the admin confirmed the copy
+ * @property {'carried' | 'declined'} outcome whether the admin confirmed the copy. chapter2.mjs
+ *  persists a third value, `'not-needed'`, when it skips this function because the zone arrived
+ *  already active; that value never comes from here.
  * @property {number} count how many records were written; `0` when declined
  * @property {string[]} types the distinct record types written, sorted; `[]` when declined
  */

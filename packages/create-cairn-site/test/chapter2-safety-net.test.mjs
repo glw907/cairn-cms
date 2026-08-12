@@ -267,6 +267,12 @@ test('interruption: a record at live runs every hop exactly once through to doma
   const state = await loadSite(siteId);
   assert.equal(state.step, 'domain-live');
   assert.equal(state.cloudflare.domain, domain);
+
+  // This zone arrives already active (setupCloudflare's zoneStatus above), so the carry-over hop
+  // must have skipped its read and gate entirely rather than writing anything.
+  assert.equal(state.cloudflare.carryOver.outcome, 'not-needed');
+  const dnsWrites = cloudflare.requests.filter((r) => r.method === 'POST' && r.path.includes('/dns_records'));
+  assert.equal(dnsWrites.length, 0, 'an already-active zone must never write DNS records');
 });
 
 test('interruption: a record at zone-created reaches domain-live without repeating the zone-create hop', async (t) => {

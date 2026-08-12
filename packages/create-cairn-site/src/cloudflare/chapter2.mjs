@@ -634,14 +634,17 @@ export async function runChapter2({
 
     // --- Test send: proves the sending path before the redeploy, on purpose, since a redeploy is
     // pointless when the sender path itself is broken. Unconditional past this point: a resumed
-    // record repeats this call every time, which is both cheap and the point, proving delivery
-    // again on every re-run rather than only the first.
+    // record repeats this call every time, which is both cheap and the point, proving acceptance
+    // again on every re-run rather than only the first. Acceptance is all a send call can ever
+    // observe; Cloudflare returns 200 the moment it takes the message, well before any receiver
+    // decides whether to deliver it.
     const from = defaultFromAddress(domain);
     let sendWaitError;
     await runStep(
       frame,
       'Send a test sign-in email',
-      `Sends one message from ${from} to your saved sign-in address, proving delivery works.`,
+      `Sends one message from ${from} to your saved sign-in address, proving Cloudflare accepts ` +
+        'a message from that address.',
       async () => {
         try {
           await sendTestMessage({ api, from, to: ownerEmail, onboardedAt });
@@ -698,14 +701,19 @@ export async function runChapter2({
       'Prints your sign-in sender address and how to check it again later.',
       async () => {
         log(
-          `Your site now sends its own sign-in email, from ${from}. Change it any time by editing ` +
-            "email: { from: '...' } in src/theme/cairn.config.ts and redeploying.\n" +
+          `Cloudflare accepted a real test message sent from ${from}, your site's own sign-in ` +
+            "sender. Change that address any time by editing email: { from: '...' } in " +
+            'src/theme/cairn.config.ts and redeploying.\n' +
+            'A domain this new has no sending history yet. As of 2026-08-12, a brand-new domain ' +
+            'can take a while before mail providers trust it enough to deliver its first ' +
+            'messages. That trust builds on its own as the domain keeps sending. If a sign-in ' +
+            'link does not arrive yet, this warm-up period is the usual reason.\n' +
             `Onboarding also wrote a DMARC policy at _dmarc.${domain}, set to reject mail that ` +
             "isn't from Cloudflare's own sending infrastructure. That record stays in place even " +
             'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
             'to this domain later, add it to that record too, or its mail will be rejected.\n' +
-            `Run npx cairn-doctor --from ${from} --send-test <you@example.com> any time to re-prove ` +
-            'delivery without running this installer again.',
+            `Run npx cairn-doctor --from ${from} --send-test <you@example.com> any time to check ` +
+            'the sending path again without running this installer again.',
         );
       },
     );

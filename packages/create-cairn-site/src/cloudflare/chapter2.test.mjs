@@ -1494,6 +1494,80 @@ test('email closing copy: names the from-address, its override, the DMARC conseq
   assert.match(closing, /cairn-doctor --from .* --send-test/, 'must name the doctor re-proof command');
 });
 
+// --- T4b.1 defect harvest: the tool never promises delivery, anywhere (live e2e finding) -------
+
+test('email closing copy: proves acceptance, not delivery, and promises no arrival timeline', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedDomainLiveSite(t, 'site-email-no-delivery-claim', dir);
+  await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-no-delivery-claim',
+    record: await loadSite('site-email-no-delivery-claim'),
+    dir,
+    args: { yes: false },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysMatchingFetch(),
+  });
+
+  assert.equal(outcome.outcome, 'email-live');
+  const closing = logs.find((line) => line.includes('cairn-doctor'));
+  assert.ok(closing, 'expected a closing message naming the doctor command');
+  assert.equal(
+    closing.includes('proving delivery works'),
+    false,
+    'the CLI only ever sees acceptance, never delivery, so it must never claim to prove delivery',
+  );
+  assert.match(closing, /Cloudflare accepted/, 'must name the claim actually proven: acceptance');
+  assert.match(closing, /2026-08-12/, 'must date the reputation claim');
+  assert.doesNotMatch(
+    closing,
+    /\b\d+\s*(hours?|days?|minutes?|weeks?)\b/i,
+    'must promise no arrival timeline',
+  );
+});
+
+test('email send hop: the detail line proves acceptance, not delivery', async (t) => {
+  await freshStateDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const wrangler = await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-dry-run-send-detail',
+    record: null,
+    dir: '/tmp/dry-run-does-not-exist',
+    args: { yes: false },
+    log: (line) => logs.push(line),
+    dryRun: true,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+    promptSecretFn: mustNotBeCalled('promptSecretFn'),
+  });
+
+  assert.equal(cloudflare.requests.length, 0, 'a dry run must make no Cloudflare API request');
+  assert.deepEqual(await wrangler.invocations(), [], 'a dry run must shell out to nothing');
+
+  const titleIndex = logs.indexOf('Send a test sign-in email');
+  assert.notEqual(titleIndex, -1, 'expected the send hop title to print');
+  const detail = logs[titleIndex + 1];
+  assert.equal(
+    detail.includes('proving delivery works'),
+    false,
+    'the send hop only proves acceptance, never delivery',
+  );
+  assert.match(detail, /accepts/, 'must name what is actually proven: Cloudflare acceptance');
+});
+
 // --- Amendment 13: sendTestMessage's dir-less rows are rebuilt with a real --dir before printing
 
 test('amendment 13: email-sender-propagating carries the real --dir, never the string undefined', async (t) => {

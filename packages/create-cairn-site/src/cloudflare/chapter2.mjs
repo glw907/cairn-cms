@@ -239,6 +239,7 @@ export async function runChapter2({
       if (isCancel(answer)) exitOnCancel();
       if (!answer) {
         consented = false;
+        log(`No domain connected. Re-run npx create-cairn-site --dir ${dir} any time to connect one.`);
         return;
       }
       consented = true;
@@ -387,6 +388,7 @@ export async function runChapter2({
           // do. Printing "go change your nameservers" would send someone who did the work
           // correctly back to undo it.
           waitError = cloudflareError('delegation-propagating', { dir, domain, nameServers });
+          log(waitError.message);
           delegationOutcome = state;
           return;
         }
@@ -398,9 +400,11 @@ export async function runChapter2({
           throw cloudflareError('delegation-wrong-nameservers', { dir, domain, nameServers, actual });
         }
         // 'pending': the domain has not been repointed yet, so this is the one delegation state
-        // where the admin still has work to do at their registrar.
+        // where the admin still has work to do at their registrar. delegationInstructions prints
+        // the how-to; the row's own message (logged next) carries the re-run next step.
         log(delegationInstructions(nameServers));
         waitError = cloudflareError('delegation-pending', { dir, domain, nameServers });
+        log(waitError.message);
         delegationOutcome = state;
       },
     );
@@ -448,7 +452,12 @@ export async function runChapter2({
       },
     );
     if (!dryRun && cutoverOutcome !== 'live') {
-      return { outcome: cutoverOutcome, domain };
+      // cutOverHostname itself returns only the outcome name, the same pure-step contract every
+      // other producer in this chapter follows; this is the one place that turns a wait outcome
+      // into the row an admin actually reads, the same way the delegation park above does.
+      const parkError = cloudflareError(cutoverOutcome, { dir, domain });
+      log(parkError.message);
+      return { outcome: cutoverOutcome, domain, message: parkError.message };
     }
     if (!dryRun) {
       await updateSite(siteId, { step: 'domain-live' });

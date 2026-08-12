@@ -12,6 +12,7 @@ import { collectAnswers } from './src/prompts.mjs';
 import { scaffold, handoverText, dryRunNotice } from './src/scaffold.mjs';
 import { runGithubChapter } from './src/github/chapter.mjs';
 import { runCloudflareChapter } from './src/cloudflare/chapter.mjs';
+import { runChapter2 } from './src/cloudflare/chapter2.mjs';
 import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './src/cloudflare/bootstrap.mjs';
 import { loadSite, updateSite, findSiteByDir, retireSite } from './src/state.mjs';
 import { webBase } from './src/github/api.mjs';
@@ -26,8 +27,17 @@ const GITHUB_RESUMABLE_STEPS = ['scaffolded', 'app-created', 'awaiting-org-appro
  */
 const CLOUDFLARE_RESUMABLE_STEPS = ['pushed', 'deployed'];
 
-/** Every step a resumed run can still finish from. `live` is handled separately (the whole
- * chapter is already done); anything else is not a record this tool ever wrote. */
+/**
+ * Every step a resumed run can still finish chapter 2 from, entering it directly and skipping
+ * both `runGithubChapter` and chapter 1's `runCloudflareChapter` entirely: there is no GitHub or
+ * chapter-1 work left to redo, and re-entering either would try to rebuild a context this branch
+ * never reconstructs. `domain-live` is chapter 2's own terminal step for this pass and is handled
+ * separately, since it needs no further chapter-2 work at all.
+ */
+const CHAPTER2_RESUMABLE_STEPS = ['zone-created', 'records-carried', 'delegated'];
+
+/** Every step a resumed run can still finish from. `live` and `domain-live` are each handled
+ * separately; anything else is not a record this tool ever wrote. */
 const RESUMABLE_STEPS = [...GITHUB_RESUMABLE_STEPS, ...CLOUDFLARE_RESUMABLE_STEPS];
 
 /**
@@ -53,7 +63,8 @@ async function printLiveInfo(siteId) {
       "What exists now: one Worker, two databases, one storage bucket, and the GitHub App's " +
         'private key, stored as a Worker secret.',
       '',
-      'Your domain and email arrive with the next chapter.',
+      `Connect your own domain any time by re-running npx create-cairn-site --dir ${state.dir}. ` +
+        'Email arrives with a later chapter.',
     );
   } else {
     lines.push('', 'Deploying it to the internet arrives with the next chapter.');
@@ -61,6 +72,54 @@ async function printLiveInfo(siteId) {
 
   lines.push('', 'Run `npx cairn-doctor` any time to check what is set up and what is still missing.');
   console.log(lines.join('\n'));
+}
+
+/**
+ * Print the closing block for a site already at `domain-live`: its own domain and admin sign-in
+ * URL, a note that its workers.dev address keeps working, and the same repo/App lines and
+ * `npx cairn-doctor` line every closing block ends with. `domain-live` is chapter 2's own
+ * terminal step for this pass (T4b's email half is not built yet), so this returns without ever
+ * calling `runChapter2` again; `runChapter2` itself still re-validates (and, if needed,
+ * re-prefills) the saved API token on re-entry, which is what lets a later T4b build reopen this
+ * branch and continue the chapter from here.
+ * @param {string} siteId the site's state-store id, already at step `domain-live`
+ * @returns {Promise<void>}
+ */
+async function printDomainLiveInfo(siteId) {
+  const state = await loadSite(siteId);
+  const repoUrl = `${webBase()}/${state.github.repo.owner}/${state.github.repo.repo}`;
+  const appUrl = `${webBase()}/apps/${state.github.appSlug}`;
+  const domain = state.cloudflare.domain;
+  const lines = [
+    '',
+    `Your site is live on GitHub: ${repoUrl}`,
+    `The App that publishes for you: ${appUrl}`,
+    '',
+    `Your site is live at your own domain: https://${domain}`,
+    `Sign in at: https://${domain}/admin`,
+    `Your workers.dev address (${state.cloudflare.url}) keeps working too.`,
+    '',
+    'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
+  ];
+  console.log(lines.join('\n'));
+}
+
+/**
+ * Run chapter 2 to whatever point the site's current saved state lets it reach, and print the
+ * closing block unless it reached the `domain-live` finish line itself (chapter 2's own last
+ * runStep already prints that closing copy). Shared by the `live`-branch reopening and the
+ * fresh/resumed chapter-1-to-2 handoff in `runCloudflareAndReport`, so the two paths cannot
+ * diverge on what "continuing into chapter 2" means.
+ * @param {{ siteId: string, dir: string, flags: object, log: (line: string) => void, dryRun: boolean }} args
+ * @returns {Promise<{ outcome: string }>} chapter 2's own outcome
+ */
+async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
+  const record = dryRun ? null : await loadSite(siteId);
+  const outcome = await runChapter2({ siteId, record, dir, args: flags, log, dryRun });
+  if (!dryRun && outcome.outcome !== 'domain-live') {
+    await printLiveInfo(siteId);
+  }
+  return outcome;
 }
 
 /**
@@ -101,20 +160,26 @@ async function reseedAndOpen({ siteId, state, ownerEmailOverride, log }) {
 
 /**
  * Run the Cloudflare chapter for one site and, when it carries the site all the way to live,
- * print the closing block. Shared by the fresh-run and resumed-run paths so a change to what
- * "finished" prints can never land on one and miss the other. A dry run always reports
- * `'declined'`, so it prints its actions and stops short of the closing block, same as a chapter
- * the admin declined.
+ * continue straight into chapter 2 (the domain half) rather than stopping, so a first-time run
+ * reaches the domain admission prompt without a second invocation. Shared by the fresh-run and
+ * resumed-run paths so a change to what "chapter 1 finished" does can never land on one and miss
+ * the other.
+ *
+ * A dry run always reports `'declined'` from chapter 1 (nothing is ever actually created), but
+ * still continues into chapter 2's own dry run unconditionally, passing `record: null` (chapter
+ * 1's own `dryRun ? null` precedent): that is the only way the whole chapter's hops, across both
+ * halves, print in one dry run.
  * @param {{ siteId: string, siteName: string, dir: string, flags: object,
  *  log: (line: string) => void, dryRun: boolean }} args the chapter's inputs
  * @returns {Promise<void>}
  */
 async function runCloudflareAndReport({ siteId, siteName, dir, flags, log, dryRun }) {
   const outcome = await runCloudflareChapter({ siteId, siteName, dir, flags, log, dryRun });
-  if (outcome === 'live') {
+  if (!dryRun) {
+    if (outcome !== 'live') return;
     console.log('This site is set up end to end.');
-    await printLiveInfo(siteId);
   }
+  await continueIntoChapter2({ siteId, dir, flags, log, dryRun });
 }
 
 /**
@@ -158,10 +223,33 @@ async function main() {
     // fresh path below, same as before this task.
     let priorRecord = flags.dir !== undefined && !flags.dryRun ? await findSiteByDir(flags.dir) : null;
 
+    if (priorRecord && flags.startOver && [...CHAPTER2_RESUMABLE_STEPS, 'domain-live'].includes(priorRecord.data.step)) {
+      // A record this far into chapter 2 has real Cloudflare resources connected to it: retiring
+      // it here would leave a zone, its copied DNS records, and a Worker attached to the admin's
+      // domain orphaned with no record pointing back at them. --start-over refuses instead of
+      // silently discarding that state.
+      throw new Error(
+        `${priorRecord.data.name} already has Cloudflare resources connected for ` +
+          `${priorRecord.data.cloudflare?.domain ?? 'its domain'}: a Cloudflare zone, the DNS ` +
+          "records copied into it, and the deployed Worker attached to it. --start-over cannot " +
+          'safely retire this record without also cleaning those up.\n' +
+          `Next: re-run npx create-cairn-site --dir ${priorRecord.data.dir} without --start-over ` +
+          'to continue connecting your domain, or remove those Cloudflare resources yourself ' +
+          'first.',
+      );
+    }
+
     if (priorRecord && flags.startOver) {
       await retireSite(priorRecord.id);
       console.log(`Setting aside the previous record for ${priorRecord.data.name} and starting over.`);
       priorRecord = null;
+    }
+
+    if (priorRecord && priorRecord.data.step === 'domain-live') {
+      // T4b reopens this branch for the email half; until then, domain-live is fully finished
+      // work from bin.mjs's own point of view, so this returns without ever calling runChapter2.
+      await printDomainLiveInfo(priorRecord.id);
+      return;
     }
 
     if (priorRecord && priorRecord.data.step === 'live') {
@@ -174,7 +262,25 @@ async function main() {
           log,
         });
       }
-      await printLiveInfo(priorRecord.id);
+      await continueIntoChapter2({
+        siteId: priorRecord.id,
+        dir: priorRecord.data.dir,
+        flags,
+        log,
+        dryRun: flags.dryRun,
+      });
+      return;
+    }
+
+    if (priorRecord && CHAPTER2_RESUMABLE_STEPS.includes(priorRecord.data.step)) {
+      console.log(`Resuming ${priorRecord.data.name} at ${priorRecord.data.step}.`);
+      await continueIntoChapter2({
+        siteId: priorRecord.id,
+        dir: priorRecord.data.dir,
+        flags,
+        log,
+        dryRun: flags.dryRun,
+      });
       return;
     }
 

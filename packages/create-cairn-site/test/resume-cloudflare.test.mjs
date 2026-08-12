@@ -128,7 +128,12 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
 
   await seedLiveSite('alpine-club-abcdef', dir);
 
-  const result = await runCli(['--dir', dir, '--sign-in'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
+  // --yes (with no --domain) is what keeps this hermetic now that a `live` record continues
+  // straight into chapter 2's own admission gate after the --sign-in recovery: with no --yes,
+  // that gate would ask a real, unstubbed @clack confirm prompt this spawned run has no stdin
+  // answer for. --yes with no --domain takes the gate's unattended skip-hint branch instead,
+  // which returns with no further wrangler calls, so the assertions below are unaffected.
+  const result = await runCli(['--dir', dir, '--sign-in', '--yes'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
 
   assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
   // This run's stdout is piped rather than a TTY (execFile always pipes), so the sign-in URL's raw

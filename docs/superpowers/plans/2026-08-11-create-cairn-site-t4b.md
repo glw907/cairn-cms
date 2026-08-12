@@ -126,6 +126,21 @@ where they conflict**, and the dependent tasks are cleared to dispatch.
     **Test both sides:** a 403 on a non-email route still maps to `token-scope-missing`, and a 403
     on an email route maps to the propagation or fall-through row. This is the kind of assertion
     the suite would otherwise never make, because no existing test sends a 403 down an email path.
+13. **`sendTestMessage`'s rows carry no `dir`, and chapter 2 must rebuild them before printing.**
+    Its interface, as written in both the spec and this plan, is
+    `{ api, from, to, onboardedAt, now }`, with no `dir` and no `record`. The three rows it throws
+    interpolate `${params.dir}` into their `Next:` line, so surfacing `err.message` unchanged
+    prints `--dir undefined` to an owner. `chapter2.mjs` therefore catches those errors, reads
+    `err.catalogue.code`, and rebuilds each row with its own real `dir` and `domain`, the same way
+    `hostname.mjs`'s `cutOverHostname` hands wait outcomes up to be wrapped. The signature stays
+    as written: the "classify here, print later" split is deliberate, and the assertion that locks
+    it is that each of the three rows, driven through `runChapter2`, prints the real `dir` and
+    never the string `undefined`.
+
+    Two things worth noticing about how this was found. It survived a green suite in the module
+    that owns the rows, because nothing there printed one. And it was caught only because the
+    implementer reported an interface it had been given twice as a concern rather than
+    implementing it silently, which is the behavior worth keeping.
 
 ### The T4a handoff is already carried, and one T4a carry-forward is stale
 

@@ -252,13 +252,13 @@ will consume is captured verbatim into an appendix, and Task 3's fixtures are co
 that appendix, never written from memory.** A spike question that answers "no" or
 "unknown" re-plans its dependent task before dispatch.
 
-- [ ] **Step 1: Account enumeration before any token.** How does the tool list accounts
+- [x] **Step 1: Account enumeration before any token.** How does the tool list accounts
   through the wrangler session alone: `wrangler whoami` output (record it verbatim,
   pinned by wrangler version, noting the output-string risk T3 filed) or a
   session-authenticated API call? Also observe `CLOUDFLARE_ACCOUNT_ID` in a spawn env
   selecting the account on a multi-account session, and record the observed behavior.
   **Gate for Tasks 2 and 6.**
-- [ ] **Step 2: Zone creation, verbatim.** With a token minted for the purpose, create a
+- [x] **Step 2: Zone creation, verbatim.** With a token minted for the purpose, create a
   zone for a scratch name, capture the full success body (`name_servers`,
   `original_name_servers`, `status` vocabulary including `initializing`, `account.id`,
   `type`), the wrong-scope error body, the malformed-token body, and the 1061
@@ -266,24 +266,24 @@ that appendix, never written from memory.** A spike question that answers "no" o
   same-account from foreign-account ownership; if it does not, Task 8's adopt-vs-error
   branch re-plans on the zone-list lookup instead. Delete the zone. **Gate for Tasks 3,
   5, and 8.**
-- [ ] **Step 3: The records probe.** Fix the probe list (apex A/AAAA/MX/TXT/CAA/NS,
+- [x] **Step 3: The records probe.** Fix the probe list (apex A/AAAA/MX/TXT/CAA/NS,
   `www`, `mail`, `autodiscover`, `_dmarc`, and a named DKIM-selector list), run it via
   `node:dns` against a real domain with mail, and record the raw shapes: `resolveTxt`'s
   `string[][]` chunking against a long DKIM value, `resolveMx`'s
   `{ exchange, priority }`, and the DNS-record create call's counterpart fields
   (`priority` distinct from `content`; CAA's `data` object). **Gate for Task 8.**
-- [ ] **Step 4: Routes and the cutover.** Record the route-creation call the cutover
+- [x] **Step 4: Routes and the cutover.** Record the route-creation call the cutover
   needs, which credential covers it (the wrangler session or the pasted token: this
   decides the prefill template), the verbatim duplicate-route error, and what a proxied
   hostname with no matching route serves (the 1016/522/parked-page shapes the confirm
   must not read as success). **Gate for Task 9, and an input to Step 5.**
-- [ ] **Step 5: The prefill URL, authored last.** With every call the chapter makes now
+- [x] **Step 5: The prefill URL, authored last.** With every call the chapter makes now
   enumerated (zone create, DNS writes, and whatever Step 4 added), establish the
   create-token page's prefill parameter shape and produce a URL covering the full scope
   set, recording which parts the admin still clicks. If prefill is unsupported for any
   needed field, record the closest deep-link and the copy that bridges the gap. **Gate
   for Task 7.**
-- [ ] **Step 6: Write the verdict doc and amend this plan.** Every task below marked
+- [x] **Step 6: Write the verdict doc and amend this plan.** Every task below marked
   **[spike]** gets its premise confirmed or corrected in place, the T3 idiom (the
   amendment block at the top of File Structure).
 
@@ -304,16 +304,16 @@ that appendix, never written from memory.** A spike question that answers "no" o
   `env` (merged over `process.env`); the fake bin recording `env` alongside
   `{ argv, cwd, stdin }`.
 
-- [ ] **Step 1: Failing state tests.** A two-hop partial write
+- [x] **Step 1: Failing state tests.** A two-hop partial write
   (`{ cloudflare: { accountId } }` then `{ cloudflare: { zoneId } }`) preserves both
   fields plus T3's `url`/`workerName`; `replaceSite` removes a key and the removal is
   asserted against `loadSite()` re-read from disk plus a scan of the raw file bytes;
   `retireSite` on a record carrying `apiToken` scrubs the token from the retired file.
-- [ ] **Step 2: Failing exec/fake-bin tests.** `runWrangler` passes `env` through to the
+- [x] **Step 2: Failing exec/fake-bin tests.** `runWrangler` passes `env` through to the
   spawn; the fake bin's self-test proves a planted env var is recorded in its invocation
   log (prove the test can fail by asserting a var the caller never set, then fix the
   assertion).
-- [ ] **Step 3: Implement all; suite green; commit.**
+- [x] **Step 3: Implement all; suite green; commit.**
 
 ### Task 3: The fake Cloudflare API (test helper) **[spike]**
 
@@ -328,14 +328,14 @@ that appendix, never written from memory.** A spike question that answers "no" o
   in-process tests and spawned-`bin.mjs` tests can point at it (the
   `pointAtFake` idiom).
 
-- [ ] **Step 1: Write the helper and its self-test.** Routes cover zone create/get/list,
+- [x] **Step 1: Write the helper and its self-test.** Routes cover zone create/get/list,
   DNS record create/list, and routes-create, with bodies copied from the spike appendix:
   the v4 envelope, `success: false` under HTTP 200, error codes as data, `result_info`
   pagination on list routes (with a page-2 fixture), and a **random per-zone
   `name_servers` pair** (a fixed pair would hide wrong-nameserver detection). The
   self-test proves each route, `failNext`'s status/body form, pagination, and port
   cleanup.
-- [ ] **Step 2: Full package suite green; commit.**
+- [x] **Step 2: Full package suite green; commit.**
 
 ### Task 4: The catalogue rows
 
@@ -353,10 +353,10 @@ that appendix, never written from memory.** A spike question that answers "no" o
   `route-create-failed`, `cutover-deploy-failed`, `account-ambiguous`; every row carries
   a literal `Next:` line (`extractNext` throws without one).
 
-- [ ] **Step 1: Failing tests** asserting each row exists, carries non-empty literal
+- [x] **Step 1: Failing tests** asserting each row exists, carries non-empty literal
   text, names its kind, and ends in a next command; the existing all-rows-are-act
   assertion is replaced by a per-row kind table, not deleted.
-- [ ] **Step 2: Write the rows; suite green; commit.** The two wait rows read as normal
+- [x] **Step 2: Write the rows; suite green; commit.** The two wait rows read as normal
   outcomes, not failures, per spec ruling 5.
 
 ### Task 5: The API seam **[spike]**
@@ -377,14 +377,14 @@ that appendix, never written from memory.** A spike question that answers "no" o
   caller, which re-reads and reconciles before any second write.** A `redactToken`
   scrubber runs over every error message this seam constructs.
 
-- [ ] **Step 1: Failing tests against the fake** for the success path, each code mapping,
+- [x] **Step 1: Failing tests against the fake** for the success path, each code mapping,
   `success: false` under 200, pagination traversal (the page-2 account fixture), the
   429 path, and the no-second-POST rule (`failNext` a 5xx on a record create; assert
   exactly one POST in `requests`).
-- [ ] **Step 2: The redaction test.** Construct a failure whose upstream body echoes a
+- [x] **Step 2: The redaction test.** Construct a failure whose upstream body echoes a
   planted token-shaped value; assert the constructed message and any thrown error's
   text carry the redacted form. Prove it can fail first.
-- [ ] **Step 3: Implement; suite green; commit.**
+- [x] **Step 3: Implement; suite green; commit.**
 
 ### Task 6: Account selection, wired into chapter 1 **[spike]**
 
@@ -403,12 +403,12 @@ that appendix, never written from memory.** A spike question that answers "no" o
   wrangler calls in chapter 1's deploy group) gain an optional `accountId` exported as
   `CLOUDFLARE_ACCOUNT_ID` in the spawn env.
 
-- [ ] **Step 1: Failing tests for `ensureAccountId`** per the four branches; the saved-id
+- [x] **Step 1: Failing tests for `ensureAccountId`** per the four branches; the saved-id
   branch asserts zero enumeration calls.
-- [ ] **Step 2: Failing test for the chapter-1 fix**: a deploy with a record carrying
+- [x] **Step 2: Failing test for the chapter-1 fix**: a deploy with a record carrying
   `accountId` shows `CLOUDFLARE_ACCOUNT_ID` in the fake bin's recorded env; a record
   without one shows no such var (the falsifiable pair).
-- [ ] **Step 3: Implement; suite green; commit.**
+- [x] **Step 3: Implement; suite green; commit.**
 
 ### Task 7: Token prefill **[spike]**
 

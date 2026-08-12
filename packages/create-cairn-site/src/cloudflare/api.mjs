@@ -17,11 +17,15 @@
 // most. The permission name is extracted from the message and passed to the
 // token-scope-missing row, since it is the single most useful thing in the whole failure.
 //
-// Only two catalogue rows accept a `detail` param for a Cloudflare-reported message
-// (zone-create-failed, custom-domain-failed); no dedicated row exists yet for a DNS-record
-// call, so a DNS-record failure reports through dns-record-failed rather than borrowing the
-// zone row: a partly written carry-over is a different situation from a zone that never got
-// created, and the copy has to say so. See OPERATION_CODES.
+// Only some catalogue rows accept a `detail` param for a Cloudflare-reported message
+// (zone-create-failed, custom-domain-failed, and the two email rows); no dedicated row exists yet
+// for a DNS-record call, so a DNS-record failure reports through dns-record-failed rather than
+// borrowing the zone row: a partly written carry-over is a different situation from a zone that
+// never got created, and the copy has to say so. See OPERATION_CODES.
+//
+// The Email Sending routes are the one exception to "keyed on HTTP status first": their 403 is
+// read from the body rather than mapped to token-scope-missing, because the send's own refusal is
+// a 403. The reasoning is at the discriminator in throwMapped.
 //
 // Retrying is GET-only, deliberately. A failed POST or PUT is reported to the caller and never
 // retried automatically: a create or an attach that failed partway may or may not have taken
@@ -42,7 +46,28 @@ const OPERATION_CODES = {
   zone: 'zone-create-failed',
   dnsRecord: 'dns-record-failed',
   customDomain: 'custom-domain-failed',
+  emailSubdomain: 'email-onboarding-failed',
+  emailSend: 'email-send-failed',
 };
+
+/** The operation codes belonging to an Email Sending route, which throwMapped classifies apart. */
+const EMAIL_OPERATION_CODES = new Set([OPERATION_CODES.emailSubdomain, OPERATION_CODES.emailSend]);
+
+/**
+ * Wording, not a code, because no numeric code for the entitlement refusal has been observed: the
+ * account this was built against is on Workers Paid, so the condition was unreachable during the
+ * 2026-08-12 spike and inventing a code would be a guess. The alternatives cover Cloudflare's
+ * prose and its dotted-identifier style.
+ */
+const ENTITLEMENT_PATTERN = /workers[ _.]?paid|paid[ _.]?plan|not[ _.]?entitled|entitlement|subscription[ _.]?required/i;
+
+/**
+ * Cloudflare's code for a send refused because the sender domain is not enabled for Email
+ * Sending, captured live 2026-08-12. It covers a domain that was never onboarded AND one whose
+ * records are still settling; nothing in the body separates them, so the caller's own record of
+ * when onboarding happened is the only discriminator.
+ */
+export const SENDING_DISABLED_CODE = 10203;
 
 /** How long to wait when a 429 carries no Retry-After header, in milliseconds. */
 const DEFAULT_RETRY_AFTER_MS = 1000;
@@ -79,6 +104,23 @@ export function redactToken(message, token) {
 function extractPermission(message) {
   const match = /permission\s+"([^"]+)"/i.exec(message ?? '');
   return match?.[1];
+}
+
+/**
+ * Read the numeric code and the dotted identifier out of an Email Sending failure envelope, so a
+ * caller classifies a send refusal without parsing v4 envelopes of its own. A caller holding a
+ * thrown catalogued error reads `err.api.code` instead; this is for a caller holding the raw body.
+ * @param {unknown} json a parsed v4 envelope, or anything else
+ * @returns {{ code: number | undefined, id: string | undefined }} `errors[0].code` and
+ *  `errors[0].message`, which on this surface is an identifier such as
+ *  `email.sending.error.email.sending_disabled` rather than prose
+ */
+export function sendErrorInfo(json) {
+  const primary = Array.isArray(json?.errors) ? json.errors[0] : undefined;
+  return {
+    code: typeof primary?.code === 'number' ? primary.code : undefined,
+    id: typeof primary?.message === 'string' ? primary.message : undefined,
+  };
 }
 
 /**
@@ -181,7 +223,19 @@ function throwMapped(status, json, operationCode, dir, token) {
 
   const api = { status, code: primary?.code };
 
-  if (status === 403) {
+  // An Email Sending route's 403 is classified by its body, never by the blanket token rule below.
+  // The send's own refusal (SENDING_DISABLED_CODE) arrives as HTTP 403, so the blanket rule would
+  // tell an owner whose DNS is still settling that their API token is missing a permission, which
+  // is both wrong and unactionable, and would hide the propagation park behind a scope error the
+  // owner cannot fix. The cost of the trade is that an underscoped token hitting an email route
+  // now lands on an email row instead of token-scope-missing. That is the right way round: the
+  // refusal above is the only 403 the send has been observed to return, and a run cannot reach
+  // these routes at all without a token that already passed validateToken.
+  if (EMAIL_OPERATION_CODES.has(operationCode)) {
+    if (ENTITLEMENT_PATTERN.test(combinedMessage)) {
+      throwCatalogued('paid-plan-missing', { dir }, token, api);
+    }
+  } else if (status === 403) {
     const permission = extractPermission(combinedMessage);
     throwCatalogued('token-scope-missing', permission ? { dir, permission } : { dir }, token, api);
   }
@@ -240,6 +294,9 @@ function throwCatalogued(code, params, token, api) {
  *   listDnsRecords(zoneId: string): Promise<object[]>,
  *   attachCustomDomain(input: { hostname: string, zoneId: string, service: string, environment?: string }): Promise<object>,
  *   listCustomDomains(): Promise<object[]>,
+ *   listSendingSubdomains(zoneId: string): Promise<object[]>,
+ *   createSendingSubdomain(zoneId: string, name: string): Promise<object>,
+ *   sendMessage(message: { from: string, to: string, subject: string, text: string }): Promise<void>,
  * }}
  */
 export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
@@ -324,6 +381,30 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
 
     async listCustomDomains() {
       return listPaginated(`/accounts/${accountId}/workers/domains`, {}, OPERATION_CODES.customDomain);
+    },
+
+    async listSendingSubdomains(zoneId) {
+      return listPaginated(`/zones/${zoneId}/email/sending/subdomains`, {}, OPERATION_CODES.emailSubdomain);
+    },
+
+    // A write, so it is never retried: the caller lists first and creates only when no entry
+    // matches, which is what keeps a resumed run from onboarding the same domain twice.
+    async createSendingSubdomain(zoneId, name) {
+      const { status, json } = await write('POST', `/zones/${zoneId}/email/sending/subdomains`, { name });
+      ensureSuccess(status, json, OPERATION_CODES.emailSubdomain);
+      return json.result;
+    },
+
+    // The result carries a message id and three delivery arrays that came back empty on every
+    // live send, so nothing in it is worth returning: reaching the next line is the whole answer.
+    async sendMessage({ from, to, subject, text }) {
+      const { status, json } = await write('POST', `/accounts/${accountId}/email/sending/send`, {
+        from,
+        to,
+        subject,
+        text,
+      });
+      ensureSuccess(status, json, OPERATION_CODES.emailSend);
     },
   };
 }

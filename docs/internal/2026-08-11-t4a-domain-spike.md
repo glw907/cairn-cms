@@ -772,3 +772,72 @@ chunks=2 lengths=[255,182] joined=437
 ```
 
 Confirms Step 3's finding on a record we control, which is what the e2e will assert against.
+
+## Addendum 3: Task 13 pre-run findings (2026-08-11)
+
+Written before the live run, because preparing for it produced two results that stand on their
+own. The run itself waits on a wrangler OAuth session.
+
+### The defect the e2e existed to catch, caught before the sitting
+
+Chapter 2 died at its second hop on the very branch amendment 16 added. `ensureZone` computes
+`alreadyActive`, the zone hop persists it, and the delegation hop consults it, but the carry-over
+hop between them ran unconditionally. That hop calls `readCurrentRecords`, which throws an
+uncatalogued Error once a domain's nameservers carry a `.ns.cloudflare.com` pair. A domain
+registered at Cloudflare Registrar therefore reached a developer-facing exception about a caller
+ordering mistake, with no catalogued row and no next step.
+
+Reproduced against the real domain rather than reasoned about:
+
+```
+carin-test.org   -> THREW: readCurrentRecords refuses to run: ... already delegated to Cloudflare
+wikipedia.org    -> OK, records=16, lowConfidence=false
+```
+
+The first control tried was `example.com`, which also threw. That is not a code fault: IANA's
+example domains now run on Cloudflare nameservers (`hera`/`elliott.ns.cloudflare.com`). Worth
+recording, since it makes `example.com` useless as a non-Cloudflare fixture anywhere in this
+codebase.
+
+Fixed in `f4a3d3a6`. An already-active zone skips the read and the gate, says so, and persists
+`carryOver = { outcome: 'not-needed', at }`. Suite 439 pass, 0 fail, exit 0.
+
+**Why every gate missed it.** No fixture ran an already-active zone *through* the carry-over hop.
+The one test pairing `alreadyActive` with a run seeds its record at `records-carried`, already
+past the hop, and every other resolver stub answers non-Cloudflare nameservers. The fakes were
+not wrong about Cloudflare. The sequence was never assembled.
+
+### The carry-over write path, proven live
+
+The scratch domain cannot exercise the carry-over gate at all, so the write half was proven
+directly against the real zone: a synthetic list written through the real `api.mjs` seam under a
+`probe-t4a` prefix, read back, then deleted.
+
+MX priority survived as its own field on both records (10 and 20, distinct). A 437-byte TXT came
+back at exactly 437 bytes, crossing the 255-byte chunk boundary the spike observed on the read
+side. Teardown verified by listing: zero probe records left, the four seeded records untouched
+with unchanged hashes.
+
+The probe was then proven able to fail, by mutating its priority assertion and confirming it
+reports RED against the same live data.
+
+### What the scratch domain can and cannot prove
+
+Registered at Cloudflare Registrar, so the zone is active and delegated on arrival and can never
+present a pre-migration DNS state. There is no workaround: Cloudflare Registrar requires
+Cloudflare nameservers.
+
+Proven live by the run: admission, account selection, token prefill and paste, the zone adopt
+path, the already-active skip, the delegation short-circuit, the Custom Domain attach and marker
+confirm, the origin rewrite and redeploy, the token surviving `domain-live`, resume, teardown.
+
+Fakes only, and outstanding for a future externally registered domain: zone creation and its
+birth state, the records probe against a real pre-migration domain, the carry-over gate's confirm
+and caveat copy, the delegation park and its instructions, `propagating`, `wrong-nameservers`,
+`certificate-pending`, and the apex address-record collision.
+
+### One teardown fact
+
+Deleting a Workers Custom Domain also removes the proxied apex `AAAA 100::` that the attach
+created. It needs no separate delete, and a teardown that tries one gets `81044 Record does not
+exist`.

@@ -1,36 +1,47 @@
-// Chapter 2's orchestrator: the guided path from `live` (chapter 1's finish line) to serving on
-// the admin's own domain. It is the ONLY module in this chapter that writes `step` or calls the
-// state store; every producer it drives (account.mjs, prefill.mjs, zone.mjs, records.mjs,
-// hostname.mjs) is pure over an in-memory record and returns its outcome, exactly as the T4a plan
-// requires. Modelled directly on chapter.mjs (T3's own orchestrator): the same runStep/runActions
-// idiom carries the dry-run guarantee (a title always prints, a detail prints only under
-// --dry-run, and execute never runs under --dry-run), and the same step-gated resume shape skips
-// whatever a saved record already finished.
+// Chapter 2's orchestrator: the guided path from `live` (chapter 1's finish line) through the
+// admin's own domain and, since T4b, on to sending its own sign-in mail. It is the ONLY module in
+// this chapter that writes `step` or calls the state store; every producer it drives (account.mjs,
+// prefill.mjs, zone.mjs, records.mjs, hostname.mjs, email.mjs) is pure over an in-memory record
+// and returns its outcome, exactly as the T4a plan requires. Modelled directly on chapter.mjs
+// (T3's own orchestrator): the same runStep/runActions idiom carries the dry-run guarantee (a
+// title always prints, a detail prints only under --dry-run, and execute never runs under
+// --dry-run), and the same step-gated resume shape skips whatever a saved record already
+// finished.
 //
-// New states, in order: zone-created -> records-carried -> delegated -> domain-live. A wait-class
-// outcome (delegation still pending, the hostname still propagating, the certificate still
-// issuing) is RETURNED, never thrown, and never advances `step`: a re-run re-detects from the
-// same recorded step. Only an act or ask-someone row throws.
+// New states, in order: zone-created -> records-carried -> delegated -> domain-live ->
+// email-onboarded -> email-live. A wait-class outcome (delegation still pending, the hostname
+// still propagating, the certificate still issuing, the sending domain not yet enabled, a test
+// send still inside its propagation window) is RETURNED, never thrown, and never advances `step`:
+// a re-run re-detects from the same recorded step. Only an act or ask-someone row throws.
+// `domain-live` is not a stopping point for this function: once the domain half's own completion
+// hop has printed, execution runs straight into the email half's own admission in the same call,
+// the same way every hop above it already re-validates the token on a resumed record rather than
+// treating domain-live as finished.
 //
-// TOKEN LIFECYCLE: the pasted API token is deleted at a TERMINAL step, not at domain-live.
-// domain-live is this pass's last state, but it is not the chapter's last state: T4b's email half
-// continues from here and needs the same credential, so deleting it at domain-live would strand
-// that later work. TERMINAL_STEPS names the states that really are done (T4b's email-live and a
-// recorded decline of the paid plan); reaching one deletes the token by an explicit whole-record
-// rebuild and save, since state.mjs's own updateSite merge can never express removing a key. T4a
-// implements the rule and its keep half (domain-live keeps the token); T4b exercises the delete
-// half for real by adding those two states to TERMINAL_STEPS.
+// TOKEN LIFECYCLE: the pasted API token is deleted at a TERMINAL step: `email-live`, or a recorded
+// decline of the paid plan. domain-live and email-onboarded are NOT terminal, since T4b's email
+// half continues from either and needs the same credential; deleting it there would strand that
+// later work. TERMINAL_STEPS names the states that really are done; reaching one deletes the token
+// by an explicit whole-record rebuild and save, since state.mjs's own updateSite merge can never
+// express removing a key. T4a implemented the rule and its keep half (domain-live keeps the
+// token); T4b exercises the delete half for real: a decline writes `step: 'paid-plan-declined'`
+// and deletes the token at the moment it happens, and a LATER re-entry at that same terminal step
+// (this module's own top-of-function short-circuit) re-offers with the row's reoffered copy
+// rather than returning silently, since a decline is a choice an owner can still reconsider.
 import { confirm as clackConfirm, text as clackText, select as clackSelect, isCancel } from '@clack/prompts';
 import { resolveNs as systemResolveNs } from 'node:dns/promises';
 import { exitOnCancel, promptSecret } from '../prompts.mjs';
 import { defineAction, runActions } from '../runner.mjs';
-import { updateSite, saveSite } from '../state.mjs';
+import { loadSite, updateSite, saveSite } from '../state.mjs';
 import { ensureAccountId } from './account.mjs';
 import { ensureApiToken } from './prefill.mjs';
 import { makeApi } from './api.mjs';
 import { ensureZone, checkDelegation, delegationInstructions } from './zone.mjs';
 import { readCurrentRecords, carryOverRecords } from './records.mjs';
 import { cutOverHostname } from './hostname.mjs';
+import { defaultFromAddress, ensureSendingDomain, sendTestMessage } from './email.mjs';
+import { writeEmailFrom } from './config.mjs';
+import { buildSite, deployWorker } from './deploy.mjs';
 import { cloudflareError } from './catalogue.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
 
@@ -38,14 +49,21 @@ import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
  * The states this pass's own step machine writes, in order, so a resumed record's remaining work
  * can be found by comparing indexes rather than repeating a chain of `if` checks.
  */
-const STEP_ORDER = ['live', 'zone-created', 'records-carried', 'delegated', 'domain-live'];
+const STEP_ORDER = [
+  'live',
+  'zone-created',
+  'records-carried',
+  'delegated',
+  'domain-live',
+  'email-onboarded',
+  'email-live',
+];
 
 /**
  * The step names that mean the chapter is fully done and the pasted token has no more work left
- * to do. Neither name is reachable through this pass's own step machine yet: T4b adds `email-live`
- * and a recorded decline of the paid plan. Named here, ahead of that work landing, so the delete
- * half of the token lifecycle rule is proven now by a synthesized record rather than guessed at
- * later.
+ * to do: `email-live` (the chapter's real finish line) and `paid-plan-declined` (an owner who
+ * declined the paid plan, which is also a clean stop). Neither name appears in STEP_ORDER, since
+ * reaching one short-circuits this function before any `hasReached` check ever runs against it.
  * @type {string[]}
  */
 export const TERMINAL_STEPS = ['email-live', 'paid-plan-declined'];
@@ -91,15 +109,19 @@ async function runStep(frame, title, detail, execute) {
  * Delete the pasted API token from the state record: the terminal-state half of the token
  * lifecycle rule. `updateSite`'s merge can only add or overwrite a field, never remove one (its
  * own doc block), so this rebuilds the whole record without `cloudflare.apiToken` and saves it
- * directly, the same scrub `retireSite` already performs when a record is set aside.
+ * directly, the same scrub `retireSite` already performs when a record is set aside. Always
+ * reloads the record fresh from disk rather than trusting a caller's in-memory copy: this
+ * function's callers below run after earlier hops in the same invocation may already have
+ * written newer fields (a domain, a zoneId, a step) through `updateSite`, and a stale in-memory
+ * record rebuilt here would silently discard them.
  * @param {string} siteId the site id to save under
- * @param {object} record the current in-memory record, already carrying `cloudflare.apiToken`
  * @returns {Promise<void>}
  */
-async function deleteApiToken(siteId, record) {
-  if (!record?.cloudflare || !('apiToken' in record.cloudflare)) return;
-  const { apiToken: _apiToken, ...cloudflareWithoutToken } = record.cloudflare;
-  await saveSite(siteId, { ...record, cloudflare: cloudflareWithoutToken });
+async function deleteApiToken(siteId) {
+  const current = await loadSite(siteId);
+  if (!current?.cloudflare || !('apiToken' in current.cloudflare)) return;
+  const { apiToken: _apiToken, ...cloudflareWithoutToken } = current.cloudflare;
+  await saveSite(siteId, { ...current, cloudflare: cloudflareWithoutToken });
 }
 
 /**
@@ -141,6 +163,20 @@ const ALREADY_ACTIVE_DETAIL =
   'stay untouched.';
 
 /**
+ * The email half's own admission, restating the price at the moment of the ask (T4b ruling 6):
+ * chapter 1's consent copy already said nothing up to here costs money, and this is the point
+ * where that stops being the whole story. Every figure carries its date and a link, since Email
+ * Sending is in beta; the copy also says what the plan is not, since it is easy to mistake a
+ * per-account subscription for a traffic-based upgrade.
+ */
+const EMAIL_ADMISSION_DETAIL =
+  "Cloudflare's Workers Paid plan costs $5 US per month, as of 2026-08-11 " +
+  '(https://developers.cloudflare.com/workers/platform/pricing/), billed once per Cloudflare ' +
+  "account rather than once per site. It is what sends this site's sign-in email, so it is " +
+  'needed once anyone other than you needs to sign in. It is not a scaling upgrade: your ' +
+  "site's traffic has nothing to do with it.";
+
+/**
  * @typedef {object} RunChapter2Input
  * @property {string} siteId the site's state-store id; the only id this module ever writes under
  * @property {object | null} record the site's current in-memory state record, already loaded by
@@ -148,8 +184,9 @@ const ALREADY_ACTIVE_DETAIL =
  *  under --dry-run, chapter 1's own `dryRun ? null` precedent
  * @property {string} dir the scaffolded directory, used in printed copy; read independently of
  *  `record.dir` so a dry run with no record still has it
- * @property {{ yes: boolean, domain?: string }} args the parsed CLI flags this chapter reads:
- *  `yes` for an unattended run, `domain` carrying both the value and the unattended opt-in
+ * @property {{ yes: boolean, domain?: string, email?: boolean }} args the parsed CLI flags this
+ *  chapter reads: `yes` for an unattended run, `domain` carrying both the value and the domain
+ *  half's unattended opt-in, `email` the same for the email half's own admission
  * @property {(line: string) => void} log receives one printed line per call
  * @property {boolean} dryRun when true, every hop's title and detail print and nothing executes
  * @property {(url: string, log: (line: string) => void) => Promise<void>} [openBrowser] opens the
@@ -189,8 +226,10 @@ const ALREADY_ACTIVE_DETAIL =
  * @returns {Promise<{ outcome: string, domain?: string, state?: string, message?: string }>} the
  *  outcome reached: `'admission-declined'` | `'carry-over-declined'` | `'delegation-pending'` |
  *  `'delegation-propagating'` | `'hostname-propagating'` | `'certificate-pending'` |
- *  `'domain-live'` | `'dry-run'`, or, for a record already at one of TERMINAL_STEPS, that step's
- *  own name. A delegation park also carries the row's own `state` and printed `message`
+ *  `'paid-plan-declined'` | `'email-not-ready'` | `'email-sender-propagating'` |
+ *  `'email-daily-limit'` | `'email-live'` | `'dry-run'`, or, for a record already at one of
+ *  TERMINAL_STEPS, that step's own name. A delegation park also carries the row's own `state` and
+ *  printed `message`
  */
 export async function runChapter2({
   siteId,
@@ -214,7 +253,14 @@ export async function runChapter2({
   const frame = { dryRun, log };
 
   if (!dryRun && isTerminalStep(record?.step)) {
-    await deleteApiToken(siteId, record);
+    await deleteApiToken(siteId);
+    // A re-entry at a recorded decline is not silently ignored: the owner can still change their
+    // mind, and this is the one place that later re-run would ever be told so. `email-live`
+    // prints nothing here, since its own completion hop already said everything once, on the run
+    // that reached it; bin.mjs's own closing print covers a later re-entry there.
+    if (record.step === 'paid-plan-declined') {
+      log(cloudflareError('paid-plan-declined', { dir, reoffered: true }).message);
+    }
     return { outcome: record.step };
   }
 
@@ -224,6 +270,7 @@ export async function runChapter2({
   let nameServers = record?.cloudflare?.nameServers;
   let alreadyActive = record?.cloudflare?.alreadyActive ?? false;
   let token = record?.cloudflare?.apiToken;
+  const ownerEmail = record?.ownerEmail;
 
   // --- Admission: consent, then the domain itself. Only asked from `live`; a resumed record past
   // it already answered both, and re-asking would repeat a browser-adjacent decision for nothing.
@@ -486,8 +533,9 @@ export async function runChapter2({
     }
   }
 
-  // --- Completion: reached once the cutover just succeeded or a resumed record was already at
-  // `domain-live`. domain-live is not terminal (TERMINAL_STEPS above), so the token survives this.
+  // --- Domain completion: reached once the cutover just succeeded or a resumed record was
+  // already at `domain-live`. domain-live is not terminal (TERMINAL_STEPS above): execution below
+  // continues straight into the email half's own admission rather than stopping here.
   await runStep(
     frame,
     'Finish connecting your domain',
@@ -500,8 +548,164 @@ export async function runChapter2({
     },
   );
 
+  // --- Email admission: the price, restated at the moment of the ask (T4b ruling 6). Only asked
+  // while step has not yet reached email-onboarded; once onboarding has actually succeeded, this
+  // is never re-asked. A decline writes the terminal step directly (rather than going through
+  // TERMINAL_STEPS' own short-circuit, which only fires on a LATER re-entry) and deletes the
+  // token at the point it happens, per the terminal-state token rule.
+  if (!hasReached(record?.step, 'email-onboarded')) {
+    let emailConsented = false;
+    const reoffered = Boolean(record?.cloudflare?.emailDeclinedAt);
+    await runStep(frame, 'Turn on email sign-in', EMAIL_ADMISSION_DETAIL, async () => {
+      log(EMAIL_ADMISSION_DETAIL);
+      if (args.yes && !args.email) {
+        log(
+          'Skipping email sign-in: --yes was given with no --email. Re-run with --email to turn ' +
+            'it on unattended, or without --yes to be asked.',
+        );
+        emailConsented = false;
+        return;
+      }
+      if (args.yes && args.email) {
+        emailConsented = true;
+        return;
+      }
+      const answer = await confirm({
+        message: "Turn on Cloudflare's Workers Paid plan now, so anyone besides you can sign in?",
+      });
+      if (isCancel(answer)) exitOnCancel();
+      emailConsented = Boolean(answer);
+    });
+    if (!dryRun && !emailConsented) {
+      const declineErr = cloudflareError('paid-plan-declined', { dir, reoffered });
+      log(declineErr.message);
+      await updateSite(siteId, {
+        step: 'paid-plan-declined',
+        cloudflare: { emailDeclinedAt: new Date().toISOString() },
+      });
+      await deleteApiToken(siteId);
+      return { outcome: 'paid-plan-declined' };
+    }
+  }
+
+  // --- Onboard the sending domain, then poll once. Only from before email-onboarded; a resumed
+  // record past it already carries emailOnboardedAt, read below regardless of which run set it.
+  let onboardedAt = record?.cloudflare?.emailOnboardedAt;
+  if (!hasReached(record?.step, 'email-onboarded')) {
+    let onboardEnabled = false;
+    await runStep(
+      frame,
+      'Onboard your domain for email',
+      'Turns on Cloudflare Email Sending for your domain, reading first so a resumed run never ' +
+        'onboards it twice.',
+      async () => {
+        const result = await ensureSendingDomain({ api, zoneId, domain, record });
+        onboardEnabled = result.enabled;
+        if (result.enabled) {
+          onboardedAt = result.onboardedAt;
+          return;
+        }
+        log(cloudflareError('email-not-ready', { dir, domain }).message);
+      },
+    );
+    if (!dryRun && !onboardEnabled) {
+      return { outcome: 'email-not-ready', domain };
+    }
+    if (!dryRun) {
+      await updateSite(siteId, { step: 'email-onboarded', cloudflare: { emailOnboardedAt: onboardedAt } });
+    }
+  }
+
+  // --- Test send: proves the sending path before the redeploy, on purpose, since a redeploy is
+  // pointless when the sender path itself is broken. Unconditional past this point: a resumed
+  // record repeats this call every time, which is both cheap and the point, proving delivery
+  // again on every re-run rather than only the first.
+  const from = defaultFromAddress(domain);
+  let sendWaitError;
+  await runStep(
+    frame,
+    'Send a test sign-in email',
+    `Sends one message from ${from} to your saved sign-in address, proving delivery works.`,
+    async () => {
+      try {
+        await sendTestMessage({ api, from, to: ownerEmail, onboardedAt });
+      } catch (err) {
+        // email.mjs classifies a send failure with no `dir` in hand (its own interface omits it
+        // and `record`); this rebuilds each of its three reclassified rows with this chapter's
+        // real `dir` (and `domain`, where the row takes one) before it is ever printed or
+        // returned, the same "classify now, name later" split hostname.mjs's own wait outcomes
+        // already use. Anything else (including api.mjs's own email-send-failed fall-through,
+        // which already carries the real dir since api.mjs built it) is rethrown as-is.
+        const code = err?.catalogue?.code;
+        if (code === 'email-sender-propagating') {
+          sendWaitError = cloudflareError('email-sender-propagating', { dir });
+          log(sendWaitError.message);
+          return;
+        }
+        if (code === 'email-daily-limit') {
+          sendWaitError = cloudflareError('email-daily-limit', { dir });
+          log(sendWaitError.message);
+          return;
+        }
+        if (code === 'email-sender-unavailable') {
+          throw cloudflareError('email-sender-unavailable', { dir, domain });
+        }
+        throw err;
+      }
+    },
+  );
+  if (!dryRun && sendWaitError) {
+    return { outcome: sendWaitError.catalogue.code, domain, message: sendWaitError.message };
+  }
+
+  // --- Sender address, then one deploy. Both skip when the address is already correct, so a
+  // park-and-resume never buys a second deploy; cairn.config.ts is bundled at build time (unlike
+  // writePublicOrigin's wrangler.jsonc var, which is read at runtime), so the redeploy needs a
+  // fresh build first.
+  let addressChanged = false;
+  await runStep(
+    frame,
+    'Update your sign-in email address',
+    `Writes ${from} into your site's config as its sign-in sender, then builds and redeploys so ` +
+      'the running site carries it. Skipped once the address is already correct.',
+    async () => {
+      addressChanged = await writeEmailFrom(dir, from);
+      if (!addressChanged) return;
+      await buildSite({ dir, log });
+      await deployWorker({ dir, log, accountId });
+    },
+  );
+  if (!dryRun) {
+    await updateSite(siteId, { cloudflare: { emailFrom: from } });
+  }
+
+  // --- Completion: email-live is recorded and the token is deleted, the terminal step this
+  // chapter was building toward.
+  await runStep(
+    frame,
+    'Finish setting up email',
+    'Prints your sign-in sender address and how to check it again later.',
+    async () => {
+      log(
+        `Your site now sends its own sign-in email, from ${from}. Change it any time by editing ` +
+          "email: { from: '...' } in src/theme/cairn.config.ts and redeploying.\n" +
+          `Onboarding also wrote a DMARC policy at _dmarc.${domain}, set to reject mail that ` +
+          "isn't from Cloudflare's own sending infrastructure. That record stays in place even " +
+          'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
+          "to this domain later, add it to that record too, or its mail will be rejected.\n" +
+          `Run npx cairn-doctor --from ${from} --send-test <you@example.com> any time to re-prove ` +
+          'delivery without running this installer again.',
+      );
+    },
+  );
+
+  if (!dryRun) {
+    await updateSite(siteId, { step: 'email-live' });
+    await deleteApiToken(siteId);
+  }
+
   if (dryRun) {
     return { outcome: 'dry-run' };
   }
-  return { outcome: 'domain-live', domain };
+  return { outcome: 'email-live', domain };
 }

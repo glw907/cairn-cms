@@ -27,6 +27,11 @@ const OPTIONS = {
   // chapter 2 with a hint rather than guessing at a domain the admin never named. `--connect`
   // stays reserved for a later pass (T4c, Builds).
   domain: { type: 'string' },
+  // The email half's own opt-in, mirroring `--domain`: a boolean rather than a value, since the
+  // admission it stands in for is a single yes/no rather than a name to collect. `--yes --email`
+  // turns on Workers Paid and Email Sending with no prompt; `--yes` alone (no --email) declines
+  // rather than committing an owner to a subscription unattended.
+  email: { type: 'boolean', default: false },
 };
 
 /**
@@ -34,8 +39,8 @@ const OPTIONS = {
  * @param {string[]} argv the argument vector, without the node/script entries
  * @returns {{ dryRun: boolean, yes: boolean, name?: string, description?: string, brandColor?: string,
  *  dir?: string, version: boolean, appName?: string, org?: string, repoName?: string, github: boolean,
- *  startOver: boolean, ownerEmail?: string, deploy: boolean, signIn: boolean, domain?: string }} the
- *  parsed flags; the string options are undefined, not empty, when absent
+ *  startOver: boolean, ownerEmail?: string, deploy: boolean, signIn: boolean, domain?: string,
+ *  email: boolean }} the parsed flags; the string options are undefined, not empty, when absent
  */
 export function parseArgs(argv) {
   let values;
@@ -65,5 +70,6 @@ export function parseArgs(argv) {
     deploy: values.deploy,
     signIn: values['sign-in'],
     domain: values.domain,
+    email: values.email,
   };
 }

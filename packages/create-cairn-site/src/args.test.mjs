@@ -70,3 +70,10 @@ test('parses --domain, undefined when absent', () => {
   assert.equal(parseArgs([]).domain, undefined);
   assert.equal(parseArgs(['--domain', 'example.com']).domain, 'example.com');
 });
+
+// The email half's own opt-in: a boolean, unlike --domain, since the admission it stands in for
+// is a single yes/no rather than a name to collect.
+test('parses --email, false when absent', () => {
+  assert.equal(parseArgs([]).email, false);
+  assert.equal(parseArgs(['--email']).email, true);
+});

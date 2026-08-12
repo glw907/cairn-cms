@@ -21,7 +21,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { makeFakeBin } from './fake-bin.mjs';
 import { startFakeCloudflare } from './fake-cloudflare.mjs';
-import { makeApi } from '../src/cloudflare/api.mjs';
+import { makeApi, SENDING_DISABLED_CODE } from '../src/cloudflare/api.mjs';
 import { saveSite, loadSite, retireSite } from '../src/state.mjs';
 import { runChapter2, TERMINAL_STEPS } from '../src/cloudflare/chapter2.mjs';
 
@@ -138,6 +138,30 @@ function confirmAnswering(answer) {
   return async () => answer;
 }
 
+/**
+ * A confirm stub for chapter 2's three yes/no gates (domain connect, carry-over copy, email
+ * admission), matched by a distinctive substring of each gate's own message, mirroring
+ * chapter2.test.mjs's own `confirmRouting`. Omitting a gate's answer means the record under test
+ * has already passed it (or must never reach it): a call for that gate is then a defect, not just
+ * an unexpected answer, so it throws rather than silently returning. A message matching none of
+ * the three also throws, so a test can never pass by answering some fourth gate silently.
+ * @param {{ domain?: boolean, carryOver?: boolean, email?: boolean }} [answers] omit a key to
+ *  assert its gate is never asked at all
+ * @returns {(input: { message: string }) => Promise<boolean>}
+ */
+function confirmRouting({ domain, carryOver, email } = {}) {
+  const answer = (label, value) => {
+    if (value === undefined) throw new Error(`the ${label} gate must not be asked on this record`);
+    return value;
+  };
+  return async ({ message }) => {
+    if (message.includes('Connect a domain')) return answer('domain', domain);
+    if (message.includes('Copy these records')) return answer('carry-over', carryOver);
+    if (message.includes('Workers Paid')) return answer('email', email);
+    throw new Error(`confirmRouting: unrecognized confirm message: ${message}`);
+  };
+}
+
 /** A confirm/text stub that fails the test the moment it is called, proving a hop was skipped. */
 function mustNotBeCalled(label) {
   return async () => {
@@ -228,6 +252,21 @@ function deployCalls(invocations) {
   return invocations.filter((inv) => inv.argv.includes('deploy'));
 }
 
+/**
+ * A `failNext('email_send', ...)` body for the propagation refusal (spike amendment 1/2),
+ * mirroring chapter2.test.mjs's own `sendingDisabledBody`: a decline is itself a terminal step
+ * (T4b ruling 5) and would delete a planted token before an interruption or sweep case here ever
+ * gets to observe it, so this is what several fixes below use to park past domain-live instead.
+ */
+function sendingDisabledBody() {
+  return {
+    success: false,
+    errors: [{ code: SENDING_DISABLED_CODE, message: 'email.sending.error.email.sending_disabled' }],
+    messages: [],
+    result: null,
+  };
+}
+
 // --- Deliverable 1: interruption cases, one per hop boundary -----------------------------------
 
 test('interruption: a record at live runs every hop exactly once through to domain-live', async (t) => {
@@ -247,13 +286,16 @@ test('interruption: a record at live runs every hop exactly once through to doma
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    confirm: confirmAnswering(true),
+    // The domain gate is answered yes; the email gate (the only other confirm this run reaches,
+    // since the carry-over hop is skipped by the already-active zone below) is declined, so this
+    // test stays about the domain half's own per-hop counts.
+    confirm: confirmRouting({ domain: true, email: false }),
     text: async () => domain,
     promptSecretFn: async () => 'safety-live-token',
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
 
   const zoneCreates = cloudflare.requests.filter((r) => r.method === 'POST' && r.path === '/client/v4/zones');
   assert.equal(zoneCreates.length, 1, 'zone create must run exactly once');
@@ -265,7 +307,7 @@ test('interruption: a record at live runs every hop exactly once through to doma
   assert.equal(deploys.length, 1, 'wrangler deploy must run exactly once');
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'domain-live');
+  assert.equal(state.step, 'paid-plan-declined');
   assert.equal(state.cloudflare.domain, domain);
 
   // This zone arrives already active (setupCloudflare's zoneStatus above), so the carry-over hop
@@ -293,14 +335,15 @@ test('interruption: a record at zone-created reaches domain-live without repeati
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    // The carry-over gate has not been answered yet on this seeded record, so confirm is still
-    // exercised here; the falsifiable no-repeat proof is the zone-create count below, not this.
-    confirm: confirmAnswering(true),
+    // This zone arrives already active (zoneStatus: 'active' above), so the carry-over hop skips
+    // its own gate entirely; the only confirm this run reaches is the email admission, declined
+    // here so this test stays about the zone-create no-repeat count below.
+    confirm: confirmRouting({ email: false }),
     text: mustNotBeCalled('text'),
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
 
   const since = seeded.cloudflare.requests.slice(requestsBefore);
   assert.equal(
@@ -310,7 +353,7 @@ test('interruption: a record at zone-created reaches domain-live without repeati
   );
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'domain-live');
+  assert.equal(state.step, 'paid-plan-declined');
   assert.equal(state.cloudflare.zoneId, seeded.zoneId, 'the seeded zoneId must survive unchanged');
   assert.deepEqual(state.cloudflare.nameServers, seeded.nameServers, 'the seeded nameServers must survive unchanged');
   assert.equal(state.cloudflare.domain, domain, 'the seeded domain must survive unchanged');
@@ -334,14 +377,15 @@ test('interruption: a record at records-carried reaches domain-live without repe
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    // The carry-over gate is already answered on this seeded record; a call here proves it ran
-    // again, which must not happen.
-    confirm: mustNotBeCalled('confirm'),
+    // The domain and carry-over gates are already answered on this seeded record; a call for
+    // either proves one of them ran again, which must not happen. The only confirm this run
+    // reaches is the email admission, declined here.
+    confirm: confirmRouting({ email: false }),
     text: mustNotBeCalled('text'),
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
 
   const since = seeded.cloudflare.requests.slice(requestsBefore);
   assert.equal(
@@ -352,7 +396,7 @@ test('interruption: a record at records-carried reaches domain-live without repe
   assert.equal(since.filter((r) => r.method === 'POST' && r.path === '/client/v4/zones').length, 0);
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'domain-live');
+  assert.equal(state.step, 'paid-plan-declined');
   assert.deepEqual(state.cloudflare.carryOver, seeded.carryOver, 'the seeded carryOver must survive unchanged');
 });
 
@@ -374,12 +418,14 @@ test('interruption: a record at delegated reaches domain-live via exactly one cu
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    confirm: mustNotBeCalled('confirm'),
+    // The domain and carry-over gates are already behind this record; the only confirm this run
+    // reaches is the email admission, declined here.
+    confirm: confirmRouting({ email: false }),
     text: mustNotBeCalled('text'),
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
 
   const since = seeded.cloudflare.requests.slice(requestsBefore);
   assert.equal(since.filter((r) => r.method === 'POST' && r.path === '/client/v4/zones').length, 0);
@@ -392,7 +438,7 @@ test('interruption: a record at delegated reaches domain-live via exactly one cu
   assert.equal(deploys.length, 1, 'wrangler deploy must run exactly once');
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'domain-live');
+  assert.equal(state.step, 'paid-plan-declined');
 });
 
 test('interruption: a resume that parks before the cutover shells out to wrangler for nothing', async (t) => {
@@ -477,12 +523,14 @@ test('interruption: a genuine park then a later re-run continues from the same s
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    confirm: mustNotBeCalled('confirm'),
+    // The domain and carry-over gates are already behind this record; the only confirm this run
+    // reaches is the email admission, declined here.
+    confirm: confirmRouting({ email: false }),
     text: mustNotBeCalled('text'),
     resolveNs: resolveNsStub,
     fetchImpl: alwaysMatchingFetch(),
   });
-  assert.equal(secondOutcome.outcome, 'domain-live');
+  assert.equal(secondOutcome.outcome, 'paid-plan-declined');
   assert.equal(resolveNsCalls, 2, 'the second run must re-detect delegation, not reuse the first answer');
 
   const since = seeded.cloudflare.requests.slice(requestsBeforeSecondRun);
@@ -490,7 +538,7 @@ test('interruption: a genuine park then a later re-run continues from the same s
   assert.equal(since.filter((r) => r.method === 'POST' && r.path.includes('/dns_records')).length, 0);
 
   const finalState = await loadSite(siteId);
-  assert.equal(finalState.step, 'domain-live');
+  assert.equal(finalState.step, 'paid-plan-declined');
 });
 
 // --- Deliverable 2: the secret sweep ------------------------------------------------------------
@@ -592,15 +640,20 @@ test('secret sweep: the helper can actually fail before it can be trusted (falsi
   assert.deepEqual(cleanedAgain, [], 'the sweep must go clean again once the plant is removed');
 });
 
+// A decline would delete the planted token as its own terminal step (T4b ruling 5), proving
+// nothing about where a LIVE token does and does not leak. So this run consents to email too, and
+// arms the fake to refuse the test send once (the propagation shape), which parks the run one hop
+// past domain-live rather than declining: the token stays live and on disk for the sweep below.
 test('secret sweep: a full run to domain-live confines the planted token to the live state record', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
-  await setupCloudflare(t, { zoneStatus: 'active' });
+  const cloudflare = await setupCloudflare(t, { zoneStatus: 'active' });
   const wrangler = await setupWrangler(t);
   const siteId = 'sweep-live';
   const domain = 'sweep-live.example';
   const plantedToken = 'cairn-plant-Zq7xK3vT9wR2mB5nJ8hL';
   await seedLiveSite(siteId, dir);
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
 
   const logs = [];
   const outcome = await runChapter2({
@@ -611,14 +664,14 @@ test('secret sweep: a full run to domain-live confines the planted token to the 
     args: { yes: false },
     log: (line) => logs.push(line),
     dryRun: false,
-    confirm: confirmAnswering(true),
+    confirm: confirmRouting({ domain: true, email: true }),
     text: async () => domain,
     // Supplied through the same path a real run uses: pasted back through promptSecretFn, the
     // way the admin's own paste reaches this chapter.
     promptSecretFn: async () => plantedToken,
     fetchImpl: alwaysMatchingFetch(),
   });
-  assert.equal(outcome.outcome, 'domain-live');
+  assert.equal(outcome.outcome, 'email-sender-propagating');
 
   const state = await loadSite(siteId);
   assert.equal(state.cloudflare.apiToken, plantedToken, 'the live record must carry the pasted token');
@@ -668,20 +721,29 @@ test('secret sweep: reaching a terminal step deletes the token everywhere, and t
     args: { yes: false },
     log: (line) => logs.push(line),
     dryRun: false,
-    confirm: confirmAnswering(true),
+    // Declines the email admission, this file's own default: this test's own point is the
+    // terminal-step deletion rule itself, not the email half, and a decline is a terminal step in
+    // its own right (T4b ruling 5).
+    confirm: confirmRouting({ domain: true, email: false }),
     text: async () => domain,
     promptSecretFn: async () => plantedToken,
     fetchImpl: alwaysMatchingFetch(),
   });
-  assert.equal(outcome.outcome, 'domain-live');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
 
   assert.ok(TERMINAL_STEPS.length > 0);
   const terminalStep = TERMINAL_STEPS[0];
-  // domain-live is deliberately not terminal (chapter2.mjs's own token-lifecycle rule); T4b lands
-  // the real path to a terminal step, so this synthesizes arriving at one the way chapter2.test.mjs
-  // already does for the token-deletion rule itself.
+  // The decline above already deleted the token as part of reaching its OWN terminal step
+  // (paid-plan-declined); replant it here so the short-circuit below has a real token to prove it
+  // deletes, rather than proving nothing against an already-empty field. This still synthesizes
+  // arriving at TERMINAL_STEPS[0] ('email-live') the way chapter2.test.mjs already does for the
+  // token-deletion rule itself.
   const liveRecord = await loadSite(siteId);
-  await saveSite(siteId, { ...liveRecord, step: terminalStep });
+  await saveSite(siteId, {
+    ...liveRecord,
+    step: terminalStep,
+    cloudflare: { ...liveRecord.cloudflare, apiToken: plantedToken },
+  });
 
   const errorMessages = [];
   let terminalOutcome;

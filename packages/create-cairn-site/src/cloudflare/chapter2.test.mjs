@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { makeFakeBin } from '../../test/fake-bin.mjs';
 import { startFakeCloudflare } from '../../test/fake-cloudflare.mjs';
-import { makeApi } from './api.mjs';
+import { makeApi, SENDING_DISABLED_CODE } from './api.mjs';
 import { saveSite, loadSite } from '../state.mjs';
 
 /** A minimal wrangler.jsonc fixture carrying the one key writePublicOrigin needs. */
@@ -14,6 +14,13 @@ const MINIMAL_WRANGLER_JSONC = JSON.stringify(
   null,
   2,
 );
+
+/**
+ * A minimal cairn.config.ts fixture carrying the one `email: { from: '...' }` entry
+ * writeEmailFrom targets, shaped exactly like the real template's placeholder so the pattern
+ * match (and its re-parse) exercise the real production shape rather than a stand-in.
+ */
+const MINIMAL_CAIRN_CONFIG_TS = "export default {\n  email: { from: 'cms@showcase.test' },\n};\n";
 
 const WORKERS_DEV_URL = 'https://cairn-domain-site.glw907.workers.dev';
 
@@ -33,8 +40,9 @@ async function freshStateDir(t) {
 }
 
 /**
- * Build a fixture scaffold directory carrying a real wrangler.jsonc so writePublicOrigin (the
- * cutover's own step) has something to rewrite.
+ * Build a fixture scaffold directory carrying a real wrangler.jsonc (for writePublicOrigin, the
+ * cutover's own step) and a real src/theme/cairn.config.ts (for writeEmailFrom, the email half's
+ * own rewrite step).
  * @param {import('node:test').TestContext} t
  * @returns {Promise<string>} the fixture directory's absolute path
  */
@@ -42,6 +50,8 @@ async function fixtureScaffoldDir(t) {
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-scaffold-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
   await writeFile(path.join(dir, 'wrangler.jsonc'), MINIMAL_WRANGLER_JSONC);
+  await mkdir(path.join(dir, 'src', 'theme'), { recursive: true });
+  await writeFile(path.join(dir, 'src', 'theme', 'cairn.config.ts'), MINIMAL_CAIRN_CONFIG_TS);
   return dir;
 }
 
@@ -62,7 +72,10 @@ async function setupCloudflare(t, overrides = {}) {
 }
 
 /**
- * Point CAIRN_WRANGLER_BIN at a fresh fake wrangler, armed for whoami (single account) and deploy.
+ * Point CAIRN_WRANGLER_BIN at a fresh fake wrangler, armed for whoami (single account) and
+ * deploy, and point CAIRN_NPM_BIN at the SAME fake, armed for `npm run build`: sharing one fake
+ * bin across both tools is what lets a test read one invocation log and see the real
+ * build-then-deploy order the email half's rewrite hop produces.
  * @param {import('node:test').TestContext} t
  * @param {{ deployReply?: object }} [options]
  * @returns {Promise<import('../../test/fake-bin.mjs').FakeBin>}
@@ -79,9 +92,12 @@ async function setupWrangler(t, { deployReply = { code: 0, stdout: `Deployed (0.
     stdout: JSON.stringify({ loggedIn: true, accounts: [{ id: 'acct-1', name: 'Test Account' }] }),
   });
   await fake.respond('deploy', deployReply);
+  await fake.respond('run build', { code: 0, stdout: 'built.\n' });
   process.env.CAIRN_WRANGLER_BIN = fake.binPath;
+  process.env.CAIRN_NPM_BIN = fake.binPath;
   t.after(() => {
     delete process.env.CAIRN_WRANGLER_BIN;
+    delete process.env.CAIRN_NPM_BIN;
   });
   return fake;
 }
@@ -119,6 +135,30 @@ function confirmAnswering(answer) {
   return async () => answer;
 }
 
+/**
+ * A confirm stub that answers chapter 2's two yes/no gates differently, matched by a distinctive
+ * substring of each gate's own message. Omitting a gate's answer means the record under test has
+ * already passed it (or must never reach it): a call for that gate is then a defect, not just an
+ * unexpected answer, so it throws rather than silently returning. A message matching neither gate
+ * also throws, so a test can never pass by answering some THIRD gate the wrong way.
+ * @param {{ domain?: boolean, email?: boolean }} [answers] the answer for the domain-connect gate
+ *  and the email-admission gate; omit a key to assert its gate is never asked at all
+ * @returns {(input: { message: string }) => Promise<boolean>}
+ */
+function confirmRouting({ domain, email } = {}) {
+  return async ({ message }) => {
+    if (message.includes('Connect a domain')) {
+      if (domain === undefined) throw new Error('the domain gate must not be asked on this record');
+      return domain;
+    }
+    if (message.includes('Workers Paid')) {
+      if (email === undefined) throw new Error('the email gate must not be asked on this record');
+      return email;
+    }
+    throw new Error(`confirmRouting: unrecognized confirm message: ${message}`);
+  };
+}
+
 /** A confirm/text stub that fails the test the moment it is called, for an unattended path. */
 function mustNotBeCalled(label) {
   return async () => {
@@ -146,8 +186,70 @@ async function seedLiveSite(siteId, dir, overrides = {}) {
   });
 }
 
+/**
+ * Seed a record at 'domain-live', the email half's own starting point: a real zone on the fake
+ * (so the email routes below have a real zoneId to key off) and the whole cloudflare shape a
+ * domain half that just finished would have written.
+ * @param {import('node:test').TestContext} t
+ * @param {string} siteId
+ * @param {string} dir
+ * @param {{ domain?: string, apiToken?: string } & Record<string, unknown>} [options] `domain`
+ *  and `apiToken` default to fixture values; any other key overrides the seeded cloudflare shape
+ * @returns {Promise<{ cloudflare: import('../../test/fake-cloudflare.mjs').FakeCloudflare,
+ *  zoneId: string, domain: string }>}
+ */
+async function seedDomainLiveSite(
+  t,
+  siteId,
+  dir,
+  { domain = 'email-half-test.example', apiToken = 'fake-token', ...cloudflareOverrides } = {},
+) {
+  const cloudflare = await setupCloudflare(t, { zoneStatus: 'active' });
+  const api = makeApi({ token: apiToken, accountId: 'acct-1', dir });
+  const created = await api.createZone(domain);
+  const zone = await api.getZone(created.id);
+  await seedLiveSite(siteId, dir, {
+    step: 'domain-live',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken,
+      domain,
+      zoneId: zone.id,
+      nameServers: zone.name_servers,
+      alreadyActive: true,
+      ...cloudflareOverrides,
+    },
+  });
+  return { cloudflare, zoneId: zone.id, domain };
+}
+
+/** A `failNext('email_send', ...)` body for the propagation refusal (spike amendment 1/2). */
+function sendingDisabledBody() {
+  return {
+    success: false,
+    errors: [{ code: SENDING_DISABLED_CODE, message: 'email.sending.error.email.sending_disabled' }],
+    messages: [],
+    result: null,
+  };
+}
+
+/** A `failNext('email_send', ...)` body for a daily-limit refusal (a derived fixture, per email.test.mjs). */
+function dailyLimitBody() {
+  return {
+    success: false,
+    errors: [{ code: 9999, message: 'email.sending.error.email.sending_daily_limit_exceeded' }],
+    messages: [],
+    result: null,
+  };
+}
+
 // --- Admission ----------------------------------------------------------------------------
 
+// The domain gate is answered yes; the email gate (the only other confirm this run reaches) is
+// declined, so this test stays focused on the domain admission without needing the email fake
+// routes or fixture at all.
 test('admission: interactive consent proceeds to ask for and save the domain', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
@@ -164,17 +266,16 @@ test('admission: interactive consent proceeds to ask for and save the domain', a
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    confirm: confirmAnswering(true),
+    confirm: confirmRouting({ domain: true, email: false }),
     text: async () => 'consented-domain.example',
     promptSecretFn: async () => 'pasted-token-value',
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
-  assert.equal(outcome.domain, 'consented-domain.example');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
 
   const state = await loadSite('site-consent');
-  assert.equal(state.step, 'domain-live');
+  assert.equal(state.step, 'paid-plan-declined');
   assert.equal(state.cloudflare.domain, 'consented-domain.example');
 
   const zoneCreates = cloudflare.requests.filter((r) => r.method === 'POST' && r.path === '/client/v4/zones');
@@ -254,6 +355,9 @@ function authoritativeResolve(domain) {
   };
 }
 
+// --yes with no --email declines the email half unattended (never committing an owner to a
+// subscription without asking), so this run is fully unattended end to end and lands on
+// paid-plan-declined rather than domain-live.
 test('admission: --yes --domain proceeds fully unattended, with no prompt ever called', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
@@ -278,11 +382,11 @@ test('admission: --yes --domain proceeds fully unattended, with no prompt ever c
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
-  assert.equal(outcome.domain, 'unattended-domain.example');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
 
   const state = await loadSite('site-unattended');
-  assert.equal(state.step, 'domain-live');
+  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal(state.cloudflare.domain, 'unattended-domain.example');
 });
 
 // The refusal this pins is the whole reason readCurrentRecords carries a confidence flag. A
@@ -480,7 +584,9 @@ test('resume: a record at records-carried never re-reads records', async (t) => 
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    confirm: confirmAnswering(true),
+    // The domain gate is already behind this record; the only confirm this run reaches is the
+    // email admission, declined here so this test stays about the DNS-record claim it names.
+    confirm: confirmAnswering(false),
     text: mustNotBeCalled('text'),
     resolve: () => {
       throw new Error('readCurrentRecords must not run again once records-carried is reached');
@@ -489,8 +595,9 @@ test('resume: a record at records-carried never re-reads records', async (t) => 
   });
 
   // alreadyActive short-circuits checkDelegation to 'active' with no NS lookup, so this reaches
-  // the cutover and finishes; the load-bearing proof is that `resolve` above was never called.
-  assert.equal(outcome.outcome, 'domain-live');
+  // the cutover and finishes, then declines email; the load-bearing proof is that `resolve`
+  // above was never called.
+  assert.equal(outcome.outcome, 'paid-plan-declined');
 
   const dnsCreatesAfterSeed = cloudflare.requests.filter(
     (r) => r.method === 'POST' && r.path.includes('/dns_records'),
@@ -531,12 +638,14 @@ test('resume: a record at delegated skips straight to the cutover', async (t) =>
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    confirm: mustNotBeCalled('confirm'),
+    // The domain gate is already behind this record; the only confirm this run reaches is the
+    // email admission, declined so this test stays about the cutover's own attach count.
+    confirm: confirmRouting({ email: false }),
     text: mustNotBeCalled('text'),
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
   const attachRequests = cloudflare.requests.filter((r) => r.path.includes('/workers/domains') && r.method === 'PUT');
   assert.equal(attachRequests.length, 1);
 });
@@ -585,7 +694,9 @@ test('records: an already-active zone skips the read and gate entirely, and pers
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    confirm: confirmAnswering(true),
+    // The domain gate is answered yes; the email gate (the only other confirm this run reaches)
+    // is declined, so this test stays focused on the already-active carry-over claim it names.
+    confirm: confirmRouting({ domain: true, email: false }),
     text: async () => 'already-active-domain.example',
     promptSecretFn: async () => 'pasted-token-value',
     // readCurrentRecords refuses to run once a domain is already delegated to Cloudflare (its
@@ -600,10 +711,10 @@ test('records: an already-active zone skips the read and gate entirely, and pers
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
 
   const state = await loadSite('site-already-active');
-  assert.equal(state.step, 'domain-live');
+  assert.equal(state.step, 'paid-plan-declined');
   assert.equal(state.cloudflare.carryOver.outcome, 'not-needed');
 
   const dnsWrites = cloudflare.requests.filter(
@@ -680,6 +791,11 @@ test('--dry-run prints every hop, with zero shell-outs and zero fake-API request
     'Wait for your domain to switch to Cloudflare',
     'Connect your domain to your site',
     'Finish connecting your domain',
+    'Turn on email sign-in',
+    'Onboard your domain for email',
+    'Send a test sign-in email',
+    'Update your sign-in email address',
+    'Finish setting up email',
   ];
   for (const title of titles) {
     assert.ok(logs.includes(title), `missing dry-run title: ${title}`);
@@ -691,12 +807,23 @@ test('--dry-run prints every hop, with zero shell-outs and zero fake-API request
 
 // --- Completion -------------------------------------------------------------------------------
 
+// Consenting to domain and email but running straight through would reach the chapter's real
+// finish line (email-live), which deletes the token as its own terminal-state rule: that would
+// prove nothing about domain-live specifically. So this test consents to email too, but arms the
+// fake to refuse the test send once (the propagation shape), which parks the run one hop further
+// than domain-live, at email-onboarded. That is a stronger proof than stopping exactly at
+// domain-live: the token survives PAST it as well. (A disabled onboarding entry cannot fake this
+// instead: the create always reports enabled immediately, spike amendment 3, and this run has not
+// created its own zone yet when the test starts, so there is no zoneId to pre-seed a disabled
+// entry under.)
 test('completion: domain-live is not terminal, so the token survives it on disk', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
-  await setupCloudflare(t, { zoneStatus: 'active' });
+  const cloudflare = await setupCloudflare(t, { zoneStatus: 'active' });
   await setupWrangler(t);
+  const domain = 'complete-me.example';
   await seedLiveSite('site-completion', dir);
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const logs = [];
@@ -708,20 +835,20 @@ test('completion: domain-live is not terminal, so the token survives it on disk'
     args: { yes: false },
     log: (line) => logs.push(line),
     dryRun: false,
-    confirm: confirmAnswering(true),
-    text: async () => 'complete-me.example',
+    confirm: confirmRouting({ domain: true, email: true }),
+    text: async () => domain,
     promptSecretFn: async () => 'complete-me-token',
     fetchImpl: alwaysMatchingFetch(),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
+  assert.equal(outcome.outcome, 'email-sender-propagating');
 
   const state = await loadSite('site-completion');
-  assert.equal(state.step, 'domain-live');
+  assert.equal(state.step, 'email-onboarded', 'domain-live is not terminal, so a later park must not revert past it');
   assert.equal(typeof state.cloudflare.apiToken, 'string');
   assert.ok(state.cloudflare.apiToken.length > 0, 'the pasted token must survive domain-live');
 
-  assert.ok(logs.some((line) => line.includes('complete-me.example') && line.includes('/admin')));
+  assert.ok(logs.some((line) => line.includes(domain) && line.includes('/admin')));
 });
 
 test('completion: a synthesized terminal state deletes the token, on both re-read and raw bytes', async (t) => {
@@ -800,16 +927,666 @@ test('completion: re-entry at domain-live re-runs ensureApiToken', async (t) => 
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    confirm: mustNotBeCalled('confirm'),
+    // The domain gate is already behind this record; the only confirm this run reaches is the
+    // email admission, declined so this test stays about the token re-validation it names.
+    confirm: confirmRouting({ email: false }),
     text: mustNotBeCalled('text'),
     promptSecretFn: mustNotBeCalled('promptSecretFn'),
   });
 
-  assert.equal(outcome.outcome, 'domain-live');
-  assert.equal(outcome.domain, 'reentry-test.example');
+  assert.equal(outcome.outcome, 'paid-plan-declined');
+
+  const state = await loadSite('site-reentry');
+  assert.equal(state.cloudflare.domain, 'reentry-test.example', 'the seeded domain must survive the decline');
 
   const zoneListCalls = cloudflare.requests
     .slice(requestsBefore)
     .filter((r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones'));
   assert.equal(zoneListCalls.length, 1, 'ensureApiToken must have validated the saved token again');
+});
+
+// --- Email admission (Task 8, Step 1) --------------------------------------------------------
+
+test('email admission: interactive consent proceeds into onboarding', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const { cloudflare, zoneId } = await seedDomainLiveSite(t, 'site-email-consent', dir);
+  await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-consent',
+    record: await loadSite('site-email-consent'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysMatchingFetch(),
+  });
+
+  const onboardingReads = cloudflare.requests.filter(
+    (r) => r.method === 'GET' && r.path.startsWith(`/client/v4/zones/${zoneId}/email/sending/subdomains`),
+  );
+  assert.equal(onboardingReads.length, 1, 'consent must proceed into the onboarding read');
+});
+
+test('email admission: a decline records, deletes the token, exits 0, and prints the --sign-in line', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedDomainLiveSite(t, 'site-email-decline', dir);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-decline',
+    record: await loadSite('site-email-decline'),
+    dir,
+    args: { yes: false },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: confirmRouting({ email: false }),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(outcome.outcome, 'paid-plan-declined');
+
+  const state = await loadSite('site-email-decline');
+  assert.equal(state.step, 'paid-plan-declined');
+  assert.equal('apiToken' in state.cloudflare, false, 'the token must be deleted on decline');
+  assert.ok(logs.some((line) => line.includes('--sign-in')));
+});
+
+test('email admission: a re-run after a decline prints the re-offered copy', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedLiveSite('site-email-reoffer', dir, {
+    step: 'paid-plan-declined',
+    cloudflare: { emailDeclinedAt: new Date().toISOString() },
+  });
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-reoffer',
+    record: await loadSite('site-email-reoffer'),
+    dir,
+    args: { yes: true },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.ok(logs.some((line) => line.includes('chose again')), 'a re-run must print the reoffered copy, not the first-decline copy');
+});
+
+test('email admission: --yes without --email declines and names the flag', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedDomainLiveSite(t, 'site-email-yes-noflag', dir);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-yes-noflag',
+    record: await loadSite('site-email-yes-noflag'),
+    dir,
+    args: { yes: true },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.ok(logs.some((line) => line.includes('--email')), 'the skip message must name --email');
+});
+
+test('email admission: --yes with --email proceeds unattended, with no prompt ever called', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const { cloudflare, zoneId } = await seedDomainLiveSite(t, 'site-email-yes-flag', dir);
+  await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-yes-flag',
+    record: await loadSite('site-email-yes-flag'),
+    dir,
+    args: { yes: true, email: true },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  const onboardingReads = cloudflare.requests.filter(
+    (r) => r.method === 'GET' && r.path.startsWith(`/client/v4/zones/${zoneId}/email/sending/subdomains`),
+  );
+  assert.equal(onboardingReads.length, 1, 'an unattended opt-in must proceed into onboarding with no prompt');
+});
+
+// --- Email hop order and resume (Task 8, Step 2) ---------------------------------------------
+
+test('email hop order: a record at domain-live runs the whole half, test send before rewrite', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const { domain } = await seedDomainLiveSite(t, 'site-email-wholehalf', dir);
+  const wrangler = await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-wholehalf',
+    record: await loadSite('site-email-wholehalf'),
+    dir,
+    args: { yes: false },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysMatchingFetch(),
+  });
+
+  assert.equal(outcome.outcome, 'email-live');
+
+  const state = await loadSite('site-email-wholehalf');
+  assert.equal(state.step, 'email-live');
+  assert.equal(state.cloudflare.emailFrom, `no-reply@${domain}`);
+
+  const sendIndex = logs.indexOf('Send a test sign-in email');
+  const rewriteIndex = logs.indexOf('Update your sign-in email address');
+  assert.ok(sendIndex !== -1 && rewriteIndex !== -1, 'both hop titles must have printed');
+  assert.ok(sendIndex < rewriteIndex, 'the test send must print before the address rewrite');
+
+  const deploys = (await wrangler.invocations()).filter((inv) => inv.argv.includes('deploy'));
+  assert.equal(deploys.length, 1, 'exactly one deploy for the email address rewrite');
+});
+
+test('email hop order: a record at email-onboarded skips onboarding and starts at the test send', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t, { zoneStatus: 'active' });
+  await setupWrangler(t);
+  const domain = 'already-onboarded.example';
+  await seedLiveSite('site-email-skiponboard', dir, {
+    step: 'email-onboarded',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: 'fake-token',
+      domain,
+      alreadyActive: true,
+      emailOnboardedAt: new Date().toISOString(),
+    },
+  });
+
+  const requestsBefore = cloudflare.requests.length;
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-skiponboard',
+    record: await loadSite('site-email-skiponboard'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysMatchingFetch(),
+  });
+
+  assert.equal(outcome.outcome, 'email-live');
+
+  const onboardingCalls = cloudflare.requests
+    .slice(requestsBefore)
+    .filter((r) => r.path.includes('/email/sending/subdomains'));
+  assert.equal(
+    onboardingCalls.length,
+    0,
+    'a record already at email-onboarded must not re-read or re-create the sending subdomain',
+  );
+});
+
+test('email hop order: an onboarding park exits 0 and a resume issues no repeated create', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const { cloudflare, zoneId, domain } = await seedDomainLiveSite(t, 'site-email-onboardpark', dir);
+  // The apex exists but has not finished enabling yet, so the onboarding hop parks rather than
+  // posting a create, which would onboard it a second time.
+  cloudflare.state.emailSubdomains.set(zoneId, [{ name: domain, enabled: false }]);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const firstOutcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-onboardpark',
+    record: await loadSite('site-email-onboardpark'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(firstOutcome.outcome, 'email-not-ready');
+  const parkedState = await loadSite('site-email-onboardpark');
+  assert.equal(parkedState.step, 'domain-live', 'a park must not advance the saved step');
+  assert.equal(typeof parkedState.cloudflare.apiToken, 'string', 'a park is not terminal, so the token must survive');
+
+  const requestsBeforeResume = cloudflare.requests.length;
+
+  // The record has not advanced past domain-live, so the admission gate (indexed on the same
+  // step) is genuinely re-asked on resume; this is distinct from the writes-repeated question the
+  // assertion below checks.
+  const secondOutcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-onboardpark',
+    record: parkedState,
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(secondOutcome.outcome, 'email-not-ready', 'the fake still reports the entry disabled');
+
+  const since = cloudflare.requests.slice(requestsBeforeResume);
+  const creates = since.filter((r) => r.method === 'POST' && r.path.includes('/email/sending/subdomains'));
+  assert.equal(creates.length, 0, 'a resume must not post a second create for an entry that already exists');
+});
+
+test('email hop order: a test-send propagation park exits 0 and a resume repeats only the send', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const wrangler = await setupWrangler(t);
+  const domain = 'propagating-test.example';
+  await seedLiveSite('site-email-sendpark', dir, {
+    step: 'email-onboarded',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: 'fake-token',
+      domain,
+      alreadyActive: true,
+      emailOnboardedAt: new Date().toISOString(),
+    },
+  });
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const firstOutcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-sendpark',
+    record: await loadSite('site-email-sendpark'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(firstOutcome.outcome, 'email-sender-propagating');
+  const parkedState = await loadSite('site-email-sendpark');
+  assert.equal(parkedState.step, 'email-onboarded');
+  assert.equal(typeof parkedState.cloudflare.apiToken, 'string', 'a park is not terminal, so the token must survive');
+
+  const requestsBeforeResume = cloudflare.requests.length;
+
+  // No failNext armed this time, so the fake's own default (success) answers, proving the resume
+  // retries the send for real rather than reusing the first parked answer.
+  const secondOutcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-sendpark',
+    record: parkedState,
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(secondOutcome.outcome, 'email-live');
+
+  const since = cloudflare.requests.slice(requestsBeforeResume);
+  const sendCalls = since.filter((r) => r.method === 'POST' && r.path.includes('/email/sending/send'));
+  assert.equal(sendCalls.length, 1, 'a resume repeats the test send exactly once, by design');
+  const onboardingCalls = since.filter((r) => r.path.includes('/email/sending/subdomains'));
+  assert.equal(onboardingCalls.length, 0, 'a resume at email-onboarded must not repeat the onboarding read or create');
+
+  const deploys = (await wrangler.invocations()).filter((inv) => inv.argv.includes('deploy'));
+  assert.equal(deploys.length, 1, 'the resumed run must still deploy the rewritten address exactly once');
+});
+
+test('email hop order: the deploy is skipped when the sender address is already correct', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const domain = 'already-correct.example';
+  // Pre-write the exact address writeEmailFrom would otherwise write, so its own skip-when-
+  // correct guard fires and no build or deploy ever runs.
+  await writeFile(
+    path.join(dir, 'src', 'theme', 'cairn.config.ts'),
+    `export default {\n  email: { from: 'no-reply@${domain}' },\n};\n`,
+  );
+  await setupCloudflare(t);
+  const wrangler = await setupWrangler(t);
+  await seedLiveSite('site-email-nodeploy', dir, {
+    step: 'email-onboarded',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: 'fake-token',
+      domain,
+      alreadyActive: true,
+      emailOnboardedAt: new Date().toISOString(),
+    },
+  });
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-nodeploy',
+    record: await loadSite('site-email-nodeploy'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(outcome.outcome, 'email-live');
+  const invocations = await wrangler.invocations();
+  assert.equal(
+    invocations.filter((inv) => inv.argv.includes('deploy')).length,
+    0,
+    'the address was already correct, so no deploy should have run',
+  );
+  assert.equal(
+    invocations.filter((inv) => inv.argv.includes('build')).length,
+    0,
+    'the address was already correct, so no build should have run either',
+  );
+});
+
+// --- Email terminal-state token rule (Task 8, Step 3) -----------------------------------------
+
+test('email terminal state: reaching email-live deletes the token from the re-read record, the raw bytes, and keeps the file 0600', async (t) => {
+  await freshStateDir(t);
+  const stateDir = process.env.CAIRN_STATE_DIR;
+  const dir = await fixtureScaffoldDir(t);
+  const plantedToken = 'planted-email-live-token-8f2a91c0';
+  await seedDomainLiveSite(t, 'site-email-terminal-live', dir, { apiToken: plantedToken });
+  await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-terminal-live',
+    record: await loadSite('site-email-terminal-live'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysMatchingFetch(),
+  });
+
+  assert.equal(outcome.outcome, 'email-live');
+
+  const state = await loadSite('site-email-terminal-live');
+  assert.equal('apiToken' in state.cloudflare, false, 'the token must be gone from the re-read record');
+
+  const rawFile = await readFile(path.join(stateDir, 'site-email-terminal-live.json'), 'utf8');
+  assert.doesNotMatch(rawFile, new RegExp(plantedToken), 'the raw bytes must not carry the token either');
+  // Falsifiable: the same regex against a haystack that DOES carry the planted token must match.
+  assert.match(`${rawFile}\n${plantedToken}`, new RegExp(plantedToken));
+
+  const mode = (await stat(path.join(stateDir, 'site-email-terminal-live.json'))).mode & 0o777;
+  assert.equal(mode, 0o600);
+});
+
+test('email terminal state: a recorded decline deletes the token from the re-read record, the raw bytes, and keeps the file 0600', async (t) => {
+  await freshStateDir(t);
+  const stateDir = process.env.CAIRN_STATE_DIR;
+  const dir = await fixtureScaffoldDir(t);
+  const plantedToken = 'planted-decline-token-3c71e05a';
+  await seedDomainLiveSite(t, 'site-email-terminal-decline', dir, { apiToken: plantedToken });
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-terminal-decline',
+    record: await loadSite('site-email-terminal-decline'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: confirmRouting({ email: false }),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(outcome.outcome, 'paid-plan-declined');
+
+  const state = await loadSite('site-email-terminal-decline');
+  assert.equal('apiToken' in state.cloudflare, false, 'the token must be gone from the re-read record');
+
+  const rawFile = await readFile(path.join(stateDir, 'site-email-terminal-decline.json'), 'utf8');
+  assert.doesNotMatch(rawFile, new RegExp(plantedToken), 'the raw bytes must not carry the token either');
+  assert.match(`${rawFile}\n${plantedToken}`, new RegExp(plantedToken));
+
+  const mode = (await stat(path.join(stateDir, 'site-email-terminal-decline.json'))).mode & 0o777;
+  assert.equal(mode, 0o600);
+});
+
+test('email terminal state: a park at email-onboarded keeps the token', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const domain = 'park-keeps-token.example';
+  const plantedToken = 'planted-park-token-9d24f6b1';
+  await seedLiveSite('site-email-park-keeps-token', dir, {
+    step: 'email-onboarded',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: plantedToken,
+      domain,
+      alreadyActive: true,
+      emailOnboardedAt: new Date().toISOString(),
+    },
+  });
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-park-keeps-token',
+    record: await loadSite('site-email-park-keeps-token'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(outcome.outcome, 'email-sender-propagating');
+
+  const state = await loadSite('site-email-park-keeps-token');
+  assert.equal(state.cloudflare.apiToken, plantedToken, 'a park at email-onboarded must keep the token');
+});
+
+// --- Email closing copy (Task 8, Step 4) -------------------------------------------------------
+
+test('email closing copy: names the from-address, its override, the DMARC consequence, and the doctor command', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const { domain } = await seedDomainLiveSite(t, 'site-email-closing-copy', dir);
+  await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-email-closing-copy',
+    record: await loadSite('site-email-closing-copy'),
+    dir,
+    args: { yes: false },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysMatchingFetch(),
+  });
+
+  assert.equal(outcome.outcome, 'email-live');
+  const closing = logs.find((line) => line.includes('cairn-doctor'));
+  assert.ok(closing, 'expected a closing message naming the doctor command');
+  assert.match(closing, new RegExp(`no-reply@${domain}`), 'must name the from-address');
+  assert.match(closing, /cairn\.config\.ts/, 'must name the one-line override file');
+  assert.match(closing, /_dmarc\./, 'must name the DMARC record');
+  assert.match(closing, /reject/i, 'must name the record\'s policy');
+  assert.match(closing, /newsletter/, 'must name the consequence for a later newsletter tool');
+  assert.match(closing, /turn Email Sending off again/, 'must say the record outlives turning Email Sending back off (amendment 9)');
+  assert.match(closing, /cairn-doctor --from .* --send-test/, 'must name the doctor re-proof command');
+});
+
+// --- Amendment 13: sendTestMessage's dir-less rows are rebuilt with a real --dir before printing
+
+test('amendment 13: email-sender-propagating carries the real --dir, never the string undefined', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const domain = 'amendment13-propagating.example';
+  await seedLiveSite('site-a13-propagating', dir, {
+    step: 'email-onboarded',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: 'fake-token',
+      domain,
+      alreadyActive: true,
+      emailOnboardedAt: new Date().toISOString(),
+    },
+  });
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-a13-propagating',
+    record: await loadSite('site-a13-propagating'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(outcome.outcome, 'email-sender-propagating');
+  assert.doesNotMatch(outcome.message, /undefined/);
+  assert.ok(outcome.message.includes(`--dir ${dir}`), `expected the real --dir in: ${outcome.message}`);
+});
+
+test('amendment 13: email-daily-limit carries the real --dir, never the string undefined', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const domain = 'amendment13-dailylimit.example';
+  await seedLiveSite('site-a13-dailylimit', dir, {
+    step: 'email-onboarded',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: 'fake-token',
+      domain,
+      alreadyActive: true,
+      emailOnboardedAt: new Date().toISOString(),
+    },
+  });
+  cloudflare.failNext('email_send', 429, dailyLimitBody());
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-a13-dailylimit',
+    record: await loadSite('site-a13-dailylimit'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+  });
+
+  assert.equal(outcome.outcome, 'email-daily-limit');
+  assert.doesNotMatch(outcome.message, /undefined/);
+  assert.ok(outcome.message.includes(`--dir ${dir}`), `expected the real --dir in: ${outcome.message}`);
+});
+
+test('amendment 13: email-sender-unavailable carries the real --dir, never the string undefined', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const domain = 'amendment13-unavailable.example';
+  await seedLiveSite('site-a13-unavailable', dir, {
+    step: 'email-onboarded',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: 'fake-token',
+      domain,
+      alreadyActive: true,
+      // Well past PROPAGATION_WINDOW_MS, so classification falls to the "did not take" row.
+      emailOnboardedAt: new Date(0).toISOString(),
+    },
+  });
+  cloudflare.failNext('email_send', 403, sendingDisabledBody());
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  await assert.rejects(
+    async () =>
+      runChapter2({
+        openBrowser: neverOpensBrowser,
+        siteId: 'site-a13-unavailable',
+        record: await loadSite('site-a13-unavailable'),
+        dir,
+        args: { yes: false },
+        log: () => {},
+        dryRun: false,
+        confirm: mustNotBeCalled('confirm'),
+        text: mustNotBeCalled('text'),
+      }),
+    (err) => {
+      assert.doesNotMatch(err.message, /undefined/);
+      assert.ok(err.message.includes(`--dir ${dir}`), `expected the real --dir in: ${err.message}`);
+      assert.ok(err.message.includes(domain), `expected the real domain in: ${err.message}`);
+      return true;
+    },
+  );
 });

@@ -650,19 +650,19 @@ boundary) carries over.
   `docs/STATUS.md`, this plan (post-mortem), `docs/internal/docs-friction-log.md`
   (triage check), the admin track's domain page
 
-- [ ] **Step 1: README**: `--domain`'s two roles, the park-and-resume story, the token's
+- [x] **Step 1: README**: `--domain`'s two roles, the park-and-resume story, the token's
   lifecycle (prefilled, pasted, deleted; env var for unattended), the honest-DNS caveat.
-- [ ] **Step 2: CHANGELOG** under `## Unreleased`; `Consumers must: nothing` (tool
+- [x] **Step 2: CHANGELOG** under `## Unreleased`; `Consumers must: nothing` (tool
   unpublished, engine untouched).
-- [ ] **Step 3: The admin track's domain page**, stating the chapter's browser-moment
+- [x] **Step 3: The admin track's domain page**, stating the chapter's browser-moment
   count as the e2e measured it.
-- [ ] **Step 4: ROADMAP**: the three-pass cut recorded where the create-cairn-site item
+- [x] **Step 4: ROADMAP**: the three-pass cut recorded where the create-cairn-site item
   lives (T4a done in place, T4b and T5 current; T4c added); the superseded two-pass
   split removed.
-- [ ] **Step 5: Doc gates by name**: `check:reference`, `check:reference:signatures`,
+- [x] **Step 5: Doc gates by name**: `check:reference`, `check:reference:signatures`,
   `check:docs`, `check:package`; `check:snippets` only if a fenced block under
   `docs/guides` or `docs/reference` was touched.
-- [ ] **Step 6: Pass-end ritual** per `cairn-pass`: code-simplifier over the pass's
+- [x] **Step 6: Pass-end ritual** per `cairn-pass`: code-simplifier over the pass's
   files; root `npm run check` 0/0; root `npm test` exit 0; `check:comments`;
   `check:surface` (no engine change expected; a flag is a leak to understand); push,
   PR, re-derive the CI workflow list with `grep -l pull_request`, confirm green; append
@@ -928,3 +928,23 @@ should state.
 - An externally registered domain still owes the branches listed in divergence 1.
 - One hand step for Geoff: delete the run's GitHub App `cairn-t4a-live-596b84` at github.com, and
   revoke the Cloudflare API token minted for this run.
+
+### Task 14 note: the plan's own roadmap instruction was stale
+
+Step 4 asked for "the three-pass cut" with "the superseded two-pass split removed". Both numbers
+were out of date by the time the step ran. The roadmap already held a FIVE-pass cut, because the
+console had been split out as its own pass T4d after this plan's Step 4 was written. Dispatching
+Step 4 on the plan's wording collapsed T4d back into T4b and deleted the ruling that separated
+them; caught in diff review and restored.
+
+The end state is T4a done, with four passes remaining: T4b (email and money), T4c (Builds connect
+and reconciliation), T4d (the localhost console), T5 (the browser door).
+
+Worth recording because the failure was structural, not careless. A plan's task text is written
+once and then ages against decisions taken after it, so a Task 14 instruction that names a
+concrete document state is a claim to verify rather than an instruction to follow. The dispatch
+repeated the stale claim as fact, and the agent did the right thing by checking the file and
+saying the two disagreed.
+
+Step 3's target did not exist at all: the admin track ships in Pass D, so the browser-moment count
+is recorded in the post-mortem and STATUS for Pass D to consume.

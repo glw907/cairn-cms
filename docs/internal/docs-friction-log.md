@@ -357,3 +357,11 @@ line.
   messages still leak raw HTTP verbs and status codes into admin-facing copy; and `bin.mjs` has
   no test file, so its resume wiring is proven only by the T2 live e2e. Triage when T3 touches
   these files.
+
+  **Trigger fired and was not acted on (noted 2026-08-12).** T3 shipped, and T4a's Task 11 edited
+  `bin.mjs` directly, so the condition this entry waits on has passed twice. The `bin.mjs` half is
+  now partly retired: T4a added spawned dispatcher tests covering the chapter-2 resume paths, so
+  its resume wiring is no longer proven by a live e2e alone. The rest stands unverified. A
+  trigger phrased against a pass that has already shipped cannot fire again, which is the weakness
+  this file's own header warns about; the next pass touching `src/github/` owns re-triaging the
+  remainder or deleting what is no longer true.

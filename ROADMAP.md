@@ -77,16 +77,14 @@ Readiness checklist:
   bucket from an id-less config, moves the GitHub App's key out of local state into a Worker
   secret, and seeds a bootstrap sign-in so the first login is one click with no email. It also
   writes the App's real identity into the scaffold before the push, so the repository is born able
-  to publish. **The remaining charge is cut into five passes** (cut 2026-08-11 at the T4a sitting
-  after an adversarial review of the first cut's arithmetic, then split again the same day when
-  T4b's research showed the console did not belong with email): **T4a** is the domain half of
-  chapter 2 (token-prefill, zone and DNS behind the MX-preserving carry-over gate, delegation
-  park-and-resume, the custom-hostname cutover), **its offline half landed and its live half
-  blocked on a zone-create token and a scratch domain**; **T4b** is email plus the money framing;
-  **T4c** is Workers Builds connect plus deploy-config reconciliation; **T4d** is the localhost
-  console; **T5** is the browser door (the public template repo, the Deploy button, C3
-  `--template` compatibility). Pass D follows T5, and the tool and template publish in the same
-  cut as release one.
+  to publish. **Pass T4a is complete**: the domain half of chapter 2, token-prefill, zone create
+  or adopt, the DNS carry-over gate that preserves MX priority, nameserver delegation with
+  park-and-resume, and a rollback-safe custom-hostname cutover, proven end to end against a live
+  scratch domain. **The remaining charge is four passes**: **T4b** is email plus the money
+  framing; **T4c** is Workers Builds connect plus deploy-config reconciliation, including the
+  silent `PUBLIC_ORIGIN` reconciliation defect; **T4d** is the localhost console; **T5** is the
+  browser door (the public template repo, the Deploy button, C3 `--template` compatibility). Pass
+  D follows T5, and the tool and template publish in the same cut as release one.
 
   **Why the console is its own pass** (Geoff, 2026-08-11): it was bundled with email because the
   email chapter was assumed to have a long wait worth watching, and the research found that
@@ -99,6 +97,7 @@ Readiness checklist:
   [`docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`](docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md),
   and the banked research behind the split is
   [`docs/internal/2026-08-11-t4b-email-console-cost-research.md`](docs/internal/2026-08-11-t4b-email-console-cost-research.md).
+
   **The baseline walk is recorded** at
   [`docs/internal/2026-08-unagented-setup-baseline.md`](docs/internal/2026-08-unagented-setup-baseline.md).
   It measured the path no one had measured, the tutorial's `wrangler`-plus-dashboard setup walked cold,

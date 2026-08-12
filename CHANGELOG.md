@@ -84,6 +84,21 @@
   and `--dry-run` still prints the whole chapter while spawning nothing. Consumers must: nothing
   (the tool is unpublished; no engine surface changed).
 
+  A domain chapter now follows the Cloudflare one and connects a scaffolded site to an owner's own
+  domain. It creates a Cloudflare zone for the domain, or adopts one the account already holds, and
+  offers to copy the domain's current DNS records into it behind a carry-over gate that writes
+  nothing until confirmed and preserves MX priority intact. Nameserver delegation parks: the tool
+  exits `0`, prints the assigned nameservers and the exact command to run again, and a resumed run
+  re-detects delegation through pending, propagating, and active. The cutover attaches a Workers
+  Custom Domain, confirms the site answers on the new hostname before touching anything else, and
+  restores the site's own address to `workers.dev` if the closing redeploy fails. A new `--domain
+  <name>` flag both supplies the domain and opts into the chapter; `--yes` alone skips it with a
+  hint. The chapter's one credential is a Cloudflare API token, prefilled with the permissions it
+  needs. It lives only in the site's local `0600` state record, never lands in the project
+  directory or on the command line, and is deleted once the chapter, email included, reaches a
+  state with nothing left to do with it. Consumers must: nothing, since the tool is unpublished
+  and the engine's runtime library is untouched by this pass.
+
 - Every entry gains a publish history and a revert-as-draft: the `history` admin view
   (`/admin/<concept>/<id>/history`), reachable from the edit screen's overflow menu, lists the
   entry's most recent 25 publishes off `Backend`'s new `listCommits(path, ref, limit)` member (a

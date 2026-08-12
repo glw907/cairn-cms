@@ -143,6 +143,68 @@ deploy picks up at the key move rather than deploying again, and one interrupted
 re-runs the deploy, which is safe: Cloudflare binds the databases and bucket by name, so a second
 deploy finds what the first one made instead of creating more.
 
+## The domain chapter
+
+Once your site is live, the command offers to connect it to a domain you own. This step is
+interactive by default: it asks whether you want to connect one, and if so, which. `--domain
+<name>` answers both at once, supplying the domain and skipping the prompts. Pair it with
+`--yes` for a fully unattended run. `--yes` alone, with no `--domain`, skips this chapter and
+prints a hint instead of guessing at a domain for you.
+
+### What it does, and what it costs
+
+The chapter creates a Cloudflare zone for your domain, or adopts one your account already holds.
+It offers to copy the domain's current DNS records into that zone, then waits for you to point
+your registrar's nameservers at Cloudflare. Once delegation takes effect, it connects the domain
+to your site and switches your site's own address over to it. Cloudflare's free plan covers every
+step, and the tool never asks for a payment method.
+
+### The API token
+
+The chapter opens your browser once, to Cloudflare's create-token page with the permissions it
+needs already selected. Paste the token back at the prompt and the tool takes it from there. The
+token lives only in the site's local state record, at mode `0600`, and is never written into the
+project directory or passed on the command line.
+
+An unattended run supplies the token through the `CAIRN_CF_API_TOKEN` environment variable
+instead of the prompt. A token-shaped value on the command line is refused, with a message naming
+that variable.
+
+The token stays on disk through the domain going live, because the email chapter that follows
+reuses it. It is deleted only once the chapter reaches its terminal state, which arrives with
+that later chapter.
+
+### The honest-DNS caveat
+
+DNS has no command that lists every record a domain has. The records the copy step shows you
+come from a fixed list of probes: the common addresses, mail records, and a handful of known
+authentication and verification names. That list can miss records the probe never thought to ask
+about, and on a domain that answers wildcard subdomains it can also show records you never
+created. Check it against what you know before confirming it.
+
+### Already at Cloudflare
+
+If your domain's nameservers already point at Cloudflare, for example a domain registered
+through Cloudflare Registrar, the zone arrives active. There is nothing to copy, and the chapter
+says so and moves on.
+
+### Waiting is normal
+
+Three points in this chapter wait on something outside the tool: the nameserver switch taking
+effect at your registrar, the new records propagating across the DNS, and the certificate for
+your domain finishing issuance. Each is a normal outcome, not a failure. The command exits `0`,
+prints what it is waiting for, and gives you the exact command to run again. Running it picks up
+exactly where it stopped.
+
+Your site keeps answering at its `workers.dev` address the whole time, including after the switch
+to your own domain completes.
+
+### Flags
+
+| Flag | Effect |
+| --- | --- |
+| `--domain` | The domain to connect, and your opt-in to this chapter. Pair with `--yes` for a fully unattended run. |
+
 ## Running the site
 
 ```
@@ -157,13 +219,15 @@ own `dev` script turns the stand-in on, so no environment variable is needed.
 
 ## Status
 
-The local scaffold, the GitHub chapter, and the Cloudflare chapter all exist today, so the
-command takes a site from nothing to live on `workers.dev` with you signed in to its admin. What
-it does not do yet is the second half of going live: your own domain, and email so people other
-than you can be invited to edit. Those arrive in a later release.
+The local scaffold, the GitHub chapter, the Cloudflare chapter, and the domain chapter all exist
+today, so the command takes a site from nothing to live on a domain you own, with you signed in
+to its admin. What it does not do yet is invite editors other than you, which needs email and
+arrives in a later release.
 
 Scaffolding writes nothing outside the site directory except one record of the site under
 `~/.config/cairn/sites/`, mode `0600`. No secret is ever written into the project. The App's
 private key lives in that record only until the Worker exists, and then only in the Worker; the
 record itself is not secret-free even after that move, since it still carries the App's client
-secret and webhook secret, which this tool never relocates anywhere else.
+secret and webhook secret, which this tool never relocates anywhere else. The domain chapter's
+Cloudflare API token lives in that same record for as long as a later chapter still needs it, and
+is deleted once the chapter reaches a state with nothing left to do with it.

@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-11: T4a is DONE, live-proven; next is the T4b planning sitting)
+## Immediate next action (2026-08-12: T4a is DONE and live-proven; next is EXECUTING T4b)
 
 **Pass T4a is complete. Chapter 2 ran end to end against the real scratch domain
 `carin-test.org` and reached `domain-live`,** on branch `t4a-domain-chapter` (worktree
@@ -29,9 +29,29 @@ Registrar died at the second hop with an uncatalogued, developer-facing exceptio
 `f4a3d3a6` with the coverage gap closed. Every gate had been green, because no fixture ran an
 already-active zone through that hop.
 
-**Next: the T4b planning sitting** (email + the console + the money framing). Its brief rides at
-the end of the T4a spec. T4b needs **Workers Paid**. Queue: T4b -> T4c (Builds connect +
-reconciliation) -> T5 -> Pass D -> release one -> site walk -> P.
+**Next: EXECUTE Pass T4b (email + the money framing). Its spec and plan are already approved and
+committed**, so no planning sitting is owed: `docs/superpowers/plans/2026-08-11-create-cairn-site-t4b.md`
+and `docs/superpowers/specs/2026-08-11-create-cairn-site-t4b-design.md`. Ten tasks, eight
+dispatchable. **Task 1 is a spike that runs in the main loop and needs one browser sitting with
+Geoff**, and it gates Tasks 4, 5, and 7; its Step 2 confirms the account's Workers Paid status,
+which the whole pass depends on because Email Sending reaches arbitrary recipients only there.
+Task 9's live e2e needs the scratch domain and a real inbox.
+
+**Resume prompt for the next session** (a fresh Opus session; launch directory
+`~/Projects/cairn-cms`): "Execute Pass T4b of the create-cairn-site umbrella (email and the money
+framing): `docs/superpowers/plans/2026-08-11-create-cairn-site-t4b.md`. Start with the cairn-pass
+skill; read the plan in full and its spec first, plus the T4a plan's post-mortem part three for
+what the live e2e learned. Task 1 (the spike) runs in the main loop before any dispatch and needs
+one browser sitting with Geoff. Work on the existing `t4a-domain-chapter` branch or a fresh
+worktree off it, since T4a is committed but NOT merged and has no PR."
+
+Queue after T4b: T4c (Builds connect + reconciliation) -> T4d (the localhost console) -> T5 ->
+Pass D -> release one -> site walk -> P.
+
+**Branch topology matters for the next session.** T4a is committed on `t4a-domain-chapter`
+(worktree `.claude/worktrees/t3-cloudflare-chapter`, branched off `main` at `1415f48e`) and is
+neither pushed nor merged, so a cold session that branches off `main` by default would build
+against an engine and a tool that lack chapter 2 entirely.
 
 **Two hand steps for Geoff, both outstanding:** delete the run's GitHub App
 `cairn-t4a-live-596b84` at github.com, and revoke the Cloudflare API token minted for the run

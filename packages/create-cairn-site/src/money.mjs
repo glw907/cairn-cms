@@ -10,8 +10,13 @@
 const AS_OF = 'as of 2026-08-11';
 /** Cloudflare's own Workers pricing page, backing the $5 Workers Paid figure. */
 const WORKERS_PRICING_URL = 'https://developers.cloudflare.com/workers/platform/pricing/';
-/** Cloudflare's own Registrar page, backing the domain-registration range. */
-const REGISTRAR_URL = 'https://developers.cloudflare.com/registrar/';
+/**
+ * Cloudflare's Registrar product page, which states the at-cost policy. Cloudflare publishes no
+ * static price list anywhere, in docs or on the marketing site, because a domain's price is set
+ * by its registry and is shown at purchase time. So this link backs the reason the range below
+ * holds, which is that Cloudflare adds no markup, and never the range itself.
+ */
+const REGISTRAR_URL = 'https://www.cloudflare.com/products/registrar/';
 
 /**
  * Build the cost preamble: the four things an owner needs to know about money before starting,
@@ -24,8 +29,10 @@ export function costPreamble() {
     '',
     'Building and running this site is free, and stays free.',
     '',
-    'A domain name costs roughly $10 to $15 a year. You pay that to a registrar, not to ' +
-      `Cloudflare, and it costs that from anyone (${AS_OF}, ${REGISTRAR_URL}).`,
+    'A domain name costs roughly $10 to $15 a year for the common endings. You pay that to a ' +
+      'registrar, not to Cloudflare, and it costs about that from anyone. Cloudflare sells ' +
+      `domains at cost, and shows you the exact price before you pay (${AS_OF}, ` +
+      `${REGISTRAR_URL}).`,
     '',
     "Cloudflare's Workers Paid plan costs $5 US per month. It is what sends sign-in email, so " +
       'it is needed once anyone other than you signs in, and it is billed once per account, ' +

@@ -544,7 +544,7 @@ const ROWS = {
         'Cloudflare would not onboard your domain for email, because this account is not on ' +
         'the Workers Paid plan, which Email Sending requires. Workers Paid costs $5 US per ' +
         'month, as of 2026-08-11 ' +
-        '(https://developers.cloudflare.com/email-service/platform/pricing/). Your site is ' +
+        '(https://developers.cloudflare.com/workers/platform/pricing/). Your site is ' +
         'untouched and still working.\n' +
         'Next: open https://dash.cloudflare.com/?to=/:account/workers-and-pages, turn on the ' +
         `Workers Paid plan, then re-run npx create-cairn-site --dir ${params.dir}.`

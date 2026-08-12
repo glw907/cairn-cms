@@ -12,7 +12,7 @@ import { collectAnswers } from './src/prompts.mjs';
 import { scaffold, handoverText, dryRunNotice } from './src/scaffold.mjs';
 import { runGithubChapter } from './src/github/chapter.mjs';
 import { runCloudflareChapter } from './src/cloudflare/chapter.mjs';
-import { runChapter2 } from './src/cloudflare/chapter2.mjs';
+import { runChapter2, TERMINAL_STEPS } from './src/cloudflare/chapter2.mjs';
 import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './src/cloudflare/bootstrap.mjs';
 import { printCostPreamble } from './src/money.mjs';
 import { loadSite, updateSite, findSiteByDir, retireSite } from './src/state.mjs';
@@ -32,21 +32,24 @@ const CLOUDFLARE_RESUMABLE_STEPS = ['pushed', 'deployed'];
  * Every step a resumed run can still finish chapter 2 from, entering it directly and skipping
  * both `runGithubChapter` and chapter 1's `runCloudflareChapter` entirely: there is no GitHub or
  * chapter-1 work left to redo, and re-entering either would try to rebuild a context this branch
- * never reconstructs. `domain-live` is chapter 2's own terminal step for this pass and is handled
- * separately, since it needs no further chapter-2 work at all.
+ * never reconstructs. `domain-live` and `email-onboarded` belong here too, since T4b: neither is
+ * a stopping point for chapter 2 anymore (the email half continues from either), so a resumed
+ * record at one is routed through runChapter2 exactly like any other in-progress chapter-2 step.
+ * Chapter 2's real terminal steps, `TERMINAL_STEPS`, are handled separately below.
  */
-const CHAPTER2_RESUMABLE_STEPS = ['zone-created', 'records-carried', 'delegated'];
+const CHAPTER2_RESUMABLE_STEPS = ['zone-created', 'records-carried', 'delegated', 'domain-live', 'email-onboarded'];
 
-/** Every step a resumed run can still finish from. `live` and `domain-live` are each handled
- * separately; anything else is not a record this tool ever wrote. */
+/** Every step a resumed run can still finish from. `live` and chapter 2's `TERMINAL_STEPS`
+ * (`email-live`, a recorded decline) are each handled separately; anything else is not a record
+ * this tool ever wrote. */
 const RESUMABLE_STEPS = [...GITHUB_RESUMABLE_STEPS, ...CLOUDFLARE_RESUMABLE_STEPS];
 
 /**
  * Build the lines every closing block ends on, whichever hop of the chapter reached it: the
  * finished site's GitHub repository and App links, and the `npx cairn-doctor` reminder. Shared by
- * `printLiveInfo`, `printDomainLiveInfo`, and `continueIntoChapter2`'s own domain-live completion
- * print, so the three can never drift into printing three different versions of the same
- * information.
+ * `printLiveInfo`, `printEmailLiveInfo`, `printDeclinedInfo`, and `continueIntoChapter2`'s own
+ * terminal completion print, so none of them can drift into printing a different version of the
+ * same information.
  * @param {{ github: { repo: { owner: string, repo: string }, appSlug: string } }} state the
  *  site's saved state record, already carrying its GitHub fields
  * @returns {{ repoLines: string[], doctorLine: string }} `repoLines` leads a block with the repo
@@ -95,27 +98,68 @@ async function printLiveInfo(siteId) {
 }
 
 /**
- * Print the closing block for a site already at `domain-live`: its own domain and admin sign-in
- * URL, a note that its workers.dev address keeps working, and the same repo/App lines and
- * `npx cairn-doctor` line every closing block ends with. `domain-live` is chapter 2's own
- * terminal step for this pass (T4b's email half is not built yet), so this returns without ever
- * calling `runChapter2` again; `runChapter2` itself still re-validates (and, if needed,
- * re-prefills) the saved API token on re-entry, which is what lets a later T4b build reopen this
- * branch and continue the chapter from here.
- * @param {string} siteId the site's state-store id, already at step `domain-live`
+ * Build the three lines every closing block prints once a site has its own domain connected: the
+ * live URL, the admin sign-in URL, and the note that its workers.dev address still works. Shared
+ * by `printEmailLiveInfo` and `printDeclinedInfo`, both of which describe a site whose domain half
+ * finished, so the two can never drift on how they name that domain.
+ * @param {{ cloudflare: { domain: string, url: string } }} state the site's saved state record,
+ *  already at `domain-live` or later
+ * @returns {string[]}
+ */
+function domainLiveLines(state) {
+  const domain = state.cloudflare.domain;
+  return [
+    `Your site is live at your own domain: https://${domain}`,
+    `Sign in at: https://${domain}/admin`,
+    `Your workers.dev address (${state.cloudflare.url}) keeps working too.`,
+  ];
+}
+
+/**
+ * Print the closing block for a site already at `email-live`: its own domain, admin sign-in URL,
+ * and workers.dev note, plus the address it sends its own sign-in email from, and the shared
+ * repo/App lines and `npx cairn-doctor` line every closing block ends with. `email-live` is
+ * chapter 2's real finish line (`TERMINAL_STEPS`), so this returns without ever calling
+ * `runChapter2` again.
+ * @param {string} siteId the site's state-store id, already at step `email-live`
  * @returns {Promise<void>}
  */
-async function printDomainLiveInfo(siteId) {
+async function printEmailLiveInfo(siteId) {
   const state = await loadSite(siteId);
   const { repoLines, doctorLine } = closingInfoLines(state);
-  const domain = state.cloudflare.domain;
   const lines = [
     '',
     ...repoLines,
     '',
-    `Your site is live at your own domain: https://${domain}`,
-    `Sign in at: https://${domain}/admin`,
-    `Your workers.dev address (${state.cloudflare.url}) keeps working too.`,
+    ...domainLiveLines(state),
+    '',
+    `Your site sends its own sign-in email, from ${state.cloudflare.emailFrom}.`,
+    '',
+    doctorLine,
+  ];
+  console.log(lines.join('\n'));
+}
+
+/**
+ * Print the closing block for a site whose owner declined the paid plan (`paid-plan-declined`,
+ * the other member of `TERMINAL_STEPS`): its own domain, admin sign-in URL, and workers.dev note,
+ * same as a site at `email-live`, but naming that email sign-in is off rather than claiming it
+ * works, since a declined site has no email path at all. `--sign-in` is that owner's only way
+ * back in, which this names alongside the shared repo/App lines and doctor line.
+ * @param {string} siteId the site's state-store id, already at step `paid-plan-declined`
+ * @returns {Promise<void>}
+ */
+async function printDeclinedInfo(siteId) {
+  const state = await loadSite(siteId);
+  const { repoLines, doctorLine } = closingInfoLines(state);
+  const lines = [
+    '',
+    ...repoLines,
+    '',
+    ...domainLiveLines(state),
+    '',
+    'Email sign-in is off, so you are still the only one who can sign in: use --sign-in any time ' +
+      'to open a fresh link.',
     '',
     doctorLine,
   ];
@@ -124,12 +168,16 @@ async function printDomainLiveInfo(siteId) {
 
 /**
  * Run chapter 2 to whatever point the site's current saved state lets it reach, and print the
- * closing block. A run that reaches `domain-live` itself already saw chapter 2's own completion
- * hop print the domain, the admin sign-in URL, and the workers.dev note, so this adds only what
- * that hop did not already say, the repo/App links and the doctor reminder, rather than repeating
- * `printLiveInfo`'s whole block on top of it. Shared by the `live`-branch reopening and the
- * fresh/resumed chapter-1-to-2 handoff in `runCloudflareAndReport`, so the two paths cannot
- * diverge on what "continuing into chapter 2" means.
+ * closing block. A run that reaches one of `TERMINAL_STEPS` (`email-live`, a fresh decline)
+ * already saw chapter 2's own completion hop print the domain, the admin sign-in URL, and (for
+ * `email-live`) the sending address, so this adds only what that hop did not already say, the
+ * repo/App links and the doctor reminder, rather than repeating `printEmailLiveInfo` or
+ * `printDeclinedInfo`'s whole block on top of it; a later resumed run at either of those steps
+ * takes bin.mjs's own dedicated terminal branch instead, which never reaches this function at all
+ * (its own dedicated blocks carry the domain and email lines this run's hop already printed).
+ * Shared by the `live`-branch reopening and the fresh/resumed chapter-1-to-2 handoff in
+ * `runCloudflareAndReport`, so the two paths cannot diverge on what "continuing into chapter 2"
+ * means.
  * @param {{ siteId: string, dir: string, flags: object, log: (line: string) => void, dryRun: boolean }} args
  * @returns {Promise<{ outcome: string }>} chapter 2's own outcome
  */
@@ -137,7 +185,7 @@ async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
   const record = dryRun ? null : await loadSite(siteId);
   const outcome = await runChapter2({ siteId, record, dir, args: flags, log, dryRun });
   if (!dryRun) {
-    if (outcome.outcome === 'domain-live') {
+    if (TERMINAL_STEPS.includes(outcome.outcome)) {
       const { repoLines, doctorLine } = closingInfoLines(record);
       console.log(['', ...repoLines, '', doctorLine].join('\n'));
     } else {
@@ -254,11 +302,17 @@ async function main() {
     // this run has already seen this directory before.
     printCostPreamble({ log, isFreshRun: !priorRecord });
 
-    if (priorRecord && flags.startOver && [...CHAPTER2_RESUMABLE_STEPS, 'domain-live'].includes(priorRecord.data.step)) {
+    if (
+      priorRecord &&
+      flags.startOver &&
+      [...CHAPTER2_RESUMABLE_STEPS, ...TERMINAL_STEPS].includes(priorRecord.data.step)
+    ) {
       // A record this far into chapter 2 has real Cloudflare resources connected to it: retiring
       // it here would leave a zone, its copied DNS records, and a Worker attached to the admin's
       // domain orphaned with no record pointing back at them. --start-over refuses instead of
-      // silently discarding that state.
+      // silently discarding that state. TERMINAL_STEPS records carry the same resources (a
+      // decline still has the connected domain; email-live also has its onboarded sending
+      // domain), so they refuse for the same reason.
       throw new Error(
         `${priorRecord.data.name} already has Cloudflare resources connected for ` +
           `${priorRecord.data.cloudflare?.domain ?? 'its domain'}: a Cloudflare zone, the DNS ` +
@@ -276,10 +330,26 @@ async function main() {
       priorRecord = null;
     }
 
-    if (priorRecord && priorRecord.data.step === 'domain-live') {
-      // T4b reopens this branch for the email half; until then, domain-live is fully finished
-      // work from bin.mjs's own point of view, so this returns without ever calling runChapter2.
-      await printDomainLiveInfo(priorRecord.id);
+    if (priorRecord && TERMINAL_STEPS.includes(priorRecord.data.step)) {
+      // Chapter 2's own real terminal states (T4b): a site that finished sending its own email,
+      // or one whose owner declined the paid plan. Neither has any chapter-2 work left, so this
+      // returns without ever calling runChapter2. --sign-in is a declined owner's only way back
+      // in (there is no email path to send a link through), and it works the same way it does
+      // for an already-live site: reseed a bootstrap token and open the confirm page directly,
+      // with no email round trip, rather than falling into chapter 2's own admission prompt.
+      if (flags.signIn) {
+        await reseedAndOpen({
+          siteId: priorRecord.id,
+          state: priorRecord.data,
+          ownerEmailOverride: flags.ownerEmail,
+          log,
+        });
+      }
+      if (priorRecord.data.step === 'email-live') {
+        await printEmailLiveInfo(priorRecord.id);
+      } else {
+        await printDeclinedInfo(priorRecord.id);
+      }
       return;
     }
 

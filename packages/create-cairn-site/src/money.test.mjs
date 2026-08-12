@@ -166,10 +166,15 @@ test('bin.mjs does not print the cost preamble on a resume', async (t) => {
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-money-preamble-resume-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
 
-  await saveSite('money-preamble-resume-domliv', {
+  // `email-live` (chapter 2's real finish line, since T4b) rather than `domain-live`: the latter
+  // is no longer a stopping point for bin.mjs's dispatcher (it now continues straight into
+  // chapter 2's own admission prompt, which needs a `confirm` seam this file has none of), while
+  // `email-live` still returns immediately with no prompt, which is what this test needs to
+  // observe a resume's stdout without hanging.
+  await saveSite('money-preamble-resume-emlive', {
     name: 'Money Preamble Resume Site',
     dir,
-    step: 'domain-live',
+    step: 'email-live',
     ownerEmail: 'owner@example.com',
     github: {
       appId: 1,
@@ -182,6 +187,7 @@ test('bin.mjs does not print the cost preamble on a resume', async (t) => {
       workerName: 'money-preamble-site',
       accountId: 'acct-1',
       domain: 'money-preamble-test.example',
+      emailFrom: 'no-reply@money-preamble-test.example',
     },
   });
 

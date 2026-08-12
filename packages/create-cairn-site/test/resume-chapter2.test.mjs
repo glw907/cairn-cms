@@ -161,11 +161,19 @@ function assertNeverFellThrough(stdout) {
 }
 
 // --- One case per new resumable step: enters chapter 2 directly, stops at the token hop -------
+//
+// `domain-live` and `email-onboarded` join this loop since T4b: neither is a stopping point for
+// chapter 2 anymore, so a resumed record at either routes into runChapter2 exactly like
+// `zone-created`, `records-carried`, and `delegated` already do, and hits the same token-hop
+// stop, since account selection and the token hop both run unconditionally on every entry
+// (chapter2.mjs's own comment on those two hops).
 
 for (const [step, siteId] of [
   ['zone-created', 'chapter2-zoncr1'],
   ['records-carried', 'chapter2-recscr'],
   ['delegated', 'chapter2-delegd'],
+  ['domain-live', 'chapter2-domlv2'],
+  ['email-onboarded', 'chapter2-emlonb'],
 ]) {
   test(`bin.mjs resumes a record at ${step} directly into chapter 2, never re-scaffolding`, async (t) => {
     const stateDir = await freshStateDir(t);
@@ -319,14 +327,22 @@ test('bin.mjs at live with --yes and no --domain skips chapter 2 with a hint and
   assert.equal(state.step, 'live', 'a declined admission must not advance the saved step');
 });
 
-// --- The `domain-live` step: terminal, never calls runChapter2 ---------------------------------
+// --- The `domain-live` step: NOT terminal since T4b, continues into chapter 2 ------------------
+//
+// UPDATED FOR T4b: this test used to assert that domain-live was terminal (the domain half's own
+// stopping point, before the email half existed) and that a resumed record there never called
+// runChapter2. That behavior is gone: domain-live is not a stopping point for chapter 2 anymore
+// (its own email half continues from here), so a resumed record at it is now routed through
+// runChapter2 exactly like the other CHAPTER2_RESUMABLE_STEPS, proven the same deterministic way
+// every other case in this file proves routing into chapter 2 (per this file's own header
+// comment): `--yes --domain <name>` with no token in the child env stops at the token hop.
 
-test('bin.mjs at domain-live is terminal: prints the closing copy and never calls runChapter2', async (t) => {
+test('bin.mjs at domain-live continues into chapter 2 instead of the old terminal return', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
 
-  const fake = await makeFakeBin('chapter2-resume-domain-live');
+  const fake = await makeFakeBin('chapter2-resume-domain-live-2');
   t.after(() => fake.close());
   const fakeOpenerDir = await makeFakeOpenerDir(t);
   const cloudflare = await startFakeCloudflare();
@@ -334,49 +350,200 @@ test('bin.mjs at domain-live is terminal: prints the closing copy and never call
 
   await seedChapter2Site('chapter2-domliv', dir, 'domain-live', {
     domain: 'already-live-test.example',
+    zoneId: 'fake-zone-id',
+    nameServers: ['burt.ns.cloudflare.com', 'carlane.ns.cloudflare.com'],
+    alreadyActive: true,
   });
 
-  const result = await runCli(['--dir', dir], {
+  const result = await runCli(['--dir', dir, '--yes', '--domain', 'already-live-test.example'], {
     stateDir,
     wranglerBin: fake.binPath,
     apiBase: cloudflare.apiBase,
     fakeOpenerDir,
   });
 
-  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  assert.equal(result.code, 1, `expected exit 1, got ${result.code}. stdout: ${result.stdout}`);
   assert.ok(
-    result.stdout.includes('https://already-live-test.example'),
-    `expected the domain named in the closing copy, got: ${result.stdout}`,
+    result.stdout.includes('Find your Cloudflare account'),
+    `expected the account-selection hop title, got: ${result.stdout}`,
   );
   assert.ok(
-    result.stdout.includes('https://already-live-test.example/admin'),
-    `expected the admin sign-in URL, got: ${result.stdout}`,
-  );
-  // The same shared closing tail asserted on the live-skip case above: a later re-run at
-  // domain-live must show the same repo/App/doctor lines a run that just finished the chapter
-  // does, not a shorter block.
-  assert.ok(
-    result.stdout.includes('Your site is live on GitHub:'),
-    `expected the shared repo link, got: ${result.stdout}`,
-  );
-  assert.ok(
-    result.stdout.includes('The App that publishes for you:'),
-    `expected the shared App link, got: ${result.stdout}`,
-  );
-  assert.ok(
-    result.stdout.includes('Run `npx cairn-doctor` any time to check what is set up and what is still missing.'),
-    `expected the shared doctor reminder, got: ${result.stdout}`,
-  );
-  assert.equal(
     result.stdout.includes('Get a Cloudflare API token'),
-    false,
-    `runChapter2 must never run for a terminal domain-live record, got: ${result.stdout}`,
+    `expected runChapter2 to reach the token hop, proving domain-live is no longer terminal, got: ${result.stdout}`,
   );
   assertNeverFellThrough(result.stdout);
+  assert.ok(
+    result.stderr.includes('Next:'),
+    `expected the token hop's own Next: line, got: ${result.stderr}`,
+  );
 
-  assert.equal(cloudflare.requests.length, 0, 'a terminal domain-live record must make no Cloudflare API call');
-  assert.deepEqual(await fake.invocations(), [], 'a terminal domain-live record must shell out to nothing');
+  const state = await loadSite('chapter2-domliv');
+  assert.equal(state.step, 'domain-live', 'a thrown row must never advance the saved step');
 });
+
+// --- The `email-live` and `paid-plan-declined` steps: chapter 2's own terminal states ----------
+
+/** Save a site record shaped like one that finished chapter 2's email half. */
+async function seedEmailLiveSite(siteId, dir, overrides = {}) {
+  await seedChapter2Site(siteId, dir, 'email-live', {
+    domain: 'email-live-test.example',
+    emailFrom: 'no-reply@email-live-test.example',
+    ...overrides,
+  });
+}
+
+/** Save a site record shaped like one whose owner declined the paid plan. */
+async function seedDeclinedSite(siteId, dir, overrides = {}) {
+  await seedChapter2Site(siteId, dir, 'paid-plan-declined', {
+    domain: 'declined-test.example',
+    emailDeclinedAt: new Date().toISOString(),
+    ...overrides,
+  });
+}
+
+for (const [label, step, seed, idSuffix] of [
+  ['email-live', 'email-live', seedEmailLiveSite, 'emlive'],
+  ['a recorded decline', 'paid-plan-declined', seedDeclinedSite, 'declin'],
+]) {
+  test(`bin.mjs at ${label} is terminal: prints the closing copy and never calls runChapter2`, async (t) => {
+    const stateDir = await freshStateDir(t);
+    const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
+    t.after(() => rm(dir, { recursive: true, force: true }));
+
+    const fake = await makeFakeBin(`chapter2-terminal-${step}`);
+    t.after(() => fake.close());
+    const fakeOpenerDir = await makeFakeOpenerDir(t);
+    const cloudflare = await startFakeCloudflare();
+    t.after(() => cloudflare.close());
+
+    // The state store's own SITE_ID_SHAPE requires an exact six-character trailing suffix
+    // (state.mjs), so idSuffix is spelled out per case rather than derived from step's own name.
+    const siteId = `chapter2-term-${idSuffix}`;
+    await seed(siteId, dir);
+
+    const result = await runCli(['--dir', dir], {
+      stateDir,
+      wranglerBin: fake.binPath,
+      apiBase: cloudflare.apiBase,
+      fakeOpenerDir,
+    });
+
+    assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+    assert.ok(
+      result.stdout.includes(`https://${step === 'email-live' ? 'email-live-test.example' : 'declined-test.example'}`),
+      `expected the domain named in the closing copy, got: ${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('Your site is live on GitHub:'),
+      `expected the shared repo link, got: ${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('The App that publishes for you:'),
+      `expected the shared App link, got: ${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('Run `npx cairn-doctor` any time to check what is set up and what is still missing.'),
+      `expected the shared doctor reminder, got: ${result.stdout}`,
+    );
+    assert.equal(
+      result.stdout.includes('Get a Cloudflare API token'),
+      false,
+      `runChapter2 must never run for a terminal ${label} record, got: ${result.stdout}`,
+    );
+    if (step === 'email-live') {
+      assert.ok(
+        result.stdout.includes('sends its own sign-in email'),
+        `expected email-live's own closing line, got: ${result.stdout}`,
+      );
+    } else {
+      assert.ok(
+        result.stdout.includes('Email sign-in is off'),
+        `expected the declined closing line, got: ${result.stdout}`,
+      );
+      assert.equal(
+        result.stdout.includes('sends its own sign-in email'),
+        false,
+        `a declined owner must never be told sign-in email works, got: ${result.stdout}`,
+      );
+    }
+    assertNeverFellThrough(result.stdout);
+
+    assert.equal(cloudflare.requests.length, 0, `a terminal ${label} record must make no Cloudflare API call`);
+    assert.deepEqual(await fake.invocations(), [], `a terminal ${label} record must shell out to nothing`);
+
+    const state = await loadSite(siteId);
+    assert.equal(state.step, step, 'a terminal record must never advance or change its saved step');
+  });
+}
+
+// --- --sign-in works from both terminal states --------------------------------------------------
+
+for (const [label, step, seed, idSuffix] of [
+  ['email-live', 'email-live', seedEmailLiveSite, 'sinliv'],
+  ['a recorded decline', 'paid-plan-declined', seedDeclinedSite, 'sindec'],
+]) {
+  test(`bin.mjs --sign-in at ${label} reseeds exactly once and reopens the browser`, async (t) => {
+    const stateDir = await freshStateDir(t);
+    const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
+    t.after(() => rm(dir, { recursive: true, force: true }));
+
+    const fake = await makeFakeBin(`chapter2-sign-in-${step}`);
+    t.after(() => fake.close());
+    await fake.respond('d1 execute', {
+      code: 0,
+      stdout: JSON.stringify([
+        { results: [], success: true, meta: { changes: 1 } },
+        { results: [], success: true, meta: { changes: 0 } },
+        { results: [], success: true, meta: { changes: 1 } },
+      ]),
+    });
+    const fakeOpenerDir = await makeFakeOpenerDir(t);
+    const cloudflare = await startFakeCloudflare();
+    t.after(() => cloudflare.close());
+
+    const siteId = `chapter2-si-${idSuffix}`;
+    await seed(siteId, dir);
+
+    const result = await runCli(['--dir', dir, '--sign-in'], {
+      stateDir,
+      wranglerBin: fake.binPath,
+      apiBase: cloudflare.apiBase,
+      fakeOpenerDir,
+    });
+
+    assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+    assert.equal(
+      result.stdout.includes('token='),
+      false,
+      `expected no token-bearing link in this non-interactive run's stdout, got: ${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('--sign-in'),
+      `expected a re-run hint naming --sign-in, got: ${result.stdout}`,
+    );
+    // --sign-in must stop before chapter 2's admission gate, not fall through into it.
+    assert.equal(
+      result.stdout.includes('Connects a domain you already own'),
+      false,
+      `expected --sign-in to stop before chapter 2's admission gate, got: ${result.stdout}`,
+    );
+    assert.equal(
+      result.stdout.includes('Get a Cloudflare API token'),
+      false,
+      `expected --sign-in to never call runChapter2, got: ${result.stdout}`,
+    );
+    assertNeverFellThrough(result.stdout);
+
+    const invocations = await fake.invocations();
+    assert.equal(
+      invocations.filter((i) => i.argv.slice(0, 2).join(' ') === 'd1 execute').length,
+      1,
+      'expected exactly one seed invocation',
+    );
+    assert.equal(invocations.length, 1, '--sign-in must touch wrangler only for the reseed');
+    assert.equal(cloudflare.requests.length, 0, '--sign-in must make no Cloudflare API call');
+  });
+}
 
 // --- --start-over refuses from any chapter-2 step -----------------------------------------------
 
@@ -424,4 +591,38 @@ test('bin.mjs --start-over from a chapter-2 step refuses rather than retiring th
     false,
     'a refused --start-over must never write a retired record',
   );
+});
+
+test('bin.mjs --start-over from a terminal chapter-2 step also refuses, same as any other', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('chapter2-resume-start-over-terminal');
+  t.after(() => fake.close());
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+
+  const siteId = 'chapter2-stovr2';
+  await seedEmailLiveSite(siteId, dir);
+  const before = await loadSite(siteId);
+
+  const result = await runCli(['--dir', dir, '--start-over'], {
+    stateDir,
+    wranglerBin: fake.binPath,
+    apiBase: cloudflare.apiBase,
+    fakeOpenerDir,
+  });
+
+  assert.equal(result.code, 1, `expected exit 1, got ${result.code}. stdout: ${result.stdout}`);
+  assert.ok(
+    result.stderr.includes('zone') && result.stderr.includes('DNS') && result.stderr.includes('Worker'),
+    `expected the refusal to name the zone, records, and Worker, got: ${result.stderr}`,
+  );
+  assert.equal(cloudflare.requests.length, 0, '--start-over must never touch the Cloudflare API');
+  assert.deepEqual(await fake.invocations(), [], '--start-over must never shell out to wrangler');
+
+  const after = await loadSite(siteId);
+  assert.deepEqual(after, before, 'a terminal record must be present and unchanged on disk');
 });

@@ -41,6 +41,26 @@ const CHAPTER2_RESUMABLE_STEPS = ['zone-created', 'records-carried', 'delegated'
 const RESUMABLE_STEPS = [...GITHUB_RESUMABLE_STEPS, ...CLOUDFLARE_RESUMABLE_STEPS];
 
 /**
+ * Build the lines every closing block ends on, whichever hop of the chapter reached it: the
+ * finished site's GitHub repository and App links, and the `npx cairn-doctor` reminder. Shared by
+ * `printLiveInfo`, `printDomainLiveInfo`, and `continueIntoChapter2`'s own domain-live completion
+ * print, so the three can never drift into printing three different versions of the same
+ * information.
+ * @param {{ github: { repo: { owner: string, repo: string }, appSlug: string } }} state the
+ *  site's saved state record, already carrying its GitHub fields
+ * @returns {{ repoLines: string[], doctorLine: string }} `repoLines` leads a block with the repo
+ *  and App links; `doctorLine` closes one with the doctor reminder
+ */
+function closingInfoLines(state) {
+  const repoUrl = `${webBase()}/${state.github.repo.owner}/${state.github.repo.repo}`;
+  const appUrl = `${webBase()}/apps/${state.github.appSlug}`;
+  return {
+    repoLines: [`Your site is live on GitHub: ${repoUrl}`, `The App that publishes for you: ${appUrl}`],
+    doctorLine: 'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
+  };
+}
+
+/**
  * Print the block that names the finished site's GitHub repository and App, and, once the
  * Cloudflare chapter has reached its own hops, the live URL and what exists on Cloudflare. Shared
  * by the fresh-run and resumed-run paths so every form of "the chapter is done" ends on identical
@@ -50,9 +70,8 @@ const RESUMABLE_STEPS = [...GITHUB_RESUMABLE_STEPS, ...CLOUDFLARE_RESUMABLE_STEP
  */
 async function printLiveInfo(siteId) {
   const state = await loadSite(siteId);
-  const repoUrl = `${webBase()}/${state.github.repo.owner}/${state.github.repo.repo}`;
-  const appUrl = `${webBase()}/apps/${state.github.appSlug}`;
-  const lines = ['', `Your site is live on GitHub: ${repoUrl}`, `The App that publishes for you: ${appUrl}`];
+  const { repoLines, doctorLine } = closingInfoLines(state);
+  const lines = ['', ...repoLines];
 
   if (state.cloudflare?.url) {
     lines.push(
@@ -70,7 +89,7 @@ async function printLiveInfo(siteId) {
     lines.push('', 'Deploying it to the internet arrives with the next chapter.');
   }
 
-  lines.push('', 'Run `npx cairn-doctor` any time to check what is set up and what is still missing.');
+  lines.push('', doctorLine);
   console.log(lines.join('\n'));
 }
 
@@ -87,27 +106,27 @@ async function printLiveInfo(siteId) {
  */
 async function printDomainLiveInfo(siteId) {
   const state = await loadSite(siteId);
-  const repoUrl = `${webBase()}/${state.github.repo.owner}/${state.github.repo.repo}`;
-  const appUrl = `${webBase()}/apps/${state.github.appSlug}`;
+  const { repoLines, doctorLine } = closingInfoLines(state);
   const domain = state.cloudflare.domain;
   const lines = [
     '',
-    `Your site is live on GitHub: ${repoUrl}`,
-    `The App that publishes for you: ${appUrl}`,
+    ...repoLines,
     '',
     `Your site is live at your own domain: https://${domain}`,
     `Sign in at: https://${domain}/admin`,
     `Your workers.dev address (${state.cloudflare.url}) keeps working too.`,
     '',
-    'Run `npx cairn-doctor` any time to check what is set up and what is still missing.',
+    doctorLine,
   ];
   console.log(lines.join('\n'));
 }
 
 /**
  * Run chapter 2 to whatever point the site's current saved state lets it reach, and print the
- * closing block unless it reached the `domain-live` finish line itself (chapter 2's own last
- * runStep already prints that closing copy). Shared by the `live`-branch reopening and the
+ * closing block. A run that reaches `domain-live` itself already saw chapter 2's own completion
+ * hop print the domain, the admin sign-in URL, and the workers.dev note, so this adds only what
+ * that hop did not already say, the repo/App links and the doctor reminder, rather than repeating
+ * `printLiveInfo`'s whole block on top of it. Shared by the `live`-branch reopening and the
  * fresh/resumed chapter-1-to-2 handoff in `runCloudflareAndReport`, so the two paths cannot
  * diverge on what "continuing into chapter 2" means.
  * @param {{ siteId: string, dir: string, flags: object, log: (line: string) => void, dryRun: boolean }} args
@@ -116,8 +135,13 @@ async function printDomainLiveInfo(siteId) {
 async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
   const record = dryRun ? null : await loadSite(siteId);
   const outcome = await runChapter2({ siteId, record, dir, args: flags, log, dryRun });
-  if (!dryRun && outcome.outcome !== 'domain-live') {
-    await printLiveInfo(siteId);
+  if (!dryRun) {
+    if (outcome.outcome === 'domain-live') {
+      const { repoLines, doctorLine } = closingInfoLines(record);
+      console.log(['', ...repoLines, '', doctorLine].join('\n'));
+    } else {
+      await printLiveInfo(siteId);
+    }
   }
   return outcome;
 }
@@ -255,12 +279,16 @@ async function main() {
     if (priorRecord && priorRecord.data.step === 'live') {
       console.log(`${priorRecord.data.name} is already live.`);
       if (flags.signIn) {
+        // --sign-in is a mid-browser recovery for an expired sign-in link; an admin in that
+        // state has no attention to spare for chapter 2's own domain admission prompt, so this
+        // reseeds and stops rather than falling into continueIntoChapter2 below.
         await reseedAndOpen({
           siteId: priorRecord.id,
           state: priorRecord.data,
           ownerEmailOverride: flags.ownerEmail,
           log,
         });
+        return;
       }
       await continueIntoChapter2({
         siteId: priorRecord.id,

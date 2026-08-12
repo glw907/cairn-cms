@@ -91,7 +91,15 @@ async function runCli(args, { stateDir, wranglerBin, apiBase, fakeOpenerDir, ext
   };
   if (!('CAIRN_CF_API_TOKEN' in extraEnv)) delete env.CAIRN_CF_API_TOKEN;
   try {
-    const { stdout, stderr } = await execFileAsync(process.execPath, [BIN_PATH, ...args], { env });
+    // input: '' closes the child's stdin immediately, and timeout is a backstop: with neither, a
+    // regression that routes this run into a real, unstubbed @clack prompt hangs the whole test
+    // run forever instead of failing it (the child's stdin is otherwise an open pipe no one ever
+    // writes to or closes).
+    const { stdout, stderr } = await execFileAsync(process.execPath, [BIN_PATH, ...args], {
+      env,
+      input: '',
+      timeout: 60000,
+    });
     return { code: 0, stdout, stderr };
   } catch (err) {
     return { code: err.code ?? 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
@@ -290,6 +298,17 @@ test('bin.mjs at live with --yes and no --domain skips chapter 2 with a hint and
     result.stdout.includes('Connect your own domain any time by re-running'),
     `expected the reworded next-chapter copy, got: ${result.stdout}`,
   );
+  // The App link and the doctor reminder are the shared closing tail printLiveInfo,
+  // printDomainLiveInfo, and a completing chapter-2 run all end on; asserting them here and
+  // again on the domain-live terminal case below proves they stay identical between the two.
+  assert.ok(
+    result.stdout.includes('The App that publishes for you:'),
+    `expected the shared App link, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('Run `npx cairn-doctor` any time to check what is set up and what is still missing.'),
+    `expected the shared doctor reminder, got: ${result.stdout}`,
+  );
   assertNeverFellThrough(result.stdout);
   assert.equal(cloudflare.requests.length, 0, 'a declined admission must make no Cloudflare API call');
 
@@ -329,6 +348,21 @@ test('bin.mjs at domain-live is terminal: prints the closing copy and never call
   assert.ok(
     result.stdout.includes('https://already-live-test.example/admin'),
     `expected the admin sign-in URL, got: ${result.stdout}`,
+  );
+  // The same shared closing tail asserted on the live-skip case above: a later re-run at
+  // domain-live must show the same repo/App/doctor lines a run that just finished the chapter
+  // does, not a shorter block.
+  assert.ok(
+    result.stdout.includes('Your site is live on GitHub:'),
+    `expected the shared repo link, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('The App that publishes for you:'),
+    `expected the shared App link, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('Run `npx cairn-doctor` any time to check what is set up and what is still missing.'),
+    `expected the shared doctor reminder, got: ${result.stdout}`,
   );
   assert.equal(
     result.stdout.includes('Get a Cloudflare API token'),

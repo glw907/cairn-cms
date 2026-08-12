@@ -84,7 +84,15 @@ async function runCli(args, { stateDir, wranglerBin, npmBin, fakeOpenerDir }) {
   };
   if (npmBin) env.CAIRN_NPM_BIN = npmBin;
   try {
-    const { stdout, stderr } = await execFileAsync(process.execPath, [BIN_PATH, ...args], { env });
+    // input: '' closes the child's stdin immediately, and timeout is a backstop: with neither, a
+    // regression that routes this run into a real, unstubbed @clack prompt hangs the whole test
+    // run forever instead of failing it (the child's stdin is otherwise an open pipe no one ever
+    // writes to or closes).
+    const { stdout, stderr } = await execFileAsync(process.execPath, [BIN_PATH, ...args], {
+      env,
+      input: '',
+      timeout: 60000,
+    });
     return { code: 0, stdout, stderr };
   } catch (err) {
     return { code: err.code ?? 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
@@ -128,12 +136,7 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
 
   await seedLiveSite('alpine-club-abcdef', dir);
 
-  // --yes (with no --domain) is what keeps this hermetic now that a `live` record continues
-  // straight into chapter 2's own admission gate after the --sign-in recovery: with no --yes,
-  // that gate would ask a real, unstubbed @clack confirm prompt this spawned run has no stdin
-  // answer for. --yes with no --domain takes the gate's unattended skip-hint branch instead,
-  // which returns with no further wrangler calls, so the assertions below are unaffected.
-  const result = await runCli(['--dir', dir, '--sign-in', '--yes'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
+  const result = await runCli(['--dir', dir, '--sign-in'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
 
   assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
   // This run's stdout is piped rather than a TTY (execFile always pipes), so the sign-in URL's raw
@@ -150,6 +153,14 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
   assert.ok(
     result.stdout.includes('--sign-in'),
     `expected a re-run hint naming --sign-in, got: ${result.stdout}`,
+  );
+  // --sign-in is a mid-browser recovery, not an invitation into chapter 2's own domain admission
+  // prompt: this run must stop after the reseed rather than falling into "Connect your own
+  // domain", chapter 2's admission hop's own title.
+  assert.equal(
+    result.stdout.includes('Connect your own domain'),
+    false,
+    `expected --sign-in to stop before chapter 2's admission gate, got: ${result.stdout}`,
   );
 
   const invocations = await fake.invocations();

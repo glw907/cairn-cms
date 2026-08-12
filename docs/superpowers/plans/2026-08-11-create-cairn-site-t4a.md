@@ -426,11 +426,11 @@ that appendix, never written from memory.** A spike question that answers "no" o
   `CAIRN_CF_API_TOKEN` from env; a token-shaped command-line flag is rejected with a
   message naming the env var.
 
-- [ ] **Step 1: Failing tests**: the four branches; the env-var path; the flag
+- [x] **Step 1: Failing tests**: the four branches; the env-var path; the flag
   rejection; the token absent from every captured log line and every error message (a
   planted distinctive value, proven able to fail); the browser open uses the
   PATH-controlled pattern.
-- [ ] **Step 2: Implement; suite green; commit.** The prefill URL lives here with the
+- [x] **Step 2: Implement; suite green; commit.** The prefill URL lives here with the
   spike's date in its doc block. Per amendment 9 it carries **only keys proven to
   resolve in the dashboard**, plus the Email Sending permission T4b rides. A test pins
   the URL's key list so a later edit cannot quietly add an unverified key.

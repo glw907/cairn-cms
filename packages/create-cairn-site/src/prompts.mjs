@@ -8,7 +8,7 @@
 // This module also owns the two prompt primitives every chapter shares, `exitOnCancel` and
 // `resolveField`, so the order a field resolves in and the Ctrl+C exit behave identically wherever
 // the tool asks a question. The GitHub chapter (src/github/chapter.mjs) imports both.
-import { intro, outro, text, isCancel, cancel } from '@clack/prompts';
+import { intro, outro, text, password, isCancel, cancel } from '@clack/prompts';
 import { slugify } from './slug.mjs';
 import { resolveHue } from './substitute.mjs';
 
@@ -56,6 +56,23 @@ export async function resolveField(flagValue, yes, fallback, prompt) {
   if (flagValue !== undefined) return flagValue;
   if (yes) return fallback;
   const answer = await prompt();
+  if (isCancel(answer)) exitOnCancel();
+  return answer;
+}
+
+/**
+ * Prompt for a secret value, masking the input as it is typed and applying the same
+ * cancel-exits-the-process contract every other prompt in this file uses. The underlying
+ * @clack/prompts `password` call is injectable, mirroring account.mjs's own `prompt` seam, so a
+ * caller like the Cloudflare chapter's token prefill can drive and retry this without a real
+ * interactive terminal.
+ * @param {string} message the prompt's question, shown above the masked input
+ * @param {(opts: { message: string }) => Promise<string | symbol>} [passwordFn] the
+ *  @clack/prompts `password` call; defaults to the real one
+ * @returns {Promise<string>} the entered value
+ */
+export async function promptSecret(message, passwordFn = password) {
+  const answer = await passwordFn({ message });
   if (isCancel(answer)) exitOnCancel();
   return answer;
 }

@@ -62,12 +62,19 @@ Pass D -> release one -> site walk -> P.
 pushed or merged, so a cold session that branches off `main` by default would build against a tool
 lacking chapter 2 entirely.
 
-**Hand steps for Geoff: ALL DONE (2026-08-12).** The GitHub Apps `cairn-t3-live-71d37c` and
-`cairn-t4a-live-596b84` are deleted, along with the scratch org from T2's org-path run, and the
-Cloudflare API token minted for the T4a run (id `a3640d8f9719e4873eca79d40f8205c3`) is revoked.
-The token revocation is reported by Geoff rather than verified here: the estate token cannot read
-`/user/tokens` (the same refusal family as the billing endpoints), so nothing in this repo can
-confirm it. Nothing is owed before Task 9 except the ACM billing glance.
+**Hand steps for Geoff, from the live e2e. THREE outstanding, one urgent.**
+
+1. **URGENT, rotate the estate Cloudflare token** (`Cloudflare Admin 2026-07`). Claude printed its
+   value into a session transcript by mistake during teardown, so it is burned. It is the
+   workstation-wide token in `~/.local/secrets`, so rotation means minting a replacement and
+   re-running `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`.
+2. **Revoke the token minted for this run** (`cairn create-cairn-site`, created 2026-08-12). Also
+   pasted into the transcript, so also burned. Its local copy was shredded.
+3. **Delete the GitHub App `cairn-t4b-live-03cd31`** at github.com/settings/apps.
+
+Everything else the run created is gone and verified: Worker, both D1 databases, the R2 bucket, the
+repository, the state record, the sending subdomain, and the residual `_dmarc`. The scratch zone is
+back to exactly its four seeded records, all sha256-identical to the pre-run fixture.
 
 **Every live e2e mints a GitHub App only Geoff can delete, and this is now a standing tax.** There
 is no REST endpoint to delete a GitHub App, and the installation-delete endpoint needs the App's

@@ -219,3 +219,85 @@ These two conditions are byte-identical, which is amendment 2:
 ```json
 {"result":null,"success":true,"errors":[],"messages":[]}
 ```
+
+---
+
+## The live e2e (2026-08-12, Task 9)
+
+A site was scaffolded, pushed, deployed, connected to `carin-test.org`, and taken through both
+email hops end to end. `runChapter2` exited 0 at `email-live`. Everything below was read back from
+the platform or from disk, never inferred from the tool's own output.
+
+| Claim | Evidence |
+|---|---|
+| Reaches `email-live` | state record read back through `loadSite()` |
+| Token deleted at the terminal state | zero occurrences in the raw file bytes; mode still `0600` |
+| Token nowhere else | swept the scaffold and state dir; the sweep was proven able to fail with a planted canary first |
+| Sender address written and deployed | `emailFrom: no-reply@carin-test.org`; the deploy's own binding list shows `PUBLIC_ORIGIN https://carin-test.org` and `env.EMAIL` |
+| Hop order | onboard, then test send, then address rewrite, then deploy |
+| Closing copy | names the address, the one-line override, the `p=reject` consequence including that it survives turning Email Sending off, and the doctor command |
+| The domain's own records survive | all four seeded records sha256-identical before, during, and after, including the 437-byte DKIM TXT |
+| Teardown restores the fixture | zone back to exactly four records; Worker, both D1 databases, R2 bucket, repo, and state record all gone |
+
+### The message did not arrive, and that is the finding
+
+Cloudflare accepted every send (HTTP 200 with a `message_id`), the recipient is not on the
+account's suppression list, and all four records Cloudflare wrote resolve from an outside
+resolver. **No message ever reached the inbox.** An established domain on the same account
+(`ecxc.ski`), through the same sending path, to the same inbox, delivered in seconds that morning.
+
+Two hypotheses were tested and both are refuted:
+
+1. **Greylisting.** Thirty minutes of polling, nothing. Greylisting does not hold that long.
+2. **SPF PERMERROR.** The seeded apex SPF points at `_spf.example.com`, which NXDOMAINs, against
+   `ecxc.ski`'s working `include:_spf.mx.cloudflare.net`. The apex SPF was repointed at Cloudflare,
+   a fresh message sent, and still nothing arrived. The fixture was then restored and re-verified.
+
+What remains is the variable that cannot be changed: the domain was registered roughly 18 hours
+earlier. **This is ordinary for the industry rather than a cairn defect.** Amazon SES puts every new
+account in a sandbox that can only reach verified addresses until a manual review grants production
+access. Resend and Postmark both document a warm-up in which a new domain has no reputation and
+mail is rejected or filtered, quoting four to eight weeks to full deliverability. A brand-new domain
+carrying `p=reject` with no sending history is exactly what a receiver silently drops.
+
+**This vindicates the spec's ruling 8 with evidence rather than assumption:** delivery is not
+observable by the CLI, and a send that returns 200 is the strongest signal the tool can honestly
+get. It also exposes a copy problem, recorded below.
+
+### Two platform findings that correct this document's own earlier conclusions
+
+**Sending authorization is sticky.** Deleting a zone's sending subdomain does not stop sends. After
+the subdomain was deleted and the list read back empty, a send from that domain still returned 200.
+So a domain onboarded once stays able to send, which is why this run's test send succeeded
+instantly: the spike had already onboarded the domain hours earlier.
+
+**There is a second refusal code, and this pass never saw it.** A domain that was never onboarded
+can return `10204 email.sending.error.email.sender_not_configured`, not the `10203
+email.sending.error.email.sending_disabled` this document recorded as the only code. Both were
+observed today across account domains. The distinction does not correlate with the subdomain list:
+two domains with no entry returned different codes, so hidden platform state decides it.
+
+The shipped classification is defensible but was not a deliberate choice: `email.mjs` keys the
+propagation park on `10203` and lets anything else fall through to the act row, so a `10204`
+surfaces Cloudflare's own message rather than parking. That is the right outcome, reached by luck.
+A pass that touches this should decide it on purpose.
+
+### What Step 3 did and did not prove
+
+The propagation park was **not** exercised through the tool. The park's underlying condition was
+observed live during the spike (sends at 25s and 47s after onboarding refused, at 107s accepted),
+but the tool's own branch could not be reached afterward, because sending authorization is sticky
+and this domain is now permanently authorized. A deliberate fault injection (deleting the subdomain,
+rewinding the record to `email-onboarded` inside the window) failed to reproduce it for the same
+reason. Reaching it live needs a domain that has never been onboarded, and the only such domains on
+this account are production ones the pass may not touch. The branch remains covered by tests on both
+sides of the boundary.
+
+### The copy overclaims, which is the one product change this run argues for
+
+The closing copy says "Your site now sends its own sign-in email." On a domain registered that day,
+that sentence is not reliably true, and the owner has no way to know. cairn cannot check delivery,
+and should not try. What it can do is set the expectation the industry already sets: a brand-new
+domain takes time before receivers trust it, so an editor who gets no link on the first day is
+looking at a normal warm-up rather than a broken setup. The `cairn-doctor --send-test` line the copy
+already carries is the right instrument; it just needs the expectation beside it.

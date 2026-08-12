@@ -466,29 +466,29 @@ that appendix, never written from memory.** A spike question that answers "no" o
   zone; `delegationInstructions(nameServers)` rendering **generic** copy naming the
   assigned pair (amendment 16 cut the per-registrar table).
 
-- [ ] **Step 1: Failing zone tests**: create-and-return; 1061 followed by a name lookup
+- [x] **Step 1: Failing zone tests**: create-and-return; 1061 followed by a name lookup
   that hits, adopting it; 1061 followed by a miss, raising the rewritten `zone-already-exists`; the
   1428 and 1002 rows from amendment 11; `nameServers` read from a zone re-read rather
   than the create response (the fake returns a create body with `name_servers` absent,
   and the test fails if the module trusts it); `alreadyActive` for a zone that arrives
   active.
-- [ ] **Step 2: Failing records tests**: the probe list is exactly the spike's (asserted
+- [x] **Step 2: Failing records tests**: the probe list is exactly the spike's (asserted
   against the module's exported list); typed returns including a chunked DKIM-length
   TXT surviving intact and MX priority as its own field; authoritative-empty vs
   failure; the post-delegation refusal; **the authoritative read is preferred and
   `lowConfidence` is set only on the recursive fallback** (amendment 15), proven by a
   resolver stub that answers absent recursively and present authoritatively, which is
   the negative-cache shape the spike observed.
-- [ ] **Step 3: Failing gate tests**: nothing writes before `confirm`; declining writes
+- [x] **Step 3: Failing gate tests**: nothing writes before `confirm`; declining writes
   nothing and returns `declined`; confirming writes every listed record (the fake's
   `state` shows each, MX priority intact) and returns `carried`; the gate copy carries
   ruling 4's incompleteness caveat verbatim (asserted as a literal string) **and the
   low-confidence caveat when that flag is set**; the stated apex-collision behavior.
-- [ ] **Step 4: Failing delegation tests**: the four states, driven by the fake's random
+- [x] **Step 4: Failing delegation tests**: the four states, driven by the fake's random
   pairs (wrong-nameservers = Cloudflare-shaped but not this zone's pair, naming the
   correct two in its row); pending → the `delegation-pending` wait row with the generic
   instructions rendered once; an arrives-active zone short-circuits and stages no wait.
-- [ ] **Step 5: Implement all; suite green; commit.**
+- [x] **Step 5: Implement all; suite green; commit.**
 
 ### Task 9: The rollback-safe cutover **[spike]**
 

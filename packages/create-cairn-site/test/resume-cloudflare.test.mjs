@@ -155,12 +155,24 @@ test('bin.mjs --sign-in at live reseeds exactly once and reopens the browser', a
     `expected a re-run hint naming --sign-in, got: ${result.stdout}`,
   );
   // --sign-in is a mid-browser recovery, not an invitation into chapter 2's own domain admission
-  // prompt: this run must stop after the reseed rather than falling into "Connect your own
-  // domain", chapter 2's admission hop's own title.
+  // prompt: this run must stop after the reseed rather than entering the gate. The marker is the
+  // admission detail's own opening words, not its hop title: printLiveInfo's own re-run hint
+  // below opens on "Connect your own domain any time", so a title match would fire on the
+  // closing block this run is supposed to print.
   assert.equal(
-    result.stdout.includes('Connect your own domain'),
+    result.stdout.includes('Connects a domain you already own'),
     false,
     `expected --sign-in to stop before chapter 2's admission gate, got: ${result.stdout}`,
+  );
+  // Stopping before chapter 2 must not cost this run its closing block, which every other
+  // already-live run prints.
+  assert.ok(
+    result.stdout.includes('Your site is live on GitHub:'),
+    `expected the closing block's repo line, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('npx cairn-doctor'),
+    `expected the closing block's doctor line, got: ${result.stdout}`,
   );
 
   const invocations = await fake.invocations();

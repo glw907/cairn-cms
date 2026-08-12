@@ -281,13 +281,15 @@ async function main() {
       if (flags.signIn) {
         // --sign-in is a mid-browser recovery for an expired sign-in link; an admin in that
         // state has no attention to spare for chapter 2's own domain admission prompt, so this
-        // reseeds and stops rather than falling into continueIntoChapter2 below.
+        // reseeds, prints the same closing block every other already-live run ends on, and
+        // stops rather than falling into continueIntoChapter2 below.
         await reseedAndOpen({
           siteId: priorRecord.id,
           state: priorRecord.data,
           ownerEmailOverride: flags.ownerEmail,
           log,
         });
+        await printLiveInfo(priorRecord.id);
         return;
       }
       await continueIntoChapter2({

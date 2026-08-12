@@ -253,8 +253,11 @@ test('bin.mjs at live with --yes --domain enters chapter 2 instead of stopping a
     result.stdout.includes('is already live'),
     `expected the existing already-live line to still print, got: ${result.stdout}`,
   );
+  // The admission detail's own opening words, not the hop title: printLiveInfo's re-run hint
+  // opens on "Connect your own domain any time", so a title match could be satisfied by a
+  // closing block rather than by the gate itself.
   assert.ok(
-    result.stdout.includes('Connect your own domain'),
+    result.stdout.includes('Connects a domain you already own'),
     `expected chapter 2's admission hop to have run, got: ${result.stdout}`,
   );
   assert.ok(

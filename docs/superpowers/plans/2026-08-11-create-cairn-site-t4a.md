@@ -625,22 +625,22 @@ DKIM-shaped TXT** so the carry-over proof can fail; no paid plan is required (th
 chapter costs nothing). The T3-proven install pattern (tarball rewrite at the chapter
 boundary) carries over.
 
-- [ ] **Step 1: Full run.** From `live` on a fresh scaffolded site: admission, account
+- [x] **Step 1: Full run.** From `live` on a fresh scaffolded site: admission, account
   selection, prefill (Geoff pastes the token), zone create, the gate showing the seeded
   records with the incompleteness caveat, nameserver change at the registrar (Geoff's
   browser), park with exit 0, re-run re-detect through `active`, cutover. Verify: the
   site answers on the domain through the marker pair, `workers.dev` still answers, the
   seeded MX and TXT are in the zone byte-intact (priority included), the record is at
   `domain-live` with no `apiToken` on disk, and the browser-moment count is recorded.
-- [ ] **Step 2: Interrupted resume.** Re-run after a kill mid-chapter; the fakes prove
+- [x] **Step 2: Interrupted resume.** Re-run after a kill mid-chapter; the fakes prove
   zero repeated writes in CI, and the live run proves it once by listing the zone's
   records twice around a resumed hop.
-- [ ] **Step 3: Teardown.** Re-run the prefill for a teardown token (completion deleted
+- [x] **Step 3: Teardown.** Re-run the prefill for a teardown token (completion deleted
   the working one by design; record the extra browser moment), delete the zone via the
   API, leave the domain parked at its registrar, tear down the run's Worker/D1/R2 by
   the T3 API path, repo and App per the T2/T3 hand steps. Verify by listing, never by
   assuming.
-- [ ] **Step 4: Record the evidence**; any fake-vs-real divergence is a Task 2/3/5 bug
+- [x] **Step 4: Record the evidence**; any fake-vs-real divergence is a Task 2/3/5 bug
   to fix in this pass with the fakes corrected and the suite re-run.
 
 ### Task 14: Docs, tracking, and pass close
@@ -817,3 +817,114 @@ zero after, attributed per file.
 Task 12's agent was stopped mid-flight to halt the tabs and never filed its report, so its
 claims were checked directly instead: breaking `hasReached` fails five of its nine cases, which
 is what proves the no-repeat assertions detect a repeated hop rather than merely passing.
+
+## Post-mortem, part three (2026-08-11): the live e2e, and the defect it caught
+
+**Status: Task 13 is done. Chapter 2 ran end to end against the real scratch domain and reached
+`domain-live`.** The run found one hard defect, fixed in this pass, and one softer one, recorded
+and carried.
+
+### The defect the e2e existed to catch
+
+Chapter 2 crashed at its second hop on the very branch amendment 16 added. `ensureZone` computes
+`alreadyActive` and the zone hop persists it, the delegation hop reads it, and the carry-over hop
+between them read nothing. That hop calls `readCurrentRecords`, which throws an uncatalogued
+Error once a domain's nameservers carry a `.ns.cloudflare.com` pair. A domain registered at
+Cloudflare Registrar therefore met a developer-facing exception about a caller ordering mistake,
+with no catalogued row and no next step.
+
+Caught before the sitting, by running the real function against the real domain rather than
+reasoning about it. Fixed in `f4a3d3a6`: an already-active zone skips the read and the gate and
+persists `carryOver = { outcome: 'not-needed', at }`.
+
+**Why every gate was green.** No fixture ran an already-active zone *through* the carry-over hop.
+The one test pairing `alreadyActive` with a run seeded its record at `records-carried`, already
+past the hop, and every other resolver stub answered non-Cloudflare nameservers. The fakes were
+not wrong about Cloudflare; the sequence was never assembled. That is a different failure from a
+bad fixture, and it is the one a live run is uniquely good at finding.
+
+One method note worth keeping. The first control for the reproduction was `example.com`, which
+also threw. IANA's example domains now run on Cloudflare nameservers, so `example.com` is useless
+as a non-Cloudflare fixture. `wikipedia.org` was the control that held.
+
+### The second finding, recorded rather than fixed
+
+The cutover's confirm resolves through `fetch`, which uses the system resolver. On this run the
+router held a stale negative for `carin-test.org` while `1.1.1.1` served the records perfectly, so
+the tool parked on `hostname-propagating` and told the owner to wait, when the site was already
+serving. Verified by connecting past the local resolver: `/` answered 200 and `/admin` answered
+303 to `/admin/login` at the moment the tool reported it unpropagated.
+
+This is amendment 15's defect class, one layer up. The records probe was hardened against
+negative-cache reads and given a `lowConfidence` flag; the confirm was left on the system
+resolver. The call to carry rather than fix: it is a wait row, it exits 0, it self-heals on
+re-run, and the site is never harmed, so it does not justify growing a pass that had already
+absorbed one unplanned fix. It belongs with a pass that owns `hostname.mjs`.
+
+### Verified, with the method named
+
+Every claim below was read back from the live platform or from disk, never inferred from the
+tool's own output.
+
+| Claim | Evidence |
+|---|---|
+| The site answers on the domain | `https://carin-test.org/` 200, `/admin` 303 to `/admin/login` |
+| `workers.dev` still answers | 200, both before and after the cutover |
+| The seeded records survive byte-intact | all four sha256-matched, MX priorities 10 and 20 preserved, the DKIM TXT still 437 bytes |
+| The run added exactly one record | the attach's proxied apex `AAAA 100::`, amendment 12's mechanism |
+| No repeated writes across a resume | the zone held 5 records before the resumed run and 5 after |
+| The record reaches `domain-live` | read back through `loadSite()`, mode 0600 |
+| The token survives `domain-live` | `apiToken` present, per Task 10's terminal-state rule |
+| The origin rewrite is ordered safely | `PUBLIC_ORIGIN` still `workers.dev` at the park, `https://carin-test.org` only after the confirm passed |
+| No secret escapes | swept the scaffold tree, `wrangler.jsonc`, every log, and the state dir for the token's distinctive fragment; the only hit is the live state record. The sweep was proven able to fail with a planted canary first |
+
+The carry-over WRITE path, which this domain cannot exercise through the chapter, was proven
+separately against the real zone: MX priority survived as its own field, a 437-byte TXT crossed
+the 255-byte chunk boundary intact, and teardown left the four seeded records untouched. That
+probe was also proven able to fail before it was trusted.
+
+### Divergences from the plan's letter
+
+1. **The scratch domain is at Cloudflare Registrar**, so the zone arrives active and delegated.
+   The run exercised the ADOPT path and the already-active short-circuit. Zone creation, the
+   records probe against a real pre-migration domain, the carry-over gate's confirm and caveat
+   copy, the delegation park and its instructions, `propagating`, `wrong-nameservers`,
+   `certificate-pending`, and the apex address-record collision all stay proven by fakes only.
+   Geoff's call, taken twice: accept and record rather than register an external domain. The
+   outstanding external-domain e2e is the way to close them.
+2. **Teardown does not delete the zone.** A Cloudflare Registrar domain requires its zone, so
+   teardown removes the Worker, both D1 databases, the R2 bucket, the Custom Domain, and the
+   repository, and leaves the zone holding its four seeded records. Deleting the Custom Domain
+   also removes the apex `AAAA` the attach created, observed twice.
+3. **No teardown token was needed.** The plan budgeted a browser moment to re-mint one because
+   completion deletes the working token. Task 10's terminal-state rule changed that: `domain-live`
+   is not terminal, so the token was still on disk.
+4. **The interactive paste was not exercised.** The token reached the run through
+   `CAIRN_CF_API_TOKEN`, the documented unattended path. The prefill URL's keys therefore remain
+   unverified against the dashboard, so amendment 9's Task 7 obligation stands open.
+5. **Task 14's admin-track domain page does not exist yet.** The admin track ships in Pass D per
+   the docs-reset spec, so the browser-moment count is recorded here and in STATUS for Pass D to
+   consume rather than filed against a page that is not there.
+6. **The template cannot build against the published engine.** The scaffold imports
+   `PreviewBanner` and `previewLoad`, which are in the unpublished window on `main`, so the run
+   needed the worktree's engine tarball. This is the release-ordering constraint STATUS already
+   records, now observed rather than predicted.
+
+### Browser moments, measured
+
+Chapter 1 cost two: creating the GitHub App and installing it. The Cloudflare sign-in cost none
+here because wrangler was already authenticated from the environment; a first-time owner pays one.
+Chapter 2 cost one, minting the API token. The site's own sign-in click does not arise in a
+non-interactive run.
+
+So chapter 2's own count is **one browser moment**, which is the number Pass D's domain page
+should state.
+
+### Carried forward
+
+- The cutover confirm's exposure to a stale negative resolver, above. Belongs to a pass owning
+  `hostname.mjs`.
+- The prefill URL's keys are still unverified against the live dashboard (amendment 9).
+- An externally registered domain still owes the branches listed in divergence 1.
+- One hand step for Geoff: delete the run's GitHub App `cairn-t4a-live-596b84` at github.com, and
+  revoke the Cloudflare API token minted for this run.

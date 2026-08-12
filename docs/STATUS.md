@@ -14,49 +14,49 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-11 evening: T4a Tasks 1-12 are LANDED; next is Task 13, which needs Geoff)
+## Immediate next action (2026-08-11: T4a is DONE, live-proven; next is the T4b planning sitting)
 
-**T4a Tasks 1 through 12 are done and committed on `t4a-domain-chapter`** (in the
-`t3-cloudflare-chapter` worktree). Suite: **437 pass, 0 fail, exit 0** in
-`packages/create-cairn-site`; `npm run check` 0 errors / 0 warnings. No PR yet. **Only Tasks 13
-and 14 remain**, and 13 cannot start without Geoff.
+**Pass T4a is complete. Chapter 2 ran end to end against the real scratch domain
+`carin-test.org` and reached `domain-live`,** on branch `t4a-domain-chapter` (worktree
+`t3-cloudflare-chapter`). A site scaffolded from scratch got its own domain: zone adopted,
+carry-over skipped as not needed, delegation short-circuited, Custom Domain attached, origin
+rewritten, redeployed, confirmed. Everything torn down and verified gone by listing. Evidence and
+the full divergence list are in the plan's post-mortem part three.
 
-**Task 13 needs three things, all of them Geoff's.** A **fresh zone-create-capable Cloudflare API
-token** (the spike one was revoked by design, and the estate token deliberately cannot create
-zones or mint tokens); the scratch domain `carin-test.org` in its seeded state (an MX record and
-a DKIM-shaped TXT, so the carry-over proof can fail); and Geoff's own browser moments for the
-token paste and the sign-in. The prefilled create-token URL lives in `prefill.mjs` and in the
-spike doc. Task 14 (docs, ROADMAP, CHANGELOG, pass close) follows it.
+**The e2e earned its keep.** It caught a hard defect before the sitting: chapter 2's carry-over hop
+ignored the `alreadyActive` flag its neighbours both read, so a domain registered at Cloudflare
+Registrar died at the second hop with an uncatalogued, developer-facing exception. Fixed in
+`f4a3d3a6` with the coverage gap closed. Every gate had been green, because no fixture ran an
+already-active zone through that hop.
 
-**The domain is registered at Cloudflare Registrar, so its zone arrives active** and the
-delegation park is unreachable on it. The externally registered path is therefore proven by the
-suite and by code review, never live. That is a known, accepted limit of this pass's e2e.
+**Next: the T4b planning sitting** (email + the console + the money framing). Its brief rides at
+the end of the T4a spec. T4b needs **Workers Paid**. Queue: T4b -> T4c (Builds connect +
+reconciliation) -> T5 -> Pass D -> release one -> site walk -> P.
 
-**Tasks 11 and 12, and what they cost.** Task 11 wired chapter 2 into `bin.mjs`: the three new
-resumable steps, the reopened `live` branch, the `domain-live` terminal branch, and the
-`--start-over` refusal. Task 12 added the cross-cutting safety net, nine cases proving a resumed
-record repeats no hop and the pasted token reaches no surface but the state record. The plan's
-post-mortem part two carries the four main-loop rulings, the five defects diff review caught, and
-the evidence for each.
+**Two hand steps for Geoff, both outstanding:** delete the run's GitHub App
+`cairn-t4a-live-596b84` at github.com, and revoke the Cloudflare API token minted for the run
+(id `a3640d8f9719e4873eca79d40f8205c3`). That token was pasted into a session transcript, so treat
+it as burned rather than merely unused. The older T3 App `cairn-t3-live-71d37c` may still be
+pending deletion too.
 
-**The one worth carrying forward: the suite was opening real browser tabs.**
-`ensureApiToken` opens the create-token page before prompting for the paste, and
-`chapter2.test.mjs` never passed the `openBrowser` seam, which defaults to the real platform
-opener. Five tabs per full run, roughly fifty across repeated agent runs, invisible on CI (no
-opener binary exists there) and silent by design (`openBrowser` swallows spawn errors). Fixed at
-both layers: every call site passes a stub, and `test/no-desktop.mjs` loads through `--import`
-from the test script, putting no-op stand-ins for `xdg-open`, `open`, and `cmd` first on PATH and
-recording what they intercept. **Any new test that drives a chapter must pass the `openBrowser`
-seam; the guard is the net, not the fix.**
-
-**Resume prompt** (a fresh Opus session; launch directory
-`~/Projects/cairn-cms/.claude/worktrees/t3-cloudflare-chapter`, branch `t4a-domain-chapter`,
-already checked out): "Resume Pass T4a of the create-cairn-site umbrella at Task 13:
-`docs/superpowers/plans/2026-08-11-create-cairn-site-t4a.md`. Tasks 1-12 are landed. Start with
-the cairn-pass skill; read the plan's two post-mortems, both Spike amendments sections, and the
-two addenda in `docs/internal/2026-08-11-t4a-domain-spike.md` first. Task 13 is the live e2e and
-runs in the main loop: ask Geoff for a fresh zone-create-capable Cloudflare API token before
-anything else, and confirm the scratch domain is still seeded. Task 14 closes the pass."
+**Carry-forwards raised by T4a, deliberately not fixed.** (1) The cutover confirm resolves through
+`fetch` and the system resolver, so a stale negative DNS cache reports a serving hostname as
+unpropagated and parks the owner. Observed live: the router answered empty while `1.1.1.1` served
+the records and the site answered 200. This is amendment 15's defect class one layer up, and it
+belongs to a pass owning `hostname.mjs`. (2) The prefill URL's permission keys are still
+unverified against the live dashboard, so amendment 9's Task 7 obligation stands open; the run
+supplied the token by env rather than the interactive paste. (3) An externally registered domain
+still owes the branches this scratch domain cannot reach: zone creation and its birth state, the
+records probe against a real pre-migration domain, the carry-over gate's confirm and caveat copy,
+the delegation park, `propagating`, `wrong-nameservers`, `certificate-pending`, and the apex
+address-record collision. (4) Chapter 2's browser-moment count is **one**, the token mint, and
+Pass D's admin-track domain page should state it; that page does not exist yet, which is why T4a
+did not write it. (5) The engine committer-attribution drift from T3 (`src/lib/github/repo.ts`
+versus spec 7.4). (6) `npm run check:comments` and the root type-check both cover `src/lib` only,
+so `packages/create-cairn-site` has neither a comment gate nor a type gate; its own `npm test` is
+the real gate. (7) `src/github/install.test.mjs`'s reauthorize race is still flaky. (8) The
+deferred defect list per the T4a spec's ruling 2. (9) The umbrella's resume table, still unowned,
+noted for Pass D.
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 

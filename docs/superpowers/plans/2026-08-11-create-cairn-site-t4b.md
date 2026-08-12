@@ -506,21 +506,39 @@ Not dispatched. The main loop drives it, per T3's and T4a's precedent.
 **Prerequisites:** the scratch domain delegated and active from T4a's e2e; the account on
 Workers Paid (Task 1 Step 2); a real inbox for the test send.
 
-- [ ] **Step 1: Run the email half end to end** against the scratch domain, from a site at
+- [x] **Step 1: Run the email half end to end** against the scratch domain, from a site at
   `domain-live`, using T3's proven install pattern. Record every browser moment and count them
   for the docs.
+  **DONE 2026-08-12**, exit 0 at `email-live`, though from scratch through chapters 1 and 2 per
+  amendment 11 rather than from a surviving `domain-live` record.
 - [ ] **Step 2: Confirm the real message arrives**, and confirm it came from
   `no-reply@<scratch-domain>`.
+  **UNPROVEN, deliberately left so.** Cloudflare accepted every send (200 with a `message_id`);
+  no message ever arrived, on a domain registered 18 hours earlier. Greylisting and SPF PERMERROR
+  were both tested and refuted; what remains is new-domain reputation, which is the industry norm
+  (SES sandboxes new accounts; Resend and Postmark document weeks of warm-up). This vindicates
+  ruling 8 with evidence: delivery is not observable by the CLI, and 200 is the strongest honest
+  signal. The harvest goes to the T4b.1 copy fix rather than to a delivery check.
 - [ ] **Step 3: Prove one park for real** by starting the run before the zone's records have
   settled, or by exercising the disabled-subdomain state, and confirm the re-run resumes with
   no repeated write.
-- [ ] **Step 4: Confirm the token is gone** from the state record after completion, by reading
-  the raw file.
-- [ ] **Step 5: Tear down.** Delete the zone through the API, which takes its sending
-  configuration with it, and verify by listing both the zones and the sending subdomains. Leave
-  the domain parked at its registrar.
-- [ ] **Step 6: Record the run** in the spike doc, including the measured propagation time,
+  **PARTIAL.** The park's condition was observed live in the spike (sends refused at 25s and 47s
+  after onboarding, accepted at 107s), but the tool's own branch could not be reached afterward:
+  sending authorization turned out to be sticky, so the domain stayed authorized even after the
+  subdomain was deleted, and a deliberate fault injection could not reproduce the refusal. The
+  only never-onboarded domains left are production ones. The branch stays covered by tests on
+  both sides of the boundary.
+- [x] **Step 4: Confirm the token is gone** from the state record after completion, by reading
+  the raw file. **DONE:** zero occurrences in the raw bytes, mode 0600, and the wider sweep was
+  proven able to fail with a planted canary first.
+- [x] **Step 5: Tear down.** Per amendment 6, not this step's original text: the subdomain
+  DELETE, then the residual `_dmarc` by hand, then the Worker, both D1 databases, the R2 bucket,
+  the repository, and the state record. The zone is back to exactly its four seeded records, all
+  sha256-identical to the pre-run fixture.
+- [x] **Step 6: Record the run** in the spike doc, including the measured propagation time,
   which is the first real measurement of a figure the docs give only as a range.
+  **DONE:** the spike doc's "The live e2e" section, including the two platform corrections
+  (sticky authorization, the second refusal code 10204).
 
 ### Task 10: Docs, tracking, and pass close
 
@@ -751,3 +769,49 @@ step; the surface was simply left behind by a correction. Removed with its tests
 Worth noticing as a pattern: **a mid-pass interface change should end by asking what it just
 orphaned.** The redirect was recorded in the plan as amendment 13 and relayed to the implementer,
 and still nothing went back to check what the old path left stranded.
+
+## Post-mortem, part three (2026-08-12): the live e2e, and what it harvested
+
+**Task 9 ran, and the pass is closed.** The full evidence table, the delivery investigation, and
+the two platform corrections live in the spike doc's "The live e2e" section; this entry carries
+the verdicts and the harvest.
+
+### Verdicts
+
+The email half works end to end against the real platform: `email-live` reached, the token deleted
+at the terminal state and nowhere else on disk, the sender address deployed in the Worker's own
+binding list, the hop order as designed, and the domain's four seeded records byte-intact through
+onboarding, cutover, and teardown. Step 2 (delivery) is **unproven and recorded as such**: every
+send returned 200, nothing arrived, and the two testable explanations were refuted, leaving
+new-domain reputation, which is the industry's documented norm and precisely what ruling 8
+predicted the CLI could not observe. Step 3 (the park) is **partial**: the condition was observed
+live in the spike, but the tool's own branch is unreachable on any domain this account may touch,
+because sending authorization turned out to survive de-onboarding.
+
+### The harvest, routed to T4b.1
+
+The run found four defects, none fixable in this pass without adding scope mid-flight. All four go
+to the T4b.1 plan drafted at this close:
+
+1. **The saved-token lock.** A saved token that passes validation (a read) but lacks a write
+   permission can never be replaced: `ensureApiToken` returns it before consulting
+   `CAIRN_CF_API_TOKEN`, and no failure clears it. The e2e needed a hand-edit of the state record.
+2. **The zone hop writes before it reads.** An owner whose zone already exists, holding a token
+   that cannot create zones, dies at `token-scope-missing` even though no create was needed. The
+   adopt path only triggers on a 1061 body, which a 403 preempts.
+3. **The closing copy overclaims on a new domain**, and `printLiveInfo` still promises "Email
+   arrives with a later chapter."
+4. **The `10204` refusal code is unclassified**, handled correctly today only by fall-through.
+
+### Method notes worth keeping
+
+- The two hypotheses that were refuted were refuted **by experiment**, not by argument: a
+  30-minute watch for greylisting, and a live SPF repoint (fixture restored and re-verified
+  after). The conclusion that remains standing is the one that survived attempts to kill it.
+- The fault injection that failed (deleting the subdomain to force the park) failed for an
+  informative reason, and turned into the sticky-authorization finding. A probe that cannot
+  reproduce a condition is evidence about the platform, not just a dead end.
+- One process defect on the orchestrator's side: the estate Cloudflare token was leaked into the
+  session transcript by a careless `${VAR:-no}` expansion during teardown. Rotation is Geoff's
+  outstanding hand step. The lesson is mechanical and worth a memory: never interpolate a secret
+  variable in a diagnostic echo, even for presence checks; use `${VAR:+yes}` alone or `test -n`.

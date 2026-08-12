@@ -14,76 +14,54 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-12: T4b is BUILT and green; its live e2e is the open half)
+## Immediate next action (2026-08-12: T4b is COMPLETE, e2e included; next is EXECUTING T4b.1)
 
-**Pass T4b's offline half is complete on branch `t4b-email-chapter`** (worktree
-`t3-cloudflare-chapter`, branched off `t4a-domain-chapter`, which is itself off `main` at
-`1415f48e`). Chapter 2 now runs `domain-live` to `email-onboarded` to `email-live`: the money
-preamble opens a fresh run, the admission asks once and respects either answer, the sending domain
-is onboarded through the REST seam, one real message proves the path, the sender address is written
-and deployed once, and the token is deleted at a genuinely terminal state.
+**Pass T4b is closed on branch `t4b-email-chapter`** (worktree `t3-cloudflare-chapter`, stacked on
+`t4a-domain-chapter`, itself off `main` at `1415f48e`). The email half is built, every gate is
+green, and the live e2e ran end to end: `email-live` reached, the token deleted at the terminal
+state and proven absent from disk, the sender address deployed, the domain's four seeded records
+byte-intact through the whole run, and teardown restored the zone exactly. Evidence: the T4b
+plan's post-mortems and the spike doc's "The live e2e" section.
 
-**Every gate is green:** the package suite at 523 passing exit 0, the root `npm run check` at 0/0
-over 1601 files, the root `npm test` at 5274 passing, and all eight named gates including the four
-CI-only ones (`check:reference:signatures`, `check:surface`, `check:comments`, `check:snippets`).
-`code-simplifier` has run. The pass is closed apart from Task 9.
+**Two honest gaps, recorded rather than dressed up.** Delivery (Task 9 Step 2) is unproven:
+Cloudflare accepted every send, nothing arrived on a day-old domain, greylisting and SPF were
+refuted by experiment, and new-domain reputation is the industry-documented norm, which vindicates
+the spec's ruling 8. The propagation park (Step 3) was observed as a platform condition in the
+spike but the tool's own branch is unreachable now that the domain is permanently authorized
+(sending authorization survives de-onboarding, a new platform finding alongside the second refusal
+code `10204`).
 
-**What is left, and it needs Geoff.** Task 9, the live e2e, has not run. T4a's teardown was
-complete, so no site sits at `domain-live` and the run starts from scratch through chapters 1 and 2,
-which costs **two browser moments** (create and install a third GitHub App). The scratch zone
-`carin-test.org` is active and its sending configuration was restored to the pre-onboarding
-baseline by the spike, so the run exercises the create path honestly.
-
-**The spike closed six of its seven steps without a browser** (`docs/internal/2026-08-11-t4b-email-spike.md`),
-because the estate token already carries Email Sending: Edit and T4a's own spike had answered the
-permission question T4b filed as its one unknown. **The one open browser question is Step 3:** given
-four Workers Custom Domains on Free-plan zones, does an Advanced Certificate Manager line item
-appear? The token is refused by every billing and certificate endpoint (code 9109). It affects one
-line of the money preamble, which currently assumes no charge.
-
-**The spike's central finding, folded into the plan as fourteen amendments.** The REST send carries
-none of the `E_` codes the Workers binding throws, and one code, `10203` at HTTP 403, covers both a
-never-onboarded domain and one still propagating, so the recorded onboarding moment plus the
-propagation window is the only discriminator. Measured propagation was 47 to 107 seconds against a
-documented 5 to 15 minutes. Deleting a sending subdomain leaves its `p=reject` DMARC record behind,
-which rewrote the teardown and sharpened the closing copy.
+**Next: EXECUTE Pass T4b.1**, the live run's defect harvest, four fixes with rulings committed in
+the plan: the saved-token lock (owner-stranding), the zone hop's write-before-read
+(owner-stranding), the delivery overclaim in two copy sites, and classifying `10204` on purpose.
+Plan: `docs/superpowers/plans/2026-08-12-create-cairn-site-t4b1.md`. Small pass, five tasks, no
+new surface.
 
 **Resume prompt for the next session** (a fresh Opus session; launch directory
-`~/Projects/cairn-cms`, then `cd .claude/worktrees/t3-cloudflare-chapter`, branch
-`t4b-email-chapter`): "Finish Pass T4b: run Task 9, the live e2e, per
-`docs/superpowers/plans/2026-08-11-create-cairn-site-t4b.md`, reading the spike amendments first
-(amendments 6, 7 and 11 rewrite the teardown, the park to prove, and the prerequisites). Then close
-the pass per `cairn-pass`."
+`~/Projects/cairn-cms`): "Execute Pass T4b.1 of the create-cairn-site umbrella (the T4b live
+run's defect harvest): `docs/superpowers/plans/2026-08-12-create-cairn-site-t4b1.md`. Start with
+the cairn-pass skill; read the plan in full first, plus the T4b plan's post-mortem part three for
+the evidence behind each fix. **First step before any dispatch: fast-forward merge the green
+stack to `main`** (`main` is at `1415f48e`, `t4b-email-chapter` is a direct descendant, so the
+merge is ff-only and lands the exact tree every gate passed), then work on a fresh worktree off
+`main`. The merge was recommended at the T4b close and not vetoed; it removes the branch-topology
+trap this section has had to carry since T4a. Hold the release itself per the standing order
+(after Pass D)."
 
-Queue after T4b: T4c (Builds connect + reconciliation) -> T4d (the localhost console) -> T5 ->
-Pass D -> release one -> site walk -> P.
+Queue after T4b.1: T4c planning sitting (Fable; Builds connect + reconciliation, brief in the
+T4a spec) -> T4d (the localhost console) -> T5 -> Pass D -> release one -> site walk -> P.
 
-**Branch topology matters.** `t4b-email-chapter` sits on `t4a-domain-chapter`, and neither is
-pushed or merged, so a cold session that branches off `main` by default would build against a tool
-lacking chapter 2 entirely.
+**Hand steps for Geoff, TWO outstanding, one urgent.** (1) **URGENT: rotate the estate Cloudflare
+token** (`Cloudflare Admin 2026-07`): its value was leaked into a session transcript during the
+e2e teardown and it is still active (verified). Mint a replacement, run
+`~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, then delete the old one.
+(2) Delete the GitHub App `cairn-t4b-live-03cd31` at github.com/settings/apps. Done already: the
+run token (deleted, verified by elimination), the two older Apps, T2's scratch org.
 
-**Hand steps for Geoff, from the live e2e. THREE outstanding, one urgent.**
-
-1. **URGENT, rotate the estate Cloudflare token** (`Cloudflare Admin 2026-07`). Claude printed its
-   value into a session transcript by mistake during teardown, so it is burned. It is the
-   workstation-wide token in `~/.local/secrets`, so rotation means minting a replacement and
-   re-running `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`.
-2. **DONE 2026-08-12: the run token** (`cairn create-cairn-site`) is deleted; verified the estate
-   token is the one still answering. Its local copy was shredded earlier.
-3. **Delete the GitHub App `cairn-t4b-live-03cd31`** at github.com/settings/apps.
-
-Everything else the run created is gone and verified: Worker, both D1 databases, the R2 bucket, the
-repository, the state record, the sending subdomain, and the residual `_dmarc`. The scratch zone is
-back to exactly its four seeded records, all sha256-identical to the pre-run fixture.
-
-**Every live e2e mints a GitHub App only Geoff can delete, and this is now a standing tax.** There
-is no REST endpoint to delete a GitHub App, and the installation-delete endpoint needs the App's
-own JWT, whose key the tool deliberately moves into a Worker secret and deletes locally. So an App
-outlives the run that made it and the credential that could reach it. Three have been deleted by
-hand across T3, T4a, and T2's org run, and **Task 9 will mint a fourth.** The fix, if the tax keeps
-biting, is for the e2e procedure to reuse one long-lived test App rather than minting per run: the
-tool already accepts an existing App, so it is a change to the procedure, not the engine. Not filed
-against a pass yet, deliberately, since it is a testing-workflow cost rather than a product defect.
+**Standing note on e2e cost:** every live e2e mints a GitHub App only Geoff can delete (no REST
+endpoint deletes an App, and the installation endpoint needs the key the tool deliberately
+destroys). Four hand-deleted so far. If the tax keeps biting, reuse one long-lived test App: a
+procedure change, not engine work.
 
 **Carry-forwards raised by T4a, deliberately not fixed.** (1) The cutover confirm resolves through
 `fetch` and the system resolver, so a stale negative DNS cache reports a serving hostname as

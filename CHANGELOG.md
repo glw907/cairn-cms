@@ -99,6 +99,34 @@
   state with nothing left to do with it. Consumers must: nothing, since the tool is unpublished
   and the engine's runtime library is untouched by this pass.
 
+  An email chapter now finishes what the domain one started, taking a site from serving on its own
+  domain to sending its own sign-in mail. It onboards the domain for Cloudflare Email Sending
+  through the REST API, sends one real message to the owner's address to prove the path, then
+  writes `no-reply@<domain>` into the scaffold's `cairn.config.ts` and redeploys once so the
+  running Worker carries it. The test send runs before the rewrite and deploy deliberately: it
+  proves the sending path without depending on the deployed Worker, and a broken path should not
+  buy a deploy. The deploy itself happens only when the address actually changed, so a resumed run
+  does not buy a second one. The chapter opens with the price rather than discovering it: a cost
+  preamble now heads a fresh run, before the site name is even asked, covering what is free, what a
+  domain costs at a registrar, and Cloudflare's Workers Paid plan at $5 US per month billed once per
+  account. Every figure carries its date and a link. A new `--email` flag opts in unattended, and
+  `--yes` alone declines rather than committing an owner to a subscription, naming the flag that
+  would not have. Declining is a first-class outcome rather than a failure: the catalogue gains a
+  fourth error kind, `declined`, which exits `0` and carries no re-run urgency, and the copy names
+  what still works, what does not, and `--sign-in` as the owner's own way back in. A re-run
+  re-offers. The pasted Cloudflare token now survives until chapter 2 reaches a genuinely terminal
+  state, which is the email half completing or a recorded decline, and a park keeps it; this closes
+  a hole where an owner who declined left a live credential on disk. Consumers must: nothing, since
+  the tool is unpublished and this pass leaves the engine's runtime library untouched.
+
+  Two platform findings from the pass's live spike are worth recording, because both contradict
+  what the documentation implies. Cloudflare's REST send carries none of the `E_` codes its Workers
+  binding throws, and one code, `10203`, covers both a domain that was never onboarded and one whose
+  DNS is still settling, so elapsed time since onboarding is the only thing separating them.
+  Deleting a sending subdomain removes the records onboarding added except the `p=reject` DMARC
+  record at the apex, so that policy outlives the feature that wrote it and any later sender for the
+  domain has to be added to it. The closing copy and the deploy guide both say so now.
+
 - Every entry gains a publish history and a revert-as-draft: the `history` admin view
   (`/admin/<concept>/<id>/history`), reachable from the edit screen's overflow menu, lists the
   entry's most recent 25 publishes off `Backend`'s new `listCommits(path, ref, limit)` member (a

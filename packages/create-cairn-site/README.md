@@ -205,6 +205,62 @@ to your own domain completes.
 | --- | --- |
 | `--domain` | The domain to connect, and your opt-in to this chapter. Pair with `--yes` for a fully unattended run. |
 
+## The email chapter
+
+With your domain live, the command offers to turn on sign-in email. This is the step that lets
+anyone other than you sign in, because everyone else gets in by clicking a link sent to their
+address. Your own sign-in never needs it.
+
+It asks once, and either answer is fine. `--email` opts in without the prompt. `--yes` alone, with
+no `--email`, declines rather than putting you on a subscription unattended, and says which flag
+turns it on.
+
+### What it costs
+
+Sending email needs Cloudflare's Workers Paid plan, at $5 US per month as of 2026-08-11. It is a
+subscription rather than a charge per message, and it is billed once per account rather than once
+per site, so a second site on the same account adds nothing. Your site's traffic has nothing to do
+with it. The command states the price again at the moment it asks.
+
+### Declining costs you nothing today
+
+If you say no, the run stops there and exits `0`. Your site keeps serving on your domain, and you
+keep editing and publishing as its owner. What you cannot do is invite anyone else, since there is
+no way to send them a link.
+
+Your own way back in is `npx create-cairn-site --dir <dir> --sign-in`, which writes a fresh sign-in
+link straight into your site's database without touching email. Each one lasts 30 days, so nothing
+expires out from under you while you decide. Running the command again re-offers the plan.
+
+### What it does
+
+The chapter onboards your domain for sending, sends one real message to your own address to prove
+the path works, then writes `no-reply@<your-domain>` into your site's config and redeploys once so
+the running site uses it. The test send comes before the redeploy on purpose: there is no point
+deploying a site whose sending path is broken.
+
+Onboarding adds records under `cf-bounce.<your-domain>` and leaves the mail you already receive
+alone.
+
+### Waiting is normal here too
+
+New DNS records take a few minutes to settle, and a test send before they do will fail. That is a
+normal outcome, not a failure: the command exits `0`, says it is waiting on DNS, and gives you the
+command to run again. A later run picks up where it stopped and does not redo the onboarding.
+
+### One thing to know for later
+
+Onboarding writes a DMARC record for your domain set to `p=reject`, which asks receivers to reject
+mail from your domain that does not pass authentication. If you later add another service that
+sends as your domain, a newsletter tool for instance, add it to that record or its mail is
+rejected. Turning Email Sending off again does not remove the record.
+
+### Flags
+
+| Flag | Effect |
+| --- | --- |
+| `--email` | Turn on sign-in email without an interactive prompt. Pair with `--yes` for a fully unattended run. |
+
 ## Running the site
 
 ```

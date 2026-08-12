@@ -27,7 +27,7 @@ const EXPECTED_KIND = {
   'zone-create-failed': 'act',
   'records-read-failed': 'act',
   'dns-record-failed': 'act',
-  'carry-over-declined': 'act',
+  'carry-over-declined': 'declined',
   'records-unverified': 'act',
   'delegation-propagating': 'wait',
   'delegation-pending': 'wait',
@@ -36,7 +36,15 @@ const EXPECTED_KIND = {
   'certificate-pending': 'wait',
   'hostname-not-serving': 'act',
   'custom-domain-failed': 'act',
-  'cutover-deploy-failed': 'act'
+  'cutover-deploy-failed': 'act',
+  'paid-plan-declined': 'declined',
+  'paid-plan-missing': 'act',
+  'email-onboarding-failed': 'act',
+  'email-not-ready': 'wait',
+  'email-sender-propagating': 'wait',
+  'email-sender-unavailable': 'act',
+  'email-daily-limit': 'wait',
+  'email-send-failed': 'act'
 };
 
 /** Plausible params for each code, enough to exercise every interpolation. */
@@ -84,7 +92,15 @@ const SAMPLE_PARAMS = {
   'certificate-pending': { dir: './alpine', domain: 'example.com' },
   'hostname-not-serving': { dir: './alpine', domain: 'example.com' },
   'custom-domain-failed': { dir: './alpine', detail: '409: hostname already exists' },
-  'cutover-deploy-failed': { dir: './alpine', detail: 'ERROR: script size limit exceeded' }
+  'cutover-deploy-failed': { dir: './alpine', detail: 'ERROR: script size limit exceeded' },
+  'paid-plan-declined': { dir: './alpine' },
+  'paid-plan-missing': { dir: './alpine' },
+  'email-onboarding-failed': { dir: './alpine', detail: 'Cloudflare: 403 not entitled' },
+  'email-not-ready': { dir: './alpine', domain: 'example.com' },
+  'email-sender-propagating': { dir: './alpine' },
+  'email-sender-unavailable': { dir: './alpine', domain: 'example.com' },
+  'email-daily-limit': { dir: './alpine' },
+  'email-send-failed': { dir: './alpine', detail: 'Cloudflare: 429 rate limited' }
 };
 
 test('the expected-kind table covers every code the module has rows for', () => {
@@ -157,7 +173,9 @@ test('detail renders above the Next: line when given', () => {
     'token-invalid',
     'zone-create-failed',
     'custom-domain-failed',
-    'cutover-deploy-failed'
+    'cutover-deploy-failed',
+    'email-onboarding-failed',
+    'email-send-failed'
   ]) {
     const err = cloudflareError(code, SAMPLE_PARAMS[code]);
     assert.match(err.message, new RegExp(SAMPLE_PARAMS[code].detail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
@@ -177,7 +195,9 @@ test('the message reads sensibly when detail is absent', () => {
     'token-invalid',
     'zone-create-failed',
     'custom-domain-failed',
-    'cutover-deploy-failed'
+    'cutover-deploy-failed',
+    'email-onboarding-failed',
+    'email-send-failed'
   ]) {
     const err = cloudflareError(code, { dir: './alpine' });
     assert.doesNotMatch(err.message, /undefined/);
@@ -314,4 +334,57 @@ test('cutover-deploy-failed says the site is still working on workers.dev with n
   assert.match(err.message, /workers\.dev/);
   assert.match(err.message, /restored/);
   assert.match(err.message, /still working/);
+});
+
+test('carry-over-declined now reports the declined kind', () => {
+  const err = cloudflareError('carry-over-declined', { dir: './alpine' });
+  assert.equal(err.catalogue.kind, 'declined');
+});
+
+test('paid-plan-declined names what still and does not still work, the --sign-in path, and the 30-day window', () => {
+  const err = cloudflareError('paid-plan-declined', { dir: './alpine' });
+  assert.match(err.message, /still working/);
+  assert.match(err.message, /editing and publishing/);
+  assert.match(err.message, /signing in/);
+  assert.ok(err.message.includes('--sign-in'), 'should name the --sign-in recovery command');
+  assert.ok(err.message.includes('./alpine'), 'should interpolate dir');
+  assert.ok(err.message.includes('30 days'), 'should name the 30-day sign-in window');
+});
+
+test('paid-plan-declined differs between its first and re-offered forms', () => {
+  const first = cloudflareError('paid-plan-declined', { dir: './alpine' });
+  const reoffered = cloudflareError('paid-plan-declined', { dir: './alpine', reoffered: true });
+  assert.notEqual(first.message, reoffered.message);
+  assert.match(reoffered.message, /Next:/);
+});
+
+test('paid-plan-missing deep-links the plan page and states the price', () => {
+  const err = cloudflareError('paid-plan-missing', { dir: './alpine' });
+  assert.match(err.message, /\$5/);
+  assert.match(err.message, /dash\.cloudflare\.com/);
+  assert.match(err.message, /Next:/);
+});
+
+test("email-not-ready reassures the site is untouched, matching delegation-pending's tone", () => {
+  const err = cloudflareError('email-not-ready', SAMPLE_PARAMS['email-not-ready']);
+  assert.match(err.message, /normal/);
+  assert.match(err.message, /untouched and still working/);
+});
+
+test('email-sender-propagating names the documented 5-to-15-minute window', () => {
+  const err = cloudflareError('email-sender-propagating', SAMPLE_PARAMS['email-sender-propagating']);
+  assert.match(err.message, /5 to 15 minutes/);
+});
+
+test('email-sender-unavailable names re-running and a dashboard check', () => {
+  const err = cloudflareError('email-sender-unavailable', SAMPLE_PARAMS['email-sender-unavailable']);
+  assert.match(err.message, /dashboard/);
+  assert.match(err.message, /Next:/);
+});
+
+test('email-daily-limit explains the ramp and names both waiting and the limit-increase form', () => {
+  const err = cloudflareError('email-daily-limit', SAMPLE_PARAMS['email-daily-limit']);
+  assert.match(err.message, /ramp|rises|improves/);
+  assert.match(err.message, /wait/i);
+  assert.match(err.message, /email-service\/platform\/limits/);
 });

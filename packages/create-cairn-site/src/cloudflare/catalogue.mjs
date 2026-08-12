@@ -4,7 +4,7 @@
 // next.
 
 /**
- * @typedef {'wait' | 'act' | 'ask-someone'} ErrorKind
+ * @typedef {'wait' | 'act' | 'ask-someone' | 'declined'} ErrorKind
  */
 
 /**
@@ -13,7 +13,8 @@
  * @property {ErrorKind} kind decides the exit code: 'wait' means nothing is wrong and something
  *  just takes time, so the caller returns this row and exits 0; 'act' means the admin does
  *  something themselves and re-runs, thrown and exits 1; 'ask-someone' means another person
- *  must act first, thrown and exits 1
+ *  must act first, thrown and exits 1; 'declined' means nothing is wrong, the owner chose this,
+ *  so the caller returns this row and exits 0 with no re-run urgency
  * @property {string} next the concrete next command or action, with the leading "Next:" label
  *  stripped
  */
@@ -362,7 +363,7 @@ const ROWS = {
     }
   },
   'carry-over-declined': {
-    kind: 'act',
+    kind: 'declined',
     build(params) {
       return (
         "You chose not to copy your domain's existing DNS records into the new Cloudflare " +
@@ -509,6 +510,133 @@ const ROWS = {
         `Next: re-run npx create-cairn-site --dir ${params.dir}.`
       );
     }
+  },
+  'paid-plan-declined': {
+    kind: 'declined',
+    build(params) {
+      if (params.reoffered) {
+        return (
+          "Earlier, you chose not to turn on Cloudflare's Workers Paid plan, so this site still " +
+          'cannot send its own sign-in email. Your site is untouched and still working, and your ' +
+          `own way back in is npx create-cairn-site --dir ${params.dir} --sign-in, which is good ` +
+          'for the current 30-day sign-in.\n' +
+          'Next: this run asks again whether to turn Workers Paid on now.'
+        );
+      }
+      return (
+        "You chose not to turn on Cloudflare's Workers Paid plan, so this site cannot send its " +
+        'own sign-in email yet. That choice is recorded, and your site is untouched and still ' +
+        'working: it keeps serving its pages, and you keep editing and publishing as the owner. ' +
+        'What does not work is anyone else signing in, since only Workers Paid can send them a ' +
+        'link.\n' +
+        `Your own way back in is npx create-cairn-site --dir ${params.dir} --sign-in, which ` +
+        "writes a fresh sign-in link straight into the site's database without touching email. " +
+        'Your current sign-in lasts 30 days, so none of this is urgent.\n' +
+        'Next: when you are ready to turn email sign-in on, re-run npx create-cairn-site --dir ' +
+        `${params.dir}.`
+      );
+    }
+  },
+  'paid-plan-missing': {
+    kind: 'act',
+    build(params) {
+      return (
+        'Cloudflare would not onboard your domain for email, because this account is not on ' +
+        'the Workers Paid plan, which Email Sending requires. Workers Paid costs $5 US per ' +
+        'month, as of 2026-08-11 ' +
+        '(https://developers.cloudflare.com/email-service/platform/pricing/). Your site is ' +
+        'untouched and still working.\n' +
+        'Next: open https://dash.cloudflare.com/?to=/:account/workers-and-pages, turn on the ' +
+        `Workers Paid plan, then re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'email-onboarding-failed': {
+    kind: 'act',
+    build(params) {
+      if (params.detail) {
+        return (
+          'Onboarding your domain for email did not finish. Cloudflare reported:\n' +
+          `${params.detail}\n` +
+          'Your site is untouched and still working.\n' +
+          'Next: fix what Cloudflare reported above, then re-run npx create-cairn-site --dir ' +
+          `${params.dir}.`
+        );
+      }
+      return (
+        'Onboarding your domain for email did not finish.\n' +
+        'Your site is untouched and still working.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'email-not-ready': {
+    kind: 'wait',
+    build(params) {
+      return (
+        `Your domain ${params.domain} is set up for email sending, but Cloudflare has not ` +
+        'finished enabling it yet. This is normal, and usually finishes within a few minutes. ' +
+        'Your site is untouched and still working.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir} in a few minutes to check again.`
+      );
+    }
+  },
+  'email-sender-propagating': {
+    kind: 'wait',
+    build(params) {
+      return (
+        'Sending a test sign-in email did not work yet: the DNS records email onboarding just ' +
+        'wrote are still settling. Cloudflare documents this as usually taking 5 to 15 minutes. ' +
+        'Nothing is wrong, and your site is untouched and still working.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir} in a few minutes to try the test ` +
+        'message again.'
+      );
+    }
+  },
+  'email-sender-unavailable': {
+    kind: 'act',
+    build(params) {
+      return (
+        `Sending a test sign-in email from ${params.domain} still does not work, well past the ` +
+        'time DNS propagation normally takes, which means onboarding did not take. Your site is ' +
+        'untouched and still working.\n' +
+        `Next: check ${params.domain}'s Email Sending status in the Cloudflare dashboard, then ` +
+        `re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'email-daily-limit': {
+    kind: 'wait',
+    build(params) {
+      return (
+        'Cloudflare would not send the test message because this account has reached its ' +
+        'daily sending limit. New accounts start with a conservative limit that rises ' +
+        'automatically as the account sends more and its reputation improves, so this is ' +
+        'expected rather than a mistake. Your site is untouched and still working.\n' +
+        `Next: wait and re-run npx create-cairn-site --dir ${params.dir} later, or ask ` +
+        'Cloudflare to raise the limit sooner from ' +
+        'https://developers.cloudflare.com/email-service/platform/limits/.'
+      );
+    }
+  },
+  'email-send-failed': {
+    kind: 'act',
+    build(params) {
+      if (params.detail) {
+        return (
+          'Sending the test sign-in email did not finish. Cloudflare reported:\n' +
+          `${params.detail}\n` +
+          'Your site is untouched and still working.\n' +
+          'Next: fix what Cloudflare reported above, then re-run npx create-cairn-site --dir ' +
+          `${params.dir}.`
+        );
+      }
+      return (
+        'Sending the test sign-in email did not finish.\n' +
+        'Your site is untouched and still working.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
   }
 };
 
@@ -523,12 +651,13 @@ export const CATALOGUE_CODES = Object.keys(ROWS);
  * Build a printable, catalogued error for one of the Cloudflare chapter's recoverable failures.
  * @param {string} code one of the catalogue's codes, the keys of `ROWS` above and of the
  *  exported `CATALOGUE_CODES`; anything else throws
- * @param {Record<string, string | string[]>} [params] the values to interpolate into the row's
- *  message; which keys are required depends on `code` (for example `dir` on every row, `detail`
- *  on the rows that carry child or API output, `database` on migrations-failed, `reason` and
- *  `email` on seed-failed's not-allowlisted case, `permission` on token-scope-missing, `domain`
- *  on the domain and hostname rows, and `nameServers`/`actual`, both string arrays, on the
- *  delegation rows)
+ * @param {Record<string, string | string[] | boolean>} [params] the values to interpolate into
+ *  the row's message; which keys are required depends on `code` (for example `dir` on every row,
+ *  `detail` on the rows that carry child or API output, `database` on migrations-failed, `reason`
+ *  and `email` on seed-failed's not-allowlisted case, `permission` on token-scope-missing,
+ *  `domain` on the domain and hostname rows and the email-sender rows, `nameServers`/`actual`,
+ *  both string arrays, on the delegation rows, and `reoffered`, a boolean, on paid-plan-declined
+ *  to print the copy for a re-run after an earlier decline)
  * @returns {Error & { catalogue: ChapterErrorInfo }} an Error whose message is the full printed
  *  text (ending in a "Next:" line) and whose `catalogue` property carries `{ code, kind, next }`
  */

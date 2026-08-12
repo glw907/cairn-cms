@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { startFakeCloudflare } from '../../test/fake-cloudflare.mjs';
-import { makeApi, redactToken, SENDING_DISABLED_CODE } from './api.mjs';
+import { startFakeCloudflare, SENDER_NOT_CONFIGURED_REFUSED_BODY } from '../../test/fake-cloudflare.mjs';
+import { makeApi, redactToken, SENDING_DISABLED_CODE, SENDER_NOT_CONFIGURED_CODE } from './api.mjs';
 
 /**
  * The send refusal captured live 2026-08-12 (docs/internal/2026-08-11-t4b-email-spike.md). The
@@ -464,6 +464,21 @@ test('a send refused with 10203 reports the send row, carrying the code and the 
     },
   );
 
+});
+
+test('a send refused with 10204 reports the send row, carrying the code and the dotted identifier on the thrown error (never observed on a just-onboarded domain live)', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('email_send', 403, SENDER_NOT_CONFIGURED_REFUSED_BODY);
+
+  await assert.rejects(
+    () => api.sendMessage({ from: 'no-reply@carin-test.org', to: 'owner@example.com', subject: 'Sign in', text: 'link' }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'email-send-failed');
+      assert.match(err.message, /email\.sending\.error\.email\.sender_not_configured/);
+      assert.equal(err.api.code, SENDER_NOT_CONFIGURED_CODE);
+      return true;
+    },
+  );
 });
 
 test('an entitlement refusal maps to paid-plan-missing, keyed on wording because the condition was never observed live', async (t) => {

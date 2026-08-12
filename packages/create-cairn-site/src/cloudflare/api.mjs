@@ -69,6 +69,17 @@ const ENTITLEMENT_PATTERN = /workers[ _.]?paid|paid[ _.]?plan|not[ _.]?entitled|
  */
 export const SENDING_DISABLED_CODE = 10203;
 
+/**
+ * A second Cloudflare code for a send refused over sender readiness, captured live 2026-08-12
+ * alongside SENDING_DISABLED_CODE, carrying the dotted identifier
+ * `email.sending.error.email.sender_not_configured`. It was observed only on domains that were
+ * never onboarded, and not consistently even there (two domains with no sending subdomain entry
+ * returned different codes); it was never observed on a domain that had just been onboarded.
+ * email.mjs classifies it the same as SENDING_DISABLED_CODE, on the reasoning that both describe
+ * the sender-not-ready family and this chapter only ever sends after a successful onboard.
+ */
+export const SENDER_NOT_CONFIGURED_CODE = 10204;
+
 /** How long to wait when a 429 carries no Retry-After header, in milliseconds. */
 const DEFAULT_RETRY_AFTER_MS = 1000;
 

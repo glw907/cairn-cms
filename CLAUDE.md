@@ -255,10 +255,11 @@ no package subpath), so its API is free to grow; the event names are the public-
 **Two surfaces, two error vocabularies; the `E_` table does not cross between them.** The binding
 `env.EMAIL.send({...})` throws `E_SENDER_NOT_VERIFIED`, the same string Routing uses for an
 unverified destination (how the ecxc outage hid), and `src/lib/email.ts` parses that. The REST
-send (`POST /accounts/{id}/email/sending/send`) throws no `E_` codes: **one code, `10203` at HTTP
-403, covers both a never-onboarded domain and one still propagating**, so elapsed time since
-onboarding is the only discriminator. `cloudflare:email`'s `EmailMessage` is *Routing*'s forward
-call, verified destinations only.
+send (`POST /accounts/{id}/email/sending/send`) throws no `E_` codes: **two codes, `10203` and
+`10204` (both HTTP 403), cover an unready sender (never onboarded, or still propagating)**;
+`10204` appeared only on never-onboarded domains. Elapsed time since onboarding is the only
+discriminator. `cloudflare:email`'s `EmailMessage` is *Routing*'s forward call, verified
+destinations only.
 
 **Onboarding** is `wrangler email sending enable <domain>` or `POST
 /zones/{zoneId}/email/sending/subdomains` with the zone's **apex** name; no dashboard visit, and

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { startFakeCloudflare } from '../../test/fake-cloudflare.mjs';
+import { startFakeCloudflare, SENDER_NOT_CONFIGURED_REFUSED_BODY } from '../../test/fake-cloudflare.mjs';
 import { makeApi, SENDING_DISABLED_CODE } from './api.mjs';
 import { ensureSendingDomain, sendTestMessage, defaultFromAddress, PROPAGATION_WINDOW_MS } from './email.mjs';
 
@@ -222,6 +222,115 @@ test('sendTestMessage treats one millisecond past PROPAGATION_WINDOW_MS as unava
     }),
     (err) => {
       assert.equal(err.catalogue.code, 'email-sender-unavailable');
+      return true;
+    },
+  );
+});
+
+// --- 10204, the second sender-not-ready code, joins 10203 under the same window logic ---------
+//
+// 10204 was never observed on a domain that had just been onboarded live (only on never-onboarded
+// domains, and not consistently even there); the boundary tests below assert a reasoned
+// classification derived from the dotted identifier's meaning, not a measured fact.
+
+test('sendTestMessage parks as email-sender-propagating for 10204 inside the propagation window (10204 never observed on a just-onboarded domain live)', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('email_send', 403, SENDER_NOT_CONFIGURED_REFUSED_BODY);
+
+  await assert.rejects(
+    sendTestMessage({
+      api,
+      from: 'no-reply@carin-test.org',
+      to: 'owner@example.com',
+      onboardedAt: new Date(0).toISOString(),
+      now: () => PROPAGATION_WINDOW_MS - 1000,
+    }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'email-sender-propagating');
+      assert.equal(err.catalogue.kind, 'wait');
+      return true;
+    },
+  );
+});
+
+test('sendTestMessage throws email-sender-unavailable for 10204 past the propagation window (10204 never observed on a just-onboarded domain live)', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('email_send', 403, SENDER_NOT_CONFIGURED_REFUSED_BODY);
+
+  await assert.rejects(
+    sendTestMessage({
+      api,
+      from: 'no-reply@carin-test.org',
+      to: 'owner@example.com',
+      onboardedAt: new Date(0).toISOString(),
+      now: () => PROPAGATION_WINDOW_MS + 60_000,
+    }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'email-sender-unavailable');
+      assert.equal(err.catalogue.kind, 'act');
+      return true;
+    },
+  );
+});
+
+test('sendTestMessage treats exactly PROPAGATION_WINDOW_MS elapsed as still propagating for 10204 too (inclusive boundary)', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('email_send', 403, SENDER_NOT_CONFIGURED_REFUSED_BODY);
+
+  await assert.rejects(
+    sendTestMessage({
+      api,
+      from: 'no-reply@carin-test.org',
+      to: 'owner@example.com',
+      onboardedAt: new Date(0).toISOString(),
+      now: () => PROPAGATION_WINDOW_MS,
+    }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'email-sender-propagating');
+      return true;
+    },
+  );
+});
+
+test('sendTestMessage treats one millisecond past PROPAGATION_WINDOW_MS as unavailable for 10204 too (exclusive boundary)', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('email_send', 403, SENDER_NOT_CONFIGURED_REFUSED_BODY);
+
+  await assert.rejects(
+    sendTestMessage({
+      api,
+      from: 'no-reply@carin-test.org',
+      to: 'owner@example.com',
+      onboardedAt: new Date(0).toISOString(),
+      now: () => PROPAGATION_WINDOW_MS + 1,
+    }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'email-sender-unavailable');
+      return true;
+    },
+  );
+});
+
+test('sendTestMessage still falls through to email-send-failed for a third code that is neither 10203 nor 10204, proving the classification was not over-widened', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('email_send', 403, {
+    success: false,
+    errors: [{ code: 10299, message: 'email.sending.error.email.some_other_condition' }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    sendTestMessage({
+      api,
+      from: 'no-reply@carin-test.org',
+      to: 'owner@example.com',
+      onboardedAt: new Date(0).toISOString(),
+      now: () => PROPAGATION_WINDOW_MS - 1000,
+    }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'email-send-failed');
+      assert.match(err.message, /email\.sending\.error\.email\.some_other_condition/);
       return true;
     },
   );

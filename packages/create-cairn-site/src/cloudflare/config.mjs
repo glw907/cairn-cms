@@ -149,3 +149,43 @@ export async function writePublicOrigin(dir, url) {
     content.replace(PUBLIC_ORIGIN_PATTERN, `"PUBLIC_ORIGIN": ${JSON.stringify(url)}`)
   );
 }
+
+const CAIRN_CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
+
+/**
+ * Matches the adapter's `email: { from: '...' }` entry in cairn.config.ts, with the address
+ * itself captured in group 2. Matched by regex on the key shape, not on the template's
+ * placeholder literal (`cms@showcase.test`), for the same reason `PUBLIC_ORIGIN_PATTERN` is:
+ * after a resumed run the value may already be a real address.
+ */
+const EMAIL_FROM_PATTERN = /(email:\s*\{\s*from:\s*')([^']*)('\s*\})/;
+
+/**
+ * Rewrite the scaffold's `email: { from: '...' }` address in cairn.config.ts to the site's real
+ * sender address, verified live against Cloudflare's onboarded apex (the T4b spike). Idempotent:
+ * a file whose address already matches is left untouched and the function reports no change, so
+ * the caller can skip a redundant deploy on a resumed run.
+ * @param {string} dir the scaffold root
+ * @param {string} address the site's real sender address (`no-reply@<domain>`)
+ * @returns {Promise<boolean>} true when the file changed, false when the address was already correct
+ */
+export async function writeEmailFrom(dir, address) {
+  const configPath = path.join(dir, CAIRN_CONFIG_RELATIVE);
+  const content = await readFile(configPath, 'utf8');
+  const match = EMAIL_FROM_PATTERN.exec(content);
+  if (!match) {
+    throw new Error(
+      `writeEmailFrom: expected to find an "email: { from: '...' }" entry in ${CAIRN_CONFIG_RELATIVE}, but it is missing`,
+    );
+  }
+  if (match[2] === address) return false;
+
+  const next =
+    content.slice(0, match.index) +
+    match[1] +
+    address +
+    match[3] +
+    content.slice(match.index + match[0].length);
+  await writeFile(configPath, next);
+  return true;
+}

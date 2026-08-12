@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { nameWranglerResources, writePublicOrigin, workerNameFor } from './config.mjs';
+import { fileURLToPath } from 'node:url';
+import { nameWranglerResources, writePublicOrigin, workerNameFor, writeEmailFrom } from './config.mjs';
 
 /**
  * Verbatim copy of the baked template's `wrangler.jsonc`: the showcase's own file
@@ -236,4 +237,116 @@ test('a display name slugging to 58 characters is bounded before any derived res
   assert.ok(parsed.d1_databases[1].database_name.length <= 63);
   assert.ok(parsed.r2_buckets[0].bucket_name.length <= 63, `bucket name too long: ${parsed.r2_buckets[0].bucket_name}`);
   assert.match(parsed.r2_buckets[0].bucket_name, R2_BUCKET_NAME_PATTERN);
+});
+
+/**
+ * A minimal stand-in for the baked template's `src/theme/cairn.config.ts`, carrying only what
+ * `writeEmailFrom` cares about and the surrounding shape it must leave alone: several distinct
+ * lines before and after the `email:` entry, so the "touches nothing else" test has real lines to
+ * diff against.
+ */
+const MINIMAL_CAIRN_CONFIG = `import { defineAdapter, githubApp } from '@glw907/cairn-cms';
+
+export const cairn = defineAdapter({
+  content: {},
+  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
+  email: { from: 'cms@showcase.test' },
+  media: { bucketBinding: 'MEDIA_BUCKET' },
+});
+`;
+
+const CAIRN_CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
+
+/**
+ * Make a temporary scaffold directory holding a `src/theme/cairn.config.ts`, removed when the
+ * test that asked for it finishes.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @param {string} [content] the file's content; defaults to the minimal fixture
+ * @returns {Promise<string>} the directory's absolute path
+ */
+async function cairnConfigFixtureDir(t, content = MINIMAL_CAIRN_CONFIG) {
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-config-email-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await mkdir(path.join(dir, 'src/theme'), { recursive: true });
+  await writeFile(path.join(dir, CAIRN_CONFIG_RELATIVE), content);
+  return dir;
+}
+
+/**
+ * Pull the `email.from` address back out of cairn.config.ts content, the same way the wrangler
+ * tests above re-parse their JSONC rather than trusting a substring match: proof that the
+ * rewritten value round-trips exactly, not just that the expected string appears somewhere in
+ * the file.
+ * @param {string} content the file's raw content
+ * @returns {string | null} the address, or null when the entry is not present
+ */
+function parseEmailFrom(content) {
+  const match = /email:\s*\{\s*from:\s*'([^']*)'\s*\}/.exec(content);
+  return match ? match[1] : null;
+}
+
+test('writeEmailFrom rewrites the from address and returns true', async (t) => {
+  const dir = await cairnConfigFixtureDir(t);
+  const changed = await writeEmailFrom(dir, 'no-reply@alpine-club.example');
+  assert.equal(changed, true);
+  const content = await readFile(path.join(dir, CAIRN_CONFIG_RELATIVE), 'utf8');
+  assert.equal(parseEmailFrom(content), 'no-reply@alpine-club.example');
+});
+
+test('a second call with the same address returns false and leaves the bytes identical', async (t) => {
+  const dir = await cairnConfigFixtureDir(t);
+  await writeEmailFrom(dir, 'no-reply@alpine-club.example');
+  const once = await readFile(path.join(dir, CAIRN_CONFIG_RELATIVE), 'utf8');
+
+  const changed = await writeEmailFrom(dir, 'no-reply@alpine-club.example');
+  const twice = await readFile(path.join(dir, CAIRN_CONFIG_RELATIVE), 'utf8');
+
+  assert.equal(changed, false);
+  assert.equal(twice, once);
+});
+
+test('a fixture missing the email.from key throws naming the file and the string', async (t) => {
+  const doctored = MINIMAL_CAIRN_CONFIG.replace(
+    "email: { from: 'cms@showcase.test' },",
+    'email: {},',
+  );
+  const dir = await cairnConfigFixtureDir(t, doctored);
+
+  await assert.rejects(
+    () => writeEmailFrom(dir, 'no-reply@alpine-club.example'),
+    (err) => {
+      assert.match(err.message, /cairn\.config\.ts/);
+      assert.match(err.message, /from/);
+      return true;
+    },
+  );
+});
+
+test('writeEmailFrom touches nothing else in the file', async (t) => {
+  const dir = await cairnConfigFixtureDir(t);
+  const before = (await readFile(path.join(dir, CAIRN_CONFIG_RELATIVE), 'utf8')).split('\n');
+
+  await writeEmailFrom(dir, 'no-reply@alpine-club.example');
+  const after = (await readFile(path.join(dir, CAIRN_CONFIG_RELATIVE), 'utf8')).split('\n');
+
+  assert.equal(after.length, before.length, 'the rewrite must not add or remove lines');
+  for (let i = 0; i < before.length; i += 1) {
+    if (before[i].includes('email:') && before[i].includes('from:')) continue;
+    assert.equal(after[i], before[i], `line ${i} changed unexpectedly: ${JSON.stringify(before[i])}`);
+  }
+});
+
+test('writeEmailFrom rewrites the real baked template cairn.config.ts', async (t) => {
+  const templatePath = path.join(
+    path.dirname(fileURLToPath(import.meta.url)),
+    '../../template',
+    CAIRN_CONFIG_RELATIVE,
+  );
+  const realContent = await readFile(templatePath, 'utf8');
+  const dir = await cairnConfigFixtureDir(t, realContent);
+
+  const changed = await writeEmailFrom(dir, 'no-reply@alpine-club.example');
+  assert.equal(changed, true);
+  const content = await readFile(path.join(dir, CAIRN_CONFIG_RELATIVE), 'utf8');
+  assert.equal(parseEmailFrom(content), 'no-reply@alpine-club.example');
 });

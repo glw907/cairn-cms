@@ -547,20 +547,20 @@ that appendix, never written from memory.** A spike question that answers "no" o
   those states. Without this, an owner who declines leaves a live credential on disk
   indefinitely.
 
-- [ ] **Step 1: Failing admission tests**: interactive consent; `--yes` without
+- [x] **Step 1: Failing admission tests**: interactive consent; `--yes` without
   `--domain` skips with a hint; `--yes --domain example.com` proceeds unattended;
   declining parks with chapter 1's site intact.
-- [ ] **Step 2: Failing hop-order and resume tests**: a record at each step resumes at
+- [x] **Step 2: Failing hop-order and resume tests**: a record at each step resumes at
   exactly the next hop with zero repeated writes (asserted per hop via the fakes'
   request and invocation logs); a record at `records-carried` never re-reads records; a
   declined gate never silently advances; `--dry-run` prints every hop with zero
   shell-outs and zero fake-API requests, via the synthesized record.
-- [ ] **Step 3: Failing completion tests**: `domain-live` is **not** terminal, so
+- [x] **Step 3: Failing completion tests**: `domain-live` is **not** terminal, so
   `apiToken` survives it (asserted against `loadSite()`'s disk re-read); a synthesized
   terminal state deletes it, absent from both the re-read and the raw file bytes, with
   the file still 0600; the closing copy names the domain and admin URL; re-entry at
   `domain-live` re-runs the prefill.
-- [ ] **Step 4: Implement; suite green; commit.**
+- [x] **Step 4: Implement; suite green; commit.**
 
 ### Task 11: The bin dispatcher
 

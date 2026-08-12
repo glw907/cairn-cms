@@ -414,6 +414,19 @@ const ROWS = {
       );
     }
   },
+  'certificate-pending': {
+    kind: 'wait',
+    build(params) {
+      return (
+        `Your domain ${params.domain} answers correctly over plain HTTP, so the connection ` +
+        'itself worked; only the HTTPS certificate has not finished issuing yet. This is ' +
+        'normal right after connecting a new domain, and Cloudflare issues the certificate ' +
+        'automatically, usually within a few minutes and rarely more than a few hours. Your ' +
+        'site keeps answering on its workers.dev address the whole time.\n' +
+        `Next: wait a bit, then re-run npx create-cairn-site --dir ${params.dir} to check again.`
+      );
+    }
+  },
   'hostname-not-serving': {
     kind: 'act',
     build(params) {

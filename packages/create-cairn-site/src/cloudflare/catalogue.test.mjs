@@ -31,6 +31,7 @@ const EXPECTED_KIND = {
   'delegation-pending': 'wait',
   'delegation-wrong-nameservers': 'act',
   'hostname-propagating': 'wait',
+  'certificate-pending': 'wait',
   'hostname-not-serving': 'act',
   'custom-domain-failed': 'act',
   'cutover-deploy-failed': 'act'
@@ -72,6 +73,7 @@ const SAMPLE_PARAMS = {
     actual: ['ns1.otheragency.com', 'ns2.otheragency.com']
   },
   'hostname-propagating': { dir: './alpine' },
+  'certificate-pending': { dir: './alpine', domain: 'example.com' },
   'hostname-not-serving': { dir: './alpine', domain: 'example.com' },
   'custom-domain-failed': { dir: './alpine', detail: '409: hostname already exists' },
   'cutover-deploy-failed': { dir: './alpine', detail: 'ERROR: script size limit exceeded' }

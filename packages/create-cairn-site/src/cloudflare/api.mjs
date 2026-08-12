@@ -221,7 +221,12 @@ function throwMapped(status, json, operationCode, dir, token) {
   const primary = errors[0];
   const combinedMessage = errors.map((e) => e.message).filter(Boolean).join('; ');
 
-  const api = { status, code: primary?.code };
+  // `id` carries Cloudflare's dotted identifier (for example
+  // "email.sending.error.email.sending_disabled"). A caller that catches a catalogued error never
+  // sees the raw envelope, so any classification finer than the numeric code has to read it from
+  // here. The Email Sending routes need exactly that, because conditions Cloudflare has not given
+  // a distinct number are separable only by their identifier.
+  const api = { status, code: primary?.code, id: primary?.message };
 
   // An Email Sending route's 403 is classified by its body, never by the blanket token rule below.
   // The send's own refusal (SENDING_DISABLED_CODE) arrives as HTTP 403, so the blanket rule would
@@ -260,10 +265,12 @@ function throwMapped(status, json, operationCode, dir, token) {
  * @param {string} code a `cloudflareError` catalogue code
  * @param {Record<string, string>} params the row's interpolation params
  * @param {string} token the API token, redacted from the thrown text
- * @param {{ status: number, code: number | undefined }} api the raw v4 status and
- *  `errors[0].code`, carried onto the thrown error so a caller can branch on the code rather than
- *  on Cloudflare's prose. A caller that matches the message text instead breaks silently the day
- *  Cloudflare rewords it, and the rewording ships without warning.
+ * @param {{ status: number, code: number | undefined, id: string | undefined }} api the raw v4
+ *  status, `errors[0].code`, and `errors[0].message` as Cloudflare's dotted identifier, carried
+ *  onto the thrown error so a caller can branch on the code rather than on Cloudflare's prose. A
+ *  caller that matches free prose instead breaks silently the day Cloudflare rewords it, and the
+ *  rewording ships without warning. The identifier is stable in a way the prose is not, so it is
+ *  the right fallback where Cloudflare gave a condition no distinct number.
  * @returns {never}
  */
 function throwCatalogued(code, params, token, api) {

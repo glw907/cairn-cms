@@ -3,6 +3,13 @@
 // (docs/internal/2026-08-11-t4a-domain-spike.md) and its two addenda, dated 2026-08-11 and
 // 2026-08-12 UTC.
 //
+// createOrAdoptZone reads before it writes: it lists zones by name first and adopts on a hit,
+// posting a create only on a miss, the same discipline email.mjs's ensureSendingDomain already
+// follows for its own non-idempotent write. A live defect (T4b.1) showed why the order matters:
+// an owner whose zone already exists but whose token cannot create zones used to die on a 403
+// from the create it never needed, because the create was tried unconditionally and only a 1061
+// response ever triggered the adopt lookup. The list-by-name check is now the main door.
+//
 // The three zone-create shapes this module recognizes (1061 already-exists, 1428 zone-hold, 1002
 // invalid-domain) are matched on Cloudflare's numeric `errors[0].code`, carried through by
 // api.mjs on the thrown error's `api` field. They are deliberately NOT matched on the message
@@ -14,9 +21,12 @@
 // `{"success":false,"errors":[{"code":1061,"message":"<name> already exists"}],"messages":[],
 // "result":null}`, carries no account or ownership field, so it cannot tell a zone this account
 // holds from one held elsewhere (spike, "the zone-already-exists body, and 1061 does NOT
-// discriminate by account"). A GET /zones?name=<domain> lookup after the fact settles it: a hit
-// is ours to adopt, a miss is the zone-already-exists row, which now means the foreign-owner case
-// alone (the same-account case is adopted silently and never reaches it).
+// discriminate by account"). A GET /zones?name=<domain> lookup after the fact settles it, the
+// same shape as the list-first lookup above: a hit is ours to adopt, a miss is the
+// zone-already-exists row, which now means the foreign-owner case alone. Since the list-first
+// check above already missed by the time a create is even attempted, 1061 here means a second
+// run raced this one between that list and this create; the lookup stays as that race's guard,
+// not as the only door.
 //
 // nameServers is always read from a zone RE-READ, never trusted from the create response: no
 // externally registered domain was ever observed going through POST /zones, so whether a create
@@ -62,30 +72,43 @@ function zoneCreateCode(err) {
 }
 
 /**
- * Resolve the zone id for the domain: create the zone, or adopt the one this account already
- * holds when Cloudflare refuses with 1061. Returns the id and nothing else, so no other field can
- * reach the caller from the create response, which is exactly the trust ensureZone must not place
- * in it.
+ * Resolve the zone id for the domain: list zones by name first and adopt on a hit, or create the
+ * zone when the list misses. The list is the primary door, mirroring email.mjs's
+ * ensureSendingDomain, since a create is a non-idempotent write and a token that cannot create
+ * must not be forced through one for a zone that already exists. The 1061-triggered adopt inside
+ * the create's catch stays as a race guard for the gap between this function's own list and its
+ * own create, not as the only door. Returns the id and nothing else, so no other field can reach
+ * the caller from the create response, which is exactly the trust ensureZone must not place in it.
  * @param {object} args
  * @param {ReturnType<typeof import('./api.mjs').makeApi>} args.api the Cloudflare API client
  * @param {string} args.domain the domain to create a zone for
  * @param {string} args.dir the `--dir` value, interpolated into every catalogued row raised here
  * @param {(line: string) => void} args.log receives the line printed when a zone is adopted
- * @returns {Promise<string>} the created or adopted zone's id
+ * @returns {Promise<string>} the found, created, or adopted zone's id
  */
 async function createOrAdoptZone({ api, domain, dir, log }) {
+  const matches = await api.listZones({ name: domain });
+  const hit = matches.find((zone) => zone.name === domain);
+  if (hit) {
+    log(`${domain} is already a Cloudflare zone on this account; using it.`);
+    return hit.id;
+  }
+
   try {
     const created = await api.createZone(domain);
     return created.id;
   } catch (err) {
     switch (zoneCreateCode(err)) {
       case ZONE_CREATE_CODES.alreadyExists: {
-        // The 1061 body names the zone and nothing else, so ownership comes from a lookup.
-        const matches = await api.listZones({ name: domain });
-        const hit = matches.find((zone) => zone.name === domain);
-        if (!hit) throw cloudflareError('zone-already-exists', { dir, domain });
+        // This function's own list above already missed, so a 1061 here means another run's
+        // create won a race in the gap between that list and this create, not that the list was
+        // wrong. The 1061 body still names the zone and nothing else, so ownership still comes
+        // from a lookup, kept here purely as the race guard rather than the main door.
+        const raceMatches = await api.listZones({ name: domain });
+        const raceHit = raceMatches.find((zone) => zone.name === domain);
+        if (!raceHit) throw cloudflareError('zone-already-exists', { dir, domain });
         log(`${domain} is already a Cloudflare zone on this account; using it.`);
-        return hit.id;
+        return raceHit.id;
       }
       case ZONE_CREATE_CODES.zoneHold:
         throw cloudflareError('zone-hold', { dir, domain });
@@ -108,10 +131,12 @@ async function createOrAdoptZone({ api, domain, dir, log }) {
  */
 
 /**
- * Create the Cloudflare zone for the admin's domain, or adopt one this account already holds.
- * Pure over the record: reads `record.dir` and `record.cloudflare.domain`, and never persists
- * anything itself, mirroring account.mjs's ensureAccountId and prefill.mjs's ensureApiToken; the
- * caller decides when to save the result.
+ * Resolve the Cloudflare zone for the admin's domain: adopt it when a list-by-name already finds
+ * it, or create it when the list misses. Reading before writing means a token that cannot create
+ * zones never needs to, for a domain whose zone already exists. Pure over the record: reads
+ * `record.dir` and `record.cloudflare.domain`, and never persists anything itself, mirroring
+ * account.mjs's ensureAccountId and prefill.mjs's ensureApiToken; the caller decides when to save
+ * the result.
  * @param {object} args
  * @param {object} args.record the site's in-memory state record; reads `record.dir` and
  *  `record.cloudflare.domain`

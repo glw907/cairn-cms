@@ -516,11 +516,13 @@ const ROWS = {
     build(params) {
       if (params.reoffered) {
         return (
-          "Earlier, you chose not to turn on Cloudflare's Workers Paid plan, so this site still " +
-          'cannot send its own sign-in email. Your site is untouched and still working, and your ' +
-          `own way back in is npx create-cairn-site --dir ${params.dir} --sign-in, which is good ` +
-          'for the current 30-day sign-in.\n' +
-          'Next: this run asks again whether to turn Workers Paid on now.'
+          "You chose again not to turn on Cloudflare's Workers Paid plan, so this site still " +
+          'cannot send its own sign-in email. Nothing is broken: the site keeps serving, and you ' +
+          'keep editing and publishing as the owner.\n' +
+          `Your own way back in stays npx create-cairn-site --dir ${params.dir} --sign-in, and ` +
+          'each sign-in it writes lasts 30 days.\n' +
+          'Next: nothing, unless you want email sign-in. Re-run npx create-cairn-site --dir ' +
+          `${params.dir} whenever you do.`
         );
       }
       return (

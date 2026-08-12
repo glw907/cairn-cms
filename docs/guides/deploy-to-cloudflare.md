@@ -157,13 +157,30 @@ npx wrangler d1 create your-site-auth
 npx wrangler r2 bucket create your-site-media
 ```
 
-The `d1 create` output prints a `database_id`; copy it into `wrangler.jsonc` below. Email
-Sending has no create command: onboard the sending domain from the dashboard instead, under
-**Compute > Email Service > Email Sending > Onboard Domain**, which adds the `cf-bounce` MX,
-SPF, DKIM, and DMARC records for you. Skip this and every magic-link send fails with
-`E_SENDER_NOT_VERIFIED`, the same error Email Routing throws for an unverified destination;
-the two are easy to conflate, and Email Sending's arbitrary-recipient send is the one cairn
-needs.
+The `d1 create` output prints a `database_id`; copy it into `wrangler.jsonc` below.
+
+Onboard the sending domain with Wrangler:
+
+```sh
+npx wrangler email sending enable your-domain.com
+```
+
+To automate the same step, call the REST endpoint that command wraps:
+`POST /zones/{zone_id}/email/sending/subdomains` with a body of `{"name": "your-domain.com"}`.
+Post the zone's apex name. Email Sending treats each domain separately, so a subdomain is
+onboarded as its own sending domain rather than inherited from the apex.
+
+Onboarding adds the `cf-bounce` MX, SPF, and DKIM records, plus a DMARC record at the zone apex.
+It leaves your domain's own MX and SPF records alone, so mail you already receive keeps working.
+
+The DMARC record is written as `p=reject`, which asks receivers to reject any mail from this
+domain that doesn't pass authentication. If you later add another service that sends as this
+domain, such as a newsletter tool, add it to that record or its mail is rejected. Turning Email
+Sending off again doesn't remove the DMARC record.
+
+Skip onboarding and every magic-link send fails with `E_SENDER_NOT_VERIFIED`, the same error
+Email Routing throws for an unverified destination; the two are easy to conflate, and Email
+Sending's arbitrary-recipient send is the one cairn needs.
 
 With both provisioned, declare the bindings alongside the observability setting from the
 next section:

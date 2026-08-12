@@ -252,50 +252,51 @@ no package subpath), so its API is free to grow; the event names are the public-
 
 ## Durable gotcha (Cloudflare email)
 
-Email *Sending* to arbitrary recipients is `env.EMAIL.send({...})`, gated on onboarding the `from`
-domain (`wrangler email sending enable <domain>`); un-onboarded senders throw
-`E_SENDER_NOT_VERIFIED`, the same string Routing uses for an unverified destination (how the ecxc
-outage hid). The `cloudflare:email` `EmailMessage` form is *Routing*'s forward call, verified
-destinations only. Sending also needs Workers Paid plus dashboard onboarding.
+**Two surfaces, two error vocabularies; the `E_` table does not cross between them.** The binding
+`env.EMAIL.send({...})` throws `E_SENDER_NOT_VERIFIED`, the same string Routing uses for an
+unverified destination (how the ecxc outage hid), and `src/lib/email.ts` parses that. The REST
+send (`POST /accounts/{id}/email/sending/send`) throws no `E_` codes: **one code, `10203` at HTTP
+403, covers both a never-onboarded domain and one still propagating**, so elapsed time since
+onboarding is the only discriminator. `cloudflare:email`'s `EmailMessage` is *Routing*'s forward
+call, verified destinations only.
+
+**Onboarding** is `wrangler email sending enable <domain>` or `POST
+/zones/{zoneId}/email/sending/subdomains` with the zone's **apex** name; no dashboard visit, and
+the create reports `enabled: true` at once. Arbitrary recipients need Workers Paid. It writes the
+`cf-bounce` MX, SPF, and DKIM plus an apex DMARC at `p=reject`, leaving the domain's own mail
+records alone, and deleting the subdomain **leaves that `p=reject` record behind**. Measured
+propagation and every captured body: `docs/internal/2026-08-11-t4b-email-spike.md`.
 
 ## Durable gotcha (a worktree showcase e2e proves MAIN's engine)
 
 In a feature worktree, `examples/showcase/node_modules` symlinks back to the main checkout, so the
-showcase resolves `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` to MAIN's build, not the worktree's.
-A showcase e2e run in a worktree therefore silently proves the wrong engine until a from-scratch
-`npm install` in the worktree's showcase repoints both `file:` deps. The adjacent stale-`dist` trap
-(editing `src/lib` after the worktree's first `npm run package`, then testing old bytes) is closed
-structurally: the showcase's `pretest:e2e` hook repackages the library before every `test:e2e` run.
-The symlink half is not: reinstall before trusting a worktree e2e, or rely on CI's real checkout.
+showcase resolves `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` to MAIN's build, not the
+worktree's, and silently proves the wrong engine until a from-scratch `npm install` in the
+worktree's showcase repoints both `file:` deps. The adjacent stale-`dist` trap is closed
+structurally by the showcase's `pretest:e2e` repackage hook. The symlink half is not: reinstall
+before trusting a worktree e2e, or rely on CI's real checkout.
 
 ## Durable gotcha (Vite 8 ships TypeScript in dist `.svelte`)
 
 Vite 8 / Rolldown parses dist `.svelte` `<script lang="ts">` as JavaScript before the consumer's
 Svelte plugin runs, so shipped TypeScript fails the consumer build. The post-package step
-`scripts/build/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>` body and
-KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse). Do not remove
-the step or strip `lang="ts"`. The showcase `package-lock.json` stays committed and CI uses `npm ci`
-so the toolchain is reproducible. Full post-mortem:
+`scripts/build/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>`
+body and KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse).
+Do not remove the step or strip `lang="ts"`. Full post-mortem:
 [`docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md`](docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md).
 
 ## Credentials (machine-local, intentionally not in git)
 
 - **GITHUB_APP_ID:** `3847496`, in the encrypted registry (`~/.dotfiles/secrets/values.age`) and
   `~/.local/secrets` as `GITHUB_APP_ID`.
-- **GITHUB_APP_INSTALLATION_ID:** `135372268`, a single installation on glw907 covering both
-  ecxc-ski (renamed from ecnordic-ski 2026-06-09) and 907-life (verified via API). In `values.age`
-  and `~/.local/secrets`.
-- **Private key:** stored as `GITHUB_APP_PRIVATE_KEY_B64` (base64 of the PEM, single-line) in
-  `values.age` and `~/.local/secrets`. The loose `.pem` was shredded. Documented in
-  `~/.dotfiles/secrets/registry.md`. A consumer site pushes it to its Worker via `sync.sh`
-  (`atob()` in-Worker before `@octokit/auth-app`).
+- **GITHUB_APP_INSTALLATION_ID:** `135372268`, a single installation on glw907 covering ecxc-ski
+  and 907-life. In `values.age` and `~/.local/secrets`.
+- **Private key:** `GITHUB_APP_PRIVATE_KEY_B64` (base64 of the PEM, single-line) in `values.age`
+  and `~/.local/secrets`. A consumer site pushes it to its Worker via `sync.sh` (`atob()`
+  in-Worker before `@octokit/auth-app`).
 - **D1 AUTH_DB (self-owned magic-link auth store):** ecxc = `cairn-ecxc-auth`
-  `a47c56d2-25ef-4131-a505-8c9fd5a92f1f` (replaced `cairn-ecnordic-auth`
-  `83178db3-0aae-4c1d-b6ad-1626193ebefd` at the 2026-06-09 rename; the old DB still exists pending
-  deletion). 907 = `cairn-907-auth`
-  `93aa929d-0228-4f8b-8d1e-5e7e0d755617`. Bound as `AUTH_DB` per site. The rebuilt auth uses opaque
-  D1-backed session rows, so a signing secret is needed only if the auth design calls for one. Set
-  any such per-site secret (worker-only) at cutover.
+  `a47c56d2-25ef-4131-a505-8c9fd5a92f1f`; 907 = `cairn-907-auth`
+  `93aa929d-0228-4f8b-8d1e-5e7e0d755617`. Bound as `AUTH_DB` per site.
 
 ## Authoring
 

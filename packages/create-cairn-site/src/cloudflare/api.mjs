@@ -106,22 +106,6 @@ function extractPermission(message) {
   return match?.[1];
 }
 
-/**
- * Read the numeric code and the dotted identifier out of an Email Sending failure envelope, so a
- * caller classifies a send refusal without parsing v4 envelopes of its own. A caller holding a
- * thrown catalogued error reads `err.api.code` instead; this is for a caller holding the raw body.
- * @param {unknown} json a parsed v4 envelope, or anything else
- * @returns {{ code: number | undefined, id: string | undefined }} `errors[0].code` and
- *  `errors[0].message`, which on this surface is an identifier such as
- *  `email.sending.error.email.sending_disabled` rather than prose
- */
-export function sendErrorInfo(json) {
-  const primary = Array.isArray(json?.errors) ? json.errors[0] : undefined;
-  return {
-    code: typeof primary?.code === 'number' ? primary.code : undefined,
-    id: typeof primary?.message === 'string' ? primary.message : undefined,
-  };
-}
 
 /**
  * Wait the given duration when no injected `sleep` is provided, the real-world default.

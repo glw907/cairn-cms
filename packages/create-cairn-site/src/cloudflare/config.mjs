@@ -180,12 +180,12 @@ export async function writeEmailFrom(dir, address) {
   }
   if (match[2] === address) return false;
 
-  const next =
-    content.slice(0, match.index) +
-    match[1] +
-    address +
-    match[3] +
-    content.slice(match.index + match[0].length);
+  // A replace function, not a replacement string, so a `$` in the address could never be read as
+  // a capture-group reference.
+  const next = content.replace(
+    EMAIL_FROM_PATTERN,
+    (_whole, prefix, _current, suffix) => prefix + address + suffix,
+  );
   await writeFile(configPath, next);
   return true;
 }

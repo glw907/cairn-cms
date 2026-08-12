@@ -637,18 +637,13 @@ export async function runChapter2({
         // already use. Anything else (including api.mjs's own email-send-failed fall-through,
         // which already carries the real dir since api.mjs built it) is rethrown as-is.
         const code = err?.catalogue?.code;
-        if (code === 'email-sender-propagating') {
-          sendWaitError = cloudflareError('email-sender-propagating', { dir });
-          log(sendWaitError.message);
-          return;
-        }
-        if (code === 'email-daily-limit') {
-          sendWaitError = cloudflareError('email-daily-limit', { dir });
+        if (code === 'email-sender-propagating' || code === 'email-daily-limit') {
+          sendWaitError = cloudflareError(code, { dir });
           log(sendWaitError.message);
           return;
         }
         if (code === 'email-sender-unavailable') {
-          throw cloudflareError('email-sender-unavailable', { dir, domain });
+          throw cloudflareError(code, { dir, domain });
         }
         throw err;
       }
@@ -692,7 +687,7 @@ export async function runChapter2({
           `Onboarding also wrote a DMARC policy at _dmarc.${domain}, set to reject mail that ` +
           "isn't from Cloudflare's own sending infrastructure. That record stays in place even " +
           'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
-          "to this domain later, add it to that record too, or its mail will be rejected.\n" +
+          'to this domain later, add it to that record too, or its mail will be rejected.\n' +
           `Run npx cairn-doctor --from ${from} --send-test <you@example.com> any time to re-prove ` +
           'delivery without running this installer again.',
       );

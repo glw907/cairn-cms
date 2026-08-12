@@ -401,9 +401,10 @@ async function seedDeclinedSite(siteId, dir, overrides = {}) {
   });
 }
 
+// Only email-live is terminal for RE-ENTRY. A recorded decline is terminal for its token and its
+// exit code, never for re-entry, and its own test sits below this loop.
 for (const [label, step, seed, idSuffix] of [
   ['email-live', 'email-live', seedEmailLiveSite, 'emlive'],
-  ['a recorded decline', 'paid-plan-declined', seedDeclinedSite, 'declin'],
 ]) {
   test(`bin.mjs at ${label} is terminal: prints the closing copy and never calls runChapter2`, async (t) => {
     const stateDir = await freshStateDir(t);
@@ -475,6 +476,48 @@ for (const [label, step, seed, idSuffix] of [
     assert.equal(state.step, step, 'a terminal record must never advance or change its saved step');
   });
 }
+
+// --- A recorded decline re-enters chapter 2 (amendment 14) --------------------------------------
+
+// The regression this locks: a decline used to return early here, which made the re-offer
+// unreachable through the real CLI. Both decline rows tell the owner to re-run when they are
+// ready, and --start-over refuses at this step, so returning early left an owner who declined no
+// way to turn email on at all. If this test goes red, that trap is back.
+test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-offer', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('chapter2-declined-reentry');
+  t.after(() => fake.close());
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+
+  const siteId = 'chapter2-term-redecl';
+  await seedDeclinedSite(siteId, dir);
+
+  // --yes with no --email declines again, which is the unattended path and needs no prompt seam.
+  const result = await runCli(['--dir', dir, '--yes'], {
+    stateDir,
+    wranglerBin: fake.binPath,
+    apiBase: cloudflare.apiBase,
+    fakeOpenerDir,
+  });
+
+  assert.equal(result.code, 0, `a re-run after a decline must exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  assert.ok(
+    result.stdout.includes('Resuming'),
+    `expected the resume line proving bin.mjs did not return early, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('chose again'),
+    `expected the re-offered copy, which only chapter 2's admission prints, got: ${result.stdout}`,
+  );
+
+  const state = await loadSite(siteId);
+  assert.equal(state.step, 'paid-plan-declined', 'declining again must leave the step where it was');
+});
 
 // --- --sign-in works from both terminal states --------------------------------------------------
 

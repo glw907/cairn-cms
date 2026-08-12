@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { startFakeCloudflare } from '../../test/fake-cloudflare.mjs';
-import { makeApi, redactToken, sendErrorInfo, SENDING_DISABLED_CODE } from './api.mjs';
+import { makeApi, redactToken, SENDING_DISABLED_CODE } from './api.mjs';
 
 /**
  * The send refusal captured live 2026-08-12 (docs/internal/2026-08-11-t4b-email-spike.md). The
@@ -450,7 +450,7 @@ test('a 429 on the subdomain create is reported rather than retried, since retry
   assert.equal(posts.length, 1);
 });
 
-test('a send refused with 10203 reports the send row, and sendErrorInfo reads the code and the dotted identifier', async (t) => {
+test('a send refused with 10203 reports the send row, carrying the code and the dotted identifier on the thrown error', async (t) => {
   const { cloudflare, api } = await setup(t);
   cloudflare.failNext('email_send', 403, SEND_REFUSED_BODY);
 
@@ -464,17 +464,6 @@ test('a send refused with 10203 reports the send row, and sendErrorInfo reads th
     },
   );
 
-  const info = sendErrorInfo(SEND_REFUSED_BODY);
-  assert.equal(info.code, SENDING_DISABLED_CODE);
-  assert.equal(info.code, 10203);
-  assert.equal(info.id, 'email.sending.error.email.sending_disabled');
-});
-
-test('sendErrorInfo reports nothing for an envelope carrying no errors', () => {
-  const info = sendErrorInfo({ success: false, errors: [], messages: [], result: null });
-  assert.equal(info.code, undefined);
-  assert.equal(info.id, undefined);
-  assert.equal(sendErrorInfo(null).code, undefined);
 });
 
 test('an entitlement refusal maps to paid-plan-missing, keyed on wording because the condition was never observed live', async (t) => {

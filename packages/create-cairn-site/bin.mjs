@@ -331,12 +331,10 @@ async function main() {
     }
 
     if (priorRecord && TERMINAL_STEPS.includes(priorRecord.data.step)) {
-      // Chapter 2's own real terminal states (T4b): a site that finished sending its own email,
-      // or one whose owner declined the paid plan. Neither has any chapter-2 work left, so this
-      // returns without ever calling runChapter2. --sign-in is a declined owner's only way back
-      // in (there is no email path to send a link through), and it works the same way it does
-      // for an already-live site: reseed a bootstrap token and open the confirm page directly,
-      // with no email round trip, rather than falling into chapter 2's own admission prompt.
+      // --sign-in reseeds a bootstrap token and opens the confirm page directly, with no email
+      // round trip, then stops. It is a declined owner's ONLY way back in, since declining means
+      // there is no email path to send a link through, and it must not fall into chapter 2's
+      // admission prompt: an admin recovering an expired sign-in has no attention to spare for it.
       if (flags.signIn) {
         await reseedAndOpen({
           siteId: priorRecord.id,
@@ -344,12 +342,34 @@ async function main() {
           ownerEmailOverride: flags.ownerEmail,
           log,
         });
+        if (priorRecord.data.step === 'email-live') {
+          await printEmailLiveInfo(priorRecord.id);
+        } else {
+          await printDeclinedInfo(priorRecord.id);
+        }
+        return;
       }
+
+      // email-live is the chapter's real finish line: nothing left to do, so print and stop.
       if (priorRecord.data.step === 'email-live') {
         await printEmailLiveInfo(priorRecord.id);
-      } else {
-        await printDeclinedInfo(priorRecord.id);
+        return;
       }
+
+      // A recorded decline is terminal for the TOKEN (deleted) and for the EXIT CODE (0, because
+      // nothing is wrong), and deliberately NOT terminal for re-entry. Both decline rows tell the
+      // owner in as many words to re-run when they are ready, and chapter 2's admission re-offers
+      // with its own `reoffered` copy. Returning here instead would make that promise unreachable
+      // and, since --start-over refuses at this step too, would leave an owner who declined no way
+      // to turn email on at all. This branch is what keeps the decline a choice rather than a trap.
+      console.log(`Resuming ${priorRecord.data.name} after a declined paid plan.`);
+      await continueIntoChapter2({
+        siteId: priorRecord.id,
+        dir: priorRecord.data.dir,
+        flags,
+        log,
+        dryRun: flags.dryRun,
+      });
       return;
     }
 

@@ -142,6 +142,25 @@ where they conflict**, and the dependent tasks are cleared to dispatch.
     implementer reported an interface it had been given twice as a concern rather than
     implementing it silently, which is the behavior worth keeping.
 
+14. **A declined record must still re-enter chapter 2, and "terminal" means two different things.**
+    Task 8b was dispatched with "a record at `email-live` or `paid-plan-declined` does not call
+    `runChapter2`", which is right for one and wrong for the other. The plan requires that "a re-run
+    after a decline re-offers with the row's `reoffered` copy", and both decline rows tell the owner
+    in as many words to re-run when they are ready. Treating the decline as fully terminal makes that
+    promise unreachable and, with `--start-over` also refused at terminal steps, leaves an owner who
+    declined **no path to enable email ever**.
+
+    The distinction to hold: a decline is terminal for the **token** (deleted) and for the **exit
+    code** (0, nothing is wrong), and it is emphatically not terminal for **re-entry**. So
+    `email-live` returns early; `paid-plan-declined` continues into chapter 2, whose admission then
+    re-offers with the `reoffered` copy it already builds. The `reoffered` parameter exists for
+    exactly this and is otherwise dead code through the real CLI.
+
+    Found by Task 8b's implementer reporting a conflict between its own instruction and copy owned by
+    another task, rather than implementing the instruction and leaving the copy lying. That is the
+    third defect this pass caught at a seam between two individually correct modules, after the 403
+    collision and the dir-less rows.
+
 ### The T4a handoff is already carried, and one T4a carry-forward is stale
 
 The plan's closing "T4a handoff" section is written for a T4a that had not yet been built. T4a is

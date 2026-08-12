@@ -550,3 +550,133 @@ resume are the File Structure block plus Task 8 Steps 2 and 3. The money framing
 Task 8's admission. Testing is distributed per task, with the fake in Task 6 and the live run in
 Task 9. Documentation is Task 10. Each acceptance criterion in the spec has a named test in the
 task that owns it.
+
+---
+
+## Post-mortem, part one (2026-08-12): the offline half, and what the spike overturned
+
+**Status: Tasks 1 through 8 and 10 are done. Task 9, the live e2e, has not run** and is the whole
+of what remains. The suite is green and the runtime library is untouched, as the pass's global
+constraint required.
+
+### The spike was supposed to be one browser sitting, and it needed none
+
+Task 1 was planned as the pass's gating unknown: mint a token, read the Email Sending permission
+group's dashboard name, and capture what could be captured. Six of its seven steps closed from the
+API alone, for two reasons worth separating.
+
+The first is that the estate token already carried `Email Sending: Edit`, which nobody had checked.
+One send from `ecxc.ski` returned HTTP 200 and simultaneously answered three questions: the token
+has the scope, the account is on Workers Paid (Step 2), and a refusal therefore means the *domain*
+is not onboarded rather than the account being unentitled.
+
+The second is that **T4a's own spike had already answered T4b's headline question** and written the
+answer into `prefill.mjs`'s doc block, where the plan did not look. The dashboard name is
+`Account > Email Sending > Edit` and the template key is `email_sending`, verified live on
+2026-08-11. The plan's closing "T4a handoff" section, asking for that key to be added before T4a
+resumed, was describing work that had already shipped.
+
+The lesson is cheap to state and was expensive here: **the plan's spike list is a set of claims
+about what is unknown, and those claims age exactly like any other.** Two of them had been answered
+by the preceding pass before this one began.
+
+### The finding that reshaped three tasks
+
+Tasks 4 and 5 were designed to classify send failures by an `E_`-prefixed code, and Task 5 was told
+in writing not to simplify away a bare-string check on `not a verified address`, because "Cloudflare
+documents no code for that condition".
+
+**None of that exists on the REST surface.** It belongs to the Workers binding, which is what
+`src/lib/email.ts` parses and what `CLAUDE.md`'s durable gotcha described. The REST send returns a
+v4 envelope with a numeric code and a dotted identifier. The pass had carried one surface's error
+vocabulary onto another by assumption, and the assumption was inherited from a gotcha doc that was
+correct about the surface it actually described.
+
+Worse for the design, **one code covers two conditions**. A send from a never-onboarded domain and a
+send 25 seconds after onboarding both return `10203 email.sending.error.email.sending_disabled` at
+HTTP 403, byte-identical. Nothing in the body separates them.
+
+The design survived this better than it deserved to, because the plan had already made the recorded
+`onboardedAt` moment and `PROPAGATION_WINDOW_MS` the discriminator between "still settling" and
+"onboarding did not take". What was designed as belt-and-braces turned out to be the only thing
+holding the classification up. Only the code table feeding it changed.
+
+### Two traps that a green suite could not have found
+
+**The seam's blanket 403 rule collided with the new routes.** `throwMapped` mapped *every* HTTP 403
+to `token-scope-missing` before reaching the operation fall-through, and the send's refusal is a 403.
+Left alone, an owner whose DNS was still settling would have been told their API token was missing a
+permission: wrong, unactionable, and it would have made the propagation park unreachable. Caught by
+reading the seam before dispatching Task 4, not by a test, because no existing test sent a 403 down
+an email path. Task 4 now discriminates ahead of the generic rule and tests both sides.
+
+**Three catalogue rows would have printed `--dir undefined` to an owner.** `sendTestMessage`'s
+interface, as written in both the spec and the plan, takes no `dir`, so the rows it throws
+interpolate an absent value into their `Next:` line. This survived a green suite in the module that
+owns the rows, because nothing there printed one. It was caught only because Task 5's implementer
+reported an interface it had been handed twice as a concern rather than implementing it silently.
+Recorded as amendment 13, fixed in `chapter2.mjs`, and locked by three tests that assert the real
+`dir` and the absence of the string `undefined`.
+
+Both belong to the same family: **a defect that lives in the seam between two correct modules, where
+neither module's own suite can see it.**
+
+### What the live platform said, against what the docs say
+
+| Claim | Documentation | Observed 2026-08-12 |
+|---|---|---|
+| Propagation after onboarding | 5 to 15 minutes | 47 to 107 seconds |
+| Send success body | `delivered` names the recipient | `message_id` plus three empty arrays |
+| Create response | (unstated) | `enabled: true` immediately, no dashboard visit |
+| `preview_enabled` | (unstated) | `true` on a fresh create, `false` on `ecxc.ski`; not a constant |
+| Undoing onboarding | (unstated) | removes the `cf-bounce` records, **leaves `p=reject` DMARC** |
+
+The last row is the one with consequences beyond this pass. A DMARC policy that outlives the feature
+that wrote it is a live hazard for any owner who later adds a newsletter tool, and it is now
+disclosed in the closing copy, the deploy guide, and `CLAUDE.md`.
+
+The propagation measurement is the first real number for a figure the docs give only as a range. The
+owner-facing copy still quotes the vendor's range, because that is the promise; the measurement is
+why the park will rarely be seen.
+
+### Deviations from the plan
+
+1. **Task 8 was split.** As written it carried six deliverables (admission, decline path, two hops,
+   the terminal-token rule, the closing copy, plus `--email` and the `bin.mjs` widening), past the
+   four-deliverable line. Split at the natural seam: 8a took chapter orchestration, 8b took the CLI
+   surface. This was the pass's only task split, so it was not a signal to split the pass.
+2. **Task 8a's first agent died mid-task** on an expired login, having written the implementation
+   and **zero** of its tests, leaving the suite red at 11. The failures were diagnosed rather than
+   assumed stale: all 11 were T4a safety-net tests whose blanket "answer yes to every gate" stub now
+   consented to the email admission and ran into fixtures predating `cairn.config.ts`. The
+   implementation was kept, because the Step 1 to 4 assertions were specified in the plan before any
+   code existed, so writing them afterward is not reverse-engineering tests from an implementation.
+3. **The continuation improved on its own dispatch.** Told to make the safety-net tests decline the
+   email admission, it found that two of them could not be fixed that way: declining is *itself* a
+   terminal state that deletes the token, so "decline, then assert the token survived" is
+   self-defeating. It parked the run one hop past `domain-live` instead, which proves more than the
+   original test did.
+4. **Task 10's admin-track page was not written**, for the same reason T4a did not write its own: the
+   admin track ships in Pass D. The browser-moment count goes to STATUS for Pass D to consume.
+5. **Task 10 Step 5's carry-forward numbers were stale**, citing a list superseded by T4a's
+   close-out. Following it literally would have retired the missing-comment-gate carry-forward, which
+   this pass does not fix. The real referents were recovered from git history: one is genuinely fixed
+   by Task 2, and the other, the duplicated fake plumbing, had been dropped entirely and is restored
+   in STATUS as item (10). Same class as T4a's Task 14 note.
+6. **Two owner-facing citations were wrong and were corrected in review.** The `$5` figure cited the
+   email-service pricing page, which states the 3,000-message quota and not the price; it now cites
+   the Workers pricing page. The domain range cited a Registrar page carrying no prices, because
+   Cloudflare publishes no static price list anywhere; it now cites the at-cost policy, which is the
+   reason the range holds, and the copy says the exact price appears before you pay.
+
+### Carried forward
+
+- **Task 9, the live e2e, is the open half**, and its prerequisite is larger than the plan assumed:
+  no site sits at `domain-live`, so it runs chapters 1 and 2 from scratch and costs two browser
+  moments for a third GitHub App.
+- **The ACM billing glance** is the pass's one unanswered question, and the only one needing a
+  browser. It affects one line of the money preamble.
+- **The entitlement mapping may never fire.** It keys on wording because the condition is unreachable
+  on an account already on Workers Paid, and a plan-less account may return the same `10203` as every
+  other refusal.
+- **The duplicated fake HTTP plumbing**, restored to STATUS, still filed for T4d.

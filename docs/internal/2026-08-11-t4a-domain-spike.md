@@ -511,7 +511,7 @@ selector published as a CNAME**, not a TXT: Fastmail delegates DKIM that way whe
 publishes a TXT. The probe list must therefore query both TXT and CNAME for every selector, which
 the spike's own probe script did and which Task 8 must keep.
 
-### Pending capture (blocked)
+### Pending capture (blocked at first writing; see the token addendum below)
 
 - `POST /zones` success body. **Mostly retired**: the `result` object's shape is captured above
   from a `GET`. What is still unobserved is the `status` value a brand-new zone carries
@@ -522,3 +522,87 @@ the spike's own probe script did and which Task 8 must keep.
   Task 8's adopt-versus-error branch re-plans onto a zone-list lookup.
 - The Custom Domain attach call (`PUT /accounts/:id/workers/domains`), its duplicate error, which
   credential covers it, and what a proxied hostname with no matching Worker serves.
+
+## Addendum: the minted spike token (2026-08-11, later the same day)
+
+Geoff minted the spike token in one sitting. Four observations follow, all made against the live
+account with the token in hand. The scratch domain had not arrived yet, so the calls below are
+the subset that needs no zone of our own.
+
+### The prefill URL is honored only in part, and it fails silently (Step 5, ANSWERED)
+
+Of the four `permissionGroupKeys` in the URL above, **three resolved and `ssl_certs` did not**.
+The dashboard rendered a fourth permission row with an empty `Select...` control rather than
+reporting an unknown key. Both resource prefills (`accountId=*`, `zoneId=all`) were honored and
+rendered as "All accounts" and "All zones".
+
+**This is the finding that changes Task 7.** A key the dashboard does not recognize costs the
+admin a silent, invisible gap in a token they then paste back with confidence, and the tool's own
+scope check is what would have to catch it. Two consequences:
+
+1. Task 7 verifies every key it puts in the shipped URL against the live dashboard before the URL
+   ships. A key that looks plausible is not evidence.
+2. The chapter cannot assume a pasted token carries what the URL asked for. The in-band
+   `permissions` list on the zone object (Step 2) and the 403 refusal path (Step 5's mapping) are
+   both load-bearing, not belt-and-braces.
+
+The Zone-scoped **SSL and Certificates** permission was added by hand instead. Whether the Custom
+Domain attach actually needs it is still the open question the scratch domain answers.
+
+### The Email Sending permission group's dashboard name (T4B'S SPIKE QUESTION, ANSWERED)
+
+Typing "email" into the permission picker under **Account** scope offers exactly three groups:
+
+| Name | What it is |
+|---|---|
+| **Email Sending** | The one chapter 2 needs. |
+| Email Routing Addresses | The forwarding side, destination verification. Not ours. |
+| Email Security | The Area 1 product. Not ours. |
+
+So T4b's plan can name **Account > Email Sending > Edit** in prose, and Task 7's shipped prefill
+URL carries it. The template key for it is unverified, and per the finding above it must be
+checked against the dashboard rather than guessed.
+
+### The zone-already-exists body, and 1061 does NOT discriminate by account (Step 2, ANSWERED)
+
+`POST /zones` for `ecxc.ski`, a zone this same account already holds, on 2026-08-11:
+
+```json
+{ "success": false, "errors": [ { "code": 1061, "message": "ecxc.ski already exists" } ],
+  "messages": [], "result": null }
+```
+
+HTTP 400. The message names the zone and nothing else: no account id, no ownership language.
+
+**This retires the appendix's open question in the direction that costs a branch.** Task 8's
+adopt-versus-error decision cannot read 1061 alone, because the body cannot distinguish a zone
+this account already holds (adopt it) from one held elsewhere (a real error the admin must
+resolve). The branch re-plans onto a zone-list lookup: on 1061, `GET /zones?name=<domain>` and
+treat a hit as ours and a miss as someone else's.
+
+One honesty note on the evidence. The foreign-account case was **not** observed directly, and
+deliberately so: the only way to observe it is to attempt a zone for a domain we do not own,
+which on a domain that is not already a Cloudflare zone would actually create one. The reasoning
+above rests on the body carrying no ownership field at all, which is a property of the body we
+did observe.
+
+### Two neighboring error codes, captured in passing
+
+Both are cheap to handle and neither was in the plan's catalogue.
+
+- **1428, a zone hold.** `POST /zones` for `cloudflare.com`: "The zone name provided is subject to
+  a hold which disallows the creation of this zone. Please contact the domain owner to have this
+  hold removed." HTTP 400. A zone hold is an opt-in protection the previous owner may have left
+  on, so an admin moving a domain they genuinely own can hit this. It is an `ask-someone` row: the
+  tool cannot clear it, and the copy should say the hold is removed at the domain's current
+  Cloudflare account, not at the registrar.
+- **1002, an invalid domain.** `POST /zones` for a name that is not a domain. HTTP 400. Worth a
+  row because the tool takes the domain as free text from the admin, and a typo that is not a
+  valid hostname deserves better than a generic failure.
+
+### Still blocked, still waiting on the scratch domain
+
+Unchanged from the blocked half above: the `POST /zones` success body (specifically the birth
+`status` value and whether `name_servers` is populated at creation), the Custom Domain attach and
+its duplicate error, which credential covers the attach, and what a proxied hostname with no
+matching Worker serves.

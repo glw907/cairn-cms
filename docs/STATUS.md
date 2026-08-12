@@ -41,7 +41,7 @@ four Workers Custom Domains on Free-plan zones, does an Advanced Certificate Man
 appear? The token is refused by every billing and certificate endpoint (code 9109). It affects one
 line of the money preamble, which currently assumes no charge.
 
-**The spike's central finding, folded into the plan as thirteen amendments.** The REST send carries
+**The spike's central finding, folded into the plan as fourteen amendments.** The REST send carries
 none of the `E_` codes the Workers binding throws, and one code, `10203` at HTTP 403, covers both a
 never-onboarded domain and one still propagating, so the recorded onboarding moment plus the
 propagation window is the only discriminator. Measured propagation was 47 to 107 seconds against a

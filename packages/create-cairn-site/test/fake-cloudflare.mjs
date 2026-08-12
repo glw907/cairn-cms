@@ -47,13 +47,14 @@ import { randomBytes, randomUUID } from 'node:crypto';
  * @property {string} apiBase the fake's base URL, `http://127.0.0.1:<port>/client/v4`
  * @property {object} state mutable fixture state, inspectable by tests: `state.zones` (array of
  *  zone objects), `state.dnsRecords` (a `Map` from zone id to its array of record objects, MX
- *  `priority` included), `state.customDomains` (array of Workers Custom Domain objects)
+ *  `priority` included), `state.customDomains` (array of Workers Custom Domain objects),
+ *  `state.emailSubdomains` (a `Map` from zone id to its array of Email Sending subdomain objects)
  * @property {Array<{ method: string, path: string, body: unknown }>} requests every request
  *  received, in arrival order; append-only, never reset except by starting a new server
  * @property {(route: string, status: number, body: unknown) => void} failNext arm a one-shot
  *  status/body override for the next request matching `route` (`zone_create`, `zone_list`,
  *  `zone_get`, `dns_record_create`, `dns_record_list`, `workers_domain_attach`,
- *  `workers_domain_list`)
+ *  `workers_domain_list`, `email_subdomain_list`, `email_subdomain_create`, `email_send`)
  * @property {() => Promise<void>} close stop the server and release its port
  */
 
@@ -72,6 +73,7 @@ export async function startFakeCloudflare({ zoneStatus = 'pending' } = {}) {
     zones: [],
     dnsRecords: new Map(),
     customDomains: [],
+    emailSubdomains: new Map(),
   };
   const assignedNameServerPairs = new Set();
 
@@ -110,6 +112,24 @@ export async function startFakeCloudflare({ zoneStatus = 'pending' } = {}) {
         regex: compile('/client/v4/accounts/:accountId/workers/domains'),
         route: 'workers_domain_list',
         handler: createWorkersDomainListHandler(ctx),
+      },
+      {
+        method: 'GET',
+        regex: compile('/client/v4/zones/:zoneId/email/sending/subdomains'),
+        route: 'email_subdomain_list',
+        handler: createEmailSubdomainListHandler(ctx),
+      },
+      {
+        method: 'POST',
+        regex: compile('/client/v4/zones/:zoneId/email/sending/subdomains'),
+        route: 'email_subdomain_create',
+        handler: createEmailSubdomainCreateHandler(ctx),
+      },
+      {
+        method: 'POST',
+        regex: compile('/client/v4/accounts/:accountId/email/sending/send'),
+        route: 'email_send',
+        handler: createEmailSendHandler(),
       },
     ],
     { requests, failNextMap },
@@ -323,6 +343,7 @@ function createZoneCreateHandler(ctx) {
     const zone = buildZone({ name, accountId, status: ctx.zoneStatus, nameServers });
     ctx.state.zones.push(zone);
     ctx.state.dnsRecords.set(zone.id, []);
+    ctx.state.emailSubdomains.set(zone.id, []);
     // name_servers is stored on the zone (so a subsequent getZone/listZones sees it) but omitted
     // from THIS response: no create-response body was ever observed carrying it (amendment 16),
     // so a caller that trusts it here rather than re-reading the zone must fail its own test.
@@ -434,5 +455,94 @@ function createWorkersDomainListHandler(ctx) {
   return async (_req, res, _params, url) => {
     const { pageItems, resultInfo } = paginate(ctx.state.customDomains, url);
     sendSuccess(res, 200, pageItems, { result_info: resultInfo });
+  };
+}
+
+// --- Email Sending routes -----------------------------------------------------------------
+//
+// Response bodies below are copied verbatim from
+// docs/internal/2026-08-11-t4b-email-spike.md ("Appendix: the captured bodies, verbatim"),
+// captured live against the scratch domain and against ecxc.ski on 2026-08-12. Two things a
+// later edit must not "fix":
+//
+// 1. `preview_enabled` is NOT a constant (a fresh create returns `true`; `ecxc.ski`, onboarded
+//    earlier, reports `false`), which is why a second fixture exists for it.
+// 2. The send refusal body is byte-identical for a never-onboarded domain and one still
+//    propagating (spike amendment 2). There is no field to key a fake failure on; the caller's
+//    own classification is `onboardedAt` plus the clock, not this body.
+
+/** The captured create response, minus `name`/`return_path_domain`, which the handler echoes. */
+const EMAIL_SUBDOMAIN_CREATE_FIXTURE = {
+  id: 'fcf72bf1ef26439884d8110a1825e142',
+  tag: 'fcf72bf1ef26439884d8110a1825e142',
+  name: 'carin-test.org',
+  enabled: true,
+  preview_enabled: true,
+  return_path_domain: 'cf-bounce.carin-test.org',
+  dkim_selector: 'cf-bounce',
+  created: '2026-08-12T08:12:02.593597Z',
+  modified: '2026-08-12T08:12:02.593597Z',
+};
+
+/** The captured send-success result: an empty-arrays body, not the documented recipient-naming shape. */
+const EMAIL_SEND_SUCCESS_FIXTURE = {
+  message_id: '<lQGT3PVeEuGfGBb7ykKdFeEdh7ztvmGEchGM@carin-test.org>',
+  delivered: [],
+  queued: [],
+  permanent_bounces: [],
+};
+
+/**
+ * Build the `GET /zones/:zoneId/email/sending/subdomains` handler: a plain paginated list over
+ * `ctx.state.emailSubdomains`, matching every other list route's shape.
+ * @param {{ state: { emailSubdomains: Map<string, object[]> } }} ctx
+ */
+function createEmailSubdomainListHandler(ctx) {
+  return async (_req, res, params, url) => {
+    const subdomains = ctx.state.emailSubdomains.get(params.zoneId);
+    if (!subdomains) {
+      sendJson(res, 404, { success: false, errors: [{ code: 1001, message: 'Zone not found' }], messages: [], result: null });
+      return;
+    }
+    const { pageItems, resultInfo } = paginate(subdomains, url);
+    sendSuccess(res, 200, pageItems, { result_info: resultInfo });
+  };
+}
+
+/**
+ * Build the `POST /zones/:zoneId/email/sending/subdomains` handler. The response reproduces the
+ * captured fixture verbatim except for `name` and `return_path_domain`, which echo the request,
+ * so posting the exact captured request, `{"name":"carin-test.org"}`, reproduces the captured
+ * response byte-for-byte. The created entry always carries `enabled: true` (spike amendment 3:
+ * the create sets the zone flag immediately, no separate enable step).
+ * @param {{ state: { emailSubdomains: Map<string, object[]> } }} ctx
+ */
+function createEmailSubdomainCreateHandler(ctx) {
+  return async (_req, res, params, _url, body) => {
+    if (!ctx.state.emailSubdomains.has(params.zoneId)) {
+      sendJson(res, 404, { success: false, errors: [{ code: 1001, message: 'Zone not found' }], messages: [], result: null });
+      return;
+    }
+    const name = body?.name ?? EMAIL_SUBDOMAIN_CREATE_FIXTURE.name;
+    const entry = {
+      ...EMAIL_SUBDOMAIN_CREATE_FIXTURE,
+      name,
+      return_path_domain: `cf-bounce.${name}`,
+    };
+    ctx.state.emailSubdomains.get(params.zoneId).push(entry);
+    sendSuccess(res, 200, entry);
+  };
+}
+
+/**
+ * Build the `POST /accounts/:accountId/email/sending/send` handler. Always succeeds with the
+ * captured fixture; the failure path (the refusal envelope, HTTP 403, code 10203) is scripted
+ * through `failNext('email_send', ...)` rather than modeled here, since the real condition
+ * (never onboarded vs. still propagating) is indistinguishable from the body alone.
+ * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<void>}
+ */
+function createEmailSendHandler() {
+  return async (_req, res) => {
+    sendSuccess(res, 200, { ...EMAIL_SEND_SUCCESS_FIXTURE });
   };
 }

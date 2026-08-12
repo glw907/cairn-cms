@@ -378,3 +378,242 @@ test('close releases the port', async (t) => {
 
   await assert.rejects(() => fetch(`${apiBase}/zones`));
 });
+
+// --- Email Sending routes ------------------------------------------------------------------
+// Every fixture below is pasted independently from the captured bodies in
+// docs/internal/2026-08-11-t4b-email-spike.md ("Appendix: the captured bodies, verbatim"),
+// rather than imported from fake-cloudflare.mjs, so a drift in the implementation's own copy (a
+// dropped field, a retyped value) fails this suite instead of passing silently.
+
+const CAPTURED_SUBDOMAIN_CREATE_BODY = {
+  id: 'fcf72bf1ef26439884d8110a1825e142',
+  tag: 'fcf72bf1ef26439884d8110a1825e142',
+  name: 'carin-test.org',
+  enabled: true,
+  preview_enabled: true,
+  return_path_domain: 'cf-bounce.carin-test.org',
+  dkim_selector: 'cf-bounce',
+  created: '2026-08-12T08:12:02.593597Z',
+  modified: '2026-08-12T08:12:02.593597Z',
+};
+
+// The `ecxc.ski` entry, captured for its `preview_enabled: false` (amendment 4: the field is not
+// a constant), used to seed state for the pagination and non-constant tests below.
+const CAPTURED_ECXC_SUBDOMAIN = {
+  id: '02b29178254d48fab3a5a85b38f56126',
+  tag: '02b29178254d48fab3a5a85b38f56126',
+  name: 'ecxc.ski',
+  enabled: true,
+  preview_enabled: false,
+  return_path_domain: 'cf-bounce.ecxc.ski',
+  dkim_selector: 'cf-bounce',
+  created: '2026-06-09T06:26:41.226901Z',
+  modified: '2026-06-09T06:26:41.226901Z',
+};
+
+const CAPTURED_SEND_SUCCESS_RESULT = {
+  message_id: '<lQGT3PVeEuGfGBb7ykKdFeEdh7ztvmGEchGM@carin-test.org>',
+  delivered: [],
+  queued: [],
+  permanent_bounces: [],
+};
+
+// The send refusal, HTTP 403: byte-identical for a never-onboarded domain and one still
+// propagating (spike amendment 2), so the fixture stands in for both conditions.
+const CAPTURED_SEND_REFUSED_BODY = {
+  success: false,
+  errors: [{ code: 10203, message: 'email.sending.error.email.sending_disabled' }],
+  messages: [],
+  result: null,
+};
+
+test('creating a sending subdomain reproduces the captured body byte-for-byte', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const zone = await createZone(cloudflare, { name: 'carin-test.org' });
+
+  const res = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'carin-test.org' }),
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.success, true);
+  assert.deepEqual(body.result, CAPTURED_SUBDOMAIN_CREATE_BODY);
+});
+
+test('the subdomain list is empty before any create, and shows the created entry right after', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const zone = await createZone(cloudflare, { name: 'carin-test.org' });
+
+  const empty = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`);
+  const emptyBody = await empty.json();
+  assert.deepEqual(emptyBody.result, []);
+
+  await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'carin-test.org' }),
+  });
+
+  const after = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`);
+  const afterBody = await after.json();
+  assert.equal(afterBody.result.length, 1);
+  assert.deepEqual(afterBody.result[0], CAPTURED_SUBDOMAIN_CREATE_BODY);
+});
+
+test('the subdomain list paginates like every other list route', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const zone = await createZone(cloudflare, { name: 'carin-test.org' });
+
+  cloudflare.state.emailSubdomains.set(zone.id, [
+    { ...CAPTURED_SUBDOMAIN_CREATE_BODY, id: 'sub-1', name: 'one.example' },
+    { ...CAPTURED_SUBDOMAIN_CREATE_BODY, id: 'sub-2', name: 'two.example' },
+    { ...CAPTURED_ECXC_SUBDOMAIN },
+  ]);
+
+  const page1 = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains?per_page=2&page=1`);
+  const page1Body = await page1.json();
+  assert.equal(page1Body.result.length, 2);
+  assert.deepEqual(page1Body.result_info, { page: 1, per_page: 2, total_pages: 2, count: 2, total_count: 3 });
+
+  const page2 = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains?per_page=2&page=2`);
+  const page2Body = await page2.json();
+  assert.equal(page2Body.result.length, 1);
+  assert.equal(page2Body.result[0].name, 'ecxc.ski');
+});
+
+test('preview_enabled is not forced to a constant: a seeded entry keeps its own value', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const zone = await createZone(cloudflare, { name: 'ecxc.ski' });
+  cloudflare.state.emailSubdomains.set(zone.id, [{ ...CAPTURED_ECXC_SUBDOMAIN }]);
+
+  const res = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`);
+  const body = await res.json();
+  assert.equal(body.result[0].preview_enabled, false);
+});
+
+test('a subdomain create against an unknown zone 404s', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+
+  const res = await fetch(`${cloudflare.apiBase}/zones/does-not-exist/email/sending/subdomains`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'carin-test.org' }),
+  });
+  assert.equal(res.status, 404);
+});
+
+test('a send succeeds with the captured message-id and empty delivery arrays', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+
+  const res = await fetch(`${cloudflare.apiBase}/accounts/acct-1/email/sending/send`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ from: 'no-reply@carin-test.org', to: 'owner@example.com', subject: 'Sign in', text: 'link' }),
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.success, true);
+  assert.deepEqual(body.result, CAPTURED_SEND_SUCCESS_RESULT);
+});
+
+test('failNext reproduces the captured sending-disabled refusal on send, HTTP 403', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  cloudflare.failNext('email_send', 403, CAPTURED_SEND_REFUSED_BODY);
+
+  const res = await fetch(`${cloudflare.apiBase}/accounts/acct-1/email/sending/send`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ from: 'no-reply@carin-test.org', to: 'owner@example.com', subject: 'Sign in', text: 'link' }),
+  });
+  assert.equal(res.status, 403);
+  const body = await res.json();
+  assert.deepEqual(body, CAPTURED_SEND_REFUSED_BODY);
+
+  // One-shot: the next send is unaffected, matching every other failNext route.
+  const after = await fetch(`${cloudflare.apiBase}/accounts/acct-1/email/sending/send`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ from: 'no-reply@carin-test.org', to: 'owner@example.com', subject: 'Sign in', text: 'link' }),
+  });
+  assert.equal(after.status, 200);
+});
+
+test('failNext reproduces the same refusal on a create, for the propagation-park path', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const zone = await createZone(cloudflare, { name: 'carin-test.org' });
+  cloudflare.failNext('email_subdomain_create', 403, CAPTURED_SEND_REFUSED_BODY);
+
+  const res = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'carin-test.org' }),
+  });
+  assert.equal(res.status, 403);
+  const body = await res.json();
+  assert.equal(body.errors[0].code, 10203);
+});
+
+test('failNext scripts a refusal on the list route too, a mechanic Tasks 4 and 5 can drive', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const zone = await createZone(cloudflare, { name: 'carin-test.org' });
+  // No entitlement-refusal body on GET was ever observed live (spike amendment 8); this is a
+  // synthetic body proving the failNext mechanic reaches this route, not a captured shape.
+  cloudflare.failNext('email_subdomain_list', 403, {
+    success: false,
+    errors: [{ code: 9109, message: 'synthetic: not entitled to view this resource' }],
+    messages: [],
+    result: null,
+  });
+
+  const res = await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`);
+  assert.equal(res.status, 403);
+  const body = await res.json();
+  assert.equal(body.errors[0].code, 9109);
+});
+
+test('a list-only call issues no create, provable through the request log', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const zone = await createZone(cloudflare, { name: 'carin-test.org' });
+
+  await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`);
+
+  const emailRequests = cloudflare.requests.filter((request) => request.path.includes('/email/sending/subdomains'));
+  assert.equal(emailRequests.length, 1);
+  assert.equal(emailRequests[0].method, 'GET');
+});
+
+test('requests logs the send route with its body, alongside the subdomain routes', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const zone = await createZone(cloudflare, { name: 'carin-test.org' });
+
+  await fetch(`${cloudflare.apiBase}/zones/${zone.id}/email/sending/subdomains`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'carin-test.org' }),
+  });
+  await fetch(`${cloudflare.apiBase}/accounts/acct-1/email/sending/send`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ from: 'no-reply@carin-test.org', to: 'owner@example.com', subject: 'Sign in', text: 'link' }),
+  });
+
+  const createRequest = cloudflare.requests.find(
+    (request) => request.path.endsWith('/email/sending/subdomains') && request.method === 'POST',
+  );
+  assert.equal(createRequest.body.name, 'carin-test.org');
+  const sendRequest = cloudflare.requests.find((request) => request.path.endsWith('/email/sending/send'));
+  assert.equal(sendRequest.body.to, 'owner@example.com');
+});

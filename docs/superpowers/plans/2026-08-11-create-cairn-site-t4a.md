@@ -585,18 +585,33 @@ that appendix, never written from memory.** A spike question that answers "no" o
 ### Task 12: The cross-cutting safety net
 
 **Files:**
-- Modify: the Task 11 test file (extend)
+- Create: `packages/create-cairn-site/test/chapter2-safety-net.test.mjs` (deviation from the
+  plan's letter, recorded below)
 
-- [ ] **Step 1: The interruption cases.** One spawned-CLI case per hop boundary (a
-  record written at that step), re-run to completion against the fakes, asserting no
-  repeated side effects hop by hop.
-- [ ] **Step 2: The secret sweep.** Drive a full run with a planted distinctive token;
+**Deviation from the plan's letter (main loop ruling, applied at dispatch):** the plan asked
+for "one spawned-CLI case per hop boundary", extending the Task 11 test file. A spawned
+`bin.mjs` cannot inject the `resolve`, `resolveNs`, and `fetchImpl` seams, and there is no env
+seam for DNS or for the cutover's HTTPS probe, so a spawned run past the zone hop would perform
+real DNS lookups and real HTTPS requests, neither hermetic nor safe; the Global Constraints
+above bar adding such a seam to production code to work around it. Every case instead drives
+`runChapter2` in-process, in a new sibling file rather than an extension of Task 11's: it still
+writes real state files through the real state store, spawns the real fake wrangler through
+`exec.mjs`, and rewrites the real scaffold `wrangler.jsonc`, so every artifact the sweep and the
+no-repeat assertions need is genuinely produced. Task 11's own spawned file already proves the
+dispatcher's routing into each new step; this file proves what happens once `runChapter2` itself
+is running.
+
+- [x] **Step 1: The interruption cases.** One case per hop boundary (a record written at
+  that step), re-run to completion against the fakes, asserting no repeated side effects
+  hop by hop, plus a genuine park-then-resume case and a park-before-cutover case
+  asserting zero wrangler invocations.
+- [x] **Step 2: The secret sweep.** Drive a full run with a planted distinctive token;
   sweep the scaffold tree (including `wrangler.jsonc`), every log line, every error
   message, argv of every fake-bin invocation, and `siteStateDir()` **including
   `*.retired-*.json`**: present only in the live state record before completion,
   nowhere after. Prove the sweep can fail by planting the value once, then remove the
   plant.
-- [ ] **Step 3: Suite green; commit.**
+- [x] **Step 3: Suite green; commit.**
 
 ### Task 13: The live e2e (main loop + Geoff's moments, scratch domain)
 

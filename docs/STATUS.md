@@ -58,10 +58,20 @@ Pass D -> release one -> site walk -> P.
 pushed or merged, so a cold session that branches off `main` by default would build against a tool
 lacking chapter 2 entirely.
 
-**Hand steps for Geoff, all outstanding:** delete the GitHub Apps `cairn-t4a-live-596b84` and
-`cairn-t3-live-71d37c` at github.com (Task 9 will add a third), and revoke the Cloudflare API token
-minted for the T4a run (id `a3640d8f9719e4873eca79d40f8205c3`). That token was pasted into a session
-transcript, so treat it as burned rather than merely unused.
+**Hand steps for Geoff. The GitHub Apps are DONE** (`cairn-t3-live-71d37c` and
+`cairn-t4a-live-596b84` both deleted 2026-08-12), along with the scratch org from T2's org-path
+run. **One remains:** revoke the Cloudflare API token minted for the T4a run (id
+`a3640d8f9719e4873eca79d40f8205c3`). That token was pasted into a session transcript, so treat it
+as burned rather than merely unused.
+
+**Every live e2e mints a GitHub App only Geoff can delete, and this is now a standing tax.** There
+is no REST endpoint to delete a GitHub App, and the installation-delete endpoint needs the App's
+own JWT, whose key the tool deliberately moves into a Worker secret and deletes locally. So an App
+outlives the run that made it and the credential that could reach it. Three have been deleted by
+hand across T3, T4a, and T2's org run, and **Task 9 will mint a fourth.** The fix, if the tax keeps
+biting, is for the e2e procedure to reuse one long-lived test App rather than minting per run: the
+tool already accepts an existing App, so it is a change to the procedure, not the engine. Not filed
+against a pass yet, deliberately, since it is a testing-workflow cost rather than a product defect.
 
 **Carry-forwards raised by T4a, deliberately not fixed.** (1) The cutover confirm resolves through
 `fetch` and the system resolver, so a stale negative DNS cache reports a serving hostname as

@@ -14,42 +14,51 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-12: T4b is COMPLETE, e2e included; next is EXECUTING T4b.1)
+## Immediate next action (2026-08-12: T4b.1 is COMPLETE; next is the T4c planning sitting)
 
-**Pass T4b is closed on branch `t4b-email-chapter`** (worktree `t3-cloudflare-chapter`, stacked on
-`t4a-domain-chapter`, itself off `main` at `1415f48e`). The email half is built, every gate is
-green, and the live e2e ran end to end: `email-live` reached, the token deleted at the terminal
-state and proven absent from disk, the sender address deployed, the domain's four seeded records
-byte-intact through the whole run, and teardown restored the zone exactly. Evidence: the T4b
+**Pass T4b.1 is closed on branch `worktree-t4b1-defect-harvest`** (worktree
+`.claude/worktrees/t4b1-defect-harvest`, off `main` at `78603466`). All four rulings shipped, the
+package suite went 523 to 544 green, the root engine suite is untouched and exits 0 at 5274, and
+every gate passes including the four CI-only ones. Each fix was verified by breaking it: the
+evidence table is in the plan's post-mortem.
+
+**The branch is NOT merged and NOT pushed.** It needs a merge to `main` before T4c branches off,
+or T4c builds without these four fixes.
+
+**One finding outside the plan, and it is the urgent one: CI has never run the merged T4b tree.**
+`origin/main` is at `1415f48e`, five commits behind local `main`, so the T4b merge this file called
+"the exact tree every gate passed" was never pushed and never gated. It would have failed: two
+package tests read the gitignored, `prepack`-baked `template/`, and `test/../test.yml` had no bake
+step, so they pass on any machine that has run the CLI and fail on every clean checkout. T4b.1 added
+the bake step (the same substitution `create-site.yml` already makes) and verified it in both
+directions. **Push and watch CI before trusting `main`.**
+
+**Ruling 3 turned out to cover four copy sites, not two.** The plan named the email completion and
+`printLiveInfo`; a sweep found the send hop's detail line and `printEmailLiveInfo` making the same
+unproven delivery claim, the latter being what a resuming owner reads. All four changed, since the
+ruling's own words are "anywhere". The published docs were swept and carry no such claim.
+
+**New carry-forward: `CLAUDE.md` is at its context ceiling**, 5997 estimated tokens against a 6000
+hook threshold. The `10204` amendment fit only after trimming its own paragraph. The next addition
+to that file must trim before it adds.
+
+**Resume prompt for the next session** (a Fable planning sitting; launch directory
+`~/Projects/cairn-cms`): "Run the T4c planning sitting for the create-cairn-site umbrella (Builds
+connect plus reconciliation; the brief is in the T4a spec). Read `docs/STATUS.md` and the T4b.1
+post-mortem first. Merge `worktree-t4b1-defect-harvest` to `main` and push before planning, since
+CI has not yet run the T4b or T4b.1 trees."
+
+**What T4b left standing, still true.** The email half works end to end against the real platform.
+Delivery is unproven and recorded as such: Cloudflare accepted every send, nothing arrived on a
+day-old domain, greylisting and SPF were both refuted by experiment, and new-domain reputation is
+the documented norm, which is exactly what ruling 8 predicted a CLI could not observe. T4b.1 has
+now brought the tool's copy into line with that. The propagation park stays partially proven: the
+condition was seen live in the spike, but the tool's own branch is unreachable on any domain this
+account may touch, because sending authorization survives de-onboarding. Full evidence: the T4b
 plan's post-mortems and the spike doc's "The live e2e" section.
 
-**Two honest gaps, recorded rather than dressed up.** Delivery (Task 9 Step 2) is unproven:
-Cloudflare accepted every send, nothing arrived on a day-old domain, greylisting and SPF were
-refuted by experiment, and new-domain reputation is the industry-documented norm, which vindicates
-the spec's ruling 8. The propagation park (Step 3) was observed as a platform condition in the
-spike but the tool's own branch is unreachable now that the domain is permanently authorized
-(sending authorization survives de-onboarding, a new platform finding alongside the second refusal
-code `10204`).
-
-**Next: EXECUTE Pass T4b.1**, the live run's defect harvest, four fixes with rulings committed in
-the plan: the saved-token lock (owner-stranding), the zone hop's write-before-read
-(owner-stranding), the delivery overclaim in two copy sites, and classifying `10204` on purpose.
-Plan: `docs/superpowers/plans/2026-08-12-create-cairn-site-t4b1.md`. Small pass, five tasks, no
-new surface.
-
-**The stack is MERGED to `main`** (ff-only, 2026-08-12, `main` at `210c3bda`, the exact tree
-every gate passed), retiring the branch-topology warning this section carried since T4a. The
-release itself still holds per the standing order (after Pass D).
-
-**Resume prompt for the next session** (a fresh Opus session; launch directory
-`~/Projects/cairn-cms`): "Execute Pass T4b.1 of the create-cairn-site umbrella (the T4b live
-run's defect harvest): `docs/superpowers/plans/2026-08-12-create-cairn-site-t4b1.md`, on a fresh
-worktree off `main`. Start with the cairn-pass skill; read the plan in full first, plus the T4b
-plan's post-mortem part three for the evidence behind each fix. The plan's four rulings are
-committed; do not re-derive them."
-
-Queue after T4b.1: T4c planning sitting (Fable; Builds connect + reconciliation, brief in the
-T4a spec) -> T4d (the localhost console) -> T5 -> Pass D -> release one -> site walk -> P.
+Queue: T4c planning sitting (Fable; Builds connect + reconciliation, brief in the T4a spec) ->
+T4d (the localhost console) -> T5 -> Pass D -> release one -> site walk -> P.
 
 **Hand steps for Geoff, TWO outstanding, one urgent.** (1) **URGENT: rotate the estate Cloudflare
 token** (`Cloudflare Admin 2026-07`): its value was leaked into a session transcript during the
@@ -86,8 +95,15 @@ and `sendJson` are defined twice; verified still true 2026-08-12. The extraction
 **third** fake server, and T4b extended the second rather than adding one, so it stays filed for
 T4d. (11) T4b's own: the `paid-plan-missing` mapping keys on Cloudflare's entitlement wording
 rather than a code, because the condition is unreachable on an account already on Workers Paid, and
-the spike notes a plan-less account may return the same `10203` as every other refusal, in which
-case the row never fires and the owner sees the fall-through carrying Cloudflare's own message.
+the spike notes a plan-less account may return one of the sender-not-ready codes like every other
+refusal, in which case the row never fires and the owner sees the fall-through carrying
+Cloudflare's own message. (12) T4b.1's own: **`CLAUDE.md` has no context headroom left**, 5997
+estimated tokens against the 6000 hook threshold, so the next addition there must trim before it
+adds. (13) Also T4b.1's: `--yes` with `CAIRN_CF_API_TOKEN` equal to a saved token that fails
+validation now throws that failure rather than re-validating the same string. The old double
+validation could mask a first failure if a second immediately succeeded, which cannot happen for a
+catalogued auth refusal (`validateToken` rethrows anything without a `catalogue`), so this is
+recorded as a deliberate narrowing rather than a behavior question left open.
 
 **A numbering trap, worth naming because it nearly cost a live item.** T4b's plan and spec tell the
 executor to "retire STATUS carry-forward 6" and "confirm carry-forward 7 still stands". Both numbers
@@ -98,6 +114,13 @@ missing comment and type gate, which this pass does not resolve. The real refere
 restored above as (10). This is the same failure class T4a's post-mortem recorded against its own
 Task 14: **a task instruction naming a concrete document state is a claim to verify, not an
 instruction to follow.**
+
+T4b.1 hit the same class a third time, in a different disguise. Its plan told the implementer to
+catch on `error.catalogue.code`; the real property is `error.cause.catalogue.code`, because
+`runner.mjs:58` rewraps every hop's error with its action title. The implementer checked the
+mechanism instead of trusting the plan, and the catch would have been silently dead code had it
+not. The generalization is now worth stating plainly: **a plan naming a concrete code shape, path,
+or document state is a claim to verify at the first task that touches it.**
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 

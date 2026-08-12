@@ -121,11 +121,38 @@
 
   Two platform findings from the pass's live spike are worth recording, because both contradict
   what the documentation implies. Cloudflare's REST send carries none of the `E_` codes its Workers
-  binding throws, and one code, `10203`, covers both a domain that was never onboarded and one whose
-  DNS is still settling, so elapsed time since onboarding is the only thing separating them.
+  binding throws, and two codes, `10203` and `10204`, both describe a sender that is not ready,
+  covering a domain that was never onboarded and one whose DNS is still settling alike, so elapsed
+  time since onboarding is the only thing separating them.
   Deleting a sending subdomain removes the records onboarding added except the `p=reject` DMARC
   record at the apex, so that policy outlives the feature that wrote it and any later sender for the
   domain has to be added to it. The closing copy and the deploy guide both say so now.
+
+  A live end-to-end run of the whole chapter then found four defects its fakes could not reach, and
+  all four are fixed here. Two of them stranded a real owner. A saved Cloudflare API token that
+  still passed validation but lacked a write permission could never be replaced, because validation
+  is a read and nothing ever cleared a token that failed later; a `token-scope-missing` or
+  `token-invalid` failure now deletes the saved token before the error surfaces, so the re-run the
+  message already asks for actually collects a new one. Under `--yes`, a `CAIRN_CF_API_TOKEN` that
+  differs from the saved token now wins, since an operator who sets the variable is expressing an
+  intent a stored value should not override. Separately, an owner whose zone already existed but
+  whose token could not create zones died on a refusal for a create that was never needed:
+  `ensureZone` now lists zones by name before posting a create, adopting on a hit, which is the
+  read-before-write discipline every other non-idempotent call in the tool already followed. The
+  1061 collision path stays as a race guard.
+
+  The third fix is a correction, not a repair. The run proved that Cloudflare accepts a message and
+  proved nothing about delivery: every send returned 200 and none arrived, on a domain a day old.
+  Greylisting and SPF were both refuted by experiment, leaving new-domain sending reputation, which
+  a CLI cannot observe. So the tool no longer claims delivery anywhere. The closing copy names what
+  was actually proven, adds the warm-up expectation a brand-new domain should have, and points at
+  `cairn-doctor --send-test` for checking the path later. The stale "Email arrives with a later
+  chapter" line, which this pass's own predecessor made false, now names `--domain` and `--email`
+  instead. Fourth, the `10204` refusal code joins `10203` under the propagation-window
+  classification deliberately, rather than landing correctly by fall-through.
+
+  Consumers must: nothing. `create-cairn-site` is still unpublished and the engine's runtime library
+  is untouched by this pass.
 
 - Every entry gains a publish history and a revert-as-draft: the `history` admin view
   (`/admin/<concept>/<id>/history`), reachable from the edit screen's overflow menu, lists the

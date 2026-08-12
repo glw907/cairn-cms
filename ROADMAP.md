@@ -452,6 +452,19 @@ the named human gates only):**
 
 ## Next
 
+- **An admin test-send, as engine work for its own pass (split out of T4b, 2026-08-12).** The
+  doctor half already ships (`email.sender-onboarded` plus `--send-test`), and chapter 2's own test
+  send proves the provisioning question at the moment it matters. The admin test-send answers a
+  different question: an editor reporting months later that no link arrived. It left the T4b pass
+  because that pass carries a hard constraint that the runtime library stays untouched, and this is
+  runtime work in the admin surface.
+
+  Two findings from T4b's spike shape it. The REST send and the Workers binding carry **different
+  error vocabularies**, so an admin-side check written against the binding cannot reuse the
+  installer's classification; see `docs/internal/2026-08-11-t4b-email-spike.md`. And a send failure
+  is ambiguous for the first minute or two after onboarding, so any admin-facing result needs to
+  say "still settling" rather than "broken" when the domain was onboarded recently.
+
 - **`npm test` can hang rather than fail (found on the cleanup pass, 2026-08-08).** A run stalled
   for roughly three hours in the browser (component) project instead of exiting non-zero. This is
   distinct from the documented "Browser connection was closed" flake, which fails fast and is

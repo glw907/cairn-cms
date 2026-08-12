@@ -606,3 +606,146 @@ Unchanged from the blocked half above: the `POST /zones` success body (specifica
 `status` value and whether `name_servers` is populated at creation), the Custom Domain attach and
 its duplicate error, which credential covers the attach, and what a proxied hostname with no
 matching Worker serves.
+
+## Addendum 2: the scratch domain (`carin-test.org`, 2026-08-12 UTC)
+
+The scratch domain arrived registered **at Cloudflare Registrar**, not at an external one. That is
+not what the plan assumed, and it changes what this spike can and cannot prove. Everything below
+was observed against it with the spike token.
+
+### The Cloudflare-registrar path skips delegation entirely (NEW BRANCH)
+
+`GET /zones?name=carin-test.org`, minutes after registration:
+
+```json
+{ "name": "carin-test.org", "status": "active", "type": "full",
+  "created_on": "2026-08-12T02:24:09.668801Z", "activated_on": "2026-08-12T02:24:10.025031Z",
+  "name_servers": ["burt.ns.cloudflare.com", "carlane.ns.cloudflare.com"],
+  "original_name_servers": null, "original_registrar": null,
+  "plan": { "name": "Free Website", "price": 0 } }
+```
+
+The zone went from created to active in **0.36 seconds**, and it never passed through `pending`.
+Both `original_name_servers` and `original_registrar` are **null**, because there was no prior
+delegation and no prior registrar to record.
+
+**This is a branch chapter 2 does not have, and cairn's audience makes it likely.** An owner who
+buys their domain through Cloudflare arrives holding an active zone. Two consequences:
+
+1. The `registrarInstructions` table the Step 2 findings recommended keys off `original_registrar`.
+   A null value must mean "already at Cloudflare, skip the delegation step", not fall through to a
+   generic instruction telling the owner to change nameservers they do not need to touch.
+2. The delegation check has nothing to wait for. Detecting the active-on-arrival case early is what
+   keeps the chapter from staging a wait that will never end.
+
+**What this domain therefore cannot prove**, and what an externally registered domain is still
+needed for: the `POST /zones` success body, the `pending` birth state, whether `name_servers` is
+populated at creation, and the nameserver change an admin actually performs at their registrar.
+
+### The Custom Domain attach: two open questions closed, both favorably
+
+`PUT /accounts/:id/workers/domains` with the **pasted token**, against a scratch Worker
+(`cairn-t4a-spike`) deployed for this purpose:
+
+```json
+{ "result": { "id": "243a7815662387d91ec18351b855b67862d0f67d",
+    "zone_id": "...", "zone_name": "carin-test.org", "hostname": "carin-test.org",
+    "service": "cairn-t4a-spike", "environment": "production",
+    "cert_id": "a7e98570-9746-488b-93cc-4709717342be",
+    "previews_enabled": false, "enabled": true },
+  "success": true, "errors": [], "messages": [] }
+```
+
+HTTP 200.
+
+**The pasted token covers the attach on its own.** No wrangler session was involved, so the
+credential split holds exactly as Step 4 described it, and Task 9's API implementation stands.
+
+**The attach is idempotent.** Issuing the identical `PUT` a second time returned HTTP 200 with the
+same domain `id` and the same `cert_id`, not a duplicate error. **Task 9 loses a branch it had
+budgeted**, and re-running the chapter after a failure is safe by construction rather than by
+careful bookkeeping.
+
+**The attach writes a proxied `AAAA` at the apex pointing at `100::`**, the IPv6 discard prefix,
+and writes no `A` record. Observed by listing the zone's records afterward. This is the mechanism
+behind the vendor's "Cloudflare will create DNS records on your behalf". **It has a consequence
+for Task 8's carry-over**: an admin whose apex already carries an `A` or `AAAA` has a record
+sitting where the attach wants to write, and the chapter needs a stated behavior for that
+collision rather than discovering it in the field.
+
+### The certificate lags the attach, and the confirm must survive the gap (CORRECTS TASK 9)
+
+Immediately after a successful attach, on a zone minutes old:
+
+```
+https://carin-test.org/   curl: (35) OpenSSL error:0A000410 sslv3 alert handshake failure
+http://carin-test.org/    200
+http://carin-test.org/admin   303  location: http://carin-test.org/admin/login
+```
+
+**The plan's ordered flow (attach, confirm, write origin, redeploy once) fails at the confirm as
+written**, because the confirm runs over HTTPS against a hostname whose certificate does not exist
+yet. The failure is a TLS handshake error, not an HTTP status, so a confirm that only inspects
+status codes reports nothing useful about why.
+
+Task 9 needs a stated behavior: distinguish "attached, certificate still issuing" from "broken",
+and either wait on it or hand the owner a `wait` row. The marker pair itself is **verified** by the
+same output above, over HTTP: `/` answers 200 and `/admin` answers 303 to `/admin/login`.
+
+**The tool cannot poll certificate status with this token.** Both
+`GET /zones/:id/ssl/certificate_packs` and `GET /zones/:id/ssl/verification` returned 9109
+Unauthorized, even with **SSL and Certificates Edit** added at Zone scope by hand during the
+minting sitting. So issuance progress is observed by probing the hostname, not by asking the API,
+unless a later spike finds the permission that actually opens those routes.
+
+### An unattached proxied hostname serves 522, in 16 plain-text bytes
+
+A proxied `A` record for `nothing.carin-test.org` pointing at an unroutable address, requested at
+the edge:
+
+```
+status=522 size=16
+error code: 522
+```
+
+Not an HTML error page. This is the clean observation Step 4 wanted and could not get from the
+production estate, where every probed hostname proxied to a real origin. It also confirms the
+confirm's 200-check discriminates in the direction that matters here: a hostname that is proxied
+but not serving answers 5xx, not 200.
+
+### THE DEFECT THIS SPIKE EXISTS TO CATCH: a stale negative cache reads as "absent"
+
+Two independent instances, both reproduced.
+
+The MX records were created at roughly 02:30 UTC, before the `.org` delegation went live. Queried
+after the zone was serving, `1.1.1.1` returned **nothing** for MX while the apex `AAAA` on the same
+name resolved normally in the same batch, and `node:dns` `resolveMx` reported **ENOTFOUND**. Queried
+again minutes later, the same resolver returned both records. Nothing in DNS changed between those
+two reads; only the cached negative expired. Second instance, still live at the time of writing:
+`getent hosts nothing.carin-test.org` reports NOT FOUND on this workstation's resolver while
+`1.1.1.1` serves the record.
+
+**The plan's mapping treats ENOTFOUND and ENODATA as authoritatively absent.** That mapping is
+correct in steady state and dangerous in exactly the window the chapter runs in. A carry-over probe
+that runs shortly after a zone is created can read a stale negative, report "no MX records found",
+and carry nothing over. The admin's mail stops and the tool says nothing is wrong.
+
+Two properties make it worse than a plain race. The negative is cached **per record type**, so the
+apex resolving is not evidence that a missing MX is truly missing. And the failure is **silent and
+plausible**: an empty record list is exactly what a domain with no mail configured looks like.
+
+**Task 8 re-plans on this.** The probe should read the domain's authoritative nameservers directly
+where they are known, since that is the one read no recursive cache sits in front of. Where it
+falls back to a recursive resolver, "absent" is a low-confidence reading, and the gate copy must
+say the list may be incomplete for that reason as well as the wildcard reason already recorded
+under Step 3. Ruling 4's caveat now has two independent causes behind it.
+
+### DKIM chunk reassembly, verified on our own record
+
+The seeded selector is 437 bytes. Read through the same `node:dns` path the tool uses:
+
+```
+chunks=2 lengths=[255,182] joined=437
+```
+
+Confirms Step 3's finding on a record we control, which is what the e2e will assert against.

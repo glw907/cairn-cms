@@ -21,8 +21,12 @@ library's own development proves changes against `examples/showcase`.
 `1415f48e`). Chapter 2 now runs `domain-live` to `email-onboarded` to `email-live`: the money
 preamble opens a fresh run, the admission asks once and respects either answer, the sending domain
 is onboarded through the REST seam, one real message proves the path, the sender address is written
-and deployed once, and the token is deleted at a genuinely terminal state. Suite green at 517 before
-Task 8b, which is the last dispatched task.
+and deployed once, and the token is deleted at a genuinely terminal state.
+
+**Every gate is green:** the package suite at 523 passing exit 0, the root `npm run check` at 0/0
+over 1601 files, the root `npm test` at 5274 passing, and all eight named gates including the four
+CI-only ones (`check:reference:signatures`, `check:surface`, `check:comments`, `check:snippets`).
+`code-simplifier` has run. The pass is closed apart from Task 9.
 
 **What is left, and it needs Geoff.** Task 9, the live e2e, has not run. T4a's teardown was
 complete, so no site sits at `domain-live` and the run starts from scratch through chapters 1 and 2,

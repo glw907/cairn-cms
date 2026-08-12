@@ -453,7 +453,7 @@ for (const [label, step, seed, idSuffix] of [
     );
     if (step === 'email-live') {
       assert.ok(
-        result.stdout.includes('sends its own sign-in email'),
+        result.stdout.includes('Cloudflare accepted'),
         `expected email-live's own closing line, got: ${result.stdout}`,
       );
     } else {
@@ -462,7 +462,7 @@ for (const [label, step, seed, idSuffix] of [
         `expected the declined closing line, got: ${result.stdout}`,
       );
       assert.equal(
-        result.stdout.includes('sends its own sign-in email'),
+        result.stdout.includes('Cloudflare accepted'),
         false,
         `a declined owner must never be told sign-in email works, got: ${result.stdout}`,
       );
@@ -668,4 +668,80 @@ test('bin.mjs --start-over from a terminal chapter-2 step also refuses, same as 
 
   const after = await loadSite(siteId);
   assert.deepEqual(after, before, 'a terminal record must be present and unchanged on disk');
+});
+
+// --- T4b.1 defect harvest: the email copy sites in bin.mjs must not promise delivery ------------
+
+test('bin.mjs at live prints the re-run hint naming --domain and --email, not the stale "later chapter" line', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('chapter2-live-rerun-hint');
+  t.after(() => fake.close());
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+
+  const siteId = 'chapter2-live-rehint';
+  await seedChapter2Site(siteId, dir, 'live');
+
+  const result = await runCli(['--dir', dir, '--yes'], {
+    stateDir,
+    wranglerBin: fake.binPath,
+    apiBase: cloudflare.apiBase,
+    fakeOpenerDir,
+  });
+
+  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  assert.equal(
+    result.stdout.includes('later chapter'),
+    false,
+    `T4b shipped email, so this line must be gone, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('--domain'),
+    `expected the re-run hint to name --domain, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('--email'),
+    `expected the re-run hint to name --email, got: ${result.stdout}`,
+  );
+});
+
+test('bin.mjs at email-live names the sender and Cloudflare\'s acceptance, never a flat delivery claim', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('chapter2-email-live-closing');
+  t.after(() => fake.close());
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+
+  const siteId = 'chapter2-emlive-closes';
+  await seedEmailLiveSite(siteId, dir);
+
+  const result = await runCli(['--dir', dir], {
+    stateDir,
+    wranglerBin: fake.binPath,
+    apiBase: cloudflare.apiBase,
+    fakeOpenerDir,
+  });
+
+  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  assert.ok(
+    result.stdout.includes('no-reply@email-live-test.example'),
+    `expected the sign-in sender address, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('Cloudflare accepted'),
+    `expected the proven claim to be acceptance, got: ${result.stdout}`,
+  );
+  assert.equal(
+    result.stdout.includes('sends its own sign-in email'),
+    false,
+    `must not flatly claim the site sends sign-in email as proven fact, got: ${result.stdout}`,
+  );
 });

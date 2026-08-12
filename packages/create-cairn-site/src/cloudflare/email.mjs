@@ -11,13 +11,16 @@
 //
 // sendTestMessage's classification is the one place amendment 1 replaces the plan's original
 // design: the REST send carries no `E_` codes, only a numeric `code` and a dotted identifier on
-// `err.api` (api.mjs's own throwCatalogued). SENDING_DISABLED_CODE (10203) is the ONLY signal
-// available for the propagation condition, and it is byte-identical for a domain that was never
-// onboarded and one whose records are still settling (amendment 2), so the caller's own
-// `onboardedAt` plus the clock is the whole discriminator; nothing in the body can do it. The
-// daily-limit condition was never observed live (amendment 8's sibling for the send path), so it
-// is matched on Cloudflare's dotted identifier containing "daily_limit", in that identifier's own
-// style, rather than on an invented numeric code.
+// `err.api` (api.mjs's own throwCatalogued). Two codes signal the propagation condition,
+// SENDING_DISABLED_CODE (10203) and SENDER_NOT_CONFIGURED_CODE (10204, captured alongside it
+// 2026-08-12): both dotted identifiers describe a sender that is not yet ready to send, and this
+// chapter only ever sends after a successful onboard, so either code within the window is most
+// plausibly settling state and either past it means onboarding did not take. Neither code
+// separates a domain that was never onboarded from one whose records are still settling
+// (amendment 2), so the caller's own `onboardedAt` plus the clock is the whole discriminator;
+// nothing in the body can do it. The daily-limit condition was never observed live (amendment 8's
+// sibling for the send path), so it is matched on Cloudflare's dotted identifier containing
+// "daily_limit", in that identifier's own style, rather than on an invented numeric code.
 //
 // The three reclassified rows (email-sender-propagating, email-sender-unavailable,
 // email-daily-limit) are built here with no `dir`: this module classifies a failure, it does not
@@ -27,7 +30,7 @@
 // the same "outcome now, message later" split hostname.mjs's cutover already uses for its own wait
 // rows. An unmapped failure is rethrown as-is instead: it already carries api.mjs's real `dir`,
 // since api.mjs built it, and reclassifying it here would only lose that.
-import { SENDING_DISABLED_CODE } from './api.mjs';
+import { SENDING_DISABLED_CODE, SENDER_NOT_CONFIGURED_CODE } from './api.mjs';
 import { cloudflareError } from './catalogue.mjs';
 
 /**
@@ -44,6 +47,15 @@ export const PROPAGATION_WINDOW_MS = 30 * 60 * 1000;
  * rather than one captured string.
  */
 const DAILY_LIMIT_PATTERN = /daily_limit/i;
+
+/**
+ * The send-refusal codes that mean the sender is not ready yet, classified as one family on
+ * purpose (ruling 4, T4b.1). SENDER_NOT_CONFIGURED_CODE (10204) was never observed live on a
+ * domain that had just been onboarded, only on never-onboarded ones and not consistently even
+ * there, so its membership here is a reasoned classification from the two dotted identifiers'
+ * shared meaning, not a measured fact.
+ */
+const SENDER_NOT_READY_CODES = new Set([SENDING_DISABLED_CODE, SENDER_NOT_CONFIGURED_CODE]);
 
 /**
  * Derive a site's default sign-in sender address from its domain. The one place this address is
@@ -101,7 +113,7 @@ export async function ensureSendingDomain({ api, zoneId, domain, record: _record
 function classifySendFailure(err, from, onboardedAt, now) {
   if (err?.catalogue?.code !== 'email-send-failed') return;
 
-  if (err.api?.code === SENDING_DISABLED_CODE) {
+  if (SENDER_NOT_READY_CODES.has(err.api?.code)) {
     const elapsedMs = now() - Date.parse(onboardedAt);
     if (elapsedMs <= PROPAGATION_WINDOW_MS) {
       throw cloudflareError('email-sender-propagating', {});

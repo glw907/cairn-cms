@@ -180,6 +180,72 @@ test('an unattended run reads CAIRN_CF_API_TOKEN and never opens a browser or pr
   assert.equal(browserOpened, false);
 });
 
+test('an unattended run with a valid saved token and no env override reuses the saved token', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureApiToken } = await import('./prefill.mjs');
+
+  const result = await ensureApiToken({
+    record: { dir: '/tmp/site', cloudflare: { accountId: 'acct-1', apiToken: 'saved-good-token' } },
+    log: () => {},
+    yes: true,
+    env: {},
+  });
+
+  assert.equal(result, 'saved-good-token');
+  const zoneListCalls = cloudflare.requests.filter(
+    (r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones'),
+  );
+  assert.equal(zoneListCalls.length, 1, 'only the saved token should have been validated');
+  assert.equal(zoneListCalls[0].headers.authorization, 'Bearer saved-good-token');
+});
+
+// --- branch 5 (T4b.1): a differing CAIRN_CF_API_TOKEN is preferred over a saved token ----------
+
+test('an unattended run with a saved token and a DIFFERING CAIRN_CF_API_TOKEN prefers and saves the env token', async (t) => {
+  const cloudflare = await setup(t);
+  const { ensureApiToken } = await import('./prefill.mjs');
+
+  const result = await ensureApiToken({
+    record: { dir: '/tmp/site', cloudflare: { accountId: 'acct-1', apiToken: 'saved-good-token' } },
+    log: () => {},
+    yes: true,
+    env: { CAIRN_CF_API_TOKEN: 'operator-set-env-token' },
+  });
+
+  assert.equal(result, 'operator-set-env-token');
+  const zoneListCalls = cloudflare.requests.filter(
+    (r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones'),
+  );
+  assert.equal(zoneListCalls.length, 1, 'only the env token should have been validated, not the saved one');
+  assert.equal(zoneListCalls[0].headers.authorization, 'Bearer operator-set-env-token');
+});
+
+test('an unattended run with a differing but INVALID CAIRN_CF_API_TOKEN throws, never falling back to the saved token', async (t) => {
+  const cloudflare = await setup(t);
+  cloudflare.failNext('zone_list', 403, GENERIC_SCOPE_MISSING_BODY);
+  const { ensureApiToken } = await import('./prefill.mjs');
+
+  await assert.rejects(
+    () =>
+      ensureApiToken({
+        record: { dir: '/tmp/site', cloudflare: { accountId: 'acct-1', apiToken: 'saved-good-token' } },
+        log: () => {},
+        yes: true,
+        env: { CAIRN_CF_API_TOKEN: 'bad-env-token' },
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-scope-missing');
+      return true;
+    },
+  );
+
+  const zoneListCalls = cloudflare.requests.filter(
+    (r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones'),
+  );
+  assert.equal(zoneListCalls.length, 1, 'the saved token must never be tried once the env token fails validation');
+  assert.equal(zoneListCalls[0].headers.authorization, 'Bearer bad-env-token');
+});
+
 test('an unattended run with no CAIRN_CF_API_TOKEN throws, naming the env var', async (t) => {
   await setup(t);
   const { ensureApiToken } = await import('./prefill.mjs');

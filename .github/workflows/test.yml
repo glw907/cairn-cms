@@ -24,6 +24,17 @@ jobs:
       # any workflow; the create-cairn-site package is new. Both gate the scaffolded output, so a
       # break here ships a broken first-run experience while every vitest project stays green.
       - run: npm run test:emit
+      # Two of the create-cairn-site tests read the baked `template/`, which is gitignored and
+      # produced by `prepack`. Bake it first, or those two fail on a clean checkout while passing
+      # on any machine that has run the CLI. The engine's own version stands in for both specs,
+      # the same substitution create-site.yml makes and for the same reason: the bake refuses a
+      # `file:` spec and a 0.0.0 version, so `prepack`'s default path is unrunnable until
+      # @glw907/cairn-cms-dev publishes.
+      - name: Bake the create-cairn-site template
+        working-directory: packages/create-cairn-site
+        run: |
+          VERSION="$(node -p "require('../../package.json').version")"
+          node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"
       - run: npm --prefix packages/create-cairn-site test
       - run: npm run check:package
       - run: npm run check:reference

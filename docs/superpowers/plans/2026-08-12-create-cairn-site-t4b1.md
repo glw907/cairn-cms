@@ -190,3 +190,80 @@ the post-mortem's harvest list maps to exactly one task, and each deferred item 
 that owns it. The two tasks sharing a file are ordered. No task adds surface, state, or an actor,
 and the runtime library stays untouched, so the charter's premise check passes trivially: all
 four are repairs to work the engine already claimed to do.
+
+---
+
+## Post-mortem (2026-08-12): all five tasks landed, plus one gate the pass had to fix first
+
+**Every ruling shipped as written.** Ruling 1 is `603d23f4`, ruling 3 is `6e8ba609` (with a cadence
+follow-up in `14bcff84`), ruling 2 is `d413334d`, ruling 4 is `c1617033`, and the simplifier pass is
+`09962f52`. The package suite went 523 to 544 green, and the root engine suite, untouched by design,
+still exits 0 at 5274.
+
+### What was verified, and how
+
+Each fix was probed by breaking it, because a passing test proves nothing about a defect it may
+never have exercised.
+
+- **Ruling 1.** Substituting the plan's literal `error.catalogue.code` for the real
+  `error.cause.catalogue.code` fails 2 tests; widening the catch to every error fails the guard
+  test. Both directions are covered.
+- **Ruling 2.** Disabling the list-first adopt (`if (false && hit)`) fails exactly the headline
+  no-POST test, which is the live defect's own shape.
+- **Ruling 4.** Dropping `10204` from the family fails 4 tests; over-widening the branch to any
+  code fails 3.
+- **Ruling 3** is copy, so its gate is a read rather than a probe. The whole completion block was
+  reread for cadence and two slips were fixed in the main loop: a subject restated across
+  consecutive sentences, and "again ... again" inside one sentence.
+
+### The finding that was not in the plan: CI was already red
+
+The package suite **failed on arrival** in a clean worktree, at 2 tests. Both read the baked
+`template/` directory, which is gitignored and produced by `prepack`, and
+`.github/workflows/test.yml` had no bake step. The tests pass on any machine that has run the CLI
+once and fail on every clean checkout, which is why T4b never saw it: `origin/main` sits at
+`1415f48e`, so **CI has never run the merged T4b tree at all**. The merge STATUS describes as landed
+is local-only.
+
+`test.yml` now bakes before running the package suite, using the same substitution `create-site.yml`
+already makes (the engine's own version for both specs, since the bake refuses a `file:` spec and a
+`0.0.0` version). Verified in both directions: with `template/` deleted the suite fails at 2, and
+after the exact CI command it passes at 544.
+
+This is scope the plan did not authorize, taken because the alternative was running a full local
+gate green while knowingly leaving `main` red, which is the failure the `cairn-ci-only-gates` memory
+already records once.
+
+### Ruling 3 covered four copy sites, not the two the plan enumerated
+
+The plan named the email completion and `printLiveInfo`. A sweep for the claim found two more: the
+send hop's own detail line ("proving delivery works") and `printEmailLiveInfo`, which is what a
+*resuming* owner reads at a finished site. The ruling's own words are "the tool does not promise
+delivery, anywhere", so all four changed. Fixing two of four would have left the pass's headline
+ruling false in the copy a returning owner is most likely to see. The published docs were swept for
+the same claim and carry none.
+
+### Decisions locked in
+
+- **A saved token is cleared only by a scope failure.** `token-scope-missing` and `token-invalid`,
+  nothing else. A park, a decline, and any unrecognized act row all still keep the token, and a
+  test guards each direction.
+- **`runActions` rewraps.** Any code catching a catalogued error *outside* a `runStep` must read
+  `error.cause.catalogue.code`, because `runner.mjs:58` wraps every hop error as
+  `new Error(\`${title}: ${cause.message}\`, { cause })`. The plan's literal property path was
+  wrong and the implementer corrected it against the real mechanism, which is the right instinct:
+  a plan naming a concrete code shape is a claim to verify, not an instruction to follow. This is
+  the same lesson T4a's Task 14 and T4b's numbering trap already recorded.
+- **Read before write is now the rule for every non-idempotent Cloudflare call in this tool**, not
+  a per-site choice. `ensureZone` joins `ensureSendingDomain`; the 1061 branch survives as a race
+  guard with a comment saying so, so it is not deleted later as dead code.
+- **The tool claims acceptance, never delivery.** A CLI can observe a 200 from Cloudflare and
+  nothing beyond it, which ruling 8 predicted and the live run confirmed.
+
+### Carried forward
+
+- **`CLAUDE.md` is at its context ceiling**, 5997 estimated tokens against a 6000 hook threshold.
+  The `10204` amendment fit only after trimming its own paragraph. The next addition to that file
+  must trim before it adds; there is no headroom left to spend.
+- The stale-negative-resolver park, sticky sending authorization, the one-long-lived-e2e-App
+  procedure change, and delivery verification all stay deferred with the homes the plan gave them.

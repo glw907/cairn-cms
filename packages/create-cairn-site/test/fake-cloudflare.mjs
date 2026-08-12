@@ -49,8 +49,11 @@ import { randomBytes, randomUUID } from 'node:crypto';
  *  zone objects), `state.dnsRecords` (a `Map` from zone id to its array of record objects, MX
  *  `priority` included), `state.customDomains` (array of Workers Custom Domain objects),
  *  `state.emailSubdomains` (a `Map` from zone id to its array of Email Sending subdomain objects)
- * @property {Array<{ method: string, path: string, body: unknown }>} requests every request
- *  received, in arrival order; append-only, never reset except by starting a new server
+ * @property {Array<{ method: string, path: string, body: unknown, headers: { authorization:
+ *  string | undefined } }>} requests every request received, in arrival order; append-only,
+ *  never reset except by starting a new server. `headers.authorization` carries the request's
+ *  raw `Authorization` value (`Bearer <token>`), so a test can prove which bearer a call
+ *  actually signed with, not just that a call happened.
  * @property {(route: string, status: number, body: unknown) => void} failNext arm a one-shot
  *  status/body override for the next request matching `route` (`zone_create`, `zone_list`,
  *  `zone_get`, `dns_record_create`, `dns_record_list`, `workers_domain_attach`,
@@ -175,7 +178,12 @@ function makeHandler(routes, { requests, failNextMap }) {
       const raw = await readRawBody(req);
       body = parseJson(raw);
     }
-    requests.push({ method: req.method, path: url.pathname + url.search, body });
+    requests.push({
+      method: req.method,
+      path: url.pathname + url.search,
+      body,
+      headers: { authorization: req.headers.authorization },
+    });
 
     let match = null;
     let params = {};
@@ -469,7 +477,9 @@ function createWorkersDomainListHandler(ctx) {
 //    earlier, reports `false`), which is why a second fixture exists for it.
 // 2. The send refusal body is byte-identical for a never-onboarded domain and one still
 //    propagating (spike amendment 2). There is no field to key a fake failure on; the caller's
-//    own classification is `onboardedAt` plus the clock, not this body.
+//    own classification is `onboardedAt` plus the clock, not this body. A second refusal code,
+//    10204, was captured separately (see SENDER_NOT_CONFIGURED_REFUSED_BODY below); it carries
+//    the same ambiguity and is scripted the same way.
 
 /** The captured create response, minus `name`/`return_path_domain`, which the handler echoes. */
 const EMAIL_SUBDOMAIN_CREATE_FIXTURE = {
@@ -490,6 +500,20 @@ const EMAIL_SEND_SUCCESS_FIXTURE = {
   delivered: [],
   queued: [],
   permanent_bounces: [],
+};
+
+/**
+ * The second sender-not-ready send refusal, captured live 2026-08-12 alongside the 10203 body
+ * (docs/internal/2026-08-11-t4b-email-spike.md, "There is a second refusal code"): observed only
+ * on domains that were never onboarded, and not consistently even there (two domains with no
+ * sending subdomain entry returned different codes). A test drives it the same way as the 10203
+ * body, via `cloudflare.failNext('email_send', 403, SENDER_NOT_CONFIGURED_REFUSED_BODY)`.
+ */
+export const SENDER_NOT_CONFIGURED_REFUSED_BODY = {
+  success: false,
+  errors: [{ code: 10204, message: 'email.sending.error.email.sender_not_configured' }],
+  messages: [],
+  result: null,
 };
 
 /**
@@ -536,9 +560,10 @@ function createEmailSubdomainCreateHandler(ctx) {
 
 /**
  * Build the `POST /accounts/:accountId/email/sending/send` handler. Always succeeds with the
- * captured fixture; the failure path (the refusal envelope, HTTP 403, code 10203) is scripted
- * through `failNext('email_send', ...)` rather than modeled here, since the real condition
- * (never onboarded vs. still propagating) is indistinguishable from the body alone.
+ * captured fixture; the failure path (the refusal envelope, HTTP 403, code 10203 or 10204, see
+ * SENDER_NOT_CONFIGURED_REFUSED_BODY above) is scripted through `failNext('email_send', ...)`
+ * rather than modeled here, since the real condition (never onboarded vs. still propagating) is
+ * indistinguishable from the body alone.
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<void>}
  */
 function createEmailSendHandler() {

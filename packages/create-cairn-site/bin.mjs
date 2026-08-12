@@ -87,7 +87,7 @@ async function printLiveInfo(siteId) {
         'private key, stored as a Worker secret.',
       '',
       `Connect your own domain any time by re-running npx create-cairn-site --dir ${state.dir}. ` +
-        'Email arrives with a later chapter.',
+        'Turn on email sign-in the same way, by adding --domain <name> and --email to that command.',
     );
   } else {
     lines.push('', 'Deploying it to the internet arrives with the next chapter.');
@@ -133,7 +133,8 @@ async function printEmailLiveInfo(siteId) {
     '',
     ...domainLiveLines(state),
     '',
-    `Your site sends its own sign-in email, from ${state.cloudflare.emailFrom}.`,
+    `Your sign-in sender address is ${state.cloudflare.emailFrom}. Cloudflare accepted a test ` +
+      'message from it during setup; the doctor line below can check that again.',
     '',
     doctorLine,
   ];

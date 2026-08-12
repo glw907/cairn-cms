@@ -79,6 +79,101 @@ test('alreadyActive is false for the documented pending default', async (t) => {
   assert.equal(result.alreadyActive, false);
 });
 
+// --- ensureZone: reads by name before ever writing (T4b.1) --------------------------------------
+
+test('an existing zone plus a create-refusing token adopts, issuing no create POST at all', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const { ensureZone } = await import('./zone.mjs');
+
+  // Seed the "existing" zone the way a prior run of this same account would have.
+  const existing = await api.createZone('ecxc.ski');
+
+  // Arm the create route with the missing-permission shape a create-refusing token hits, captured
+  // live in the T4a spike. If ensureZone still posts a create, this is what it collides with.
+  cloudflare.failNext('zone_create', 403, {
+    success: false,
+    errors: [{ code: 0, message: 'Requires permission "com.cloudflare.api.account.zone.create" to create a zone' }],
+    messages: [],
+    result: null,
+  });
+
+  const requestsBefore = cloudflare.requests.length;
+  const logLines = [];
+  const result = await ensureZone({ record: record('ecxc.ski'), api, log: (line) => logLines.push(line) });
+
+  assert.equal(result.zoneId, existing.id);
+  assert.ok(logLines.some((line) => line.includes('already a Cloudflare zone')));
+
+  // The proof the headline defect needs: no POST was issued after the seed, so a create-refusing
+  // token never had a create to be refused for.
+  const newRequests = cloudflare.requests.slice(requestsBefore);
+  assert.ok(
+    newRequests.every((req) => req.method !== 'POST'),
+    'ensureZone must not attempt a zone create once a list-by-name hit has already adopted the zone',
+  );
+});
+
+test('a domain with no existing zone still creates one, via a list miss followed by a create POST', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const { ensureZone } = await import('./zone.mjs');
+
+  const result = await ensureZone({ record: record('fresh-domain.example'), api, log: () => {} });
+
+  assert.equal(typeof result.zoneId, 'string');
+  const createRequest = cloudflare.requests.find((req) => req.method === 'POST' && req.path.endsWith('/zones'));
+  assert.ok(createRequest, 'a list miss must still fall through to a create POST');
+});
+
+test('a missing zone plus a create-refusing token still surfaces token-scope-missing', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const { ensureZone } = await import('./zone.mjs');
+
+  cloudflare.failNext('zone_create', 403, {
+    success: false,
+    errors: [{ code: 0, message: 'Requires permission "com.cloudflare.api.account.zone.create" to create a zone' }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => ensureZone({ record: record('fresh-domain.example'), api, log: () => {} }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-scope-missing');
+      return true;
+    },
+  );
+});
+
+test('a list miss followed by a 1061 create collision still adopts, via the race-guard branch', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const { ensureZone } = await import('./zone.mjs');
+
+  // A wrapper that simulates another run's create landing in the gap between our own list-miss
+  // and our own create attempt: the first list call returns genuinely empty, and only as a side
+  // effect of that emptiness does a "concurrent" zone get created, so our own create collides
+  // with it and Cloudflare answers 1061. The second list call (inside the race-guard branch)
+  // sees the concurrent zone for real, with no side effect.
+  let concurrentZoneId;
+  const raceApi = {
+    ...api,
+    async listZones(filter) {
+      const result = await api.listZones(filter);
+      if (result.length === 0) {
+        const concurrent = await api.createZone('ecxc.ski');
+        concurrentZoneId = concurrent.id;
+        cloudflare.failNext('zone_create', 400, zoneCreateFailure(1061, 'ecxc.ski already exists'));
+      }
+      return result;
+    },
+  };
+
+  const logLines = [];
+  const result = await ensureZone({ record: record('ecxc.ski'), api: raceApi, log: (line) => logLines.push(line) });
+
+  assert.equal(result.zoneId, concurrentZoneId);
+  assert.ok(logLines.some((line) => line.includes('already a Cloudflare zone')));
+});
+
 // --- ensureZone: the 1061 adopt-or-error branch -----------------------------------------------
 
 test('1061 followed by a zone-list hit adopts the existing zone rather than throwing', async (t) => {

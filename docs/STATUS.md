@@ -68,8 +68,8 @@ lacking chapter 2 entirely.
    value into a session transcript by mistake during teardown, so it is burned. It is the
    workstation-wide token in `~/.local/secrets`, so rotation means minting a replacement and
    re-running `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`.
-2. **Revoke the token minted for this run** (`cairn create-cairn-site`, created 2026-08-12). Also
-   pasted into the transcript, so also burned. Its local copy was shredded.
+2. **DONE 2026-08-12: the run token** (`cairn create-cairn-site`) is deleted; verified the estate
+   token is the one still answering. Its local copy was shredded earlier.
 3. **Delete the GitHub App `cairn-t4b-live-03cd31`** at github.com/settings/apps.
 
 Everything else the run created is gone and verified: Worker, both D1 databases, the R2 bucket, the

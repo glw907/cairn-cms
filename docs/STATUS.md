@@ -14,50 +14,54 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-12: T4a is DONE and live-proven; next is EXECUTING T4b)
+## Immediate next action (2026-08-12: T4b is BUILT and green; its live e2e is the open half)
 
-**Pass T4a is complete. Chapter 2 ran end to end against the real scratch domain
-`carin-test.org` and reached `domain-live`,** on branch `t4a-domain-chapter` (worktree
-`t3-cloudflare-chapter`). A site scaffolded from scratch got its own domain: zone adopted,
-carry-over skipped as not needed, delegation short-circuited, Custom Domain attached, origin
-rewritten, redeployed, confirmed. Everything torn down and verified gone by listing. Evidence and
-the full divergence list are in the plan's post-mortem part three.
+**Pass T4b's offline half is complete on branch `t4b-email-chapter`** (worktree
+`t3-cloudflare-chapter`, branched off `t4a-domain-chapter`, which is itself off `main` at
+`1415f48e`). Chapter 2 now runs `domain-live` to `email-onboarded` to `email-live`: the money
+preamble opens a fresh run, the admission asks once and respects either answer, the sending domain
+is onboarded through the REST seam, one real message proves the path, the sender address is written
+and deployed once, and the token is deleted at a genuinely terminal state. Suite green at 517 before
+Task 8b, which is the last dispatched task.
 
-**The e2e earned its keep.** It caught a hard defect before the sitting: chapter 2's carry-over hop
-ignored the `alreadyActive` flag its neighbours both read, so a domain registered at Cloudflare
-Registrar died at the second hop with an uncatalogued, developer-facing exception. Fixed in
-`f4a3d3a6` with the coverage gap closed. Every gate had been green, because no fixture ran an
-already-active zone through that hop.
+**What is left, and it needs Geoff.** Task 9, the live e2e, has not run. T4a's teardown was
+complete, so no site sits at `domain-live` and the run starts from scratch through chapters 1 and 2,
+which costs **two browser moments** (create and install a third GitHub App). The scratch zone
+`carin-test.org` is active and its sending configuration was restored to the pre-onboarding
+baseline by the spike, so the run exercises the create path honestly.
 
-**Next: EXECUTE Pass T4b (email + the money framing). Its spec and plan are already approved and
-committed**, so no planning sitting is owed: `docs/superpowers/plans/2026-08-11-create-cairn-site-t4b.md`
-and `docs/superpowers/specs/2026-08-11-create-cairn-site-t4b-design.md`. Ten tasks, eight
-dispatchable. **Task 1 is a spike that runs in the main loop and needs one browser sitting with
-Geoff**, and it gates Tasks 4, 5, and 7; its Step 2 confirms the account's Workers Paid status,
-which the whole pass depends on because Email Sending reaches arbitrary recipients only there.
-Task 9's live e2e needs the scratch domain and a real inbox.
+**The spike closed six of its seven steps without a browser** (`docs/internal/2026-08-11-t4b-email-spike.md`),
+because the estate token already carries Email Sending: Edit and T4a's own spike had answered the
+permission question T4b filed as its one unknown. **The one open browser question is Step 3:** given
+four Workers Custom Domains on Free-plan zones, does an Advanced Certificate Manager line item
+appear? The token is refused by every billing and certificate endpoint (code 9109). It affects one
+line of the money preamble, which currently assumes no charge.
+
+**The spike's central finding, folded into the plan as thirteen amendments.** The REST send carries
+none of the `E_` codes the Workers binding throws, and one code, `10203` at HTTP 403, covers both a
+never-onboarded domain and one still propagating, so the recorded onboarding moment plus the
+propagation window is the only discriminator. Measured propagation was 47 to 107 seconds against a
+documented 5 to 15 minutes. Deleting a sending subdomain leaves its `p=reject` DMARC record behind,
+which rewrote the teardown and sharpened the closing copy.
 
 **Resume prompt for the next session** (a fresh Opus session; launch directory
-`~/Projects/cairn-cms`): "Execute Pass T4b of the create-cairn-site umbrella (email and the money
-framing): `docs/superpowers/plans/2026-08-11-create-cairn-site-t4b.md`. Start with the cairn-pass
-skill; read the plan in full and its spec first, plus the T4a plan's post-mortem part three for
-what the live e2e learned. Task 1 (the spike) runs in the main loop before any dispatch and needs
-one browser sitting with Geoff. Work on the existing `t4a-domain-chapter` branch or a fresh
-worktree off it, since T4a is committed but NOT merged and has no PR."
+`~/Projects/cairn-cms`, then `cd .claude/worktrees/t3-cloudflare-chapter`, branch
+`t4b-email-chapter`): "Finish Pass T4b: run Task 9, the live e2e, per
+`docs/superpowers/plans/2026-08-11-create-cairn-site-t4b.md`, reading the spike amendments first
+(amendments 6, 7 and 11 rewrite the teardown, the park to prove, and the prerequisites). Then close
+the pass per `cairn-pass`."
 
 Queue after T4b: T4c (Builds connect + reconciliation) -> T4d (the localhost console) -> T5 ->
 Pass D -> release one -> site walk -> P.
 
-**Branch topology matters for the next session.** T4a is committed on `t4a-domain-chapter`
-(worktree `.claude/worktrees/t3-cloudflare-chapter`, branched off `main` at `1415f48e`) and is
-neither pushed nor merged, so a cold session that branches off `main` by default would build
-against an engine and a tool that lack chapter 2 entirely.
+**Branch topology matters.** `t4b-email-chapter` sits on `t4a-domain-chapter`, and neither is
+pushed or merged, so a cold session that branches off `main` by default would build against a tool
+lacking chapter 2 entirely.
 
-**Two hand steps for Geoff, both outstanding:** delete the run's GitHub App
-`cairn-t4a-live-596b84` at github.com, and revoke the Cloudflare API token minted for the run
-(id `a3640d8f9719e4873eca79d40f8205c3`). That token was pasted into a session transcript, so treat
-it as burned rather than merely unused. The older T3 App `cairn-t3-live-71d37c` may still be
-pending deletion too.
+**Hand steps for Geoff, all outstanding:** delete the GitHub Apps `cairn-t4a-live-596b84` and
+`cairn-t3-live-71d37c` at github.com (Task 9 will add a third), and revoke the Cloudflare API token
+minted for the T4a run (id `a3640d8f9719e4873eca79d40f8205c3`). That token was pasted into a session
+transcript, so treat it as burned rather than merely unused.
 
 **Carry-forwards raised by T4a, deliberately not fixed.** (1) The cutover confirm resolves through
 `fetch` and the system resolver, so a stale negative DNS cache reports a serving hostname as
@@ -76,7 +80,24 @@ versus spec 7.4). (6) `npm run check:comments` and the root type-check both cove
 so `packages/create-cairn-site` has neither a comment gate nor a type gate; its own `npm test` is
 the real gate. (7) `src/github/install.test.mjs`'s reauthorize race is still flaky. (8) The
 deferred defect list per the T4a spec's ruling 2. (9) The umbrella's resume table, still unowned,
-noted for Pass D.
+noted for Pass D. (10) **Restored by T4b, having been dropped in T4a's renumbering:**
+`test/fake-cloudflare.mjs` still copies its HTTP plumbing from `test/fake-github.mjs`, so `compile`
+and `sendJson` are defined twice; verified still true 2026-08-12. The extraction trigger is a
+**third** fake server, and T4b extended the second rather than adding one, so it stays filed for
+T4d. (11) T4b's own: the `paid-plan-missing` mapping keys on Cloudflare's entitlement wording
+rather than a code, because the condition is unreachable on an account already on Workers Paid, and
+the spike notes a plan-less account may return the same `10203` as every other refusal, in which
+case the row never fires and the owner sees the fall-through carrying Cloudflare's own message.
+
+**A numbering trap, worth naming because it nearly cost a live item.** T4b's plan and spec tell the
+executor to "retire STATUS carry-forward 6" and "confirm carry-forward 7 still stands". Both numbers
+were stale: they refer to the list as it stood at commit `c1d649e3`, and T4a's close-out rewrote the
+list with new numbering. Following the instruction literally would have deleted the current (6), the
+missing comment and type gate, which this pass does not resolve. The real referents were the
+`carry-over-declined` exit-1 row, which Task 2 genuinely fixed, and the duplicated fake plumbing,
+restored above as (10). This is the same failure class T4a's post-mortem recorded against its own
+Task 14: **a task instruction naming a concrete document state is a claim to verify, not an
+instruction to follow.**
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 

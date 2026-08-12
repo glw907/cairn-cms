@@ -62,7 +62,7 @@ wrong-scope error code. Read the spike doc before dispatching any task marked **
    in production (`907.life`, `ecxc.ski`, `cairn.pub`, two ASC subdomains) is attached by Custom
    Domain. Recommended call: `PUT /accounts/:id/workers/domains`, which keeps the spec's
    rollback-safe ordering with one redeploy. Rows rename: `route-create-failed` becomes
-   `custom-domain-failed`; `route-not-serving` keeps its meaning, worded about the hostname.
+   `custom-domain-failed`; `hostname-not-serving` keeps its meaning, worded about the hostname.
 2. **Task 5 maps insufficient scope on HTTP 403 regardless of `errors[].code`.** The
    account-scoped zone-create refusal reports code **0**, not 9109, with the missing permission
    named in the message; 9109 appears on other resources. Surface the permission name in the
@@ -141,7 +141,10 @@ One of these, 15, prevents a silent data-loss defect.
     polled through the API** with this token: `ssl/certificate_packs` and `ssl/verification` both
     return 9109 even with SSL and Certificates Edit granted, so progress is observed by probing
     the hostname.
-14. **`route-not-serving` has an observed shape.** A proxied hostname with no Worker behind it
+14. **`hostname-not-serving` has an observed shape, and it is renamed.** Amendment 1 kept the key
+    `route-not-serving` while rewording its copy about the hostname. Task 9 renamed the key too,
+    since the mechanism is a Custom Domain and no route exists anywhere in the chapter; the old
+    key survived nowhere in code. This section uses the new key throughout. A proxied hostname with no Worker behind it
     answers `error code: 522` in 16 plain-text bytes, not an HTML page. A hostname that is proxied
     but not serving answers 5xx, so the marker pair's 200 check discriminates.
 15. **Task 8 reads the authoritative nameservers, and treats recursive-resolver absence as low
@@ -346,7 +349,7 @@ that appendix, never written from memory.** A spike question that answers "no" o
   keyed `token-invalid`, `token-scope-missing`, `zone-already-exists`,
   `zone-create-failed`, `records-read-failed`, `carry-over-declined`,
   `delegation-pending` (wait), `delegation-wrong-nameservers` (act, prints the zone's
-  assigned pair), `hostname-propagating` (wait), `route-not-serving` (act),
+  assigned pair), `hostname-propagating` (wait), `hostname-not-serving` (act),
   `route-create-failed`, `cutover-deploy-failed`, `account-ambiguous`; every row carries
   a literal `Next:` line (`extractNext` throws without one).
 
@@ -508,7 +511,7 @@ that appendix, never written from memory.** A spike question that answers "no" o
   + redeploy + re-confirm. Outcomes: success (`domain-live`); still-propagating DNS →
   the `hostname-propagating` wait row; **a TLS failure on a hostname whose certificate
   has not issued → the `certificate-pending` wait row, distinguished from a broken site
-  per amendment 13**; resolved-but-not-this-site → `route-not-serving` (act, and the
+  per amendment 13**; resolved-but-not-this-site → `hostname-not-serving` (act, and the
   observed shape is a 522 per amendment 14); attach failure →
   `custom-domain-failed`; redeploy failure → `cutover-deploy-failed` **and the origin
   value on disk restored to the `workers.dev` URL** (asserted by reading the file).

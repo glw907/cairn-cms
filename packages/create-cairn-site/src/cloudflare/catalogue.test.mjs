@@ -22,6 +22,8 @@ const EXPECTED_KIND = {
   'token-invalid': 'act',
   'token-scope-missing': 'act',
   'zone-already-exists': 'act',
+  'zone-hold': 'ask-someone',
+  'domain-invalid': 'act',
   'zone-create-failed': 'act',
   'records-read-failed': 'act',
   'dns-record-failed': 'act',
@@ -52,6 +54,8 @@ const SAMPLE_PARAMS = {
     permission: 'com.cloudflare.api.account.zone.create'
   },
   'zone-already-exists': { dir: './alpine', domain: 'example.com' },
+  'zone-hold': { dir: './alpine', domain: 'example.com' },
+  'domain-invalid': { dir: './alpine', domain: 'not a domain' },
   'zone-create-failed': { dir: './alpine', detail: '500: Internal Server Error' },
   'records-read-failed': { dir: './alpine' },
   'dns-record-failed': { dir: './alpine', detail: 'some API detail' },
@@ -248,6 +252,24 @@ test('token-scope-missing does not print undefined when no permission is given',
   assert.doesNotMatch(err.message, /undefined/);
   assert.match(err.message, /Next:/);
   assert.match(err.message, /missing a permission/);
+});
+
+test('zone-already-exists reads as a foreign-owner case, with no own-account branch', () => {
+  const err = cloudflareError('zone-already-exists', SAMPLE_PARAMS['zone-already-exists']);
+  assert.match(err.message, /account other than/);
+  assert.doesNotMatch(err.message, /on your own account/);
+});
+
+test('zone-hold says the hold clears at the current Cloudflare account, not the registrar', () => {
+  const err = cloudflareError('zone-hold', SAMPLE_PARAMS['zone-hold']);
+  assert.match(err.message, /current Cloudflare account/);
+  assert.match(err.message, /not at your registrar/);
+});
+
+test('domain-invalid names the offending domain', () => {
+  const err = cloudflareError('domain-invalid', SAMPLE_PARAMS['domain-invalid']);
+  assert.match(err.message, /not a domain/);
+  assert.match(err.message, /not a valid domain name/);
 });
 
 test('delegation-wrong-nameservers prints both the assigned pair and what was found', () => {

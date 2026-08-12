@@ -26,12 +26,19 @@
 //    status). The v4 envelope allows it, and the API seam must not treat HTTP 200 as success on
 //    its own, so this fake supports it defensively rather than leaving it unreachable.
 //
-// Also NOT modeled, both flagged rather than guessed: the zone-already-exists body (error 1061)
-// needs a credential this workstation does not have, so it is not captured and this fake does
-// not invent one; `failNext` already lets a future test inject the real body once it exists, so
-// nothing here needs to change. And a newly created zone's real birth `status` (`pending` vs
-// `initializing`) is unverified; the default below is Cloudflare's documented value, not an
-// observed one, and a caller can override it via `startFakeCloudflare({ zoneStatus })`.
+// The zone-already-exists body (error 1061) IS captured now, from the estate account
+// (docs/internal/2026-08-11-t4a-domain-spike.md, "Addendum: the minted spike token"): 1061
+// carries no ownership field, so it cannot distinguish a zone this account holds from one held
+// elsewhere, which is why ensureZone (zone.mjs) follows it with a zone-list lookup rather than
+// reading ownership out of the body. A test arms it with `failNext('zone_create', 400, ...)`.
+// A newly created zone's real birth `status` (`pending`, `initializing`, or arriving already
+// `active`) will NOT be observed: amendment 16 rules that the external-registrar path ships
+// generic delegation instructions rather than waiting on a capture no domain outside Cloudflare's
+// own registrar was ever available to provide. The default below is Cloudflare's documented
+// value, not an observed one, and a caller can override it via `startFakeCloudflare({ zoneStatus })`.
+// The create response also never carries `name_servers` (see createZoneCreateHandler below):
+// amendment 16 found no create response was ever observed populating it, so ensureZone must
+// re-read the zone rather than trust the create response, and this fake makes trusting it fail.
 import { createServer } from 'node:http';
 import { randomBytes, randomUUID } from 'node:crypto';
 
@@ -316,7 +323,11 @@ function createZoneCreateHandler(ctx) {
     const zone = buildZone({ name, accountId, status: ctx.zoneStatus, nameServers });
     ctx.state.zones.push(zone);
     ctx.state.dnsRecords.set(zone.id, []);
-    sendSuccess(res, 200, zone);
+    // name_servers is stored on the zone (so a subsequent getZone/listZones sees it) but omitted
+    // from THIS response: no create-response body was ever observed carrying it (amendment 16),
+    // so a caller that trusts it here rather than re-reading the zone must fail its own test.
+    const { name_servers, ...responseZone } = zone;
+    sendSuccess(res, 200, responseZone);
   };
 }
 

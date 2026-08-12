@@ -277,12 +277,35 @@ const ROWS = {
     kind: 'act',
     build(params) {
       return (
-        `The domain ${params.domain} is already set up as a Cloudflare zone, so this tool could ` +
-        'not create it again. Your site is untouched and still working.\n' +
-        `Next: check https://dash.cloudflare.com for a zone named ${params.domain}. If it is on ` +
-        'your own account, remove it there first. If it belongs to someone else, an agency or a ' +
-        `previous developer, ask them to remove it. Then re-run npx create-cairn-site --dir ` +
-        `${params.dir}.`
+        `The domain ${params.domain} is already set up as a Cloudflare zone on an account other ` +
+        'than the one this token is scoped to, so this tool could not create it or use the ' +
+        'existing one. Your site is untouched and still working.\n' +
+        'Next: ask whoever controls that zone, an agency or a previous developer, to remove ' +
+        `${params.domain} from it. Then re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'zone-hold': {
+    kind: 'ask-someone',
+    build(params) {
+      return (
+        `The domain ${params.domain} has a protective hold on it that blocks creating a new ` +
+        "zone. A hold like this is removed at the domain's CURRENT Cloudflare account, not at " +
+        'your registrar, so this tool cannot clear it itself. Your site is untouched and still ' +
+        'working.\n' +
+        `Next: ask whoever controls ${params.domain}'s current Cloudflare account to remove the ` +
+        `zone hold, then re-run npx create-cairn-site --dir ${params.dir}.`
+      );
+    }
+  },
+  'domain-invalid': {
+    kind: 'act',
+    build(params) {
+      return (
+        `${params.domain} is not a valid domain name, so Cloudflare rejected it. Your site is ` +
+        'untouched and still working.\n' +
+        'Next: check the spelling of the domain, then re-run npx create-cairn-site --dir ' +
+        `${params.dir} and enter the corrected domain when asked.`
       );
     }
   },

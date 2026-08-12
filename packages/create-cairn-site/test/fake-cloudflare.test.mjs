@@ -15,7 +15,7 @@ async function createZone(cloudflare, { name = 'testsite.example', accountId = '
   return body.result;
 }
 
-test('zone create returns the v4 envelope and the captured zone shape', async (t) => {
+test('zone create returns the v4 envelope and the captured zone shape, minus name_servers', async (t) => {
   const cloudflare = await startFakeCloudflare();
   t.after(() => cloudflare.close());
 
@@ -24,10 +24,16 @@ test('zone create returns the v4 envelope and the captured zone shape', async (t
   assert.equal(zone.account.id, '120c269ad6d3dfbe6d63a0bb53758ca0');
   assert.equal(zone.id.length, 32);
   assert.equal(zone.status, 'pending');
-  assert.equal(zone.name_servers.length, 2);
-  assert.ok(zone.name_servers.every((ns) => ns.endsWith('.ns.cloudflare.com')));
+  // name_servers is deliberately absent from the create response (amendment 16: no real create
+  // response was ever observed carrying it), so a caller must re-read the zone to get it.
+  assert.equal('name_servers' in zone, false);
   assert.deepEqual(zone.original_name_servers, ['ns41.cloudns.net', 'ns42.cloudns.net', 'ns43.cloudns.net', 'ns44.cloudns.net']);
   assert.equal(zone.plan.name, 'Free Website');
+
+  const reread = await fetch(`${cloudflare.apiBase}/zones/${zone.id}`);
+  const rereadBody = await reread.json();
+  assert.equal(rereadBody.result.name_servers.length, 2);
+  assert.ok(rereadBody.result.name_servers.every((ns) => ns.endsWith('.ns.cloudflare.com')));
 });
 
 test('a created zone\'s status defaults to pending and can be overridden at startup', async (t) => {
@@ -40,15 +46,99 @@ test('a created zone\'s status defaults to pending and can be overridden at star
   t.after(() => initializingCloudflare.close());
   const initializingZone = await createZone(initializingCloudflare);
   assert.equal(initializingZone.status, 'initializing');
+
+  // The Cloudflare-registrar path (Addendum 2, carin-test.org): a zone can arrive already
+  // active, with nothing to wait on.
+  const activeCloudflare = await startFakeCloudflare({ zoneStatus: 'active' });
+  t.after(() => activeCloudflare.close());
+  const activeZone = await createZone(activeCloudflare);
+  assert.equal(activeZone.status, 'active');
 });
 
-test('two created zones get different name_servers pairs', async (t) => {
+test('failNext reproduces the captured zone-already-exists body (1061), no ownership field', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+
+  cloudflare.failNext('zone_create', 400, {
+    success: false,
+    errors: [{ code: 1061, message: 'ecxc.ski already exists' }],
+    messages: [],
+    result: null,
+  });
+
+  const res = await fetch(`${cloudflare.apiBase}/zones`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'ecxc.ski', account: { id: 'acct-1' } }),
+  });
+  assert.equal(res.status, 400);
+  const body = await res.json();
+  assert.equal(body.errors[0].code, 1061);
+  assert.equal(body.errors[0].message, 'ecxc.ski already exists');
+  assert.equal('account' in body.errors[0], false);
+});
+
+test('failNext reproduces the captured zone-hold body (1428)', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+
+  cloudflare.failNext('zone_create', 400, {
+    success: false,
+    errors: [
+      {
+        code: 1428,
+        message:
+          'The zone name provided is subject to a hold which disallows the creation of this ' +
+          'zone. Please contact the domain owner to have this hold removed.',
+      },
+    ],
+    messages: [],
+    result: null,
+  });
+
+  const res = await fetch(`${cloudflare.apiBase}/zones`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'cloudflare.com', account: { id: 'acct-1' } }),
+  });
+  assert.equal(res.status, 400);
+  const body = await res.json();
+  assert.equal(body.errors[0].code, 1428);
+  assert.match(body.errors[0].message, /subject to a hold/);
+});
+
+test('failNext reproduces the domain-invalid body (1002)', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+
+  cloudflare.failNext('zone_create', 400, {
+    success: false,
+    errors: [{ code: 1002, message: 'Invalid domain' }],
+    messages: [],
+    result: null,
+  });
+
+  const res = await fetch(`${cloudflare.apiBase}/zones`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'not a domain', account: { id: 'acct-1' } }),
+  });
+  assert.equal(res.status, 400);
+  const body = await res.json();
+  assert.equal(body.errors[0].code, 1002);
+  assert.equal(body.errors[0].message, 'Invalid domain');
+});
+
+test('two created zones get different name_servers pairs, visible on re-read', async (t) => {
   const cloudflare = await startFakeCloudflare();
   t.after(() => cloudflare.close());
 
   const first = await createZone(cloudflare, { name: 'one.example' });
   const second = await createZone(cloudflare, { name: 'two.example' });
-  assert.notDeepEqual(first.name_servers, second.name_servers);
+
+  const firstReread = await (await fetch(`${cloudflare.apiBase}/zones/${first.id}`)).json();
+  const secondReread = await (await fetch(`${cloudflare.apiBase}/zones/${second.id}`)).json();
+  assert.notDeepEqual(firstReread.result.name_servers, secondReread.result.name_servers);
 });
 
 test('zone list filters by name and paginates with a real page 2', async (t) => {

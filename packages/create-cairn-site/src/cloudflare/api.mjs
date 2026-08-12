@@ -179,18 +179,25 @@ function throwMapped(status, json, operationCode, dir, token) {
   const primary = errors[0];
   const combinedMessage = errors.map((e) => e.message).filter(Boolean).join('; ');
 
+  const api = { status, code: primary?.code };
+
   if (status === 403) {
     const permission = extractPermission(combinedMessage);
-    throwCatalogued('token-scope-missing', permission ? { dir, permission } : { dir }, token);
+    throwCatalogued('token-scope-missing', permission ? { dir, permission } : { dir }, token, api);
   }
   if (status === 400 && primary?.code === 6003) {
     const detail = primary.error_chain?.[0]?.message ?? primary.message;
-    throwCatalogued('token-invalid', { dir, detail }, token);
+    throwCatalogued('token-invalid', { dir, detail }, token, api);
   }
   if (status === 401 && primary?.code === 10000) {
-    throwCatalogued('token-invalid', { dir, detail: primary.message }, token);
+    throwCatalogued('token-invalid', { dir, detail: primary.message }, token, api);
   }
-  throwCatalogued(operationCode, combinedMessage ? { dir, detail: combinedMessage } : { dir }, token);
+  throwCatalogued(
+    operationCode,
+    combinedMessage ? { dir, detail: combinedMessage } : { dir },
+    token,
+    api,
+  );
 }
 
 /**
@@ -199,12 +206,17 @@ function throwMapped(status, json, operationCode, dir, token) {
  * @param {string} code a `cloudflareError` catalogue code
  * @param {Record<string, string>} params the row's interpolation params
  * @param {string} token the API token, redacted from the thrown text
+ * @param {{ status: number, code: number | undefined }} api the raw v4 status and
+ *  `errors[0].code`, carried onto the thrown error so a caller can branch on the code rather than
+ *  on Cloudflare's prose. A caller that matches the message text instead breaks silently the day
+ *  Cloudflare rewords it, and the rewording ships without warning.
  * @returns {never}
  */
-function throwCatalogued(code, params, token) {
+function throwCatalogued(code, params, token, api) {
   const err = cloudflareError(code, params);
   err.message = redactToken(err.message, token);
   err.catalogue.next = redactToken(err.catalogue.next, token);
+  err.api = api;
   throw err;
 }
 

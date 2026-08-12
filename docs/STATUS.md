@@ -62,11 +62,12 @@ Pass D -> release one -> site walk -> P.
 pushed or merged, so a cold session that branches off `main` by default would build against a tool
 lacking chapter 2 entirely.
 
-**Hand steps for Geoff. The GitHub Apps are DONE** (`cairn-t3-live-71d37c` and
-`cairn-t4a-live-596b84` both deleted 2026-08-12), along with the scratch org from T2's org-path
-run. **One remains:** revoke the Cloudflare API token minted for the T4a run (id
-`a3640d8f9719e4873eca79d40f8205c3`). That token was pasted into a session transcript, so treat it
-as burned rather than merely unused.
+**Hand steps for Geoff: ALL DONE (2026-08-12).** The GitHub Apps `cairn-t3-live-71d37c` and
+`cairn-t4a-live-596b84` are deleted, along with the scratch org from T2's org-path run, and the
+Cloudflare API token minted for the T4a run (id `a3640d8f9719e4873eca79d40f8205c3`) is revoked.
+The token revocation is reported by Geoff rather than verified here: the estate token cannot read
+`/user/tokens` (the same refusal family as the billing endpoints), so nothing in this repo can
+confirm it. Nothing is owed before Task 9 except the ACM billing glance.
 
 **Every live e2e mints a GitHub App only Geoff can delete, and this is now a standing tax.** There
 is no REST endpoint to delete a GitHub App, and the installation-delete endpoint needs the App's

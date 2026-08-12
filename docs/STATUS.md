@@ -14,65 +14,49 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-11 evening: T4a Tasks 1-10 are LANDED; next is Task 11)
+## Immediate next action (2026-08-11 evening: T4a Tasks 1-12 are LANDED; next is Task 13, which needs Geoff)
 
-**T4a Tasks 1 through 10 are done, committed, and pushed on `t4a-domain-chapter`** (in the
-`t3-cloudflare-chapter` worktree). Suite: **421 pass, 0 fail, exit 0** in
-`packages/create-cairn-site`; `npm run check` 0 errors / 0 warnings. No PR yet.
+**T4a Tasks 1 through 12 are done and committed on `t4a-domain-chapter`** (in the
+`t3-cloudflare-chapter` worktree). Suite: **437 pass, 0 fail, exit 0** in
+`packages/create-cairn-site`; `npm run check` 0 errors / 0 warnings. No PR yet. **Only Tasks 13
+and 14 remain**, and 13 cannot start without Geoff.
 
-**Both blockers cleared in one sitting.** Geoff minted a spike token, ran a second dashboard
-probe, and registered the scratch domain; the token is now revoked and the local copy shredded.
-The spike doc carries two addenda with every capture, and the plan carries eight new amendments
-in "Spike amendments, part two".
+**Task 13 needs three things, all of them Geoff's.** A **fresh zone-create-capable Cloudflare API
+token** (the spike one was revoked by design, and the estate token deliberately cannot create
+zones or mint tokens); the scratch domain `carin-test.org` in its seeded state (an MX record and
+a DKIM-shaped TXT, so the carry-over proof can fail); and Geoff's own browser moments for the
+token paste and the sign-in. The prefilled create-token URL lives in `prefill.mjs` and in the
+spike doc. Task 14 (docs, ROADMAP, CHANGELOG, pass close) follows it.
 
-**Geoff's ruling on the external-registrar path (2026-08-12):** do not buy a domain outside
-Cloudflare. The external case ships **general instructions**, which cut the per-registrar table
-outright. What that leaves unobserved is narrow and handled in code, not prose: no externally
-registered domain ever went through `POST /zones`, so Task 8 re-reads the zone rather than
-trusting the create response to populate `name_servers`, and treats the birth `status` as unknown.
+**The domain is registered at Cloudflare Registrar, so its zone arrives active** and the
+delegation park is unreachable on it. The externally registered path is therefore proven by the
+suite and by code review, never live. That is a known, accepted limit of this pass's e2e.
 
-**What the live half changed, beyond what the plan already carried.** The prefill link now
-carries **five** verified keys, including `email_sending`, for which Cloudflare documents no
-template key at all; it is known to work only because it was tried, and a wrong key renders an
-empty control with no error. `api.mjs` now carries the raw status and `errors[0].code` on a thrown
-error, so callers branch on the numeric code rather than Cloudflare's prose. The cutover confirm
-falls back to HTTP when HTTPS fails at the transport level, because a newly attached custom domain
-fails the TLS handshake while serving fine, and the plan's ordered flow would otherwise have
-failed on every new zone.
+**Tasks 11 and 12, and what they cost.** Task 11 wired chapter 2 into `bin.mjs`: the three new
+resumable steps, the reopened `live` branch, the `domain-live` terminal branch, and the
+`--start-over` refusal. Task 12 added the cross-cutting safety net, nine cases proving a resumed
+record repeats no hop and the pasted token reaches no surface but the state record. The plan's
+post-mortem part two carries the four main-loop rulings, the five defects diff review caught, and
+the evidence for each.
 
-**The defect this pass exists to have caught:** a stale negative DNS cache reads exactly like an
-absent record, per record type, in the window this chapter runs in. It returns an EMPTY list,
-which is what a domain with no mail legitimately looks like. `readCurrentRecords` prefers the
-authoritative nameservers and flags `lowConfidence` on the recursive fallback; an unattended run
-refuses to copy a low-confidence list (`records-unverified`) rather than writing a set quietly
-missing the admin's MX rows and reporting success.
+**The one worth carrying forward: the suite was opening real browser tabs.**
+`ensureApiToken` opens the create-token page before prompting for the paste, and
+`chapter2.test.mjs` never passed the `openBrowser` seam, which defaults to the real platform
+opener. Five tabs per full run, roughly fifty across repeated agent runs, invisible on CI (no
+opener binary exists there) and silent by design (`openBrowser` swallows spawn errors). Fixed at
+both layers: every call site passes a stub, and `test/no-desktop.mjs` loads through `--import`
+from the test script, putting no-op stand-ins for `xdg-open`, `open`, and `cmd` first on PATH and
+recording what they intercept. **Any new test that drives a chapter must pass the `openBrowser`
+seam; the guard is the net, not the fix.**
 
 **Resume prompt** (a fresh Opus session; launch directory
 `~/Projects/cairn-cms/.claude/worktrees/t3-cloudflare-chapter`, branch `t4a-domain-chapter`,
-already checked out): "Resume Pass T4a of the create-cairn-site umbrella at Task 11:
-`docs/superpowers/plans/2026-08-11-create-cairn-site-t4a.md`. Tasks 1-10 are landed and pushed.
-Read both Spike amendments sections and the two addenda in
-`docs/internal/2026-08-11-t4a-domain-spike.md` first. Tasks 11 and 12 are dispatchable; Task 13
-needs Geoff."
-
-**Task 13 needs Geoff, and needs a NEW token.** The live e2e wants a zone-create-capable
-Cloudflare API token (the spike one is revoked by design), the scratch domain in its seeded state,
-and Geoff's own moments. Tasks 11 and 12 run unattended before it.
-
-**Scratch resources still live on the account, deliberately left for Task 13's e2e** and torn down
-with everything else it creates: the domain `carin-test.org` (registered at Cloudflare Registrar,
-so its zone arrived active), two MX records, an SPF TXT, a 437-byte DKIM TXT that splits across
-two chunks, a proxied A for `nothing.carin-test.org` with no Worker behind it, the scratch Worker
-`cairn-t4a-spike`, and the apex Custom Domain attached to it.
-
-**New carry-forward from this pass:** `runActions` re-wraps a thrown error with its action label
-and does not carry the `catalogue` property across, so a row thrown inside an action loses its
-`kind` and `code` upstream and only the message survives. Chapter 1 depends on the same runner, so
-changing it is its own piece of work. The `packages/create-cairn-site` tooling gap is now three
-deep (no comment gate, no type gate, and no `--experimental-test-module-mocks`, which is what
-leaves `promptSecret`'s cancel path untested); `npm test` inside the package remains its only real
-gate. The `src/github/install.test.mjs` timing flake reproduced again under load, twice, and
-isolates clean when re-run alone.
+already checked out): "Resume Pass T4a of the create-cairn-site umbrella at Task 13:
+`docs/superpowers/plans/2026-08-11-create-cairn-site-t4a.md`. Tasks 1-12 are landed. Start with
+the cairn-pass skill; read the plan's two post-mortems, both Spike amendments sections, and the
+two addenda in `docs/internal/2026-08-11-t4a-domain-spike.md` first. Task 13 is the live e2e and
+runs in the main loop: ask Geoff for a fresh zone-create-capable Cloudflare API token before
+anything else, and confirm the scratch domain is still seeded. Task 14 closes the pass."
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 

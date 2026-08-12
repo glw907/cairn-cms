@@ -516,12 +516,12 @@ that appendix, never written from memory.** A spike question that answers "no" o
   `custom-domain-failed`; redeploy failure → `cutover-deploy-failed` **and the origin
   value on disk restored to the `workers.dev` URL** (asserted by reading the file).
 
-- [ ] **Step 1: Failing tests** for the order (the fake's `requests` log proves the
+- [x] **Step 1: Failing tests** for the order (the fake's `requests` log proves the
   attach precedes any origin write), each outcome, the marker's rejection of a
   200-that-is-not-this-site body, a transport-level TLS error mapping to
   `certificate-pending` rather than to a broken-site row, a repeated attach returning
   the same identity without a duplicate error, and the rollback restore.
-- [ ] **Step 2: Implement; suite green; commit.**
+- [x] **Step 2: Implement; suite green; commit.**
 
 ### Task 10: Chapter orchestration, admission, completion **[spike]**
 

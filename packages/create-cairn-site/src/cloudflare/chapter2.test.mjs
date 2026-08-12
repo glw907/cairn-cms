@@ -103,6 +103,17 @@ function alwaysMatchingFetch() {
   };
 }
 
+/**
+ * An openBrowser stand-in for a path that would otherwise reach the real platform opener. Every
+ * runChapter2 call here passes it: the seam defaults to the real opener, so a call that omits it
+ * launches a tab at whoever is running the suite. test/no-desktop.mjs is the net underneath, but
+ * the seam is the fix.
+ * @returns {Promise<void>}
+ */
+function neverOpensBrowser() {
+  return Promise.resolve();
+}
+
 /** A confirm stub that gives every gate in a run the same answer. */
 function confirmAnswering(answer) {
   return async () => answer;
@@ -146,6 +157,7 @@ test('admission: interactive consent proceeds to ask for and save the domain', a
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-consent',
     record: await loadSite('site-consent'),
     dir,
@@ -177,6 +189,7 @@ test('admission: --yes without --domain skips with a hint, and chapter 1\'s site
   const { runChapter2 } = await import('./chapter2.mjs');
   const logs = [];
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-skip-hint',
     record: await loadSite('site-skip-hint'),
     dir,
@@ -250,6 +263,7 @@ test('admission: --yes --domain proceeds fully unattended, with no prompt ever c
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-unattended',
     record: await loadSite('site-unattended'),
     dir,
@@ -287,6 +301,7 @@ test('unattended: a low-confidence record read refuses to copy rather than carry
   await assert.rejects(
     () =>
       runChapter2({
+    openBrowser: neverOpensBrowser,
         siteId: 'site-lowconf',
         record: seededRecord,
         dir,
@@ -334,6 +349,7 @@ test('admission: declining parks cleanly, with chapter 1\'s site intact', async 
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-declined',
     record: await loadSite('site-declined'),
     dir,
@@ -398,6 +414,7 @@ test('resume: a record at zone-created advances into the records gate without re
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-resume-zc',
     record: await loadSite('site-resume-zc'),
     dir,
@@ -456,6 +473,7 @@ test('resume: a record at records-carried never re-reads records', async (t) => 
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-resume-rc',
     record: await loadSite('site-resume-rc'),
     dir,
@@ -506,6 +524,7 @@ test('resume: a record at delegated skips straight to the cutover', async (t) =>
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-resume-delegated',
     record: await loadSite('site-resume-delegated'),
     dir,
@@ -530,6 +549,7 @@ test('resume: a declined carry-over gate never silently advances', async (t) => 
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-declined-gate',
     record: await loadSite('site-declined-gate'),
     dir,
@@ -557,6 +577,7 @@ test('--dry-run prints every hop, with zero shell-outs and zero fake-API request
   const { runChapter2 } = await import('./chapter2.mjs');
   const logs = [];
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-dry-run',
     record: null,
     dir: '/tmp/dry-run-does-not-exist',
@@ -600,6 +621,7 @@ test('completion: domain-live is not terminal, so the token survives it on disk'
   const { runChapter2 } = await import('./chapter2.mjs');
   const logs = [];
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-completion',
     record: await loadSite('site-completion'),
     dir,
@@ -644,6 +666,7 @@ test('completion: a synthesized terminal state deletes the token, on both re-rea
   });
 
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-terminal',
     record: await loadSite('site-terminal'),
     dir,
@@ -690,6 +713,7 @@ test('completion: re-entry at domain-live re-runs ensureApiToken', async (t) => 
 
   const { runChapter2 } = await import('./chapter2.mjs');
   const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
     siteId: 'site-reentry',
     record: await loadSite('site-reentry'),
     dir,

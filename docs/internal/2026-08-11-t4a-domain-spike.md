@@ -590,15 +590,35 @@ did observe.
 
 Both are cheap to handle and neither was in the plan's catalogue.
 
-- **1428, a zone hold.** `POST /zones` for `cloudflare.com`: "The zone name provided is subject to
-  a hold which disallows the creation of this zone. Please contact the domain owner to have this
-  hold removed." HTTP 400. A zone hold is an opt-in protection the previous owner may have left
-  on, so an admin moving a domain they genuinely own can hit this. It is an `ask-someone` row: the
-  tool cannot clear it, and the copy should say the hold is removed at the domain's current
-  Cloudflare account, not at the registrar.
-- **1002, an invalid domain.** `POST /zones` for a name that is not a domain. HTTP 400. Worth a
-  row because the tool takes the domain as free text from the admin, and a typo that is not a
-  valid hostname deserves better than a generic failure.
+- **1428, a zone hold.** `POST /zones` for `cloudflare.com`, HTTP 400:
+
+  ```json
+  { "success": false,
+    "errors": [ { "code": 1428,
+      "message": "The zone name provided is subject to a hold which disallows the creation of this zone. Please contact the domain owner to have this hold removed." } ],
+    "messages": [], "result": null }
+  ```
+
+  A zone hold is an opt-in protection the previous owner may have left on, so an admin moving a
+  domain they genuinely own can hit this. It is an `ask-someone` row: the tool cannot clear it,
+  and the copy should say the hold is removed at the domain's current Cloudflare account, not at
+  the registrar.
+- **1002, an invalid domain.** `POST /zones` for a name that is not a domain, HTTP 400:
+
+  ```json
+  { "success": false,
+    "errors": [ { "code": 1002, "message": "Invalid domain" } ],
+    "messages": [], "result": null }
+  ```
+
+  Worth a row because the tool takes the domain as free text from the admin, and a typo that is
+  not a valid hostname deserves better than a generic failure.
+
+**Match these on the code, never on the message.** All three zone-create shapes the chapter
+recognizes (1061, 1428, 1002) are matched on `errors[0].code`. A numeric code is part of the API
+contract; the prose beside it is not. A text match would stop recognizing the shape the day
+Cloudflare rewords it, and it would fail by falling through to a generic row rather than by
+breaking a test.
 
 ### Still blocked, still waiting on the scratch domain
 

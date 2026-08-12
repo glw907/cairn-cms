@@ -95,6 +95,82 @@ wrong-scope error code. Read the spike doc before dispatching any task marked **
    creation, the 1061 duplicate body and whether it distinguishes same-account from
    foreign-account ownership, and the Custom Domain attach call with its duplicate error.
 
+## Spike amendments, part two (2026-08-12, from the minted token and the scratch domain)
+
+The blocked half of the spike ran once Geoff minted the token and registered `carin-test.org`.
+Both addenda in `docs/internal/2026-08-11-t4a-domain-spike.md` carry the evidence. **Amendments 5
+and 8 above are superseded**, 5 by Geoff's ruling in 16 and 8 by what the credential unblocked.
+One of these, 15, prevents a silent data-loss defect.
+
+9. **Task 7 verifies every prefill key against the live dashboard before shipping the URL.** Of
+   the four keys in the spike URL, three resolved and `ssl_certs` rendered an empty control with
+   no error. A key the dashboard does not recognize costs the admin an invisible gap in a token
+   they paste back with confidence. Two consequences: the shipped URL carries only keys proven to
+   resolve, and the chapter never assumes a pasted token holds what the URL requested. The 403
+   scope path from amendment 2 is load-bearing, not a backstop. **Task 7 also adds the Email
+   Sending permission** (T4b's amendment; the picker offers "Email Sending", "Email Routing
+   Addresses", and "Email Security" under Account scope, and the first is ours), so chapter 2 asks
+   for one token rather than two.
+10. **Task 8's adopt-versus-error branch reads a zone lookup, not the 1061 body.** The duplicate
+    body is `{"code":1061,"message":"<name> already exists"}` and carries no ownership field, so
+    it cannot distinguish a zone this account holds from one held elsewhere. On 1061, call
+    `GET /zones?name=<domain>`: a hit is ours to adopt, a miss belongs to someone else.
+
+    **This rewrites the landed `zone-already-exists` row rather than adding one.** Its current
+    copy tells the admin to remove the zone and re-run, which is now wrong for the same-account
+    case that gets adopted silently. Keep the key, cut the own-account branch from the copy, and
+    let the row mean the foreign-owner case alone.
+11. **The catalogue gains three rows, and one landed row is rewritten. Task 4 has already landed,
+    so each arrives with the task that raises it**: `zone-hold` and `domain-invalid` in Task 8
+    (plus the `zone-already-exists` rewrite from amendment 10), `certificate-pending` in Task 9. `zone-hold` (1428): a zone hold blocks creation, and the
+    copy must say the hold clears at the domain's current Cloudflare account rather than at the
+    registrar, which makes it `ask-someone`. `domain-invalid` (1002): the domain arrives as free
+    text from the admin, so a malformed name deserves better than a generic failure.
+12. **Task 9 loses its duplicate-error branch, and the pasted token covers the attach.** The
+    Custom Domain `PUT` is idempotent: an identical second call returns HTTP 200 with the same
+    domain `id` and `cert_id`. Re-running after a failure is safe by construction. No wrangler
+    session is involved, so the credential split in amendment 1 holds. **The attach writes a
+    proxied `AAAA` at the apex pointing at `100::` and no `A` record**, so Task 8 must state what
+    happens when the admin's apex already carries an address record.
+13. **Task 9's confirm must survive a missing certificate.** On a zone minutes old, HTTPS fails
+    the TLS handshake immediately after a successful attach while HTTP serves correctly. The
+    plan's ordered flow confirms over HTTPS right after attaching, so it would fail on every new
+    zone, and fail with an OpenSSL error rather than a status code. Distinguish "attached,
+    certificate issuing" from "broken" and hand the owner a `wait` row. The marker pair is
+    verified: `/` answers 200 and `/admin` answers 303 to `/admin/login`. **Issuance cannot be
+    polled through the API** with this token: `ssl/certificate_packs` and `ssl/verification` both
+    return 9109 even with SSL and Certificates Edit granted, so progress is observed by probing
+    the hostname.
+14. **`route-not-serving` has an observed shape.** A proxied hostname with no Worker behind it
+    answers `error code: 522` in 16 plain-text bytes, not an HTML page. A hostname that is proxied
+    but not serving answers 5xx, so the marker pair's 200 check discriminates.
+15. **Task 8 reads the authoritative nameservers, and treats recursive-resolver absence as low
+    confidence.** A stale negative DNS cache reads exactly like an absent record, and it bites in
+    the window this chapter runs in. Observed twice: seeded MX records returned nothing from
+    `1.1.1.1` while the apex `AAAA` on the same name resolved in the same batch, then returned
+    normally minutes later with nothing changed in DNS. The negative is cached **per record
+    type**, so the apex resolving proves nothing about a missing MX, and the failure is silent
+    because an empty list is what a domain with no mail legitimately looks like. A carry-over that
+    trusts it stops the admin's mail and reports success. Read the domain's authoritative
+    nameservers directly where they are known. Where the probe falls back to a recursive resolver,
+    the gate copy says the list may be incomplete for this reason as well as amendment 6's
+    wildcard reason.
+16. **The registrar table is cut, and the external-registrar path ships general instructions**
+    (Geoff, 2026-08-12). This supersedes amendment 5. A domain registered at Cloudflare arrives
+    with an active zone: created to active in 0.36 seconds, never `pending`, with
+    `original_name_servers` and `original_registrar` both null. Rather than branch per registrar,
+    Task 8 renders generic delegation copy naming the assigned pair, and detects the
+    already-active case so it never stages a wait that cannot end. `registrars.mjs` and its test
+    leave the file structure.
+
+    **The premise this leaves unobserved, and where it lands.** No externally registered domain
+    was tested, so the `POST /zones` success body, the birth `status`, and whether `name_servers`
+    is populated at creation remain uncaptured. The instructions are generic, but the zone-creation
+    code path still runs for those admins. Task 8 therefore **re-reads the zone rather than
+    trusting the create response** to populate `name_servers`, and treats the birth `status` as
+    unknown rather than assuming `pending`. The fixture for that body is marked unobserved in
+    `fake-cloudflare.mjs` so a later session does not mistake it for a captured one.
+
 ## File Structure
 
 ```
@@ -102,10 +178,10 @@ packages/create-cairn-site/
   src/cloudflare/api.mjs         fetch seam for the Cloudflare REST API (+ .test.mjs)
   src/cloudflare/account.mjs     wrangler-session account enumeration + selection (+ .test.mjs)
   src/cloudflare/prefill.mjs     create-token deep link, paste, validation (+ .test.mjs)
-  src/cloudflare/zone.mjs        zone create/adopt, nameservers, 4-state delegation (+ .test.mjs)
+  src/cloudflare/zone.mjs        zone create/adopt, nameservers, 4-state delegation,
+                                 generic delegation copy (+ .test.mjs)
   src/cloudflare/records.mjs     probe-list read + carry-over gate writes (+ .test.mjs)
-  src/cloudflare/registrars.mjs  nameserver instructions table + fallback (+ .test.mjs)
-  src/cloudflare/hostname.mjs    rollback-safe cutover: route, confirm, origin, redeploy (+ .test.mjs)
+  src/cloudflare/hostname.mjs    rollback-safe cutover: attach, confirm, origin, redeploy (+ .test.mjs)
   src/cloudflare/chapter2.mjs    orchestration: admission, hops, parks, completion (+ .test.mjs)
   test/fake-cloudflare.mjs       REST fixture server from the spike's captured bodies
 Modified: src/state.mjs + src/state.test.mjs (deep-merge cloudflare, token-removal save),
@@ -355,52 +431,64 @@ that appendix, never written from memory.** A spike question that answers "no" o
   planted distinctive value, proven able to fail); the browser open uses the
   PATH-controlled pattern.
 - [ ] **Step 2: Implement; suite green; commit.** The prefill URL lives here with the
-  spike's date in its doc block.
+  spike's date in its doc block. Per amendment 9 it carries **only keys proven to
+  resolve in the dashboard**, plus the Email Sending permission T4b rides. A test pins
+  the URL's key list so a later edit cannot quietly add an unverified key.
 
-### Task 8: Zone, records, the carry-over gate, and registrar instructions **[spike]**
+### Task 8: Zone, records, and the carry-over gate **[spike]**
 
 **Files:**
 - Create: `packages/create-cairn-site/src/cloudflare/zone.mjs`,
   `packages/create-cairn-site/src/cloudflare/zone.test.mjs`,
   `packages/create-cairn-site/src/cloudflare/records.mjs`,
-  `packages/create-cairn-site/src/cloudflare/records.test.mjs`,
-  `packages/create-cairn-site/src/cloudflare/registrars.mjs`,
-  `packages/create-cairn-site/src/cloudflare/registrars.test.mjs`
+  `packages/create-cairn-site/src/cloudflare/records.test.mjs`
 
 **Interfaces:**
 - Consumes: `makeApi`, catalogue rows, the spike's probe list and captured bodies.
 - Produces: `ensureZone({ record, api, log })` creating or adopting the zone, returning
-  `{ zoneId, nameServers }` (the assigned pair; adoption vs `zone-already-exists` per
-  the spike's 1061 answer); `readCurrentRecords({ domain, resolve })` running the probe
-  list, returning typed records (MX with distinct `priority`; TXT values joined per the
-  spike's observed chunking), distinguishing authoritative-empty from failure
-  (`records-read-failed`), and **refusing to run once delegation is active** (it would
-  read the tool's own writes; the persisted carry-over snapshot is the source after
-  that point); `carryOverRecords({ api, zoneId, records, confirm, log })` writing only
-  after `confirm`, returning `{ outcome: 'carried' | 'declined', count, types }`;
+  `{ zoneId, nameServers, alreadyActive }`. Per amendment 10 a 1061 sends it to
+  `GET /zones?name=`, adopting a hit and raising `zone-already-exists` on a miss; per
+  amendment 16 it **re-reads the zone** rather than trusting the create response to
+  populate `name_servers`, and reports `alreadyActive` for the arrives-active case.
+  `readCurrentRecords({ domain, resolve })` running the probe list, returning typed
+  records (MX with distinct `priority`; TXT values joined per the spike's observed
+  chunking), distinguishing authoritative-empty from failure (`records-read-failed`),
+  reading the **authoritative nameservers** where known per amendment 15 and flagging
+  `lowConfidence` when it fell back to a recursive resolver, and **refusing to run once
+  delegation is active** (it would read the tool's own writes; the persisted carry-over
+  snapshot is the source after that point); `carryOverRecords({ api, zoneId, records,
+  confirm, log })` writing only after `confirm`, returning `{ outcome: 'carried' |
+  'declined', count, types }`, and stating what it does when the apex already carries an
+  address record the attach will want (amendment 12);
   `checkDelegation({ record, api, resolveNs })` returning
   `'pending' | 'wrong-nameservers' | 'propagating' | 'active'` from an independent NS
-  lookup plus the zone's status; `registrarInstructions(registrarName, nameServers)`
-  from a named table for the top registrars with a generic fallback.
+  lookup plus the zone's status, short-circuiting to `active` for an arrives-active
+  zone; `delegationInstructions(nameServers)` rendering **generic** copy naming the
+  assigned pair (amendment 16 cut the per-registrar table).
 
-- [ ] **Step 1: Failing zone tests**: create-and-return; adopt-when-owned; the
-  spike-determined foreign-owner branch; `nameServers` returned and distinct per zone
-  (two fake zones, two pairs).
+- [ ] **Step 1: Failing zone tests**: create-and-return; 1061 followed by a name lookup
+  that hits, adopting it; 1061 followed by a miss, raising the rewritten `zone-already-exists`; the
+  1428 and 1002 rows from amendment 11; `nameServers` read from a zone re-read rather
+  than the create response (the fake returns a create body with `name_servers` absent,
+  and the test fails if the module trusts it); `alreadyActive` for a zone that arrives
+  active.
 - [ ] **Step 2: Failing records tests**: the probe list is exactly the spike's (asserted
   against the module's exported list); typed returns including a chunked DKIM-length
   TXT surviving intact and MX priority as its own field; authoritative-empty vs
-  failure; the post-delegation refusal.
+  failure; the post-delegation refusal; **the authoritative read is preferred and
+  `lowConfidence` is set only on the recursive fallback** (amendment 15), proven by a
+  resolver stub that answers absent recursively and present authoritatively, which is
+  the negative-cache shape the spike observed.
 - [ ] **Step 3: Failing gate tests**: nothing writes before `confirm`; declining writes
   nothing and returns `declined`; confirming writes every listed record (the fake's
   `state` shows each, MX priority intact) and returns `carried`; the gate copy carries
-  ruling 4's incompleteness caveat verbatim (asserted as a literal string).
+  ruling 4's incompleteness caveat verbatim (asserted as a literal string) **and the
+  low-confidence caveat when that flag is set**; the stated apex-collision behavior.
 - [ ] **Step 4: Failing delegation tests**: the four states, driven by the fake's random
   pairs (wrong-nameservers = Cloudflare-shaped but not this zone's pair, naming the
-  correct two in its row); pending → the `delegation-pending` wait row with the
-  registrar instructions rendered once.
-- [ ] **Step 5: Failing registrar-table test**: a listed registrar returns its steps; an
-  unlisted one returns the generic fallback naming the pair.
-- [ ] **Step 6: Implement all; suite green; commit.**
+  correct two in its row); pending → the `delegation-pending` wait row with the generic
+  instructions rendered once; an arrives-active zone short-circuits and stages no wait.
+- [ ] **Step 5: Implement all; suite green; commit.**
 
 ### Task 9: The rollback-safe cutover **[spike]**
 
@@ -410,21 +498,26 @@ that appendix, never written from memory.** A spike question that answers "no" o
 
 **Interfaces:**
 - Consumes: `writePublicOrigin` (existing `config.mjs`), `deployWorker` (existing
-  `deploy.mjs`, heartbeat included), route creation per the spike's Step 4 credential
-  answer, catalogue rows.
-- Produces: `cutOverHostname({ record, api, exec, fetchImpl, log })`, ordered: create
-  the route; confirm the existing deployment answers on the new hostname with the
-  site-specific marker (`/` 200 AND `/admin` 303 to `/admin/login`, the T3 live-check
-  idiom; a Cloudflare error page or parked page fails the marker); only then
-  `writePublicOrigin` + redeploy + re-confirm. Outcomes: success (`domain-live`);
-  still-propagating DNS → the `hostname-propagating` wait row;
-  resolved-but-not-this-site → `route-not-serving` (act); route API failure →
-  `route-create-failed`; redeploy failure → `cutover-deploy-failed` **and the origin
+  `deploy.mjs`, heartbeat included), the Custom Domain attach on the pasted token per
+  amendments 1 and 12, catalogue rows.
+- Produces: `cutOverHostname({ record, api, exec, fetchImpl, log })`, ordered: attach
+  the Custom Domain (idempotent per amendment 12, so a retry re-attaches safely);
+  confirm the existing deployment answers on the new hostname with the site-specific
+  marker (`/` 200 AND `/admin` 303 to `/admin/login`, the T3 live-check idiom; a
+  Cloudflare error page or parked page fails the marker); only then `writePublicOrigin`
+  + redeploy + re-confirm. Outcomes: success (`domain-live`); still-propagating DNS →
+  the `hostname-propagating` wait row; **a TLS failure on a hostname whose certificate
+  has not issued → the `certificate-pending` wait row, distinguished from a broken site
+  per amendment 13**; resolved-but-not-this-site → `route-not-serving` (act, and the
+  observed shape is a 522 per amendment 14); attach failure →
+  `custom-domain-failed`; redeploy failure → `cutover-deploy-failed` **and the origin
   value on disk restored to the `workers.dev` URL** (asserted by reading the file).
 
-- [ ] **Step 1: Failing tests** for the order (the fake's `requests` log proves route
-  before any origin write), each outcome, the marker's rejection of a
-  200-that-is-not-this-site body, and the rollback restore.
+- [ ] **Step 1: Failing tests** for the order (the fake's `requests` log proves the
+  attach precedes any origin write), each outcome, the marker's rejection of a
+  200-that-is-not-this-site body, a transport-level TLS error mapping to
+  `certificate-pending` rather than to a broken-site row, a repeated attach returning
+  the same identity without a duplicate error, and the rollback restore.
 - [ ] **Step 2: Implement; suite green; commit.**
 
 ### Task 10: Chapter orchestration, admission, completion **[spike]**
@@ -439,9 +532,17 @@ that appendix, never written from memory.** A spike question that answers "no" o
 - Consumes: every Producer above, in the runtime order of File Structure.
 - Produces: `runChapter2({ record, args, ... })`, the one writer of `step` and the one
   caller of the state store; the admission copy (a domain you own, at no cost); parks
-  returned as outcomes (exit 0 upstream), errors thrown; completion deletes `apiToken`
-  via `replaceSite` and prints the closing copy; re-entry at `domain-live` prints what
-  it will re-do and re-runs `ensureApiToken`.
+  returned as outcomes (exit 0 upstream), errors thrown; re-entry at `domain-live`
+  prints what it will re-do and re-runs `ensureApiToken`.
+
+  **Token deletion is a terminal-state rule, not a `domain-live` rule** (T4b's design
+  sitting, 2026-08-11). Chapter 2 no longer ends at `domain-live`, so deleting there
+  would strand the email half without a credential. A park **keeps** the token. A
+  terminal state **deletes** it, and the terminal states are `email-live` and a
+  recorded decline of the paid plan, both of which land in T4b. Task 10 therefore
+  implements the rule and its keep half; the delete half is exercised when T4b adds
+  those states. Without this, an owner who declines leaves a live credential on disk
+  indefinitely.
 
 - [ ] **Step 1: Failing admission tests**: interactive consent; `--yes` without
   `--domain` skips with a hint; `--yes --domain example.com` proceeds unattended;
@@ -451,10 +552,11 @@ that appendix, never written from memory.** A spike question that answers "no" o
   request and invocation logs); a record at `records-carried` never re-reads records; a
   declined gate never silently advances; `--dry-run` prints every hop with zero
   shell-outs and zero fake-API requests, via the synthesized record.
-- [ ] **Step 3: Failing completion tests**: after `domain-live`, `apiToken` is absent
-  from `loadSite()`'s disk re-read and from the raw file bytes, the file is still 0600,
-  and the closing copy names the domain and admin URL; re-entry at `domain-live`
-  re-runs the prefill.
+- [ ] **Step 3: Failing completion tests**: `domain-live` is **not** terminal, so
+  `apiToken` survives it (asserted against `loadSite()`'s disk re-read); a synthesized
+  terminal state deletes it, absent from both the re-read and the raw file bytes, with
+  the file still 0600; the closing copy names the domain and admin URL; re-entry at
+  `domain-live` re-runs the prefill.
 - [ ] **Step 4: Implement; suite green; commit.**
 
 ### Task 11: The bin dispatcher

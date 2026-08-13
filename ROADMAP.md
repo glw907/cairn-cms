@@ -473,6 +473,22 @@ the named human gates only):**
 
 ## Next
 
+- **The `checkOrigin` migration pass, before P (moved up from Later, Geoff 2026-08-13).** The
+  deprecation warning now prints six-plus times in every first-time owner's build (observed live in
+  T5 Task 8's e2e, in the scaffold's own output), which makes it launch polish, not just a removal
+  tripwire. The timing asymmetry decides the slot: fixed pre-P, every scaffolded site, doc, and
+  consumer ships the new spelling once; fixed post-P, the migration lands as consumer homework on
+  freshly launched sites. **Step 1 is re-verifying the recorded blocker against current kit**: as of
+  kit 2.61, `trustedOrigins` could not replace the disable (a missing-`Origin` POST is always
+  forbidden, and the check runs before the `handle` hook; reasoning in
+  `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`), with an edge Transform Rule injecting
+  `Origin` for `/admin` POSTs as the planned fallback and upstream kit#15992 as the higher-leverage
+  path. If kit has since shipped a clean disable, the pass is the sweep: `svelte.config.js` spelling
+  in showcase and template, the doctor's `checkOrigin: false` heuristic, the diagnostics copy,
+  `csrf.ts`, the docs, and an upgrade-guide entry with its `Consumers must:` line. If kit has not
+  moved, the pass decides among the recorded options with the owner-noise cost now on the scale.
+  The scheduled kit#15992 watch routine stays armed either way until the removal actually lands.
+
 - **An admin test-send, as engine work for its own pass (split out of T4b, 2026-08-12).** The
   doctor half already ships (`email.sender-onboarded` plus `--send-test`), and chapter 2's own test
   send proves the provisioning question at the moment it matters. The admin test-send answers a
@@ -1249,6 +1265,20 @@ the named human gates only):**
 
 ## Later
 
+- **The Go successor tool: a dependency-free binary that is engine and console both (Geoff,
+  2026-08-13; pre-design banked).** A single downloaded Go/bubbletea binary succeeds the Node
+  `create-cairn-site` CLI post-1.0: it orchestrates the whole install locally as bare REST
+  (Builds-first, so no local Node is needed to put a site live), and it is a standing console
+  over every site the machine knows: parks held as ambient waits, in-tool resume, doctor, log
+  tailing. The pre-design, with the full decision record (why successor rather than protocol
+  frontend, the Node-TUI option declined on taste not capability, the parity contract via the
+  language-neutral fixture corpus, poplar's three-layer shape) is
+  `docs/superpowers/specs/2026-08-13-go-successor-tool-design.md`. **One part is effective
+  now:** the spec's "standing input for the current track" section tunes the Node tool's docs,
+  comments, and structure so the port later reads them as a spec. The trigger is post-1.0, after
+  T4d, release one, and the site walk; the real design sitting happens then, on the spec's
+  open-questions agenda.
+
 - **Undelete a recently-deleted entry (filed 2026-08-06, history/revert design sitting).** History
   and revert both deliberately leave a deleted entry out of scope: `historyLoad` answers a 404 for
   one exactly as `editLoad` does, so nothing in the admin can name a deleted id to restore it, and
@@ -1389,12 +1419,6 @@ the named human gates only):**
   Workers Builds preview deployment per branch can give a shareable draft URL with zero engine code;
   document that pattern at a site cutover, and consider an engine-rendered signed preview URL only if
   the pattern proves clumsy on a real site.
-- **Migrate cairn's CSRF-disable before SvelteKit removes `checkOrigin`.** cairn's admin CSRF ownership
-  depends on `csrf: { checkOrigin: false }`, deprecated in SvelteKit 2.61. `trustedOrigins` cannot replace
-  it: a missing-`Origin` POST is always forbidden, and the check runs before the `handle` hook. The
-  planned fallback is an edge Transform Rule that injects `Origin` for `/admin` POSTs; the higher-leverage
-  path is the upstream issue (sveltejs/kit#15992). Track the removal and act before a major lands.
-  Reasoning in `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`.
 - **A collapsed sidebar section holding the active route's link does not auto-expand.** Landing on a
   route whose nav entry sits inside a section the editor previously collapsed leaves that section
   closed, so the active link is present but hidden. Consider forcing the section open when one of its

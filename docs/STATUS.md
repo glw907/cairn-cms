@@ -14,61 +14,48 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-13: T5a is BUILT and green; next is T4d, or Task 8's e2e when Geoff has a browser)
+## Immediate next action (2026-08-13 evening: Task 8 ran to `builds-live`; next is T4d's Fable spec-and-plan sitting)
 
-**T5a is complete on branch `t5-browser-door`**, in the worktree
-`.claude/worktrees/t4c-builds-connect` (a T4c-era directory name; the branch is what matters),
-cut from `origin/main` at `5ae9eeee`. **A cold session must `git fetch` first: the `main` ref in
-the `~/Projects/cairn-cms` checkout is stale at `5a37c7cb` while `origin/main` is `5ae9eeee`.**
-The branch is unmerged and unpushed. `package.json` is untouched, the runtime library is
-untouched, and the changelog entry sits under `## Unreleased`.
+**Task 8, the live CLI e2e, is COMPLETE.** PR #30 merged first (six checks green, merge
+`95227bed`), then chapters 1 through 3 ran cold against real services to `builds-live`: four
+invocations, three parks (DNS propagation, App repo-selection, build queue), every park exit 0
+with a correct re-entry, every resume entering at the right hop. The per-hop evidence, all raw
+reads with the no-fake preflight, is `docs/internal/2026-08-13-t5-task8-live-e2e.md`; the
+post-mortem is in the T5 plan. Now live-proven: the tool's whole orchestration, the
+`reauthorize` OAuth trip (instant on an authorized browser session), a full scaffold building
+green on Workers Builds, the eight-key interactive paste (**carry-forward 2 cleared**, all
+eight dashboard rows confirmed), and the email chapter end to end (Geoff opted into Workers
+Paid, so the planned decline became coverage). **The App ledger stands at five**
+(`cairn-t5-scratch`, id 4585219). The e2e estate persists for T4d (spec ruling 1); its
+teardown table, everything marked "after T4d", is in the evidence doc.
 
-**T5a is pushed and on draft PR #30**, with all five gating workflows running
-(`scaffold`, `design`, `test`, `e2e`, `create-site`). **Note for anyone pushing a feature branch
-here: a push alone runs nothing.** All five restrict their `push` trigger to `main` and
-`rebuild`, so CI on a feature branch comes only from `pull_request`. The two workflow YAML files
-this pass added have no local gate, so that PR is their first real validation, and the
-`release: published` path stays unproven until release one.
+**Next: T4d, the localhost console, needs its spec and plan, and that sitting belongs on
+Fable** per the model economy (the console is a UI surface whose open questions are taste).
+Its brief is in `docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md` (amended
+2026-08-13). **Task 8 delivered the observed inputs the ordering argument promised:** the wait
+inventory (a 27-minute park on a *serving* hostname from resolver negative cache alone, with
+the authoritative answer live the whole time; build-queue lag in minutes; cert issuance inside
+the DNS window), the three park shapes with their printed re-entry commands, and the admission
+copy working owner-facing. T4d now inherits the live site, the fifth App, and the saved state
+record at `builds-live`, and owns the single teardown.
 
-**Two things are next and neither blocks the other.**
+**A defect owed before release one, found by Task 8's freshness check: a tarball-installed
+scaffold ships no `.gitignore`.** npm always drops `.gitignore` from tarballs, `scaffold.mjs`
+copies the template verbatim, and nothing restores it, so on the published-tool path
+`pushScaffold`'s only protection against uploading `.svelte-kit/`, `.wrangler/`, and
+`.dev.vars` silently vanishes — and the scaffold's own hand-over text sends users to
+`npm install && npm run dev` before the push. The run mitigated by restoring the baked file;
+the fix (bake to a neutral name, scaffold renames it back, tested through the packed-tarball
+path) is small, well-specified, and owed before the tool publishes. Filed here rather than
+ROADMAP so the release-one checklist cannot miss it.
 
-1. **Task 8, the live CLI e2e.** Still owed from T5, unaffected by the split, and the only T5
-   hand step actionable today. It needs Geoff's browser for the fifth GitHub App's creation and
-   the `reauthorize` OAuth trip. **Run it before T4d** (the information-flow argument below).
-
-   **State at the 2026-08-13 clear:** PR #30 was open with `scaffold`, `design`, `create-site`,
-   and `e2e` green and `test` still running. Both of Task 8's own preconditions are already
-   satisfied (T4c is merged; `~/.config/cairn/sites` is empty), so **merging #30 first is a
-   preference, not a requirement**: it makes the run's evidence name a merged sha instead of a
-   branch tip. Check #30's checks, merge if green, then run. If `test` came back red, that is
-   the first thing to fix and it outranks Task 8. Running against the branch is also fine, as
-   long as the post-mortem records the sha it packed from; a cold happy-path run never touches
-   the declined-reconnect fix this branch added.
-2. **T4d, the localhost console.** Its brief is in
-   `docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`, amended 2026-08-13 with
-   the correction below. **It needs a spec and a plan before execution, and that sitting belongs
-   on Fable** per the model economy: the console is a UI surface whose open questions are taste
-   (whether the delegation view polls or asks for a refresh; whether it retrofits the GitHub
-   chapter's one-shot pages, which the research recommends against as cosmetic). An Opus
-   execution session should not author it.
-
-**A rotted assumption, corrected at T5a's close.** T4d's brief said it inherits T5's live site,
-minted GitHub App, and saved state, and owns the single teardown. **None of that exists**:
-`~/.config/cairn/sites` is empty and the App ledger still stands at four hand-deleted, not five,
-because T5a did not run Task 8. The brief now states both cases and tells the planning sitting to
-check the directory rather than trust the paragraph.
-
-**The estate is not an ordering argument, and an earlier version of this entry wrongly implied it
-was.** Whichever of the two runs first mints the fifth App and the other inherits it, so the count
-is one either way. What the estate does argue for is keeping them adjacent, since a long gap
-between them means the first one's estate gets torn down and the second mints a sixth.
-
-**The ordering argument that does hold is information flow** (the same ground ruling 1 used to put
-T5 ahead of T4d). Task 8 is the first live exercise of chapter 3's own orchestration and the
-`reauthorize` trip; every proof of them today comes from fakes whose fixtures were copied from
-captures. What it observes is what T4d renders: where a run actually parks, what the waits look
-like, how long they take. A live run can reshape T4d's brief and nothing in T4d can reshape Task 8,
-so **Task 8 should run first** unless a browser session is not available.
+**Banked opportunistically during Task 8's DNS wait:** the Go successor-tool pre-design
+(`docs/superpowers/specs/2026-08-13-go-successor-tool-design.md`, its ROADMAP Later entry, and
+its "standing input for the current track" section, which tunes the Node tool's docs, comments,
+and structure so a post-1.0 Go port reads them as a spec — passes should honor it starting
+now); and the `checkOrigin` migration pass, moved Later -> Next as pre-P launch polish (the
+deprecation warning prints six-plus times in every owner build; step 1 re-verifies the recorded
+kit-2.61 blocker against current kit).
 
 **Gate at close, verified in the main loop rather than taken from an agent's report:**
 `packages/create-cairn-site` 701 pass exit 0; root `npm test` 412 files / 5275 tests exit 0;
@@ -144,36 +131,26 @@ retired rather than rescheduled, since the probe was never runnable. T4d's brief
 (the T4a spec, plus the two T4c inputs: the build watch as a second long wait, and the grown
 fake surface its plumbing extraction must cover).
 
-**Hand steps for Geoff, EIGHT outstanding, one urgent.** Steps 6 through 8 are T5's and are
-listed after the five carried in. (6) **Mint a fine-grained PAT** scoped to the single repo
-`glw907/cairn-waymark-template` with contents read/write, run
-`~/.dotfiles/scripts/secrets/secret-set.sh TEMPLATE_REPO_TOKEN`, add the registry entry **with
-expiry and rotation date**, and set `TEMPLATE_REPO_TOKEN` as an Actions secret on
-`glw907/cairn-cms`. **Not blocking anything now**: the split moved Task 5 to release one, so this
-is owed at that cut rather than today. The recorded store check the spec asks for is done,
-name-only: the registry does hold `CMS_BOT_PAT`, but its entry reads "GitHub repository write
-access for CMS automation" rotating at `github.com/settings/tokens`, a broad classic-shaped bot
-credential, so against the standing narrow-token rule it is not reused. (7) **The button spike's
-browser moment** (Task 2), now owed at release one with the rest of T5a', not before: the tree it
-would deploy cannot build until the engine it names is on the registry. (8) **The live CLI e2e's
-browser moments** (Task 8), batched: the fifth GitHub App's creation and the `reauthorize` OAuth
-trip. **This is the only T5 hand step that is actionable today**, and it is unaffected by the
-split.
+**Hand steps for Geoff, SIX outstanding, one urgent.** Two settled 2026-08-13 during Task 8:
+the old (3) (`cairn-t4c-spike` removed from the "Workers and Pages" App's selection, done in the
+same visit that added `t5-scratch` for the connect), and the old (8) (Task 8's browser moments,
+all spent: the fifth App's creation and the `reauthorize` trip). Remaining, renumbered:
 
-The five carried in: (1) **URGENT: rotate the estate
-Cloudflare token** (`Cloudflare Admin 2026-07`): leaked into a transcript, still active. Mint a
-replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the
-old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31` at github.com/settings/apps.
-(3) **NEW: remove `cairn-t4c-spike` from the Cloudflare "Workers and Pages" App's repository
-selection** at github.com/settings/installations, leaving `glw907/907-life` selected; it was
-added for the spike. (4) **NEW: revoke the T4c spike API token**, id
-`d07b2a25f05151591830c45053186979`, at dash.cloudflare.com/profile/api-tokens, then
-`rm -f ~/.config/cairn/t4c-spike-token ~/.config/cairn/store-t4c-token.sh`. (5) **NEW, and
-unrelated to cairn's own work: 907-life's push-to-deploy has been broken since 2026-07-14.**
-Both recent builds failed with "The build token selected for this build has been deleted or
-rolled"; the site has had no automatic deploy for a month. Found while censusing the account.
-It is the production instance of the coupling chapter 3 now takes on deliberately, and the
-README's caveat is written from it.
+(1) **URGENT: rotate the estate Cloudflare token** (`Cloudflare Admin 2026-07`): leaked into a
+transcript, still active. Mint a replacement, run
+`~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the old one.
+(2) Delete the GitHub App `cairn-t4b-live-03cd31` at github.com/settings/apps.
+(3) **Revoke the T4c spike API token**, id `d07b2a25f05151591830c45053186979`, at
+dash.cloudflare.com/profile/api-tokens, then
+`rm -f ~/.config/cairn/t4c-spike-token ~/.config/cairn/store-t4c-token.sh` (both files still
+present, verified 2026-08-13). (4) **907-life's push-to-deploy has been broken since
+2026-07-14** ("build token … deleted or rolled"); unrelated to cairn's own work but a month
+without automatic deploys, and the production instance of the coupling chapter 3 takes on
+deliberately. (5) **Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT** at release one (Task 5
+moved there with the split): scoped to `glw907/cairn-waymark-template` contents read/write,
+through `secret-set.sh`, registry entry with expiry, Actions secret on `glw907/cairn-cms`. The
+store check is done, name-only: `CMS_BOT_PAT` exists but is broad and classic-shaped, not
+reused. (6) **The button spike's browser moment** (Task 2), owed at release one with T5a'.
 
 **The spike's scratch estate is TORN DOWN and verified by listing** (2026-08-13, after Geoff took
 the fold-into-T4d option above). Deleted: the trigger, the repo connection, the spike build token,
@@ -182,9 +159,10 @@ the GitHub repo `glw907/cairn-t4c-spike`. Confirmed by re-listing rather than by
 delete calls: build tokens now show only 907-life's two, no Worker matches `t4c-spike`, and the
 repo 404s. Only hand steps 3 and 4 above remain, both browser-only.
 
-**Standing note on e2e cost, unchanged:** every live e2e mints a GitHub App only Geoff can
-delete. Four hand-deleted so far. T4c minted **none** (its spike used the API directly), so the
-count is still four; T5's run will add the fifth, and T4d reuses it.
+**Standing note on e2e cost:** every live e2e mints a GitHub App only Geoff can delete. Four
+hand-deleted so far; **Task 8 minted the fifth (`cairn-t5-scratch`, id 4585219), which is live
+and persists for T4d to reuse**, joining the teardown table rather than the hand-delete count
+until after T4d.
 
 **A second watch routine is live.** `trig_01G4gNi4RbR4vmhTLa8jCmk9`, "cairn Artifacts GA watch",
 monthly on the 1st at 18:00 UTC, first run 2026-09-01, emailing only when it trips. It watches
@@ -200,11 +178,12 @@ moving off GitHub costs them pull requests, Actions, and collaborators.
 **Carry-forwards (the tool initiative), renumbered this entry; verify against this list, not a
 remembered one.** (1) The cutover confirm resolves through `fetch` and the system resolver, so a
 stale negative DNS cache can park the owner on a serving hostname; belongs to a pass owning
-`hostname.mjs`. (2) The T4a prefill URL's permission keys are verified, but amendment 9's Task 7
-obligation (the interactive-paste path against the live dashboard) stands open, and **T4c adds
-to it: `d1` and `workers_r2` ship in the chapter-3 key set without a live dashboard
-confirmation**, and R2's requirement is inferred rather than observed (the failing probe build
-died at the first D1 binding and never reached the bucket). (3) An externally registered domain
+`hostname.mjs`. **Task 8 observed it live: 26 minutes parked with the authoritative answer
+serving the whole time**, so the fix now has a measured cost attached. (2) **CLEARED
+2026-08-13:** the interactive-paste path ran against the live dashboard in Task 8's run 2, and
+Geoff confirmed all eight rows filled on the eight-key prefill page; `prefill.mjs`'s comment now
+records the confirmation. The one residue, stated there: R2's *requirement* stays a conservative
+inference (no request has ever exercised `workers_r2` alone). (3) An externally registered domain
 still owes the branches the scratch domain cannot reach. (4) Chapter 2's browser-moment count is
 one and Pass D's admin-track domain page should state it; **chapter 3's count is two** (the App
 authorization, once per account, and the reconcile sign-in). (5) The engine committer-attribution

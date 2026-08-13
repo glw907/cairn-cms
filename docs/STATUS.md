@@ -29,15 +29,21 @@ Paid, so the planned decline became coverage). **The App ledger stands at five**
 (`cairn-t5-scratch`, id 4585219). The e2e estate persists for T4d (spec ruling 1); its
 teardown table, everything marked "after T4d", is in the evidence doc.
 
-**Next: T4d, the localhost console, needs its spec and plan, and that sitting belongs on
-Fable** per the model economy (the console is a UI surface whose open questions are taste).
-Its brief is in `docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md` (amended
-2026-08-13). **Task 8 delivered the observed inputs the ordering argument promised:** the wait
-inventory (a 27-minute park on a *serving* hostname from resolver negative cache alone, with
-the authoritative answer live the whole time; build-queue lag in minutes; cert issuance inside
-the DNS window), the three park shapes with their printed re-entry commands, and the admission
-copy working owner-facing. T4d now inherits the live site, the fifth App, and the saved state
-record at `builds-live`, and owns the single teardown.
+**Next: EXECUTE the T4d plan** (`docs/superpowers/plans/2026-08-13-create-cairn-site-t4d.md`)
+**in a fresh Opus session**, per the model economy: the Fable sitting that authored it ended at
+plan approval. Spec and plan both passed an adversarial gate the same day (three lenses on the
+spec, four on the plan, 56 ranked findings folded; the gates' largest catches are recorded in
+each document's header, including a correction OF the T4a brief: `loopback.mjs` never had the
+secret path or Host guard the brief claimed). Method: task-by-task `cairn-implementer`
+dispatches (pinned Sonnet), test-first, full gate between dispatches, on this same worktree
+branch `t5-browser-door` off merged `main`; Tasks 7 and 8 are main-loop. The plan's pass-size
+note names the cut point (after Task 3) if execution splits a task again. T4d inherits the
+live site, the fifth App, and the state record at `builds-live` (re-verify the directory at
+execution start), and owns the single teardown. Task 8's observed inputs are folded into the
+spec's decision record already; the sitting also banked, opportunistically: the Go
+successor-tool pre-design (with its effective-now "tune for the port" standing input), the
+`checkOrigin` pre-P migration pass (ROADMAP Next), and the missing-`.gitignore` defect (filed
+above, owed before release one).
 
 **A defect owed before release one, found by Task 8's freshness check: a tarball-installed
 scaffold ships no `.gitignore`.** npm always drops `.gitignore` from tarballs, `scaffold.mjs`

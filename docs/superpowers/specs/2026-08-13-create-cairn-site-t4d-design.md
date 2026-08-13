@@ -94,12 +94,17 @@ Three pieces; the runtime library (`src/lib`) is untouched; everything lands in
 path secret and guards Host"; **the code has neither** (fixed literal paths `/callback` and
 `/manifest`; no read of the Host header anywhere). The extraction therefore ADDS three
 things: a routing layer (path -> handler map), a per-start secret mount prefix
-(`randomBytes(16).toString('base64url')`, carried by every console URL), and a Host
-allowlist (`127.0.0.1[:port]`, `localhost[:port]`, `[::1][:port]`; 403 otherwise). The Host
-guard is a deliberate behavior change for the GitHub chapter too (its callback carries
-GitHub's `code` and today answers any Host); the chapter's registered redirect URIs are
-`127.0.0.1` literals, so real flows pass. Acceptance criterion 2 is scoped to behavior: the
-chapter's existing tests pass with at most mechanical URL-prefix threading.
+(`randomBytes(16).toString('base64url')`), and a Host allowlist (`127.0.0.1[:port]`,
+`localhost[:port]`, `[::1][:port]`; 403 otherwise). **The prefix is a per-mount property,
+console routes only.** GitHub's `/callback` and `/manifest` mount at their fixed unprefixed
+paths: the App's `callback_urls` are baked at App creation and GitHub's loopback leniency is
+port-only, never path-flexible (`oauth.mjs` pins this as a spike-observed constraint), so a
+per-start prefix there would dead-end `reauthorize` for every App including the inherited
+one; those routes' secret is GitHub's own `state` nonce, already checked. The Host guard
+applies to every mount and is a deliberate behavior change for the GitHub chapter (its
+callback today answers any Host); the registered URIs are `127.0.0.1` literals, so real
+flows pass. Acceptance criterion 2: the chapter's redirect URIs and its tests are unchanged,
+with a regression test that the `reauthorize` redirect path stays exactly `/callback`.
 
 **The shared DNS helper (reuse, not reinvention).** `records.mjs` already carries the
 authoritative-versus-recursive machinery (`defaultResolve`, `firstAuthoritativeAddress`, the
@@ -143,10 +148,23 @@ helper lives beside `runner.mjs` and is called by the two seams only.
 - Unit tests against fixture state records for routing, each view, the park pages, and the
   hold loop's transitions (probe injected; no network): probe-clears -> resume, budget
   expiry -> park verbatim, `--yes`/non-TTY/`CI` -> never holds.
-- A child-process test drives the real signal path: spawn the CLI against the fakes into a
-  held wait, wait for the printed console URL, fetch it (asserting state-derived content:
-  the fixture's domain, both nameservers, the hop header), send SIGINT, assert the park row,
-  the exit code 0, and the state save.
+- **The integration proofs target the Builds hold, the one class a child process can
+  drive.** The propagation probe's inputs (the marker fetch, DNS) have deliberately no env
+  seam, so the propagation class is proven at the unit level with the injected probe; the
+  Builds probe flows entirely through `CAIRN_CLOUDFLARE_API_BASE` and the existing fake's
+  builds handlers. A child-process test spawns the CLI (spawn with a stdout line reader,
+  not the resume tests' await-exit idiom) against the fakes with a fixture record at
+  chapter 3's watch step, enters the held build watch via `--connect`, waits for the
+  printed console URL, fetches it (asserting state-derived content), flips the fake's
+  build state and asserts the changed cell on re-fetch, and separately drives SIGINT,
+  asserting the park row, exit 0, and the state save.
+- **The hold-force seam, named.** A spawned child is non-TTY and CI sets `CI`, so the
+  never-holds rule would make both integration proofs unreachable. The hold gate lives in
+  the caller (a chapter composes `waitForClear` only for an interactive run:
+  `!yes && stdout.isTTY && !CI`), and one documented override, `CAIRN_FORCE_HOLD=1`,
+  honored only when a fake API base is also set, exists for exactly these two proofs.
+  The default-policy refusal keeps its own falsifiable test (the injected `waitForClear`
+  is never invoked, no URL line prints, the call returns before one poll interval).
 - The loopback core's own tests: bind, secret-prefix refusal (a request without the prefix
   404s), Host-guard refusal (403), shutdown, and the grace-window exit render.
 - **The secret-sentinel sweep:** a fixture record carries distinctive sentinels in
@@ -162,16 +180,21 @@ helper lives beside `runner.mjs` and is called by the two seams only.
   mint a fourth copy). Fakes keep refusing what the real service refuses.
 - **The CI probe keeps the brief's lock with a defined mechanism:** `create-site.yml` (which
   has the full checkout beside the packed CLI) seeds `CAIRN_STATE_DIR` with a fixture at
-  `delegated`, points `CAIRN_CLOUDFLARE_API_BASE` at the repo's fake, runs the packed CLI
-  into the held wait, fetches the printed console URL asserting state-derived body content,
-  flips the fake's probe state, and asserts the changed cell on re-fetch (proving
-  re-render, not a stub 200). The package `test` script's explicit per-directory glob list
-  gains the new directory.
-- **The live proof, with its provocation named:** against the inherited estate, kick the
-  trigger (or push a trivial commit to `glw907/t5-scratch`) so a real queued build exists,
-  re-enter with `--connect` into the held build watch with the console up; expect a fresh
-  token paste if the terminal outcome cleared the saved one. Evidence: the console URL
-  line, one re-render showing state change, the auto-resume line, and a raw
+  chapter 3's watch step, points `CAIRN_CLOUDFLARE_API_BASE` at the repo's fake, sets
+  `CAIRN_FORCE_HOLD=1`, runs the packed CLI with `--connect` into the held build watch,
+  fetches the printed console URL asserting state-derived body content, flips the fake's
+  build state, and asserts the changed cell on re-fetch (proving re-render, not a stub
+  200). The existing packed-real-path jobs are untouched. The console lives at
+  `src/console/`, and the package `test` script's explicit per-directory glob list gains
+  exactly that entry.
+- **The live proof, with its provocation named:** the inherited record sits at
+  `builds-live`, whose re-entry gates on LOCAL config drift (the reconcile hash), so a
+  push or kick alone cannot reach the watch. The provocation is a trivial local edit to a
+  reconciled file in the inherited site dir so the hash drifts; the re-entered `--connect`
+  then runs the reconcile (the reauthorize trip), pushes the commit, and enters the held
+  build watch with the console up for the real push-event build. Expect a fresh token
+  paste if the terminal outcome cleared the saved one. Evidence: the console URL line,
+  one re-render showing state change, the auto-resume line, and a raw
   `builds/workers/{tag}/builds` read matching the same `build_uuid`. Teardown after, per
   the Task 8 table.
 
@@ -194,12 +217,13 @@ owns that horizon). The email chapter. Proxying interactive prompts through the 
 ## Acceptance criteria
 
 1. A run entering a held wait prints the console URL, serves the matching view on loopback
-   under the secret prefix, refuses non-loopback Hosts (403) and unprefixed paths (404),
-   auto-resumes when the injected probe clears (serving the exit render through the grace
-   window), and honors the budget by parking verbatim as today.
-2. The GitHub chapter's behavior is unchanged on the extracted core (its tests pass with at
-   most mechanical URL threading), and the core's own tests cover prefix, Host guard, and
-   shutdown.
+   under the console's secret prefix, refuses non-loopback Hosts (403) and unprefixed
+   console paths (404), auto-resumes when the injected probe clears (serving the exit
+   render through the grace window), and honors the budget by parking verbatim as today.
+2. The GitHub chapter's redirect URIs, behavior, and tests are unchanged on the extracted
+   core; a regression test pins the `reauthorize` redirect path at exactly `/callback`
+   across two core starts; the core's own tests cover the console prefix, the Host guard
+   on every mount, and shutdown.
 3. `hostname.mjs` splits `hostname-propagating` into records-absent versus
    resolver-lagging, with the disagreement fixture red before the change and green after;
    `live` remains exclusively the marker pair's verdict.
@@ -210,10 +234,12 @@ owns that horizon). The email chapter. Proxying interactive prompts through the 
 6. The secret-sentinel sweep passes over every route and the printed URL line.
 7. Every rendered view and the park's final printed line carry the
    serves-during-a-run-only sentence, asserted by test.
-8. A `--yes`, non-TTY, or `CI` run never holds (parks as today), asserted by test.
+8. A `--yes`, non-TTY, or `CI` run never holds unless `CAIRN_FORCE_HOLD=1` is set beside a
+   fake API base; the default refusal is asserted by the never-invoked/no-URL/fast-return
+   oracle, and the force seam rides the sentinel sweep like every other env read.
 9. The full gate is green with the PR-gating list re-derived at close, the package test
-   glob covers the new directory, and the `create-site.yml` probe passes with its
-   state-derived assertions.
+   glob gains the `src/console/` entry (proven falsifiable by a deliberately failing test
+   there), and the `create-site.yml` probe passes with its state-derived assertions.
 10. The pass performs the API-deletable teardown rows itself (verified by re-listing),
     hands the browser-only rows to STATUS's hand-step list, and updates the App ledger
     note to five hand-deleted.

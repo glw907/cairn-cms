@@ -261,6 +261,81 @@ rejected. Turning Email Sending off again does not remove the record.
 | --- | --- |
 | `--email` | Turn on sign-in email without an interactive prompt. Pair with `--yes` for a fully unattended run. |
 
+## The Builds chapter
+
+Once your site is live, the command offers to connect its repository to Cloudflare Workers
+Builds, so every commit to your default branch deploys itself, no laptop involved. This step is
+interactive by default: it asks whether you want to connect. Unlike the domain and email
+chapters, `--yes` alone consents to this one rather than skipping it, since there is nothing
+about connecting a repository that costs money or commits you to anything ongoing; a fully
+unattended run reaches a live Builds connection with no extra flag. Running the command again
+later, from a site that already finished this run, `--connect` opts in (or resumes a parked run)
+any time after your site is live on Cloudflare.
+
+### What gets created, and what it costs
+
+The chapter connects your repository to Workers Builds, creates a trigger bound to your existing
+Worker, and, if your repository's committed `wrangler.jsonc` and `src/theme/cairn.config.ts` have
+drifted from what your machine last deployed, commits the current versions back. It then watches
+the first Builds deploy through to success. Cloudflare's free tier covers it: 3,000 build minutes
+a month and one build running at a time, as of 2026-08-12
+(https://developers.cloudflare.com/workers/platform/pricing/).
+
+### No second dashboard trip for a token
+
+Unlike a typical Workers Builds setup, this chapter does not send you to the dashboard to create a
+separate build token. It asks you to paste a fresh Cloudflare API token, the same paste flow the
+domain chapter already used, and registers that same token as your Workers Builds build token.
+Two things still need a browser, and each is either one-time or skips cleanly on a re-run:
+
+1. **Authorizing Cloudflare's "Workers and Pages" GitHub App** on your account, if you have not
+   already done this for an earlier site. If it is not authorized yet, or if it is authorized but
+   this repository is not among the ones it can see, the chapter prints the exact settings page to
+   visit and the command to re-run once you have.
+2. **One sign-in click**, only when your repository's committed config actually differs from what
+   your machine last deployed. The commit this writes is attributed to you, so it needs a fresh
+   sign-in the same way any other commit-writing step in this tool does. A repository that is
+   already in sync skips this step entirely.
+
+### The coupling to your pasted token
+
+Cloudflare's build token wraps the Cloudflare API token you pasted for this chapter, registered
+under the name **cairn create-cairn-site build token**. Revoking or rolling that token later, at
+the Cloudflare dashboard, breaks your automatic deploys, silently: your next commit still builds,
+and the build fails with no warning beforehand. This is not a hypothetical risk. It is the exact
+state a production cairn site was found in while this chapter was being built. If you rotate your
+Cloudflare API tokens on a schedule, either exclude this one or update the build token to match
+whenever you do.
+
+### Migrations still run through this CLI
+
+An automatic Builds deploy handles your site's code. It does not run database migrations:
+`wrangler d1 migrations apply` has no Workers Builds equivalent. An engine update that ships a new
+migration still needs you to run this CLI's own update path on your machine, so it is not
+something you can set aside once Builds is connected.
+
+### Waiting is normal
+
+Two points in this chapter wait on something outside the tool: Cloudflare's App authorization
+(above) and the first build itself, which can still be running when this run stops watching it.
+Each exits `0`, prints what it is waiting for, and gives the exact command to run again. A failed
+or unrunnable build is different: the run exits `1` with the build log's last few lines and a link
+to the full log.
+
+### Flags
+
+| Flag | Effect |
+| --- | --- |
+| `--connect` | Re-enter this chapter on a later run, from a site that has already finished an earlier run, either to resume a park or to check for and commit a config drift on an already-connected site. |
+
+### Resuming
+
+Each hop is saved as it completes, the same as every earlier chapter. A park resumes with a plain
+re-run; the connection and trigger are adopted rather than re-created if they already exist. Once
+your site is live on Workers Builds, running `--connect` again re-checks your deploy config and
+commits anything that has drifted since, such as a `PUBLIC_ORIGIN` your own machine last deployed
+but never pushed.
+
 ## Running the site
 
 ```
@@ -275,15 +350,16 @@ own `dev` script turns the stand-in on, so no environment variable is needed.
 
 ## Status
 
-The local scaffold, the GitHub chapter, the Cloudflare chapter, and the domain chapter all exist
-today, so the command takes a site from nothing to live on a domain you own, with you signed in
-to its admin. What it does not do yet is invite editors other than you, which needs email and
-arrives in a later release.
+The local scaffold, the GitHub chapter, the Cloudflare chapter, the domain chapter, the email
+chapter, and the Builds chapter all exist today, so the command takes a site from nothing to live
+on a domain you own, sending its own sign-in email, deploying itself on every commit, with you
+signed in to its admin throughout.
 
 Scaffolding writes nothing outside the site directory except one record of the site under
 `~/.config/cairn/sites/`, mode `0600`. No secret is ever written into the project. The App's
 private key lives in that record only until the Worker exists, and then only in the Worker; the
 record itself is not secret-free even after that move, since it still carries the App's client
-secret and webhook secret, which this tool never relocates anywhere else. The domain chapter's
-Cloudflare API token lives in that same record for as long as a later chapter still needs it, and
-is deleted once the chapter reaches a state with nothing left to do with it.
+secret and webhook secret, which this tool never relocates anywhere else. Each Cloudflare API
+token, the domain chapter's and, later, the Builds chapter's own fresh paste, lives in that same
+record for as long as its chapter still needs it, and is deleted once that chapter reaches a
+state with nothing left to do with it.

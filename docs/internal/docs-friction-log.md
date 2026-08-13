@@ -365,3 +365,16 @@ line.
   trigger phrased against a pass that has already shipped cannot fire again, which is the weakness
   this file's own header warns about; the next pass touching `src/github/` owns re-triaging the
   remainder or deleting what is no longer true.
+
+- **`developer`: [Deploy to Cloudflare](../guides/deploy-to-cloudflare.md) now describes only one of
+  two ways a cairn site gets to production, and does not say so.** That guide walks a developer
+  through mounting the admin and running `wrangler deploy` by hand; `create-cairn-site`'s Builds
+  chapter (T4c, 2026-08-12) is a second path that reaches the same live Worker through
+  `npx create-cairn-site --dir <dir> --connect`, with the engine committing every future deploy for
+  the admin instead. The guide names neither the tool nor the choice between the two, so a reader
+  who lands here first has no way to learn a scaffolded site does not need this page's manual steps
+  at all, and a reader who lands on the tool's own README first has no pointer back to this guide's
+  binding/migration detail for the parts Builds still leaves to the CLI (engine updates,
+  migrations). Candidate fix: a short callout near the top of this guide naming
+  `create-cairn-site --connect` as the scaffolded path, with this guide kept as the reference for
+  what it automates and what it deliberately still asks of the developer.

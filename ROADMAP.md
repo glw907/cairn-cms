@@ -80,20 +80,30 @@ Readiness checklist:
   to publish. **Pass T4a is complete**: the domain half of chapter 2, token-prefill, zone create
   or adopt, the DNS carry-over gate that preserves MX priority, nameserver delegation with
   park-and-resume, and a rollback-safe custom-hostname cutover, proven end to end against a live
-  scratch domain. **The remaining charge is four passes**: **T4b** is email plus the money
-  framing; **T4c** is Workers Builds connect plus deploy-config reconciliation, including the
-  silent `PUBLIC_ORIGIN` reconciliation defect; **T4d** is the localhost console; **T5** is the
-  browser door (the public template repo, the Deploy button, C3 `--template` compatibility). Pass
-  D follows T5, and the tool and template publish in the same cut as release one.
+  scratch domain. **Pass T4b is complete**: the email chapter and the money framing, sending a
+  site's own sign-in mail once the owner opts in. **Pass T4c is complete**: Workers Builds
+  connect, a trigger bound to the site's existing Worker, and deploy-config reconciliation,
+  closing the silent `PUBLIC_ORIGIN` reconciliation defect through an admin-attributed `base_tree`
+  commit, with the first Builds deploy watched to `success` end to end against a live scratch site
+  (the account's existing 907-life Builds usage was left untouched throughout). **The remaining
+  charge is two passes**: **T4d** is the localhost console, which now carries two inputs from T4c,
+  the build watch as a second long wait worth rendering and the grown fake-server surface its
+  plumbing extraction must cover (the T4c spec's own "What follows" section records both); **T5**
+  is the browser door (the public template repo, the Deploy button, C3 `--template`
+  compatibility). Pass D follows T5, and the tool and template publish in the same cut as release
+  one.
 
   **Why the console is its own pass** (Geoff, 2026-08-11): it was bundled with email because the
   email chapter was assumed to have a long wait worth watching, and the research found that
   onboarding a Cloudflare-DNS domain takes minutes. The wait that earns a console is chapter 2's
   nameserver delegation, which can run for hours, so the console attaches to no single chapter and
   bundling it with email was adjacency rather than design. It sits after Builds because it improves
-  a flow that already works through terminal parks, where Builds closes a real capability gap
-  including the silent `PUBLIC_ORIGIN` reconciliation defect. The T4a spec carries the T4b and T4c
-  briefs:
+  a flow that already works through terminal parks, where Builds closed a real capability gap
+  including the silent `PUBLIC_ORIGIN` reconciliation defect. T4c, now shipped, added two inputs
+  to the console's own brief: the build watch as a second long wait worth rendering, and the grown
+  fake-server surface its plumbing extraction must now cover (recorded in the T4c spec's own "What
+  follows" section, `docs/superpowers/specs/2026-08-12-create-cairn-site-t4c-design.md`). The T4a
+  spec carries the T4b and T4c briefs:
   [`docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`](docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md),
   and the banked research behind the split is
   [`docs/internal/2026-08-11-t4b-email-console-cost-research.md`](docs/internal/2026-08-11-t4b-email-console-cost-research.md).

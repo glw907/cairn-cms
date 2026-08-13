@@ -717,7 +717,10 @@ export async function runChapter2({
             'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
             'to this domain later, add it to that record too, or its mail will be rejected.\n' +
             `Run npx cairn-doctor --from ${from} --send-test <you@example.com> to check the ` +
-            'sending path any time, without running this installer.',
+            'sending path any time, without running this installer.\n' +
+            'One more step is available: run npx create-cairn-site --dir ' +
+            `${dir} --connect to connect this repository to Cloudflare Workers Builds, so every ` +
+            'future commit to your default branch deploys itself, no laptop required.',
         );
       },
     );

@@ -154,6 +154,33 @@
   Consumers must: nothing. `create-cairn-site` is still unpublished and the engine's runtime library
   is untouched by this pass.
 
+  A Builds chapter now follows the email one (or, later, is entered on its own with a new
+  `--connect` flag) and takes a site the rest of the way to push-to-deploy. It connects the
+  repository to Cloudflare Workers Builds, creates a trigger bound to the site's existing Worker,
+  reconciles the two tool-owned config files (`wrangler.jsonc`, `src/theme/cairn.config.ts`) into
+  the repository through an admin-attributed commit whenever they have drifted, and watches the
+  first Builds deploy to success. Connecting and the trigger are both adopted rather than
+  re-created on a re-run, since the connections PUT is a true upsert and a worker's existing
+  triggers each embed the connection they already point at. The build token needs no separate
+  dashboard visit: the chapter registers the admin's own pasted Cloudflare API token as the build
+  token, through the same paste flow the domain chapter already used, using
+  `GET /user/tokens/verify` to learn the id Cloudflare's token-registration route needs.
+  Two things still need a browser: a one-time authorization of Cloudflare's "Workers and Pages"
+  GitHub App, and a sign-in click for the reconcile commit, skipped entirely when nothing has
+  drifted (checked unauthenticated first, so a repository already in sync never needs the OAuth
+  trip at all). Both authorization refusals Cloudflare's connections API can return are read from
+  their numeric codes (`8000008`, `8000012`) rather than their platform message, since both
+  messages are Pages-era and factually wrong for this condition; the rows state the real
+  condition in cairn's own words. A push-triggered build is found by matching the reconcile
+  commit's sha; a manual kick, needed only on a genuinely first run whose config already matches,
+  carries no commit metadata to match on and is tracked by its own build id instead. A
+  `builds-live` re-entry (a later `--connect`) is not a no-op: it re-runs the reconcile diff, so a
+  `PUBLIC_ORIGIN` that changed locally after the site went live is not silently left uncommitted.
+  Every park exits `0` and names the exact command to resume; a failed or unrunnable build exits
+  `1` with the build log's last few lines and a dashboard link. Consumers must: nothing. The
+  engine's runtime library is untouched by this pass, and `create-cairn-site` is still
+  unpublished.
+
 - Every entry gains a publish history and a revert-as-draft: the `history` admin view
   (`/admin/<concept>/<id>/history`), reachable from the edit screen's overflow menu, lists the
   entry's most recent 25 publishes off `Backend`'s new `listCommits(path, ref, limit)` member (a

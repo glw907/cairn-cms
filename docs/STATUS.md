@@ -14,52 +14,54 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-13: T5 is IN FLIGHT and PARKED on a decision plus Geoff's browser)
+## Immediate next action (2026-08-13: T5a is BUILT and green; next is T4d, or Task 8's e2e when Geoff has a browser)
 
-**Pass T5 is executing on branch `t5-browser-door`**, in the worktree
-`.claude/worktrees/t4c-builds-connect` (a T4c-era directory name; the branch is what matters).
-The branch was cut from `origin/main` at `5ae9eeee`, which carries the T4c merge. **A cold
-session must `git fetch` first: the `main` ref in the `~/Projects/cairn-cms` checkout is stale at
-`5a37c7cb` while `origin/main` is `5ae9eeee`.**
+**T5a is complete on branch `t5-browser-door`**, in the worktree
+`.claude/worktrees/t4c-builds-connect` (a T4c-era directory name; the branch is what matters),
+cut from `origin/main` at `5ae9eeee`. **A cold session must `git fetch` first: the `main` ref in
+the `~/Projects/cairn-cms` checkout is stale at `5a37c7cb` while `origin/main` is `5ae9eeee`.**
+The branch is unmerged and unpushed. `package.json` is untouched, the runtime library is
+untouched, and the changelog entry sits under `## Unreleased`.
 
-**Landed this pass, gates green throughout** (`npm run check` 0/0, `packages/create-cairn-site`
-687/687 exit 0, `check:comments` OK):
+**The immediate next action is a decision about ordering, not code.** Three things are ready and
+none blocks another: (1) push and open a PR for T5a, (2) run Task 8's live CLI e2e, which is
+unaffected by the split finding and needs only Geoff's browser, (3) start T4d. The queue as
+recorded is T4d next, so absent a preference that is where a fresh session goes, after landing
+T5a.
 
-- **Task 1**: `scripts/sync-template-repo.mjs` plus its suite and the `template-repo/` overlay
-  skeleton. A three-lens adversarial review (deletion-test, oracle conformance, credential and
-  git safety) found **ten real defects**, four of them blocking, all confirmed and fixed with
-  mutate-and-restore falsifiability proofs. The four that mattered: the push credential rode the
-  remote URL, exposing it in subprocess argv and the clone's persisted `.git/config` (now an
-  env-injected `http.extraheader`); a look-alike host and the ssh, scp, and plain-http spellings
-  all bypassed the remote guard; the `.gitignore` append rule was untested, and deleting it left
-  the template repo ignoring nothing while all 15 tests stayed green; and **`--strip-dev-backend`
-  alone always exited 1**, which is the one invocation the pass actually needs.
-- **Task 4 Step 1**: the release path as a `needs: publish` job in `publish.yml`, plus
-  `sync-template.yml` carrying `workflow_dispatch` and the weekly drift cron. A shared
-  concurrency group and a `WATCH:` comment on the release-one strip obligation were added in
-  main-loop review.
-- **Task 2 Step 0 and Task 3 Step 0**: both vendor sources read and banked with dates in
-  `docs/internal/2026-08-13-t5-button-spike.md`.
+**Gate at close, verified in the main loop rather than taken from an agent's report:**
+`packages/create-cairn-site` 701 pass exit 0; root `npm test` 412 files / 5275 tests exit 0;
+`npm run check` 0 errors 0 warnings over 1601 files; `check:comments`, `check:docs` (187 files),
+`check:reference`, `check:package`, and all four CI-only gates
+(`check:reference:signatures`, `check:surface`, `check:snippets` at 209 blocks, `check:comments`)
+green. PR-gating workflows re-derived with `grep -l pull_request`: `scaffold`, `create-site`,
+`e2e`, `test`, `design`. Neither sync path is PR-gating, which is correct.
 
-**THE PASS IS BLOCKED ON A DECISION, and it is Geoff's.** Task 2 Step 1's install-and-build check,
-rehearsed locally before spending a browser session on it, **fails**. The synced tree installs and
-then will not build: it imports `previewLoad` and `PreviewBanner`, which the published
-`@glw907/cairn-cms@0.94.0` does not export. The bake emits the showcase's current tree, which has
-adopted unpublished-window engine features, while the emitted engine dependency resolves to the
-last published version. **Spec ruling 6 assumed the strip made the acceptance criterion reachable
-before release one; the strip only addresses the dev backend and has no bearing on the engine, so
-the criterion is not reachable as the pass is written.** The gap is exactly two symbols (measured
-across all 57 engine imports, not inferred from the build's two errors), both from the preview
-feature, both used by one route. No existing gate could have caught it: `create-site.yml` rewrites
-the scaffolded site to point at a locally packed engine tarball, so CI has never proven a scaffold
-against the registry. The three resolutions, with evidence, are in the spike doc's Step 1; option
-3 (gate the sync on a real build, not only on registry resolvability) looks necessary whichever
-of the other two is chosen. **Do not run the live spike until this is settled**: a button pointed
-at a tree that cannot build makes every downstream observation ambiguous.
+**What T5a shipped.** The sync script that generates the template repo wholesale from the bake
+plus an overlay (normal commits, never a force push, a remote guard covering https, http, ssh and
+scp spellings, and a credential carried as an injected `http.extraheader` rather than in the
+remote URL or argv); the overlay skeleton; two push gates, registry resolvability and a real
+install-and-build of the composed tree; the GitHub Actions wiring (a `needs: publish` release job,
+a manual dispatch, and a weekly cron that now checks drift **and** buildability), sharing a
+concurrency group with a 15-minute timeout; and `docs/guides/deploy-to-cloudflare.md`'s paths
+framing, which resolved and removed T4c's friction-log entry. One defect outside the pass's own
+code was fixed because the guide documents that surface: **a site whose owner declined Workers
+Builds could never reconnect**, though the decline message and `bin.mjs`'s own comment both named
+`--connect` as the way back in. Nothing in 698 tests covered it.
 
-Everything after Task 4 Step 1 is gated on that decision, on the `TEMPLATE_REPO_TOKEN` hand step,
-or on Geoff's browser. Tasks 3 and 6 are spike-gated by design; Task 5 needs the Actions secret;
-Tasks 7, 8, and 9 follow.
+**Why the pass split (Geoff, 2026-08-13), and what T5a' owes at release one.** Rehearsing Task 2
+Step 1 locally showed the synced tree installs and will not build: it imports `previewLoad` and
+`PreviewBanner`, which published `0.94.0` does not export. Spec ruling 6 assumed the strip made
+the acceptance criterion reachable before release one; the strip addresses the dev backend and has
+no bearing on the engine. **The sync therefore refuses to push today, which is correct.** T5a'
+carries Task 4 Step 2 (the PAT), Task 5 (create and first-sync the repo), Task 7 (the C3
+contract), Task 2 (the live button spike), Task 3 (the overlay's spike-derived content), Task 6's
+button section rewritten from observation, and the checklist with its match test. Two
+release-checklist obligations are in the changelog for `cairn-release` to read: drop
+`--strip-dev-backend` from the cron and its dispatch input default, and drop the README's
+pre-release notice. **Ruling 2's adopt probe was retired rather than rescheduled**: `--connect` is
+gated on a state record a button-created site never has, so the probe was never runnable; the
+spec's T5b section now records what reading settled and what only the button can show.
 
 **T4c's own record, now history:** chapter 3 exists end to end: admission, the
 eight-key token paste, connect, trigger, the `base_tree` reconcile commit, the build watch, and
@@ -93,25 +95,29 @@ needs chapter 1, which mints a GitHub App only Geoff can hand-delete, and
 and plan are both approved (the plan at the adversarial gate). The queue is now T5 -> T4d ->
 Pass D -> release one -> site walk -> P. The live CLI e2e (the gap below) folds into T5, not
 T4d; the e2e estate T5 mints persists across both passes with its teardown after T4d, while
-T5's spike estate is torn down at T5's own end (spec ruling 7). T5's scope: the template repo
-and button with a printed checklist as the completion story; the adopt-existing-repo path is
-deferred to a T5b brief written from the T5 spike's findings (the spike's `--connect` adopt
-probe is its first evidence). T4d's brief is unchanged (the T4a spec, plus the two T4c inputs:
-the build watch as a second long wait, and the grown fake surface its plumbing extraction must
-cover).
+T5's spike estate is torn down at T5's own end (spec ruling 7). **Amended by the T5a split
+above:** the spike, and the estate it would have created, move to release one, so nothing needs
+tearing down from T5a. The live CLI e2e (Task 8) is still T5's and still unrun. The
+adopt-existing-repo path is still deferred to a T5b brief, but its `--connect` adopt probe was
+retired rather than rescheduled, since the probe was never runnable. T4d's brief is unchanged
+(the T4a spec, plus the two T4c inputs: the build watch as a second long wait, and the grown
+fake surface its plumbing extraction must cover).
 
 **Hand steps for Geoff, EIGHT outstanding, one urgent.** Steps 6 through 8 are T5's and are
 listed after the five carried in. (6) **Mint a fine-grained PAT** scoped to the single repo
 `glw907/cairn-waymark-template` with contents read/write, run
 `~/.dotfiles/scripts/secrets/secret-set.sh TEMPLATE_REPO_TOKEN`, add the registry entry **with
 expiry and rotation date**, and set `TEMPLATE_REPO_TOKEN` as an Actions secret on
-`glw907/cairn-cms`. **This blocks Task 5.** The recorded store check the spec asks for is done,
+`glw907/cairn-cms`. **Not blocking anything now**: the split moved Task 5 to release one, so this
+is owed at that cut rather than today. The recorded store check the spec asks for is done,
 name-only: the registry does hold `CMS_BOT_PAT`, but its entry reads "GitHub repository write
 access for CMS automation" rotating at `github.com/settings/tokens`, a broad classic-shaped bot
 credential, so against the standing narrow-token rule it is not reused. (7) **The button spike's
-browser moment** (Task 2), which should NOT be scheduled until the publish-window decision above
-is settled. (8) **The live CLI e2e's browser moments** (Task 8), batched: the fifth GitHub App's
-creation and the `reauthorize` OAuth trip.
+browser moment** (Task 2), now owed at release one with the rest of T5a', not before: the tree it
+would deploy cannot build until the engine it names is on the registry. (8) **The live CLI e2e's
+browser moments** (Task 8), batched: the fifth GitHub App's creation and the `reauthorize` OAuth
+trip. **This is the only T5 hand step that is actionable today**, and it is unaffected by the
+split.
 
 The five carried in: (1) **URGENT: rotate the estate
 Cloudflare token** (`Cloudflare Admin 2026-07`): leaked into a transcript, still active. Mint a

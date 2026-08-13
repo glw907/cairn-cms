@@ -1,0 +1,92 @@
+name: Sync template repo
+
+# The public glw907/cairn-waymark-template repo is generated wholesale from this package's bake
+# output; a hand edit there survives at most one sync. publish.yml carries the release-triggered
+# path (see its `sync-template-repo` job for why that one lives there instead of here). This
+# workflow carries the two paths that are not tied to a release:
+#
+#   - `workflow_dispatch`, a real sync on demand. This pass's first sync and its live spike both
+#     use this path, since the release path stays unproven until a release actually ships the dev
+#     backend.
+#   - a weekly cron in --dry-run compare mode that fails on drift: the machine-detectable tripwire
+#     for a hand edit to the template repo, an expired TEMPLATE_REPO_TOKEN, or a sync that has gone
+#     silently inert. A red run reaches a maintainer through GitHub's own failure notification
+#     rather than waiting for someone to notice at the next release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      strip-dev-backend:
+        description: >-
+          Strip the @glw907/cairn-cms-dev devDependency, its dev script, and the dev shim from the
+          synced tree. Leave this on until the dev backend's first publish: a template referencing
+          an unpublished package fails npm install for anyone who uses it before then.
+        type: boolean
+        default: true
+  schedule:
+    # Monday 06:00 UTC. Weekly is frequent enough that drift never accumulates for long and rare
+    # enough not to be noise; the exact hour has no significance beyond sitting outside the
+    # release-triggered path's own traffic.
+    - cron: '0 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync the public template repo
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      # --engine-spec/--dev-spec are required because the bake this script runs internally refuses
+      # its own default: cairn-cms-dev's repo-declared version is 0.0.0 (unpublished) today, so the
+      # engine's own version stands in for both specs, the same substitution test.yml's bake step
+      # makes and for the same reason.
+      - name: Sync the public template repo
+        working-directory: packages/create-cairn-site
+        env:
+          TEMPLATE_REPO_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+        run: |
+          VERSION="$(node -p "require('../../package.json').version")"
+          STRIP_FLAG=""
+          if [ "${{ inputs.strip-dev-backend }}" = "true" ]; then
+            STRIP_FLAG="--strip-dev-backend"
+          fi
+          node scripts/sync-template-repo.mjs --remote https://github.com/glw907/cairn-waymark-template.git \
+            --engine-spec "^$VERSION" --dev-spec "^$VERSION" $STRIP_FLAG
+
+  drift-check:
+    name: Fail on template repo drift
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm ci
+      # --dry-run never pushes, so this step only reads and reports. The script's own contract
+      # exits 0 on both a clean compare and a drifted one, printing a distinct line for each ("up
+      # to date at <sha> (no changes)" versus "dry run: would sync N file(s)"); this step is what
+      # turns a drifted compare, or any other failure (a bad credential, a renamed remote), into a
+      # red run. `-o pipefail` (GitHub's default bash flags) means a script failure fails the step
+      # before the grep ever runs, and a clean compare that does not match the no-op line also
+      # fails it, so neither an error nor silent drift can pass as healthy.
+      - name: Compare the public template repo against a fresh bake
+        working-directory: packages/create-cairn-site
+        env:
+          TEMPLATE_REPO_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+        run: |
+          VERSION="$(node -p "require('../../package.json').version")"
+          node scripts/sync-template-repo.mjs --remote https://github.com/glw907/cairn-waymark-template.git \
+            --engine-spec "^$VERSION" --dev-spec "^$VERSION" --strip-dev-backend --dry-run \
+            | tee sync-dry-run.log
+          if ! grep -q "up to date at .* (no changes)" sync-dry-run.log; then
+            echo "::error::the public template repo has drifted from a fresh bake; run the sync-template.yml workflow_dispatch to sync it"
+            exit 1
+          fi

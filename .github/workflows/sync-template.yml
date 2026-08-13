@@ -32,6 +32,13 @@ on:
 permissions:
   contents: read
 
+# Shared with publish.yml's own sync-template-repo job, so a manual dispatch cut during a release
+# cannot race the release-triggered sync. Two concurrent syncs would not corrupt the template repo
+# (the loser's push is refused as a non-fast-forward), but the loser fails red, and a red run whose
+# cause is a benign race is exactly what teaches a maintainer to stop reading these notifications.
+concurrency:
+  group: sync-template-repo
+
 jobs:
   sync:
     name: Sync the public template repo
@@ -77,6 +84,15 @@ jobs:
       # red run. `-o pipefail` (GitHub's default bash flags) means a script failure fails the step
       # before the grep ever runs, and a clean compare that does not match the no-op line also
       # fails it, so neither an error nor silent drift can pass as healthy.
+      #
+      # WATCH: --strip-dev-backend below is hardcoded on, and it comes off at release one, in the
+      # same edit that drops the dispatch input's default and the overlay README's pre-release
+      # notice. The release path (publish.yml) never strips, so the moment a release publishes
+      # @glw907/cairn-cms-dev this compare starts measuring a stripped bake against an unstripped
+      # repo and goes red every Monday forever. A tripwire that cries wolf weekly is worse than no
+      # tripwire: the next real drift arrives in a notification everyone has learned to delete. The
+      # obligation is filed in CHANGELOG.md as a release-checklist item, and this comment is the
+      # copy that sits where the edit has to happen.
       - name: Compare the public template repo against a fresh bake
         working-directory: packages/create-cairn-site
         env:

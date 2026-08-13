@@ -77,6 +77,9 @@ jobs:
     needs: publish
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    # Shared with sync-template.yml, so a manual dispatch cut during a release cannot race this job.
+    concurrency:
+      group: sync-template-repo
     permissions:
       contents: read
     steps:

@@ -150,11 +150,11 @@ spike's captured bodies.
 
 ## State and resume
 
-The `cloudflare` sub-object gains a `builds` object: `connectionUuid`, `triggerUuid`, and
-the recorded outcome of the last watched build (uuid and `build_outcome`), written by the
-chapter orchestration only, one field per hop, through the existing `updateSite` deep merge
-(which already covers `cloudflare`; the nested `builds` object is written whole per hop, and
-a test proves a two-hop partial write preserves sibling `cloudflare` fields). The GitHub
+The `cloudflare` sub-object gains flat keys, never a nested object (`updateSite`'s merge is
+one level deep, the rule T4b locked): `buildsConnectionUuid`, `buildsTriggerUuid`, and the
+last watched build's `buildsLastBuildUuid` and `buildsLastBuildOutcome`, written by the
+chapter orchestration only, one hop per write, with a test proving a two-hop partial write
+preserves sibling `cloudflare` fields. The GitHub
 App's OAuth user token is never persisted, exactly as chapter 1. `--start-over` from any
 T4c state refuses, naming what exists (a connection, a trigger, a live site). `--connect`
 joins `args.mjs` as a real flag: it enters this chapter directly when the record sits at or

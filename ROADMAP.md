@@ -1249,6 +1249,20 @@ the named human gates only):**
 
 ## Later
 
+- **The Go successor tool: a dependency-free binary that is engine and console both (Geoff,
+  2026-08-13; pre-design banked).** A single downloaded Go/bubbletea binary succeeds the Node
+  `create-cairn-site` CLI post-1.0: it orchestrates the whole install locally as bare REST
+  (Builds-first, so no local Node is needed to put a site live), and it is a standing console
+  over every site the machine knows: parks held as ambient waits, in-tool resume, doctor, log
+  tailing. The pre-design, with the full decision record (why successor rather than protocol
+  frontend, the Node-TUI option declined on taste not capability, the parity contract via the
+  language-neutral fixture corpus, poplar's three-layer shape) is
+  `docs/superpowers/specs/2026-08-13-go-successor-tool-design.md`. **One part is effective
+  now:** the spec's "standing input for the current track" section tunes the Node tool's docs,
+  comments, and structure so the port later reads them as a spec. The trigger is post-1.0, after
+  T4d, release one, and the site walk; the real design sitting happens then, on the spec's
+  open-questions agenda.
+
 - **Undelete a recently-deleted entry (filed 2026-08-06, history/revert design sitting).** History
   and revert both deliberately leave a deleted entry out of scope: `historyLoad` answers a 404 for
   one exactly as `editLoad` does, so nothing in the admin can name a deleted id to restore it, and

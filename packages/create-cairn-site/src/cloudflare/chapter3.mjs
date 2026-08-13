@@ -321,11 +321,26 @@ function completionMessage({ defaultBranch, domain }) {
  * build is searched for again (the newest build on this worker) rather than ever kicking a second
  * one, since a `chapter3Reached` record already committed or kicked exactly once and the plan's
  * own invariant is one build, not two.
+ *
+ * THE DISCOVERY HOLD (T4d Task 4b). The commit-hash and newest-build searches above are a queue-lag
+ * race: the reconcile's push (or a resumed watch's earlier kick) may not have surfaced on
+ * `listBuildsForWorker` yet. Absent an injected `waitForClear` this reads the list exactly once and
+ * falls straight through to today's `build-not-started` park when nothing matches, byte-identical to
+ * before this hold existed. Given one, the SAME read (same predicate, same tag) is retried by the
+ * hold loop until it finds a match or the build budget runs out, so `build-not-started` becomes a
+ * held, watchable wait rather than an immediate park. `kickBuild` is never part of this: a fresh
+ * manual kick resolves its own `buildUuid` synchronously and so never reaches the discovery hold at
+ * all, and a match found by the hold is simply handed to the single existing `pollBuildToStop` pass
+ * below, never a second loop over one build.
  * @param {object} input
+ * @param {(probe: import('../hold-loop.mjs').HoldProbe) =>
+ *  Promise<import('../hold-loop.mjs').HoldObservation>} [input.waitForClear] the injected build
+ *  discovery hold. Absent it, discovery behaves exactly as it did before the console existed: one
+ *  `listBuildsForWorker` read, then today's park.
  * @returns {Promise<{ outcome: string, message?: string }>} a wait-kind park (returned, never
  *  thrown) or the `builds-live` success outcome; an act-kind failure throws a catalogued error
  */
-async function watchAndComplete({
+export async function watchAndComplete({
   siteId,
   record,
   dir,
@@ -341,15 +356,21 @@ async function watchAndComplete({
   lastBuildUuid,
   lastBuildOutcome,
   reconcileResult,
+  waitForClear,
 }) {
   const tag = await resolveWorkerTag(api, dir, 'nothing to watch');
 
   let buildUuid = lastBuildUuid;
+  // Which predicate discovery must apply once it starts reading the build list: an exact
+  // commit-hash match when the reconcile just committed, or the newest build when nothing local
+  // changed. `needsDiscovery` stays false when buildUuid is already known or a fresh manual kick
+  // (below) is about to mint one directly, so discovery is skipped entirely in both cases.
+  let discoveryCommitSha;
+  let needsDiscovery = false;
+
   if (reconcileResult?.changed) {
-    const builds = await api.listBuildsForWorker(tag);
-    buildUuid = builds.find(
-      (build) => build.build_trigger_metadata?.commit_hash === reconcileResult.commitSha,
-    )?.build_uuid;
+    needsDiscovery = true;
+    discoveryCommitSha = reconcileResult.commitSha;
   } else if (!buildUuid) {
     if (lastBuildOutcome === 'success') {
       // A terminal outcome like any other: the step is recorded and the pasted token deleted, the
@@ -368,13 +389,33 @@ async function watchAndComplete({
       // documented contract, which is why every OTHER build-discovery site in this module still
       // matches on `build_trigger_metadata.commit_hash` (amendment 10) rather than position; do
       // not widen this `builds[0]` shortcut to those sites.
-      const builds = await api.listBuildsForWorker(tag);
-      buildUuid = builds[0]?.build_uuid;
+      needsDiscovery = true;
     } else {
       const kicked = await api.kickBuild(triggerUuid, defaultBranch);
       buildUuid = kicked.build_uuid;
       await updateSite(siteId, { cloudflare: { buildsLastBuildUuid: buildUuid } });
     }
+  }
+
+  if (needsDiscovery) {
+    const discoverBuild = async () => {
+      const builds = await api.listBuildsForWorker(tag);
+      const matched = discoveryCommitSha
+        ? builds.find((build) => build.build_trigger_metadata?.commit_hash === discoveryCommitSha)
+        : builds[0];
+      return {
+        cleared: Boolean(matched),
+        detail: {
+          buildUuid: matched?.build_uuid ?? null,
+          status: matched?.status ?? null,
+          outcome: matched?.build_outcome ?? null,
+          commitSha: matched?.build_trigger_metadata?.commit_hash ?? discoveryCommitSha ?? null,
+        },
+        park: matched ? undefined : cloudflareError('build-not-started', { dir }).message,
+      };
+    };
+    const observation = waitForClear ? await waitForClear(discoverBuild) : await discoverBuild();
+    buildUuid = observation.detail.buildUuid ?? undefined;
   }
 
   // The three parks below are the only returns in this chapter that KEEP the saved token, and only

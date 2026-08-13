@@ -11,9 +11,11 @@ import {
 import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
 import { createRepo, pushScaffold } from '../github/repo.mjs';
 import { saveSite, loadSite } from '../state.mjs';
+import { createWaitForClear, BUILD_HOLD_CLASS } from '../hold-loop.mjs';
 import { makeApi } from './api.mjs';
 import {
   runChapter3,
+  watchAndComplete,
   reconciledConfigHash,
   CHAPTER3_TERMINAL_STEPS,
   CHAPTER3_RESUMABLE_STEPS,
@@ -734,6 +736,185 @@ test('runChapter3: a differing repo whose push build the fake surfaces is found 
     (r) => r.method === 'POST' && r.path.includes('/builds/triggers/') && r.path.endsWith('/builds'),
   );
   assert.equal(kicks.length, 0, 'the push build was found; a manual kick must never fire');
+});
+
+/**
+ * A minimal Cloudflare API stand-in for watchAndComplete's own discovery branch, tracking how
+ * many times each method is called. `listBuildsForWorker` answers empty for its first
+ * `emptyPolls` calls and `builds` from then on, so a test can script exactly how many polls a
+ * discovery hold needs before it clears. `getBuild` always answers a settled, successful build:
+ * these tests are about discovery, not the poll-to-stop loop pollBuildToStop already owns and
+ * already has its own tests.
+ * @param {{ tag: string, emptyPolls?: number, builds?: object[] }} opts
+ */
+function discoveryApi({ tag, emptyPolls = 0, builds = [] }) {
+  const calls = { listBuildsForWorker: 0, kickBuild: 0, getBuild: 0 };
+  return {
+    calls,
+    async findWorkerTag() {
+      return tag;
+    },
+    async listBuildsForWorker() {
+      calls.listBuildsForWorker += 1;
+      return calls.listBuildsForWorker > emptyPolls ? builds : [];
+    },
+    async kickBuild() {
+      calls.kickBuild += 1;
+      throw new Error('kickBuild must not be called by the discovery hold');
+    },
+    async getBuild(buildUuid) {
+      calls.getBuild += 1;
+      return { build_uuid: buildUuid, status: 'stopped', build_outcome: 'success' };
+    },
+  };
+}
+
+/** A clock that advances by a fixed step on every call, for deterministic budget-expiry tests
+ * that never depend on real elapsed time. */
+function stepClock(stepMs) {
+  let value = 0;
+  return () => {
+    value += stepMs;
+    return value;
+  };
+}
+
+const DISCOVERY_RECORD = { cloudflare: { domain: 'example.test' } };
+
+test('watchAndComplete: the discovery hold polls listBuildsForWorker only, and never calls kickBuild, until a commit-hash match appears', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const commitSha = 'deadbeef';
+  const api = discoveryApi({
+    tag: WORKER_TAG,
+    emptyPolls: 2,
+    builds: [{ build_uuid: 'discovered-1', build_trigger_metadata: { commit_hash: commitSha } }],
+  });
+
+  const result = await watchAndComplete({
+    siteId: 'discovery-commit-site',
+    record: DISCOVERY_RECORD,
+    dir,
+    log: () => {},
+    api,
+    sleepFn: async () => {},
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 0,
+    maxPollAttempts: 5,
+    triggerUuid: 'trigger-1',
+    defaultBranch: 'main',
+    chapter3Reached: false,
+    lastBuildUuid: undefined,
+    lastBuildOutcome: undefined,
+    reconcileResult: { changed: true, commitSha },
+    waitForClear: createWaitForClear({
+      holdClass: BUILD_HOLD_CLASS,
+      pollIntervalMs: 1,
+      budgetMs: 60_000,
+      sleepFn: async () => {},
+    }),
+  });
+
+  assert.equal(result.outcome, 'builds-live');
+  assert.equal(api.calls.listBuildsForWorker, 3, 'not-clear on polls 1 and 2, clear on poll 3');
+  assert.ok(api.calls.kickBuild <= 1, 'kickBuild stays outside the discovery loop');
+  assert.equal(api.calls.kickBuild, 0, 'a commit-hash discovery never needs to kick a build');
+  assert.equal(api.calls.getBuild, 1, 'a found build composes with exactly one pollBuildToStop pass, never a second loop');
+});
+
+test('watchAndComplete: on the resumed no-diff path, the discovery hold picks the newest build, the same predicate the branch uses today', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const api = discoveryApi({
+    tag: WORKER_TAG,
+    emptyPolls: 2,
+    builds: [{ build_uuid: 'newest-build' }, { build_uuid: 'older-build' }],
+  });
+
+  const result = await watchAndComplete({
+    siteId: 'discovery-resumed-site',
+    record: DISCOVERY_RECORD,
+    dir,
+    log: () => {},
+    api,
+    sleepFn: async () => {},
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 0,
+    maxPollAttempts: 5,
+    triggerUuid: 'trigger-1',
+    defaultBranch: 'main',
+    chapter3Reached: true,
+    lastBuildUuid: undefined,
+    lastBuildOutcome: undefined,
+    reconcileResult: undefined,
+    waitForClear: createWaitForClear({
+      holdClass: BUILD_HOLD_CLASS,
+      pollIntervalMs: 1,
+      budgetMs: 60_000,
+      sleepFn: async () => {},
+    }),
+  });
+
+  assert.equal(result.outcome, 'builds-live');
+  assert.equal(api.calls.listBuildsForWorker, 3, 'not-clear on polls 1 and 2, clear on poll 3');
+  assert.equal(api.calls.kickBuild, 0, 'a resumed watch never kicks a second build');
+
+  const saved = await loadSite('discovery-resumed-site');
+  assert.equal(saved.cloudflare.buildsLastBuildUuid, 'newest-build', 'the newest build is the one discovered and watched');
+});
+
+test('watchAndComplete: a discovery hold that never clears within its budget parks on build-not-started, the exact row the no-hold path would have parked on', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+
+  const withoutHold = await watchAndComplete({
+    siteId: 'discovery-expiry-baseline',
+    record: DISCOVERY_RECORD,
+    dir,
+    log: () => {},
+    api: discoveryApi({ tag: WORKER_TAG, emptyPolls: Infinity }),
+    sleepFn: async () => {},
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 0,
+    maxPollAttempts: 5,
+    triggerUuid: 'trigger-1',
+    defaultBranch: 'main',
+    chapter3Reached: false,
+    lastBuildUuid: undefined,
+    lastBuildOutcome: undefined,
+    reconcileResult: { changed: true, commitSha: 'never-found' },
+  });
+
+  const heldApi = discoveryApi({ tag: WORKER_TAG, emptyPolls: Infinity });
+  const withHold = await watchAndComplete({
+    siteId: 'discovery-expiry-held',
+    record: DISCOVERY_RECORD,
+    dir,
+    log: () => {},
+    api: heldApi,
+    sleepFn: async () => {},
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 0,
+    maxPollAttempts: 5,
+    triggerUuid: 'trigger-1',
+    defaultBranch: 'main',
+    chapter3Reached: false,
+    lastBuildUuid: undefined,
+    lastBuildOutcome: undefined,
+    reconcileResult: { changed: true, commitSha: 'never-found' },
+    waitForClear: createWaitForClear({
+      holdClass: BUILD_HOLD_CLASS,
+      pollIntervalMs: 1,
+      budgetMs: 50,
+      sleepFn: async () => {},
+      now: stepClock(100),
+    }),
+  });
+
+  assert.equal(withHold.outcome, 'build-not-started');
+  assert.equal(withHold.outcome, withoutHold.outcome);
+  assert.equal(withHold.message, withoutHold.message, 'the held expiry parks on the exact same row as today');
+  assert.ok(heldApi.calls.listBuildsForWorker >= 1, 'the hold must have actually probed before giving up');
 });
 
 test('runChapter3: --yes with a real config diff parks on builds-reconcile-parked, opening no browser', async (t) => {

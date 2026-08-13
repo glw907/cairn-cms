@@ -5,8 +5,18 @@ is copied verbatim from a real response or a real dashboard surface; anything in
 than observed says so in the sentence that states it. The platform claims carry their read date
 and rot on Cloudflare's schedule.
 
-Status: **Step 0 banked (the vendor documentation, read cold, before the live run). Steps 1
-through 5 not yet run; they need Geoff's browser.**
+Status: **Step 0 is banked and Step 1 was rehearsed locally and failed, which split the pass. The
+live steps now belong to release one, not to a browser session that can be scheduled today.**
+
+The finding in Step 1 is resolved, so nothing here is waiting on a decision. It was resolved by
+splitting T5 rather than by fixing the tree: the template repo goes public at release one, when the
+engine it names is on the registry and the tree can build. Two things landed with that decision.
+The sync now gates on a real install-and-build, so it refuses to push an unbuildable tree at all,
+and the weekly drift cron runs that check unconditionally, so a template that stops building
+between releases trips a tripwire rather than waiting for someone to notice. **A release-one
+session picks up at Step 1's live half** (publish the scratch repo through the sync script, then
+verify install and build from a clean clone) and runs Steps 2 through 5 from there. The Step 0
+vendor facts below carry their read date and should be re-read if that date has gone stale.
 
 ## Step 0: the vendor documentation, read 2026-08-13 UTC
 
@@ -173,10 +183,11 @@ spike's findings should inform, not settled in advance.**
 
 ## Step 1: publish the scratch repo through the sync script
 
-**Rehearsed locally 2026-08-13 against a bare fixture remote, and it FAILED at the build. The
-live half (a real public scratch repo) is not yet run, and should not run until the finding below
-is resolved: a button pointed at a tree that cannot build would make every downstream observation
-ambiguous, which is the exact reason the plan put the install-and-build check ahead of the button.**
+**Rehearsed locally 2026-08-13 against a bare fixture remote, and it FAILED at the build.** The
+live half (a real public scratch repo) belongs to release one, per the split. A button pointed at a
+tree that cannot build would make every downstream observation ambiguous, which is exactly why the
+plan put the install-and-build check ahead of the button, and why honoring that ordering cost a
+local rehearsal instead of a wasted browser session and a scratch estate.
 
 The sync itself works. `sync-template-repo.mjs --remote <bare fixture> --strip-dev-backend
 --engine-spec ^0.94.0` (no explicit `--dev-spec`, the real invocation) exited 0 and produced one

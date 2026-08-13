@@ -133,17 +133,20 @@ export function assertRemoteAllowed(remote, allowAnyRemote) {
 }
 
 /**
- * Spawn one git command, capturing its output without routing through a shell.
- * @param {string[]} args the git subcommand and its arguments
- * @param {string} cwd the working directory git runs in
+ * Spawn one subprocess, capturing its output without routing through a shell. The shared idiom
+ * behind every subprocess this module runs: git plumbing (via {@link runGit}), the default
+ * registry resolver, and the default build check.
+ * @param {string} cmd the command to run
+ * @param {string[]} args the command's arguments
+ * @param {string} cwd the working directory the command runs in
  * @param {Record<string, string>} [env] environment variables to merge on top of the inherited
- *  environment, for example the credential overrides {@link gitAuthEnv} builds
+ *  environment
  * @returns {Promise<{ code: number, stdout: string, stderr: string }>} the exit code and
- *  captured output; a spawn-level failure (for example git not on PATH) rejects instead
+ *  captured output; a spawn-level failure (for example the command not on PATH) rejects instead
  */
-function runGit(args, cwd, env) {
+function runCommand(cmd, args, cwd, env) {
   return new Promise((resolve, reject) => {
-    const child = spawn('git', args, {
+    const child = spawn(cmd, args, {
       cwd,
       shell: false,
       env: env ? { ...process.env, ...env } : process.env,
@@ -155,6 +158,19 @@ function runGit(args, cwd, env) {
     child.on('error', reject);
     child.on('close', (code) => resolve({ code, stdout, stderr }));
   });
+}
+
+/**
+ * Spawn one git command, capturing its output. See {@link runCommand}.
+ * @param {string[]} args the git subcommand and its arguments
+ * @param {string} cwd the working directory git runs in
+ * @param {Record<string, string>} [env] environment variables to merge on top of the inherited
+ *  environment, for example the credential overrides {@link gitAuthEnv} builds
+ * @returns {Promise<{ code: number, stdout: string, stderr: string }>} the exit code and
+ *  captured output; a spawn-level failure (for example git not on PATH) rejects instead
+ */
+function runGit(args, cwd, env) {
+  return runCommand('git', args, cwd, env);
 }
 
 /**
@@ -311,6 +327,73 @@ function defaultResolveSpec(name, spec) {
   });
 }
 
+const BUILD_CHECK_OUTPUT_TAIL_LINES = 40;
+
+/**
+ * The last lines of a subprocess's combined stdout and stderr, short enough to paste into a
+ * refusal message while still carrying the actual error (for example rolldown's
+ * `MISSING_EXPORT` lines, which land well into a full build's output).
+ * @param {string} stdout the subprocess's captured stdout
+ * @param {string} stderr the subprocess's captured stderr
+ * @returns {string} the tail, one line per entry, blank lines dropped
+ */
+function tailOutput(stdout, stderr) {
+  const lines = `${stdout}\n${stderr}`.split('\n').filter((line) => line.length);
+  return lines.slice(-BUILD_CHECK_OUTPUT_TAIL_LINES).join('\n');
+}
+
+/**
+ * The default build check: copy the composed tree to a fresh temp directory, install its
+ * dependencies for real, and build it. This proves the tree the sync is about to push actually
+ * builds against the engine spec it emits, which registry resolvability alone cannot: a spec can
+ * resolve to a real published version whose published code has not yet caught up to what the
+ * checked-out tree imports (the gap a bake taken from an unpublished window can carry). Never
+ * used by the suite, which always injects its own buildCheck so no test pays for a real install
+ * and build.
+ * @param {string} sourceDir the composed tree to check
+ * @returns {Promise<{ ok: boolean, output: string }>} whether the tree builds, and, on failure,
+ *  enough of the failing command's own output to name the cause
+ */
+async function defaultBuildCheck(sourceDir) {
+  const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const checkDir = await mkdtemp(path.join(tmpdir(), 'cairn-sync-buildcheck-'));
+  try {
+    await cp(sourceDir, checkDir, { recursive: true });
+    const install = await runCommand(npm, ['install', '--no-audit', '--no-fund'], checkDir);
+    if (install.code !== 0) {
+      return { ok: false, output: tailOutput(install.stdout, install.stderr) };
+    }
+    const build = await runCommand(npm, ['run', 'build'], checkDir);
+    if (build.code !== 0) {
+      return { ok: false, output: tailOutput(build.stdout, build.stderr) };
+    }
+    return { ok: true, output: '' };
+  } finally {
+    await rm(checkDir, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Prove the composed tree actually builds, and refuse the sync otherwise. Called only once the
+ * sync already knows it has something to push (see the call site in {@link syncTemplateRepo}): a
+ * no-op sync and a `--dry-run` both return before reaching this, since a real install and build
+ * is too expensive to pay on every routine cron run or drift check, and an idempotent run should
+ * stay cheap.
+ * @param {string} sourceDir the composed tree to check
+ * @param {(sourceDir: string) => Promise<{ ok: boolean, output: string }>} buildCheck the
+ *  injectable build check
+ * @returns {Promise<void>}
+ */
+async function assertBuilds(sourceDir, buildCheck) {
+  const result = await buildCheck(sourceDir);
+  if (!result.ok) {
+    throw new Error(
+      'sync-template-repo: the composed tree does not build against its own emitted spec; ' +
+        `publish the missing symbols or adjust the spec before syncing\n${result.output}`,
+    );
+  }
+}
+
 /**
  * Remove every entry from a git working directory except `.git`, so the next copy of the source
  * tree lands as the working directory's whole content rather than merging alongside whatever the
@@ -351,10 +434,12 @@ async function wipeWorkingTree(workDir) {
  *   token?: string,
  *   overlayDir?: string,
  *   resolveSpec?: (name: string, spec: string) => Promise<boolean>,
+ *   buildCheck?: (sourceDir: string) => Promise<{ ok: boolean, output: string }>,
  *   log?: (line: string) => void,
  * }} options `token` defaults to `process.env.TEMPLATE_REPO_TOKEN`; `overlayDir` defaults to
  *  this package's own `template-repo/` skeleton; `resolveSpec` defaults to a real `npm view`
- *  call, meant to be overridden by every test.
+ *  call, meant to be overridden by every test. `buildCheck` defaults to a real install-and-build
+ *  check ({@link defaultBuildCheck}), likewise meant to be overridden by every test.
  * @returns {Promise<SyncResult>}
  */
 export async function syncTemplateRepo({
@@ -367,6 +452,7 @@ export async function syncTemplateRepo({
   token = process.env.TEMPLATE_REPO_TOKEN,
   overlayDir = OVERLAY_DIR,
   resolveSpec = defaultResolveSpec,
+  buildCheck = defaultBuildCheck,
   log = () => {},
 }) {
   if (!remote) throw new Error('sync-template-repo: "remote" is required');
@@ -436,6 +522,12 @@ export async function syncTemplateRepo({
       for (const file of changedFiles) log(`  ${file.status} ${file.path}`);
       return { status: 'dry-run', sha: previousSha, changedFiles };
     }
+
+    // The build check runs only here, once a no-op sync and a --dry-run have both already
+    // returned above: it proves the tree the sync is about to commit actually builds, which
+    // costs a real install and build, so it is worth paying only when there is something real to
+    // push. An idempotent cron run or a drift check stays cheap.
+    await assertBuilds(sourceDir, buildCheck);
 
     await git(
       [

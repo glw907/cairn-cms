@@ -15,8 +15,15 @@ import {
 } from './sync-template-repo.mjs';
 
 // Published specs, so the suite never depends on what the monorepo's own versions happen to be
-// (the same discipline bake-template.test.mjs uses).
-const FIXTURE_OPTIONS = { engineSpec: '^0.94.0', devSpec: '^0.1.0', resolveSpec: async () => true };
+// (the same discipline bake-template.test.mjs uses). buildCheck stubs a real install-and-build
+// as always succeeding: every test in this suite that does not test the build check itself
+// overrides nothing, so it never pays for a real install, the same discipline resolveSpec holds.
+const FIXTURE_OPTIONS = {
+  engineSpec: '^0.94.0',
+  devSpec: '^0.1.0',
+  resolveSpec: async () => true,
+  buildCheck: async () => ({ ok: true, output: '' }),
+};
 
 /**
  * A temp directory removed when the test that asked for it finishes.
@@ -368,6 +375,7 @@ test('--strip-dev-backend succeeds with no explicit --dev-spec, the real use cas
     stripDevBackend: true,
     engineSpec: FIXTURE_OPTIONS.engineSpec,
     resolveSpec: FIXTURE_OPTIONS.resolveSpec,
+    buildCheck: FIXTURE_OPTIONS.buildCheck,
     log: () => {},
   });
   assert.equal(result.status, 'synced');
@@ -387,6 +395,85 @@ test('the resolvability gate exits with an error and commits nothing when a spec
     }),
   );
   assert.equal(await remoteCommitCount(remote), 0);
+});
+
+test('the build check gate refuses a tree that does not build, and commits nothing', async (t) => {
+  const remote = await createBareRemote(t);
+  const shaBefore = await remoteSha(remote);
+
+  await assert.rejects(
+    () =>
+      syncTemplateRepo({
+        remote,
+        ...FIXTURE_OPTIONS,
+        buildCheck: async () => ({
+          ok: false,
+          output: '[MISSING_EXPORT] "PreviewBanner" is not exported',
+        }),
+        log: () => {},
+      }),
+    /PreviewBanner/,
+  );
+  assert.equal(await remoteCommitCount(remote), 0);
+  assert.equal(
+    await remoteSha(remote),
+    shaBefore,
+    'the remote ref is unmoved by a refused build check',
+  );
+});
+
+test('the build check gate lets a tree that builds through, and the sync commits normally', async (t) => {
+  const remote = await createBareRemote(t);
+  let calls = 0;
+  const result = await syncTemplateRepo({
+    remote,
+    ...FIXTURE_OPTIONS,
+    buildCheck: async () => {
+      calls += 1;
+      return { ok: true, output: '' };
+    },
+    log: () => {},
+  });
+  assert.equal(result.status, 'synced');
+  assert.equal(calls, 1, 'the build check ran exactly once for the commit it gated');
+  assert.equal(await remoteCommitCount(remote), 1);
+});
+
+test('the build check never runs for a no-op sync, only when there is something to push', async (t) => {
+  const remote = await createBareRemote(t);
+  let calls = 0;
+  const buildCheck = async () => {
+    calls += 1;
+    return { ok: true, output: '' };
+  };
+
+  const first = await syncTemplateRepo({ remote, ...FIXTURE_OPTIONS, buildCheck, log: () => {} });
+  assert.equal(first.status, 'synced');
+  assert.equal(calls, 1, 'the first, real sync ran the build check once');
+
+  const second = await syncTemplateRepo({ remote, ...FIXTURE_OPTIONS, buildCheck, log: () => {} });
+  assert.equal(second.status, 'no-op');
+  assert.equal(calls, 1, 'a no-op sync never invokes the build check again');
+});
+
+test('the build check never runs for a --dry-run, which only reports what it would change', async (t) => {
+  const remote = await createBareRemote(t);
+  let calls = 0;
+  const buildCheck = async () => {
+    calls += 1;
+    return { ok: true, output: '' };
+  };
+
+  const dry = await syncTemplateRepo({
+    remote,
+    dryRun: true,
+    ...FIXTURE_OPTIONS,
+    buildCheck,
+    log: () => {},
+  });
+  assert.equal(dry.status, 'dry-run');
+  assert.ok(dry.changedFiles.length > 0);
+  assert.equal(calls, 0, 'a dry run never invokes the build check');
 });
 
 test('no token substring appears in any output, dry-run or real', async (t) => {

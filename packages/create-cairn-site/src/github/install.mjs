@@ -260,9 +260,20 @@ export async function installAndAuthorize({
       cancelPoll.value = true;
       callback = raced.result;
       poll = { found: false };
+      // pollSignal is abandoned here, not awaited: its outcome no longer matters once the
+      // callback has already won, and a cancellation only stops the NEXT poll iteration, not a
+      // findInstallation call already in flight (a JWT sign plus a round trip), which can still
+      // reject later (a non-200 status, or the fake server closing once a test's own cleanup
+      // runs). Promise.race already attaches its own handler to the derived promise fed into it
+      // above, so that late rejection is not actually unhandled today; this explicit no-op catch
+      // is belt-and-suspenders against a future refactor that races these two signals some other
+      // way and loses that implicit protection.
+      pollSignal.catch(() => {});
     } else if (raced.source === 'poll' && raced.result.found) {
       callback = { found: false };
       poll = raced.result;
+      // Mirrors the guard above for the other side of the race.
+      callbackSignal.catch(() => {});
     } else {
       // The first settlement was negative. That does not mean the other side has also concluded:
       // their independent deadlines (each Date.now() + maxWaitMs, computed a tick apart) can

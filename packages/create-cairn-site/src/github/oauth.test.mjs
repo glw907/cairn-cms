@@ -1,9 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readdir, mkdtemp, rm } from 'node:fs/promises';
+import { readdir, readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
+import { saveSite } from '../state.mjs';
 import { exchangeCode, authorizeUrl, reauthorize } from './oauth.mjs';
 
 test('exchangeCode: the happy path returns the access token', async (t) => {
@@ -230,4 +231,83 @@ test('reauthorize: writes nothing under CAIRN_STATE_DIR', async (t) => {
   });
 
   assert.deepEqual(await readdir(stateDir), []);
+});
+
+test('reauthorize: a denied consent (error=access_denied, no code) maps to builds-oauth-denied, not a raw Error', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
+  github.state.denyNextAuthorize = true;
+
+  await assert.rejects(
+    () =>
+      reauthorize({
+        clientId: 'fake-client-1',
+        clientSecret: 'fake-secret',
+        dir: '/tmp/alpine-club',
+        appName: 'Alpine Club CMS',
+        openBrowser: async (url) => {
+          setTimeout(() => {
+            fetch(url).catch(() => {});
+          }, 0);
+        },
+        log: () => {},
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'builds-oauth-denied');
+      assert.equal(err.catalogue.kind, 'act');
+      assert.match(err.message, /\/tmp\/alpine-club/);
+      return true;
+    },
+  );
+});
+
+test('reauthorize: a minted token never lands in a site state file, and the sweep is falsifiable', async (t) => {
+  const stateDir = await mkdtemp(path.join(tmpdir(), 'cairn-state-'));
+  const previousStateDir = process.env.CAIRN_STATE_DIR;
+  process.env.CAIRN_STATE_DIR = stateDir;
+  t.after(async () => {
+    if (previousStateDir === undefined) delete process.env.CAIRN_STATE_DIR;
+    else process.env.CAIRN_STATE_DIR = previousStateDir;
+    await rm(stateDir, { recursive: true, force: true });
+  });
+
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
+
+  const siteId = 'alpine-club-abc123';
+  const record = {
+    dir: '/tmp/alpine-club',
+    github: { clientId: 'fake-client-1', clientSecret: 'fake-secret', installationId: 42 },
+  };
+  await saveSite(siteId, record);
+  const filePath = path.join(stateDir, `${siteId}.json`);
+  const TOKEN = 'fake-user-token';
+
+  // Falsifiability proof first: a decoy write carrying the exact token string IS caught by the
+  // same sweep the real check below runs, so a clean result afterward is not just an unreachable
+  // assertion. Restore the clean record once the decoy is confirmed detectable.
+  await writeFile(filePath, `${await readFile(filePath, 'utf8')}// decoy: ${TOKEN}\n`);
+  assert.ok((await readFile(filePath, 'utf8')).includes(TOKEN), 'the sweep must be able to detect the token when present');
+  await saveSite(siteId, record);
+
+  const token = await reauthorize({
+    clientId: 'fake-client-1',
+    clientSecret: 'fake-secret',
+    dir: '/tmp/alpine-club',
+    appName: 'Alpine Club CMS',
+    openBrowser: async (url) => {
+      setTimeout(() => {
+        fetch(url).catch(() => {});
+      }, 0);
+    },
+    log: () => {},
+  });
+  assert.equal(token, TOKEN);
+
+  const bytes = await readFile(filePath, 'utf8');
+  assert.ok(!bytes.includes(TOKEN), `the token must never land in the site state file, got: ${bytes}`);
 });

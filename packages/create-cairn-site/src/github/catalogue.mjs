@@ -1,12 +1,15 @@
-// The GitHub chapter's error catalogue. A run that hits one of these eight recoverable
-// failures should never surface a raw fetch error or stack trace: it prints through
-// chapterError, which names what happened, what it means, and the one concrete command the
-// admin should run next. Two rows are deliberately absent. Declining the App's consent screen
-// is a normal return value, not an error, so there is no consent-denied row. The tool also
-// cannot observe GitHub silently re-rendering the manifest form with the App name already
-// filled in and an inline "name already taken" notice, so there is no app-name-collision row
-// either; that recovery is covered by browser-step-abandoned's own wait copy, which already
-// tells the admin to check for exactly that page.
+// The GitHub chapter's error catalogue. A run that hits one of these recoverable failures
+// should never surface a raw fetch error or stack trace: it prints through chapterError, which
+// names what happened, what it means, and the one concrete command the admin should run next.
+// Two rows are deliberately absent. Declining the App's consent screen (the manifest and
+// install flows) is a normal return value, not an error, so there is no consent-denied row.
+// The tool also cannot observe GitHub silently re-rendering the manifest form with the App name
+// already filled in and an inline "name already taken" notice, so there is no
+// app-name-collision row either; that recovery is covered by browser-step-abandoned's own wait
+// copy, which already tells the admin to check for exactly that page. builds-oauth-denied is
+// the one place a declined consent DOES get a row: chapter 3's reconcile OAuth trip has no
+// caller-visible "declined, keep going" state the way chapters 1 and 2 do, so a denial there
+// surfaces as this catalogue's own act row instead.
 
 /**
  * @typedef {'wait' | 'act' | 'ask-someone'} ErrorKind
@@ -139,14 +142,41 @@ const ROWS = {
         `Next: re-run npx create-cairn-site --dir ${params.dir}.`
       );
     }
+  },
+  'builds-oauth-denied': {
+    kind: 'act',
+    build(params) {
+      return (
+        'The sign-in step for the config reconcile commit was not completed (declined or ' +
+        'abandoned), so nothing was committed.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir} --connect and complete the ` +
+        'sign-in step this time.'
+      );
+    }
+  },
+  'builds-push-refused': {
+    kind: 'act',
+    build(params) {
+      return (
+        `GitHub refused to update ${params.branch} on ${params.owner}/${params.repo} (a ` +
+        'protected or diverged default branch), so the deploy-config commit was not pushed.\n' +
+        `Next: check the branch's protection rules at ${params.webBase}/${params.owner}/` +
+        `${params.repo}/settings/branches, then re-run npx create-cairn-site --dir ${params.dir} ` +
+        '--connect.'
+      );
+    }
   }
 };
+
+/** Every code the catalogue covers, for a collision guard that counts rather than reads. */
+export const CATALOGUE_CODES = Object.keys(ROWS);
 
 /**
  * Build a printable, catalogued error for one of the GitHub chapter's recoverable failures.
  * @param {string} code one of the catalogue's codes: browser-step-abandoned,
  *  manifest-window-expired, code-expired, repo-name-collision, sso-blocked,
- *  org-approval-pending, installation-not-covering-repo, or push-interrupted
+ *  org-approval-pending, installation-not-covering-repo, push-interrupted, builds-oauth-denied,
+ *  or builds-push-refused
  * @param {Record<string, string>} [params] the values to interpolate into the row's message;
  *  which keys are required depends on `code` (for example `step` for browser-step-abandoned,
  *  `org` for org-approval-pending and sso-blocked)

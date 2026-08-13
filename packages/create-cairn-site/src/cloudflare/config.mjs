@@ -150,6 +150,48 @@ export async function writePublicOrigin(dir, url) {
   );
 }
 
+const ACCOUNT_ID_PATTERN = /"account_id":\s*"[^"]*"/;
+
+/**
+ * Matches the top-level `"name": "..."` line `nameWranglerResources` already rewrites, capturing
+ * its leading indentation (group 1) so `writeAccountId`'s insert can match it exactly. Anchored
+ * on this line specifically because no `account_id` key exists anywhere in the baked template:
+ * every scaffold ships with one, so it is always present to insert after.
+ */
+const NAME_LINE_PATTERN = /^([ \t]*)"name":\s*"[^"]*",?\r?\n/m;
+
+/**
+ * Write the Worker's Cloudflare account id into wrangler.jsonc, inserting the key when absent
+ * (anchored on the `"name"` line, since no scaffold ships one today) and replacing its value
+ * when already present. Byte-stable on a re-run with the same id: the replace path only writes
+ * when the stored value actually differs, and the insert path only ever runs once, since the key
+ * it looks for is gone on every later call.
+ * @param {string} dir the scaffold root
+ * @param {string} accountId the Cloudflare account id
+ * @returns {Promise<void>}
+ */
+export async function writeAccountId(dir, accountId) {
+  const configPath = path.join(dir, WRANGLER_CONFIG_RELATIVE);
+  const content = await readFile(configPath, 'utf8');
+  const encoded = JSON.stringify(accountId);
+
+  if (ACCOUNT_ID_PATTERN.test(content)) {
+    if (content.includes(`"account_id": ${encoded}`)) return;
+    await writeFile(configPath, content.replace(ACCOUNT_ID_PATTERN, `"account_id": ${encoded}`));
+    return;
+  }
+
+  const match = NAME_LINE_PATTERN.exec(content);
+  if (!match) {
+    throw new Error(
+      `writeAccountId: expected to find a "name" entry in ${WRANGLER_CONFIG_RELATIVE}, but it is missing`,
+    );
+  }
+  const insertAt = match.index + match[0].length;
+  const insertion = `${match[1]}"account_id": ${encoded},\n`;
+  await writeFile(configPath, content.slice(0, insertAt) + insertion + content.slice(insertAt));
+}
+
 const CAIRN_CONFIG_RELATIVE = 'src/theme/cairn.config.ts';
 
 /**

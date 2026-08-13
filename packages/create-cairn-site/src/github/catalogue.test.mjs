@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chapterError } from './catalogue.mjs';
+import { chapterError, CATALOGUE_CODES } from './catalogue.mjs';
 
-/** The exact eight recoverable codes the catalogue must cover, and no others. */
+/** The exact ten recoverable codes the catalogue must cover, and no others. */
 const KINDS = {
   'browser-step-abandoned': 'act',
   'manifest-window-expired': 'act',
@@ -11,7 +11,9 @@ const KINDS = {
   'sso-blocked': 'ask-someone',
   'org-approval-pending': 'ask-someone',
   'installation-not-covering-repo': 'act',
-  'push-interrupted': 'act'
+  'push-interrupted': 'act',
+  'builds-oauth-denied': 'act',
+  'builds-push-refused': 'act'
 };
 
 /** Plausible params for each code, enough to exercise every interpolation. */
@@ -41,8 +43,21 @@ const SAMPLE_PARAMS = {
     repo: 'alpine-club-cms',
     webBase: 'https://github.com'
   },
-  'push-interrupted': { dir: './alpine' }
+  'push-interrupted': { dir: './alpine' },
+  'builds-oauth-denied': { dir: './alpine' },
+  'builds-push-refused': {
+    dir: './alpine',
+    owner: 'alpine-club',
+    repo: 'alpine-club-cms',
+    branch: 'main',
+    webBase: 'https://github.com'
+  }
 };
+
+test('the catalogue holds exactly the ten codes in KINDS, proven by a count assertion, not by reading', () => {
+  assert.equal(CATALOGUE_CODES.length, Object.keys(KINDS).length);
+  assert.deepEqual(new Set(CATALOGUE_CODES), new Set(Object.keys(KINDS)));
+});
 
 test('every catalogue code produces an Error whose message contains a Next: line', () => {
   for (const code of Object.keys(KINDS)) {
@@ -125,6 +140,35 @@ test('manifest-window-expired matches the exact specified text', () => {
       '(Alpine Club CMS) may exist while its key was never collected and cannot be recovered.\n' +
       'Next: delete the App at https://github.com/settings/apps if it exists, then re-run npx ' +
       'create-cairn-site --dir ./alpine (pick a new name with --app-name if the old one is taken).'
+  );
+});
+
+test('builds-oauth-denied matches the exact specified text', () => {
+  const err = chapterError('builds-oauth-denied', { dir: './alpine' });
+  assert.equal(
+    err.message,
+    'The sign-in step for the config reconcile commit was not completed (declined or ' +
+      'abandoned), so nothing was committed.\n' +
+      'Next: re-run npx create-cairn-site --dir ./alpine --connect and complete the sign-in ' +
+      'step this time.'
+  );
+});
+
+test('builds-push-refused matches the exact specified text', () => {
+  const err = chapterError('builds-push-refused', {
+    dir: './alpine',
+    owner: 'alpine-club',
+    repo: 'alpine-club-cms',
+    branch: 'main',
+    webBase: 'https://github.com'
+  });
+  assert.equal(
+    err.message,
+    'GitHub refused to update main on alpine-club/alpine-club-cms (a protected or diverged ' +
+      'default branch), so the deploy-config commit was not pushed.\n' +
+      "Next: check the branch's protection rules at " +
+      'https://github.com/alpine-club/alpine-club-cms/settings/branches, then re-run npx ' +
+      'create-cairn-site --dir ./alpine --connect.'
   );
 });
 

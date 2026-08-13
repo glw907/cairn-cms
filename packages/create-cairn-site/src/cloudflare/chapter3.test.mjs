@@ -12,7 +12,12 @@ import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
 import { createRepo, pushScaffold } from '../github/repo.mjs';
 import { saveSite, loadSite } from '../state.mjs';
 import { makeApi } from './api.mjs';
-import { runChapter3, CHAPTER3_TERMINAL_STEPS, CHAPTER3_RESUMABLE_STEPS } from './chapter3.mjs';
+import {
+  runChapter3,
+  reconciledConfigHash,
+  CHAPTER3_TERMINAL_STEPS,
+  CHAPTER3_RESUMABLE_STEPS,
+} from './chapter3.mjs';
 
 const WORKER_NAME = 'cairn-builds-site';
 const WORKER_TAG = 'tag-abc123';
@@ -101,6 +106,50 @@ async function seedSite(siteId, dir, repo, overrides = {}) {
     cloudflare: { accountId: 'acct-1', url: `https://${WORKER_NAME}.example.workers.dev`, workerName: WORKER_NAME },
     ...overrides,
   });
+}
+
+/**
+ * The `cloudflare` overrides that make a seeded record read as "already reconciled": the local
+ * config hash chapter 3 records at every reconcile. A test about a later hop (the build watch, the
+ * connect refusals) seeds it so the run skips the sign-in trip the hash gate would otherwise owe,
+ * exactly as a real second run does.
+ * @param {string} dir the scaffold whose current contents the hash is taken over
+ * @returns {Promise<object>} a `seedSite` overrides object
+ */
+async function alreadyReconciled(dir) {
+  return {
+    cloudflare: {
+      accountId: 'acct-1',
+      url: `https://${WORKER_NAME}.example.workers.dev`,
+      workerName: WORKER_NAME,
+      buildsReconciledHash: await reconciledConfigHash(dir),
+    },
+  };
+}
+
+/**
+ * Assert a secret is nowhere in a site's state file on disk, falsifiably: a decoy carrying the
+ * exact string is written first and confirmed detectable, so the clean result that follows is a
+ * real sweep rather than an assertion that could never fail (the pattern oauth.test.mjs
+ * established for the OAuth user token).
+ * @param {string} stateDir the state directory in force for this test
+ * @param {string} siteId the site whose record is swept
+ * @param {string} secret the exact string that must not be on disk
+ */
+async function assertSecretSweptFromDisk(stateDir, siteId, secret) {
+  const filePath = path.join(stateDir, `${siteId}.json`);
+  const clean = await readFile(filePath, 'utf8');
+  await writeFile(filePath, `${clean}// decoy: ${secret}\n`);
+  assert.ok(
+    (await readFile(filePath, 'utf8')).includes(secret),
+    'the sweep must be able to detect the secret when it is present',
+  );
+  await writeFile(filePath, clean);
+  assert.equal(
+    (await readFile(filePath, 'utf8')).includes(secret),
+    false,
+    `the token must be nowhere in the state file, got: ${clean}`,
+  );
 }
 
 function confirmAnswering(answer) {
@@ -202,15 +251,16 @@ function makeApiFnWithPushBuildSeed({ cloudflare, github, owner, repo, defaultBr
   };
 }
 
-test('runChapter3: an interactive consent connects, creates the trigger, reconciles an identical repo by kicking a manual build, and watches it to builds-live', async (t) => {
+test('runChapter3: an interactive consent connects, creates the trigger, reconciles an identical repo through one sign-in and no commit, kicks a manual build, and watches it to builds-live', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
   const github = await setupGithub(t);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-test-site-abc123';
   await seedSite(siteId, dir, repo);
-  void stateDir;
+  const commitsBefore = github.requests.filter((r) => r.method === 'POST' && r.pathname.endsWith('/git/commits')).length;
 
   const logs = [];
   const result = await runChapter3({
@@ -220,7 +270,7 @@ test('runChapter3: an interactive consent connects, creates the trigger, reconci
     args: { yes: false },
     log: (line) => logs.push(line),
     dryRun: false,
-    openBrowser: neverOpensBrowser,
+    openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
     promptSecretFn: async () => 'fresh-cf-token',
     ...fastSeams(cloudflare),
@@ -231,6 +281,7 @@ test('runChapter3: an interactive consent connects, creates the trigger, reconci
   const saved = await loadSite(siteId);
   assert.equal(saved.step, 'builds-live');
   assert.equal('apiToken' in saved.cloudflare, false, 'the token must be deleted at the terminal step');
+  await assertSecretSweptFromDisk(stateDir, siteId, 'fresh-cf-token');
   assert.ok(saved.cloudflare.buildsConnectionUuid);
   assert.ok(saved.cloudflare.buildsTriggerUuid);
   assert.ok(saved.cloudflare.buildsLastBuildUuid);
@@ -256,8 +307,14 @@ test('runChapter3: an interactive consent connects, creates the trigger, reconci
   assert.equal(cloudflare.state.buildTokens.length, 1);
   assert.equal(cloudflare.state.buildTokens[0].cloudflare_token_id, 'd07b2a25f05151591830c45053186979');
 
-  // An identical repo must never touch the OAuth trip at all.
-  assert.equal(github.requests.filter((r) => r.pathname === '/login/oauth/authorize').length, 0);
+  // A first run has no recorded config hash to compare against, and the repository is private, so
+  // the only way to know whether it matches is to sign in and let reconcileRepo read it. The trip
+  // happens exactly once and writes nothing, and the hash it records is what lets the next run skip
+  // it (the test below proves that half).
+  assert.equal(github.requests.filter((r) => r.pathname === '/login/oauth/authorize').length, 1);
+  const commitsAfter = github.requests.filter((r) => r.method === 'POST' && r.pathname.endsWith('/git/commits')).length;
+  assert.equal(commitsAfter - commitsBefore, 0, 'an identical repository must be committed to zero times');
+  assert.equal(saved.cloudflare.buildsReconciledHash, await reconciledConfigHash(dir));
 
   // A manual kick, since nothing differed and no successful build was recorded yet.
   const kickRequest = cloudflare.requests.find(
@@ -350,7 +407,10 @@ test('runChapter3: --yes consents silently, never prompting, reads CAIRN_CF_API_
   const github = await setupGithub(t);
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-yes-site-abc123';
-  await seedSite(siteId, dir, repo);
+  // Seeded as already reconciled: `--yes` never opens a browser, so it can only carry a run all the
+  // way through when the local config has not drifted since the last reconcile. A `--yes` run that
+  // meets drift parks instead, which the reconcile-park test below covers.
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
 
   const result = await runChapter3({
     siteId,
@@ -373,11 +433,64 @@ test('runChapter3: --yes consents silently, never prompting, reads CAIRN_CF_API_
   assert.equal(putRequest.headers.authorization, 'Bearer env-token-value');
 });
 
+test('runChapter3: a record still carrying chapter 2\'s own saved token gets the full admission and a fresh eight-key token, never chapter 2\'s', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-ch2-token-abc123';
+  // The state `--connect` actually meets at a chapter-2 resumable step: chapter 2 deletes its saved
+  // token only at its own TERMINAL steps, so a record parked at `domain-live` still carries the
+  // five-key token it pasted. Reading that token as "chapter 3 already ran" is what skipped this
+  // chapter's consent, its cost copy, and its eight-key prefill.
+  const alreadyReconciledCloudflare = (await alreadyReconciled(dir)).cloudflare;
+  await seedSite(siteId, dir, repo, {
+    step: 'domain-live',
+    cloudflare: { ...alreadyReconciledCloudflare, apiToken: 'chapter2-five-key-token' },
+  });
+
+  const logs = [];
+  const opened = [];
+  let confirmCalls = 0;
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    openBrowser: async (url) => {
+      opened.push(url);
+    },
+    confirm: async () => {
+      confirmCalls += 1;
+      return true;
+    },
+    promptSecretFn: async () => 'fresh-cf-token',
+    ...fastSeams(cloudflare),
+  });
+
+  assert.equal(result.outcome, 'builds-live');
+  assert.equal(confirmCalls, 1, 'the admission consent must still be asked');
+  assert.match(logs.join('\n'), /3,000 build minutes/, 'the admission cost copy must still be stated');
+
+  const prefill = opened.find((url) => url.includes('/profile/api-tokens'));
+  assert.ok(prefill, 'the create-token page must open, rather than chapter 2\'s token being adopted');
+  assert.match(decodeURIComponent(prefill), /workers_ci/, 'the prefill must request the Builds keys');
+
+  const putRequest = cloudflare.requests.find(
+    (r) => r.method === 'PUT' && r.path.includes('/builds/repos/connections'),
+  );
+  assert.equal(putRequest.headers.authorization, 'Bearer fresh-cf-token', 'the Builds calls must sign with the fresh token');
+});
+
 test('runChapter3: an authorization refusal parks on its own row, and a re-run after the fake flips to authorized proceeds through to builds-live', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
   const github = await setupGithub(t);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-park-site-abc123';
   await seedSite(siteId, dir, repo);
@@ -404,7 +517,11 @@ test('runChapter3: an authorization refusal parks on its own row, and a re-run a
   const afterPark = await loadSite(siteId);
   assert.equal(afterPark.step, 'email-live');
   assert.equal(afterPark.cloudflare.apiToken, 'fresh-cf-token');
+  assert.ok(afterPark.cloudflare.buildsTokenSavedAt, 'the park records that this chapter saved the token');
 
+  // The re-run neither re-asks admission nor re-asks for the token: the marker above is what says
+  // both already happened, and it is chapter-3-owned, so no chapter-2 token could ever stand in for
+  // it (`mustNotBeCalled` on both prompts is the assertion).
   const second = await runChapter3({
     siteId,
     record: afterPark,
@@ -412,7 +529,7 @@ test('runChapter3: an authorization refusal parks on its own row, and a re-run a
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    openBrowser: mustNotBeCalled('openBrowser'),
+    openBrowser: smartOpenBrowser(),
     confirm: mustNotBeCalled('confirm'),
     promptSecretFn: mustNotBeCalled('promptSecretFn'),
     ...fastSeams(cloudflare),
@@ -451,11 +568,12 @@ test('runChapter3: the App-not-authorized refusal maps to its own row without qu
   assert.doesNotMatch(result.message ?? '', /disconnected from your Git account/);
 });
 
-test('runChapter3: connect and trigger are idempotent across two runs, one kick only, and a two-hop partial write preserves sibling cloudflare fields', async (t) => {
+test('runChapter3: connect and trigger are idempotent across two runs, the second skips the sign-in trip entirely, one kick only, and a two-hop partial write preserves sibling cloudflare fields', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
   const github = await setupGithub(t);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-idempotent-site-abc123';
   await seedSite(siteId, dir, repo);
@@ -467,7 +585,7 @@ test('runChapter3: connect and trigger are idempotent across two runs, one kick 
     args: { yes: false },
     log: () => {},
     dryRun: false,
-    openBrowser: neverOpensBrowser,
+    openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
     promptSecretFn: async () => 'fresh-cf-token',
     ...fastSeams(cloudflare),
@@ -493,13 +611,22 @@ test('runChapter3: connect and trigger are idempotent across two runs, one kick 
     dir,
     args: { yes: false },
     log: () => {},
-    dryRun: false,
-    openBrowser: neverOpensBrowser,
+    // Nothing local drifted between the two runs, so the recorded config hash still matches and
+    // this run owes no sign-in trip. The opener still simulates one (the token hop opens the
+    // prefill page through this same seam), so a regression that re-ran the trip would show up in
+    // the authorize count below rather than hanging the suite.
+    openBrowser: smartOpenBrowser(),
     confirm: confirmAnswering(true),
     promptSecretFn: async () => 'fresh-cf-token-2',
+    dryRun: false,
     ...fastSeams(cloudflare),
   });
   assert.equal(second.outcome, 'builds-live');
+  assert.equal(
+    github.requests.filter((r) => r.pathname === '/login/oauth/authorize').length,
+    1,
+    'only the first run pays a sign-in trip; the recorded hash carries the second',
+  );
 
   const afterSecond = await loadSite(siteId);
   assert.equal(afterSecond.cloudflare.buildsConnectionUuid, connectionUuid1, 'the uuid is stable across two PUTs');
@@ -632,7 +759,9 @@ test('runChapter3: the build watch polls through queued, initializing, and runni
   const github = await setupGithub(t);
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-poll-sequence-site-abc123';
-  await seedSite(siteId, dir, repo);
+  // Seeded as already reconciled: this test is about the poll sequence, not the sign-in trip a
+  // first, unreconciled run owes.
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
 
   const sequence = new Array(9).fill('queued').concat(['initializing', 'running', 'stopped']);
   let call = 0;
@@ -675,7 +804,7 @@ test('runChapter3: fail surfaces builds-deploy-failed carrying the log tail', as
   const github = await setupGithub(t);
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-fail-site-abc123';
-  await seedSite(siteId, dir, repo);
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
 
   const failingSleep = async () => {
     const build = [...cloudflare.state.builds.values()][0];
@@ -724,7 +853,7 @@ test('runChapter3: skipped surfaces builds-not-runnable naming the outcome', asy
   const github = await setupGithub(t);
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-skipped-site-abc123';
-  await seedSite(siteId, dir, repo);
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
 
   const skippingSleep = async () => {
     const build = [...cloudflare.state.builds.values()][0];
@@ -764,7 +893,7 @@ test('runChapter3: a budget-exceeded poll parks as build-running, and a re-run r
   const github = await setupGithub(t);
   const repo = await seedGithubRepo(github, dir);
   const siteId = 'builds-budget-site-abc123';
-  await seedSite(siteId, dir, repo);
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
 
   const neverAdvances = async () => {};
 
@@ -835,6 +964,8 @@ test('runChapter3: a builds-live re-entry with nothing changed reports "nothing 
       buildsTriggerUuid: 'trig-1',
       buildsLastBuildUuid: 'build-1',
       buildsLastBuildOutcome: 'success',
+      // What a site that finished the chapter carries: the config hash its own reconcile recorded.
+      buildsReconciledHash: await reconciledConfigHash(dir),
     },
   });
 
@@ -855,8 +986,8 @@ test('runChapter3: a builds-live re-entry with nothing changed reports "nothing 
   assert.equal(github.requests.filter((r) => r.pathname === '/login/oauth/authorize').length, 0);
 });
 
-test('runChapter3: a builds-live re-entry with a real diff commits the change and re-runs the token prefill, saying so', async (t) => {
-  await freshStateDir(t);
+test('runChapter3: a builds-live re-entry with a real diff commits the change, re-runs the token prefill, and leaves no token behind when it parks', async (t) => {
+  const stateDir = await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
   const cloudflare = await setupCloudflare(t);
   const github = await setupGithub(t);
@@ -906,7 +1037,15 @@ test('runChapter3: a builds-live re-entry with a real diff commits the change an
   assert.match(wranglerContent, /account_id/);
 
   const saved = await loadSite(siteId);
-  assert.equal(saved.cloudflare.apiToken, 'fresh-cf-token-2');
+  // The record's step never leaves `builds-live` on this branch, and a terminal step must not carry
+  // a live credential: a later re-entry re-runs the prefill for itself rather than reusing this one.
+  assert.equal('apiToken' in saved.cloudflare, false, 'a builds-live re-entry must leave no token behind');
+  await assertSecretSweptFromDisk(stateDir, siteId, 'fresh-cf-token-2');
+  assert.equal(
+    saved.cloudflare.buildsReconciledHash,
+    await reconciledConfigHash(dir),
+    'the commit it just made is what the next run compares against',
+  );
   void cloudflare;
 });
 

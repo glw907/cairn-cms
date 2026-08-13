@@ -17,8 +17,10 @@ import { generateKeyPairSync, randomBytes, createVerify } from 'node:crypto';
  * @property {string} apiBase the fake api.github.com base URL, `http://127.0.0.1:<port>`
  * @property {string} webBase the fake github.com base URL, `http://127.0.0.1:<port>`
  * @property {object} state mutable fixture state: apps, repos, installations, gitObjects, orgs,
- *  ownerIds (a login-to-numeric-id map, assigned on first use by a repo create or a
- *  GET /repos/:owner/:repo read); `state.suppressAutoLink = true` makes the next created repo
+ *  ownerIds (a login-to-numeric-id map, assigned on first use by a repo create, a
+ *  GET /repos/:owner/:repo read, or a GET /users/:login read); a repo created with
+ *  `private: true` is readable only by a request carrying an authorization header, exactly as
+ *  GitHub behaves; `state.suppressAutoLink = true` makes the next created repo
  *  skip the normal auto-add to its covering installation, for testing the otherwise-unreachable
  *  not-covered case; `state.nextDefaultBranch = '<name>'` is a one-shot: the next repo the fake
  *  creates reports that name as its `default_branch` (instead of the usual `main`), for testing
@@ -87,6 +89,7 @@ export async function startFakeGithub() {
       { method: 'GET', regex: compile('/repos/:owner/:repo/git/blobs/:sha'), route: 'blobs-read', handler: createGetBlobHandler(ctx) },
       { method: 'GET', regex: compile('/repos/:owner/:repo'), route: 'repo', handler: createGetRepoHandler(ctx) },
       { method: 'GET', regex: compile('/app/installations'), route: 'installations', handler: createListInstallationsHandler(ctx) },
+      { method: 'GET', regex: compile('/users/:login'), route: 'users', handler: createGetPublicUserHandler(ctx) },
       { method: 'GET', regex: compile('/user'), route: 'user', handler: createGetUserHandler() },
       { method: 'GET', regex: compile('/orgs/:org'), route: 'org', handler: createGetOrgHandler(ctx) },
       { method: 'GET', regex: compile('/orgs/:org/memberships/:user'), route: 'membership', handler: createGetMembershipHandler(ctx) }
@@ -270,6 +273,26 @@ function ownerIdFor(ctx, login) {
   return ctx.state.ownerIds.get(login);
 }
 
+/**
+ * Whether this read of a repository must be refused. GitHub answers a read of a PRIVATE
+ * repository with 404, never 403, when the request carries no credential: an anonymous caller is
+ * not told the repository exists at all. Every repository this tool creates is private
+ * (`repo.mjs`'s `createRepo` always sends `private: true`), so a client that reads one without a
+ * token gets nothing back in production, and a fake that served those reads anonymously would
+ * hide exactly that defect. Any bearer is accepted here: this fake cannot tell one user token
+ * from another, and the failure worth catching is a missing header, not a wrong one.
+ * @param {{ state: object }} ctx the fake's shared context
+ * @param {{ owner: string, repo: string }} params the route's owner and repo captures
+ * @param {Record<string, string | undefined> | undefined} headers the request headers
+ * @returns {boolean} true when the read must answer 404
+ */
+function refusesAnonymousRead(ctx, params, headers) {
+  const repo = ctx.state.repos.find(
+    (candidate) => candidate.owner.login === params.owner && candidate.name === params.repo
+  );
+  return Boolean(repo?.private) && !headers?.authorization;
+}
+
 /** Seed a repo's git object store with a root commit on `heads/<branch>`. */
 function seedRepo(entry, branch = 'main') {
   const sha = randomSha();
@@ -422,6 +445,10 @@ function createRepoHandler(getOwner, ctx) {
       name,
       full_name: `${owner}/${name}`,
       owner: { login: owner, id: ownerIdFor(ctx, owner) },
+      // Carried so every read handler can enforce the anonymous-read refusal a private repo gets
+      // from the real API. `createRepo` always sends it true; a test seeding a repo through this
+      // route without it gets a public repo, readable the way this fake always served them.
+      private: body?.private === true,
       default_branch: defaultBranch
     };
     ctx.state.repos.push(repo);
@@ -460,10 +487,27 @@ function createLinkHandler() {
  * that follow it.
  */
 function createGetRepoHandler(ctx) {
-  return async (_req, res, params) => {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
     const repo = ctx.state.repos.find((candidate) => candidate.owner.login === params.owner && candidate.name === params.repo);
     if (!repo) return sendJson(res, 404, { message: 'Not Found' });
     sendJson(res, 200, repo);
+  };
+}
+
+/**
+ * GET /users/:login, the public endpoint the Builds connect hop reads an owner's numeric id from.
+ * Public in the real API for users and organizations alike (verified against api.github.com,
+ * 2026-08-12), so no authorization is checked here either: this is the one GitHub read chapter 3
+ * can make holding no credential at all.
+ */
+function createGetPublicUserHandler(ctx) {
+  return async (_req, res, params) => {
+    sendJson(res, 200, {
+      login: params.login,
+      id: ownerIdFor(ctx, params.login),
+      type: ctx.state.orgs.some((candidate) => candidate.login === params.login) ? 'Organization' : 'User'
+    });
   };
 }
 
@@ -536,7 +580,8 @@ function createTreeHandler(ctx) {
  * since nothing in this package reads a tree any other way.
  */
 function createGetTreeHandler(ctx) {
-  return async (_req, res, params) => {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     const tree = entry.trees.get(params.sha);
@@ -552,7 +597,8 @@ function createGetTreeHandler(ctx) {
 
 /** Read a stored blob back, in the real API's `{ sha, content, encoding, size, url }` shape. */
 function createGetBlobHandler(ctx) {
-  return async (_req, res, params) => {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     const content = entry.blobs.get(params.sha);
@@ -609,7 +655,8 @@ function createCreateCommitHandler(ctx) {
 }
 
 function createGetCommitHandler(ctx) {
-  return async (_req, res, params) => {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     const commit = entry.commits.get(params.sha);
@@ -635,7 +682,8 @@ function createUpdateRefHandler(ctx) {
 }
 
 function createGetRefHandler(ctx) {
-  return async (_req, res, params) => {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, the ref read included.

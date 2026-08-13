@@ -88,10 +88,12 @@ async function runCli(args, { stateDir, wranglerBin, apiBase, githubApiBase, fak
 /**
  * Seed a site record shaped like one chapter 1 (and, where the step implies it, chapter 2)
  * already finished: the GitHub and Cloudflare fields every closing print and every chapter-3 hop
- * reads. `cloudflare.apiToken` is deliberately never set here (chapter 2 deletes its own copy at
- * every one of its terminal/park steps this file seeds past, and chapter 3's own park steps carry
- * none either until its own token hop saves one), so every case below reaches chapter 3's token
- * hop with nothing saved, the deterministic stop this file's header describes.
+ * reads. `cloudflare.apiToken` is left unset by default so every case below reaches chapter 3's
+ * token hop with nothing saved, the deterministic stop this file's header describes. That is a
+ * fixture choice, not a fact about the world: chapter 2 clears its own saved token only at its
+ * TERMINAL steps, so a real record at `domain-live` or `email-onboarded` still carries one. The
+ * case below that seeds `apiToken` covers exactly that, and chapter 3 keys its own "already
+ * admitted" answer on `cloudflare.buildsTokenSavedAt`, which only chapter 3 ever writes.
  * @param {string} siteId
  * @param {string} dir
  * @param {string} step
@@ -383,6 +385,50 @@ for (const [label, step, overrides] of [
   });
 }
 
+test('bin.mjs --connect at domain-live still admits chapter 3 when chapter 2\'s own token is saved', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-connect-scaffold-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('chapter3-connect-ch2-token');
+  t.after(() => fake.close());
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+  // Both fakes are pointed at, so a regression that adopted chapter 2's token would validate it and
+  // walk on into the Builds calls here rather than reaching for the real Cloudflare or GitHub.
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+
+  const siteId = makeSiteId('cnct-ch2tok');
+  await seedSite(siteId, dir, 'domain-live', {
+    domain: 'connect-carried-token-test.example',
+    apiToken: 'chapter2-five-key-token',
+  });
+
+  const result = await runCli(['--dir', dir, '--connect', '--yes'], {
+    stateDir,
+    wranglerBin: fake.binPath,
+    apiBase: cloudflare.apiBase,
+    githubApiBase: github.apiBase,
+    fakeOpenerDir,
+  });
+
+  assert.equal(result.code, 1, `expected exit 1, got ${result.code}. stdout: ${result.stdout}`);
+  assert.ok(
+    result.stdout.includes(CHAPTER3_ADMISSION_TITLE),
+    `a saved chapter-2 token must never skip chapter 3's admission, got: ${result.stdout}`,
+  );
+  assertReachedChapter3TokenHop(result.stdout);
+  assert.ok(
+    result.stderr.includes('CAIRN_CF_API_TOKEN'),
+    `chapter 2's token must not be adopted; the token hop must ask for one, got: ${result.stderr}`,
+  );
+
+  const state = await loadSite(siteId);
+  assert.equal(state.step, 'domain-live', 'a thrown row must never advance the saved step');
+});
+
 test('bin.mjs --connect re-enters chapter 3 from a recorded builds-connect-declined', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-connect-scaffold-'));
@@ -463,13 +509,12 @@ test('bin.mjs --connect at builds-live runs the re-reconcile hop rather than a n
   t.after(() => github.close());
 
   const siteId = makeSiteId('recon-live');
-  // No repository is seeded on the fake, so the reconcile's own unauthenticated peek reads a 404
-  // for the default branch's ref (peekConfigDiffers's own "a missing repo file counts as
-  // differing" rule), which this run then parks on under --yes rather than committing, per the
-  // plan's "a real diff parks on builds-reconcile-parked with zero browser opens" rule. That park
-  // is the proof this is the real reconcile hop running, not a no-op: a no-op would never reach
-  // it, and this run's own token hop is never touched (the token hop for builds-live only runs
-  // after a genuine diff, which this test never lets happen).
+  // The record carries no `buildsReconciledHash`, and this scaffold directory holds neither
+  // tool-owned file, so the reconcile's hash gate cannot say "nothing drifted" and the hop owes a
+  // sign-in trip, which `--yes` parks on rather than opening a browser. That park is the proof this
+  // is the real reconcile hop running, not a no-op: a no-op would never reach it, and this run's
+  // own token hop is never touched (the token hop for builds-live only runs after a real commit,
+  // which this test never lets happen).
   await seedSite(siteId, dir, 'builds-live', {
     buildsConnectionUuid: 'connection-uuid-1',
     buildsTriggerUuid: 'trigger-uuid-1',

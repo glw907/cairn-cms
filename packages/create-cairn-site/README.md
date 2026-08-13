@@ -292,10 +292,17 @@ Two things still need a browser, and each is either one-time or skips cleanly on
    already done this for an earlier site. If it is not authorized yet, or if it is authorized but
    this repository is not among the ones it can see, the chapter prints the exact settings page to
    visit and the command to re-run once you have.
-2. **One sign-in click**, only when your repository's committed config actually differs from what
-   your machine last deployed. The commit this writes is attributed to you, so it needs a fresh
-   sign-in the same way any other commit-writing step in this tool does. A repository that is
-   already in sync skips this step entirely.
+2. **One sign-in click**, to commit your `wrangler.jsonc` and `src/theme/cairn.config.ts` back to
+   the repository. The commit this writes is attributed to you, so it needs a fresh sign-in the
+   same way any other commit-writing step in this tool does. Nothing is committed unless the
+   repository's copies actually differ; the sign-in is what lets the command read a private
+   repository to find out.
+
+   A later run skips this click when neither file has changed on your machine since the last time
+   the command reconciled them. It decides that from a hash of the two files it recorded then, not
+   by reading the repository, which needs the very credential the click grants. The narrowing that
+   accepts, plainly: if you edit either file **in the repository** and change nothing locally, the
+   command does not notice. Change either file on your machine, and the next run reconciles both.
 
 ### The coupling to your pasted token
 
@@ -333,8 +340,10 @@ to the full log.
 Each hop is saved as it completes, the same as every earlier chapter. A park resumes with a plain
 re-run; the connection and trigger are adopted rather than re-created if they already exist. Once
 your site is live on Workers Builds, running `--connect` again re-checks your deploy config and
-commits anything that has drifted since, such as a `PUBLIC_ORIGIN` your own machine last deployed
-but never pushed.
+commits anything that has drifted on your machine since, such as a `PUBLIC_ORIGIN` your own machine
+last deployed but never pushed. With `--yes`, a run that finds local drift stops and asks you to
+re-run interactively: committing the change needs the sign-in click above, and `--yes` never opens
+a browser.
 
 ## Running the site
 

@@ -5,31 +5,42 @@
 // idiom (a title always prints, a detail prints only under --dry-run, execute never runs under
 // --dry-run), one state writer, pure step logic over an in-memory record.
 //
-// TOKEN LIFECYCLE: chapter 2 already deletes its own saved `cloudflare.apiToken` at its own
-// terminal steps (email-live, paid-plan-declined), so this chapter always starts with none saved
-// and always asks for a fresh one, per the design's "one fresh token paste" framing. Once this
-// chapter's own token hop saves one, its presence is what lets a re-run (after a park) skip
-// re-asking admission: `record.cloudflare.apiToken` can only be set by THIS chapter, since chapter
-// 2 has already cleared its own copy by the time chapter 3 ever runs, so seeing one saved is an
-// unambiguous "admission and the token hop already ran" signal that survives a connect or trigger
-// park (neither of which advances `step`, so `step` alone cannot carry this signal the way it
-// carries "connect and trigger both finished", CHAPTER3_RESUMABLE_STEPS below). The token is
-// deleted only at a terminal step (builds-live, builds-connect-declined); a park keeps it, since a
-// later re-run needs the same credential.
+// THIS CHAPTER HOLDS NO GITHUB CREDENTIAL, and needs none until the reconcile commit. Chapter 1
+// destroyed the App's private key once it had moved it into the Worker's secrets, and nothing
+// persists a GitHub token. Both numeric ids the connections PUT needs are reachable anyway: the
+// repository's own id was persisted by chapter 1 (`createRepo`'s result, saved at
+// `github.repo.id`), and the owner's id comes from `GET /users/{login}`, which GitHub serves
+// anonymously for users and organizations alike. Every repository this tool creates is private, so
+// an anonymous `GET /repos/{owner}/{repo}` would answer 404 and connect nothing: do not reach for
+// one here.
 //
-// THE RECONCILE DIFF READ IS UNAUTHENTICATED, DELIBERATELY (a flagged gap, not a fixed one). The
-// diff peek below (peekConfigDiffers) calls GitHub with no token, matching the same pattern the
-// connect hop's own `GET /repos/{owner}/{repo}` already takes: against the fake, which enforces no
-// authorization on a read, this genuinely detects an identical repo and the OAuth trip is skipped
-// entirely, satisfying the plan's own "an identical repo skips the OAuth trip entirely" rule.
-// Against the real API, a private repo (every repo this tool creates) answers an unauthenticated
-// read with 404, which this treats as "missing", the same as reconcileRepo's own missing-file
-// rule, so a live run pays one confirmatory OAuth trip on its very first genuinely-identical
-// reconcile; reconcileRepo's own authenticated re-check then resolves it with zero writes. This
-// mirrors the connect hop's own unproven-but-accepted shape (see the plan's own note on that gap)
-// and is called out here rather than silently patched, since fixing it would mean touching
-// reconcile.mjs, outside this task's file list.
+// TOKEN LIFECYCLE. Chapter 3 asks for its own token, prefilled with eight permission keys (the
+// five chapter 2 asks for plus the three Workers Builds needs). It never adopts a token it did not
+// save itself: chapter 2 writes the same `cloudflare.apiToken` key and only clears it at its own
+// terminal steps, so a record parked at `domain-live` or `email-onboarded` still carries a
+// five-key chapter-2 token when `--connect` runs, and adopting that one skips the eight-key
+// prefill and 403s at the first Builds call. `cloudflare.buildsTokenSavedAt` is the chapter-3-owned
+// marker recording that this chapter's own token hop saved the token now on the record. Its
+// presence is also what lets a re-run skip admission after a connect or trigger park (neither
+// advances `step`, so `step` alone cannot carry that signal the way it carries "connect and
+// trigger both finished", CHAPTER3_RESUMABLE_STEPS below), and it can only ever be written after
+// admission has been given. The token is deleted at every terminal outcome (builds-live,
+// builds-connect-declined) and on the `--yes` reconcile park; the parks that keep it are the ones
+// whose own re-run resumes with it, listed where they return.
+//
+// THE RECONCILE'S SKIP GATE IS LOCAL, NOT REMOTE. Deciding whether the reconcile hop owes an OAuth
+// trip cannot be done by reading the repository: it is private, and the only credential that could
+// read it is the one the trip mints. So the chapter records `cloudflare.buildsReconciledHash`, a
+// hash of the two tool-owned files as they sat on disk at the last reconcile, and compares the
+// current disk contents against it. Equal means nothing local has drifted since, and the trip is
+// skipped. Absent or different means the trip runs and `reconcileRepo`'s own authenticated diff
+// decides, which stays authoritative and still writes nothing when the repository already matches.
+// The narrowing this accepts, stated plainly: an admin who edits `wrangler.jsonc` or
+// `src/theme/cairn.config.ts` directly in the repository is not noticed until something local
+// changes too. Local drift is what ruling 4's stale-origin remedy is about, and that is what the
+// hash catches exactly.
 import { confirm as clackConfirm, select as clackSelect, isCancel } from '@clack/prompts';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { exitOnCancel, promptSecret } from '../prompts.mjs';
@@ -85,7 +96,7 @@ const WORKER_NAME_PATTERN = /"name":\s*"([^"]+)"/;
  * The two files the reconcile hop owns, duplicated from reconcile.mjs's own private
  * `RECONCILED_FILES` rather than imported: that module exports no such list, and this task's own
  * file list does not include it. A third tool-owned file added there without a matching update
- * here would silently go unnoticed by the diff peek below; there is no structural guard against
+ * here would silently go unnoticed by the hash gate below; there is no structural guard against
  * that drift today.
  */
 const RECONCILED_FILE_PATHS = ['wrangler.jsonc', 'src/theme/cairn.config.ts'];
@@ -152,59 +163,65 @@ async function runStep(frame, title, detail, execute) {
 }
 
 /**
- * A best-effort, unauthenticated check for whether the repository's committed config differs from
- * the local scaffold, used to decide whether the reconcile hop needs the OAuth trip at all (see
- * this module's own header comment for why an unauthenticated read is the deliberate, flagged
- * choice here). Mirrors reconcile.mjs's own read-and-diff logic without a token and without ever
- * writing.
- * @param {{ owner: string, repo: string, defaultBranch: string }} target the repository to read
- * @param {string} dir the scaffold root, holding the local copies to compare against
- * @returns {Promise<boolean>} true when reconcileRepo would need to commit
+ * The same record with any saved `cloudflare.apiToken` withheld, for the calls that must not reuse
+ * a token this chapter did not save. Returns the record untouched when there is nothing to
+ * withhold, and never writes: the state store still holds whatever it held.
+ * @param {object | null | undefined} record the site's in-memory state record
+ * @returns {object | null | undefined} the record without a saved token
  */
-async function peekConfigDiffers({ owner, repo, defaultBranch }, dir) {
-  const refResponse = await githubRequest('GET', `/repos/${owner}/${repo}/git/ref/heads/${defaultBranch}`);
-  const headSha = refResponse.json?.object?.sha;
-  if (!headSha) return true;
+function withoutSavedToken(record) {
+  if (!record?.cloudflare || !('apiToken' in record.cloudflare)) return record;
+  const { apiToken: _withheld, ...cloudflare } = record.cloudflare;
+  return { ...record, cloudflare };
+}
 
-  const commitResponse = await githubRequest('GET', `/repos/${owner}/${repo}/git/commits/${headSha}`);
-  const headTreeSha = commitResponse.json?.tree?.sha ?? null;
-  if (!headTreeSha) return true;
-
-  const treeResponse = await githubRequest('GET', `/repos/${owner}/${repo}/git/trees/${headTreeSha}?recursive=1`);
-  const tree = Array.isArray(treeResponse.json?.tree) ? treeResponse.json.tree : [];
-
+/**
+ * Fingerprint the two tool-owned files as they currently sit on disk. The chapter stores this at
+ * every reconcile and compares it on the next entry, which is what lets an unchanged scaffold skip
+ * the OAuth trip without reading the (private) repository; see this module's header for the
+ * narrowing that accepts. A file missing locally hashes as its own distinct state rather than
+ * raising, so a directory that is not a scaffold reads as "drifted" and the reconcile hop decides,
+ * rather than the hash itself failing the run.
+ * @param {string} dir the scaffold root
+ * @returns {Promise<string>} a hex sha-256 over each file's path and contents, in a fixed order
+ */
+export async function reconciledConfigHash(dir) {
+  const hash = createHash('sha256');
   for (const relativePath of RECONCILED_FILE_PATHS) {
-    const local = await readFile(path.join(dir, relativePath), 'utf8');
-    const entry = tree.find((candidate) => candidate.type === 'blob' && candidate.path === relativePath);
-    if (!entry) return true;
-    const blobResponse = await githubRequest('GET', `/repos/${owner}/${repo}/git/blobs/${entry.sha}`);
-    const remote = Buffer.from(blobResponse.json?.content ?? '', blobResponse.json?.encoding ?? 'base64').toString('utf8');
-    if (remote !== local) return true;
+    let content;
+    try {
+      content = await readFile(path.join(dir, relativePath), 'utf8');
+    } catch (cause) {
+      if (cause.code !== 'ENOENT') throw cause;
+      content = null;
+    }
+    hash.update(`${relativePath}\0${content === null ? 'missing' : content}\0`);
   }
-  return false;
+  return hash.digest('hex');
 }
 
 /**
  * @typedef {object} ReconcileAttempt
  * @property {boolean} [changed] whether reconcileRepo committed (present when no park occurred)
  * @property {string} [commitSha] the commit's sha, present only when `changed` is true
+ * @property {string} [hash] the local config hash this attempt read, for the caller to record
  * @property {Error & { catalogue: object }} [parked] set instead of `changed`/`commitSha` when
- *  `--yes` met a real diff and the OAuth trip was parked rather than attempted
+ *  `--yes` met a possible diff and the OAuth trip was parked rather than attempted
  */
 
 /**
- * Run the reconcile diff-then-commit hop: peek unauthenticated, skip the OAuth trip entirely when
- * nothing differs, park under `--yes` when it does, and otherwise run `reauthorize` and the real
- * `reconcileRepo`. Shared by the main flow (always called once connect and trigger have settled)
- * and the `builds-live` re-entry (ruling 4: not a no-op).
+ * Run the reconcile diff-then-commit hop: skip the OAuth trip entirely when the local config
+ * matches the hash recorded at the last reconcile, park under `--yes` when it does not, and
+ * otherwise run `reauthorize` and the real `reconcileRepo`, whose authenticated diff is the
+ * authority on whether anything is actually committed. Shared by the main flow (always called once
+ * connect and trigger have settled) and the `builds-live` re-entry (ruling 4: not a no-op).
  * @param {{ record: object, dir: string, args: { yes: boolean }, log: (line: string) => void,
  *  openBrowser: (url: string, log: (line: string) => void) => Promise<void> }} input
  * @returns {Promise<ReconcileAttempt>} the attempt's outcome
  */
 async function performReconcile({ record, dir, args, log, openBrowser }) {
-  const target = record?.github?.repo ?? {};
-  const differs = await peekConfigDiffers(target, dir);
-  if (!differs) return { changed: false };
+  const hash = await reconciledConfigHash(dir);
+  if (hash === record?.cloudflare?.buildsReconciledHash) return { changed: false, hash };
 
   if (args.yes) {
     const parked = cloudflareError('builds-reconcile-parked', { dir });
@@ -220,7 +237,7 @@ async function performReconcile({ record, dir, args, log, openBrowser }) {
     log,
   });
   const result = await reconcileRepo({ record: record.github, dir, userToken });
-  return { changed: result.changed, commitSha: result.commitSha };
+  return { changed: result.changed, commitSha: result.commitSha, hash };
 }
 
 /**
@@ -322,6 +339,11 @@ async function watchAndComplete({
     buildUuid = builds.find((build) => build.build_trigger_metadata?.commit_hash === reconcileResult.commitSha)?.build_uuid;
   } else if (!buildUuid) {
     if (lastBuildOutcome === 'success') {
+      // A terminal outcome like any other: the step is recorded and the pasted token deleted, the
+      // same as the watched-to-success path below. Reaching builds-live without doing either would
+      // leave a live credential on a record nothing ever comes back to clear.
+      await updateSite(siteId, { step: 'builds-live' });
+      await deleteApiToken(siteId);
       return { outcome: 'builds-live', message: 'Nothing to reconcile: your site is already live.' };
     }
     if (chapter3Reached) {
@@ -334,6 +356,11 @@ async function watchAndComplete({
     }
   }
 
+  // The three parks below are the only returns in this chapter that KEEP the saved token, and only
+  // when the main flow reaches them: each leaves `step` short of a terminal one, so a plain re-run
+  // resumes this same watch and signs its polls with the same credential. Reached from the
+  // builds-live re-entry instead, that record's step never leaves a terminal one, and the re-entry's
+  // own wrapper deletes the token on every return, including these.
   if (!buildUuid) {
     const err = cloudflareError('build-not-started', { dir });
     log(err.message);
@@ -441,12 +468,13 @@ const WATCH_DETAIL =
  * and watching the first Builds deploy to success. Re-entry reads the step already reached on
  * `record`: `builds-connect-declined` short-circuits at the top (the token is cleared again, in
  * case an earlier run somehow left one behind, and the decline is reported back unchanged);
- * `builds-live` is not a no-op (ruling 4) and re-runs only the reconcile diff, reporting "nothing
- * to reconcile" when it is genuinely empty and, when it is not, re-running the token prefill (the
- * saved token was already deleted at that terminal step) to watch the build the fresh commit
- * triggers. A saved `cloudflare.apiToken` or a step already in CHAPTER3_RESUMABLE_STEPS means
- * admission has already run and is not re-asked; a step already in CHAPTER3_RESUMABLE_STEPS
- * additionally skips connect and trigger, both of which are otherwise safe to repeat.
+ * `builds-live` is not a no-op (ruling 4) and re-runs only the reconcile check, reporting "nothing
+ * to reconcile" when the local config has not drifted since the last one and, when it has,
+ * re-running the token prefill (the saved token was already deleted at that terminal step) to watch
+ * the build the fresh commit triggers. A saved `cloudflare.buildsTokenSavedAt` or a step already in
+ * CHAPTER3_RESUMABLE_STEPS means this chapter's own admission has already run and is not re-asked;
+ * a step already in CHAPTER3_RESUMABLE_STEPS additionally skips connect and trigger, both of which
+ * are otherwise safe to repeat.
  *
  * A connect-time authorization refusal, a reconcile OAuth denial, and every wait-kind park (an
  * authorization park, `builds-reconcile-parked`, `build-not-started`, `build-running`, a hostname
@@ -487,23 +515,30 @@ export async function runChapter3({
   // --- builds-live re-entry: the site is already fully connected and live; only the reconcile
   // diff might still need to run (ruling 4, the stale-origin remedy). Never a no-op.
   if (!dryRun && record?.step === 'builds-live') {
-    let reconcileResult;
-    await runStep(frame, 'Reconcile your deploy config', RECONCILE_DETAIL, async () => {
-      reconcileResult = await performReconcile({ record, dir, args, log, openBrowser });
-    });
-    if (reconcileResult.parked) {
-      return { outcome: reconcileResult.parked.catalogue.code, message: reconcileResult.parked.message };
-    }
-    if (!reconcileResult.changed) {
-      const message = 'Nothing to reconcile: your repository already matches your local deploy config.';
-      log(message);
-      return { outcome: 'builds-live', message };
-    }
-
-    let accountId = record?.cloudflare?.accountId;
-    let token;
-    let watchOutcome;
+    // Every return below runs through the `finally`, which deletes the pasted token: this branch
+    // leaves `step` at `builds-live` whatever happens, and a terminal step must never carry a live
+    // credential. A park here is not resumable the way a mid-chapter park is either, since the next
+    // entry re-enters this same branch and re-runs the prefill for itself.
     try {
+      let reconcileResult;
+      await runStep(frame, 'Reconcile your deploy config', RECONCILE_DETAIL, async () => {
+        reconcileResult = await performReconcile({ record, dir, args, log, openBrowser });
+      });
+      if (reconcileResult.parked) {
+        return { outcome: reconcileResult.parked.catalogue.code, message: reconcileResult.parked.message };
+      }
+      if (reconcileResult.hash !== record?.cloudflare?.buildsReconciledHash) {
+        await updateSite(siteId, { cloudflare: { buildsReconciledHash: reconcileResult.hash } });
+      }
+      if (!reconcileResult.changed) {
+        const message = 'Nothing to reconcile: your repository already matches your local deploy config.';
+        log(message);
+        return { outcome: 'builds-live', message };
+      }
+
+      let accountId = record?.cloudflare?.accountId;
+      let token;
+      let watchOutcome;
       await runStep(
         frame,
         'Get a fresh Cloudflare API token',
@@ -521,7 +556,10 @@ export async function runChapter3({
             await updateSite(siteId, { cloudflare: { accountId } });
           }
           token = await ensureApiToken({
-            record,
+            // Never the record as saved: reaching builds-live deleted this chapter's own token, so
+            // anything still under that key came from somewhere else and is not this chapter's to
+            // reuse.
+            record: withoutSavedToken(record),
             log,
             openBrowser,
             yes: args.yes,
@@ -530,7 +568,9 @@ export async function runChapter3({
             argv,
             permissionKeys: CHAPTER3_PERMISSION_KEYS,
           });
-          await updateSite(siteId, { cloudflare: { apiToken: token } });
+          await updateSite(siteId, {
+            cloudflare: { apiToken: token, buildsTokenSavedAt: new Date().toISOString() },
+          });
         },
       );
 
@@ -554,18 +594,14 @@ export async function runChapter3({
           reconcileResult,
         });
       });
-    } catch (error) {
-      const code = error?.cause?.catalogue?.code;
-      if (code === 'token-scope-missing' || code === 'token-invalid') {
-        await deleteApiToken(siteId);
-      }
-      throw error;
+      return watchOutcome;
+    } finally {
+      await deleteApiToken(siteId);
     }
-    return watchOutcome;
   }
 
   let accountId = record?.cloudflare?.accountId;
-  let token = record?.cloudflare?.apiToken;
+  let token;
   let connectionUuid = record?.cloudflare?.buildsConnectionUuid;
   let triggerUuid = record?.cloudflare?.buildsTriggerUuid;
   const lastBuildUuid = record?.cloudflare?.buildsLastBuildUuid;
@@ -573,9 +609,16 @@ export async function runChapter3({
   const { defaultBranch } = record?.github?.repo ?? {};
 
   const chapter3Reached = CHAPTER3_RESUMABLE_STEPS.includes(record?.step);
-  const alreadyAdmitted = Boolean(record?.cloudflare?.apiToken) || chapter3Reached;
+  // Both of this chapter's "has it already run?" questions are answered by evidence this chapter
+  // itself wrote, never by a saved `cloudflare.apiToken`: chapter 2 writes that same key and clears
+  // it only at its own terminal steps, so a record at `domain-live` or `email-onboarded` reaches
+  // here still carrying a five-key chapter-2 token. Reading that as "chapter 3 already ran" skipped
+  // this chapter's consent, its cost statement, and its eight-key prefill, and then 403'd on the
+  // first Builds call with the adopted token.
+  const chapter3TokenSaved = Boolean(record?.cloudflare?.buildsTokenSavedAt);
+  const alreadyAdmitted = chapter3TokenSaved || chapter3Reached;
 
-  // --- Admission: only asked once, per the module doc's token-presence signal above.
+  // --- Admission: only asked once, per the chapter-3-owned signals above.
   if (!alreadyAdmitted) {
     let consented = false;
     await runStep(frame, 'Connect to Workers Builds', ADMISSION_DETAIL, async () => {
@@ -624,7 +667,9 @@ export async function runChapter3({
         'and asks you to paste the token back.',
       async () => {
         token = await ensureApiToken({
-          record,
+          // A saved token is offered back to `ensureApiToken` only when this chapter is the one
+          // that saved it; anything else is withheld, so the eight-key prefill actually opens.
+          record: chapter3TokenSaved ? record : withoutSavedToken(record),
           log,
           openBrowser,
           yes: args.yes,
@@ -633,8 +678,10 @@ export async function runChapter3({
           argv,
           permissionKeys: CHAPTER3_PERMISSION_KEYS,
         });
-        if (!dryRun && token !== record?.cloudflare?.apiToken) {
-          await updateSite(siteId, { cloudflare: { apiToken: token } });
+        if (!dryRun && (!chapter3TokenSaved || token !== record?.cloudflare?.apiToken)) {
+          await updateSite(siteId, {
+            cloudflare: { apiToken: token, buildsTokenSavedAt: new Date().toISOString() },
+          });
         }
       },
     );
@@ -642,31 +689,44 @@ export async function runChapter3({
     const api = makeApiFn({ token, accountId, dir });
 
     if (!chapter3Reached) {
-      // --- Connect: the repository's numeric id and its owner's numeric id both come from one
-      // GET, then the connections PUT (a proven upsert, per the spike).
-      const { owner, repo } = record?.github?.repo ?? {};
+      // --- Connect: the repository's numeric id was persisted by chapter 1, and the owner's comes
+      // from GitHub's public user read, so this hop needs no GitHub credential (module header).
+      // Then the connections PUT, a proven upsert per the spike.
+      const { owner, repo, id: repoId } = record?.github?.repo ?? {};
       let parkError;
 
       await runStep(
         frame,
         'Connect your repository to Workers Builds',
-        "Reads your repository's numeric ids from GitHub, then connects it to Workers Builds.",
+        "Reads your repository owner's numeric id from GitHub, then connects your repository to " +
+          'Workers Builds.',
         async () => {
-          const { status, json } = await githubRequest('GET', `/repos/${owner}/${repo}`);
+          if (!repoId) {
+            throw new Error(
+              `chapter3: this site's saved record carries no numeric id for ${owner}/${repo}, ` +
+                'which is what Workers Builds identifies a repository by, so there is nothing to ' +
+                'connect it with. Chapter 1 records that id when it creates the repository, so a ' +
+                'record without one was written by hand or by a much older version of this tool.\n' +
+                `Next: connect ${owner}/${repo} to your Worker yourself at ` +
+                `${BUILDS_DASHBOARD_URL}, then re-run npx create-cairn-site --dir ${dir} ` +
+                '--connect to finish the rest of this chapter.',
+            );
+          }
+          const { status, json } = await githubRequest('GET', `/users/${owner}`);
           if (status !== 200) {
             throw new Error(
-              `chapter3: could not read ${owner}/${repo} from GitHub (status ${status}), so ` +
-                'Workers Builds has nothing to connect to.\n' +
-                `Next: verify the repository still exists, then re-run npx create-cairn-site ` +
-                `--dir ${dir} --connect.`,
+              `chapter3: could not read the GitHub account ${owner} (status ${status}), so ` +
+                "Workers Builds cannot be told which account's repository to connect.\n" +
+                `Next: check that github.com/${owner} still exists and that you can reach ` +
+                `github.com, then re-run npx create-cairn-site --dir ${dir} --connect.`,
             );
           }
           try {
             const result = await api.putBuildConnection({
-              providerAccountId: String(json.owner.id),
-              providerAccountName: json.owner.login,
-              repoId: String(json.id),
-              repoName: json.name,
+              providerAccountId: String(json.id),
+              providerAccountName: owner,
+              repoId: String(repoId),
+              repoName: repo,
             });
             connectionUuid = result.repo_connection_uuid;
           } catch (err) {
@@ -753,10 +813,16 @@ export async function runChapter3({
       reconcileResult = await performReconcile({ record, dir, args, log, openBrowser });
     });
     if (!dryRun && reconcileResult?.parked) {
+      // The token goes with this park: it was `--yes` that could not open a browser, so the re-run
+      // this row asks for is an interactive one, which collects a token of its own.
+      await deleteApiToken(siteId);
       return { outcome: reconcileResult.parked.catalogue.code, message: reconcileResult.parked.message };
     }
     if (!dryRun) {
-      await updateSite(siteId, { step: 'config-reconciled' });
+      await updateSite(siteId, {
+        step: 'config-reconciled',
+        cloudflare: { buildsReconciledHash: reconcileResult.hash },
+      });
     }
 
     // --- Watch: find or kick the build the reconcile hop should have triggered, poll it, and

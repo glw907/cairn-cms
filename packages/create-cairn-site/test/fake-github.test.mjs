@@ -277,6 +277,50 @@ test('GET /repos/:owner/:repo returns the repo with a numeric owner id, and 404s
   assert.equal(missing.status, 404);
 });
 
+test('a private repo answers 404 to every anonymous read, and serves the same reads to a bearer', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  github.state.installations.push({ id: 1, app_id: 1, account: { login: 'fake-admin' }, repositories: [] });
+  await fetch(`${github.apiBase}/user/repos`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'private-repo', auto_init: true, private: true })
+  });
+
+  const authorized = { headers: { authorization: 'Bearer fake-user-token' } };
+  const refRead = await fetch(`${github.apiBase}/repos/fake-admin/private-repo/git/ref/heads/main`, authorized);
+  assert.equal(refRead.status, 200);
+  const headSha = (await refRead.json()).object.sha;
+
+  for (const readPath of [
+    '/repos/fake-admin/private-repo',
+    '/repos/fake-admin/private-repo/git/ref/heads/main',
+    `/repos/fake-admin/private-repo/git/commits/${headSha}`
+  ]) {
+    const anonymous = await fetch(`${github.apiBase}${readPath}`);
+    assert.equal(anonymous.status, 404, `expected an anonymous read of ${readPath} to 404`);
+    assert.equal((await anonymous.json()).message, 'Not Found');
+
+    const withToken = await fetch(`${github.apiBase}${readPath}`, authorized);
+    assert.equal(withToken.status, 200, `expected a bearer read of ${readPath} to succeed`);
+  }
+});
+
+test('GET /users/:login serves an owner numeric id anonymously, matching the id a repo read reports', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  await createSeededRepo(github, 'public-repo');
+
+  const user = await fetch(`${github.apiBase}/users/fake-admin`);
+  assert.equal(user.status, 200);
+  const body = await user.json();
+  assert.equal(body.login, 'fake-admin');
+  assert.equal(typeof body.id, 'number');
+
+  const repo = await (await fetch(`${github.apiBase}/repos/fake-admin/public-repo`)).json();
+  assert.equal(body.id, repo.owner.id, 'the public user read and the repo read must agree on the owner id');
+});
+
 test('GET /repos/:owner/:repo reports the same owner id across repos owned by the same login', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());

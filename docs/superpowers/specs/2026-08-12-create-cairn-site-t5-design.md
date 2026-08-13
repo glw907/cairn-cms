@@ -344,6 +344,47 @@ that writes it argues otherwise, and until it ships the checklist is the complet
 If the spike proves the button leaves nothing material undone, the brief says so and T5b
 dies; that outcome is legitimate.
 
+### Amendment, 2026-08-13: ruling 2's adopt probe is not runnable, and reading replaced it
+
+The spike moves to release one with the rest of the button work (plan execution amendment 1), so
+the probe was reconsidered rather than rescheduled. Reading the code answered more of the question
+than the probe was designed to, and reframed the rest.
+
+**The probe as ruling 2 specifies it cannot be run at all.** `bin.mjs` routes `--connect` behind
+`if (priorRecord && flags.connect)`. Without a saved state record there is no chapter 3 to enter,
+and a button-created site has no record, because the record is written by chapter 1, which such a
+site never ran. So "run chapter 3's `--connect` against the button-created site and record whether
+it adopts or recreates" has no observable outcome. The tool does not decline. It never arrives.
+
+**That reframes T5b's premise rather than falsifying it.** T5b is not "teach `--connect` to
+dedupe". It is "construct a state record for a site the tool did not scaffold", and every question
+ruling 2 listed sits downstream of that admission step. Two are already partly answered with no
+estate at all:
+
+- **Connection adoption is free.** `putBuildConnection` is a true upsert, proven live in T4c's
+  spike (amendment 8): the identical PUT returns the same `repo_connection_uuid` with only
+  `modified_on` advancing, which the API client's own comment names as what lets a caller adopt an
+  existing connection when no list route exists. A T5b run that reaches connect adopts the button's
+  connection rather than duplicating it.
+- **Trigger dedupe is the open question, and it is a code question rather than a platform one.**
+  `listBuildTriggers(workerTag)` exists, every trigger chapter 3 creates carries one fixed name, and
+  re-entry skipping is keyed on the local record rather than on a platform read. Whether a T5b run
+  would add a second trigger beside the button's is answerable by reading the trigger step, and it
+  should be answered that way before the release-one spike, so the spike spends its browser time on
+  what only the button can show.
+
+**What still genuinely needs the button**, and what the release-one spike must capture for this
+brief: the states a button-created site actually lands in. Which resources exist and under what
+names and ids, whether `wrangler.jsonc` came back rewritten, where the pasted secrets landed, and
+what Builds wiring is present. Those are the admission rules' raw material, and no amount of reading
+substitutes for them.
+
+**Why no hand-made stand-in was used instead.** A scratch site built to imitate a button-created one
+is built from an assumed model of button behavior, drawn from vendor documentation rather than
+observation, so the probe would confirm the model against itself. That is the oracle tautology this
+repo's testing discipline exists to prevent. Ruling 2 called the probe cheap because the button had
+already made the site; detached from the button it is neither cheap nor evidence.
+
 ## T4d, unchanged but re-anchored
 
 T4d's brief stays as the T4a spec wrote it (plus its two T4c inputs, the build watch and the

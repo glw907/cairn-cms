@@ -67,12 +67,12 @@ rolled"; the site has had no automatic deploy for a month. Found while censusing
 It is the production instance of the coupling chapter 3 now takes on deliberately, and the
 README's caveat is written from it.
 
-**The spike's scratch estate still needs teardown** and a script is ready but unrun, pending the
-e2e decision above (the spike repo and Worker are the natural target if a run happens):
-`glw907/cairn-t4c-spike`, Worker `cairn-t4c-spike`, D1 `cairn-t4c-spike-auth` and
-`-app`, R2 `cairn-t4c-spike-media`, connection `c3b2f3e1-5639-4e5e-95cb-cb6bc12bf9b5`, trigger
-`218d9fa8-79ba-4121-80c2-a8ccabce7165`, build token `34d0cf5f-082b-44a2-9b04-7b24be3a4fd9`. The
-full table, including the estate-wrapping build token already deleted, is in the spike doc.
+**The spike's scratch estate is TORN DOWN and verified by listing** (2026-08-13, after Geoff took
+the fold-into-T4d option above). Deleted: the trigger, the repo connection, the spike build token,
+the Worker `cairn-t4c-spike`, D1 `cairn-t4c-spike-auth` and `-app`, R2 `cairn-t4c-spike-media`, and
+the GitHub repo `glw907/cairn-t4c-spike`. Confirmed by re-listing rather than by trusting the
+delete calls: build tokens now show only 907-life's two, no Worker matches `t4c-spike`, and the
+repo 404s. Only hand steps 3 and 4 above remain, both browser-only.
 
 **Standing note on e2e cost, unchanged:** every live e2e mints a GitHub App only Geoff can
 delete. Four hand-deleted so far. T4c minted **none** (its spike used the API directly), so the

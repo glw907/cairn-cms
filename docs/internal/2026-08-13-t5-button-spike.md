@@ -171,7 +171,97 @@ which is the same class of failure the pass is trying to close. It is not obviou
 the sync script's resolvability gate already half-touches). **Recorded here as a decision the
 spike's findings should inform, not settled in advance.**
 
-## Step 1: publish the scratch repo through the sync script (NOT YET RUN)
+## Step 1: publish the scratch repo through the sync script
+
+**Rehearsed locally 2026-08-13 against a bare fixture remote, and it FAILED at the build. The
+live half (a real public scratch repo) is not yet run, and should not run until the finding below
+is resolved: a button pointed at a tree that cannot build would make every downstream observation
+ambiguous, which is the exact reason the plan put the install-and-build check ahead of the button.**
+
+The sync itself works. `sync-template-repo.mjs --remote <bare fixture> --strip-dev-backend
+--engine-spec ^0.94.0` (no explicit `--dev-spec`, the real invocation) exited 0 and produced one
+93-file commit. A clean clone of that remote carries the expected tree: the merged `.gitignore`
+with the negation last, `.dev.vars.example` committed, no `scripts/dev.mjs`, no
+`@glw907/cairn-cms-dev` devDependency, no `dev` script, and `"@glw907/cairn-cms": "^0.94.0"` as
+the one engine dependency. `npm install` succeeded, adding 303 packages.
+
+`npm run build` then failed with two errors:
+
+```
+[MISSING_EXPORT] "PreviewBanner" is not exported by "node_modules/@glw907/cairn-cms/dist/components/index.js".
+   src/routes/(site)/preview/[token]/+page.svelte:2:10
+
+[MISSING_EXPORT] "previewLoad" is not exported by "node_modules/@glw907/cairn-cms/dist/sveltekit/index.js".
+   src/routes/(site)/preview/[token]/+page.server.ts:1:10
+```
+
+### The finding, stated structurally
+
+**The template's installability is coupled to the publish window, and nothing in the pass as
+written accounts for that.** The bake emits the showcase's *current* tree, which has adopted
+engine features from the unpublished window, while the emitted engine dependency resolves to the
+last *published* version. Any engine feature the showcase adopts before a release makes the
+template uninstallable until that release ships.
+
+Spec ruling 6 reasoned that the strip is what makes `npm install && npm run build` reachable
+before release one. The strip addresses the **dev backend** and nothing else. It has no bearing on
+the **engine** itself, so the acceptance criterion is not reachable as the pass is written.
+
+### Scope, measured rather than assumed
+
+Rolldown stops at one aggregated batch, so its two errors are a lower bound, not the count. A
+sweep of all 57 engine symbols the emitted tree imports, checked against the published package's
+own barrels and declarations, puts the real gap at **exactly two**, both value imports, both from
+the preview feature, both consumed by the single route `src/routes/(site)/preview/[token]/`:
+
+| Symbol | Subpath | In published `0.94.0`? |
+|---|---|---|
+| `previewLoad` | `@glw907/cairn-cms/sveltekit` | absent from `dist/sveltekit/index.js` and from every `.d.ts` |
+| `PreviewBanner` | `@glw907/cairn-cms/components` | absent from `dist/components/index.js` and from every `.d.ts` |
+
+Eight further names first flagged by the sweep (`ContentSummary`, `ContentRoutesOptions`,
+`ResolvedReference`, `FeedItem`, `AdminShellData`, `AdminData`, `SitemapUrl`, `IslandRegistry`)
+are **false positives** and are recorded as such: they are type-only imports, absent from the
+runtime barrels by nature and present in the published declarations. Both symbols above are
+present in this worktree's `src/lib`, so the gap is the publish window and nothing else.
+
+### Why no existing gate catches it
+
+`create-site.yml` scaffolds a site and builds it, which looks like the gate that should have
+caught this. It is not. The job packs the engine and dev backend from the checkout and then
+**rewrites the scaffolded site's dependencies to point at those local tarballs** ("Point the
+scaffolded site at the packed tarballs"), so it proves the scaffold against the worktree's engine
+and has never once proven one against the registry's. The same holds for `scaffold.yml`. This is
+the same blind-spot family as the two durable gotchas already in `CLAUDE.md`: a gate that resolves
+the library locally cannot see a published-surface gap.
+
+It also means the finding is **wider than the template repo**. `create-cairn-site`'s own scaffold
+bakes from the same emitter with the same engine spec, so a site scaffolded today from a published
+CLI would hit the identical two missing exports. The template repo is where the rehearsal happened
+to find it, not the only place it bites.
+
+### The resolution is a decision, not a fix
+
+Left open deliberately, because the choices trade against release ordering Geoff has already set
+(T5, T4d, Pass D, release one) and against what the template ships:
+
+1. **Exclude the preview route from the bake** (`examples/showcase/.cairn-template.json` already
+   carries an exclusion list, and the preview route is not on it). Cheap and mechanical, but it
+   decides that a scaffolded site ships without preview until someone adds it back, which is a
+   product call.
+2. **Cut release one before the template repo goes public**, which resolves the gap by definition
+   and reorders the queue.
+3. **Gate the sync on a real build**, not only on registry resolvability: the sync proves the tree
+   it is about to push actually builds against the spec it emits, and refuses otherwise. This is
+   what the acceptance criterion asks for in substance, and unlike the other two it is permanent
+   and catches the next occurrence rather than this one. It is also the expensive option, since it
+   puts an install and a build inside every sync.
+
+Option 3 looks necessary whichever of 1 or 2 is chosen, since a sync that can push an unbuildable
+tree is the underlying defect and the weekly drift cron would never detect it. Recorded, not
+acted on.
+
+## Step 1b: the live scratch repo (NOT YET RUN)
 
 ## Step 2: the button run (NOT YET RUN, needs Geoff's browser)
 

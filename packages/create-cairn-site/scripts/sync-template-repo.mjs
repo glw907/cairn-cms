@@ -22,9 +22,18 @@ export const OVERLAY_DIR = path.join(packageDir, 'template-repo');
 /** The one github.com repo the sync is allowed to push to without `--allow-any-remote`. */
 export const TEMPLATE_REPO_SLUG = 'glw907/cairn-waymark-template';
 
+const TEMPLATE_REPO_HOST = 'github.com';
+
 const DEV_BACKEND_PACKAGE = '@glw907/cairn-cms-dev';
 const DEV_SCRIPT_NAME = 'dev';
 const DEV_SHIM_RELATIVE_PATH = path.join('scripts', 'dev.mjs');
+
+// bake() validates devSpec against the repo's own cairn-cms-dev version whenever the caller
+// leaves it unset, and that version is 0.0.0 until the dev backend publishes. --strip-dev-backend
+// deletes the devDependency entry entirely right after the bake, so the spec's actual value never
+// reaches a commit; this placeholder only has to clear assertInstallableSpec's unpublished-version
+// check, never resolve on a registry.
+const STRIPPED_DEV_SPEC_PLACEHOLDER = '^0.0.1';
 
 // The overlay's own merge-rule table. Every overlay file replaces its bake counterpart outright
 // except a path listed here, which is merged instead. Today this holds exactly one entry: the
@@ -49,57 +58,95 @@ export function redact(text, token) {
 }
 
 /**
- * Embed a push credential into an https remote URL, in the `x-access-token:<token>@host` shape
- * GitHub's own tooling uses for a PAT over HTTPS. A non-https remote (a local fixture path, used
- * by every test in this suite) is returned unchanged, since it carries no credential.
- * @param {string} remote the remote to push to
+ * Build the environment overrides that carry a push credential to git's HTTP transport, in place
+ * of embedding it in the remote URL. `GIT_CONFIG_COUNT`/`KEY_0`/`VALUE_0` set `http.extraheader`
+ * for the one subprocess they are passed to, without writing anything to a config file: the
+ * credential never appears in that subprocess's argv (readable by any local user via
+ * `/proc/<pid>/cmdline`) or in a clone's persisted `.git/config` (the way an embedded-in-URL
+ * credential does on both counts). A non-https remote (a local fixture path, used by every test
+ * in this suite) needs no credential and returns no overrides.
+ * @param {string} remote the remote about to be cloned or pushed to
  * @param {string | undefined} token the push credential, required only for an https remote
- * @returns {string} the remote to actually clone and push against
+ * @returns {Record<string, string>} environment variables to merge into the git subprocess's env
  */
-export function composeAuthenticatedRemote(remote, token) {
-  if (!remote.startsWith('https://')) return remote;
+export function gitAuthEnv(remote, token) {
+  if (!remote.startsWith('https://')) return {};
   if (!token) {
     throw new Error(
       'sync-template-repo: TEMPLATE_REPO_TOKEN is required to push to an https remote',
     );
   }
-  const url = new URL(remote);
-  url.username = 'x-access-token';
-  url.password = token;
-  return url.toString();
+  const basicAuth = Buffer.from(`x-access-token:${token}`).toString('base64');
+  return {
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'http.extraheader',
+    GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${basicAuth}`,
+  };
 }
 
 /**
- * Refuse a github.com remote that is not the template repo, unless the caller opted in. A local
- * filesystem path, or an https remote on any other host, is always allowed; this only guards the
- * one destination a routine sync is meant to reach.
+ * Parse a remote spelling into the host and repo slug it names, for the https, http, ssh, and
+ * scp-like (`user@host:owner/repo`) shapes a github.com remote can take. Returns `null` for
+ * anything that is not one of those shapes, which this treats as a local filesystem path, the
+ * one kind of remote a routine sync never restricts.
+ * @param {string} remote the remote to parse
+ * @returns {{ hostname: string, slug: string } | null} the parsed host and slug, or `null` for a
+ *  local path
+ */
+function parseNetworkRemote(remote) {
+  if (!remote.includes('://')) {
+    const scpMatch = /^[^@/]+@([^:/]+):(.+?)(?:\.git)?$/.exec(remote);
+    if (scpMatch) return { hostname: scpMatch[1], slug: scpMatch[2] };
+  }
+  let url;
+  try {
+    url = new URL(remote);
+  } catch {
+    return null;
+  }
+  if (!['https:', 'http:', 'ssh:', 'git:'].includes(url.protocol)) return null;
+  return { hostname: url.hostname, slug: url.pathname.replace(/^\//, '').replace(/\.git$/, '') };
+}
+
+/**
+ * Refuse a remote that names a github.com repo other than the template repo, unless the caller
+ * opted in. This guards every shape a github.com remote can take (https, http, ssh, and the
+ * scp-like `git@github.com:owner/repo` form a human or `gh repo clone` would type), not only
+ * https, and it refuses a look-alike host the same as a slug mismatch: neither is the one
+ * destination a routine sync is meant to reach, and the credential the sync composes for an https
+ * push should never be handed to either. A local filesystem path is always allowed.
  * @param {string} remote the remote to check
- * @param {boolean} allowAnyRemote when true, any github.com remote is allowed
+ * @param {boolean} allowAnyRemote when true, any remote is allowed
  * @returns {void}
  */
 export function assertRemoteAllowed(remote, allowAnyRemote) {
-  if (!remote.startsWith('https://')) return;
-  const url = new URL(remote);
-  if (url.hostname !== 'github.com') return;
-  const slug = url.pathname.replace(/^\//, '').replace(/\.git$/, '');
-  if (slug !== TEMPLATE_REPO_SLUG && !allowAnyRemote) {
-    throw new Error(
-      `sync-template-repo: refusing github.com remote "${slug}" (expected "${TEMPLATE_REPO_SLUG}"); ` +
-        'pass --allow-any-remote to sync a different repo',
-    );
-  }
+  const parsed = parseNetworkRemote(remote);
+  if (!parsed) return;
+  if (parsed.hostname === TEMPLATE_REPO_HOST && parsed.slug === TEMPLATE_REPO_SLUG) return;
+  if (allowAnyRemote) return;
+  throw new Error(
+    `sync-template-repo: refusing remote "${remote}" (expected the template repo, ` +
+      `"${TEMPLATE_REPO_HOST}/${TEMPLATE_REPO_SLUG}"); pass --allow-any-remote to sync a ` +
+      'different repo',
+  );
 }
 
 /**
  * Spawn one git command, capturing its output without routing through a shell.
  * @param {string[]} args the git subcommand and its arguments
  * @param {string} cwd the working directory git runs in
+ * @param {Record<string, string>} [env] environment variables to merge on top of the inherited
+ *  environment, for example the credential overrides {@link gitAuthEnv} builds
  * @returns {Promise<{ code: number, stdout: string, stderr: string }>} the exit code and
  *  captured output; a spawn-level failure (for example git not on PATH) rejects instead
  */
-function runGit(args, cwd) {
+function runGit(args, cwd, env) {
   return new Promise((resolve, reject) => {
-    const child = spawn('git', args, { cwd, shell: false });
+    const child = spawn('git', args, {
+      cwd,
+      shell: false,
+      env: env ? { ...process.env, ...env } : process.env,
+    });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk) => (stdout += chunk));
@@ -113,13 +160,19 @@ function runGit(args, cwd) {
  * Run one git command, mirroring its (redacted) output through `log` and throwing a redacted
  * error on a non-zero exit.
  * @param {string[]} args the git subcommand and its arguments
- * @param {{ cwd: string, log: (line: string) => void, token: string | undefined, mirror?: boolean }} options
- *  `mirror` suppresses per-line logging for a plumbing call whose output is read programmatically
- *  rather than shown to an operator; it defaults to true
+ * @param {{
+ *   cwd: string,
+ *   log: (line: string) => void,
+ *   token: string | undefined,
+ *   mirror?: boolean,
+ *   env?: Record<string, string>,
+ * }} options `mirror` suppresses per-line logging for a plumbing call whose output is read
+ *  programmatically rather than shown to an operator; it defaults to true. `env` carries the
+ *  credential overrides for a clone or push against an https remote; every other call omits it.
  * @returns {Promise<{ code: number, stdout: string, stderr: string }>} the captured result
  */
-async function git(args, { cwd, log, token, mirror = true }) {
-  const result = await runGit(args, cwd);
+async function git(args, { cwd, log, token, mirror = true, env }) {
+  const result = await runGit(args, cwd, env);
   if (mirror) {
     for (const text of [result.stdout, result.stderr]) {
       for (const line of text.split('\n')) {
@@ -317,17 +370,26 @@ export async function syncTemplateRepo({
   if (!remote) throw new Error('sync-template-repo: "remote" is required');
   assertRemoteAllowed(remote, allowAnyRemote);
 
+  // stripDevBackend() below deletes this spec from package.json outright, so a caller who did not
+  // supply one (the whole point of --strip-dev-backend, syncing before the dev backend publishes)
+  // gets a placeholder that only needs to clear bake()'s unpublished-version check, never a real
+  // devSpec.
+  const resolvedDevSpec = devSpec ?? (stripFlag ? STRIPPED_DEV_SPEC_PLACEHOLDER : undefined);
+
   const sourceDir = await mkdtemp(path.join(tmpdir(), 'cairn-sync-source-'));
   let workDir;
   try {
-    await bake({ to: sourceDir, engineSpec, devSpec });
+    await bake({ to: sourceDir, engineSpec, devSpec: resolvedDevSpec });
     await applyOverlay(sourceDir, overlayDir);
     if (stripFlag) await stripDevBackend(sourceDir);
     await assertResolvable(sourceDir, resolveSpec);
 
-    const authenticatedRemote = composeAuthenticatedRemote(remote, token);
+    // The credential rides an env-injected git config, never the remote URL: an embedded-in-URL
+    // credential would appear in this subprocess's argv (world-readable via /proc/<pid>/cmdline)
+    // and would persist in the clone's own .git/config for as long as the temp directory exists.
+    const authEnv = gitAuthEnv(remote, token);
     workDir = await mkdtemp(path.join(tmpdir(), 'cairn-sync-work-'));
-    await git(['clone', authenticatedRemote, workDir], { cwd: process.cwd(), log, token });
+    await git(['clone', remote, workDir], { cwd: process.cwd(), log, token, env: authEnv });
 
     const { stdout: currentBranch } = await git(['branch', '--show-current'], {
       cwd: workDir,
@@ -336,6 +398,18 @@ export async function syncTemplateRepo({
       mirror: false,
     });
     if (currentBranch.trim() !== 'main') {
+      // A `checkout -B main` on a remote whose default branch already carries commits would
+      // create a brand-new `main` alongside it, push there, and return success, while the
+      // remote's HEAD symref (what "Use this template" and a deploy button actually resolve)
+      // stays on the untouched original branch. Only the unborn-branch case (a genuinely empty
+      // remote, where there is nothing to diverge from) is safe to name `main` unconditionally.
+      if ((await currentSha(workDir)) !== null) {
+        throw new Error(
+          `sync-template-repo: the remote's default branch is "${currentBranch.trim()}", not ` +
+            '"main"; the sync only ever writes to main and refuses to create a second, divergent ' +
+            'branch. Set the remote\'s default branch to main before syncing.',
+        );
+      }
       await git(['checkout', '-B', 'main'], { cwd: workDir, log, token });
     }
 
@@ -374,7 +448,7 @@ export async function syncTemplateRepo({
       { cwd: workDir, log, token },
     );
     const sha = await currentSha(workDir);
-    await git(['push', authenticatedRemote, 'HEAD:main'], { cwd: workDir, log, token });
+    await git(['push', remote, 'HEAD:main'], { cwd: workDir, log, token, env: authEnv });
     log(`synced template repo: commit ${sha} (${changedFiles.length} file(s) changed)`);
     return { status: 'synced', sha, changedFiles };
   } finally {

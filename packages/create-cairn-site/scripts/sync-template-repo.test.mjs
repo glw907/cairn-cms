@@ -9,7 +9,7 @@ import {
   OVERLAY_DIR,
   TEMPLATE_REPO_SLUG,
   assertRemoteAllowed,
-  composeAuthenticatedRemote,
+  gitAuthEnv,
   redact,
   syncTemplateRepo,
 } from './sync-template-repo.mjs';
@@ -149,22 +149,42 @@ async function listFiles(dir, base = dir) {
 test('a first sync produces one commit whose tree is bake output plus overlay', async (t) => {
   const remote = await createBareRemote(t);
   const oracleDir = await tempDir(t, 'cairn-sync-oracle-');
-  await bake({ to: oracleDir, ...FIXTURE_OPTIONS });
-  const bakedFileCount = (await listFiles(oracleDir)).length;
+  await bake({ to: oracleDir, engineSpec: FIXTURE_OPTIONS.engineSpec, devSpec: FIXTURE_OPTIONS.devSpec });
+  const bakedFiles = await listFiles(oracleDir);
 
-  const result = await syncTemplateRepo({ remote, ...FIXTURE_OPTIONS, log: () => {} });
+  const logs = [];
+  const result = await syncTemplateRepo({ remote, ...FIXTURE_OPTIONS, log: (line) => logs.push(line) });
   assert.equal(result.status, 'synced');
   assert.equal(await remoteCommitCount(remote), 1);
+  assert.ok(
+    logs.some((line) => line.includes(result.sha) && line.includes(`${result.changedFiles.length} file`)),
+    'the sync line names the resulting commit sha and the changed-file count',
+  );
 
   const checkout = await cloneRemote(t, remote);
   await access(path.join(checkout, 'wrangler.jsonc'));
   const pkg = JSON.parse(await readFile(path.join(checkout, 'package.json'), 'utf8'));
-  assert.match(pkg.dependencies['@glw907/cairn-cms'], /^\^\d+\.\d+\.\d+$/);
-  const syncedFileCount = (await listFiles(checkout)).length;
-  assert.ok(
-    syncedFileCount >= bakedFileCount,
-    `expected the synced tree (${syncedFileCount} files) to carry at least the bake's own file count (${bakedFileCount})`,
-  );
+  assert.equal(pkg.dependencies['@glw907/cairn-cms'], FIXTURE_OPTIONS.engineSpec);
+  assert.equal(pkg.devDependencies['@glw907/cairn-cms-dev'], FIXTURE_OPTIONS.devSpec);
+
+  // The overlay only ever replaces or merges a bake-produced file (README.md, package.json,
+  // .gitignore) or adds a file the bake never emits (LICENSE, .dev.vars.example); it never
+  // touches anything else. So every other baked file must survive into the synced tree
+  // byte-for-byte, which is the assertion that would catch a corrupted or substituted bake
+  // output that a bare file-count check cannot.
+  const overlayRelativePaths = new Set(await listFiles(OVERLAY_DIR));
+  const syncedFiles = new Set(await listFiles(checkout));
+  const expectedFiles = new Set([...bakedFiles, ...overlayRelativePaths]);
+  assert.deepEqual([...syncedFiles].sort(), [...expectedFiles].sort());
+  for (const file of bakedFiles) {
+    if (overlayRelativePaths.has(file) || file === 'package.json') continue;
+    const [bakedContent, syncedContent] = await Promise.all([
+      readFile(path.join(oracleDir, file)),
+      readFile(path.join(checkout, file)),
+    ]);
+    assert.ok(bakedContent.equals(syncedContent), `expected ${file} to match bake output exactly`);
+  }
+
   const readme = await readFile(path.join(checkout, 'README.md'), 'utf8');
   assert.ok(!readme.includes('This site runs on'), 'the bake SITE_README no longer stands');
   assert.ok(readme.includes('generated'), 'the overlay README replaced it');
@@ -216,6 +236,32 @@ test('the hand-edit trio is corrected by one sync, with history growing by exact
   assert.equal(await remoteCommitCount(remote), countAfterPlant + 1);
   const ancestorCheck = await runGit(['merge-base', '--is-ancestor', shaAfterPlant, 'HEAD'], postSyncCheckout);
   assert.equal(ancestorCheck.code, 0, 'the pre-sync sha is still an ancestor of the new HEAD');
+});
+
+test('a remote whose default branch already carries content but is not main is refused, not silently forked', async (t) => {
+  // A `checkout -B main` on this remote would create a brand-new main alongside the real default
+  // branch and push there, reporting success while the branch a visitor and a deploy button
+  // actually resolve stays untouched.
+  const dir = await tempDir(t, 'cairn-sync-remote-');
+  await git(['init', '--bare', '--initial-branch=master', dir], process.cwd());
+  const work = await tempDir(t, 'cairn-sync-seed-');
+  await git(['clone', dir, work], process.cwd());
+  await writeFile(path.join(work, 'seed.txt'), 'content on master\n');
+  await git(['add', '-A'], work);
+  await git(
+    ['-c', 'user.name=fixture', '-c', 'user.email=fixture@example.com', 'commit', '-m', 'seed'],
+    work,
+  );
+  await git(['push', 'origin', 'HEAD:master'], work);
+
+  await assert.rejects(
+    () => syncTemplateRepo({ remote: dir, ...FIXTURE_OPTIONS, log: () => {} }),
+    /default branch is "master", not "main"/,
+  );
+  const masterCount = await runGit(['rev-list', '--count', 'refs/heads/master'], dir);
+  assert.equal(masterCount.stdout.trim(), '1', 'the remote gained no commit from the refused sync');
+  const refs = await runGit(['for-each-ref', '--format=%(refname)'], dir);
+  assert.ok(!refs.stdout.includes('refs/heads/main'), 'no divergent main branch was created');
 });
 
 test('an overlay edit lands as a second commit that carries the change', async (t) => {
@@ -279,6 +325,21 @@ test('--strip-dev-backend removes the dev backend and leaves every other file by
   assert.equal(unstrippedPkg.scripts.dev, 'node scripts/dev.mjs');
   await access(path.join(unstrippedCheckout, 'scripts', 'dev.mjs'));
 
+  // Positive assertions on what the strip leaves behind, not only on what it removed: an
+  // over-broad strip that wipes the whole dependency graph or every script satisfies the two
+  // negative checks above just as well as a correct strip does.
+  assert.equal(strippedPkg.dependencies['@glw907/cairn-cms'], unstrippedPkg.dependencies['@glw907/cairn-cms']);
+  assert.deepEqual(
+    strippedPkg.scripts,
+    Object.fromEntries(Object.entries(unstrippedPkg.scripts).filter(([name]) => name !== 'dev')),
+  );
+  assert.deepEqual(
+    Object.keys(strippedPkg.devDependencies ?? {}).sort(),
+    Object.keys(unstrippedPkg.devDependencies)
+      .filter((name) => name !== '@glw907/cairn-cms-dev')
+      .sort(),
+  );
+
   const exceptions = new Set(['package.json', path.join('scripts', 'dev.mjs')]);
   const strippedFiles = new Set(await listFiles(strippedCheckout));
   const unstrippedFiles = new Set(await listFiles(unstrippedCheckout));
@@ -294,6 +355,25 @@ test('--strip-dev-backend removes the dev backend and leaves every other file by
     ]);
     assert.ok(a.equals(b), `expected ${file} to be byte-identical between the stripped and unstripped trees`);
   }
+});
+
+test('--strip-dev-backend succeeds with no explicit --dev-spec, the real use case it exists for', async (t) => {
+  // The dev backend is unpublished (version 0.0.0), so bake() defaults an unset devSpec to a
+  // caret spec that fails its own unpublished-version check. --strip-dev-backend deletes that
+  // spec from package.json right after the bake, so a caller who wants a template free of the
+  // unpublished dev backend should not have to name a spec for the very thing they are removing.
+  const remote = await createBareRemote(t);
+  const result = await syncTemplateRepo({
+    remote,
+    stripDevBackend: true,
+    engineSpec: FIXTURE_OPTIONS.engineSpec,
+    resolveSpec: FIXTURE_OPTIONS.resolveSpec,
+    log: () => {},
+  });
+  assert.equal(result.status, 'synced');
+  const checkout = await cloneRemote(t, remote);
+  const pkg = JSON.parse(await readFile(path.join(checkout, 'package.json'), 'utf8'));
+  assert.ok(!pkg.devDependencies || !('@glw907/cairn-cms-dev' in pkg.devDependencies));
 });
 
 test('the resolvability gate exits with an error and commits nothing when a spec is unpublished', async (t) => {
@@ -333,18 +413,67 @@ test('redact strips every occurrence of a secret from a string', () => {
   assert.equal(redact('no secret here', undefined), 'no secret here');
 });
 
-test('composeAuthenticatedRemote embeds an x-access-token credential for an https remote and leaves a local path untouched', () => {
-  const composed = composeAuthenticatedRemote('https://github.com/glw907/cairn-waymark-template.git', 'abc123');
-  assert.ok(composed.includes('x-access-token:abc123@'));
-  assert.equal(composeAuthenticatedRemote('/tmp/some/local/repo.git', 'abc123'), '/tmp/some/local/repo.git');
+test('gitAuthEnv carries the credential as an env-injected git config, never the raw token, and leaves a local remote untouched', () => {
+  const env = gitAuthEnv('https://github.com/glw907/cairn-waymark-template.git', 'abc123');
+  assert.equal(env.GIT_CONFIG_COUNT, '1');
+  assert.equal(env.GIT_CONFIG_KEY_0, 'http.extraheader');
+  assert.ok(!env.GIT_CONFIG_VALUE_0.includes('abc123'), 'the raw token never appears verbatim in the header value');
+  const [, encoded] = env.GIT_CONFIG_VALUE_0.match(/^AUTHORIZATION: basic (.+)$/);
+  assert.equal(Buffer.from(encoded, 'base64').toString('utf8'), 'x-access-token:abc123');
+
+  assert.deepEqual(gitAuthEnv('/tmp/some/local/repo.git', 'abc123'), {});
+  assert.throws(
+    () => gitAuthEnv('https://github.com/glw907/cairn-waymark-template.git', undefined),
+    /TEMPLATE_REPO_TOKEN is required/,
+  );
 });
 
-test('.dev.vars.example survives into the synced tree via the .gitignore negation', async (t) => {
+test('a credential never appears in the thrown error or logged output of a failing https clone', async () => {
+  // An https remote git cannot reach (an unroutable address) exercises the one path where an
+  // embedded-in-URL credential would have shown up: the clone failure's error message and git's
+  // own stderr. gitAuthEnv's env-injected header carries the credential instead, so neither
+  // should ever see it.
+  const token = 'cairn-sync-test-token-9f3ac1';
+  const logs = [];
+  await assert.rejects(
+    syncTemplateRepo({
+      remote: 'https://127.0.0.1:1/glw907/cairn-waymark-template.git',
+      token,
+      allowAnyRemote: true,
+      ...FIXTURE_OPTIONS,
+      log: (line) => logs.push(line),
+    }),
+    (err) => {
+      assert.ok(!err.message.includes(token), 'the thrown error does not carry the token');
+      return true;
+    },
+  );
+  assert.ok(!logs.some((line) => line.includes(token)), 'no logged line carries the token');
+});
+
+test('.dev.vars.example survives into the synced tree via the .gitignore negation, and the full merged .gitignore is committed', async (t) => {
   const remote = await createBareRemote(t);
   await syncTemplateRepo({ remote, ...FIXTURE_OPTIONS, log: () => {} });
   const checkout = await cloneRemote(t, remote);
   const committed = await git(['show', 'HEAD:.dev.vars.example'], checkout);
   assert.ok(committed.includes('GITHUB_APP_ID'));
+
+  // The one clause the .gitignore append merge rule exists for: the overlay's negation must land
+  // after the bake's own `.dev.vars.*` line, and every one of the bake's own ignore lines must
+  // still be present, or the published template repo stops ignoring node_modules and .dev.vars.
+  const gitignore = await git(['show', 'HEAD:.gitignore'], checkout);
+  const lines = gitignore.trim().split('\n');
+  assert.deepEqual(lines, [
+    'node_modules',
+    '.svelte-kit',
+    'build',
+    '.wrangler',
+    '.dev.vars',
+    '.dev.vars.*',
+    'test-results',
+    'playwright-report',
+    '!.dev.vars.example',
+  ]);
 });
 
 test('a github.com remote other than the template repo is refused without --allow-any-remote', () => {
@@ -354,6 +483,35 @@ test('a github.com remote other than the template repo is refused without --allo
   );
   assert.doesNotThrow(() => assertRemoteAllowed('https://github.com/glw907/some-other-repo.git', true));
   assert.doesNotThrow(() => assertRemoteAllowed(`https://github.com/${TEMPLATE_REPO_SLUG}.git`, false));
+});
+
+test('a non-https spelling of the same github.com remote is guarded identically (ssh, scp-like, plain http)', () => {
+  const mismatches = [
+    `git@github.com:glw907/some-other-repo.git`,
+    `ssh://git@github.com/glw907/some-other-repo.git`,
+    `http://github.com/glw907/some-other-repo.git`,
+  ];
+  for (const remote of mismatches) {
+    assert.throws(() => assertRemoteAllowed(remote, false), /refusing/, remote);
+    assert.doesNotThrow(() => assertRemoteAllowed(remote, true), remote);
+  }
+  const matches = [
+    `git@github.com:${TEMPLATE_REPO_SLUG}.git`,
+    `ssh://git@github.com/${TEMPLATE_REPO_SLUG}.git`,
+  ];
+  for (const remote of matches) {
+    assert.doesNotThrow(() => assertRemoteAllowed(remote, false), remote);
+  }
+});
+
+test('a look-alike github.com host is refused the same as a slug mismatch, without --allow-any-remote', () => {
+  assert.throws(
+    () => assertRemoteAllowed(`https://github.com.evil.example/${TEMPLATE_REPO_SLUG}.git`, false),
+    /refusing/,
+  );
+  assert.doesNotThrow(() =>
+    assertRemoteAllowed(`https://github.com.evil.example/${TEMPLATE_REPO_SLUG}.git`, true),
+  );
 });
 
 test('a github.com remote other than the template repo is refused end to end, before any network reaches it', async () => {

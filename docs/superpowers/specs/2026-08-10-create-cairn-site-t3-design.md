@@ -189,3 +189,9 @@ CLI "finishes what the button cannot" against an existing repo, which is an
 adopt-existing-repo path the CLI does not have yet); where the button flow leaves secrets
 and whether that respects the no-secret rules. T5 lands before Pass D so the admin track
 documents both doors; the tool and template publish with release one, same cut.
+
+**Amended 2026-08-12 (the T5 sitting): T5 was re-sequenced ahead of T4d and its scope
+split.** The adopt-existing-repo half of "the CLI finishes what the button cannot" is
+deferred to a T5b brief written from the T5 spike's findings; the checklist is the
+completion story until then. The full rulings are in
+`2026-08-12-create-cairn-site-t5-design.md`.

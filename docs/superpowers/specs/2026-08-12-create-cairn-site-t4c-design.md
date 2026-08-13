@@ -287,3 +287,7 @@ T4d (the localhost console) follows T4c and precedes T5; its brief lives in the 
 now with two inputs from this pass: the build watch as a second long wait, and the grown
 fake surface its extraction must cover. The loopback routing layer and the fake-plumbing
 extraction both land there.
+
+**Amended 2026-08-12 (the T5 sitting): the order above is superseded.** T5 jumps ahead of
+T4d, and the live CLI e2e this pass left unrun folds into T5 rather than T4d. The ruling and
+its grounds are in the T5 spec (`2026-08-12-create-cairn-site-t5-design.md`, ruling 1).

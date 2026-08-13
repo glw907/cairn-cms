@@ -42,15 +42,18 @@ to `success`, both refusal shapes, and push-to-deploy with no tool involved). Wh
 against real services is the tool's own orchestration and the `reauthorize` OAuth trip, both
 covered only by fakes whose fixtures are copied verbatim from real captures. A full CLI run
 needs chapter 1, which mints a GitHub App only Geoff can hand-delete, and
-`~/.config/cairn/sites` is empty so no App state could be reused. **Recommendation: fold it
-into T4d's run**, which needs a live site anyway, so one App is minted instead of two.
+`~/.config/cairn/sites` is empty so no App state could be reused. **It folds into T5's run**
+(decided with the reorder below), so one App is minted instead of two.
 
-**Next is the T4d planning sitting** (the localhost console; its brief lives in the T4a spec and
-now carries two T4c inputs: the build watch as a second long wait, and the grown fake surface
-its plumbing extraction must cover). Queue after that: T5 -> Pass D -> release one -> site walk
--> P. Note the T5 question raised this pass and not yet decided: Cloudflare's own deploy button
-creates the repo and the Builds connection in one click, which overlaps a real fraction of what
-chapter 3 does by hand for a brand-new site, so T5 may deserve to come before T4d.
+**The T5-before-T4d question is DECIDED (Geoff, 2026-08-12): T5 jumps ahead.** The T5 planning
+sitting ran and its spec is at `docs/superpowers/specs/2026-08-12-create-cairn-site-t5-design.md`;
+the queue is now T5 -> T4d -> Pass D -> release one -> site walk -> P. The live CLI e2e (the gap
+below) folds into T5, not T4d, and the estate it mints persists across both passes with one
+teardown after T4d. T5's scope: the template repo and button with a printed checklist as the
+completion story; the adopt-existing-repo path is deferred to a T5b brief written from the T5
+spike's findings. T4d's brief is unchanged (the T4a spec, plus the two T4c inputs: the build
+watch as a second long wait, and the grown fake surface its plumbing extraction must cover).
+**T5 execution requires T4c merged to `main` first.**
 
 **Hand steps for Geoff, FIVE outstanding, one urgent.** (1) **URGENT: rotate the estate
 Cloudflare token** (`Cloudflare Admin 2026-07`): leaked into a transcript, still active. Mint a
@@ -76,7 +79,7 @@ repo 404s. Only hand steps 3 and 4 above remain, both browser-only.
 
 **Standing note on e2e cost, unchanged:** every live e2e mints a GitHub App only Geoff can
 delete. Four hand-deleted so far. T4c minted **none** (its spike used the API directly), so the
-count is still four; T4d's run will add the fifth.
+count is still four; T5's run will add the fifth, and T4d reuses it.
 
 **A second watch routine is live.** `trig_01G4gNi4RbR4vmhTLa8jCmk9`, "cairn Artifacts GA watch",
 monthly on the 1st at 18:00 UTC, first run 2026-09-01, emailing only when it trips. It watches

@@ -345,13 +345,15 @@ Live on the account and in GitHub, to be removed at the pass's teardown:
 | Builds connection | `c3b2f3e1-5639-4e5e-95cb-cb6bc12bf9b5` |
 | Builds trigger | `218d9fa8-79ba-4121-80c2-a8ccabce7165` |
 | Build token (spike token) | `34d0cf5f-082b-44a2-9b04-7b24be3a4fd9` |
-| Build token (estate token) | `e29515ff-9f11-4877-bb2c-3f6645321182` — **delete first**, it wraps the estate token |
+| ~~Build token (estate token)~~ | ~~`e29515ff-9f11-4877-bb2c-3f6645321182`~~ — **already deleted**, see below |
 | Spike API token | id `d07b2a25f05151591830c45053186979`, revoke at the dashboard |
 | Local token file | `~/.config/cairn/t4c-spike-token` |
 
 The estate token was registered as a build token only to run the A/B in Step 5. It is the token
-STATUS already flags for urgent rotation, which makes deleting that build token the first
-teardown step rather than the last.
+STATUS already flags for urgent rotation, so that build token was deleted as soon as the A/B
+was read rather than waiting for teardown: the trigger was pointed back at the spike token
+(`"ok": true`), the build token was deleted (`{"result":"ok","success":true}`), and a
+confirming list shows only the spike token and 907-life's two remaining.
 
 Unlike T4a and T4b, this spike minted **no GitHub App**, so it adds nothing to the hand-delete
 list.

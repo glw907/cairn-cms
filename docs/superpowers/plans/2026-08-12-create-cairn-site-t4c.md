@@ -121,6 +121,67 @@ superseding task text where they conflict, exactly as T4b did.
 - [ ] **Step 7: Bank the doc and amend the plan.** Commit the spike doc; write the
   amendments section; state plainly which dependent tasks are cleared.
 
+## Spike amendments (2026-08-12, Task 1 complete; these supersede the task text below)
+
+Full evidence, every captured body, and the teardown list:
+`docs/internal/2026-08-12-t4c-builds-spike.md`. **Task 1's stop condition did not fire** (the
+`12006` report does not reproduce), so Tasks 2, 3, 4, 6, and 7 are cleared. Where an amendment
+conflicts with a task's text, the amendment wins.
+
+1. **The permission is `Workers CI`; the template key is `workers_ci`**, verified filling its
+   row on the live dashboard. The spec's "Workers Builds Configuration" does not exist.
+2. **The union key set is EIGHT keys**: the five T4a keys (`zone`, `dns`, `workers_scripts`,
+   `ssl_and_certificates`, `email_sending`) plus `workers_ci`, `d1`, and `workers_r2`. A Builds
+   deploy resolves cairn's id-less bindings by calling the D1 and R2 APIs directly, so a token
+   without them fails the deploy. **D1 is observed; R2 is inferred** (the failing build died at
+   the first D1 binding and never reached the bucket). Say which is which in `prefill.mjs`.
+   `d1` and `workers_r2` still owe one live dashboard confirmation before ship.
+3. **`writeAccountId` is DELETED from Task 5.** A Builds deploy does not need `account_id`;
+   wrangler resolves the account from the build token. Task 5's remaining deliverables are
+   `reconcileRepo` and the OAuth call path. Task 8 Step 1 drops "`writeAccountId` runs before
+   the diff". If it was already built, remove it.
+4. **`builds-no-build-token` is DELETED** (Task 2's row; Task 7 Step 3's park test).
+   `POST /builds/tokens` requires `build_token_name`, `build_token_secret`, and
+   `cloudflare_token_id`: it registers a token the caller already holds rather than minting
+   one. **The chapter registers the admin's own pasted token as the build token**, taking
+   `cloudflare_token_id` from `GET /user/tokens/verify`'s `result.id`. Deleting the tool's
+   local copy at the terminal step stays correct, because Cloudflare holds the secret. A later
+   revoke breaks Builds silently; the README names that.
+5. **Both authorization refusals are HTTP 404, not 403**, with distinct codes: `8000008` = the
+   Git account never authorized the App (→ `builds-app-not-authorized`); `8000012` = authorized
+   but this repository is not in the selection (→ `builds-repo-not-selected`). Task 3 Step 1's
+   prescribed narrower-pre-check inside the blanket-403 branch is **unnecessary and dropped**:
+   404s never reach that branch, so `token-scope-missing` was never at risk. Still test that a
+   genuinely underscoped token on a Builds route maps to `token-scope-missing`.
+6. **Neither refusal's platform message may be shown to the admin.** Both are Pages-era and
+   factually wrong here (`8000012` says the repository "no longer exists" about one that
+   exists). Task 2's "follow Task 1's captured wording where a row quotes the platform" is
+   superseded for these two rows: state the real condition in cairn's own words, print the
+   link. The codes are the contract, the messages are not.
+7. **There is NO connections list route.** Drop `listBuildConnections()`. Only
+   `PUT .../builds/repos/connections` (a proven upsert: the identical PUT twice returns the
+   same `repo_connection_uuid`, only `modified_on` advancing) and `DELETE .../{uuid}`. Adoption
+   is structural. A worker's triggers each embed the whole `repo_connection` object, which is
+   the other way to discover an existing connection. Task 7 Step 2's "zero PUTs on re-run"
+   assertion becomes "the returned uuid is stable across two PUTs".
+8. **`listBuildTriggers()` takes a worker tag**: `GET .../builds/workers/{tag}/triggers`, not an
+   account-wide list.
+9. **`kickBuild` requires a body**, `{"branch": "<default branch>"}`; an empty body is `12002`.
+   The response is the full build record, already `status: "queued"`.
+10. **Build discovery splits by trigger source.** A push build carries
+    `build_trigger_metadata.commit_hash`, so the reconcile push is found by matching it (as
+    planned). A **manual kick carries an empty `commit_hash`, `commit_message`, and `author`**,
+    so the no-diff branch must take `build_uuid` straight from the kick response instead. Task 8
+    Step 2 covers both entries into the poll.
+11. **`config_autofill` needs `?branch=`** and returns only `config_file`,
+    `default_worker_name`, `env_worker_names`, `package_manager`, `scripts`. Cross-check only.
+12. **Build log shape**: `{cursor, truncated, lines: [[epochMillis, text], ...], events: [...]}`.
+    The `builds-deploy-failed` tail is the last `lines` entries.
+13. **A production site is already on Builds** (907-life, two triggers), so the account's
+    GitHub App install must not be cycled. It was not. The install is repo-selected, and
+    `cairn-t4c-spike` was added to it for the spike; **Task 10's teardown owes its removal**,
+    along with everything in the spike doc's teardown table.
+
 ### Task 2: The catalogue: the Builds rows **[spike]**
 
 **Files:**

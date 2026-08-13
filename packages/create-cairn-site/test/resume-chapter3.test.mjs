@@ -429,7 +429,42 @@ test('bin.mjs --connect at domain-live still admits chapter 3 when chapter 2\'s 
   assert.equal(state.step, 'domain-live', 'a thrown row must never advance the saved step');
 });
 
-test('bin.mjs --connect re-enters chapter 3 from a recorded builds-connect-declined', async (t) => {
+test('bin.mjs at builds-connect-declined routes a plain re-run to the terminal branch, never calling runChapter3', async (t) => {
+  // The regression guard for the behavior a fix to the module's own short-circuit must preserve:
+  // a plain re-run (no --connect) at a recorded decline reports the decline unchanged and never
+  // reaches admission. This mirrors the loop test above (`'builds-connect-declined'` is one of its
+  // cases) at the same dispatcher layer, named and kept standalone here so the decline-then-plain-
+  // re-entry and decline-then-reconnect cases read as the deliberate pair this task adds.
+  const stateDir = await freshStateDir(t);
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-connect-scaffold-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+
+  const fake = await makeFakeBin('chapter3-declined-plain-rerun');
+  t.after(() => fake.close());
+  const fakeOpenerDir = await makeFakeOpenerDir(t);
+
+  const siteId = makeSiteId('decl-plain');
+  await seedSite(siteId, dir, 'builds-connect-declined');
+
+  const result = await runCli(['--dir', dir], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
+
+  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  assert.ok(
+    result.stdout.includes('Workers Builds is not connected'),
+    `expected the terminal note naming the still-declined state, got: ${result.stdout}`,
+  );
+  assert.equal(
+    result.stdout.includes(CHAPTER3_ADMISSION_TITLE),
+    false,
+    `a plain re-run at a recorded decline must never reach admission, got: ${result.stdout}`,
+  );
+  assert.deepEqual(await fake.invocations(), [], 'a plain re-run at a declined record shells out to nothing');
+
+  const state = await loadSite(siteId);
+  assert.equal(state.step, 'builds-connect-declined', 'a plain re-run must never change the saved step');
+});
+
+test('bin.mjs --connect at builds-connect-declined proceeds into admission, not the stale decline report', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter3-connect-scaffold-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -443,22 +478,40 @@ test('bin.mjs --connect re-enters chapter 3 from a recorded builds-connect-decli
 
   const result = await runCli(['--dir', dir, '--connect', '--yes'], { stateDir, wranglerBin: fake.binPath, fakeOpenerDir });
 
-  // chapter3.mjs's own top-of-function short-circuit reports the decline back unchanged for any
-  // call at this step (its own module doc: "the decline is reported back unchanged"), so this
-  // outcome is a clean, non-throwing return, unlike the other --connect cases in this file.
-  assert.equal(result.code, 0, `expected exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  // The bug this guards: chapter3.mjs's own top-of-function short-circuit used to fire
+  // unconditionally at this step, so `--connect` here just re-reported the stale decline and
+  // deleted the token again, with no way back in despite the catalogue row's own promise ("re-run
+  // npx create-cairn-site --dir <dir> --connect"). The fix gates that short-circuit on the absence
+  // of `--connect`, so an explicit `--connect` now proceeds into the same admission every other
+  // entry step goes through, and reaches this suite's own deterministic token-hop stop.
+  assert.equal(
+    result.code,
+    1,
+    `expected exit 1 (the deterministic token-hop stop), got ${result.code}. stdout: ${result.stdout}`,
+  );
   assert.ok(
     result.stdout.includes('Connecting Chapter3 Resume Site to Workers Builds.'),
     `expected the --connect entry line, got: ${result.stdout}`,
   );
   assert.ok(
-    result.stdout.includes('Workers Builds is not connected'),
-    `expected the terminal note naming the still-declined state, got: ${result.stdout}`,
+    result.stdout.includes(CHAPTER3_ADMISSION_TITLE),
+    `--connect must reach chapter 3's own admission, got: ${result.stdout}`,
   );
-  assert.deepEqual(await fake.invocations(), [], '--connect at a declined record shells out to nothing');
+  assertReachedChapter3TokenHop(result.stdout);
+  assert.ok(result.stderr.includes('Next:'), `expected the token hop's own Next: line, got: ${result.stderr}`);
+  assert.equal(
+    result.stdout.includes('Workers Builds is not connected'),
+    false,
+    'the stale decline note must never print again once --connect has proceeded past it',
+  );
+  assert.deepEqual(
+    await fake.invocations(),
+    [],
+    '--connect at a declined record with a saved accountId shells out to nothing',
+  );
 
   const state = await loadSite(siteId);
-  assert.equal(state.step, 'builds-connect-declined', 'the declined step is unchanged');
+  assert.equal(state.step, 'builds-connect-declined', 'a thrown row must never advance the saved step');
 });
 
 // --- --connect refuses ahead of `live`, naming what has to finish first --------------------------

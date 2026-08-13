@@ -484,8 +484,9 @@ const WATCH_DETAIL =
  *  the caller; `null` under --dry-run, chapter 1 and chapter 2's own `dryRun ? null` precedent
  * @property {string} dir the scaffolded directory, used in printed copy and read for the local
  *  Worker name
- * @property {{ yes: boolean }} args the parsed CLI flags this chapter reads: `yes` for an
- *  unattended run
+ * @property {{ yes: boolean, connect?: boolean }} args the parsed CLI flags this chapter reads:
+ *  `yes` for an unattended run, `connect` for an explicit `--connect` re-entry (the only thing
+ *  that admits a `builds-connect-declined` record back into admission; see the module doc below)
  * @property {(line: string) => void} log receives one printed line per call
  * @property {boolean} dryRun when true, every hop's title and detail print and nothing executes
  * @property {(url: string, log: (line: string) => void) => Promise<void>} [openBrowser] opens the
@@ -515,9 +516,12 @@ const WATCH_DETAIL =
  * Run chapter 3: admission, the Cloudflare token, connecting the repository to Workers Builds,
  * binding a trigger to the site's own Worker, reconciling its deploy config into the repository,
  * and watching the first Builds deploy to success. Re-entry reads the step already reached on
- * `record`: `builds-connect-declined` short-circuits at the top (the token is cleared again, in
- * case an earlier run somehow left one behind, and the decline is reported back unchanged);
- * `builds-live` is not a no-op (ruling 4) and re-runs only the reconcile check, reporting "nothing
+ * `record`: a plain re-entry (no `--connect`) at `builds-connect-declined` short-circuits at the
+ * top (the token is cleared again, in case an earlier run somehow left one behind, and the
+ * decline is reported back unchanged), while an explicit `--connect` there is the declining
+ * owner's own way back in (the catalogue row's own copy) and falls through into the normal
+ * admission below instead, the same as any other `--connect` entry step; `builds-live` is not a
+ * no-op (ruling 4) and re-runs only the reconcile check, reporting "nothing
  * to reconcile" when the local config has not drifted since the last one and, when it has,
  * re-running the token prefill (the saved token was already deleted at that terminal step) to watch
  * the build the fresh commit triggers. A saved `cloudflare.buildsTokenSavedAt` or a step already in
@@ -588,7 +592,7 @@ export async function runChapter3({
     return collected;
   }
 
-  if (!dryRun && record?.step === 'builds-connect-declined') {
+  if (!dryRun && record?.step === 'builds-connect-declined' && !args.connect) {
     await deleteApiToken(siteId);
     return { outcome: 'builds-connect-declined' };
   }

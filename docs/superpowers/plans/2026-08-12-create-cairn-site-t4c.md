@@ -531,3 +531,83 @@ re-running the diff; the pasted token 0600 during the chapter and absent everywh
 the terminal steps; the OAuth token never persisted; every new catalogue row triggered by
 a test; `--dry-run` clean; the runtime library untouched; suite green at the full gate
 including `create-site.yml`.
+
+## Post-mortem (2026-08-13)
+
+**Built.** Chapter 3 exists: admission, the eight-key token paste, connect, trigger,
+the reconcile commit, the build watch, and the completion, wired into `bin.mjs` at all three
+hook sites with `--connect` as a real flag. Fifteen commits, `ff3a1699` through `84a110ea`,
+on `worktree-t4c-builds-connect` off `main` at `5a37c7cb`. The runtime library is untouched.
+
+**The spike paid for itself and then some.** Task 1 ran live against the glw907 account and
+produced thirteen amendments, two of which **deleted planned deliverables** rather than
+adjusting them: `writeAccountId` (a Builds deploy needs no `account_id`) and the
+`builds-no-build-token` row (the token-create route registers a token the caller already
+holds, so the condition cannot arise). The load-bearing premise was settled by an A/B on one
+repo and one trigger, differing only in which Cloudflare token the build token wrapped: the
+first build failed on `GET /d1/database/{id}` with `Authentication error [code: 10000]`, the
+second deployed green with `env.AUTH_DB (inherited)` and the Worker serving every binding.
+That single pair proved three things at once. Builds resolves cairn's id-less bindings
+without prompting; `account_id` is not required; and the union key set must grow to eight,
+D1 observed and R2 inferred. No amount of reading would have produced any of it, and the
+permission is not even named what the spec said (`Workers CI`, template key `workers_ci`,
+not "Workers Builds Configuration").
+
+**The review gate was the pass's real safety net, and the mechanical gates were not.**
+Nine implementation tasks landed with every gate green at each step, 596 tests passing, and
+a chapter that **could not connect a single real site**. `githubRequest('GET', /repos/...)`
+was called with no credential, `repo.mjs` creates every repository `private: true`, and
+GitHub answers an unauthenticated read of a private repo with 404. Three reviewers found it
+independently by reading; zero tests found it, because `fake-github.mjs` served private
+repos anonymously. This is the `conformance-verification-cannot-find-a-wrong-premise` shape
+exactly, and the lens that caught it was the one asked "would this test still pass if the
+feature were deleted," not the two asked "does this conform." **Keep that third reviewer on
+every substantial pass.** Five more confirmed defects came with it: the unauthenticated diff
+peek, an admission bypass whenever chapter 2 had a saved token, the pasted token outliving
+its terminal step on four return paths with a test asserting the leaked value, a
+key-presence check standing in for the required disk sweep, and a missing positive
+`build_outcome === 'success'` test that read a null outcome as a successful deploy.
+
+**One design call the plan never anticipated.** You cannot diff a private repo without a
+credential, and the only credential available costs a browser trip, so the unauthenticated
+peek was not fixable in place. The resolution is a local content hash (`buildsReconciledHash`)
+recorded at every reconcile: equal means nothing local drifted and the sign-in is skipped;
+absent or different runs the OAuth trip and lets `reconcileRepo`'s authenticated diff decide.
+The narrowing is honest and is now stated in the module header, the README, and the changelog:
+editing either file **in the repository** while changing nothing locally goes unnoticed until
+something local also changes. A first run has no hash, so it always signs in once, and a first
+`--yes` run parks there rather than completing.
+
+**Verified, with evidence.** 667 tests pass and the full 18-check gate is green, including the
+four that normally only run on CI (`check:reference:signatures`, `check:surface`,
+`check:snippets`, `check:comments`). Falsifiability was proven, not assumed, at four points:
+reverting the connect-credential fix turns 13 tests red; reverting the admission fix turns its
+new test red; each of round B's three blockers was run against the pre-fix code and failed for
+the stated reason; and stripping the new token-disclosure copy turns exactly one test red.
+`fake-github.mjs` now refuses anonymous reads of a private repo, which is what makes the first
+of those possible at all.
+
+**Not verified: the live CLI e2e (Task 10).** The spike proved the whole platform path live,
+including connect, upsert idempotence, build-token registration, trigger creation, a manual
+kick, a poll to `success`, both authorization refusal shapes, and push-to-deploy with no tool
+involved. What remains unproven against real services is the tool's own orchestration and the
+`reauthorize` OAuth trip, which are covered only by fakes whose fixtures are copied verbatim
+from real captures. A full CLI run needs chapter 1, which mints a GitHub App only Geoff can
+hand-delete, and `~/.config/cairn/sites` is empty, so no existing App state could be reused.
+This is a deliberate, named gap, not an oversight; the recommendation is to fold it into
+T4d's run, which needs a live site anyway, so one App is minted instead of two.
+
+**Blockers and carry-forwards.** The spike's scratch estate is still live and owes teardown
+(the spike doc carries the table). Two items need Geoff by hand: removing `cairn-t4c-spike`
+from the Cloudflare App's repo selection, and revoking the spike token. Separately, and
+outside this pass: **907-life's push-to-deploy has been failing since 2026-07-14** on a rolled
+build token, found while censusing the account. It is the production instance of the exact
+coupling this chapter now takes on deliberately, and it is what the README's caveat is
+written from.
+
+**Budgets.** Four interaction points, of which **one was a defect**: the first token-handoff
+instruction used `read -rsp`, which needs a tty and silently wrote nothing, costing a
+round trip. A second was half a defect, an option list that did not fit what Geoff actually
+did. The other two were irreducible browser work. Token spend was dominated by the workflow
+(11 agents, ~2.42M subagent tokens) and the three defect and simplify dispatches (~700k);
+the main loop stayed on orchestration, the live spike, and prose.

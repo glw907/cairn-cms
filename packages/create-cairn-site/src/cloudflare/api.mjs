@@ -230,6 +230,31 @@ function isSuccess(status, json) {
 }
 
 /**
+ * Throw `token-invalid` when a failed response carries either shape Cloudflare uses to say the
+ * token itself is not usable, and return normally when it carries neither, leaving the caller's
+ * own family-specific mapping to decide. Shared by `throwMapped` and `throwBuildsMapped`, which
+ * apply these two rules identically; the 400 shape nests its real explanation one level down in
+ * `error_chain`, which is the part worth reading off in exactly one place.
+ * @param {number} status the HTTP status
+ * @param {{ code?: number, message?: string, error_chain?: Array<{ message?: string }> }
+ *  | undefined} primary the first entry of the response's `errors` array
+ * @param {string} dir the `--dir` value, interpolated into the row
+ * @param {string} token the API token, redacted from the thrown text
+ * @param {{ status: number, code: number | undefined, id: string | undefined }} api the raw v4
+ *  fields carried onto the thrown error
+ * @returns {void}
+ */
+function throwIfTokenInvalid(status, primary, dir, token, api) {
+  if (status === 400 && primary?.code === 6003) {
+    const detail = primary.error_chain?.[0]?.message ?? primary.message;
+    throwCatalogued('token-invalid', { dir, detail }, token, api);
+  }
+  if (status === 401 && primary?.code === 10000) {
+    throwCatalogued('token-invalid', { dir, detail: primary.message }, token, api);
+  }
+}
+
+/**
  * Map a failed response onto one of the chapter's catalogued errors and throw it, redacting the
  * token from the final message and from `catalogue.next`. Never returns.
  * @param {number} status the HTTP status
@@ -268,13 +293,7 @@ function throwMapped(status, json, operationCode, dir, token) {
     const permission = extractPermission(combinedMessage);
     throwCatalogued('token-scope-missing', permission ? { dir, permission } : { dir }, token, api);
   }
-  if (status === 400 && primary?.code === 6003) {
-    const detail = primary.error_chain?.[0]?.message ?? primary.message;
-    throwCatalogued('token-invalid', { dir, detail }, token, api);
-  }
-  if (status === 401 && primary?.code === 10000) {
-    throwCatalogued('token-invalid', { dir, detail: primary.message }, token, api);
-  }
+  throwIfTokenInvalid(status, primary, dir, token, api);
   throwCatalogued(
     operationCode,
     combinedMessage ? { dir, detail: combinedMessage } : { dir },
@@ -349,13 +368,7 @@ function throwBuildsMapped(status, json, dir, token, refusalParams = {}) {
     const permission = extractPermission(combinedMessage);
     throwCatalogued('token-scope-missing', permission ? { dir, permission } : { dir }, token, api);
   }
-  if (status === 400 && primary?.code === 6003) {
-    const detail = primary.error_chain?.[0]?.message ?? primary.message;
-    throwCatalogued('token-invalid', { dir, detail }, token, api);
-  }
-  if (status === 401 && primary?.code === 10000) {
-    throwCatalogued('token-invalid', { dir, detail: primary.message }, token, api);
-  }
+  throwIfTokenInvalid(status, primary, dir, token, api);
 
   // No catalogued Builds row exists for anything else, and the platform's own message must never
   // reach the admin on a /builds/ route: both captured refusals were Pages-era prose that is
@@ -363,7 +376,8 @@ function throwBuildsMapped(status, json, dir, token, refusalParams = {}) {
   // general whether an unmapped Builds failure carries the same problem. So the fallback names
   // only the numeric code(s) Cloudflare returned, never `combinedMessage`.
   const codes = errors.map((e) => e.code).filter((code) => code !== undefined);
-  const err = new Error(`Cloudflare Builds API error (HTTP ${status}, code ${codes.length > 0 ? codes.join(', ') : 'unknown'})`);
+  const codeText = codes.length > 0 ? codes.join(', ') : 'unknown';
+  const err = new Error(`Cloudflare Builds API error (HTTP ${status}, code ${codeText})`);
   err.api = api;
   throw err;
 }
@@ -570,7 +584,15 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
       return listBuildsPaginated(`/accounts/${accountId}/builds/workers/${workerTag}/triggers`);
     },
 
-    async createBuildTrigger({ workerTag, repoConnectionUuid, buildTokenUuid, triggerName, branchIncludes, buildCommand, deployCommand }) {
+    async createBuildTrigger({
+      workerTag,
+      repoConnectionUuid,
+      buildTokenUuid,
+      triggerName,
+      branchIncludes,
+      buildCommand,
+      deployCommand,
+    }) {
       const { status, json } = await write('POST', `/accounts/${accountId}/builds/triggers`, {
         external_script_id: workerTag,
         repo_connection_uuid: repoConnectionUuid,

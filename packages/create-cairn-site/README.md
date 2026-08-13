@@ -267,10 +267,12 @@ Once your site is live, the command offers to connect its repository to Cloudfla
 Builds, so every commit to your default branch deploys itself, no laptop involved. This step is
 interactive by default: it asks whether you want to connect. Unlike the domain and email
 chapters, `--yes` alone consents to this one rather than skipping it, since there is nothing
-about connecting a repository that costs money or commits you to anything ongoing; a fully
-unattended run reaches a live Builds connection with no extra flag. Running the command again
-later, from a site that already finished this run, `--connect` opts in (or resumes a parked run)
-any time after your site is live on Cloudflare.
+about connecting a repository that costs money or commits you to anything ongoing, so an
+unattended run connects the repository and creates the trigger with no extra flag. It stops one
+hop short of the end: the config commit needs the sign-in click described below, and `--yes`
+never opens a browser, so an unattended run parks there and prints the command to finish
+interactively. Running the command again later, from a site that already finished this run,
+`--connect` opts in (or resumes a parked run) any time after your site is live on Cloudflare.
 
 ### What gets created, and what it costs
 
@@ -370,5 +372,16 @@ private key lives in that record only until the Worker exists, and then only in 
 record itself is not secret-free even after that move, since it still carries the App's client
 secret and webhook secret, which this tool never relocates anywhere else. Each Cloudflare API
 token, the domain chapter's and, later, the Builds chapter's own fresh paste, lives in that same
-record for as long as its chapter still needs it, and is deleted once that chapter reaches a
-state with nothing left to do with it.
+record for as long as its chapter still needs it, and this tool's copy is deleted once that
+chapter reaches a state with nothing left to do with it.
+
+One consequence of the Builds chapter deserves stating on its own, because deleting this tool's
+copy is not the same as the token being gone. Registering your pasted token as the build token
+means Cloudflare keeps its secret and supplies it to every build your repository runs, where
+`wrangler` reads it from the environment. The token the create-token page asks for is scoped
+across all your accounts and zones, and it can edit DNS, zones, SSL, Workers, D1, R2, and Email
+Sending, so anyone who can land a commit on your default branch, or any build-time dependency you
+install, can read a credential with that reach. That is the price of not sending you to the
+dashboard for a second token, and it is worth knowing before you accept it. If that trade is
+wrong for your site, mint the build token yourself at the Cloudflare dashboard, scope it to
+deploys alone, and point the trigger at it.

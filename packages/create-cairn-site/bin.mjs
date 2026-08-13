@@ -564,6 +564,8 @@ async function main() {
     // names --connect as its own way back in (the catalogue row's own copy). This is the terminal
     // branch that keeps a plain re-run here from falling through to the scaffolder.
     if (priorRecord && CHAPTER3_TERMINAL_STEPS.includes(priorRecord.data.step)) {
+      // --sign-in reseeds a bootstrap token and reopens the confirm page first; either way this
+      // step's own closing block is what prints.
       if (flags.signIn) {
         await reseedAndOpen({
           siteId: priorRecord.id,
@@ -571,8 +573,6 @@ async function main() {
           ownerEmailOverride: flags.ownerEmail,
           log,
         });
-        await printBuildsChapterInfo(priorRecord.id, priorRecord.data.step);
-        return;
       }
       await printBuildsChapterInfo(priorRecord.id, priorRecord.data.step);
       return;

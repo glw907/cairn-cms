@@ -166,9 +166,14 @@
   token, through the same paste flow the domain chapter already used, using
   `GET /user/tokens/verify` to learn the id Cloudflare's token-registration route needs.
   Two things still need a browser: a one-time authorization of Cloudflare's "Workers and Pages"
-  GitHub App, and a sign-in click for the reconcile commit, skipped entirely when nothing has
-  drifted (checked unauthenticated first, so a repository already in sync never needs the OAuth
-  trip at all). Both authorization refusals Cloudflare's connections API can return are read from
+  GitHub App, and a sign-in click for the reconcile commit. That sign-in is skipped when nothing
+  has drifted locally, decided by a hash of the two tool-owned files recorded at the last
+  reconcile, because a scaffolded repository is private and reading it to compare needs a
+  credential the tool deliberately does not keep. One narrowing follows from that, stated here
+  rather than discovered later: editing either file in the repository while changing nothing on
+  your machine leaves the drift unnoticed until something local changes too. A first run has no
+  recorded hash, so it always signs in once, and an unattended `--yes` first run parks at that
+  point instead. Both authorization refusals Cloudflare's connections API can return are read from
   their numeric codes (`8000008`, `8000012`) rather than their platform message, since both
   messages are Pages-era and factually wrong for this condition; the rows state the real
   condition in cairn's own words. A push-triggered build is found by matching the reconcile

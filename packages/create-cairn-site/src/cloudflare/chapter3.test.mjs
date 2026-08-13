@@ -396,6 +396,19 @@ test('runChapter3: the admission copy states the App authorization, the token pa
   assert.match(printed, /Reconcile your deploy config/);
   assert.match(printed, /Watch your first Workers Builds deploy/);
 
+  // The consent point must disclose what the pasted token becomes, not only what it costs in
+  // money. Registering it as the build token hands Cloudflare a secret it keeps and injects into
+  // every build, and the token the prefill asks for is account-wide, so a commit to the default
+  // branch can read it. A security review found this stated nowhere the admin sees before
+  // consenting; these assertions exist so it cannot quietly go missing again.
+  assert.match(printed, /build token/, 'the admission must say the token becomes the build token');
+  assert.match(printed, /every build/, 'the admission must say Cloudflare gives it to every build');
+  assert.match(
+    printed,
+    /commit to your default branch/,
+    'the admission must name who can read the token as a result',
+  );
+
   assert.equal(cloudflare.requests.length, 0);
   assert.equal(github.requests.length, 0);
 });

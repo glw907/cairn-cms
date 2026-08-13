@@ -140,6 +140,31 @@ async function readWorkerName(dir) {
 }
 
 /**
+ * Resolve the Cloudflare tag of the Worker the local scaffold names, the id every Builds trigger
+ * and build list is keyed by, or throw naming what a missing Worker blocks. Shared by the trigger
+ * hop and the build watch, which need the identical name-then-tag lookup and differ only in what
+ * they were about to do with the tag.
+ * @param {object} api the Cloudflare API client
+ * @param {string} dir the scaffold root
+ * @param {string} blocked what Workers Builds has when no such Worker exists, completing "so
+ *  Workers Builds has ..."
+ * @returns {Promise<string>} the worker tag
+ */
+async function resolveWorkerTag(api, dir, blocked) {
+  const workerName = await readWorkerName(dir);
+  const tag = await api.findWorkerTag(workerName);
+  if (!tag) {
+    throw new Error(
+      `chapter3: no Cloudflare Worker named "${workerName}" was found on this account, so ` +
+        `Workers Builds has ${blocked}.\n` +
+        `Next: run npx create-cairn-site --dir ${dir} to finish deploying first, then re-run ` +
+        `npx create-cairn-site --dir ${dir} --connect.`,
+    );
+  }
+  return tag;
+}
+
+/**
  * Run one hop as a single-action batch through runActions, mirroring chapter2.mjs's own
  * `runStep`: the hop's title always prints, its detail prints only under --dry-run, and `execute`
  * never runs under --dry-run.
@@ -317,21 +342,14 @@ async function watchAndComplete({
   lastBuildOutcome,
   reconcileResult,
 }) {
-  const workerName = await readWorkerName(dir);
-  const tag = await api.findWorkerTag(workerName);
-  if (!tag) {
-    throw new Error(
-      `chapter3: no Cloudflare Worker named "${workerName}" was found on this account, so ` +
-        'Workers Builds has nothing to watch.\n' +
-        `Next: run npx create-cairn-site --dir ${dir} to finish deploying first, then re-run ` +
-        `npx create-cairn-site --dir ${dir} --connect.`,
-    );
-  }
+  const tag = await resolveWorkerTag(api, dir, 'nothing to watch');
 
   let buildUuid = lastBuildUuid;
   if (reconcileResult?.changed) {
     const builds = await api.listBuildsForWorker(tag);
-    buildUuid = builds.find((build) => build.build_trigger_metadata?.commit_hash === reconcileResult.commitSha)?.build_uuid;
+    buildUuid = builds.find(
+      (build) => build.build_trigger_metadata?.commit_hash === reconcileResult.commitSha,
+    )?.build_uuid;
   } else if (!buildUuid) {
     if (lastBuildOutcome === 'success') {
       // A terminal outcome like any other: the step is recorded and the pasted token deleted, the
@@ -370,7 +388,14 @@ async function watchAndComplete({
     return { outcome: 'build-not-started', message: err.message };
   }
 
-  const { build, budgetExceeded } = await pollBuildToStop({ api, buildUuid, log, sleepFn, pollIntervalMs, maxPollAttempts });
+  const { build, budgetExceeded } = await pollBuildToStop({
+    api,
+    buildUuid,
+    log,
+    sleepFn,
+    pollIntervalMs,
+    maxPollAttempts,
+  });
   if (budgetExceeded) {
     await updateSite(siteId, { cloudflare: { buildsLastBuildUuid: buildUuid } });
     const err = cloudflareError('build-running', { dir });
@@ -378,7 +403,9 @@ async function watchAndComplete({
     return { outcome: 'build-running', message: err.message };
   }
 
-  await updateSite(siteId, { cloudflare: { buildsLastBuildUuid: buildUuid, buildsLastBuildOutcome: build.build_outcome } });
+  await updateSite(siteId, {
+    cloudflare: { buildsLastBuildUuid: buildUuid, buildsLastBuildOutcome: build.build_outcome },
+  });
 
   if (build.build_outcome === 'fail' || build.build_outcome === 'terminated') {
     const logs = await api.getBuildLogs(buildUuid);
@@ -432,8 +459,12 @@ const ADMISSION_DETAIL =
   'of Cloudflare\'s "Workers and Pages" GitHub App on your account (if you have not already done ' +
   'this), a fresh Cloudflare API token pasted the same way chapter 2 asked for one, and one ' +
   'sign-in click later in this chapter, when it commits its own config changes back to your ' +
-  'repository. This costs nothing: Workers Builds\' free tier includes 3,000 build minutes a ' +
-  'month and one build running at a time, as of 2026-08-12 ' +
+  'repository. That token becomes your Workers Builds build token, which saves you a second trip ' +
+  'to the dashboard and has a consequence worth knowing first: Cloudflare keeps its secret and ' +
+  'gives it to every build your repository runs, and the token is scoped across your accounts ' +
+  'and zones. Treat anyone who can commit to your default branch as able to read it. It costs no ' +
+  "money: Workers Builds' free tier includes 3,000 build minutes a month and one build running " +
+  'at a time, as of 2026-08-12 ' +
   '(https://developers.cloudflare.com/workers/platform/pricing/). Your site keeps working ' +
   'exactly as it does now the whole time.';
 
@@ -525,6 +556,38 @@ export async function runChapter3({
 }) {
   const frame = { dryRun, log };
 
+  /**
+   * Collect this chapter's own eight-key token and record it under `cloudflare.apiToken`
+   * alongside `buildsTokenSavedAt`, the chapter-3-owned marker saying this chapter is the one
+   * that saved what is now on the record. Both of this chapter's token hops (the main flow's and
+   * the builds-live re-entry's) run through here, so neither can drift from the other on which
+   * saved token may be reused.
+   * @param {boolean} offerSaved whether the record's own saved token may be offered back to
+   *  `ensureApiToken`. True only when `buildsTokenSavedAt` proves this chapter saved the token now
+   *  on the record; anything else (a five-key chapter-2 token, or a builds-live record still
+   *  carrying the marker after its token was deleted at that terminal step) is withheld, so the
+   *  eight-key prefill actually opens.
+   * @returns {Promise<string>} the token now in hand
+   */
+  async function collectBuildsToken(offerSaved) {
+    const collected = await ensureApiToken({
+      record: offerSaved ? record : withoutSavedToken(record),
+      log,
+      openBrowser,
+      yes: args.yes,
+      promptSecretFn,
+      env,
+      argv,
+      permissionKeys: CHAPTER3_PERMISSION_KEYS,
+    });
+    if (!dryRun && (!offerSaved || collected !== record?.cloudflare?.apiToken)) {
+      await updateSite(siteId, {
+        cloudflare: { apiToken: collected, buildsTokenSavedAt: new Date().toISOString() },
+      });
+    }
+    return collected;
+  }
+
   if (!dryRun && record?.step === 'builds-connect-declined') {
     await deleteApiToken(siteId);
     return { outcome: 'builds-connect-declined' };
@@ -573,22 +636,10 @@ export async function runChapter3({
           if (accountResult.learned) {
             await updateSite(siteId, { cloudflare: { accountId } });
           }
-          token = await ensureApiToken({
-            // Never the record as saved: reaching builds-live deleted this chapter's own token, so
-            // anything still under that key came from somewhere else and is not this chapter's to
-            // reuse.
-            record: withoutSavedToken(record),
-            log,
-            openBrowser,
-            yes: args.yes,
-            promptSecretFn,
-            env,
-            argv,
-            permissionKeys: CHAPTER3_PERMISSION_KEYS,
-          });
-          await updateSite(siteId, {
-            cloudflare: { apiToken: token, buildsTokenSavedAt: new Date().toISOString() },
-          });
+          // Never the record as saved: reaching builds-live deleted this chapter's own token, so
+          // anything still under that key came from somewhere else and is not this chapter's to
+          // reuse.
+          token = await collectBuildsToken(false);
         },
       );
 
@@ -684,23 +735,9 @@ export async function runChapter3({
         'filled in (the same five chapter 2 already asked for, plus the Workers Builds ones), ' +
         'and asks you to paste the token back.',
       async () => {
-        token = await ensureApiToken({
-          // A saved token is offered back to `ensureApiToken` only when this chapter is the one
-          // that saved it; anything else is withheld, so the eight-key prefill actually opens.
-          record: chapter3TokenSaved ? record : withoutSavedToken(record),
-          log,
-          openBrowser,
-          yes: args.yes,
-          promptSecretFn,
-          env,
-          argv,
-          permissionKeys: CHAPTER3_PERMISSION_KEYS,
-        });
-        if (!dryRun && (!chapter3TokenSaved || token !== record?.cloudflare?.apiToken)) {
-          await updateSite(siteId, {
-            cloudflare: { apiToken: token, buildsTokenSavedAt: new Date().toISOString() },
-          });
-        }
+        // A saved token is offered back to `ensureApiToken` only when this chapter is the one
+        // that saved it; anything else is withheld, so the eight-key prefill actually opens.
+        token = await collectBuildsToken(chapter3TokenSaved);
       },
     );
 
@@ -773,16 +810,7 @@ export async function runChapter3({
         'Binds your Worker to the connected repository, so every push to its default branch ' +
           'builds and deploys automatically.',
         async () => {
-          const workerName = await readWorkerName(dir);
-          const tag = await api.findWorkerTag(workerName);
-          if (!tag) {
-            throw new Error(
-              `chapter3: no Cloudflare Worker named "${workerName}" was found on this account, ` +
-                'so Workers Builds has nothing to bind to.\n' +
-                `Next: run npx create-cairn-site --dir ${dir} to finish deploying first, then ` +
-                `re-run npx create-cairn-site --dir ${dir} --connect.`,
-            );
-          }
+          const tag = await resolveWorkerTag(api, dir, 'nothing to bind to');
 
           const triggers = await api.listBuildTriggers(tag);
           const existing = triggers.find(
@@ -820,7 +848,10 @@ export async function runChapter3({
         },
       );
       if (!dryRun) {
-        await updateSite(siteId, { step: 'builds-connected', cloudflare: { buildsTriggerUuid: triggerUuid } });
+        await updateSite(siteId, {
+          step: 'builds-connected',
+          cloudflare: { buildsTriggerUuid: triggerUuid },
+        });
       }
     }
 

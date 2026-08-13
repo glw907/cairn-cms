@@ -749,6 +749,11 @@ export const BUILD_LOGS_FIXTURE = {
   events: [{ type: 'initializing', started_on: '2026-08-13T02:34:29.793Z', ended_on: '2026-08-13T02:34:35.117Z' }],
 };
 
+/** Write a Builds route's 404: the v4 failure envelope carrying one numeric error. */
+function sendBuildsNotFound(res, code, message) {
+  sendJson(res, 404, { success: false, errors: [{ code, message }], messages: [], result: null });
+}
+
 /**
  * Look up a build trigger by its `trigger_uuid` across every worker tag's list, since a kick
  * only carries the trigger uuid, not its tag.
@@ -955,7 +960,7 @@ function createBuildKickHandler(ctx) {
     }
     const trigger = findTriggerByUuid(ctx, params.triggerUuid);
     if (!trigger) {
-      sendJson(res, 404, { success: false, errors: [{ code: 8000000, message: 'Trigger not found' }], messages: [], result: null });
+      sendBuildsNotFound(res, 8000000, 'Trigger not found');
       return;
     }
     const now = new Date().toISOString();
@@ -1006,7 +1011,7 @@ function createBuildGetHandler(ctx) {
   return async (_req, res, params) => {
     const build = ctx.state.builds.get(params.buildUuid);
     if (!build) {
-      sendJson(res, 404, { success: false, errors: [{ code: 8000001, message: 'Build not found' }], messages: [], result: null });
+      sendBuildsNotFound(res, 8000001, 'Build not found');
       return;
     }
     sendSuccess(res, 200, { ...build });
@@ -1031,14 +1036,15 @@ function createBuildLogsHandler(ctx) {
   return async (_req, res, params, url) => {
     const pages = ctx.state.buildLogs.get(params.buildUuid);
     if (!pages || pages.length === 0) {
-      sendJson(res, 404, { success: false, errors: [{ code: 8000001, message: 'Build not found' }], messages: [], result: null });
+      sendBuildsNotFound(res, 8000001, 'Build not found');
       return;
     }
     const cursorParam = url.searchParams.get('cursor');
     let page = pages[0];
     if (cursorParam) {
       const previousIndex = pages.findIndex((candidate) => candidate.cursor === cursorParam);
-      page = previousIndex >= 0 && previousIndex + 1 < pages.length ? pages[previousIndex + 1] : pages[pages.length - 1];
+      const hasNext = previousIndex >= 0 && previousIndex + 1 < pages.length;
+      page = hasNext ? pages[previousIndex + 1] : pages[pages.length - 1];
     }
     sendSuccess(res, 200, { ...page });
   };

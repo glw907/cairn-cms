@@ -251,7 +251,10 @@ serves during a run only, and both the page and the park's last line say so.
 keeps its path secret, and shuts itself down; the research brief enumerates precisely what it does
 and what a console needs on top, which is a routing layer it does not have. Extract the shared part
 rather than copying it, since a third copy of the fake-server plumbing is already a live
-carry-forward in STATUS.
+carry-forward in STATUS. **[Corrected 2026-08-13 at the T4d adversarial gate: two of these claims
+are false. `loopback.mjs` has fixed literal paths (`/callback`, `/manifest`), not a secret one,
+and never reads the Host header. The T4d spec
+(`2026-08-13-create-cairn-site-t4d-design.md`) specifies both as built-in-T4d, not inherited.]**
 
 Open for that sitting: whether the console retrofits the GitHub chapter's one-shot pages, which the
 research recommends against as cosmetic; and whether the delegation view polls or asks the admin to

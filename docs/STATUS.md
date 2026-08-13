@@ -14,21 +14,52 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-13: T4c is MERGED, the T5 plan is approved; next is T5 execution)
+## Immediate next action (2026-08-13: T5 is IN FLIGHT and PARKED on a decision plus Geoff's browser)
 
-**T4c is MERGED to `main`** (PR #29, merge commit `a3905737`, all six PR gates green), and the
-same merge carries the T5 spec and plan. **The immediate next action is T5 execution in a fresh
-Opus 5 session**, launched from `~/Projects/cairn-cms`, which creates a fresh worktree off
-`main` for the pass (the plan's prerequisite is satisfied; verify `main` is at or past
-`a3905737`). Resume prompt for that session: "Execute pass T5 (the create-cairn-site browser
-door). Invoke cairn-pass, read docs/STATUS.md, the spec at
-docs/superpowers/specs/2026-08-12-create-cairn-site-t5-design.md, and the plan at
-docs/superpowers/plans/2026-08-12-create-cairn-site-t5.md, then run it task-by-task; Task 1
-(the sync script) is dispatchable immediately, and Task 2 (the button spike) needs Geoff's
-browser." The spec and plan were amended at a three-agent adversarial gate in the planning
-sitting (wrong-premise, conformance, deletion-test); the gate's root catch, a spike that would
-have proven a stripped tree while shipping an unstripped one, is folded in, and the plan as
-written supersedes nothing (no pre-review draft was ever executed).
+**Pass T5 is executing on branch `t5-browser-door`**, in the worktree
+`.claude/worktrees/t4c-builds-connect` (a T4c-era directory name; the branch is what matters).
+The branch was cut from `origin/main` at `5ae9eeee`, which carries the T4c merge. **A cold
+session must `git fetch` first: the `main` ref in the `~/Projects/cairn-cms` checkout is stale at
+`5a37c7cb` while `origin/main` is `5ae9eeee`.**
+
+**Landed this pass, gates green throughout** (`npm run check` 0/0, `packages/create-cairn-site`
+687/687 exit 0, `check:comments` OK):
+
+- **Task 1**: `scripts/sync-template-repo.mjs` plus its suite and the `template-repo/` overlay
+  skeleton. A three-lens adversarial review (deletion-test, oracle conformance, credential and
+  git safety) found **ten real defects**, four of them blocking, all confirmed and fixed with
+  mutate-and-restore falsifiability proofs. The four that mattered: the push credential rode the
+  remote URL, exposing it in subprocess argv and the clone's persisted `.git/config` (now an
+  env-injected `http.extraheader`); a look-alike host and the ssh, scp, and plain-http spellings
+  all bypassed the remote guard; the `.gitignore` append rule was untested, and deleting it left
+  the template repo ignoring nothing while all 15 tests stayed green; and **`--strip-dev-backend`
+  alone always exited 1**, which is the one invocation the pass actually needs.
+- **Task 4 Step 1**: the release path as a `needs: publish` job in `publish.yml`, plus
+  `sync-template.yml` carrying `workflow_dispatch` and the weekly drift cron. A shared
+  concurrency group and a `WATCH:` comment on the release-one strip obligation were added in
+  main-loop review.
+- **Task 2 Step 0 and Task 3 Step 0**: both vendor sources read and banked with dates in
+  `docs/internal/2026-08-13-t5-button-spike.md`.
+
+**THE PASS IS BLOCKED ON A DECISION, and it is Geoff's.** Task 2 Step 1's install-and-build check,
+rehearsed locally before spending a browser session on it, **fails**. The synced tree installs and
+then will not build: it imports `previewLoad` and `PreviewBanner`, which the published
+`@glw907/cairn-cms@0.94.0` does not export. The bake emits the showcase's current tree, which has
+adopted unpublished-window engine features, while the emitted engine dependency resolves to the
+last published version. **Spec ruling 6 assumed the strip made the acceptance criterion reachable
+before release one; the strip only addresses the dev backend and has no bearing on the engine, so
+the criterion is not reachable as the pass is written.** The gap is exactly two symbols (measured
+across all 57 engine imports, not inferred from the build's two errors), both from the preview
+feature, both used by one route. No existing gate could have caught it: `create-site.yml` rewrites
+the scaffolded site to point at a locally packed engine tarball, so CI has never proven a scaffold
+against the registry. The three resolutions, with evidence, are in the spike doc's Step 1; option
+3 (gate the sync on a real build, not only on registry resolvability) looks necessary whichever
+of the other two is chosen. **Do not run the live spike until this is settled**: a button pointed
+at a tree that cannot build makes every downstream observation ambiguous.
+
+Everything after Task 4 Step 1 is gated on that decision, on the `TEMPLATE_REPO_TOKEN` hand step,
+or on Geoff's browser. Tasks 3 and 6 are spike-gated by design; Task 5 needs the Actions secret;
+Tasks 7, 8, and 9 follow.
 
 **T4c's own record, now history:** chapter 3 exists end to end: admission, the
 eight-key token paste, connect, trigger, the `base_tree` reconcile commit, the build watch, and
@@ -69,7 +100,20 @@ probe is its first evidence). T4d's brief is unchanged (the T4a spec, plus the t
 the build watch as a second long wait, and the grown fake surface its plumbing extraction must
 cover).
 
-**Hand steps for Geoff, FIVE outstanding, one urgent.** (1) **URGENT: rotate the estate
+**Hand steps for Geoff, EIGHT outstanding, one urgent.** Steps 6 through 8 are T5's and are
+listed after the five carried in. (6) **Mint a fine-grained PAT** scoped to the single repo
+`glw907/cairn-waymark-template` with contents read/write, run
+`~/.dotfiles/scripts/secrets/secret-set.sh TEMPLATE_REPO_TOKEN`, add the registry entry **with
+expiry and rotation date**, and set `TEMPLATE_REPO_TOKEN` as an Actions secret on
+`glw907/cairn-cms`. **This blocks Task 5.** The recorded store check the spec asks for is done,
+name-only: the registry does hold `CMS_BOT_PAT`, but its entry reads "GitHub repository write
+access for CMS automation" rotating at `github.com/settings/tokens`, a broad classic-shaped bot
+credential, so against the standing narrow-token rule it is not reused. (7) **The button spike's
+browser moment** (Task 2), which should NOT be scheduled until the publish-window decision above
+is settled. (8) **The live CLI e2e's browser moments** (Task 8), batched: the fifth GitHub App's
+creation and the `reauthorize` OAuth trip.
+
+The five carried in: (1) **URGENT: rotate the estate
 Cloudflare token** (`Cloudflare Admin 2026-07`): leaked into a transcript, still active. Mint a
 replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the
 old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31` at github.com/settings/apps.
@@ -132,7 +176,17 @@ into `runner.mjs` is right but is a cross-cutting refactor of pre-existing code,
 `code-simplifier` rather than done. (14) **NEW: a first `--yes` run cannot reach `builds-live`.**
 The reconcile hash gate has no prior hash on a first run, so an unattended run parks at the
 sign-in. Documented in the README and changelog; revisit only if an unattended full run is
-actually wanted. **Retired this entry:** the old (7), `install.test.mjs`'s reauthorize flake,
+actually wanted. (15) **NEW, and the pass's headline: the bake couples the template's
+installability to the publish window.** The emitted tree and the emitted engine spec must come
+from the same release, or the tree imports symbols the resolved engine does not export. Harmless
+whenever a baked tree is used against the release its spec names; it breaks only in the
+ship-before-release case, which is exactly the template repo's. Full evidence and the three
+candidate resolutions: `docs/internal/2026-08-13-t5-button-spike.md`, Step 1. (16) **NEW: no gate
+proves a scaffold against the registry.** `create-site.yml` and `scaffold.yml` both pack the
+engine from the checkout and rewrite the scaffolded site to point at that tarball, so a
+published-surface gap in the emitted tree is invisible to every existing gate. This is the same
+blind-spot family as the worktree-symlink and Vite-8 gotchas in `CLAUDE.md`, and it is what let
+(15) reach a live-spike rehearsal undetected. **Retired this entry:** the old (7), `install.test.mjs`'s reauthorize flake,
 which was diagnosed and fixed rather than quarantined; and the `PUBLIC_ORIGIN` reconciliation
 gap, which is what this pass closed.
 

@@ -376,12 +376,12 @@ test('build logs read back the seeded fixture shape, and are settable per test f
   const body = await res.json();
   assert.deepEqual(body.result, BUILD_LOGS_FIXTURE);
 
-  cloudflare.state.buildLogs.set(kicked.build_uuid, {
+  cloudflare.state.buildLogs.set(kicked.build_uuid, [{
     cursor: 'WzAsNTBd',
     truncated: false,
     lines: [[1784052300000, 'Failed: error occurred while running deploy command']],
     events: [{ type: 'running', started_on: '2026-08-13T02:34:35.117Z', ended_on: '2026-08-13T02:34:40.000Z' }],
-  });
+  }]);
   const after = await (await fetch(`${cloudflare.apiBase}/accounts/${ACCOUNT_ID}/builds/builds/${kicked.build_uuid}/logs`)).json();
   assert.match(after.result.lines[0][1], /Failed: error occurred/);
 });
@@ -391,6 +391,33 @@ test('build logs against an unknown build uuid 404s', async (t) => {
   t.after(() => cloudflare.close());
   const res = await fetch(`${cloudflare.apiBase}/accounts/${ACCOUNT_ID}/builds/builds/does-not-exist/logs`);
   assert.equal(res.status, 404);
+});
+
+test('build logs page forward on ?cursor=, resuming after the matching page rather than always serving page 0', async (t) => {
+  const cloudflare = await startFakeCloudflare();
+  t.after(() => cloudflare.close());
+  const { body: trigger } = await createTrigger(cloudflare);
+  const kickRes = await fetch(`${cloudflare.apiBase}/accounts/${ACCOUNT_ID}/builds/triggers/${trigger.result.trigger_uuid}/builds`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ branch: 'main' }),
+  });
+  const kicked = (await kickRes.json()).result;
+
+  cloudflare.state.buildLogs.set(kicked.build_uuid, [
+    { cursor: 'page-1', truncated: true, lines: [[1, 'head of the log']], events: [] },
+    { cursor: 'page-2', truncated: false, lines: [[2, 'the actual tail of the log']], events: [] },
+  ]);
+
+  const first = await (await fetch(`${cloudflare.apiBase}/accounts/${ACCOUNT_ID}/builds/builds/${kicked.build_uuid}/logs`)).json();
+  assert.equal(first.result.truncated, true);
+  assert.match(first.result.lines[0][1], /head of the log/);
+
+  const second = await (
+    await fetch(`${cloudflare.apiBase}/accounts/${ACCOUNT_ID}/builds/builds/${kicked.build_uuid}/logs?cursor=page-1`)
+  ).json();
+  assert.equal(second.result.truncated, false);
+  assert.match(second.result.lines[0][1], /the actual tail of the log/);
 });
 
 test('the Builds routes log into requests alongside every other route', async (t) => {

@@ -15,8 +15,14 @@ import { chapterError } from './catalogue.mjs';
  */
 export const RECONCILE_COMMIT_MESSAGE = 'Reconcile deploy config from create-cairn-site';
 
-/** The two files this chapter owns; every other repo file is left untouched by its commit. */
-const RECONCILED_FILES = ['wrangler.jsonc', 'src/theme/cairn.config.ts'];
+/**
+ * The two files this chapter owns; every other repo file is left untouched by its commit.
+ * Exported, and imported directly by chapter3.mjs's own hash-gate (`reconciledConfigHash`),
+ * rather than duplicated there: a third tool-owned file added to this list without a matching
+ * update at that gate would silently go unnoticed by it, so this constant is the ONE place either
+ * module reads it from (T4c review finding B5).
+ */
+export const RECONCILED_FILES = ['wrangler.jsonc', 'src/theme/cairn.config.ts'];
 
 /**
  * Find a path's blob sha in a flat, fully-recursive tree listing: the shape `GET .../git/trees/

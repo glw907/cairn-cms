@@ -810,12 +810,12 @@ test('runChapter3: fail surfaces builds-deploy-failed carrying the log tail', as
     const build = [...cloudflare.state.builds.values()][0];
     build.status = 'stopped';
     build.build_outcome = 'fail';
-    cloudflare.state.buildLogs.set(build.build_uuid, {
+    cloudflare.state.buildLogs.set(build.build_uuid, [{
       cursor: 'x',
       truncated: false,
       lines: [[Date.now(), 'a distinctive deploy failure marker']],
       events: [],
-    });
+    }]);
   };
 
   await assert.rejects(
@@ -881,6 +881,91 @@ test('runChapter3: skipped surfaces builds-not-runnable naming the outcome', asy
     (err) => {
       assert.match(err.message, /did not run/);
       assert.match(err.message, /skipped/);
+      return true;
+    },
+  );
+});
+
+test('runChapter3: a null build_outcome at a stopped status keeps polling rather than reporting a false success (B1)', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-null-outcome-site-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+
+  // Cloudflare's own write ordering (docs/internal/2026-08-12-t4c-builds-spike.md) writes
+  // `status: "stopped"` before `build_outcome`, so a real poll can observe exactly this
+  // combination for a tick. A poll that stops on `status` alone reads this as a finished build
+  // and, downstream, as a success; this proves it keeps polling instead.
+  let call = 0;
+  const scriptedSleep = async () => {
+    const build = [...cloudflare.state.builds.values()][0];
+    call += 1;
+    if (call === 1) {
+      build.status = 'stopped';
+      build.build_outcome = null;
+    } else {
+      build.build_outcome = 'success';
+    }
+  };
+
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    openBrowser: neverOpensBrowser,
+    confirm: confirmAnswering(true),
+    promptSecretFn: async () => 'fresh-cf-token',
+    sleepFn: scriptedSleep,
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 0,
+    maxPollAttempts: 5,
+  });
+
+  assert.equal(result.outcome, 'builds-live');
+  assert.ok(call >= 2, 'the poll must have taken at least the null-outcome tick before settling');
+});
+
+test('runChapter3: an unrecognized build_outcome maps to builds-not-runnable rather than a false success (B1)', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-weird-outcome-site-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+
+  const weirdOutcomeSleep = async () => {
+    const build = [...cloudflare.state.builds.values()][0];
+    build.status = 'stopped';
+    build.build_outcome = 'some-future-outcome-cloudflare-has-not-documented-yet';
+  };
+
+  await assert.rejects(
+    async () =>
+      runChapter3({
+        siteId,
+        record: await loadSite(siteId),
+        dir,
+        args: { yes: false },
+        log: () => {},
+        dryRun: false,
+        openBrowser: neverOpensBrowser,
+        confirm: confirmAnswering(true),
+        promptSecretFn: async () => 'fresh-cf-token',
+        sleepFn: weirdOutcomeSleep,
+        fetchImpl: alwaysMatchingFetch(),
+        pollIntervalMs: 0,
+        maxPollAttempts: 5,
+      }),
+    (err) => {
+      assert.match(err.message, /did not run/);
+      assert.match(err.message, /some-future-outcome-cloudflare-has-not-documented-yet/);
       return true;
     },
   );

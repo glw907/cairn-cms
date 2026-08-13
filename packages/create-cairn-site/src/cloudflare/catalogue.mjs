@@ -703,8 +703,15 @@ const ROWS = {
   'builds-deploy-failed': {
     kind: 'act',
     build(params) {
+      // `logTruncated` is set only when getBuildLogs gave up mid-log against its own page cap
+      // (api.mjs), never when the log genuinely ended: claiming "ends with" over a log this tool
+      // stopped reading early would misrepresent lines it never saw as the log's true tail.
+      const logIntro = params.logTruncated
+        ? 'The build log is too long for this tool to read in full. Here are the last lines it ' +
+          'managed to read before giving up:'
+        : 'The build log ends with:';
       return (
-        'The first Workers Builds deploy did not finish successfully. The build log ends with:\n' +
+        `The first Workers Builds deploy did not finish successfully. ${logIntro}\n` +
         `${params.detail}\n` +
         `Next: open the build at ${params.buildUrl} to see the full log, fix what it names, ` +
         `then re-run npx create-cairn-site --dir ${params.dir} --connect to trigger and watch ` +
@@ -756,8 +763,9 @@ export const CATALOGUE_CODES = Object.keys(ROWS);
  *  `domain` on the domain and hostname rows and the email-sender rows, `nameServers`/`actual`,
  *  both string arrays, on the delegation rows, `reoffered`, a boolean, on paid-plan-declined to
  *  print the copy for a re-run after an earlier decline, `owner`/`repo` on
- *  builds-repo-not-selected, `detail`/`buildUrl` on builds-deploy-failed, and `outcome` (`skipped`
- *  or `cancelled`) on builds-not-runnable)
+ *  builds-repo-not-selected, `detail`/`buildUrl`/`logTruncated` (a boolean, true only when
+ *  getBuildLogs gave up against its own page cap) on builds-deploy-failed, and `outcome`
+ *  (`skipped`, `cancelled`, or another non-success value) on builds-not-runnable)
  * @returns {Error & { catalogue: ChapterErrorInfo }} an Error whose message is the full printed
  *  text (ending in a "Next:" line) and whose `catalogue` property carries `{ code, kind, next }`
  */

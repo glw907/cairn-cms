@@ -55,7 +55,7 @@ import { confirmHostname } from './hostname.mjs';
 import { githubRequest } from '../github/api.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
 import { reauthorize } from '../github/oauth.mjs';
-import { reconcileRepo } from '../github/reconcile.mjs';
+import { reconcileRepo, RECONCILED_FILES } from '../github/reconcile.mjs';
 
 /**
  * The step names this chapter's own success terminal and its declined terminal write, exported
@@ -91,15 +91,6 @@ const BUILD_TOKEN_NAME = 'cairn create-cairn-site build token';
 
 /** Matches the top-level `"name": "..."` line in a scaffold's wrangler.jsonc. */
 const WORKER_NAME_PATTERN = /"name":\s*"([^"]+)"/;
-
-/**
- * The two files the reconcile hop owns, duplicated from reconcile.mjs's own private
- * `RECONCILED_FILES` rather than imported: that module exports no such list, and this task's own
- * file list does not include it. A third tool-owned file added there without a matching update
- * here would silently go unnoticed by the hash gate below; there is no structural guard against
- * that drift today.
- */
-const RECONCILED_FILE_PATHS = ['wrangler.jsonc', 'src/theme/cairn.config.ts'];
 
 /** The generic, already-verified Cloudflare dashboard entry point (Global Constraints' own
  * fallback for an unproven deep link): no build-specific deep-link shape was captured by the
@@ -187,7 +178,7 @@ function withoutSavedToken(record) {
  */
 export async function reconciledConfigHash(dir) {
   const hash = createHash('sha256');
-  for (const relativePath of RECONCILED_FILE_PATHS) {
+  for (const relativePath of RECONCILED_FILES) {
     let content;
     try {
       content = await readFile(path.join(dir, relativePath), 'utf8');
@@ -241,17 +232,21 @@ async function performReconcile({ record, dir, args, log, openBrowser }) {
 }
 
 /**
- * Poll a build until it reaches `stopped`, printing a heartbeat every BUILD_POLL_HEARTBEAT_EVERY
- * attempts, or until `maxPollAttempts` elapses first.
+ * Poll a build until it reaches `stopped` WITH a settled `build_outcome`, printing a heartbeat
+ * every BUILD_POLL_HEARTBEAT_EVERY attempts, or until `maxPollAttempts` elapses first. `stopped`
+ * with `build_outcome: null` keeps polling rather than returning: the spike's own capture shows
+ * `build_outcome` is written after `status` flips to `stopped`, so those two fields are not a
+ * guaranteed atomic write, and a caller that stops on `status` alone can read a one-tick-early
+ * snapshot and, downstream, treat an unfinished build as a success (T4c review finding B1).
  * @param {{ api: object, buildUuid: string, log: (line: string) => void,
  *  sleepFn: (ms: number) => Promise<void>, pollIntervalMs: number, maxPollAttempts: number }} input
  * @returns {Promise<{ build: object, budgetExceeded: boolean }>} the last-read build record, and
- *  whether the poll gave up before it reached `stopped`
+ *  whether the poll gave up before it reached a stopped build with a settled outcome
  */
 async function pollBuildToStop({ api, buildUuid, log, sleepFn, pollIntervalMs, maxPollAttempts }) {
   let build = await api.getBuild(buildUuid);
   let attempt = 0;
-  while (build.status !== 'stopped') {
+  while (build.status !== 'stopped' || build.build_outcome == null) {
     attempt += 1;
     if (attempt > maxPollAttempts) return { build, budgetExceeded: true };
     if (attempt % BUILD_POLL_HEARTBEAT_EVERY === 0) log(BUILD_POLL_HEARTBEAT_MESSAGE);
@@ -347,6 +342,14 @@ async function watchAndComplete({
       return { outcome: 'builds-live', message: 'Nothing to reconcile: your site is already live.' };
     }
     if (chapter3Reached) {
+      // A resumed run with no diff and no tracked buildsLastBuildUuid has nothing to match a
+      // commit hash against (this is the manual-kick-not-push-build case, amendment 10), so
+      // position is the only signal available: `listBuildsForWorker` was observed newest-first
+      // live, captured in docs/internal/2026-08-12-t4c-builds-spike.md ("Two shapes captured
+      // after the fact"). That capture is explicitly one observation on one account, not a
+      // documented contract, which is why every OTHER build-discovery site in this module still
+      // matches on `build_trigger_metadata.commit_hash` (amendment 10) rather than position; do
+      // not widen this `builds[0]` shortcut to those sites.
       const builds = await api.listBuildsForWorker(tag);
       buildUuid = builds[0]?.build_uuid;
     } else {
@@ -379,10 +382,25 @@ async function watchAndComplete({
 
   if (build.build_outcome === 'fail' || build.build_outcome === 'terminated') {
     const logs = await api.getBuildLogs(buildUuid);
-    throw cloudflareError('builds-deploy-failed', { dir, detail: buildLogTail(logs), buildUrl: BUILDS_DASHBOARD_URL });
+    throw cloudflareError('builds-deploy-failed', {
+      dir,
+      detail: buildLogTail(logs),
+      buildUrl: BUILDS_DASHBOARD_URL,
+      logTruncated: Boolean(logs?.cappedAtPageLimit),
+    });
   }
-  if (build.build_outcome === 'skipped' || build.build_outcome === 'cancelled') {
-    throw cloudflareError('builds-not-runnable', { dir, outcome: build.build_outcome, buildUrl: BUILDS_DASHBOARD_URL });
+  // `success` is the ONLY outcome the live path proceeds on. This catches `skipped` and
+  // `cancelled` (the catalogue's own builds-not-runnable cases) and, deliberately, anything else:
+  // the poll above already guarantees `build_outcome` is settled (never null) by this point, so an
+  // outcome this code does not recognize is genuinely unexpected, and reading it as success would
+  // tell the admin a failed or unrunnable deploy actually succeeded (T4c review finding B1). No
+  // outcome value ever falls through to the live path below without matching 'success' exactly.
+  if (build.build_outcome !== 'success') {
+    throw cloudflareError('builds-not-runnable', {
+      dir,
+      outcome: build.build_outcome ?? 'unknown',
+      buildUrl: BUILDS_DASHBOARD_URL,
+    });
   }
 
   const currentOrigin = record?.cloudflare?.domain ?? new URL(record?.cloudflare?.url).host;

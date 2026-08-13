@@ -101,6 +101,14 @@ export const SENDER_NOT_CONFIGURED_CODE = 10204;
 export const BUILDS_APP_NOT_AUTHORIZED_CODE = 8000008;
 export const BUILDS_REPO_NOT_SELECTED_CODE = 8000012;
 
+/**
+ * The most pages `getBuildLogs` will fetch for one build before giving up, rather than looping
+ * forever against a `cursor` that keeps advancing (or, defensively, one that stops advancing but
+ * keeps reporting `truncated: true`). A real build's log runs to at most a few hundred lines, so
+ * this stays comfortably above any real log while still bounding the request count.
+ */
+const MAX_BUILD_LOG_PAGES = 50;
+
 /** How long to wait when a 429 carries no Retry-After header, in milliseconds. */
 const DEFAULT_RETRY_AFTER_MS = 1000;
 
@@ -301,8 +309,16 @@ function throwCatalogued(code, params, token, api) {
  * Map a failed Workers Builds response onto a catalogued or plain error and throw it. See the
  * module doc comment for why Builds routes carry their own smaller mapper rather than joining
  * OPERATION_CODES/throwMapped: the two Builds-specific 404 refusals and the family-agnostic
- * 403/token-invalid rules are still caught here, but anything else throws a plain, redacted
- * Error instead of a catalogued one, since no catalogued Builds row exists to reuse truthfully.
+ * 403/token-invalid rules are still caught here, but anything else throws a plain error carrying
+ * only the numeric code(s), never a catalogued one, since no catalogued Builds row exists to
+ * reuse truthfully.
+ *
+ * The two refusal codes are matched against `errors.some(...)`, independent of both the error's
+ * position in the array and the response's HTTP status (the T4c review's B3 finding): the spike
+ * observed both as HTTP 404 with the refusal at `errors[0]`, but that was one observation, and a
+ * warning ahead of the refusal, or Cloudflare re-statusing these Pages-era codes, must not make
+ * the row fall through to the plain fallback below, which is the one branch that could otherwise
+ * leak Cloudflare's own factually-wrong Pages prose (spike amendment 6).
  * @param {number} status the HTTP status
  * @param {unknown} json the parsed body
  * @param {string} dir the `--dir` value, interpolated into a catalogued row
@@ -318,10 +334,10 @@ function throwBuildsMapped(status, json, dir, token, refusalParams = {}) {
   const combinedMessage = errors.map((e) => e.message).filter(Boolean).join('; ');
   const api = { status, code: primary?.code, id: primary?.message };
 
-  if (status === 404 && primary?.code === BUILDS_APP_NOT_AUTHORIZED_CODE) {
+  if (errors.some((e) => e.code === BUILDS_APP_NOT_AUTHORIZED_CODE)) {
     throwCatalogued('builds-app-not-authorized', { dir }, token, api);
   }
-  if (status === 404 && primary?.code === BUILDS_REPO_NOT_SELECTED_CODE) {
+  if (errors.some((e) => e.code === BUILDS_REPO_NOT_SELECTED_CODE)) {
     throwCatalogued(
       'builds-repo-not-selected',
       { dir, owner: refusalParams.owner, repo: refusalParams.repo },
@@ -340,7 +356,14 @@ function throwBuildsMapped(status, json, dir, token, refusalParams = {}) {
   if (status === 401 && primary?.code === 10000) {
     throwCatalogued('token-invalid', { dir, detail: primary.message }, token, api);
   }
-  const err = new Error(redactToken(combinedMessage || `Cloudflare Builds API error (HTTP ${status})`, token));
+
+  // No catalogued Builds row exists for anything else, and the platform's own message must never
+  // reach the admin on a /builds/ route: both captured refusals were Pages-era prose that is
+  // factually wrong for the condition they actually describe here, and there is no way to know in
+  // general whether an unmapped Builds failure carries the same problem. So the fallback names
+  // only the numeric code(s) Cloudflare returned, never `combinedMessage`.
+  const codes = errors.map((e) => e.code).filter((code) => code !== undefined);
+  const err = new Error(`Cloudflare Builds API error (HTTP ${status}, code ${codes.length > 0 ? codes.join(', ') : 'unknown'})`);
   err.api = api;
   throw err;
 }
@@ -607,10 +630,37 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
       return json.result;
     },
 
+    // Pages the `cursor` the logs route returns until a page reports `truncated: false` (the
+    // real end, per the captured shape), the cursor stops advancing, or MAX_BUILD_LOG_PAGES is
+    // hit, concatenating every page's `lines` and `events` in the oldest-first order the route
+    // already serves them in. The prior version read only page one and NEVER inspected `cursor`
+    // or `truncated`, so a failed build with its actual error past the first page silently
+    // printed the log's HEAD (build-environment setup chatter) under a heading that promised the
+    // tail (T4c review finding B2). `cappedAtPageLimit` tells the caller the page cap, not the
+    // log's real end, was reached, so a caller must not claim these are the log's true last lines.
     async getBuildLogs(buildUuid) {
-      const { status, json } = await get(`/accounts/${accountId}/builds/builds/${buildUuid}/logs`);
-      if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
-      return json.result;
+      const lines = [];
+      const events = [];
+      let cursor;
+      let page;
+      let pagesRead = 0;
+      let cappedAtPageLimit = false;
+      for (;;) {
+        const qs = buildQuery({ cursor });
+        const { status, json } = await get(`/accounts/${accountId}/builds/builds/${buildUuid}/logs${qs}`);
+        if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
+        page = json.result;
+        pagesRead += 1;
+        if (Array.isArray(page.lines)) lines.push(...page.lines);
+        if (Array.isArray(page.events)) events.push(...page.events);
+        if (!page.truncated) break;
+        if (page.cursor === cursor || pagesRead >= MAX_BUILD_LOG_PAGES) {
+          cappedAtPageLimit = true;
+          break;
+        }
+        cursor = page.cursor;
+      }
+      return { ...page, lines, events, cappedAtPageLimit };
     },
   };
 }

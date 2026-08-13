@@ -725,6 +725,48 @@ test('putBuildConnection maps the repo-not-selected refusal (HTTP 404, code 8000
   );
 });
 
+test('the repo-not-selected refusal is still caught with the code behind a warning at errors[1] (B3)', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('builds_connection_put', 404, {
+    success: false,
+    errors: [
+      { code: 1, message: 'A warning ahead of the real refusal' },
+      { code: BUILDS_REPO_NOT_SELECTED_CODE, message: REPO_NOT_SELECTED_REFUSED_BODY.errors[0].message },
+    ],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.putBuildConnection({ providerAccountId: '14229321', providerAccountName: 'glw907', repoId: '1332620835', repoName: 'cairn-t4c-spike' }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'builds-repo-not-selected');
+      assert.doesNotMatch(err.message, /no longer exists/);
+      return true;
+    },
+  );
+});
+
+test('an unmapped /builds/ failure never leaks Cloudflare\'s own platform prose, naming only the numeric code', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('builds_triggers_list', 500, {
+    success: false,
+    errors: [{ code: 99999, message: 'Some Cloudflare-internal Pages-era sentence the admin must never see' }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.listBuildTriggers('some-tag'),
+    (err) => {
+      assert.equal(err.catalogue, undefined, 'an unmapped Builds failure carries no catalogue code');
+      assert.doesNotMatch(err.message, /Pages-era sentence/);
+      assert.match(err.message, /99999/);
+      return true;
+    },
+  );
+});
+
 test('a genuinely underscoped token on a Builds route still maps to token-scope-missing', async (t) => {
   const { cloudflare, api } = await setup(t);
   cloudflare.failNext('builds_triggers_list', 403, {
@@ -875,7 +917,69 @@ test('getBuild reads back a kicked build by uuid, and getBuildLogs reads its see
   assert.equal(build.status, 'queued');
 
   const logs = await api.getBuildLogs(kicked.build_uuid);
-  assert.deepEqual(logs, BUILD_LOGS_FIXTURE);
+  assert.deepEqual(logs, { ...BUILD_LOGS_FIXTURE, cappedAtPageLimit: false });
+});
+
+test('getBuildLogs pages the cursor until truncated is false, so a tail on a later page is read', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+  const trigger = await api.createBuildTrigger({
+    workerTag: 'tag-paged-logs',
+    repoConnectionUuid: connection.repo_connection_uuid,
+    branchIncludes: ['main'],
+  });
+  const kicked = await api.kickBuild(trigger.trigger_uuid, 'main');
+
+  // A single-fetch implementation (the pre-fix shape: no cursor sent, `truncated` ignored) reads
+  // only this first page and never sees the marker on the second: this is the B2 falsifiable test.
+  cloudflare.state.buildLogs.set(kicked.build_uuid, [
+    { cursor: 'page-1', truncated: true, lines: [[1, 'Initializing build environment...'], [2, 'Cloning repository...']], events: [] },
+    { cursor: 'page-2', truncated: false, lines: [[3, 'a distinctive tail-only failure marker']], events: [] },
+  ]);
+
+  const logs = await api.getBuildLogs(kicked.build_uuid);
+  assert.deepEqual(logs.lines.map(([, text]) => text), [
+    'Initializing build environment...',
+    'Cloning repository...',
+    'a distinctive tail-only failure marker',
+  ]);
+  assert.equal(logs.truncated, false);
+  assert.equal(logs.cappedAtPageLimit, false);
+});
+
+test('getBuildLogs stops at its page cap and reports cappedAtPageLimit rather than looping forever', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+  const trigger = await api.createBuildTrigger({
+    workerTag: 'tag-runaway-logs',
+    repoConnectionUuid: connection.repo_connection_uuid,
+    branchIncludes: ['main'],
+  });
+  const kicked = await api.kickBuild(trigger.trigger_uuid, 'main');
+
+  // Every page reports truncated: true and a distinct cursor, so nothing short of a page cap
+  // would ever stop this loop.
+  const pages = Array.from({ length: 60 }, (_unused, i) => ({
+    cursor: `page-${i}`,
+    truncated: true,
+    lines: [[i, `line ${i}`]],
+    events: [],
+  }));
+  cloudflare.state.buildLogs.set(kicked.build_uuid, pages);
+
+  const logs = await api.getBuildLogs(kicked.build_uuid);
+  assert.equal(logs.cappedAtPageLimit, true);
+  assert.ok(logs.lines.length < pages.length, 'the page cap must stop the loop before every page is read');
 });
 
 test('listBuildsForWorker discovers a build by the worker tag its trigger carries', async (t) => {

@@ -58,7 +58,8 @@ import { randomBytes, randomUUID } from 'node:crypto';
  *  `queued` -> `initializing` -> `running` -> `stopped` sequence by writing directly onto the
  *  stored record between polls, and the per-worker discovery list is derived by filtering this
  *  map on `trigger.external_script_id`, never a second store), `state.buildLogs` (a `Map` from
- *  `build_uuid` to its logs body, seeded with `BUILD_LOGS_FIXTURE` when a build is kicked)
+ *  `build_uuid` to an ARRAY of logs pages, seeded as `[BUILD_LOGS_FIXTURE]` when a build is
+ *  kicked; a test appends further pages to prove `getBuildLogs`'s own cursor paging)
  * @property {Array<{ method: string, path: string, body: unknown, headers: { authorization:
  *  string | undefined } }>} requests every request received, in arrival order; append-only,
  *  never reset except by starting a new server. `headers.authorization` carries the request's
@@ -941,10 +942,10 @@ function createWorkersScriptsListHandler(ctx) {
  * shape rather than defaulting a branch. A successful kick returns the full build record already
  * `status: "queued"`, with empty `commit_hash`, `commit_message`, and `author` and
  * `build_trigger_source: "manual"` (a manual kick carries no commit identity; only a push event
- * does), and seeds `state.buildLogs` with `BUILD_LOGS_FIXTURE` so the logs route has something to
- * read immediately.
+ * does), and seeds `state.buildLogs` with a single-page `[BUILD_LOGS_FIXTURE]` so the logs route
+ * has something to read immediately.
  * @param {{ state: { buildTriggersByTag: Map<string, object[]>, builds: Map<string, object>,
- *  buildLogs: Map<string, object> } }} ctx
+ *  buildLogs: Map<string, object[]> } }} ctx
  */
 function createBuildKickHandler(ctx) {
   return async (_req, res, params, _url, body) => {
@@ -971,7 +972,7 @@ function createBuildKickHandler(ctx) {
       build_trigger_metadata: { commit_hash: '', commit_message: '', author: '', branch: body?.branch ?? '' },
     };
     ctx.state.builds.set(build.build_uuid, build);
-    ctx.state.buildLogs.set(build.build_uuid, { ...BUILD_LOGS_FIXTURE });
+    ctx.state.buildLogs.set(build.build_uuid, [{ ...BUILD_LOGS_FIXTURE }]);
     sendSuccess(res, 200, { ...build });
   };
 }
@@ -1014,17 +1015,31 @@ function createBuildGetHandler(ctx) {
 
 /**
  * Build the `GET /accounts/:accountId/builds/builds/:buildUuid/logs` handler: reads
- * `state.buildLogs`, seeded automatically by a kick and otherwise settable directly by a test
- * (for example to script the log tail `builds-deploy-failed` reads).
- * @param {{ state: { buildLogs: Map<string, object> } }} ctx
+ * `state.buildLogs`, an ARRAY of pages per build, seeded as a single page by a kick and otherwise
+ * settable directly by a test (for example to script the log tail `builds-deploy-failed` reads,
+ * or a multi-page sequence to prove the client's own cursor paging). With no `?cursor=` query
+ * parameter, page 0 is served. With one, the page immediately after whichever page's own
+ * `cursor` field matches it is served (falling back to the last page when nothing matches),
+ * modelling a cursor-based "resume after this point" route: this exact query-parameter shape was
+ * never captured live (docs/internal/2026-08-12-t4c-builds-spike.md records only the response
+ * body, `{cursor, truncated, lines, events}`), so it is inferred, not observed, and paired one-to-
+ * one with `api.mjs`'s own `getBuildLogs`, which is the only caller. Do not treat this shape as a
+ * captured fixture the way the rest of this file's Builds bodies are.
+ * @param {{ state: { buildLogs: Map<string, object[]> } }} ctx
  */
 function createBuildLogsHandler(ctx) {
-  return async (_req, res, params) => {
-    const logs = ctx.state.buildLogs.get(params.buildUuid);
-    if (!logs) {
+  return async (_req, res, params, url) => {
+    const pages = ctx.state.buildLogs.get(params.buildUuid);
+    if (!pages || pages.length === 0) {
       sendJson(res, 404, { success: false, errors: [{ code: 8000001, message: 'Build not found' }], messages: [], result: null });
       return;
     }
-    sendSuccess(res, 200, { ...logs });
+    const cursorParam = url.searchParams.get('cursor');
+    let page = pages[0];
+    if (cursorParam) {
+      const previousIndex = pages.findIndex((candidate) => candidate.cursor === cursorParam);
+      page = previousIndex >= 0 && previousIndex + 1 < pages.length ? pages[previousIndex + 1] : pages[pages.length - 1];
+    }
+    sendSuccess(res, 200, { ...page });
   };
 }

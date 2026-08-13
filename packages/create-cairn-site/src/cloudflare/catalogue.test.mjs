@@ -486,6 +486,17 @@ test('builds-deploy-failed carries the log tail and the build dashboard link', (
   assert.equal(err.catalogue.kind, 'act');
   assert.match(err.message, /error occurred while running deploy command/);
   assert.match(err.message, /dash\.cloudflare\.com/);
+  assert.match(err.message, /log ends with/);
+});
+
+test('builds-deploy-failed says the log was truncated, not that it ends there, when logTruncated is set', () => {
+  const err = cloudflareError('builds-deploy-failed', {
+    ...SAMPLE_PARAMS['builds-deploy-failed'],
+    logTruncated: true,
+  });
+  assert.doesNotMatch(err.message, /log ends with/);
+  assert.match(err.message, /too long/);
+  assert.match(err.message, /error occurred while running deploy command/);
 });
 
 test('builds-not-runnable names which outcome (skipped or cancelled) it was', () => {

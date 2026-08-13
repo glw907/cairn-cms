@@ -48,8 +48,19 @@ this pass added have no local gate, so that PR is their first real validation, a
 minted GitHub App, and saved state, and owns the single teardown. **None of that exists**:
 `~/.config/cairn/sites` is empty and the App ledger still stands at four hand-deleted, not five,
 because T5a did not run Task 8. The brief now states both cases and tells the planning sitting to
-check the directory rather than trust the paragraph. Order matters here: Task 8 first means one
-App and one teardown; T4d first means T4d mints the fifth itself.
+check the directory rather than trust the paragraph.
+
+**The estate is not an ordering argument, and an earlier version of this entry wrongly implied it
+was.** Whichever of the two runs first mints the fifth App and the other inherits it, so the count
+is one either way. What the estate does argue for is keeping them adjacent, since a long gap
+between them means the first one's estate gets torn down and the second mints a sixth.
+
+**The ordering argument that does hold is information flow** (the same ground ruling 1 used to put
+T5 ahead of T4d). Task 8 is the first live exercise of chapter 3's own orchestration and the
+`reauthorize` trip; every proof of them today comes from fakes whose fixtures were copied from
+captures. What it observes is what T4d renders: where a run actually parks, what the waits look
+like, how long they take. A live run can reshape T4d's brief and nothing in T4d can reshape Task 8,
+so **Task 8 should run first** unless a browser session is not available.
 
 **Gate at close, verified in the main loop rather than taken from an agent's report:**
 `packages/create-cairn-site` 701 pass exit 0; root `npm test` 412 files / 5275 tests exit 0;

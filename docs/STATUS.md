@@ -23,11 +23,33 @@ the `~/Projects/cairn-cms` checkout is stale at `5a37c7cb` while `origin/main` i
 The branch is unmerged and unpushed. `package.json` is untouched, the runtime library is
 untouched, and the changelog entry sits under `## Unreleased`.
 
-**The immediate next action is a decision about ordering, not code.** Three things are ready and
-none blocks another: (1) push and open a PR for T5a, (2) run Task 8's live CLI e2e, which is
-unaffected by the split finding and needs only Geoff's browser, (3) start T4d. The queue as
-recorded is T4d next, so absent a preference that is where a fresh session goes, after landing
-T5a.
+**T5a is pushed and on draft PR #30**, with all five gating workflows running
+(`scaffold`, `design`, `test`, `e2e`, `create-site`). **Note for anyone pushing a feature branch
+here: a push alone runs nothing.** All five restrict their `push` trigger to `main` and
+`rebuild`, so CI on a feature branch comes only from `pull_request`. The two workflow YAML files
+this pass added have no local gate, so that PR is their first real validation, and the
+`release: published` path stays unproven until release one.
+
+**Two things are next and neither blocks the other.**
+
+1. **Task 8, the live CLI e2e.** Still owed from T5, unaffected by the split, and the only T5
+   hand step actionable today. It needs Geoff's browser for the fifth GitHub App's creation and
+   the `reauthorize` OAuth trip. Running it before T4d is worth real money: T4d's brief was
+   written assuming it inherits this estate.
+2. **T4d, the localhost console.** Its brief is in
+   `docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`, amended 2026-08-13 with
+   the correction below. **It needs a spec and a plan before execution, and that sitting belongs
+   on Fable** per the model economy: the console is a UI surface whose open questions are taste
+   (whether the delegation view polls or asks for a refresh; whether it retrofits the GitHub
+   chapter's one-shot pages, which the research recommends against as cosmetic). An Opus
+   execution session should not author it.
+
+**A rotted assumption, corrected at T5a's close.** T4d's brief said it inherits T5's live site,
+minted GitHub App, and saved state, and owns the single teardown. **None of that exists**:
+`~/.config/cairn/sites` is empty and the App ledger still stands at four hand-deleted, not five,
+because T5a did not run Task 8. The brief now states both cases and tells the planning sitting to
+check the directory rather than trust the paragraph. Order matters here: Task 8 first means one
+App and one teardown; T4d first means T4d mints the fifth itself.
 
 **Gate at close, verified in the main loop rather than taken from an agent's report:**
 `packages/create-cairn-site` 701 pass exit 0; root `npm test` 412 files / 5275 tests exit 0;

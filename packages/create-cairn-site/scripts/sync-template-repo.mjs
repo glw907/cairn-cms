@@ -5,7 +5,7 @@
 // most one sync. The sync never forks or re-implements the emit or prune logic; it reuses bake()
 // from bake-template.mjs exactly the way the tool's own prepack step does.
 import { spawn } from 'node:child_process';
-import { access, cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,7 @@ export const TEMPLATE_REPO_SLUG = 'glw907/cairn-waymark-template';
 
 const TEMPLATE_REPO_HOST = 'github.com';
 
+const ENGINE_PACKAGE = '@glw907/cairn-cms';
 const DEV_BACKEND_PACKAGE = '@glw907/cairn-cms-dev';
 const DEV_SCRIPT_NAME = 'dev';
 const DEV_SHIM_RELATIVE_PATH = path.join('scripts', 'dev.mjs');
@@ -227,22 +228,26 @@ async function applyOverlay(sourceDir, overlayDir) {
     const overlayContent = await readFile(overlayFile, 'utf8');
     await mkdir(path.dirname(destPath), { recursive: true });
     const rule = OVERLAY_MERGE_RULES[relativePath] ?? 'replace';
-    if (rule === 'replace') {
-      await writeFile(destPath, overlayContent);
-      continue;
-    }
-    if (rule === 'append') {
-      let base = '';
-      try {
-        base = await readFile(destPath, 'utf8');
-      } catch {
-        // No baked counterpart to append after; the overlay content stands alone.
+    switch (rule) {
+      case 'replace':
+        await writeFile(destPath, overlayContent);
+        break;
+      case 'append': {
+        let base = '';
+        try {
+          base = await readFile(destPath, 'utf8');
+        } catch {
+          // No baked counterpart to append after; the overlay content stands alone.
+        }
+        const separator = base === '' || base.endsWith('\n') ? '' : '\n';
+        await writeFile(destPath, base + separator + overlayContent);
+        break;
       }
-      const separated = base === '' || base.endsWith('\n') ? base : `${base}\n`;
-      await writeFile(destPath, separated + overlayContent);
-      continue;
+      default:
+        throw new Error(
+          `sync-template-repo: unknown overlay merge rule "${rule}" for ${relativePath}`,
+        );
     }
-    throw new Error(`sync-template-repo: unknown overlay merge rule "${rule}" for ${relativePath}`);
   }
 }
 
@@ -272,13 +277,10 @@ async function stripDevBackend(sourceDir) {
  */
 async function assertResolvable(sourceDir, resolveSpec) {
   const pkg = JSON.parse(await readFile(path.join(sourceDir, 'package.json'), 'utf8'));
-  const specs = [];
-  if (pkg.dependencies?.['@glw907/cairn-cms']) {
-    specs.push(['@glw907/cairn-cms', pkg.dependencies['@glw907/cairn-cms']]);
-  }
-  if (pkg.devDependencies?.[DEV_BACKEND_PACKAGE]) {
-    specs.push([DEV_BACKEND_PACKAGE, pkg.devDependencies[DEV_BACKEND_PACKAGE]]);
-  }
+  const specs = [
+    [ENGINE_PACKAGE, pkg.dependencies?.[ENGINE_PACKAGE]],
+    [DEV_BACKEND_PACKAGE, pkg.devDependencies?.[DEV_BACKEND_PACKAGE]],
+  ].filter(([, spec]) => spec);
   for (const [name, spec] of specs) {
     const resolvable = await resolveSpec(name, spec);
     if (!resolvable) {
@@ -370,10 +372,9 @@ export async function syncTemplateRepo({
   if (!remote) throw new Error('sync-template-repo: "remote" is required');
   assertRemoteAllowed(remote, allowAnyRemote);
 
-  // stripDevBackend() below deletes this spec from package.json outright, so a caller who did not
-  // supply one (the whole point of --strip-dev-backend, syncing before the dev backend publishes)
-  // gets a placeholder that only needs to clear bake()'s unpublished-version check, never a real
-  // devSpec.
+  // --strip-dev-backend exists for syncing before the dev backend publishes, so a caller passing it
+  // should not have to name a spec for the very thing they are removing. What the stand-in has to
+  // satisfy is at STRIPPED_DEV_SPEC_PLACEHOLDER.
   const resolvedDevSpec = devSpec ?? (stripFlag ? STRIPPED_DEV_SPEC_PLACEHOLDER : undefined);
 
   const sourceDir = await mkdtemp(path.join(tmpdir(), 'cairn-sync-source-'));
@@ -391,13 +392,14 @@ export async function syncTemplateRepo({
     workDir = await mkdtemp(path.join(tmpdir(), 'cairn-sync-work-'));
     await git(['clone', remote, workDir], { cwd: process.cwd(), log, token, env: authEnv });
 
-    const { stdout: currentBranch } = await git(['branch', '--show-current'], {
+    const { stdout: branchOutput } = await git(['branch', '--show-current'], {
       cwd: workDir,
       log,
       token,
       mirror: false,
     });
-    if (currentBranch.trim() !== 'main') {
+    const currentBranch = branchOutput.trim();
+    if (currentBranch !== 'main') {
       // A `checkout -B main` on a remote whose default branch already carries commits would
       // create a brand-new `main` alongside it, push there, and return success, while the
       // remote's HEAD symref (what "Use this template" and a deploy button actually resolve)
@@ -405,7 +407,7 @@ export async function syncTemplateRepo({
       // remote, where there is nothing to diverge from) is safe to name `main` unconditionally.
       if ((await currentSha(workDir)) !== null) {
         throw new Error(
-          `sync-template-repo: the remote's default branch is "${currentBranch.trim()}", not ` +
+          `sync-template-repo: the remote's default branch is "${currentBranch}", not ` +
             '"main"; the sync only ever writes to main and refuses to create a second, divergent ' +
             'branch. Set the remote\'s default branch to main before syncing.',
         );

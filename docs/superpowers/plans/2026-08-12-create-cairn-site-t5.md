@@ -34,6 +34,51 @@ copy claim waits for it.
 **Prerequisite:** T4c is merged to `main` and this pass runs in a fresh worktree off `main`.
 The live e2e proves chapter 3, which exists only post-merge.
 
+## Execution amendment 1: the pass splits (2026-08-13, Geoff)
+
+**Supersedes the task text below wherever they conflict.** Task 2 Step 1's install-and-build check
+was rehearsed locally, against a bare fixture remote, before spending a browser session on the live
+run. It failed. The synced tree installs and will not build: it imports `previewLoad` and
+`PreviewBanner`, which published `@glw907/cairn-cms@0.94.0` does not export. Evidence, scope
+(exactly two symbols, measured across all 57 engine imports rather than inferred from the build's
+two errors), and why no existing gate could have caught it are in
+[`docs/internal/2026-08-13-t5-button-spike.md`](../../internal/2026-08-13-t5-button-spike.md),
+Step 1.
+
+**Spec ruling 6 is wrong on its central claim.** It reasoned that moving the strip into the sync is
+what makes `npm install && npm run build` reachable before release one. The strip removes the
+`@glw907/cairn-cms-dev` devDependency and has no bearing on the engine, so the acceptance criterion
+was never reachable as written. The bake emits the showcase's current tree while the emitted engine
+spec resolves to the last published version, and the showcase has adopted unpublished-window
+features.
+
+**The split.** STATUS already recorded that `create-cairn-site` and the template repo publish in
+the same cut as release one, so the repo was always going public then; only this plan's "installable
+today" criterion assumed otherwise.
+
+- **T5a, this session:** Task 1, Task 4 Step 1, the guide's three doors (Task 6, with its button
+  section naming the door as not yet available and citing the vendor rather than observation), and
+  a **new build gate on the sync** (below). The friction-log entry Task 6 owns is triaged here,
+  since `--connect` is what resolves it.
+- **T5a', at release one:** Task 4 Step 2 (the PAT), Task 5 (create and first-sync the repo),
+  Task 7 (the C3 contract), Task 2 (the live button spike), Task 3 (the overlay's spike-derived
+  content), Task 6's button section rewritten from observation, and the checklist plus its
+  cross-file match test. The T5b brief (Task 9 Step 2) moves with the spike that feeds it.
+- **Task 8 (the live CLI e2e) is unaffected by the finding** and stays browser-gated. It is not
+  blocked by the split; it is blocked only on Geoff's browser.
+
+**New in T5a, approved with the split: the sync gates on a real build, not only on registry
+resolvability.** `npm view` answers whether a spec resolves, which it does; nothing asked whether
+the tree builds. A sync that can push an unbuildable tree is the underlying defect, and the weekly
+drift cron would never detect it. The gate runs only when a real sync is about to commit, so a
+no-op or a `--dry-run` never pays for an install and a build. Its consequence is deliberate: **the
+sync now refuses to push until the preview symbols publish**, which is the correct behavior under
+the split and makes Task 5 genuinely blocked rather than quietly shipping a broken tree.
+
+Two acceptance criteria in the spec are therefore not met by T5a and move to T5a' with the work
+that earns them: the repo existing and building from a clean clone, and the button reaching a
+serving `workers.dev` site.
+
 **Tech Stack:** Node ESM (`.mjs`), `node:test`, the existing `bake-template.mjs` /
 `emitTemplate` pipeline, git over HTTPS with a fine-grained PAT, GitHub Actions.
 

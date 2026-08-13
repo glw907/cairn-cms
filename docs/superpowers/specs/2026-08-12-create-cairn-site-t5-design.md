@@ -73,7 +73,17 @@ proves chapter 3, which exists only post-merge.
    healthy one.
 6. **The strip lives in the sync, so the shipped repo is installable** (rewritten at the
    adversarial gate; the pre-review draft stripped only the spike copy, which proved one tree
-   and shipped a different one). The baked template's `@glw907/cairn-cms-dev` devDependency
+   and shipped a different one). **AMENDED 2026-08-13, at execution: this ruling's central claim
+   is wrong.** The strip is necessary and nowhere near sufficient. It removes the dev backend and
+   has no bearing on the **engine**, whose emitted spec resolves to the last published version
+   while the bake emits the showcase's current tree. When the showcase has adopted
+   unpublished-window engine features, the tree imports symbols the resolved engine does not
+   export, and the clean-clone build fails. It did: `previewLoad` and `PreviewBanner` against
+   `0.94.0`. So "installable before release one" was never reachable as this ruling reasoned, the
+   pass split (plan execution amendment 1), and the sync gained a gate that proves the tree it
+   would push actually builds. Evidence:
+   [`docs/internal/2026-08-13-t5-button-spike.md`](../../internal/2026-08-13-t5-button-spike.md),
+   Step 1. The rest of the ruling below stands. The baked template's `@glw907/cairn-cms-dev` devDependency
    is unpublished (`0.0.0`), which makes the bake's default invocation throw; both existing
    CI workflows already bake with explicit `--engine-spec`/`--dev-spec` and pack with
    `--ignore-scripts` for exactly this reason. The bake's `assertInstallableSpec` catches

@@ -93,6 +93,17 @@ Readiness checklist:
   compatibility). Pass D follows T5, and the tool and template publish in the same cut as release
   one.
 
+  **T5 split at execution** (Geoff, 2026-08-13). **T5a is done**: the sync script that generates the
+  template repo wholesale from the bake plus an overlay, its GitHub Actions wiring (a release job,
+  a manual dispatch, and a weekly drift cron), a build gate that proves the tree the sync would
+  push actually builds, and the deploy guide's three-door framing. **T5a' waits for release one**:
+  the public repo, its first sync, the live button spike, the spike-derived overlay content and
+  completion checklist, and the C3 `--template` verification. The reason is a finding, not a
+  scheduling preference: the bake emits the showcase's current tree while the emitted engine spec
+  resolves to the last published version, so a template synced today imports engine symbols the
+  registry does not serve. Release one resolves it by definition, and the ordering above already
+  put the template repo in that cut.
+
   **Why the console is its own pass** (Geoff, 2026-08-11): it was bundled with email because the
   email chapter was assumed to have a long wait worth watching, and the research found that
   onboarding a Cloudflare-DNS domain takes minutes. The wait that earns a console is chapter 2's

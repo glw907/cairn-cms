@@ -3,8 +3,14 @@
 // stays dependency-free and catalogue-free on purpose: every later chapter (manifest creation,
 // install) maps its own LOOPBACK_TIMEOUT into its own error catalogue rather than this module
 // reaching outward.
-
-import http from 'node:http';
+//
+// Built on ../loopback-core.mjs's fixed, unprefixed mounts: GitHub bakes callback_urls and
+// redirect_url at App-creation time, so this module mounts its three paths ('/', '/callback',
+// '/manifest') fixed and unprefixed, never per-start prefixed (see loopback-core.mjs's own doc
+// header for why). The core's Host allowlist now guards every request here too; a request whose
+// Host header is not 127.0.0.1, localhost, or [::1] (each with an optional port) is refused with
+// 403 before reaching any handler.
+import { startLoopbackCore } from '../loopback-core.mjs';
 
 /**
  * @typedef {object} WaitForOptions
@@ -31,70 +37,74 @@ import http from 'node:http';
  */
 
 /**
+ * Build a fixed mount's handler: resolve the pending wait watching this exact pathname, or 404
+ * when nothing is currently watching it.
+ * @param {string} pathname the fixed path this handler is mounted at
+ * @param {() => PendingWait | null} getPendingWait reads the current pending wait, if any
+ * @param {(next: PendingWait | null) => void} setPendingWait replaces the current pending wait
+ * @returns {import('../loopback-core.mjs').MountHandler} the mount handler
+ */
+function pendingWaitHandler(pathname, getPendingWait, setPendingWait) {
+  return (req, res, url) => {
+    const pendingWait = getPendingWait();
+    if (pendingWait && pathname === pendingWait.pathname) {
+      const { landingHtml, resolve: resolveWait, timer } = pendingWait;
+      clearTimeout(timer);
+      setPendingWait(null);
+      res.writeHead(200, { 'content-type': 'text/html' });
+      res.end(landingHtml);
+      resolveWait(url.searchParams);
+      return;
+    }
+    res.writeHead(404, { 'content-type': 'text/plain' });
+    res.end('Not found');
+  };
+}
+
+/**
  * Start the loopback receiver on an ephemeral, 127.0.0.1-only port.
  * @returns {Promise<Loopback>} the running receiver
  */
-export function startLoopback() {
-  return new Promise((resolve, reject) => {
-    let formHtml = '';
-    /** @type {PendingWait | null} */
-    let pendingWait = null;
+export async function startLoopback() {
+  const core = await startLoopbackCore();
+  let formHtml = '';
+  /** @type {PendingWait | null} */
+  let pendingWait = null;
+  const getPendingWait = () => pendingWait;
+  const setPendingWait = (next) => {
+    pendingWait = next;
+  };
 
-    const server = http.createServer((req, res) => {
-      const requestUrl = new URL(req.url ?? '/', 'http://127.0.0.1');
-
-      if (pendingWait && requestUrl.pathname === pendingWait.pathname) {
-        const { landingHtml, resolve: resolveWait, timer } = pendingWait;
-        clearTimeout(timer);
-        pendingWait = null;
-        res.writeHead(200, { 'content-type': 'text/html' });
-        res.end(landingHtml);
-        resolveWait(requestUrl.searchParams);
-        return;
-      }
-
-      if (requestUrl.pathname === '/') {
-        res.writeHead(200, { 'content-type': 'text/html' });
-        res.end(formHtml);
-        return;
-      }
-
-      res.writeHead(404, { 'content-type': 'text/plain' });
-      res.end('Not found');
-    });
-
-    server.on('error', reject);
-
-    server.listen(0, '127.0.0.1', () => {
-      const address = server.address();
-      // listen(0, ...) always yields an AddressInfo object, never a string pipe name.
-      const port = /** @type {import('node:net').AddressInfo} */ (address).port;
-
-      resolve({
-        port,
-        url: `http://127.0.0.1:${port}`,
-        serveForm(html) {
-          formHtml = html;
-        },
-        waitFor(pathname, { timeoutMs = 10 * 60 * 1000, landingHtml }) {
-          return new Promise((resolveWait, rejectWait) => {
-            const timer = setTimeout(() => {
-              pendingWait = null;
-              const timeoutError = new Error(`loopback: timed out waiting for ${pathname}`);
-              timeoutError.code = 'LOOPBACK_TIMEOUT';
-              rejectWait(timeoutError);
-            }, timeoutMs);
-            pendingWait = { pathname, landingHtml, resolve: resolveWait, timer };
-          });
-        },
-        close() {
-          if (pendingWait) {
-            clearTimeout(pendingWait.timer);
-            pendingWait = null;
-          }
-          return new Promise((resolveClose) => server.close(() => resolveClose()));
-        },
-      });
-    });
+  core.mount('/', (req, res) => {
+    res.writeHead(200, { 'content-type': 'text/html' });
+    res.end(formHtml);
   });
+  core.mount('/callback', pendingWaitHandler('/callback', getPendingWait, setPendingWait));
+  core.mount('/manifest', pendingWaitHandler('/manifest', getPendingWait, setPendingWait));
+
+  return {
+    port: core.port,
+    url: core.url,
+    serveForm(html) {
+      formHtml = html;
+    },
+    waitFor(pathname, { timeoutMs = 10 * 60 * 1000, landingHtml }) {
+      return new Promise((resolveWait, rejectWait) => {
+        const timer = setTimeout(() => {
+          pendingWait = null;
+          const timeoutError = new Error(`loopback: timed out waiting for ${pathname}`);
+          timeoutError.code = 'LOOPBACK_TIMEOUT';
+          rejectWait(timeoutError);
+        }, timeoutMs);
+        pendingWait = { pathname, landingHtml, resolve: resolveWait, timer };
+      });
+    },
+    close() {
+      if (pendingWait) {
+        clearTimeout(pendingWait.timer);
+        pendingWait = null;
+      }
+      return core.close();
+    },
+  };
 }

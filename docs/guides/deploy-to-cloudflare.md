@@ -1,5 +1,42 @@
 # Deploy to Cloudflare
 
+A cairn site reaches production one of three ways.
+
+## Choose a path
+
+The rest of this guide walks the first door: wiring the admin by hand and running `wrangler
+deploy` yourself. Every other door builds on this one, and it stays the reference for what those
+doors still leave you to do.
+
+The second door is `create-cairn-site`'s own Builds chapter, and it only works on a site
+`create-cairn-site` itself scaffolded. It reads the tool's own saved record of your GitHub App
+and your Cloudflare account, which a site built by hand never has. Run it from the site's
+directory once the site is already live at its `workers.dev` address:
+
+```sh
+npx create-cairn-site --dir <dir> --connect
+```
+
+It connects your repository to Cloudflare Workers Builds, binds a trigger to your existing
+Worker, and commits `wrangler.jsonc` and `src/theme/cairn.config.ts` back to the repository if
+either has drifted from what you last deployed. It then watches the first Builds deploy through
+to completion. After that, every push to your default branch builds and deploys itself. Running
+`--connect` again later re-checks the same two files and commits anything that has drifted on
+your machine since. Workers Builds automates the deploy. A migration or an engine update still
+runs through this CLI or by hand, whichever door got you live. See the [Builds
+chapter](../../packages/create-cairn-site/README.md#the-builds-chapter) for what each step asks
+of you and what it costs.
+
+The third door is a Deploy to Cloudflare button, the kind Cloudflare's own [template
+gallery](https://developers.cloudflare.com/workers/platform/deploy-buttons/) uses. Clicking one
+creates a copy of a template repository in your own GitHub account, provisions the bindings its
+config declares, and connects it to Workers Builds, all without installing anything locally.
+cairn does not publish a template repository for this button yet, so this door is not available.
+
+Whichever door you take, your site still needs a Workers plan that supports sending to arbitrary
+recipients before anyone other than you can sign in. See [Choose a Workers
+plan](./configure-auth-and-d1.md#choose-a-workers-plan).
+
 Deploying a cairn site means wiring its admin and provisioning its Worker's Cloudflare
 bindings. The admin is six files (a composer in `src/lib`, the guard in
 `src/hooks.server.ts`, plus a layout pair and a catch-all pair under `src/routes/admin`)

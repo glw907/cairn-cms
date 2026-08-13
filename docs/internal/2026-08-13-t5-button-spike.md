@@ -235,10 +235,15 @@ and has never once proven one against the registry's. The same holds for `scaffo
 the same blind-spot family as the two durable gotchas already in `CLAUDE.md`: a gate that resolves
 the library locally cannot see a published-surface gap.
 
-It also means the finding is **wider than the template repo**. `create-cairn-site`'s own scaffold
-bakes from the same emitter with the same engine spec, so a site scaffolded today from a published
-CLI would hit the identical two missing exports. The template repo is where the rehearsal happened
-to find it, not the only place it bites.
+The coupling is **general to the bake, not specific to the template repo**, though what it costs
+depends on when the baked tree meets the registry. `create-cairn-site` bakes from the same emitter
+with the same engine spec, so anyone packing the CLI locally today and scaffolding against the
+registry hits the identical two missing exports. The CLI itself is unpublished (`0.0.0`), so no
+user has met this, and at release one it publishes alongside a new engine version whose spec does
+carry preview, which resolves it there by construction. **The template repo is the one artifact
+this actually blocks**, precisely because it is meant to go public ahead of release one. That is
+the difference worth holding onto: the bake is fine whenever its emitted spec and its emitted tree
+come from the same release, and only the ship-before-release case breaks it.
 
 ### The resolution is a decision, not a fix
 

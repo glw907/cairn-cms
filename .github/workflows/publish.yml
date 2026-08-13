@@ -77,6 +77,11 @@ jobs:
     needs: publish
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
+    # A real sync's own install-and-build (paid whenever there is drift to push, which a version
+    # bump always is) runs in well under two minutes locally; this bounds a wedged install or
+    # build well short of GitHub's 6-hour job default, without being so tight that ordinary
+    # network variance trips it. See sync-template.yml's own sync job for the same reasoning.
+    timeout-minutes: 15
     # Shared with sync-template.yml, so a manual dispatch cut during a release cannot race this job.
     concurrency:
       group: sync-template-repo

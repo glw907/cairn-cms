@@ -9,6 +9,7 @@ import {
   OVERLAY_DIR,
   TEMPLATE_REPO_SLUG,
   assertRemoteAllowed,
+  defaultBuildCheck,
   gitAuthEnv,
   redact,
   syncTemplateRepo,
@@ -474,6 +475,197 @@ test('the build check never runs for a --dry-run, which only reports what it wou
   assert.equal(dry.status, 'dry-run');
   assert.ok(dry.changedFiles.length > 0);
   assert.equal(calls, 0, 'a dry run never invokes the build check');
+});
+
+test('defaultBuildCheck runs a real install and build against a synthetic tree, no stub involved', async (t) => {
+  // A dependency-free package.json needs no network for `npm install`, which keeps this test
+  // hermetic; every other test in this suite injects a buildCheck stub so this is the only one
+  // that exercises the function CI actually relies on.
+  const successDir = await tempDir(t, 'cairn-sync-buildcheck-success-');
+  await writeFile(
+    path.join(successDir, 'package.json'),
+    JSON.stringify({
+      name: 'cairn-sync-buildcheck-success',
+      version: '1.0.0',
+      scripts: { build: 'node -e "process.exit(0)"' },
+    }),
+  );
+  const successResult = await defaultBuildCheck(successDir);
+  assert.equal(successResult.ok, true);
+
+  const failDir = await tempDir(t, 'cairn-sync-buildcheck-fail-');
+  await writeFile(
+    path.join(failDir, 'package.json'),
+    JSON.stringify({
+      name: 'cairn-sync-buildcheck-fail',
+      version: '1.0.0',
+      scripts: {
+        build: 'node -e "console.log(\'CAIRN_BUILDCHECK_FAILURE_MARKER\'); process.exit(1)"',
+      },
+    }),
+  );
+  const failResult = await defaultBuildCheck(failDir);
+  assert.equal(failResult.ok, false);
+  assert.ok(
+    failResult.output.includes('CAIRN_BUILDCHECK_FAILURE_MARKER'),
+    'the failing build script\'s own output survives into the reported output',
+  );
+});
+
+test('defaultBuildCheck strips TEMPLATE_REPO_TOKEN from the install and build subprocesses\' environment', async (t) => {
+  const dir = await tempDir(t, 'cairn-sync-buildcheck-env-');
+  await writeFile(
+    path.join(dir, 'package.json'),
+    JSON.stringify({
+      name: 'cairn-sync-buildcheck-env',
+      version: '1.0.0',
+      scripts: {
+        // Fails on purpose, so its stdout lands in the reported output regardless of what the
+        // env var holds; a passing build's stdout is never captured.
+        build:
+          'node -e "console.log(\'TOKEN_SEEN=\' + (process.env.TEMPLATE_REPO_TOKEN || \'none\')); process.exit(1)"',
+      },
+    }),
+  );
+  const token = 'cairn-sync-test-token-9f3ac1';
+  const previous = process.env.TEMPLATE_REPO_TOKEN;
+  process.env.TEMPLATE_REPO_TOKEN = token;
+  t.after(() => {
+    if (previous === undefined) delete process.env.TEMPLATE_REPO_TOKEN;
+    else process.env.TEMPLATE_REPO_TOKEN = previous;
+  });
+
+  const result = await defaultBuildCheck(dir);
+  assert.equal(result.ok, false);
+  assert.ok(
+    result.output.includes('TOKEN_SEEN=none'),
+    'the build subprocess never saw TEMPLATE_REPO_TOKEN, even though the parent process carried it',
+  );
+  assert.ok(!result.output.includes(token), 'the token itself never appears in the captured output');
+});
+
+test('a build failure that echoes the token is redacted before it reaches the thrown error', async (t) => {
+  const remote = await createBareRemote(t);
+  const token = 'cairn-sync-test-token-9f3ac1';
+
+  await assert.rejects(
+    () =>
+      syncTemplateRepo({
+        remote,
+        token,
+        ...FIXTURE_OPTIONS,
+        buildCheck: async () => ({
+          ok: false,
+          output: `install failed while reading TEMPLATE_REPO_TOKEN=${token} from the environment`,
+        }),
+        log: () => {},
+      }),
+    (err) => {
+      assert.ok(!err.message.includes(token), 'the thrown error does not carry the token');
+      assert.ok(err.message.includes('[REDACTED]'), 'the redaction marker stands in its place');
+      return true;
+    },
+  );
+});
+
+test('--verify-build runs the build check even when there is no drift, and refuses on failure', async (t) => {
+  const remote = await createBareRemote(t);
+  await syncTemplateRepo({ remote, ...FIXTURE_OPTIONS, log: () => {} });
+
+  let calls = 0;
+  await assert.rejects(
+    () =>
+      syncTemplateRepo({
+        remote,
+        ...FIXTURE_OPTIONS,
+        verifyBuild: true,
+        buildCheck: async () => {
+          calls += 1;
+          return { ok: false, output: '[MISSING_EXPORT] "PreviewBanner" is not exported' };
+        },
+        log: () => {},
+      }),
+    /PreviewBanner/,
+  );
+  assert.equal(calls, 1, 'the build check ran once even though there was no drift to push');
+  assert.equal(await remoteCommitCount(remote), 1, 'no additional commit landed');
+});
+
+test('--verify-build runs the build check on a --dry-run, independent of the change comparison', async (t) => {
+  const remote = await createBareRemote(t);
+  const shaBefore = await remoteSha(remote);
+  let calls = 0;
+
+  await assert.rejects(
+    () =>
+      syncTemplateRepo({
+        remote,
+        dryRun: true,
+        verifyBuild: true,
+        ...FIXTURE_OPTIONS,
+        buildCheck: async () => {
+          calls += 1;
+          return { ok: false, output: '[MISSING_EXPORT] "PreviewBanner" is not exported' };
+        },
+        log: () => {},
+      }),
+    /PreviewBanner/,
+  );
+  assert.equal(calls, 1, 'the build check ran once during a dry run when --verify-build is set');
+  assert.equal(await remoteSha(remote), shaBefore, 'the remote ref is unmoved');
+});
+
+test('--verify-build lets a passing build through a dry-run and a no-op alike, running the check exactly once per call', async (t) => {
+  const remote = await createBareRemote(t);
+
+  let calls = 0;
+  const buildCheck = async () => {
+    calls += 1;
+    return { ok: true, output: '' };
+  };
+
+  // A fresh remote carries drift against the bake, so this call exercises the dry-run branch.
+  const dry = await syncTemplateRepo({
+    remote,
+    dryRun: true,
+    verifyBuild: true,
+    ...FIXTURE_OPTIONS,
+    buildCheck,
+    log: () => {},
+  });
+  assert.equal(dry.status, 'dry-run');
+  assert.equal(calls, 1);
+
+  // A real sync (no --verify-build, no stubbed call counter) lands the commit, so the remote
+  // matches the bake and the next call exercises the no-op branch instead.
+  await syncTemplateRepo({ remote, ...FIXTURE_OPTIONS, log: () => {} });
+
+  const noop = await syncTemplateRepo({
+    remote,
+    verifyBuild: true,
+    ...FIXTURE_OPTIONS,
+    buildCheck,
+    log: () => {},
+  });
+  assert.equal(noop.status, 'no-op');
+  assert.equal(calls, 2, 'each verify-build call ran the check independently, once per invocation');
+});
+
+test('--verify-build does not double-run the check for a real sync that has drift', async (t) => {
+  const remote = await createBareRemote(t);
+  let calls = 0;
+  const result = await syncTemplateRepo({
+    remote,
+    verifyBuild: true,
+    ...FIXTURE_OPTIONS,
+    buildCheck: async () => {
+      calls += 1;
+      return { ok: true, output: '' };
+    },
+    log: () => {},
+  });
+  assert.equal(result.status, 'synced');
+  assert.equal(calls, 1, 'the build check ran exactly once, not twice, for a real sync under --verify-build');
 });
 
 test('no token substring appears in any output, dry-run or real', async (t) => {

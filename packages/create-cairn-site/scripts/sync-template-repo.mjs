@@ -348,22 +348,32 @@ function tailOutput(stdout, stderr) {
  * builds against the engine spec it emits, which registry resolvability alone cannot: a spec can
  * resolve to a real published version whose published code has not yet caught up to what the
  * checked-out tree imports (the gap a bake taken from an unpublished window can carry). Never
- * used by the suite, which always injects its own buildCheck so no test pays for a real install
- * and build.
+ * used by the suite (other than the test that exercises this function directly), which always
+ * injects its own buildCheck so no other test pays for a real install and build.
+ *
+ * The install and build subprocesses run with `TEMPLATE_REPO_TOKEN` stripped from their
+ * environment: neither step needs a git push credential, and this keeps a lifecycle script or
+ * build step that happens to echo its environment from ever being able to leak it.
  * @param {string} sourceDir the composed tree to check
  * @returns {Promise<{ ok: boolean, output: string }>} whether the tree builds, and, on failure,
  *  enough of the failing command's own output to name the cause
  */
-async function defaultBuildCheck(sourceDir) {
+export async function defaultBuildCheck(sourceDir) {
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
   const checkDir = await mkdtemp(path.join(tmpdir(), 'cairn-sync-buildcheck-'));
+  const buildEnv = { TEMPLATE_REPO_TOKEN: undefined };
   try {
     await cp(sourceDir, checkDir, { recursive: true });
-    const install = await runCommand(npm, ['install', '--no-audit', '--no-fund'], checkDir);
+    const install = await runCommand(
+      npm,
+      ['install', '--no-audit', '--no-fund'],
+      checkDir,
+      buildEnv,
+    );
     if (install.code !== 0) {
       return { ok: false, output: tailOutput(install.stdout, install.stderr) };
     }
-    const build = await runCommand(npm, ['run', 'build'], checkDir);
+    const build = await runCommand(npm, ['run', 'build'], checkDir, buildEnv);
     if (build.code !== 0) {
       return { ok: false, output: tailOutput(build.stdout, build.stderr) };
     }
@@ -374,22 +384,26 @@ async function defaultBuildCheck(sourceDir) {
 }
 
 /**
- * Prove the composed tree actually builds, and refuse the sync otherwise. Called only once the
- * sync already knows it has something to push (see the call site in {@link syncTemplateRepo}): a
- * no-op sync and a `--dry-run` both return before reaching this, since a real install and build
- * is too expensive to pay on every routine cron run or drift check, and an idempotent run should
- * stay cheap.
+ * Prove the composed tree actually builds, and refuse the sync otherwise. Without `--verify-build`
+ * this is called only once the sync already knows it has something to push (see the call site in
+ * {@link syncTemplateRepo}): a no-op sync and a `--dry-run` both return before reaching this,
+ * since a real install and build is too expensive to pay on every routine cron run or drift
+ * check, and an idempotent run should stay cheap. `--verify-build` calls this unconditionally
+ * instead, before either of those early returns.
  * @param {string} sourceDir the composed tree to check
  * @param {(sourceDir: string) => Promise<{ ok: boolean, output: string }>} buildCheck the
  *  injectable build check
+ * @param {string | undefined} token the push credential, redacted out of the build output before
+ *  it reaches a thrown error; a build's own output is otherwise the one place in this module that
+ *  is not already routed through {@link redact}
  * @returns {Promise<void>}
  */
-async function assertBuilds(sourceDir, buildCheck) {
+async function assertBuilds(sourceDir, buildCheck, token) {
   const result = await buildCheck(sourceDir);
   if (!result.ok) {
     throw new Error(
       'sync-template-repo: the composed tree does not build against its own emitted spec; ' +
-        `publish the missing symbols or adjust the spec before syncing\n${result.output}`,
+        `publish the missing symbols or adjust the spec before syncing\n${redact(result.output, token)}`,
     );
   }
 }
@@ -435,11 +449,15 @@ async function wipeWorkingTree(workDir) {
  *   overlayDir?: string,
  *   resolveSpec?: (name: string, spec: string) => Promise<boolean>,
  *   buildCheck?: (sourceDir: string) => Promise<{ ok: boolean, output: string }>,
+ *   verifyBuild?: boolean,
  *   log?: (line: string) => void,
  * }} options `token` defaults to `process.env.TEMPLATE_REPO_TOKEN`; `overlayDir` defaults to
  *  this package's own `template-repo/` skeleton; `resolveSpec` defaults to a real `npm view`
  *  call, meant to be overridden by every test. `buildCheck` defaults to a real install-and-build
- *  check ({@link defaultBuildCheck}), likewise meant to be overridden by every test.
+ *  check ({@link defaultBuildCheck}), likewise meant to be overridden by every test. `verifyBuild`
+ *  runs the build check unconditionally, including on a no-op or a `--dry-run`, for a
+ *  buildability tripwire independent of drift; it defaults to false, which keeps the normal cost
+ *  rule (the check only runs ahead of a real push) unchanged.
  * @returns {Promise<SyncResult>}
  */
 export async function syncTemplateRepo({
@@ -453,6 +471,7 @@ export async function syncTemplateRepo({
   overlayDir = OVERLAY_DIR,
   resolveSpec = defaultResolveSpec,
   buildCheck = defaultBuildCheck,
+  verifyBuild = false,
   log = () => {},
 }) {
   if (!remote) throw new Error('sync-template-repo: "remote" is required');
@@ -512,6 +531,13 @@ export async function syncTemplateRepo({
     );
     const changedFiles = parseNameStatus(diffOutput);
 
+    // --verify-build runs the check here, before either early return below, and independently of
+    // whether there is any drift to push: the template repo can be perfectly in sync with the
+    // bake and still stop building, because the published engine moved underneath it. Without the
+    // flag the check stays where it always has, gated behind both early returns, so a plain no-op
+    // or --dry-run still never pays for a real install and build.
+    if (verifyBuild) await assertBuilds(sourceDir, buildCheck, token);
+
     if (changedFiles.length === 0) {
       log(`template repo up to date at ${previousSha} (no changes)`);
       return { status: 'no-op', sha: previousSha, changedFiles: [] };
@@ -523,11 +549,12 @@ export async function syncTemplateRepo({
       return { status: 'dry-run', sha: previousSha, changedFiles };
     }
 
-    // The build check runs only here, once a no-op sync and a --dry-run have both already
-    // returned above: it proves the tree the sync is about to commit actually builds, which
-    // costs a real install and build, so it is worth paying only when there is something real to
-    // push. An idempotent cron run or a drift check stays cheap.
-    await assertBuilds(sourceDir, buildCheck);
+    // The build check runs here, once a no-op sync and a --dry-run have both already returned
+    // above: it proves the tree the sync is about to commit actually builds, which costs a real
+    // install and build, so it is worth paying only when there is something real to push. An
+    // idempotent cron run or a drift check stays cheap. --verify-build already ran the check
+    // above, so it is skipped here to avoid paying for it twice in one invocation.
+    if (!verifyBuild) await assertBuilds(sourceDir, buildCheck, token);
 
     await git(
       [
@@ -553,10 +580,11 @@ export async function syncTemplateRepo({
 
 // CLI: node scripts/sync-template-repo.mjs --remote <url-or-path> [--dry-run]
 //   [--strip-dev-backend] [--engine-spec <spec>] [--dev-spec <spec>] [--allow-any-remote]
+//   [--verify-build]
 if (import.meta.url === `file://${process.argv[1]}`) {
   const USAGE =
     'usage: sync-template-repo.mjs --remote <url-or-path> [--dry-run] [--strip-dev-backend] ' +
-    '[--engine-spec <spec>] [--dev-spec <spec>] [--allow-any-remote]';
+    '[--engine-spec <spec>] [--dev-spec <spec>] [--allow-any-remote] [--verify-build]';
   let values;
   try {
     ({ values } = parseArgs({
@@ -568,6 +596,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         'engine-spec': { type: 'string' },
         'dev-spec': { type: 'string' },
         'allow-any-remote': { type: 'boolean', default: false },
+        'verify-build': { type: 'boolean', default: false },
       },
       strict: true,
     }));
@@ -588,6 +617,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       engineSpec: values['engine-spec'],
       devSpec: values['dev-spec'],
       allowAnyRemote: values['allow-any-remote'],
+      verifyBuild: values['verify-build'],
       log: (line) => console.log(line),
     });
   } catch (err) {

@@ -13,6 +13,11 @@ import { scaffold, handoverText, dryRunNotice } from './src/scaffold.mjs';
 import { runGithubChapter } from './src/github/chapter.mjs';
 import { runCloudflareChapter } from './src/cloudflare/chapter.mjs';
 import { runChapter2, TERMINAL_STEPS } from './src/cloudflare/chapter2.mjs';
+import {
+  runChapter3,
+  CHAPTER3_TERMINAL_STEPS,
+  CHAPTER3_RESUMABLE_STEPS,
+} from './src/cloudflare/chapter3.mjs';
 import { seedOwnerAndToken, SIGN_IN_OPENED_NOTICE } from './src/cloudflare/bootstrap.mjs';
 import { printCostPreamble } from './src/money.mjs';
 import { loadSite, updateSite, findSiteByDir, retireSite } from './src/state.mjs';
@@ -43,6 +48,26 @@ const CHAPTER2_RESUMABLE_STEPS = ['zone-created', 'records-carried', 'delegated'
  * (`email-live`, a recorded decline) are each handled separately; anything else is not a record
  * this tool ever wrote. */
 const RESUMABLE_STEPS = [...GITHUB_RESUMABLE_STEPS, ...CLOUDFLARE_RESUMABLE_STEPS];
+
+/**
+ * Every step `--connect` can enter chapter 3 from: an explicit allowlist (never an index
+ * comparison, the same reason chapter3.mjs's own admission avoids one), covering every step from
+ * `live` onward, across chapter 2 and chapter 3 both. A site still mid chapter 1 (`RESUMABLE_STEPS`,
+ * for example `scaffolded` or `deployed`) has no live Worker and no pushed repository yet, so
+ * `--connect` refuses there instead: chapter 3 needs both.
+ */
+const CHAPTER3_CONNECT_ENTRY_STEPS = [
+  'live',
+  ...CHAPTER2_RESUMABLE_STEPS,
+  ...TERMINAL_STEPS,
+  ...CHAPTER3_RESUMABLE_STEPS,
+  ...CHAPTER3_TERMINAL_STEPS,
+];
+
+/** Every step `--start-over` must refuse at because chapter 3 has already connected real Workers
+ * Builds resources: `CHAPTER3_RESUMABLE_STEPS` (a connection and a trigger already exist) and
+ * `CHAPTER3_TERMINAL_STEPS` (the same, plus, at `builds-live`, a live deploy pipeline). */
+const CHAPTER3_START_OVER_REFUSAL_STEPS = [...CHAPTER3_RESUMABLE_STEPS, ...CHAPTER3_TERMINAL_STEPS];
 
 /**
  * Build the lines every closing block ends on, whichever hop of the chapter reached it: the
@@ -168,6 +193,47 @@ async function printDeclinedInfo(siteId) {
 }
 
 /**
+ * Print the closing block for a site that has reached one of chapter 3's own terminal steps,
+ * `CHAPTER3_TERMINAL_STEPS`: the shared repo/App and doctor lines, plus one line naming whether
+ * Workers Builds is actually connected. Shared by a plain re-entry at either step (which never
+ * calls `runChapter3` at all) and `runChapter3AndReport`'s own post-run print (for a run that just
+ * reached one of these steps), so both ways of arriving here print identically.
+ * @param {string} siteId the site's state-store id, already at `builds-live` or
+ *  `builds-connect-declined`
+ * @param {string} step the step just printed for, `'builds-live'` or `'builds-connect-declined'`
+ * @returns {Promise<void>}
+ */
+async function printBuildsChapterInfo(siteId, step) {
+  const state = await loadSite(siteId);
+  const { repoLines, doctorLine } = closingInfoLines(state);
+  const note =
+    step === 'builds-live'
+      ? 'Every commit to your default branch now builds and deploys itself through Workers Builds.'
+      : 'Workers Builds is not connected, so deploys still go through this CLI. Re-run with ' +
+        '--connect any time to connect it.';
+  console.log(['', ...repoLines, '', note, '', doctorLine].join('\n'));
+}
+
+/**
+ * Run chapter 3 to whatever point the site's current saved state lets it reach, and print the
+ * closing block once it settles on one of `CHAPTER3_TERMINAL_STEPS`. A wait-kind park already
+ * printed its own row, with its own re-entry command, inside `runChapter3` itself, so nothing
+ * further prints for that outcome here. Shared by `--connect`'s own entry branch, a plain re-entry
+ * at `CHAPTER3_RESUMABLE_STEPS`, and `continueIntoChapter2`'s own terminal-outcome cascade, so
+ * every way of reaching chapter 3 settles through the one function.
+ * @param {{ siteId: string, dir: string, flags: object, log: (line: string) => void, dryRun: boolean }} args
+ * @returns {Promise<{ outcome: string, message?: string }>} chapter 3's own outcome
+ */
+async function runChapter3AndReport({ siteId, dir, flags, log, dryRun }) {
+  const record = dryRun ? null : await loadSite(siteId);
+  const outcome = await runChapter3({ siteId, record, dir, args: flags, log, dryRun });
+  if (!dryRun && CHAPTER3_TERMINAL_STEPS.includes(outcome.outcome)) {
+    await printBuildsChapterInfo(siteId, outcome.outcome);
+  }
+  return outcome;
+}
+
+/**
  * Run chapter 2 to whatever point the site's current saved state lets it reach, and print the
  * closing block. A run that reaches one of `TERMINAL_STEPS` (`email-live`, a fresh decline)
  * already saw chapter 2's own completion hop print the domain, the admin sign-in URL, and (for
@@ -179,6 +245,12 @@ async function printDeclinedInfo(siteId) {
  * Shared by the `live`-branch reopening and the fresh/resumed chapter-1-to-2 handoff in
  * `runCloudflareAndReport`, so the two paths cannot diverge on what "continuing into chapter 2"
  * means.
+ *
+ * Reaching one of chapter 2's own `TERMINAL_STEPS` is also chapter 3's own entry point (T4c): once
+ * chapter 2 settles there, this continues straight into `runChapter3AndReport` in the same call,
+ * under a real record or (when `dryRun`) `record: null`, the same "one dry run prints every hop
+ * across every chapter" precedent `runCloudflareAndReport` already established for chapter 1 into
+ * chapter 2.
  * @param {{ siteId: string, dir: string, flags: object, log: (line: string) => void, dryRun: boolean }} args
  * @returns {Promise<{ outcome: string }>} chapter 2's own outcome
  */
@@ -189,9 +261,12 @@ async function continueIntoChapter2({ siteId, dir, flags, log, dryRun }) {
     if (TERMINAL_STEPS.includes(outcome.outcome)) {
       const { repoLines, doctorLine } = closingInfoLines(record);
       console.log(['', ...repoLines, '', doctorLine].join('\n'));
+      await runChapter3AndReport({ siteId, dir, flags, log, dryRun });
     } else {
       await printLiveInfo(siteId);
     }
+  } else {
+    await runChapter3AndReport({ siteId, dir, flags, log, dryRun });
   }
   return outcome;
 }
@@ -325,10 +400,51 @@ async function main() {
       );
     }
 
+    if (priorRecord && flags.startOver && CHAPTER3_START_OVER_REFUSAL_STEPS.includes(priorRecord.data.step)) {
+      // A record this far into chapter 3 has real Workers Builds resources connected to it: a
+      // repository connection and a build trigger, and (at builds-live) a deploy pipeline the
+      // site's own domain is already relying on. --start-over refuses instead of silently
+      // discarding that state, the same reasoning the chapter-2 refusal below already follows.
+      throw new Error(
+        `${priorRecord.data.name} already has Workers Builds connected: a repository connection, ` +
+          'a build trigger, and a live site deploying from it. --start-over cannot safely retire ' +
+          'this record without also cleaning those up.\n' +
+          `Next: re-run npx create-cairn-site --dir ${priorRecord.data.dir} without --start-over ` +
+          'to continue, or remove those Workers Builds resources yourself first.',
+      );
+    }
+
     if (priorRecord && flags.startOver) {
       await retireSite(priorRecord.id);
       console.log(`Setting aside the previous record for ${priorRecord.data.name} and starting over.`);
       priorRecord = null;
+    }
+
+    if (priorRecord && flags.connect) {
+      // --connect sits ahead of every other resumed-step branch below, so it can enter chapter 3
+      // straight from a step one of those branches would otherwise claim for itself (domain-live,
+      // for instance, which CHAPTER2_RESUMABLE_STEPS below would route into chapter 2's own
+      // admission instead). Only a step at or past `live` has a live Worker and a pushed
+      // repository for chapter 3 to connect; anything earlier refuses, naming what has to finish
+      // first.
+      if (!CHAPTER3_CONNECT_ENTRY_STEPS.includes(priorRecord.data.step)) {
+        throw new Error(
+          `${priorRecord.data.name} has not finished its first deploy yet (it is at ` +
+            `${priorRecord.data.step}), so --connect has no live site or repository to attach ` +
+            'Workers Builds to.\n' +
+            `Next: re-run npx create-cairn-site --dir ${priorRecord.data.dir} without --connect ` +
+            'to finish deploying first, then add --connect once it says your site is live.',
+        );
+      }
+      console.log(`Connecting ${priorRecord.data.name} to Workers Builds.`);
+      await runChapter3AndReport({
+        siteId: priorRecord.id,
+        dir: priorRecord.data.dir,
+        flags,
+        log,
+        dryRun: flags.dryRun,
+      });
+      return;
     }
 
     if (priorRecord && TERMINAL_STEPS.includes(priorRecord.data.step)) {
@@ -409,6 +525,56 @@ async function main() {
         log,
         dryRun: flags.dryRun,
       });
+      return;
+    }
+
+    // A plain re-run at a park inside chapter 3's own connect-and-trigger hop (builds-connected,
+    // config-reconciled) resumes the chapter directly, the same as CHAPTER2_RESUMABLE_STEPS above:
+    // there is no earlier chapter's work left to redo, and without this branch the step falls
+    // through, unrecognized, to collectAnswers() and scaffold() below, which would scaffold over
+    // an already-finished site.
+    if (priorRecord && CHAPTER3_RESUMABLE_STEPS.includes(priorRecord.data.step)) {
+      if (flags.signIn) {
+        // The site has been live since chapter 1, well before chapter 3 ever started, so --sign-in
+        // here is the same mid-browser recovery the 'live' branch above offers: it must not fall
+        // into runChapter3AndReport, which can itself open a real, unstubbed token-paste prompt.
+        await reseedAndOpen({
+          siteId: priorRecord.id,
+          state: priorRecord.data,
+          ownerEmailOverride: flags.ownerEmail,
+          log,
+        });
+        await printLiveInfo(priorRecord.id);
+        return;
+      }
+      console.log(`Resuming ${priorRecord.data.name} at ${priorRecord.data.step}.`);
+      await runChapter3AndReport({
+        siteId: priorRecord.id,
+        dir: priorRecord.data.dir,
+        flags,
+        log,
+        dryRun: flags.dryRun,
+      });
+      return;
+    }
+
+    // A plain re-run at one of chapter 3's own terminal steps (builds-live,
+    // builds-connect-declined) never calls runChapter3 again on its own: builds-live's only
+    // further work is the re-reconcile path (--connect, handled above), and builds-connect-declined
+    // names --connect as its own way back in (the catalogue row's own copy). This is the terminal
+    // branch that keeps a plain re-run here from falling through to the scaffolder.
+    if (priorRecord && CHAPTER3_TERMINAL_STEPS.includes(priorRecord.data.step)) {
+      if (flags.signIn) {
+        await reseedAndOpen({
+          siteId: priorRecord.id,
+          state: priorRecord.data,
+          ownerEmailOverride: flags.ownerEmail,
+          log,
+        });
+        await printBuildsChapterInfo(priorRecord.id, priorRecord.data.step);
+        return;
+      }
+      await printBuildsChapterInfo(priorRecord.id, priorRecord.data.step);
       return;
     }
 

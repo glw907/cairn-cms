@@ -380,3 +380,113 @@ verified column.
   pre-review root defect; the CI gate list re-derived with
   `grep -l pull_request .github/workflows/*`; post-mortem in this file; budgets scored;
   cold-start test for the context clear.
+
+## Post-mortem (T5a, 2026-08-13)
+
+T5a shipped the machinery behind the browser door. The door itself moves to release one, for a
+reason the pass discovered rather than assumed.
+
+### What was built
+
+The sync script (`packages/create-cairn-site/scripts/sync-template-repo.mjs`) generates the
+template repo wholesale from the bake plus a repo-only overlay, commits normally and never force
+pushes, and refuses a remote that is not the template repo. Its credential rides an injected
+`http.extraheader` rather than the remote URL. Two gates guard a push: registry resolvability, and
+a real install-and-build of the composed tree. The overlay skeleton ships a generated-and-
+pre-release README, MIT license, `.dev.vars.example`, and the `.gitignore` negation that keeps git
+from swallowing it. GitHub Actions drives three paths: a `needs: publish` job in `publish.yml`, a
+manual dispatch, and a weekly cron that now checks drift **and** buildability. Both sync paths share
+a concurrency group and carry a 15-minute timeout. `docs/guides/deploy-to-cloudflare.md` gained the
+paths framing, and T4c's friction-log entry was deleted as resolved.
+
+One defect outside the pass's own code was fixed because the guide documents that surface: a site
+whose owner declined Workers Builds could never reconnect, though the decline message and
+`bin.mjs`'s own comment both named `--connect` as the way back in.
+
+### What was verified, with evidence
+
+`npm --prefix packages/create-cairn-site test` exit 0; `npm run check` 0 errors 0 warnings across
+1601 files; `check:comments` OK; `check:docs` OK across 187 files; `check:surface` matches the
+committed snapshot; `check:reference:signatures` OK. Vale over the changed guide: 0 errors, with the
+warning and suggestion tiers matching the file's pre-existing density.
+
+The load-bearing proof is not a test. The real `defaultBuildCheck`, run by hand against the real
+composed tree with `--engine-spec ^0.94.0 --strip-dev-backend`, exits 1 and names the two missing
+exports. A suite of injected stubs proves plumbing; that run proves the gate works on the failure it
+was built for.
+
+### The finding that split the pass
+
+Task 2 Step 1's install-and-build check was rehearsed locally before spending a browser session on
+it. The synced tree installs and does not build, because it imports `previewLoad` and
+`PreviewBanner`, which published `0.94.0` does not export. The bake emits the showcase's current
+tree while the emitted engine spec resolves to the last published version.
+
+**Spec ruling 6 was wrong on its central claim**, and the correction is worth carrying: the strip
+addresses the dev backend and has no bearing on the engine, so "installable before release one" was
+never reachable as reasoned. Two process notes. The scope was **measured** (all 57 engine imports
+checked, gap of exactly two) rather than inferred from the build's two errors, and eight names the
+first sweep flagged were false positives from grepping runtime barrels for type-only imports.
+Rehearsing before the live run is what made the finding cheap; the plan's own ordering put the
+install-and-build check ahead of the button, and honoring it saved a wasted browser session and a
+scratch estate.
+
+**No existing gate could have caught it.** `create-site.yml` and `scaffold.yml` both pack the engine
+from the checkout and rewrite the scaffolded site to point at that tarball, so neither has ever
+proven a scaffold against the registry. That is the same blind-spot family as the two durable
+gotchas in `CLAUDE.md`, and it is now a memory.
+
+### The review gate's yield
+
+Five adversarial rounds, and every one found something real. Rough tally: **ten confirmed defects on
+Task 1** (four blocking, including the push credential appearing in subprocess argv and a clone's
+persisted `.git/config`, a look-alike host bypassing the remote guard, ssh and scp spellings
+bypassing it entirely, an untested `.gitignore` merge rule whose deletion left the template ignoring
+nothing while all 15 tests stayed green, and `--strip-dev-backend` alone always exiting 1, which is
+the one invocation the pass needs); **four on the build gate** (no coverage of the real
+implementation, an unredacted output path whose subprocess inherited the token, a gate whose only
+automatic firing point was after the publish had already happened, and no job timeout); **ten on the
+guide**, two of them factual errors about cairn's own tool; **one code defect** found by a
+truthfulness re-read; and **two coverage gaps** found by a deletion test, one substantive.
+
+The lens that keeps paying is the deletion test. It found the `.gitignore` rule, the strip test's
+`package.json` exception, and finally that deleting the entire `npm install` block from
+`defaultBuildCheck` left all 31 tests green: the hermetic fixture had bought its hermeticity by
+removing the only thing that would notice the install disappearing. That is this pass's headline
+finding one level down, inside the gate built to catch it.
+
+### A process defect, recorded
+
+Two verify lenses ran in one `parallel()` over the same file, one of them mutating. The
+non-mutating lens watched the file change under it and reported the tree dirty and the suite red,
+and neither lens could tell the implementer from its sibling. The tree was fine at HEAD, but a
+`git commit -a` in that window would have folded an inverted cost rule into the branch. A
+mutating verifier is an executor, however read-only its brief sounds. Filed in the
+`workflow-agent-runaway-guard` memory as lesson 8. Also filed there, for the second time: this
+session armed its guard with the generic thresholds when that file already carried the cairn
+calibration, and then left a stale guard running past its workflow's completion, which duly
+false-alarmed.
+
+### Budgets
+
+Roughly 2.4M subagent tokens across four workflows and two standalone agents, plus the main loop's
+own reads. The expensive half was the five review rounds, and they returned twenty-seven confirmed
+defects, four of them blocking and one of them the finding that redirected the pass, so the spend
+bought correctness rather than churn.
+
+**Two human interaction points, one of them a defect.** The blocking decision (how to resolve the
+publish-window finding, and whether to add the build gate) was genuine and unavoidable. The second
+was not: the orchestrator floated splitting the adopt probe off against a hand-made scratch site,
+Geoff asked whether that was actually worth doing, and checking the code showed the probe was not
+runnable at all, since `--connect` is gated on a state record a button-created site never has. The
+option should have been checked before it was offered. It cost Geoff a turn and it produced the
+better answer anyway, which is the shape of a defect rather than a consultation.
+
+### Carried to T5a', at release one
+
+Task 4 Step 2 (the PAT), Task 5 (create and first-sync the repo), Task 7 (the C3 contract), Task 2
+(the live button spike), Task 3 (the overlay's spike-derived content), Task 6's button section
+rewritten from observation, and the checklist with its cross-file match test. Two release-checklist
+obligations sit in the changelog: drop `--strip-dev-backend` from the cron and its dispatch default,
+and drop the README's pre-release notice. Task 8 (the live CLI e2e) is unaffected by the finding and
+remains browser-gated.

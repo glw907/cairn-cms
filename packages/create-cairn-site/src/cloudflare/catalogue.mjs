@@ -639,6 +639,102 @@ const ROWS = {
         `Next: re-run npx create-cairn-site --dir ${params.dir}.`
       );
     }
+  },
+  'builds-app-not-authorized': {
+    kind: 'wait',
+    build(params) {
+      return (
+        "Cloudflare cannot connect this repository to Workers Builds yet: your GitHub account " +
+        "has not authorized Cloudflare's GitHub App at all. This is a one-time authorization " +
+        'Cloudflare requires before it can watch any repository. Nothing is wrong, and this ' +
+        'run has saved its progress.\n' +
+        'Next: open https://dash.cloudflare.com/?to=/:account/workers-and-pages, connect your ' +
+        'GitHub account when prompted, then re-run npx create-cairn-site --dir ' +
+        `${params.dir} --connect.`
+      );
+    }
+  },
+  'builds-repo-not-selected': {
+    kind: 'wait',
+    build(params) {
+      return (
+        "Cloudflare's GitHub App is authorized on your account, but it only watches a chosen " +
+        `set of repositories, and ${params.owner}/${params.repo} is not one of them yet. ` +
+        'Nothing is wrong, and this run has saved its progress.\n' +
+        'Next: open https://github.com/settings/installations, find Cloudflare Workers and ' +
+        `Pages, add ${params.owner}/${params.repo} to its repository access, then re-run npx ` +
+        `create-cairn-site --dir ${params.dir} --connect.`
+      );
+    }
+  },
+  'builds-connect-declined': {
+    kind: 'declined',
+    build(params) {
+      return (
+        'You chose not to connect this repository to Workers Builds. That choice is recorded, ' +
+        'and your site is untouched and still working.\n' +
+        `Next: if you change your mind, re-run npx create-cairn-site --dir ${params.dir} ` +
+        '--connect.'
+      );
+    }
+  },
+  'build-not-started': {
+    kind: 'wait',
+    build(params) {
+      return (
+        'The reconcile commit was pushed, but no matching build has appeared yet. This is ' +
+        "normal right after a push; Cloudflare's build queue usually picks it up within a " +
+        'minute.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir} --connect in a minute or two ` +
+        'to check again.'
+      );
+    }
+  },
+  'build-running': {
+    kind: 'wait',
+    build(params) {
+      return (
+        'The build is still running, and this run stopped watching it before it finished. ' +
+        'Nothing is wrong; a build can take a few minutes.\n' +
+        `Next: re-run npx create-cairn-site --dir ${params.dir} --connect to keep watching it.`
+      );
+    }
+  },
+  'builds-deploy-failed': {
+    kind: 'act',
+    build(params) {
+      return (
+        'The first Workers Builds deploy did not finish successfully. The build log ends with:\n' +
+        `${params.detail}\n` +
+        `Next: open the build at ${params.buildUrl} to see the full log, fix what it names, ` +
+        `then re-run npx create-cairn-site --dir ${params.dir} --connect to trigger and watch ` +
+        'a new build.'
+      );
+    }
+  },
+  'builds-not-runnable': {
+    kind: 'act',
+    build(params) {
+      return (
+        'The first Workers Builds deploy did not run: Cloudflare marked it ' +
+        `${params.outcome} rather than completing it.\n` +
+        `Next: open the build at ${params.buildUrl} to see why, fix what it names, then ` +
+        `re-run npx create-cairn-site --dir ${params.dir} --connect to trigger a new build.`
+      );
+    }
+  },
+  'builds-reconcile-parked': {
+    kind: 'wait',
+    build(params) {
+      return (
+        'This run is unattended (--yes), and the reconcile found a real difference between ' +
+        "your site's local config and what is committed to the repository. Committing it " +
+        'needs a sign-in in a browser, which an unattended run cannot open. Nothing was ' +
+        'changed, and this run has saved its progress.\n' +
+        `Next: run npx create-cairn-site --dir ${params.dir} --connect without --yes, so the ` +
+        'sign-in step can open a browser.'
+      );
+    }
   }
 };
 
@@ -658,8 +754,10 @@ export const CATALOGUE_CODES = Object.keys(ROWS);
  *  `detail` on the rows that carry child or API output, `database` on migrations-failed, `reason`
  *  and `email` on seed-failed's not-allowlisted case, `permission` on token-scope-missing,
  *  `domain` on the domain and hostname rows and the email-sender rows, `nameServers`/`actual`,
- *  both string arrays, on the delegation rows, and `reoffered`, a boolean, on paid-plan-declined
- *  to print the copy for a re-run after an earlier decline)
+ *  both string arrays, on the delegation rows, `reoffered`, a boolean, on paid-plan-declined to
+ *  print the copy for a re-run after an earlier decline, `owner`/`repo` on
+ *  builds-repo-not-selected, `detail`/`buildUrl` on builds-deploy-failed, and `outcome` (`skipped`
+ *  or `cancelled`) on builds-not-runnable)
  * @returns {Error & { catalogue: ChapterErrorInfo }} an Error whose message is the full printed
  *  text (ending in a "Next:" line) and whose `catalogue` property carries `{ code, kind, next }`
  */

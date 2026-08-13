@@ -44,7 +44,15 @@ const EXPECTED_KIND = {
   'email-sender-propagating': 'wait',
   'email-sender-unavailable': 'act',
   'email-daily-limit': 'wait',
-  'email-send-failed': 'act'
+  'email-send-failed': 'act',
+  'builds-app-not-authorized': 'wait',
+  'builds-repo-not-selected': 'wait',
+  'builds-connect-declined': 'declined',
+  'build-not-started': 'wait',
+  'build-running': 'wait',
+  'builds-deploy-failed': 'act',
+  'builds-not-runnable': 'act',
+  'builds-reconcile-parked': 'wait'
 };
 
 /** Plausible params for each code, enough to exercise every interpolation. */
@@ -100,7 +108,23 @@ const SAMPLE_PARAMS = {
   'email-sender-propagating': { dir: './alpine' },
   'email-sender-unavailable': { dir: './alpine', domain: 'example.com' },
   'email-daily-limit': { dir: './alpine' },
-  'email-send-failed': { dir: './alpine', detail: 'Cloudflare: 429 rate limited' }
+  'email-send-failed': { dir: './alpine', detail: 'Cloudflare: 429 rate limited' },
+  'builds-app-not-authorized': { dir: './alpine' },
+  'builds-repo-not-selected': { dir: './alpine', owner: 'glw907', repo: 'alpine' },
+  'builds-connect-declined': { dir: './alpine' },
+  'build-not-started': { dir: './alpine' },
+  'build-running': { dir: './alpine' },
+  'builds-deploy-failed': {
+    dir: './alpine',
+    detail: 'Failed: error occurred while running deploy command',
+    buildUrl: 'https://dash.cloudflare.com/acct/workers/services/view/alpine/production/builds/abc'
+  },
+  'builds-not-runnable': {
+    dir: './alpine',
+    outcome: 'skipped',
+    buildUrl: 'https://dash.cloudflare.com/acct/workers/services/view/alpine/production/builds/abc'
+  },
+  'builds-reconcile-parked': { dir: './alpine' }
 };
 
 test('the expected-kind table covers every code the module has rows for', () => {
@@ -142,6 +166,39 @@ test('err.catalogue.next is a non-empty string derived from the Next: line', () 
     assert.equal(typeof err.catalogue.next, 'string');
     assert.ok(err.catalogue.next.length > 0, `${code} should have a non-empty next`);
     assert.ok(!err.catalogue.next.startsWith('Next:'), `${code} next should have the label stripped`);
+  }
+});
+
+test('every catalogue code message ends in exactly one Next: line', () => {
+  for (const code of Object.keys(EXPECTED_KIND)) {
+    const err = cloudflareError(code, SAMPLE_PARAMS[code]);
+    const nextLines = err.message.split('\n').filter((line) => line.startsWith('Next:'));
+    assert.equal(nextLines.length, 1, `${code} should have exactly one Next: line`);
+    assert.ok(err.message.trimEnd().endsWith(nextLines[0]), `${code} message should end with its Next: line`);
+  }
+});
+
+test('the Builds rows add exactly eight codes, none colliding with build-failed or build-not-runnable', () => {
+  const BASELINE_CODE_COUNT = 37;
+  const NEW_BUILDS_CODES = [
+    'builds-app-not-authorized',
+    'builds-repo-not-selected',
+    'builds-connect-declined',
+    'build-not-started',
+    'build-running',
+    'builds-deploy-failed',
+    'builds-not-runnable',
+    'builds-reconcile-parked'
+  ];
+  assert.equal(
+    CATALOGUE_CODES.length,
+    BASELINE_CODE_COUNT + NEW_BUILDS_CODES.length,
+    'CATALOGUE_CODES should have grown by exactly the number of new Builds rows'
+  );
+  assert.ok(CATALOGUE_CODES.includes('build-failed'), 'build-failed (chapter 1) must survive untouched');
+  assert.ok(!CATALOGUE_CODES.includes('build-not-runnable'), 'build-not-runnable must never be used as a name');
+  for (const code of NEW_BUILDS_CODES) {
+    assert.ok(CATALOGUE_CODES.includes(code), `${code} should be a catalogue code`);
   }
 });
 
@@ -387,4 +444,64 @@ test('email-daily-limit explains the ramp and names both waiting and the limit-i
   assert.match(err.message, /ramp|rises|improves/);
   assert.match(err.message, /wait/i);
   assert.match(err.message, /email-service\/platform\/limits/);
+});
+
+test('builds-app-not-authorized never quotes the platform message and prints the dashboard link', () => {
+  const err = cloudflareError('builds-app-not-authorized', SAMPLE_PARAMS['builds-app-not-authorized']);
+  assert.match(err.message, /has not authorized/);
+  assert.doesNotMatch(err.message, /disconnected from your Git account/);
+  assert.match(err.message, /dash\.cloudflare\.com/);
+  assert.equal(err.catalogue.kind, 'wait');
+  assert.match(err.catalogue.next, /--connect/);
+});
+
+test('builds-repo-not-selected never quotes the platform message and prints the GitHub installations link', () => {
+  const err = cloudflareError('builds-repo-not-selected', SAMPLE_PARAMS['builds-repo-not-selected']);
+  assert.match(err.message, /glw907\/alpine/);
+  assert.doesNotMatch(err.message, /no longer exists/);
+  assert.match(err.message, /github\.com\/settings\/installations/);
+  assert.equal(err.catalogue.kind, 'wait');
+});
+
+test('builds-connect-declined names --connect as the way back in and is a declined kind', () => {
+  const err = cloudflareError('builds-connect-declined', SAMPLE_PARAMS['builds-connect-declined']);
+  assert.equal(err.catalogue.kind, 'declined');
+  assert.match(err.message, /chose not to/);
+  assert.match(err.message, /recorded/);
+  assert.match(err.catalogue.next, /--connect/);
+});
+
+test('build-not-started and build-running are wait rows that name a plain re-run', () => {
+  const notStarted = cloudflareError('build-not-started', SAMPLE_PARAMS['build-not-started']);
+  assert.equal(notStarted.catalogue.kind, 'wait');
+  assert.match(notStarted.message, /no matching build/);
+
+  const running = cloudflareError('build-running', SAMPLE_PARAMS['build-running']);
+  assert.equal(running.catalogue.kind, 'wait');
+  assert.match(running.message, /still running/);
+});
+
+test('builds-deploy-failed carries the log tail and the build dashboard link', () => {
+  const err = cloudflareError('builds-deploy-failed', SAMPLE_PARAMS['builds-deploy-failed']);
+  assert.equal(err.catalogue.kind, 'act');
+  assert.match(err.message, /error occurred while running deploy command/);
+  assert.match(err.message, /dash\.cloudflare\.com/);
+});
+
+test('builds-not-runnable names which outcome (skipped or cancelled) it was', () => {
+  const skipped = cloudflareError('builds-not-runnable', SAMPLE_PARAMS['builds-not-runnable']);
+  assert.match(skipped.message, /skipped/);
+  const cancelled = cloudflareError('builds-not-runnable', {
+    ...SAMPLE_PARAMS['builds-not-runnable'],
+    outcome: 'cancelled'
+  });
+  assert.match(cancelled.message, /cancelled/);
+  assert.equal(cancelled.catalogue.kind, 'act');
+});
+
+test('builds-reconcile-parked names the interactive re-run without --yes', () => {
+  const err = cloudflareError('builds-reconcile-parked', SAMPLE_PARAMS['builds-reconcile-parked']);
+  assert.equal(err.catalogue.kind, 'wait');
+  assert.match(err.message, /--yes/);
+  assert.match(err.catalogue.next, /without --yes/);
 });

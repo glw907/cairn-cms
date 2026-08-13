@@ -1,0 +1,12 @@
+# Local-only secrets for cairn-cms. Copy this file to .dev.vars (gitignored) and fill in real
+# values; never commit a real value here.
+
+# The GitHub App identity: an App whose key parses and signs, whose installation mints a
+# token, and whose installation can read this site's repository. See the cairn-cms
+# "set up the GitHub App" guide.
+GITHUB_APP_ID = "0000000"
+GITHUB_APP_INSTALLATION_ID = "00000000"
+GITHUB_APP_PRIVATE_KEY_B64 = "base64-encoded-pem-placeholder"
+
+# Optional: only read when tidy is enabled in site.config.yaml.
+ANTHROPIC_API_KEY = ""

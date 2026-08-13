@@ -15,7 +15,10 @@ whole install locally: scaffold, GitHub App, repo push, Workers Builds connect, 
 build to a live site, domain, email. The console half is a bubbletea surface over every
 cairn site the machine knows: lifecycle position, parks held as ambient waits,
 in-tool resume, doctor, log tailing. It succeeds the Node `create-cairn-site` CLI
-rather than fronting it.
+rather than fronting it, and `cairn-doctor` folds in whole (Geoff, 2026-08-13): the
+doctor's checks are engine knowledge and the engine is this binary, so the separate
+`npx cairn-doctor` command retires with the CLI rather than surviving beside the
+console's doctor view.
 
 ## Decision record (2026-08-13 sitting)
 

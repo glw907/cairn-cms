@@ -490,3 +490,38 @@ rewritten from observation, and the checklist with its cross-file match test. Tw
 obligations sit in the changelog: drop `--strip-dev-backend` from the cron and its dispatch default,
 and drop the README's pre-release notice. Task 8 (the live CLI e2e) is unaffected by the finding and
 remains browser-gated.
+
+## Post-mortem (Task 8, the live CLI e2e, 2026-08-13)
+
+**Ran to `builds-live`.** Chapters 1 through 3, cold, against real services, across four
+invocations and three parks (DNS propagation, App repo-selection, build queue), every park exit 0
+with a correct printed re-entry and every resume entering at the right hop. PR #30 was merged
+first (all six checks green, merge `95227bed`), so the packed artifacts are byte-identical to
+`main`. The full per-hop evidence, all raw reads, is
+[`docs/internal/2026-08-13-t5-task8-live-e2e.md`](../../internal/2026-08-13-t5-task8-live-e2e.md):
+the no-fake preflight, the freshness triple, and each hop's read.
+
+**What is now live-proven that only fakes covered before:** the tool's own orchestration end to
+end; the reconcile `reauthorize` OAuth trip (instant on an authorized browser session, no click);
+a full scaffolded site building on Workers Builds (`e266a910` success, source `push_event`, from
+the vendored-tarball tree); the eight-key interactive token paste with all eight dashboard rows
+confirmed filled (carry-forward 2 cleared, `prefill.mjs` comment updated); chapter 3's admission
+distinguishing authorized-from-unwatched on the App install; and the email chapter live end to
+end (Geoff opted into Workers Paid, so the planned decline became bonus coverage: onboarding,
+accepted test send, the T4b DMARC gotcha in owner-facing copy).
+
+**Findings, filed:** (1) a tarball-installed scaffold ships **no `.gitignore`** (npm always drops
+it; the scaffold `cp` never restores it), so `pushScaffold`'s protection against pushing
+`.svelte-kit/`, `.wrangler/`, and `.dev.vars` silently vanishes on the published-tool path; run
+mitigated by restoring it pre-push, fix owed with a packed-tarball-path test before release one.
+(2) Run 1's closing hand-over block is not state-aware after a domain park. (3) The kit#15992
+deprecation warning prints six-plus times in every owner build; filed as the pre-P `checkOrigin`
+migration pass in ROADMAP Next. (4) Carry-forward 1 observed live: 26 minutes of
+park-on-a-serving-hostname from resolver negative cache alone. (5) The prerender
+`guard.rejected`/`400 /admin` noise repeats in every owner build. (6) Minor: the token step
+header prints even when the saved token is silently reused.
+
+**For T4d's sitting, the observed wait inventory:** the DNS negative-cache wait (27 minutes,
+authoritative-yes the whole time), the build queue lag (minutes), cert issuance (inside the DNS
+wait here), and the three park shapes with their re-entry commands. The estate persists for T4d
+(spec ruling 1); the App ledger stands at five.

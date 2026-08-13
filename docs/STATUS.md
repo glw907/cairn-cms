@@ -34,8 +34,16 @@ this pass added have no local gate, so that PR is their first real validation, a
 
 1. **Task 8, the live CLI e2e.** Still owed from T5, unaffected by the split, and the only T5
    hand step actionable today. It needs Geoff's browser for the fifth GitHub App's creation and
-   the `reauthorize` OAuth trip. Running it before T4d is worth real money: T4d's brief was
-   written assuming it inherits this estate.
+   the `reauthorize` OAuth trip. **Run it before T4d** (the information-flow argument below).
+
+   **State at the 2026-08-13 clear:** PR #30 was open with `scaffold`, `design`, `create-site`,
+   and `e2e` green and `test` still running. Both of Task 8's own preconditions are already
+   satisfied (T4c is merged; `~/.config/cairn/sites` is empty), so **merging #30 first is a
+   preference, not a requirement**: it makes the run's evidence name a merged sha instead of a
+   branch tip. Check #30's checks, merge if green, then run. If `test` came back red, that is
+   the first thing to fix and it outranks Task 8. Running against the branch is also fine, as
+   long as the post-mortem records the sha it packed from; a cold happy-path run never touches
+   the declined-reconnect fix this branch added.
 2. **T4d, the localhost console.** Its brief is in
    `docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`, amended 2026-08-13 with
    the correction below. **It needs a spec and a plan before execution, and that sitting belongs

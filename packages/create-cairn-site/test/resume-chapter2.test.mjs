@@ -16,7 +16,7 @@
 // step routed into chapter 2, and that scaffold and the GitHub chapter were never reached,
 // without ever touching DNS or a real Cloudflare token.
 //
-// The wait-row parks (delegation-pending, hostname-propagating, certificate-pending) are
+// The wait-row parks (delegation-pending, hostname-records-absent, certificate-pending) are
 // unreachable in a spawned run without a DNS or HTTPS seam, so this file does not attempt one:
 // their own printed copy is proven in chapter2.test.mjs. What this file proves about a park is
 // bin.mjs's shared contract every park exits through (return the outcome, exit 0, print a next

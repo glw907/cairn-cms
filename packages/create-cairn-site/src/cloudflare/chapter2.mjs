@@ -240,7 +240,7 @@ const EMAIL_ADMISSION_DETAIL =
  * @param {RunChapter2Input} input the chapter's inputs
  * @returns {Promise<{ outcome: string, domain?: string, state?: string, message?: string }>} the
  *  outcome reached: `'admission-declined'` | `'carry-over-declined'` | `'delegation-pending'` |
- *  `'delegation-propagating'` | `'hostname-propagating'` | `'certificate-pending'` |
+ *  `'delegation-propagating'` | `'hostname-records-absent'` | `'certificate-pending'` |
  *  `'paid-plan-declined'` | `'email-not-ready'` | `'email-sender-propagating'` |
  *  `'email-daily-limit'` | `'email-live'` | `'dry-run'`, or, for a record already at one of
  *  TERMINAL_STEPS, that step's own name. A delegation park also carries the row's own `state` and

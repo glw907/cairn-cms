@@ -28,10 +28,25 @@
 // back to HTTP whenever HTTPS fails at the transport level, and reads what HTTP shows to tell
 // "certificate still issuing" apart from "genuinely not serving": if HTTP answers the marker
 // pair, only the certificate is missing (certificate-pending, a wait row, not a broken site); if
-// HTTP does not connect either, the hostname has not finished propagating (hostname-propagating);
-// and if HTTP connects but answers something else, the hostname resolves to something that is
-// not this site (hostname-not-serving, the observed shape being a 522 with a 16-byte plain-text
-// body, "error code: 522", not an HTML page).
+// HTTP does not connect either, the hostname has not finished propagating; and if HTTP connects
+// but answers something else, the hostname resolves to something that is not this site
+// (hostname-not-serving, the observed shape being a 522 with a 16-byte plain-text body, "error
+// code: 522", not an HTML page).
+//
+// THE PROPAGATION SPLIT (Task 2, closing carry-forward 1): a live run measured 27 minutes parked
+// on this last "not connecting at all" case while the zone's authoritative nameservers were
+// already serving the apex AAAA record the whole time, a resolver-side negative cache, not a
+// records problem. When neither http nor https connects at all, confirmHostname reads the apex
+// AAAA record against the zone's own authoritative nameservers (the same negative-cache-immune
+// read records.mjs and dns.mjs's header both document): present there but still unreachable
+// means only the caller's resolver is behind (hostname-resolver-lagging, a self-clearing wait);
+// absent there too means the record genuinely has not been created or propagated to the zone's
+// own nameservers yet (hostname-records-absent). The DNS context is optional and absent-safe: a
+// caller that passes none (chapter3.mjs's own call site, untouched by this split) gets the
+// conservative default with no lookup attempted at all, never a crash and never a real DNS call
+// it did not ask for. Either way, this only ever refines WHICH wait row is reported: the marker
+// pair above stays the sole authority for `live`, and a DNS presence never overrides a failing or
+// mismatched marker probe.
 //
 // Certificate issuance CANNOT be polled through the Cloudflare API with this token: both
 // GET /zones/:id/ssl/certificate_packs and GET /zones/:id/ssl/verification returned 9109
@@ -40,6 +55,7 @@
 import { deployWorker } from './deploy.mjs';
 import { writePublicOrigin } from './config.mjs';
 import { cloudflareError } from './catalogue.mjs';
+import { readAuthoritativeAndRecursive } from './dns.mjs';
 
 /** The path the site-specific marker's `/admin` redirect must land on. */
 const ADMIN_LOGIN_PATH = '/admin/login';
@@ -80,6 +96,43 @@ async function probeOrigin(origin, fetchImpl) {
 }
 
 /**
+ * @typedef {object} DnsContext
+ * @property {(servers?: string[]) => object} [resolve] resolver factory forwarded to the shared
+ *  DNS helper (`dns.mjs`'s `readAuthoritativeAndRecursive`); when omitted, the unreachable-case
+ *  diagnosis below is skipped entirely and confirmHostname reports its conservative default
+ *  (`hostname-records-absent`) with no DNS lookup attempted at all
+ * @property {string[]} [nameServers] the zone's own nameserver hostnames, when already known
+ *  (for example a saved `record.cloudflare.nameServers`); skips the NS discovery lookup the
+ *  helper otherwise makes
+ */
+
+/**
+ * Diagnose the "neither http nor https connects at all" case: read the apex AAAA record (the
+ * same record the Custom Domain attach itself writes, per this module's header) against the
+ * zone's own authoritative nameservers, which no recursive negative cache sits in front of.
+ * Present there means only the caller's own resolver has not caught up yet, a self-clearing
+ * wait; absent there too means the record genuinely is not there yet. Never throws: a DNS hiccup
+ * during this best-effort diagnosis falls back to the conservative records-absent default, the
+ * same as no DNS context being given at all.
+ * @param {string} domain the domain to probe, no scheme
+ * @param {DnsContext} dns the DNS context; absent-safe (see `confirmHostname`)
+ * @returns {Promise<'hostname-resolver-lagging' | 'hostname-records-absent'>} the split outcome
+ */
+async function diagnoseUnreachable(domain, { resolve, nameServers } = {}) {
+  if (!resolve) return 'hostname-records-absent';
+
+  const { authoritative } = await readAuthoritativeAndRecursive({
+    domain,
+    name: domain,
+    method: 'resolve6',
+    nameServers,
+    resolve,
+  });
+  const authoritativePresent = Array.isArray(authoritative) && authoritative.length > 0;
+  return authoritativePresent ? 'hostname-resolver-lagging' : 'hostname-records-absent';
+}
+
+/**
  * Confirm the domain answers with this site, distinguishing every outcome the spike observed.
  * HTTPS is tried first; only when it fails at the transport level (no HTTP response reached at
  * all, whether from a missing certificate, DNS not yet resolving, or a refused connection) does
@@ -87,17 +140,24 @@ async function probeOrigin(origin, fetchImpl) {
  * itself is reachable. Exported for chapter3.mjs's own live check (the first Builds deploy's
  * completion), which reuses this rather than rebuilding it; a workers.dev origin needs its scheme
  * stripped by the caller, since this takes a bare domain, no scheme.
+ *
+ * When neither http nor https connects at all, `dns` (optional, absent-safe) refines which wait
+ * row is reported (see this module's header for the propagation split); the DNS answer only ever
+ * upgrades that diagnosis, never the verdict: a DNS presence never overrides a failing or
+ * mismatched marker probe, so `live` stays exclusively the marker pair's own conclusion.
  * @param {string} domain the domain to probe, no scheme
  * @param {typeof fetch} fetchImpl the fetch implementation to probe with
- * @returns {Promise<'live' | 'hostname-propagating' | 'certificate-pending' |
- *  'hostname-not-serving'>} the catalogue code the probes point at, or `'live'`
+ * @param {DnsContext} [dns] the optional DNS context for the unreachable-case diagnosis
+ * @returns {Promise<'live' | 'hostname-records-absent' | 'hostname-resolver-lagging' |
+ *  'certificate-pending' | 'hostname-not-serving'>} the catalogue code the probes point at, or
+ *  `'live'`
  */
-export async function confirmHostname(domain, fetchImpl) {
+export async function confirmHostname(domain, fetchImpl, dns = {}) {
   const https = await probeOrigin(`https://${domain}`, fetchImpl);
   if (https.reachable) return https.matches ? 'live' : 'hostname-not-serving';
 
   const http = await probeOrigin(`http://${domain}`, fetchImpl);
-  if (!http.reachable) return 'hostname-propagating';
+  if (!http.reachable) return diagnoseUnreachable(domain, dns);
   return http.matches ? 'certificate-pending' : 'hostname-not-serving';
 }
 
@@ -108,8 +168,9 @@ export async function confirmHostname(domain, fetchImpl) {
  * @param {string} domain the domain to probe, no scheme
  * @param {typeof fetch} fetchImpl the fetch implementation to probe with
  * @param {string} dir the `--dir` value, interpolated into the row raised here
- * @returns {Promise<'live' | 'hostname-propagating' | 'certificate-pending'>} the outcome to hand
- *  back to the admin
+ * @returns {Promise<'live' | 'hostname-records-absent' | 'certificate-pending'>} the outcome to
+ *  hand back to the admin; this call site passes no DNS context (Task 4a's hold loop is the one
+ *  that will), so `hostname-resolver-lagging` is never reached from here
  */
 async function confirmOrThrow(domain, fetchImpl, dir) {
   const outcome = await confirmHostname(domain, fetchImpl);
@@ -138,10 +199,11 @@ function stripNestedNext(message) {
 
 /**
  * @typedef {object} CutOverResult
- * @property {'live' | 'hostname-propagating' | 'certificate-pending'} outcome `'live'` once the
- *  domain serves this site over HTTPS and the redeploy under its real origin has succeeded; the
- *  other two are wait outcomes, returned rather than thrown per the catalogue's own convention
- *  (`ChapterErrorInfo`'s `kind` doc: a 'wait' row is returned by its caller, not thrown)
+ * @property {'live' | 'hostname-records-absent' | 'certificate-pending'} outcome `'live'` once
+ *  the domain serves this site over HTTPS and the redeploy under its real origin has succeeded;
+ *  the other two are wait outcomes, returned rather than thrown per the catalogue's own
+ *  convention (`ChapterErrorInfo`'s `kind` doc: a 'wait' row is returned by its caller, not
+ *  thrown)
  */
 
 /**

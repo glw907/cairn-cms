@@ -124,6 +124,75 @@ function wrongSiteFetch() {
   return async () => new Response('<html>not cairn</html>', { status: 200 });
 }
 
+// --- DNS context fixtures, for the propagation split (Task 2) ----------------------------------
+
+/** Build a DNS lookup error carrying the given `node:dns` code. */
+function dnsError(code) {
+  const err = new Error(code);
+  err.code = code;
+  return err;
+}
+
+/** A resolver-like stub method that always answers authoritatively absent (`ENODATA`). */
+function absent() {
+  return async () => {
+    throw dnsError('ENODATA');
+  };
+}
+
+/** A resolver-like stub method that answers `value` for exactly `name`, absent otherwise. */
+function only(name, value) {
+  return async (queriedName) => {
+    if (queriedName === name) return value;
+    throw dnsError('ENODATA');
+  };
+}
+
+/** A full resolver-like stub, every method absent unless overridden. */
+function stubResolver(overrides = {}) {
+  return {
+    resolveNs: absent(),
+    resolve4: absent(),
+    resolve6: absent(),
+    ...overrides,
+  };
+}
+
+const NS_HOST = 'ns1.registrar.test';
+
+/**
+ * A DNS context where the domain's own authoritative nameservers already carry the apex AAAA
+ * record (the Custom Domain attach's own write) while the recursive resolver still answers
+ * absent, the exact negative-cache disagreement this split exists to see past.
+ * @param {string} domain the domain queried
+ * @returns {{ resolve: (servers?: string[]) => object }}
+ */
+function disagreeingDns(domain) {
+  const recursive = stubResolver({
+    resolveNs: async () => [NS_HOST],
+    resolve6: only(NS_HOST, ['203.0.113.9']),
+  });
+  const authoritative = stubResolver({
+    resolve6: only(domain, ['2001:db8::100']),
+  });
+  return { resolve: (servers) => (servers ? authoritative : recursive) };
+}
+
+/**
+ * A DNS context where the domain's own authoritative nameservers are reachable but genuinely
+ * carry no apex AAAA record yet.
+ * @param {string} domain the domain queried
+ * @returns {{ resolve: (servers?: string[]) => object }}
+ */
+function recordsAbsentDns(domain) {
+  const recursive = stubResolver({
+    resolveNs: async () => [NS_HOST],
+    resolve6: only(NS_HOST, ['203.0.113.9']),
+  });
+  const authoritative = stubResolver(); // absent for everything, including domain
+  return { resolve: (servers) => (servers ? authoritative : recursive) };
+}
+
 test('the attach precedes any origin write, and the origin is updated by completion', async (t) => {
   const { cloudflare, api } = await setupCloudflare(t);
   const dir = await setupDir(t);
@@ -181,7 +250,7 @@ test('success redeploys once and returns the live outcome', async (t) => {
   );
 });
 
-test('still-propagating DNS: unreachable over both http and https returns the wait outcome, not a throw', async (t) => {
+test('unreachable over both http and https, with no DNS context: returns hostname-records-absent, not a throw', async (t) => {
   const { api } = await setupCloudflare(t);
   const dir = await setupDir(t);
   await setupWrangler(t);
@@ -195,7 +264,60 @@ test('still-propagating DNS: unreachable over both http and https returns the wa
     log: () => {},
   });
 
-  assert.deepEqual(result, { outcome: 'hostname-propagating' });
+  // cutOverHostname's own call site forwards no DNS context, so confirmHostname's diagnosis
+  // stays absent-safe: no lookup is attempted, and it reports the conservative default.
+  assert.deepEqual(result, { outcome: 'hostname-records-absent' });
+});
+
+// --- confirmHostname: the propagation split (Task 2) --------------------------------------------
+
+test('hostname-propagating is retired: no fixture in this parameterized set can still produce it', async () => {
+  const { confirmHostname } = await import('./hostname.mjs');
+  const domain = 'carin-test.org';
+
+  const cases = [
+    { name: 'matching marker', fetchImpl: alwaysMatchingFetch(), dns: undefined, expected: 'live' },
+    { name: 'certificate pending', fetchImpl: certificatePendingFetch(), dns: undefined, expected: 'certificate-pending' },
+    { name: '522 route', fetchImpl: routeNotServingFetch(), dns: undefined, expected: 'hostname-not-serving' },
+    { name: 'wrong site', fetchImpl: wrongSiteFetch(), dns: undefined, expected: 'hostname-not-serving' },
+    { name: 'unreachable, no DNS context', fetchImpl: alwaysUnreachableFetch(), dns: undefined, expected: 'hostname-records-absent' },
+    { name: 'unreachable, disagreeing DNS', fetchImpl: alwaysUnreachableFetch(), dns: disagreeingDns(domain), expected: 'hostname-resolver-lagging' },
+    { name: 'unreachable, records genuinely absent', fetchImpl: alwaysUnreachableFetch(), dns: recordsAbsentDns(domain), expected: 'hostname-records-absent' },
+  ];
+
+  for (const { name, fetchImpl, dns, expected } of cases) {
+    const outcome = await confirmHostname(domain, fetchImpl, dns);
+    assert.notEqual(outcome, 'hostname-propagating', `${name} must never produce the retired code`);
+    assert.equal(outcome, expected, `${name} should report ${expected}`);
+  }
+});
+
+test('the disagreement fixture (authoritative serves, resolver empty) maps to hostname-resolver-lagging', async () => {
+  const { confirmHostname } = await import('./hostname.mjs');
+  const domain = 'carin-test.org';
+
+  const outcome = await confirmHostname(domain, alwaysUnreachableFetch(), disagreeingDns(domain));
+  assert.equal(outcome, 'hostname-resolver-lagging');
+});
+
+test('the records-absent fixture (authoritative reachable but empty too) maps to hostname-records-absent', async () => {
+  const { confirmHostname } = await import('./hostname.mjs');
+  const domain = 'carin-test.org';
+
+  const outcome = await confirmHostname(domain, alwaysUnreachableFetch(), recordsAbsentDns(domain));
+  assert.equal(outcome, 'hostname-records-absent');
+});
+
+test('an authoritative answer present but the marker probe failing must not report live: the DNS answer upgrades the diagnosis, never the verdict', async (t) => {
+  const domain = 'carin-test.org';
+  const { confirmHostname } = await import('./hostname.mjs');
+
+  // The site is reachable but answers the wrong content (the "wrong site" shape); the DNS
+  // context claims the apex record is already present. Reachability, not DNS presence, decides
+  // the verdict here, so this must stay hostname-not-serving and never live.
+  const outcome = await confirmHostname(domain, wrongSiteFetch(), disagreeingDns(domain));
+  assert.notEqual(outcome, 'live');
+  assert.equal(outcome, 'hostname-not-serving');
 });
 
 test('a TLS transport failure with the site reachable over HTTP maps to certificate-pending, not a broken-site row', async (t) => {

@@ -32,7 +32,8 @@ const EXPECTED_KIND = {
   'delegation-propagating': 'wait',
   'delegation-pending': 'wait',
   'delegation-wrong-nameservers': 'act',
-  'hostname-propagating': 'wait',
+  'hostname-records-absent': 'wait',
+  'hostname-resolver-lagging': 'wait',
   'certificate-pending': 'wait',
   'hostname-not-serving': 'act',
   'custom-domain-failed': 'act',
@@ -96,7 +97,8 @@ const SAMPLE_PARAMS = {
     nameServers: ['ada.ns.cloudflare.com', 'walt.ns.cloudflare.com'],
     actual: ['ns1.otheragency.com', 'ns2.otheragency.com']
   },
-  'hostname-propagating': { dir: './alpine' },
+  'hostname-records-absent': { dir: './alpine', domain: 'example.com' },
+  'hostname-resolver-lagging': { dir: './alpine', domain: 'example.com' },
   'certificate-pending': { dir: './alpine', domain: 'example.com' },
   'hostname-not-serving': { dir: './alpine', domain: 'example.com' },
   'custom-domain-failed': { dir: './alpine', detail: '409: hostname already exists' },
@@ -179,7 +181,9 @@ test('every catalogue code message ends in exactly one Next: line', () => {
 });
 
 test('the Builds rows add exactly eight codes, none colliding with build-failed or build-not-runnable', () => {
-  const BASELINE_CODE_COUNT = 37;
+  // 37 pre-Builds codes, plus Task 2's split: hostname-propagating retired (-1), replaced by
+  // hostname-records-absent and hostname-resolver-lagging (+2).
+  const BASELINE_CODE_COUNT = 38;
   const NEW_BUILDS_CODES = [
     'builds-app-not-authorized',
     'builds-repo-not-selected',
@@ -376,8 +380,19 @@ test('delegation-wrong-nameservers explains the one-pair-per-account fact rather
 test('the wait rows read as normal progress, not failures', () => {
   const pending = cloudflareError('delegation-pending', SAMPLE_PARAMS['delegation-pending']);
   assert.match(pending.message, /normal/);
-  const propagating = cloudflareError('hostname-propagating', SAMPLE_PARAMS['hostname-propagating']);
-  assert.match(propagating.message, /normal/);
+  const recordsAbsent = cloudflareError('hostname-records-absent', SAMPLE_PARAMS['hostname-records-absent']);
+  assert.match(recordsAbsent.message, /normal/);
+  const resolverLagging = cloudflareError('hostname-resolver-lagging', SAMPLE_PARAMS['hostname-resolver-lagging']);
+  assert.match(resolverLagging.message, /not a real problem/);
+});
+
+test('hostname-records-absent and hostname-resolver-lagging read as distinct diagnoses, never producing the retired hostname-propagating code', () => {
+  const recordsAbsent = cloudflareError('hostname-records-absent', SAMPLE_PARAMS['hostname-records-absent']);
+  const resolverLagging = cloudflareError('hostname-resolver-lagging', SAMPLE_PARAMS['hostname-resolver-lagging']);
+  assert.notEqual(recordsAbsent.message, resolverLagging.message);
+  assert.equal(recordsAbsent.catalogue.code, 'hostname-records-absent');
+  assert.equal(resolverLagging.catalogue.code, 'hostname-resolver-lagging');
+  assert.ok(!CATALOGUE_CODES.includes('hostname-propagating'), 'hostname-propagating must be retired');
 });
 
 test('carry-over-declined reads as a recorded decision, not an error', () => {

@@ -49,26 +49,72 @@ export const PREFILL_PERMISSION_KEYS = [
   { key: 'email_sending', type: 'edit' },
 ];
 
+/**
+ * The three keys chapter 3 (Builds connect) adds to PREFILL_PERMISSION_KEYS. Verified live
+ * 2026-08-12 (docs/internal/2026-08-12-t4c-builds-spike.md), one at a different confidence than
+ * the other two:
+ *
+ * `workers_ci` was seen filling its row on the live dashboard, 2026-08-12, the same bar every key
+ * above met.
+ *
+ * `d1` has NOT yet been confirmed on the live dashboard. Its requirement is observed, not
+ * guessed: a Builds deploy of a cairn-shaped scaffold, run with a token missing it, died on
+ * `GET /d1/database/{id}` with `Authentication error [code: 10000]`.
+ *
+ * `workers_r2` has NOT yet been confirmed on the live dashboard either, and unlike `d1` its
+ * requirement is inferred, not observed: the failing build above died at the first D1 binding
+ * and never reached the R2 binding, so no request ever exercised this permission directly. A
+ * second token carrying both `d1` and `workers_r2` deployed the same scaffold successfully, which
+ * is the evidence for including it, not a request log entry naming it.
+ *
+ * `d1` and `workers_r2` still owe one live dashboard confirmation before this list ships, the
+ * same bar `workers_ci` and every key in PREFILL_PERMISSION_KEYS already cleared.
+ * @type {Array<{ key: string, type: 'edit' }>}
+ */
+const BUILDS_PERMISSION_KEYS = [
+  { key: 'workers_ci', type: 'edit' },
+  { key: 'd1', type: 'edit' },
+  { key: 'workers_r2', type: 'edit' },
+];
+
+/**
+ * The chapter-3 union key set: PREFILL_PERMISSION_KEYS plus BUILDS_PERMISSION_KEYS. One token,
+ * pasted once, has to authorize every call chapter 2 and chapter 3 both make (module header,
+ * "The narrower reading, and why the chapter does not take it").
+ * @type {Array<{ key: string, type: 'edit' }>}
+ */
+export const CHAPTER3_PERMISSION_KEYS = [...PREFILL_PERMISSION_KEYS, ...BUILDS_PERMISSION_KEYS];
+
 /** The name Cloudflare pre-fills into the create-token page's own "Token name" field. */
 const PREFILL_TOKEN_NAME = 'cairn create-cairn-site';
 
 /**
- * The prefilled create-token page: every permission in PREFILL_PERMISSION_KEYS at edit, over
- * every account and every zone. Format documented by Cloudflare
+ * Build the prefilled create-token page for a given permission-group key list, over every
+ * account and every zone. Format documented by Cloudflare
  * (https://developers.cloudflare.com/fundamentals/api/how-to/account-owned-token-template/);
  * `accountId=*` and `zoneId=all` were both confirmed live to render as "All accounts" and "All
  * zones", 2026-08-11.
- * @type {string}
+ * @param {Array<{ key: string, type: 'edit' }>} [keys] the permission-group keys to request;
+ *  defaults to PREFILL_PERMISSION_KEYS, the chapter-2 set
+ * @returns {string} the full prefilled create-token URL
  */
-export const PREFILL_URL = (() => {
+export function prefillUrl(keys = PREFILL_PERMISSION_KEYS) {
   const params = new URLSearchParams({
-    permissionGroupKeys: JSON.stringify(PREFILL_PERMISSION_KEYS),
+    permissionGroupKeys: JSON.stringify(keys),
     accountId: '*',
     zoneId: 'all',
     name: PREFILL_TOKEN_NAME,
   });
   return `https://dash.cloudflare.com/profile/api-tokens?${params.toString()}`;
-})();
+}
+
+/**
+ * The chapter-2 prefilled create-token page, built from PREFILL_PERMISSION_KEYS. Byte-stable
+ * across the prefillUrl seam's addition: this is exactly `prefillUrl()`'s default-argument
+ * result, kept as its own export so chapter 2's callers need not change.
+ * @type {string}
+ */
+export const PREFILL_URL = prefillUrl();
 
 /** The question the first paste and the retry both ask, so the retry reads as the same request. */
 const PASTE_PROMPT = 'Paste your Cloudflare API token';
@@ -144,6 +190,10 @@ async function validateToken(token, { dir, accountId }) {
  *  read from under `yes`; defaults to `process.env`, injected in tests
  * @property {string[]} [argv] the argument vector scanned for a mistakenly-passed token; defaults
  *  to `process.argv.slice(2)`, injected in tests
+ * @property {Array<{ key: string, type: 'edit' }>} [permissionKeys] the permission-group keys
+ *  the browser prefill requests; defaults to PREFILL_PERMISSION_KEYS, the chapter-2 set. Chapter
+ *  3 passes CHAPTER3_PERMISSION_KEYS. Only the prefill URL changes; validateToken always calls
+ *  listZones regardless of which keys were requested.
  */
 
 /**
@@ -193,6 +243,7 @@ export async function ensureApiToken({
   promptSecretFn = promptSecret,
   env = process.env,
   argv = process.argv.slice(2),
+  permissionKeys = PREFILL_PERMISSION_KEYS,
 }) {
   const offender = findTokenShapedArg(argv);
   if (offender) {
@@ -235,7 +286,7 @@ export async function ensureApiToken({
   const savedResult = await trySavedToken(saved, scope, log);
   if (savedResult.ok) return savedResult.token;
 
-  await openBrowser(PREFILL_URL, log);
+  await openBrowser(prefillUrl(permissionKeys), log);
 
   const pasted = await promptSecretFn(PASTE_PROMPT);
   const firstTry = await validateToken(pasted, scope);

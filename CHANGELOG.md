@@ -186,6 +186,38 @@
   engine's runtime library is untouched by this pass, and `create-cairn-site` is still
   unpublished.
 
+  The machinery behind the public template repo lands next, though the repo itself does not.
+  `scripts/sync-template-repo.mjs` generates `glw907/cairn-waymark-template` wholesale from the
+  same bake the CLI scaffolds from, plus a small repo-only overlay (README, MIT license,
+  `.dev.vars.example`, and the `.gitignore` negation that keeps git from swallowing it). The tree
+  is regenerated on every sync and committed normally, never force-pushed, so a hand edit to the
+  template repo survives at most one sync and history stays intact. GitHub Actions drives it three
+  ways: a job gated on the npm publish succeeding, a manual dispatch, and a weekly `--dry-run`
+  compare that fails on drift, which is the tripwire for a hand edit, an expired credential, or a
+  sync gone silently inert. Write access rides a fine-grained PAT that reaches the script only as
+  `TEMPLATE_REPO_TOKEN` in the environment, carried to git as an injected `http.extraheader` rather
+  than embedded in the remote URL, so it appears in no subprocess argv and in no clone's persisted
+  `.git/config`.
+
+  The sync refuses to push a tree it cannot prove builds. Registry resolvability alone was not
+  enough, and finding out why is what split this pass: the bake emits the showcase's **current**
+  tree while the emitted engine dependency resolves to the last **published** version, so a
+  template generated between releases can import engine symbols the registry does not serve. It
+  did, against `0.94.0`. The gate installs and builds the composed tree before committing, and runs
+  only when a real sync is about to push, so a no-op run and a `--dry-run` never pay for it.
+  `docs/guides/deploy-to-cloudflare.md` gains the three-door framing this implies: the manual
+  door, `create-cairn-site --connect`, and the Deploy to Cloudflare button, which is named as not
+  yet available. Consumers must: nothing; none of this ships in the engine tarball.
+
+  **Two release-checklist obligations ride this entry, and `cairn-release` must not miss them.**
+  (1) Drop `--strip-dev-backend` from `sync-template.yml`'s drift cron and from its dispatch input
+  default, in the same edit; the release path never strips, so leaving the flag on makes the weekly
+  compare measure a stripped bake against an unstripped repo and go red every Monday forever.
+  (2) Drop the pre-release notice from `packages/create-cairn-site/template-repo/README.md`. The
+  remaining T5 work (creating the public repo, its first sync, the live button spike, the
+  spike-derived completion checklist, and the C3 `--template` verification) belongs to the same
+  cut, since the repo cannot build from a clean clone until the engine it names is on the registry.
+
 - Every entry gains a publish history and a revert-as-draft: the `history` admin view
   (`/admin/<concept>/<id>/history`), reachable from the edit screen's overflow menu, lists the
   entry's most recent 25 publishes off `Backend`'s new `listCommits(path, ref, limit)` member (a

@@ -261,3 +261,28 @@ refresh. T4d follows T4c and precedes T5.
 GitHub App, and saved state instead of minting its own, and owns the single estate teardown. The
 brief above is otherwise unchanged; the reorder ruling is in
 `2026-08-12-create-cairn-site-t5-design.md`, ruling 1.
+
+**Amended 2026-08-13 (T5a's close): the inherited estate does not exist, so plan for either
+case.** T5 split, and **T5a did not run the live CLI e2e** (T5 Task 8), which is what would have
+minted the estate. Verified at T5a's close: `~/.config/cairn/sites` is empty, and the GitHub App
+ledger still stands at four hand-deleted, not five. So the amendment above is conditional, not a
+fact:
+
+- **If Task 8 runs before T4d**, the amendment holds as written: T4d inherits the site, the App,
+  and the saved state, and owns the single teardown.
+- **If T4d runs first**, it mints its own estate, including the fifth GitHub App, which is a Geoff
+  hand step (only he can delete one), and the "single teardown" economy is lost. A T4d planning
+  sitting that assumes an inherited estate without checking will plan a run it cannot start.
+
+**Check `~/.config/cairn/sites` at the start of that sitting rather than trusting this brief**;
+that directory is the fact, and this paragraph is a claim about it. The rest of the T4d brief is
+unaffected: nothing in the console's own shape depends on which case holds.
+
+**Two inputs T4c added, restated here so the brief is self-contained:** the Builds build watch is
+a second long wait worth rendering beside chapter 2's delegation wait, and the fake-server surface
+the plumbing extraction must cover has grown (`test/fake-cloudflare.mjs` now carries the Builds
+routes on top of what it copied from `test/fake-github.mjs`). Verified at T5a's close: `runStep`
+still exists as an identical one-liner in **four** modules (`github/chapter.mjs`,
+`cloudflare/chapter.mjs`, `chapter2.mjs`, `chapter3.mjs`), so the hoist into `runner.mjs` that
+STATUS carries is still four copies rather than more. T5a added no console-facing surface and no
+fifth copy.

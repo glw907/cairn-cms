@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { nameWranglerResources, writePublicOrigin, writeAccountId, workerNameFor, writeEmailFrom } from './config.mjs';
+import { nameWranglerResources, writePublicOrigin, workerNameFor, writeEmailFrom } from './config.mjs';
 
 /**
  * Verbatim copy of the baked template's `wrangler.jsonc`: the showcase's own file
@@ -173,52 +173,6 @@ test('writePublicOrigin replaces a previous workers.dev value on a resumed run',
   const content = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
   assert.ok(content.includes('"PUBLIC_ORIGIN": "https://alpine-club-2.geoff.workers.dev"'));
   assert.ok(!content.includes('alpine-club.geoff.workers.dev"'));
-});
-
-test('writeAccountId inserts the key right after "name" when no scaffold has one yet, and parses as JSONC', async (t) => {
-  const dir = await fixtureDir(t);
-  assert.ok(!BAKED_WRANGLER_JSONC.includes('account_id'), 'the fixture must start with no account_id key');
-
-  await writeAccountId(dir, 'abc123accountid');
-  const content = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
-
-  assert.ok(content.includes('"account_id": "abc123accountid"'));
-  const lines = content.split('\n');
-  const nameLineIndex = lines.findIndex((line) => line.includes('"name": "cairn-showcase"'));
-  assert.equal(lines[nameLineIndex + 1].trim(), '"account_id": "abc123accountid",');
-
-  const parsed = parseJsonc(content);
-  assert.equal(parsed.account_id, 'abc123accountid');
-  assert.equal(parsed.name, 'cairn-showcase');
-});
-
-test('writeAccountId replaces an existing value rather than inserting a second key', async (t) => {
-  const withAccountId = BAKED_WRANGLER_JSONC.replace(
-    '"name": "cairn-showcase",',
-    '"name": "cairn-showcase",\n  "account_id": "stale-id",',
-  );
-  const dir = await fixtureDir(t, withAccountId);
-
-  await writeAccountId(dir, 'fresh-id');
-  const content = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
-
-  assert.ok(content.includes('"account_id": "fresh-id"'));
-  assert.ok(!content.includes('stale-id'));
-  assert.equal(content.match(/"account_id"/g).length, 1, 'only one account_id key may survive');
-
-  const parsed = parseJsonc(content);
-  assert.equal(parsed.account_id, 'fresh-id');
-});
-
-test('writeAccountId is byte-stable when called twice with the same id', async (t) => {
-  const dir = await fixtureDir(t);
-  await writeAccountId(dir, 'abc123accountid');
-  const once = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
-
-  await writeAccountId(dir, 'abc123accountid');
-  const twice = await readFile(path.join(dir, 'wrangler.jsonc'), 'utf8');
-
-  assert.equal(twice, once);
 });
 
 test('workerNameFor slugs the name with the cairn-site fallback, matching scaffold.mjs and the GitHub chapter', () => {

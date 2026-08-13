@@ -84,13 +84,15 @@ async function probeOrigin(origin, fetchImpl) {
  * HTTPS is tried first; only when it fails at the transport level (no HTTP response reached at
  * all, whether from a missing certificate, DNS not yet resolving, or a refused connection) does
  * this fall back to plain HTTP, which needs no certificate and so isolates whether the site
- * itself is reachable.
+ * itself is reachable. Exported for chapter3.mjs's own live check (the first Builds deploy's
+ * completion), which reuses this rather than rebuilding it; a workers.dev origin needs its scheme
+ * stripped by the caller, since this takes a bare domain, no scheme.
  * @param {string} domain the domain to probe, no scheme
  * @param {typeof fetch} fetchImpl the fetch implementation to probe with
  * @returns {Promise<'live' | 'hostname-propagating' | 'certificate-pending' |
  *  'hostname-not-serving'>} the catalogue code the probes point at, or `'live'`
  */
-async function confirmHostname(domain, fetchImpl) {
+export async function confirmHostname(domain, fetchImpl) {
   const https = await probeOrigin(`https://${domain}`, fetchImpl);
   if (https.reachable) return https.matches ? 'live' : 'hostname-not-serving';
 

@@ -206,6 +206,33 @@ commands from the scaffold it emitted.
 keyed by worker tag. The chapter does not need it; `builds/workers/{tag}/builds` is the
 discovery route.
 
+### Two shapes captured after the fact (added 2026-08-13 at the review gate)
+
+The pass's review fan-out correctly flagged that two things the chapter leans on were never
+written down here, even though the code assumed them. Both were then captured live rather than
+argued about. Recording them so no later reader has to take the code's word for it.
+
+**`GET /accounts/{acc}/workers/scripts` does carry `tag` per entry**, which is what
+`findWorkerTag` matches the local `wrangler.jsonc` name against. One entry, verbatim and
+trimmed to the fields that matter:
+
+```json
+{"created_on":"2026-01-25T18:00:10.112994Z","modified_on":"2026-07-14T18:05:50.361487Z","id":"907-life","tag":"05ff4b1476754994a3b11ca9c0997778","tags":[],"deployment_id":"","tail_consumers":null,"logpush":false,"has_assets":true,"has_modules":true,"etag":"ccae8ed05167147a378304e1db0c1d09e54c2b3cb1c58abb3e5563bf5cdbc397","handlers":["fetch"],"last_deployed_from":"wrangler","compatibility_date":"2025-05-05","compatibility_flags":["nodejs_compat"],"usage_model":"standard","routes":null}
+```
+
+`id` is the Worker's name and `tag` is the `external_script_id` every Builds route wants. Note
+that Cloudflare's own documented Worker-script object does not list `tag`, so reading the docs
+would have left this unproven. The account carries twelve scripts and every one has a `tag`.
+
+**`GET .../builds/workers/{tag}/builds` returns newest first.** The two-per-page read used for
+the Step 4 captures came back `created_on` `2026-07-14T18:04:54.134Z` then
+`2026-07-14T08:27:21.167Z`, with `result_info` of
+`{"next_page":true,"page":1,"per_page":2,"count":2,"total_count":87,"total_pages":44}`. So
+taking `builds[0]` as the most recent build is observed behavior on one account, not an
+inference. It is still a single observation, and the route is paginated, so a caller that needs
+a *specific* build should match `build_trigger_metadata.commit_hash` rather than trust the
+ordering (which is what amendment 10 already requires for the reconcile push).
+
 ## Step 5: the id-less-binding probe (THE PREMISE HOLDS; two amendments)
 
 The probe repo `glw907/cairn-t4c-spike` carries a `wrangler.jsonc` reproducing the cairn

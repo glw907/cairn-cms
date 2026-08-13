@@ -37,6 +37,15 @@
 // redactToken scrubs every error message this seam constructs, and is exported so a caller can
 // apply the same scrub to its own logging. A pasted API token must never reach a thrown error's
 // text, because that text gets pasted into issues and screenshots.
+//
+// The Workers Builds routes (added T4c) are NOT threaded through OPERATION_CODES/throwMapped:
+// the catalogue (docs/superpowers/plans/2026-08-12-create-cairn-site-t4c.md, Task 2) catalogued
+// exactly the eight recoverable Builds conditions, a count a test guards, and none of them is a
+// generic "this Builds call failed" row a genuinely unexpected failure could reuse (each row's
+// copy is hardcoded, not built from a `detail` param the way zone-create-failed and its
+// siblings are). throwBuildsMapped below is their parallel, smaller mapper: it still catches the
+// two Builds-specific HTTP 404 authorization refusals and the family-agnostic 403/token-invalid
+// rules, but falls back to a plain, redacted Error rather than inventing a ninth catalogue code.
 import { cloudflareError } from './catalogue.mjs';
 
 /**
@@ -79,6 +88,26 @@ export const SENDING_DISABLED_CODE = 10203;
  * the sender-not-ready family and this chapter only ever sends after a successful onboard.
  */
 export const SENDER_NOT_CONFIGURED_CODE = 10204;
+
+/**
+ * HTTP 404 codes for the two Workers Builds GitHub-App authorization refusals, captured live
+ * 2026-08-12/13 against the connections PUT (spike amendment 5,
+ * docs/internal/2026-08-12-t4c-builds-spike.md): the owner's GitHub account has never
+ * authorized Cloudflare's GitHub App at all (8000008), or the App is authorized but this
+ * repository is not in its selection (8000012). Both are Pages-era codes reused for Builds, and
+ * Cloudflare's own message text is factually wrong for this condition (spike amendment 6), so
+ * the catalogue rows these map to never quote it back to the admin.
+ */
+export const BUILDS_APP_NOT_AUTHORIZED_CODE = 8000008;
+export const BUILDS_REPO_NOT_SELECTED_CODE = 8000012;
+
+/**
+ * The most pages `getBuildLogs` will fetch for one build before giving up, rather than looping
+ * forever against a `cursor` that keeps advancing (or, defensively, one that stops advancing but
+ * keeps reporting `truncated: true`). A real build's log runs to at most a few hundred lines, so
+ * this stays comfortably above any real log while still bounding the request count.
+ */
+const MAX_BUILD_LOG_PAGES = 50;
 
 /** How long to wait when a 429 carries no Retry-After header, in milliseconds. */
 const DEFAULT_RETRY_AFTER_MS = 1000;
@@ -201,6 +230,31 @@ function isSuccess(status, json) {
 }
 
 /**
+ * Throw `token-invalid` when a failed response carries either shape Cloudflare uses to say the
+ * token itself is not usable, and return normally when it carries neither, leaving the caller's
+ * own family-specific mapping to decide. Shared by `throwMapped` and `throwBuildsMapped`, which
+ * apply these two rules identically; the 400 shape nests its real explanation one level down in
+ * `error_chain`, which is the part worth reading off in exactly one place.
+ * @param {number} status the HTTP status
+ * @param {{ code?: number, message?: string, error_chain?: Array<{ message?: string }> }
+ *  | undefined} primary the first entry of the response's `errors` array
+ * @param {string} dir the `--dir` value, interpolated into the row
+ * @param {string} token the API token, redacted from the thrown text
+ * @param {{ status: number, code: number | undefined, id: string | undefined }} api the raw v4
+ *  fields carried onto the thrown error
+ * @returns {void}
+ */
+function throwIfTokenInvalid(status, primary, dir, token, api) {
+  if (status === 400 && primary?.code === 6003) {
+    const detail = primary.error_chain?.[0]?.message ?? primary.message;
+    throwCatalogued('token-invalid', { dir, detail }, token, api);
+  }
+  if (status === 401 && primary?.code === 10000) {
+    throwCatalogued('token-invalid', { dir, detail: primary.message }, token, api);
+  }
+}
+
+/**
  * Map a failed response onto one of the chapter's catalogued errors and throw it, redacting the
  * token from the final message and from `catalogue.next`. Never returns.
  * @param {number} status the HTTP status
@@ -239,13 +293,7 @@ function throwMapped(status, json, operationCode, dir, token) {
     const permission = extractPermission(combinedMessage);
     throwCatalogued('token-scope-missing', permission ? { dir, permission } : { dir }, token, api);
   }
-  if (status === 400 && primary?.code === 6003) {
-    const detail = primary.error_chain?.[0]?.message ?? primary.message;
-    throwCatalogued('token-invalid', { dir, detail }, token, api);
-  }
-  if (status === 401 && primary?.code === 10000) {
-    throwCatalogued('token-invalid', { dir, detail: primary.message }, token, api);
-  }
+  throwIfTokenInvalid(status, primary, dir, token, api);
   throwCatalogued(
     operationCode,
     combinedMessage ? { dir, detail: combinedMessage } : { dir },
@@ -277,6 +325,64 @@ function throwCatalogued(code, params, token, api) {
 }
 
 /**
+ * Map a failed Workers Builds response onto a catalogued or plain error and throw it. See the
+ * module doc comment for why Builds routes carry their own smaller mapper rather than joining
+ * OPERATION_CODES/throwMapped: the two Builds-specific 404 refusals and the family-agnostic
+ * 403/token-invalid rules are still caught here, but anything else throws a plain error carrying
+ * only the numeric code(s), never a catalogued one, since no catalogued Builds row exists to
+ * reuse truthfully.
+ *
+ * The two refusal codes are matched against `errors.some(...)`, independent of both the error's
+ * position in the array and the response's HTTP status (the T4c review's B3 finding): the spike
+ * observed both as HTTP 404 with the refusal at `errors[0]`, but that was one observation, and a
+ * warning ahead of the refusal, or Cloudflare re-statusing these Pages-era codes, must not make
+ * the row fall through to the plain fallback below, which is the one branch that could otherwise
+ * leak Cloudflare's own factually-wrong Pages prose (spike amendment 6).
+ * @param {number} status the HTTP status
+ * @param {unknown} json the parsed body
+ * @param {string} dir the `--dir` value, interpolated into a catalogued row
+ * @param {string} token the API token, redacted from the thrown text
+ * @param {{ owner?: string, repo?: string }} [refusalParams] the owner/repo to interpolate into
+ *  builds-repo-not-selected; only the connections PUT, the one route the two refusals were
+ *  captured against, ever passes this
+ * @returns {never}
+ */
+function throwBuildsMapped(status, json, dir, token, refusalParams = {}) {
+  const errors = Array.isArray(json?.errors) ? json.errors : [];
+  const primary = errors[0];
+  const combinedMessage = errors.map((e) => e.message).filter(Boolean).join('; ');
+  const api = { status, code: primary?.code, id: primary?.message };
+
+  if (errors.some((e) => e.code === BUILDS_APP_NOT_AUTHORIZED_CODE)) {
+    throwCatalogued('builds-app-not-authorized', { dir }, token, api);
+  }
+  if (errors.some((e) => e.code === BUILDS_REPO_NOT_SELECTED_CODE)) {
+    throwCatalogued(
+      'builds-repo-not-selected',
+      { dir, owner: refusalParams.owner, repo: refusalParams.repo },
+      token,
+      api,
+    );
+  }
+  if (status === 403) {
+    const permission = extractPermission(combinedMessage);
+    throwCatalogued('token-scope-missing', permission ? { dir, permission } : { dir }, token, api);
+  }
+  throwIfTokenInvalid(status, primary, dir, token, api);
+
+  // No catalogued Builds row exists for anything else, and the platform's own message must never
+  // reach the admin on a /builds/ route: both captured refusals were Pages-era prose that is
+  // factually wrong for the condition they actually describe here, and there is no way to know in
+  // general whether an unmapped Builds failure carries the same problem. So the fallback names
+  // only the numeric code(s) Cloudflare returned, never `combinedMessage`.
+  const codes = errors.map((e) => e.code).filter((code) => code !== undefined);
+  const codeText = codes.length > 0 ? codes.join(', ') : 'unknown';
+  const err = new Error(`Cloudflare Builds API error (HTTP ${status}, code ${codeText})`);
+  err.api = api;
+  throw err;
+}
+
+/**
  * Build the Cloudflare API client chapter 2 calls against. Every method reads
  * `CAIRN_CLOUDFLARE_API_BASE` at call time via `apiBase()`, never cached, so a test can point it
  * at a fake after this client is already built.
@@ -299,6 +405,17 @@ function throwCatalogued(code, params, token, api) {
  *   listSendingSubdomains(zoneId: string): Promise<object[]>,
  *   createSendingSubdomain(zoneId: string, name: string): Promise<object>,
  *   sendMessage(message: { from: string, to: string, subject: string, text: string }): Promise<void>,
+ *   verifyToken(): Promise<{ id: string, status: string }>,
+ *   putBuildConnection(repo: { providerAccountId: string, providerAccountName: string, repoId: string, repoName: string }): Promise<object>,
+ *   listBuildTriggers(workerTag: string): Promise<object[]>,
+ *   createBuildTrigger(trigger: { workerTag: string, repoConnectionUuid: string, buildTokenUuid: string, triggerName?: string, branchIncludes?: string[], buildCommand?: string, deployCommand?: string }): Promise<object>,
+ *   getBuildTokens(): Promise<object[]>,
+ *   createBuildToken(token: { name: string, secret: string, cloudflareTokenId: string }): Promise<object>,
+ *   findWorkerTag(workerName: string): Promise<string | undefined>,
+ *   listBuildsForWorker(tag: string): Promise<object[]>,
+ *   kickBuild(triggerUuid: string, branch: string): Promise<object>,
+ *   getBuild(buildUuid: string): Promise<object>,
+ *   getBuildLogs(buildUuid: string): Promise<object>,
  * }}
  */
 export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
@@ -335,6 +452,28 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
       const qs = buildQuery({ ...query, page });
       const { status, json } = await get(`${basePath}${qs}`);
       ensureSuccess(status, json, operationCode);
+      results.push(...(json.result ?? []));
+      const info = json.result_info;
+      if (!info || page >= info.total_pages || results.length >= info.total_count) break;
+      page += 1;
+    }
+    return results;
+  }
+
+  /**
+   * The Builds-family twin of `listPaginated`: same page-walking loop, but a failure routes
+   * through `throwBuildsMapped` rather than `OPERATION_CODES`/`throwMapped` (see that
+   * function's doc comment). Also tolerates a route with no `result_info` at all (the triggers
+   * list, per the spike, returns a bare array), since the loop simply stops after page one when
+   * `info` is absent.
+   */
+  async function listBuildsPaginated(basePath) {
+    const results = [];
+    let page = 1;
+    for (;;) {
+      const qs = buildQuery({ page });
+      const { status, json } = await get(`${basePath}${qs}`);
+      if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
       results.push(...(json.result ?? []));
       const info = json.result_info;
       if (!info || page >= info.total_pages || results.length >= info.total_count) break;
@@ -407,6 +546,143 @@ export function makeApi({ token, accountId, dir, sleep = defaultSleep }) {
         text,
       });
       ensureSuccess(status, json, OPERATION_CODES.emailSend);
+    },
+
+    // --- Workers Builds ---------------------------------------------------------------------
+    //
+    // `GET /user/tokens/verify` is a bare user-scoped route, not under `/accounts/:id` (the
+    // spike's fixture doc: docs/internal/2026-08-12-t4c-builds-spike.md). `result.id` is the
+    // `cloudflare_token_id` the chapter needs when it registers the admin's own pasted token as
+    // the build token.
+    async verifyToken() {
+      const { status, json } = await get('/user/tokens/verify');
+      if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
+      return json.result;
+    },
+
+    // A true upsert (spike amendment 8): the identical PUT run twice returns the same
+    // `repo_connection_uuid`, only `modified_on` advancing, which is what lets a caller adopt an
+    // existing connection with no separate list route. `providerAccountName`/`repoName` are
+    // carried through unconditionally so a `builds-repo-not-selected` refusal can name the repo.
+    async putBuildConnection({ providerAccountId, providerAccountName, repoId, repoName }) {
+      const { status, json } = await write('PUT', `/accounts/${accountId}/builds/repos/connections`, {
+        provider_type: 'github',
+        provider_account_id: providerAccountId,
+        provider_account_name: providerAccountName,
+        repo_id: repoId,
+        repo_name: repoName,
+      });
+      if (!isSuccess(status, json)) {
+        throwBuildsMapped(status, json, dir, token, { owner: providerAccountName, repo: repoName });
+      }
+      return json.result;
+    },
+
+    // Per worker, never account-wide (spike amendment 9): there is no other way to list a
+    // repo's triggers, since there is no connections-list route either.
+    async listBuildTriggers(workerTag) {
+      return listBuildsPaginated(`/accounts/${accountId}/builds/workers/${workerTag}/triggers`);
+    },
+
+    async createBuildTrigger({
+      workerTag,
+      repoConnectionUuid,
+      buildTokenUuid,
+      triggerName,
+      branchIncludes,
+      buildCommand,
+      deployCommand,
+    }) {
+      const { status, json } = await write('POST', `/accounts/${accountId}/builds/triggers`, {
+        external_script_id: workerTag,
+        repo_connection_uuid: repoConnectionUuid,
+        build_token_uuid: buildTokenUuid,
+        trigger_name: triggerName,
+        branch_includes: branchIncludes,
+        build_command: buildCommand,
+        deploy_command: deployCommand,
+      });
+      if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
+      return json.result;
+    },
+
+    async getBuildTokens() {
+      return listBuildsPaginated(`/accounts/${accountId}/builds/tokens`);
+    },
+
+    // The route REGISTERS a Cloudflare API token the caller already holds; it mints nothing
+    // (spike Step 4). The chapter calls this with the admin's own pasted token and
+    // `verifyToken()`'s `result.id`.
+    async createBuildToken({ name, secret, cloudflareTokenId }) {
+      const { status, json } = await write('POST', `/accounts/${accountId}/builds/tokens`, {
+        build_token_name: name,
+        build_token_secret: secret,
+        cloudflare_token_id: cloudflareTokenId,
+      });
+      if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
+      return json.result;
+    },
+
+    // There is no id-based Workers Scripts lookup by name; the tag a Builds trigger needs is
+    // read off the full list and matched on `id`, the script's own name.
+    async findWorkerTag(workerName) {
+      const scripts = await listBuildsPaginated(`/accounts/${accountId}/workers/scripts`);
+      return scripts.find((script) => script.id === workerName)?.tag;
+    },
+
+    async listBuildsForWorker(tag) {
+      return listBuildsPaginated(`/accounts/${accountId}/builds/workers/${tag}/builds`);
+    },
+
+    // The branch is REQUIRED in the body (spike amendment 9); Cloudflare 400s an empty body
+    // with code 12002. The caller always has a branch to hand (the repo's default branch), so
+    // this is a client-side contract check that never makes a request, not a mapped condition.
+    async kickBuild(triggerUuid, branch) {
+      if (!branch) {
+        throw new Error('kickBuild requires a branch: Cloudflare rejects an empty-body kick with code 12002');
+      }
+      const { status, json } = await write('POST', `/accounts/${accountId}/builds/triggers/${triggerUuid}/builds`, { branch });
+      if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
+      return json.result;
+    },
+
+    async getBuild(buildUuid) {
+      const { status, json } = await get(`/accounts/${accountId}/builds/builds/${buildUuid}`);
+      if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
+      return json.result;
+    },
+
+    // Pages the `cursor` the logs route returns until a page reports `truncated: false` (the
+    // real end, per the captured shape), the cursor stops advancing, or MAX_BUILD_LOG_PAGES is
+    // hit, concatenating every page's `lines` and `events` in the oldest-first order the route
+    // already serves them in. The prior version read only page one and NEVER inspected `cursor`
+    // or `truncated`, so a failed build with its actual error past the first page silently
+    // printed the log's HEAD (build-environment setup chatter) under a heading that promised the
+    // tail (T4c review finding B2). `cappedAtPageLimit` tells the caller the page cap, not the
+    // log's real end, was reached, so a caller must not claim these are the log's true last lines.
+    async getBuildLogs(buildUuid) {
+      const lines = [];
+      const events = [];
+      let cursor;
+      let page;
+      let pagesRead = 0;
+      let cappedAtPageLimit = false;
+      for (;;) {
+        const qs = buildQuery({ cursor });
+        const { status, json } = await get(`/accounts/${accountId}/builds/builds/${buildUuid}/logs${qs}`);
+        if (!isSuccess(status, json)) throwBuildsMapped(status, json, dir, token);
+        page = json.result;
+        pagesRead += 1;
+        if (Array.isArray(page.lines)) lines.push(...page.lines);
+        if (Array.isArray(page.events)) events.push(...page.events);
+        if (!page.truncated) break;
+        if (page.cursor === cursor || pagesRead >= MAX_BUILD_LOG_PAGES) {
+          cappedAtPageLimit = true;
+          break;
+        }
+        cursor = page.cursor;
+      }
+      return { ...page, lines, events, cappedAtPageLimit };
     },
   };
 }

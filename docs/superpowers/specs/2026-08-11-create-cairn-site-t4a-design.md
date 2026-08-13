@@ -256,3 +256,8 @@ carry-forward in STATUS.
 Open for that sitting: whether the console retrofits the GitHub chapter's one-shot pages, which the
 research recommends against as cosmetic; and whether the delegation view polls or asks the admin to
 refresh. T4d follows T4c and precedes T5.
+
+**Amended 2026-08-12 (the T5 sitting): T4d now follows T5.** It inherits T5's live site, minted
+GitHub App, and saved state instead of minting its own, and owns the single estate teardown. The
+brief above is otherwise unchanged; the reorder ruling is in
+`2026-08-12-create-cairn-site-t5-design.md`, ruling 1.

@@ -131,6 +131,15 @@ export async function reauthorize({ clientId, clientSecret, dir, appName, openBr
     }
 
     const code = params.get('code');
+    if (!code) {
+      // GitHub's own shape for a declined consent screen: the redirect still lands (and still
+      // echoes state, checked above), but carries no code, only an error param. Only the
+      // reconcile chapter's re-authorize trip can actually reach a live consent screen (chapter
+      // 1's own call happens only once the App is already confirmed installed, which GitHub
+      // never re-prompts for), so the builds-prefixed row is the right home for this even though
+      // the check itself lives in the shared trip both chapters call.
+      throw chapterError('builds-oauth-denied', { dir });
+    }
     return await exchangeCode({ clientId, clientSecret, code, redirectUri, dir });
   } finally {
     await loopback.close();

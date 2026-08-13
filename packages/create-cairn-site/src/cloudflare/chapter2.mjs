@@ -125,10 +125,14 @@ async function runStep(frame, title, detail, execute) {
  * function's callers below run after earlier hops in the same invocation may already have
  * written newer fields (a domain, a zoneId, a step) through `updateSite`, and a stale in-memory
  * record rebuilt here would silently discard them.
+ * Exported for chapter3.mjs, which reuses this exact function rather than re-implementing the
+ * reload-before-rebuild behavior above: chapter 2 already deletes its own saved token at ITS
+ * terminal steps, so by the time chapter 3 runs there is nothing left for chapter 2's own callers
+ * to accidentally double-delete, and chapter 3's own terminal steps need the identical rebuild.
  * @param {string} siteId the site id to save under
  * @returns {Promise<void>}
  */
-async function deleteApiToken(siteId) {
+export async function deleteApiToken(siteId) {
   const current = await loadSite(siteId);
   if (!current?.cloudflare || !('apiToken' in current.cloudflare)) return;
   const { apiToken: _apiToken, ...cloudflareWithoutToken } = current.cloudflare;
@@ -713,7 +717,10 @@ export async function runChapter2({
             'if you turn Email Sending off again, so if you add a newsletter tool or mailing list ' +
             'to this domain later, add it to that record too, or its mail will be rejected.\n' +
             `Run npx cairn-doctor --from ${from} --send-test <you@example.com> to check the ` +
-            'sending path any time, without running this installer.',
+            'sending path any time, without running this installer.\n' +
+            'One more step is available: run npx create-cairn-site --dir ' +
+            `${dir} --connect to connect this repository to Cloudflare Workers Builds, so every ` +
+            'future commit to your default branch deploys itself, no laptop required.',
         );
       },
     );

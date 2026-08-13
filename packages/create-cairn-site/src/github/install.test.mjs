@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { generateKeyPairSync } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
@@ -199,9 +200,14 @@ test('installAndAuthorize: an installation appearing while the browser callback 
   const pem = registerFakeApp(github, { id: 1, clientId: 'fake-client-1', callbackUrls: ['http://127.0.0.1/callback'] });
 
   const opened = [];
+  // Wide relative to the STATUS carry-forward's known-flaky race: this delay must reliably
+  // outlast installAndAuthorize's own pre-race findInstallation() check (a real JWT sign plus a
+  // round trip), or that check itself observes the installation already present under
+  // contention and takes the "existing" shortcut this test is not exercising, opening the
+  // browser only once instead of the two hops asserted below.
   setTimeout(() => {
     github.state.installations.push({ id: 7, account: { login: 'fake-owner' } });
-  }, 30);
+  }, 200);
 
   const result = await installAndAuthorize({
     appId: 1,
@@ -222,7 +228,13 @@ test('installAndAuthorize: an installation appearing while the browser callback 
     },
     log: () => {},
     pollIntervalMs: 10,
-    maxWaitMs: 500,
+    // Wide relative to the 30ms the installation needs to appear: this is the STATUS
+    // carry-forward's known-flaky race (JWT signing plus a loopback round trip, under
+    // contention from every other test file running concurrently, can occasionally eat past a
+    // tighter budget than this without any real defect). A short budget only buys a faster
+    // failure in the one case that never happens here (a genuinely stuck install), so there is
+    // no real cost to leaving ample headroom.
+    maxWaitMs: 5000,
   });
 
   assert.equal(result.userToken, 'fake-user-token');
@@ -239,10 +251,15 @@ test('installAndAuthorize: the installation poll wins the race when the callback
   // Nothing ever drives the loopback: this is the finding's exact shape, a resumed run whose
   // install redirect lands on a dead port from an earlier run and can never reach this run's own
   // loopback. The poll must find the installation and win the race well inside maxWaitMs, not
-  // only after the callback wait's own timeout.
+  // only after the callback wait's own timeout. The delay is wide (the STATUS carry-forward's
+  // known-flaky race) so it reliably outlasts the pre-race findInstallation() check itself: if
+  // that check's own JWT-sign-plus-round-trip is slow enough under contention to still be
+  // in-flight when a shorter delay fires, it observes the installation already present and
+  // takes the "existing installation" shortcut instead, which never logs the detected-install
+  // line this test asserts on.
   setTimeout(() => {
     github.state.installations.push({ id: 7, account: { login: 'fake-owner' } });
-  }, 30);
+  }, 200);
 
   const logs = [];
   const start = Date.now();
@@ -291,9 +308,13 @@ test('installAndAuthorize: a poll-first win with a shared loopback never produce
   process.on('unhandledRejection', onUnhandledRejection);
   t.after(() => process.removeListener('unhandledRejection', onUnhandledRejection));
 
+  // Wide for the same reason as the two tests above: outlast the pre-race findInstallation()
+  // check itself, or this test silently stops exercising the shared-loopback poll-win path it
+  // is named for (the "existing installation" shortcut returns the same installationId, so a
+  // narrower delay would not fail this specific assertion, only quietly test the wrong path).
   setTimeout(() => {
     github.state.installations.push({ id: 7, account: { login: 'fake-owner' } });
-  }, 20);
+  }, 200);
 
   const result = await installAndAuthorize({
     appId: 1,
@@ -314,16 +335,20 @@ test('installAndAuthorize: a poll-first win with a shared loopback never produce
     },
     log: () => {},
     pollIntervalMs: 5,
-    maxWaitMs: 100,
+    // Wide relative to the 20ms the installation needs to appear, the same STATUS
+    // carry-forward margin fix as the test above: a tight budget here only risks a spurious
+    // failure under contention, since the point of this test is the rejection check below, not
+    // how fast the poll wins.
+    maxWaitMs: 1000,
   });
 
   assert.equal(result.installationId, 7);
 
   // The loopback is SHARED (this test's own, not installAndAuthorize's to close), so its
   // /callback wait's own timer is still pending after the poll already won. Give it time to
-  // actually fire in the background: this is the exact moment the pre-fix code path would have
-  // produced an unhandled rejection.
-  await new Promise((resolve) => setTimeout(resolve, 200));
+  // actually fire in the background (past maxWaitMs above): this is the exact moment an
+  // unguarded callbackSignal would have produced an unhandled rejection.
+  await new Promise((resolve) => setTimeout(resolve, 1200));
   assert.equal(rejections.length, 0, `expected no unhandled rejections, got: ${rejections.map((e) => e.message)}`);
 });
 
@@ -450,6 +475,109 @@ test('installAndAuthorize: a JWT that fails to verify surfaces a plain Next step
     },
   );
   assert.ok(Date.now() - start < 5000, 'a bad JWT must fail fast, not fall into a poll loop');
+});
+
+/**
+ * Start a bare `GET /app/installations` stand-in that answers the FIRST request immediately
+ * (empty, so `installAndAuthorize`'s own pre-race check finds nothing) and holds every later
+ * request open for `delayMs` before answering 500, standing in for the moment install.mjs's
+ * concurrent poll has a `findInstallation` call already in flight when the browser callback
+ * wins the race. A real GitHub outage or the fake server closing mid-poll produces the same
+ * shape: a rejection surfacing well after the poll's own outcome has stopped mattering.
+ * @param {number} delayMs how long to hold every request after the first before answering 500
+ * @returns {Promise<{ url: string, close: () => Promise<void> }>} the running stand-in
+ */
+async function startSlowInstallationsServer(delayMs) {
+  let calls = 0;
+  const server = createServer((req, res) => {
+    calls += 1;
+    if (calls === 1) {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end('[]');
+      return;
+    }
+    setTimeout(() => {
+      res.writeHead(500, { 'content-type': 'application/json' });
+      res.end('{"message":"stand-in outage"}');
+    }, delayMs);
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address();
+  return {
+    url: `http://127.0.0.1:${port}`,
+    close: () => new Promise((resolve) => server.close(resolve)),
+  };
+}
+
+// This is a regression guard, not a reproduction of a currently-reachable bug: Promise.race
+// already attaches its own handler to every candidate it races, so a losing pollSignal that
+// rejects after the callback has won is not actually unhandled today (confirmed by hand before
+// writing this test: removing install.mjs's explicit pollSignal.catch(() => {}) still leaves
+// this test green). The explicit catch and this test both guard the SAME invariant against a
+// future refactor that races these two signals some other way and loses Promise.race's implicit
+// protection.
+test('installAndAuthorize: a poll call already in flight when the callback wins never produces an unhandled rejection even if it later fails', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  process.env.CAIRN_GITHUB_WEB_BASE = github.webBase;
+  t.after(() => delete process.env.CAIRN_GITHUB_WEB_BASE);
+
+  // GET /app/installations is answered by this stand-in, not by fake-github: the first call
+  // (installAndAuthorize's own pre-race check) returns immediately with no installation, and
+  // every later call (the concurrent poll's) is held for 80ms before failing, so the poll's
+  // second findInstallation call is still in flight when the callback below wins the race at
+  // around 15ms, well before the held call ever settles.
+  const slow = await startSlowInstallationsServer(80);
+  process.env.CAIRN_GITHUB_API_BASE = slow.url;
+  t.after(async () => {
+    delete process.env.CAIRN_GITHUB_API_BASE;
+    await slow.close();
+  });
+
+  const rejections = [];
+  const onUnhandledRejection = (err) => rejections.push(err);
+  process.on('unhandledRejection', onUnhandledRejection);
+  t.after(() => process.removeListener('unhandledRejection', onUnhandledRejection));
+
+  // findInstallation signs a real JWT before every call regardless of who answers it, so this
+  // needs a real RSA key even though the stand-in server above never verifies one.
+  const { privateKey: pem } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    publicKeyEncoding: { type: 'spki', format: 'pem' },
+    privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+  });
+
+  const logs = [];
+  const result = await installAndAuthorize({
+    appId: 1,
+    appSlug: 'alpine-club-cms-1',
+    appName: 'Alpine Club CMS',
+    clientId: 'fake-client-1',
+    clientSecret: 'fake-secret',
+    pem,
+    owner: 'fake-owner',
+    ownerType: 'user',
+    dir: '/tmp/alpine-club',
+    openBrowser: async () => {
+      setTimeout(() => {
+        const loopbackUrl = extractLoopbackUrl(logs);
+        fetch(`${loopbackUrl}/callback?code=fake-code&installation_id=99`).catch(() => {});
+      }, 15);
+    },
+    log: (line) => logs.push(line),
+    pollIntervalMs: 1,
+    maxWaitMs: 5000,
+  });
+
+  assert.equal(result.userToken, 'fake-user-token');
+  assert.equal(result.installationId, 99);
+
+  // The held /app/installations call answers 500 at ~80ms, well after installAndAuthorize has
+  // already resolved via the callback; give it time to actually fire and reject in the
+  // background before checking for the unhandled rejection it would produce without the
+  // catch guard.
+  await new Promise((resolve) => setTimeout(resolve, 200));
+  assert.equal(rejections.length, 0, `expected no unhandled rejections, got: ${rejections.map((e) => e.message)}`);
 });
 
 test('src/github/: no implementation file names the nonexistent --app-id flag', async () => {

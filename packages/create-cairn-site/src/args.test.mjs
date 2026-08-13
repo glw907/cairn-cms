@@ -77,3 +77,10 @@ test('parses --email, false when absent', () => {
   assert.equal(parseArgs([]).email, false);
   assert.equal(parseArgs(['--email']).email, true);
 });
+
+// Chapter 3's own flag (T4c, Builds): a boolean, like --email, since it is bin.mjs's own entry
+// signal into chapter 3 rather than a value to collect.
+test('parses --connect, false when absent', () => {
+  assert.equal(parseArgs([]).connect, false);
+  assert.equal(parseArgs(['--connect']).connect, true);
+});

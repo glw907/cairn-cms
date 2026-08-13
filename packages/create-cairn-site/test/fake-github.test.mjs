@@ -242,6 +242,241 @@ test('requests logs every request across both servers', async (t) => {
   assert.ok(github.requests.some((r) => r.method === 'POST' && r.pathname === '/login/oauth/access_token'));
 });
 
+/**
+ * Create a seeded (auto_init) repo owned by `fake-admin`, via a real installation and the fake's
+ * own repo-create route, and return its name. Shared setup for the Git Data read-path tests
+ * below, which all need somewhere to write blobs, trees, commits, and refs before reading them
+ * back.
+ * @param {import('./fake-github.mjs').FakeGithub} github the running fake
+ * @param {string} name the repo's name
+ * @returns {Promise<void>}
+ */
+async function createSeededRepo(github, name) {
+  github.state.installations.push({ id: 1, app_id: 1, account: { login: 'fake-admin' }, repositories: [] });
+  await fetch(`${github.apiBase}/user/repos`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name, auto_init: true })
+  });
+}
+
+test('GET /repos/:owner/:repo returns the repo with a numeric owner id, and 404s for an unknown repo', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  await createSeededRepo(github, 'alpine-club-cms');
+
+  const res = await fetch(`${github.apiBase}/repos/fake-admin/alpine-club-cms`);
+  assert.equal(res.status, 200);
+  const repo = await res.json();
+  assert.equal(typeof repo.id, 'number');
+  assert.equal(repo.owner.login, 'fake-admin');
+  assert.equal(typeof repo.owner.id, 'number');
+  assert.equal(repo.default_branch, 'main');
+
+  const missing = await fetch(`${github.apiBase}/repos/fake-admin/does-not-exist`);
+  assert.equal(missing.status, 404);
+});
+
+test('a private repo answers 404 to every anonymous read, and serves the same reads to a bearer', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  github.state.installations.push({ id: 1, app_id: 1, account: { login: 'fake-admin' }, repositories: [] });
+  await fetch(`${github.apiBase}/user/repos`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ name: 'private-repo', auto_init: true, private: true })
+  });
+
+  const authorized = { headers: { authorization: 'Bearer fake-user-token' } };
+  const refRead = await fetch(`${github.apiBase}/repos/fake-admin/private-repo/git/ref/heads/main`, authorized);
+  assert.equal(refRead.status, 200);
+  const headSha = (await refRead.json()).object.sha;
+
+  for (const readPath of [
+    '/repos/fake-admin/private-repo',
+    '/repos/fake-admin/private-repo/git/ref/heads/main',
+    `/repos/fake-admin/private-repo/git/commits/${headSha}`
+  ]) {
+    const anonymous = await fetch(`${github.apiBase}${readPath}`);
+    assert.equal(anonymous.status, 404, `expected an anonymous read of ${readPath} to 404`);
+    assert.equal((await anonymous.json()).message, 'Not Found');
+
+    const withToken = await fetch(`${github.apiBase}${readPath}`, authorized);
+    assert.equal(withToken.status, 200, `expected a bearer read of ${readPath} to succeed`);
+  }
+});
+
+test('GET /users/:login serves an owner numeric id anonymously, matching the id a repo read reports', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  await createSeededRepo(github, 'public-repo');
+
+  const user = await fetch(`${github.apiBase}/users/fake-admin`);
+  assert.equal(user.status, 200);
+  const body = await user.json();
+  assert.equal(body.login, 'fake-admin');
+  assert.equal(typeof body.id, 'number');
+
+  const repo = await (await fetch(`${github.apiBase}/repos/fake-admin/public-repo`)).json();
+  assert.equal(body.id, repo.owner.id, 'the public user read and the repo read must agree on the owner id');
+});
+
+test('GET /repos/:owner/:repo reports the same owner id across repos owned by the same login', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  await createSeededRepo(github, 'first-repo');
+  await createSeededRepo(github, 'second-repo');
+
+  const first = await (await fetch(`${github.apiBase}/repos/fake-admin/first-repo`)).json();
+  const second = await (await fetch(`${github.apiBase}/repos/fake-admin/second-repo`)).json();
+  assert.equal(first.owner.id, second.owner.id);
+});
+
+test('GET .../git/trees/:sha round-trips a posted tree verbatim, matching the real recursive=1 shape', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  await createSeededRepo(github, 'tree-repo');
+
+  const posted = [
+    { path: 'wrangler.jsonc', mode: '100644', type: 'blob', sha: 'a'.repeat(40) },
+    { path: 'src/theme/cairn.config.ts', mode: '100644', type: 'blob', sha: 'b'.repeat(40) }
+  ];
+  const created = await fetch(`${github.apiBase}/repos/fake-admin/tree-repo/git/trees`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ tree: posted })
+  });
+  const { sha } = await created.json();
+
+  const read = await fetch(`${github.apiBase}/repos/fake-admin/tree-repo/git/trees/${sha}?recursive=1`);
+  assert.equal(read.status, 200);
+  const body = await read.json();
+  assert.equal(body.sha, sha);
+  assert.equal(body.truncated, false);
+  assert.deepEqual(body.tree, posted);
+
+  const missing = await fetch(`${github.apiBase}/repos/fake-admin/tree-repo/git/trees/${'0'.repeat(40)}`);
+  assert.equal(missing.status, 404);
+});
+
+test('GET .../git/blobs/:sha round-trips posted base64 content', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  await createSeededRepo(github, 'blob-repo');
+
+  const encoded = Buffer.from('account_id placeholder', 'utf8').toString('base64');
+  const created = await fetch(`${github.apiBase}/repos/fake-admin/blob-repo/git/blobs`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ content: encoded, encoding: 'base64' })
+  });
+  const { sha } = await created.json();
+
+  const read = await fetch(`${github.apiBase}/repos/fake-admin/blob-repo/git/blobs/${sha}`);
+  assert.equal(read.status, 200);
+  const body = await read.json();
+  assert.equal(body.sha, sha);
+  assert.equal(body.encoding, 'base64');
+  assert.equal(body.content, encoded);
+  assert.equal(Buffer.from(body.content, 'base64').toString('utf8'), 'account_id placeholder');
+
+  const missing = await fetch(`${github.apiBase}/repos/fake-admin/blob-repo/git/blobs/${'0'.repeat(40)}`);
+  assert.equal(missing.status, 404);
+});
+
+test('a created and re-read commit carries tree as { sha, url }, never a bare string', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  await createSeededRepo(github, 'commit-repo');
+
+  const refBefore = await (await fetch(`${github.apiBase}/repos/fake-admin/commit-repo/git/ref/heads/main`)).json();
+  const treeCreated = await fetch(`${github.apiBase}/repos/fake-admin/commit-repo/git/trees`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ tree: [] })
+  });
+  const { sha: treeSha } = await treeCreated.json();
+
+  const commitCreated = await fetch(`${github.apiBase}/repos/fake-admin/commit-repo/git/commits`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ message: 'reconcile', tree: treeSha, parents: [refBefore.object.sha] })
+  });
+  assert.equal(commitCreated.status, 201);
+  const createdBody = await commitCreated.json();
+  assert.equal(createdBody.tree.sha, treeSha);
+  assert.equal(typeof createdBody.tree.url, 'string');
+
+  const read = await fetch(`${github.apiBase}/repos/fake-admin/commit-repo/git/commits/${createdBody.sha}`);
+  const readBody = await read.json();
+  assert.equal(readBody.tree.sha, treeSha);
+  assert.equal(typeof readBody.tree.url, 'string');
+});
+
+test('POST .../git/trees with base_tree merges onto the base by path, rather than replacing it', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  await createSeededRepo(github, 'merge-repo');
+
+  const baseCreated = await fetch(`${github.apiBase}/repos/fake-admin/merge-repo/git/trees`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      tree: [
+        { path: 'wrangler.jsonc', mode: '100644', type: 'blob', sha: 'a'.repeat(40) },
+        { path: 'posts/hello.md', mode: '100644', type: 'blob', sha: 'c'.repeat(40) }
+      ]
+    })
+  });
+  const { sha: baseSha } = await baseCreated.json();
+
+  const mergedCreated = await fetch(`${github.apiBase}/repos/fake-admin/merge-repo/git/trees`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      base_tree: baseSha,
+      tree: [{ path: 'wrangler.jsonc', mode: '100644', type: 'blob', sha: 'd'.repeat(40) }]
+    })
+  });
+  assert.equal(mergedCreated.status, 201);
+  const { sha: mergedSha } = await mergedCreated.json();
+
+  const read = await fetch(`${github.apiBase}/repos/fake-admin/merge-repo/git/trees/${mergedSha}`);
+  const body = await read.json();
+  const byPath = Object.fromEntries(body.tree.map((entryItem) => [entryItem.path, entryItem.sha]));
+  assert.equal(byPath['wrangler.jsonc'], 'd'.repeat(40), 'the named path must be overridden');
+  assert.equal(byPath['posts/hello.md'], 'c'.repeat(40), 'an untouched base path must survive the merge');
+  assert.equal(body.tree.length, 2, 'no extra entries beyond the base plus the override');
+});
+
+test('refs-read and refs-update are independently failable: failNext on one never intercepts the other', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  await createSeededRepo(github, 'refs-repo');
+
+  github.failNext('refs-update', 422, { message: 'Update is not a fast forward' });
+
+  // The read route must be untouched by the update route's armed failure.
+  const read = await fetch(`${github.apiBase}/repos/fake-admin/refs-repo/git/ref/heads/main`);
+  assert.equal(read.status, 200);
+  const readBody = await read.json();
+
+  const update = await fetch(`${github.apiBase}/repos/fake-admin/refs-repo/git/refs/heads/main`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ sha: readBody.object.sha })
+  });
+  assert.equal(update.status, 422);
+
+  // The one-shot override is now spent; a second update succeeds normally.
+  const secondUpdate = await fetch(`${github.apiBase}/repos/fake-admin/refs-repo/git/refs/heads/main`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ sha: readBody.object.sha })
+  });
+  assert.equal(secondUpdate.status, 200);
+});
+
 test('failNext fires exactly once', async (t) => {
   const github = await startFakeGithub();
   t.after(() => github.close());

@@ -48,7 +48,18 @@ import { randomBytes, randomUUID } from 'node:crypto';
  * @property {object} state mutable fixture state, inspectable by tests: `state.zones` (array of
  *  zone objects), `state.dnsRecords` (a `Map` from zone id to its array of record objects, MX
  *  `priority` included), `state.customDomains` (array of Workers Custom Domain objects),
- *  `state.emailSubdomains` (a `Map` from zone id to its array of Email Sending subdomain objects)
+ *  `state.emailSubdomains` (a `Map` from zone id to its array of Email Sending subdomain objects),
+ *  `state.buildConnections` (a `Map` keyed by `provider_account_id:repo_id` to a Builds repo
+ *  connection object; the upsert idempotence lives here), `state.buildTriggersByTag` (a `Map`
+ *  from a Worker's `tag` to its array of trigger objects, each embedding the whole
+ *  `repo_connection`), `state.buildTokens` (array of registered build-token objects),
+ *  `state.workerScripts` (array of `{ id, tag }`-shaped Workers Scripts entries, seeded by a
+ *  test), `state.builds` (a `Map` from `build_uuid` to a mutable build record; a test drives the
+ *  `queued` -> `initializing` -> `running` -> `stopped` sequence by writing directly onto the
+ *  stored record between polls, and the per-worker discovery list is derived by filtering this
+ *  map on `trigger.external_script_id`, never a second store), `state.buildLogs` (a `Map` from
+ *  `build_uuid` to an ARRAY of logs pages, seeded as `[BUILD_LOGS_FIXTURE]` when a build is
+ *  kicked; a test appends further pages to prove `getBuildLogs`'s own cursor paging)
  * @property {Array<{ method: string, path: string, body: unknown, headers: { authorization:
  *  string | undefined } }>} requests every request received, in arrival order; append-only,
  *  never reset except by starting a new server. `headers.authorization` carries the request's
@@ -57,19 +68,24 @@ import { randomBytes, randomUUID } from 'node:crypto';
  * @property {(route: string, status: number, body: unknown) => void} failNext arm a one-shot
  *  status/body override for the next request matching `route` (`zone_create`, `zone_list`,
  *  `zone_get`, `dns_record_create`, `dns_record_list`, `workers_domain_attach`,
- *  `workers_domain_list`, `email_subdomain_list`, `email_subdomain_create`, `email_send`)
+ *  `workers_domain_list`, `email_subdomain_list`, `email_subdomain_create`, `email_send`,
+ *  `builds_connection_put`, `builds_triggers_list`, `builds_trigger_create`,
+ *  `builds_tokens_list`, `builds_token_create`, `user_token_verify`, `workers_scripts_list`,
+ *  `builds_kick`, `builds_worker_list`, `builds_get`, `builds_logs`)
  * @property {() => Promise<void>} close stop the server and release its port
  */
 
 /**
  * Start the fake Cloudflare server.
- * @param {{ zoneStatus?: string }} [options] `zoneStatus` sets the `status` a newly created zone
- *  carries; defaults to `'pending'`, Cloudflare's documented value for a fresh zone (this pass's
- *  spike could not create a real zone to confirm it, so the default is documented rather than
- *  observed).
+ * @param {{ zoneStatus?: string, tokenVerifyId?: string }} [options] `zoneStatus` sets the
+ *  `status` a newly created zone carries; defaults to `'pending'`, Cloudflare's documented value
+ *  for a fresh zone (this pass's spike could not create a real zone to confirm it, so the default
+ *  is documented rather than observed). `tokenVerifyId` sets the `result.id` `GET
+ *  /user/tokens/verify` returns, the value the Builds chapter reuses as `cloudflare_token_id`;
+ *  defaults to the id captured live in `docs/internal/2026-08-12-t4c-builds-spike.md`.
  * @returns {Promise<FakeCloudflare>} the running fake, ready for requests
  */
-export async function startFakeCloudflare({ zoneStatus = 'pending' } = {}) {
+export async function startFakeCloudflare({ zoneStatus = 'pending', tokenVerifyId = 'd07b2a25f05151591830c45053186979' } = {}) {
   const requests = [];
   const failNextMap = new Map();
   const state = {
@@ -77,6 +93,12 @@ export async function startFakeCloudflare({ zoneStatus = 'pending' } = {}) {
     dnsRecords: new Map(),
     customDomains: [],
     emailSubdomains: new Map(),
+    buildConnections: new Map(),
+    buildTriggersByTag: new Map(),
+    buildTokens: [],
+    workerScripts: [],
+    builds: new Map(),
+    buildLogs: new Map(),
   };
   const assignedNameServerPairs = new Set();
 
@@ -85,7 +107,7 @@ export async function startFakeCloudflare({ zoneStatus = 'pending' } = {}) {
 
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const apiBase = `http://127.0.0.1:${server.address().port}/client/v4`;
-  const ctx = { state, zoneStatus, assignedNameServerPairs };
+  const ctx = { state, zoneStatus, tokenVerifyId, assignedNameServerPairs };
 
   dispatcher = makeHandler(
     [
@@ -133,6 +155,72 @@ export async function startFakeCloudflare({ zoneStatus = 'pending' } = {}) {
         regex: compile('/client/v4/accounts/:accountId/email/sending/send'),
         route: 'email_send',
         handler: createEmailSendHandler(),
+      },
+      {
+        method: 'PUT',
+        regex: compile('/client/v4/accounts/:accountId/builds/repos/connections'),
+        route: 'builds_connection_put',
+        handler: createBuildConnectionPutHandler(ctx),
+      },
+      {
+        method: 'GET',
+        regex: compile('/client/v4/accounts/:accountId/builds/workers/:tag/triggers'),
+        route: 'builds_triggers_list',
+        handler: createBuildTriggersListHandler(ctx),
+      },
+      {
+        method: 'POST',
+        regex: compile('/client/v4/accounts/:accountId/builds/triggers'),
+        route: 'builds_trigger_create',
+        handler: createBuildTriggerCreateHandler(ctx),
+      },
+      {
+        method: 'GET',
+        regex: compile('/client/v4/accounts/:accountId/builds/tokens'),
+        route: 'builds_tokens_list',
+        handler: createBuildTokensListHandler(ctx),
+      },
+      {
+        method: 'POST',
+        regex: compile('/client/v4/accounts/:accountId/builds/tokens'),
+        route: 'builds_token_create',
+        handler: createBuildTokenCreateHandler(ctx),
+      },
+      {
+        method: 'GET',
+        regex: compile('/client/v4/user/tokens/verify'),
+        route: 'user_token_verify',
+        handler: createUserTokenVerifyHandler(ctx),
+      },
+      {
+        method: 'GET',
+        regex: compile('/client/v4/accounts/:accountId/workers/scripts'),
+        route: 'workers_scripts_list',
+        handler: createWorkersScriptsListHandler(ctx),
+      },
+      {
+        method: 'POST',
+        regex: compile('/client/v4/accounts/:accountId/builds/triggers/:triggerUuid/builds'),
+        route: 'builds_kick',
+        handler: createBuildKickHandler(ctx),
+      },
+      {
+        method: 'GET',
+        regex: compile('/client/v4/accounts/:accountId/builds/workers/:tag/builds'),
+        route: 'builds_worker_list',
+        handler: createBuildsForWorkerListHandler(ctx),
+      },
+      {
+        method: 'GET',
+        regex: compile('/client/v4/accounts/:accountId/builds/builds/:buildUuid/logs'),
+        route: 'builds_logs',
+        handler: createBuildLogsHandler(ctx),
+      },
+      {
+        method: 'GET',
+        regex: compile('/client/v4/accounts/:accountId/builds/builds/:buildUuid'),
+        route: 'builds_get',
+        handler: createBuildGetHandler(ctx),
       },
     ],
     { requests, failNextMap },
@@ -325,10 +413,13 @@ function buildZone({ name, accountId, status, nameServers }) {
   };
 }
 
-/** Paginate `items` per `url`'s `page`/`per_page` query params, defaulting to page 1 of 20. */
-function paginate(items, url) {
+/**
+ * Paginate `items` per `url`'s `page`/`per_page` query params, defaulting to page 1 of
+ * `defaultPerPage` (20 for every route except the captured `builds/tokens` default of 50).
+ */
+function paginate(items, url, defaultPerPage = 20) {
   const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
-  const perPage = Math.max(1, Number(url.searchParams.get('per_page')) || 20);
+  const perPage = Math.max(1, Number(url.searchParams.get('per_page')) || defaultPerPage);
   const start = (page - 1) * perPage;
   const pageItems = items.slice(start, start + perPage);
   const resultInfo = {
@@ -569,5 +660,392 @@ function createEmailSubdomainCreateHandler(ctx) {
 function createEmailSendHandler() {
   return async (_req, res) => {
     sendSuccess(res, 200, { ...EMAIL_SEND_SUCCESS_FIXTURE });
+  };
+}
+
+// --- Workers Builds routes -----------------------------------------------------------------
+//
+// Response bodies below are copied verbatim from
+// docs/internal/2026-08-12-t4c-builds-spike.md, captured live 2026-08-12/13 against the glw907
+// account and the `cairn-t4c-spike` scratch repo. Three route corrections that spike amendments
+// 7-9 made against the plan's original assumption, load-bearing for anyone extending this file:
+//
+// 1. There is NO connections list route. Adoption comes from the PUT's proven upsert idempotence
+//    (the identical PUT run twice returns the same repo_connection_uuid, only modified_on
+//    advancing) and from the repo_connection object each of a worker's triggers embeds.
+// 2. Triggers list PER WORKER (`GET .../builds/workers/:tag/triggers`), never account-wide.
+// 3. A build kick REQUIRES a body (`{branch: "..."}`); an empty body is `12002`.
+//
+// The two authorization-refusal bodies (APP_NOT_AUTHORIZED_REFUSED_BODY,
+// REPO_NOT_SELECTED_REFUSED_BODY) are HTTP 404, not 403 (spike amendment 5/6): Cloudflare's own
+// wording is Pages-era and factually wrong for this condition, which is exactly why the
+// catalogue rows that map these codes do not quote it back to the admin. Do not "fix" the
+// wording here to sound more correct; a test that pins the codes (8000008, 8000012) rather than
+// the message is asserting the part of this body that is actually the contract.
+//
+// Two shapes below were never captured live and are inferred rather than observed, flagged at
+// the point they are built: the connections PUT's REQUEST body (the response fields are
+// captured; the request is inferred by mirroring them, the same field names Cloudflare's own
+// connections API documents), and the Workers Scripts list entry shape (the spike captured only
+// that a `tag` exists per script, never the full list body).
+
+/**
+ * The first authorization refusal, captured live for `mojombo/grit`: the owner's GitHub account
+ * has never authorized Cloudflare's GitHub App at all. HTTP 404, not 403.
+ */
+export const APP_NOT_AUTHORIZED_REFUSED_BODY = {
+  success: false,
+  errors: [
+    {
+      code: 8000008,
+      message:
+        'This project is disconnected from your Git account, this may cause deployments to ' +
+        'fail. Refer to https://developers.cloudflare.com/pages/platform/git-integration/' +
+        '#this-project-is-disconnected-from-your-git-account-this-may-cause-deployments-to-fail',
+    },
+  ],
+  messages: [],
+  result: null,
+};
+
+/**
+ * The second authorization refusal, captured live for `glw907/cairn-t4c-spike` before it was
+ * added to the App's repository selection: the App is authorized, but this repository is not
+ * selected. HTTP 404, not 403.
+ */
+export const REPO_NOT_SELECTED_REFUSED_BODY = {
+  success: false,
+  errors: [
+    {
+      code: 8000012,
+      message:
+        'The project is linked to a repository that no longer exists, this may cause ' +
+        'deployments to fail. Refer to https://developers.cloudflare.com/pages/platform/' +
+        'git-integration/#the-project-is-linked-to-a-repository-that-no-longer-exists-this-may' +
+        '-cause-deployments-to-fail',
+    },
+  ],
+  messages: [],
+  result: null,
+};
+
+/**
+ * The captured build-token create response shape (`build_token_uuid`, `owner_type`,
+ * `build_token_name`, `cloudflare_token_id`); an empty-body create is rejected with this shape
+ * (spike Step 4: "confirmed by three rejected bodies returning 12002").
+ */
+const INVALID_REQUEST_BODY_FIXTURE = {
+  success: false,
+  errors: [{ code: 12002, message: 'Invalid request body' }],
+  messages: [],
+  result: null,
+};
+
+/** The captured logs body, seeded onto a kicked build's `state.buildLogs` entry. */
+export const BUILD_LOGS_FIXTURE = {
+  cursor: 'WzAsMzRd',
+  truncated: false,
+  lines: [[1784052295481, 'Initializing build environment...']],
+  events: [{ type: 'initializing', started_on: '2026-08-13T02:34:29.793Z', ended_on: '2026-08-13T02:34:35.117Z' }],
+};
+
+/** Write a Builds route's 404: the v4 failure envelope carrying one numeric error. */
+function sendBuildsNotFound(res, code, message) {
+  sendJson(res, 404, { success: false, errors: [{ code, message }], messages: [], result: null });
+}
+
+/**
+ * Look up a build trigger by its `trigger_uuid` across every worker tag's list, since a kick
+ * only carries the trigger uuid, not its tag.
+ * @param {{ state: { buildTriggersByTag: Map<string, object[]> } }} ctx
+ * @param {string} triggerUuid
+ * @returns {object | null}
+ */
+function findTriggerByUuid(ctx, triggerUuid) {
+  for (const triggers of ctx.state.buildTriggersByTag.values()) {
+    const found = triggers.find((trigger) => trigger.trigger_uuid === triggerUuid);
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * Look up a build connection by its `repo_connection_uuid`, since a trigger create references a
+ * connection by uuid rather than by the composite key the upsert is keyed on internally.
+ * @param {{ state: { buildConnections: Map<string, object> } }} ctx
+ * @param {string | undefined} connectionUuid
+ * @returns {object | null}
+ */
+function findConnectionByUuid(ctx, connectionUuid) {
+  if (!connectionUuid) return null;
+  for (const connection of ctx.state.buildConnections.values()) {
+    if (connection.repo_connection_uuid === connectionUuid) return connection;
+  }
+  return null;
+}
+
+/**
+ * Build the `PUT /accounts/:accountId/builds/repos/connections` handler: a true upsert, keyed on
+ * `provider_account_id:repo_id`. A repeat PUT with the same identifying fields returns the SAME
+ * `repo_connection_uuid`, only `modified_on` advancing (spike Step 4, proven live: two identical
+ * PUTs returned the same uuid, only the timestamp moved), which is why this fake carries no
+ * separate "already connected" branch.
+ * @param {{ state: { buildConnections: Map<string, object> } }} ctx
+ */
+function createBuildConnectionPutHandler(ctx) {
+  return async (_req, res, _params, _url, body) => {
+    const key = `${body?.provider_account_id ?? ''}:${body?.repo_id ?? ''}`;
+    const now = new Date().toISOString();
+    let connection = ctx.state.buildConnections.get(key);
+    if (connection) {
+      connection.modified_on = now;
+    } else {
+      connection = {
+        repo_connection_uuid: randomUUID(),
+        repo_id: body?.repo_id ?? '',
+        repo_name: body?.repo_name ?? '',
+        provider_type: body?.provider_type ?? 'github',
+        provider_account_id: body?.provider_account_id ?? '',
+        provider_account_name: body?.provider_account_name ?? '',
+        created_on: now,
+        modified_on: now,
+        deleted_on: null,
+      };
+      ctx.state.buildConnections.set(key, connection);
+    }
+    sendSuccess(res, 200, { ...connection });
+  };
+}
+
+/**
+ * Build the `GET /accounts/:accountId/builds/workers/:tag/triggers` handler: per-worker, never
+ * account-wide (spike amendment 9). An unknown tag reads back an empty list, matching the
+ * captured shape for a worker with no triggers (`{"result":[],...}`), not a 404: an unrecognized
+ * worker tag is not itself an error on this route.
+ * @param {{ state: { buildTriggersByTag: Map<string, object[]> } }} ctx
+ */
+function createBuildTriggersListHandler(ctx) {
+  return async (_req, res, params) => {
+    const triggers = ctx.state.buildTriggersByTag.get(params.tag) ?? [];
+    sendSuccess(res, 200, triggers);
+  };
+}
+
+/**
+ * Build the `POST /accounts/:accountId/builds/triggers` handler. The response embeds the whole
+ * `repo_connection` object (spike Step 4), which is how a worker's triggers stand in for the
+ * missing connections-list route; `build_token_name` is looked up from the registered token
+ * rather than trusted from the request, matching a real create's own echo behavior.
+ * @param {{ state: { buildTriggersByTag: Map<string, object[]>, buildConnections: Map<string,
+ *  object>, buildTokens: object[] } }} ctx
+ */
+function createBuildTriggerCreateHandler(ctx) {
+  return async (_req, res, _params, _url, body) => {
+    const now = new Date().toISOString();
+    const scriptTag = body?.external_script_id ?? '';
+    const connection = findConnectionByUuid(ctx, body?.repo_connection_uuid);
+    const token = ctx.state.buildTokens.find((candidate) => candidate.build_token_uuid === body?.build_token_uuid);
+    const trigger = {
+      trigger_uuid: randomUUID(),
+      external_script_id: scriptTag,
+      build_token_uuid: body?.build_token_uuid ?? '',
+      build_token_name: token?.build_token_name ?? '',
+      trigger_name: body?.trigger_name ?? 'Deploy default branch',
+      build_command: body?.build_command ?? '',
+      deploy_command: body?.deploy_command ?? 'npx wrangler deploy',
+      root_directory: body?.root_directory ?? '/',
+      branch_includes: body?.branch_includes ?? [],
+      branch_excludes: body?.branch_excludes ?? [],
+      path_includes: body?.path_includes ?? ['*'],
+      path_excludes: body?.path_excludes ?? [],
+      build_caching_enabled: body?.build_caching_enabled ?? true,
+      created_on: now,
+      modified_on: now,
+      deleted_on: null,
+      repo_connection: connection,
+    };
+    if (!ctx.state.buildTriggersByTag.has(scriptTag)) ctx.state.buildTriggersByTag.set(scriptTag, []);
+    ctx.state.buildTriggersByTag.get(scriptTag).push(trigger);
+    sendSuccess(res, 200, trigger);
+  };
+}
+
+/**
+ * Build the `GET /accounts/:accountId/builds/tokens` handler: a plain paginated list, matching
+ * the captured `result_info` shape's `next_page` field (a boolean, sitting alongside the usual
+ * page/per_page/count/total_count fields every other list route already carries) and the
+ * captured default page size of 50, wider than every other route's default of 20.
+ * @param {{ state: { buildTokens: object[] } }} ctx
+ */
+function createBuildTokensListHandler(ctx) {
+  return async (_req, res, _params, url) => {
+    const { pageItems, resultInfo } = paginate(ctx.state.buildTokens, url, 50);
+    sendSuccess(res, 200, pageItems, { result_info: { ...resultInfo, next_page: resultInfo.page < resultInfo.total_pages } });
+  };
+}
+
+/**
+ * Build the `POST /accounts/:accountId/builds/tokens` handler. The route REGISTERS a Cloudflare
+ * API token the caller already holds; it mints nothing (spike Step 4: confirmed by Cloudflare's
+ * own OpenAPI schema and three rejected bodies). Missing `build_token_name`,
+ * `build_token_secret`, or `cloudflare_token_id` is rejected with the captured `12002` shape; the
+ * response never echoes `build_token_secret` back, matching the captured create response.
+ * @param {{ state: { buildTokens: object[] } }} ctx
+ */
+function createBuildTokenCreateHandler(ctx) {
+  return async (_req, res, _params, _url, body) => {
+    if (!body?.build_token_name || !body?.build_token_secret || !body?.cloudflare_token_id) {
+      sendJson(res, 400, INVALID_REQUEST_BODY_FIXTURE);
+      return;
+    }
+    const token = {
+      build_token_uuid: randomUUID(),
+      owner_type: 'user',
+      build_token_name: body.build_token_name,
+      cloudflare_token_id: body.cloudflare_token_id,
+    };
+    ctx.state.buildTokens.push(token);
+    sendSuccess(res, 200, token);
+  };
+}
+
+/**
+ * Build the `GET /user/tokens/verify` handler: the captured success envelope, with `result.id`
+ * fixed at startup (`tokenVerifyId`), the value the chapter reuses as `cloudflare_token_id` when
+ * it registers the admin's pasted token as the build token.
+ * @param {{ tokenVerifyId: string }} ctx
+ */
+function createUserTokenVerifyHandler(ctx) {
+  return async (_req, res) => {
+    sendSuccess(
+      res,
+      200,
+      { id: ctx.tokenVerifyId, status: 'active' },
+      { messages: [{ code: 10000, message: 'This API Token is valid and active', type: null }] },
+    );
+  };
+}
+
+/**
+ * Build the `GET /accounts/:accountId/workers/scripts` handler: a plain paginated list over
+ * `state.workerScripts`, a test-seeded array of `{ id, tag }`-shaped entries. UNOBSERVED: the
+ * spike captured only that a `tag` exists per script (Step 4's route-corrections table), never
+ * the full list body, so this fake carries no invented fields beyond what a caller (`
+ * findWorkerTag`) actually needs.
+ * @param {{ state: { workerScripts: object[] } }} ctx
+ */
+function createWorkersScriptsListHandler(ctx) {
+  return async (_req, res, _params, url) => {
+    const { pageItems, resultInfo } = paginate(ctx.state.workerScripts, url);
+    sendSuccess(res, 200, pageItems, { result_info: resultInfo });
+  };
+}
+
+/**
+ * Build the `POST /accounts/:accountId/builds/triggers/:triggerUuid/builds` handler: the kick.
+ * The body is REQUIRED (spike amendment 10); an empty body is rejected with the captured `12002`
+ * shape rather than defaulting a branch. A successful kick returns the full build record already
+ * `status: "queued"`, with empty `commit_hash`, `commit_message`, and `author` and
+ * `build_trigger_source: "manual"` (a manual kick carries no commit identity; only a push event
+ * does), and seeds `state.buildLogs` with a single-page `[BUILD_LOGS_FIXTURE]` so the logs route
+ * has something to read immediately.
+ * @param {{ state: { buildTriggersByTag: Map<string, object[]>, builds: Map<string, object>,
+ *  buildLogs: Map<string, object[]> } }} ctx
+ */
+function createBuildKickHandler(ctx) {
+  return async (_req, res, params, _url, body) => {
+    if (!body?.branch && !body?.commit_hash) {
+      sendJson(res, 400, INVALID_REQUEST_BODY_FIXTURE);
+      return;
+    }
+    const trigger = findTriggerByUuid(ctx, params.triggerUuid);
+    if (!trigger) {
+      sendBuildsNotFound(res, 8000000, 'Trigger not found');
+      return;
+    }
+    const now = new Date().toISOString();
+    const build = {
+      build_uuid: randomUUID(),
+      status: 'queued',
+      build_outcome: null,
+      initializing_on: null,
+      running_on: null,
+      stopped_on: null,
+      created_on: now,
+      trigger: { ...trigger },
+      build_trigger_source: 'manual',
+      build_trigger_metadata: { commit_hash: '', commit_message: '', author: '', branch: body?.branch ?? '' },
+    };
+    ctx.state.builds.set(build.build_uuid, build);
+    ctx.state.buildLogs.set(build.build_uuid, [{ ...BUILD_LOGS_FIXTURE }]);
+    sendSuccess(res, 200, { ...build });
+  };
+}
+
+/**
+ * Build the `GET /accounts/:accountId/builds/workers/:tag/builds` handler: the paginated
+ * discovery list, derived by filtering `state.builds` on `trigger.external_script_id` rather
+ * than kept as a second store, so a test seeding a push build only ever writes `state.builds`
+ * once. Newest first, matching a discovery list's usual order.
+ * @param {{ state: { builds: Map<string, object> } }} ctx
+ */
+function createBuildsForWorkerListHandler(ctx) {
+  return async (_req, res, params, url) => {
+    const matching = [...ctx.state.builds.values()]
+      .filter((build) => build.trigger?.external_script_id === params.tag)
+      .sort((a, b) => b.created_on.localeCompare(a.created_on));
+    const { pageItems, resultInfo } = paginate(matching, url);
+    sendSuccess(res, 200, pageItems, { result_info: resultInfo });
+  };
+}
+
+/**
+ * Build the `GET /accounts/:accountId/builds/builds/:buildUuid` handler: reads back the current
+ * stored record. This is the scriptable status sequence: a test walks a build through `queued` ->
+ * `initializing` -> `running` -> `stopped` (and sets `build_outcome`) by writing directly onto
+ * the object in `state.builds` between polls, since the record is the same object this handler
+ * reads, never a copy.
+ * @param {{ state: { builds: Map<string, object> } }} ctx
+ */
+function createBuildGetHandler(ctx) {
+  return async (_req, res, params) => {
+    const build = ctx.state.builds.get(params.buildUuid);
+    if (!build) {
+      sendBuildsNotFound(res, 8000001, 'Build not found');
+      return;
+    }
+    sendSuccess(res, 200, { ...build });
+  };
+}
+
+/**
+ * Build the `GET /accounts/:accountId/builds/builds/:buildUuid/logs` handler: reads
+ * `state.buildLogs`, an ARRAY of pages per build, seeded as a single page by a kick and otherwise
+ * settable directly by a test (for example to script the log tail `builds-deploy-failed` reads,
+ * or a multi-page sequence to prove the client's own cursor paging). With no `?cursor=` query
+ * parameter, page 0 is served. With one, the page immediately after whichever page's own
+ * `cursor` field matches it is served (falling back to the last page when nothing matches),
+ * modelling a cursor-based "resume after this point" route: this exact query-parameter shape was
+ * never captured live (docs/internal/2026-08-12-t4c-builds-spike.md records only the response
+ * body, `{cursor, truncated, lines, events}`), so it is inferred, not observed, and paired one-to-
+ * one with `api.mjs`'s own `getBuildLogs`, which is the only caller. Do not treat this shape as a
+ * captured fixture the way the rest of this file's Builds bodies are.
+ * @param {{ state: { buildLogs: Map<string, object[]> } }} ctx
+ */
+function createBuildLogsHandler(ctx) {
+  return async (_req, res, params, url) => {
+    const pages = ctx.state.buildLogs.get(params.buildUuid);
+    if (!pages || pages.length === 0) {
+      sendBuildsNotFound(res, 8000001, 'Build not found');
+      return;
+    }
+    const cursorParam = url.searchParams.get('cursor');
+    let page = pages[0];
+    if (cursorParam) {
+      const previousIndex = pages.findIndex((candidate) => candidate.cursor === cursorParam);
+      const hasNext = previousIndex >= 0 && previousIndex + 1 < pages.length;
+      page = hasNext ? pages[previousIndex + 1] : pages[pages.length - 1];
+    }
+    sendSuccess(res, 200, { ...page });
   };
 }

@@ -1134,6 +1134,36 @@ test('email hop order: a record at domain-live runs the whole half, test send be
   assert.equal(deploys.length, 1, 'exactly one deploy for the email address rewrite');
 });
 
+// --- Closing copy: the forward pointer to chapter 3 (T4c, Task 11) ----------------------------
+
+test('closing copy: reaching email-live names --connect as the way to add Workers Builds', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await seedDomainLiveSite(t, 'site-connect-pointer', dir);
+  await setupWrangler(t);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const logs = [];
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-connect-pointer',
+    record: await loadSite('site-connect-pointer'),
+    dir,
+    args: { yes: false },
+    log: (line) => logs.push(line),
+    dryRun: false,
+    confirm: confirmRouting({ email: true }),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysMatchingFetch(),
+  });
+
+  assert.equal(outcome.outcome, 'email-live');
+  assert.ok(
+    logs.some((line) => line.includes('--connect') && line.includes('Workers Builds')),
+    `expected a closing line naming --connect and Workers Builds; got:\n${logs.join('\n---\n')}`,
+  );
+});
+
 test('email hop order: a record at email-onboarded skips onboarding and starts at the test send', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);

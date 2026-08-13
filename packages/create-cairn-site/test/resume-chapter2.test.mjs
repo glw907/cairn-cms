@@ -483,7 +483,16 @@ for (const [label, step, seed, idSuffix] of [
 // unreachable through the real CLI. Both decline rows tell the owner to re-run when they are
 // ready, and --start-over refuses at this step, so returning early left an owner who declined no
 // way to turn email on at all. If this test goes red, that trap is back.
-test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-offer', async (t) => {
+//
+// UPDATED FOR T4c: chapter 2's own top-of-function short-circuit reaches its reoffered copy with
+// no network call at all (it never re-runs the actual admission), and its outcome,
+// `paid-plan-declined`, is one of chapter 2's own TERMINAL_STEPS, so bin.mjs's continueIntoChapter2
+// now falls straight through into chapter 3 in the same call (T4c's own fall-through). This run
+// carries no saved Cloudflare token for chapter 3 to reuse, so it stops at chapter 3's own token
+// hop and exits 1, the same deterministic stop this file's own CHAPTER2_RESUMABLE_STEPS loop
+// already uses; the two assertions this test exists for (the resume line, the reoffered copy) both
+// print before that stop.
+test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-offer, then falls through into chapter 3', async (t) => {
   const stateDir = await freshStateDir(t);
   const dir = await mkdtemp(path.join(tmpdir(), 'cairn-chapter2-resume-scaffold-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -505,7 +514,11 @@ test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-
     fakeOpenerDir,
   });
 
-  assert.equal(result.code, 0, `a re-run after a decline must exit 0, got ${result.code}. stderr: ${result.stderr}`);
+  assert.equal(
+    result.code,
+    1,
+    `expected chapter 3's own token-hop stop (T4c's fall-through), got ${result.code}. stderr: ${result.stderr}`,
+  );
   assert.ok(
     result.stdout.includes('Resuming'),
     `expected the resume line proving bin.mjs did not return early, got: ${result.stdout}`,
@@ -513,6 +526,14 @@ test('bin.mjs at a recorded decline re-enters chapter 2 so the admission can re-
   assert.ok(
     result.stdout.includes('chose again'),
     `expected the re-offered copy, which only chapter 2's admission prints, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stdout.includes('Get a fresh Cloudflare API token'),
+    `expected chapter 3's own token hop to have started, got: ${result.stdout}`,
+  );
+  assert.ok(
+    result.stderr.includes('Next:'),
+    `expected chapter 3's token-hop Next: line, got: ${result.stderr}`,
   );
 
   const state = await loadSite(siteId);

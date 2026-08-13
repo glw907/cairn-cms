@@ -1,7 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { startFakeCloudflare, SENDER_NOT_CONFIGURED_REFUSED_BODY } from '../../test/fake-cloudflare.mjs';
-import { makeApi, redactToken, SENDING_DISABLED_CODE, SENDER_NOT_CONFIGURED_CODE } from './api.mjs';
+import {
+  startFakeCloudflare,
+  SENDER_NOT_CONFIGURED_REFUSED_BODY,
+  APP_NOT_AUTHORIZED_REFUSED_BODY,
+  REPO_NOT_SELECTED_REFUSED_BODY,
+  BUILD_LOGS_FIXTURE,
+} from '../../test/fake-cloudflare.mjs';
+import {
+  makeApi,
+  redactToken,
+  SENDING_DISABLED_CODE,
+  SENDER_NOT_CONFIGURED_CODE,
+  BUILDS_APP_NOT_AUTHORIZED_CODE,
+  BUILDS_REPO_NOT_SELECTED_CODE,
+} from './api.mjs';
 
 /**
  * The send refusal captured live 2026-08-12 (docs/internal/2026-08-11-t4b-email-spike.md). The
@@ -639,4 +652,352 @@ test('a planted token-shaped value echoed in an upstream error body is redacted 
       return true;
     },
   );
+});
+
+// --- Workers Builds routes -----------------------------------------------------------------
+
+test('verifyToken reads result.id from the bare user-scoped route', async (t) => {
+  const { api } = await setup(t);
+  const result = await api.verifyToken();
+  assert.equal(result.id, 'd07b2a25f05151591830c45053186979');
+  assert.equal(result.status, 'active');
+});
+
+test('putBuildConnection upserts and returns the parsed connection', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+  assert.equal(connection.provider_account_name, 'glw907');
+  assert.equal(connection.repo_name, 'cairn-t4c-spike');
+  assert.ok(connection.repo_connection_uuid);
+
+  const puts = cloudflare.requests.filter((r) => r.method === 'PUT' && r.path.endsWith('/builds/repos/connections'));
+  assert.equal(puts.length, 1);
+  assert.deepEqual(puts[0].body, {
+    provider_type: 'github',
+    provider_account_id: '14229321',
+    provider_account_name: 'glw907',
+    repo_id: '1332620835',
+    repo_name: 'cairn-t4c-spike',
+  });
+});
+
+test('putBuildConnection is a true upsert: a second call returns the same uuid', async (t) => {
+  const { api } = await setup(t);
+  const repo = { providerAccountId: '14229321', providerAccountName: 'glw907', repoId: '1332620835', repoName: 'cairn-t4c-spike' };
+  const first = await api.putBuildConnection(repo);
+  const second = await api.putBuildConnection(repo);
+  assert.equal(second.repo_connection_uuid, first.repo_connection_uuid);
+});
+
+test('putBuildConnection maps the app-not-authorized refusal (HTTP 404, code 8000008)', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('builds_connection_put', 404, APP_NOT_AUTHORIZED_REFUSED_BODY);
+
+  await assert.rejects(
+    () => api.putBuildConnection({ providerAccountId: '1', providerAccountName: 'mojombo', repoId: '2', repoName: 'grit' }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'builds-app-not-authorized');
+      assert.equal(err.api.code, BUILDS_APP_NOT_AUTHORIZED_CODE);
+      assert.doesNotMatch(err.message, /disconnected from your Git account/);
+      return true;
+    },
+  );
+});
+
+test('putBuildConnection maps the repo-not-selected refusal (HTTP 404, code 8000012) and names the repo', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('builds_connection_put', 404, REPO_NOT_SELECTED_REFUSED_BODY);
+
+  await assert.rejects(
+    () => api.putBuildConnection({ providerAccountId: '14229321', providerAccountName: 'glw907', repoId: '1332620835', repoName: 'cairn-t4c-spike' }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'builds-repo-not-selected');
+      assert.equal(err.api.code, BUILDS_REPO_NOT_SELECTED_CODE);
+      assert.match(err.message, /glw907\/cairn-t4c-spike/);
+      assert.doesNotMatch(err.message, /no longer exists/);
+      return true;
+    },
+  );
+});
+
+test('the repo-not-selected refusal is still caught with the code behind a warning at errors[1] (B3)', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('builds_connection_put', 404, {
+    success: false,
+    errors: [
+      { code: 1, message: 'A warning ahead of the real refusal' },
+      { code: BUILDS_REPO_NOT_SELECTED_CODE, message: REPO_NOT_SELECTED_REFUSED_BODY.errors[0].message },
+    ],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.putBuildConnection({ providerAccountId: '14229321', providerAccountName: 'glw907', repoId: '1332620835', repoName: 'cairn-t4c-spike' }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'builds-repo-not-selected');
+      assert.doesNotMatch(err.message, /no longer exists/);
+      return true;
+    },
+  );
+});
+
+test('an unmapped /builds/ failure never leaks Cloudflare\'s own platform prose, naming only the numeric code', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('builds_triggers_list', 500, {
+    success: false,
+    errors: [{ code: 99999, message: 'Some Cloudflare-internal Pages-era sentence the admin must never see' }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.listBuildTriggers('some-tag'),
+    (err) => {
+      assert.equal(err.catalogue, undefined, 'an unmapped Builds failure carries no catalogue code');
+      assert.doesNotMatch(err.message, /Pages-era sentence/);
+      assert.match(err.message, /99999/);
+      return true;
+    },
+  );
+});
+
+test('a genuinely underscoped token on a Builds route still maps to token-scope-missing', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.failNext('builds_triggers_list', 403, {
+    success: false,
+    errors: [{ code: 9109, message: 'Unauthorized to access requested resource' }],
+    messages: [],
+    result: null,
+  });
+
+  await assert.rejects(
+    () => api.listBuildTriggers('some-tag'),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-scope-missing');
+      return true;
+    },
+  );
+});
+
+test('listBuildTriggers reads back an empty list for an unknown worker tag, and a created trigger for a known one', async (t) => {
+  const { api } = await setup(t);
+  assert.deepEqual(await api.listBuildTriggers('unknown-tag'), []);
+
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+  await api.createBuildTrigger({
+    workerTag: 'ec60995bd99d4c28a8a3a4dc7ce64c10',
+    repoConnectionUuid: connection.repo_connection_uuid,
+    branchIncludes: ['main'],
+  });
+  const triggers = await api.listBuildTriggers('ec60995bd99d4c28a8a3a4dc7ce64c10');
+  assert.equal(triggers.length, 1);
+  assert.equal(triggers[0].external_script_id, 'ec60995bd99d4c28a8a3a4dc7ce64c10');
+  assert.deepEqual(triggers[0].repo_connection, connection);
+});
+
+test('createBuildTrigger maps camelCase fields onto the request body and returns the parsed trigger', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+
+  const trigger = await api.createBuildTrigger({
+    workerTag: 'ec60995bd99d4c28a8a3a4dc7ce64c10',
+    repoConnectionUuid: connection.repo_connection_uuid,
+    buildTokenUuid: 'a-token-uuid',
+    triggerName: 'Deploy default branch',
+    branchIncludes: ['main'],
+    buildCommand: 'npm run build',
+    deployCommand: 'npx wrangler deploy',
+  });
+  assert.equal(trigger.trigger_name, 'Deploy default branch');
+  assert.equal(trigger.deploy_command, 'npx wrangler deploy');
+  assert.deepEqual(trigger.branch_includes, ['main']);
+
+  const posts = cloudflare.requests.filter((r) => r.method === 'POST' && r.path.endsWith('/builds/triggers'));
+  assert.equal(posts.length, 1);
+  assert.deepEqual(posts[0].body, {
+    external_script_id: 'ec60995bd99d4c28a8a3a4dc7ce64c10',
+    repo_connection_uuid: connection.repo_connection_uuid,
+    build_token_uuid: 'a-token-uuid',
+    trigger_name: 'Deploy default branch',
+    branch_includes: ['main'],
+    build_command: 'npm run build',
+    deploy_command: 'npx wrangler deploy',
+  });
+});
+
+test('getBuildTokens lists what createBuildToken registers, without echoing the secret', async (t) => {
+  const { api } = await setup(t);
+  assert.deepEqual(await api.getBuildTokens(), []);
+
+  const token = await api.createBuildToken({
+    name: 'cairn t4c spike token',
+    secret: 'super-secret-token-value',
+    cloudflareTokenId: 'd07b2a25f05151591830c45053186979',
+  });
+  assert.equal(token.build_token_name, 'cairn t4c spike token');
+  assert.equal(token.cloudflare_token_id, 'd07b2a25f05151591830c45053186979');
+  assert.equal('build_token_secret' in token, false);
+
+  const tokens = await api.getBuildTokens();
+  assert.equal(tokens.length, 1);
+  assert.equal(tokens[0].build_token_uuid, token.build_token_uuid);
+});
+
+test('findWorkerTag resolves the tag for a seeded script by its id, and undefined for an unknown name', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  cloudflare.state.workerScripts.push({ id: 'cairn-t4c-spike', tag: 'ec60995bd99d4c28a8a3a4dc7ce64c10' });
+
+  assert.equal(await api.findWorkerTag('cairn-t4c-spike'), 'ec60995bd99d4c28a8a3a4dc7ce64c10');
+  assert.equal(await api.findWorkerTag('no-such-worker'), undefined);
+});
+
+test('kickBuild requires a branch and throws without ever calling the network', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  await assert.rejects(() => api.kickBuild('some-trigger-uuid', undefined), /requires a branch/);
+  await assert.rejects(() => api.kickBuild('some-trigger-uuid', ''), /requires a branch/);
+
+  const kicks = cloudflare.requests.filter((r) => r.method === 'POST' && r.path.includes('/builds'));
+  assert.equal(kicks.length, 0);
+});
+
+test('kickBuild posts the branch and returns the queued build with empty commit identity', async (t) => {
+  const { api } = await setup(t);
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+  const trigger = await api.createBuildTrigger({
+    workerTag: 'tag-kick',
+    repoConnectionUuid: connection.repo_connection_uuid,
+    branchIncludes: ['main'],
+  });
+
+  const build = await api.kickBuild(trigger.trigger_uuid, 'main');
+  assert.equal(build.status, 'queued');
+  assert.equal(build.build_trigger_source, 'manual');
+  assert.equal(build.build_trigger_metadata.commit_hash, '');
+  assert.ok(build.build_uuid);
+});
+
+test('getBuild reads back a kicked build by uuid, and getBuildLogs reads its seeded log fixture', async (t) => {
+  const { api } = await setup(t);
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+  const trigger = await api.createBuildTrigger({
+    workerTag: 'tag-get',
+    repoConnectionUuid: connection.repo_connection_uuid,
+    branchIncludes: ['main'],
+  });
+  const kicked = await api.kickBuild(trigger.trigger_uuid, 'main');
+
+  const build = await api.getBuild(kicked.build_uuid);
+  assert.equal(build.build_uuid, kicked.build_uuid);
+  assert.equal(build.status, 'queued');
+
+  const logs = await api.getBuildLogs(kicked.build_uuid);
+  assert.deepEqual(logs, { ...BUILD_LOGS_FIXTURE, cappedAtPageLimit: false });
+});
+
+test('getBuildLogs pages the cursor until truncated is false, so a tail on a later page is read', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+  const trigger = await api.createBuildTrigger({
+    workerTag: 'tag-paged-logs',
+    repoConnectionUuid: connection.repo_connection_uuid,
+    branchIncludes: ['main'],
+  });
+  const kicked = await api.kickBuild(trigger.trigger_uuid, 'main');
+
+  // A single-fetch implementation (the pre-fix shape: no cursor sent, `truncated` ignored) reads
+  // only this first page and never sees the marker on the second: this is the B2 falsifiable test.
+  cloudflare.state.buildLogs.set(kicked.build_uuid, [
+    { cursor: 'page-1', truncated: true, lines: [[1, 'Initializing build environment...'], [2, 'Cloning repository...']], events: [] },
+    { cursor: 'page-2', truncated: false, lines: [[3, 'a distinctive tail-only failure marker']], events: [] },
+  ]);
+
+  const logs = await api.getBuildLogs(kicked.build_uuid);
+  assert.deepEqual(logs.lines.map(([, text]) => text), [
+    'Initializing build environment...',
+    'Cloning repository...',
+    'a distinctive tail-only failure marker',
+  ]);
+  assert.equal(logs.truncated, false);
+  assert.equal(logs.cappedAtPageLimit, false);
+});
+
+test('getBuildLogs stops at its page cap and reports cappedAtPageLimit rather than looping forever', async (t) => {
+  const { cloudflare, api } = await setup(t);
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+  const trigger = await api.createBuildTrigger({
+    workerTag: 'tag-runaway-logs',
+    repoConnectionUuid: connection.repo_connection_uuid,
+    branchIncludes: ['main'],
+  });
+  const kicked = await api.kickBuild(trigger.trigger_uuid, 'main');
+
+  // Every page reports truncated: true and a distinct cursor, so nothing short of a page cap
+  // would ever stop this loop.
+  const pages = Array.from({ length: 60 }, (_unused, i) => ({
+    cursor: `page-${i}`,
+    truncated: true,
+    lines: [[i, `line ${i}`]],
+    events: [],
+  }));
+  cloudflare.state.buildLogs.set(kicked.build_uuid, pages);
+
+  const logs = await api.getBuildLogs(kicked.build_uuid);
+  assert.equal(logs.cappedAtPageLimit, true);
+  assert.ok(logs.lines.length < pages.length, 'the page cap must stop the loop before every page is read');
+});
+
+test('listBuildsForWorker discovers a build by the worker tag its trigger carries', async (t) => {
+  const { api } = await setup(t);
+  const connection = await api.putBuildConnection({
+    providerAccountId: '14229321',
+    providerAccountName: 'glw907',
+    repoId: '1332620835',
+    repoName: 'cairn-t4c-spike',
+  });
+  const trigger = await api.createBuildTrigger({
+    workerTag: 'tag-discover',
+    repoConnectionUuid: connection.repo_connection_uuid,
+    branchIncludes: ['main'],
+  });
+  const kicked = await api.kickBuild(trigger.trigger_uuid, 'main');
+
+  const builds = await api.listBuildsForWorker('tag-discover');
+  assert.equal(builds.length, 1);
+  assert.equal(builds[0].build_uuid, kicked.build_uuid);
 });

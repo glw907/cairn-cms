@@ -447,3 +447,115 @@ test('the keys observed NOT to resolve are absent from the shipped key list', as
     );
   }
 });
+
+// --- the parameterized seam, T4c task 6 -------------------------------------------------------
+
+/** The chapter-2 PREFILL_URL, captured byte-for-byte before the seam grew a parameter. */
+const CHAPTER2_URL =
+  'https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22zone' +
+  '%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22dns%22%2C%22type%22%3A%22edit%22%7D%2C%7B' +
+  '%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22ssl_and_cer' +
+  'tificates%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22email_sending%22%2C%22type%22%3A' +
+  '%22edit%22%7D%5D&accountId=*&zoneId=all&name=cairn+create-cairn-site';
+
+test('the chapter-2 PREFILL_URL is byte-for-byte unchanged by the seam', async () => {
+  const { PREFILL_URL } = await import('./prefill.mjs');
+  assert.equal(PREFILL_URL, CHAPTER2_URL);
+});
+
+test('prefillUrl() with no argument reproduces the chapter-2 URL exactly', async () => {
+  const { prefillUrl } = await import('./prefill.mjs');
+  assert.equal(prefillUrl(), CHAPTER2_URL);
+});
+
+test('CHAPTER3_PERMISSION_KEYS is the five chapter-2 keys plus the three verified Builds keys', async () => {
+  const { PREFILL_PERMISSION_KEYS, CHAPTER3_PERMISSION_KEYS } = await import('./prefill.mjs');
+  assert.deepEqual(CHAPTER3_PERMISSION_KEYS, [
+    ...PREFILL_PERMISSION_KEYS,
+    { key: 'workers_ci', type: 'edit' },
+    { key: 'd1', type: 'edit' },
+    { key: 'workers_r2', type: 'edit' },
+  ]);
+  assert.equal(CHAPTER3_PERMISSION_KEYS.length, 8);
+});
+
+test('prefillUrl(CHAPTER3_PERMISSION_KEYS) carries all eight keys', async () => {
+  const { prefillUrl, CHAPTER3_PERMISSION_KEYS } = await import('./prefill.mjs');
+  const url = new URL(prefillUrl(CHAPTER3_PERMISSION_KEYS));
+  const keys = JSON.parse(url.searchParams.get('permissionGroupKeys'));
+  assert.deepEqual(keys, CHAPTER3_PERMISSION_KEYS);
+  assert.equal(url.searchParams.get('accountId'), '*');
+  assert.equal(url.searchParams.get('zoneId'), 'all');
+});
+
+test('a token failing listZones still maps to token-scope-missing when permissionKeys is passed', async (t) => {
+  const cloudflare = await setup(t);
+  cloudflare.failNext('zone_list', 403, GENERIC_SCOPE_MISSING_BODY);
+  const { ensureApiToken, CHAPTER3_PERMISSION_KEYS } = await import('./prefill.mjs');
+
+  let promptCalls = 0;
+  const promptSecretFn = async () => {
+    promptCalls += 1;
+    if (promptCalls === 2) {
+      cloudflare.failNext('zone_list', 403, GENERIC_SCOPE_MISSING_BODY);
+    }
+    return `pasted-token-attempt-${promptCalls}`;
+  };
+
+  await assert.rejects(
+    () =>
+      ensureApiToken({
+        record: { dir: '/tmp/site', cloudflare: { accountId: 'acct-1' } },
+        log: () => {},
+        openBrowser: async () => {},
+        promptSecretFn,
+        permissionKeys: CHAPTER3_PERMISSION_KEYS,
+      }),
+    (err) => {
+      assert.equal(err.catalogue.code, 'token-scope-missing');
+      return true;
+    },
+  );
+
+  // The validation call is unchanged by permissionKeys: still listZones, still one call per
+  // attempt, matching the chapter-2 path's own assertion above.
+  const zoneListCalls = cloudflare.requests.filter(
+    (r) => r.method === 'GET' && r.path.startsWith('/client/v4/zones'),
+  );
+  assert.equal(zoneListCalls.length, 2);
+});
+
+test('ensureApiToken opens the chapter-3 prefill URL when permissionKeys is passed', async (t) => {
+  await setup(t);
+  const { ensureApiToken, prefillUrl, CHAPTER3_PERMISSION_KEYS } = await import('./prefill.mjs');
+
+  const openedUrls = [];
+  await ensureApiToken({
+    record: { dir: '/tmp/site', cloudflare: { accountId: 'acct-1' } },
+    log: () => {},
+    openBrowser: async (url) => {
+      openedUrls.push(url);
+    },
+    promptSecretFn: async () => 'chapter-3-good-token',
+    permissionKeys: CHAPTER3_PERMISSION_KEYS,
+  });
+
+  assert.deepEqual(openedUrls, [prefillUrl(CHAPTER3_PERMISSION_KEYS)]);
+});
+
+test('ensureApiToken opens the chapter-2 PREFILL_URL when permissionKeys is omitted', async (t) => {
+  await setup(t);
+  const { ensureApiToken, PREFILL_URL } = await import('./prefill.mjs');
+
+  const openedUrls = [];
+  await ensureApiToken({
+    record: { dir: '/tmp/site', cloudflare: { accountId: 'acct-1' } },
+    log: () => {},
+    openBrowser: async (url) => {
+      openedUrls.push(url);
+    },
+    promptSecretFn: async () => 'chapter-2-good-token',
+  });
+
+  assert.deepEqual(openedUrls, [PREFILL_URL]);
+});

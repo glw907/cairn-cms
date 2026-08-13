@@ -16,12 +16,17 @@ import { generateKeyPairSync, randomBytes, createVerify } from 'node:crypto';
  * @typedef {object} FakeGithub
  * @property {string} apiBase the fake api.github.com base URL, `http://127.0.0.1:<port>`
  * @property {string} webBase the fake github.com base URL, `http://127.0.0.1:<port>`
- * @property {object} state mutable fixture state: apps, repos, installations, gitObjects, orgs;
- *  `state.suppressAutoLink = true` makes the next created repo skip the normal auto-add to its
- *  covering installation, for testing the otherwise-unreachable not-covered case;
- *  `state.nextDefaultBranch = '<name>'` is a one-shot: the next repo the fake creates reports
- *  that name as its `default_branch` (instead of the usual `main`), for testing a client's
- *  handling of an organization-set default other than `main`
+ * @property {object} state mutable fixture state: apps, repos, installations, gitObjects, orgs,
+ *  ownerIds (a login-to-numeric-id map, assigned on first use by a repo create, a
+ *  GET /repos/:owner/:repo read, or a GET /users/:login read); a repo created with
+ *  `private: true` is readable only by a request carrying an authorization header, exactly as
+ *  GitHub behaves; `state.suppressAutoLink = true` makes the next created repo
+ *  skip the normal auto-add to its covering installation, for testing the otherwise-unreachable
+ *  not-covered case; `state.nextDefaultBranch = '<name>'` is a one-shot: the next repo the fake
+ *  creates reports that name as its `default_branch` (instead of the usual `main`), for testing
+ *  a client's handling of an organization-set default other than `main`;
+ *  `state.denyNextAuthorize = true` is a one-shot: the next `/login/oauth/authorize` redirect
+ *  carries `error=access_denied` and no `code`, GitHub's own shape for a declined consent screen
  * @property {Array<{ method: string, pathname: string, authorization: string | null }>} requests
  *  every request received by either server, in arrival order; append-only, never reset except
  *  by starting a new server
@@ -42,9 +47,14 @@ export async function startFakeGithub() {
     repos: [],
     installations: [],
     gitObjects: new Map(),
-    orgs: []
+    orgs: [],
+    // Every owner login's fake numeric id, assigned the first time it is needed (a repo create
+    // or a GET /repos/:owner/:repo read) and stable for the rest of the run: the real API's repo
+    // owner carries an id alongside its login, which the connect chapter's Builds connection PUT
+    // needs (providerAccountId), and nothing about repo creation itself requires one.
+    ownerIds: new Map()
   };
-  const counters = { nextAppId: 1, nextRepoId: 1 };
+  const counters = { nextAppId: 1, nextRepoId: 1, nextOwnerId: 1 };
 
   // The route tables reference apiBase/webBase (for html_url and blob/commit URLs), which are
   // only known once both servers have a bound port. Route to a mutable dispatcher so the
@@ -72,10 +82,14 @@ export async function startFakeGithub() {
       { method: 'POST', regex: compile('/repos/:owner/:repo/git/trees'), route: 'trees', handler: createTreeHandler(ctx) },
       { method: 'POST', regex: compile('/repos/:owner/:repo/git/commits'), route: 'commits', handler: createCreateCommitHandler(ctx) },
       { method: 'GET', regex: compile('/repos/:owner/:repo/git/commits/:sha'), route: 'commits', handler: createGetCommitHandler(ctx) },
-      { method: 'PATCH', regex: compile('/repos/:owner/:repo/git/refs/heads/:branch'), route: 'refs', handler: createUpdateRefHandler(ctx) },
-      { method: 'GET', regex: compile('/repos/:owner/:repo/git/ref/heads/:branch'), route: 'refs', handler: createGetRefHandler(ctx) },
-      { method: 'POST', regex: compile('/repos/:owner/:repo/git/refs'), route: 'refs', handler: createCreateRefHandler(ctx) },
+      { method: 'PATCH', regex: compile('/repos/:owner/:repo/git/refs/heads/:branch'), route: 'refs-update', handler: createUpdateRefHandler(ctx) },
+      { method: 'GET', regex: compile('/repos/:owner/:repo/git/ref/heads/:branch'), route: 'refs-read', handler: createGetRefHandler(ctx) },
+      { method: 'POST', regex: compile('/repos/:owner/:repo/git/refs'), route: 'refs-create', handler: createCreateRefHandler(ctx) },
+      { method: 'GET', regex: compile('/repos/:owner/:repo/git/trees/:sha'), route: 'trees-read', handler: createGetTreeHandler(ctx) },
+      { method: 'GET', regex: compile('/repos/:owner/:repo/git/blobs/:sha'), route: 'blobs-read', handler: createGetBlobHandler(ctx) },
+      { method: 'GET', regex: compile('/repos/:owner/:repo'), route: 'repo', handler: createGetRepoHandler(ctx) },
       { method: 'GET', regex: compile('/app/installations'), route: 'installations', handler: createListInstallationsHandler(ctx) },
+      { method: 'GET', regex: compile('/users/:login'), route: 'users', handler: createGetPublicUserHandler(ctx) },
       { method: 'GET', regex: compile('/user'), route: 'user', handler: createGetUserHandler() },
       { method: 'GET', regex: compile('/orgs/:org'), route: 'org', handler: createGetOrgHandler(ctx) },
       { method: 'GET', regex: compile('/orgs/:org/memberships/:user'), route: 'membership', handler: createGetMembershipHandler(ctx) }
@@ -245,6 +259,40 @@ function slugify(name) {
   return slug || 'fake-app';
 }
 
+/**
+ * The fake numeric id for an owner login, assigned on first use and stable after that.
+ * @param {{ state: object, counters: object }} ctx the fake's shared context
+ * @param {string} login the owner's login
+ * @returns {number} the owner's fake numeric id
+ */
+function ownerIdFor(ctx, login) {
+  if (!ctx.state.ownerIds.has(login)) {
+    ctx.state.ownerIds.set(login, ctx.counters.nextOwnerId);
+    ctx.counters.nextOwnerId += 1;
+  }
+  return ctx.state.ownerIds.get(login);
+}
+
+/**
+ * Whether this read of a repository must be refused. GitHub answers a read of a PRIVATE
+ * repository with 404, never 403, when the request carries no credential: an anonymous caller is
+ * not told the repository exists at all. Every repository this tool creates is private
+ * (`repo.mjs`'s `createRepo` always sends `private: true`), so a client that reads one without a
+ * token gets nothing back in production, and a fake that served those reads anonymously would
+ * hide exactly that defect. Any bearer is accepted here: this fake cannot tell one user token
+ * from another, and the failure worth catching is a missing header, not a wrong one.
+ * @param {{ state: object }} ctx the fake's shared context
+ * @param {{ owner: string, repo: string }} params the route's owner and repo captures
+ * @param {Record<string, string | undefined> | undefined} headers the request headers
+ * @returns {boolean} true when the read must answer 404
+ */
+function refusesAnonymousRead(ctx, params, headers) {
+  const repo = ctx.state.repos.find(
+    (candidate) => candidate.owner.login === params.owner && candidate.name === params.repo
+  );
+  return Boolean(repo?.private) && !headers?.authorization;
+}
+
 /** Seed a repo's git object store with a root commit on `heads/<branch>`. */
 function seedRepo(entry, branch = 'main') {
   const sha = randomSha();
@@ -392,7 +440,17 @@ function createRepoHandler(getOwner, ctx) {
     ctx.counters.nextRepoId += 1;
     const defaultBranch = ctx.state.nextDefaultBranch ?? 'main';
     ctx.state.nextDefaultBranch = undefined;
-    const repo = { id, name, full_name: `${owner}/${name}`, owner: { login: owner }, default_branch: defaultBranch };
+    const repo = {
+      id,
+      name,
+      full_name: `${owner}/${name}`,
+      owner: { login: owner, id: ownerIdFor(ctx, owner) },
+      // Carried so every read handler can enforce the anonymous-read refusal a private repo gets
+      // from the real API. `createRepo` always sends it true; a test seeding a repo through this
+      // route without it gets a public repo, readable the way this fake always served them.
+      private: body?.private === true,
+      default_branch: defaultBranch
+    };
     ctx.state.repos.push(repo);
     const gitEntry = { seeded: false, blobs: new Map(), trees: new Map(), commits: new Map(), refs: new Map() };
     ctx.state.gitObjects.set(repo.full_name, gitEntry);
@@ -423,6 +481,36 @@ function createLinkHandler() {
   };
 }
 
+/**
+ * GET /repos/:owner/:repo, the one call the Builds connect chapter needs both numeric ids from:
+ * `.id` (the repository) and `.owner.id` (its owner), alongside `default_branch` for the reads
+ * that follow it.
+ */
+function createGetRepoHandler(ctx) {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
+    const repo = ctx.state.repos.find((candidate) => candidate.owner.login === params.owner && candidate.name === params.repo);
+    if (!repo) return sendJson(res, 404, { message: 'Not Found' });
+    sendJson(res, 200, repo);
+  };
+}
+
+/**
+ * GET /users/:login, the public endpoint the Builds connect hop reads an owner's numeric id from.
+ * Public in the real API for users and organizations alike (verified against api.github.com,
+ * 2026-08-12), so no authorization is checked here either: this is the one GitHub read chapter 3
+ * can make holding no credential at all.
+ */
+function createGetPublicUserHandler(ctx) {
+  return async (_req, res, params) => {
+    sendJson(res, 200, {
+      login: params.login,
+      id: ownerIdFor(ctx, params.login),
+      type: ctx.state.orgs.some((candidate) => candidate.login === params.login) ? 'Organization' : 'User'
+    });
+  };
+}
+
 function createListLinkedReposHandler(ctx) {
   return async (_req, res, params) => {
     const installation = ctx.state.installations.find((candidate) => String(candidate.id) === params.iid);
@@ -449,16 +537,96 @@ function createBlobHandler(ctx) {
   };
 }
 
+/**
+ * POST /repos/:owner/:repo/git/trees. `pushScaffold` never sends `base_tree` (a first push
+ * writes one full tree deliberately), but the reconcile chapter always does: its whole point is
+ * committing two changed files without disturbing anything else the admin has added since the
+ * scaffold push, and that survival depends on this fake actually merging onto the base rather
+ * than replacing it. The merge is by path, matching the real API's own base_tree semantics
+ * closely enough for a fake that (like `pushScaffold` itself) stores one flat tree of full
+ * slash-joined paths rather than real git's nested per-directory tree objects: a base entry
+ * survives untouched unless `tree` names the same path, and any new path is appended.
+ */
 function createTreeHandler(ctx) {
   return async (_req, res, params, _url, body) => {
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, trees included.
     if (!entry.seeded) return sendJson(res, 409, { message: 'Git Repository is empty.' });
+    const incoming = Array.isArray(body?.tree) ? body.tree : [];
+
+    let merged = incoming;
+    if (body?.base_tree) {
+      const base = entry.trees.get(body.base_tree);
+      if (!base) return sendJson(res, 404, { message: 'Not Found' });
+      const byPath = new Map(base.map((candidate) => [candidate.path, candidate]));
+      for (const candidate of incoming) byPath.set(candidate.path, candidate);
+      merged = [...byPath.values()];
+    }
+
     const sha = randomSha();
-    entry.trees.set(sha, body?.tree ?? []);
+    entry.trees.set(sha, merged);
     sendJson(res, 201, { sha, url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/trees/${sha}` });
   };
+}
+
+/**
+ * Read a stored tree back. The stored entries already carry full slash-joined paths (exactly
+ * what `pushScaffold` and the reconcile write path post, one flat tree with no intermediate
+ * directory objects), which is not a simplification of the real API: GitHub's own `GET .../git/
+ * trees/:sha?recursive=1` returns precisely this shape, a flat array of blob entries with full
+ * paths and no directory entries. A caller that reads without `recursive=1` would see the real
+ * API's un-flattened, one-level view instead; this fake only ever serves the recursive shape,
+ * since nothing in this package reads a tree any other way.
+ */
+function createGetTreeHandler(ctx) {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
+    const entry = getGitEntry(ctx, params.owner, params.repo);
+    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    const tree = entry.trees.get(params.sha);
+    if (!tree) return sendJson(res, 404, { message: 'Not Found' });
+    sendJson(res, 200, {
+      sha: params.sha,
+      url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/trees/${params.sha}`,
+      tree,
+      truncated: false
+    });
+  };
+}
+
+/** Read a stored blob back, in the real API's `{ sha, content, encoding, size, url }` shape. */
+function createGetBlobHandler(ctx) {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
+    const entry = getGitEntry(ctx, params.owner, params.repo);
+    if (!entry) return sendJson(res, 404, { message: 'Not Found' });
+    const content = entry.blobs.get(params.sha);
+    if (content === undefined) return sendJson(res, 404, { message: 'Not Found' });
+    sendJson(res, 200, {
+      sha: params.sha,
+      content,
+      encoding: 'base64',
+      size: Buffer.from(content, 'base64').length,
+      url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/blobs/${params.sha}`
+    });
+  };
+}
+
+/**
+ * Wrap a stored bare tree sha into the real Git Data API's commit-response shape: a commit's
+ * `tree` field is `{ sha, url }`, never a bare string. Only the outgoing response is wrapped;
+ * `entry.commits`' internal storage keeps the bare sha, since that is also the shape the real
+ * create-commit REQUEST body sends and nothing here needs to round-trip the object form.
+ * @param {{ apiBase: string }} ctx the fake's shared context
+ * @param {string} owner the repository owner's login
+ * @param {string} repo the repository name
+ * @param {string | null} sha the stored bare tree sha, or null for a treeless seed commit
+ * @returns {{ sha: string, url: string } | null} the wrapped tree reference
+ */
+function treeRef(ctx, owner, repo, sha) {
+  if (!sha) return null;
+  return { sha, url: `${ctx.apiBase}/repos/${owner}/${repo}/git/trees/${sha}` };
 }
 
 function createCreateCommitHandler(ctx) {
@@ -471,7 +639,8 @@ function createCreateCommitHandler(ctx) {
     const message = body?.message ?? '';
     // parents/tree are carried in state (and echoed back), not just message: task 8's push
     // test asserts the created commit's parent is the seed sha, which needs somewhere to read
-    // it back from, matching the real Git Data API's own commit response shape.
+    // it back from, matching the real Git Data API's own commit response shape. tree is stored
+    // as the bare sha the request body sent; treeRef wraps it for every outgoing response.
     const parents = Array.isArray(body?.parents) ? body.parents : [];
     const tree = body?.tree ?? null;
     entry.commits.set(sha, { sha, message, parents, tree });
@@ -479,19 +648,25 @@ function createCreateCommitHandler(ctx) {
       sha,
       message,
       parents,
-      tree,
+      tree: treeRef(ctx, params.owner, params.repo, tree),
       url: `${ctx.apiBase}/repos/${params.owner}/${params.repo}/git/commits/${sha}`
     });
   };
 }
 
 function createGetCommitHandler(ctx) {
-  return async (_req, res, params) => {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     const commit = entry.commits.get(params.sha);
     if (!commit) return sendJson(res, 404, { message: 'Not Found' });
-    sendJson(res, 200, { sha: commit.sha, message: commit.message, parents: commit.parents ?? [], tree: commit.tree ?? null });
+    sendJson(res, 200, {
+      sha: commit.sha,
+      message: commit.message,
+      parents: commit.parents ?? [],
+      tree: treeRef(ctx, params.owner, params.repo, commit.tree ?? null)
+    });
   };
 }
 
@@ -507,7 +682,8 @@ function createUpdateRefHandler(ctx) {
 }
 
 function createGetRefHandler(ctx) {
-  return async (_req, res, params) => {
+  return async (_req, res, params, _url, _body, headers) => {
+    if (refusesAnonymousRead(ctx, params, headers)) return sendJson(res, 404, { message: 'Not Found' });
     const entry = getGitEntry(ctx, params.owner, params.repo);
     if (!entry) return sendJson(res, 404, { message: 'Not Found' });
     // spike-confirmed 2026-08-10: an empty repo's Git Data API 409s, the ref read included.
@@ -574,6 +750,13 @@ function createGetMembershipHandler(ctx) {
 
 // --- webBase route handlers -------------------------------------------------------------
 
+/**
+ * GET /login/oauth/authorize. `state.denyNextAuthorize = true` is a one-shot test seam,
+ * mirroring `suppressAutoLink` and `nextDefaultBranch`'s idiom: the NEXT successful-match
+ * request redirects the way GitHub itself redirects when the admin declines the consent
+ * screen, `error=access_denied` and no `code`, with `state` still echoed back exactly as a
+ * normal approval would.
+ */
 function createAuthorizeHandler(ctx) {
   return async (_req, res, _params, url) => {
     const clientId = url.searchParams.get('client_id');
@@ -587,7 +770,13 @@ function createAuthorizeHandler(ctx) {
       return;
     }
     const target = new URL(redirectUri);
-    target.searchParams.set('code', 'fake-code');
+    if (ctx.state.denyNextAuthorize) {
+      ctx.state.denyNextAuthorize = false;
+      target.searchParams.set('error', 'access_denied');
+      target.searchParams.set('error_description', 'The user has denied your application access.');
+    } else {
+      target.searchParams.set('code', 'fake-code');
+    }
     if (callerState) target.searchParams.set('state', callerState);
     res.writeHead(302, { location: target.toString() });
     res.end();

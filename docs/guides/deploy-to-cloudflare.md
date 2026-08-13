@@ -1,6 +1,6 @@
 # Deploy to Cloudflare
 
-A cairn site reaches production one of three ways. Deploying it always means wiring its admin
+A cairn site reaches production one of two ways. Deploying it always means wiring its admin
 and provisioning its Worker's Cloudflare bindings, whichever way you take. Mounting the admin
 takes five files (a composer in `src/lib`, plus a layout pair and a catch-all pair under
 `src/routes/admin`) and one build-config line; wiring the guard that gates it,
@@ -25,11 +25,18 @@ npx create-cairn-site --dir <dir> --connect
 
 `--connect` works any time from your site's first deploy onward, including mid-way through the
 domain or email chapters, or a resumed Builds chapter of its own. It connects your repository to
-Workers Builds and binds a trigger to your existing Worker, then checks your repository's
-committed `wrangler.jsonc` and `src/theme/cairn.config.ts` against the copies on your machine.
-That check reads a hash recorded at the last check rather than the repository itself, so it
-catches a change made on your machine but misses one made directly in the repository. When the
-two differ, it commits your local copies onto the repository's current head.
+Workers Builds and binds a trigger to your existing Worker, then reconciles the two files it
+owns, `wrangler.jsonc` and `src/theme/cairn.config.ts`, into your repository.
+
+The reconcile itself, when it runs, reads the repository directly. It asks GitHub for each
+file's committed content and compares each one against your local copy. When either file
+differs, the reconcile commits both. Editing only one still lands both files in that commit.
+
+Most runs skip this authenticated trip entirely. The tool keeps a hash of the two files as they
+sat on disk right after the last reconcile. Before checking again, it recomputes that hash from
+their current disk contents. A matching hash skips the trip. A changed hash, or a first run,
+sends the tool to GitHub instead. This gate only reads your machine. An edit committed straight
+to the repository goes unnoticed until something on your machine changes too.
 
 The build watch that follows runs for up to about fifteen minutes by default. A build still
 running past that point leaves the run exiting `0`, with the exact command to re-run and keep
@@ -49,14 +56,15 @@ If you built the site by hand, `create-cairn-site` holds no record of it and can
 this way. Wire the admin and deploy with `wrangler deploy` yourself, the way the rest of this
 guide covers, and connect Workers Builds at the Cloudflare dashboard afterward if you want it.
 
-The third way is a Deploy to Cloudflare button on a template repository. cairn does not publish
-one, so this way is not available today. See Cloudflare's own [deploy-button
-documentation](https://developers.cloudflare.com/workers/platform/deploy-buttons/) for what such
-a button does when a template has one.
-
 Whichever way you take, your site still needs a Workers plan that supports sending to arbitrary
 recipients before anyone other than you can sign in. See [Choose a Workers
 plan](./configure-auth-and-d1.md#choose-a-workers-plan).
+
+Cloudflare also documents a Deploy to Cloudflare button for template repositories. cairn
+publishes no template repository, so no cairn site offers that button today. See Cloudflare's
+own [deploy-button
+documentation](https://developers.cloudflare.com/workers/platform/deploy-buttons/) for what such
+a button does when a template has one.
 
 Workers Builds deploys your site's code on every push. It has no equivalent for database
 migrations. A schema change from an engine update still needs `wrangler d1 migrations apply` run

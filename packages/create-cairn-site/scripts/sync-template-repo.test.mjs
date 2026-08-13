@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { access, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { bake } from './bake-template.mjs';
@@ -478,16 +478,34 @@ test('the build check never runs for a --dry-run, which only reports what it wou
 });
 
 test('defaultBuildCheck runs a real install and build against a synthetic tree, no stub involved', async (t) => {
-  // A dependency-free package.json needs no network for `npm install`, which keeps this test
-  // hermetic; every other test in this suite injects a buildCheck stub so this is the only one
-  // that exercises the function CI actually relies on.
+  // The dependency lives inside successDir (under vendor/), so the `cp` into the check's own temp
+  // directory carries it along and the relative `file:` spec still resolves there. A single local
+  // `file:` dependency needs no network for `npm install`, which keeps this test hermetic; every
+  // other test in this suite injects a buildCheck stub so this is the only one that exercises the
+  // function CI actually relies on. The build script `require`s the dependency's own export, so a
+  // tree that never ran `npm install` fails the build step with `MODULE_NOT_FOUND` instead of
+  // silently succeeding: this is what actually proves the install step ran, which a
+  // dependency-free package.json cannot.
   const successDir = await tempDir(t, 'cairn-sync-buildcheck-success-');
+  await mkdir(path.join(successDir, 'vendor', 'dep'), { recursive: true });
+  await writeFile(
+    path.join(successDir, 'vendor', 'dep', 'package.json'),
+    JSON.stringify({ name: 'cairn-sync-buildcheck-dep', version: '1.0.0', main: 'index.js' }),
+  );
+  await writeFile(
+    path.join(successDir, 'vendor', 'dep', 'index.js'),
+    "module.exports = { marker: 'CAIRN_DEP_MARKER' };\n",
+  );
   await writeFile(
     path.join(successDir, 'package.json'),
     JSON.stringify({
       name: 'cairn-sync-buildcheck-success',
       version: '1.0.0',
-      scripts: { build: 'node -e "process.exit(0)"' },
+      dependencies: { 'cairn-sync-buildcheck-dep': 'file:./vendor/dep' },
+      scripts: {
+        build:
+          'node -e "console.log(require(\'cairn-sync-buildcheck-dep\').marker); process.exit(0)"',
+      },
     }),
   );
   const successResult = await defaultBuildCheck(successDir);
@@ -509,6 +527,47 @@ test('defaultBuildCheck runs a real install and build against a synthetic tree, 
   assert.ok(
     failResult.output.includes('CAIRN_BUILDCHECK_FAILURE_MARKER'),
     'the failing build script\'s own output survives into the reported output',
+  );
+});
+
+test('defaultBuildCheck reports the install\'s own failure text when npm install itself fails', async (t) => {
+  // A dependency whose postinstall script fails makes `npm install` itself exit non-zero, the
+  // branch nothing in this suite exercised before. Still hermetic: the dependency is a nested
+  // `file:` path, so npm never leaves the local filesystem. The build script would emit its own,
+  // different marker if it ever ran, which must never happen since a failed install stops before
+  // the build step.
+  const failInstallDir = await tempDir(t, 'cairn-sync-buildcheck-badinstall-');
+  await mkdir(path.join(failInstallDir, 'vendor', 'broken-dep'), { recursive: true });
+  await writeFile(
+    path.join(failInstallDir, 'vendor', 'broken-dep', 'package.json'),
+    JSON.stringify({
+      name: 'cairn-sync-buildcheck-broken-dep',
+      version: '1.0.0',
+      scripts: {
+        postinstall: 'node -e "console.error(\'CAIRN_INSTALL_FAILURE_MARKER\'); process.exit(1)"',
+      },
+    }),
+  );
+  await writeFile(
+    path.join(failInstallDir, 'package.json'),
+    JSON.stringify({
+      name: 'cairn-sync-buildcheck-badinstall',
+      version: '1.0.0',
+      dependencies: { 'cairn-sync-buildcheck-broken-dep': 'file:./vendor/broken-dep' },
+      scripts: {
+        build: 'node -e "console.log(\'CAIRN_BUILDCHECK_FAILURE_MARKER\'); process.exit(1)"',
+      },
+    }),
+  );
+  const result = await defaultBuildCheck(failInstallDir);
+  assert.equal(result.ok, false);
+  assert.ok(
+    result.output.includes('CAIRN_INSTALL_FAILURE_MARKER'),
+    'the install\'s own failure text survives into the reported output',
+  );
+  assert.ok(
+    !result.output.includes('CAIRN_BUILDCHECK_FAILURE_MARKER'),
+    'the build script never ran, since the install already failed',
   );
 });
 
@@ -668,7 +727,12 @@ test('--verify-build does not double-run the check for a real sync that has drif
   assert.equal(calls, 1, 'the build check ran exactly once, not twice, for a real sync under --verify-build');
 });
 
-test('no token substring appears in any output, dry-run or real', async (t) => {
+test('no token substring appears in any output of a successful local-remote sync, dry-run or real', async (t) => {
+  // A local remote never touches gitAuthEnv's credential path (it returns {} for a non-https
+  // remote), so this cannot catch a token leak on its own; see the https variant below for that.
+  // What this proves instead is that a full, successful multi-step sync (clone, add, diff,
+  // commit, push) never accidentally logs an unrelated token substring anywhere along its real
+  // output-mirroring path, the one this suite's other tests only ever exercise on a failure.
   const remote = await createBareRemote(t);
   const token = 'cairn-sync-test-token-9f3ac1';
 
@@ -685,6 +749,54 @@ test('no token substring appears in any output, dry-run or real', async (t) => {
   const realLogs = [];
   await syncTemplateRepo({ remote, token, ...FIXTURE_OPTIONS, log: (line) => realLogs.push(line) });
   assert.ok(!realLogs.some((line) => line.includes(token)));
+});
+
+test('no token substring appears in any output of an https sync, dry-run or real, where the credential is genuinely computed', async (t) => {
+  // Unlike the local-remote variant above, an https remote makes gitAuthEnv build a real
+  // credential and hand it to the clone subprocess, so this sits on the path a token leak would
+  // actually occur on. The remote is unroutable, so both calls fail at the clone step before
+  // dry-run vs. real can diverge. Checking the thrown error's own message matters as much as the
+  // logged lines here: git already strips a credential from its own printed messages, so a
+  // regression that leaked the token (for example embedding it back into the clone URL) would
+  // show up only in the message this module builds for the thrown error, never in git's own
+  // mirrored stderr.
+  const remote = 'https://127.0.0.1:1/glw907/cairn-waymark-template.git';
+  const token = 'cairn-sync-test-token-9f3ac1';
+
+  const dryLogs = [];
+  await assert.rejects(
+    () =>
+      syncTemplateRepo({
+        remote,
+        dryRun: true,
+        token,
+        allowAnyRemote: true,
+        ...FIXTURE_OPTIONS,
+        log: (line) => dryLogs.push(line),
+      }),
+    (err) => {
+      assert.ok(!err.message.includes(token), 'the thrown error does not carry the token');
+      return true;
+    },
+  );
+  assert.ok(!dryLogs.some((line) => line.includes(token)), 'no logged line carries the token');
+
+  const realLogs = [];
+  await assert.rejects(
+    () =>
+      syncTemplateRepo({
+        remote,
+        token,
+        allowAnyRemote: true,
+        ...FIXTURE_OPTIONS,
+        log: (line) => realLogs.push(line),
+      }),
+    (err) => {
+      assert.ok(!err.message.includes(token), 'the thrown error does not carry the token');
+      return true;
+    },
+  );
+  assert.ok(!realLogs.some((line) => line.includes(token)), 'no logged line carries the token');
 });
 
 test('redact strips every occurrence of a secret from a string', () => {

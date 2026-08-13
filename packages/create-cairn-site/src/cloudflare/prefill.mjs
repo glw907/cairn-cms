@@ -50,25 +50,18 @@ export const PREFILL_PERMISSION_KEYS = [
 ];
 
 /**
- * The three keys chapter 3 (Builds connect) adds to PREFILL_PERMISSION_KEYS. Verified live
- * 2026-08-12 (docs/internal/2026-08-12-t4c-builds-spike.md), one at a different confidence than
- * the other two:
+ * The three keys chapter 3 (Builds connect) adds to PREFILL_PERMISSION_KEYS. All three confirmed
+ * filling their rows on the live dashboard, the same bar every key above met: `workers_ci` on
+ * 2026-08-12 (docs/internal/2026-08-12-t4c-builds-spike.md), `d1` and `workers_r2` on 2026-08-13
+ * through the full eight-key URL, pasted interactively during the T5 live e2e
+ * (docs/internal/2026-08-13-t5-task8-live-e2e.md).
  *
- * `workers_ci` was seen filling its row on the live dashboard, 2026-08-12, the same bar every key
- * above met.
- *
- * `d1` has NOT yet been confirmed on the live dashboard. Its requirement is observed, not
- * guessed: a Builds deploy of a cairn-shaped scaffold, run with a token missing it, died on
- * `GET /d1/database/{id}` with `Authentication error [code: 10000]`.
- *
- * `workers_r2` has NOT yet been confirmed on the live dashboard either, and unlike `d1` its
- * requirement is inferred, not observed: the failing build above died at the first D1 binding
- * and never reached the R2 binding, so no request ever exercised this permission directly. A
- * second token carrying both `d1` and `workers_r2` deployed the same scaffold successfully, which
- * is the evidence for including it, not a request log entry naming it.
- *
- * `d1` and `workers_r2` still owe one live dashboard confirmation before this list ships, the
- * same bar `workers_ci` and every key in PREFILL_PERMISSION_KEYS already cleared.
+ * The requirements behind the two data keys carry different evidence. `d1` is observed: a Builds
+ * deploy of a cairn-shaped scaffold, run with a token missing it, died on `GET /d1/database/{id}`
+ * with `Authentication error [code: 10000]`. `workers_r2` is inferred: that failing build died at
+ * the first D1 binding and never reached the R2 binding, and the successful deploy that followed
+ * carried both keys, so no request log entry has ever named `workers_r2` alone. It stays as a
+ * conservative include.
  * @type {Array<{ key: string, type: 'edit' }>}
  */
 const BUILDS_PERMISSION_KEYS = [

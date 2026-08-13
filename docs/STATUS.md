@@ -14,10 +14,23 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-13: T4c is BUILT and green; next is the T4d planning sitting)
+## Immediate next action (2026-08-13: T4c is MERGED, the T5 plan is approved; next is T5 execution)
 
-**T4c is code-complete on `worktree-t4c-builds-connect`** (off `main` at `5a37c7cb`), seventeen
-commits, `ff3a1699` through the post-mortem. Chapter 3 exists end to end: admission, the
+**T4c is MERGED to `main`** (PR #29, merge commit `a3905737`, all six PR gates green), and the
+same merge carries the T5 spec and plan. **The immediate next action is T5 execution in a fresh
+Opus 5 session**, launched from `~/Projects/cairn-cms`, which creates a fresh worktree off
+`main` for the pass (the plan's prerequisite is satisfied; verify `main` is at or past
+`a3905737`). Resume prompt for that session: "Execute pass T5 (the create-cairn-site browser
+door). Invoke cairn-pass, read docs/STATUS.md, the spec at
+docs/superpowers/specs/2026-08-12-create-cairn-site-t5-design.md, and the plan at
+docs/superpowers/plans/2026-08-12-create-cairn-site-t5.md, then run it task-by-task; Task 1
+(the sync script) is dispatchable immediately, and Task 2 (the button spike) needs Geoff's
+browser." The spec and plan were amended at a three-agent adversarial gate in the planning
+sitting (wrong-premise, conformance, deletion-test); the gate's root catch, a spike that would
+have proven a stripped tree while shipping an unstripped one, is folded in, and the plan as
+written supersedes nothing (no pre-review draft was ever executed).
+
+**T4c's own record, now history:** chapter 3 exists end to end: admission, the
 eight-key token paste, connect, trigger, the `base_tree` reconcile commit, the build watch, and
 completion, wired into `bin.mjs` at all three hook sites with `--connect` as a real flag.
 **667 tests pass and all 18 gates are green**, including the four that normally only run on CI
@@ -45,15 +58,16 @@ needs chapter 1, which mints a GitHub App only Geoff can hand-delete, and
 `~/.config/cairn/sites` is empty so no App state could be reused. **It folds into T5's run**
 (decided with the reorder below), so one App is minted instead of two.
 
-**The T5-before-T4d question is DECIDED (Geoff, 2026-08-12): T5 jumps ahead.** The T5 planning
-sitting ran and its spec is at `docs/superpowers/specs/2026-08-12-create-cairn-site-t5-design.md`;
-the queue is now T5 -> T4d -> Pass D -> release one -> site walk -> P. The live CLI e2e (the gap
-below) folds into T5, not T4d, and the estate it mints persists across both passes with one
-teardown after T4d. T5's scope: the template repo and button with a printed checklist as the
-completion story; the adopt-existing-repo path is deferred to a T5b brief written from the T5
-spike's findings. T4d's brief is unchanged (the T4a spec, plus the two T4c inputs: the build
-watch as a second long wait, and the grown fake surface its plumbing extraction must cover).
-**T5 execution requires T4c merged to `main` first.**
+**The T5-before-T4d question is DECIDED (Geoff, 2026-08-12): T5 jumps ahead**, and the T5 spec
+and plan are both approved (the plan at the adversarial gate). The queue is now T5 -> T4d ->
+Pass D -> release one -> site walk -> P. The live CLI e2e (the gap below) folds into T5, not
+T4d; the e2e estate T5 mints persists across both passes with its teardown after T4d, while
+T5's spike estate is torn down at T5's own end (spec ruling 7). T5's scope: the template repo
+and button with a printed checklist as the completion story; the adopt-existing-repo path is
+deferred to a T5b brief written from the T5 spike's findings (the spike's `--connect` adopt
+probe is its first evidence). T4d's brief is unchanged (the T4a spec, plus the two T4c inputs:
+the build watch as a second long wait, and the grown fake surface its plumbing extraction must
+cover).
 
 **Hand steps for Geoff, FIVE outstanding, one urgent.** (1) **URGENT: rotate the estate
 Cloudflare token** (`Cloudflare Admin 2026-07`): leaked into a transcript, still active. Mint a

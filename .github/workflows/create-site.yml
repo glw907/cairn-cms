@@ -143,3 +143,141 @@ jobs:
             cat /tmp/ci-dev.log
             exit 1
           fi
+      - name: Seed and probe the Builds discovery console
+        # T4d Task 6's CI probe: the only console proof that runs the PACKED CLI (the same install
+        # the earlier steps already produced in /tmp/create-scratch, no second install) from a real
+        # GitHub Actions job rather than node:test. Both integration proofs in this repo target the
+        # Builds hold, the one wait class a spawned child can drive at all (the propagation probe's
+        # inputs have no env seam; see hold-loop.mjs's own header). CAIRN_STATE_DIR is seeded with a
+        # fixture at chapter 3's own watch step (config-reconciled, its buildsReconciledHash already
+        # matching the local scaffold so performReconcile sees no diff and needs no GitHub call at
+        # all), CAIRN_CLOUDFLARE_API_BASE points at this repo's own fake Cloudflare (run in-process
+        # here so this step can flip its state mid-run), and CAIRN_FORCE_HOLD=1 is the documented
+        # override the hold-force seam exists for (a spawned child is non-TTY, and this runner's own
+        # CI=true would otherwise refuse to hold at all). Two fetches prove a real re-render, never a
+        # stub 200: the first against the pre-discovery view, the second once the fake's build state
+        # has flipped and the console has moved to its cleared exit page.
+        env:
+          PKG_DIR: ${{ github.workspace }}/packages/create-cairn-site
+          CREATE_BIN: /tmp/create-scratch/node_modules/create-cairn-site/bin.mjs
+        run: |
+          cat > /tmp/builds-console-probe.mjs <<'PROBE_EOF'
+          import assert from 'node:assert/strict';
+          import path from 'node:path';
+          import { pathToFileURL } from 'node:url';
+          import { spawn } from 'node:child_process';
+          import { createInterface } from 'node:readline';
+          import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+          import { tmpdir } from 'node:os';
+          import { randomUUID } from 'node:crypto';
+
+          const pkgDir = process.env.PKG_DIR;
+          const load = (relative) => import(pathToFileURL(path.join(pkgDir, relative)).href);
+
+          const { startFakeCloudflare } = await load('test/fake-cloudflare.mjs');
+          const { saveSite } = await load('src/state.mjs');
+          const { reconciledConfigHash } = await load('src/cloudflare/chapter3.mjs');
+          const { EXIT_TEXT } = await load('src/console/exit-render.mjs');
+
+          const WORKER_NAME = 'ci-console-hold-worker';
+          const WORKER_TAG = 'tag-ci-console-hold';
+
+          const stateDir = await mkdtemp(path.join(tmpdir(), 'ci-console-hold-state-'));
+          process.env.CAIRN_STATE_DIR = stateDir;
+
+          const scaffold = await mkdtemp(path.join(tmpdir(), 'ci-console-hold-scaffold-'));
+          await writeFile(path.join(scaffold, 'wrangler.jsonc'), `${JSON.stringify({ name: WORKER_NAME }, null, 2)}\n`);
+          await mkdir(path.join(scaffold, 'src/theme'), { recursive: true });
+          await writeFile(path.join(scaffold, 'src/theme/cairn.config.ts'), "export const from = 'cms@example.test';\n");
+
+          const cloudflare = await startFakeCloudflare();
+          cloudflare.state.workerScripts.push({ id: WORKER_NAME, tag: WORKER_TAG });
+
+          const hash = await reconciledConfigHash(scaffold);
+          const siteId = 'ci-console-hold-abc123';
+          await saveSite(siteId, {
+            name: 'CI Console Hold Site',
+            dir: scaffold,
+            step: 'config-reconciled',
+            ownerEmail: 'owner@example.com',
+            github: {
+              clientId: 'fake-client-1',
+              clientSecret: 'fake-secret',
+              installationId: 1,
+              repo: { owner: 'ci-console-hold-owner', repo: 'ci-console-hold-site', defaultBranch: 'main' },
+            },
+            cloudflare: {
+              accountId: 'acct-1',
+              url: `https://${WORKER_NAME}.example.workers.dev`,
+              workerName: WORKER_NAME,
+              buildsReconciledHash: hash,
+            },
+          });
+
+          const child = spawn(process.execPath, [process.env.CREATE_BIN, '--dir', scaffold, '--yes', '--connect'], {
+            env: {
+              ...process.env,
+              CAIRN_STATE_DIR: stateDir,
+              CAIRN_CLOUDFLARE_API_BASE: cloudflare.apiBase,
+              CAIRN_CF_API_TOKEN: 'ci-console-hold-env-token',
+              CAIRN_FORCE_HOLD: '1',
+            },
+          });
+
+          let failed = false;
+          try {
+            const url = await new Promise((resolve, reject) => {
+              const rl = createInterface({ input: child.stdout });
+              const timer = setTimeout(() => reject(new Error('timed out waiting for the console URL line')), 20000);
+              rl.on('line', (line) => {
+                const match = /^Watch progress at (\S+) /.exec(line);
+                if (match) {
+                  clearTimeout(timer);
+                  resolve(match[1]);
+                }
+              });
+            });
+
+            const firstBody = await (await fetch(url)).text();
+            assert.ok(firstBody.includes(WORKER_NAME), `expected the worker name in the first render, got: ${firstBody}`);
+            assert.ok(
+              firstBody.includes('Still discovering the build that matches your push.'),
+              `expected the pre-discovery view, got: ${firstBody}`,
+            );
+
+            const buildUuid = randomUUID();
+            cloudflare.state.builds.set(buildUuid, {
+              build_uuid: buildUuid,
+              status: 'running',
+              build_outcome: null,
+              created_on: new Date().toISOString(),
+              trigger: { external_script_id: WORKER_TAG },
+              build_trigger_source: 'push_event',
+              build_trigger_metadata: { commit_hash: 'deadbeef', commit_message: 'x', author: 'admin', branch: 'main' },
+            });
+
+            const deadline = Date.now() + 15000;
+            let changedBody = firstBody;
+            while (changedBody === firstBody && Date.now() < deadline) {
+              await new Promise((resolve) => setTimeout(resolve, 200));
+              try {
+                changedBody = await (await fetch(url)).text();
+              } catch {
+                break; // The exit render's grace window closed the server; the assertion below reports this.
+              }
+            }
+            assert.notEqual(changedBody, firstBody, 'expected a real re-render once the build was discovered');
+            assert.ok(changedBody.includes(EXIT_TEXT), `expected the cleared exit page, got: ${changedBody}`);
+
+            console.log('Builds discovery console probe passed.');
+          } catch (err) {
+            failed = true;
+            console.error(err);
+          } finally {
+            child.kill('SIGKILL');
+            await cloudflare.close();
+          }
+
+          process.exit(failed ? 1 : 0);
+          PROBE_EOF
+          node /tmp/builds-console-probe.mjs

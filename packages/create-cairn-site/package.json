@@ -8,7 +8,7 @@
   "bin": { "create-cairn-site": "./bin.mjs" },
   "files": ["bin.mjs", "src", "template", "README.md"],
   "scripts": {
-    "test": "node --test --import ./test/no-desktop.mjs \"src/*.test.mjs\" \"src/github/*.test.mjs\" \"src/cloudflare/*.test.mjs\" \"scripts/*.test.mjs\" \"test/*.test.mjs\"",
+    "test": "node --test --import ./test/no-desktop.mjs \"src/*.test.mjs\" \"src/github/*.test.mjs\" \"src/cloudflare/*.test.mjs\" \"src/console/*.test.mjs\" \"scripts/*.test.mjs\" \"test/*.test.mjs\"",
     "prepack": "node scripts/bake-template.mjs --to template"
   },
   "dependencies": { "@clack/prompts": "^1.7.0" }

@@ -50,6 +50,7 @@ import { makeApi } from './api.mjs';
 import { ensureZone, checkDelegation, delegationInstructions } from './zone.mjs';
 import { readCurrentRecords, carryOverRecords } from './records.mjs';
 import { cutOverHostname } from './hostname.mjs';
+import { defaultResolve } from './dns.mjs';
 import { defaultFromAddress, ensureSendingDomain, sendTestMessage } from './email.mjs';
 import { writeEmailFrom } from './config.mjs';
 import { buildSite, deployWorker } from './deploy.mjs';
@@ -223,7 +224,9 @@ const EMAIL_ADMISSION_DETAIL =
  * @property {(domain: string) => Promise<string[]>} [resolveNs] the NS lookup forwarded to
  *  `checkDelegation`; a test seam defaulting to `node:dns/promises`' own `resolveNs`
  * @property {(servers?: string[]) => object} [resolve] the resolver factory forwarded to
- *  `readCurrentRecords`; a test seam, defaulting to that module's own
+ *  `readCurrentRecords` and to the cutover's own DNS context (`hostname.mjs`'s
+ *  `diagnoseUnreachable`); a test seam, defaulting to `dns.mjs`'s own `defaultResolve`, the same
+ *  real resolver readCurrentRecords already fell back to
  * @property {Record<string, string | undefined>} [env] the environment `ensureApiToken` reads
  *  `CAIRN_CF_API_TOKEN` from under `yes`; defaults to `process.env`
  * @property {string[]} [argv] the argument vector `ensureApiToken` scans for a mistakenly-passed
@@ -288,11 +291,11 @@ function composeCutoverWaitForClear({
  * @param {RunChapter2Input} input the chapter's inputs
  * @returns {Promise<{ outcome: string, domain?: string, state?: string, message?: string }>} the
  *  outcome reached: `'admission-declined'` | `'carry-over-declined'` | `'delegation-pending'` |
- *  `'delegation-propagating'` | `'hostname-records-absent'` | `'certificate-pending'` |
- *  `'paid-plan-declined'` | `'email-not-ready'` | `'email-sender-propagating'` |
- *  `'email-daily-limit'` | `'email-live'` | `'dry-run'`, or, for a record already at one of
- *  TERMINAL_STEPS, that step's own name. A delegation park also carries the row's own `state` and
- *  printed `message`
+ *  `'delegation-propagating'` | `'hostname-records-absent'` | `'hostname-resolver-lagging'` |
+ *  `'certificate-pending'` | `'paid-plan-declined'` | `'email-not-ready'` |
+ *  `'email-sender-propagating'` | `'email-daily-limit'` | `'email-live'` | `'dry-run'`, or, for a
+ *  record already at one of TERMINAL_STEPS, that step's own name. A delegation park also carries
+ *  the row's own `state` and printed `message`
  */
 export async function runChapter2({
   siteId,
@@ -309,7 +312,7 @@ export async function runChapter2({
   makeApiFn = makeApi,
   fetchImpl = fetch,
   resolveNs = systemResolveNs,
-  resolve,
+  resolve = defaultResolve,
   env = process.env,
   argv = process.argv.slice(2),
   isTTY = Boolean(process.stdout.isTTY),
@@ -591,11 +594,17 @@ export async function runChapter2({
                 workerName: record?.cloudflare?.workerName,
                 accountId,
                 url: record?.cloudflare?.url,
+                nameServers,
               },
             },
             api,
             fetchImpl,
             log,
+            // The zone's own nameservers, when already known, let the unreachable-case diagnosis
+            // skip a fresh NS discovery lookup (dns.mjs's own `selectAuthoritativeResolver`); the
+            // resolver factory is the same one `readCurrentRecords` above already uses, real DNS
+            // in production and a hermetic stub in a test that injects one.
+            dns: { resolve, nameServers },
             waitForClear,
           });
           cutoverOutcome = result.outcome;

@@ -1,11 +1,16 @@
 # The Go successor tool (pre-design, post-1.0)
 
-**Status: pre-design, banked for post-1.0.** Nothing here starts before the tool track
-(T4d, release one, the site walk) lands and `1.0` ships. This sitting happened
-2026-08-13, during T5 Task 8's DNS-propagation wait, and its purpose is to bank the
-decisions while they are cheap and to hand the current track one standing input (the
-"tune for the port" section, which is effective now). The full design sitting happens
-when the trigger fires; the open-questions section is its agenda.
+**Status: pre-design. AMENDED 2026-08-13 by a second sitting, which moved the start date
+in.** The first sitting happened during T5 Task 8's DNS-propagation wait and banked the
+decisions while they were cheap, on the assumption that nothing here started before the
+tool track (T4d, release one, the site walk) landed and `1.0` shipped. The second sitting,
+during T4d execution, settled multi-site scope, the name, and the repo home (decisions 7
+through 9), and **the dashboard half now starts once T4d closes** rather than post-1.0,
+since it has no dependency on the moving Node reference. The provisioning half still waits
+for T4d, the `go:embed` bake for release one, and the upgrade verbs for ROADMAP P9. The
+"tune for the port" section remains effective now. **The full design sitting is still owed
+and is Fable's**, run through `superpowers:brainstorming`; the open-questions section is
+its agenda.
 
 ## What it is
 
@@ -52,6 +57,75 @@ console's doctor view.
    dependency-free path; the `npm create cairn-site` door stays via the
    esbuild/turbo pattern (platform binaries as npm `optionalDependencies`), so one
    engine serves both audiences.
+
+## Multi-site scope, the name, and where it lives (Geoff, 2026-08-13, second sitting)
+
+Settled during T4d execution, in conversation. These are decisions, not open questions; the
+open-questions section below carries what they left unresolved.
+
+7. **The tool is multi-site, and the goal is a dashboard plus a provisioning tool with a polished
+   bubbletea interface.** Three scopes, decreasing in obviousness. Multi-site *addressing* is
+   nearly free, since `~/.config/cairn/sites` is already a registry and only the verbs are
+   single-site today. The *dashboard* is assembly rather than new logic, because each chapter's
+   confirm step already is a health check (`confirmHostname` answers whether the domain serves; the
+   Builds trigger read answers whether push-to-deploy is wired). *Cross-site upgrades and installs*
+   do a job nothing else does: four consumer sites sit on four different `0.x` carets, and in `0.x`
+   a caret admits only its own minor, so each moves only by deliberate migration.
+8. **Upgrades push, all the way through.** An initial stage-never-push recommendation was
+   overturned on the evidence: the tool already pushes (chapter 3 pushes the scaffold and rides the
+   build), and of 98 `Consumers must:` lines, 40 say "nothing" and most of the rest are mechanical
+   renames on an import line. What earns the push is a **local build gate before it** (the gate that
+   caught the T5a rehearsal failure), an **ordered rollout that stops on the first failure**, a
+   **rollback verb shipped in the same pass** as the upgrade verb, and **classifying the
+   judgment-bearing `Consumers must:` lines** rather than skipping them. The member-facing site gets
+   a pull request instead of a direct push; the rest push straight through. This depends on the
+   changelog contract becoming machine-readable, filed as ROADMAP P9 and owed before the beta cut.
+9. **The name is `cairn`, and it lives in this repo, not its own.** Subcommands carry the purpose,
+   the `gh` and `wrangler` shape; `cairnctl` was the runner-up. A bare `cairn` launches the TUI when
+   stdout is a terminal and prints help when it is not, reusing T4d's own interactive gate. **Every
+   TUI action needs an equivalent subcommand**, or that action can never be scripted, put in a cron,
+   or run over ssh, which is exactly when a four-site upgrade wants it. On the repo question, the
+   deciding argument is that **parity is a continuous property and a repo boundary demotes it from a
+   CI gate to a prose watch item**; two further couplings already cross that line (the `go:embed`
+   template comes from the Node-side bake under bake-couples-tree-to-publish-window, and the upgrade
+   verb parses this repo's changelog). The separate-repo case is all ergonomics, each item solved by
+   path filters and a tag prefix, and `packages/create-cairn-site` already proves a second toolchain
+   here. The asymmetry settles it: in-repo then extracting via `git filter-repo` is cheap and
+   lossless, while starting separate and discovering parity rot is expensive and silent. **Named
+   extraction triggers:** the Node CLI retires at proven parity, or the tool grows a consumer that is
+   not a cairn-cms site.
+
+**Sequencing, because the Node reference is still moving.** The dashboard half has no parity
+dependency and can start once T4d closes. The provisioning half waits for T4d to land, since T4d
+rewrites the exact vocabulary a port would encode (`hostname-propagating` split into
+records-absent and resolver-lagging, the hold-loop wait and park semantics, the console contract).
+The `go:embed` bake waits for release one. The upgrade verbs wait on P9.
+
+**The HUD is empty without adopt, so adopt is feature one.** `~/.config/cairn/sites/` holds one
+record today and it is a scratch site; all four production consumers predate `create-cairn-site`
+and have no state record, so a day-one launch shows a single scratch row. This revives the
+adopt-existing-repo path that T5b deferred and whose `--connect` probe was retired as never
+runnable. Adopt splits into two tiers, which makes it shippable in stages. **Adopt-to-watch** needs
+only readable or discoverable facts (account id, worker name, zone, repo) and gets a site into the
+HUD immediately. **Adopt-to-manage** needs the site's GitHub App client and webhook secrets, which
+are believed to be write-once and unreadable after creation, so it likely costs a secret rotation
+and a browser trip per site. Verify that platform claim against the current GitHub API at design
+time rather than inheriting it.
+
+**Two standing cautions.** Blast radius grows: each state record holds a live Cloudflare API token,
+a GitHub client secret, and a webhook secret, so one process reading all of them across every site
+is a much larger target than a one-run scaffolder, and each check should prefer the narrowest
+credential that answers it and degrade honestly when a token cannot. And a dashboard would not have
+caught 907-life's month-long push-to-deploy outage, which failed by nobody looking; that case argues
+for a scheduled routine as the tripwire, with the dashboard as what you open once it fires.
+
+**TUI polish.** poplar's chassis carries most of it (`uicore` primitives, golden tests, the analyzer
+gate, elm-conventions), so invoke `bubbletea-design` and `elm-conventions` when the work starts. What
+decides whether a TUI looks good is width degradation and alignment rather than palette: 80 / 120 /
+160 columns is the terminal's version of the family's five-viewport bar, and a site-health table is
+exactly the layout that breaks at 80. Never encode status as color alone, since terminal themes vary
+and the tool does not own the background; pair each state with a glyph. Golden tests make the polish
+a gate rather than an eyeball check.
 
 ## Architecture
 
@@ -111,8 +185,29 @@ structure are tuned so a later Go reimplementation reads them as a spec:
 
 ## Open questions for the real design sitting
 
-The name (candidates from the family register: `blaze`, `switchback`, `signpost`);
-the credential UX (token paste with prefill URLs is the proven path; whether any
-OAuth flow is worth owning); the npm binary-shim mechanics; the console's v1 view
-cut; the retirement criteria and window for the Node CLI; whether T4d's web surface
-gets absorbed or stays sibling.
+The name is settled (`cairn`, decision 9), leaving: the credential UX (token paste
+with prefill URLs is the proven path; whether any OAuth flow is worth owning); the
+npm binary-shim mechanics; the retirement criteria and window for the Node CLI; and
+whether T4d's web surface gets absorbed or stays sibling, which the multi-site
+decision softens, since at different scopes the two are the same view rather than
+competitors.
+
+The second sitting added five, and the last is the hardest:
+
+- **The v1 view cut.** Which dashboard views ship first, and what a site's row shows
+  when it is healthy and boring.
+- **What "health" means per site, concretely.** Which checks run, and what each
+  degrades to when a token cannot answer it. A check that silently reports fine
+  because it lacked a scope is worse than no check.
+- **The upgrade verb's UX.** How a judgment-bearing `Consumers must:` line gets
+  surfaced and resolved without dropping the operator into four repos by hand.
+- **How much of the web admin's Warm Stone identity crosses a medium with no type
+  control**, given both surfaces will be open at once on the same sites. A shared
+  palette adapted to terminal constraints would make them read as one product; going
+  fully native-terminal is also defensible. Cheaper to decide once than to drift into.
+- **The credential model.** Two directions pull against each other. Keep the per-site
+  records and accept that a launch loads the union of the estate's credentials,
+  scoping each check as narrowly as it can go. Or mint a separate read-only credential
+  for the watch half, so provisioning secrets are not loaded just to answer whether a
+  site is serving. The second is cleaner and it adds a credential to mint per site,
+  which is exactly the friction this tool exists to remove.

@@ -9,8 +9,8 @@
 // Two http.Server instances, not one: apiBase plays api.github.com, webBase plays github.com.
 // A real client never talks to both from the same base URL, so keeping them separate here
 // catches a client that accidentally points a web-flow call at the API host or vice versa.
-import { createServer } from 'node:http';
 import { generateKeyPairSync, randomBytes, createVerify } from 'node:crypto';
+import { compile, matchRoute, readRawBody, sendJson, startLoopbackServer } from './fake-server.mjs';
 
 /**
  * @typedef {object} FakeGithub
@@ -57,21 +57,16 @@ export async function startFakeGithub() {
   const counters = { nextAppId: 1, nextRepoId: 1, nextOwnerId: 1 };
 
   // The route tables reference apiBase/webBase (for html_url and blob/commit URLs), which are
-  // only known once both servers have a bound port. Route to a mutable dispatcher so the
-  // servers can start listening before the route tables exist.
-  let apiDispatcher = (_req, res) => sendJson(res, 503, { message: 'fake-github: not ready yet' });
-  let webDispatcher = (_req, res) => sendJson(res, 503, { message: 'fake-github: not ready yet' });
-  const apiServer = createServer((req, res) => apiDispatcher(req, res));
-  const webServer = createServer((req, res) => webDispatcher(req, res));
+  // only known once both servers have a bound port. Bind both first, then wire each one's real
+  // dispatcher once the route tables exist.
+  const apiServer = await startLoopbackServer('fake-github (api): not ready yet');
+  const webServer = await startLoopbackServer('fake-github (web): not ready yet');
 
-  await new Promise((resolve) => apiServer.listen(0, '127.0.0.1', resolve));
-  await new Promise((resolve) => webServer.listen(0, '127.0.0.1', resolve));
-
-  const apiBase = `http://127.0.0.1:${apiServer.address().port}`;
-  const webBase = `http://127.0.0.1:${webServer.address().port}`;
+  const apiBase = apiServer.base;
+  const webBase = webServer.base;
   const ctx = { state, counters, apiBase, webBase };
 
-  apiDispatcher = makeHandler(
+  apiServer.setDispatcher(makeHandler(
     [
       { method: 'POST', regex: compile('/app-manifests/:code/conversions'), route: 'conversions', handler: createConversionsHandler(ctx) },
       { method: 'POST', regex: compile('/user/repos'), route: 'user_repos', handler: createRepoHandler(() => 'fake-admin', ctx) },
@@ -95,16 +90,16 @@ export async function startFakeGithub() {
       { method: 'GET', regex: compile('/orgs/:org/memberships/:user'), route: 'membership', handler: createGetMembershipHandler(ctx) }
     ],
     { requests, failNextMap }
-  );
+  ));
 
-  webDispatcher = makeHandler(
+  webServer.setDispatcher(makeHandler(
     [
       { method: 'GET', regex: compile('/login/oauth/authorize'), route: 'authorize', handler: createAuthorizeHandler(ctx) },
       { method: 'GET', regex: compile('/apps/:slug/installations/new'), route: null, handler: createInstallStandInHandler() },
       { method: 'POST', regex: compile('/login/oauth/access_token'), route: 'access_token', handler: createAccessTokenHandler() }
     ],
     { requests, failNextMap }
-  );
+  ));
 
   return {
     apiBase,
@@ -115,10 +110,7 @@ export async function startFakeGithub() {
       failNextMap.set(route, { status, body });
     },
     async close() {
-      await Promise.all([
-        new Promise((resolve) => apiServer.close(resolve)),
-        new Promise((resolve) => webServer.close(resolve))
-      ]);
+      await Promise.all([apiServer.close(), webServer.close()]);
     }
   };
 }
@@ -141,19 +133,9 @@ export function pointAtFake(t, github) {
 }
 
 /**
- * Compile a `/foo/:bar/baz` path pattern into an anchored regex with named capture groups.
- * @param {string} pattern the path pattern; a `:name` segment becomes a `(?<name>[^/]+)` group
- * @returns {RegExp} the anchored regex
- */
-function compile(pattern) {
-  const source = pattern.replace(/:[^/]+/g, (token) => `(?<${token.slice(1)}>[^/]+)`);
-  return new RegExp(`^${source}$`);
-}
-
-/**
- * Build a request listener that logs every request, matches it against a route table, decodes
- * a one-shot `failNext` override before the route's own handler ever runs, and reads and parses
- * the body for methods that carry one.
+ * Build a request listener that logs every request, matches it against a route table (via the
+ * shared `matchRoute`), decodes a one-shot `failNext` override before the route's own handler
+ * ever runs, and reads and parses the body for methods that carry one.
  * @param {Array<{ method: string, regex: RegExp, route: string | null, handler: Function }>} routes
  * @param {{ requests: unknown[], failNextMap: Map<string, { status: number, body: unknown }> }} shared
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<void>}
@@ -164,17 +146,7 @@ function makeHandler(routes, { requests, failNextMap }) {
     const authorization = req.headers.authorization ?? null;
     requests.push({ method: req.method, pathname: url.pathname, authorization });
 
-    let match = null;
-    let params = {};
-    for (const candidate of routes) {
-      if (candidate.method !== req.method) continue;
-      const result = candidate.regex.exec(url.pathname);
-      if (result) {
-        match = candidate;
-        params = result.groups ?? {};
-        break;
-      }
-    }
+    const { match, params } = matchRoute(routes, req.method, url.pathname);
     if (!match) {
       sendJson(res, 404, { message: 'Not Found' });
       return;
@@ -197,16 +169,6 @@ function makeHandler(routes, { requests, failNextMap }) {
 
     await match.handler(req, res, params, url, body, req.headers);
   };
-}
-
-/** Buffer a request body to a UTF-8 string. Resolves with `''` for a bodyless request. */
-function readRawBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', (chunk) => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', reject);
-  });
 }
 
 /**
@@ -237,12 +199,6 @@ function parseBody(raw, contentType) {
   } catch {
     return {};
   }
-}
-
-/** Write a JSON response with the given status. */
-function sendJson(res, status, body) {
-  res.writeHead(status, { 'content-type': 'application/json' });
-  res.end(JSON.stringify(body));
 }
 
 /** A fake 40-character hex sha, good enough to stand in for a git object id. */

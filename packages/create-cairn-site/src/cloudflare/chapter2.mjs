@@ -50,11 +50,15 @@ import { makeApi } from './api.mjs';
 import { ensureZone, checkDelegation, delegationInstructions } from './zone.mjs';
 import { readCurrentRecords, carryOverRecords } from './records.mjs';
 import { cutOverHostname } from './hostname.mjs';
+import { defaultResolve } from './dns.mjs';
 import { defaultFromAddress, ensureSendingDomain, sendTestMessage } from './email.mjs';
 import { writeEmailFrom } from './config.mjs';
 import { buildSite, deployWorker } from './deploy.mjs';
 import { cloudflareError } from './catalogue.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
+import { createWaitForClear, shouldHold, PROPAGATION_HOLD_CLASS } from '../hold-loop.mjs';
+import { createConsoleServer } from '../console/server.mjs';
+import { renderPropagationView } from '../console/views.mjs';
 
 /**
  * The states this pass's own step machine writes, in order, so a resumed record's remaining work
@@ -220,12 +224,73 @@ const EMAIL_ADMISSION_DETAIL =
  * @property {(domain: string) => Promise<string[]>} [resolveNs] the NS lookup forwarded to
  *  `checkDelegation`; a test seam defaulting to `node:dns/promises`' own `resolveNs`
  * @property {(servers?: string[]) => object} [resolve] the resolver factory forwarded to
- *  `readCurrentRecords`; a test seam, defaulting to that module's own
+ *  `readCurrentRecords` and to the cutover's own DNS context (`hostname.mjs`'s
+ *  `diagnoseUnreachable`); a test seam, defaulting to `dns.mjs`'s own `defaultResolve`, the same
+ *  real resolver readCurrentRecords already fell back to
  * @property {Record<string, string | undefined>} [env] the environment `ensureApiToken` reads
  *  `CAIRN_CF_API_TOKEN` from under `yes`; defaults to `process.env`
  * @property {string[]} [argv] the argument vector `ensureApiToken` scans for a mistakenly-passed
  *  token; defaults to `process.argv.slice(2)`
+ * @property {boolean} [isTTY] whether stdout is a terminal, read by `shouldHold` to decide
+ *  whether the cutover may hold; defaults to `process.stdout.isTTY`
+ * @property {typeof createWaitForClear} [createWaitForClearFn] builds the cutover's hold seam; a
+ *  test seam defaulting to hold-loop.mjs's own
+ * @property {typeof createConsoleServer} [createConsoleServerFn] builds the console the hold
+ *  serves through; a test seam defaulting to the console module's own
  */
+
+/**
+ * Compose the cutover's hold seam for an interactive run, or nothing at all for one the policy
+ * refuses (hold-loop.mjs's own `shouldHold`: `--yes`, non-TTY, or `CI` never holds;
+ * `CAIRN_FORCE_HOLD` is the one override, honored only beside a fake API base). The console and
+ * the loop are built here and only here, so a run the policy refuses never composes either, and
+ * `cutOverHostname` sees `undefined` and behaves exactly as it did before this seam existed.
+ * @param {object} input
+ * @param {{ yes: boolean }} input.runArgs the chapter's own parsed flags
+ * @param {boolean} input.isTTY whether stdout is a terminal
+ * @param {Record<string, string | undefined>} input.env the environment `shouldHold` reads
+ * @param {(line: string) => void} input.log receives the console URL line
+ * @param {object} input.record the full state record, handed to the console's view as is
+ * @param {string} input.dir the `--dir` value, interpolated into the hold's default park row
+ * @param {string} input.domain the domain being connected, interpolated into that same row
+ * @param {typeof createWaitForClear} input.createWaitForClearFn a test seam, defaulting to
+ *  hold-loop.mjs's own
+ * @param {typeof createConsoleServer} input.createConsoleServerFn a test seam, defaulting to the
+ *  console module's own
+ * @returns {((probe: import('../hold-loop.mjs').HoldProbe) =>
+ *  Promise<import('../hold-loop.mjs').HoldObservation>) | undefined} the seam to thread into
+ *  `cutOverHostname`, or `undefined` when this run may not hold
+ */
+function composeCutoverWaitForClear({
+  runArgs,
+  isTTY,
+  env,
+  log,
+  record,
+  dir,
+  domain,
+  createWaitForClearFn,
+  createConsoleServerFn,
+}) {
+  if (!shouldHold({ yes: runArgs.yes, isTTY, env })) return undefined;
+  const server = createConsoleServerFn({
+    chapter: 'Connect your domain',
+    hop: 'Connect your domain to your site',
+    record,
+    renderView: renderPropagationView,
+  });
+  return createWaitForClearFn({
+    holdClass: PROPAGATION_HOLD_CLASS,
+    server,
+    log,
+    // The row an interrupt lands on before the first probe has read anything. Resolver lag is
+    // this hold's earliest honest verdict: `attachCustomDomain` has already returned by the time
+    // the hold starts, so the record does exist at the zone's own nameservers, and what remains
+    // unconfirmed is only whether the rest of the world can see it yet. The records-absent row
+    // would instead claim the attach never took, which this run has just disproved.
+    defaultPark: cloudflareError('hostname-resolver-lagging', { dir, domain }).message,
+  });
+}
 
 /**
  * Run chapter 2: connect the admin's own domain to the already-deployed site. Re-entry reads the
@@ -240,11 +305,11 @@ const EMAIL_ADMISSION_DETAIL =
  * @param {RunChapter2Input} input the chapter's inputs
  * @returns {Promise<{ outcome: string, domain?: string, state?: string, message?: string }>} the
  *  outcome reached: `'admission-declined'` | `'carry-over-declined'` | `'delegation-pending'` |
- *  `'delegation-propagating'` | `'hostname-propagating'` | `'certificate-pending'` |
- *  `'paid-plan-declined'` | `'email-not-ready'` | `'email-sender-propagating'` |
- *  `'email-daily-limit'` | `'email-live'` | `'dry-run'`, or, for a record already at one of
- *  TERMINAL_STEPS, that step's own name. A delegation park also carries the row's own `state` and
- *  printed `message`
+ *  `'delegation-propagating'` | `'hostname-records-absent'` | `'hostname-resolver-lagging'` |
+ *  `'certificate-pending'` | `'paid-plan-declined'` | `'email-not-ready'` |
+ *  `'email-sender-propagating'` | `'email-daily-limit'` | `'email-live'` | `'dry-run'`, or, for a
+ *  record already at one of TERMINAL_STEPS, that step's own name. A delegation park also carries
+ *  the row's own `state` and printed `message`
  */
 export async function runChapter2({
   siteId,
@@ -261,9 +326,12 @@ export async function runChapter2({
   makeApiFn = makeApi,
   fetchImpl = fetch,
   resolveNs = systemResolveNs,
-  resolve,
+  resolve = defaultResolve,
   env = process.env,
   argv = process.argv.slice(2),
+  isTTY = Boolean(process.stdout.isTTY),
+  createWaitForClearFn = createWaitForClear,
+  createConsoleServerFn = createConsoleServer,
 }) {
   const frame = { dryRun, log };
 
@@ -522,6 +590,17 @@ export async function runChapter2({
         'Connects your domain to your already-deployed site, confirms it answers there, then ' +
           "switches your site's own address over and redeploys once.",
         async () => {
+          const waitForClear = composeCutoverWaitForClear({
+            runArgs: args,
+            isTTY,
+            env,
+            log,
+            record,
+            dir,
+            domain,
+            createWaitForClearFn,
+            createConsoleServerFn,
+          });
           const result = await cutOverHostname({
             record: {
               dir,
@@ -531,11 +610,18 @@ export async function runChapter2({
                 workerName: record?.cloudflare?.workerName,
                 accountId,
                 url: record?.cloudflare?.url,
+                nameServers,
               },
             },
             api,
             fetchImpl,
             log,
+            // The zone's own nameservers, when already known, let the unreachable-case diagnosis
+            // skip a fresh NS discovery lookup (dns.mjs's own `selectAuthoritativeResolver`); the
+            // resolver factory is the same one `readCurrentRecords` above already uses, real DNS
+            // in production and a hermetic stub in a test that injects one.
+            dns: { resolve, nameServers },
+            waitForClear,
           });
           cutoverOutcome = result.outcome;
         },

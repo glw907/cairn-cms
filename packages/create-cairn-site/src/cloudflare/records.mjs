@@ -23,17 +23,11 @@
 // `.ns.cloudflare.com` pair: at that point a probe would read this tool's own writes rather than
 // what the admin had before, and the persisted carry-over snapshot (this function's own earlier
 // return value, saved by the caller) is the source of truth from there on.
-import { Resolver } from 'node:dns/promises';
 import { cloudflareError } from './catalogue.mjs';
+import { defaultResolve, readNsNames, selectAuthoritativeResolver } from './dns.mjs';
 
 /** Matches a Cloudflare-assigned nameserver hostname, `<name>.ns.cloudflare.com`. */
 const CLOUDFLARE_NS_PATTERN = /\.ns\.cloudflare\.com$/i;
-
-/**
- * The recursive resolvers the spike itself was pinned to (Step 3), used only as the fallback path
- * and to discover the domain's own authoritative nameservers in the first place.
- */
-const RECURSIVE_SERVERS = ['1.1.1.1', '8.8.8.8'];
 
 /**
  * The probe list this chapter reads, fixed rather than open-ended: DNS has no enumeration
@@ -95,19 +89,6 @@ function probeTargets(domain) {
       types: ['TXT', 'CNAME'],
     })),
   ];
-}
-
-/**
- * Build a resolver pointed at the given servers, or the pinned recursive pair when none are
- * given. The default `resolve` factory every call in this module goes through, injectable so a
- * test can stub both the recursive and the authoritative path.
- * @param {string[]} [servers] the server IPs to query; defaults to `RECURSIVE_SERVERS`
- * @returns {import('node:dns/promises').Resolver} a resolver pointed at those servers
- */
-function defaultResolve(servers = RECURSIVE_SERVERS) {
-  const resolver = new Resolver();
-  resolver.setServers(servers);
-  return resolver;
 }
 
 /**
@@ -173,46 +154,6 @@ function translate(type, answer, name, host) {
 }
 
 /**
- * Resolve one nameserver hostname to an address usable as an authoritative query target, trying
- * every hostname in turn until one resolves.
- * @param {object} recursive the recursive resolver to resolve NS hostnames against
- * @param {string[]} nsNames the domain's own NS hostnames
- * @returns {Promise<string | null>} the first resolvable address, or `null` when none resolve
- */
-async function firstAuthoritativeAddress(recursive, nsNames) {
-  for (const nsName of nsNames) {
-    for (const method of ['resolve4', 'resolve6']) {
-      try {
-        const addresses = await recursive[method](nsName);
-        if (addresses?.[0]) return addresses[0];
-      } catch {
-        // A nameserver with no address of this family is ordinary; try the other family, then
-        // the next nameserver. Exhausting every one is what the recursive fallback is for.
-      }
-    }
-  }
-  return null;
-}
-
-/**
- * Look up the domain's own NS records, the read that both decides whether the domain is already
- * delegated to Cloudflare and supplies the authoritative query targets. A lookup that fails or
- * answers something other than a list reports empty rather than throwing, since the recursive
- * fallback covers that case and flags it as `lowConfidence`.
- * @param {object} recursive the recursive resolver to query
- * @param {string} domain the domain whose NS records to read
- * @returns {Promise<string[]>} the NS hostnames, or `[]` when none could be read
- */
-async function readNsNames(recursive, domain) {
-  try {
-    const answer = await recursive.resolveNs(domain);
-    return Array.isArray(answer) ? answer : [];
-  } catch {
-    return [];
-  }
-}
-
-/**
  * @typedef {object} ReadCurrentRecordsResult
  * @property {object[]} records every record the probe list found, each `{ type, name, content,
  *  priority?, data?, host }`
@@ -248,15 +189,12 @@ export async function readCurrentRecords({ domain, dir, resolve = defaultResolve
     );
   }
 
-  let resolver = recursive;
-  let lowConfidence = true;
-  if (nsNames.length > 0) {
-    const authoritativeAddress = await firstAuthoritativeAddress(recursive, nsNames);
-    if (authoritativeAddress) {
-      resolver = resolve([authoritativeAddress]);
-      lowConfidence = false;
-    }
-  }
+  const { resolver, lowConfidence } = await selectAuthoritativeResolver({
+    recursive,
+    domain,
+    nameServers: nsNames,
+    resolve,
+  });
 
   const records = [];
   for (const { host, name, types } of probeTargets(domain)) {

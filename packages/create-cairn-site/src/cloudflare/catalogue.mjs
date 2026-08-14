@@ -434,13 +434,27 @@ const ROWS = {
       );
     }
   },
-  'hostname-propagating': {
+  'hostname-records-absent': {
     kind: 'wait',
     build(params) {
       return (
-        'Your domain now resolves, but the new certificate or DNS record has not finished ' +
-        'propagating yet. This is a normal step, and usually finishes within a few minutes to ' +
-        'a few hours. Your site keeps answering on its workers.dev address the whole time.\n' +
+        `Your domain ${params.domain} does not resolve yet: even its own nameservers do not ` +
+        'show a DNS record for it. This is a normal step right after connecting a new domain, ' +
+        'and usually finishes within a few minutes to a few hours. Your site keeps answering on ' +
+        'its workers.dev address the whole time.\n' +
+        `Next: wait a bit, then re-run npx create-cairn-site --dir ${params.dir} to check again.`
+      );
+    }
+  },
+  'hostname-resolver-lagging': {
+    kind: 'wait',
+    build(params) {
+      return (
+        `Your domain ${params.domain} already has its DNS record at its own nameservers, so ` +
+        "the connection itself is set up; it just has not reached your machine's resolver yet. " +
+        'This is a public resolver holding an older "not found" answer for a few minutes, not a ' +
+        'real problem, and usually clears on its own well within an hour. Your site keeps ' +
+        'answering on its workers.dev address the whole time.\n' +
         `Next: wait a bit, then re-run npx create-cairn-site --dir ${params.dir} to check again.`
       );
     }
@@ -751,6 +765,16 @@ const ROWS = {
  * @type {string[]}
  */
 export const CATALOGUE_CODES = Object.keys(ROWS);
+
+/**
+ * The catalogue's wait-kind codes only, in catalogue order: a self-clearing or no-fault wait,
+ * returned by its caller rather than thrown. This is the completeness source the console's park
+ * pages are checked against (src/console/park-pages.mjs and its tests), so a wait-kind code added
+ * here without a matching park-page fixture fails that check rather than shipping a wait state
+ * with no page.
+ * @type {string[]}
+ */
+export const WAIT_KIND_CODES = CATALOGUE_CODES.filter((code) => ROWS[code].kind === 'wait');
 
 /**
  * Build a printable, catalogued error for one of the Cloudflare chapter's recoverable failures.

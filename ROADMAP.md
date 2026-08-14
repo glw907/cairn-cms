@@ -204,7 +204,12 @@ release-one boundary; the passes are invariant.
   prepend, the silent post-handoff mail path, the absent DNS-authentication check, the missing
   `Cache-Control` on every admin response, the unverified `prerender` flag, the 307/308
   trailing-slash divergence across the family, and the stripped `charset` on cairn's one deliberate
-  public-output header, among others. P7 and P8 overlap heavily and should be planned together, since
+  public-output header, among others. **P9 the `Consumers must:` machine-readable contract** (Geoff,
+  2026-08-13): the changelog convention becomes a parseable shape before the beta cut, so the `cairn`
+  tool's cross-site upgrade verb can read it to drive per-site migrations instead of a human reading
+  98 entries. Today it is a helpful sentence enforced loosely for human readers, which is enough for
+  a reader and not enough for a parser. Scoped forward-only, with no backfill of the historical
+  entries, which is why it has to land before the beta cut rather than after. P7 and P8 overlap heavily and should be planned together, since
   the quickstart's credential story and the audit's effective-state checks answer the same question
   from opposite ends. The standing template track (cairn.pub voice, starter set, Topo with the
   docs-effectiveness infra, the scaffolder with its agent brief, now carrying Cloudflare

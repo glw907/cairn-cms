@@ -28,10 +28,31 @@
 // back to HTTP whenever HTTPS fails at the transport level, and reads what HTTP shows to tell
 // "certificate still issuing" apart from "genuinely not serving": if HTTP answers the marker
 // pair, only the certificate is missing (certificate-pending, a wait row, not a broken site); if
-// HTTP does not connect either, the hostname has not finished propagating (hostname-propagating);
-// and if HTTP connects but answers something else, the hostname resolves to something that is
-// not this site (hostname-not-serving, the observed shape being a 522 with a 16-byte plain-text
-// body, "error code: 522", not an HTML page).
+// HTTP does not connect either, the hostname has not finished propagating; and if HTTP connects
+// but answers something else, the hostname resolves to something that is not this site
+// (hostname-not-serving, the observed shape being a 522 with a 16-byte plain-text body, "error
+// code: 522", not an HTML page).
+//
+// THE PROPAGATION SPLIT (Task 2, closing carry-forward 1): a live run measured 27 minutes parked
+// on this last "not connecting at all" case while the zone's authoritative nameservers were
+// already serving the apex AAAA record the whole time, a resolver-side negative cache, not a
+// records problem. When neither http nor https connects at all, confirmHostname reads the apex
+// AAAA record against the zone's own authoritative nameservers (the same negative-cache-immune
+// read records.mjs and dns.mjs's header both document): present there but still unreachable
+// means only the caller's resolver is behind (hostname-resolver-lagging, a self-clearing wait);
+// absent there too means the record genuinely has not been created or propagated to the zone's
+// own nameservers yet (hostname-records-absent). The DNS context is optional and absent-safe: a
+// caller that passes none gets the conservative default with no lookup attempted at all, never a
+// crash and never a real DNS call it did not ask for. Either way, this only ever refines WHICH
+// wait row is reported: the marker pair above stays the sole authority for `live`, and a DNS
+// presence never overrides a failing or mismatched marker probe.
+//
+// THE HOLD SEAM (Task 4a): the propagation wait above is one of the two classes this tool holds
+// in process with a console up rather than parking on. The seam is one optional injected
+// `waitForClear`, threaded around the PRE-REDEPLOY confirm only; see cutOverHostname's own doc
+// block for why the re-check after the redeploy stays one-shot. The attach sits outside the loop
+// (it is idempotent, but re-attaching per poll would be pointless traffic), and absent the
+// injection every path here is byte-identical to what it was before the console existed.
 //
 // Certificate issuance CANNOT be polled through the Cloudflare API with this token: both
 // GET /zones/:id/ssl/certificate_packs and GET /zones/:id/ssl/verification returned 9109
@@ -40,6 +61,7 @@
 import { deployWorker } from './deploy.mjs';
 import { writePublicOrigin } from './config.mjs';
 import { cloudflareError } from './catalogue.mjs';
+import { readAuthoritativeAndRecursive } from './dns.mjs';
 
 /** The path the site-specific marker's `/admin` redirect must land on. */
 const ADMIN_LOGIN_PATH = '/admin/login';
@@ -80,6 +102,67 @@ async function probeOrigin(origin, fetchImpl) {
 }
 
 /**
+ * @typedef {object} DnsContext
+ * @property {(servers?: string[]) => object} [resolve] resolver factory forwarded to the shared
+ *  DNS helper (`dns.mjs`'s `readAuthoritativeAndRecursive`); when omitted, the unreachable-case
+ *  diagnosis below is skipped entirely and confirmHostname reports its conservative default
+ *  (`hostname-records-absent`) with no DNS lookup attempted at all
+ * @property {string[]} [nameServers] the zone's own nameserver hostnames, when already known
+ *  (for example a saved `record.cloudflare.nameServers`); skips the NS discovery lookup the
+ *  helper otherwise makes
+ */
+
+/**
+ * @typedef {object} DnsReading
+ * @property {unknown[] | null} authoritative the apex answer read against the zone's own
+ *  nameservers; `null` when no authoritative source could be found
+ * @property {unknown[] | null} recursive the same answer through the ordinary recursive resolver;
+ *  `null` when no lookup was attempted at all, which is how a caller tells "not read" from "read,
+ *  and empty"
+ * @property {boolean} lowConfidence whether the authoritative read fell back to the recursive
+ *  resolver, so its answer is not authoritative evidence
+ */
+
+/** What a confirm reports when it never needed a DNS lookup to reach its verdict. */
+const NO_DNS_READING = Object.freeze({ authoritative: null, recursive: null, lowConfidence: false });
+
+/**
+ * Diagnose the "neither http nor https connects at all" case: read the apex AAAA record (the
+ * same record the Custom Domain attach itself writes, per this module's header) against the
+ * zone's own authoritative nameservers, which no recursive negative cache sits in front of.
+ * Present there means only the caller's own resolver has not caught up yet, a self-clearing
+ * wait; absent there too means the record genuinely is not there yet. Never throws: a DNS hiccup
+ * during this best-effort diagnosis falls back to the conservative records-absent default, the
+ * same as no DNS context being given at all.
+ *
+ * The reading itself is returned beside the outcome, not just the code it implies: a held
+ * propagation wait renders both answers in its console view, and the loop that polls is the one
+ * process allowed to read DNS (the console never looks anything up at render time), so the read
+ * this call already made is the one the view must be built from rather than a second one.
+ * @param {string} domain the domain to probe, no scheme
+ * @param {DnsContext} dns the DNS context; absent-safe (see `confirmHostname`)
+ * @returns {Promise<{ outcome: 'hostname-resolver-lagging' | 'hostname-records-absent',
+ *  reading: DnsReading }>} the split outcome and the answers it was concluded from
+ */
+async function diagnoseUnreachable(domain, { resolve, nameServers } = {}) {
+  if (!resolve) return { outcome: 'hostname-records-absent', reading: NO_DNS_READING };
+
+  const reading = await readAuthoritativeAndRecursive({
+    domain,
+    name: domain,
+    method: 'resolve6',
+    nameServers,
+    resolve,
+  });
+  const authoritativePresent =
+    Array.isArray(reading.authoritative) && reading.authoritative.length > 0;
+  return {
+    outcome: authoritativePresent ? 'hostname-resolver-lagging' : 'hostname-records-absent',
+    reading,
+  };
+}
+
+/**
  * Confirm the domain answers with this site, distinguishing every outcome the spike observed.
  * HTTPS is tried first; only when it fails at the transport level (no HTTP response reached at
  * all, whether from a missing certificate, DNS not yet resolving, or a refused connection) does
@@ -87,18 +170,62 @@ async function probeOrigin(origin, fetchImpl) {
  * itself is reachable. Exported for chapter3.mjs's own live check (the first Builds deploy's
  * completion), which reuses this rather than rebuilding it; a workers.dev origin needs its scheme
  * stripped by the caller, since this takes a bare domain, no scheme.
+ *
+ * When neither http nor https connects at all, `dns` (optional, absent-safe) refines which wait
+ * row is reported (see this module's header for the propagation split); the DNS answer only ever
+ * upgrades that diagnosis, never the verdict: a DNS presence never overrides a failing or
+ * mismatched marker probe, so `live` stays exclusively the marker pair's own conclusion.
  * @param {string} domain the domain to probe, no scheme
  * @param {typeof fetch} fetchImpl the fetch implementation to probe with
- * @returns {Promise<'live' | 'hostname-propagating' | 'certificate-pending' |
- *  'hostname-not-serving'>} the catalogue code the probes point at, or `'live'`
+ * @param {DnsContext} [dns] the optional DNS context for the unreachable-case diagnosis
+ * @returns {Promise<'live' | 'hostname-records-absent' | 'hostname-resolver-lagging' |
+ *  'certificate-pending' | 'hostname-not-serving'>} the catalogue code the probes point at, or
+ *  `'live'`
  */
-export async function confirmHostname(domain, fetchImpl) {
+export async function confirmHostname(domain, fetchImpl, dns = {}) {
+  const { outcome } = await confirmWithDiagnosis(domain, fetchImpl, dns);
+  return outcome;
+}
+
+/**
+ * Confirm the domain and report the DNS answers the confirm read, when it read any. The whole of
+ * `confirmHostname`'s logic lives here; that export is this call with the reading dropped, kept
+ * as the narrow contract every existing caller already holds.
+ * @param {string} domain the domain to probe, no scheme
+ * @param {typeof fetch} fetchImpl the fetch implementation to probe with
+ * @param {DnsContext} [dns] the optional DNS context for the unreachable-case diagnosis
+ * @returns {Promise<{ outcome: string, reading: DnsReading }>} the catalogue code the probes point
+ *  at (or `'live'`), and what DNS showed while reaching it
+ */
+async function confirmWithDiagnosis(domain, fetchImpl, dns = {}) {
   const https = await probeOrigin(`https://${domain}`, fetchImpl);
-  if (https.reachable) return https.matches ? 'live' : 'hostname-not-serving';
+  if (https.reachable) {
+    return { outcome: https.matches ? 'live' : 'hostname-not-serving', reading: NO_DNS_READING };
+  }
 
   const http = await probeOrigin(`http://${domain}`, fetchImpl);
-  if (!http.reachable) return 'hostname-propagating';
-  return http.matches ? 'certificate-pending' : 'hostname-not-serving';
+  if (!http.reachable) return diagnoseUnreachable(domain, dns);
+  return {
+    outcome: http.matches ? 'certificate-pending' : 'hostname-not-serving',
+    reading: NO_DNS_READING,
+  };
+}
+
+/**
+ * Apply the catalogue's own kind split to a settled confirm outcome: the one act-kind code throws,
+ * and everything else is a wait-kind outcome (or `'live'`) the caller hands back. Stated once here
+ * so the one-shot confirm and the held one below can never disagree on which outcome is a failure.
+ * @param {string} outcome the outcome a confirm settled on
+ * @param {string} dir the `--dir` value, interpolated into the row raised here
+ * @param {string} domain the domain that was probed, interpolated into that same row
+ * @returns {'live' | 'hostname-records-absent' | 'hostname-resolver-lagging' |
+ *  'certificate-pending'} the outcome to hand back to the admin
+ */
+function orThrow(outcome, dir, domain) {
+  if (outcome === 'hostname-not-serving') {
+    throw cloudflareError('hostname-not-serving', { dir, domain });
+  }
+  return outcome;
 }
 
 /**
@@ -108,15 +235,64 @@ export async function confirmHostname(domain, fetchImpl) {
  * @param {string} domain the domain to probe, no scheme
  * @param {typeof fetch} fetchImpl the fetch implementation to probe with
  * @param {string} dir the `--dir` value, interpolated into the row raised here
- * @returns {Promise<'live' | 'hostname-propagating' | 'certificate-pending'>} the outcome to hand
- *  back to the admin
+ * @param {DnsContext} [dns] the optional DNS context; absent (chapter 2's own call today) the
+ *  diagnosis stays conservative and `hostname-resolver-lagging` is never reached from here
+ * @returns {Promise<'live' | 'hostname-records-absent' | 'hostname-resolver-lagging' |
+ *  'certificate-pending'>} the outcome to hand back to the admin
  */
-async function confirmOrThrow(domain, fetchImpl, dir) {
-  const outcome = await confirmHostname(domain, fetchImpl);
-  if (outcome === 'hostname-not-serving') {
-    throw cloudflareError('hostname-not-serving', { dir, domain });
-  }
-  return outcome;
+async function confirmOrThrow(domain, fetchImpl, dir, dns) {
+  return orThrow(await confirmHostname(domain, fetchImpl, dns), dir, domain);
+}
+
+/**
+ * The pre-redeploy confirm, held when the caller injected a `waitForClear` and one-shot when it
+ * did not. This is the whole of the hold seam in this module: the loop polls the confirm and
+ * nothing else, so the attach above it runs once per cutover and the hop line prints once, no
+ * matter how long the wait runs.
+ *
+ * A `hostname-not-serving` reading mid-hold is an ordinary not-cleared observation, recorded and
+ * retried: on a zone minutes old, an edge answering 522 for a moment is the same self-clearing
+ * shape as a resolver still catching up. It becomes the throw it is today only when it is still
+ * the verdict when the hold ends.
+ * @param {object} args
+ * @param {string} args.domain the domain to probe, no scheme
+ * @param {typeof fetch} args.fetchImpl the fetch implementation to probe with
+ * @param {string} args.dir the `--dir` value, interpolated into any row raised here
+ * @param {DnsContext} [args.dns] the optional DNS context, forwarded to each confirm
+ * @param {(probe: import('../hold-loop.mjs').HoldProbe) =>
+ *  Promise<import('../hold-loop.mjs').HoldObservation>} [args.waitForClear] the injected hold
+ * @returns {Promise<'live' | 'hostname-records-absent' | 'hostname-resolver-lagging' |
+ *  'certificate-pending'>} the outcome to hand back to the admin
+ */
+async function confirmBeforeRedeploy({ domain, fetchImpl, dir, dns, waitForClear }) {
+  if (!waitForClear) return confirmOrThrow(domain, fetchImpl, dir, dns);
+
+  const observation = await waitForClear(async () => {
+    const { outcome, reading } = await confirmWithDiagnosis(domain, fetchImpl, dns);
+    // `hostname-not-serving` is an act-kind code (confirmOrThrow throws it below once it is still
+    // the verdict at hold's end), never a page a console should show while telling the admin the
+    // hold is still just waiting; the other three non-live outcomes are wait-kind and get one.
+    const hasParkPage = outcome !== 'live' && outcome !== 'hostname-not-serving';
+    return {
+      cleared: outcome === 'live',
+      detail: {
+        authoritative: reading.authoritative,
+        recursive: reading.recursive,
+        lowConfidence: reading.lowConfidence,
+        markerOutcome: outcome,
+      },
+      // The row the caller would print for this verdict, composed here because this is the site
+      // that knows both the code and its params; an interrupted hold prints it rather than
+      // leaving an admin with nothing.
+      park: outcome === 'live' ? undefined : cloudflareError(outcome, { dir, domain }).message,
+      // The same verdict, as a catalogue code and params rather than pre-rendered text: what a
+      // console still up when the hold ends un-cleared renders as its own park page.
+      parkCode: hasParkPage ? outcome : undefined,
+      parkParams: hasParkPage ? { dir, domain } : undefined,
+    };
+  });
+
+  return orThrow(observation.detail.markerOutcome, dir, domain);
 }
 
 /**
@@ -138,10 +314,12 @@ function stripNestedNext(message) {
 
 /**
  * @typedef {object} CutOverResult
- * @property {'live' | 'hostname-propagating' | 'certificate-pending'} outcome `'live'` once the
- *  domain serves this site over HTTPS and the redeploy under its real origin has succeeded; the
- *  other two are wait outcomes, returned rather than thrown per the catalogue's own convention
- *  (`ChapterErrorInfo`'s `kind` doc: a 'wait' row is returned by its caller, not thrown)
+ * @property {'live' | 'hostname-records-absent' | 'hostname-resolver-lagging' |
+ *  'certificate-pending'} outcome `'live'` once the domain serves this site over HTTPS and the
+ *  redeploy under its real origin has succeeded; the others are wait outcomes, returned rather
+ *  than thrown per the catalogue's own convention (`ChapterErrorInfo`'s `kind` doc: a 'wait' row
+ *  is returned by its caller, not thrown). `hostname-resolver-lagging` is reachable only when a
+ *  caller supplied a DNS context
  */
 
 /**
@@ -162,16 +340,24 @@ function stripNestedNext(message) {
  * @param {typeof fetch} [args.fetchImpl] the fetch implementation the confirm probes with;
  *  defaults to the global `fetch`, overridden in tests
  * @param {(line: string) => void} args.log receives one printed line per call
+ * @param {DnsContext} [args.dns] the optional DNS context, forwarded to every confirm here
+ * @param {(probe: import('../hold-loop.mjs').HoldProbe) =>
+ *  Promise<import('../hold-loop.mjs').HoldObservation>} [args.waitForClear] the hold seam. Absent
+ *  it, this behaves exactly as it did before the console existed: one confirm, then today's park.
+ *  Given one, the PRE-REDEPLOY confirm is polled until it clears or the hold's budget runs out.
+ *  The re-check after the redeploy stays one-shot on purpose: a completed redeploy has already
+ *  proven this hostname serves the site once, so a park there is both rare and terminal, and
+ *  holding on it would keep a console up over a wait nothing is expected to clear.
  * @returns {Promise<CutOverResult>} the outcome
  */
-export async function cutOverHostname({ record, api, fetchImpl = fetch, log }) {
+export async function cutOverHostname({ record, api, fetchImpl = fetch, log, dns, waitForClear }) {
   const { dir } = record;
   const { domain, zoneId, workerName, accountId, url: workersDevUrl } = record.cloudflare;
 
   await api.attachCustomDomain({ hostname: domain, zoneId, service: workerName });
   log(`Connected ${domain} to your site; checking that it answers there.`);
 
-  const beforeRedeploy = await confirmOrThrow(domain, fetchImpl, dir);
+  const beforeRedeploy = await confirmBeforeRedeploy({ domain, fetchImpl, dir, dns, waitForClear });
   if (beforeRedeploy !== 'live') return { outcome: beforeRedeploy };
 
   await writePublicOrigin(dir, `https://${domain}`);
@@ -187,7 +373,7 @@ export async function cutOverHostname({ record, api, fetchImpl = fetch, log }) {
   }
 
   log(`Re-checking ${domain} after redeploying.`);
-  const afterRedeploy = await confirmOrThrow(domain, fetchImpl, dir);
+  const afterRedeploy = await confirmOrThrow(domain, fetchImpl, dir, dns);
   if (afterRedeploy !== 'live') return { outcome: afterRedeploy };
 
   log(`${domain} is live.`);

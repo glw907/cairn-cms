@@ -3,10 +3,13 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { EventEmitter } from 'node:events';
 import { makeFakeBin } from '../../test/fake-bin.mjs';
 import { startFakeCloudflare } from '../../test/fake-cloudflare.mjs';
 import { makeApi, SENDING_DISABLED_CODE } from './api.mjs';
 import { saveSite, loadSite } from '../state.mjs';
+import { createWaitForClear, consoleUrlLine } from '../hold-loop.mjs';
+import { cloudflareError } from './catalogue.mjs';
 
 /** A minimal wrangler.jsonc fixture carrying the one key writePublicOrigin needs. */
 const MINIMAL_WRANGLER_JSONC = JSON.stringify(
@@ -116,6 +119,83 @@ function alwaysMatchingFetch() {
   return async (url) => {
     const u = new URL(url);
     return markerResponse(u.pathname, u.origin);
+  };
+}
+
+/** A fetchImpl that fails at the transport level on every confirm; the no-hold park's own probe. */
+function alwaysUnreachableFetch() {
+  return async () => {
+    throw new TypeError('fetch failed', { cause: { code: 'ENOTFOUND' } });
+  };
+}
+
+/**
+ * A fetchImpl that fails at the transport level for the first `rounds` confirms, then answers the
+ * marker pair correctly. Mirrors hostname.test.mjs's own `unreachableForRounds`: a confirm is
+ * counted by its first request, the https probe of `/`.
+ * @param {number} rounds how many confirms fail before the marker pair starts answering
+ * @returns {{ fetchImpl: typeof fetch, state: { rounds: number } }}
+ */
+function unreachableForRounds(rounds) {
+  const state = { rounds: 0 };
+  const fetchImpl = async (url) => {
+    const u = new URL(url);
+    if (u.pathname === '/' && u.protocol === 'https:') state.rounds += 1;
+    if (state.rounds <= rounds) throw new TypeError('fetch failed', { cause: { code: 'ENOTFOUND' } });
+    return markerResponse(u.pathname, u.origin);
+  };
+  return { fetchImpl, state };
+}
+
+/** A console server handle recording what the hold loop does with it, the same stand-in
+ * hostname.test.mjs's own `fakeConsole` uses for the seam's own tests. */
+const HOLD_CONSOLE_URL = 'http://127.0.0.1:49152/Zm9vYmFyLXNlY3JldA';
+function fakeConsole() {
+  const calls = { start: [], update: [], stop: 0 };
+  return {
+    calls,
+    handle: {
+      async start(observation) {
+        calls.start.push(observation);
+        return { url: HOLD_CONSOLE_URL };
+      },
+      update(observation) {
+        calls.update.push(observation);
+      },
+      async stop() {
+        calls.stop += 1;
+      },
+    },
+  };
+}
+
+/**
+ * Build a `createWaitForClearFn` test seam wrapping the real `createWaitForClear`, over a virtual
+ * clock so a multi-poll hold resolves at once instead of waiting real time. Records how many holds
+ * were composed, so a test can assert the seam is built exactly once.
+ * @param {{ calls: string[], lastOptions?: object }} recorder pushed one entry (the hold class)
+ *  per composition, and given the composed options themselves, so a test can assert what the
+ *  chapter actually handed the loop rather than only that it composed one
+ * @returns {typeof createWaitForClear} the test seam
+ */
+function testCreateWaitForClearFn(recorder) {
+  return (options) => {
+    const { holdClass, server, log, persist, defaultPark } = options;
+    recorder.calls.push(holdClass);
+    recorder.lastOptions = options;
+    let clock = 0;
+    return createWaitForClear({
+      holdClass,
+      server,
+      log,
+      persist,
+      defaultPark,
+      now: () => clock,
+      sleepFn: async (ms) => {
+        clock += ms;
+      },
+      signals: new EventEmitter(),
+    });
   };
 }
 
@@ -670,6 +750,262 @@ test('resume: a record at delegated skips straight to the cutover', async (t) =>
   assert.equal(outcome.outcome, 'paid-plan-declined');
   const attachRequests = cloudflare.requests.filter((r) => r.path.includes('/workers/domains') && r.method === 'PUT');
   assert.equal(attachRequests.length, 1);
+});
+
+// --- The production hold seam (T4d Task 5c) ----------------------------------------------------
+
+/** Seed a record at `delegated`, the cutover's own starting point, on a real fake-Cloudflare zone. */
+async function seedDelegatedSite(siteId, dir, domain) {
+  const api = makeApi({ token: 'fake-token', accountId: 'acct-1', dir });
+  const created = await api.createZone(domain);
+  const zone = await api.getZone(created.id);
+  await seedLiveSite(siteId, dir, {
+    step: 'delegated',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: 'fake-token',
+      domain,
+      zoneId: zone.id,
+      nameServers: zone.name_servers,
+      alreadyActive: true,
+      carryOver: { outcome: 'carried', at: new Date().toISOString(), count: 0, types: [] },
+    },
+  });
+  return zone;
+}
+
+test('an interactive run threads waitForClear into cutOverHostname: the console URL and the hop title each print exactly once across a three-poll hold', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await setupCloudflare(t, { zoneStatus: 'active' });
+  await setupWrangler(t);
+  const domain = 'held-cutover.example';
+  await seedDelegatedSite('site-held-cutover', dir, domain);
+
+  const { fetchImpl, state } = unreachableForRounds(2);
+  const consoleServer = fakeConsole();
+  const holdRecorder = { calls: [] };
+  const lines = [];
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-held-cutover',
+    record: await loadSite('site-held-cutover'),
+    dir,
+    args: { yes: false },
+    log: (line) => lines.push(line),
+    dryRun: false,
+    // The domain gate is already behind this record; the only confirm this run reaches after the
+    // held cutover clears is the email admission, declined so this test stays about the hold.
+    confirm: confirmRouting({ email: false }),
+    text: mustNotBeCalled('text'),
+    fetchImpl,
+    // The held probes now run the cutover's own DNS diagnosis for real; a hermetic
+    // authoritative-absent stub keeps this test about the hold's own print/count contract rather
+    // than a real lookup for a fictional domain.
+    resolve: () => ({
+      resolveNs: absentAnswer(),
+      resolve4: absentAnswer(),
+      resolve6: absentAnswer(),
+      resolveMx: absentAnswer(),
+      resolveTxt: absentAnswer(),
+      resolveCaa: absentAnswer(),
+      resolveCname: absentAnswer(),
+    }),
+    isTTY: true,
+    env: {},
+    createWaitForClearFn: testCreateWaitForClearFn(holdRecorder),
+    createConsoleServerFn: () => consoleServer.handle,
+  });
+
+  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(state.rounds, 4, 'three held probes, then the one-shot re-check after the redeploy');
+  assert.equal(holdRecorder.calls.length, 1, 'the seam is composed exactly once, for the pre-redeploy confirm');
+  // The row an interrupt lands on before the first probe has read anything. The chapter is the
+  // only place that knows both this class's earliest honest verdict and this run's own params, so
+  // a hold composed without it would leave a Ctrl-C during the first probe printing nothing.
+  assert.equal(
+    holdRecorder.lastOptions.defaultPark,
+    cloudflareError('hostname-resolver-lagging', { dir, domain }).message,
+  );
+  assert.equal(consoleServer.calls.start.length, 1, 'the console starts exactly once across the hold');
+  assert.equal(
+    lines.filter((line) => line === consoleUrlLine(HOLD_CONSOLE_URL)).length,
+    1,
+    'the console URL line prints exactly once per hold',
+  );
+  assert.equal(
+    lines.filter((line) => line === 'Connect your domain to your site').length,
+    1,
+    'the hop title prints exactly once, not once per poll',
+  );
+});
+
+/**
+ * Seed a record at `delegated` with no saved nameServers, mirroring `seedDelegatedSite` except for
+ * that one omission: the cutover's own DNS diagnosis must then discover the domain's authoritative
+ * nameservers itself, exactly the shape `disagreeingResolve`'s NS-discovery stub expects.
+ */
+async function seedDelegatedSiteNoNameServers(siteId, dir, domain) {
+  const api = makeApi({ token: 'fake-token', accountId: 'acct-1', dir });
+  const created = await api.createZone(domain);
+  const zone = await api.getZone(created.id);
+  await seedLiveSite(siteId, dir, {
+    step: 'delegated',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: 'fake-token',
+      domain,
+      zoneId: zone.id,
+      alreadyActive: true,
+      carryOver: { outcome: 'carried', at: new Date().toISOString(), count: 0, types: [] },
+    },
+  });
+  return zone;
+}
+
+const DISAGREEING_NS_HOST = 'ns1.registrar.test';
+
+/**
+ * A resolver factory whose authoritative path already carries the apex AAAA record (the Custom
+ * Domain attach's own write) while the recursive resolver still answers absent, the exact
+ * negative-cache disagreement the propagation split exists to see past. Mirrors hostname.test.mjs's
+ * own `disagreeingDns`, reimplemented here since this test proves the wiring at the chapter level,
+ * through the `resolve` seam `runChapter2` itself exposes, not by calling `cutOverHostname` directly.
+ * @param {string} domain the domain under test
+ * @returns {(servers?: string[]) => object} the factory `runChapter2` passes through as `resolve`
+ */
+function disagreeingResolve(domain) {
+  const recursive = {
+    resolveNs: async () => [DISAGREEING_NS_HOST],
+    resolve4: absentAnswer(),
+    resolve6: async (name) => {
+      if (name === DISAGREEING_NS_HOST) return ['203.0.113.9'];
+      throw Object.assign(new Error('absent'), { code: 'ENODATA' });
+    },
+  };
+  const authoritative = {
+    resolve4: absentAnswer(),
+    resolve6: async (name) => {
+      if (name === domain) return ['2001:db8::100'];
+      throw Object.assign(new Error('absent'), { code: 'ENODATA' });
+    },
+  };
+  return (servers) => (servers ? authoritative : recursive);
+}
+
+/**
+ * Build a `createWaitForClearFn` test seam that expires after exactly one probe, over a virtual
+ * clock so no real time passes. Deliberately does not reuse the propagation class's own 40-minute
+ * budget: the assertion this test makes is about which outcome the wiring reaches, not about how
+ * many polls a held wait takes to get there.
+ * @returns {typeof createWaitForClear} the test seam
+ */
+function oneProbeWaitForClearFn() {
+  return ({ holdClass, server, log, persist }) => {
+    let clock = 0;
+    return createWaitForClear({
+      holdClass,
+      server,
+      log,
+      persist,
+      pollIntervalMs: 1,
+      budgetMs: 1,
+      now: () => clock,
+      sleepFn: async (ms) => {
+        clock += ms;
+      },
+      signals: new EventEmitter(),
+    });
+  };
+}
+
+// The falsifiability control this test exists for: chapter2.mjs is the only production caller of
+// cutOverHostname, and until this fix it forwarded no `dns` context at all, so
+// hostname-resolver-lagging was unreachable from a real run no matter how carefully hostname.mjs's
+// own split was proven in isolation. Deleting the `dns: { resolve, nameServers }` argument at the
+// cutOverHostname call site (leaving diagnoseUnreachable itself untouched) makes this test fail
+// with 'hostname-records-absent', the exact regression this pins.
+test('a held cutover threads the injected resolver into the DNS diagnosis: disagreement returns hostname-resolver-lagging end to end', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await setupCloudflare(t, { zoneStatus: 'active' });
+  await setupWrangler(t);
+  const domain = 'lagging-cutover.example';
+  await seedDelegatedSiteNoNameServers('site-lagging-cutover', dir, domain);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-lagging-cutover',
+    record: await loadSite('site-lagging-cutover'),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    // The hold's tiny budget expires before any confirm below the cutover is ever reached.
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysUnreachableFetch(),
+    resolve: disagreeingResolve(domain),
+    isTTY: true,
+    env: {},
+    createWaitForClearFn: oneProbeWaitForClearFn(),
+    createConsoleServerFn: () => fakeConsole().handle,
+  });
+
+  assert.equal(outcome.outcome, 'hostname-resolver-lagging');
+
+  const state = await loadSite('site-lagging-cutover');
+  assert.equal(state.step, 'delegated', 'a wait outcome must not advance the step');
+});
+
+test('a --yes run composes no hold at all: no console, no loop, and the seam never even builds', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await setupCloudflare(t, { zoneStatus: 'active' });
+  await setupWrangler(t);
+  const domain = 'yes-no-hold.example';
+  await seedDelegatedSite('site-yes-no-hold', dir, domain);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-yes-no-hold',
+    record: await loadSite('site-yes-no-hold'),
+    dir,
+    args: { yes: true },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysUnreachableFetch(),
+    // The cutover's own DNS diagnosis now runs for real (the very wiring the test above this one
+    // pins), so this stays hermetic with an authoritative-absent stub rather than letting the
+    // default resolver attempt a real lookup for a fictional domain.
+    resolve: () => ({
+      resolveNs: absentAnswer(),
+      resolve4: absentAnswer(),
+      resolve6: absentAnswer(),
+      resolveMx: absentAnswer(),
+      resolveTxt: absentAnswer(),
+      resolveCaa: absentAnswer(),
+      resolveCname: absentAnswer(),
+    }),
+    // A run the policy refuses must never even call these, isTTY: true or not: --yes alone is
+    // enough to refuse.
+    isTTY: true,
+    env: {},
+    createWaitForClearFn: mustNotBeCalled('createWaitForClearFn'),
+    createConsoleServerFn: mustNotBeCalled('createConsoleServerFn'),
+  });
+
+  assert.equal(outcome.outcome, 'hostname-records-absent');
 });
 
 test('resume: a declined carry-over gate never silently advances', async (t) => {

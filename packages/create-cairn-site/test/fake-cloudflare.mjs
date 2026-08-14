@@ -39,8 +39,8 @@
 // The create response also never carries `name_servers` (see createZoneCreateHandler below):
 // amendment 16 found no create response was ever observed populating it, so ensureZone must
 // re-read the zone rather than trust the create response, and this fake makes trusting it fail.
-import { createServer } from 'node:http';
 import { randomBytes, randomUUID } from 'node:crypto';
+import { compile, matchRoute, readRawBody, sendJson, startLoopbackServer } from './fake-server.mjs';
 
 /**
  * @typedef {object} FakeCloudflare
@@ -102,14 +102,11 @@ export async function startFakeCloudflare({ zoneStatus = 'pending', tokenVerifyI
   };
   const assignedNameServerPairs = new Set();
 
-  let dispatcher = (_req, res) => sendJson(res, 503, { message: 'fake-cloudflare: not ready yet' });
-  const server = createServer((req, res) => dispatcher(req, res));
-
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const apiBase = `http://127.0.0.1:${server.address().port}/client/v4`;
+  const server = await startLoopbackServer('fake-cloudflare: not ready yet');
+  const apiBase = `${server.base}/client/v4`;
   const ctx = { state, zoneStatus, tokenVerifyId, assignedNameServerPairs };
 
-  dispatcher = makeHandler(
+  server.setDispatcher(makeHandler(
     [
       { method: 'POST', regex: compile('/client/v4/zones'), route: 'zone_create', handler: createZoneCreateHandler(ctx) },
       { method: 'GET', regex: compile('/client/v4/zones'), route: 'zone_list', handler: createZoneListHandler(ctx) },
@@ -224,7 +221,7 @@ export async function startFakeCloudflare({ zoneStatus = 'pending', tokenVerifyI
       },
     ],
     { requests, failNextMap },
-  );
+  ));
 
   return {
     apiBase,
@@ -233,26 +230,14 @@ export async function startFakeCloudflare({ zoneStatus = 'pending', tokenVerifyI
     failNext(route, status, body) {
       failNextMap.set(route, { status, body });
     },
-    async close() {
-      await new Promise((resolve) => server.close(resolve));
-    },
+    close: server.close,
   };
 }
 
 /**
- * Compile a `/foo/:bar/baz` path pattern into an anchored regex with named capture groups.
- * @param {string} pattern the path pattern; a `:name` segment becomes a `(?<name>[^/]+)` group
- * @returns {RegExp} the anchored regex
- */
-function compile(pattern) {
-  const source = pattern.replace(/:[^/]+/g, (token) => `(?<${token.slice(1)}>[^/]+)`);
-  return new RegExp(`^${source}$`);
-}
-
-/**
- * Build a request listener that logs every request, matches it against a route table, decodes a
- * one-shot `failNext` override before the route's own handler ever runs, and reads and parses
- * the body for methods that carry one.
+ * Build a request listener that logs every request, matches it against a route table (via the
+ * shared `matchRoute`), decodes a one-shot `failNext` override before the route's own handler
+ * ever runs, and reads and parses the body for methods that carry one.
  * @param {Array<{ method: string, regex: RegExp, route: string, handler: Function }>} routes
  * @param {{ requests: unknown[], failNextMap: Map<string, { status: number, body: unknown }> }} shared
  * @returns {(req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse) => Promise<void>}
@@ -273,17 +258,7 @@ function makeHandler(routes, { requests, failNextMap }) {
       headers: { authorization: req.headers.authorization },
     });
 
-    let match = null;
-    let params = {};
-    for (const candidate of routes) {
-      if (candidate.method !== req.method) continue;
-      const result = candidate.regex.exec(url.pathname);
-      if (result) {
-        match = candidate;
-        params = result.groups ?? {};
-        break;
-      }
-    }
+    const { match, params } = matchRoute(routes, req.method, url.pathname);
     if (!match) {
       sendJson(res, 404, { success: false, errors: [{ code: 7003, message: 'Not found' }], messages: [], result: null });
       return;
@@ -300,16 +275,6 @@ function makeHandler(routes, { requests, failNextMap }) {
   };
 }
 
-/** Buffer a request body to a UTF-8 string. Resolves with `''` for a bodyless request. */
-function readRawBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on('data', (chunk) => chunks.push(chunk));
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', reject);
-  });
-}
-
 /** Parse a request body as JSON, falling back to `{}` when empty or unparseable. */
 function parseJson(raw) {
   if (!raw) return {};
@@ -318,12 +283,6 @@ function parseJson(raw) {
   } catch {
     return {};
   }
-}
-
-/** Write a JSON response with the given status. */
-function sendJson(res, status, body) {
-  res.writeHead(status, { 'content-type': 'application/json' });
-  res.end(JSON.stringify(body));
 }
 
 /** Write a v4 success envelope: `{ result, success: true, errors: [], messages: [] }`. */

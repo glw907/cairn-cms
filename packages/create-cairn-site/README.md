@@ -347,6 +347,50 @@ last deployed but never pushed. With `--yes`, a run that finds local drift stops
 re-run interactively: committing the change needs the sign-in click above, and `--yes` never opens
 a browser.
 
+## Watching a wait
+
+Two waits in this tool can run longer than you want to sit and watch: DNS propagation in the domain
+chapter, and the first build in the Builds chapter. On an interactive run, each one now holds in
+place and prints a `127.0.0.1` URL. Open it and you get a page showing what the run is waiting on
+and what it has read so far. When the wait clears, the run carries on in your terminal by itself.
+
+### What the page shows
+
+For DNS, the answer from your domain's own nameservers sits beside the answer your machine's
+resolver gives. That distinguishes the two situations a single "still propagating" message used to
+blur together: a record that was never written, and a record that is live everywhere except in your
+own resolver's cache. The second one clears on its own, and the page tells you so. Certificate
+issuance cannot be polled with the token this tool holds, so the page reports the HTTPS check it can
+actually make rather than inventing a status.
+
+For a build, the page shows its state as it moves from queued to running to an outcome, and the
+commit it matched. The page refreshes on its own. When the wait clears it serves one last page
+saying the run is continuing in your terminal, then stops.
+
+### It only exists while a run is waiting
+
+The console is not a daemon and nothing survives the run. No port is held between runs, and the URL
+stops answering the moment the wait ends. Re-running the command is how you get it back.
+
+Each run mounts the console under a fresh random path and refuses any request that did not arrive
+addressed to your own machine. No token or secret appears on any page.
+
+### A run that is not interactive never holds
+
+With `--yes`, with output redirected, or under CI, both waits park exactly as they always have: exit
+`0`, print what the run is waiting for, and give you the command to run again. The console is for a
+person watching a terminal, so a scripted run behaves as though it did not exist.
+
+### Interrupting a wait
+
+Ctrl-C during a wait is safe. The run stops watching, saves what it learned, prints the same message
+it would have printed on parking by itself, and exits `0`. Run the command again when you are ready.
+
+### If the console cannot start
+
+A port collision, or a sandbox that forbids listening, costs you the page and not the run. The wait
+proceeds as it would have, and the run says once that the console is unavailable.
+
 ## Running the site
 
 ```

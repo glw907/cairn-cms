@@ -15,35 +15,37 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-13 night: T4d's console is BUILT and gated; next is its live proof plus the teardown, both browser-bound)
+## Immediate next action (2026-08-13 night: T4d is DONE, live-proven, CI-green, and torn down; next is Pass D)
 
-**T4d Tasks 1 through 6 are COMPLETE**, plus four rounds of review and repair. The localhost
-console ships over both held wait classes, with the three extractions (loopback core, DNS helper,
-fake HTTP plumbing) and the hostname diagnosis split. **Carry-forwards 1 and 7 are CLOSED.** The
-post-mortem, with the full lesson set, is in the plan
+**T4d is COMPLETE, all eight tasks.** The localhost console ships over both held wait classes,
+with the three extractions (loopback core, DNS helper, fake HTTP plumbing) and the hostname
+diagnosis split. **Carry-forwards 1 and 7 are CLOSED.** The post-mortem, with the full lesson set
+and the Task 7/8 addendum, is in the plan
 (`docs/superpowers/plans/2026-08-13-create-cairn-site-t4d.md`).
 
-**Next: Task 7's live proof and Task 8 Step 1's teardown, in a session with Geoff at a browser.**
-Task 7: drift the local reconcile hash on a reconciled file in `~/Projects/cairn-scratch/t5-scratch`
-(the `builds-live` re-entry gates on the LOCAL hash, so a push or kick cannot open it), re-enter with
-`--connect`, ride the reconcile and its reauthorize trip into the held build watch with the console
-up, and bank per-hop raw-read evidence (console URL line, one re-render showing state change, the
-auto-resume line, a `builds/workers/{tag}/builds` read matching the same `build_uuid`). Expect a
-fresh token paste if the terminal outcome cleared the saved one. Then Task 8 Step 1's teardown per
-the table in `docs/internal/2026-08-13-t5-task8-live-e2e.md`, API-deletable rows verified by
-re-listing, browser-only rows moved into the hand-step list below, and the App ledger note updated
-to five hand-deleted. **The estate is intact and re-verified at execution start:**
-`~/.config/cairn/sites/` holds only `t5-scratch-a32510.json` at `builds-live`, with
-`buildsReconciledHash` set, so the provocation is reachable. After that, Pass D.
+**The console is live-proven.** Three provocations drifted the local reconcile hash on the
+inherited `builds-live` record, each riding the reauthorize trip and its push into a real held
+build watch. The clean run captured the whole arc from one console: 19 samples, `initializing` to
+`running` to the `Cleared` exit render, the live pages carrying the 5-second `meta refresh` and
+the exit render carrying none, with the rendered `build_uuid` and commit matching an independent
+`builds/workers/{tag}/builds` read (`build_trigger_source: push_event`). The hold spanned the
+build in all three runs. Evidence, raw reads, and the harness findings:
+`docs/internal/2026-08-13-t4d-task7-live-proof.md`.
 
-**The branch is pushed but NOT CI-verified, and nothing is waiting to verify it.** All five
-gating workflows trigger on `pull_request` plus a `push` scoped to `main` and `rebuild` only, and
-no PR is open on `t5-browser-door` (the earlier ones merged). **Opening a PR is what gates this
-code**, and it should happen before the branch is built on or merged. The local gate below is
-comprehensive and was run by name, and `check:consumers` ran against a real from-scratch
-`examples/showcase` install rather than the worktree's absent `node_modules`, so it does not carry
-the usual worktree blind spot. What only CI's clean checkout can still prove is the `e2e`,
-`scaffold`, and `create-site` workflows against a real install.
+**The estate is torn down and verified by re-listing**, not by trusting a delete's success code:
+Builds trigger and connection, the Worker and its secret, both D1 databases, the R2 bucket, the
+custom domain, the Email Sending subdomain with its four `cf-bounce` records and the `_dmarc` it
+leaves behind, the GitHub repo, the state record, and the wrangler OAuth session. The settled
+table is in `docs/internal/2026-08-13-t5-task8-live-e2e.md`. `~/Projects/cairn-scratch/` went
+from 550M to 376K, holding only the run transcripts and the Task 7 console samples.
+
+**Next: Pass D.**
+
+**The branch is CI-verified.** PR #33 (`t5-browser-door` to `main`) is open with all six checks
+green: `create-site`, `design`, `e2e`, `norms`, `scaffold`, `test`. That closes the ungated gap
+this entry used to carry, including the three the local gate cannot prove (`e2e`, `scaffold`,
+`create-site` against a real install). **The PR is green but NOT merged**; merging it is the next
+mechanical step before Pass D branches off `main`.
 
 **Gate at close, verified in the main loop rather than taken from an agent's report.**
 `packages/create-cairn-site` 821 pass exit 0 (701 at pass start). Root `npm run check` 0 errors 0
@@ -90,16 +92,22 @@ frontmatter field edits. **Recommendation: a triage session first** (dispatchabl
 against current code, delete the stale, promote the rest with triggers), and let what survives decide
 whether the editor cluster is worth its own pass. Deliberately NOT folded into T4d.
 
-**Hand steps for Geoff, SIX outstanding, one urgent, unchanged this pass.** (1) **URGENT: rotate the
-estate Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still active;
-mint a replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the
-old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API token
-`d07b2a25f05151591830c45053186979`, then
+**Hand steps for Geoff, NINE outstanding, one urgent. T4d's teardown added three.** (1) **URGENT:
+rotate the estate Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still
+active; mint a replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`,
+delete the old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API
+token `d07b2a25f05151591830c45053186979`, then
 `rm -f ~/.config/cairn/t4c-spike-token ~/.config/cairn/store-t4c-token.sh`. (4) 907-life's
 push-to-deploy has been broken since 2026-07-14. (5) Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT
-at release one. (6) The button spike's browser moment, owed at release one with T5a'. **T4d adds no
-new hand step until its teardown runs**, at which point the browser-only App and installation rows
-join this list.
+at release one. (6) The button spike's browser moment, owed at release one with T5a'.
+**(7) NEW: delete the GitHub App `cairn-t5-scratch` (id 4585219)** at github.com/settings/apps, which
+uninstalls installation 153531337 with it. **This is the fifth hand-deleted App**, and with (2) the
+ledger stands at two awaiting deletion. **(8) NEW: revoke three Cloudflare API tokens** at
+dash.cloudflare.com/profile/api-tokens, all named for `create-cairn-site`: T5 run 1's five-key token,
+T5 run 2's eight-key token, and the eight-key token minted 2026-08-13 for T4d's live proof and
+teardown (its local file is already deleted). **(9) NEW: check the Workers Paid opt-in** taken at T5
+run 2's prompt, in case the account was not already on it via 907-life. Everything else in the T5
+teardown table is done and verified.
 
 **Carry-forwards (the tool initiative). CLOSED this pass: 1 (the resolver negative-cache
 diagnosis) and 7 (the fake HTTP plumbing extraction).** Renumbered survivors: (1) an externally

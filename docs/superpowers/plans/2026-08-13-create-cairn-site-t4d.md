@@ -255,8 +255,11 @@ torn down with the ledger settled.
 
 **Built: Tasks 1 through 6, plus four rounds of review and repair.** The console ships over both
 held wait classes, with the three extractions (loopback core, DNS helper, fake HTTP plumbing) and
-the hostname diagnosis split. Tasks 7 and 8 Step 1 (the live proof, the estate teardown) are NOT
-done; both need Geoff at a browser and are carried in STATUS.
+the hostname diagnosis split.
+
+**Tasks 7 and 8 closed later the same night, in a second session** (see the Task 7 and 8
+addendum at the end of this post-mortem). The console is live-proven, the estate is torn down,
+and every acceptance criterion is met.
 
 **Final gate, verified in the main loop rather than taken from an agent's report.** Package suite
 821 pass, exit 0 (701 at pass start). Root `npm run check`: 1601 files, 0 errors, 0 warnings.
@@ -326,10 +329,53 @@ own initiative, which is not a defect. One genuine correction he had to prompt: 
 real assessment, which is a defect against the standing rule to answer a design question rather
 than agree with it.
 
-**Outstanding, carried to STATUS.** Task 7's live proof (drift the local reconcile hash on the
-inherited `builds-live` record, re-enter with `--connect`, ride the reauthorize trip and the push
-into the held build watch with the console up). Task 8 Step 1's teardown, whose table is in
-`docs/internal/2026-08-13-t5-task8-live-e2e.md`, including the browser-only App and installation
-rows and the App ledger note moving to five hand-deleted. AC5, AC9, and AC10 are met, unmet, and
-outstanding respectively only in the sense that the live proof and teardown have not run; every
-criterion provable without the browser is met.
+## Task 7 and 8 addendum (2026-08-13 night, Opus session)
+
+**Task 7 is proven and Task 8 Step 1 is done.** Full evidence, with the raw reads, is in
+[`docs/internal/2026-08-13-t4d-task7-live-proof.md`](../../internal/2026-08-13-t4d-task7-live-proof.md);
+the settled teardown table is in
+[`docs/internal/2026-08-13-t5-task8-live-e2e.md`](../../internal/2026-08-13-t5-task8-live-e2e.md).
+Every acceptance criterion is now met, AC5, AC9, and AC10 included.
+
+**The proof.** Three provocations drifted the local reconcile hash on the inherited `builds-live`
+record; each opened the re-entry, rode the reauthorize trip (instant, on an authorized browser
+session) and its push into the held build watch. The clean third run captured the whole arc from
+one console: 19 samples, `initializing` to `running` to the `Cleared` exit render, the live pages
+all carrying the build class's 5-second `meta refresh` and the exit render deliberately carrying
+none. The console's rendered `build_uuid` and commit match an independent
+`builds/workers/{tag}/builds` read, whose `build_trigger_source` is `push_event`: the reconcile
+push triggered the build, no kick. The hold spanned the build in all three runs, each exiting
+within seconds of its build settling, which is the live confirmation of the fix round's
+"hold across the build, not just its discovery".
+
+**The pass's own headline lesson recurred during the teardown, in the verification rather than
+the code.** The first teardown-verification pass read `GET /accounts/{id}/builds/triggers` and
+`GET .../builds/repos/connections` and got `12000 Not found` on both, which looks exactly like
+"already gone". The rows were live. The T4c spike had already recorded that no connections list
+route exists and that triggers list per worker. **A verification reading the wrong route reports
+success for the wrong reason**, the same shape as the sentinel sweep that rendered through a
+test-local copy of the view. The check that caught it was reading the spike's own findings table
+before trusting an empty result.
+
+**A live proof driven by an agent needs a rehearsed harness, and the harness cost two runs.**
+The hold gate reads `stdout.isTTY`, so the run needs a pty; `script` provides one, and T5's own
+runs 3 and 4 used the same idiom. Three faults, all in the harness and none in cairn: `script`
+buffers its typescript unless given `-f`, so a feeder watching the transcript for the paste
+prompt never fires; a pty with no window size wraps clack's prompt one character per line, so no
+plain grep matches it; and two samplers sharing filenames had one deleting the other's captures.
+Answering a clack `password` prompt from a pipe needs a pty, a write that lands after the prompt
+attaches, and a writer held open afterwards, since the prompt reads EOF as a cancel. All three
+were rehearsed against a standalone prompt before the live run, which is why the first run could
+be recovered by hand rather than lost.
+
+**One process note on the credential handoff.** The token arrived damaged twice: once as the
+literal placeholder out of the instructions, once wrapped in bracketed-paste escape markers.
+Both were caught by checking shape and calling `/user/tokens/verify` before use rather than by
+watching the run fail. A file handoff should validate before it drives anything.
+
+**Budgets for this session.** Human interaction points: two (one batched question with two
+decisions, plus two exchanges resolving the damaged token file). The token question was
+unavoidable, since minting a Cloudflare API token is dashboard-only and neither the estate token
+nor wrangler's OAuth session carries `workers_ci`. Three real Workers Builds deploys were spent
+on a scratch site that was torn down minutes later, which is the right trade for capturing the
+console's state change cleanly rather than claiming it from one sample.

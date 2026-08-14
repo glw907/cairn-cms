@@ -767,6 +767,16 @@ const ROWS = {
 export const CATALOGUE_CODES = Object.keys(ROWS);
 
 /**
+ * The catalogue's wait-kind codes only, in catalogue order: a self-clearing or no-fault wait,
+ * returned by its caller rather than thrown. This is the completeness source the console's park
+ * pages are checked against (src/console/park-pages.mjs and its tests), so a wait-kind code added
+ * here without a matching park-page fixture fails that check rather than shipping a wait state
+ * with no page.
+ * @type {string[]}
+ */
+export const WAIT_KIND_CODES = CATALOGUE_CODES.filter((code) => ROWS[code].kind === 'wait');
+
+/**
  * Build a printable, catalogued error for one of the Cloudflare chapter's recoverable failures.
  * @param {string} code one of the catalogue's codes, the keys of `ROWS` above and of the
  *  exported `CATALOGUE_CODES`; anything else throws

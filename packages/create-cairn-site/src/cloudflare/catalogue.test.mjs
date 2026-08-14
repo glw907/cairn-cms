@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cloudflareError, CATALOGUE_CODES } from './catalogue.mjs';
+import { cloudflareError, CATALOGUE_CODES, WAIT_KIND_CODES } from './catalogue.mjs';
 
 /**
  * Every catalogue code, mapped to its expected kind. Kept as a table (not a flat list) so a
@@ -530,4 +530,22 @@ test('builds-reconcile-parked names the interactive re-run without --yes', () =>
   assert.equal(err.catalogue.kind, 'wait');
   assert.match(err.message, /--yes/);
   assert.match(err.catalogue.next, /without --yes/);
+});
+
+test('WAIT_KIND_CODES holds exactly the wait-kind rows, in catalogue order, and nothing else', () => {
+  const expectedWaitCodes = CATALOGUE_CODES.filter((code) => EXPECTED_KIND[code] === 'wait');
+  assert.deepEqual(WAIT_KIND_CODES, expectedWaitCodes);
+  assert.ok(WAIT_KIND_CODES.length > 0, 'expected at least one wait-kind code');
+  for (const code of WAIT_KIND_CODES) {
+    assert.equal(
+      cloudflareError(code, SAMPLE_PARAMS[code]).catalogue.kind,
+      'wait',
+      `${code} is in WAIT_KIND_CODES but its row is not kind: 'wait'`
+    );
+  }
+  for (const code of CATALOGUE_CODES) {
+    if (EXPECTED_KIND[code] !== 'wait') {
+      assert.ok(!WAIT_KIND_CODES.includes(code), `${code} is not a wait-kind row and must not be in WAIT_KIND_CODES`);
+    }
+  }
 });

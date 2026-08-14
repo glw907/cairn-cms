@@ -26,16 +26,17 @@ is archived at `docs/internal/history/STATUS-archive-2026-08-13-t4d-close.md`.
 2026-08-14), against the umbrella spec's Part 2
 (`docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`). Execution runs
 in a fresh Opus 5 session in its own worktree off `main`, task-by-task through
-`cairn-implementer`, per the plan's header. **The plan is two phases, each its own worktree
-and merge** (the sizing ruling, made at plan time rather than mid-flight): Phase 1 (Tasks
-1-5) is the friction-log triage, the move manifest, the tree move with every gate rewired,
-the readiness contract, and the standards layer; Phase 2 (Tasks 6-14) is the track content,
-the prune, the prepared cairn-pub branch, and the close. Phase 1's first dispatch is the
-friction-log triage (Task 1, self-contained). Five rulings made at plan time sit at the top
-of the plan for approval or veto at the gate: the Microsoft Vale package on
-`docs/editors/`, the resume table landing as the admin track's setup recovery page,
-cairn-pub prepared-not-merged, no published Diátaxis citation, and explicit P6/P7
-absorption in ROADMAP.
+`cairn-implementer`, per the plan's header. **The pass is a ground-up REBUILD (Geoff,
+2026-08-14): the old guides, tutorial, and explanation arms are deleted at cutover, never
+repaired or mined during writing; the reference arm is the kept exception; the new tracks
+are written clean-room from the code and the recorded runs, and a mining sweep reads the
+old corpus only after the new docs are fully baked.** Three phases, each its own worktree
+and merge: Phase 1 (Tasks 1-3) standards and targets (friction-log triage first,
+self-contained; the target manifest; the register standard rebuilt on the profiles and
+anatomies); Phase 2 (Tasks 4-8) the clean-room build, landing the new tree beside the old
+so `main` stays releasable; Phase 3 (Tasks 9-13) the mining sweep, the cutover with every
+gate rewired and proven red once, the outside edges, the prepared cairn-pub branch, and
+the close. Seven rulings sit at the top of the plan for approval or veto at the gate.
 
 **The sitting extended past the plan commit (2026-08-14, Geoff's direction) and banked
 three governing inputs for the content phase,** all committed under `docs/internal/`:

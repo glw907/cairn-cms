@@ -1,4 +1,4 @@
-# Pass D: the documentation reset
+# Pass D: the documentation rebuild
 
 > **For agentic workers:** executed by a fresh Opus 5 conductor session in its own worktree
 > off `main`, dispatching each implementable task to `cairn-implementer` (pinned Sonnet);
@@ -8,421 +8,385 @@
 > task that touches it, never an instruction to follow blind (the T4a-through-T4d lesson,
 > six times now).
 
-**Goal:** restructure `docs/` around the four audiences (admin, editor, extender,
-contributor), rewrite the setup guides to `create-cairn-site`'s real UX, rewire every gate
-that encodes the old arm layout, and prepare the cairn-pub migration, so release one cuts
-with documentation that matches the product it publishes.
+**Goal:** build cairn's documentation from the ground up for the four audiences (admin,
+editor, extender, contributor), written clean-room against the code and the tool's
+recorded runs; then remove the old corpus in one cutover that rewires every gate, so
+release one cuts with documentation that matches the product it publishes.
 
-**Spec:** the umbrella,
-[`docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`](../specs/2026-08-09-admin-setup-and-docs-reset-design.md)
-(Part 2 and its Pass D acceptance criteria), with the pre-brainstorm brief
-(`2026-08-09-docs-refactor-brief.md`) as background. **Three inputs banked at the
-2026-08-14 planning sitting govern the content work and supersede this plan where they
-are more specific:** the audience profiles
-(`docs/internal/2026-08-14-audience-profiles.md`, the grading rubric every track review
-uses), the competitor review (`docs/internal/2026-08-14-cms-docs-competitor-review.md`,
-whose closing rules are adopted doctrine), and the track outlines
-(`docs/internal/2026-08-14-docs-track-outlines.md`, **revised at a five-reviewer
-adversarial gate**; its page set, contracts, kills, merges, anatomies, and revision
-record are the target state Task 2's manifest maps onto). The admin track's evidence
-base is the baseline walk (`docs/internal/2026-08-unagented-setup-baseline.md`; its drag
-points 2, 4, 5, 7, 9, 10, 11, 12, 13, and 14 are this pass's documentation defects) and
-the live run records (`docs/internal/2026-08-13-t5-task8-live-e2e.md`,
+**This is a rebuild, not a refactor (Geoff, 2026-08-14).** Today's guides, tutorials, and
+explanation pages are not repaired, moved, or mined during writing: repairing them is
+complex and expensive, and mining them would pollute the effort. They are deleted at
+cutover. The one exception is the reference arm, which is machine-gated against the code
+and current; it is kept and touched, not rebuilt. A mining sweep over the old corpus runs
+only after the new docs are fully baked, as a completeness check.
+
+**Spec and inputs.** The umbrella
+([`2026-08-09-admin-setup-and-docs-reset-design.md`](../specs/2026-08-09-admin-setup-and-docs-reset-design.md),
+Part 2 and its Pass D acceptance criteria) governs, as amended by the rebuild ruling
+above. Three inputs banked at the 2026-08-14 planning sitting govern the content and
+supersede this plan where they are more specific: the **audience profiles**
+(`docs/internal/2026-08-14-audience-profiles.md`, the grading rubric), the **competitor
+review** (`docs/internal/2026-08-14-cms-docs-competitor-review.md`, whose closing rules
+are adopted doctrine), and the **track outlines**
+(`docs/internal/2026-08-14-docs-track-outlines.md`, revised at a five-reviewer
+adversarial gate; its page set, contracts, and anatomies are the target state; its
+"absorbs X" annotations read as job provenance, never as instructions to copy prose).
+The admin track's evidence base is the baseline walk
+(`docs/internal/2026-08-unagented-setup-baseline.md`; drag points 2, 4, 5, 7, 8, 9, 10,
+11, 12, 13, and 14 are defects the new pages must not reproduce) and the live run
+records (`docs/internal/2026-08-13-t5-task8-live-e2e.md`,
 `docs/internal/2026-08-13-t4d-task7-live-proof.md`).
 
-**Two phases, two worktrees (the sizing ruling, applied at plan time rather than
-mid-flight).** Fourteen tasks is past a full plate, and this initiative's history says a
-quiet double costs more than an early split. Phase 1 (Tasks 1-5) is the structural half:
-the friction-log triage, the move manifest, the tree move with every gate rewired, the
-readiness contract, and the standards layer. It merges to `main` with all gates green
-before Phase 2 branches, so `main` stays releasable at the boundary. Phase 2 (Tasks 6-14)
-is the content half: the track rewrites, the prune, cairn-pub, and the close. Within a
-phase, the T4d rule stands: a second in-flight task split means proposing a further pass
-split, not absorbing it.
+**Three phases, three worktrees, each merging to `main` green before the next branches.**
+Phase 1 (Tasks 1-3) is standards and targets. Phase 2 (Tasks 4-8) is the clean-room
+build, landing the new tree beside the old one so `main` stays releasable throughout
+(the old arms remain canonical in the tarball until cutover). Phase 3 (Tasks 9-13) is
+the mining sweep, the cutover, and the consumers. Within a phase, the T4d rule stands: a
+second in-flight task split means proposing a further pass split, not absorbing it.
 
 ## Rulings made at plan time (approve or veto at the plan gate)
 
 1. **`docs/editors/` moves to Vale's Microsoft package**, vendored beside Google; every
-   other published track stays on Google. The workstation standard routes editor copy to
-   Microsoft, and the register standard already gives the editor guides their own register;
-   this gives that register its deterministic net. Lands in Task 5.
-2. **The resume table lands as the admin track's setup recovery page** (Task 8), derived
-   from the shipped tool's real state model. This closes two debts at once: the umbrella's
-   unowned resume-table deliverable (STATUS carry-forward 7) and the baseline's drag point
-   10, that the setup phase has no troubleshooting surface at all.
-3. **cairn-pub work is prepared in-pass and merged at the site walk.** The migration is
-   authored on a branch in `~/Projects/cairn-pub` and proven against the packed tarball,
-   but it cannot build against the registry until release one publishes, so it merges when
-   the site walk reaches cairn-pub. "Lands" in the umbrella's acceptance reads as authored
-   and proven, not deployed.
-4. **No published page cites Diátaxis.** The front door routes by audience, which needs no
-   appeal to authority, and the citation's URL is known dead. This retires the umbrella's
-   re-verify item.
-5. **ROADMAP reconciliation is explicit, not silent.** P6 (front-door docs) is absorbed by
-   Task 6; P7's quickstart story is delivered by the tool's chapter 1 plus Task 7's
-   create-your-site page. Task 14 marks both absorbed with pointers rather than deleting
-   them.
+   other published track stays on Google.
+2. **The resume table lands as the admin track's setup recovery page** (closes STATUS
+   carry-forward 7 and baseline drag 10).
+3. **cairn-pub work is prepared in-pass and merged at the site walk**, proven against the
+   packed tarball; it cannot build against the registry until release one publishes.
+4. **No published page cites Diátaxis.**
+5. **ROADMAP reconciliation is explicit:** P6 is absorbed by the front-door task, P7 by
+   the tool's chapter 1 plus the create-your-site page; both marked absorbed with
+   pointers.
+6. **Ground-up rebuild (Geoff, 2026-08-14):** the old guides, tutorial, and explanation
+   arms are removed at cutover, not repaired; the reference arm is the kept exception.
+7. **Clean-room discipline (Geoff, 2026-08-14):** Phase 2 writers do not read the old
+   corpus. Permitted inputs: source code (ground truth), the recorded run transcripts
+   and live-proof records, the doctor's condition table, the specs, and the three banked
+   input docs. The mining sweep (Task 9) is the only task that reads the old arms, and
+   it runs only after the new tracks are written and profile-graded.
 
 ## Global constraints
 
-- Docs prose follows the Google standard under Vale plus the register standard in
-  `docs/internal/docs-register.md` (as rewritten by Task 5), and never names ASC publicly.
-  `docs/editors/` follows Microsoft per ruling 1.
-- **No version bump, no publish.** The pass finalizes its `CHANGELOG.md` entry under
-  `## Unreleased`, carrying a `Consumers must:` line for the docs-tree consumers
-  (cairn-pub's loaders, any bookmarked `/docs/<arm>/<stem>` URL).
-- **`CHANGELOG.md` history is immutable.** Old entries keep their old paths;
-  `scripts/checks/docs-links.mjs` learns a legacy-path map applied to `CHANGELOG.md` only
-  (Task 3).
-- **Quoted tool output in the admin track must trace to a recorded transcript or a freshly
-  captured run.** The sources are the live run records named above and runs of the real CLI
-  against its fakes. Invented output is a defect, not a placeholder.
-- **Every rewired gate is proven red once** before it is trusted green: flip one input the
-  gate exists to catch and watch the named check fail (the falsifiability rule this
-  initiative keeps relearning).
-- **Every moved file's inbound links chase in the same task that moves it.** `check:docs`
-  green is necessary; the reverse check, a grep for the old stem across `docs/`,
-  `README.md`, and the root files, runs by hand per task.
-- Root `CLAUDE.md` has no context headroom: Task 13's path chase trims at least as much
+- Docs prose: the Google standard under Vale plus the register standard as Task 3
+  rebuilds it (profiles, anatomies, track registers); never names ASC publicly;
+  `docs/editors/` under Microsoft per ruling 1.
+- **No version bump, no publish.** The `CHANGELOG.md` entry stays under `## Unreleased`
+  with a `Consumers must:` line for the docs-tree consumers (cairn-pub's loaders,
+  bookmarked `/docs/<arm>/<stem>` URLs).
+- **`CHANGELOG.md` history is immutable**: old entries keep their old paths;
+  `scripts/checks/docs-links.mjs` learns a legacy-path map applied to `CHANGELOG.md`
+  only (Task 10).
+- **Quoted tool output traces to a recorded transcript or a freshly captured run.**
+  Invented output is a defect, and the transcript gate (Task 4) makes drift mechanical
+  to catch.
+- **No stub ever ships**, at page level and inside a page: no "coming soon," no
+  unresolved marker, no section naming an unrecorded tool state.
+- **Every rewired or new gate is proven red once** before it is trusted green.
+- Root `CLAUDE.md` has no context headroom: Task 11's path chase trims at least as much
   prose as it adds.
-- The full docs gate list for this pass, run in whole at each phase close and re-derived
-  (never restated from memory) with `grep -l pull_request .github/workflows/*` before each
-  merge: `check`, `test`, `check:comments`, `check:docs`, `check:arm-indexes`,
+- The full docs gate list runs in whole at each phase close, re-derived (never restated
+  from memory) with `grep -l pull_request .github/workflows/*` before each merge:
+  `check`, `test`, `check:comments`, `check:docs`, `check:arm-indexes`,
   `check:reference`, `check:reference:signatures`, `check:package`, `check:snippets`,
-  `check:surface`, `check:readiness`, `check:prose`, `check:version`, `check:dev-package`,
-  `check:consumers`.
+  `check:surface`, `check:readiness`, `check:prose`, `check:version`,
+  `check:dev-package`, `check:consumers`.
 
 ---
 
-## Phase 1: structure
+## Phase 1: standards and targets
 
 ### Task 1: the friction-log triage
 
 **Files:** modify `docs/internal/docs-friction-log.md`, `ROADMAP.md`.
 
-Self-contained and dispatchable first, per STATUS's own recommendation. The log holds 19
-open findings, last cleared 2026-07-29; complete-or-move governs.
+Self-contained and dispatchable first. The log holds 19 open findings;
+complete-or-move governs, with one rebuild simplification: **a finding about prose in a
+page slated for deletion closes as superseded by the rebuild** (its job, if real, is
+already in the outlines); engine and code findings triage normally.
 
-- [ ] Verify each of the 19 findings against current code before acting on it; an entry
-  records what was true when written. For each: delete it (stale, with the verification
-  evidence named in the triage note), promote it to the `ROADMAP.md` tier where it bites
-  with its trigger, convert it to a co-located `// WATCH:` comment where the trigger is
-  next-time-you-touch-X, or ship it only if the fix is genuinely one line.
-- [ ] The refused-action editor cluster (the polite/assertive announcement split, the
-  `?new=1` title seed, the 409 disclosure, the discarded frontmatter edits, the four forms
-  losing working state) is one theme. Produce an explicit recommendation in the task
-  report: does it earn its own later pass? The refused-save-discards-frontmatter finding is
-  the sharpest and files to ROADMAP regardless of the cluster verdict.
-- [ ] Entry 19 (the T2 hardening tail) has had its trigger fire twice without action;
-  re-triage its remaining items now or delete what is no longer true, per the entry's own
-  text.
-- [ ] The setup-walk entry (the Pass D work list) stays open until Phase 2 ships what it
-  names; Task 14 closes it.
-- [ ] Keep the existing tag vocabulary in this task; Task 5 renames it.
+- [ ] Verify each finding against current code; delete (with evidence named), promote to
+  the ROADMAP tier where it bites with its trigger, convert to a `// WATCH:` comment, or
+  close as superseded by the rebuild.
+- [ ] The refused-action editor cluster: produce the written recommendation (does it earn
+  its own pass?); the refused-save-frontmatter finding files to ROADMAP regardless.
+- [ ] Entry 19 (the T2 hardening tail): its trigger has fired twice; re-triage or delete
+  per its own text.
+- [ ] The setup-walk entry stays open until Phase 3 ships what it names; Task 13 closes
+  it. Tags rename in Task 3.
 
-**Acceptance:** the open-findings section holds only entries verified live within this
-task; every removal names its evidence; the editor-cluster recommendation exists in
-writing.
+**Acceptance:** only verified-live findings remain; every removal names its evidence;
+the cluster recommendation exists in writing.
 
-### Task 2: the move manifest
+### Task 2: the target manifest
 
-**Files:** create `docs/internal/2026-08-14-pass-d-move-manifest.md` (a dated process
-artifact; Task 5's filing rule will place it on the record side).
+**Files:** create `docs/internal/2026-08-14-pass-d-target-manifest.md` (a dated process
+artifact, filed to the record side per Task 3's rule).
 
-The umbrella's bill demands exact counts before any move budget is committed. This task
-produces the single document Task 3 executes mechanically.
+The rebuild's planning document: what gets built, from what inputs, and what the cutover
+must touch. No move map; the old corpus's only appearances here are the deletion list
+and the redirect map.
 
-- [ ] The move map: every current page under `docs/` maps to exactly one disposition, a
-  new path under `docs/{admin,editors,extend,reference,internal}/` (plus
-  `docs/why-cairn.md` beside the front door), KILL, or MERGE-into (naming the surviving
-  page). **The target shape is the revised outlines doc**, page by page, including its
-  kills (`authoring-syntax`, `structured-fields`, the draft-only pages never born), its
-  merges and splits (the `upgrade-cairn`/`migration-notes` split, `design-your-site`,
-  `add-a-second-audience`, `declare-your-own-concept`), and its two new-page sets per
-  track. Verify each outline claim against the code the way the gate did (it found two
-  code-contradicted doc passages; expect more), and record the per-guide audience call
-  with a one-line justification where the outline's disposition is not obvious.
-- [ ] Inventory the seventeen `LIVE-UI:` markers in the editor guides with their
-  resolution route (live reproduction via the `/help` pipeline, coordinated with Task
-  12); the editors track does not ship to `/help` with an unresolved marker rendering.
-- [ ] The prune list, full corpus: the redundancy harvest the umbrella names (duplicated
-  log tables, AI-posture pages, `fields.reference` and glob-wiring snippets, the
-  three-way gating overlap) plus anything else that does not earn its place, each with a
-  rationale.
-- [ ] The redirect map for cairn.pub: every old `/docs/<arm>/<stem>` and `/help/<stem>`
-  URL to its new path, consumed by Task 12.
-- [ ] The derived inbound-link counts (from a `check:docs`-based scan) and the gate bill
-  re-derived against the current tree: every file that hardcodes an arm path. Verified at
-  plan time as at least: `scripts/checks/{reference-coverage,check-reference-signatures,check-arm-indexes,check-snippets,check-package-files,check-readiness,docs-links}.mjs`,
-  `src/lib/diagnostics/conditions.ts` (21 `docsAnchor` slugs),
-  `src/tests/unit/github-slug-contract.test.ts`, `package.json` `files`, `.vale.ini`,
-  `docs/internal/docs-register.md`, `docs/internal/docs-maintenance.md`, root `CLAUDE.md`,
-  the `cairn-pass` skill, and the agent memories.
-- [ ] The `internal/` split: the curated live set (roughly the 14 the README indexes,
-  re-derived) versus the record (dated artifacts, joining `history/` or a sibling
-  directory the manifest rules on), plus the filing rule's exact text so sediment does not
-  reaccumulate.
+- [ ] The target page set, confirmed from the outlines with each outline claim verified
+  against the code the way the gate did (it found two code-contradicted passages;
+  expect more). Every page carries its contract line and its **input list: the code
+  modules, transcript records, spec sections, and reference pages that ground it. Old
+  guides, tutorial, and explanation pages never appear in an input list (ruling 7).**
+- [ ] The deletion list: every old page removed at cutover (the guides, tutorial, and
+  explanation arms, plus `reference/authoring-syntax.md`), and the redirect map from
+  every old published path (`/docs/<arm>/<stem>`, `/help/<stem>`) to its nearest new
+  page, consumed by Task 12.
+- [ ] The cutover gate bill, re-derived against the current tree: `package.json`
+  `files`, `check-package-files.mjs` allowlists and fixtures, `check-arm-indexes.mjs`
+  `ARMS` (plus the `why-cairn` front-door mapping and the new `docs/internal`
+  entry), `check-snippets.mjs` `DOC_DIRS`, `reference-coverage.mjs` and
+  `check-reference-signatures.mjs` CONFIG, `check-readiness.mjs` `DOC` plus the 21
+  `docsAnchor` slugs in `src/lib/diagnostics/conditions.ts`,
+  `src/tests/unit/github-slug-contract.test.ts` corpus, `.vale.ini`, and
+  `docs-links.mjs` (legacy map; the `## Unreleased` pairing repoints to
+  `extend/migration-notes.md`).
+- [ ] The LIVE-UI stance recorded: the seventeen markers die with their pages; a new
+  page earns a live reproduction through the `/help` pipeline or carries nothing (the
+  no-stub rule applies inside pages).
 
-**Acceptance:** every current `docs/` page appears exactly once in the manifest; a reader
-could execute Task 3 from the manifest alone.
+**Acceptance:** every target page has a contract and a clean-room input list; every old
+page appears exactly once in the deletion list with a redirect; the gate bill names
+every file the cutover edits.
 
-### Task 3: the tree move and the mechanical gates
+### Task 3: the standards layer
 
-**Files:** per the manifest. Modify at least `package.json`,
-`scripts/checks/check-package-files.mjs` and its unit-test fixtures,
-`scripts/checks/check-arm-indexes.mjs` (`ARMS`), `scripts/checks/check-snippets.mjs`
-(`DOC_DIRS`), `scripts/checks/reference-coverage.mjs` and
-`check-reference-signatures.mjs` (CONFIG paths), `scripts/checks/docs-links.mjs` (the
-legacy-path map), `src/tests/unit/github-slug-contract.test.ts` (corpus scope),
-`.vale.ini` (track paths; Google only, the Microsoft flip is Task 5's).
+**Files:** rewrite `docs/internal/docs-register.md`; modify `.vale.ini` (vendor the
+Microsoft package under `.vale/styles`); modify `docs/internal/docs-friction-log.md`
+(tags), `docs/internal/README.md`; move record artifacts to `docs/internal/record/`;
+modify `scripts/checks/check-arm-indexes.mjs`.
 
-- [ ] Execute the manifest: `git mv` per the move map, KILLs executed (merges wait for
-  Phase 2), each track's `README.md` index written with the full link order, the two
-  front doors re-pointed so every link resolves (the audience rewrite is Task 6's).
-- [ ] Rewire each gate named above; `package.json` `files` ships the new tracks and the
-  packaging gate's allowlist plus fixtures match. The `files` change sequences before any
-  cairn-pub loader change by construction (Task 12 is later and unmerged).
-- [ ] `docs-links.mjs` learns the legacy-path map (old arm path to new track path),
-  applied to `CHANGELOG.md` only; its hardcoded `upgrade-cairn.md` `## Unreleased`
-  pairing repoints to wherever the manifest homed the upgrade page.
-- [ ] Prove each rewired gate red once: a temporary wrong entry in the packaging
-  allowlist, a dead link, a snippet in a moved dir, an index omission; watch each named
-  check fail, then revert.
-- [ ] Full gate green at task end: content unrewritten, every link resolving, the tarball
-  shape correct (`npm pack --dry-run` inspected).
+The standard is rebuilt before any page is written, because the clean-room writers
+write to it.
 
-### Task 4: the readiness contract
+- [ ] `docs-register.md` rebuilt: the keystone and universal contract stay; the four
+  audience profiles fold in as each track's grading rubric; the page anatomies from the
+  outlines (task guide, tutorial milestone, reference entry with narrative lede,
+  condition entry, symptom row, recovery row) are encoded; the track registers replace
+  the arm registers; the front-door register updates for five-route audience routing;
+  the stale page count dies.
+- [ ] `.vale.ini` gains `[docs/editors/**]` on the vendored Microsoft package (confirm
+  it runs offline the way Google's does); the new track paths scope Google.
+- [ ] The friction-log tag vocabulary becomes the four audience names (`operator:`
+  retires into `admin:`); the log's header rules update.
+- [ ] The internal zone: dated artifacts move to `docs/internal/record/`,
+  `docs/internal/README.md` becomes the curated live index with the filing rule, and
+  `check:arm-indexes` gains a non-recursive `docs/internal` entry so an unindexed
+  top-level internal doc fails CI; proven red with a temporary unindexed file.
 
-**Files:** modify `scripts/checks/check-readiness.mjs` (`DOC`),
-`src/lib/diagnostics/conditions.ts`, the readiness page at its new admin-track home, and
-the contract's tests.
-
-The umbrella names this its own task: `check:readiness` is a three-way contract between a
-hardcoded doc path, 21 `docsAnchor` heading slugs baked into library source, and the page
-itself.
-
-- [ ] Reorganize the readiness page for its admin-track home, enumerate the anchors, and
-  make the `docsAnchor` semantics track-aware (the doctor's rendered links must resolve
-  against the new tree).
-- [ ] `npm test` proves the contract; one deliberate wrong-anchor mutation proves the gate
-  can fail; `conditions.ts` changes run the library gates (`check`, `npm test`,
-  `check:comments`, and `check:surface` if the exported surface moved, with the snapshot
-  regenerated and committed only if drift is intended).
-
-### Task 5: the standards layer
-
-**Files:** modify `docs/internal/docs-register.md`, `.vale.ini` (vendor the Microsoft
-package beside Google under `.vale/styles`), `docs/internal/docs-friction-log.md` (tags),
-`docs/internal/README.md`; move record artifacts per the manifest.
-
-- [ ] Rewrite `docs-register.md`'s arm registers as track registers **founded on the four
-  audience profiles** (fold `2026-08-14-audience-profiles.md` in as each track's
-  grading rubric) and carrying the outline's page anatomies (task guide, tutorial
-  milestone, reference entry with narrative lede, condition entry, symptom row,
-  recovery row); update the front-door register for five-route audience routing, and
-  fix the stale "62 pages" count (line 3) against the post-move tree.
-- [ ] The three named `CONTRIBUTING.md` edits from the outline: the track-aware arm list
-  and repository map, the which-track-does-my-page-go-in rule, and the scope paragraph
-  linking `what-cairn-is-and-is-not.md`.
-- [ ] The internal-index gate: the dated record moves to `docs/internal/record/` per the
-  manifest, and `check:arm-indexes` gains a non-recursive `docs/internal` entry so an
-  unindexed top-level internal doc fails CI; prove it red with a temporary unindexed
-  file.
-- [ ] Apply ruling 1: `[docs/editors/**]` gets the Microsoft package; confirm the vendored
-  package passes offline the way Google's does; run Vale over the moved editor guides and
-  clear error-tier findings only.
-- [ ] Rename the friction-log tag vocabulary to the four audience names; `operator:`
-  retires into `admin:`; retag the entries that survived Task 1; update the log's own
-  header rules.
-- [ ] Rewrite `docs/internal/README.md` as the curated live index plus the filing rule
-  from the manifest; move the record artifacts per the manifest.
-
-**Phase 1 close [main loop]:** full gate by name, `grep -l pull_request` for the CI list,
-push, PR, all checks green, merge to `main`. Update STATUS's entry to "Phase 1 merged,
-Phase 2 next" with the fresh-worktree instruction. This is a normal pass boundary: prep
-the context clear even if the same conductor continues.
+**Phase 1 close [main loop]:** full gate, push, PR, checks green, merge. STATUS notes
+the phase. Prep the context clear.
 
 ---
 
-## Phase 2: content (fresh worktree off the merged `main`)
+## Phase 2: the clean-room build (fresh worktree off the merged `main`)
 
-### Task 6: the front doors
+The new tree lands beside the old arms: `docs/admin/`, `docs/editors/`, `docs/extend/`,
+`docs/why-cairn.md`, and the rewritten front doors. The old arms stay canonical in the
+tarball until Phase 3; `check:docs` covers the new pages (their links must resolve), and
+the enumerating gates ignore directories they do not list. **Every writing dispatch
+carries ruling 7 verbatim and the page's input list from the manifest; a dispatch that
+needs a fact the inputs do not carry captures it from the code or a run, never from an
+old page.** Each track task ends with a fresh-context review graded against the track's
+profile and the register standard; the writer's own context never grades its track.
 
-**Files:** modify `README.md`, `docs/README.md`; create `docs/why-cairn.md` (moved from
-`explanation/`, absorbing the evaluator route).
+### Task 4: the admin track
 
-- [ ] Both front doors follow the outline's ordered spec: one-sentence what-is line, the
-  copyable command, then the five routes (evaluator first, admin and extender lines
-  carrying the discriminator and the default), all in the first screenful; positioning
-  material below; the vocabulary section moves to the extend index.
-- [ ] `docs/README.md` stops telling the reader to keep `examples/showcase` open and
-  stops promising the guides follow the tutorial's order; the "scaffolder is planned"
-  residue dies; no page cites Diátaxis (ruling 4).
-- [ ] `why-cairn` keeps the why and the trade-offs, links the admin fact sheet for costs
-  rather than restating them, and is mapped in `check:arm-indexes` to the front-door
-  index so it cannot orphan.
-- [ ] Vale plus the Task 5 register standard hold on all three files.
+**Files:** create `docs/admin/` per the outline (index, `before-you-start`,
+`create-your-site`, `own-your-domain`, `is-it-working`, `setup-recovery`,
+`invite-editors`, `troubleshooting`); create the transcript-check script and its
+fixtures.
 
-### Task 7: the admin track, before-you-start and chapter 1
+- [ ] The eight files per their outline contracts, written from the tool's source and
+  the recorded runs. The non-negotiables from the gate: the three admission prices with
+  the confirm-every-row token warning; the free-until-second-writer boundary stated at
+  the fact sheet and the chapter-1 finish line; "Getting back in" (`--sign-in`, the
+  ten-minute token, verified against `bootstrap.mjs`); the two-door fork with price and
+  default, **the button half staged on the T5a' spike** (written CLI-first; the
+  button's quoted flow lands when the spike records it, inside the release-one window;
+  no stub in between); the push-to-deploy-only fork opening `own-your-domain`, its two
+  tokens as two admission prices, and the existing-domain "stop and talk to whoever
+  runs your DNS" branch (the modal narrative takes the externally-registered live run,
+  STATUS carry-forward 1, as its input, or ships the branch in its place and says so);
+  browser-moment counts per chapter on the pages that own them; the instrument-keyed
+  three-line router atop the three diagnostic pages; `is-it-working` written to the
+  condition-entry anatomy with the anchor set the readiness contract will pin at
+  cutover.
+- [ ] **The transcript gate:** every fenced transcript block in `docs/admin/` compared
+  in CI against a recorded fixture, proven red by editing a quoted line.
+- [ ] Platform rules: no GNU-only command without a macOS branch; no placeholder ids;
+  vendor dashboards linked and named, never restated or pictured.
+- [ ] Fresh-context review against the admin profile; findings folded before the task
+  closes.
 
-**Files:** create `docs/admin/before-you-start.md` and `docs/admin/create-your-site.md`
-per the outline; the admin index.
+### Task 5: the editors track
 
-- [ ] `before-you-start.md` per its outline contract: the asset inventory, the three
-  admission prices (plan, payment method, the API token with the confirm-every-row
-  warning, drags 2 and 7), the free-until-second-writer boundary, what needs a
-  developer, the successor hand-off, and the exit story.
-- [ ] `create-your-site.md` per its outline contract: the two-door fork block with price
-  and default; the CLI narrative quoting recorded transcripts to the finish line;
-  prerequisites as facts (Node with an install path, drag 8; no git, no money, no
-  domain); the local-dev stand-in stated; chapter 1's browser-moment count; the
-  "Getting back in" close (`--sign-in`, the ten-minute token). **The button half is
-  staged on the T5a' spike** (release-one window): written CLI-first now, the button's
-  quoted flow lands when the spike records it, and no stub ships in between.
-- [ ] **The transcript gate ships here:** every fenced transcript block in `docs/admin/`
-  lives as or beside a recorded fixture, with a check script comparing them in CI (the
-  transcript analog of `check:snippets`), proven red once by editing a quoted line.
-- [ ] Platform rule: no GNU-only shell command ships without a macOS branch (drag 5); no
-  placeholder ids (drag 9); the two-localhost-origins confusion resolved wherever
-  origins are named (drag 13).
+**Files:** create `docs/editors/` per the outline (index, `welcome`,
+`write-in-the-editor`, `publish-and-history`, `when-something-goes-wrong`,
+`add-an-image`, `manage-the-media-library`, `manage-your-tag-vocabulary`).
 
-### Task 8: the admin track, own-your-domain and day 2
+- [ ] The eight files per their outline contracts, written from the admin components'
+  actual behavior (the code), the refusal strings in `content-routes-core.ts` and the
+  taxonomy enforcement, and the log-event vocabulary. The non-negotiables: sign-in
+  opens `welcome`; the two-tier index is the `/help` sidebar, outcome-phrased, written
+  for the reader who arrived stuck, repeating nothing from the admin Help home;
+  `when-something-goes-wrong` quotes the real message strings and states the true
+  conflict behavior (a refused save keeps the typing; verified against `EditPage`'s
+  seeding); the image boundary contracts (formats and HEIC live on the library page);
+  alt-text doctrine has one home; the tag page names its actor; `::include` and the
+  `cairn:` token are documented where the author meets them.
+- [ ] Track rules: Microsoft register; no outbound links to other tracks; no markdown
+  demo heading at `h2`; live reproductions only where earned, else nothing; a dated
+  change-note footer per page.
+- [ ] Fresh-context review against the editor profile; findings folded.
 
-**Files:** create `docs/admin/own-your-domain.md`, `docs/admin/setup-recovery.md`,
-`docs/admin/invite-editors.md`; rewrite `docs/admin/troubleshooting.md` (absorbing the
-log-querying mechanics).
+### Task 6: the extend track
 
-- [ ] `own-your-domain.md` per its outline contract: the push-to-deploy-only fork at the
-  top; the two tokens as two admission prices with scope lists; the domain-and-zone
-  prerequisite before any zone step (drag 4); the existing-domain case split into
-  sending-domain versus the organization's mail, with the "stop and talk to whoever
-  runs your DNS" branch; **browser-moment counts per chapter (two: one; three: two,
-  carry-forward 2), plus chapter 1's on its own page**. The modal existing-domain
-  narrative takes the externally-registered live run (STATUS carry-forward 1) as its
-  input, or ships the DNS-admin branch in its place and says so.
-- [ ] `setup-recovery.md` is the resume table made real (ruling 2), derived from the
-  tool's real state model and the live-run records, positioned directly after the
-  chapter pages, with every chapter-page failure branch linking its row by anchor, a
-  `--sign-in` row, and wait/act/ask classification per row (drag 10).
-- [ ] The three diagnostic pages (`is-it-working`, `setup-recovery`, `troubleshooting`)
-  carry the identical three-line instrument-keyed router at the top; troubleshooting
-  rows a developer must fix point at the extend track's debugging page.
-- [ ] `invite-editors.md` opens by restating its precondition (the plan and a sending
-  domain).
+**Files:** create `docs/extend/` per the outline (index, `build-a-site-by-hand`, the
+23 guides, the 6 concept pages).
 
-### Task 9: the editors track
+- [ ] The files per their outline contracts, written from the engine source, the
+  reference pages, and the specs. The non-negotiables: the deep path holds its line
+  budget, pulls deploy into the first third, links task guides at credential
+  milestones, and is written against a fresh `npx sv create` run (the adapter lives in
+  `vite.config.ts` now); `add-cairn-to-a-sveltekit-app` and `what-the-scaffold-wrote`
+  serve the two reader states the gate found unserved; `declare-your-own-concept` owns
+  concept declaration; `upgrade-cairn` is the short task and `migration-notes` the
+  record (seeded from `CHANGELOG.md`, which is a permitted input: it is the immutable
+  record, not the old docs); `debug-your-site` carries the code-fixable symptom rows;
+  the index carries the groups, the adapter-precondition sentence with its two
+  producers, the vocabulary section, the stability statement opening the operate
+  group, and the cross-track block to the admin diagnostic pages.
+- [ ] Fresh-context review against the extender profile; findings folded.
 
-**Files:** the seven editor pages and `docs/editors/README.md` per the outline,
-including the new `when-something-goes-wrong.md`; kill
-`docs/reference/authoring-syntax.md` per the manifest.
+### Task 7: the front doors
 
-- [ ] The track ships per its outline section: the two-tier index as the `/help` sidebar
-  (outcome-phrased, complete, no repetition of the admin Help home's content); sign-in
-  opens `welcome`; the `cairn:` paragraph and `::include` subsection land in
-  `write-in-the-editor`; the image boundary contracts applied (formats and HEIC to the
-  library page, alt-text doctrine one home); the tag page gains its actor sentence.
-- [ ] `when-something-goes-wrong.md` absorbs the four scattered failure sections plus the
-  undocumented cases (sign-in mail, creation refusals, tag refusal), quoting the real
-  message strings; **the edit-conflict prose is rewritten from the code** (a refused
-  save keeps the typing; the current claim is false), filed as a fix in the manifest.
-- [ ] Track rules hold: Microsoft register (ruling 1; the welcome markup-history essay is
-  the first cut); no outbound links to other tracks; the demo headings demoted or
-  fenced; the LIVE-UI markers from Task 2's inventory resolved or the `/help` ship
-  gated on them; a dated change-note footer per page.
+**Files:** rewrite `README.md` and `docs/README.md`; create `docs/why-cairn.md`.
 
-### Task 10: the extend track
+- [ ] The ordered spec: one-sentence what-is line, the copyable command, the five
+  routes (evaluator first; the admin and extender lines carry the discriminator and
+  the default), all in the first screenful; positioning below; no showcase
+  instruction, no "planned" scaffolder residue, no Diátaxis citation, no vocabulary
+  section (it lives in the extend index).
+- [ ] `why-cairn.md` written fresh to the evaluator: the why, the honest trade-offs,
+  the reasons not to use cairn; costs cited from the admin fact sheet, not restated.
+- [ ] Fresh-context review against all four profiles' routing questions (does each
+  reader recognize their door?).
 
-**Files:** the tutorial, guides, and concept pages per the outline's extend section,
-including the new `add-cairn-to-a-sveltekit-app.md`, `what-the-scaffold-wrote.md`,
-`debug-your-site.md`, and `migration-notes.md`; `reference/core.md` gains the fields
-table; `build-a-theme` moves to `internal/` as a draft.
+### Task 8: the reference touch-ups
 
-- [ ] The deep path holds its line budget, pulls deploy into the first third, links the
-  task guides at credential milestones instead of absorbing them, and fixes the
-  toolchain drift against a fresh `npx sv create` run (drag 11); origins reconciled
-  (drag 13); platform-branched commands (drag 5).
-- [ ] The merges, splits, retitles, kills, and folds land per the outline (including
-  `declare-your-own-concept`, `add-a-second-audience`, `design-your-site`, the
-  `upgrade-cairn`/`migration-notes` split with the `docs-links.mjs` pairing repointed
-  to the record half, the `structured-fields` kill into the gated reference section,
-  and concepts at six). Before folding `editor-copyedit`, verify the editors track
-  still answers "why doesn't spellcheck fix everything."
-- [ ] The extend index carries the groups, the adapter precondition sentence with its
-  two producers, the vocabulary section from the front door, the stability statement
-  opening the operate group, and the cross-track block linking the admin diagnostic
-  pages.
+**Files:** modify `docs/reference/README.md` and reference pages per the outline.
 
-### Task 11: the prune
+The kept arm. Not clean-room (it is gated against the code and stays), and not a
+rebuild: ledes and index corrections only.
 
-**Files:** per the manifest's MERGE list.
+- [ ] Each reference page gains its short narrative lede; the index corrects its
+  non-export-page miscount, gains the "also for site admins" grouping (`doctor`,
+  `log-events`, `supported-toolchain`), and `reference/core.md`'s fields section gains
+  the widget-and-validation table (the `structured-fields` job) under its lede.
+- [ ] The admin and extend pages link these by name, citing rather than restating
+  version facts. `authoring-syntax.md` is untouched here; it dies at cutover.
 
-- [ ] Execute the merges: duplicated log tables, AI-posture pages, `fields.reference` and
-  glob-wiring snippets, the three-way gating overlap, collapsing to the canonical homes
-  the manifest names; every merged page's inbound links repoint.
-- [ ] Sweep for residue: grep every killed or merged stem across `docs/`, `README.md`,
-  and `CONTRIBUTING.md`; zero hits outside the CHANGELOG legacy map and the process
-  record.
+**Phase 2 close [main loop]:** full gate (the old arms still green and canonical), the
+per-track profile grades on record, push, PR, merge. Prep the context clear.
+
+---
+
+## Phase 3: mine, cut over, consumers (fresh worktree off the merged `main`)
+
+### Task 9: the mining sweep
+
+**Files:** a findings report in `docs/internal/record/`; folds applied to the new tree.
+
+**The only task that reads the old arms, and it runs only now, with the new docs fully
+baked (Geoff's ordering, 2026-08-14).** A fresh-context sweep reads the old corpus
+against the new tree and reports, ranked: facts, worked examples, warnings, and edge
+cases present in the old pages and genuinely absent from the new ones.
+
+- [ ] Every candidate find is verified against the code before folding (the old corpus
+  contains known code-contradicted prose; nothing folds on the old page's authority).
+- [ ] Folds land as edits to the new pages in their own register; a find that would
+  add a page goes to the ROADMAP, not the tree (the page set is the approved outline).
+- [ ] The report records what was checked and what was declined, so the deletion is
+  auditable.
+
+### Task 10: the cutover
+
+**Files:** delete the old arms per the manifest's deletion list; edit every file in the
+manifest's gate bill; `CHANGELOG.md`.
+
+- [ ] Delete `docs/guides/`, `docs/tutorial/`, `docs/explanation/`, and
+  `reference/authoring-syntax.md`; rewire every gate in the bill (files array,
+  packaging allowlists and fixtures, ARMS with the `why-cairn` mapping, snippet dirs,
+  reference CONFIG, the readiness `DOC` and the track-aware `docsAnchor` slugs with
+  `npm test` proving the three-way contract and one wrong-anchor mutation proving it
+  can fail, the slugger corpus, Vale paths, and the `docs-links.mjs` legacy map with
+  the `## Unreleased` pairing repointed).
+- [ ] Each rewired gate proven red once; full gate green at task end; `npm pack
+  --dry-run` inspected (the tarball ships the new tracks and nothing dead).
+- [ ] The `CHANGELOG.md` `## Unreleased` entry finalized with the `Consumers must:`
+  line naming the tree change and the cairn-pub migration.
+
+### Task 11: the outside edges **[main loop]**
+
+**Files:** root `CLAUDE.md`, `docs/internal/docs-maintenance.md`,
+`~/.claude/skills/cairn-pass/SKILL.md`, `CONTRIBUTING.md`, agent memories; the drift
+routine via the schedule tooling.
+
+- [ ] The three `CONTRIBUTING.md` edits (track-aware arm list and map, the
+  which-track rule, the scope paragraph linking `what-cairn-is-and-is-not.md`), plus
+  the `docs-links` pairing's contributor-facing mechanics documented here.
+- [ ] Prose path chasing: `CLAUDE.md` (trimming at least as much as it adds),
+  `docs-maintenance.md`'s machine-layer table, the `cairn-pass` skill's docs step, any
+  memory naming an arm path.
+- [ ] The drift routine (`trig_015UPQostYVisXuExTHTH2vu`): verify what it samples; if
+  repo paths, re-scope now; if cairn.pub URLs, the re-scope rides the site-walk sitting
+  that merges Task 12's branch, recorded as a STATUS hand-off line. Either way it must
+  fail loud when its sample set stops resolving.
 
 ### Task 12: cairn-pub, prepared **[main loop]**
 
-**Files:** in `~/Projects/cairn-pub`, on a branch: `src/lib/docs/{loader,link-policy,link-check}.ts`,
-the `/docs/[...path]` and `/help/[guide]` routes, the loader tests,
-`src/theme/components/GettingStartedPanel.svelte`, plus a redirect map.
+**Files:** in `~/Projects/cairn-pub`, on a branch:
+`src/lib/docs/{loader,link-policy,link-check}.ts`, the `/docs/[...path]` and
+`/help/[guide]` routes, the loader tests,
+`src/theme/components/GettingStartedPanel.svelte`, the redirect map.
 
-- [ ] The loader consumes the track tree: the arms union, `/help` derived from the
-  `editors/` index instead of parsing a "For editors" heading out of the guides README
-  (the mechanism dissolves, not just the path), tutorial stems reworked, and
-  `link-policy.ts` made fail-loud on an unknown `docs/*` prefix instead of silently
-  rewriting to a GitHub blob URL.
-- [ ] The redirect map: every old `/docs/<arm>/<stem>` and `/help/<stem>` URL from the
-  manifest redirects to its new location.
-- [ ] Proven against the packed tarball: `npm pack` from the Pass D tree, installed via
-  `file:` in the cairn-pub branch, site builds green and renders the tracks.
-- [ ] **Not merged** (ruling 3): the branch name and its proof evidence are recorded in
-  STATUS; the site walk merges it once release one publishes and the dependency range
-  bumps.
+- [ ] The loader consumes the track tree (`/help` derived from the editors index; the
+  arms union; tutorial stems reworked; `link-policy.ts` fail-loud on unknown
+  prefixes); the redirect map from the manifest covers every old `/docs` and `/help`
+  URL; the LIVE-UI reproductions the editors track earned render through this
+  pipeline.
+- [ ] Proven against the packed tarball (`npm pack` from the Pass D tree, `file:`
+  install, site builds green and renders the tracks). **Not merged** (ruling 3): the
+  branch and its proof evidence recorded in STATUS; the site walk merges it after
+  release one.
 
-### Task 13: the outside edges **[main loop]**
+### Task 13: pass close **[main loop]**
 
-**Files:** modify `CHANGELOG.md`, `docs/guides`-successor upgrade page, root `CLAUDE.md`,
-`docs/internal/docs-maintenance.md`, `~/.claude/skills/cairn-pass/SKILL.md`, agent
-memories; the drift routine via the schedule tooling.
-
-- [ ] Finalize the `## Unreleased` entry with the `Consumers must:` line naming the docs
-  tree change and the cairn-pub loader migration; add the upgrade-guide entry.
-- [ ] Chase arm paths through prose: root `CLAUDE.md` (trimming at least as much as it
-  adds), `docs-maintenance.md`'s machine-layer table, the `cairn-pass` skill's docs step,
-  and any agent memory naming an arm path.
-- [ ] The drift routine (`trig_015UPQostYVisXuExTHTH2vu`): verify what it actually
-  samples. If it samples repo paths, re-scope it now; if it samples cairn.pub URLs, the
-  re-scope rides the site-walk sitting that merges Task 12's branch, recorded as a STATUS
-  hand-off line. Either way the routine must fail loud, not report a clean "no drift",
-  when its sample set stops resolving.
-
-### Task 14: pass close **[main loop]**
-
-- [ ] ROADMAP reconciliation: Pass D marked done in the T-series entry; P6 and P7 marked
-  absorbed with pointers (ruling 5); the editor-cluster filing from Task 1's
-  recommendation; the friction log's setup-walk entry closed against what shipped.
-- [ ] Post-mortem appended to this plan; STATUS rewritten with the next action (release
-  one via `cairn-release`, restating the same-cut obligations: `create-cairn-site`,
-  `@glw907/cairn-cms-dev`, the template repo, and T5a'); the initiative memory
-  refreshed.
-- [ ] Phase 2 merges via PR with all checks green; the cold-start test runs before the
-  session closes (a fresh session reading only plan, spec, STATUS, and memory reaches
-  the same next action).
+- [ ] ROADMAP reconciliation (Pass D done; P6 and P7 absorbed per ruling 5; the
+  editor-cluster filing from Task 1; the admin update page filed to arrive with the
+  tool's upgrade verb; the friction log's setup-walk entry closed).
+- [ ] Post-mortem appended here; STATUS rewritten (next action: release one via
+  `cairn-release`, restating the same-cut obligations: `create-cairn-site`,
+  `@glw907/cairn-cms-dev`, the template repo, T5a' with the button spike feeding Task
+  4's staged block); the initiative memory refreshed.
+- [ ] Phase 3 merges via PR with all checks green; the cold-start test runs before the
+  session closes.
 
 ## Exit criteria
 
-The umbrella's Pass D acceptance, verbatim where it applies: the four tracks ship with
-the dispositions above; every gate in the bill passes, including the readiness contract,
-the packaging allowlist, the re-scoped anchor corpus, and the two gates this plan adds
-(the admin transcript check and the internal-index entry); the cairn-pub branch is
-proven against the tarball with its redirect map and fail-loud link policy; the
+The umbrella's Pass D acceptance as amended by the rebuild ruling: the four tracks
+ship, written clean-room and graded against the audience profiles; the old corpus is
+deleted with every published path redirected; every gate in the bill passes, including
+the readiness contract, the packaging allowlist, the re-scoped anchor corpus, and the
+two gates this plan adds (the admin transcript check and the internal-index entry); the
+mining sweep's report is on record with every fold code-verified; the cairn-pub branch
+is proven against the tarball with its redirect map and fail-loud link policy; the
 CHANGELOG keeps its history via the legacy-path map; the drift routine's scope is
-handled at the boundary Task 13 rules; the front doors route five ways by name; the
-reference lands at 23 pages with the corrected index; every track's pages grade clean
-against the audience profiles at the pass-end review; and no published page describes
+handled at the boundary Task 11 rules; the front doors route five ways by name; the
+reference lands at 23 pages with the corrected index; and no published page describes
 tooling that is not installable in the same cut, which release one satisfies by
 publishing the tool, `@glw907/cairn-cms-dev`, and the template repo together with this
 tree.

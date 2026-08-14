@@ -8,8 +8,17 @@ against the competitor review
 ([`2026-08-14-cms-docs-competitor-review.md`](./2026-08-14-cms-docs-competitor-review.md));
 and **revised at a five-reviewer adversarial gate** (2026-08-14: one reviewer per track,
 one cross-track coherence reviewer, ~60 ranked findings; the revision record at the end
-lists what changed and what was declined). Pass D's move manifest (Task 2) consumes this
-document as its target shape; the manifest still owns the exhaustive per-page mapping.
+lists what changed and what was declined). Pass D's target manifest (Task 2) consumes
+this document as its target shape.
+
+**This is the spec for a ground-up rebuild, not a reorganization (Geoff, 2026-08-14).**
+The old guides, tutorial, and explanation pages are deleted at cutover, not repaired or
+moved; the reference arm is the kept exception (machine-gated and current). Every
+"absorbs X" or "the old Y" annotation below is **job provenance**, recording which old
+page's job a new page covers, never an instruction to move or copy prose. The new pages
+are written clean-room from the code, the recorded runs, and the specs; the old corpus
+is read only by the post-bake mining sweep, which verifies any find against the code
+before folding it.
 
 **The governing ruling (Geoff, 2026-08-14): tight beats complete-looking. More does not
 equal better; a smaller number of really well-written pages beats a sprawling collection

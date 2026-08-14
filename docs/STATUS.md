@@ -37,9 +37,25 @@ of the plan for approval or veto at the gate: the Microsoft Vale package on
 cairn-pub prepared-not-merged, no published Diátaxis citation, and explicit P6/P7
 absorption in ROADMAP.
 
+**The sitting extended past the plan commit (2026-08-14, Geoff's direction) and banked
+three governing inputs for the content phase,** all committed under `docs/internal/`:
+the competitor review (`2026-08-14-cms-docs-competitor-review.md`, ten web-researched
+corpora with a what-users-say synthesis and eight adopted rules), the audience profiles
+(`2026-08-14-audience-profiles.md`, the grading rubric for all four tracks, including
+the extender-versus-contributor developer-flavor split), and the track outlines
+(`2026-08-14-docs-track-outlines.md`, **revised at a five-reviewer adversarial gate**,
+~60 ranked findings; the revision record lists adoptions and declines). The plan's
+Tasks 2 and 5 through 10 now consume these by name. Standing rulings from the sitting:
+tight beats sprawling (fewer, really well-written pages); page anatomies encoded so the
+pattern is reproducible; the anti-fishtank coherence gate (index order reads as a
+story, preconditions produced before use). The gate also surfaced two code-verified doc
+defects (the edit-conflict prose contradicts the code; the bootstrap sign-in's
+ten-minute TTL is documented nowhere) that the manifest files as fixes.
+
 **Then release one, AFTER Pass D** (ordering unchanged): the engine window plus
 `create-cairn-site`, `@glw907/cairn-cms-dev`, and the template repo publish in the same
-cut, plus T5a'. Invoke `cairn-release`; verify the next number is free first.
+cut, plus T5a' **including the button spike, which Task 7's staged button block consumes**.
+Invoke `cairn-release`; verify the next number is free first.
 
 **Restored to the ledger (held only in memory since T4d; a defect owed BEFORE release
 one): a tarball-installed scaffold ships NO `.gitignore`.** npm drops the file from every

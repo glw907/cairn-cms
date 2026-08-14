@@ -16,10 +16,18 @@ with documentation that matches the product it publishes.
 **Spec:** the umbrella,
 [`docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`](../specs/2026-08-09-admin-setup-and-docs-reset-design.md)
 (Part 2 and its Pass D acceptance criteria), with the pre-brainstorm brief
-(`2026-08-09-docs-refactor-brief.md`) as background. The admin track's evidence base is the
-baseline walk (`docs/internal/2026-08-unagented-setup-baseline.md`; its drag points 2, 4, 5,
-7, 9, 10, 11, 12, 13, and 14 are this pass's documentation defects) and the live run
-records (`docs/internal/2026-08-13-t5-task8-live-e2e.md`,
+(`2026-08-09-docs-refactor-brief.md`) as background. **Three inputs banked at the
+2026-08-14 planning sitting govern the content work and supersede this plan where they
+are more specific:** the audience profiles
+(`docs/internal/2026-08-14-audience-profiles.md`, the grading rubric every track review
+uses), the competitor review (`docs/internal/2026-08-14-cms-docs-competitor-review.md`,
+whose closing rules are adopted doctrine), and the track outlines
+(`docs/internal/2026-08-14-docs-track-outlines.md`, **revised at a five-reviewer
+adversarial gate**; its page set, contracts, kills, merges, anatomies, and revision
+record are the target state Task 2's manifest maps onto). The admin track's evidence
+base is the baseline walk (`docs/internal/2026-08-unagented-setup-baseline.md`; its drag
+points 2, 4, 5, 7, 9, 10, 11, 12, 13, and 14 are this pass's documentation defects) and
+the live run records (`docs/internal/2026-08-13-t5-task8-live-e2e.md`,
 `docs/internal/2026-08-13-t4d-task7-live-proof.md`).
 
 **Two phases, two worktrees (the sizing ruling, applied at plan time rather than
@@ -124,16 +132,19 @@ artifact; Task 5's filing rule will place it on the record side).
 The umbrella's bill demands exact counts before any move budget is committed. This task
 produces the single document Task 3 executes mechanically.
 
-- [ ] Re-derive the per-guide audience classification **from the guide texts**, not the
-  filenames. The umbrella's 7 setup / 4 operations / 17 extender / 6 editor split is a
-  claim to check, recorded per guide with a one-line justification.
 - [ ] The move map: every current page under `docs/` maps to exactly one disposition, a
-  new path under `docs/{admin,editors,extend,reference,internal}/`, KILL, or MERGE-into
-  (naming the surviving page). Target shape per the umbrella: tracks are flat directories,
-  each with its own `README.md` index whose link order is the future sidebar;
-  `docs/README.md` stays the front door; `reference/` stays put except the
-  authoring-syntax editor half; the hand-build tutorial and `explanation/` fold into
-  `extend/`; `build-a-theme.md` moves to `internal/` as a draft.
+  new path under `docs/{admin,editors,extend,reference,internal}/` (plus
+  `docs/why-cairn.md` beside the front door), KILL, or MERGE-into (naming the surviving
+  page). **The target shape is the revised outlines doc**, page by page, including its
+  kills (`authoring-syntax`, `structured-fields`, the draft-only pages never born), its
+  merges and splits (the `upgrade-cairn`/`migration-notes` split, `design-your-site`,
+  `add-a-second-audience`, `declare-your-own-concept`), and its two new-page sets per
+  track. Verify each outline claim against the code the way the gate did (it found two
+  code-contradicted doc passages; expect more), and record the per-guide audience call
+  with a one-line justification where the outline's disposition is not obvious.
+- [ ] Inventory the seventeen `LIVE-UI:` markers in the editor guides with their
+  resolution route (live reproduction via the `/help` pipeline, coordinated with Task
+  12); the editors track does not ship to `/help` with an unresolved marker rendering.
 - [ ] The prune list, full corpus: the redundancy harvest the umbrella names (duplicated
   log tables, AI-posture pages, `fields.reference` and glob-wiring snippets, the
   three-way gating overlap) plus anything else that does not earn its place, each with a
@@ -204,9 +215,19 @@ itself.
 package beside Google under `.vale/styles`), `docs/internal/docs-friction-log.md` (tags),
 `docs/internal/README.md`; move record artifacts per the manifest.
 
-- [ ] Rewrite `docs-register.md`'s arm registers as track registers, update the front-door
-  register for four-audience routing, and fix the stale "62 pages" count (line 3) against
-  the post-move tree.
+- [ ] Rewrite `docs-register.md`'s arm registers as track registers **founded on the four
+  audience profiles** (fold `2026-08-14-audience-profiles.md` in as each track's
+  grading rubric) and carrying the outline's page anatomies (task guide, tutorial
+  milestone, reference entry with narrative lede, condition entry, symptom row,
+  recovery row); update the front-door register for five-route audience routing, and
+  fix the stale "62 pages" count (line 3) against the post-move tree.
+- [ ] The three named `CONTRIBUTING.md` edits from the outline: the track-aware arm list
+  and repository map, the which-track-does-my-page-go-in rule, and the scope paragraph
+  linking `what-cairn-is-and-is-not.md`.
+- [ ] The internal-index gate: the dated record moves to `docs/internal/record/` per the
+  manifest, and `check:arm-indexes` gains a non-recursive `docs/internal` entry so an
+  unindexed top-level internal doc fails CI; prove it red with a temporary unindexed
+  file.
 - [ ] Apply ruling 1: `[docs/editors/**]` gets the Microsoft package; confirm the vendored
   package passes offline the way Google's does; run Vale over the moved editor guides and
   clear error-tier findings only.
@@ -227,89 +248,109 @@ the context clear even if the same conductor continues.
 
 ### Task 6: the front doors
 
-**Files:** modify `README.md`, `docs/README.md`; `why-cairn`'s new home per the manifest.
+**Files:** modify `README.md`, `docs/README.md`; create `docs/why-cairn.md` (moved from
+`explanation/`, absorbing the evaluator route).
 
-- [ ] Both front doors route four audiences by name in the first screenful; the first
-  copyable command sits near the top of the root README rather than behind five sections
-  of positioning (drag 12).
-- [ ] `docs/README.md` stops telling the reader to keep `examples/showcase` open (a
-  quickstart reader does not have it) and stops promising the guides follow the tutorial's
-  order; the track indexes own sequencing now.
-- [ ] `why-cairn` sits in the front door's orbit per the manifest; no page cites Diátaxis
-  (ruling 4).
-- [ ] Vale plus the Task 5 register standard hold on both files.
+- [ ] Both front doors follow the outline's ordered spec: one-sentence what-is line, the
+  copyable command, then the five routes (evaluator first, admin and extender lines
+  carrying the discriminator and the default), all in the first screenful; positioning
+  material below; the vocabulary section moves to the extend index.
+- [ ] `docs/README.md` stops telling the reader to keep `examples/showcase` open and
+  stops promising the guides follow the tutorial's order; the "scaffolder is planned"
+  residue dies; no page cites Diátaxis (ruling 4).
+- [ ] `why-cairn` keeps the why and the trade-offs, links the admin fact sheet for costs
+  rather than restating them, and is mapped in `check:arm-indexes` to the front-door
+  index so it cannot orphan.
+- [ ] Vale plus the Task 5 register standard hold on all three files.
 
-### Task 7: the admin track, chapter 1
+### Task 7: the admin track, before-you-start and chapter 1
 
-**Files:** create/modify the admin track's create-your-site page and the setup guides per
-the manifest's setup set.
+**Files:** create `docs/admin/before-you-start.md` and `docs/admin/create-your-site.md`
+per the outline; the admin index.
 
-- [ ] "Create your site" presents both doors: the Deploy button as the zero-prerequisite
-  start, the CLI as the complete experience, per the umbrella's two-doors ruling. The CLI
-  narrative quotes the tool's real printed output from the recorded runs (the
-  transcript-traceability constraint), through chapter 1's finish line: signed into your
-  own admin on `workers.dev`, no payment, no domain, no email.
-- [ ] Prerequisites are stated up front as facts, not discovered at the failing step: Node
-  (with an install path, drag 8), a GitHub account; and chapter 1 explicitly needs no git
-  binary, no payment, no domain.
-- [ ] The setup guides rewrite to the tool's output rather than relocating hand-authoring:
-  each page in the manifest's setup set is rewritten, merged into the track pages, or
-  killed per the manifest. `CLOUDFLARE_API_TOKEN` guidance lands where the tool's
-  token-prefill needs it, with scopes (drag 7). No placeholder ids: the tool writes real
-  ones, and any residual placeholder is marked as one that breaks a real deploy (drag 9).
-  The two-localhost-origins confusion is resolved wherever origins are named (drag 13).
-- [ ] The readiness page (Task 4's home) slots into this track as the doctor-organized
-  "is it working" surface.
-- [ ] Platform rule: no GNU-only shell command ships without a macOS branch (the `base64
-  -w0` class, drag 5).
+- [ ] `before-you-start.md` per its outline contract: the asset inventory, the three
+  admission prices (plan, payment method, the API token with the confirm-every-row
+  warning, drags 2 and 7), the free-until-second-writer boundary, what needs a
+  developer, the successor hand-off, and the exit story.
+- [ ] `create-your-site.md` per its outline contract: the two-door fork block with price
+  and default; the CLI narrative quoting recorded transcripts to the finish line;
+  prerequisites as facts (Node with an install path, drag 8; no git, no money, no
+  domain); the local-dev stand-in stated; chapter 1's browser-moment count; the
+  "Getting back in" close (`--sign-in`, the ten-minute token). **The button half is
+  staged on the T5a' spike** (release-one window): written CLI-first now, the button's
+  quoted flow lands when the spike records it, and no stub ships in between.
+- [ ] **The transcript gate ships here:** every fenced transcript block in `docs/admin/`
+  lives as or beside a recorded fixture, with a check script comparing them in CI (the
+  transcript analog of `check:snippets`), proven red once by editing a quoted line.
+- [ ] Platform rule: no GNU-only shell command ships without a macOS branch (drag 5); no
+  placeholder ids (drag 9); the two-localhost-origins confusion resolved wherever
+  origins are named (drag 13).
 
-### Task 8: the admin track, chapter 2 and day 2
+### Task 8: the admin track, own-your-domain and day 2
 
-**Files:** create/modify the domain, email, and push-to-deploy pages; the setup recovery
-page; the four operations guides; the default-site upgrade page.
+**Files:** create `docs/admin/own-your-domain.md`, `docs/admin/setup-recovery.md`,
+`docs/admin/invite-editors.md`; rewrite `docs/admin/troubleshooting.md` (absorbing the
+log-querying mechanics).
 
-- [ ] Chapter 2 opens with the money stated plainly (Workers Paid and a payment method are
-  the chapter's admission price, drag 2) and the domain prerequisite named before any
-  zone instruction: you own a domain, it becomes a Cloudflare zone, nameservers and
-  propagation are involved (drag 4).
-- [ ] **Browser-moment counts are stated per door and per chapter, derived from the real
-  flow; the domain page states both carried counts: chapter 2's count is one and chapter
-  3's is two** (STATUS carry-forward 2).
-- [ ] The setup recovery page is the umbrella's resume table made real (ruling 2): one row
-  per step naming the persisted key, its expiry, how partial state is detected, and the
-  exact re-entry, derived from `packages/create-cairn-site`'s real state model and the
-  live-run records. It doubles as the setup-phase troubleshooting surface the corpus
-  lacks (drag 10), and says plainly what the published troubleshooting guide covers
-  (live sites) versus this page (setup).
-- [ ] The four operations guides land as day 2, with the short default-site upgrade page
-  beside them.
+- [ ] `own-your-domain.md` per its outline contract: the push-to-deploy-only fork at the
+  top; the two tokens as two admission prices with scope lists; the domain-and-zone
+  prerequisite before any zone step (drag 4); the existing-domain case split into
+  sending-domain versus the organization's mail, with the "stop and talk to whoever
+  runs your DNS" branch; **browser-moment counts per chapter (two: one; three: two,
+  carry-forward 2), plus chapter 1's on its own page**. The modal existing-domain
+  narrative takes the externally-registered live run (STATUS carry-forward 1) as its
+  input, or ships the DNS-admin branch in its place and says so.
+- [ ] `setup-recovery.md` is the resume table made real (ruling 2), derived from the
+  tool's real state model and the live-run records, positioned directly after the
+  chapter pages, with every chapter-page failure branch linking its row by anchor, a
+  `--sign-in` row, and wait/act/ask classification per row (drag 10).
+- [ ] The three diagnostic pages (`is-it-working`, `setup-recovery`, `troubleshooting`)
+  carry the identical three-line instrument-keyed router at the top; troubleshooting
+  rows a developer must fix point at the extend track's debugging page.
+- [ ] `invite-editors.md` opens by restating its precondition (the plan and a sending
+  domain).
 
 ### Task 9: the editors track
 
-**Files:** the six editor guides at their new home; `docs/editors/README.md`; the
-authoring-syntax split per the manifest.
+**Files:** the seven editor pages and `docs/editors/README.md` per the outline,
+including the new `when-something-goes-wrong.md`; kill
+`docs/reference/authoring-syntax.md` per the manifest.
 
-- [ ] The six guides read under the Microsoft register; fix error-tier findings without
-  flattening the guides' existing voice.
-- [ ] The editor-facing half of `authoring-syntax` joins the track, named in both indexes
-  as the one deliberate `reference/` exception; the developer-facing residue stays in
-  `reference/` with cross-pointers both ways.
+- [ ] The track ships per its outline section: the two-tier index as the `/help` sidebar
+  (outcome-phrased, complete, no repetition of the admin Help home's content); sign-in
+  opens `welcome`; the `cairn:` paragraph and `::include` subsection land in
+  `write-in-the-editor`; the image boundary contracts applied (formats and HEIC to the
+  library page, alt-text doctrine one home); the tag page gains its actor sentence.
+- [ ] `when-something-goes-wrong.md` absorbs the four scattered failure sections plus the
+  undocumented cases (sign-in mail, creation refusals, tag refusal), quoting the real
+  message strings; **the edit-conflict prose is rewritten from the code** (a refused
+  save keeps the typing; the current claim is false), filed as a fix in the manifest.
+- [ ] Track rules hold: Microsoft register (ruling 1; the welcome markup-history essay is
+  the first cut); no outbound links to other tracks; the demo headings demoted or
+  fenced; the LIVE-UI markers from Task 2's inventory resolved or the `/help` ship
+  gated on them; a dated change-note footer per page.
 
 ### Task 10: the extend track
 
-**Files:** the extender guides, the retitled hand-build tutorial, the folded
-`explanation/` pages, the upgrade-ceremony material, per the manifest.
+**Files:** the tutorial, guides, and concept pages per the outline's extend section,
+including the new `add-cairn-to-a-sveltekit-app.md`, `what-the-scaffold-wrote.md`,
+`debug-your-site.md`, and `migration-notes.md`; `reference/core.md` gains the fields
+table; `build-a-theme` moves to `internal/` as a draft.
 
-- [ ] The hand-build tutorial retitles as the extender's deep path and its toolchain drift
-  is fixed against the current scaffold, verified by running `npx sv create` before
-  writing: the adapter is configured in `vite.config.ts` now, so the `svelte.config.js`
-  edit dies (drag 11); the origins are reconciled (drag 13); every shell command is
-  platform-branched where GNU/BSD differ (drag 5).
-- [ ] `make-waymark-your-own` joins the track (it edits source and rebuilds);
-  `build-a-theme` moves to `internal/` as a draft per the umbrella.
-- [ ] `explanation/` folds per the manifest; the changelog-ceremony upgrade material
-  (`upgrade-cairn.md`) homes here and Task 3's gate pairing already points at it
-  (verify).
+- [ ] The deep path holds its line budget, pulls deploy into the first third, links the
+  task guides at credential milestones instead of absorbing them, and fixes the
+  toolchain drift against a fresh `npx sv create` run (drag 11); origins reconciled
+  (drag 13); platform-branched commands (drag 5).
+- [ ] The merges, splits, retitles, kills, and folds land per the outline (including
+  `declare-your-own-concept`, `add-a-second-audience`, `design-your-site`, the
+  `upgrade-cairn`/`migration-notes` split with the `docs-links.mjs` pairing repointed
+  to the record half, the `structured-fields` kill into the gated reference section,
+  and concepts at six). Before folding `editor-copyedit`, verify the editors track
+  still answers "why doesn't spellcheck fix everything."
+- [ ] The extend index carries the groups, the adapter precondition sentence with its
+  two producers, the vocabulary section from the front door, the stability statement
+  opening the operate group, and the cross-track block linking the admin diagnostic
+  pages.
 
 ### Task 11: the prune
 
@@ -373,12 +414,15 @@ memories; the drift routine via the schedule tooling.
 
 ## Exit criteria
 
-The umbrella's Pass D acceptance, verbatim where it applies: the four tracks ship with the
-dispositions above; every gate in the bill passes, including the readiness contract, the
-packaging allowlist, and the re-scoped anchor corpus; the cairn-pub branch is proven
-against the tarball with its redirect map and fail-loud link policy; the CHANGELOG keeps
-its history via the legacy-path map; the drift routine's scope is handled at the boundary
-Task 13 rules; the front doors route four audiences by name; and no published page
-describes tooling that is not installable in the same cut, which release one satisfies by
+The umbrella's Pass D acceptance, verbatim where it applies: the four tracks ship with
+the dispositions above; every gate in the bill passes, including the readiness contract,
+the packaging allowlist, the re-scoped anchor corpus, and the two gates this plan adds
+(the admin transcript check and the internal-index entry); the cairn-pub branch is
+proven against the tarball with its redirect map and fail-loud link policy; the
+CHANGELOG keeps its history via the legacy-path map; the drift routine's scope is
+handled at the boundary Task 13 rules; the front doors route five ways by name; the
+reference lands at 23 pages with the corrected index; every track's pages grade clean
+against the audience profiles at the pass-end review; and no published page describes
+tooling that is not installable in the same cut, which release one satisfies by
 publishing the tool, `@glw907/cairn-cms-dev`, and the template repo together with this
 tree.

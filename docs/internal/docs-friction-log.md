@@ -5,9 +5,12 @@ building cairn surfaces, so a rough edge becomes a tracked candidate for work in
 observation. Triage feeds `ROADMAP.md` and `docs/STATUS.md`; this repo keeps no separate backlog file.
 A finding here does not block the doc that found it.
 
-Record each finding with its perspective and a short note. The perspective is `developer` (the
-integrator building and deploying a site), `editor` (the non-technical author working in `/admin`),
-`maintainer`, or `operator`.
+Record each finding with its perspective and a short note. The perspective is one of the four
+audience tracks ([`2026-08-14-audience-profiles.md`](./2026-08-14-audience-profiles.md)): `editor`
+(the non-technical author working in `/admin`), `admin` (the technical non-developer who sets up
+and runs the default site; `operator` retired into this tag 2026-08-14), `extender` (the
+Svelte-fluent developer building on cairn's seams; formerly tagged `developer`), or `contributor`
+(the engine contributor working on cairn itself; formerly tagged `maintainer`).
 
 This log holds only live findings and the tombstones below. Resolved findings are pruned here once
 shipped; their detail lives in the per-plan post-mortems and `docs/STATUS.md`, the homes for shipped
@@ -86,7 +89,7 @@ lands the grammar-ladder doctrine the harvest's pattern argued for, in
 check, prose alone being the demonstrated failure mode. New findings start fresh below this
 line.
 
-- **[developer, admin] The setup docs were walked cold from five vantages, and the findings are a
+- **[extender, admin] The setup docs were walked cold from five vantages, and the findings are a
   Pass D work list, not a doc-by-doc polish.** The record, with every finding evidenced by
   `file:line` and ranked by how many independent walks raised it, is
   [`2026-08-unagented-setup-baseline.md`](./2026-08-unagented-setup-baseline.md); read it there

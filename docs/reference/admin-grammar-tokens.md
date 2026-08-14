@@ -137,7 +137,7 @@ Each one carries a counted, reasoned directive at its call site:
 
 | Site | Value | Why it is exempt |
 |---|---|---|
-| The brand wordmark, three sites | 22px | The keming fix raised the wordmark off the nearest step because the `rn` pair merged and "Cairn" read "Caim". |
+| The brand wordmark, three sites | 22px | The keming fix raised the wordmark off the nearest step because the `rn` pair merged and `Cairn` read `Caim`. |
 | The editor document title | 30px | The editor canvas sets its own scale, deliberately larger than the admin chrome. |
 | The editor prose surface | 18px | The editor's own canvas in the editor face. Its size coincides with `type-heading`, but it is body text, not a heading. |
 

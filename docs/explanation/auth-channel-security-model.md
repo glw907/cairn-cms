@@ -219,8 +219,11 @@ These are accepted, not solved, carried here with the numbers unchanged from the
 - **A 6-to-10-digit code hashed at rest is a speed bump, not a protection.** Read-only database
   exposure recovers live codes. The mitigations are the 10-minute TTL and session binding, which make
   a recovered code useless in another browser.
+<!-- vale Google.Units = NO -->
+<!-- SP 800-63B is a document identifier, not a measurement. -->
 - **SMS is a restricted authenticator under NIST SP 800-63B.** A site choosing it owes its members
   that disclosure; the guide says so.
+<!-- vale Google.Units = YES -->
 - **A member must confirm in the browser that requested.** This is what makes a code stolen in
   transit useless to the thief, and it costs the cross-device flow.
 - **The Cloudflare rate-limit binding is back pressure only** (10 or 60 second periods, per colo,

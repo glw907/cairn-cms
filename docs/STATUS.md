@@ -36,6 +36,15 @@ to five hand-deleted. **The estate is intact and re-verified at execution start:
 `~/.config/cairn/sites/` holds only `t5-scratch-a32510.json` at `builds-live`, with
 `buildsReconciledHash` set, so the provocation is reachable. After that, Pass D.
 
+**The branch is pushed but NOT CI-verified, and nothing is waiting to verify it.** All five
+gating workflows trigger on `pull_request` plus a `push` scoped to `main` and `rebuild` only, and
+no PR is open on `t5-browser-door` (the earlier ones merged). **Opening a PR is what gates this
+code**, and it should happen before the branch is built on or merged. The local gate below is
+comprehensive and was run by name, and `check:consumers` ran against a real from-scratch
+`examples/showcase` install rather than the worktree's absent `node_modules`, so it does not carry
+the usual worktree blind spot. What only CI's clean checkout can still prove is the `e2e`,
+`scaffold`, and `create-site` workflows against a real install.
+
 **Gate at close, verified in the main loop rather than taken from an agent's report.**
 `packages/create-cairn-site` 821 pass exit 0 (701 at pass start). Root `npm run check` 0 errors 0
 warnings over 1601 files. `check:docs` 188 files, every relative link and anchor resolving. The

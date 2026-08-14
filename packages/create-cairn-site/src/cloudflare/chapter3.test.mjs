@@ -296,10 +296,12 @@ function makeApiFnWithDelayedPushBuildSeed({ cloudflare, github, owner, repo, de
 }
 
 /** A console server handle recording what the hold loop does with it, mirroring hostname.test.mjs
- * and chapter2.test.mjs's own `fakeConsole` stand-in. */
+ * and chapter2.test.mjs's own `fakeConsole` stand-in. `stopAtUpdate` records how many times `stop`
+ * had already run when each update arrived, so a test can assert the console was still up while it
+ * was being fed rather than only that it was fed at all. */
 const HOLD_CONSOLE_URL = 'http://127.0.0.1:49153/YmFja3VwLXNlY3JldA';
 function fakeConsole() {
-  const calls = { start: [], update: [], stop: 0 };
+  const calls = { start: [], update: [], stop: 0, stopAtUpdate: [] };
   return {
     calls,
     handle: {
@@ -309,6 +311,7 @@ function fakeConsole() {
       },
       update(observation) {
         calls.update.push(observation);
+        calls.stopAtUpdate.push(calls.stop);
       },
       async stop() {
         calls.stop += 1;
@@ -891,6 +894,132 @@ test('an interactive run threads waitForClear into watchAndComplete: the console
   assert.equal(kicks.length, 0, 'the push build was discovered through the held poll; a manual kick must never fire');
 });
 
+/**
+ * Wrap the real Cloudflare API client so the push build appears QUEUED on the first
+ * `listBuildsForWorker` read (rather than already finished) and then advances one scripted status
+ * per `getBuild` read. This is the ordinary shape of a real deploy: the build is found in seconds
+ * and runs for minutes afterwards, which is the whole stretch the console exists to make watchable.
+ * @param {{ cloudflare: object, github: object, owner: string, repo: string, defaultBranch: string,
+ *  statuses: string[] }} input `statuses` is consumed one entry per `getBuild`; `'stopped'` also
+ *  settles the outcome to success
+ * @returns {{ makeApiFn: Function, calls: { getBuild: number, listBuildsForWorker: number } }} the
+ *  seam and its own call counters
+ */
+function makeApiFnWithRunningPushBuild({ cloudflare, github, owner, repo, defaultBranch, statuses }) {
+  const remaining = [...statuses];
+  const calls = { getBuild: 0, listBuildsForWorker: 0 };
+  let seeded = false;
+  const makeApiFn = (opts) => {
+    const real = makeApi(opts);
+    return {
+      ...real,
+      async listBuildsForWorker(tag) {
+        calls.listBuildsForWorker += 1;
+        if (!seeded) {
+          seeded = true;
+          const gitEntry = github.state.gitObjects.get(`${owner}/${repo}`);
+          const headSha = gitEntry?.refs.get(`heads/${defaultBranch}`);
+          if (headSha) {
+            cloudflare.state.builds.set('push-build-1', {
+              build_uuid: 'push-build-1',
+              status: 'queued',
+              build_outcome: null,
+              created_on: new Date().toISOString(),
+              trigger: { external_script_id: tag },
+              build_trigger_source: 'push_event',
+              build_trigger_metadata: { commit_hash: headSha, commit_message: 'x', author: 'admin', branch: defaultBranch },
+            });
+          }
+        }
+        return real.listBuildsForWorker(tag);
+      },
+      async getBuild(buildUuid) {
+        calls.getBuild += 1;
+        const next = remaining.shift();
+        const build = cloudflare.state.builds.get(buildUuid);
+        if (next && build) {
+          build.status = next;
+          if (next === 'stopped') {
+            build.build_outcome = 'success';
+            build.stopped_on = new Date().toISOString();
+          }
+        }
+        return real.getBuild(buildUuid);
+      },
+    };
+  };
+  return { makeApiFn, calls };
+}
+
+test('an interactive run holds the console across the build itself, not only its discovery: every getBuild read reaches the console, queued through running to the settled outcome, with the server still up throughout', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
+  const staleDir = await fixtureScaffoldDir(t, { wrangler: `${JSON.stringify({ name: 'stale-name' }, null, 2)}\n` });
+  const repo = await seedGithubRepo(github, staleDir);
+  const siteId = 'builds-held-poll-site-abc123';
+  await seedSite(siteId, dir, repo);
+
+  const consoleServer = fakeConsole();
+  const buildApi = makeApiFnWithRunningPushBuild({
+    cloudflare,
+    github,
+    owner: repo.owner,
+    repo: repo.repo,
+    defaultBranch: repo.defaultBranch,
+    statuses: ['running', 'running', 'stopped'],
+  });
+
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    openBrowser: smartOpenBrowser(),
+    confirm: confirmAnswering(true),
+    promptSecretFn: async () => 'fresh-cf-token',
+    // The hold owns the pacing here, so chapter 3's own sleep belongs to `pollBuildToStop` alone:
+    // a call to it would mean a second loop is polling the build the hold already polled.
+    sleepFn: mustNotBeCalled('sleepFn'),
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 1,
+    maxPollAttempts: 20,
+    makeApiFn: buildApi.makeApiFn,
+    isTTY: true,
+    env: {},
+    createWaitForClearFn: testCreateWaitForClearFn({ calls: [] }),
+    createConsoleServerFn: () => consoleServer.handle,
+  });
+
+  assert.equal(result.outcome, 'builds-live');
+  assert.equal(consoleServer.calls.start.length, 1, 'the console starts once, on the first not-yet-finished observation');
+  assert.equal(consoleServer.calls.start[0].detail.status, 'queued', 'the build is discovered queued, long before it is done');
+  assert.deepEqual(
+    consoleServer.calls.update.map((observation) => observation.detail.status),
+    ['running', 'running', 'stopped'],
+    'each getBuild read must reach the console, so the view moves queued -> running -> outcome',
+  );
+  assert.deepEqual(
+    consoleServer.calls.stopAtUpdate,
+    [0, 0, 0],
+    'the console must still be up while the build runs, not shut down at discovery',
+  );
+  const last = consoleServer.calls.update.at(-1);
+  assert.equal(last.cleared, true, 'cleared means the build reached a terminal status, not that it was found');
+  assert.equal(last.detail.outcome, 'success');
+  assert.equal(last.detail.buildUuid, 'push-build-1');
+  assert.equal(consoleServer.calls.stop, 1, 'the console shuts down once, after the build settles');
+  assert.equal(buildApi.calls.getBuild, 3, 'exactly one loop over the build: the hold polls it, and nothing polls it again');
+
+  const saved = await loadSite(siteId);
+  assert.equal(saved.cloudflare.buildsLastBuildUuid, 'push-build-1');
+  assert.equal(saved.cloudflare.buildsLastBuildOutcome, 'success');
+});
+
 test('a --yes run composes no hold at all: no console, no loop, and the seam never even builds', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
@@ -925,10 +1054,10 @@ test('a --yes run composes no hold at all: no console, no loop, and the seam nev
 /**
  * A minimal Cloudflare API stand-in for watchAndComplete's own discovery branch, tracking how
  * many times each method is called. `listBuildsForWorker` answers empty for its first
- * `emptyPolls` calls and `builds` from then on, so a test can script exactly how many polls a
- * discovery hold needs before it clears. `getBuild` always answers a settled, successful build:
- * these tests are about discovery, not the poll-to-stop loop pollBuildToStop already owns and
- * already has its own tests.
+ * `emptyPolls` calls and `builds` from then on, so a test can script exactly how many polls
+ * discovery needs before it matches. `getBuild` always answers a settled, successful build, so the
+ * build half of the watch ends on the read right after discovery: these tests are about the
+ * discovery half, and the test above owns the build half's own queued-to-outcome sequence.
  * @param {{ tag: string, emptyPolls?: number, builds?: object[] }} opts
  */
 function discoveryApi({ tag, emptyPolls = 0, builds = [] }) {

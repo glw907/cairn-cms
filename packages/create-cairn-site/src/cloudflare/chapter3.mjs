@@ -260,12 +260,25 @@ async function performReconcile({ record, dir, args, log, openBrowser }) {
 }
 
 /**
- * Poll a build until it reaches `stopped` WITH a settled `build_outcome`, printing a heartbeat
- * every BUILD_POLL_HEARTBEAT_EVERY attempts, or until `maxPollAttempts` elapses first. `stopped`
- * with `build_outcome: null` keeps polling rather than returning: the spike's own capture shows
- * `build_outcome` is written after `status` flips to `stopped`, so those two fields are not a
- * guaranteed atomic write, and a caller that stops on `status` alone can read a one-tick-early
- * snapshot and, downstream, treat an unfinished build as a success (T4c review finding B1).
+ * Whether a build is finished: `stopped` WITH a settled `build_outcome`. `stopped` with
+ * `build_outcome: null` is NOT finished, since the spike's own capture shows `build_outcome` is
+ * written after `status` flips to `stopped`, so those two fields are not a guaranteed atomic write,
+ * and a caller that stops on `status` alone can read a one-tick-early snapshot and, downstream,
+ * treat an unfinished build as a success (T4c review finding B1). The one predicate both watch
+ * paths ask, so the held loop and `pollBuildToStop` can never disagree on what "done" means.
+ * @param {{ status?: string, build_outcome?: string | null } | null | undefined} build the build
+ *  record as last read, or nothing at all when none has been found yet
+ * @returns {boolean} whether the build has reached a terminal status with its outcome settled
+ */
+function isBuildSettled(build) {
+  return Boolean(build) && build.status === 'stopped' && build.build_outcome != null;
+}
+
+/**
+ * Poll a build until it is settled (`isBuildSettled`), printing a heartbeat every
+ * BUILD_POLL_HEARTBEAT_EVERY attempts, or until `maxPollAttempts` elapses first. This is the
+ * unheld path's loop; a run holding the console polls the same build through the hold instead, and
+ * exactly one of the two ever runs over a given build.
  * @param {{ api: object, buildUuid: string, log: (line: string) => void,
  *  sleepFn: (ms: number) => Promise<void>, pollIntervalMs: number, maxPollAttempts: number }} input
  * @returns {Promise<{ build: object, budgetExceeded: boolean }>} the last-read build record, and
@@ -274,7 +287,7 @@ async function performReconcile({ record, dir, args, log, openBrowser }) {
 async function pollBuildToStop({ api, buildUuid, log, sleepFn, pollIntervalMs, maxPollAttempts }) {
   let build = await api.getBuild(buildUuid);
   let attempt = 0;
-  while (build.status !== 'stopped' || build.build_outcome == null) {
+  while (!isBuildSettled(build)) {
     attempt += 1;
     if (attempt > maxPollAttempts) return { build, budgetExceeded: true };
     if (attempt % BUILD_POLL_HEARTBEAT_EVERY === 0) log(BUILD_POLL_HEARTBEAT_MESSAGE);
@@ -315,15 +328,19 @@ function completionMessage({ defaultBranch, domain }) {
 }
 
 /**
- * Compose the build-discovery hold seam for an interactive run, or nothing at all for one the
+ * Compose the build-watch hold seam for an interactive run, or nothing at all for one the
  * policy refuses (hold-loop.mjs's own `shouldHold`: `--yes`, non-TTY, or `CI` never holds;
  * `CAIRN_FORCE_HOLD` is the one override, honored only beside a fake API base). The pacing is
  * chapter 3's own `pollIntervalMs`/`maxPollAttempts`, the same pair `pollBuildToStop` already
  * runs on, converted to a duration budget rather than minting a second pair (T4d Task 4a's own
- * `createWaitForClear` throws for the `builds` class without one). On an interrupt, the loop's
- * own `persist` callback saves the build this hold has discovered so far, the one thing a
- * resumed run could not otherwise recover (the observation itself is never saved; the console
- * that rendered it is already gone by the time a later run starts).
+ * `createWaitForClear` throws for the `builds` class without one). That one budget now covers the
+ * whole watch, discovery and the build together, since they are one wait and one loop.
+ *
+ * On an interrupt, the loop's own `persist` callback saves the build this hold has discovered so
+ * far, the one thing a resumed run could not otherwise recover (the observation itself is never
+ * saved; the console that rendered it is already gone by the time a later run starts). That path
+ * is reached whenever the interrupt lands after discovery, which is most of a real watch: a build
+ * is found in seconds and then runs for minutes.
  * @param {object} input
  * @param {{ yes: boolean }} input.runArgs the chapter's own parsed flags
  * @param {boolean} input.isTTY whether stdout is a terminal
@@ -342,7 +359,7 @@ function completionMessage({ defaultBranch, domain }) {
  *  Promise<import('../hold-loop.mjs').HoldObservation>) | undefined} the seam to thread into
  *  `watchAndComplete`, or `undefined` when this run may not hold
  */
-function composeDiscoveryWaitForClear({
+function composeBuildWatchWaitForClear({
   runArgs,
   isTTY,
   env,
@@ -386,21 +403,27 @@ function composeDiscoveryWaitForClear({
  * one, since a `chapter3Reached` record already committed or kicked exactly once and the plan's
  * own invariant is one build, not two.
  *
- * THE DISCOVERY HOLD (T4d Task 4b). The commit-hash and newest-build searches above are a queue-lag
- * race: the reconcile's push (or a resumed watch's earlier kick) may not have surfaced on
- * `listBuildsForWorker` yet. Absent an injected `waitForClear` this reads the list exactly once and
- * falls straight through to today's `build-not-started` park when nothing matches, byte-identical to
- * before this hold existed. Given one, the SAME read (same predicate, same tag) is retried by the
- * hold loop until it finds a match or the build budget runs out, so `build-not-started` becomes a
- * held, watchable wait rather than an immediate park. `kickBuild` is never part of this: a fresh
- * manual kick resolves its own `buildUuid` synchronously and so never reaches the discovery hold at
- * all, and a match found by the hold is simply handed to the single existing `pollBuildToStop` pass
- * below, never a second loop over one build.
+ * THE BUILD-WATCH HOLD (T4d Task 4b). The wait this chapter ends on is one wait in two parts: a
+ * queue-lag race (the reconcile's push, or a resumed watch's earlier kick, may not have surfaced on
+ * `listBuildsForWorker` yet) followed by the build itself, which is the long part. Absent an
+ * injected `waitForClear` this reads the list exactly once, falls straight through to today's
+ * `build-not-started` park when nothing matches, and otherwise polls the build through
+ * `pollBuildToStop`, byte-identical to before the hold existed. Given one, the hold owns BOTH
+ * parts: each probe reads the list while no build is known and `getBuild` once one is, and
+ * `cleared` means the build reached a terminal status, never merely that it was found. That is
+ * what keeps the console up for the minutes an admin actually has to wait, and what makes the
+ * view's own queued-to-running-to-outcome cells reachable.
+ *
+ * ONE LOOP OVER A BUILD, ALWAYS. A held run polls the build through the hold and skips
+ * `pollBuildToStop` entirely; an unheld run polls it through `pollBuildToStop` and never enters the
+ * hold. Both ask the same `isBuildSettled` predicate, so neither can call a half-written build
+ * finished. `kickBuild` stays outside both: a fresh manual kick resolves its own `buildUuid`
+ * synchronously, which simply means the hold starts at the build rather than at discovery.
  * @param {object} input
  * @param {(probe: import('../hold-loop.mjs').HoldProbe) =>
  *  Promise<import('../hold-loop.mjs').HoldObservation>} [input.waitForClear] the injected build
- *  discovery hold. Absent it, discovery behaves exactly as it did before the console existed: one
- *  `listBuildsForWorker` read, then today's park.
+ *  watch hold. Absent it, the watch behaves exactly as it did before the console existed: one
+ *  `listBuildsForWorker` read, then today's park or today's `pollBuildToStop` pass.
  * @returns {Promise<{ outcome: string, message?: string }>} a wait-kind park (returned, never
  *  thrown) or the `builds-live` success outcome; an act-kind failure throws a catalogued error
  */
@@ -461,25 +484,55 @@ export async function watchAndComplete({
     }
   }
 
-  if (needsDiscovery) {
-    const discoverBuild = async () => {
+  // The build as last read, whichever read found it: the discovery list entry carries the same
+  // status and outcome fields `getBuild` answers with, so the probe that matches a build does not
+  // re-read it, and one probe is always exactly one API read.
+  let watched = null;
+  let probes = 0;
+  const observeBuild = async () => {
+    probes += 1;
+    if (!buildUuid) {
       const builds = await api.listBuildsForWorker(tag);
       const matched = discoveryCommitSha
         ? builds.find((build) => build.build_trigger_metadata?.commit_hash === discoveryCommitSha)
         : builds[0];
-      return {
-        cleared: Boolean(matched),
-        detail: {
-          buildUuid: matched?.build_uuid ?? null,
-          status: matched?.status ?? null,
-          outcome: matched?.build_outcome ?? null,
-          commitSha: matched?.build_trigger_metadata?.commit_hash ?? discoveryCommitSha ?? null,
-        },
-        park: matched ? undefined : cloudflareError('build-not-started', { dir }).message,
-      };
+      if (matched) {
+        buildUuid = matched.build_uuid;
+        watched = matched;
+      }
+    } else {
+      watched = await api.getBuild(buildUuid);
+    }
+    // The same heartbeat cadence `pollBuildToStop` prints on, so a held run's terminal is no
+    // quieter than an unheld one's while the build runs. Discovery itself stays silent: there is
+    // no build to say anything about yet.
+    if (watched && probes % BUILD_POLL_HEARTBEAT_EVERY === 0) log(BUILD_POLL_HEARTBEAT_MESSAGE);
+    return {
+      cleared: isBuildSettled(watched),
+      detail: {
+        buildUuid: buildUuid ?? null,
+        status: watched?.status ?? null,
+        outcome: watched?.build_outcome ?? null,
+        commitSha: watched?.build_trigger_metadata?.commit_hash ?? discoveryCommitSha ?? null,
+      },
+      // Which park this verdict would be: nothing found yet versus a build still running. The
+      // interrupt path prints it, so an interrupted hold reads like the park it interrupted.
+      park: cloudflareError(buildUuid ? 'build-running' : 'build-not-started', { dir }).message,
     };
-    const observation = waitForClear ? await waitForClear(discoverBuild) : await discoverBuild();
-    buildUuid = observation.detail.buildUuid ?? undefined;
+  };
+
+  /** The settled build, once either watch path has one. */
+  let build;
+  let budgetExceeded = false;
+
+  if (waitForClear && (needsDiscovery || buildUuid)) {
+    const observation = await waitForClear(observeBuild);
+    if (observation.cleared) build = watched;
+    // A hold that ran out of budget with a build in hand is today's build-running park; one that
+    // never found a build at all falls through to the build-not-started park just below.
+    else budgetExceeded = Boolean(buildUuid);
+  } else if (needsDiscovery) {
+    await observeBuild();
   }
 
   // The three parks below are the only returns in this chapter that KEEP the saved token, and only
@@ -493,14 +546,16 @@ export async function watchAndComplete({
     return { outcome: 'build-not-started', message: err.message };
   }
 
-  const { build, budgetExceeded } = await pollBuildToStop({
-    api,
-    buildUuid,
-    log,
-    sleepFn,
-    pollIntervalMs,
-    maxPollAttempts,
-  });
+  if (!build && !budgetExceeded) {
+    ({ build, budgetExceeded } = await pollBuildToStop({
+      api,
+      buildUuid,
+      log,
+      sleepFn,
+      pollIntervalMs,
+      maxPollAttempts,
+    }));
+  }
   if (budgetExceeded) {
     await updateSite(siteId, { cloudflare: { buildsLastBuildUuid: buildUuid } });
     const err = cloudflareError('build-running', { dir });
@@ -616,8 +671,8 @@ const WATCH_DETAIL =
  * @property {number} [maxPollAttempts] the build watch's poll budget, in attempts; defaults to 180
  *  (fifteen minutes at the default interval, comfortably under Cloudflare's own 20-minute timeout)
  * @property {boolean} [isTTY] whether stdout is a terminal, read by `shouldHold` to decide
- *  whether the build-discovery hold may hold; defaults to `process.stdout.isTTY`
- * @property {typeof createWaitForClear} [createWaitForClearFn] builds the discovery hold's seam;
+ *  whether the build-watch hold may hold; defaults to `process.stdout.isTTY`
+ * @property {typeof createWaitForClear} [createWaitForClearFn] builds the build-watch hold's seam;
  *  a test seam defaulting to hold-loop.mjs's own
  * @property {typeof createConsoleServer} [createConsoleServerFn] builds the console the hold
  *  serves through; a test seam defaulting to the console module's own
@@ -779,7 +834,7 @@ export async function runChapter3({
           lastBuildUuid: undefined,
           lastBuildOutcome: record?.cloudflare?.buildsLastBuildOutcome,
           reconcileResult,
-          waitForClear: composeDiscoveryWaitForClear({
+          waitForClear: composeBuildWatchWaitForClear({
             runArgs: args,
             isTTY,
             env,
@@ -1025,7 +1080,7 @@ export async function runChapter3({
         lastBuildUuid,
         lastBuildOutcome,
         reconcileResult,
-        waitForClear: composeDiscoveryWaitForClear({
+        waitForClear: composeBuildWatchWaitForClear({
           runArgs: args,
           isTTY,
           env,

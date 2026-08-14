@@ -17,14 +17,12 @@
 // a fake API base (hold-loop.mjs's `shouldHold`), is the documented override that exists for
 // exactly this file's two cases.
 //
-// WHY THE SECOND FETCH NEVER SEES THE POPULATED BUILD FIELDS. The Builds view only ever renders
-// `detail.buildUuid` once discovery's own predicate has matched (views.mjs), and that same match
-// is what clears the hold (chapter3.mjs's `discoverBuild`: `cleared: Boolean(matched)`), so the
-// console's very next observation after a build appears is already the cleared one. server.mjs
-// flips into its exit render as soon as the hold's `stop()` runs, which happens in the same tick
-// the hold ends, so the second fetch below is asserted against the exit page's own cleared text,
-// not a populated build cell: that transition (a real page change driven by a real state flip, on
-// a route that otherwise never varies) is the re-render this file exists to prove.
+// WHAT THE SECOND FETCH SEES. The hold spans discovery AND the build poll (chapter3.mjs's
+// `observeBuild`), so finding a build does not end it: an unfinished build is an ordinary
+// not-cleared observation, and the console re-renders into the populated Build/Status/Outcome
+// cells and keeps serving while the build runs. That is the transition the first case asserts (a
+// real page change driven by a real state flip, on a route that otherwise never varies), and it is
+// what makes the six minutes between discovery and a settled outcome watchable at all.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -49,6 +47,9 @@ const CAIRN_CONFIG_CONTENT = "export const from = 'cms@example.test';\n";
 /** The build-not-started catalogue row's own opening sentence, the park text an interrupted
  * discovery hold prints (catalogue.mjs's own `build-not-started` build()). */
 const BUILD_NOT_STARTED_TEXT = 'no matching build has appeared yet';
+/** The build-running catalogue row's own opening sentence, the park text an interrupt taken while
+ * the hold is watching a discovered build prints. */
+const BUILD_RUNNING_TEXT = 'The build is still running';
 
 /** Point CAIRN_STATE_DIR at a fresh temporary directory for the duration of one test. */
 async function freshStateDir(t) {
@@ -211,9 +212,8 @@ test('a spawned run holds the Builds discovery wait, serves state-derived consol
 
   // Flip the fake's build state: any build now answers `listBuildsForWorker` for this tag, which
   // is exactly what the resumed, no-diff discovery predicate (chapter3.mjs's own header) matches
-  // on position alone. `status: 'running'` with no settled outcome keeps the SUBSEQUENT
-  // pollBuildToStop loop (outside the hold and the console entirely) from ever reaching
-  // confirmHostname's real network fetch during this test's lifetime.
+  // on position alone. `status: 'running'` with no settled outcome is a build the hold has found
+  // and is still watching, which is the state this case exists to see rendered.
   const buildUuid = randomUUID();
   cloudflare.state.builds.set(buildUuid, {
     build_uuid: buildUuid,
@@ -225,20 +225,81 @@ test('a spawned run holds the Builds discovery wait, serves state-derived consol
     build_trigger_metadata: { commit_hash: 'deadbeef', commit_message: 'x', author: 'admin', branch: 'main' },
   });
 
-  // Poll-fetch until the body changes: the next discovery probe fires on chapter3's own poll
-  // interval (5s), and the console's exit render only stays up for its grace window once cleared.
-  const deadline = Date.now() + 15000;
+  // Poll-fetch until the body changes: the next probe fires on chapter3's own poll interval (5s).
+  const deadline = Date.now() + 20000;
   let changedBody = firstBody;
   while (changedBody === firstBody && Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, 200));
-    try {
-      changedBody = await (await fetch(url)).text();
-    } catch {
-      break; // The exit render's grace window closed the server; the loop below reports this.
-    }
+    changedBody = await (await fetch(url)).text();
   }
   assert.notEqual(changedBody, firstBody, 'expected a real re-render once the build was discovered');
-  assert.ok(changedBody.includes(EXIT_TEXT), `expected the cleared exit page, got: ${changedBody}`);
+  assert.ok(changedBody.includes(buildUuid), `expected the discovered build's own id, got: ${changedBody}`);
+  assert.ok(changedBody.includes('Status: running'), `expected the build's live status, got: ${changedBody}`);
+  assert.equal(
+    changedBody.includes(EXIT_TEXT),
+    false,
+    'the hold must not end at discovery: an unfinished build is still a wait to watch',
+  );
+
+  // Still serving after another poll interval, which is the whole point: the console stays up for
+  // the minutes between discovery and a settled outcome, not for the seconds before discovery.
+  await new Promise((resolve) => setTimeout(resolve, 6000));
+  const stillUp = await fetch(url);
+  assert.equal(stillUp.status, 200, 'the console must still be up while the build runs');
+  assert.ok((await stillUp.text()).includes('Status: running'));
+});
+
+test('SIGINT while the hold is watching a running build persists the discovered build uuid and parks on build-running', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await scaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const siteId = makeSiteId('midbuild');
+  await seedHoldSite(siteId, dir);
+
+  // The build is already there when the run starts, so the very first probe discovers it and the
+  // hold settles into watching it: an interrupt from here is an interrupt MID-BUILD, the only
+  // moment at which there is a discovered build uuid worth saving.
+  const buildUuid = randomUUID();
+  cloudflare.state.builds.set(buildUuid, {
+    build_uuid: buildUuid,
+    status: 'running',
+    build_outcome: null,
+    created_on: new Date().toISOString(),
+    trigger: { external_script_id: WORKER_TAG },
+    build_trigger_source: 'push_event',
+    build_trigger_metadata: { commit_hash: 'deadbeef', commit_message: 'x', author: 'admin', branch: 'main' },
+  });
+
+  const { child, stdoutLines, waitForLine } = spawnCli(['--dir', dir, '--yes', '--connect'], {
+    ...process.env,
+    CAIRN_STATE_DIR: stateDir,
+    CAIRN_CLOUDFLARE_API_BASE: cloudflare.apiBase,
+    CAIRN_CF_API_TOKEN: 'console-hold-env-token',
+    CAIRN_FORCE_HOLD: '1',
+  });
+  t.after(() => child.kill('SIGKILL'));
+
+  const [, url] = await waitForLine(matchConsoleUrlLine);
+  const body = await (await fetch(url)).text();
+  assert.ok(body.includes(buildUuid), `expected the running build to be on the page before the interrupt, got: ${body}`);
+
+  child.kill('SIGINT');
+  const [code, signal] = await new Promise((resolve) => {
+    child.on('exit', (exitCode, exitSignal) => resolve([exitCode, exitSignal]));
+  });
+  assert.equal(code, 0, `expected exit 0, got ${code} (signal ${signal}). stdout:\n${stdoutLines.join('\n')}`);
+  assert.ok(
+    stdoutLines.some((line) => line.includes(BUILD_RUNNING_TEXT)),
+    `expected the build-running park row, got:\n${stdoutLines.join('\n')}`,
+  );
+
+  const state = await loadSite(siteId);
+  assert.equal(state.step, 'config-reconciled', 'an interrupted hold must never advance the saved step');
+  assert.equal(
+    state.cloudflare.buildsLastBuildUuid,
+    buildUuid,
+    'the interrupt must save the build it had discovered, the one thing a resumed run cannot recover',
+  );
 });
 
 test('SIGINT during a held Builds discovery wait closes the console, prints the park row, exits 0, and leaves the saved state intact', async (t) => {

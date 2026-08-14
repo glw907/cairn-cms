@@ -39,7 +39,12 @@ gate rewired and proven red once, the outside edges, the prepared cairn-pub bran
 the close. Seven rulings sit at the top of the plan for approval or veto at the gate.
 
 **The sitting extended past the plan commit (2026-08-14, Geoff's direction) and banked
-three governing inputs for the content phase,** all committed under `docs/internal/`:
+four governing inputs,** all committed under `docs/internal/`: the review methodology
+(`2026-08-14-docs-review-methodology.md`, the five-stage Claude-reviews-Claude gate
+sequence researched against measured LLM-docs failure modes and LLM-as-judge bias;
+governs the Phase 2 per-track reviews and the Task 13 production gate, adds the symbol
+sweep and transcript gates, and names Geoff's editor-track read as the
+novice-comprehension instrument),
 the competitor review (`2026-08-14-cms-docs-competitor-review.md`, ten web-researched
 corpora with a what-users-say synthesis and eight adopted rules), the audience profiles
 (`2026-08-14-audience-profiles.md`, the grading rubric for all four tracks, including

@@ -23,14 +23,18 @@ only after the new docs are fully baked, as a completeness check.
 **Spec and inputs.** The umbrella
 ([`2026-08-09-admin-setup-and-docs-reset-design.md`](../specs/2026-08-09-admin-setup-and-docs-reset-design.md),
 Part 2 and its Pass D acceptance criteria) governs, as amended by the rebuild ruling
-above. Three inputs banked at the 2026-08-14 planning sitting govern the content and
-supersede this plan where they are more specific: the **audience profiles**
+above. Four inputs banked at the 2026-08-14 planning sitting govern the content and review
+work and supersede this plan where they are more specific: the **audience profiles**
 (`docs/internal/2026-08-14-audience-profiles.md`, the grading rubric), the **competitor
 review** (`docs/internal/2026-08-14-cms-docs-competitor-review.md`, whose closing rules
-are adopted doctrine), and the **track outlines**
+are adopted doctrine), the **track outlines**
 (`docs/internal/2026-08-14-docs-track-outlines.md`, revised at a five-reviewer
 adversarial gate; its page set, contracts, and anatomies are the target state; its
-"absorbs X" annotations read as job provenance, never as instructions to copy prose).
+"absorbs X" annotations read as job provenance, never as instructions to copy prose),
+and the **review methodology**
+(`docs/internal/2026-08-14-docs-review-methodology.md`, the five-stage gate sequence
+and reliability rules for every Claude-reviews-Claude pass in this plan, researched
+against the measured failure modes of LLM-written docs and LLM-as-judge bias).
 The admin track's evidence base is the baseline walk
 (`docs/internal/2026-08-unagented-setup-baseline.md`; drag points 2, 4, 5, 7, 8, 9, 10,
 11, 12, 13, and 14 are defects the new pages must not reproduce) and the live run
@@ -176,6 +180,11 @@ write to it.
   `docs/internal/README.md` becomes the curated live index with the filing rule, and
   `check:arm-indexes` gains a non-recursive `docs/internal` entry so an unindexed
   top-level internal doc fails CI; proven red with a temporary unindexed file.
+- [ ] **The symbol sweep** (the methodology's stage-0 defense against hallucinated
+  names): a check script that extracts every code-voice token a published page names
+  (exports, CLI flags, config keys, env vars, event names, file paths) and resolves
+  each against the source tree, failing on any name the code does not carry. Built now
+  so Phase 2's pages are written under it; proven red with an invented flag.
 
 **Phase 1 close [main loop]:** full gate, push, PR, checks green, merge. STATUS notes
 the phase. Prep the context clear.
@@ -190,8 +199,11 @@ tarball until Phase 3; `check:docs` covers the new pages (their links must resol
 the enumerating gates ignore directories they do not list. **Every writing dispatch
 carries ruling 7 verbatim and the page's input list from the manifest; a dispatch that
 needs a fact the inputs do not carry captures it from the code or a run, never from an
-old page.** Each track task ends with a fresh-context review graded against the track's
-profile and the register standard; the writer's own context never grades its track.
+old page.** Each track task ends with a per-track review run per the methodology's
+scaling rule (stages 0, 1, and 4 plus the single-track persona walk), graded against
+the track's profile and the register standard; the writer's own context never grades
+its track, and every finding carries a quoted line, a named criterion, and a proposed
+change or is discarded.
 
 ### Task 4: the admin track
 
@@ -367,29 +379,32 @@ routine via the schedule tooling.
 ### Task 13: the production gate, a final adversarial review **[main loop]**
 
 **Runs on the post-cutover tree, after the mining folds: the exact bytes release one
-ships.** A whole-corpus adversarial pass (Geoff, 2026-08-14), distinct from Phase 2's
-per-track reviews, which graded tracks in isolation before the cutover existed. Four
-lenses, fresh contexts throughout, findings ranked with file-and-line evidence:
+ships.** The whole-corpus gate (Geoff, 2026-08-14), executed per the review
+methodology (`docs/internal/2026-08-14-docs-review-methodology.md`), which owns the
+stage definitions, the reliability rules, and the findings pipeline; this task is its
+full five-stage form.
 
-- [ ] **Blind persona walks**, one fresh agent per track briefed only with its audience
-  profile and a goal (the method the setup baseline proved): the admin walks
-  create-through-recover, the editor walks first-day-through-refusal against `/help`'s
-  rendered order, the extender walks evaluate-through-first-custom-screen, the
-  contributor walks CONTRIBUTING to a first-PR question. Forced rankings, quoted
-  evidence, no thresholds.
-- [ ] **Claims-verification sample**: beyond the mechanical gates, a sampled trace of
-  factual claims per track to the code or a live run (the full-corpus claims audit
-  stays the post-beta.1 ROADMAP gate; this is the sample that catches a systemic
-  miss now).
-- [ ] **The fishtank read**: one cross-track reviewer walks every index as a story on
-  the shipping tree, checking contracts, preconditions, and the redirect map against
-  what actually renders (including the cairn-pub branch's `/help` preview from Task
-  12).
-- [ ] **The register pass**: the register-check machinery over every new page, graded
-  against the track registers and profiles.
-- [ ] Blocking-tier findings fold before the pass closes and **release one does not cut
-  until they are folded**; the ranked report and dispositions land in
-  `docs/internal/record/`. This gate's shape is a natural Workflow-tool
+- [ ] **Stage 0, mechanical:** the full lint-and-execution battery, including the
+  symbol sweep and the transcript gate, green before any model review runs.
+- [ ] **Stage 1, the claims sample:** per track, decomposed claims traced to current
+  code or recorded runs, numeric claims exact; two confirmed misses of one class
+  escalate to a full sweep of that class.
+- [ ] **Stage 2, blind persona walks:** one fresh agent per track under knowledge
+  suppression, completion-measured (guesses and dead ends are the findings, opinions
+  are inadmissible): the admin walks create-through-recover, the editor walks
+  first-day-through-refusal against `/help`'s rendered order, the extender walks
+  evaluate-through-first-custom-screen, the contributor walks CONTRIBUTING to a
+  first-PR question.
+- [ ] **Stage 3, the fishtank read:** one cross-track reviewer, per-edge findings
+  only, including the redirect map against the cairn-pub branch's rendered preview.
+- [ ] **Stage 4, the register pass** over every new page.
+- [ ] The findings pipeline per the methodology: quoted line + named criterion +
+  proposed change or discarded; forced rankings; independent find-then-verify on
+  everything blocking-tier, empirical where executable. Blocking findings fold before
+  the pass closes and **release one does not cut until they are folded**; the ranked
+  report and dispositions land in `docs/internal/record/`. **Geoff's human read of
+  the editor track is part of this gate** (the novice-comprehension instrument no
+  LLM pass substitutes). This gate's shape is a natural Workflow-tool
   find-and-verify sweep; the conductor names the moment and Geoff opts in or the
   fan-out runs as plain parallel dispatches.
 
@@ -411,7 +426,9 @@ The umbrella's Pass D acceptance as amended by the rebuild ruling: the four trac
 ship, written clean-room and graded against the audience profiles; the old corpus is
 deleted with every published path redirected; every gate in the bill passes, including
 the readiness contract, the packaging allowlist, the re-scoped anchor corpus, and the
-two gates this plan adds (the admin transcript check and the internal-index entry); the
+three gates this plan adds (the admin transcript check, the symbol sweep, and the
+internal-index entry); the Task 13 production gate has run all five stages with its
+blocking findings folded and Geoff's editor-track read done; the
 mining sweep's report is on record with every fold code-verified; the cairn-pub branch
 is proven against the tarball with its redirect map and fail-loud link policy; the
 CHANGELOG keeps its history via the legacy-path map; the drift routine's scope is

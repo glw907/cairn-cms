@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { EventEmitter } from 'node:events';
 import {
   startFakeCloudflare,
   APP_NOT_AUTHORIZED_REFUSED_BODY,
@@ -11,7 +12,7 @@ import {
 import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
 import { createRepo, pushScaffold } from '../github/repo.mjs';
 import { saveSite, loadSite } from '../state.mjs';
-import { createWaitForClear, BUILD_HOLD_CLASS } from '../hold-loop.mjs';
+import { createWaitForClear, BUILD_HOLD_CLASS, consoleUrlLine } from '../hold-loop.mjs';
 import { makeApi } from './api.mjs';
 import {
   runChapter3,
@@ -250,6 +251,96 @@ function makeApiFnWithPushBuildSeed({ cloudflare, github, owner, repo, defaultBr
         return real.listBuildsForWorker(tag);
       },
     };
+  };
+}
+
+// --- The production hold seam (T4d Task 5c) ----------------------------------------------------
+
+/**
+ * Wrap the real Cloudflare API client so `listBuildsForWorker` answers empty for its first
+ * `emptyPolls` calls, then seeds the push-triggered build carrying the repository's CURRENT head
+ * commit sha (simulating Cloudflare's own push webhook noticing the reconcile commit, delayed a
+ * few polls) and delegates through to the real client from then on. The delay is what lets a test
+ * script a discovery hold across more than one poll, the same shape `makeApiFnWithPushBuildSeed`
+ * gives a hold that clears on its very first probe.
+ */
+function makeApiFnWithDelayedPushBuildSeed({ cloudflare, github, owner, repo, defaultBranch, emptyPolls }) {
+  let calls = 0;
+  return (opts) => {
+    const real = makeApi(opts);
+    return {
+      ...real,
+      async listBuildsForWorker(tag) {
+        calls += 1;
+        if (calls > emptyPolls) {
+          const gitEntry = github.state.gitObjects.get(`${owner}/${repo}`);
+          const headSha = gitEntry?.refs.get(`heads/${defaultBranch}`);
+          if (headSha && !cloudflare.state.builds.has('push-build-1')) {
+            cloudflare.state.builds.set('push-build-1', {
+              build_uuid: 'push-build-1',
+              status: 'stopped',
+              build_outcome: 'success',
+              created_on: new Date().toISOString(),
+              stopped_on: new Date().toISOString(),
+              trigger: { external_script_id: tag },
+              build_trigger_source: 'push_event',
+              build_trigger_metadata: { commit_hash: headSha, commit_message: 'x', author: 'admin', branch: defaultBranch },
+            });
+          }
+          return real.listBuildsForWorker(tag);
+        }
+        return [];
+      },
+    };
+  };
+}
+
+/** A console server handle recording what the hold loop does with it, mirroring hostname.test.mjs
+ * and chapter2.test.mjs's own `fakeConsole` stand-in. */
+const HOLD_CONSOLE_URL = 'http://127.0.0.1:49153/YmFja3VwLXNlY3JldA';
+function fakeConsole() {
+  const calls = { start: [], update: [], stop: 0 };
+  return {
+    calls,
+    handle: {
+      async start(observation) {
+        calls.start.push(observation);
+        return { url: HOLD_CONSOLE_URL };
+      },
+      update(observation) {
+        calls.update.push(observation);
+      },
+      async stop() {
+        calls.stop += 1;
+      },
+    },
+  };
+}
+
+/**
+ * Build a `createWaitForClearFn` test seam wrapping the real `createWaitForClear`, over a virtual
+ * clock so a multi-poll hold resolves at once instead of waiting real time. Records how many holds
+ * were composed, so a test can assert the seam is built exactly once.
+ * @param {{ calls: string[] }} recorder pushed one entry (the hold class) per composition
+ * @returns {typeof createWaitForClear} the test seam
+ */
+function testCreateWaitForClearFn(recorder) {
+  return ({ holdClass, server, log, persist, pollIntervalMs, budgetMs }) => {
+    recorder.calls.push(holdClass);
+    let clock = 0;
+    return createWaitForClear({
+      holdClass,
+      server,
+      log,
+      persist,
+      pollIntervalMs,
+      budgetMs,
+      now: () => clock,
+      sleepFn: async (ms) => {
+        clock += ms;
+      },
+      signals: new EventEmitter(),
+    });
   };
 }
 
@@ -736,6 +827,99 @@ test('runChapter3: a differing repo whose push build the fake surfaces is found 
     (r) => r.method === 'POST' && r.path.includes('/builds/triggers/') && r.path.endsWith('/builds'),
   );
   assert.equal(kicks.length, 0, 'the push build was found; a manual kick must never fire');
+});
+
+test('an interactive run threads waitForClear into watchAndComplete: the console URL and the hop title each print exactly once across a three-poll hold', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
+  const staleDir = await fixtureScaffoldDir(t, { wrangler: `${JSON.stringify({ name: 'stale-name' }, null, 2)}\n` });
+  const repo = await seedGithubRepo(github, staleDir);
+  const siteId = 'builds-held-discovery-site-abc123';
+  await seedSite(siteId, dir, repo);
+
+  const consoleServer = fakeConsole();
+  const holdRecorder = { calls: [] };
+  const lines = [];
+
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: (line) => lines.push(line),
+    dryRun: false,
+    openBrowser: smartOpenBrowser(),
+    confirm: confirmAnswering(true),
+    promptSecretFn: async () => 'fresh-cf-token',
+    sleepFn: autoResolveBuilds(cloudflare),
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 1,
+    maxPollAttempts: 5,
+    makeApiFn: makeApiFnWithDelayedPushBuildSeed({
+      cloudflare,
+      github,
+      owner: repo.owner,
+      repo: repo.repo,
+      defaultBranch: repo.defaultBranch,
+      emptyPolls: 2,
+    }),
+    isTTY: true,
+    env: {},
+    createWaitForClearFn: testCreateWaitForClearFn(holdRecorder),
+    createConsoleServerFn: () => consoleServer.handle,
+  });
+
+  assert.equal(result.outcome, 'builds-live');
+  assert.deepEqual(holdRecorder.calls, [BUILD_HOLD_CLASS], 'the seam is composed exactly once, for the build-discovery hold');
+  assert.equal(consoleServer.calls.start.length, 1, 'the console starts exactly once across the hold');
+  assert.equal(
+    lines.filter((line) => line === consoleUrlLine(HOLD_CONSOLE_URL)).length,
+    1,
+    'the console URL line prints exactly once per hold',
+  );
+  assert.equal(
+    lines.filter((line) => line === 'Watch your first Workers Builds deploy').length,
+    1,
+    'the hop title prints exactly once, not once per poll',
+  );
+  const kicks = cloudflare.requests.filter(
+    (r) => r.method === 'POST' && r.path.includes('/builds/triggers/') && r.path.endsWith('/builds'),
+  );
+  assert.equal(kicks.length, 0, 'the push build was discovered through the held poll; a manual kick must never fire');
+});
+
+test('a --yes run composes no hold at all: no console, no loop, and the seam never even builds', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-yes-no-hold-site-abc123';
+  await seedSite(siteId, dir, repo, await alreadyReconciled(dir));
+
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: true },
+    log: () => {},
+    dryRun: false,
+    openBrowser: mustNotBeCalled('openBrowser'),
+    confirm: mustNotBeCalled('confirm'),
+    promptSecretFn: mustNotBeCalled('promptSecretFn'),
+    env: { CAIRN_CF_API_TOKEN: 'env-token-value' },
+    // A run the policy refuses must never even call these, isTTY: true or not: --yes alone is
+    // enough to refuse.
+    isTTY: true,
+    createWaitForClearFn: mustNotBeCalled('createWaitForClearFn'),
+    createConsoleServerFn: mustNotBeCalled('createConsoleServerFn'),
+    ...fastSeams(cloudflare),
+  });
+
+  assert.equal(result.outcome, 'builds-live');
 });
 
 /**

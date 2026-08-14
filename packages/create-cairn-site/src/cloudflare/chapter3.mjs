@@ -56,6 +56,9 @@ import { githubRequest } from '../github/api.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
 import { reauthorize } from '../github/oauth.mjs';
 import { reconcileRepo, RECONCILED_FILES } from '../github/reconcile.mjs';
+import { createWaitForClear, shouldHold, BUILD_HOLD_CLASS } from '../hold-loop.mjs';
+import { createConsoleServer } from '../console/server.mjs';
+import { renderBuildsView } from '../console/views.mjs';
 
 /**
  * The step names this chapter's own success terminal and its declined terminal write, exported
@@ -312,6 +315,67 @@ function completionMessage({ defaultBranch, domain }) {
 }
 
 /**
+ * Compose the build-discovery hold seam for an interactive run, or nothing at all for one the
+ * policy refuses (hold-loop.mjs's own `shouldHold`: `--yes`, non-TTY, or `CI` never holds;
+ * `CAIRN_FORCE_HOLD` is the one override, honored only beside a fake API base). The pacing is
+ * chapter 3's own `pollIntervalMs`/`maxPollAttempts`, the same pair `pollBuildToStop` already
+ * runs on, converted to a duration budget rather than minting a second pair (T4d Task 4a's own
+ * `createWaitForClear` throws for the `builds` class without one). On an interrupt, the loop's
+ * own `persist` callback saves the build this hold has discovered so far, the one thing a
+ * resumed run could not otherwise recover (the observation itself is never saved; the console
+ * that rendered it is already gone by the time a later run starts).
+ * @param {object} input
+ * @param {{ yes: boolean }} input.runArgs the chapter's own parsed flags
+ * @param {boolean} input.isTTY whether stdout is a terminal
+ * @param {Record<string, string | undefined>} input.env the environment `shouldHold` reads
+ * @param {(line: string) => void} input.log receives the console URL line
+ * @param {string} input.hop the hop title this hold's console header renders
+ * @param {object} input.record the full state record, handed to the console's view as is
+ * @param {string} input.siteId the site to persist the discovered build uuid to, on interrupt only
+ * @param {number} input.pollIntervalMs chapter 3's own poll interval, reused verbatim
+ * @param {number} input.maxPollAttempts chapter 3's own poll budget, converted to a duration
+ * @param {typeof createWaitForClear} input.createWaitForClearFn a test seam, defaulting to
+ *  hold-loop.mjs's own
+ * @param {typeof createConsoleServer} input.createConsoleServerFn a test seam, defaulting to the
+ *  console module's own
+ * @returns {((probe: import('../hold-loop.mjs').HoldProbe) =>
+ *  Promise<import('../hold-loop.mjs').HoldObservation>) | undefined} the seam to thread into
+ *  `watchAndComplete`, or `undefined` when this run may not hold
+ */
+function composeDiscoveryWaitForClear({
+  runArgs,
+  isTTY,
+  env,
+  log,
+  hop,
+  record,
+  siteId,
+  pollIntervalMs,
+  maxPollAttempts,
+  createWaitForClearFn,
+  createConsoleServerFn,
+}) {
+  if (!shouldHold({ yes: runArgs.yes, isTTY, env })) return undefined;
+  const server = createConsoleServerFn({
+    chapter: 'Connect to Workers Builds',
+    hop,
+    record,
+    renderView: renderBuildsView,
+  });
+  return createWaitForClearFn({
+    holdClass: BUILD_HOLD_CLASS,
+    server,
+    log,
+    pollIntervalMs,
+    budgetMs: pollIntervalMs * maxPollAttempts,
+    persist: (observation) => {
+      if (!observation.detail.buildUuid) return undefined;
+      return updateSite(siteId, { cloudflare: { buildsLastBuildUuid: observation.detail.buildUuid } });
+    },
+  });
+}
+
+/**
  * Find (or, on a genuinely first attempt, kick) the build the reconcile hop should have
  * triggered, poll it to a terminal status, and on success re-confirm the site's hostname and
  * record `builds-live`. A push-triggered commit is found by matching its commit sha in the
@@ -551,6 +615,12 @@ const WATCH_DETAIL =
  * @property {number} [pollIntervalMs] the build watch's poll interval; defaults to five seconds
  * @property {number} [maxPollAttempts] the build watch's poll budget, in attempts; defaults to 180
  *  (fifteen minutes at the default interval, comfortably under Cloudflare's own 20-minute timeout)
+ * @property {boolean} [isTTY] whether stdout is a terminal, read by `shouldHold` to decide
+ *  whether the build-discovery hold may hold; defaults to `process.stdout.isTTY`
+ * @property {typeof createWaitForClear} [createWaitForClearFn] builds the discovery hold's seam;
+ *  a test seam defaulting to hold-loop.mjs's own
+ * @property {typeof createConsoleServer} [createConsoleServerFn] builds the console the hold
+ *  serves through; a test seam defaulting to the console module's own
  */
 
 /**
@@ -598,6 +668,9 @@ export async function runChapter3({
   fetchImpl = fetch,
   pollIntervalMs = DEFAULT_BUILD_POLL_INTERVAL_MS,
   maxPollAttempts = DEFAULT_MAX_POLL_ATTEMPTS,
+  isTTY = Boolean(process.stdout.isTTY),
+  createWaitForClearFn = createWaitForClear,
+  createConsoleServerFn = createConsoleServer,
 }) {
   const frame = { dryRun, log };
 
@@ -706,6 +779,19 @@ export async function runChapter3({
           lastBuildUuid: undefined,
           lastBuildOutcome: record?.cloudflare?.buildsLastBuildOutcome,
           reconcileResult,
+          waitForClear: composeDiscoveryWaitForClear({
+            runArgs: args,
+            isTTY,
+            env,
+            log,
+            hop: 'Watch the build your update triggered',
+            record,
+            siteId,
+            pollIntervalMs,
+            maxPollAttempts,
+            createWaitForClearFn,
+            createConsoleServerFn,
+          }),
         });
       });
       return watchOutcome;
@@ -939,6 +1025,19 @@ export async function runChapter3({
         lastBuildUuid,
         lastBuildOutcome,
         reconcileResult,
+        waitForClear: composeDiscoveryWaitForClear({
+          runArgs: args,
+          isTTY,
+          env,
+          log,
+          hop: 'Watch your first Workers Builds deploy',
+          record,
+          siteId,
+          pollIntervalMs,
+          maxPollAttempts,
+          createWaitForClearFn,
+          createConsoleServerFn,
+        }),
       });
     });
     if (!dryRun) {

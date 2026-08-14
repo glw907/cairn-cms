@@ -55,6 +55,9 @@ import { writeEmailFrom } from './config.mjs';
 import { buildSite, deployWorker } from './deploy.mjs';
 import { cloudflareError } from './catalogue.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
+import { createWaitForClear, shouldHold, PROPAGATION_HOLD_CLASS } from '../hold-loop.mjs';
+import { createConsoleServer } from '../console/server.mjs';
+import { renderPropagationView } from '../console/views.mjs';
 
 /**
  * The states this pass's own step machine writes, in order, so a resumed record's remaining work
@@ -225,7 +228,52 @@ const EMAIL_ADMISSION_DETAIL =
  *  `CAIRN_CF_API_TOKEN` from under `yes`; defaults to `process.env`
  * @property {string[]} [argv] the argument vector `ensureApiToken` scans for a mistakenly-passed
  *  token; defaults to `process.argv.slice(2)`
+ * @property {boolean} [isTTY] whether stdout is a terminal, read by `shouldHold` to decide
+ *  whether the cutover may hold; defaults to `process.stdout.isTTY`
+ * @property {typeof createWaitForClear} [createWaitForClearFn] builds the cutover's hold seam; a
+ *  test seam defaulting to hold-loop.mjs's own
+ * @property {typeof createConsoleServer} [createConsoleServerFn] builds the console the hold
+ *  serves through; a test seam defaulting to the console module's own
  */
+
+/**
+ * Compose the cutover's hold seam for an interactive run, or nothing at all for one the policy
+ * refuses (hold-loop.mjs's own `shouldHold`: `--yes`, non-TTY, or `CI` never holds;
+ * `CAIRN_FORCE_HOLD` is the one override, honored only beside a fake API base). The console and
+ * the loop are built here and only here, so a run the policy refuses never composes either, and
+ * `cutOverHostname` sees `undefined` and behaves exactly as it did before this seam existed.
+ * @param {object} input
+ * @param {{ yes: boolean }} input.runArgs the chapter's own parsed flags
+ * @param {boolean} input.isTTY whether stdout is a terminal
+ * @param {Record<string, string | undefined>} input.env the environment `shouldHold` reads
+ * @param {(line: string) => void} input.log receives the console URL line
+ * @param {object} input.record the full state record, handed to the console's view as is
+ * @param {typeof createWaitForClear} input.createWaitForClearFn a test seam, defaulting to
+ *  hold-loop.mjs's own
+ * @param {typeof createConsoleServer} input.createConsoleServerFn a test seam, defaulting to the
+ *  console module's own
+ * @returns {((probe: import('../hold-loop.mjs').HoldProbe) =>
+ *  Promise<import('../hold-loop.mjs').HoldObservation>) | undefined} the seam to thread into
+ *  `cutOverHostname`, or `undefined` when this run may not hold
+ */
+function composeCutoverWaitForClear({
+  runArgs,
+  isTTY,
+  env,
+  log,
+  record,
+  createWaitForClearFn,
+  createConsoleServerFn,
+}) {
+  if (!shouldHold({ yes: runArgs.yes, isTTY, env })) return undefined;
+  const server = createConsoleServerFn({
+    chapter: 'Connect your domain',
+    hop: 'Connect your domain to your site',
+    record,
+    renderView: renderPropagationView,
+  });
+  return createWaitForClearFn({ holdClass: PROPAGATION_HOLD_CLASS, server, log });
+}
 
 /**
  * Run chapter 2: connect the admin's own domain to the already-deployed site. Re-entry reads the
@@ -264,6 +312,9 @@ export async function runChapter2({
   resolve,
   env = process.env,
   argv = process.argv.slice(2),
+  isTTY = Boolean(process.stdout.isTTY),
+  createWaitForClearFn = createWaitForClear,
+  createConsoleServerFn = createConsoleServer,
 }) {
   const frame = { dryRun, log };
 
@@ -522,6 +573,15 @@ export async function runChapter2({
         'Connects your domain to your already-deployed site, confirms it answers there, then ' +
           "switches your site's own address over and redeploys once.",
         async () => {
+          const waitForClear = composeCutoverWaitForClear({
+            runArgs: args,
+            isTTY,
+            env,
+            log,
+            record,
+            createWaitForClearFn,
+            createConsoleServerFn,
+          });
           const result = await cutOverHostname({
             record: {
               dir,
@@ -536,6 +596,7 @@ export async function runChapter2({
             api,
             fetchImpl,
             log,
+            waitForClear,
           });
           cutoverOutcome = result.outcome;
         },

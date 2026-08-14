@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { EventEmitter } from 'node:events';
 import { makeFakeBin } from '../../test/fake-bin.mjs';
 import { startFakeCloudflare } from '../../test/fake-cloudflare.mjs';
 import { makeApi, SENDING_DISABLED_CODE } from './api.mjs';
 import { saveSite, loadSite } from '../state.mjs';
+import { createWaitForClear, consoleUrlLine } from '../hold-loop.mjs';
 
 /** A minimal wrangler.jsonc fixture carrying the one key writePublicOrigin needs. */
 const MINIMAL_WRANGLER_JSONC = JSON.stringify(
@@ -116,6 +118,78 @@ function alwaysMatchingFetch() {
   return async (url) => {
     const u = new URL(url);
     return markerResponse(u.pathname, u.origin);
+  };
+}
+
+/** A fetchImpl that fails at the transport level on every confirm; the no-hold park's own probe. */
+function alwaysUnreachableFetch() {
+  return async () => {
+    throw new TypeError('fetch failed', { cause: { code: 'ENOTFOUND' } });
+  };
+}
+
+/**
+ * A fetchImpl that fails at the transport level for the first `rounds` confirms, then answers the
+ * marker pair correctly. Mirrors hostname.test.mjs's own `unreachableForRounds`: a confirm is
+ * counted by its first request, the https probe of `/`.
+ * @param {number} rounds how many confirms fail before the marker pair starts answering
+ * @returns {{ fetchImpl: typeof fetch, state: { rounds: number } }}
+ */
+function unreachableForRounds(rounds) {
+  const state = { rounds: 0 };
+  const fetchImpl = async (url) => {
+    const u = new URL(url);
+    if (u.pathname === '/' && u.protocol === 'https:') state.rounds += 1;
+    if (state.rounds <= rounds) throw new TypeError('fetch failed', { cause: { code: 'ENOTFOUND' } });
+    return markerResponse(u.pathname, u.origin);
+  };
+  return { fetchImpl, state };
+}
+
+/** A console server handle recording what the hold loop does with it, the same stand-in
+ * hostname.test.mjs's own `fakeConsole` uses for the seam's own tests. */
+const HOLD_CONSOLE_URL = 'http://127.0.0.1:49152/Zm9vYmFyLXNlY3JldA';
+function fakeConsole() {
+  const calls = { start: [], update: [], stop: 0 };
+  return {
+    calls,
+    handle: {
+      async start(observation) {
+        calls.start.push(observation);
+        return { url: HOLD_CONSOLE_URL };
+      },
+      update(observation) {
+        calls.update.push(observation);
+      },
+      async stop() {
+        calls.stop += 1;
+      },
+    },
+  };
+}
+
+/**
+ * Build a `createWaitForClearFn` test seam wrapping the real `createWaitForClear`, over a virtual
+ * clock so a multi-poll hold resolves at once instead of waiting real time. Records how many holds
+ * were composed, so a test can assert the seam is built exactly once.
+ * @param {{ calls: string[] }} recorder pushed one entry (the hold class) per composition
+ * @returns {typeof createWaitForClear} the test seam
+ */
+function testCreateWaitForClearFn(recorder) {
+  return ({ holdClass, server, log, persist }) => {
+    recorder.calls.push(holdClass);
+    let clock = 0;
+    return createWaitForClear({
+      holdClass,
+      server,
+      log,
+      persist,
+      now: () => clock,
+      sleepFn: async (ms) => {
+        clock += ms;
+      },
+      signals: new EventEmitter(),
+    });
   };
 }
 
@@ -670,6 +744,110 @@ test('resume: a record at delegated skips straight to the cutover', async (t) =>
   assert.equal(outcome.outcome, 'paid-plan-declined');
   const attachRequests = cloudflare.requests.filter((r) => r.path.includes('/workers/domains') && r.method === 'PUT');
   assert.equal(attachRequests.length, 1);
+});
+
+// --- The production hold seam (T4d Task 5c) ----------------------------------------------------
+
+/** Seed a record at `delegated`, the cutover's own starting point, on a real fake-Cloudflare zone. */
+async function seedDelegatedSite(siteId, dir, domain) {
+  const api = makeApi({ token: 'fake-token', accountId: 'acct-1', dir });
+  const created = await api.createZone(domain);
+  const zone = await api.getZone(created.id);
+  await seedLiveSite(siteId, dir, {
+    step: 'delegated',
+    cloudflare: {
+      url: WORKERS_DEV_URL,
+      workerName: 'cairn-domain-site',
+      accountId: 'acct-1',
+      apiToken: 'fake-token',
+      domain,
+      zoneId: zone.id,
+      nameServers: zone.name_servers,
+      alreadyActive: true,
+      carryOver: { outcome: 'carried', at: new Date().toISOString(), count: 0, types: [] },
+    },
+  });
+  return zone;
+}
+
+test('an interactive run threads waitForClear into cutOverHostname: the console URL and the hop title each print exactly once across a three-poll hold', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await setupCloudflare(t, { zoneStatus: 'active' });
+  await setupWrangler(t);
+  const domain = 'held-cutover.example';
+  await seedDelegatedSite('site-held-cutover', dir, domain);
+
+  const { fetchImpl, state } = unreachableForRounds(2);
+  const consoleServer = fakeConsole();
+  const holdRecorder = { calls: [] };
+  const lines = [];
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-held-cutover',
+    record: await loadSite('site-held-cutover'),
+    dir,
+    args: { yes: false },
+    log: (line) => lines.push(line),
+    dryRun: false,
+    // The domain gate is already behind this record; the only confirm this run reaches after the
+    // held cutover clears is the email admission, declined so this test stays about the hold.
+    confirm: confirmRouting({ email: false }),
+    text: mustNotBeCalled('text'),
+    fetchImpl,
+    isTTY: true,
+    env: {},
+    createWaitForClearFn: testCreateWaitForClearFn(holdRecorder),
+    createConsoleServerFn: () => consoleServer.handle,
+  });
+
+  assert.equal(outcome.outcome, 'paid-plan-declined');
+  assert.equal(state.rounds, 4, 'three held probes, then the one-shot re-check after the redeploy');
+  assert.equal(holdRecorder.calls.length, 1, 'the seam is composed exactly once, for the pre-redeploy confirm');
+  assert.equal(consoleServer.calls.start.length, 1, 'the console starts exactly once across the hold');
+  assert.equal(
+    lines.filter((line) => line === consoleUrlLine(HOLD_CONSOLE_URL)).length,
+    1,
+    'the console URL line prints exactly once per hold',
+  );
+  assert.equal(
+    lines.filter((line) => line === 'Connect your domain to your site').length,
+    1,
+    'the hop title prints exactly once, not once per poll',
+  );
+});
+
+test('a --yes run composes no hold at all: no console, no loop, and the seam never even builds', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  await setupCloudflare(t, { zoneStatus: 'active' });
+  await setupWrangler(t);
+  const domain = 'yes-no-hold.example';
+  await seedDelegatedSite('site-yes-no-hold', dir, domain);
+
+  const { runChapter2 } = await import('./chapter2.mjs');
+  const outcome = await runChapter2({
+    openBrowser: neverOpensBrowser,
+    siteId: 'site-yes-no-hold',
+    record: await loadSite('site-yes-no-hold'),
+    dir,
+    args: { yes: true },
+    log: () => {},
+    dryRun: false,
+    confirm: mustNotBeCalled('confirm'),
+    text: mustNotBeCalled('text'),
+    fetchImpl: alwaysUnreachableFetch(),
+    // A run the policy refuses must never even call these, isTTY: true or not: --yes alone is
+    // enough to refuse.
+    isTTY: true,
+    env: {},
+    createWaitForClearFn: mustNotBeCalled('createWaitForClearFn'),
+    createConsoleServerFn: mustNotBeCalled('createConsoleServerFn'),
+  });
+
+  assert.equal(outcome.outcome, 'hostname-records-absent');
 });
 
 test('resume: a declined carry-over gate never silently advances', async (t) => {

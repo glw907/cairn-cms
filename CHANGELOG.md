@@ -293,6 +293,32 @@
   `docs/internal/admin-design-system.md`. Consumers must: nothing. The new export and the two new
   classes are additive, and no existing class changed.
 
+- `create-cairn-site` gained a localhost console over its two longest waits. DNS propagation and the
+  first Workers build now hold in place on an interactive run instead of parking, printing a
+  `127.0.0.1` URL that serves a live view of what the run is waiting on, and resuming by themselves
+  the moment the wait clears. The propagation view reads the answer from the zone's own nameservers
+  beside the machine resolver's, which splits the old single `hostname-propagating` outcome into
+  `hostname-records-absent` and `hostname-resolver-lagging`: a live run measured 27 minutes parked on
+  a stale negative cache while the authoritative answer served the whole time, and that case now
+  names itself and clears without a re-run. The marker pair remains the only authority for a live
+  verdict, so the DNS answer upgrades the diagnosis and never the verdict. The builds view shows
+  discovery, then the build's own state from queued to running to an outcome, and the commit it
+  matched. Each page carries a chapter and hop header, refreshes on a per-class cadence, and renders
+  from a per-view field allowlist, so no token or secret reaches a rendered byte or a printed line.
+  The console mounts under a fresh unguessable path per run, refuses any request not addressed to
+  the local machine, and exists only while a run is waiting; nothing is left listening between runs.
+  A run that is `--yes`, non-TTY, or under CI never holds and parks exactly as before. An interrupt
+  during a wait closes the console, saves what the loop learned, prints the same park row the expiry
+  path prints, and exits `0`, where an interrupt previously died at 130 with nothing saved. A console
+  that cannot bind degrades to the old behavior rather than failing the run. Three internal reuse
+  moves came with it: the loopback listener extracted into a routing core that adds a Host allowlist
+  and per-mount secret prefixes (the GitHub chapter's `/callback` and `/manifest` stay at their fixed
+  paths, since GitHub's loopback leniency is port-only and the App's callback URLs are baked at
+  creation), the authoritative-versus-recursive DNS machinery lifted out of the records module into a
+  shared helper, and the fake HTTP plumbing shared by the GitHub and Cloudflare test fakes collapsed
+  into one. Consumers must: nothing. The engine's runtime library, exports, and tarball are untouched,
+  and this package ships separately.
+
 ### Changed
 
 - The docs now say plainly that a production site belongs on the Workers Paid plan, and why. A new

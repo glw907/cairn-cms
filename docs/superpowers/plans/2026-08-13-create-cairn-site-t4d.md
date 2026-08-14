@@ -250,3 +250,86 @@ same `build_uuid`. Record in the pass post-mortem.
 The spec's ten acceptance criteria, all green, plus: pre-existing tests pass under the
 licensed-edit list only, carry-forwards 1 and 7 marked closed in STATUS, and the estate
 torn down with the ledger settled.
+
+## Post-mortem (2026-08-13, Opus execution session)
+
+**Built: Tasks 1 through 6, plus four rounds of review and repair.** The console ships over both
+held wait classes, with the three extractions (loopback core, DNS helper, fake HTTP plumbing) and
+the hostname diagnosis split. Tasks 7 and 8 Step 1 (the live proof, the estate teardown) are NOT
+done; both need Geoff at a browser and are carried in STATUS.
+
+**Final gate, verified in the main loop rather than taken from an agent's report.** Package suite
+821 pass, exit 0 (701 at pass start). Root `npm run check`: 1601 files, 0 errors, 0 warnings.
+`check:docs`: 188 files, every relative link and anchor resolves. PR-gating list re-derived with
+`grep -l pull_request .github/workflows/*`: `design`, `e2e`, `create-site`, `scaffold`, `test`.
+The `create-site.yml` console probe was extracted verbatim and RUN against HEAD (exit 0, stable
+over four consecutive runs), then falsified by reinstating the pre-fix assertion and watching it
+fail. Both interrupt shapes were driven against the real packed `bin.mjs` behind a latency proxy.
+
+**The headline, and it is the same lesson as the previous pass wearing different clothes: nine
+tasks landed with 801 tests passing and BOTH headline features inert in a real run.** Chapter 2
+never threaded a DNS context, so the propagation split (the entire point of carry-forward 1 and
+the measured 27-minute defect) could not execute and the park message asserted what an unmade
+lookup had shown. The Builds hold cleared the instant a build was FOUND, so the console shut down
+exactly when the six-minute build it existed to display began. Park pages were built, tested
+against the catalogue, and mounted on no route. The secret-sentinel sweep, which is the security
+gate for AC6, rendered through a test-local copy of the view that did its own allowlisting, so it
+could never fail for the reason it claimed. Every one of these passed every mechanical gate.
+
+**The dominant defect class, four instances in one pass: a test proves a function while nothing
+proves the call path reaches it.** DNS context (chapter 2, then again chapter 3), the park-page
+forwarding, and the sentinel sweep were all of this shape. The fix that generalizes: a test for a
+wiring must be proven red BY MUTATION, deleting the production argument or forwarding and watching
+a named test fail. Round 3 and the tail round adopted that as the standard rather than an
+escalation, and it immediately caught that round 2's own chapter-3 DNS fix was unpinned.
+
+**The fixes introduced two regressions of their own, which is worth planning for rather than
+treating as a surprise.** Four of the five round-2 fixes touched one hold loop, and the probe race
+added for SIGINT responsiveness made `observation === null` reachable at the interrupt path, so an
+interrupt before the first probe exited 1 with a TypeError instead of parking. Separately, the
+Builds-hold widening updated the in-repo mirror of an assertion and not its copy in
+`create-site.yml`, leaving a PR-gating workflow red. Asking the verifier specifically for
+regressions introduced by the fixes is what surfaced both.
+
+**A mirrored assertion across a test file and a workflow YAML drifts silently.** The console
+scenario exists twice by design (once as an in-repo test, once as the CI probe against the packed
+CLI). Nothing links them, so changing the behavior updated one. Any future edit to that scenario
+has to touch both, and the only reliable check is extracting the workflow's script and running it.
+
+**Decisions locked this pass.** The hold gate lives in the caller, with `CAIRN_FORCE_HOLD=1`
+honored only beside a fake API base. `defaultPark` belongs with the composer, not the loop, since
+only the composer knows both the class's earliest honest verdict and the run's own params; chapter
+2 supplies `hostname-resolver-lagging` (the attach has already returned, so the record does exist
+at the zone's nameservers) and chapter 3 supplies `build-running` or `build-not-started` depending
+on whether a uuid is known at hold entry. The interrupt races the in-flight probe rather than
+threading an AbortSignal through the probe contract, because decision 6 requires the loop to stop
+waiting, not the underlying call to be cancelled.
+
+**Deviations from the plan, all verified against the code rather than followed blind.** Task 1's
+four named callers needed zero edits, since the loopback core's boundary sat below them. Task 2's
+claimed `chapter3.mjs` outcome-union doc comment did not exist. Task 5b found the plan and spec
+contradicting each other on the CI probe's fixture (the plan said the delegated-step propagation
+fixture, the spec said a Builds-hold state); the spec governed and the Task 6 dispatch already
+specified the Builds fixture, so it resolved without intervention.
+
+**Process notes.** A runaway guard must be retired when its workflow completes, or it alarms on
+the finished run; this happened twice. A guard watching `journal.jsonl` reads a legitimately long
+agent as a stall, because the journal only ticks on agent transitions; watch the newest
+`agent-*.jsonl` mtime instead. `prettier` reformats whole files here, since the repo carries no
+`prettierrc` and prettier is in no gate.
+
+**Budgets.** Roughly 4.6M subagent tokens across six workflows (nine task agents, three review
+lenses, eight fix agents, three verifiers, one simplifier), plus the main loop. Human interaction
+points: zero blocking questions. Geoff opened a design conversation on the Go successor tool of his
+own initiative, which is not a defect. One genuine correction he had to prompt: an initial
+"separate repo, agreed" was given too quickly and reversed on the evidence when he asked for the
+real assessment, which is a defect against the standing rule to answer a design question rather
+than agree with it.
+
+**Outstanding, carried to STATUS.** Task 7's live proof (drift the local reconcile hash on the
+inherited `builds-live` record, re-enter with `--connect`, ride the reauthorize trip and the push
+into the held build watch with the console up). Task 8 Step 1's teardown, whose table is in
+`docs/internal/2026-08-13-t5-task8-live-e2e.md`, including the browser-only App and installation
+rows and the App ledger note moving to five hand-deleted. AC5, AC9, and AC10 are met, unmet, and
+outstanding respectively only in the sense that the live proof and teardown have not run; every
+criterion provable without the browser is met.

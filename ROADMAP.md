@@ -272,6 +272,26 @@ The original decision framing, for the record:
 
 ## Now
 
+- **The doctor's CSRF-handoff check silently skips on every current `sv create` scaffold,
+  filed off Pass D's target-manifest work (2026-08-14).** `src/lib/doctor/checks-local.ts:90-91`
+  (`configCsrfDisable`, condition `config.csrf-disable-missing`) reads
+  `const text = await ctx.readFile('svelte.config.js'); if (text === null) return
+  skip('svelte.config.js not found');`. Verified live: `npx sv@latest create --template
+  minimal --types ts --no-add-ons` (sv 0.17.0, run 2026-08-14) emits **no
+  `svelte.config.js` at all**, wiring the adapter inside `vite.config.ts`'s plugin call
+  instead (`sveltekit({ compilerOptions: {...}, adapter: adapter() })`, `adapter` from
+  `@sveltejs/adapter-auto` by default). So this check fires its skip path on every site built
+  from a current scaffold, not an edge case; it has already fired, not merely a condition
+  that could. A skip is not visually distinct from a pass in the doctor's own report, so the
+  run looks clean while the CSRF-handoff check never executed: a silent green, the worse
+  failure mode for a readiness check to have. Candidate fix: read the adapter and CSRF
+  configuration from `vite.config.ts` as well as `svelte.config.js` (a site may carry either,
+  depending on when it was scaffolded), and make "could not find a file to check" a result
+  distinct from "checked and passed" wherever the doctor reports it, so a consumer reading the
+  report can tell the two apart. Full evidence:
+  `docs/internal/2026-08-14-pass-d-target-manifest.md` ("An engine defect this uncovered,
+  filed rather than fixed").
+
 - **Vertical alignment's declared follow-up, filed off the cairn-wide pass (2026-08-07).** A
   cairn-wide inventory measured both the admin and the public surface for vertical-alignment
   defects and closed the two entries this replaces: the optical-centring engine default Geoff asked

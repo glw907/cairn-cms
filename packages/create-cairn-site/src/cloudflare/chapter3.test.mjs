@@ -1239,6 +1239,78 @@ test('watchAndComplete: a discovery hold that never clears within its budget par
   assert.ok(heldApi.calls.listBuildsForWorker >= 1, 'the hold must have actually probed before giving up');
 });
 
+/** A fetchImpl whose every probe fails at the transport level, for confirmHostname's unreachable-case diagnosis. */
+function alwaysUnreachableFetch() {
+  return async () => {
+    throw new TypeError('fetch failed', { cause: { code: 'ENOTFOUND' } });
+  };
+}
+
+/**
+ * A resolver factory whose authoritative path already carries the apex AAAA record while the
+ * recursive resolver still answers absent, the negative-cache disagreement that upgrades
+ * `hostname-records-absent` to `hostname-resolver-lagging`. Mirrors chapter2.test.mjs's own
+ * `disagreeingResolve`, reimplemented here since this test proves the wiring through
+ * `watchAndComplete`'s own `dns` param, not by calling `confirmHostname` directly.
+ * @param {string} domain the domain under test
+ * @returns {(servers?: string[]) => object} the factory `watchAndComplete` forwards to `hostname.mjs`
+ */
+function disagreeingResolve(domain) {
+  const absent = async () => {
+    throw Object.assign(new Error('absent'), { code: 'ENODATA' });
+  };
+  const recursive = {
+    resolveNs: async () => ['ns1.registrar.test'],
+    resolve4: absent,
+    resolve6: async (name) => {
+      if (name === 'ns1.registrar.test') return ['203.0.113.9'];
+      throw Object.assign(new Error('absent'), { code: 'ENODATA' });
+    },
+  };
+  const authoritative = {
+    resolve4: absent,
+    resolve6: async (name) => {
+      if (name === domain) return ['2001:db8::100'];
+      throw Object.assign(new Error('absent'), { code: 'ENODATA' });
+    },
+  };
+  return (servers) => (servers ? authoritative : recursive);
+}
+
+// The falsifiability control this test exists for: chapter3.mjs's post-success hostname confirm
+// forwarded no `dns` context at all, so hostname-resolver-lagging was unreachable from a real
+// chapter-3 run no matter how carefully hostname.mjs's own split was proven in isolation, and the
+// catalogue's hostname-records-absent row (which claims "even its own nameservers do not show a
+// DNS record") was reached with no DNS lookup ever attempted. Deleting the `dns` argument at the
+// confirmHostname call site (leaving diagnoseUnreachable itself untouched) makes this test fail
+// with 'hostname-records-absent', the exact regression this pins.
+test('watchAndComplete: the post-success hostname confirm threads the injected resolver into the DNS diagnosis, so a disagreement returns hostname-resolver-lagging', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const domain = 'lagging-watch.example';
+
+  const result = await watchAndComplete({
+    siteId: 'watch-dns-wiring-site',
+    record: { cloudflare: { domain } },
+    dir,
+    log: () => {},
+    api: discoveryApi({ tag: WORKER_TAG }),
+    sleepFn: async () => {},
+    fetchImpl: alwaysUnreachableFetch(),
+    pollIntervalMs: 0,
+    maxPollAttempts: 5,
+    triggerUuid: 'trigger-1',
+    defaultBranch: 'main',
+    chapter3Reached: true,
+    lastBuildUuid: 'build-1',
+    lastBuildOutcome: undefined,
+    reconcileResult: undefined,
+    dns: { resolve: disagreeingResolve(domain) },
+  });
+
+  assert.equal(result.outcome, 'hostname-resolver-lagging');
+});
+
 test('runChapter3: --yes with a real config diff parks on builds-reconcile-parked, opening no browser', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);

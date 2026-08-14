@@ -42,11 +42,10 @@
 // means only the caller's resolver is behind (hostname-resolver-lagging, a self-clearing wait);
 // absent there too means the record genuinely has not been created or propagated to the zone's
 // own nameservers yet (hostname-records-absent). The DNS context is optional and absent-safe: a
-// caller that passes none (chapter3.mjs's own call site, untouched by this split) gets the
-// conservative default with no lookup attempted at all, never a crash and never a real DNS call
-// it did not ask for. Either way, this only ever refines WHICH wait row is reported: the marker
-// pair above stays the sole authority for `live`, and a DNS presence never overrides a failing or
-// mismatched marker probe.
+// caller that passes none gets the conservative default with no lookup attempted at all, never a
+// crash and never a real DNS call it did not ask for. Either way, this only ever refines WHICH
+// wait row is reported: the marker pair above stays the sole authority for `live`, and a DNS
+// presence never overrides a failing or mismatched marker probe.
 //
 // THE HOLD SEAM (Task 4a): the propagation wait above is one of the two classes this tool holds
 // in process with a console up rather than parking on. The seam is one optional injected

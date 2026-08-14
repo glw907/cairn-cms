@@ -156,7 +156,9 @@ jobs:
         # override the hold-force seam exists for (a spawned child is non-TTY, and this runner's own
         # CI=true would otherwise refuse to hold at all). Two fetches prove a real re-render, never a
         # stub 200: the first against the pre-discovery view, the second once the fake's build state
-        # has flipped and the console has moved to its cleared exit page.
+        # has flipped to a build the hold has found but not yet settled (`status: 'running'`, a null
+        # `build_outcome`), which keeps the console up rather than reaching its cleared exit page;
+        # mirrors test/console-hold.test.mjs's own "changed cell" assertions exactly.
         env:
           PKG_DIR: ${{ github.workspace }}/packages/create-cairn-site
           CREATE_BIN: /tmp/create-scratch/node_modules/create-cairn-site/bin.mjs
@@ -267,7 +269,13 @@ jobs:
               }
             }
             assert.notEqual(changedBody, firstBody, 'expected a real re-render once the build was discovered');
-            assert.ok(changedBody.includes(EXIT_TEXT), `expected the cleared exit page, got: ${changedBody}`);
+            assert.ok(changedBody.includes(buildUuid), `expected the discovered build's own id, got: ${changedBody}`);
+            assert.ok(changedBody.includes('Status: running'), `expected the build's live status, got: ${changedBody}`);
+            assert.equal(
+              changedBody.includes(EXIT_TEXT),
+              false,
+              'the hold must not end at discovery: an unfinished build is still a wait to watch',
+            );
 
             console.log('Builds discovery console probe passed.');
           } catch (err) {

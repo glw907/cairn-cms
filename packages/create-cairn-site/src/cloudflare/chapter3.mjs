@@ -52,6 +52,7 @@ import { makeApi } from './api.mjs';
 import { cloudflareError, trailingStderr } from './catalogue.mjs';
 import { deleteApiToken } from './chapter2.mjs';
 import { confirmHostname } from './hostname.mjs';
+import { defaultResolve } from './dns.mjs';
 import { githubRequest } from '../github/api.mjs';
 import { openBrowser as defaultOpenBrowser } from '../github/open.mjs';
 import { reauthorize } from '../github/oauth.mjs';
@@ -430,6 +431,10 @@ function composeBuildWatchWaitForClear({
  *  Promise<import('../hold-loop.mjs').HoldObservation>} [input.waitForClear] the injected build
  *  watch hold. Absent it, the watch behaves exactly as it did before the console existed: one
  *  `listBuildsForWorker` read, then today's park or today's `pollBuildToStop` pass.
+ * @param {import('./hostname.mjs').DnsContext} [input.dns] the DNS context forwarded to the
+ *  post-success `confirmHostname` re-check; absent-safe (see hostname.mjs's own header), so a
+ *  caller that passes none gets the conservative `hostname-records-absent` default with no lookup
+ *  attempted, never a false claim that a lookup ran and found nothing.
  * @returns {Promise<{ outcome: string, message?: string }>} a wait-kind park (returned, never
  *  thrown) or the `builds-live` success outcome; an act-kind failure throws a catalogued error
  */
@@ -450,6 +455,7 @@ export async function watchAndComplete({
   lastBuildOutcome,
   reconcileResult,
   waitForClear,
+  dns = {},
 }) {
   const tag = await resolveWorkerTag(api, dir, 'nothing to watch');
 
@@ -601,7 +607,7 @@ export async function watchAndComplete({
   }
 
   const currentOrigin = record?.cloudflare?.domain ?? new URL(record?.cloudflare?.url).host;
-  const hostOutcome = await confirmHostname(currentOrigin, fetchImpl);
+  const hostOutcome = await confirmHostname(currentOrigin, fetchImpl, dns);
   if (hostOutcome === 'hostname-not-serving') {
     throw cloudflareError('hostname-not-serving', { dir, domain: currentOrigin });
   }
@@ -677,6 +683,10 @@ const WATCH_DETAIL =
  *  defaulting to a real timer-based sleep
  * @property {typeof fetch} [fetchImpl] the fetch implementation the live-hostname confirm probes
  *  with; defaults to the global `fetch`, overridden in tests
+ * @property {(servers?: string[]) => object} [resolve] the resolver factory forwarded to the
+ *  build watch's post-success hostname confirm (`hostname.mjs`'s `diagnoseUnreachable`, the same
+ *  unreachable-case diagnosis chapter 2's cutover uses); a test seam, defaulting to `dns.mjs`'s
+ *  own `defaultResolve`
  * @property {number} [pollIntervalMs] the build watch's poll interval; defaults to five seconds
  * @property {number} [maxPollAttempts] the build watch's poll budget, in attempts; defaults to 180
  *  (fifteen minutes at the default interval, comfortably under Cloudflare's own 20-minute timeout)
@@ -731,6 +741,7 @@ export async function runChapter3({
   argv = process.argv.slice(2),
   sleepFn = defaultSleep,
   fetchImpl = fetch,
+  resolve = defaultResolve,
   pollIntervalMs = DEFAULT_BUILD_POLL_INTERVAL_MS,
   maxPollAttempts = DEFAULT_MAX_POLL_ATTEMPTS,
   isTTY = Boolean(process.stdout.isTTY),
@@ -844,6 +855,10 @@ export async function runChapter3({
           lastBuildUuid: undefined,
           lastBuildOutcome: record?.cloudflare?.buildsLastBuildOutcome,
           reconcileResult,
+          // The zone's own nameservers, saved by chapter 2, let the post-success hostname confirm's
+          // unreachable-case diagnosis skip a fresh NS discovery lookup (dns.mjs's own
+          // `selectAuthoritativeResolver`).
+          dns: { resolve, nameServers: record?.cloudflare?.nameServers },
           waitForClear: composeBuildWatchWaitForClear({
             runArgs: args,
             isTTY,
@@ -1091,6 +1106,10 @@ export async function runChapter3({
         lastBuildUuid,
         lastBuildOutcome,
         reconcileResult,
+        // The zone's own nameservers, saved by chapter 2, let the post-success hostname confirm's
+        // unreachable-case diagnosis skip a fresh NS discovery lookup (dns.mjs's own
+        // `selectAuthoritativeResolver`).
+        dns: { resolve, nameServers: record?.cloudflare?.nameServers },
         waitForClear: composeBuildWatchWaitForClear({
           runArgs: args,
           isTTY,

@@ -9,6 +9,7 @@ import { startFakeCloudflare } from '../../test/fake-cloudflare.mjs';
 import { makeApi, SENDING_DISABLED_CODE } from './api.mjs';
 import { saveSite, loadSite } from '../state.mjs';
 import { createWaitForClear, consoleUrlLine } from '../hold-loop.mjs';
+import { cloudflareError } from './catalogue.mjs';
 
 /** A minimal wrangler.jsonc fixture carrying the one key writePublicOrigin needs. */
 const MINIMAL_WRANGLER_JSONC = JSON.stringify(
@@ -172,18 +173,23 @@ function fakeConsole() {
  * Build a `createWaitForClearFn` test seam wrapping the real `createWaitForClear`, over a virtual
  * clock so a multi-poll hold resolves at once instead of waiting real time. Records how many holds
  * were composed, so a test can assert the seam is built exactly once.
- * @param {{ calls: string[] }} recorder pushed one entry (the hold class) per composition
+ * @param {{ calls: string[], lastOptions?: object }} recorder pushed one entry (the hold class)
+ *  per composition, and given the composed options themselves, so a test can assert what the
+ *  chapter actually handed the loop rather than only that it composed one
  * @returns {typeof createWaitForClear} the test seam
  */
 function testCreateWaitForClearFn(recorder) {
-  return ({ holdClass, server, log, persist }) => {
+  return (options) => {
+    const { holdClass, server, log, persist, defaultPark } = options;
     recorder.calls.push(holdClass);
+    recorder.lastOptions = options;
     let clock = 0;
     return createWaitForClear({
       holdClass,
       server,
       log,
       persist,
+      defaultPark,
       now: () => clock,
       sleepFn: async (ms) => {
         clock += ms;
@@ -818,6 +824,13 @@ test('an interactive run threads waitForClear into cutOverHostname: the console 
   assert.equal(outcome.outcome, 'paid-plan-declined');
   assert.equal(state.rounds, 4, 'three held probes, then the one-shot re-check after the redeploy');
   assert.equal(holdRecorder.calls.length, 1, 'the seam is composed exactly once, for the pre-redeploy confirm');
+  // The row an interrupt lands on before the first probe has read anything. The chapter is the
+  // only place that knows both this class's earliest honest verdict and this run's own params, so
+  // a hold composed without it would leave a Ctrl-C during the first probe printing nothing.
+  assert.equal(
+    holdRecorder.lastOptions.defaultPark,
+    cloudflareError('hostname-resolver-lagging', { dir, domain }).message,
+  );
   assert.equal(consoleServer.calls.start.length, 1, 'the console starts exactly once across the hold');
   assert.equal(
     lines.filter((line) => line === consoleUrlLine(HOLD_CONSOLE_URL)).length,

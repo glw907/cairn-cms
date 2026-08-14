@@ -2,7 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import dns from 'node:dns';
-import { BUILD_HOLD_CLASS, PROPAGATION_HOLD_CLASS, consoleUrlLine, makeObservation } from '../hold-loop.mjs';
+import { EventEmitter } from 'node:events';
+import {
+  BUILD_HOLD_CLASS,
+  PROPAGATION_HOLD_CLASS,
+  consoleUrlLine,
+  createWaitForClear,
+  makeObservation,
+} from '../hold-loop.mjs';
 import { cloudflareError } from '../cloudflare/catalogue.mjs';
 import { escapeHtml, SERVES_DURING_RUN_SENTENCE } from './render.mjs';
 import { renderParkPage } from './park-pages.mjs';
@@ -230,6 +237,73 @@ test('park page: a cleared observation always wins over a park argument, so the 
   assert.match(duringGrace.body, /This wait cleared\. The run is continuing in your terminal\./);
 
   await stopPromise;
+});
+
+test('park page: a real hold ending on a park serves it here, so deleting the loop\'s own forwarding turns this red', async () => {
+  // The three park tests above call `stop(park)` themselves, which proves the SERVER but not the
+  // WIRING: with the hold loop's forwarding deleted they all stay green while a real run's park
+  // page becomes unreachable. This test hands the park to nothing but a probe, and lets the real
+  // `createWaitForClear` carry it to the real server, so the forwarding is what is under test.
+  const park = { code: 'build-not-started', params: { dir: '/tmp/park-wiring-test' } };
+  const server = createConsoleServer({
+    chapter: CHAPTER,
+    hop: HOP,
+    record: {},
+    renderView: stubRenderView,
+    graceMs: 2000,
+  });
+
+  let url;
+  let startStopping;
+  const stopping = new Promise((resolve) => {
+    startStopping = resolve;
+  });
+  // A pass-through handle: it observes when `stop` is entered and forwards its argument verbatim,
+  // so a loop that stopped forwarding lands here with `undefined` exactly as it would in a run.
+  const handle = {
+    async start(observation) {
+      const started = await server.start(observation);
+      url = started.url;
+      return started;
+    },
+    update: (observation) => server.update(observation),
+    stop(forwarded) {
+      const stopped = server.stop(forwarded);
+      startStopping();
+      return stopped;
+    },
+  };
+
+  let clock = 0;
+  const waitForClear = createWaitForClear({
+    holdClass: BUILD_HOLD_CLASS,
+    server: handle,
+    log: () => {},
+    // One poll's worth of budget, so the hold expires un-cleared on its second probe.
+    pollIntervalMs: 1000,
+    budgetMs: 1000,
+    now: () => clock,
+    sleepFn: async (ms) => {
+      clock += ms;
+    },
+    signals: new EventEmitter(),
+  });
+  const held = waitForClear(async () => ({
+    cleared: false,
+    detail: { buildUuid: null },
+    park: cloudflareError(park.code, park.params).message,
+    parkCode: park.code,
+    parkParams: park.params,
+  }));
+
+  await stopping;
+  const parsed = new URL(url);
+  const duringGrace = await rawRequest(Number(parsed.port), parsed.pathname);
+  assert.equal(duringGrace.status, 200);
+  assert.equal(duringGrace.body, renderParkPage({ chapter: CHAPTER, hop: HOP, ...park }));
+
+  await held;
+  await assert.rejects(() => rawRequest(Number(parsed.port), parsed.pathname));
 });
 
 test('park page: with no fetch during the grace window, the server still shuts down on its own', async (t) => {

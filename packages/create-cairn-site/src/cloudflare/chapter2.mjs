@@ -251,6 +251,8 @@ const EMAIL_ADMISSION_DETAIL =
  * @param {Record<string, string | undefined>} input.env the environment `shouldHold` reads
  * @param {(line: string) => void} input.log receives the console URL line
  * @param {object} input.record the full state record, handed to the console's view as is
+ * @param {string} input.dir the `--dir` value, interpolated into the hold's default park row
+ * @param {string} input.domain the domain being connected, interpolated into that same row
  * @param {typeof createWaitForClear} input.createWaitForClearFn a test seam, defaulting to
  *  hold-loop.mjs's own
  * @param {typeof createConsoleServer} input.createConsoleServerFn a test seam, defaulting to the
@@ -265,6 +267,8 @@ function composeCutoverWaitForClear({
   env,
   log,
   record,
+  dir,
+  domain,
   createWaitForClearFn,
   createConsoleServerFn,
 }) {
@@ -275,7 +279,17 @@ function composeCutoverWaitForClear({
     record,
     renderView: renderPropagationView,
   });
-  return createWaitForClearFn({ holdClass: PROPAGATION_HOLD_CLASS, server, log });
+  return createWaitForClearFn({
+    holdClass: PROPAGATION_HOLD_CLASS,
+    server,
+    log,
+    // The row an interrupt lands on before the first probe has read anything. Resolver lag is
+    // this hold's earliest honest verdict: `attachCustomDomain` has already returned by the time
+    // the hold starts, so the record does exist at the zone's own nameservers, and what remains
+    // unconfirmed is only whether the rest of the world can see it yet. The records-absent row
+    // would instead claim the attach never took, which this run has just disproved.
+    defaultPark: cloudflareError('hostname-resolver-lagging', { dir, domain }).message,
+  });
 }
 
 /**
@@ -582,6 +596,8 @@ export async function runChapter2({
             env,
             log,
             record,
+            dir,
+            domain,
             createWaitForClearFn,
             createConsoleServerFn,
           });

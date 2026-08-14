@@ -200,16 +200,24 @@ function defaultSleep(ms) {
 /**
  * Run one hold to its end: clear, budget expiry, or interrupt.
  * @param {object} config the resolved hold configuration (see `createWaitForClear`)
- * @returns {Promise<HoldObservation>} the last observation taken
+ * @returns {Promise<HoldObservation | null>} the last observation taken, or `null` when an
+ *  interrupt ended the hold before the first probe returned. No caller reads that `null` in
+ *  production, since the interrupt path exits the process before this resolves; it exists for a
+ *  test that injects its own `exit`
  */
 async function runHold(config) {
   const { holdClass, probe, server, log, persist, pollIntervalMs, budgetMs } = config;
-  const { sleepFn, now, signals, exit } = config;
+  const { sleepFn, now, signals, exit, defaultPark } = config;
 
   const startedAt = now();
   let attempt = 0;
   let observation = null;
-  let park;
+  // The park row an interrupt prints, replaced by each probe's own verdict as one arrives. It
+  // starts at the class default because the interrupt is raced against the probe itself: a signal
+  // landing during the FIRST probe (the widest window in practice, since that probe is the one
+  // that waits on a domain that does not resolve yet) has no verdict of its own to print, and an
+  // admin who pressed Ctrl-C is owed the same row an expired hold would have left them.
+  let park = defaultPark;
   // The last probe's park page, forwarded to `server.stop` so a console still up when the hold
   // ends un-cleared (expiry, interrupt, or a park-class outcome surfacing mid-hold) renders that
   // page through its grace window rather than closing at once. `server.stop` itself decides
@@ -253,7 +261,10 @@ async function runHold(config) {
   // the caller's park path would have done, in that order.
   const handleInterrupt = async () => {
     await stopServer();
-    if (persist) await persist(observation);
+    // No completed probe means nothing was learned, so there is nothing to save; a persist reads
+    // the observation's own detail (chapter 3's saves the discovered build uuid from it), and an
+    // absent observation is not a shape every caller's persist should have to defend against.
+    if (persist && observation) await persist(observation);
     if (park) log(park);
     exit(0);
   };
@@ -335,7 +346,12 @@ async function runHold(config) {
  *  an interrupt
  * @param {(observation: HoldObservation) => Promise<void>} [options.persist] save what the loop
  *  learned; called on the interrupt path only, since every other path returns to a caller that
- *  does its own saving
+ *  does its own saving, and never before a probe has produced an observation to save
+ * @param {string} [options.defaultPark] this class's own default park row, printed when an
+ *  interrupt arrives before any probe has returned a verdict of its own. It belongs to the caller
+ *  composing the seam, the one place that knows both the class's earliest honest verdict and the
+ *  run's own catalogue params; this module holds no catalogue knowledge. It carries no park PAGE,
+ *  since the console starts only after a probe has already failed to clear
  * @param {number} [options.pollIntervalMs] the wait between probes; required for the Builds class
  * @param {number} [options.budgetMs] how long the hold may run; required for the Builds class
  * @param {(ms: number) => Promise<void>} [options.sleepFn] the sleep, overridden in tests
@@ -350,6 +366,7 @@ export function createWaitForClear({
   server,
   log = () => {},
   persist,
+  defaultPark,
   pollIntervalMs,
   budgetMs,
   sleepFn = defaultSleep,
@@ -378,6 +395,7 @@ export function createWaitForClear({
       server,
       log,
       persist,
+      defaultPark,
       pollIntervalMs: resolvedPoll,
       budgetMs: resolvedBudget,
       sleepFn,

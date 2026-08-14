@@ -349,6 +349,7 @@ function completionMessage({ defaultBranch, domain }) {
  * @param {string} input.hop the hop title this hold's console header renders
  * @param {object} input.record the full state record, handed to the console's view as is
  * @param {string} input.siteId the site to persist the discovered build uuid to, on interrupt only
+ * @param {string} input.dir the `--dir` value, interpolated into the hold's default park row
  * @param {number} input.pollIntervalMs chapter 3's own poll interval, reused verbatim
  * @param {number} input.maxPollAttempts chapter 3's own poll budget, converted to a duration
  * @param {typeof createWaitForClear} input.createWaitForClearFn a test seam, defaulting to
@@ -367,6 +368,7 @@ function composeBuildWatchWaitForClear({
   hop,
   record,
   siteId,
+  dir,
   pollIntervalMs,
   maxPollAttempts,
   createWaitForClearFn,
@@ -385,6 +387,10 @@ function composeBuildWatchWaitForClear({
     log,
     pollIntervalMs,
     budgetMs: pollIntervalMs * maxPollAttempts,
+    // The row an interrupt lands on before discovery's first probe has returned: the push has
+    // happened and no build has been seen yet, which is the same verdict that first probe would
+    // report and the same park a watch that never finds a build ends on.
+    defaultPark: cloudflareError('build-not-started', { dir }).message,
     persist: (observation) => {
       if (!observation.detail.buildUuid) return undefined;
       return updateSite(siteId, { cloudflare: { buildsLastBuildUuid: observation.detail.buildUuid } });
@@ -846,6 +852,7 @@ export async function runChapter3({
             hop: 'Watch the build your update triggered',
             record,
             siteId,
+            dir,
             pollIntervalMs,
             maxPollAttempts,
             createWaitForClearFn,
@@ -1092,6 +1099,7 @@ export async function runChapter3({
           hop: 'Watch your first Workers Builds deploy',
           record,
           siteId,
+          dir,
           pollIntervalMs,
           maxPollAttempts,
           createWaitForClearFn,

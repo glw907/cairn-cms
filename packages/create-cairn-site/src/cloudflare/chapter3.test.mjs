@@ -14,6 +14,7 @@ import { createRepo, pushScaffold } from '../github/repo.mjs';
 import { saveSite, loadSite } from '../state.mjs';
 import { createWaitForClear, BUILD_HOLD_CLASS, consoleUrlLine } from '../hold-loop.mjs';
 import { makeApi } from './api.mjs';
+import { cloudflareError } from './catalogue.mjs';
 import {
   runChapter3,
   watchAndComplete,
@@ -324,18 +325,23 @@ function fakeConsole() {
  * Build a `createWaitForClearFn` test seam wrapping the real `createWaitForClear`, over a virtual
  * clock so a multi-poll hold resolves at once instead of waiting real time. Records how many holds
  * were composed, so a test can assert the seam is built exactly once.
- * @param {{ calls: string[] }} recorder pushed one entry (the hold class) per composition
+ * @param {{ calls: string[], lastOptions?: object }} recorder pushed one entry (the hold class)
+ *  per composition, and given the composed options themselves, so a test can assert what the
+ *  chapter actually handed the loop rather than only that it composed one
  * @returns {typeof createWaitForClear} the test seam
  */
 function testCreateWaitForClearFn(recorder) {
-  return ({ holdClass, server, log, persist, pollIntervalMs, budgetMs }) => {
+  return (options) => {
+    const { holdClass, server, log, persist, defaultPark, pollIntervalMs, budgetMs } = options;
     recorder.calls.push(holdClass);
+    recorder.lastOptions = options;
     let clock = 0;
     return createWaitForClear({
       holdClass,
       server,
       log,
       persist,
+      defaultPark,
       pollIntervalMs,
       budgetMs,
       now: () => clock,
@@ -877,6 +883,9 @@ test('an interactive run threads waitForClear into watchAndComplete: the console
 
   assert.equal(result.outcome, 'builds-live');
   assert.deepEqual(holdRecorder.calls, [BUILD_HOLD_CLASS], 'the seam is composed exactly once, for the build-discovery hold');
+  // The row an interrupt lands on before discovery's first probe has returned. Without it, a
+  // Ctrl-C in that window (the whole first read against the platform) prints nothing at all.
+  assert.equal(holdRecorder.lastOptions.defaultPark, cloudflareError('build-not-started', { dir }).message);
   assert.equal(consoleServer.calls.start.length, 1, 'the console starts exactly once across the hold');
   assert.equal(
     lines.filter((line) => line === consoleUrlLine(HOLD_CONSOLE_URL)).length,

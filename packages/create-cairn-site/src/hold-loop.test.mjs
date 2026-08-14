@@ -72,6 +72,20 @@ const NOT_CLEARED = {
 };
 const CLEARED = { cleared: true, detail: { markerOutcome: 'live' } };
 
+/**
+ * The bound every interrupt-races-a-probe test below runs under. Each of them uses a probe that
+ * never resolves, so the ONLY thing that can end the hold is the interrupt: a regression that
+ * stops racing the probe would otherwise hang the test forever, and node:test applies no per-test
+ * timeout of its own here, so the whole CI job's timeout would be spent before anything reported.
+ * A bounded test reports the regression instead of stalling on it. The value is far above what
+ * these tests need (they resolve on microtasks, over an injected clock) and far below any CI
+ * timeout.
+ */
+const IN_FLIGHT_INTERRUPT_TIMEOUT_MS = 5000;
+
+/** The class default park row, the one a hold with no probe verdict yet has to fall back on. */
+const DEFAULT_PARK = 'DEFAULT PARK ROW\nNext: re-run the tool.';
+
 test('the named constants carry the values the pass locked, display cadence exported apart from the poll interval', () => {
   assert.equal(PROPAGATION_BUDGET_MS, 40 * 60 * 1000);
   assert.equal(PROPAGATION_POLL_INTERVAL_MS, 30 * 1000);
@@ -298,7 +312,7 @@ test('a console that fails to bind degrades the hold to running without one, log
 });
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
-  test(`${signal} arriving while a probe is still in flight interrupts at once, not only once the probe returns`, async () => {
+  test(`${signal} arriving while a probe is still in flight interrupts at once, not only once the probe returns`, { timeout: IN_FLIGHT_INTERRUPT_TIMEOUT_MS }, async () => {
     const server = fakeServer();
     const { now, sleepFn } = fakeClock();
     const signals = new EventEmitter();
@@ -343,6 +357,57 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
     assert.equal(observation.cleared, false);
     assert.deepEqual(lines, [consoleUrlLine(server.url), NOT_CLEARED.park]);
     assert.deepEqual(exits, [0]);
+    assert.equal(signals.listenerCount(signal), 0);
+  });
+}
+
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  test(`${signal} arriving before the FIRST probe returns still parks: the class default row, nothing saved, exit 0`, { timeout: IN_FLIGHT_INTERRUPT_TIMEOUT_MS }, async () => {
+    const server = fakeServer();
+    const { now, sleepFn } = fakeClock();
+    const signals = new EventEmitter();
+    const exits = [];
+    const lines = [];
+    let persistCalls = 0;
+    let calls = 0;
+
+    // The widest interrupt window a real run has: the very first probe, which for the propagation
+    // hold is an HTTPS and an HTTP fetch against a domain that does not resolve yet, and for the
+    // builds hold is the first discovery read. Nothing has been observed when the signal lands.
+    const probe = async () => {
+      calls += 1;
+      signals.emit(signal);
+      return new Promise(() => {});
+    };
+
+    const waitForClear = createWaitForClear({
+      holdClass: PROPAGATION_HOLD_CLASS,
+      server: server.handle,
+      log: (line) => lines.push(line),
+      // Shaped like chapter 3's own persist, which reads the observation's detail: handed a null
+      // observation it throws the exact TypeError a live run reported, so this stub proves the
+      // interrupt path never calls it without something to save.
+      persist: async (observation) => {
+        persistCalls += 1;
+        return observation.detail.buildUuid;
+      },
+      defaultPark: DEFAULT_PARK,
+      now,
+      sleepFn,
+      signals,
+      exit: (code) => exits.push(code),
+    });
+    const observation = await waitForClear(probe);
+
+    assert.equal(calls, 1);
+    // The console only ever starts after a probe has failed to clear, so there is none to stop.
+    assert.equal(server.calls.start.length, 0);
+    assert.equal(server.calls.stop, 0);
+    assert.equal(persistCalls, 0, 'nothing was observed, so there is nothing to save');
+    // Decision 6's contract, met with no observation at all: a meaningful park row, then exit 0.
+    assert.deepEqual(lines, [DEFAULT_PARK]);
+    assert.deepEqual(exits, [0]);
+    assert.equal(observation, null);
     assert.equal(signals.listenerCount(signal), 0);
   });
 }

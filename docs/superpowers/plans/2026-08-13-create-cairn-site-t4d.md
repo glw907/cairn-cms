@@ -332,9 +332,9 @@ than agree with it.
 ## Task 7 and 8 addendum (2026-08-13 night, Opus session)
 
 **Task 7 is proven and Task 8 Step 1 is done.** Full evidence, with the raw reads, is in
-[`docs/internal/2026-08-13-t4d-task7-live-proof.md`](../../internal/2026-08-13-t4d-task7-live-proof.md);
+[`docs/internal/2026-08-13-t4d-task7-live-proof.md`](../../internal/record/2026-08-13-t4d-task7-live-proof.md);
 the settled teardown table is in
-[`docs/internal/2026-08-13-t5-task8-live-e2e.md`](../../internal/2026-08-13-t5-task8-live-e2e.md).
+[`docs/internal/2026-08-13-t5-task8-live-e2e.md`](../../internal/record/2026-08-13-t5-task8-live-e2e.md).
 Every acceptance criterion is now met, AC5, AC9, and AC10 included.
 
 **The proof.** Three provocations drifted the local reconcile hash on the inherited `builds-live`

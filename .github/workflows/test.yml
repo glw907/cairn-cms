@@ -48,6 +48,7 @@ jobs:
       - run: npm run check:readiness
       - run: npm run check:docs
       - run: npm run check:arm-indexes
+      - run: npm run check:symbols
       - run: npm run check:snippets
       - run: npm run check:prose
       - run: npm run check:version
@@ -66,4 +67,8 @@ jobs:
           curl -sfL https://github.com/errata-ai/vale/releases/download/v3.15.1/vale_3.15.1_Linux_64-bit.tar.gz \
             | sudo tar -xz -C /usr/local/bin vale
           vale --version
+      # Error-tier only: warnings and suggestions are advisory and are not gated (the standing
+      # repo rule). The Google and Microsoft style packages are vendored under .vale/styles, so
+      # this runs offline against the exact rules committed to the repo.
+      - run: npm run check:vale
       - run: npm run check:comments

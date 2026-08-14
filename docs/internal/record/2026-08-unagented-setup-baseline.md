@@ -12,14 +12,14 @@ produce something a single walk cannot: **agreement**. When five readers who wer
 different things all stop at the same line, that line is not a matter of taste.
 
 Why it exists: the ROADMAP's standing requirement, and the umbrella spec's before-UX-lock condition
-([`2026-08-09-admin-setup-and-docs-reset-design.md`](../superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md)).
+([`2026-08-09-admin-setup-and-docs-reset-design.md`](../../superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md)).
 Pass T1 Task 8 (the `create-cairn-site` UX wiring) was blocked on this record and is unblocked by it.
 
 ## Protocol
 
 Environment: no prior cairn checkout, no wrangler login, no gh login. Each walker started from the
 root README as a stranger would and followed
-[`docs/tutorial/build-your-first-cairn-site.md`](../tutorial/build-your-first-cairn-site.md) and the
+[`docs/tutorial/build-your-first-cairn-site.md`](../../tutorial/build-your-first-cairn-site.md) and the
 setup guides it links, toward a deployed site with a signed-in owner. Every finding required a
 `file:line` quote; a finding that could not be evidenced was not a finding. Walkers were barred from
 reading `docs/superpowers/`, since the specs and plans would have told them the answers. Each drag

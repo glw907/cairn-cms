@@ -76,7 +76,7 @@ post-mortem appended to
 The harvest, the "ink not boxes" lesson now folded into the `visual-fidelity` skill's trigger, and
 the gate lessons (a passing visual baseline certifies stability never correctness; a conformance
 fan-out cannot find a wrong premise) are banked in
-[`2026-08-07-vertical-alignment-harvest-findings.md`](../2026-08-07-vertical-alignment-harvest-findings.md).
+[`2026-08-07-vertical-alignment-harvest-findings.md`](../record/2026-08-07-vertical-alignment-harvest-findings.md).
 
 **Both open decisions the post-mortem raised are now RESOLVED.**
 
@@ -89,7 +89,7 @@ demoted to advisory after failing `error` tier on five measured false positives.
 that is pure shipped surface, so the rule, its tests, its reference entry, its changelog and
 upgrade-guide text, and the ROADMAP item for earning `error` tier are all deleted. The lesson is
 banked in
-[`2026-08-07-vertical-alignment-harvest-findings.md`](../2026-08-07-vertical-alignment-harvest-findings.md).
+[`2026-08-07-vertical-alignment-harvest-findings.md`](../record/2026-08-07-vertical-alignment-harvest-findings.md).
 
 `.cairn-icon-label`'s wrapping-label gap is **fixed** (commit `524a76a8`): `align-self: start;
 min-height: 1lh` takes a 3-line label from +16.71px to -0.29px against the first line's cap centre,

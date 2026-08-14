@@ -15,7 +15,54 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-14: Pass D is planned; execute it)
+## Immediate next action (2026-08-14: Pass D Phase 1 is MERGED; execute Phase 2)
+
+**Pass D Phase 1 landed** (branch `pass-d-phase-1`, four commits, full gate green including
+the two gates it adds). Tasks 1, 2, 3a and 3b are done; Task 3 was split once, into the prose
+standards layer and the two mechanical gates, which is Pass D's first task split (a second
+means proposing a pass split, not absorbing it).
+
+**Next: Phase 2, the clean-room build**, in a fresh worktree off the merged `main`. Geoff
+opted into the Workflow tool (2026-08-14) and asked that the parallelizable work run in
+parallel, so Phase 2 runs as a workflow: **the admin, editors, extend and reference tasks
+(4, 5, 6, 8) run concurrently, each a three-stage pipeline of write, fresh-context review
+against its audience profile, then fold**, with **one real barrier before Task 7**, since the
+front doors route five ways by name into pages the other tracks create and `check:docs` fails
+on a link to a page that does not exist yet. Writers run the non-packaging gates only:
+anything invoking `npm run package` writes `dist/` and cannot run concurrently, so
+`check:snippets`, `check:reference`, `check:readiness` and `check:surface` run once at the
+phase close. Every writing dispatch carries ruling 7 verbatim plus that page's input list from
+the manifest. The conductor reads each track's diff as it lands.
+
+**Three Phase 1 findings that change what Phase 2 and 3 build against.**
+(1) **A current `sv create` (0.17.0) emits no `svelte.config.js` at all**, wiring the adapter
+inside `vite.config.ts`; verified by running the tool, not by reading this repo's showcase.
+The extend track's deep path must stop telling readers to edit a file they do not have.
+(2) **The doctor's CSRF-handoff check silently skips on every current scaffold**
+(`src/lib/doctor/checks-local.ts`, reads `svelte.config.js`, returns `skip` when absent), so
+the run reads clean while the check never executed. Filed to `ROADMAP.md` Now as engine work,
+deliberately not fixed in a docs pass; `admin/is-it-working.md` must not claim coverage it
+does not deliver. (3) **Vale was installed in CI and never invoked**, so the Google standard
+had never been enforced there. `check:vale` now runs at error tier, proven red before trusted
+green; both pre-existing error-tier findings were false positives, and the register standard
+now carries the rule that a wrong Vale finding gets a scoped suppression or corrective markup,
+never a content change that alters a citation or a literal string.
+
+**The standards and targets Phase 2 consumes**, all on `main` now: the rewritten
+`docs/internal/docs-register.md` (four track registers with the audience profiles folded in as
+grading rubrics, the page anatomies encoded, five-route front-door register), the target
+manifest at `docs/internal/record/2026-08-14-pass-d-target-manifest.md` (74 target pages with
+contracts and clean-room input lists, the 50-page deletion list paired 1:1 with its redirect
+map, the cutover gate bill re-derived), and three new gates: `check:vale`, `check:symbols`
+(the hallucinated-symbol sweep, scoped to the new tracks plus the kept reference arm so
+Phase 2's pages are born under it, with a unit test pinning all five token classes), and the
+non-recursive `docs/internal` arm-index entry. **`docs/internal`'s 49 dated artifacts moved to
+`docs/internal/record/`**; a link to one of them needs the new path.
+
+**Carried out of Phase 1:** root `CLAUDE.md` now sits a few tokens over its context budget
+after a link repoint, and Task 11 already owes it a trim of at least as much as it adds.
+
+## Superseded: the Pass D planning entry (2026-08-14)
 
 **PR #33 is MERGED** (`ea3be5ee`), so `main` now carries T4d and the whole tool initiative
 through the localhost console. T4d's close entry, with the live-proof and teardown record,
@@ -75,9 +122,14 @@ packed-tarball-path test; it is tool code, deliberately not folded into Pass D's
 scope, so it either rides its own small pass or the release-one sitting checks it off
 first.
 
-**The docs friction log (19 open findings, 367 lines) is Pass D Task 1**, a self-contained
-first dispatch: verify all 19 against current code, complete-or-move, with an explicit
-written recommendation on whether the refused-action editor cluster earns its own pass.
+**The docs friction log is TRIAGED (Task 1, done).** All 19 findings were verified against
+current code and dispositioned: nine promoted to `ROADMAP.md` with triggers, two folded into
+existing entries, three closed as superseded by the rebuild with the new extend-track pages
+that inherit their jobs named, one deleted as already fixed, one converted to a `// WATCH:`
+comment. Only the setup-walk record stays open, by design; Task 14 closes it. The
+refused-action editor cluster's written recommendation is a Next-tier roadmap entry: it earns
+its own small pass, since all five screens share one root cause (no `use:enhance`, so a
+refused POST re-renders a fresh document with no state to preserve and nothing to announce).
 
 **Hand steps for Geoff, NINE outstanding, one urgent. T4d's teardown added three.** (1) **URGENT:
 rotate the estate Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still

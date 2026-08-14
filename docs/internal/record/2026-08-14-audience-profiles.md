@@ -4,7 +4,7 @@ The grading rubric for the four-track documentation. Every published page belong
 exactly one track, every track serves exactly one profile, and a page review grades the
 page against its profile: the vocabulary contract, the arrival state, and the success
 criterion below, on top of the register standard
-([`docs-register.md`](./docs-register.md)) and the Vale floor. Pass D Task 5 folds these
+([`docs-register.md`](../docs-register.md)) and the Vale floor. Pass D Task 5 folds these
 profiles into the rewritten register standard as the foundation of each track register;
 until then this document is their home.
 

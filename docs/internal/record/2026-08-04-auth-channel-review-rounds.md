@@ -4,9 +4,9 @@ Internal process record for the `createAuthChannel` seam. Written 2026-08-04, du
 sitting, so the findings survive the sitting's context. This is provenance, not documentation: it
 exists so a later reviewer can see what was already attacked and why a mechanism is shaped the way
 it is, without re-litigating settled ground. The developer-facing distillation is
-[`docs/explanation/auth-channel-security-model.md`](../explanation/auth-channel-security-model.md);
+[`docs/explanation/auth-channel-security-model.md`](../../explanation/auth-channel-security-model.md);
 the design itself is
-[the spec](../superpowers/specs/2026-08-03-auth-channel-factory-design.md).
+[the spec](../../superpowers/specs/2026-08-03-auth-channel-factory-design.md).
 
 Three rounds ran, each a read-only Opus 5 reviewer with the design but no implementation. Rounds 1
 and 2 returned "do not build" and both were right. The rounds cost roughly 300k subagent tokens in

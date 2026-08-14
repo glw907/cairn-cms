@@ -218,6 +218,11 @@ export interface AuthChannelConfig<Env> {
    * and independently clamped; an out-of-range override rejects at construction on whichever
    * bound the table states for that row.
    */
+  // WATCH: only three of these nine fields are durations (codeTtlMs, cooldownMs, sessionTtlMs);
+  // the rest count digits, guesses, sends per hour, and live rows, so the ttl name reads
+  // narrower than the bag's contents. The grouping is spec-faithful, since the design's own
+  // Defaults and clamps table treats every clamped numeric knob as one family, so this is a name
+  // a future config redesign might reconsider, not a behavior to fix. Recorded 2026-08-14.
   ttl?: {
     /** Digits per code. Default 8, clamped 8 to 10. */
     codeLength?: number;

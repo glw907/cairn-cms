@@ -117,10 +117,10 @@ Readiness checklist:
   spec carries the T4b and T4c briefs:
   [`docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`](docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md),
   and the banked research behind the split is
-  [`docs/internal/2026-08-11-t4b-email-console-cost-research.md`](docs/internal/2026-08-11-t4b-email-console-cost-research.md).
+  [`docs/internal/record/2026-08-11-t4b-email-console-cost-research.md`](docs/internal/record/2026-08-11-t4b-email-console-cost-research.md).
 
   **The baseline walk is recorded** at
-  [`docs/internal/2026-08-unagented-setup-baseline.md`](docs/internal/2026-08-unagented-setup-baseline.md).
+  [`docs/internal/2026-08-unagented-setup-baseline.md`](docs/internal/record/2026-08-unagented-setup-baseline.md).
   It measured the path no one had measured, the tutorial's `wrangler`-plus-dashboard setup walked cold,
   since every site so far was provisioned by an agent holding account-wide access (Geoff, 2026-08-05,
   the harvest sitting). Geoff first ruled he would walk it himself, then revised that the same day: a
@@ -199,7 +199,7 @@ release-one boundary; the passes are invariant.
   `CairnMediaLibrary` split; P6 front-door docs (cold-reader, diagnostic-pair); P7 the
   zero-credential quickstart; **P8 the ambient-defaults remediation**, the phase-P bucket of the
   2026-08-03 audit, enumerated in
-  [its report](docs/internal/2026-08-03-ambient-defaults-audit.md) rather than restated here.
+  [its report](docs/internal/record/2026-08-03-ambient-defaults-audit.md) rather than restated here.
   Thirteen items, all additive, ordered by consequence in the report: the undetected managed-robots
   prepend, the silent post-handoff mail path, the absent DNS-authentication check, the missing
   `Cache-Control` on every admin response, the unverified `prerender` flag, the 307/308
@@ -218,7 +218,7 @@ release-one boundary; the passes are invariant.
   and the RC cut, all additive and all riding the same unpublished window:
 
   1. ~~**The ambient-defaults audit.**~~ **RUN 2026-08-03**, report at
-     [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/2026-08-03-ambient-defaults-audit.md).
+     [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/record/2026-08-03-ambient-defaults-audit.md).
      It does not gate the RC: one finding is recommended for this window (the engine's unconditional
      two-year `includeSubDomains` admin HSTS, which overrides a zone owner's own HSTS decision), and
      it is a judgment call rather than a forced hand. Everything else went to phase P or to the
@@ -272,6 +272,26 @@ The original decision framing, for the record:
 
 ## Now
 
+- **The doctor's CSRF-handoff check silently skips on every current `sv create` scaffold,
+  filed off Pass D's target-manifest work (2026-08-14).** `src/lib/doctor/checks-local.ts:90-91`
+  (`configCsrfDisable`, condition `config.csrf-disable-missing`) reads
+  `const text = await ctx.readFile('svelte.config.js'); if (text === null) return
+  skip('svelte.config.js not found');`. Verified live: `npx sv@latest create --template
+  minimal --types ts --no-add-ons` (sv 0.17.0, run 2026-08-14) emits **no
+  `svelte.config.js` at all**, wiring the adapter inside `vite.config.ts`'s plugin call
+  instead (`sveltekit({ compilerOptions: {...}, adapter: adapter() })`, `adapter` from
+  `@sveltejs/adapter-auto` by default). So this check fires its skip path on every site built
+  from a current scaffold, not an edge case; it has already fired, not merely a condition
+  that could. A skip is not visually distinct from a pass in the doctor's own report, so the
+  run looks clean while the CSRF-handoff check never executed: a silent green, the worse
+  failure mode for a readiness check to have. Candidate fix: read the adapter and CSRF
+  configuration from `vite.config.ts` as well as `svelte.config.js` (a site may carry either,
+  depending on when it was scaffolded), and make "could not find a file to check" a result
+  distinct from "checked and passed" wherever the doctor reports it, so a consumer reading the
+  report can tell the two apart. Full evidence:
+  `docs/internal/record/2026-08-14-pass-d-target-manifest.md` ("An engine defect this uncovered,
+  filed rather than fixed").
+
 - **Vertical alignment's declared follow-up, filed off the cairn-wide pass (2026-08-07).** A
   cairn-wide inventory measured both the admin and the public surface for vertical-alignment
   defects and closed the two entries this replaces: the optical-centring engine default Geoff asked
@@ -303,7 +323,7 @@ The original decision framing, for the record:
     and `ListToolbar.svelte:510` (`.toolkit-toolbar-band`) is the only real precedent in the
     toolkit. An earlier review cited `FieldLabel.svelte:38` as a second precedent; that is wrong,
     since `FieldLabel` carries no `<style>` block at all.
-  Full measurement: `docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`.
+  Full measurement: `docs/internal/record/2026-08-07-vertical-alignment-harvest-findings.md`.
 
 - **The showcase visual suite cannot see a vertical-alignment regression, and its admin corpus is
   missing the screen most of them landed on (measured 2026-08-07, off the same pass).** Two
@@ -353,7 +373,7 @@ The original decision framing, for the record:
 
 - **Decide whether the chassis safelists the classes the engine's rendered markdown emits.**
   Surfaced 2026-08-04 by the auth-channel consumer proof; evidence and the measurement in
-  [`docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md`](docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md),
+  [`docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md`](docs/internal/record/2026-08-04-auth-channel-consumer-proof-harvest.md),
   finding 1. `src/lib/render/rehype-dispatch.ts` writes `card-body` and `card-title` into runtime
   HTML, and the alert directive writes `alert` and its variants. Tailwind scans source files and
   never runtime output, so DaisyUI ships those base rules only when some source file happens to
@@ -366,7 +386,7 @@ The original decision framing, for the record:
   `cairn-audit`.
 
 - **The ambient-defaults audit: RUN 2026-08-03.** Report:
-  [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/2026-08-03-ambient-defaults-audit.md).
+  [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/record/2026-08-03-ambient-defaults-audit.md).
   Fourteen agents, one lens per surface plus an adversarial verifier per surface. It reported and
   fixed nothing, per its own boundary, and the method terminated as designed.
 
@@ -419,6 +439,19 @@ The original decision framing, for the record:
   source closes the classic docs-drift hole before it opens. Rider: the in-product sheet
   omits undo/redo; add the rows when touching it.
 
+- **`SiteConfig`'s doc comment says unknown keys are ignored; the parser throws on them
+  (docs friction log, triaged 2026-08-14).** `src/lib/nav/site-config.ts:74-76` still reads
+  "Unknown keys are ignored so the file can grow without an engine change," and the interface
+  still carries a `[key: string]: unknown` index signature (`:104`) that says the same thing.
+  `KNOWN_TOP_LEVEL_KEYS` (`:293`) and `parseSiteConfig`'s check (`:337`) throw `unrecognized
+  key` on anything outside the set instead. The strict behavior is the one worth keeping (it
+  catches a typo and a misplaced adapter setting, with its own `ADAPTER_MISPLACEMENTS` table
+  for exactly that), so the comment and the index signature are the stale half, and this
+  already cost real breakage: it is what let the scaffolder ship a `tagline:` key that broke
+  every scaffolded site's build, since the shape a reader consults said the key would be
+  ignored. Fix the doc comment to state the strict behavior, and weigh dropping the index
+  signature, which still advertises an openness the parser does not honor.
+
 **The pre-beta sequence (Geoff, 2026-07-02; the order is the plan, executed continuously with
 the named human gates only):**
 
@@ -431,7 +464,7 @@ the named human gates only):**
 4. ~~The Waymark design review~~ — DONE 2026-07-17: the two-track audit (90 findings, 82
    surviving adversarial verify), seven ratified verdicts, and the full fix plan executed on
    the `waymark-final-design-review` branch. Record:
-   `docs/internal/2026-07-17-waymark-final-design-review-audit.md`.
+   `docs/internal/record/2026-07-17-waymark-final-design-review-audit.md`.
 5. **Deploy the finished Waymark example to cairn.pub** — the intro site IS the reviewed
    example, live (Geoff, 2026-07-02), with its positioning content drawn from the docs pass's
    front-door work; the template's permanent living demo. Audience-per-surface (Geoff,
@@ -503,7 +536,7 @@ the named human gates only):**
 
   Two findings from T4b's spike shape it. The REST send and the Workers binding carry **different
   error vocabularies**, so an admin-side check written against the binding cannot reuse the
-  installer's classification; see `docs/internal/2026-08-11-t4b-email-spike.md`. And a send failure
+  installer's classification; see `docs/internal/record/2026-08-11-t4b-email-spike.md`. And a send failure
   is ambiguous for the first minute or two after onboarding, so any admin-facing result needs to
   say "still settling" rather than "broken" when the domain was onboarded recently.
 
@@ -601,7 +634,7 @@ the named human gates only):**
 
 - **Cairn's own admin's error tier is clean (design infrastructure Pass 3, 2026-07-29).** The four
   error-tier defect groups Pass 2 calibration found against six admin routes in both themes
-  (measurements in `docs/internal/2026-07-design-infrastructure-audit-calibration.md`) are resolved:
+  (measurements in `docs/internal/record/2026-07-design-infrastructure-audit-calibration.md`) are resolved:
   `touch-targets` and `viewport-overflow` were fixed at the code (`fix(admin): clear the audit's
   own-tree error tier`, `8d3e532f`: an outward `::before` hit-area expansion on ConceptList's sort
   buttons, real padding on the row-title link, the default `.checkbox` size on Media's selection
@@ -726,7 +759,7 @@ the named human gates only):**
 
 - **The engine debt and rule repairs corpus C confirmed** (ASC authenticated-admin calibration,
   2026-07-28; evidence and per-item mechanisms in
-  `docs/internal/2026-07-design-infrastructure-audit-calibration.md` section 12). Same discipline
+  `docs/internal/record/2026-07-design-infrastructure-audit-calibration.md` section 12). Same discipline
   as the entry above: each is confirmed, classified, and adversarially verified, and each waits
   for its own pass rather than a gate-stage patch. Engine defects the audit caught in cairn
   itself: LoginPage renders no `<main>`/`<header>` landmark (already tracked above; corpus C
@@ -852,12 +885,32 @@ the named human gates only):**
     the type-role scale untouched (its global constraints rule out changes to type roles), so the
     12px ruling stays unresolved. The ratchet evidence it fed now lives in
     `docs/explanation/enforced-design.md`'s grammar-ladder section.
-  - **`cairn-doctor`'s zone checks report a bare 403 on read (DX, low; repair named).**
-    `readZoneSetting` (`src/lib/doctor/checks-cloudflare.ts`) fails with "`<setting>` read
-    returned 403" and prints a fix that assumes the setting is off, while the email check in the
-    same file already routes the same status through `permissionFail`, which names the missing
-    token scope. Route the zone-settings read through `permissionFail` so the failure
-    distinguishes "the setting is wrong" from "this token cannot read zone settings".
+  - **`cairn-doctor`'s zone checks report a bare 403 on read the same way a genuinely wrong
+    zone setting reads, misleading an operator into changing a correct setting (severity raised
+    from DX/low, docs friction log, triaged 2026-08-14: reproduced on two live migrations, not
+    one).** `readZoneSetting` (`src/lib/doctor/checks-cloudflare.ts:67-76`, called by
+    `edgeHttpsForced` and `edgeHsts`) still fails with a bare `` `${settingId} read returned
+    ${res.status}` `` and prints a fix that assumes the setting is off, while `emailSenderOnboarded`
+    and the D1 checks in the same file already route the identical status through
+    `permissionFail` (`:42-46`), which names the missing token scope instead. First found on the
+    `aksailingclub-org` `0.94.0-rc.1` migration (see [that
+    report](docs/internal/feedback/2026-08-05-aksailingclub-org-migration.md)): `http://` on both hosts
+    redirected to `https://`, verified with a plain `curl -I`, while the doctor run said Always
+    Use HTTPS had failed, both of that run's only two failures. **Second site, same 403**
+    (`cairn-pub`, see [that report](docs/internal/feedback/2026-08-05-cairn-pub-migration.md)): two of that
+    run's three failures were this same pair, on a different zone under the same operator
+    token, which is the altitude signal that 403 is the standard outcome rather than one site's
+    misconfigured token. It also cost real work downstream on that migration: `0.94.0-rc.1` asks
+    a consumer to check whether the zone sends `includeSubDomains` before deciding on
+    `createAuthGuard({ includeSubDomains })`, and the check that would answer that is one of the
+    two returning 403, so the answer had to come from reading live response headers by hand.
+    Candidate fix, with a precedent already in this repo's own tree: route `readZoneSetting`
+    through `permissionFail` the way the email and D1 checks already do (closes the
+    misdiagnosis), and separately, since the measurement the checks want is available with no
+    API permission at all (the redirect and the `Strict-Transport-Security` header are both
+    observable from an unauthenticated request, the same shape `ai.posture-effective` already
+    uses against a live `GET /robots.txt`), weigh falling back to that credential-free
+    observation on a 403 rather than only relabeling the failure.
 
 - **daisyUI pins every `.list-row` child to `grid-row-start: 1`, so overriding the container's
   grid alone does nothing (from the 2026-07-30 Assets-trial-build harvest, finding 5; the design
@@ -1268,7 +1321,158 @@ the named human gates only):**
   leaning on the zone's edge rules alone. **Trigger:** real-world spray traffic against a deployed
   `/preview/[token]` route.
 
+- **The refused-action editor cluster: four non-enhanced forms plus a shared announcement gap
+  (docs friction log, triaged 2026-08-14; C2b review round).** Four admin forms still post
+  full-page with no `use:enhance` (verified: `NavTree.svelte:53`, and the same pattern in
+  `VocabularyAdmin`, `CairnTidySettings`, `ConceptList`'s create dialog), so a refused submit
+  re-renders a fresh document and drops whatever the editor was mid-typing (a drag-reordered
+  tree, an in-progress rename, an edited conventions block, the create dialog's typed
+  title/slug/date); only `EditPage` survives this, by echoing the posted body back. The same
+  four screens plus `ManageEditors` route their refusal through `aria-live="polite"`
+  (`NavTree.svelte:131`, and the same pattern in the other four), while `EditPage` gives a
+  refused submit its own assertive region (`EditPage.svelte:1834`) with no screen moving focus
+  to the banner (WCAG 3.3.7 Redundant Entry (2.2), 3.3.1, 4.1.3, 2.4.3; ARIA APG). **Verdict:
+  this earns its own small pass rather than riding an unrelated one.** The shared root cause
+  (no `use:enhance`, so a refusal has no live-region-friendly mutation to announce and no state
+  to preserve) means the two candidate mechanisms, `use:enhance` across the four forms or
+  echoing the posted payload back per failure type, both close the whole cluster in one design
+  rather than five piecemeal patches; picking one mechanism and applying it uniformly is the
+  point. Pairs naturally with the pre-beta keyboard-and-screen-reader walkthrough above (Now),
+  since the walkthrough would otherwise rediscover this defect live, and belongs before that
+  session rather than after it. The refused-save frontmatter gap below is the same shape, one
+  screen further along (`EditPage` half-fixed already); fold the two into one pass if the
+  sequencing allows.
+
+- **Pre-existing security findings outside the C2b refusal-channel diff (docs friction log,
+  triaged 2026-08-14; found by the C2b review round, security MEDIUM 5 and LOW 9).**
+  `editLoad`'s `?new=1` create-dialog seed renders an attacker-crafted query value to a
+  signed-in editor: `content-routes-core.ts:922` still seeds `seededTitle` straight from
+  `event.url.searchParams.get('title')?.trim()` with no bound, while the sibling `?date=` field
+  right beside it (`:926`) is correctly regex-bounded. Svelte escapes the render, so this is
+  not XSS, but it is a form field and heading rendering arbitrary attacker text to whoever
+  clicked a crafted link. Candidate fix: bound `title` the way `date` already is (a length cap
+  plus a conservative character class), or move the create dialog's typed title into a
+  short-lived server-side hold instead of the URL. Separately, a rename's 409 conflict still
+  lists every open branch's `concept/id` with no access check:
+  `content-routes-core.ts:1859-1861`'s conflict-branch index filters only
+  `row.origin.kind === 'branch' && row.origin.branch !== ownBranch`, with no `canReach` filter,
+  unlike `publishAllAction`'s own index for the same underlying data (`:1546`), which does
+  filter. A role denied a concept still learns that concept has an in-progress, unpublished
+  entry and its id. Candidate fix: filter the conflict-branch index through
+  `canReach(runtime.access, editor, row.concept)` the same way `publishAllAction` already does,
+  collapsing an unreachable branch to a bare count. Neither is urgent (both pre-existing, low
+  and medium severity, no known exploitation), so they file together for whoever next touches
+  `content-routes-core.ts`'s create or rename paths.
+
+- **`create-cairn-site` hardening candidates, re-triaged (docs friction log, triaged
+  2026-08-14; the T2 review's unverified tail, re-verified against current code since the
+  entry's own trigger — "the next pass touching `src/github/`" — had already fired twice with
+  no action).** `bin.mjs` no longer lacks test coverage (RETIRED: `test/resume-chapter2.test.mjs`,
+  `resume-chapter3.test.mjs`, `resume-cloudflare.test.mjs`, `console-hold.test.mjs`, and
+  `chapter2-safety-net.test.mjs` all spawn `bin.mjs` directly and cover its resume wiring
+  across every chapter, not only chapter 2). Five items are still live, verified against the
+  code as it stands today: (1) the loopback receiver still accepts any hit on a watched
+  pathname with no validation that it looks like the expected redirect, and does not re-arm
+  after a bogus hit consumes the wait (`oauth.mjs`'s `reauthorize` makes exactly one
+  `waitFor('/callback', ...)` call and throws outright on a state mismatch rather than
+  re-arming); (2) `verifyInstallationCovers` (`repo.mjs:106`) still destructures `{ json }`
+  with no status check, so an auth failure on the covers-check GET reads as "not covered"
+  rather than "could not check," and it still does not paginate past the first page of
+  `/user/installations/{id}/repositories`; (3) `saveSite` (`state.mjs:55-61`) still writes the
+  App PEM with a plain `writeFile` followed by a separate `chmod`, leaving a brief window where
+  an overwritten record is more permissive than 0600; (4) `CAIRN_GITHUB_API_BASE` and
+  `CAIRN_GITHUB_WEB_BASE` (`api.mjs:20,29`) are still honored unconditionally, with no
+  `NODE_ENV=test` gate distinguishing the test seam from a hostile environment variable; (5)
+  several inner error messages still leak a raw HTTP status code into user-facing copy
+  (`chapter.mjs:388`, `chapter3.mjs:1017`, `repo.mjs:82`, `manifest.mjs:202`, each interpolating
+  `status ${status}` into the thrown message). **Trigger, deliberately not "the next pass that
+  touches these files" again: before T5a'/the public template repo and Deploy button ship**,
+  since that is when this tool's exposure changes from a controlled, dogfooded rollout to
+  strangers running it unsupervised against their own GitHub and Cloudflare accounts, which is
+  exactly the threat model these five items assume.
+
 ## Later
+
+- **`CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it whatever
+  the last action returned, successes included (docs friction log, triaged 2026-08-14).**
+  `ContentFormFailure` (`content-routes.ts:93-95`, still `Partial<SaveFailure & DeleteRefusal &
+  ... & TidyFailure>`) is an intersection of only the content actions' `fail()` payloads;
+  SvelteKit's generated `ActionData` unions every action's awaited return regardless of arm,
+  and the assignment type-checks today only because every failure-payload field name happens to
+  differ from every success-payload field name. C2b's refusal-channel pass hit this directly:
+  sharpening every `fail()` from `ActionFailure<unknown>` to a precise `ActionFailure<T>` turned
+  that previously-masked union into a real structural check, and `TidyResult.usage` (token
+  counts) collided with `MediaDeleteRefusal.usage` (where-used rows), failing every consumer's
+  `svelte-check` on upgrade until the field renamed to `TidyResult.tokens`. A new action whose
+  success payload shares a field name with any action's failure payload reproduces this, with no
+  warning until a consumer's own build. A type-level assertion in `src/tests/component/CairnAdmin.test.ts`
+  now catches a same-repo recurrence at compile time, but the structural gap in the prop's own
+  type is unrepaired. Candidate fix: type `form` to model both arms honestly, for example a
+  discriminated union or a generic keyed by the last action name, rather than one merged
+  failure-shaped intersection.
+
+- **`createD1AuditSink` cannot join a caller's `db.batch()`, so an operation whose audit row
+  has to be atomic with the write it describes still hand-rolls its own insert (docs friction
+  log, triaged 2026-08-14).** `createD1AuditSink` (`sveltekit/audit-sink.ts:92-158`) still
+  builds and dispatches its own `prepare().bind().run()` internally with no way for a caller to
+  get the bound `D1PreparedStatement` for its own batch. The sink is fire-and-forget by
+  contract, returning before the insert settles, which is exactly what makes it safe to call
+  from `adminAction` and fail-open, and it is also what puts it out of reach of a transaction.
+  On `aksailingclub-org`, the first site to adopt it, four operations (the season rollover, the
+  signup statements, two enrollment writes) correctly kept their own insert, because a batch is
+  the only way to make the audit row and the write it describes succeed or fail together.
+  Candidate fix: export the statement half the sink already composes, a builder returning the
+  bound `D1PreparedStatement` for a record, so a caller can push it into its own batch and
+  still get the packaged column mapping and truncation; the sink itself then becomes that
+  builder plus the fire-and-forget dispatch. Not urgent: the admin path the seam was built for
+  fits without a workaround, and the hand-rolled inserts beside it are correct. **Trigger:** the
+  same need from a second consumer site.
+
+- **The design spec's "reverted content is validated" paragraph names link/include drift as a
+  revert advisory, but the shipped advisory covers only retired fields and retired vocabulary
+  tags (docs friction log, triaged 2026-08-14).** [The design
+  spec](docs/superpowers/specs/2026-08-06-history-revert-preview-design.md) (Part 2, "Reverted
+  content is validated, warn-not-refuse") lists three things an old version can carry that the
+  current schema no longer recognizes: retired frontmatter fields, removed vocabulary values,
+  and "links or includes to since-deleted targets." `revertSchemaDrift`
+  (`content-routes-core.ts:397-408`) still builds only the first two into
+  `retiredContentAdvisory`; a reverted version whose body links or `::include`s a target
+  deleted since that version was published gets no warning at revert time, and the dangling
+  reference surfaces only at the next build's `verifyReferences` gate or as a live 404 if the
+  editor publishes without rebuilding locally first. The scope-out was deliberate, not an
+  oversight: `revertAction` already reuses save's `draftLinks`/`referenceWarnings` machinery for
+  the *current* manifest, and wiring the same body-link and reference-edge scan against the
+  *reverted* version's own content, before the branch exists to scan, was judged a larger,
+  separable change. Candidate fix: run the same `extractReferenceEdges`/body-link scan save
+  already does against the parsed old version inside `revertAction`, folding any absent or
+  draft target into the same advisory channel. **Trigger:** the next time an editor hits this
+  in practice.
+
+- **`cairn-audit`'s `rendered.pages` replaces the default page list rather than merging with
+  it, so a consumer that adds one screen of its own quietly stops auditing cairn's six core
+  routes (docs friction log, triaged 2026-08-14).** `loadConfig` (`audit/config.ts:165`) still
+  passes `DEFAULT_RENDERED_PAGES` as the fallback for an absent `rendered.pages` key, replacing
+  rather than merging when the key is present. The six defaults are cairn's own screens, which
+  a consumer mounts and does not own, while the pages a consumer writes are additions beside
+  them; nothing in the run says the six went unmeasured, and the exit code is clean, the silent
+  green this tool's own config loader is otherwise strict about ("a typo that quietly narrows
+  the audit to nothing"). The reference documents the replace semantics today, which closes the
+  surprise; the candidate fix behind it is to merge the two lists and give a consumer an
+  explicit opt-out for the rare case where it means to audit its own screens alone, weighed
+  against a consumer that deliberately narrows a run for speed, which merging would take away.
+  Found on the `cairn-pub` `0.94.0-rc.1` migration (see [that
+  report](docs/internal/feedback/2026-08-05-cairn-pub-migration.md)).
+
+- **Should `PreviewBanner` be a declared palette site rather than a 17-suppression cluster
+  (docs friction log, triaged 2026-08-14; raised by the code-simplifier on the preview pass,
+  2026-08-07)?** `PreviewBanner` mounts on public pages where neither `cairn-admin.css` nor
+  Tailwind may exist, so it deliberately carries its own fallback palette
+  (`src/lib/components/PreviewBanner.svelte:62-75`), and `token-colors` still needs a
+  `cairn-audit-disable-next-line` suppression per literal to accept that. `DEFAULT_PALETTE_CSS_FILES`
+  (`audit/config.ts:38`) is the existing seam a site names its own theme file through; the open
+  question is whether a component that declares (or consumes by fallback) its own `--cairn-*`
+  palette should be addable to that same list, rather than carrying a suppression per literal.
+  Small and not urgent; no candidate fix proposed beyond the question itself.
 
 - **The Go successor tool: a dependency-free binary that is engine and console both (Geoff,
   2026-08-13; pre-design banked).** A single downloaded Go/bubbletea binary succeeds the Node
@@ -1429,12 +1633,26 @@ the named human gates only):**
   closed, so the active link is present but hidden. Consider forcing the section open when one of its
   children `isActive`, without overriding a deliberate manual collapse of an inactive section. Review
   finding, 2026-07-14 nav-layout pass.
-- **Preserve the editor's draft on a save conflict.** The conflict refusal itself is right (never
-  merge by guesswork), but recovery today is a manual copy-reload-reapply the editor guide has to
-  teach: copy your whole draft somewhere safe, reload for your colleague's version, re-apply by
-  hand. The editor's own text could be preserved for them instead — shown side by side, or held in
-  a recoverable buffer. A docs section that procedural is a UX gap wearing a hat. From the friction
-  log, 2026-07-03; triaged here at the 2026-07-16 clearing.
+- **A refused save preserves the body but discards frontmatter field edits (updated with a
+  code-verified finding, docs friction log, triaged 2026-08-14; supersedes the 2026-07-03
+  framing below).** `SaveFailure` (`content-routes-core.ts:299-306`) carries only `error`,
+  `brokenLinks`, and `body`, no frontmatter; `EditPage` reseeds the body through `form?.body ??
+  data.body` (`EditPage.svelte:147`), but every frontmatter field reloads from the stored
+  record. Converting the save refusal from a `?error=` redirect to `fail(400, SaveFailure)` was
+  meant to stop discarding an editor's work, and it half succeeds: the prose survives, the
+  frontmatter does not. Observed directly: clearing Title and saving re-renders with the alert
+  and the body intact, and the Title reverted to its committed value. The realistic cost is
+  larger than that single case: an editor who retitles an entry, adds a tag that fails taxonomy
+  validation, and saves loses the retitle while keeping the prose. This is strictly better than
+  the pre-C2b behavior, where the redirect discarded everything, so it is an incomplete
+  improvement rather than a regression. Candidate fix: carry the submitted frontmatter on
+  `SaveFailure` alongside `body` and reseed the fields from it, which also makes the failure
+  shape honest about what it holds. The refused-action editor cluster above (Next tier) shares
+  this same "no `use:enhance`, so a refusal loses state" shape one screen further along;
+  consider folding the two into one pass. Original framing, 2026-07-03 friction log, triaged at
+  the 2026-07-16 clearing: the conflict refusal itself is right (never merge by guesswork), but
+  recovery was a manual copy-reload-reapply the editor guide had to teach. That framing is now
+  superseded by the more specific, code-verified gap above.
 - **Make required image and reference fields visible to constraint validation.** Both arms submit
   through hidden inputs, which the browser's constraint API ignores regardless of `required`, so a
   required hero image or author reference never trips the capture-phase invalid handler that

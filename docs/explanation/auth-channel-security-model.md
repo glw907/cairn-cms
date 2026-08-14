@@ -40,7 +40,7 @@ delivered nothing. A third design wrote the rule down and then carved out two ex
 escalation path with no wire representation, which could only resolve as a fail-closed denial, and a
 live-row cap that pruned by identity rather than by requester. Reviewers broke both within one
 round. The rule now has no exceptions.
-[`docs/internal/2026-08-04-auth-channel-review-rounds.md`](../internal/2026-08-04-auth-channel-review-rounds.md)
+[`docs/internal/record/2026-08-04-auth-channel-review-rounds.md`](../internal/record/2026-08-04-auth-channel-review-rounds.md)
 records all three rounds in full, including what was rejected and why.
 
 Escalation only counts as escalation when it has a wire representation the site can render.
@@ -219,8 +219,11 @@ These are accepted, not solved, carried here with the numbers unchanged from the
 - **A 6-to-10-digit code hashed at rest is a speed bump, not a protection.** Read-only database
   exposure recovers live codes. The mitigations are the 10-minute TTL and session binding, which make
   a recovered code useless in another browser.
+<!-- vale Google.Units = NO -->
+<!-- SP 800-63B is a document identifier, not a measurement. -->
 - **SMS is a restricted authenticator under NIST SP 800-63B.** A site choosing it owes its members
   that disclosure; the guide says so.
+<!-- vale Google.Units = YES -->
 - **A member must confirm in the browser that requested.** This is what makes a code stolen in
   transit useless to the thief, and it costs the cross-device flow.
 - **The Cloudflare rate-limit binding is back pressure only** (10 or 60 second periods, per colo,
@@ -253,5 +256,5 @@ code. Each of the first two found a real defect, and the third found a subtler r
 same defect; in all three the code itself read as correct in isolation. Run a round with at
 least one reviewer on the auth-security lens, dispatched with the design change and no
 implementation, and record the outcome in
-[`docs/internal/2026-08-04-auth-channel-review-rounds.md`](../internal/2026-08-04-auth-channel-review-rounds.md)
+[`docs/internal/record/2026-08-04-auth-channel-review-rounds.md`](../internal/record/2026-08-04-auth-channel-review-rounds.md)
 before writing code against it.

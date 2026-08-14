@@ -2,7 +2,7 @@
 
 Findings banked 2026-08-04, at the close of the pass that built the showcase `/members` fixture.
 The pass's own post-mortem lives with the plan
-([`../superpowers/plans/2026-08-04-auth-channel-consumer-proof.md`](../superpowers/plans/2026-08-04-auth-channel-consumer-proof.md));
+([`../../superpowers/plans/2026-08-04-auth-channel-consumer-proof.md`](../../superpowers/plans/2026-08-04-auth-channel-consumer-proof.md));
 this file holds what outlives it.
 
 ## 1. Engine-rendered markup depends on class names Tailwind may never emit (MECHANIC)

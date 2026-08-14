@@ -284,7 +284,7 @@ Svelte plugin runs, so shipped TypeScript fails the consumer build. The post-pac
 `scripts/build/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>`
 body and KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse).
 Do not remove the step or strip `lang="ts"`. Full post-mortem:
-[`docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md`](docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md).
+[`docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](docs/internal/record/2026-06-21-e2e-dist-svelte-build-failure.md).
 
 ## Credentials (machine-local, intentionally not in git)
 

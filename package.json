@@ -40,6 +40,8 @@
     "check:surface": "npm run package && node scripts/checks/check-surface.mjs",
     "check:readiness": "npm run package && node scripts/checks/check-readiness.mjs",
     "check:docs": "node scripts/checks/docs-links.mjs",
+    "check:symbols": "node scripts/checks/check-symbols.mjs",
+    "check:vale": "vale --minAlertLevel=error docs README.md examples/showcase/README.md",
     "check:arm-indexes": "node scripts/checks/check-arm-indexes.mjs",
     "check:snippets": "npm run package && node scripts/checks/check-snippets.mjs",
     "check:version": "node scripts/checks/check-version.mjs",

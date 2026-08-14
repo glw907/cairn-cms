@@ -263,6 +263,90 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
   });
 }
 
+test('a console that fails to bind degrades the hold to running without one, logging once, and the wait still clears', async () => {
+  const server = fakeServer();
+  let startAttempts = 0;
+  server.handle.start = async () => {
+    startAttempts += 1;
+    throw new Error('EADDRINUSE: address already in use');
+  };
+  const { now, sleepFn } = fakeClock();
+  const { probe, state } = scriptedProbe([NOT_CLEARED, NOT_CLEARED, CLEARED]);
+  const lines = [];
+  const signals = new EventEmitter();
+
+  const waitForClear = createWaitForClear({
+    holdClass: PROPAGATION_HOLD_CLASS,
+    server: server.handle,
+    log: (line) => lines.push(line),
+    now,
+    sleepFn,
+    signals,
+  });
+  const observation = await waitForClear(probe);
+
+  assert.equal(observation.cleared, true);
+  assert.equal(state.calls, 3);
+  // The bind is retried on no later poll: once it fails the hold stops trying rather than
+  // repeating a listen that is not going to come up.
+  assert.equal(startAttempts, 1);
+  assert.equal(server.calls.update.length, 0);
+  assert.equal(server.calls.stop, 0);
+  assert.equal(lines.length, 1);
+  assert.match(lines[0], /console unavailable/i);
+  assert.equal(signals.listenerCount('SIGINT'), 0);
+});
+
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  test(`${signal} arriving while a probe is still in flight interrupts at once, not only once the probe returns`, async () => {
+    const server = fakeServer();
+    const { now, sleepFn } = fakeClock();
+    const signals = new EventEmitter();
+    const persisted = [];
+    const exits = [];
+    const lines = [];
+    let calls = 0;
+
+    // The first poll clears normally so the console is up and there is a prior observation to
+    // persist. The second poll's probe emits the signal and then never resolves; under the old
+    // implementation (`await probe()` with no race) this would hang the whole test forever,
+    // since nothing would notice the interrupt until this promise settled. Only a probe that is
+    // itself raced against the interrupt can make this test finish.
+    const probe = async () => {
+      calls += 1;
+      if (calls === 1) return NOT_CLEARED;
+      signals.emit(signal);
+      return new Promise(() => {});
+    };
+
+    const waitForClear = createWaitForClear({
+      holdClass: PROPAGATION_HOLD_CLASS,
+      server: server.handle,
+      log: (line) => lines.push(line),
+      persist: async (observation) => persisted.push(observation),
+      now,
+      sleepFn,
+      signals,
+      exit: (code) => exits.push(code),
+    });
+    const observation = await waitForClear(probe);
+
+    assert.equal(calls, 2);
+    assert.equal(server.calls.stop, 1);
+    // The persisted and returned observation is the first probe's, since the second never
+    // completed.
+    assert.deepEqual(
+      persisted.map((o) => o.attempt),
+      [1],
+    );
+    assert.equal(observation.attempt, 1);
+    assert.equal(observation.cleared, false);
+    assert.deepEqual(lines, [consoleUrlLine(server.url), NOT_CLEARED.park]);
+    assert.deepEqual(exits, [0]);
+    assert.equal(signals.listenerCount(signal), 0);
+  });
+}
+
 test('a probe that throws stops the server and rethrows, leaving no handler behind', async () => {
   const server = fakeServer();
   const { now, sleepFn } = fakeClock();

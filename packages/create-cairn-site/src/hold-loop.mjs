@@ -127,7 +127,8 @@ const CLASS_DEFAULTS = {
  * @typedef {object} ConsoleServerHandle
  * @property {(observation: HoldObservation) => Promise<{ url?: string } | void>} start bring the
  *  console up; the returned `url` is what the loop prints. Called at most once per hold, and only
- *  once a probe has failed to clear, since a wait that is already over is not a wait to watch
+ *  once a probe has failed to clear, since a wait that is already over is not a wait to watch.
+ *  A rejection degrades the hold to running without a console rather than failing the wait
  * @property {(observation: HoldObservation) => void} [update] hand the console each later
  *  observation; the console never probes for itself
  * @property {(park?: { code: string, params: Record<string, string | string[] | boolean> }) =>
@@ -217,6 +218,10 @@ async function runHold(config) {
   let parkPage;
   let serverStarted = false;
   let serverStopped = false;
+  // Set once a console bind fails, so the loop never retries a listener that is not going to
+  // come up (a port collision or a sandboxed environment forbidding a listen socket does not
+  // resolve itself between polls) and logs the degradation exactly once.
+  let serverDisabled = false;
 
   const stopServer = async () => {
     if (!serverStarted || serverStopped) return;
@@ -224,10 +229,14 @@ async function runHold(config) {
     await server.stop(parkPage);
   };
 
-  // The interrupt is raced against the sleep rather than polled for, so a signal ends the hold at
-  // once instead of at the next poll boundary. Handlers are added with `on`, not by clearing the
-  // signal's listeners: any listener already installed keeps running, and removing exactly the
-  // handler added here restores the disposition the process had before the hold.
+  // The interrupt is raced against both the sleep AND the probe itself, rather than polled for,
+  // so a signal ends the hold at once instead of at the next poll boundary. A probe (a DNS lookup,
+  // an API read) can run for many seconds; without racing it too, the handler installed below
+  // would only be acted on once that in-flight probe finally settled, which is worse than no
+  // handler at all, since installing it also suppresses Node's own terminate-on-Ctrl-C. Handlers
+  // are added with `on`, not by clearing the signal's listeners: any listener already installed
+  // keeps running, and removing exactly the handler added here restores the disposition the
+  // process had before the hold.
   let markInterrupted;
   let interrupted = false;
   const interruptArrived = new Promise((resolve) => {
@@ -240,10 +249,37 @@ async function runHold(config) {
   signals.on('SIGINT', onSignal);
   signals.on('SIGTERM', onSignal);
 
+  // Nothing else runs after this: the caller never regains control, so the loop itself does what
+  // the caller's park path would have done, in that order.
+  const handleInterrupt = async () => {
+    await stopServer();
+    if (persist) await persist(observation);
+    if (park) log(park);
+    exit(0);
+  };
+
   try {
     for (;;) {
       attempt += 1;
-      const result = await probe();
+      // Two settlement shapes rather than a bare rejection: a probe that throws must still
+      // propagate today (rethrown below), but a probe still pending when the interrupt wins the
+      // race is abandoned, and its eventual settlement (including a rejection) must never surface
+      // as an unhandled rejection once the loop has already moved on.
+      const raced = probe().then(
+        (result) => ({ result }),
+        (error) => ({ error }),
+      );
+      const probeOutcome = await Promise.race([
+        raced,
+        interruptArrived.then(() => ({ interrupted: true })),
+      ]);
+      if (probeOutcome.interrupted) {
+        await handleInterrupt();
+        return observation;
+      }
+      if (probeOutcome.error) throw probeOutcome.error;
+      const result = probeOutcome.result;
+
       observation = makeObservation(holdClass, {
         at: now(),
         cleared: Boolean(result.cleared),
@@ -259,20 +295,23 @@ async function runHold(config) {
       // it would have reported without any hold at all.
       if (now() - startedAt >= budgetMs) return observation;
 
-      if (server && !serverStarted) {
-        const started = await server.start(observation);
-        serverStarted = true;
-        if (started?.url) log(consoleUrlLine(started.url));
+      if (server && !serverStarted && !serverDisabled) {
+        try {
+          const started = await server.start(observation);
+          serverStarted = true;
+          if (started?.url) log(consoleUrlLine(started.url));
+        } catch (error) {
+          // The console is an enhancement layered onto a wait that worked fine without it; a
+          // bind failure must degrade to today's behavior rather than crash a run that would
+          // otherwise have succeeded.
+          serverDisabled = true;
+          log(`Console unavailable, continuing without it: ${error.message}`);
+        }
       }
 
       await Promise.race([sleepFn(pollIntervalMs), interruptArrived]);
       if (interrupted) {
-        // Nothing else will run after this: the caller never regains control, so the loop itself
-        // does what the caller's park path would have done, in that order.
-        await stopServer();
-        if (persist) await persist(observation);
-        if (park) log(park);
-        exit(0);
+        await handleInterrupt();
         return observation;
       }
     }

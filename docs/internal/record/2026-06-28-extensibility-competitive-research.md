@@ -3,7 +3,7 @@
 How developer-extensible CMSs and content frameworks handle three things: extending the admin with
 custom screens, reusing the login session on a developer's own routes, and keeping customizations
 working across version upgrades. Gathered 2026-06-28 to ground the developer-extensibility design
-([`docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`](../superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md)).
+([`docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`](../../superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md)).
 Sources are primary vendor documentation current as of mid-2026 (Payload v3, Sanity Studio v6, Strapi
 v5, Directus current, Keystatic/Decap current). Findings were adversarially verified (25 claims, 25
 confirmed, 0 killed in the verification pass).

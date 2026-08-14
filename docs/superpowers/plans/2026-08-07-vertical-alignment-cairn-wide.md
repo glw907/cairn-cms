@@ -375,7 +375,7 @@ ROADMAP lists neither closed entry.
 > that guards nothing pure shipped surface a developer pays for. The recipes (`FieldRow`,
 > `cairn-icon-label`, `cairn-line-slot`) and the doctrine in `docs/internal/admin-design-system.md`
 > are what this pass shipped. The durable lesson is banked in
-> [`2026-08-07-vertical-alignment-harvest-findings.md`](../../internal/2026-08-07-vertical-alignment-harvest-findings.md).
+> [`2026-08-07-vertical-alignment-harvest-findings.md`](../../internal/record/2026-08-07-vertical-alignment-harvest-findings.md).
 
 ### What was built
 

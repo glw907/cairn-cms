@@ -19,9 +19,9 @@ profiles ([`2026-08-14-audience-profiles.md`](./2026-08-14-audience-profiles.md)
 competitor review
 ([`2026-08-14-cms-docs-competitor-review.md`](./2026-08-14-cms-docs-competitor-review.md)), the
 umbrella spec's Part 2 and acceptance criteria
-([`2026-08-09-admin-setup-and-docs-reset-design.md`](../superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md)),
+([`2026-08-09-admin-setup-and-docs-reset-design.md`](../../superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md)),
 the plan's own Task 2 acceptance
-([`2026-08-14-pass-d-docs-reset.md`](../superpowers/plans/2026-08-14-pass-d-docs-reset.md)), the
+([`2026-08-14-pass-d-docs-reset.md`](../../superpowers/plans/2026-08-14-pass-d-docs-reset.md)), the
 baseline walk ([`2026-08-unagented-setup-baseline.md`](./2026-08-unagented-setup-baseline.md)),
 and the source tree, which is ground truth for every claim below.
 

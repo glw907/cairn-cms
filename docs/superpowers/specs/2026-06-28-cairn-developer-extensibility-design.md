@@ -44,7 +44,7 @@ primitive; custom data is a D1 binding the developer reads directly. cairn suppl
 identity, the nav entry, and an enforced boundary, then gets out of the way.
 
 The competitive research that grounds this design is in
-[`docs/internal/2026-06-28-extensibility-competitive-research.md`](../../internal/2026-06-28-extensibility-competitive-research.md).
+[`docs/internal/2026-06-28-extensibility-competitive-research.md`](../../internal/record/2026-06-28-extensibility-competitive-research.md).
 Three findings are load-bearing:
 
 - The git-backed CMSs closest to cairn (Keystatic, Decap) gate login on git-host access and offer

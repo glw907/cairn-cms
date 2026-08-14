@@ -225,7 +225,7 @@ declare const AI_CRAWLERS: readonly AiCrawler[];
 
 The training-crawler table `buildRobots` disallows under `posture: 'decline'`. Every record's
 `citation` is a first-party page from the operator itself, verified 2026-08-05 (the evidence is in
-`docs/internal/2026-08-05-ai-crawler-token-verification.md` in the source repository). The table
+`docs/internal/record/2026-08-05-ai-crawler-token-verification.md` in the source repository). The table
 carries training tokens only. `Googlebot`, `OAI-SearchBot`, and `Claude-SearchBot` are search
 crawlers and are deliberately absent, since disallowing a search crawler costs a site its search
 presence for no training benefit. A token no first-party page documents doesn't ship here.

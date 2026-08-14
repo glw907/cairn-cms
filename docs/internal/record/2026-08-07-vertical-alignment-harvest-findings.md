@@ -139,7 +139,7 @@ not be cited as evidence that alignment is intact.**
 The general form: a pixel-tolerance gate has a defect-size floor, and a defect class whose whole
 footprint falls under that floor needs a gate that measures geometry rather than one that compares
 images. This pass's real regression net is
-[`src/tests/component/vertical-alignment-recipes.test.ts`](../../src/tests/component/vertical-alignment-recipes.test.ts),
+[`src/tests/component/vertical-alignment-recipes.test.ts`](../../../src/tests/component/vertical-alignment-recipes.test.ts),
 which renders the real components and reads ink and cap centres directly, so it has the resolution
 the screenshot lacks.
 

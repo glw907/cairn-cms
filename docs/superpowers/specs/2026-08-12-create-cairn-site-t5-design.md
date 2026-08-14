@@ -82,7 +82,7 @@ proves chapter 3, which exists only post-merge.
    `0.94.0`. So "installable before release one" was never reachable as this ruling reasoned, the
    pass split (plan execution amendment 1), and the sync gained a gate that proves the tree it
    would push actually builds. Evidence:
-   [`docs/internal/2026-08-13-t5-button-spike.md`](../../internal/2026-08-13-t5-button-spike.md),
+   [`docs/internal/2026-08-13-t5-button-spike.md`](../../internal/record/2026-08-13-t5-button-spike.md),
    Step 1. The rest of the ruling below stands. The baked template's `@glw907/cairn-cms-dev` devDependency
    is unpublished (`0.0.0`), which makes the bake's default invocation throw; both existing
    CI workflows already bake with explicit `--engine-spec`/`--dev-spec` and pack with

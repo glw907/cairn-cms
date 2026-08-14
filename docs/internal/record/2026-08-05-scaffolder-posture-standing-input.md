@@ -5,7 +5,7 @@ the AI-posture pass's share of that future pass: exactly what the scaffolder mus
 `CairnAdapter.aiPosture`, so the scaffolder pass implements from this rather than re-deriving the
 reasoning. Authority: `docs/superpowers/specs/2026-08-05-ai-posture-design.md`, "The setup path."
 The tutorial's version of this same moment is the "Worth deciding here" passage in
-[`docs/tutorial/build-your-first-cairn-site.md`](../tutorial/build-your-first-cairn-site.md#milestone-6-wire-the-delivery-surface),
+[`docs/tutorial/build-your-first-cairn-site.md`](../../tutorial/build-your-first-cairn-site.md#milestone-6-wire-the-delivery-surface),
 Milestone 6.
 
 ## When it asks

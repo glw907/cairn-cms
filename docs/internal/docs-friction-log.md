@@ -6,7 +6,7 @@ observation. Triage feeds `ROADMAP.md` and `docs/STATUS.md`; this repo keeps no 
 A finding here does not block the doc that found it.
 
 Record each finding with its perspective and a short note. The perspective is one of the four
-audience tracks ([`2026-08-14-audience-profiles.md`](./2026-08-14-audience-profiles.md)): `editor`
+audience tracks ([`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)): `editor`
 (the non-technical author working in `/admin`), `admin` (the technical non-developer who sets up
 and runs the default site; `operator` retired into this tag 2026-08-14), `extender` (the
 Svelte-fluent developer building on cairn's seams; formerly tagged `developer`), or `contributor`
@@ -92,7 +92,7 @@ line.
 - **[extender, admin] The setup docs were walked cold from five vantages, and the findings are a
   Pass D work list, not a doc-by-doc polish.** The record, with every finding evidenced by
   `file:line` and ranked by how many independent walks raised it, is
-  [`2026-08-unagented-setup-baseline.md`](./2026-08-unagented-setup-baseline.md); read it there
+  [`2026-08-unagented-setup-baseline.md`](./record/2026-08-unagented-setup-baseline.md); read it there
   rather than restating it here. Four classes need a decision Pass D cannot duck. **Prerequisites
   arrive last**: a domain, a Cloudflare zone, `wrangler login`, a GitHub account with owner access
   on the target repo, and the Workers Paid plan for arbitrary-recipient email are each stated at

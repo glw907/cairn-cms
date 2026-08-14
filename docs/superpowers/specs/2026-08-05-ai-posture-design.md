@@ -7,9 +7,9 @@ Inputs, all read in full before this was written:
 
 - [`ROADMAP.md`](../../../ROADMAP.md), the "site's AI posture" entry, which carries Geoff's dated
   rulings of 2026-08-03 and is the governing authority here.
-- [`docs/internal/2026-08-03-ai-crawler-posture-research.md`](../../internal/2026-08-03-ai-crawler-posture-research.md),
+- [`docs/internal/2026-08-03-ai-crawler-posture-research.md`](../../internal/record/2026-08-03-ai-crawler-posture-research.md),
   the evidence base.
-- [`docs/internal/2026-08-03-ambient-defaults-audit.md`](../../internal/2026-08-03-ambient-defaults-audit.md),
+- [`docs/internal/2026-08-03-ambient-defaults-audit.md`](../../internal/record/2026-08-03-ambient-defaults-audit.md),
   which this pass consumes.
 
 The ROADMAP settles most of this. What follows adds only what it left open, plus three corrections

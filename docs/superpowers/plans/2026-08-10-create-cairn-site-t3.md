@@ -104,7 +104,7 @@ deep merge only covers `github`; the chapter writes `cloudflare` whole per hop, 
 safe because each hop rewrites every field it knows.
 
 > **Amended by Task 1's spike (2026-08-10).** The verdict doc is
-> [`docs/internal/2026-08-10-t3-cloudflare-spike.md`](../../internal/2026-08-10-t3-cloudflare-spike.md);
+> [`docs/internal/2026-08-10-t3-cloudflare-spike.md`](../../internal/record/2026-08-10-t3-cloudflare-spike.md);
 > read it before Tasks 3, 4, 7, 9, and 10. The six changes it forces, each marked **[spike]**
 > at the task it changes:
 > 1. **No id write-back.** Wrangler provisions id-less bindings by name and writes nothing back

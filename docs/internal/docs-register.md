@@ -5,7 +5,7 @@ The agent-facing register standard for cairn's published documentation and the f
 `docs/superpowers/specs/2026-07-18-docs-register-standard-design.md`); the specimen history
 lives in the `cairn-pub-front-page-voice` memory. Pass D (2026-08-14) rewrote this document's
 organization around the four audience tracks the rebuild ships
-([`2026-08-14-pass-d-target-manifest.md`](./2026-08-14-pass-d-target-manifest.md) names the
+([`2026-08-14-pass-d-target-manifest.md`](./record/2026-08-14-pass-d-target-manifest.md) names the
 target page set; a page count belongs there, not here, since a number in this document rots).
 The keystone and the universal contract carried over unchanged.
 
@@ -138,7 +138,7 @@ reviewer can check a page against a checklist rather than a feeling.
 ## The four tracks
 
 Every published page belongs to exactly one track, every track serves exactly one profile
-(the full profiles: [`2026-08-14-audience-profiles.md`](./2026-08-14-audience-profiles.md)),
+(the full profiles: [`2026-08-14-audience-profiles.md`](./record/2026-08-14-audience-profiles.md)),
 and a page review grades the page against its profile. The five elements below are what a
 reviewer needs without opening the profile document: which reader the track claims, the
 vocabulary contract, how the reader arrives, the success criterion, and the question that

@@ -117,10 +117,10 @@ Readiness checklist:
   spec carries the T4b and T4c briefs:
   [`docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md`](docs/superpowers/specs/2026-08-11-create-cairn-site-t4a-design.md),
   and the banked research behind the split is
-  [`docs/internal/2026-08-11-t4b-email-console-cost-research.md`](docs/internal/2026-08-11-t4b-email-console-cost-research.md).
+  [`docs/internal/record/2026-08-11-t4b-email-console-cost-research.md`](docs/internal/record/2026-08-11-t4b-email-console-cost-research.md).
 
   **The baseline walk is recorded** at
-  [`docs/internal/2026-08-unagented-setup-baseline.md`](docs/internal/2026-08-unagented-setup-baseline.md).
+  [`docs/internal/2026-08-unagented-setup-baseline.md`](docs/internal/record/2026-08-unagented-setup-baseline.md).
   It measured the path no one had measured, the tutorial's `wrangler`-plus-dashboard setup walked cold,
   since every site so far was provisioned by an agent holding account-wide access (Geoff, 2026-08-05,
   the harvest sitting). Geoff first ruled he would walk it himself, then revised that the same day: a
@@ -199,7 +199,7 @@ release-one boundary; the passes are invariant.
   `CairnMediaLibrary` split; P6 front-door docs (cold-reader, diagnostic-pair); P7 the
   zero-credential quickstart; **P8 the ambient-defaults remediation**, the phase-P bucket of the
   2026-08-03 audit, enumerated in
-  [its report](docs/internal/2026-08-03-ambient-defaults-audit.md) rather than restated here.
+  [its report](docs/internal/record/2026-08-03-ambient-defaults-audit.md) rather than restated here.
   Thirteen items, all additive, ordered by consequence in the report: the undetected managed-robots
   prepend, the silent post-handoff mail path, the absent DNS-authentication check, the missing
   `Cache-Control` on every admin response, the unverified `prerender` flag, the 307/308
@@ -218,7 +218,7 @@ release-one boundary; the passes are invariant.
   and the RC cut, all additive and all riding the same unpublished window:
 
   1. ~~**The ambient-defaults audit.**~~ **RUN 2026-08-03**, report at
-     [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/2026-08-03-ambient-defaults-audit.md).
+     [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/record/2026-08-03-ambient-defaults-audit.md).
      It does not gate the RC: one finding is recommended for this window (the engine's unconditional
      two-year `includeSubDomains` admin HSTS, which overrides a zone owner's own HSTS decision), and
      it is a judgment call rather than a forced hand. Everything else went to phase P or to the
@@ -289,7 +289,7 @@ The original decision framing, for the record:
   depending on when it was scaffolded), and make "could not find a file to check" a result
   distinct from "checked and passed" wherever the doctor reports it, so a consumer reading the
   report can tell the two apart. Full evidence:
-  `docs/internal/2026-08-14-pass-d-target-manifest.md` ("An engine defect this uncovered,
+  `docs/internal/record/2026-08-14-pass-d-target-manifest.md` ("An engine defect this uncovered,
   filed rather than fixed").
 
 - **Vertical alignment's declared follow-up, filed off the cairn-wide pass (2026-08-07).** A
@@ -323,7 +323,7 @@ The original decision framing, for the record:
     and `ListToolbar.svelte:510` (`.toolkit-toolbar-band`) is the only real precedent in the
     toolkit. An earlier review cited `FieldLabel.svelte:38` as a second precedent; that is wrong,
     since `FieldLabel` carries no `<style>` block at all.
-  Full measurement: `docs/internal/2026-08-07-vertical-alignment-harvest-findings.md`.
+  Full measurement: `docs/internal/record/2026-08-07-vertical-alignment-harvest-findings.md`.
 
 - **The showcase visual suite cannot see a vertical-alignment regression, and its admin corpus is
   missing the screen most of them landed on (measured 2026-08-07, off the same pass).** Two
@@ -373,7 +373,7 @@ The original decision framing, for the record:
 
 - **Decide whether the chassis safelists the classes the engine's rendered markdown emits.**
   Surfaced 2026-08-04 by the auth-channel consumer proof; evidence and the measurement in
-  [`docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md`](docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md),
+  [`docs/internal/2026-08-04-auth-channel-consumer-proof-harvest.md`](docs/internal/record/2026-08-04-auth-channel-consumer-proof-harvest.md),
   finding 1. `src/lib/render/rehype-dispatch.ts` writes `card-body` and `card-title` into runtime
   HTML, and the alert directive writes `alert` and its variants. Tailwind scans source files and
   never runtime output, so DaisyUI ships those base rules only when some source file happens to
@@ -386,7 +386,7 @@ The original decision framing, for the record:
   `cairn-audit`.
 
 - **The ambient-defaults audit: RUN 2026-08-03.** Report:
-  [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/2026-08-03-ambient-defaults-audit.md).
+  [`docs/internal/2026-08-03-ambient-defaults-audit.md`](docs/internal/record/2026-08-03-ambient-defaults-audit.md).
   Fourteen agents, one lens per surface plus an adversarial verifier per surface. It reported and
   fixed nothing, per its own boundary, and the method terminated as designed.
 
@@ -464,7 +464,7 @@ the named human gates only):**
 4. ~~The Waymark design review~~ — DONE 2026-07-17: the two-track audit (90 findings, 82
    surviving adversarial verify), seven ratified verdicts, and the full fix plan executed on
    the `waymark-final-design-review` branch. Record:
-   `docs/internal/2026-07-17-waymark-final-design-review-audit.md`.
+   `docs/internal/record/2026-07-17-waymark-final-design-review-audit.md`.
 5. **Deploy the finished Waymark example to cairn.pub** — the intro site IS the reviewed
    example, live (Geoff, 2026-07-02), with its positioning content drawn from the docs pass's
    front-door work; the template's permanent living demo. Audience-per-surface (Geoff,
@@ -536,7 +536,7 @@ the named human gates only):**
 
   Two findings from T4b's spike shape it. The REST send and the Workers binding carry **different
   error vocabularies**, so an admin-side check written against the binding cannot reuse the
-  installer's classification; see `docs/internal/2026-08-11-t4b-email-spike.md`. And a send failure
+  installer's classification; see `docs/internal/record/2026-08-11-t4b-email-spike.md`. And a send failure
   is ambiguous for the first minute or two after onboarding, so any admin-facing result needs to
   say "still settling" rather than "broken" when the domain was onboarded recently.
 
@@ -634,7 +634,7 @@ the named human gates only):**
 
 - **Cairn's own admin's error tier is clean (design infrastructure Pass 3, 2026-07-29).** The four
   error-tier defect groups Pass 2 calibration found against six admin routes in both themes
-  (measurements in `docs/internal/2026-07-design-infrastructure-audit-calibration.md`) are resolved:
+  (measurements in `docs/internal/record/2026-07-design-infrastructure-audit-calibration.md`) are resolved:
   `touch-targets` and `viewport-overflow` were fixed at the code (`fix(admin): clear the audit's
   own-tree error tier`, `8d3e532f`: an outward `::before` hit-area expansion on ConceptList's sort
   buttons, real padding on the row-title link, the default `.checkbox` size on Media's selection
@@ -759,7 +759,7 @@ the named human gates only):**
 
 - **The engine debt and rule repairs corpus C confirmed** (ASC authenticated-admin calibration,
   2026-07-28; evidence and per-item mechanisms in
-  `docs/internal/2026-07-design-infrastructure-audit-calibration.md` section 12). Same discipline
+  `docs/internal/record/2026-07-design-infrastructure-audit-calibration.md` section 12). Same discipline
   as the entry above: each is confirmed, classified, and adversarially verified, and each waits
   for its own pass rather than a gate-stage patch. Engine defects the audit caught in cairn
   itself: LoginPage renders no `<main>`/`<header>` landmark (already tracked above; corpus C

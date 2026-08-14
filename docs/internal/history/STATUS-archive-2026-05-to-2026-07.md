@@ -1576,7 +1576,7 @@ shipped `.svelte` `<script>` body to plain JavaScript (esbuild `verbatimModuleSy
 value imports survive) while keeping the `lang="ts"` tag, because the markup still carries TypeScript the
 Svelte compiler reads. The showcase lockfile is committed and CI uses `npm ci` so the toolchain is
 reproducible, and the spellcheck e2e specs got a larger CI test budget. The full post-mortem and the dead
-ends are [`internal/2026-06-21-e2e-dist-svelte-build-failure.md`](../../internal/2026-06-21-e2e-dist-svelte-build-failure.md);
+ends are [`internal/record/2026-06-21-e2e-dist-svelte-build-failure.md`](../../internal/record/2026-06-21-e2e-dist-svelte-build-failure.md);
 the `cairn-pass` ritual now carries a consumer-build gate so this class of failure is caught before
 release.
 

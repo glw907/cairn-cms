@@ -4,9 +4,17 @@
 // link whose resolved target is that file. It does no prose analysis and parses no numeric claims;
 // a page that exists on disk but is not reachable from its arm's index is the one thing this checks.
 //
-// Three of the four arms keep their index inside the directory (`docs/reference/README.md`, and so
-// on). The tutorial arm has no README of its own: its index is the front door, `docs/README.md`,
-// which links both tutorial pages. That mapping is declared explicitly below, by design, not a gap.
+// Three of the four published arms keep their index inside the directory (`docs/reference/README.md`,
+// and so on). The tutorial arm has no README of its own: its index is the front door,
+// `docs/README.md`, which links both tutorial pages. That mapping is declared explicitly below, by
+// design, not a gap.
+//
+// `docs/internal` is a fifth arm, contributor-zone rather than published, and walks non-recursively:
+// only its own top-level `.md` files are checked against `docs/internal/README.md`. It carries dated
+// record files under `docs/internal/record/` and other subdirectories (`design/`, `feedback/`,
+// `history/`, `probes/`) that keep their own filing rule and their own index, and a recursive walk
+// would wrongly demand this top-level README link every dated record by name, recreating the
+// sediment problem the filing rule exists to end.
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,11 +25,15 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 // Each arm's directory and the index file that must link every page in it. The tutorial arm's
 // index lives outside its own directory (`docs/README.md`, the front door), because the tutorial
 // arm has no README of its own; this is the load-bearing mapping the gate encodes on purpose.
+// `recursive` defaults to true; an arm sets it false to check only its own top-level `.md` files,
+// skipping every subdirectory (`docs/internal`'s `record/`, `design/`, `feedback/`, `history/`,
+// `probes/`).
 const ARMS = [
   { dir: 'docs/reference', index: 'docs/reference/README.md' },
   { dir: 'docs/guides', index: 'docs/guides/README.md' },
   { dir: 'docs/explanation', index: 'docs/explanation/README.md' },
   { dir: 'docs/tutorial', index: 'docs/README.md' },
+  { dir: 'docs/internal', index: 'docs/internal/README.md', recursive: false },
 ];
 
 // Pages deliberately left unindexed (a draft skeleton, a page mid-retirement). Keyed by the
@@ -44,6 +56,15 @@ function walkMarkdown(dir) {
     else if (entry.name.endsWith('.md')) out.push(full);
   }
   return out;
+}
+
+// Collect only the `.md` files directly inside a directory, no subdirectory walked at all. Used by
+// an arm marked `recursive: false`.
+/** @param {string} dir */
+function listMarkdown(dir) {
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
+    .map((entry) => join(dir, entry.name));
 }
 
 // The absolute link targets an index file's links resolve to, external links dropped and any
@@ -69,7 +90,7 @@ function linkTargetsOf(indexAbs) {
 export function findUnindexedPages(root = ROOT) {
   /** @type {{ arm: string, page: string, index: string }[]} */
   const missing = [];
-  for (const { dir, index } of ARMS) {
+  for (const { dir, index, recursive = true } of ARMS) {
     const dirAbs = join(root, dir);
     const indexAbs = join(root, index);
     if (!existsSync(dirAbs) || !statSync(dirAbs).isDirectory()) {
@@ -79,7 +100,8 @@ export function findUnindexedPages(root = ROOT) {
       throw new Error(`check-arm-indexes: arm index not found: ${index}`);
     }
     const targets = linkTargetsOf(indexAbs);
-    for (const pageAbs of walkMarkdown(dirAbs)) {
+    const pages = recursive ? walkMarkdown(dirAbs) : listMarkdown(dirAbs);
+    for (const pageAbs of pages) {
       if (pageAbs === indexAbs) continue;
       const page = relative(root, pageAbs);
       if (ALLOWLIST.has(page)) continue;

@@ -7,7 +7,7 @@ for everything except the ASC evidence corpus it points to, which remains this i
 data. Implementation runs as three just-in-time pass plans under `docs/superpowers/plans/`.
 Revised 2026-07-27 after a clean-context adversarial Fable review with prior-art research;
 the full report with sources is
-[`docs/internal/2026-07-27-design-infrastructure-adversarial-review.md`](../../internal/2026-07-27-design-infrastructure-adversarial-review.md),
+[`docs/internal/2026-07-27-design-infrastructure-adversarial-review.md`](../../internal/record/2026-07-27-design-infrastructure-adversarial-review.md),
 and the revision marks are noted inline where they changed a decision.
 
 ## 1. The question and the bet

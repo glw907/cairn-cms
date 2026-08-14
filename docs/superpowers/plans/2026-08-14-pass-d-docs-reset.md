@@ -40,8 +40,9 @@ records (`docs/internal/2026-08-13-t5-task8-live-e2e.md`,
 **Three phases, three worktrees, each merging to `main` green before the next branches.**
 Phase 1 (Tasks 1-3) is standards and targets. Phase 2 (Tasks 4-8) is the clean-room
 build, landing the new tree beside the old one so `main` stays releasable throughout
-(the old arms remain canonical in the tarball until cutover). Phase 3 (Tasks 9-13) is
-the mining sweep, the cutover, and the consumers. Within a phase, the T4d rule stands: a
+(the old arms remain canonical in the tarball until cutover). Phase 3 (Tasks 9-14) is
+the mining sweep, the cutover, the consumers, and the final adversarial production
+gate. Within a phase, the T4d rule stands: a
 second in-flight task split means proposing a further pass split, not absorbing it.
 
 ## Rulings made at plan time (approve or veto at the plan gate)
@@ -363,7 +364,36 @@ routine via the schedule tooling.
   branch and its proof evidence recorded in STATUS; the site walk merges it after
   release one.
 
-### Task 13: pass close **[main loop]**
+### Task 13: the production gate, a final adversarial review **[main loop]**
+
+**Runs on the post-cutover tree, after the mining folds: the exact bytes release one
+ships.** A whole-corpus adversarial pass (Geoff, 2026-08-14), distinct from Phase 2's
+per-track reviews, which graded tracks in isolation before the cutover existed. Four
+lenses, fresh contexts throughout, findings ranked with file-and-line evidence:
+
+- [ ] **Blind persona walks**, one fresh agent per track briefed only with its audience
+  profile and a goal (the method the setup baseline proved): the admin walks
+  create-through-recover, the editor walks first-day-through-refusal against `/help`'s
+  rendered order, the extender walks evaluate-through-first-custom-screen, the
+  contributor walks CONTRIBUTING to a first-PR question. Forced rankings, quoted
+  evidence, no thresholds.
+- [ ] **Claims-verification sample**: beyond the mechanical gates, a sampled trace of
+  factual claims per track to the code or a live run (the full-corpus claims audit
+  stays the post-beta.1 ROADMAP gate; this is the sample that catches a systemic
+  miss now).
+- [ ] **The fishtank read**: one cross-track reviewer walks every index as a story on
+  the shipping tree, checking contracts, preconditions, and the redirect map against
+  what actually renders (including the cairn-pub branch's `/help` preview from Task
+  12).
+- [ ] **The register pass**: the register-check machinery over every new page, graded
+  against the track registers and profiles.
+- [ ] Blocking-tier findings fold before the pass closes and **release one does not cut
+  until they are folded**; the ranked report and dispositions land in
+  `docs/internal/record/`. This gate's shape is a natural Workflow-tool
+  find-and-verify sweep; the conductor names the moment and Geoff opts in or the
+  fan-out runs as plain parallel dispatches.
+
+### Task 14: pass close **[main loop]**
 
 - [ ] ROADMAP reconciliation (Pass D done; P6 and P7 absorbed per ruling 5; the
   editor-cluster filing from Task 1; the admin update page filed to arrive with the

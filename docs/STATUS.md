@@ -34,9 +34,11 @@ old corpus only after the new docs are fully baked.** Three phases, each its own
 and merge: Phase 1 (Tasks 1-3) standards and targets (friction-log triage first,
 self-contained; the target manifest; the register standard rebuilt on the profiles and
 anatomies); Phase 2 (Tasks 4-8) the clean-room build, landing the new tree beside the old
-so `main` stays releasable; Phase 3 (Tasks 9-13) the mining sweep, the cutover with every
-gate rewired and proven red once, the outside edges, the prepared cairn-pub branch, and
-the close. Seven rulings sit at the top of the plan for approval or veto at the gate.
+so `main` stays releasable; Phase 3 (Tasks 9-14) the mining sweep, the cutover with every
+gate rewired and proven red once, the outside edges, the prepared cairn-pub branch, the
+five-stage production gate (Task 13, per the review methodology, with Geoff's
+editor-track read), and the close. Seven rulings sit at the top of the plan for approval
+or veto at the gate.
 
 **The sitting extended past the plan commit (2026-08-14, Geoff's direction) and banked
 four governing inputs,** all committed under `docs/internal/`: the review methodology

@@ -115,7 +115,7 @@ already in the outlines); engine and code findings triage normally.
   its own pass?); the refused-save-frontmatter finding files to ROADMAP regardless.
 - [ ] Entry 19 (the T2 hardening tail): its trigger has fired twice; re-triage or delete
   per its own text.
-- [ ] The setup-walk entry stays open until Phase 3 ships what it names; Task 13 closes
+- [ ] The setup-walk entry stays open until Phase 3 ships what it names; Task 14 closes
   it. Tags rename in Task 3.
 
 **Acceptance:** only verified-live findings remain; every removal names its evidence;

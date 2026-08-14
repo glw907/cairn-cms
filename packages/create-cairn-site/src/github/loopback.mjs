@@ -37,31 +37,6 @@ import { startLoopbackCore } from '../loopback-core.mjs';
  */
 
 /**
- * Build a fixed mount's handler: resolve the pending wait watching this exact pathname, or 404
- * when nothing is currently watching it.
- * @param {string} pathname the fixed path this handler is mounted at
- * @param {() => PendingWait | null} getPendingWait reads the current pending wait, if any
- * @param {(next: PendingWait | null) => void} setPendingWait replaces the current pending wait
- * @returns {import('../loopback-core.mjs').MountHandler} the mount handler
- */
-function pendingWaitHandler(pathname, getPendingWait, setPendingWait) {
-  return (req, res, url) => {
-    const pendingWait = getPendingWait();
-    if (pendingWait && pathname === pendingWait.pathname) {
-      const { landingHtml, resolve: resolveWait, timer } = pendingWait;
-      clearTimeout(timer);
-      setPendingWait(null);
-      res.writeHead(200, { 'content-type': 'text/html' });
-      res.end(landingHtml);
-      resolveWait(url.searchParams);
-      return;
-    }
-    res.writeHead(404, { 'content-type': 'text/plain' });
-    res.end('Not found');
-  };
-}
-
-/**
  * Start the loopback receiver on an ephemeral, 127.0.0.1-only port.
  * @returns {Promise<Loopback>} the running receiver
  */
@@ -70,17 +45,35 @@ export async function startLoopback() {
   let formHtml = '';
   /** @type {PendingWait | null} */
   let pendingWait = null;
-  const getPendingWait = () => pendingWait;
-  const setPendingWait = (next) => {
-    pendingWait = next;
-  };
+
+  /**
+   * Build a fixed mount's handler: resolve the pending wait watching this exact pathname, or 404
+   * when nothing is currently watching it.
+   * @param {string} pathname the fixed path this handler is mounted at
+   * @returns {import('../loopback-core.mjs').MountHandler} the mount handler
+   */
+  function pendingWaitHandler(pathname) {
+    return (req, res, url) => {
+      if (pendingWait && pathname === pendingWait.pathname) {
+        const { landingHtml, resolve: resolveWait, timer } = pendingWait;
+        clearTimeout(timer);
+        pendingWait = null;
+        res.writeHead(200, { 'content-type': 'text/html' });
+        res.end(landingHtml);
+        resolveWait(url.searchParams);
+        return;
+      }
+      res.writeHead(404, { 'content-type': 'text/plain' });
+      res.end('Not found');
+    };
+  }
 
   core.mount('/', (req, res) => {
     res.writeHead(200, { 'content-type': 'text/html' });
     res.end(formHtml);
   });
-  core.mount('/callback', pendingWaitHandler('/callback', getPendingWait, setPendingWait));
-  core.mount('/manifest', pendingWaitHandler('/manifest', getPendingWait, setPendingWait));
+  core.mount('/callback', pendingWaitHandler('/callback'));
+  core.mount('/manifest', pendingWaitHandler('/manifest'));
 
   return {
     port: core.port,

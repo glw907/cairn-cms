@@ -212,6 +212,23 @@ async function confirmWithDiagnosis(domain, fetchImpl, dns = {}) {
 }
 
 /**
+ * Apply the catalogue's own kind split to a settled confirm outcome: the one act-kind code throws,
+ * and everything else is a wait-kind outcome (or `'live'`) the caller hands back. Stated once here
+ * so the one-shot confirm and the held one below can never disagree on which outcome is a failure.
+ * @param {string} outcome the outcome a confirm settled on
+ * @param {string} dir the `--dir` value, interpolated into the row raised here
+ * @param {string} domain the domain that was probed, interpolated into that same row
+ * @returns {'live' | 'hostname-records-absent' | 'hostname-resolver-lagging' |
+ *  'certificate-pending'} the outcome to hand back to the admin
+ */
+function orThrow(outcome, dir, domain) {
+  if (outcome === 'hostname-not-serving') {
+    throw cloudflareError('hostname-not-serving', { dir, domain });
+  }
+  return outcome;
+}
+
+/**
  * Confirm the domain, applying the catalogue's own kind split to what the probes found: the one
  * act-kind outcome is thrown here, so every caller is left holding a wait-kind outcome or `'live'`
  * and the split is stated once rather than repeated at each confirm.
@@ -224,11 +241,7 @@ async function confirmWithDiagnosis(domain, fetchImpl, dns = {}) {
  *  'certificate-pending'>} the outcome to hand back to the admin
  */
 async function confirmOrThrow(domain, fetchImpl, dir, dns) {
-  const outcome = await confirmHostname(domain, fetchImpl, dns);
-  if (outcome === 'hostname-not-serving') {
-    throw cloudflareError('hostname-not-serving', { dir, domain });
-  }
-  return outcome;
+  return orThrow(await confirmHostname(domain, fetchImpl, dns), dir, domain);
 }
 
 /**
@@ -279,11 +292,7 @@ async function confirmBeforeRedeploy({ domain, fetchImpl, dir, dns, waitForClear
     };
   });
 
-  const outcome = observation.detail.markerOutcome;
-  if (outcome === 'hostname-not-serving') {
-    throw cloudflareError('hostname-not-serving', { dir, domain });
-  }
-  return outcome;
+  return orThrow(observation.detail.markerOutcome, dir, domain);
 }
 
 /**

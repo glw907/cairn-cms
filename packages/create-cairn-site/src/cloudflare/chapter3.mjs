@@ -766,6 +766,38 @@ export async function runChapter3({
 }) {
   const frame = { dryRun, log };
 
+  // The zone's own nameservers, saved by chapter 2, let the post-success hostname confirm's
+  // unreachable-case diagnosis skip a fresh NS discovery lookup (dns.mjs's own
+  // `selectAuthoritativeResolver`). Both watch call sites below hand `watchAndComplete` this same
+  // context.
+  const dns = { resolve, nameServers: record?.cloudflare?.nameServers };
+
+  /**
+   * Compose the build-watch hold for one hop, with this run's own shape and seams filled in. Both
+   * watch call sites below go through here, so neither can drift from the other on what the hold
+   * is given; only the hop title differs between them.
+   * @param {string} hop the hop title this hold's console header renders
+   * @returns {((buildUuidKnown: boolean) => (probe: import('../hold-loop.mjs').HoldProbe) =>
+   *  Promise<import('../hold-loop.mjs').HoldObservation>) | undefined} the factory
+   *  `watchAndComplete` calls, or `undefined` when this run may not hold
+   */
+  function buildWatchHold(hop) {
+    return composeBuildWatchWaitForClear({
+      runArgs: args,
+      isTTY,
+      env,
+      log,
+      hop,
+      record,
+      siteId,
+      dir,
+      pollIntervalMs,
+      maxPollAttempts,
+      createWaitForClearFn,
+      createConsoleServerFn,
+    });
+  }
+
   /**
    * Collect this chapter's own eight-key token and record it under `cloudflare.apiToken`
    * alongside `buildsTokenSavedAt`, the chapter-3-owned marker saying this chapter is the one
@@ -871,24 +903,8 @@ export async function runChapter3({
           lastBuildUuid: undefined,
           lastBuildOutcome: record?.cloudflare?.buildsLastBuildOutcome,
           reconcileResult,
-          // The zone's own nameservers, saved by chapter 2, let the post-success hostname confirm's
-          // unreachable-case diagnosis skip a fresh NS discovery lookup (dns.mjs's own
-          // `selectAuthoritativeResolver`).
-          dns: { resolve, nameServers: record?.cloudflare?.nameServers },
-          waitForClear: composeBuildWatchWaitForClear({
-            runArgs: args,
-            isTTY,
-            env,
-            log,
-            hop: 'Watch the build your update triggered',
-            record,
-            siteId,
-            dir,
-            pollIntervalMs,
-            maxPollAttempts,
-            createWaitForClearFn,
-            createConsoleServerFn,
-          }),
+          dns,
+          waitForClear: buildWatchHold('Watch the build your update triggered'),
         });
       });
       return watchOutcome;
@@ -1122,24 +1138,8 @@ export async function runChapter3({
         lastBuildUuid,
         lastBuildOutcome,
         reconcileResult,
-        // The zone's own nameservers, saved by chapter 2, let the post-success hostname confirm's
-        // unreachable-case diagnosis skip a fresh NS discovery lookup (dns.mjs's own
-        // `selectAuthoritativeResolver`).
-        dns: { resolve, nameServers: record?.cloudflare?.nameServers },
-        waitForClear: composeBuildWatchWaitForClear({
-          runArgs: args,
-          isTTY,
-          env,
-          log,
-          hop: 'Watch your first Workers Builds deploy',
-          record,
-          siteId,
-          dir,
-          pollIntervalMs,
-          maxPollAttempts,
-          createWaitForClearFn,
-          createConsoleServerFn,
-        }),
+        dns,
+        waitForClear: buildWatchHold('Watch your first Workers Builds deploy'),
       });
     });
     if (!dryRun) {

@@ -42,6 +42,26 @@ function formatDnsAnswer(answer) {
 }
 
 /**
+ * The certificate cell's own text, driven solely by the marker outcome. Certificate issuance
+ * cannot be polled with this token (hostname.mjs's own header), so anything but the two outcomes
+ * that settle it one way or the other reports the honest "not knowable yet" rather than a status
+ * this view would have to invent.
+ * @param {string | null} markerOutcome the marker probe's own conclusion, or `null` when no probe
+ *  has run yet
+ * @returns {string} the sentence the certificate cell renders
+ */
+function certificateText(markerOutcome) {
+  switch (markerOutcome) {
+    case 'live':
+      return 'Issued (your site answers over HTTPS).';
+    case 'certificate-pending':
+      return 'Not yet issued (your site answers over plain HTTP).';
+    default:
+      return 'Not yet knowable: this only becomes readable once the site answers at all.';
+  }
+}
+
+/**
  * Render the authoritative-DNS row. When the read fell back to the recursive resolver
  * (`lowConfidence`), the answer is explicitly labeled as unavailable rather than shown, since
  * presenting a recursive-fallback answer under the "authoritative" heading is exactly the
@@ -70,12 +90,7 @@ export function renderPropagationView(observation, record) {
   const detail = observation?.detail ?? {};
   const markerOutcome = detail.markerOutcome ?? null;
 
-  const certText =
-    markerOutcome === 'live'
-      ? 'Issued (your site answers over HTTPS).'
-      : markerOutcome === 'certificate-pending'
-        ? 'Not yet issued (your site answers over plain HTTP).'
-        : 'Not yet knowable: this only becomes readable once the site answers at all.';
+  const certText = certificateText(markerOutcome);
 
   const markerMeaning = markerOutcome
     ? (MARKER_OUTCOME_MEANINGS[markerOutcome] ?? markerOutcome)
@@ -104,18 +119,16 @@ export function renderBuildsView(observation, record) {
   const workerName = safe.cloudflare?.workerName ?? safe.cloudflare?.domain ?? 'your site';
   const detail = observation?.detail ?? {};
 
-  const bodyHtml = detail.buildUuid
+  const heading = `<h1>Watching the Workers Builds deploy for ${escapeHtml(workerName)}</h1>`;
+  const rows = detail.buildUuid
     ? [
-        `<h1>Watching the Workers Builds deploy for ${escapeHtml(workerName)}</h1>`,
         `<p class="cairn-console-build-id">Build: ${escapeHtml(detail.buildUuid)}</p>`,
         `<p class="cairn-console-build-status">Status: ${escapeHtml(detail.status ?? 'unknown')}</p>`,
         `<p class="cairn-console-build-outcome">Outcome: ${escapeHtml(detail.outcome ?? 'not yet settled')}</p>`,
         `<p class="cairn-console-build-commit">Commit: ${escapeHtml(detail.commitSha ?? 'unknown')}</p>`,
-      ].join('\n')
-    : [
-        `<h1>Watching the Workers Builds deploy for ${escapeHtml(workerName)}</h1>`,
-        '<p class="cairn-console-build-discovering">Still discovering the build that matches your push.</p>',
-      ].join('\n');
+      ]
+    : ['<p class="cairn-console-build-discovering">Still discovering the build that matches your push.</p>'];
+  const bodyHtml = [heading, ...rows].join('\n');
 
   return { title: 'Watching your build', bodyHtml, refreshSeconds: DISPLAY_REFRESH_SECONDS[BUILD_HOLD_CLASS] };
 }

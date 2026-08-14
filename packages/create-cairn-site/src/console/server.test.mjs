@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 import dns from 'node:dns';
-import { BUILD_HOLD_CLASS, consoleUrlLine, makeObservation } from '../hold-loop.mjs';
+import { BUILD_HOLD_CLASS, PROPAGATION_HOLD_CLASS, consoleUrlLine, makeObservation } from '../hold-loop.mjs';
 import { cloudflareError } from '../cloudflare/catalogue.mjs';
-import { escapeHtml, pickAllowlist, SERVES_DURING_RUN_SENTENCE } from './render.mjs';
+import { escapeHtml, SERVES_DURING_RUN_SENTENCE } from './render.mjs';
 import { renderParkPage } from './park-pages.mjs';
+import { renderBuildsView, renderPropagationView } from './views.mjs';
 import { createConsoleServer } from './server.mjs';
 
 const CHAPTER = 'Chapter 3: Workers Builds';
@@ -284,8 +285,9 @@ test('render purity: rendering never issues an API or DNS call', async (t) => {
 });
 
 // The sentinel-sweep fixture: distinctive, unmistakable strings planted in apiToken and every
-// other credential-shaped field a real site record carries. If any route's rendered bytes ever
-// contain one of these, the allowlist discipline has a hole.
+// other credential-shaped field a real site record carries, including the GitHub App's own
+// secrets, which neither real view ever reads. If any real route's rendered bytes ever contain
+// one of these, the allowlist discipline, or a whole-record spread bypassing it, has a hole.
 const SENTINEL_TOKEN = 'SENTINEL-CLOUDFLARE-API-TOKEN-DO-NOT-RENDER';
 const SENTINEL_PEM = 'SENTINEL-GITHUB-APP-PEM-DO-NOT-RENDER';
 const SENTINEL_INSTALL_TOKEN = 'SENTINEL-GITHUB-INSTALL-TOKEN-DO-NOT-RENDER';
@@ -309,35 +311,26 @@ const sentinelRecord = {
   },
 };
 
-/** The allowlisted view a real production view would use: named fields only, never a spread. */
-const SAFE_RECORD_FIELDS = ['id', 'cloudflare.domain', 'cloudflare.workerName'];
-
-function safeSweepRenderView(observation, record) {
-  const safe = pickAllowlist(record, SAFE_RECORD_FIELDS);
-  return {
-    title: 'Status',
-    bodyHtml: `<p>Site ${escapeHtml(safe.id)} watching ${escapeHtml(safe.cloudflare?.domain ?? '')} (${escapeHtml(
-      safe.cloudflare?.workerName ?? '',
-    )})</p>`,
-  };
-}
-
-test('secret-sentinel sweep: every route and the printed console URL line carry zero sentinel occurrences', async (t) => {
-  const server = createConsoleServer({
-    chapter: CHAPTER,
-    hop: HOP,
-    record: sentinelRecord,
-    renderView: safeSweepRenderView,
-  });
-  const { url } = await server.start(makeObservation(BUILD_HOLD_CLASS, { attempt: 1 }));
+/**
+ * Run the sentinel sweep over one real view function, wired through the real console server
+ * exactly the way chapter2.mjs and chapter3.mjs wire it, never a test-local stand-in for either.
+ * Exercises the view page, the Host-guard 403, the unprefixed 404, the render-failure 500, the
+ * printed console URL line, and one terminal route: the exit render on a cleared observation, or
+ * a park page when the caller hands in `park` for an un-cleared one.
+ * @param {object} args
+ * @param {import('./server.mjs').RenderView} args.renderView the real view under sweep
+ * @param {import('../hold-loop.mjs').HoldObservation} args.observation the observation to render
+ * @param {{ code: string, params: object }} [args.park] when supplied, the terminal route swept
+ *  is the park page for this catalogue code rather than the exit render
+ * @returns {Promise<{ statuses: Record<string, number>, bytes: string[] }>} every rendered byte
+ *  string a caller should scan for sentinel occurrences, and the status each route answered with
+ */
+async function sweepRealView({ renderView, observation, park }) {
+  const server = createConsoleServer({ chapter: CHAPTER, hop: HOP, record: sentinelRecord, renderView });
+  const { url } = await server.start(observation);
   const parsed = new URL(url);
 
   const view = await rawRequest(Number(parsed.port), parsed.pathname);
-  // Positive control: the allowlisted fields must still render, so the sentinel absence below
-  // means the allowlist worked, not that nothing rendered at all.
-  assert.match(view.body, /sentinel-site-a1b2c3/);
-  assert.match(view.body, /sentinel\.example\.com/);
-
   const notFound = await rawRequest(Number(parsed.port), '/not-the-real-prefix');
   const forbidden = await rawRequest(Number(parsed.port), parsed.pathname, 'evil.example.com');
 
@@ -349,23 +342,99 @@ test('secret-sentinel sweep: every route and the printed console URL line carry 
       throw new Error('boom');
     },
   });
-  const { url: errorUrl } = await errorServer.start(makeObservation(BUILD_HOLD_CLASS));
-  t.after(() => errorServer.stop());
+  const { url: errorUrl } = await errorServer.start(observation);
   const errorParsed = new URL(errorUrl);
   const errorPage = await rawRequest(Number(errorParsed.port), errorParsed.pathname);
-  assert.equal(errorPage.status, 500);
+  await errorServer.stop();
 
-  server.update(makeObservation(BUILD_HOLD_CLASS, { cleared: true }));
-  const stopPromise = server.stop();
-  const exitPage = await rawRequest(Number(parsed.port), parsed.pathname);
-  await stopPromise;
+  let terminal;
+  if (park) {
+    const stopPromise = server.stop(park);
+    terminal = await rawRequest(Number(parsed.port), parsed.pathname);
+    await stopPromise;
+  } else {
+    server.update({ ...observation, cleared: true });
+    const stopPromise = server.stop();
+    terminal = await rawRequest(Number(parsed.port), parsed.pathname);
+    await stopPromise;
+  }
 
   const printedLine = consoleUrlLine(url);
 
-  const renderedBytes = [view.body, notFound.body, forbidden.body, errorPage.body, exitPage.body, printedLine];
+  return {
+    statuses: { view: view.status, notFound: notFound.status, forbidden: forbidden.status, errorPage: errorPage.status },
+    bytes: [view.body, notFound.body, forbidden.body, errorPage.body, terminal.body, printedLine],
+  };
+}
+
+/**
+ * Assert none of `SENTINELS` occurs anywhere in `bytes`.
+ * @param {string[]} bytes the rendered byte strings to scan
+ * @returns {void}
+ */
+function assertNoSentinels(bytes) {
   for (const sentinel of SENTINELS) {
-    for (const bytes of renderedBytes) {
-      assert.equal(bytes.includes(sentinel), false, `expected no occurrence of ${sentinel}`);
+    for (const rendered of bytes) {
+      assert.equal(rendered.includes(sentinel), false, `expected no occurrence of ${sentinel}`);
     }
   }
+}
+
+test('secret-sentinel sweep: renderPropagationView, every detail field populated, carries zero sentinel occurrences over the real routes', async () => {
+  const observation = makeObservation(PROPAGATION_HOLD_CLASS, {
+    attempt: 3,
+    detail: {
+      authoritative: [{ type: 'A', address: '203.0.113.5' }],
+      recursive: [{ type: 'A', address: '203.0.113.5' }],
+      lowConfidence: false,
+      markerOutcome: 'live',
+    },
+  });
+
+  const { statuses, bytes } = await sweepRealView({ renderView: renderPropagationView, observation });
+  assert.equal(statuses.view, 200);
+  assert.equal(statuses.notFound, 404);
+  assert.equal(statuses.forbidden, 403);
+  assert.equal(statuses.errorPage, 500);
+
+  // Positive control: the allowlisted domain must still render, so the sentinel absence below
+  // means the allowlist worked, not that nothing rendered at all.
+  assert.ok(bytes.some((rendered) => rendered.includes('sentinel.example.com')));
+  assertNoSentinels(bytes);
+});
+
+test('secret-sentinel sweep: renderBuildsView, discovery branch (no build matched yet), carries zero sentinel occurrences over the real routes', async () => {
+  const observation = makeObservation(BUILD_HOLD_CLASS, { attempt: 1 });
+  assert.equal(observation.detail.buildUuid, null, 'the discovery branch is buildUuid: null');
+
+  const { statuses, bytes } = await sweepRealView({
+    renderView: renderBuildsView,
+    observation,
+    park: { code: 'build-not-started', params: { dir: '/tmp/sentinel-site' } },
+  });
+  assert.equal(statuses.view, 200);
+  assert.equal(statuses.notFound, 404);
+  assert.equal(statuses.forbidden, 403);
+  assert.equal(statuses.errorPage, 500);
+
+  assert.ok(bytes.some((rendered) => rendered.includes('sentinel-worker')));
+  assertNoSentinels(bytes);
+});
+
+test('secret-sentinel sweep: renderBuildsView, populated branch (a build matched and is running), carries zero sentinel occurrences over the real routes', async () => {
+  const observation = makeObservation(BUILD_HOLD_CLASS, {
+    attempt: 4,
+    detail: { buildUuid: 'b-42', status: 'running', outcome: null, commitSha: 'deadbeef' },
+  });
+  assert.notEqual(observation.detail.buildUuid, null, 'this is the populated branch');
+
+  const { statuses, bytes } = await sweepRealView({ renderView: renderBuildsView, observation });
+  assert.equal(statuses.view, 200);
+  assert.equal(statuses.notFound, 404);
+  assert.equal(statuses.forbidden, 403);
+  assert.equal(statuses.errorPage, 500);
+
+  assert.ok(bytes.some((rendered) => rendered.includes('sentinel-worker')));
+  assert.ok(bytes.some((rendered) => rendered.includes('b-42')));
+  assertNoSentinels(bytes);
 });

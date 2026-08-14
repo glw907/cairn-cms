@@ -175,8 +175,20 @@ test('renderBuildsView shows queued, then running, then the settled outcome and 
   assert.match(settled.bodyHtml, /abc123/);
 });
 
-test('renderBuildsView never renders a secret field off the record', () => {
+test('renderBuildsView never renders a secret field off the record, in the discovery branch', () => {
   const view = renderBuildsView(makeObservation(BUILD_HOLD_CLASS), BUILDS_RECORD);
+  assert.equal(view.bodyHtml.includes(BUILDS_RECORD.cloudflare.apiToken), false, 'discovery branch: buildUuid is null');
+  assert.doesNotMatch(view.bodyHtml, /SECRET-SHOULD-NEVER-RENDER/);
+});
+
+test('renderBuildsView never renders a secret field off the record, in the populated branch', () => {
+  const populated = makeObservation(BUILD_HOLD_CLASS, {
+    attempt: 3,
+    detail: { buildUuid: 'b-1', status: 'running', outcome: null, commitSha: 'abc123' },
+  });
+  const view = renderBuildsView(populated, BUILDS_RECORD);
+  assert.notEqual(populated.detail.buildUuid, null, 'this is the populated branch, unlike the test above');
+  assert.equal(view.bodyHtml.includes(BUILDS_RECORD.cloudflare.apiToken), false, 'populated branch: a build is matched');
   assert.doesNotMatch(view.bodyHtml, /SECRET-SHOULD-NEVER-RENDER/);
 });
 

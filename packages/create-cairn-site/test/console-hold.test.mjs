@@ -26,6 +26,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import http from 'node:http';
 import { createInterface } from 'node:readline';
 import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -38,6 +39,7 @@ import { reconciledConfigHash } from '../src/cloudflare/chapter3.mjs';
 import { consoleUrlLine } from '../src/hold-loop.mjs';
 import { SERVES_DURING_RUN_SENTENCE } from '../src/console/render.mjs';
 import { EXIT_TEXT } from '../src/console/exit-render.mjs';
+import { renderParkPage } from '../src/console/park-pages.mjs';
 
 const BIN_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'bin.mjs');
 const WORKER_NAME = 'console-hold-worker';
@@ -175,6 +177,28 @@ function spawnCli(args, env) {
  * punctuation: the caller re-derives the expected line through consoleUrlLine and asserts equality. */
 function matchConsoleUrlLine(line) {
   return /^Watch progress at (\S+) /.exec(line);
+}
+
+/**
+ * A GET request that closes its own socket once the response ends, mirroring server.test.mjs's
+ * own `rawRequest` (a bare `http.get`, not global `fetch`). `loopback-core.mjs`'s `close()` is
+ * the ordinary `http.Server#close`, which waits for every open connection to end before its
+ * promise resolves; global `fetch` (undici) pools a keep-alive connection per origin by default,
+ * which a request landing during the console's own grace window could leave open past its own
+ * reuse, holding `close()` (and so the child's own `exit(0)`) pending. This sidesteps that risk
+ * rather than proving it either way.
+ * @param {string} url the console URL to request
+ * @returns {Promise<{ status: number, body: string }>}
+ */
+function getNoKeepAlive(url) {
+  return new Promise((resolve, reject) => {
+    const req = http.get(url, { agent: false }, (res) => {
+      const chunks = [];
+      res.on('data', (chunk) => chunks.push(chunk));
+      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8') }));
+    });
+    req.on('error', reject);
+  });
 }
 
 test('a spawned run holds the Builds discovery wait, serves state-derived console content, and re-renders once the build is found', async (t) => {
@@ -337,5 +361,73 @@ test('SIGINT during a held Builds discovery wait closes the console, prints the 
     state.cloudflare.buildsLastBuildUuid,
     undefined,
     'no build was ever discovered, so the interrupt persist must write nothing',
+  );
+});
+
+test('SIGINT during a held Builds discovery wait serves the park page over the real console route before the process exits (View 3)', async (t) => {
+  const stateDir = await freshStateDir(t);
+  const dir = await scaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const siteId = makeSiteId('parkpage');
+  await seedHoldSite(siteId, dir);
+
+  const { child, stdoutLines, waitForLine } = spawnCli(['--dir', dir, '--yes', '--connect'], {
+    ...process.env,
+    CAIRN_STATE_DIR: stateDir,
+    CAIRN_CLOUDFLARE_API_BASE: cloudflare.apiBase,
+    CAIRN_CF_API_TOKEN: 'console-hold-env-token',
+    CAIRN_FORCE_HOLD: '1',
+  });
+  t.after(() => child.kill('SIGKILL'));
+
+  const [, url] = await waitForLine(matchConsoleUrlLine);
+  // Attached before the interrupt, not after the fetches below: the first fetch to land during
+  // the grace window ends it early (onRequestDuringGrace), so the child can exit within
+  // milliseconds of that request. A listener attached only after this point would miss the
+  // 'exit' event entirely, since Node never replays it to a late listener.
+  const exited = new Promise((resolve) => {
+    child.on('exit', (exitCode, exitSignal) => resolve([exitCode, exitSignal]));
+  });
+  child.kill('SIGINT');
+
+  // The interrupt's `stop` now serves the park page through the same grace window the exit
+  // render already used (server.mjs's own header), so a request landing before the process
+  // exits must see it: this is the wiring FIX 3 adds, deleting it (leaving only renderParkPage
+  // as a function nothing calls) would make this test time out with no matching park body.
+  const expectedPage = renderParkPage({
+    chapter: 'Connect to Workers Builds',
+    hop: 'Watch your first Workers Builds deploy',
+    code: 'build-not-started',
+    params: { dir },
+  });
+
+  const deadline = Date.now() + 5000;
+  let parkBody = null;
+  while (!parkBody && Date.now() < deadline) {
+    try {
+      const response = await getNoKeepAlive(url);
+      if (response.status === 200 && response.body.includes(BUILD_NOT_STARTED_TEXT)) {
+        parkBody = response.body;
+      }
+    } catch {
+      // The grace window may have already closed the socket on a late poll; keep retrying up to
+      // the deadline, since the assertion below is what actually proves the page was served.
+    }
+    if (!parkBody) await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  assert.ok(parkBody, 'expected the console to serve the build-not-started park page before it closed');
+  assert.equal(parkBody, expectedPage, 'the served page must be exactly what renderParkPage produces');
+  assert.ok(parkBody.includes(SERVES_DURING_RUN_SENTENCE));
+  assert.doesNotMatch(parkBody, /http-equiv="refresh"/, 'a park is a terminal state for the console');
+
+  // The console must actually close once the grace window ends, not linger after the park page.
+  await new Promise((resolve) => setTimeout(resolve, 4000));
+  await assert.rejects(() => getNoKeepAlive(url), 'the console must be closed well after its grace window');
+
+  const [code, signal] = await exited;
+  assert.equal(code, 0, `expected exit 0, got ${code} (signal ${signal}). stdout:\n${stdoutLines.join('\n')}`);
+  assert.ok(
+    stdoutLines.some((line) => line.includes(BUILD_NOT_STARTED_TEXT)),
+    `expected the build-not-started park row printed to the terminal too, got:\n${stdoutLines.join('\n')}`,
   );
 });

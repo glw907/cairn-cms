@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cloudflareError, WAIT_KIND_CODES } from '../cloudflare/catalogue.mjs';
 import { escapeHtml } from './render.mjs';
-import { renderParkPage } from './park-pages.mjs';
+import { messageBody, renderParkPage } from './park-pages.mjs';
 
 const CHAPTER = 'Chapter 2: Cloudflare';
 const HOP = 'Connect your domain to your site';
@@ -37,20 +37,6 @@ const PARK_FIXTURES = {
   'builds-reconcile-parked': { dir: DIR },
 };
 
-/**
- * Split a catalogue row's full printed text the same way its `Next:` line is separated from the
- * body a reader sees above it, mirroring catalogue.mjs's own `extractNext` split direction (the
- * body, not the label-stripped Next text catalogue.mjs already exposes as `err.catalogue.next`).
- * @param {string} message the row's full printed text
- * @returns {string} every line except the trailing `Next:` line
- */
-function messageBody(message) {
-  return message
-    .split('\n')
-    .filter((line) => !line.startsWith('Next:'))
-    .join('\n');
-}
-
 test('every wait-kind catalogue code has a park-page fixture (completeness)', () => {
   for (const code of WAIT_KIND_CODES) {
     assert.ok(code in PARK_FIXTURES, `missing park-page fixture for wait-kind code ${code}`);
@@ -64,13 +50,28 @@ test('park-page output equality: the rendered page carries the exact printed mes
     const page = renderParkPage({ code, params, chapter: CHAPTER, hop: HOP });
 
     assert.match(page, /<!doctype html>/, `${code}: expected a full document`);
+
+    // The split itself is the module UNDER TEST's own export (park-pages.mjs's messageBody), not
+    // a second copy of the same logic kept here: a bug in the real split would move both this
+    // computed value and the page together, so a local reimplementation would never see it move.
+    const body = messageBody(printed.message);
     assert.ok(
-      page.includes(escapeHtml(messageBody(printed.message))),
+      page.includes(escapeHtml(body)),
       `${code}: park page is missing the printed row's own message`,
     );
     assert.ok(
       page.includes(`Next: ${escapeHtml(printed.catalogue.next)}`),
       `${code}: park page is missing the printed row's own exact Next: line`,
+    );
+
+    // messageBody's own output is everything ABOVE the Next: line, a prefix of the full printed
+    // text by construction. Checking that prefix and the Next: line separately (above) does not
+    // by itself prove nothing was dropped IN BETWEEN; reassembling the two must reproduce the
+    // catalogue row's full printed text exactly, over the WHOLE message, not just its prefix.
+    assert.equal(
+      `${body}\nNext: ${printed.catalogue.next}`,
+      printed.message,
+      `${code}: the message body and the Next: line must reconstruct the row's full printed text`,
     );
   }
 });

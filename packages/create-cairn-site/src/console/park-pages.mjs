@@ -9,11 +9,13 @@ import { renderParkShell } from './park-shell.mjs';
 /**
  * Reduce a catalogue row's full printed text down to everything above its `Next:` line, the part
  * `renderParkShell`'s own `message` param takes; the label-stripped `Next:` text itself is already
- * exposed as `err.catalogue.next`, so this never needs to re-derive that half.
+ * exposed as `err.catalogue.next`, so this never needs to re-derive that half. Exported so a test
+ * asserting output equality reads this same split rather than keeping a second copy of it that
+ * could drift from what a park page actually renders.
  * @param {string} fullMessage the row's full printed text, ending in a `Next:` line
  * @returns {string} `fullMessage` with its trailing `Next:` line removed
  */
-function messageBody(fullMessage) {
+export function messageBody(fullMessage) {
   return fullMessage
     .split('\n')
     .filter((line) => !line.startsWith('Next:'))

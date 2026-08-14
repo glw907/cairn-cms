@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import dns from 'node:dns';
 import { BUILD_HOLD_CLASS, consoleUrlLine, makeObservation } from '../hold-loop.mjs';
+import { cloudflareError } from '../cloudflare/catalogue.mjs';
 import { escapeHtml, pickAllowlist, SERVES_DURING_RUN_SENTENCE } from './render.mjs';
+import { renderParkPage } from './park-pages.mjs';
 import { createConsoleServer } from './server.mjs';
 
 const CHAPTER = 'Chapter 3: Workers Builds';
@@ -174,6 +176,75 @@ test('exit render: with no fetch during the grace window, the server still shuts
   server.update(makeObservation(BUILD_HOLD_CLASS, { attempt: 2, cleared: true }));
   const startedAt = Date.now();
   await server.stop();
+  assert.ok(Date.now() - startedAt >= 40, 'expected the stop to wait out the grace window');
+
+  await assert.rejects(() => rawRequest(Number(parsed.port), parsed.pathname));
+});
+
+test('park page: a hold that ends un-cleared with a park serves that catalogue code\'s own page through the grace window before closing', async (t) => {
+  const server = createConsoleServer({
+    chapter: CHAPTER,
+    hop: HOP,
+    record: {},
+    renderView: stubRenderView,
+    graceMs: 500,
+  });
+  const { url } = await server.start(makeObservation(BUILD_HOLD_CLASS, { attempt: 1 }));
+  const parsed = new URL(url);
+
+  // Not cleared: this is the hold ending on a wait-kind park, exactly what a budget expiry or an
+  // interrupt hands `stop`, never the exit render's cleared path.
+  server.update(makeObservation(BUILD_HOLD_CLASS, { attempt: 2, cleared: false }));
+  const park = { code: 'build-not-started', params: { dir: '/tmp/park-server-test' } };
+  const stopPromise = server.stop(park);
+
+  const duringGrace = await rawRequest(Number(parsed.port), parsed.pathname);
+  assert.equal(duringGrace.status, 200);
+  // Served through the REAL server route, compared against the SAME production renderParkPage a
+  // deleted wiring would leave unreachable: this is not a call to renderParkPage in isolation.
+  assert.equal(duringGrace.body, renderParkPage({ chapter: CHAPTER, hop: HOP, ...park }));
+  const printed = cloudflareError(park.code, park.params);
+  assert.ok(duringGrace.body.includes(escapeHtml(printed.catalogue.next)));
+  assert.doesNotMatch(duringGrace.body, /http-equiv="refresh"/, 'a park is a terminal state for the console');
+
+  await stopPromise;
+  await assert.rejects(() => rawRequest(Number(parsed.port), parsed.pathname));
+});
+
+test('park page: a cleared observation always wins over a park argument, so the exit render still shows', async (t) => {
+  const server = createConsoleServer({
+    chapter: CHAPTER,
+    hop: HOP,
+    record: {},
+    renderView: stubRenderView,
+    graceMs: 500,
+  });
+  const { url } = await server.start(makeObservation(BUILD_HOLD_CLASS, { attempt: 1 }));
+  const parsed = new URL(url);
+
+  server.update(makeObservation(BUILD_HOLD_CLASS, { attempt: 2, cleared: true }));
+  const stopPromise = server.stop({ code: 'build-not-started', params: { dir: '/tmp/park-server-test' } });
+
+  const duringGrace = await rawRequest(Number(parsed.port), parsed.pathname);
+  assert.match(duringGrace.body, /This wait cleared\. The run is continuing in your terminal\./);
+
+  await stopPromise;
+});
+
+test('park page: with no fetch during the grace window, the server still shuts down on its own', async (t) => {
+  const server = createConsoleServer({
+    chapter: CHAPTER,
+    hop: HOP,
+    record: {},
+    renderView: stubRenderView,
+    graceMs: 40,
+  });
+  const { url } = await server.start(makeObservation(BUILD_HOLD_CLASS, { attempt: 1 }));
+  const parsed = new URL(url);
+
+  server.update(makeObservation(BUILD_HOLD_CLASS, { attempt: 2, cleared: false }));
+  const startedAt = Date.now();
+  await server.stop({ code: 'build-not-started', params: { dir: '/tmp/park-server-test' } });
   assert.ok(Date.now() - startedAt >= 40, 'expected the stop to wait out the grace window');
 
   await assert.rejects(() => rawRequest(Number(parsed.port), parsed.pathname));

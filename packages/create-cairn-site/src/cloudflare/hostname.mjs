@@ -257,6 +257,10 @@ async function confirmBeforeRedeploy({ domain, fetchImpl, dir, dns, waitForClear
 
   const observation = await waitForClear(async () => {
     const { outcome, reading } = await confirmWithDiagnosis(domain, fetchImpl, dns);
+    // `hostname-not-serving` is an act-kind code (confirmOrThrow throws it below once it is still
+    // the verdict at hold's end), never a page a console should show while telling the admin the
+    // hold is still just waiting; the other three non-live outcomes are wait-kind and get one.
+    const hasParkPage = outcome !== 'live' && outcome !== 'hostname-not-serving';
     return {
       cleared: outcome === 'live',
       detail: {
@@ -269,6 +273,10 @@ async function confirmBeforeRedeploy({ domain, fetchImpl, dir, dns, waitForClear
       // that knows both the code and its params; an interrupted hold prints it rather than
       // leaving an admin with nothing.
       park: outcome === 'live' ? undefined : cloudflareError(outcome, { dir, domain }).message,
+      // The same verdict, as a catalogue code and params rather than pre-rendered text: what a
+      // console still up when the hold ends un-cleared renders as its own park page.
+      parkCode: hasParkPage ? outcome : undefined,
+      parkParams: hasParkPage ? { dir, domain } : undefined,
     };
   });
 

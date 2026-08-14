@@ -14,9 +14,11 @@ import {
   shouldHold,
 } from './hold-loop.mjs';
 
-/** A console server handle recording every call the loop makes on it. */
+/** A console server handle recording every call the loop makes on it, including `stop`'s own
+ * park argument: the wiring proof this file's own tests need is that a park a probe hands back
+ * actually reaches this call, not merely that some `stop()` happened. */
 function fakeServer(url = 'http://127.0.0.1:49152/Zm9vYmFyLXNlY3JldA') {
-  const calls = { start: [], update: [], stop: 0 };
+  const calls = { start: [], update: [], stop: 0, stopArgs: [] };
   return {
     calls,
     url,
@@ -28,8 +30,9 @@ function fakeServer(url = 'http://127.0.0.1:49152/Zm9vYmFyLXNlY3JldA') {
       update(observation) {
         calls.update.push(observation);
       },
-      async stop() {
+      async stop(park) {
         calls.stop += 1;
+        calls.stopArgs.push(park);
       },
     },
   };
@@ -64,6 +67,8 @@ const NOT_CLEARED = {
   cleared: false,
   detail: { markerOutcome: 'hostname-records-absent' },
   park: 'PARK ROW\nNext: re-run the tool.',
+  parkCode: 'hostname-records-absent',
+  parkParams: { dir: '/tmp/hold-loop-test', domain: 'example.com' },
 };
 const CLEARED = { cleared: true, detail: { markerOutcome: 'live' } };
 
@@ -181,6 +186,12 @@ test('the propagation budget expires on the injected clock after exactly its own
   // The park row belongs to the caller on the expiry path, exactly as today; the only line this
   // loop prints is the console URL.
   assert.deepEqual(lines, [consoleUrlLine(server.url)]);
+  // The wiring this fix adds: the last probe's catalogue code and params reach `stop`, so a
+  // console still up at expiry can render that code's own park page rather than closing at once.
+  // Deleting the forwarding in runHold (leaving `server.stop()` called bare) would fail this.
+  assert.deepEqual(server.calls.stopArgs, [
+    { code: NOT_CLEARED.parkCode, params: NOT_CLEARED.parkParams },
+  ]);
 });
 
 test('the builds class refuses to invent its own poll and budget, naming chapter 3 as their owner', () => {
@@ -240,6 +251,11 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
     assert.deepEqual(lines, [consoleUrlLine(server.url), NOT_CLEARED.park]);
     assert.deepEqual(exits, [0]);
     assert.equal(observation.cleared, false);
+    // Same wiring proof as the expiry path: an interrupt's stop also carries the park a console
+    // still up would need to serve, not just the text line already asserted above.
+    assert.deepEqual(server.calls.stopArgs, [
+      { code: NOT_CLEARED.parkCode, params: NOT_CLEARED.parkParams },
+    ]);
 
     // The hold's handlers live for the hold only; the prior disposition is what is left behind.
     assert.deepEqual(signals.listeners(signal), [priorListener]);

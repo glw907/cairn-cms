@@ -114,9 +114,13 @@ const CLASS_DEFAULTS = {
 
 /**
  * @callback HoldProbe
- * @returns {Promise<{ cleared: boolean, detail: object, park?: string }>} `cleared` ends the hold;
- *  `detail` is merged over the class defaults; `park` is the exact printed row this verdict would
- *  park with, which the interrupt path prints so an interrupted hold reads like today's park
+ * @returns {Promise<{ cleared: boolean, detail: object, park?: string, parkCode?: string,
+ *  parkParams?: Record<string, string | string[] | boolean> }>} `cleared` ends the hold; `detail`
+ *  is merged over the class defaults; `park` is the exact printed row this verdict would park
+ *  with, which the interrupt path prints so an interrupted hold reads like today's park;
+ *  `parkCode`/`parkParams` are the same verdict's catalogue code and params, present only when the
+ *  code has its own park page (a wait-kind code, never one a caller is about to throw), and are
+ *  what a console still up when the hold ends un-cleared renders through its own grace window
  */
 
 /**
@@ -126,8 +130,10 @@ const CLASS_DEFAULTS = {
  *  once a probe has failed to clear, since a wait that is already over is not a wait to watch
  * @property {(observation: HoldObservation) => void} [update] hand the console each later
  *  observation; the console never probes for itself
- * @property {() => Promise<void>} stop shut the console down. The exit render and its grace
- *  window belong to the handle, not to this loop
+ * @property {(park?: { code: string, params: Record<string, string | string[] | boolean> }) =>
+ *  Promise<void>} stop shut the console down. The exit render and the park page, and both of
+ *  their grace windows, belong to the handle, not to this loop; this loop only forwards the last
+ *  probe's `parkCode`/`parkParams`, when it had any, as `park`
  */
 
 /**
@@ -203,13 +209,19 @@ async function runHold(config) {
   let attempt = 0;
   let observation = null;
   let park;
+  // The last probe's park page, forwarded to `server.stop` so a console still up when the hold
+  // ends un-cleared (expiry, interrupt, or a park-class outcome surfacing mid-hold) renders that
+  // page through its grace window rather than closing at once. `server.stop` itself decides
+  // priority between this and a cleared observation's exit render, so this loop never checks
+  // `observation.cleared` before forwarding it.
+  let parkPage;
   let serverStarted = false;
   let serverStopped = false;
 
   const stopServer = async () => {
     if (!serverStarted || serverStopped) return;
     serverStopped = true;
-    await server.stop();
+    await server.stop(parkPage);
   };
 
   // The interrupt is raced against the sleep rather than polled for, so a signal ends the hold at
@@ -239,6 +251,7 @@ async function runHold(config) {
         detail: result.detail,
       });
       park = result.park;
+      parkPage = result.parkCode ? { code: result.parkCode, params: result.parkParams } : undefined;
       if (serverStarted) server.update?.(observation);
 
       if (observation.cleared) return observation;

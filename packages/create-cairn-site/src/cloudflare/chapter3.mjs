@@ -516,8 +516,12 @@ export async function watchAndComplete({
         commitSha: watched?.build_trigger_metadata?.commit_hash ?? discoveryCommitSha ?? null,
       },
       // Which park this verdict would be: nothing found yet versus a build still running. The
-      // interrupt path prints it, so an interrupted hold reads like the park it interrupted.
+      // interrupt path prints it, so an interrupted hold reads like the park it interrupted. Both
+      // are wait-kind codes with their own park page, which is what a console still up renders
+      // when the hold ends un-cleared on one of them.
       park: cloudflareError(buildUuid ? 'build-running' : 'build-not-started', { dir }).message,
+      parkCode: buildUuid ? 'build-running' : 'build-not-started',
+      parkParams: { dir },
     };
   };
 

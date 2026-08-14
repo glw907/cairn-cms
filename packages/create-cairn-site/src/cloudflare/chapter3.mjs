@@ -357,9 +357,14 @@ function completionMessage({ defaultBranch, domain }) {
  *  hold-loop.mjs's own
  * @param {typeof createConsoleServer} input.createConsoleServerFn a test seam, defaulting to the
  *  console module's own
- * @returns {((probe: import('../hold-loop.mjs').HoldProbe) =>
- *  Promise<import('../hold-loop.mjs').HoldObservation>) | undefined} the seam to thread into
- *  `watchAndComplete`, or `undefined` when this run may not hold
+ * @returns {((buildUuidKnown: boolean) => (probe: import('../hold-loop.mjs').HoldProbe) =>
+ *  Promise<import('../hold-loop.mjs').HoldObservation>) | undefined} a factory `watchAndComplete`
+ *  calls once, right at the moment it is about to enter the hold, with whether a build uuid is
+ *  already in hand at that instant; `undefined` when this run may not hold. Built as a factory
+ *  rather than a plain seam because that instant is not knowable at compose time: a fresh manual
+ *  kick (this chapter's own `kickBuild` call) can mint a `buildUuid` after this function has
+ *  already returned, and the default park printed on an interrupt racing the hold's first probe
+ *  must reflect whichever is true right then, not what was true when the run started.
  */
 function composeBuildWatchWaitForClear({
   runArgs,
@@ -382,21 +387,27 @@ function composeBuildWatchWaitForClear({
     record,
     renderView: renderBuildsView,
   });
-  return createWaitForClearFn({
-    holdClass: BUILD_HOLD_CLASS,
-    server,
-    log,
-    pollIntervalMs,
-    budgetMs: pollIntervalMs * maxPollAttempts,
-    // The row an interrupt lands on before discovery's first probe has returned: the push has
-    // happened and no build has been seen yet, which is the same verdict that first probe would
-    // report and the same park a watch that never finds a build ends on.
-    defaultPark: cloudflareError('build-not-started', { dir }).message,
-    persist: (observation) => {
-      if (!observation.detail.buildUuid) return undefined;
-      return updateSite(siteId, { cloudflare: { buildsLastBuildUuid: observation.detail.buildUuid } });
-    },
-  });
+  return (buildUuidKnown) =>
+    createWaitForClearFn({
+      holdClass: BUILD_HOLD_CLASS,
+      server,
+      log,
+      pollIntervalMs,
+      budgetMs: pollIntervalMs * maxPollAttempts,
+      // The row an interrupt lands on before the hold's first probe has returned. With no build
+      // uuid in hand yet, that first probe is a discovery read, and the push has happened with no
+      // build seen: the same verdict that probe would report itself. With a build uuid already
+      // known (a resumed `buildsLastBuildUuid`, or a manual kick that just minted one), that first
+      // probe is a `getBuild` instead, and the honest verdict is the catalogue's own "still
+      // running" row, the exact one a budget-exceeded hold with a build in hand already parks on
+      // just below (watchAndComplete's own `budgetExceeded` branch); claiming no build exists
+      // would contradict the buildUuid this run is about to persist.
+      defaultPark: cloudflareError(buildUuidKnown ? 'build-running' : 'build-not-started', { dir }).message,
+      persist: (observation) => {
+        if (!observation.detail.buildUuid) return undefined;
+        return updateSite(siteId, { cloudflare: { buildsLastBuildUuid: observation.detail.buildUuid } });
+      },
+    });
 }
 
 /**
@@ -427,10 +438,13 @@ function composeBuildWatchWaitForClear({
  * finished. `kickBuild` stays outside both: a fresh manual kick resolves its own `buildUuid`
  * synchronously, which simply means the hold starts at the build rather than at discovery.
  * @param {object} input
- * @param {(probe: import('../hold-loop.mjs').HoldProbe) =>
- *  Promise<import('../hold-loop.mjs').HoldObservation>} [input.waitForClear] the injected build
- *  watch hold. Absent it, the watch behaves exactly as it did before the console existed: one
- *  `listBuildsForWorker` read, then today's park or today's `pollBuildToStop` pass.
+ * @param {(buildUuidKnown: boolean) => (probe: import('../hold-loop.mjs').HoldProbe) =>
+ *  Promise<import('../hold-loop.mjs').HoldObservation>} [input.waitForClear] a factory for the
+ *  injected build watch hold, called exactly once, right at the moment the hold is about to
+ *  start, with whether `buildUuid` is already known at that instant (so the hold's own default
+ *  park, printed if an interrupt races its first probe, tells the truth about what this run has
+ *  actually found). Absent it, the watch behaves exactly as it did before the console existed:
+ *  one `listBuildsForWorker` read, then today's park or today's `pollBuildToStop` pass.
  * @param {import('./hostname.mjs').DnsContext} [input.dns] the DNS context forwarded to the
  *  post-success `confirmHostname` re-check; absent-safe (see hostname.mjs's own header), so a
  *  caller that passes none gets the conservative `hostname-records-absent` default with no lookup
@@ -542,7 +556,9 @@ export async function watchAndComplete({
   let budgetExceeded = false;
 
   if (waitForClear && (needsDiscovery || buildUuid)) {
-    const observation = await waitForClear(observeBuild);
+    // Built here, not earlier: `buildUuid` may have just been set by the manual kick above, which
+    // ran after `waitForClear` was composed, so this is the earliest point that instant is known.
+    const observation = await waitForClear(Boolean(buildUuid))(observeBuild);
     if (observation.cleared) build = watched;
     // A hold that ran out of budget with a build in hand is today's build-running park; one that
     // never found a build at all falls through to the build-not-started park just below.

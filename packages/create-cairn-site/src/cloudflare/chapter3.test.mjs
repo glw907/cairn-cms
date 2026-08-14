@@ -903,6 +903,59 @@ test('an interactive run threads waitForClear into watchAndComplete: the console
   assert.equal(kicks.length, 0, 'the push build was discovered through the held poll; a manual kick must never fire');
 });
 
+test('an interactive run entering the hold with a buildUuid already known, from a manual kick, composes the honest build-running default park, not the false build-not-started row', async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-manual-kick-hold-site-abc123';
+  await seedSite(siteId, dir, repo);
+
+  const consoleServer = fakeConsole();
+  const holdRecorder = { calls: [] };
+
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    openBrowser: smartOpenBrowser(),
+    confirm: confirmAnswering(true),
+    promptSecretFn: async () => 'fresh-cf-token',
+    // No sleepFn call is expected: a manual kick's build stays 'queued' forever in the fake (no
+    // seam ever advances it), so the hold runs out its own small budget rather than clearing, and
+    // chapter 3's own sleepFn (pollBuildToStop's) is never reached on the held path.
+    sleepFn: mustNotBeCalled('sleepFn'),
+    fetchImpl: alwaysMatchingFetch(),
+    pollIntervalMs: 1,
+    maxPollAttempts: 2,
+    isTTY: true,
+    env: {},
+    createWaitForClearFn: testCreateWaitForClearFn(holdRecorder),
+    createConsoleServerFn: () => consoleServer.handle,
+  });
+
+  // The manual kick fires (nothing differed and no successful build was recorded yet), so the
+  // hold begins with a buildUuid already in hand and never reaches discovery.
+  const kickRequest = cloudflare.requests.find(
+    (r) => r.method === 'POST' && r.path.includes('/builds/triggers/') && r.path.endsWith('/builds'),
+  );
+  assert.ok(kickRequest, 'expected a manual build kick');
+  assert.equal(result.outcome, 'build-running', 'the never-clearing queued build runs the hold out of budget');
+  assert.deepEqual(holdRecorder.calls, [BUILD_HOLD_CLASS], 'the seam is composed exactly once');
+  assert.equal(
+    holdRecorder.lastOptions.defaultPark,
+    cloudflareError('build-running', { dir }).message,
+    'a build uuid was already known when the hold began, so an interrupt racing its first probe ' +
+      'must print the honest build-running row, never the build-not-started row a fresh discovery ' +
+      'would have printed',
+  );
+});
+
 /**
  * Wrap the real Cloudflare API client so the push build appears QUEUED on the first
  * `listBuildsForWorker` read (rather than already finished) and then advances one scripted status
@@ -1129,12 +1182,15 @@ test('watchAndComplete: the discovery hold polls listBuildsForWorker only, and n
     lastBuildUuid: undefined,
     lastBuildOutcome: undefined,
     reconcileResult: { changed: true, commitSha },
-    waitForClear: createWaitForClear({
-      holdClass: BUILD_HOLD_CLASS,
-      pollIntervalMs: 1,
-      budgetMs: 60_000,
-      sleepFn: async () => {},
-    }),
+    // watchAndComplete now calls this factory itself, with whether a build uuid is already known
+    // at the moment the hold begins; this fixture's own assertions do not depend on that value.
+    waitForClear: () =>
+      createWaitForClear({
+        holdClass: BUILD_HOLD_CLASS,
+        pollIntervalMs: 1,
+        budgetMs: 60_000,
+        sleepFn: async () => {},
+      }),
   });
 
   assert.equal(result.outcome, 'builds-live');
@@ -1169,12 +1225,13 @@ test('watchAndComplete: on the resumed no-diff path, the discovery hold picks th
     lastBuildUuid: undefined,
     lastBuildOutcome: undefined,
     reconcileResult: undefined,
-    waitForClear: createWaitForClear({
-      holdClass: BUILD_HOLD_CLASS,
-      pollIntervalMs: 1,
-      budgetMs: 60_000,
-      sleepFn: async () => {},
-    }),
+    waitForClear: () =>
+      createWaitForClear({
+        holdClass: BUILD_HOLD_CLASS,
+        pollIntervalMs: 1,
+        budgetMs: 60_000,
+        sleepFn: async () => {},
+      }),
   });
 
   assert.equal(result.outcome, 'builds-live');
@@ -1224,13 +1281,14 @@ test('watchAndComplete: a discovery hold that never clears within its budget par
     lastBuildUuid: undefined,
     lastBuildOutcome: undefined,
     reconcileResult: { changed: true, commitSha: 'never-found' },
-    waitForClear: createWaitForClear({
-      holdClass: BUILD_HOLD_CLASS,
-      pollIntervalMs: 1,
-      budgetMs: 50,
-      sleepFn: async () => {},
-      now: stepClock(100),
-    }),
+    waitForClear: () =>
+      createWaitForClear({
+        holdClass: BUILD_HOLD_CLASS,
+        pollIntervalMs: 1,
+        budgetMs: 50,
+        sleepFn: async () => {},
+        now: stepClock(100),
+      }),
   });
 
   assert.equal(withHold.outcome, 'build-not-started');
@@ -1277,13 +1335,11 @@ function disagreeingResolve(domain) {
   return (servers) => (servers ? authoritative : recursive);
 }
 
-// The falsifiability control this test exists for: chapter3.mjs's post-success hostname confirm
-// forwarded no `dns` context at all, so hostname-resolver-lagging was unreachable from a real
-// chapter-3 run no matter how carefully hostname.mjs's own split was proven in isolation, and the
-// catalogue's hostname-records-absent row (which claims "even its own nameservers do not show a
-// DNS record") was reached with no DNS lookup ever attempted. Deleting the `dns` argument at the
-// confirmHostname call site (leaving diagnoseUnreachable itself untouched) makes this test fail
-// with 'hostname-records-absent', the exact regression this pins.
+// This proves `watchAndComplete`'s own `dns` parameter reaches `confirmHostname`'s unreachable-case
+// diagnosis: passed one directly, a disagreement resolves to hostname-resolver-lagging rather than
+// the absent-safe default. It does NOT prove `runChapter3`, the only production caller, actually
+// supplies one at either of its own two `watchAndComplete` call sites; the test just below this one
+// closes that gap by going through `runChapter3` itself with no `dns` argument of its own.
 test('watchAndComplete: the post-success hostname confirm threads the injected resolver into the DNS diagnosis, so a disagreement returns hostname-resolver-lagging', async (t) => {
   await freshStateDir(t);
   const dir = await fixtureScaffoldDir(t);
@@ -1306,6 +1362,106 @@ test('watchAndComplete: the post-success hostname confirm threads the injected r
     lastBuildOutcome: undefined,
     reconcileResult: undefined,
     dns: { resolve: disagreeingResolve(domain) },
+  });
+
+  assert.equal(result.outcome, 'hostname-resolver-lagging');
+});
+
+// The falsifiability control for runChapter3's OWN two watchAndComplete call sites: neither ever
+// forwarded a `dns` context of its own, so hostname-resolver-lagging was unreachable from a real
+// chapter-3 run no matter how carefully the unit-level test above proved watchAndComplete's own
+// parameter. This test drives the main first-run call site (the one every fresh `--connect` takes);
+// the next one drives the builds-live re-entry call site. Deleting `dns: { resolve, nameServers:
+// ... }` from EITHER makes its own test fail with 'hostname-records-absent', the exact regression
+// this pins; deleting it from both fails both.
+test("runChapter3: a manual-kick build watched to success threads the run's own resolver into the post-success hostname confirm, so a disagreement returns hostname-resolver-lagging", async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-dns-wiring-site-abc123';
+  const domain = 'lagging-builds.example';
+  await seedSite(siteId, dir, repo, {
+    cloudflare: {
+      accountId: 'acct-1',
+      url: `https://${WORKER_NAME}.example.workers.dev`,
+      workerName: WORKER_NAME,
+      domain,
+    },
+  });
+
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    openBrowser: smartOpenBrowser(),
+    confirm: confirmAnswering(true),
+    promptSecretFn: async () => 'fresh-cf-token',
+    ...fastSeams(cloudflare),
+    fetchImpl: alwaysUnreachableFetch(),
+    resolve: disagreeingResolve(domain),
+  });
+
+  assert.equal(result.outcome, 'hostname-resolver-lagging');
+});
+
+test("runChapter3: a builds-live re-entry whose push build is watched to success threads the run's own resolver into the post-success hostname confirm, so a disagreement returns hostname-resolver-lagging", async (t) => {
+  await freshStateDir(t);
+  const dir = await fixtureScaffoldDir(t);
+  const cloudflare = await setupCloudflare(t);
+  const github = await setupGithub(t);
+  github.state.apps.push({ id: 1, client_id: 'fake-client-1', callback_urls: ['http://127.0.0.1/callback'] });
+  const repo = await seedGithubRepo(github, dir);
+  const siteId = 'builds-live-reentry-dns-wiring-site-abc123';
+  const domain = 'lagging-reentry.example';
+  await seedSite(siteId, dir, repo, {
+    step: 'builds-live',
+    cloudflare: {
+      accountId: 'acct-1',
+      url: `https://${WORKER_NAME}.example.workers.dev`,
+      workerName: WORKER_NAME,
+      buildsConnectionUuid: 'conn-1',
+      buildsTriggerUuid: 'trig-1',
+      buildsLastBuildUuid: 'build-1',
+      buildsLastBuildOutcome: 'success',
+      domain,
+    },
+  });
+
+  // Simulate a stale-origin cutover: the local wrangler.jsonc now differs from what is committed,
+  // so the reconcile hop actually commits and the watch has a fresh push build to find.
+  await writeFile(
+    path.join(dir, 'wrangler.jsonc'),
+    `${JSON.stringify({ name: WORKER_NAME, account_id: 'acct-1' }, null, 2)}\n`,
+  );
+
+  const result = await runChapter3({
+    siteId,
+    record: await loadSite(siteId),
+    dir,
+    args: { yes: false },
+    log: () => {},
+    dryRun: false,
+    openBrowser: smartOpenBrowser(),
+    confirm: mustNotBeCalled('confirm'),
+    promptSecretFn: async () => 'fresh-cf-token-3',
+    sleepFn: autoResolveBuilds(cloudflare),
+    fetchImpl: alwaysUnreachableFetch(),
+    resolve: disagreeingResolve(domain),
+    pollIntervalMs: 0,
+    maxPollAttempts: 5,
+    makeApiFn: makeApiFnWithPushBuildSeed({
+      cloudflare,
+      github,
+      owner: repo.owner,
+      repo: repo.repo,
+      defaultBranch: repo.defaultBranch,
+    }),
   });
 
   assert.equal(result.outcome, 'hostname-resolver-lagging');

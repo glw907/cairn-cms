@@ -15,7 +15,69 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-14: Pass D Phases 1 and 2 are MERGED; execute Phase 3)
+## Immediate next action (2026-08-14: Pass D's production gate FAILED; fold it before anything else)
+
+**Phase 3 is NOT merged and must not be, until the fold below lands.** Branch
+`pass-d-phase-3` (worktree `.claude/worktrees/pass-d-phase-3`) carries Tasks 9 through 13:
+the mining sweep, the cutover, the outside edges, cairn-pub, and the production gate. Every
+gate is green and `npm test` is 5310 at exit 0, so the tree is mechanically sound. **It is
+the gate's human-facing findings that block, not a red build.**
+
+**Resume prompt:** "Fold the Pass D Task 13 production-gate findings
+(`docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`), then close the pass."
+Launch inside `.claude/worktrees/pass-d-phase-3`.
+
+### What the gate found
+
+**All four blind persona walks failed to reach their goal.** These are the highest-value
+findings in the record, because a walk is completion-measured rather than opinion-measured, and
+because knowledge suppression caught what four earlier review rounds could not: every earlier
+reviewer already knew the missing facts.
+
+| Track | Stopped at | The gap |
+|---|---|---|
+| editors | `welcome.md`, sign-in step 1 | The track never says where the sign-in page IS. Verified: zero mentions of `/admin`, an address bar, or a bookmark across all 8 pages. |
+| admin | `is-it-working.md`, "Running the check" | The page says the credential-bearing checks skip and that a skip is not a pass, then never says how to make them run. |
+| extend | `add-a-custom-admin-screen.md`, "Gate it" | `requireAccess` 403s every session including the owner without an access map, and `defineAccess(roles, map)` needs a `roles` declaration no earlier page produces. |
+| reference | `core.md`'s adapter surface | `media`/`assets` and `editor.nav`/`navMenu` name the same config key two different ways across pages. |
+
+**118 findings, of which only 24 were independently verified: 19 confirmed, 3 narrowed, 2
+refuted.** The cap is a conductor error worth knowing about rather than a property of the
+findings: the workflow's verify stage was written `verifiable.slice(0, 24)` and took findings
+in array order, so it consumed three of the four claims sweeps and reached **no walk, fishtank,
+or register finding at all**. A 79% confirmation rate on what was checked is the reason to
+treat the remaining 94 as likely-real. Sample across lenses, not off the front of the array.
+
+### What the fold owes
+
+1. The four walk failures. These are structural gaps, not line edits.
+2. The 19 confirmed and 3 narrowed findings, each carrying the verifier's file-and-line
+   evidence in the record.
+3. Verification of the 94 unverified findings, or an explicit decision to ship without it,
+   recorded either way.
+4. The record's dispositions section, deliberately left empty for this.
+5. **Geoff's own read of the editor track**, which the methodology names as the
+   novice-comprehension instrument no LLM pass substitutes. Still owed. The track is 8 pages
+   and is deliberately the smallest because it carries the highest novice-gap risk.
+6. Task 14: ROADMAP reconciliation, the post-mortem, this file's rewrite, the memory refresh,
+   then the Phase 3 PR, merge, and cold-start test.
+
+**Release one does not cut until the blocking findings fold and that human read happens.**
+
+### Task 12: cairn-pub is prepared, and NOT merged (ruling 3)
+
+Branch `pass-d-docs-tracks` at `e7218a4` in `~/Projects/cairn-pub`, **local only, never
+pushed**. Proven against a packed tarball: 81 prerendered pages, zero broken links, a clean
+rebuild. The site walk merges it after release one. It also found a real defect the rebuild
+introduced, now fixed there: the reference index's new "also for site admins" grouping relists
+three pages, and the loader walked every bullet list, so the second occurrence won the prev/next
+map. Fail-loud link policy is a build-time throw.
+
+**A stale premise this corrected:** cairn-pub is pinned at `0.94.0-rc.1`, NOT the `^0.87.4` the
+consumer table below has carried. A prior pass already landed that upgrade, so there is no
+six-minor gap and the only consumer-facing change left is the docs restructure itself.
+
+## Superseded: the Phase 3 start entry (2026-08-14)
 
 **Phase 2 landed** (PR #35, squashed to `main` at `55bf8184`, all six checks green). The four
 tracks are written clean-room and sit BESIDE the old arms, which stay canonical in the tarball
@@ -241,7 +303,7 @@ release one per the ordering above:
 | Repo | Range | Behind |
 |---|---|---|
 | `907-life` | `^0.84.4` | 0.85 through 0.93, plus this window |
-| `cairn-pub` | `^0.87.4` | 0.88 through 0.93, plus this window (migration ran against `rc.1`; the `Consumers must:` work is done, blocked only on the GitHub App item above) |
+| `cairn-pub` | `0.94.0-rc.1` (pinned exact) | this window only. **Corrected 2026-08-14 at Pass D Task 12**, which found this row claiming `^0.87.4`: a prior pass already landed the full upgrade, so the six-minor gap this table asserted does not exist. The `Consumers must:` work is done, blocked only on the GitHub App item above |
 | `aksailingclub-org` | `^0.94.0` | current (adoption merged, deployed, and smoked 2026-08-07) |
 | `ecxc-ski` | `^0.93.0` | this window only |
 

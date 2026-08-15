@@ -47,22 +47,22 @@ a commit, not a database row.
 
 ## R2: media bytes, deduplicated by content hash
 
-A site that declares an `assets` block on its adapter gets an R2 bucket for uploaded media, bound
+A site that declares a `media` block on its adapter gets an R2 bucket for uploaded media, bound
 by name and resolved at request time from that declared binding, never a hard-coded one. Bytes are
 addressed by their own content hash: the same image uploaded twice is stored once, and the media
 manifest, keyed by a 16-hex hash prefix, is the dedup lookup an ingest checks before writing
 anything. Each manifest row carries what the bytes themselves can't: a display name, alt text, the
 original filename, and known pixel dimensions. Delivery serves the stored MIME type verbatim rather
 than guessing from a URL extension, and optionally reaches Cloudflare's own Image Transformations
-for the variant presets a site's `assets.variants` declares, when the zone has transformations on;
+for the variant presets a site's `variants` field on that same `media` block declares, when the
+zone has transformations on;
 without that, the resolver serves the bare full-size original regardless of what preset was asked
 for.
 
 R2 exists specifically because git is the wrong place for binary asset bytes at any real scale, and
 D1 is the wrong place for anything measured in megabytes. Both manifests are committed JSON under
-`src/content/.cairn/`. Only the bytes they describe live in a different tier. The media manifest
-keys by content hash rather than by concept and id, and carries exactly what the bytes themselves
-can't: a display name, alt text, the original filename, and known pixel dimensions.
+`src/content/.cairn/`. Only the bytes they describe live in a different tier. Unlike the content manifest,
+which keys by concept and id, the media manifest keys by content hash.
 
 ## Choosing the right tier for something new
 

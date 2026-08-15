@@ -1,4 +1,4 @@
-# Reference: log events
+# Log events
 
 cairn emits structured diagnostic events through `console`, which Cloudflare Workers Logs ingests
 and indexes when a site sets `observability.enabled = true`. Each record carries an envelope
@@ -9,12 +9,12 @@ identity the caller supplied, which need not be an editor when site code calls
 [`createD1AuditSink`](./sveltekit.md#created1auditsink) directly with its own domain events. No
 record ever carries a magic-link token, a session ID, or a
 magic-link's contents (see
-[the security model](../explanation/security-model.md) for the redaction stance). To query these
-in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
+[the security model](../extend/security-model.md) for the redaction stance). To query these
+in production, see the [read cairn's logs guide](../admin/troubleshooting.md).
 
 | Event | Level | Fires when | Fields |
 |---|---|---|---|
-| `auth.link.requested` | info | A magic-link request reaches `POST /admin/auth/request`. | `email` |
+| `auth.link.requested` | info | The login view's `?/request` action runs (`POST /admin/login?/request`). | `email` |
 | `auth.token.minted` | info | A token is issued for an allow-listed editor. | `email`, `expiresAt` |
 | `auth.link.send_failed` | error | The confirmation email send rejects. | `email`, `error`, `code`, `conditionId` |
 | `auth.token.confirmed` | info | A valid token is consumed at `POST /admin/auth/confirm`. | `email` |

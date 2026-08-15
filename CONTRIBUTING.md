@@ -4,7 +4,7 @@ cairn is the embedded, git-backed CMS this repository publishes to npm as
 [`@glw907/cairn-cms`](https://www.npmjs.com/package/@glw907/cairn-cms). This guide orients you
 in the repository and describes what a change needs before it can land. For what cairn is and
 why it works the way it does, start with the [docs](./docs/README.md) and
-[Why cairn](./docs/explanation/why-cairn.md).
+[Why cairn](./docs/why-cairn.md).
 
 ## Set up and run the suite
 
@@ -21,6 +21,40 @@ dependency, so it runs your checkout rather than the published package. Its impo
 into `dist/`, so run `npm run package` at the root after changing `src/lib` for the showcase
 to pick the change up.
 
+## Is this cairn's job?
+
+Before opening an issue, check whether the idea belongs in the engine. cairn owns markdown
+content and the editor/admin frame, and little else: a site's own functionality, actors,
+auth, data, and domain logic belongs to the developer, served through a thin seam rather
+than built into cairn. Read
+[`docs/internal/what-cairn-is-and-is-not.md`](./docs/internal/what-cairn-is-and-is-not.md)
+before proposing anything that adds an abstraction, a subsystem, an actor, or new public
+surface. Settling this first is faster than writing code against a premise a review later
+rejects.
+
+## Choosing a docs track
+
+A new docs page belongs in exactly one of four tracks: `docs/admin/`, `docs/editors/`,
+`docs/extend/`, or `docs/reference/`. The discriminator is the reader, not the content, so
+decide by asking who reads this page and whether that reader can act on it with nothing but
+the page and what they already have.
+
+- **`docs/editors/`**: a non-technical author working in `/admin`, with no terminal and no
+  access to the repository.
+- **`docs/admin/`**: a technical non-developer who sets up and runs the default site, runs
+  commands, and reads a dashboard, but does not write code.
+- **`docs/extend/`**: a Svelte-fluent developer building an organization's site on cairn's
+  seams.
+- **`docs/reference/`**: dry contract prose (signature, parameters, defaults, failure
+  modes) that the admin and extend readers both look up rather than read start to finish.
+
+A step that assumes a terminal fails an editor page. A step that assumes reading source
+code fails an admin page. If a page's steps split across two readers, it is two pages, not
+one page trying to serve both; write each half in its track rather than switching register
+mid-page. `docs/internal/docs-register.md` carries the full track profiles, vocabulary
+contract, and the counterpart question a reviewer grades a page against; read it before
+writing a page a reviewer will grade on register.
+
 ## Proposing a change
 
 Open an issue before starting anything large, so the design question settles before the code
@@ -34,6 +68,31 @@ and `test.yml` carries most of them; derive the list from those files rather tha
 Locally, `npm test` and `npm run check` catch most failures, and each `check:*` target in
 `package.json` runs a gate script from `scripts/checks/`.
 
+### CHANGELOG.md and the legacy-path map
+
+`check:docs` (`scripts/checks/docs-links.mjs`) walks every published docs page plus the root
+project files and fails on a broken relative link or a `#anchor` that resolves to no heading.
+`CHANGELOG.md` is the one exception. It is an immutable record, and a past entry's links point
+at paths that were real when that entry shipped. Pass D's docs reset deleted `docs/guides/`,
+`docs/tutorial/`, and `docs/explanation/`, so without an exception every old CHANGELOG link to
+one of those paths would go dead the moment the pass merged, forever.
+
+The script carries a `LEGACY_PATH_MAP`, a table from each retired path to the page that
+inherited its job, consulted for `CHANGELOG.md` links alone; a dead path written anywhere else
+still fails the gate. Only the path half is translated, since a legacy anchor named a heading
+the fold did not preserve.
+
+The map carries three self-checks, run on every `check:docs` invocation, so it cannot quietly
+rot into a rule that answers for nothing. If a run reports one of these, it is telling you
+which invariant broke, not that the gate is wrong:
+
+- A map value must name a file that exists. If it doesn't, the replacement page moved again;
+  repoint the entry at whatever carries that job now.
+- A map key must NOT name a file that exists. If it does, someone recreated a page at the old
+  path; drop the entry so its links are checked like any other link again.
+- Every map key must still be cited by a real `CHANGELOG.md` link. If one isn't, the entry
+  answers for nothing; delete it rather than carrying a rule nothing reaches.
+
 ## Conventions a change is held to
 
 - Write the failing test first. Tests live under `src/tests/{unit,integration,component}/`,
@@ -44,12 +103,13 @@ Locally, `npm test` and `npm run check` catch most failures, and each `check:*` 
 - Code comments follow [TSDoc](https://tsdoc.org/), enforced by `npm run check:comments` over
   `src/lib`. Write the contract and the why, never a paraphrase of the code. The em dash is
   banned in comments.
-- Pages under `docs/reference/`, `docs/guides/`, `docs/explanation/`, and `docs/tutorial/`
-  follow the
-  [Google Developer Documentation Style Guide](https://developers.google.com/style). Those
-  four directories ship inside the npm package, so a docs edit is a product change, and a
-  public-API change is not done until its reference page matches. `npm run check:reference`
-  enforces the coverage.
+- Pages under `docs/reference/`, `docs/admin/`, and `docs/extend/` follow the
+  [Google Developer Documentation Style Guide](https://developers.google.com/style);
+  `docs/editors/` follows the
+  [Microsoft Writing Style Guide](https://learn.microsoft.com/style-guide/welcome/) instead,
+  because its reader is a non-technical writer. All four directories ship inside the npm
+  package, so a docs edit is a product change, and a public-API change is not done until its
+  reference page matches. `npm run check:reference` enforces the coverage.
 - Commit subjects are imperative, in the
   [Conventional Commits](https://www.conventionalcommits.org/) shape:
   `fix(auth): reject expired tokens`.
@@ -79,13 +139,14 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
 - `examples/showcase/`: a complete consumer site and the library's proving ground. The e2e
   and visual suites run against it.
 - `examples/cairn-theme/`: the optional identity layer for
-  [Waymark](./docs/guides/make-waymark-your-own.md), the starter template, and the skin
+  [Waymark](./docs/extend/design-your-site.md), the starter template, and the skin
   [cairn.pub](https://cairn.pub) runs. The ported example themes (AstroPaper, Foxi, the
   gallery) live in their own repository,
   [glw907/cairn-themes](https://github.com/glw907/cairn-themes).
-- `docs/`: `reference/`, `guides/`, `explanation/`, and `tutorial/` ship in the npm package,
-  along with `docs/README.md`. `internal/` is maintainer-facing, `superpowers/` holds the
-  dated specs and plans as history, and `STATUS.md` is the rolling project status.
+- `docs/`: the four published tracks (`admin/`, `editors/`, `extend/`, `reference/`) ship in
+  the npm package, along with `docs/README.md` and `docs/why-cairn.md`. See "Choosing a docs
+  track" above for what belongs where. `internal/` is maintainer-facing, `superpowers/` holds
+  the dated specs and plans as history, and `STATUS.md` is the rolling project status.
 - `packages/cairn-cms-dev/`: the companion package `@glw907/cairn-cms-dev`, a
   local-development fake backend. Install it as a `devDependency` only, never in production.
 - `migrations/`: the D1 schema migrations for the auth store. They ship with the package.

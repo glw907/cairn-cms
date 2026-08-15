@@ -11,9 +11,9 @@ A Cloudflare Workers build activates `worker` and `browser` together, and the ex
 `worker` first, so the real module reaches the Worker. "Server only" describes where the stub
 lives. A Workers deploy resolves the real module.
 
-Anything proposed here must be a stateless Web Crypto primitive, a token, hash, compare, or
-cookie-name function, a second-audience login flow would otherwise copy by hand. This subpath
-re-exports the token and session-id generators, the token hash, the constant-time compare, and
+This subpath carries the stateless Web Crypto primitives, token, hash, compare, and cookie-name
+functions, a second-audience login flow would otherwise copy by hand. It re-exports the token and
+session-id generators, the token hash, the constant-time compare, and
 the `__Host-` cookie-name primitive the engine's own magic-link guard uses, for a site that
 authenticates a second audience: member magic-link sessions, offer tokens, an OTP flow. A site
 building that flow stops copying the engine's cryptography by hand and reuses the same primitives
@@ -98,8 +98,8 @@ Four properties to design around: it leaks length, since a length mismatch is a 
 non-constant-time reject and length is not a secret; `tokensMatch('', '')` is deliberately
 `false`, so an unset expected value can never match an unset submitted one; it is meant only
 for fixed-length CSPRNG tokens and hex hashes, the shape `generateToken` and `hashToken`
-produce, never for a password or anything an attacker can enumerate; and it compares UTF-16
-encoded bytes, so two distinct strings that differ only in a lone (unpaired) surrogate collapse
+produce, never for a password or anything an attacker can enumerate; and it compares UTF-8
+encoded bytes (`TextEncoder`), so two distinct strings that differ only in a lone (unpaired) surrogate collapse
 to the same replacement-character byte sequence and compare equal. That collapse is harmless for
 a CSPRNG token or a hex digest, since neither can carry a lone surrogate in the first place, which
 is exactly why this precondition is stated rather than guarded against; it stops being harmless

@@ -147,6 +147,12 @@ The `@glw907/cairn-cms/ambient` import augments `App.Locals` with the four field
 reads and writes on every admin request. The `__CAIRN_DEV_BUILD__` constant is the build-time
 half of the dev-backend gate you'll wire into `hooks.server.ts` next.
 
+This declares `App.Locals`, not `App.Platform`. A custom admin route that reads
+`event.platform.env` for a binding of its own, an audit sink's database, say, needs
+`App.Platform` declared too, once you build one; [The canonical admin
+mount](../reference/admin-routes.md#the-guard-and-the-ambient-type) shows the worked block when
+you get there.
+
 ### Declare a concept
 
 Content lives as markdown files with frontmatter, one directory per concept. Create the
@@ -213,7 +219,8 @@ export const cairn = defineAdapter({
   }),
   email: { from: 'cms@example.com' },
   rendering: {
-    render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
+    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
+    renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
     components: registry,
   },
 });
@@ -323,7 +330,19 @@ double-submit CSRF for the admin is the guard's job, so kit's own origin check w
 Both are new keys inside the same `sveltekit({ ... })` call from Milestone 1. `checkOrigin` itself
 is deprecated as of SvelteKit 2.61 in favor of `csrf.trustedOrigins`, but stays supported across
 cairn's tested range. See [Supported toolchain](../reference/supported-toolchain.md#the-checkorigin-deprecation)
-for why cairn still relies on it:
+for why cairn still relies on it.
+
+Name `__CAIRN_DEV_BUILD__` directly at every call site that reads it, as `hooks.server.ts` does
+above, never through a shared exported constant. Vite substitutes the flag as a literal into the
+text of the module that names it, so an inlined check folds away with its dead branch; a constant
+exported from one module and imported into another survives, because the fold happens inside the
+constant's own chunk and never propagates across the module boundary. Route the check through a
+shared constant and the `@glw907/cairn-cms-dev` import ships in your deployed Worker.
+
+Add `ssr: { noExternal: ['@glw907/cairn-cms'] }` to the same config. The package ships its
+`.svelte` files straight from source under its `svelte` export condition, so Vite has to run them
+through your Svelte plugin rather than treat the package as pre-built and skip over it; without
+this line, the admin's components fail to build:
 
 ```ts
 import adapter from '@sveltejs/adapter-cloudflare';
@@ -342,6 +361,7 @@ export default defineConfig(({ command }) => ({
       csrf: { checkOrigin: false },
     }),
   ],
+  ssr: { noExternal: ['@glw907/cairn-cms'] },
 }));
 ```
 
@@ -395,6 +415,39 @@ export const site = indexes.site;
 export const ORIGIN = 'http://localhost:5173';
 ```
 
+Add the [`cairnManifest`](../reference/vite.md) plugin to `vite.config.ts`, alongside the keys
+from Milestone 2. It evaluates your content corpus at build time and fails the build if the
+committed manifest has drifted from the markdown files on disk, the same check `cairn-doctor`
+reads when it reports on your manifest:
+
+<!-- snippet-check-skip: elides the sveltekit() plugin and other vite.config.ts keys from Milestone 2 (defineConfig and sveltekit are already imported there) to focus on adding the manifest plugin -->
+```ts
+import { cairnManifest } from '@glw907/cairn-cms/vite';
+
+export default defineConfig(({ command }) => ({
+  // ...the sveltekit() plugin and other keys from Milestone 2
+  plugins: [
+    sveltekit({
+      /* ... */
+    }),
+    cairnManifest({
+      configModule: '/src/lib/cairn.config.ts',
+      content: { posts: '/src/content/posts/*.md' },
+      manifestPath: '/src/content/.cairn/index.json',
+    }),
+  ],
+  ssr: { noExternal: ['@glw907/cairn-cms'] },
+}));
+```
+
+Regenerate the manifest after any hand-edit to content outside the admin, with the
+[`cairn-manifest`](../reference/cli-cairn-manifest.md) command, which reads the same options off
+the plugin:
+
+```bash
+npx cairn-manifest
+```
+
 Wire the catch-all public route:
 
 ```ts
@@ -436,9 +489,11 @@ export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 </article>
 ```
 
-Restart the dev server, and visit `/2026/08/hello` (posts route by date under `routing: 'feed'`;
-run `svelte-kit sync` or just reload if the route doesn't resolve on the first try). You should
-see your rendered entry.
+Restart the dev server, and visit `/posts/hello`. Every concept defaults to the permalink
+pattern `/<id>/:slug`, except `pages`, which defaults to `/:slug`, and the default `datePrefix`
+of `day` strips the entry filename's `2026-08-14-` stem from the slug. `routing: 'feed'` marks
+the entry dated and feed-eligible. It doesn't shape the URL. Run `svelte-kit sync` or reload if
+the route doesn't resolve on the first try. You should see your rendered entry.
 
 This is the minimum public surface. A real site also wants the raw-markdown twin, the feed, the
 sitemap, and `robots.txt`; [Wire the delivery surface](./wire-the-delivery-surface.md) covers all
@@ -470,6 +525,13 @@ loads the sign-in page (not a crash, and not signed in).
 
 **Objective:** replace the dev backend with a real GitHub App and a real auth database, so a
 save actually commits to a repository and a sign-in actually sends an email.
+
+Sending that email needs a domain zone connected to Cloudflare, since Email Sending onboards on a
+zone, and the `workers.dev` subdomain this walkthrough has used through Milestone 4 has none. Add
+cairn to a SvelteKit app, linked below, covers onboarding it once you own a zone; the moment a
+second person needs their own sign-in rather than just you, Cloudflare's Workers Paid plan, $5 a
+month, is what lets a real email reach them. See [the free-until
+boundary](../admin/before-you-start.md#the-free-until-boundary) for exactly when that bill starts.
 
 This milestone is almost entirely account setup rather than code, and it's exactly the setup
 [Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md) already walks through in full:
@@ -523,7 +585,16 @@ email: { from: 'cms@your-domain.example' },
 }
 ```
 
-**3. `hooks.server.ts` stops mattering**, without needing an edit. On a production build,
+**3. `src/lib/content.ts`'s `ORIGIN` constant stops pointing at localhost.** Milestone 3 set it to
+`'http://localhost:5173'`, and `export const prerender = true` bakes it into every canonical URL,
+the feed, and the sitemap at build time; update it to match the deployed origin below before you
+rebuild:
+
+```ts
+export const ORIGIN = 'https://my-cairn-site.<your-subdomain>.workers.dev';
+```
+
+**4. `hooks.server.ts` stops mattering**, without needing an edit. On a production build,
 `__CAIRN_DEV_BUILD__` folds to `false`, so the `import('@glw907/cairn-cms-dev')` branch never
 runs and the bundle never carries it; `createAuthGuard()` is the only path a deployed request can
 reach.

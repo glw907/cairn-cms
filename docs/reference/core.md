@@ -3,8 +3,8 @@
 The root export is the engine. It carries the adapter and schema contract a site declares, the
 markdown render pipeline, the composed runtime, the content and manifest projections, and the auth
 and GitHub App primitives. A site imports it at `src/lib/cairn.config.ts` and in its admin and
-delivery code. Anything proposed here must be construction surface a `cairn.config.ts` builds
-with, or a read helper a site's own route calls directly; a SvelteKit route factory belongs on
+delivery code. This subpath carries the adapter and schema construction surface plus the read
+helpers a site's own routes call directly; a SvelteKit route factory lives on
 [`/sveltekit`](./sveltekit.md), and an admin Svelte component on [`/components`](./components.md),
 even though a site's adapter config also feeds both.
 
@@ -40,8 +40,9 @@ declare function defineAdapter<const A extends CairnAdapter>(adapter: A): A;
 ```
 
 Declare a site's adapter while preserving each concept's concrete fieldset type for typed reads. The
-return value is the adapter itself, narrowed. The adapter has six groups: `content`, `backend`,
-`email`, `rendering`, `media`, and `editor`.
+return value is the adapter itself, narrowed. The adapter has nine members. `content`, `backend`,
+`email`, and `rendering` are required. `roles`, `access`, `media`, `aiPosture`, and `editor` stay
+optional.
 
 ```ts
 // examples/showcase/src/theme/cairn.config.ts
@@ -108,7 +109,9 @@ Declare one concept while preserving its fieldset type for typed reads, the conc
 to `defineAdapter`. It also validates the concept's URL policy at declaration, so a bad `permalink`,
 `datePrefix`, or `routing` throws at module load rather than defaulting or resolving silently. A
 concept declares its routing with `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand only)
-and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`. When the
+and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`. An omitted
+`permalink` defaults to `/:slug` for a concept named `pages` and `/<concept-id>/:slug` for any
+other; an omitted `datePrefix` defaults to `'day'`. When the
 resolved permalink uses a date token (`:year`, `:month`, or `:day`), the concept must declare a
 field named `date` of type `date`; `defineConcept` and `normalizeConcepts` both throw at
 declaration on a missing or wrong-typed one, and both normalize the declared field to
@@ -117,7 +120,7 @@ declaration on a missing or wrong-typed one, and both normalize the declared fie
 affordances until you declare `singular: 'post'`. Declare `singular` on every concept.
 
 The concept key `fragments` reserves reusable content: declare it to include one entry's body
-inside another with [the `::include` directive](./authoring-syntax.md#include-a-fragment). It
+inside another with [the `::include` directive](../editors/write-in-the-editor.md#fragments). It
 must use `routing: 'embedded'`, and `normalizeConcepts` throws otherwise. The include directive
 resolves against a non-routable concept, and an embedded entry publishing its own live page would
 make the same content reachable two ways.
@@ -230,6 +233,31 @@ export const cairn = defineAdapter({
 </svelte:head>
 ```
 
+#### `nav` (adapter `editor` member)
+
+```ts
+interface NavMenuConfig {
+  configPath: string;
+  menuName: string;
+  label: string;
+  maxDepth?: number;
+}
+```
+
+A site turns on the built-in nav tree editor by declaring `editor.nav`; omitting it leaves
+`/admin/nav` a 404. `configPath` names the site-config YAML file the nav editor reads and writes
+(a repo-relative path, for example `'src/lib/site.config.yaml'`). `menuName` is the key inside
+that file's `menus` map the editor manages (for example `'primary'`). `label` is the sidebar
+label for the nav-editor screen. `maxDepth` (default `2`) bounds how deep the editor lets a site
+nest menu items.
+
+<!-- snippet-check-skip: illustrates the adapter editor member's nav value in isolation -->
+```ts
+editor: {
+  nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation' },
+},
+```
+
 #### `media` (adapter member)
 
 ```ts
@@ -271,7 +299,7 @@ Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or
 `media:<hash>`), the same shape as the `cairn:` link scheme. The hash is the content identity and the
 slug is cosmetic, so a rename never breaks a reference. At render, the handle rewrites to a delivery
 URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. See the
-[media storage explanation](../explanation/media-storage.md) for the full model. This grew from a
+[media storage explanation](../extend/data-tiers.md) for the full model. This grew from a
 reserved seam, so it is additive: a site that declares no `media` is unchanged, and the author-facing
 upload surface lands in a later phase on this substrate.
 
@@ -304,8 +332,8 @@ declare function defineComponent<const D extends ComponentDef>(def: D): D & { at
 Declare one component while building its attribute validator from the `fields.*` descriptors, the
 component-level companion to `defineConcept`. A directive attribute is one flat string, so the
 attributes are a `fields.*` record of scalar leaves: `text`, `textarea`, `number`, `select`, `url`,
-`email`, `date`, `datetime`, `boolean`, and `icon`. An `object`, `array`, `reference`, or `image`
-attribute throws at declaration. It validates at declaration like `defineConcept`, so a bad type or a
+`email`, `date`, `datetime`, `boolean`, and `icon`. An `object`, `array`, `multiselect`,
+`reference`, or `image` attribute throws at declaration. It validates at declaration like `defineConcept`, so a bad type or a
 malformed pattern fails at module load rather than at first insert. The built `attributeSchema` is a
 `Fieldset`, the engine's own component-grammar validator runs it, so a component attribute and a
 concept field validate through identical code. A cross-field attribute rule lives in the co-bundled
@@ -660,23 +688,21 @@ const { frontmatter, body } = parseMarkdown(fileText);
 
 Stability tier: Extension API.
 
-These build hast inside a component's `build` function, so a site arranges markup without walking the
-tree. The showcase `alert` component composes them.
+`glyph` builds an inline SVG glyph from the site's icon set, and lives on this root barrel.
 
 ```ts
 declare function glyph(name: string, icons: IconSet): Element;
-declare function iconSpan(glyphEl: Element, role?: string): Element;
-declare function cardShell(classes: string[], body: ElementContent[]): Element;
-declare function headRow(title: ElementContent[], icon?: Element): Element;
 ```
 
-`glyph` builds an inline SVG glyph from the site's icon set. `iconSpan` wraps a glyph in an
-`ec-icon` span. `cardShell` builds a `<section>` wrapper with a card body. `headRow` builds a
-title-plus-optional-icon head row.
+The rest of the hast-building toolkit a component's `build` function reaches for, `iconSpan`,
+`cardShell`, `headRow`, `strAttr`, and `isElement`, lives on the [`/render`](./render.md) subpath,
+not here. The showcase `alert` component composes `glyph` with those helpers:
 
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
 // examples/showcase/src/theme/cairn.config.ts
+import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
+
 const makeIcon = (name, role) => iconSpan(glyph(name, icons), role);
 build: (ctx) =>
   cardShell(['alert'], [
@@ -924,7 +950,7 @@ A role vocabulary says who has which name; the access map says what each name ma
 enforcement and visibility point reads: the guard's [`requireAccess`](./sveltekit.md#requireaccess)
 helper, the engine's own route gates, and the nav resolver. Capability is always the floor, and
 the map only narrows it, never widens it, so a site that declares no map sees no behavior change.
-See [Restrict admin access by role](../guides/restrict-admin-access.md) for the worked guide.
+See [Restrict admin access by role](../extend/restrict-admin-access.md) for the worked guide.
 
 #### `defineAccess`
 
@@ -1013,10 +1039,10 @@ function signatures above reference these.
 | `FileChange` | Extension API | `interface FileChange` | One path change in a commit: write `content`, or delete the path when `content` is null. |
 | `BackendCommit` | Extension API | `interface BackendCommit { ref: string; author: { name: string; email: string }; date: string }` | One entry in `Backend.listCommits`'s answer, newest first: the commit's full sha (`ref`), the git commit-author trailer (`author`, never the matched GitHub account, which is null for a magic-link editor), and `date` (ISO 8601, when the commit landed on the read ref). A file's log can hold commits made outside cairn, so `author` renders whoever git recorded, not necessarily a cairn editor. |
 | `SenderConfig` | Extension API | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
-| `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
+| `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. See the preceding [`nav` adapter `editor` member](#nav-adapter-editor-member). |
 | `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
-| `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named Cloudflare Images variant presets. Omitting it leaves media off. See the `assets` adapter member above. |
-| `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, named by `CairnAdapter.aiPosture` and read by [`buildRobots`](delivery-data.md#buildrobots). Unset states nothing. Declining is a request that named crawlers say they honor, not enforcement. See [Choose an AI posture](../guides/choose-an-ai-posture.md) for what each direction does and doesn't buy. |
+| `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named Cloudflare Images variant presets. Omitting it leaves media off. See the preceding [`media` adapter member](#media-adapter-member). |
+| `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, named by `CairnAdapter.aiPosture` and read by [`buildRobots`](delivery-data.md#buildrobots). Unset states nothing. Declining is a request that named crawlers say they honor, not enforcement. See [Choose an AI posture](../extend/choose-an-ai-posture.md) for what each direction does and doesn't buy. |
 | `CairnRuntime` | Extension API | `interface CairnRuntime` | The composed runtime the engine serves from. |
 | `ComposeInput` | Extension API | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig. |
 | `NamedField` | Extension API | `type NamedField` | A field descriptor with its frontmatter key re-attached as `name`, the normalized shape `ConceptDescriptor.fields` carries. |

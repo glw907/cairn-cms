@@ -89,23 +89,13 @@ lands the grammar-ladder doctrine the harvest's pattern argued for, in
 check, prose alone being the demonstrated failure mode. New findings start fresh below this
 line.
 
-- **[extender, admin] The setup docs were walked cold from five vantages, and the findings are a
-  Pass D work list, not a doc-by-doc polish.** The record, with every finding evidenced by
-  `file:line` and ranked by how many independent walks raised it, is
-  [`2026-08-unagented-setup-baseline.md`](./record/2026-08-unagented-setup-baseline.md); read it there
-  rather than restating it here. Four classes need a decision Pass D cannot duck. **Prerequisites
-  arrive last**: a domain, a Cloudflare zone, `wrangler login`, a GitHub account with owner access
-  on the target repo, and the Workers Paid plan for arbitrary-recipient email are each stated at
-  the step that needs them, so a reader meets an unbudgeted decision after nine milestones of
-  work. **The tutorial has drifted from its own toolchain**: current `sv create` sets the adapter
-  in `vite.config.ts`, so the `svelte.config.js` edit at milestone 1 is a no-op that
-  `adapter-auto` silently overrides, and the same drift breaks doctor's `config.csrf-disable`
-  text heuristic. Two walkers reproduced this live. **Troubleshooting is scoped to live sites**,
-  which `guides/README.md:72` states outright, so the entire setup phase has no recovery surface;
-  every symptom in the table keys on a runtime log event. **The front door buries the first
-  command** behind five sections of positioning, and `docs/README.md:10` tells the reader to keep
-  `examples/showcase` open, which a reader who arrived through the README's own quickstart does
-  not have. Smaller items in the record: `base64 -w0` is GNU-only and fails on macOS, `.dev.vars`
-  is missing from the scaffold's `.gitignore`, the GitHub App guide's three visual aids are
-  unfilled `<!-- SCREENSHOT: -->` comments, and `PUBLIC_ORIGIN` disagrees with `ORIGIN` on which
-  localhost port is meant.
+CLOSED 2026-08-14 by Pass D. The setup-walk entry (five blind vantages, four classes of gap:
+prerequisites arriving late, the tutorial's toolchain drift, troubleshooting scoped only to live
+sites, the front door burying the first command) is what the docs rebuild's admin track,
+front-door task, and Task 13 production gate were built to answer. The baseline record stays at
+[`2026-08-unagented-setup-baseline.md`](./record/2026-08-unagented-setup-baseline.md) as the
+evidence trail; the shipped disposition is `docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`'s
+post-mortem and `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`'s
+dispositions. One item from the smaller list is code, not docs, and was already tracked
+separately before this closure: `.dev.vars` missing from the scaffold's `.gitignore` is the
+missing-`.gitignore` defect `docs/STATUS.md` holds as owed before release one.

@@ -46,6 +46,11 @@ refactor can't flip it open by accident.
 `X-Forwarded-For`: a request can set that header to anything, so passing it through would let a
 bot supply its own IP to siteverify.
 
+`secret` is the second parameter, not the third. Both `token` and `secret` are plain strings, so
+swapping them, easy to do when porting from a hand-rolled `(token, ip, secret)` shape, still
+typechecks and compiles; it just fails every submission closed with no signal beyond the
+`turnstile.verify_failed` log record this function already writes.
+
 Cloudflare documents a solved token as single-use and valid for a roughly 300-second window.
 Siteverify is what enforces that, not this function, and it's a property of a remote, eventually
 consistent service that this engine neither adds to nor verifies. A site gating a privileged

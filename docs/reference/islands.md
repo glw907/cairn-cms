@@ -4,10 +4,9 @@ This subpath holds the client runtime for content islands: the seam that mounts 
 components over the static fallbacks the render pipeline emits. cairn is Svelte-only by design, so the
 runtime mounts with Svelte's own `mount()` and `unmount()` directly, with no framework abstraction. A
 site imports it dynamically and only when it registers at least one island, so a static site never
-ships the runtime. Anything proposed here must be part of the client-side mount/teardown mechanism
-itself; an admin screen component belongs on [`/components`](./components.md), and the render
-pipeline's own hast builders on [`/render`](./render.md), even though both feed what this runtime
-eventually mounts.
+ships the runtime. This subpath carries the client-side mount/teardown mechanism itself; an admin
+screen component lives on [`/components`](./components.md), and the render pipeline's own hast
+builders on [`/render`](./render.md), even though both feed what this runtime eventually mounts.
 
 ```ts
 import { hydrateIslands } from '@glw907/cairn-cms/islands';
@@ -151,4 +150,4 @@ Verify a live island on the deployed page, not in the preview.
 
 - [`hydrate` on the components reference](./components.md#hydrate-and-the-island-boundary): the directive-side declaration.
 - [`rendering.islands` on the core reference](./core.md#renderingislands-adapter-member): the adapter registration and the consistency check.
-- [Add an island](../guides/add-an-island.md): the end-to-end recipe.
+- [Add an island](../extend/add-an-island.md): the end-to-end recipe.

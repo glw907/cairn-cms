@@ -41,6 +41,13 @@ and choose how it sits on the page (Measure, Center, Wide, or Full), covered in
 If the upload doesn't go through, see
 [When something goes wrong](./when-something-goes-wrong.md#an-image-wont-add).
 
+## Setting an entry's lead picture
+
+Open **Details** and set the entry's hero image to give the entry a lead picture, shown
+at the top of the page. It's also what shows up when someone shares the entry on a
+social site, so its own dialog previews the shape it gets cropped to there. It gets the
+same alt-text-or-decorative choice and a caption as a picture in your text.
+
 ---
 
 *Checked against the editor on 2026-08-14.*

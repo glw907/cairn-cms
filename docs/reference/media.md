@@ -3,21 +3,21 @@
 This subpath holds the node-safe media surface a site actually reaches into: the config normalizer,
 reading the committed manifest, the `media:` reference codec, and the render-time resolver. All of
 it is pure projection. Nothing here pulls `@sveltejs/kit` or `@cloudflare/workers-types` into the
-module graph, so a plain-Node tool, a Vite build step, or a site's render path can import it.
-Anything proposed here must be node-safe pure projection over the media surface. The
-R2-touching pieces (the object store and the delivery bucket seam), the `requireBucket` helper, and
-the `createMediaRoute` delivery factory live on [`/sveltekit`](./sveltekit.md) instead, off this
-surface, so the public type for `/media` names no kit or workers-types type. The manifest CRUD, the
-content-hash naming helpers, and the Cloudflare Images transform-URL builders back the engine's own
-upload and preview pipeline; every real caller reaches them by relative import, so they stay
-unexported internals rather than public surface.
+module graph, so a plain-Node tool, a Vite build step, or a site's render path can import it. This
+subpath carries node-safe pure projection over the media surface. The R2-touching pieces (the
+object store and the delivery bucket seam), the `requireBucket` helper, and the `createMediaRoute`
+delivery factory live on [`/sveltekit`](./sveltekit.md) instead, off this surface, so the public
+type for `/media` names no kit or workers-types type. The manifest CRUD, the content-hash naming
+helpers, and the Cloudflare Images transform-URL builders back the engine's own upload and preview
+pipeline; every real caller reaches them by relative import, so they stay unexported internals
+rather than public surface.
 
 ```ts
 import { buildMediaResolver, normalizeAssets } from '@glw907/cairn-cms/media';
 ```
 
 A site reaches into this subpath to back its public render path with a media resolver: it reads the
-committed `media.json`, normalizes its adapter `assets` block, and threads the resolver through
+committed `media.json`, normalizes the adapter's [`media` member](./core.md#media-adapter-member), and threads the resolver through
 `render`, so a `media:` reference in published content rewrites to its delivery URL. The TypeScript
 types in `src/lib/media` and `src/lib/render/resolve-media.ts` are the source of truth, and the
 export-coverage gate checks every name here against them.

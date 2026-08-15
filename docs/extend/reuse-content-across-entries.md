@@ -40,12 +40,19 @@ entry, and an embedded entry that also published its own live page would make th
 reachable two different ways.
 
 `fragments` needs a glob at [the content index](./wire-the-delivery-surface.md#the-content-index)
-the same as any other declared concept. `createSiteIndexes` throws at build time otherwise:
+the same as any other declared concept, added to the same `src/lib/content.ts` file that already
+declares `postsRaw`. `createSiteIndexes` throws at build time otherwise:
 
 ```ts
+// src/lib/content.ts
 import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
 import { cairn, siteConfig } from './cairn.config.js';
-import { postsRaw } from './content.js';
+
+const postsRaw = import.meta.glob('/src/content/posts/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
 
 const fragmentsRaw = import.meta.glob('/src/content/fragments/*.md', {
   query: '?raw',
@@ -55,6 +62,11 @@ const fragmentsRaw = import.meta.glob('/src/content/fragments/*.md', {
 
 export const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, fragments: fragmentsRaw });
 ```
+
+If your site also builds the committed content manifest with the [`cairnManifest`](../reference/vite.md)
+Vite plugin, add `fragments` to that plugin's own `content` option in `vite.config.ts` too; a
+concept missing there fails silently rather than throwing, so an entry that includes a fragment
+would find it missing from the manifest with no build error to explain why.
 
 Fragments need no fields of their own beyond a title; the admin gives every concept one for free.
 Write one like any other entry:
@@ -91,6 +103,12 @@ resolver is `FragmentResolve`, the type `SiteRender`'s `resolveFragment` option 
 supplies one backed by [`buildFragmentResolver`](../reference/delivery-data.md#buildfragmentresolver),
 and a dangling `::include` (an id naming no real fragment) fails the build the same way a
 dangling `cairn:` link does.
+
+Your own adapter's `rendering.render` function has to forward that resolver, the same way it
+already forwards `resolve` and `resolveMedia`: `({ body, resolve, resolveMedia, resolveFragment })
+=> renderMarkdown(body, { resolve, resolveMedia, resolveFragment })`. Drop `resolveFragment` from
+that destructure and forward, and `::include` directives never resolve; they publish as literal
+directive text instead of the fragment's content, with no error to flag it.
 
 ## The one nesting rule
 

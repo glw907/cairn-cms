@@ -34,14 +34,15 @@ export function checkPackageFiles(filePaths) {
   return { ok: true, count: migrations.length };
 }
 
-// The four published arm indexes plus the docs index; the tutorial's index is its single lesson
-// page, since docs/tutorial carries no README.md of its own.
+// The four published arm indexes plus the two front doors. `docs/why-cairn.md` is a front door
+// with no arm of its own, so it is named here as a file rather than covered by a prefix below.
 const DOCS_INDEX_PATHS = [
   'docs/README.md',
+  'docs/why-cairn.md',
   'docs/reference/README.md',
-  'docs/guides/README.md',
-  'docs/explanation/README.md',
-  'docs/tutorial/build-your-first-cairn-site.md'
+  'docs/admin/README.md',
+  'docs/editors/README.md',
+  'docs/extend/README.md'
 ];
 
 // The published docs allowlist. A registry consumer's site build reads the published arms only,
@@ -49,11 +50,14 @@ const DOCS_INDEX_PATHS = [
 // tree nobody has named yet) fails by construction instead of by an ever-growing denylist.
 const DOCS_ALLOWED_ARM_PREFIXES = [
   'docs/reference/',
-  'docs/guides/',
-  'docs/explanation/',
-  'docs/tutorial/'
+  'docs/admin/',
+  'docs/editors/',
+  'docs/extend/'
 ];
-const DOCS_INDEX_PATH = 'docs/README.md';
+
+// The docs/ paths that ship as bare files rather than inside an allowed arm. Both are front doors:
+// the index every track routes from, and the evaluator's page it links first.
+const DOCS_ROOT_FILES = ['docs/README.md', 'docs/why-cairn.md'];
 
 /**
  * Check a packed file list for the published docs arms, present, and every other docs/ path,
@@ -73,7 +77,7 @@ export function checkDocsPacked(filePaths) {
   const leaked = filePaths.filter(
     (path) =>
       path.startsWith('docs/') &&
-      path !== DOCS_INDEX_PATH &&
+      !DOCS_ROOT_FILES.includes(path) &&
       !DOCS_ALLOWED_ARM_PREFIXES.some((prefix) => path.startsWith(prefix))
   );
   if (leaked.length > 0) {

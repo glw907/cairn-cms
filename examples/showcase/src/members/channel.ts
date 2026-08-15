@@ -1,5 +1,5 @@
 // cairn-cms: the showcase's members login channel, the worked exemplar for
-// docs/guides/add-a-login-channel.md. Two named divergences from the guide, stated here so
+// docs/extend/add-a-second-audience.md. Two named divergences from that page, stated here so
 // "living exemplar" does not overclaim: the module lives under src/members/ rather than
 // src/lib/server/ (the showcase keeps no src/lib), and `challenge` is `insecureTestChallenge`
 // rather than a real Turnstile verifier, since CI cannot reach challenges.cloudflare.com (see
@@ -30,10 +30,9 @@ export const MEMBER_ROSTER: ReadonlyMap<string, string> = new Map([
  * A stand-in `challenge` hook, named to be unmistakable about what it is not: CI has no route to
  * challenges.cloudflare.com, so the showcase cannot ship the real Turnstile verifier
  * `createAuthChannel` expects for this field. It checks only that the login form carries the
- * expected static token, never a real proof of humanity. A real site wires Turnstile here
- * instead, following the guide's "Wire Turnstile as the challenge hook" section
- * (docs/guides/add-a-login-channel.md); this function exists only so the fixture satisfies the
- * required `challenge` config field.
+ * expected static token, never a real proof of humanity. A real site wires `verifyTurnstile` into
+ * this same `challenge` field instead (docs/reference/auth-channel.md); this function exists only
+ * so the fixture satisfies the required `challenge` config field.
  */
 export async function insecureTestChallenge<Env>(
   _event: AuthChannelEvent<Env>,

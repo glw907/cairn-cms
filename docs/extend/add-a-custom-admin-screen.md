@@ -43,6 +43,12 @@ export const clubAction = createSectionAction<Env, D1Database>({
 });
 ```
 
+`Env` here is a type you declare yourself, not one cairn ships: it's your site's
+`App.Platform['env']`, so `CLUB_DB` names whatever `d1_databases` binding your own
+`wrangler.jsonc` gives this section. [`createSectionAction`](../reference/sveltekit.md#createsectionaction)
+shows the worked shape (a standalone `SectionEnv` interface, annotated explicitly so the resolver
+typechecks either way) if you haven't declared one yet.
+
 ```ts
 // src/routes/admin/club/events/+page.server.ts
 import { requireAccess } from '@glw907/cairn-cms/sveltekit';
@@ -131,7 +137,8 @@ of a visually adjacent guess at it.
 <!-- snippet-check-skip: reads App.Platform (env, ctx.waitUntil), which only the site's own app.d.ts declares -->
 ```ts
 // src/hooks.server.ts
-import { createD1AuditSink } from '@glw907/cairn-cms/sveltekit';
+import { sequence } from '@sveltejs/kit/hooks';
+import { createAuthGuard, createD1AuditSink } from '@glw907/cairn-cms/sveltekit';
 import type { Handle } from '@sveltejs/kit';
 
 const wireAuditSink: Handle = ({ event, resolve }) => {
@@ -142,8 +149,15 @@ const wireAuditSink: Handle = ({ event, resolve }) => {
   return resolve(event);
 };
 
-export const handle = wireAuditSink;
+export const handle = sequence(createAuthGuard(), wireAuditSink);
 ```
+
+`hooks.server.ts` holds exactly one `handle` export, so this composes with whatever your site
+already runs there rather than replacing it: `createAuthGuard()` alone if you followed [Build a
+site by hand](./build-a-site-by-hand.md)'s production branch, `createAuthGuard({ roles, access })`
+if you followed [Restrict admin access by role](./restrict-admin-access.md), or the dev-backend
+branch if you're still on that milestone. `sequence` runs each `Handle` in order; put
+`createAuthGuard` first, since `wireAuditSink` only needs `resolve`, not anything the guard sets.
 
 The sink is fail-open: it returns before the insert settles, so a persist failure never fails
 the action it's auditing, and a rejected write logs rather than disappearing. `createSectionAction`

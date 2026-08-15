@@ -1,5 +1,5 @@
 // cairn-cms: the doc-snippet typecheck gate. It extracts every fenced ```ts, ```typescript, and
-// ```svelte code block from docs/tutorial, docs/guides, and docs/reference, and typechecks each
+// ```svelte code block from the published docs directories (DOC_DIRS below), and typechecks each
 // one against the BUILT package (run `npm run package` first) through the TypeScript compiler API.
 // A page that teaches a retired export or a stale call signature fails the gate; the RED output
 // names the doc file, the line, and the compiler's own message.
@@ -13,8 +13,8 @@
 // than fighting the compiler to stand it up alone.
 //
 // A doc snippet is not a standalone program: it imports fictional site-local modules
-// ($lib/cairn.config.js, ./$types, and the like) that only exist in the tutorial's imagined
-// project, never in this repo. Resolving those for real is not this gate's job, so before
+// ($lib/cairn.config.js, ./$types, and the like) that only exist in the consuming site a page
+// imagines, never in this repo. Resolving those for real is not this gate's job, so before
 // typechecking, every import whose specifier is NOT `@glw907/cairn-cms` (or a subpath) and does
 // not resolve to a real dependency of this package is rewritten to an untyped `any` stand-in
 // (`rewriteLocalImports`). This keeps the gate's teeth on the one thing it exists to catch: a
@@ -44,7 +44,7 @@ import { walk } from '../walk-files.mjs';
 import { CONFIG, runIfMain } from './reference-coverage.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-const DOC_DIRS = ['docs/tutorial', 'docs/guides', 'docs/reference', 'docs/extend', 'docs/admin', 'docs/editors'];
+const DOC_DIRS = ['docs/reference', 'docs/extend', 'docs/admin', 'docs/editors'];
 const PACKAGE_NAME = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).name;
 
 const SKIP_RE = /^<!--\s*snippet-check-skip:\s*(.+?)\s*-->$/;
@@ -61,7 +61,7 @@ export function isPackageSpecifier(spec) {
 // The package itself always does. A relative specifier or a SvelteKit alias ($lib, $app, $env,
 // ...) never does, since a doc snippet's local paths are fictional, not real filesystem targets,
 // even when a same-named file happens to exist. Any other bare specifier is real exactly when
-// it resolves as an actual dependency of this package (so a devDependency the tutorial mentions
+// it resolves as an actual dependency of this package (so a devDependency a doc page mentions
 // but this repo does not install, like a site's own `@tailwindcss/vite`, stubs automatically
 // with no allowlist to maintain).
 /** @param {string} spec */
@@ -284,7 +284,7 @@ function isBarePropsShape(stmt) {
   return (ts.isObjectBindingPattern(decl.name) || ts.isArrayBindingPattern(decl.name)) && decl.initializer === undefined;
 }
 
-/** Every doc file under the three checked directories, repo-relative, sorted. */
+/** Every doc file under the four checked directories, repo-relative, sorted. */
 export function docFiles() {
   return DOC_DIRS.flatMap((dir) => walk(join(ROOT, dir), (name) => name.endsWith('.md')))
     .map((p) => relative(ROOT, p))

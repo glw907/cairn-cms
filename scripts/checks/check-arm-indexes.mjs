@@ -4,10 +4,10 @@
 // link whose resolved target is that file. It does no prose analysis and parses no numeric claims;
 // a page that exists on disk but is not reachable from its arm's index is the one thing this checks.
 //
-// Three of the four published arms keep their index inside the directory (`docs/reference/README.md`,
-// and so on). The tutorial arm has no README of its own: its index is the front door,
-// `docs/README.md`, which links both tutorial pages. That mapping is declared explicitly below, by
-// design, not a gap.
+// All four published arms keep their index inside the directory (`docs/reference/README.md`, and so
+// on). `docs/why-cairn.md` is the exception the arm shape cannot express: a published page with no
+// directory of its own, reachable only from the front door. FRONT_DOOR_PAGES covers it, so a front
+// door that stops linking the evaluator's page fails the same way an unindexed arm page does.
 //
 // `docs/internal` is a fifth arm, contributor-zone rather than published, and walks non-recursively:
 // only its own top-level `.md` files are checked against `docs/internal/README.md`. It carries dated
@@ -22,18 +22,21 @@ import { linksIn, isExternal } from './docs-links.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-// Each arm's directory and the index file that must link every page in it. The tutorial arm's
-// index lives outside its own directory (`docs/README.md`, the front door), because the tutorial
-// arm has no README of its own; this is the load-bearing mapping the gate encodes on purpose.
-// `recursive` defaults to true; an arm sets it false to check only its own top-level `.md` files,
-// skipping every subdirectory (`docs/internal`'s `record/`, `design/`, `feedback/`, `history/`,
-// `probes/`).
+// Each arm's directory and the index file that must link every page in it. `recursive` defaults to
+// true; an arm sets it false to check only its own top-level `.md` files, skipping every
+// subdirectory (`docs/internal`'s `record/`, `design/`, `feedback/`, `history/`, `probes/`).
 const ARMS = [
   { dir: 'docs/reference', index: 'docs/reference/README.md' },
-  { dir: 'docs/guides', index: 'docs/guides/README.md' },
-  { dir: 'docs/explanation', index: 'docs/explanation/README.md' },
-  { dir: 'docs/tutorial', index: 'docs/README.md' },
+  { dir: 'docs/admin', index: 'docs/admin/README.md' },
+  { dir: 'docs/editors', index: 'docs/editors/README.md' },
+  { dir: 'docs/extend', index: 'docs/extend/README.md' },
   { dir: 'docs/internal', index: 'docs/internal/README.md', recursive: false },
+];
+
+// Published pages that belong to no arm directory, each with the index that must link it. A bare
+// file cannot be found by walking an arm, so it is named here or it is checked by nothing.
+const FRONT_DOOR_PAGES = [
+  { page: 'docs/why-cairn.md', index: 'docs/README.md' },
 ];
 
 // Pages deliberately left unindexed (a draft skeleton, a page mid-retirement). Keyed by the
@@ -106,6 +109,19 @@ export function findUnindexedPages(root = ROOT) {
       const page = relative(root, pageAbs);
       if (ALLOWLIST.has(page)) continue;
       if (!targets.has(pageAbs)) missing.push({ arm: dir, page, index });
+    }
+  }
+  for (const { page, index } of FRONT_DOOR_PAGES) {
+    const pageAbs = join(root, page);
+    const indexAbs = join(root, index);
+    if (!existsSync(pageAbs)) {
+      throw new Error(`check-arm-indexes: front-door page not found: ${page}`);
+    }
+    if (!existsSync(indexAbs)) {
+      throw new Error(`check-arm-indexes: front-door index not found: ${index}`);
+    }
+    if (!linkTargetsOf(indexAbs).has(pageAbs)) {
+      missing.push({ arm: 'front door', page, index });
     }
   }
   return missing;

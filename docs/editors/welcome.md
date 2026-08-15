@@ -6,14 +6,16 @@ of your own, or anything installed. You sign in with your email address and a li
 
 ## Signing in
 
-1. Open your site's sign-in page. Enter the email address your site owner added for you,
-   then select **Send sign-in link**.
+1. Go to your site's address followed by `/admin`. For example, if your site is
+   `yoursite.com`, go to `yoursite.com/admin`. Enter the email address your site owner
+   added for you, then select **Send sign-in link**.
 2. Check your inbox. A message arrives with a one-time link. Open it within 10 minutes, or
    it expires and you'll need to request a new one.
 3. The link opens a page that asks you to confirm. Select **Confirm sign-in**. This extra
    step exists so opening the email itself can't sign you in by accident.
 
-You'll land in the editor, signed in.
+You'll land in the editor, signed in. Bookmark `yoursite.com/admin` (with your own site's
+address) so you can come straight back next time without waiting on another email.
 
 **You'll see the same "check your email" message either way, whether your site owner has
 added your address yet or not.** That's deliberate: it keeps anyone who tries a random

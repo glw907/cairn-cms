@@ -28,7 +28,9 @@ minor can break a documented seam, so an upgrade is never a blind bump.
 3. **Make the changes each crossed `Consumers must:` line names.** Most are a rename, a type
    widening, or a config addition; a few are structural. Do them in the order the changelog states
    them when a version's own list is ordered, since a later rename sometimes depends on an earlier
-   one already compiling.
+   one already compiling. If a version shipped a D1 migration, apply it by hand with `wrangler d1
+   migrations apply`: a Cloudflare Workers Builds deploy on push has no equivalent step for a
+   database schema change, so nothing runs a new migration for you.
 
 4. **Run the doctor:**
 

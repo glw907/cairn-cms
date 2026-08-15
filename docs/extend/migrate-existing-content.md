@@ -70,6 +70,17 @@ right on the first write: a rename after import is a normal editor action once t
 in cairn (and it correctly rewrites every inbound reference), but nothing rewrites an external
 link into your old site from anywhere on the internet.
 
+Match the prefix's precision to the concept's `datePrefix` exactly, not just its shape. cairn
+strips only a prefix at the declared granularity: a file named `2024-03-15-my-trip.md` under
+`datePrefix: 'month'` strips just `2024-03-`, leaving the day digits in the slug as
+`15-my-trip`. This never throws or fails a build; it just leaks a stray number into every affected
+URL, so check the concept's `datePrefix` before you write the migration script, not after.
+
+Keep the filename itself lowercase letters, digits, and single internal hyphens. An id outside
+that shape still serves its own page, but it's invisible to a `cairn:` link, and to the rename and
+delete guards that protect against orphaning it, since both treat that id as unparseable rather
+than as a target.
+
 ## Write the new files
 
 `serializeMarkdown`, the write-side counterpart to `parseMarkdown`, is an internal save-path
@@ -89,6 +100,16 @@ await writeFile('src/content/posts/2024-01-15-my-post.md', content);
 
 Any YAML-dumping library works; cairn doesn't care which one produced the file, only that the
 result is a well-formed frontmatter block cairn's own `parseMarkdown` can read back.
+
+## Bringing in media
+
+cairn has no bulk media importer either. An old image URL left as-is in a migrated body renders
+unchanged; the render pipeline passes through anything that isn't a `media:` token or a recognized
+image source rather than rejecting it, so migrated content keeps working against your old image
+hosting with no extra step. Adopting a picture into cairn's own media library, so it gets a
+`media:` token, content-addressed storage, and the library's alt-text and where-used tooling, is
+optional and one asset at a time through the ordinary upload path; there's no path that imports a
+whole folder of old images in one pass.
 
 ## Validate
 

@@ -7,6 +7,8 @@ import {
   findBrokenLinks,
   hasUnreleasedHeading,
   unreleasedParityMismatch,
+  legacyTarget,
+  legacyMapProblems,
 } from '../../../scripts/checks/docs-links.mjs';
 import { resolve } from 'node:path';
 import { readFileSync } from 'node:fs';
@@ -91,22 +93,89 @@ describe('unreleasedParityMismatch', () => {
   it('fails when only the CHANGELOG carries an Unreleased heading', () => {
     const mismatch = unreleasedParityMismatch('## Unreleased\n', '## 0.91.0: a recipe\n');
     expect(mismatch).toMatch(/CHANGELOG\.md/);
-    expect(mismatch).toMatch(/upgrade-cairn\.md/);
+    expect(mismatch).toMatch(/migration-notes\.md/);
   });
 
-  it('fails when only the upgrade guide carries an Unreleased heading', () => {
+  it('fails when only the migration notes carry an Unreleased heading', () => {
     const mismatch = unreleasedParityMismatch('## 0.91.0\n', '## Unreleased: a recipe\n');
-    expect(mismatch).toMatch(/upgrade-cairn\.md/);
+    expect(mismatch).toMatch(/migration-notes\.md/);
     expect(mismatch).toMatch(/CHANGELOG\.md/);
   });
 
   // The 0.91.0 cut shipped exactly the drift this gate now catches: CHANGELOG.md's window was
-  // renamed and the upgrade guide's was not. Read the real, current files, since the whole point of
+  // renamed and the paired page's was not. Read the real, current files, since the whole point of
   // this gate is proving today's tree is in sync, not a synthetic pair of strings.
-  it('agrees on the real, current CHANGELOG.md and docs/guides/upgrade-cairn.md', () => {
+  it('agrees on the real, current CHANGELOG.md and docs/extend/migration-notes.md', () => {
     const root = resolve(__dirname, '../../..');
     const changelog = readFileSync(resolve(root, 'CHANGELOG.md'), 'utf8');
-    const upgradeGuide = readFileSync(resolve(root, 'docs/guides/upgrade-cairn.md'), 'utf8');
-    expect(unreleasedParityMismatch(changelog, upgradeGuide)).toBeNull();
+    const migrationNotes = readFileSync(resolve(root, 'docs/extend/migration-notes.md'), 'utf8');
+    expect(unreleasedParityMismatch(changelog, migrationNotes)).toBeNull();
+  });
+});
+
+// Pass D deleted the guides, tutorial, and explanation arms. CHANGELOG.md is immutable, so its
+// historical links keep the old paths and the gate translates them; every other file's links stay
+// checked against the tree. These pin both halves, and the map's own anti-rot invariants.
+describe('the legacy CHANGELOG path map', () => {
+  const root = resolve(__dirname, '../../..');
+
+  it('resolves a retired path written in CHANGELOG.md', () => {
+    expect(legacyTarget('CHANGELOG.md', 'docs/guides/add-an-island.md')).toBe(
+      'docs/extend/add-an-island.md'
+    );
+  });
+
+  it('resolves the same path written with a leading ./ or carrying an anchor', () => {
+    expect(legacyTarget('CHANGELOG.md', './docs/guides/add-an-island.md')).toBe(
+      'docs/extend/add-an-island.md'
+    );
+    expect(legacyTarget('CHANGELOG.md', 'docs/explanation/security-model.md#who-may-edit')).toBe(
+      'docs/extend/security-model.md'
+    );
+  });
+
+  it('refuses the same retired path written in any other file', () => {
+    expect(legacyTarget('ROADMAP.md', 'docs/guides/add-an-island.md')).toBeNull();
+    expect(legacyTarget('docs/reference/core.md', 'docs/guides/add-an-island.md')).toBeNull();
+  });
+
+  it('leaves a live path alone', () => {
+    expect(legacyTarget('CHANGELOG.md', 'docs/reference/core.md')).toBeNull();
+  });
+
+  // The map is only as good as its own upkeep: a value pointing nowhere, a key whose page came
+  // back, or a key nothing cites all have to fail loudly rather than quietly excuse a link.
+  it('holds its three invariants against the real tree', () => {
+    expect(legacyMapProblems(root)).toEqual([]);
+  });
+
+  // The green assertion above cannot distinguish three working invariants from three that never
+  // run, so each one gets its own red proof against a two-entry map. These were proven by hand
+  // during the cutover and not banked, which is how a gate quietly stops gating.
+  it('fails a value that names a page which does not exist', () => {
+    const problems = legacyMapProblems(root, {
+      'docs/guides/add-an-island.md': 'docs/extend/no-such-page.md',
+    });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('docs/extend/no-such-page.md');
+    expect(problems[0]).toContain('no longer exists');
+  });
+
+  it('fails a key whose own page is back on disk', () => {
+    const problems = legacyMapProblems(root, {
+      'docs/reference/core.md': 'docs/extend/architecture.md',
+    });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('docs/reference/core.md');
+    expect(problems[0]).toContain('exists again');
+  });
+
+  it('fails a key that no CHANGELOG link names', () => {
+    const problems = legacyMapProblems(root, {
+      'docs/guides/never-cited-anywhere.md': 'docs/extend/architecture.md',
+    });
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain('never-cited-anywhere.md');
+    expect(problems[0]).toContain('no CHANGELOG.md link names');
   });
 });

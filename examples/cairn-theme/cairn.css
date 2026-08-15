@@ -15,7 +15,7 @@
 
    No markup change is needed. Import order matters for the base-ladder tokens below (see their own
    comment); every other rule here wins over Waymark's neutral default regardless of order. See
-   docs/guides/make-waymark-your-own.md for the full walkthrough.
+   docs/extend/design-your-site.md for the full walkthrough.
    ============================================================================ */
 
 /* The display face. Fraunces pulls the `opsz` axis so headings render at a display optical size;

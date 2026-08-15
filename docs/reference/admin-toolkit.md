@@ -2,15 +2,15 @@
 
 General-purpose primitives a site building its own `/admin/` screen, and cairn's own admin
 screens, reach for instead of a bespoke parallel. Two tiers share this one charter. The **field**
-primitives (`FieldLabel`, `TextInput`, `SelectInput`) render one labeled control in the admin's
-label and control rhythm; they merged here from the retired `admin-fields` subpath (CHANGELOG
-`0.94.0`), since two subpaths stating the same charter is one subpath. The
+primitives (`FieldLabel`, `FieldRow`, `TextInput`, `SelectInput`) render one labeled control in
+the admin's label and control rhythm; they merged here from the retired `admin-fields` subpath
+(CHANGELOG `0.94.0`), since two subpaths stating the same charter is one subpath. The
 **screen-scaffold** primitives (`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`,
 `Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`) plus the formatters compose a whole
 screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
-every contract here is general-purpose across sites, and a new addition must clear the same bar.
-A component that renders one of cairn's own content concepts (a `ConceptList` row, an `EditPage`
-field) belongs on `/components` instead, even though it also renders inside the admin theme.
+every contract here is general-purpose across sites. A component that renders one of cairn's own
+content concepts (a `ConceptList` row, an `EditPage` field) lives on `/components` instead, even
+though it also renders inside the admin theme.
 
 ```ts
 import { formatMoney, formatCivilDate, formatTimestamp, ageFromBirthdate } from '@glw907/cairn-cms/admin-toolkit';

@@ -6,16 +6,16 @@ import { createRenderer } from '../../lib/render/pipeline.js';
  *
  * `rehype-slug` computes each id with `github-slugger` under the hood, so this is meant to be
  * a tautology today. The point of the test is to keep it one: every case below is a real
- * heading pulled from the published `docs/reference/` and `docs/tutorial/` corpus, and its
- * expected id is a literal, not a value computed by importing `github-slugger` at test time. If
- * the pipeline's slugging ever drifts (a `rehype-slug` upgrade, a config change), this test goes
- * red without needing to know why GitHub's algorithm changed; the 225 in-corpus anchors the
+ * heading pulled from the published `docs/reference/`, `docs/admin/`, and `docs/extend/` corpus,
+ * and its expected id is a literal, not a value computed by importing `github-slugger` at test
+ * time. If the pipeline's slugging ever drifts (a `rehype-slug` upgrade, a config change), this
+ * test goes red without needing to know why GitHub's algorithm changed; the in-corpus anchors the
  * published docs carry (`#section-heading` links between pages) ride on this contract holding.
  *
- * Coverage note: `docs/reference/` and `docs/tutorial/` carry no heading with a literal `?` or a
- * double quote, so those two punctuation marks are not represented here. Every other stress
- * category the task calls for (backticked terms, parentheses, a slash, a single quote, a colon,
- * a period, mixed case, and the tutorial's real duplicate heading) is a genuine heading below.
+ * Coverage note: the published corpus carries no heading with a double quote, so that one
+ * punctuation mark is not represented here. Every other stress category is a genuine heading
+ * below: backticked terms, parentheses, a slash, a single quote, a colon, a period, a question
+ * mark, mixed case, and a real duplicate heading.
  */
 describe('the GitHub-slug contract', () => {
   const cases: Array<{ markdown: string; id: string; source: string }> = [
@@ -62,16 +62,22 @@ describe('the GitHub-slug contract', () => {
       source: 'docs/reference/sveltekit.md',
     },
     {
-      // A leading digit and a period, from the tutorial's numbered steps.
-      markdown: '## 1. Start from the chassis',
-      id: '1-start-from-the-chassis',
-      source: 'docs/tutorial/build-a-theme.md',
+      // Nothing but digits and periods: every period drops and no separator replaces it.
+      markdown: '## 0.94.0',
+      id: '0940',
+      source: 'docs/extend/migration-notes.md',
     },
     {
-      // A digit and a colon mid-heading.
-      markdown: '## Milestone 0: What you will build',
-      id: 'milestone-0-what-you-will-build',
-      source: 'docs/tutorial/build-your-first-cairn-site.md',
+      // A digit and a colon mid-heading, plus a comma before the last word.
+      markdown: '## Milestone 1: a bare SvelteKit site, deployed',
+      id: 'milestone-1-a-bare-sveltekit-site-deployed',
+      source: 'docs/extend/build-a-site-by-hand.md',
+    },
+    {
+      // A trailing question mark, which drops without leaving a trailing hyphen.
+      markdown: '# Is it working?',
+      id: 'is-it-working',
+      source: 'docs/admin/is-it-working.md',
     },
   ];
 
@@ -84,19 +90,21 @@ describe('the GitHub-slug contract', () => {
     });
   }
 
-  it('suffixes the tutorial\'s real duplicate "How it went" heading the way GitHub does', async () => {
-    // docs/tutorial/build-your-first-cairn-site.md carries this exact heading twice: once at
-    // the end of Milestone 3 (line 134) and again at the end of Milestone 9 (line 538). GitHub
-    // slugs the first occurrence plain and suffixes every repeat with -1, -2, and so on.
+  it('suffixes the admin track\'s real repeated "You know it worked when" heading the way GitHub does', async () => {
+    // docs/admin/own-your-domain.md closes each of its three sections with this exact heading.
+    // GitHub slugs the first occurrence plain and suffixes every repeat with -1, -2, and so on,
+    // which is what the page's own section links depend on.
     const { renderDocument } = createRenderer();
     const { headings } = await renderDocument(
-      '## Milestone 3: Add content\n\n## How it went\n\nText\n\n## Milestone 9: Confirm the internal link\n\n## How it went',
+      '## Connect your domain\n\n### You know it worked when\n\nText\n\n## Turn on sign-in email\n\n### You know it worked when\n\nText\n\n## Connect to Workers Builds\n\n### You know it worked when',
     );
     expect(headings.map((heading) => heading.id)).toEqual([
-      'milestone-3-add-content',
-      'how-it-went',
-      'milestone-9-confirm-the-internal-link',
-      'how-it-went-1',
+      'connect-your-domain',
+      'you-know-it-worked-when',
+      'turn-on-sign-in-email',
+      'you-know-it-worked-when-1',
+      'connect-to-workers-builds',
+      'you-know-it-worked-when-2',
     ]);
   });
 });

@@ -36,22 +36,24 @@ describe('checkPackageFiles', () => {
   });
 });
 
-// The published docs arms (reference, guides, explanation, tutorial) plus the docs index must
-// reach the tarball, and the write-only-plan trees (internal, superpowers) and the rolling
-// STATUS.md must not, so a future `files` edit cannot silently drop or leak either direction.
+// The published docs arms (reference, admin, editors, extend) plus the two front doors must reach
+// the tarball, and the write-only-plan trees (internal, superpowers) and the rolling STATUS.md
+// must not, so a future `files` edit cannot silently drop or leak either direction.
 describe('checkDocsPacked', () => {
   const arms = [
     'docs/README.md',
+    'docs/why-cairn.md',
     'docs/reference/README.md',
     'docs/reference/render.md',
-    'docs/guides/README.md',
-    'docs/guides/deploy.md',
-    'docs/explanation/README.md',
-    'docs/explanation/why-cairn.md',
-    'docs/tutorial/build-your-first-cairn-site.md'
+    'docs/admin/README.md',
+    'docs/admin/create-your-site.md',
+    'docs/editors/README.md',
+    'docs/editors/write-in-the-editor.md',
+    'docs/extend/README.md',
+    'docs/extend/build-a-site-by-hand.md'
   ];
 
-  it('passes when the four arm indexes and docs index are packed with no internal leak', () => {
+  it('passes when the four arm indexes and both front doors are packed with no internal leak', () => {
     expect(checkDocsPacked(['dist/index.js', ...arms])).toEqual({ ok: true, count: arms.length });
   });
 
@@ -61,6 +63,22 @@ describe('checkDocsPacked', () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
     expect(result.error).toContain('docs/reference/README.md');
+  });
+
+  it('fails naming the missing why-cairn front door, which no arm prefix covers', () => {
+    const result = checkDocsPacked(arms.filter((p) => p !== 'docs/why-cairn.md'));
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('docs/why-cairn.md');
+  });
+
+  // Pass D retired the guides, tutorial, and explanation arms. A tarball still carrying one is a
+  // stale `files` entry, and the allowlist is what makes that a failure rather than a silent ship.
+  it('fails naming a path under a retired docs arm', () => {
+    const result = checkDocsPacked([...arms, 'docs/guides/deploy-to-cloudflare.md']);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('docs/guides/deploy-to-cloudflare.md');
   });
 
   it('fails naming a leaked docs/internal path', () => {

@@ -2,7 +2,7 @@
 
 cairn-cms runs two production sites today, [ecxc.ski](https://ecxc.ski) (formerly ecnordic.ski) and
 [907.life](https://907.life). It is `0.x` and breaks between minor versions; the latest published
-release is `0.90.1`. The author is still working through the core-feature roadmap, and the project stays
+release is `0.94.0`. The author is still working through the core-feature roadmap, and the project stays
 closely held until that core lands.
 
 This roadmap is a direction, not a commitment. Priorities shift as the production sites surface needs,
@@ -90,7 +90,8 @@ Readiness checklist:
   the build watch as a second long wait worth rendering and the grown fake-server surface its
   plumbing extraction must cover (the T4c spec's own "What follows" section records both); **T5**
   is the browser door (the public template repo, the Deploy button, C3 `--template`
-  compatibility). Pass D follows T5, and the tool and template publish in the same cut as release
+  compatibility). **Pass D is done** (`docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`,
+  post-mortem appended there); the tool and template still publish in the same cut as release
   one.
 
   **T5 split at execution** (Geoff, 2026-08-13). **T5a is done**: the sync script that generates the
@@ -196,8 +197,11 @@ release-one boundary; the passes are invariant.
   rendering would go uncaught); P2
   the zero-state pass; P3 viewport extremes; P4 sign-in touchpoints, with the keyboard/SR
   walkthrough as the attended session at phase end plus a fixes rider; P5 the
-  `CairnMediaLibrary` split; P6 front-door docs (cold-reader, diagnostic-pair); P7 the
-  zero-credential quickstart; **P8 the ambient-defaults remediation**, the phase-P bucket of the
+  `CairnMediaLibrary` split; ~~P6 front-door docs (cold-reader, diagnostic-pair)~~ absorbed by
+  Pass D's front-door task (`docs/README.md`, root `README.md`, `docs/why-cairn.md`; see
+  `docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`, ruling 5); ~~P7 the zero-credential
+  quickstart~~ absorbed by Pass D, the tool's chapter 1 plus `docs/admin/create-your-site.md`;
+  **P8 the ambient-defaults remediation**, the phase-P bucket of the
   2026-08-03 audit, enumerated in
   [its report](docs/internal/record/2026-08-03-ambient-defaults-audit.md) rather than restated here.
   Thirteen items, all additive, ordered by consequence in the report: the undetected managed-robots
@@ -209,9 +213,9 @@ release-one boundary; the passes are invariant.
   tool's cross-site upgrade verb can read it to drive per-site migrations instead of a human reading
   98 entries. Today it is a helpful sentence enforced loosely for human readers, which is enough for
   a reader and not enough for a parser. Scoped forward-only, with no backfill of the historical
-  entries, which is why it has to land before the beta cut rather than after. P7 and P8 overlap heavily and should be planned together, since
-  the quickstart's credential story and the audit's effective-state checks answer the same question
-  from opposite ends. The standing template track (cairn.pub voice, starter set, Topo with the
+  entries, which is why it has to land before the beta cut rather than after. P8's effective-state
+  checks still overlap the now-absorbed P7's credential story; weigh it alongside Pass D's
+  `create-your-site.md` rather than as an open pair. The standing template track (cairn.pub voice, starter set, Topo with the
   docs-effectiveness infra, the scaffolder with its agent brief, now carrying Cloudflare
   provisioning in the same tool) runs parallel and feeds the rebuilds.
 - **The pre-RC block, ordered (Geoff, 2026-08-03).** C2b merged, and three items now sit between it
@@ -292,6 +296,54 @@ The original decision framing, for the record:
   `docs/internal/record/2026-08-14-pass-d-target-manifest.md` ("An engine defect this uncovered,
   filed rather than fixed").
 
+- **The DMARC instruction in `own-your-domain.md` was a faithful mirror of a bug in the CLI's own
+  closing copy, filed off Pass D's Task 13 production gate (2026-08-14).**
+  `packages/create-cairn-site/src/cloudflare/chapter2.mjs:801-804` prints "add it to that
+  [DMARC] record too" to the admin's terminal at the end of a real run, and
+  `packages/create-cairn-site/README.md:253-255` repeats it; both are wrong the same way the
+  docs page was (Cloudflare's `_dmarc` TXT record is `v=DMARC1; p=reject;`, a policy with no
+  sender field to add anything to — the real mechanism is SPF/DKIM, which neither string names).
+  The docs half is fixed (`docs/admin/own-your-domain.md`); the CLI's terminal output and its own
+  README still print the unexecutable instruction. `chapter2.test.mjs:1830-1857`'s assertions
+  (`/_dmarc\./`, `/reject/i`, `/newsletter/`) do not block a corrected string. Full evidence:
+  `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`, claims-sweep rank 4 under
+  `docs/admin`.
+
+- **The media allow-list permits AVIF; no editor upload path can ever produce one, filed off Pass
+  D's Task 13 production gate (2026-08-14).** `DEFAULT_ALLOWED_TYPES`
+  (`src/lib/media/config.ts:37`) includes `image/avif`, and the server-side sniffer and its
+  content-route check (`content-routes-media.ts:520`) both honor it, but every editor upload runs
+  through `ingestFile` (`src/lib/components/client-ingest.ts`) first, which accepts only JPEG,
+  PNG, WebP, GIF, and HEIC-via-re-encode; an AVIF sniffs correctly and then falls through to
+  `throw new IngestError('decode-unsupported')`. An editor who drops an AVIF gets a failure card
+  with no explanation the allow-list would predict. AVIF is reachable only through developer-side
+  paths (the seeding assembler, delivery of already-stored objects), never through the editor UI.
+  `docs/editors/manage-the-media-library.md` correctly omits AVIF from what the editor can upload
+  (confirmed by the gate's own verifier, which refuted a proposed docs fix that would have added
+  it); the fix belongs in the engine, either an AVIF passthrough branch in `ingestFile` (AVIF is
+  web-native and `createImageBitmap` decodes it in current browsers) or a documented note in the
+  extend track that the server allow-list exceeds what the editor UI can submit. Full evidence:
+  `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`, "The refutations" section,
+  `docs/editors/manage-the-media-library.md` (claims:editors rank 9).
+
+- **The doctor's `config.site-config` check skips on every `create-cairn-site` site, filed off Pass
+  D's Task 13 production gate (2026-08-14).** `src/lib/doctor/checks-local.ts:138`
+  (`SITE_CONFIG_PATHS`) looks for `site.config.yaml`, `src/lib/site.config.yaml`, or
+  `src/site.config.yaml`; the baked template ships it at `src/theme/site.config.yaml`, which is in
+  none of the three, so the check reports a skip rather than a pass on every scaffolded site.
+  `docs/reference/doctor.md:21` tells an admin to run the doctor from the directory holding a file
+  that, per the candidate list, is never actually where the tool looks for it on their site.
+  Pass D's `docs/admin/is-it-working.md` documents this as a known exception rather than fixing
+  the code. Full evidence: `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`,
+  persona walk, `docs/admin`, rank 6 (NARROWED, second-round verify).
+
+- **A fold-coverage gap, found and closed inside Pass D (2026-08-14).** Two fold agents scoped
+  to `docs/editors/` and `docs/extend/` reported completion for nine CONFIRMED/NARROWED gate
+  findings they never applied; the close-out caught it by grepping the tree for each finding's
+  quoted text rather than reading the reports. **All nine are now folded and independently
+  verified by grep**, so nothing is owed here. Kept as a standing caution rather than work: a
+  fold report is a claim, and the check that a fold landed costs one grep. Evidence and the
+  per-finding dispositions: `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`.
 - **Vertical alignment's declared follow-up, filed off the cairn-wide pass (2026-08-07).** A
   cairn-wide inventory measured both the admin and the public surface for vertical-alignment
   defects and closed the two entries this replaces: the optical-centring engine default Geoff asked
@@ -457,10 +509,10 @@ the named human gates only):**
 
 1. ~~Polish pass close + merge~~ — DONE, merged 2026-07-02.
 2. ~~The pre-beta cut~~ — DONE: `v0.79.0` published 2026-07-02, the last `0.x`.
-3. **In parallel: the docs rewrite Stage 2** (its plan is written; human gate: Geoff reads the
-   front-door drafts) **and the Waymark starter component set** (human gate: one batched
-   taste question settles the final component list at its plan's start; no file contention
-   between the two).
+3. ~~The docs rewrite Stage 2~~ — DONE, superseded by the ground-up rebuild ruling and shipped
+   as Pass D (`docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`); **the Waymark starter
+   component set** (human gate: one batched taste question settles the final component list at
+   its plan's start) is still open.
 4. ~~The Waymark design review~~ — DONE 2026-07-17: the two-track audit (90 findings, 82
    surviving adversarial verify), seven ratified verdicts, and the full fix plan executed on
    the `waymark-final-design-review` branch. Record:
@@ -803,7 +855,7 @@ the named human gates only):**
   `before:` already emits `content: var(--tw-content)` for free either way.
 - **DX: a `type-scale` finding could name the matching grammar role, closing the loop toward a
   rename codemod** (design infrastructure Pass 3, 2026-07-29). The upgrade guide's rename recipe
-  (`docs/guides/upgrade-cairn.md`) has an editor look up the reported class's size in [Admin grammar
+  (`docs/extend/upgrade-cairn.md`) has an editor look up the reported class's size in [Admin grammar
   tokens](./docs/reference/admin-grammar-tokens.md) by hand; if the `type-scale` rule instead named
   the role whose size the reported class resolves to, step 2 of that recipe becomes automatic, and a
   codemod that rewrites the class in place becomes buildable on top. **Flag for Geoff:** decide
@@ -884,7 +936,7 @@ the named human gates only):**
     evidence"; that pass ran as the design-ratchet initiative (2026-07-30) and deliberately left
     the type-role scale untouched (its global constraints rule out changes to type roles), so the
     12px ruling stays unresolved. The ratchet evidence it fed now lives in
-    `docs/explanation/enforced-design.md`'s grammar-ladder section.
+    `docs/extend/add-a-custom-admin-screen.md`'s grammar-ladder section.
   - **`cairn-doctor`'s zone checks report a bare 403 on read the same way a genuinely wrong
     zone setting reads, misleading an operator into changing a correct setting (severity raised
     from DX/low, docs friction log, triaged 2026-08-14: reproduced on two live migrations, not
@@ -1234,8 +1286,9 @@ the named human gates only):**
   exhaustively. Once Topo exists, cairn's own documentation moves onto it, so the engine publishes
   its own manual (the strongest dogfood available, and the standing proof that the docs-site use
   case is first-class). Inherits Waymark's component set and adds only what documentation demands.
-  Sequenced after the Waymark starter component set and the frozen-contract docs rewrite (which
-  produces the content Topo hosts); gives the scaffolder its first real template choice.
+  Sequenced after the Waymark starter component set; the frozen-contract docs rewrite that
+  produces the content Topo hosts is done (Pass D). Gives the scaffolder its first real template
+  choice.
 - **The project sites: cairn.pub on Waymark, docs.cairn.pub on Topo (domain DECIDED 2026-07-02: cairn.pub, standard tier, registered via the dashboard since the Registrar API does not yet carry .pub; every single-word alternative was taken and the .pub TLD reads "publish", cairn's signature verb; the cairn.dev acquisition inquiry remains the optional endgame, yielding via redirect if it ever lands).** Two sites, not one, because
   a cairn site carries one design (one adapter, one `render`), so a combined site would compromise
   either the landing pages or the docs chrome. Each site is the living exemplar and standing dogfood
@@ -1393,6 +1446,31 @@ the named human gates only):**
 
 ## Later
 
+- **`check:symbols` spawns a `grep` per environment-variable token, and the cost scales with the
+  corpus (filed at Pass D Task 10, 2026-08-14).** `envVarInSourceTree` in
+  `scripts/checks/check-symbols.mjs` shells out to `grep -rl` once per distinct token, memoized
+  within a run. That was cheap over 27 files in Phase 1 and takes about 33 seconds over the 74
+  the rebuild ships, which crossed vitest's 30-second default and made
+  `src/tests/unit/check-symbols.test.ts` fail on wall-clock rather than on a finding. The test
+  now carries an explicit 120-second ceiling, so this is a cost rather than a break, paid twice
+  per CI run (once in the suite, once in the gate). The fix is to read the searched tree once
+  into memory and resolve tokens against a set, which removes the subprocess entirely. Pass D
+  declined it deliberately as adjacent scope rather than folding it into the cutover.
+  **Trigger:** the gate passing roughly 60 seconds, or the published corpus growing past about
+  120 files.
+
+- **Nothing pins `CHANNEL_SCHEMA_SQL`'s literal text any more (filed at Pass D Task 10,
+  2026-08-14).** `src/tests/unit/auth-channel-guide-ddl.test.ts` asserted the exported constant
+  byte-for-byte against the DDL block reproduced in the old auth-channel guide, so a drift
+  between the two went red. The docs rebuild stopped reproducing the DDL in prose at all (both
+  `docs/extend/add-a-second-audience.md` and `docs/reference/auth-channel.md` tell a reader to
+  copy the exported constant instead), which removes the drift risk the test guarded and also
+  removes the test's subject, so the cutover deleted it. The constant's body is now unpinned by
+  anything. That is defensible, since the duplicate it guarded against no longer exists, but a
+  change to that SQL now reaches a consumer with no gate in the way. **Trigger:** the next
+  change to the auth-channel schema, which should arrive with a migration test rather than a
+  restored text pin.
+
 - **`CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it whatever
   the last action returned, successes included (docs friction log, triaged 2026-08-14).**
   `ContentFormFailure` (`content-routes.ts:93-95`, still `Partial<SaveFailure & DeleteRefusal &
@@ -1487,6 +1565,15 @@ the named human gates only):**
   comments, and structure so the port later reads them as a spec. The trigger is post-1.0, after
   T4d, release one, and the site walk; the real design sitting happens then, on the spec's
   open-questions agenda.
+
+  **Rider: the admin track's missing update page arrives with the upgrade verb (filed at Pass D
+  Task 14, 2026-08-15).** Pass D killed `maintain-your-site` from the admin outline because the
+  track has no way to tell a non-developer how to move their site to a new cairn version: today
+  that is a terminal task the admin cannot do, and a page describing it would either teach the
+  extend track's job or describe a verb that does not exist. When the Go tool grows its
+  cross-site upgrade verb, that page becomes writable, and it should be written in the same pass
+  as the verb rather than filed forward again. Its precondition is P9, the machine-readable
+  `Consumers must:` contract the verb reads.
 
 - **Undelete a recently-deleted entry (filed 2026-08-06, history/revert design sitting).** History
   and revert both deliberately leave a deleted entry out of scope: `historyLoad` answers a 404 for
@@ -1754,3 +1841,35 @@ the named human gates only):**
   its own responses and reimplements it by hand. Filed by the 2026-08-01 ASC engine-seams adversarial
   review as a promotion candidate rather than adopted in that pass; take it up when a second audience
   actually needs it.
+
+- **The markdown-versus-WYSIWYG case, and a tool-by-tool competitor comparison, have no home in the
+  published docs (Pass D mining sweep, triaged 2026-08-14).** The deleted old corpus carried both:
+  `explanation/why-cairn.md`'s academic case for markdown over a rich-text editor (Scribe, TeX, SGML,
+  Coombs/Renear/DeRose 1987, iA Writer, Ulysses, Bear) and a tool-by-tool comparison against Sveltia,
+  Decap, Keystatic, the hosted headless services, and WordPress, whose strongest argument was that a
+  config-driven dashboard has nowhere for a site's growth to go, so a newsletter editor and a
+  membership coordinator end up in two different tools. The new `docs/why-cairn.md` carries the
+  trade-offs and the stack commitment but never justifies markdown itself and drops the comparison
+  entirely; after the old corpus's deletion, the academic case survives nowhere in the published
+  tree or the internal planning docs it once cited
+  (`docs/superpowers/plans/2026-07-03-markdown-academic-case.md` remains as history only). This is
+  page-shaped, not a sentence to fold into an existing page, and whether it belongs at all is a
+  register question for whoever owns the front door: `docs-register.md`'s "keeps the why and the
+  honest trade-offs" line for `why-cairn.md` doesn't say which why. No trigger yet; take it up if a
+  reader or reviewer asks why cairn is markdown-first, or why it isn't a rich-text or headless-CMS
+  competitor, and the current page doesn't answer.
+
+- **`check:snippets` cannot see a wrong call through a site-local import stub, which hid a real
+  defect (Pass D mining sweep, 2026-08-14).** The gate auto-stubs any site-local import (a name
+  imported from a path like `$lib/cairn.config.js`, one the gate cannot resolve) as untyped, so a
+  call routed through such a stub typechecks trivially regardless of the real signature it's
+  supposed to match. This is exactly how two docs pages (`docs/extend/wire-the-delivery-surface.md`
+  and `docs/reference/delivery-data.md`, both since fixed) called the public `SiteRender` type with
+  two positional arguments instead of the one object argument `src/lib/content/types.ts:215`
+  actually declares, and the gate never caught it because both call sites went through a
+  `cairn.rendering.render` reached off a stubbed site-local import rather than the typed package
+  export directly. The gate correctly proves an import resolves from cairn's own subpaths; it has no
+  way to prove a call made through a site-local stub matches the real signature the stubbed value
+  would have if it resolved. No concrete fix proposed yet; worth a look at whether the snippet
+  fixtures can carry a real minimal adapter shape for the common `cairn.*` call sites instead of an
+  untyped stub, weighed against the added fixture-maintenance cost.

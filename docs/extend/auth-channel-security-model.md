@@ -1,10 +1,9 @@
 # Auth channel security model
 
 The security contract for `createAuthChannel`, cairn's supported way to add a second audience's own
-login, members, athletes, boosters, without hand-writing auth crypto. This page stands alone
-deliberately: a security contract for code that authenticates real people needs to stay findable on
-its own, not buried inside a how-to. [Add a second audience](./add-a-second-audience.md) is the
-task guide; this page is what to trust and why.
+login, members, athletes, boosters, without hand-writing auth crypto. [Add a second
+audience](./add-a-second-audience.md) walks through building one; this page is what to trust and
+why.
 
 ## What this is, and what it is not
 
@@ -99,6 +98,20 @@ lets a site's own code end every session for one identity at once, for a roster 
 reported compromise; this is the one place identity-keyed action is a deliberate destructive
 capability rather than a denial-of-service risk, since it is the site's own trusted code invoking
 it, not a public, unauthenticated caller.
+
+## The dev transport is not a dev-only risk
+
+`devDelivery` prints a channel's code to the console instead of sending it, so local development
+needs no real SMS or email provider. Any transport shaped like it, including a capture transport a
+site builds to prove its own channel end to end, answers a roster oracle by construction: delivery
+only ever runs for a known subject, so a readback route standing in front of one tells an
+unauthenticated caller whether an arbitrary contact is on the roster, no code-guessing required.
+Never point one at a database holding real contacts.
+
+The same transport also lands its plaintext one-time codes in Workers Logs if it runs inside a
+deployed Worker with observability turned on, since cairn logs through `console`. Both risks are
+about where the transport runs, not about the code being wrong: keep `devDelivery` and any
+capture-style stand-in strictly local, gated the same way cairn's own dev backend is.
 
 ## What a site is responsible for
 

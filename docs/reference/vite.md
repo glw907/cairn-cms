@@ -2,8 +2,8 @@
 
 This subpath holds the build-time manifest plugin. The `cairnManifest()` plugin evaluates a site's
 content corpus through the build's own Vite resolution, verifies the committed manifest against it on
-every build, and fails the build on drift. Import it in your `vite.config.ts`. Anything proposed here
-must be a plugin a site wires into its own `vite.config.ts`. The write, verify, and
+every build, and fails the build on drift. Import it in your `vite.config.ts`. This subpath
+carries the plugin a site wires into its own `vite.config.ts`. The write, verify, and
 derive machinery the plugin shares with the [`cairn-manifest`](./cli-cairn-manifest.md) and
 `cairn-doctor` bins is not public surface: a build-time helper that is not itself a Vite plugin stays
 internal. Every real caller (both bins and their unit tests) reaches
@@ -28,7 +28,8 @@ function cairnManifest(opts: CairnManifestOptions): Plugin;
 
 The build plugin. In `buildStart` it evaluates a verify virtual module through a nested Vite SSR
 load, so a manifest that has drifted from the corpus fails the build. Add it to the `plugins` array,
-after `sveltekit()`. The showcase wires it in its `vite.config.ts`:
+after `sveltekit()`. The showcase wires it in its `vite.config.ts`, alongside its own build-time
+plugins (a `__CAIRN_DEV_BUILD__` define and `@tailwindcss/vite`) this excerpt omits:
 
 ```ts
 import { sveltekit } from '@sveltejs/kit/vite';
@@ -40,7 +41,11 @@ export default defineConfig({
     sveltekit(),
     cairnManifest({
       configModule: '/src/theme/cairn.config.ts',
-      content: { posts: '/src/content/posts/*.md', pages: '/src/content/pages/*.md' },
+      content: {
+        posts: '/src/content/posts/*.md',
+        pages: '/src/content/pages/*.md',
+        fragments: '/src/content/fragments/*.md',
+      },
       manifestPath: '/src/content/.cairn/index.json',
     }),
   ],

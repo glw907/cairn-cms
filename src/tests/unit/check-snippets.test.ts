@@ -178,7 +178,7 @@ describe('the shared-program cross-block global augmentation regression', () => 
       ),
     };
     const unitB = {
-      file: 'docs/guides/b.md',
+      file: 'docs/extend/b.md',
       lineBase: 0,
       code: stripGlobalAugmentations(
         [

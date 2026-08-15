@@ -144,7 +144,8 @@ export const cairn = defineAdapter({
   }),
   email: { from: 'cms@your-domain.example' },
   rendering: {
-    render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
+    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
+    renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
     components: registry,
   },
 });

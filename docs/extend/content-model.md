@@ -19,6 +19,14 @@ outside the fieldset system; a field type the fifteen builders don't cover is a 
 workaround to invent locally. [Declare your own concept](./declare-your-own-concept.md) covers
 adding a new one.
 
+`object` and `array` are the two container builders, and both cap at one level of nesting: an
+`object`'s sub-fields, or an `array`'s item shape, must all be leaves (any builder except `object`
+or `array` itself). A container inside a container throws at declaration, "containers nest one
+level only," the same way a `reference` field inside an `object` throws, since a reference inside
+an object isn't supported this phase; model that relationship as the parent's own concept instead,
+or use a top-level `array(reference)`. A field key never contains a dot either, in a container or
+at the top level, since a dotted path is how the engine addresses a nested field internally.
+
 ## An entry's id is its filename
 
 There is no separate slug codec. An entry's id is its markdown filename with `.md` stripped, and
@@ -27,6 +35,11 @@ of `year`, `month`, or `day`) additionally carries a leading date on the filenam
 (`2026-08-14-my-post.md`). The URL slug strips only that leading prefix, so a title that happens to
 start with a year-like number keeps it. Renaming an entry changes the filename, which is a real git
 operation on the holding branch, not a metadata field flip.
+
+The filename's date prefix only ever feeds the slug. An entry's actual date, the one a dated
+permalink resolves against and a template reads, always comes from the entry's own `date`
+frontmatter field, never from the filename. That's why a dated permalink pattern makes `date` a
+structurally required field: nothing else supplies it.
 
 ## Routing is a declared shorthand, not a convention
 

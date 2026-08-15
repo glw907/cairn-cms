@@ -29,7 +29,7 @@ stops; that absence is itself a result.
 
 Record the site and repo, the version it came from, the version it went to, every `Consumers must:`
 list it crossed, and whether a recipe existed. `aksailingclub-org` goes first and writes the recipe
-into [`../../guides/upgrade-cairn.md`](../../guides/upgrade-cairn.md); the three after it follow
+into [`../../extend/upgrade-cairn.md`](../../extend/upgrade-cairn.md); the three after it follow
 that recipe. Say which you were, because it changes what the rest of the report means.
 
 Name the two deltas that correct the guide. What it told you to do that was wrong or unnecessary,

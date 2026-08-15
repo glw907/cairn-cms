@@ -9,7 +9,7 @@ If you write content on a site someone else already set up, you want
 [the editor track](../editors/welcome.md) instead. If you build custom screens or features on
 cairn, you want [the extend track](../extend/README.md).
 
-## The journey, in order
+## The pages, roughly in order
 
 1. **[Before you start](./before-you-start.md)** — what you'll end up owning, what it costs, and
    what a developer still has to do for you.

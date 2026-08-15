@@ -15,173 +15,124 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-14: Pass D Phase 1 is MERGED; execute Phase 2)
+## Immediate next action (2026-08-15: Pass D is DONE; next is release one)
 
-**Pass D Phase 1 landed** (branch `pass-d-phase-1`, four commits, full gate green including
-the two gates it adds). Tasks 1, 2, 3a and 3b are done; Task 3 was split once, into the prose
-standards layer and the two mechanical gates, which is Pass D's first task split (a second
-means proposing a pass split, not absorbing it).
+**Pass D, the documentation reset, is complete across all three phases.** Phase 1 (PR #34) and
+Phase 2 (PR #35) merged earlier; Phase 3 (Tasks 9 through 14) closes the pass. The published
+corpus is now four audience tracks, counted as files including each arm's index:
+`docs/admin/` at 8, `docs/editors/` at 8, `docs/extend/` at 31, and the kept `docs/reference/`
+arm at 24 (its 23 pages plus the index), alongside `docs/why-cairn.md` and the rewritten front
+doors. The old guides, tutorial, and explanation arms are deleted, every
+published path redirected, and every gate in the cutover bill rewired and proven red once.
+Plan and post-mortem: `docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`.
 
-**Next: Phase 2, the clean-room build**, in a fresh worktree off the merged `main`. Geoff
-opted into the Workflow tool (2026-08-14) and asked that the parallelizable work run in
-parallel, so Phase 2 runs as a workflow: **the admin, editors, extend and reference tasks
-(4, 5, 6, 8) run concurrently, each a three-stage pipeline of write, fresh-context review
-against its audience profile, then fold**, with **one real barrier before Task 7**, since the
-front doors route five ways by name into pages the other tracks create and `check:docs` fails
-on a link to a page that does not exist yet. Writers run the non-packaging gates only:
-anything invoking `npm run package` writes `dist/` and cannot run concurrently, so
-`check:snippets`, `check:reference`, `check:readiness` and `check:surface` run once at the
-phase close. Every writing dispatch carries ruling 7 verbatim plus that page's input list from
-the manifest. The conductor reads each track's diff as it lands.
+**The Task 13 production gate ran all five stages and its findings are folded.** 118 findings:
+114 folded as CONFIRMED or NARROWED, 3 refuted, 1 with no owning fold (its target is outside
+this repo). Three routed to `ROADMAP.md` as engine or cross-repo fixes rather than docs fixes.
+The four blind persona walks all failed their first run, which was the gate's highest-value
+result, and each failure is fixed in its own track: the editors track now says where the sign-in
+page is, `is-it-working.md` separates the checks an admin can run from the ones nobody can,
+`restrict-admin-access` states the roles precondition `defineAccess` needs, and the reference arm
+settles which config key names the code actually uses. Record with per-finding dispositions:
+`docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`.
 
-**Three Phase 1 findings that change what Phase 2 and 3 build against.**
-(1) **A current `sv create` (0.17.0) emits no `svelte.config.js` at all**, wiring the adapter
-inside `vite.config.ts`; verified by running the tool, not by reading this repo's showcase.
-The extend track's deep path must stop telling readers to edit a file they do not have.
-(2) **The doctor's CSRF-handoff check silently skips on every current scaffold**
-(`src/lib/doctor/checks-local.ts`, reads `svelte.config.js`, returns `skip` when absent), so
-the run reads clean while the check never executed. Filed to `ROADMAP.md` Now as engine work,
-deliberately not fixed in a docs pass; `admin/is-it-working.md` must not claim coverage it
-does not deliver. (3) **Vale was installed in CI and never invoked**, so the Google standard
-had never been enforced there. `check:vale` now runs at error tier, proven red before trusted
-green; both pre-existing error-tier findings were false positives, and the register standard
-now carries the rule that a wrong Vale finding gets a scoped suppression or corrective markup,
-never a content change that alters a citation or a literal string.
+**One lesson from the close worth carrying, since it cost a whole extra round.** Two fold agents
+reported completion for nine CONFIRMED or NARROWED findings they never applied, and the close-out
+caught it only by grepping the tree for each finding's quoted text instead of reading the fold
+reports. All nine are folded and grep-verified now. **A fold report is a claim; confirming a fold
+landed costs one grep against the text the finding said was there.** The re-fold dispatches
+carried that proof requirement, and `ROADMAP.md` keeps the caution rather than the work.
 
-**The standards and targets Phase 2 consumes**, all on `main` now: the rewritten
-`docs/internal/docs-register.md` (four track registers with the audience profiles folded in as
-grading rubrics, the page anatomies encoded, five-route front-door register), the target
-manifest at `docs/internal/record/2026-08-14-pass-d-target-manifest.md` (74 target pages with
-contracts and clean-room input lists, the 50-page deletion list paired 1:1 with its redirect
-map, the cutover gate bill re-derived), and three new gates: `check:vale`, `check:symbols`
-(the hallucinated-symbol sweep, scoped to the new tracks plus the kept reference arm so
-Phase 2's pages are born under it, with a unit test pinning all five token classes), and the
-non-recursive `docs/internal` arm-index entry. **`docs/internal`'s 49 dated artifacts moved to
-`docs/internal/record/`**; a link to one of them needs the new path.
+### Release one is next, and ONE thing is owed before it cuts
 
-**Carried out of Phase 1:** root `CLAUDE.md` now sits a few tokens over its context budget
-after a link repoint, and Task 11 already owes it a trim of at least as much as it adds.
+**Geoff's own read of the editor track.** The docs review methodology names it as the
+novice-comprehension instrument no LLM pass substitutes, and it is the one Task 13 stage that has
+not run. The track is `docs/editors/`, 8 pages, deliberately the smallest because it carries the
+highest novice-gap risk. Release one does not cut until that read happens.
 
-## Superseded: the Pass D planning entry (2026-08-14)
+**A session that reaches this point with the read still outstanding hands Geoff the track and
+stops there.** No agent pass substitutes for it, and no amount of further LLM review discharges
+it; that is the whole reason the methodology names a human instrument. When the read happens,
+record it here as a dated line, so the next cold session neither re-asks nor tries to stand in
+for it.
 
-**PR #33 is MERGED** (`ea3be5ee`), so `main` now carries T4d and the whole tool initiative
-through the localhost console. T4d's close entry, with the live-proof and teardown record,
-is archived at `docs/internal/history/STATUS-archive-2026-08-13-t4d-close.md`.
+**Then invoke `cairn-release`**, verifying the next number is free first
+(`npm view @glw907/cairn-cms versions --json`; numbers are immutable). Release one rolls this
+window plus the history/revert, preview, vertical-alignment, and cleanup passes plus the docs
+reset. **Its same-cut obligations, all four in one publish**, so no shipped page describes
+tooling that is not installable: the engine window, `create-cairn-site`,
+`@glw907/cairn-cms-dev`, and the template repo, plus T5a' (the public repo, the first sync, the
+button spike, the C3 check). Task 7's staged button block consumes the button spike.
 
-**Next: execute Pass D, the documentation reset.** The plan is
-`docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md` (Fable planning sitting,
-2026-08-14), against the umbrella spec's Part 2
-(`docs/superpowers/specs/2026-08-09-admin-setup-and-docs-reset-design.md`). Execution runs
-in a fresh Opus 5 session in its own worktree off `main`, task-by-task through
-`cairn-implementer`, per the plan's header. **The pass is a ground-up REBUILD (Geoff,
-2026-08-14): the old guides, tutorial, and explanation arms are deleted at cutover, never
-repaired or mined during writing; the reference arm is the kept exception; the new tracks
-are written clean-room from the code and the recorded runs, and a mining sweep reads the
-old corpus only after the new docs are fully baked.** Three phases, each its own worktree
-and merge: Phase 1 (Tasks 1-3) standards and targets (friction-log triage first,
-self-contained; the target manifest; the register standard rebuilt on the profiles and
-anatomies); Phase 2 (Tasks 4-8) the clean-room build, landing the new tree beside the old
-so `main` stays releasable; Phase 3 (Tasks 9-14) the mining sweep, the cutover with every
-gate rewired and proven red once, the outside edges, the prepared cairn-pub branch, the
-five-stage production gate (Task 13, per the review methodology, with Geoff's
-editor-track read), and the close. Seven rulings sit at the top of the plan for approval
-or veto at the gate.
+**A defect owed BEFORE release one: a tarball-installed scaffold ships NO `.gitignore`.** npm
+drops the file from every tarball, the baked template carries none, and `scaffold.mjs` never
+writes one, so `pushScaffold`'s ignore-honoring silently no-ops and `.dev.vars`/`.wrangler` sit
+one `git add -A` from a push. Re-verified 2026-08-14. Tool code, deliberately outside Pass D's
+docs scope, so it rides its own small pass or the release-one sitting checks it off first.
 
-**The sitting extended past the plan commit (2026-08-14, Geoff's direction) and banked
-four governing inputs,** all committed under `docs/internal/`: the review methodology
-(`2026-08-14-docs-review-methodology.md`, the five-stage Claude-reviews-Claude gate
-sequence researched against measured LLM-docs failure modes and LLM-as-judge bias;
-governs the Phase 2 per-track reviews and the Task 13 production gate, adds the symbol
-sweep and transcript gates, and names Geoff's editor-track read as the
-novice-comprehension instrument),
-the competitor review (`2026-08-14-cms-docs-competitor-review.md`, ten web-researched
-corpora with a what-users-say synthesis and eight adopted rules), the audience profiles
-(`2026-08-14-audience-profiles.md`, the grading rubric for all four tracks, including
-the extender-versus-contributor developer-flavor split), and the track outlines
-(`2026-08-14-docs-track-outlines.md`, **revised at a five-reviewer adversarial gate**,
-~60 ranked findings; the revision record lists adoptions and declines). The plan's
-Tasks 2 and 5 through 10 now consume these by name. Standing rulings from the sitting:
-tight beats sprawling (fewer, really well-written pages); page anatomies encoded so the
-pattern is reproducible; the anti-fishtank coherence gate (index order reads as a
-story, preconditions produced before use). The gate also surfaced two code-verified doc
-defects (the edit-conflict prose contradicts the code; the bootstrap sign-in's
-ten-minute TTL is documented nowhere) that the manifest files as fixes.
+Queue: **release one -> the three-site walk -> P.**
 
-**Then release one, AFTER Pass D** (ordering unchanged): the engine window plus
-`create-cairn-site`, `@glw907/cairn-cms-dev`, and the template repo publish in the same
-cut, plus T5a' **including the button spike, which Task 7's staged button block consumes**.
-Invoke `cairn-release`; verify the next number is free first.
+### cairn-pub is PREPARED and deliberately not merged
 
-**Restored to the ledger (held only in memory since T4d; a defect owed BEFORE release
-one): a tarball-installed scaffold ships NO `.gitignore`.** npm drops the file from every
-tarball, the baked template (`packages/create-cairn-site/template/`) carries none, and
-`scaffold.mjs` never writes one, so `pushScaffold`'s own ignore-honoring silently no-ops on
-a real scaffold and `.dev.vars`/`.wrangler` sit one `git add -A` from a push. Re-verified
-2026-08-14 by inspecting the bake and the scaffold path. A small tool fix with a
-packed-tarball-path test; it is tool code, deliberately not folded into Pass D's docs
-scope, so it either rides its own small pass or the release-one sitting checks it off
-first.
+Branch `pass-d-docs-tracks` at `e7218a4` in `~/Projects/cairn-pub`, **local only, never pushed**
+(plan ruling 3). Proven against a packed tarball: 81 prerendered pages, zero broken links, a
+clean rebuild. **The site walk merges it after release one**, and the ordering is forced rather
+than a preference: that branch reads the docs payload out of its installed
+`@glw907/cairn-cms`, and the published `0.94.0-rc.1` predates the restructure, so a build against
+the registry fails on the pages the restructure added until release one ships the new payload. It also fixed a defect the rebuild
+introduced there: the reference index's new "also for site admins" grouping relists three pages
+and the loader walked every bullet list, so the second occurrence won the prev/next map. Its
+link policy is a build-time throw.
 
-**The docs friction log is TRIAGED (Task 1, done).** All 19 findings were verified against
-current code and dispositioned: nine promoted to `ROADMAP.md` with triggers, two folded into
-existing entries, three closed as superseded by the rebuild with the new extend-track pages
-that inherit their jobs named, one deleted as already fixed, one converted to a `// WATCH:`
-comment. Only the setup-walk record stays open, by design; Task 14 closes it. The
-refused-action editor cluster's written recommendation is a Next-tier roadmap entry: it earns
-its own small pass, since all five screens share one root cause (no `use:enhance`, so a
-refused POST re-renders a fresh document with no state to preserve and nothing to announce).
+### Hand steps for Geoff, independent of the queue above
 
-**Hand steps for Geoff, NINE outstanding, one urgent. T4d's teardown added three.** (1) **URGENT:
-rotate the estate Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still
-active; mint a replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`,
-delete the old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API
-token `d07b2a25f05151591830c45053186979`, then
-`rm -f ~/.config/cairn/t4c-spike-token ~/.config/cairn/store-t4c-token.sh`. (4) 907-life's
-push-to-deploy has been broken since 2026-07-14. (5) Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT
-at release one. (6) The button spike's browser moment, owed at release one with T5a'.
-**(7) NEW: delete the GitHub App `cairn-t5-scratch` (id 4585219)** at github.com/settings/apps, which
-uninstalls installation 153531337 with it. **This is the fifth hand-deleted App**, and with (2) the
-ledger stands at two awaiting deletion. **(8) NEW: revoke three Cloudflare API tokens** at
-dash.cloudflare.com/profile/api-tokens, all named for `create-cairn-site`: T5 run 1's five-key token,
-T5 run 2's eight-key token, and the eight-key token minted 2026-08-13 for T4d's live proof and
-teardown (its local file is already deleted). **(9) NEW: check the Workers Paid opt-in** taken at T5
-run 2's prompt, in case the account was not already on it via 907-life. Everything else in the T5
-teardown table is done and verified.
+These are not gated on release one, the site walk, or each other. Item (1) in particular should be
+actioned now rather than batched with the rest; it is listed first because it is a live credential
+exposure, not because it is first in any sequence.
 
-**Carry-forwards (the tool initiative). CLOSED this pass: 1 (the resolver negative-cache
-diagnosis) and 7 (the fake HTTP plumbing extraction).** Renumbered survivors: (1) an externally
-registered domain still owes the branches the scratch domain cannot reach. (2) Chapter 2's
-browser-moment count is one and chapter 3's is two; **owned by Pass D Task 8**, whose
-admin-track domain page states both. (3) The engine committer-attribution drift from T3 (`src/lib/github/repo.ts` versus spec 7.4).
-(4) `check:comments` and the root type-check cover `src/lib` only, so `packages/create-cairn-site`
-has neither a comment gate nor a type gate; its own `npm test` is the real gate, and this pass leaned
-on that fact repeatedly. (5) The `paid-plan-missing` mapping keys on entitlement wording rather than
-a code. (6) The deferred defect list per the T4a spec's ruling 2. (7) The umbrella's resume table, **now owned by Pass D
-Task 8** as the admin track's setup recovery page. (8) Root `CLAUDE.md` has no context headroom left; the next addition
-there must trim first. (9) `--yes` with `CAIRN_CF_API_TOKEN` equal to a saved token that fails
-validation throws rather than re-validating, a deliberate narrowing. (10) `runStep` exists as an
-identical one-liner in four modules; the hoist is right but is a cross-cutting refactor of
-pre-existing code, and this pass explicitly declined it as a fourth extraction. (11) A first `--yes`
-run cannot reach `builds-live`, since the reconcile hash gate has no prior hash. (12) The bake couples
-the template's installability to the publish window. (13) No gate proves a scaffold against the
-registry. (14) **NEW: the console scenario is mirrored in `test/console-hold.test.mjs` and
-`.github/workflows/create-site.yml` with nothing linking them.** (15) **NEW: no spawned-child test
-covers the pre-first-probe interrupt window**; it is held by a unit test plus two composer wiring
-assertions, and an end-to-end proof needs a latency proxy or a hang-the-first-request capability in
-the fake.
+**NINE outstanding, one urgent.** (1) **URGENT: rotate the estate
+Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still active; mint
+a replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the
+old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API token
+`d07b2a25f05151591830c45053186979`, then `rm -f ~/.config/cairn/t4c-spike-token
+~/.config/cairn/store-t4c-token.sh`. (4) 907-life's push-to-deploy has been broken since
+2026-07-14. (5) Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT at release one. (6) The button
+spike's browser moment, owed at release one with T5a'. (7) Delete the GitHub App
+`cairn-t5-scratch` (id 4585219), which uninstalls installation 153531337 with it; with (2) the
+ledger stands at two Apps awaiting deletion. (8) Revoke three Cloudflare API tokens at
+dash.cloudflare.com/profile/api-tokens, all named for `create-cairn-site`: T5 run 1's five-key
+token, T5 run 2's eight-key token, and the eight-key token minted 2026-08-13 for T4d's live proof
+and teardown. (9) Check the Workers Paid opt-in taken at T5 run 2's prompt, in case the account
+was not already on it via 907-life.
+
+**Carry-forwards (the tool initiative), verified against this list, not a remembered one.**
+(1) An externally registered domain still owes the branches the scratch domain cannot reach.
+(2) The engine committer-attribution drift from T3 (`src/lib/github/repo.ts` versus spec 7.4).
+(3) `check:comments` and the root type-check cover `src/lib` only, so `packages/create-cairn-site`
+has neither a comment gate nor a type gate; its own `npm test` is the real gate. (4) The
+`paid-plan-missing` mapping keys on entitlement wording rather than a code. (5) The deferred
+defect list per the T4a spec's ruling 2. (6) Root `CLAUDE.md` has no context headroom left; the
+next addition there must trim first. (7) `--yes` with `CAIRN_CF_API_TOKEN` equal to a saved token
+that fails validation throws rather than re-validating, a deliberate narrowing. (8) `runStep`
+exists as an identical one-liner in four modules; the hoist is right but is a cross-cutting
+refactor of pre-existing code. (9) A first `--yes` run cannot reach `builds-live`, since the
+reconcile hash gate has no prior hash. (10) The bake couples the template's installability to the
+publish window. (11) No gate proves a scaffold against the registry. (12) The console scenario is
+mirrored in `test/console-hold.test.mjs` and `.github/workflows/create-site.yml` with nothing
+linking them. (13) No spawned-child test covers the pre-first-probe interrupt window. **CLOSED by
+Pass D:** the browser-moment counts (the admin track's domain page states them) and the
+umbrella's resume table (now `docs/admin/setup-recovery.md`).
 
 ## Standing state (release ordering, consumers, open items, carry-forwards)
 
-**T4c is BUILT** (2026-08-13; the entry above carries its state, gaps, and hand steps). T4b and
-T4b.1 are shipped history: their detail lives in their plans' post-mortems and the archived
-entries. T4c's own execution record is its plan's post-mortem plus the live spike at
-`docs/internal/2026-08-12-t4c-builds-spike.md`, which is the fixture source for every Builds
-fake body and carries the teardown table.
+**The whole `create-cairn-site` initiative is shipped history**, T4a through T4d plus T5: the
+detail lives in each plan's post-mortem and the archived entries. The T4c live spike at
+`docs/internal/record/2026-08-12-t4c-builds-spike.md` stays the fixture source for every Builds
+fake body and carries its teardown table. Pass D is now history too, on the same terms; the
+entry above holds what release one still needs from it.
 
-**THEN release one, AFTER Pass D** (amended ordering, Geoff 2026-08-09): it rolls this window
-plus the history/revert, preview, vertical-alignment, and cleanup passes plus the docs reset, and
-**`create-cairn-site` and the template repo publish in the same cut** so no shipped page
-describes an uninstallable tool. Invoke `cairn-release`; verify the next number is free first.
+**Release one is the next cut** (ordering amended by Geoff 2026-08-09, and Pass D was the last
+gate on it). The entry above carries the same-cut obligations and the one human read still owed.
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to
@@ -206,24 +157,28 @@ release one per the ordering above:
 | Repo | Range | Behind |
 |---|---|---|
 | `907-life` | `^0.84.4` | 0.85 through 0.93, plus this window |
-| `cairn-pub` | `^0.87.4` | 0.88 through 0.93, plus this window (migration ran against `rc.1`; the `Consumers must:` work is done, blocked only on the GitHub App item above) |
+| `cairn-pub` | `0.94.0-rc.1` (pinned exact) | this window only. **Corrected 2026-08-14 at Pass D Task 12**, which found this row claiming `^0.87.4`: a prior pass already landed the full upgrade, so the six-minor gap this table asserted does not exist. The `Consumers must:` work is done, blocked only on the GitHub App item above |
 | `aksailingclub-org` | `^0.94.0` | current (adoption merged, deployed, and smoked 2026-08-07) |
 | `ecxc-ski` | `^0.93.0` | this window only |
 
 (`~/Projects/asc-site` is a second checkout of `aksailingclub-org`, not a fifth consumer.)
-**cairn.pub is a consumer and the project's own site**, a docs shell six minors behind the engine it
-documents.
+**cairn.pub is a consumer and the project's own site.** It is current on the engine, pinned at
+`0.94.0-rc.1`; what it is behind on is the docs restructure, which its prepared
+`pass-d-docs-tracks` branch carries and the site walk merges.
 
 **Carry-forwards (live):** admin error statuses flattening to HTTP 200 under the shell's streamed
 pending count (upstream sveltejs/kit#12987, OPEN); `config.kit.csrf.checkOrigin` is an ACTIVE
 deprecation warning in the toolchain this repo builds against (kit#15992, watched by a scheduled
 routine) and prints on every showcase build; engine-rendered markup depending on classes Tailwind
 may never emit (ROADMAP Now, and resolving it moves the approved visual baseline, so it runs through
-`visual-fidelity` with Geoff's before/after); mermaid diagrams near-illegible at 320/390;
-section-index breadcrumbs duplicating the arm name; the `/admin/help` first-steps card overlap; the
+`visual-fidelity` with Geoff's before/after); the `/admin/help` first-steps card overlap; the
 `sideEffects` coverage gate filed as mechanical hardening. The xcathletes pass-1 plan amendment
 (ruling 3) still rides the next session that touches `~/Projects/ecxc-ski`. ASC's own retrofits run
-in that repo on its own clock.
+in that repo on its own clock. **Two docs-rendering carry-forwards retired here:** no published
+page carries a mermaid diagram any more (verified across all four tracks), which closes the
+320/390 legibility item, and the section-index breadcrumb duplication rode the old arm structure,
+so it re-verifies against the rebuilt cairn-pub loader at the site walk rather than standing as a
+known defect.
 
 ## Archives
 
@@ -250,4 +205,6 @@ session started from, is in `STATUS-archive-2026-08-12-t4c-planned.md`. The T5 T
 close, the T5a split record, and the state T4d's execution session started from are in
 `STATUS-archive-2026-08-13-t5-task8-close.md`. The T4d close entry, with the live-proof and
 teardown record as STATUS carried them to the Pass D planning sitting, is in
-`STATUS-archive-2026-08-13-t4d-close.md`.
+`STATUS-archive-2026-08-13-t4d-close.md`. The four entries Pass D itself ran through, the
+planning entry, the Phase 1 close, the Phase 3 start, and the production-gate failure that
+blocked Phase 3 until its fold landed, are in `STATUS-archive-2026-08-14-pass-d.md`.

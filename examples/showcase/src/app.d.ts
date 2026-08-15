@@ -42,7 +42,7 @@ declare global {
           // CairnPlatformBindings itself.
           CAIRN_DEV_BACKEND?: string | boolean;
           // cairn-template:exclude-start
-          // The showcase members fixture's own binding (docs/guides/add-a-login-channel.md);
+          // The showcase members fixture's own binding (docs/extend/add-a-second-audience.md);
           // cairn's engine never reads it. Excluded from every scaffolded site along with
           // src/members/, src/routes/members/, and the wrangler.jsonc MEMBER_DB block.
           MEMBER_DB: D1Database;

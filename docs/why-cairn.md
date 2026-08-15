@@ -49,11 +49,10 @@ cairn means committing to the stack underneath it.
 
 ## The honest trade-offs
 
-**cairn is pre-1.0, and seams still move.** The package is at `0.94.0` today, and the extend
-track's own stability section documents a seam that moved across two separate minor releases
-already, inside the tier meant to stay frozen. Until `1.0`, an upgrade is something to verify
-against your own code, not just install. [Migration notes](./extend/migration-notes.md) is the
-per-version record.
+**cairn is pre-1.0, and seams still move.** The extend track's own stability section documents a
+seam that moved across two separate minor releases already, inside the tier meant to stay frozen.
+Until `1.0`, an upgrade is something to verify against your own code, not just install.
+[Migration notes](./extend/migration-notes.md) is the per-version record.
 
 **cairn is built for a small, coordinated editorial team, not a large or anonymous one.** The
 zero-config identity model assumes one to a handful of editors who already know each other, with

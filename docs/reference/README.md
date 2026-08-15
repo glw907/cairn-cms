@@ -8,7 +8,7 @@ Two gates hold every export-keyed page to that source of truth. `check:reference
 documents every export of its subpath. `check:reference:signatures` goes further for function and
 const-function exports: it renders each export's real type through the TypeScript compiler and
 compares it against the declared `ts`-block signature on the page, so a signature that drifts from
-the code fails the build. A drifted signature fails the build red.
+the code fails the build.
 
 ## Stability tiers
 
@@ -74,9 +74,3 @@ internal contract rather than a package subpath: the four CLI pages (`cairn-mani
 `cairn-doctor`, `cairn-media-seed`, `cairn-audit`), [the canonical admin mount](./admin-routes.md),
 [log events](./log-events.md), [admin grammar tokens](./admin-grammar-tokens.md), and
 [supported toolchain](./supported-toolchain.md).
-
-## Superseded
-
-[Content authoring syntax](./authoring-syntax.md) is author-facing rather than a developer
-contract, so it moves into the editors track and the media reference. It still ships while the
-replacement finishes, and the next release drops it.

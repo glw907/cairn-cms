@@ -20,7 +20,7 @@ export interface CairnCondition {
 	remediation: string;
 	/**
 	 * The condition's section in the readiness checklist, written as
-	 * 'cloudflare-readiness.md#<heading-slug>' so a doc can link it relative to docs/guides/.
+	 * 'is-it-working.md#<heading-slug>' so a doc can link it relative to docs/admin/.
 	 * The check:readiness gate parses the part after '#' and asserts the heading exists; two
 	 * conditions may share a section. Every entry carries one unless the gate's allowlist
 	 * excuses it.
@@ -38,7 +38,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Always Use HTTPS is off',
 		why: 'The JS-free admin sign-in posts a form, and the framework CSRF guard rejects a form POST whose origin scheme does not match, so an admin reached over http hits an opaque 403.',
 		remediation: 'Turn on Always Use HTTPS for the zone under SSL/TLS, Edge Certificates, and keep HSTS on.',
-		docsAnchor: 'cloudflare-readiness.md#force-https-at-the-edge',
+		docsAnchor: 'is-it-working.md#force-https-at-the-edge',
 		logEvent: 'guard.rejected',
 	},
 	'auth.csrf-token-invalid': {
@@ -47,7 +47,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Admin CSRF token check failed',
 		why: 'An admin form POST carried no valid __Host-cairn_csrf double-submit token, usually a stale tab or blocked cookies.',
 		remediation: 'Open the sign-in page fresh, allow cookies for the site, and request a new link.',
-		docsAnchor: 'cloudflare-readiness.md#admin-csrf-token-rejected',
+		docsAnchor: 'is-it-working.md#admin-csrf-token-rejected',
 		logEvent: 'guard.rejected',
 	},
 	'auth.csrf-origin-mismatch': {
@@ -56,7 +56,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Non-admin form Origin rejected',
 		why: "A non-admin unsafe form POST carried an Origin that did not match the site, so cairn's restored framework Origin check rejected it.",
 		remediation: 'Post the form from the same origin, or check a proxy that strips or rewrites the Origin header.',
-		docsAnchor: 'cloudflare-readiness.md#non-admin-origin-rejected',
+		docsAnchor: 'is-it-working.md#non-admin-origin-rejected',
 		logEvent: 'guard.rejected',
 	},
 	'email.sender-not-onboarded': {
@@ -65,7 +65,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Email sending domain is not onboarded',
 		why: 'The from-address domain has no enabled Cloudflare sending subdomain, so env.EMAIL.send has no aligned sender and the magic-link send throws E_SENDER_NOT_VERIFIED. No editor can sign in.',
 		remediation: 'Onboard the sending domain with `wrangler email sending enable <domain>`, then re-deploy. The domain must match branding.from.',
-		docsAnchor: 'cloudflare-readiness.md#onboard-the-sending-domain',
+		docsAnchor: 'is-it-working.md#onboard-the-sending-domain',
 		logEvent: 'auth.link.send_failed',
 	},
 	'email.send-failed': {
@@ -74,7 +74,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Magic-link email send failed',
 		why: 'The magic-link send threw for a reason other than a missing sender onboarding (a delivery error, a binding misconfiguration, or a custom sender failure), so the editor never received a link.',
 		remediation: 'Read the auth.link.send_failed log record (the code and error fields) in Workers Logs, and check the EMAIL binding and the sender configuration.',
-		docsAnchor: 'cloudflare-readiness.md#onboard-the-sending-domain',
+		docsAnchor: 'is-it-working.md#onboard-the-sending-domain',
 		logEvent: 'auth.link.send_failed',
 	},
 	'config.bindings-missing': {
@@ -83,7 +83,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Wrangler bindings are missing',
 		why: 'The wrangler config declares no send_email binding named EMAIL or no D1 binding named AUTH_DB, so the magic-link send or the session store has nothing to call and no editor can sign in.',
 		remediation: 'Declare the send_email binding as EMAIL and the d1_databases binding as AUTH_DB in wrangler.jsonc (or wrangler.toml), then re-deploy.',
-		docsAnchor: 'cloudflare-readiness.md#deploy-the-worker-with-its-bindings',
+		docsAnchor: 'is-it-working.md#deploy-the-worker-with-its-bindings',
 	},
 	'config.observability-off': {
 		id: 'config.observability-off',
@@ -91,7 +91,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Workers Logs has no sink',
 		why: 'observability.enabled is not true in the wrangler config, so the structured log records go nowhere and a runtime failure leaves nothing to read.',
 		remediation: 'Set observability.enabled to true in wrangler.jsonc, then re-deploy.',
-		docsAnchor: 'cloudflare-readiness.md#turn-on-observability',
+		docsAnchor: 'is-it-working.md#turn-on-observability',
 	},
 	'config.csrf-disable-missing': {
 		id: 'config.csrf-disable-missing',
@@ -99,7 +99,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Framework CSRF check is not handed off',
 		why: "The CSRF authority is not handed to cairn cleanly. Either svelte.config.js does not carry csrf: { checkOrigin: false }, so SvelteKit's own Origin check runs ahead of cairn's guard and rejects an admin form POST that arrives without an Origin header, or the disable is present with no cairn guard wired in src/hooks.server.ts, which leaves the site with no CSRF protection at all.",
 		remediation: "Set csrf: { checkOrigin: false } in svelte.config.js and wire createAuthGuard into src/hooks.server.ts; cairn's guard owns the Origin and double-submit token checks.",
-		docsAnchor: 'cloudflare-readiness.md#wire-cairns-csrf-guard',
+		docsAnchor: 'is-it-working.md#wire-cairns-csrf-guard',
 	},
 	'config.public-origin-invalid': {
 		id: 'config.public-origin-invalid',
@@ -107,7 +107,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'PUBLIC_ORIGIN is missing or invalid',
 		why: 'PUBLIC_ORIGIN is unset, does not parse as a URL, or uses http on a non-local host. The magic-link confirmation links and the absolute feed URLs derive from it, config-only so a forged Host header cannot redirect a link, and sign-in cannot mint a usable link without it.',
 		remediation: "Set PUBLIC_ORIGIN to the site's canonical https origin in the wrangler config vars (with .dev.vars carrying the local http override), then re-deploy; http passes only on localhost or 127.0.0.1.",
-		docsAnchor: 'cloudflare-readiness.md#set-the-public-origin',
+		docsAnchor: 'is-it-working.md#set-the-public-origin',
 	},
 	'config.site-config-invalid': {
 		id: 'config.site-config-invalid',
@@ -115,7 +115,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Site config does not validate',
 		why: 'site.config.yaml fails to parse or fails the URL-policy validation, so the build and the admin cannot resolve the content concepts.',
 		remediation: 'Correct site.config.yaml; the parse or validation error names the failing field or URL-policy rule.',
-		docsAnchor: 'cloudflare-readiness.md#validate-the-site-config',
+		docsAnchor: 'is-it-working.md#validate-the-site-config',
 	},
 	'config.dependency-floors-unmet': {
 		id: 'config.dependency-floors-unmet',
@@ -123,7 +123,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'A framework dependency sits below the engine floor',
 		why: 'The lockfile resolves svelte or @sveltejs/kit below the range the engine declares as a peer. Consumer sites compile the shipped .svelte sources, so a below-floor compiler bites silently at build time; svelte 5.56.1 miscompiles parenthesized boolean groupings, which is why the svelte floor is ^5.56.3.',
 		remediation: "Raise the devDependency range in the site's package.json to the engine peer range and reinstall so the lockfile re-resolves, for example `npm install --save-dev svelte@^5.56.3`.",
-		docsAnchor: 'cloudflare-readiness.md#meet-the-dependency-floors',
+		docsAnchor: 'is-it-working.md#meet-the-dependency-floors',
 	},
 	'edge.hsts-off': {
 		id: 'edge.hsts-off',
@@ -131,7 +131,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'HSTS is off',
 		why: 'The zone sends no Strict-Transport-Security header with a meaningful max-age, so nothing pins https for the site at large and a later http visit reaches the origin over plain transport. The admin host is covered either way, since cairn\'s own admin responses carry their own max-age, so this is about every other route.',
 		remediation: "Turn on HSTS for the zone, with a max-age of six months or more. The check's own floor is 30 days.",
-		docsAnchor: 'cloudflare-readiness.md#turn-on-hsts',
+		docsAnchor: 'is-it-working.md#turn-on-hsts',
 	},
 	'ai.posture-not-effective': {
 		id: 'ai.posture-not-effective',
@@ -139,7 +139,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'The stated AI posture is not the served one',
 		why: 'The adapter declares an aiPosture, but the robots.txt the origin actually serves carries nothing consistent with it, so the stance crawlers read is not the stance the site states.',
 		remediation: "Check that the site's robots.txt route passes aiPosture to robotsResponse and that the build carrying it deployed. If the served file is not the one cairn emits, something ahead of the origin is writing it, which a zone's managed robots.txt does by prepending; this check cannot see which. Look at the zone's robots.txt and AI Crawl Control settings in the Cloudflare dashboard.",
-		docsAnchor: 'cloudflare-readiness.md#make-the-stated-ai-posture-effective',
+		docsAnchor: 'is-it-working.md#make-the-stated-ai-posture-effective',
 	},
 	'auth.store-unreachable': {
 		id: 'auth.store-unreachable',
@@ -147,7 +147,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Auth store is unreachable',
 		why: 'The AUTH_DB D1 database is missing, lacks the auth schema, or holds no owner row, so no magic-link token can be minted and nobody can sign in.',
 		remediation: 'Create the database, apply the auth schema with `wrangler d1 execute <db> --remote --file ./migrations/0000_auth.sql`, seed the owner row, and check the AUTH_DB binding id in wrangler.jsonc.',
-		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
+		docsAnchor: 'is-it-working.md#provision-the-auth-store',
 	},
 	'auth.unknown-role': {
 		id: 'auth.unknown-role',
@@ -155,7 +155,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Editor row uses an undeclared role',
 		why: "An editor row's role is not a key in the site's declared vocabulary (a pruned config or a hand-edited row), so that session resolves to none capability: it can sign in but the guard refuses every content and admin-mutation route.",
 		remediation: 'Either restore the role to the vocabulary, or set the row to a declared role name through the manage-editors screen.',
-		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
+		docsAnchor: 'is-it-working.md#provision-the-auth-store',
 		logEvent: 'auth.role.unknown',
 	},
 	'auth.role-wiring-missing': {
@@ -164,7 +164,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Guard is missing the declared role vocabulary',
 		why: 'The adapter declares custom roles with defineRoles, but createAuthGuard in src/hooks.server.ts was not passed { roles }, so the running guard falls back to the implicit owner/editor pair. Every editor whose role is outside that pair resolves to none capability: they authenticate but the guard refuses every content and admin-mutation route. This is the second half of a two-part wiring the auth.unknown-role check cannot see, since the editor rows still match the declared vocabulary.',
 		remediation: 'Pass the same declared vocabulary to the guard: createAuthGuard({ roles }) in src/hooks.server.ts, importing the roles the adapter declares with defineRoles.',
-		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
+		docsAnchor: 'is-it-working.md#provision-the-auth-store',
 		logEvent: 'auth.role.unknown',
 	},
 	'auth.email-not-normalized': {
@@ -173,7 +173,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Editor email is not trimmed and lowercase',
 		why: 'An editor row carries an email that is not trimmed and lowercase, breaking the invariant the auth store, the allowlist lookup, and a consumer\'s own domain tables all rely on as a join key. This usually comes from a manual D1 insert.',
 		remediation: 'Update the row so its email is trimmed and lowercase, matching what every write path (magic-link request, manage-editors) already normalizes to.',
-		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
+		docsAnchor: 'is-it-working.md#provision-the-auth-store',
 	},
 	'github.app-unreachable': {
 		id: 'github.app-unreachable',
@@ -181,7 +181,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'GitHub App is unreachable',
 		why: 'The App key fails to parse, the App fails to authenticate, the installation token fails to mint, or the repository refuses a read, so saves and publishes cannot commit.',
 		remediation: 'Check GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 against the App settings, and confirm the App is installed on the repository.',
-		docsAnchor: 'cloudflare-readiness.md#install-the-github-app',
+		docsAnchor: 'is-it-working.md#install-the-github-app',
 		logEvent: 'github.unreachable',
 	},
 	'admin.mount-incomplete': {
@@ -191,7 +191,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		why: "The four-file /admin mount (the shared +layout that renders CairnAdminShell and calls the composer's shellLoad, and the [...path] catch-all that renders CairnAdmin) appears not fully wired, so a custom admin screen or the shared chrome may not render. This is a best-effort text heuristic, so an unconventionally-wired site can trip it without being broken.",
 		remediation:
 			'Mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin(runtime).shellLoad, and the /admin/[...path] catch-all that renders CairnAdmin.',
-		docsAnchor: 'cloudflare-readiness.md#wire-the-admin-mount',
+		docsAnchor: 'is-it-working.md#wire-the-admin-mount',
 	},
 	'skill.admin-screens-stale': {
 		id: 'skill.admin-screens-stale',
@@ -199,6 +199,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'admin-screens skill is missing or stale',
 		why: 'The packaged cairn-admin-screens skill teaches an agent the register rules, the annotated exemplars, and the done-gate for building admin screens. When the consumer copy under .claude/skills/cairn-admin-screens/ is absent, or its content no longer hashes the same as the installed package, an agent loading it works from a missing or stale standard instead of the current one.',
 		remediation: 'Run `npx cairn-doctor --fix` to install or refresh the skill from the installed package.',
+		docsAnchor: 'is-it-working.md#refresh-the-admin-screens-skill',
 	},
 	'admin.login-probe-failed': {
 		id: 'admin.login-probe-failed',
@@ -206,7 +207,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		title: 'Live admin login probe failed',
 		why: 'A live request to the deployed admin did not answer with the working sign-in envelope (the login page, its CSRF cookie and hidden field, and the request action), so a real editor cannot sign in either. A probe failure has many possible causes; the detail line names the assertion that failed.',
 		remediation: 'Read the failed assertion in the detail line, run the full doctor against the same site, and work through the deploy guide; the other checks narrow the cause.',
-		docsAnchor: 'cloudflare-readiness.md#probe-the-deployed-admin',
+		docsAnchor: 'is-it-working.md#probe-the-deployed-admin',
 	},
 };
 

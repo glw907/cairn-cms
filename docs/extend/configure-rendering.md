@@ -29,7 +29,8 @@ Wire its result as the adapter's render function:
 <!-- snippet-check-skip: illustrates the rendering member's render and components keys inside the adapter's rendering object; the full object is shown in core.md's worked example -->
 ```ts
 rendering: {
-  render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
+  render: ({ body, resolve, resolveMedia, resolveFragment }) =>
+    renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
   components: registry,
 },
 ```
@@ -72,9 +73,11 @@ transform, once per occurrence, so it can't `await` anything. If a component nee
 doesn't already have, fetch it outside the render pipeline (at content build time, or in the
 adapter's own resolver) and pass the result through `attributes`.
 
-`attributes` is a flat record of scalar `fields.*` descriptors (`text`, `select`, `number`, and
-the rest of the leaf types; never `object`, `array`, `reference`, or `image`), validated by the
-same fieldset machinery a concept's own fields use. `slots` name the content regions the
+`attributes` accepts exactly ten `fields.*` descriptors, the ones that serialize to a single
+directive-attribute string: `text`, `textarea`, `number`, `select`, `url`, `email`, `date`,
+`datetime`, `boolean`, and `icon`. Everything else, including `multiselect`, `object`, `array`,
+`reference`, and `image`, throws at declaration; the same fieldset machinery a concept's own
+fields use validates attributes too. `slots` name the content regions the
 component's directive can carry: `title` and `body` are conventional names the editor's
 component-insert dialog treats specially, but any name works.
 

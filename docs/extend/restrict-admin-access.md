@@ -8,12 +8,22 @@ Capability is the floor cairn already enforces: `owner`, `editor`, or `none`, re
 and narrows it further, per screen or per route. It never widens what a capability already
 permits.
 
+**Precondition:** a role vocabulary to validate the map's role names against. If your adapter
+already declares one with [`defineRoles`](../reference/core.md#defineroles) (see [Add a second
+audience](./add-a-second-audience.md) for a worked example), import that same value. If it
+doesn't, import [`DEFAULT_ROLES`](../reference/core.md#defineroles) from `@glw907/cairn-cms`
+instead: the implicit `{ owner: 'owner', editor: 'editor' }` pair a site with no declared
+vocabulary already resolves against.
+
 ## Declare the map
 
 ```ts
 // src/lib/cairn.access.ts
-import { defineAccess } from '@glw907/cairn-cms';
-import { roles } from './cairn.config.js';
+import { defineAccess, type RolesDeclaration } from '@glw907/cairn-cms';
+
+// Your own declared vocabulary, whatever module you keep it in. Import `DEFAULT_ROLES` from
+// `@glw907/cairn-cms` instead if you have not declared one; see the precondition above.
+declare const roles: RolesDeclaration;
 
 export const access = defineAccess(roles, {
   pages: ['webmaster'],
@@ -84,6 +94,10 @@ same access check before its handler: see [Add a custom admin
 screen](./add-a-custom-admin-screen.md) for the full worked route. **A page's `load` gating a
 read never gates the POST to its own action.** SvelteKit dispatches a matched form action with
 no ancestor `load` run first, so an unguarded action is reachable even behind a guarded page.
+
+Restricting `media` restricts more than the media library screen: the inline image picker inside
+every image-bearing concept's editor calls the same access-gated endpoint, so a role that edits
+one of those concepts also needs `media` reachable, or its picker breaks.
 
 ## Hiding is not denying
 

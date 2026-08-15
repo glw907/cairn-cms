@@ -31,11 +31,14 @@ async function announceNewPublishes() {
 }
 ```
 
-An entry counts as newly published when `after` carries a `publishedAt` stamp and its
-same-identity counterpart in `before` was either absent or itself unstamped. An entry that
-carried its stamp forward, one that was already live but never stamped, and a draft all fail to
-match, since none of them changes the stamp between the two manifests you pass in. An entry
-deleted from `after` never comes back through this seam, so a removal is silent here by design.
+An entry counts as newly published when it's live (not a draft) in `after`, carries a
+`publishedAt` stamp there, and its same-identity counterpart in `before` was either absent or
+itself unstamped. An entry that carried its stamp forward, and one that was already live but never
+stamped, both fail to match, since neither changes the stamp between the two manifests you pass
+in. A draft fails to match too, but for a different reason: the draft check runs first and
+excludes it outright, whether or not its stamp changed, since a currently unpublished entry can
+still carry a stamp forward from an earlier publish. An entry deleted from `after` never comes
+back through this seam, so a removal is silent here by design.
 
 The helper is pure: no I/O, no clock read. You supply both manifests and get a deterministic
 result, which is what makes it safe to run this diff anywhere, in a deploy hook, a scheduled
@@ -57,6 +60,16 @@ stamped row disappears from `after`, and the new key's row has no stamped counte
 `before`. A site that renames published entries and doesn't want a rename to re-announce needs to
 filter that case out itself; the helper has no way to distinguish "genuinely new" from "renamed"
 from the manifest alone, since both look identical at the identity level it diffs on.
+
+## Deleting and recreating an entry reads as new too
+
+The same "no stamped counterpart in `before`" rule catches more than a rename. Deleting a
+published entry drops its manifest row, stamp included; publishing a new entry created under
+that same id afterward finds no prior row to carry a stamp forward from, so it re-announces
+exactly like a first publish, even if the deleted entry was years old. The general rule behind
+both cases: a row only keeps its original publish stamp while it keeps existing and stays
+published, so anything that leaves a publish with no still-existing, already-stamped
+predecessor reads as new, not only a rename.
 
 ## You know it worked when
 

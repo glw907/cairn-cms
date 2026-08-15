@@ -62,7 +62,7 @@ See [`CHANGELOG.md`](../../CHANGELOG.md#0870).
 ## 0.86.0
 
 `navLayout` shipped in this version, giving a site one declarative tree for the whole admin
-sidebar. Its types were renamed again in 0.94.0 (`AdminNavEntry` and its siblings became
+sidebar. Its types were renamed in 0.94.0 (`AdminNavEntry` and its siblings became
 `NavLayoutEntry` and its siblings), so a site jumping from before 0.86.0 to past 0.94.0 in one leap
 applies this version's shape first and then 0.94.0's rename on top of it.
 

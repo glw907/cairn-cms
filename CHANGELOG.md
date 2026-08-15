@@ -359,6 +359,38 @@
   (`npm install @anthropic-ai/sdk`), because npm does not auto-install an optional peer; a site not
   using tidy does nothing, and its install gets lighter.
 
+### Documentation
+
+- The published documentation is now organized by who is reading it, not by what shape the page
+  is. Three audience tracks replace the old Diataxis arms: [admin](docs/admin/README.md) for the
+  person who runs the site, [editors](docs/editors/README.md) for the person who writes in it, and
+  [extend](docs/extend/README.md) for the developer building on it, with the machine-gated
+  [reference](docs/reference/README.md) arm kept as it was and [why cairn](docs/why-cairn.md)
+  raised to sit beside the [docs index](docs/README.md) as a second front door. `docs/guides/`,
+  `docs/tutorial/`, and `docs/explanation/` are deleted, 50 files in all, along with
+  `docs/reference/authoring-syntax.md`, whose content was author-facing rather than a developer
+  contract and now lives in the editors track. The new pages were written against the source tree
+  rather than edited out of the old ones, which is what let them fix claims the old corpus had
+  wrong: an edit conflict keeps your typing on screen instead of asking you to reload and reapply
+  it, entry history is capped at the 25 most recent publishes, and a current SvelteKit scaffold
+  carries no `svelte.config.js` to put the adapter in at all. The editors track grades under the
+  Microsoft style guide rather than Google, because its reader is not a developer.
+
+  Every gate that named the old arms moved with them. `check:docs` learned a legacy-path map so
+  `CHANGELOG.md` keeps its historical links unrewritten while every other file's links still fail
+  loud on a dead target, and the map fails loudly itself when an entry rots: a replacement that no
+  longer exists, an old page that came back, or an entry no link reaches. `check:arm-indexes`
+  gained a front-door rule for `docs/why-cairn.md`, a published page belonging to no arm
+  directory, and `check:package` now treats the front doors as named files rather than covering
+  them with a directory prefix.
+
+  Consumers must: update any bookmark or inbound link into `docs/guides/`, `docs/tutorial/`, or
+  `docs/explanation/`, which no longer exist; cairn-pub serves a redirect for every URL those
+  pages published, so a live link keeps resolving, but a link written into your own site's content
+  or code should be repointed at its new home. The published tarball's docs payload changes shape
+  with it: `docs/admin`, `docs/editors`, `docs/extend`, and `docs/why-cairn.md` ship, and the three
+  retired arms no longer do. Nothing in the engine's exports, types, or runtime behavior changes.
+
 ## 0.94.0
 
 <!-- release-size: minor -->

@@ -90,26 +90,24 @@ durable orientation only.
 
 ## Documentation is a pass dimension
 
-Documentation is a standing dimension of every cairn-cms pass, not a separate project. A pass updates
-the relevant `docs/` arm for whatever it changed, and a public-API change is not done until its
-reference page matches. The `cairn-pass` pass-end ritual carries this step, and two automated gates
-back it: `npm run check:reference` fails on an undocumented export, and `npm run check:package` checks
-the entry points.
+Every pass updates the docs for what it changed, and a public-API change is not done until its
+reference page matches. The `cairn-pass` ritual carries the step; `check:reference` fails on an
+undocumented export and `check:package` checks the entry points.
 
-The public docs follow a Diátaxis structure under `docs/`: [`reference/`](docs/reference/README.md)
-(one page per export subpath), [`guides/`](docs/guides/README.md) (task how-tos),
-[`explanation/`](docs/explanation/README.md) (the why), and
-[`tutorial/`](docs/tutorial/build-your-first-cairn-site.md) (the first-site build).
+The public docs are four audience tracks under `docs/`, one reader each:
+[`admin/`](docs/admin/README.md) (running the default site, no code),
+[`editors/`](docs/editors/README.md) (writing in `/admin`, no terminal),
+[`extend/`](docs/extend/README.md) (building on the seams), and
+[`reference/`](docs/reference/README.md) (one page per export subpath, gated), plus
+[`why-cairn.md`](docs/why-cairn.md) for an evaluator. A page serves one track or it is two pages.
 [`docs/internal/docs-friction-log.md`](docs/internal/docs-friction-log.md) collects the design
-friction that writing a doc surfaces, from the developer and editor perspectives, triaged into
-[`ROADMAP.md`](ROADMAP.md) and [`docs/STATUS.md`](docs/STATUS.md). This repo keeps no separate backlog
-file.
+friction that writing a doc surfaces, triaged into [`ROADMAP.md`](ROADMAP.md) and
+[`docs/STATUS.md`](docs/STATUS.md). This repo keeps no separate backlog file.
 
 **Maintaining it:** a staging area, never a backlog, measured by what leaves it. Triage is
-complete-or-move, so an entry is fixed and deleted, promoted to the `ROADMAP.md` tier where it bites,
-or deleted as no longer true. Verify against the code first, since an entry records what was true
-when written. The log's own header carries the full rules, including why the same friction from a
-second consumer site is an altitude signal rather than a louder request.
+complete-or-move: fixed and deleted, promoted to the `ROADMAP.md` tier where it bites, or deleted as
+no longer true. Verify against the code first, since an entry records what was true when written.
+The log's own header carries the full rules.
 
 [`ROADMAP.md`](ROADMAP.md) is itself a pass dimension, not a write-once file. A pass that ships a
 roadmap item marks it done and removes it from the live tiers, and a pass that surfaces a new direction
@@ -242,8 +240,8 @@ Map the symptom to its event. An admin who cannot sign in points at `auth.link.s
 `guard.rejected` with its `reason`. A save that does nothing points at `commit.failed`: a `reason` of
 `conflict` is a stale-edit collision, and an `error` field is the GitHub failure to act on. On
 Cloudflare the query surface is Workers Logs, which a site turns on with `observability.enabled = true`
-in `wrangler.jsonc`; filter by `event` or by `editor`. The operator how-to is
-[`docs/guides/read-cairn-logs.md`](docs/guides/read-cairn-logs.md). The records carry an editor's email
+in `wrangler.jsonc`; filter by `event` or by `editor`. The operator how-to opens
+[`docs/admin/troubleshooting.md`](docs/admin/troubleshooting.md). The records carry an editor's email
 for attribution and never a token or a session id, so a log is safe to read and paste.
 
 When a pass adds a diagnosable code path, give it an event in the vocabulary rather than a bare

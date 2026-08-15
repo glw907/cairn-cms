@@ -4,7 +4,7 @@
 
 Site `cairn-pub` (`glw907/cairn-pub`), `0.87.4` to `0.94.0-rc.1`, pinned exactly rather than
 caret-ranged. This was the second of the four, and the first to follow the [upgrade
-guide](../../guides/upgrade-cairn.md) that `aksailingclub-org` wrote. The recipe held. Its eight
+guide](../../extend/upgrade-cairn.md) that `aksailingclub-org` wrote. The recipe held. Its eight
 steps ran in order with no improvisation.
 
 ASC, which wrote the guide, is admin-heavy and consumes four server seams. This site is

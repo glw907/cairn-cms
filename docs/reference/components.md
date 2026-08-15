@@ -3,14 +3,14 @@
 This subpath holds the admin Svelte UI: the shell, the sign-in and confirm pages, the content list
 and editor, the editors, nav, vocabulary, and welcome screens, and the dialogs and pickers those
 compose. The canonical mount is one component: `CairnAdmin`, rendered from the catch-all
-`/admin/[...path]` route, switches to the matching view. The membership rule for the view tier is
-exact: **every view `CairnAdmin` can render is individually mountable here**, so a site on the
-advanced per-route mounting reaches the same component the single-mount facade would have
-rendered; `VocabularyAdmin` and `WelcomeView` complete that seam. A general-purpose,
-domain-agnostic primitive belongs on [`/admin-toolkit`](./admin-toolkit.md) instead, even one this
-barrel's own screens compose internally (`PageHeader`, `AdminTable`): this barrel is for the
-admin's own views and their composed parts, never a reusable building block a site's custom screen
-would reach for on its own. For the catch-all wiring, see
+`/admin/[...path]` route, switches to the matching view. Every view `CairnAdmin` can render is
+individually mountable here, so a site on the advanced per-route mounting reaches the same
+component the single-mount facade would have rendered; `VocabularyAdmin` and `WelcomeView`
+complete that seam. A general-purpose, domain-agnostic primitive lives on
+[`/admin-toolkit`](./admin-toolkit.md) instead, even one this barrel's own screens compose
+internally (`PageHeader`, `AdminTable`): this barrel carries the admin's own views and their
+composed parts, not a reusable building block a site's custom screen would reach for on its own.
+For the catch-all wiring, see
 [the canonical admin mount](./admin-routes.md).
 
 ```ts
@@ -295,7 +295,7 @@ web-link dialog.
 <script lang="ts">
   import { EditPage } from '@glw907/cairn-cms/components';
   import type { EditData } from '@glw907/cairn-cms/sveltekit';
-  import { cairn } from '$lib/cairn.config.js';
+  import { cairn, siteConfig } from '$lib/cairn.config.js';
 
   let { data }: { data: EditData } = $props();
 </script>
@@ -737,7 +737,7 @@ compose it.
 `PreviewBanner` is the one exception to this barrel's admin-only membership rule: a design-agnostic
 component for a page a site's own visitors reach, not the admin. See [Public
 preview](./sveltekit.md#public-preview) for the `previewLoad` seam it pairs with, and [Share a
-draft preview](../guides/share-a-draft-preview.md) for the full walkthrough.
+draft preview](../extend/share-a-draft-preview.md) for the full walkthrough.
 
 ### `PreviewBanner`
 

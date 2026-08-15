@@ -144,7 +144,8 @@ public login and confirm views return bare page data, and every authed view retu
 data. `/admin`'s landing is role-aware: a role with a declared `home` (see [Roles](./core.md#roles))
 redirects there; absent a `home`, an owner- or editor-capability role lands on the first concept's
 list as before, and a none-capability role lands on the calm `'welcome'` view. The nav view is a
-404 unless the runtime configures a `navMenu`.
+404 unless the runtime's `navMenu` is set, composed from the adapter's
+[`nav` member](./core.md#nav-adapter-editor-member).
 
 `shellLoad` is the shared `/admin/+layout.server.ts` load. It returns the lean shell payload that
 [`CairnAdminShell`](./components.md#cairnadminshell) renders: the streamed pending count for an authed
@@ -152,7 +153,7 @@ path, and a bare payload that returns early for the public login and auth paths.
 once for the whole `/admin/**` subtree rather than per view. Stability tier: Extension API, a
 versioned seam a site's own `/admin/` route depends on.
 
-`deps.branding` defaults from the runtime's `siteName` and `sender`, so most sites pass no deps. The
+`deps.auth.branding` defaults from the runtime's `siteName` and `sender`, so most sites pass no deps. The
 showcase reads through a fake GitHub backend in development, which rides `event.locals.cairnBackend` from a
 fenced dev handle rather than through a dep.
 
@@ -468,7 +469,7 @@ holds it against both failure shapes: a sink that throws synchronously, and a si
 rejecting promise. The rejecting case is reachable in practice, not theoretical: the seam's
 `(record) => void` type admits an async function through void-return bivariance, the same pressure
 that writes a sink following the `waitUntil` advice in [add a custom admin
-screen](../guides/add-a-custom-admin-screen.md#wire-the-auditsink). `ctx.audit` catches the
+screen](../extend/add-a-custom-admin-screen.md#wire-the-auditsink). `ctx.audit` catches the
 synchronous throw directly and attaches a fire-and-forget rejection handler to a promise-returning
 result, so the handler's own result still returns exactly as if the sink had succeeded either way,
 and the failure logs `admin.action.sink_threw` (see [log events](./log-events.md)) rather
@@ -596,7 +597,7 @@ optional parameter would make the shortest call the one that silently drops the 
 isolate tears down before it settles, so omitting it (typically when no `event.platform.ctx` is
 reachable) has to be a decision the caller makes on purpose, with the drop risk understood.
 
-The sink is fail-open, the same convention as [a hand-rolled one](../guides/add-a-custom-admin-screen.md#wire-the-auditsink):
+The sink is fail-open, the same convention as [a hand-rolled one](../extend/add-a-custom-admin-screen.md#wire-the-auditsink):
 it returns synchronously, before the insert settles, so a persist failure never fails the audited
 action, and a rejected insert logs `audit.sink.write_failed` (see [log events](./log-events.md))
 carrying the whole truncated record plus the error, since the audited action already completed and
@@ -823,7 +824,7 @@ a manual `wrangler d1 execute` insert. On a request whose normalized email match
 `INSERT ... WHERE NOT EXISTS` statement) before the normal magic-link flow proceeds, and logs
 `editor.bootstrapped`. Once any row exists the config grants nothing, and a non-matching email on
 an empty table behaves exactly as an unknown email. The hand-run `wrangler d1 execute` insert (the
-[configure auth and D1 guide](../guides/configure-auth-and-d1.md)) still works and stays documented
+[configure auth and D1 guide](../extend/add-cairn-to-a-sveltekit-app.md)) still works and stays documented
 as the fallback for a site that prefers it.
 
 ```ts
@@ -1046,7 +1047,7 @@ cascade, closing an id-reuse collision where a stale link could later resolve to
 entry's draft; publishing deliberately leaves the rows in place, since [`previewLoad`](#previewload)
 needs them to answer a stale link with "this preview has ended" rather than a bare 404. See [Public
 preview](#public-preview) below for the site-mounted page these actions feed, and [Share a draft
-preview](../guides/share-a-draft-preview.md) for the adopter's full walkthrough.
+preview](../extend/share-a-draft-preview.md) for the adopter's full walkthrough.
 
 `settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
@@ -1175,7 +1176,7 @@ non-editor"): the edit screen's share affordance, the preceding
 draft, and a site-mounted, never-prerendered
 page renders it through the site's own public composition, so the preview is a real page in the
 site's own app rather than an approximated shell. See [Share a draft
-preview](../guides/share-a-draft-preview.md) for the full adopter walkthrough, including the
+preview](../extend/share-a-draft-preview.md) for the full adopter walkthrough, including the
 `preview_tokens` migration, the mount, and the lifecycle.
 
 **Disambiguation: two unrelated `preview` seams share a word.** [`CairnRuntime.preview`](#types)
@@ -1366,8 +1367,8 @@ with that one entry, and every engine screen the declaration omits lands in the 
 group automatically, with no need to enumerate the rest of the sidebar. Every engine door and every
 site entry's href is additionally gated by the site's declared [access
 map](./core.md#access-map), when one is declared: see [Restrict admin access by
-role](../guides/restrict-admin-access.md) for the map, and [Organize your admin
-nav](../guides/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
+role](../extend/restrict-admin-access.md) for the map, and [Organize your admin
+nav](../extend/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
 icon overrides, and the omission-fallback and `hidden` semantics in practice.
 
 ### `NavLayoutEntry`
@@ -1453,8 +1454,8 @@ shell's foot slot), in engine order; `hidden: true` on an engine reference remov
 purpose (the route itself stays live, since nav placement is never authorization). Every engine
 door and every site entry's href is additionally gated by the site's declared [access
 map](./core.md#access-map), when one is declared: see [Restrict admin access by
-role](../guides/restrict-admin-access.md) for the map, and [Organize your admin
-nav](../guides/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
+role](../extend/restrict-admin-access.md) for the map, and [Organize your admin
+nav](../extend/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
 icon overrides, and the omission-fallback and `hidden` semantics in practice.
 
 ### `EngineScreenId`
@@ -1710,11 +1711,26 @@ export async function attention({ editor }) {
 }
 ```
 
-Wire the function above onto [`ContentRoutesOptions.attention`](#contentroutesoptions) (or
-[`CairnAdminOptions.attention`](#cairnadminoptions) on the single-mount facade), which is awaited
-exactly once per request, after nav resolution and `navFilter` have both already run: the site
-computes items per session from its own domain queues, and the engine drops anything the session
-cannot act on before any rendering or summing. An item is dropped when its `count` is
+Wire the preceding function onto [`ContentRoutesOptions.attention`](#contentroutesoptions) (or
+[`CairnAdminOptions.attention`](#cairnadminoptions) on the single-mount facade), passed as a dep
+where `cairn.server.ts` composes the runtime, not declared on the adapter beside `attention`'s own
+`cairn.config.ts`:
+
+<!-- snippet-check-skip: elides composeRuntime's other real inputs (shown in full in core.md's worked example) to focus on wiring the attention dep -->
+```ts
+// src/lib/cairn.server.ts
+import { composeRuntime } from '@glw907/cairn-cms';
+import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+import { cairn, siteConfig } from './cairn.config.js';
+import { attention } from './cairn.config.js';
+
+export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+export const admin = createCairnAdmin(runtime, { attention });
+```
+
+The dep is awaited exactly once per request, after nav resolution and `navFilter` have both
+already run: the site computes items per session from its own domain queues, and the engine drops
+anything the session cannot act on before any rendering or summing. An item is dropped when its `count` is
 non-positive, when its `href` matches no visible nav entry (an engine door or a site entry, in
 the resolved-and-filtered set), or when it duplicates an earlier item's `href` (first wins,
 silently), so a count can never leak to a role that cannot see its nav entry (counts are
@@ -1732,9 +1748,9 @@ the shell payload serializes an empty record and renders exactly as before this 
 pill on the matching visible nav entry, capped at `99+`; a collapsed section's header shows the
 sum of its visible children's counts, computed from the same live items as the leaf pills, and
 disappears once the section opens (the item pills remain); the count lives in the entry link's
-accessible name, never on the pill span itself, which is `aria-hidden`. See [Organize your admin
-nav](../guides/organize-your-admin-nav.md#badge-a-nav-entry-with-pending-work) for the worked
-guide and the rendering contract in full.
+accessible name, never on the pill span itself, which is `aria-hidden`. That is the rendering
+contract in full. See [Organize your admin nav](../extend/organize-your-admin-nav.md) for the
+layout these counts attach to.
 
 ---
 
@@ -1889,7 +1905,7 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string \| boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker bindings and vars the whole engine reads, all optional: the D1 session store, the canonical confirmation-link origin, the `CAIRN_DEV_BACKEND` tripwire flag the guard reads, the Email Sending binding, and the GitHub App's private-key secret. One shape serves every factory that needs platform bindings, rather than a per-layer split; every member is optional, since a test or a partial handler builds one piece at a time. A site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the members every site needs compile-checked (not a requirement: see that type's own row). |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it structurally with no cast. |
 | <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }` | The Cloudflare bindings and vars every cairn site's Worker needs. Every member but `ANTHROPIC_API_KEY` is required (not optional), so a binding a site forgets to wire fails `app.d.ts` at compile time rather than surfacing as a runtime `config.bindings-missing` error. **A recommended convenience preset, not a requirement:** every route factory's env parameter is `CairnEnv`, structurally satisfied by a bare `wrangler types`-generated env too (`EmailSender.send` returns `Promise<unknown>`, which structurally accepts `@cloudflare/workers-types`' wider `Promise<EmailSendResult>`), so intersecting this type exists to catch a forgotten binding at compile time, not to unblock a route factory assignment. `ANTHROPIC_API_KEY` stays optional since only the opt-in tidy action reads it. The GitHub App's id and installation id aren't runtime bindings: the adapter passes them as compile-time config to `githubApp({ appId, installationId })`, and only the private key names a Worker secret this type carries. `/sveltekit` is the canonical home for this and the other binding-shaped types; intersect it into `App.Platform.env` (`/ambient` augments only `App.Locals`, never `App.Platform`, since a second `Platform` declaration would collide with a site's own through interface merging): `env: CairnPlatformBindings & { /* the site's own bindings */ }`. A media-enabled site also intersects `CairnMediaBindings`. |
-| <a id="cairnmediabindings"></a>`CairnMediaBindings` | Extension API | `interface CairnMediaBindings { MEDIA_BUCKET: R2Bucket }` | The R2 binding a media-enabled site adds to its `Platform.env` intersection, split from `CairnPlatformBindings` since `MEDIA_BUCKET` exists only when the adapter's `assets` block turns media on: `env: CairnPlatformBindings & CairnMediaBindings & { /* the site's own bindings */ }`. |
+| <a id="cairnmediabindings"></a>`CairnMediaBindings` | Extension API | `interface CairnMediaBindings { MEDIA_BUCKET: R2Bucket }` | The R2 binding a media-enabled site adds to its `Platform.env` intersection, split from `CairnPlatformBindings` since it exists only when the adapter's [`media` member](./core.md#media-adapter-member) turns media on: `env: CairnPlatformBindings & CairnMediaBindings & { /* the site's own bindings */ }`. `MEDIA_BUCKET` is the conventional binding name this preset assumes; a site whose adapter names a different `bucketBinding` declares that name in its own env intersection instead of this preset. |
 | `LoginData` | Unstable API | `interface LoginData { siteName: string; error: string \| null; csrf: string }` | `loginLoad`'s named payload: the site name, a resolved `?error` code, and the CSRF token the login form's hidden field carries. |
 | `ConfirmData` | Unstable API | `interface ConfirmData { token: string; siteName: string; error: string \| null; csrf: string }` | `confirmLoad`'s named payload: the token to re-submit, the site name, a resolved `?error` code, and the CSRF token. |
 | `EditorsData` | Unstable API | `interface EditorsData { editors: Editor[]; self: string; error: string \| null; vocabulary: { role: string; capability: Capability }[] }` | `editorsLoad`'s named payload: the allowlist with each row's resolved capability, the acting owner's email, a resolved `?error` code, and the role vocabulary. |

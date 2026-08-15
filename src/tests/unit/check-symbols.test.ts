@@ -237,7 +237,11 @@ describe('the ALLOWLIST', () => {
 });
 
 describe('findUnresolvedSymbols', () => {
+  // A whole-corpus scan, and it runs about 31 seconds against the published tracks, which is over
+  // vitest's 30-second default. That default is nobody's budget for this test; racing it made the
+  // suite fail on wall-clock rather than on a finding. The scan's own gate (`npm run check:symbols`)
+  // runs the identical function outside vitest, so the ceiling here is only about not flaking.
   it('returns no findings on the real committed corpus', () => {
     expect(findUnresolvedSymbols()).toEqual([]);
-  });
+  }, 120_000);
 });

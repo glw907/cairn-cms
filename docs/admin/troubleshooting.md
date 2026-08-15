@@ -32,9 +32,14 @@ logs first. Run `npx cairn-doctor` and start with
 [Provision the auth store](./is-it-working.md#provision-the-auth-store) and
 [Onboard the sending domain](./is-it-working.md#onboard-the-sending-domain). If it's one specific
 person and everyone else is fine, confirm their email is actually on your roster at
-[Invite your editors](./invite-editors.md); the sign-in page never reveals whether an address is
-allow-listed, so a stranger can't tell those two cases apart, and neither can you from the page
-itself.
+[Invite your editors](./invite-editors.md).
+
+The ordinary "check your inbox" message is deliberately the same whether or not the address is on
+your roster, so it can't tell you which case you're in. Two other messages can. "You requested a
+link recently. Check your inbox, or wait a minute and try again" and "We're having trouble sending
+sign-in links right now" both only ever show for an address that's already on your roster, so if
+your person quotes either one back to you, the problem isn't the invite; move on to the sending
+domain and the auth store checks above.
 
 **The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`.
 
@@ -45,12 +50,20 @@ doing anything.
 
 **What it means:** cairn's admin guard rejected the request before it ever reached the screen
 behind it, almost always because of how the site is reached rather than anything wrong with the
-content. This is covered end to end by the doctor's edge and configuration checks: start with
-[Force HTTPS at the edge](./is-it-working.md#force-https-at-the-edge),
-[Admin CSRF token rejected](./is-it-working.md#admin-csrf-token-rejected), and
-[Non-admin origin rejected](./is-it-working.md#non-admin-origin-rejected).
+content. Start with [Force HTTPS at the edge](./is-it-working.md#force-https-at-the-edge), which
+`cairn-doctor` does check, and
+[Admin CSRF token rejected](./is-it-working.md#admin-csrf-token-rejected) and
+[Non-admin origin rejected](./is-it-working.md#non-admin-origin-rejected), which cover the other
+two cases even though the doctor doesn't report them itself; each of those two shows up as a
+`guard.rejected` log record instead.
 
-**The log event:** `guard.rejected`, whose `reason` field names which of those three it was.
+If instead **every** admin page, including the sign-in page itself, shows the same branded error,
+that's a different reason: your database binding is missing, and
+[Deploy the Worker with its bindings](./is-it-working.md#deploy-the-worker-with-its-bindings)
+covers the fix.
+
+**The log event:** `guard.rejected`, whose `reason` field names which case it was: `https`,
+`csrf`, and `origin` are the three above, and `bindings` is the missing-database case.
 
 ## A save or publish reports a conflict, or just fails
 
@@ -63,8 +76,18 @@ the GitHub App itself; check [Install the GitHub App](./is-it-working.md#install
 If the doctor reports the App healthy and saves still fail, this needs a developer; see
 [Debug your site](../extend/debug-your-site.md).
 
-**The log event:** `commit.failed`, whose `reason` field is `conflict` on the ordinary case, or
-whose `error` field names what GitHub actually said otherwise.
+Separately, the **Publish site** button only appears when something is actually waiting to
+publish, so its absence usually just means nothing is pending, or that you're inside an entry
+right now, where the button always stands down. If you know an editor has saved work that hasn't
+gone live and the button still isn't there on the main screen, that's the other case: the site
+couldn't read GitHub at all to know what's pending, and it hides the button rather than guess at a
+count. Check the GitHub App the same way.
+
+**The log events:** `commit.failed` on an ordinary save, `publish.failed` on a publish, whose
+`reason` field is `conflict` on the ordinary case, or whose `error` field names what GitHub
+actually said otherwise. `github.unreachable` is the one case where the Publish site button
+disappearing means something is actually wrong, rather than nothing being pending or an entry
+being open.
 
 ## Someone can sign in, but every screen refuses them
 

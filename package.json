@@ -165,10 +165,11 @@
     "skills",
     "CHANGELOG.md",
     "docs/README.md",
+    "docs/why-cairn.md",
     "docs/reference",
-    "docs/guides",
-    "docs/explanation",
-    "docs/tutorial"
+    "docs/admin",
+    "docs/editors",
+    "docs/extend"
   ],
   "peerDependencies": {
     "@anthropic-ai/sdk": "^0.105.0",

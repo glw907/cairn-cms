@@ -64,14 +64,15 @@ the sidebar (or hide everything else from it) with
 }
 ```
 
-An instructor invited this way is still added and removed through
-[`ManageEditors`](../admin/invite-editors.md): the role selector renders your declared vocabulary
-once it's larger than the default owner/editor pair.
+An instructor invited this way is still added and removed through [the same invite
+screen](../admin/invite-editors.md): the role selector renders your declared vocabulary once it's
+larger than the default owner/editor pair.
 
 ## Path B: a wholly separate login
 
-`createAuthChannel` builds request, confirm, and logout actions over an 8-digit code, delivered
-however you choose, backed by a D1 binding that is never `AUTH_DB`:
+`createAuthChannel` builds request, confirm, and logout actions over an 8-digit-by-default code
+(configurable from 8 to 10 digits), delivered however you choose, backed by a D1 binding that is
+never `AUTH_DB`:
 
 ```ts
 // src/lib/members/channel.ts
@@ -108,6 +109,31 @@ surface end to end. Reach for [`@glw907/cairn-cms/admin-toolkit`](../reference/a
 anyway if you want the same consistent list-and-form scaffolding this audience's portal can share
 with your staff-facing screens, since the toolkit's primitives carry no dependency on a cairn
 editor session.
+
+Give the channel database its own `wrangler.jsonc` entry, with its own `migrations_dir` distinct
+from the one your site's `AUTH_DB` uses:
+
+```jsonc
+{
+  "d1_databases": [
+    { "binding": "AUTH_DB", "database_name": "my-site-auth", "migrations_dir": "migrations" },
+    {
+      "binding": "MEMBER_DB",
+      "database_name": "my-site-members",
+      "migrations_dir": "migrations/members"
+    }
+  ]
+}
+```
+
+A shared `migrations_dir` runs cairn's own auth migrations against the channel database, and the
+channel's schema against the site's auth store, the first time you apply either. Copy
+[`CHANNEL_SCHEMA_SQL`](../reference/auth-channel.md#channel_schema_sql) verbatim into the first
+migration in that separate directory.
+
+Test the channel against a real D1-shaped double with `@glw907/cairn-cms-dev`'s
+`createChannelDb`, which needs `node:sqlite`, unflagged only from Node 22.13 and later; it throws
+a named error below that floor.
 
 ## You know it worked when
 

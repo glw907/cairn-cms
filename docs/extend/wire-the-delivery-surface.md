@@ -113,15 +113,19 @@ survives to the browser depends on which server you're looking at, and the three
 
 Measured directly: a prerendered `.md` route (the shape above, with `prerender = true`) bakes to
 a static file at build time, and `@sveltejs/adapter-cloudflare` does not capture its Response
-headers into the build's `_headers` file. Serving that build with `wrangler dev` still returns
-`Content-Type: text/markdown; charset=utf-8`, but not because the header survived: setting the
-route's own header to a deliberately different value and rebuilding produced the identical
-`wrangler dev` response, `text/markdown; charset=utf-8`, unchanged. Cloudflare's static-asset
-layer is re-deriving the content type from the `.md` file extension on every request, discarding
-whatever the original Response set, and it happens to land on the same value cairn's own code
-chooses. `vite preview` disagrees with both: the identical build, served locally through Vite's
-own preview server rather than Cloudflare's asset layer, reports `text/markdown` with **no**
-`charset` parameter at all.
+headers into the build's `_headers` file. That much is confirmed straight from the adapter's own
+source (version 7.2.9, the range this page's snippets are tested against): it copies a root
+`_headers` file if your project has one and otherwise emits only a fixed immutable-assets block
+for hashed build output, with no path from a route's own Response headers into that file at all.
+Serving that build with `wrangler dev` still returns `Content-Type: text/markdown; charset=utf-8`,
+but not because the header survived: setting the route's own header to a deliberately different
+value and rebuilding produced the identical `wrangler dev` response, `text/markdown;
+charset=utf-8`, unchanged. Since the header can't have reached `_headers`, Cloudflare's
+static-asset layer has to be re-deriving the content type from the `.md` file extension on every
+request instead, discarding whatever the original Response set, and it happens to land on the same
+value cairn's own code chooses. `vite preview` disagrees with both: the identical build, served
+locally through Vite's own preview server rather than Cloudflare's asset layer, reports
+`text/markdown` with **no** `charset` parameter at all.
 
 So for a `.md`-suffixed prerendered route specifically, the deliberate charset ships correctly on
 Cloudflare's asset layer today, by coincidence of its own MIME table rather than by design, and
@@ -153,7 +157,7 @@ export const GET = async () => {
       url: ORIGIN + p.permalink,
       date: p.date,
       summary: p.excerpt,
-      contentHtml: await cairn.rendering.render(posts.byId(p.id)!.body, { resolve }),
+      contentHtml: await cairn.rendering.render({ body: posts.byId(p.id)!.body, resolve }),
       tags: p.tags,
     })),
   );

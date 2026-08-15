@@ -3,11 +3,10 @@
 This subpath is the public read model for a SvelteKit site. It carries the catch-all route loader,
 the public route-data types, and the feed, sitemap, and robots responders. Import it from a
 `+server.ts` or a `+page.server.ts` in the reader-facing site. The matching head
-component, [`CairnHead`](#cairnhead), lives one level down at `/delivery/head`. Anything proposed
-here must be a SvelteKit-route-facing reader, or already live on
-[`/delivery/data`](./delivery-data.md); a pure projection with no kit dependency belongs on
-`/delivery/data` alone, and the `.svelte` head component stays split onto `/delivery/head` so
-neither pulls Svelte into a plain-Node build.
+component, [`CairnHead`](#cairnhead), lives one level down at `/delivery/head`. This subpath
+carries the SvelteKit-route-facing readers; a pure projection with no kit dependency lives on
+[`/delivery/data`](./delivery-data.md) alone, and the `.svelte` head component stays split onto
+`/delivery/head`, so neither pulls Svelte into a plain-Node build.
 
 ```ts
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';

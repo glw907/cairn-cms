@@ -73,9 +73,31 @@ budget plus a two-part text alternative replace it), themed mermaid with a desig
 theme built first, the diagram inventory re-tested from seventeen down to twelve, a gated
 alt-and-caption standard, motion out by decision (trigger filed in Later), and numbered
 callouts with keyed lists for the three locate-many-controls screens. The per-page contracts in
-`2026-08-15-docs-outlines-with-visuals.md` stand as amended by those rulings. **Next for the
-visual work:** a plan authored against the rulings' build order, whose first deliverable is the
-cairn diagram theme in cairn-pub; nothing lands before the theme.
+`2026-08-15-docs-outlines-with-visuals.md` stand as amended by those rulings.
+
+**The visual work is now running on two parallel tracks (2026-08-15).** The cairn diagram theme
+is in process in cairn-pub (its own session). In this repo, the **diagram-pages pass is planned
+and ready to execute**: Geoff ruled the same day that known diagram content means the pages can
+be written now, so the pass authors the ten mermaid diagrams and rewrites their pages in a
+worktree, with the MERGE gated on the theme landing (no stock-theme render ever ships). Plan:
+`docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`. **A fresh Opus session executes
+it**; resume prompt: "Execute the docs diagram-pages pass per
+docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md, from ~/Projects/cairn-cms, via
+cairn-pass." The pass's authored diagrams feed the theme session as its representative styling
+set (plan Task 10 pushes the branch for it). The visuals standard itself already landed on
+`main` (the Visuals section of `docs/internal/docs-register.md`, plus the CLAUDE.md scope note).
+
+**The transcript-fixtures question is resolved, in the negative (2026-08-15).** No consumable
+recorded-run fixtures exist anywhere in the repo; the T-series stdout lives uncommitted in
+`~/Projects/cairn-scratch/`, and no `cairn-doctor` report was ever captured at all. So
+`create-your-site.md` and `is-it-working.md` wait for a dedicated **capture pass** (a fresh
+end-to-end `create-cairn-site` run plus a doctor run against the deployed result, stdout
+committed as fixtures), which costs real Cloudflare resources and GitHub App browser moments
+and therefore **needs scheduling with Geoff**. Each page rewrites once, so the setup-journey
+diagram rides that pass too. Full evidence in the ROADMAP transcript-gate entry. The editors
+track stays blocked on the live-reproduction seam: reproduction content is decided by the
+render (fixture data, crop, widths), not by an authorable source, so writing it now would mean
+writing it twice.
 
 **Geoff ruled the sequencing (2026-08-15): release one waits for the visual layer.** There is no
 hurry to release, and the docs go out at best quality with the beta release. The visual work runs
@@ -109,7 +131,8 @@ writes one, so `pushScaffold`'s ignore-honoring silently no-ops and `.dev.vars`/
 one `git add -A` from a push. Re-verified 2026-08-14. Tool code, deliberately outside Pass D's
 docs scope, so it rides its own small pass or the release-one sitting checks it off first.
 
-Queue: **the visual layer (theme -> diagrams -> seam -> editors rewrite) -> the editors read ->
+Queue: **the diagram-pages pass (parallel with the cairn-pub theme; merge on theme) -> the
+capture pass (scheduled with Geoff) -> the seam -> the editors rewrite -> the editors read ->
 release one -> the three-site walk -> P.**
 
 ### cairn-pub is PREPARED and deliberately not merged

@@ -346,9 +346,17 @@ The original decision framing, for the record:
   over an empty set, the exact vacuous-green shape this repo already legislates against. The
   visuals plan (`docs/internal/record/2026-08-15-docs-outlines-with-visuals.md`) restores recorded
   transcripts as the admin track's screenshot equivalent; the gate lands with them, and is proven
-  red once by corrupting a block before it is trusted. **Precondition:** confirm the recorded-run
-  fixtures exist in consumable form, which that plan flags as unresolved; if they do not, capturing
-  them is the first step and no transcript ships until they do.
+  red once by corrupting a block before it is trusted. **Precondition resolved 2026-08-15, in the
+  negative:** a thorough sweep found no consumable recorded-run fixtures anywhere in the repo. The
+  T-series spikes captured platform API bodies and scattered console excerpts, but the full stdout
+  logs live uncommitted in `~/Projects/cairn-scratch/`, T5's own method was "raw reads from the
+  real service, never the tool's own report," and no `cairn-doctor` report has ever been recorded
+  at all (the largest single gap). So capturing is the first step: a dedicated capture pass runs
+  `create-cairn-site` fresh end-to-end plus `cairn-doctor` against the real deployed result,
+  commits the raw stdout as fixture files, and only then writes `create-your-site.md` and
+  `is-it-working.md` against them (each page rewritten once, diagram and transcripts together).
+  The run costs real Cloudflare resources and the GitHub App browser moments, so it needs
+  scheduling with Geoff rather than riding a docs pass.
 
 - **The doctor's CSRF-handoff check silently skips on every current `sv create` scaffold,
   filed off Pass D's target-manifest work (2026-08-14).** `src/lib/doctor/checks-local.ts:90-91`

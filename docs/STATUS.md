@@ -43,7 +43,7 @@ reports. All nine are folded and grep-verified now. **A fold report is a claim; 
 landed costs one grep against the text the finding said was there.** The re-fold dispatches
 carried that proof requirement, and `ROADMAP.md` keeps the caution rather than the work.
 
-### Release one is next, and the editors read is ON HOLD behind a visual-layer decision
+### The visual layer runs before release one (Geoff, 2026-08-15)
 
 **The editors-track read is deferred, not skipped (Geoff, 2026-08-15).** On first contact with the
 finished track he asked why the docs carry no images or diagrams, and the answer changes the pages
@@ -77,12 +77,16 @@ callouts with keyed lists for the three locate-many-controls screens. The per-pa
 visual work:** a plan authored against the rulings' build order, whose first deliverable is the
 cairn diagram theme in cairn-pub; nothing lands before the theme.
 
-**The open question for Geoff, unchanged and still ahead of the cut: does release one go out on the
-prose corpus as it stands, with the visual layer landing in a later release, or does it wait for the
-rewrite?** Both are defensible. The corpus is correct, gated, and shippable as prose today, and four
-consumer sites are waiting on the window; against that, a first published docs corpus is a first
-impression, and the rewrite changes pages a reader would have already read. **Nothing else blocks
-the cut.**
+**Geoff ruled the sequencing (2026-08-15): release one waits for the visual layer.** There is no
+hurry to release, and the docs go out at best quality with the beta release. The visual work runs
+first, in the rulings record's order (the cairn diagram theme in cairn-pub, then the extend and
+admin diagrams with their gates, then the live-reproduction seam, then the editors rewrite), then
+the deferred editors-track read happens against the rewritten pages, then release one is cut. The
+same-cut obligations and the `.gitignore` defect are unchanged and wait with the cut. **The beta
+framing carries two standing items if release one is that beta:** the `Consumers must:`
+parseable-changelog API is filed to land before the beta (Geoff's own call, per the ROADMAP), and
+the churn-free-until-beta era closes with it; confirm both ride the release-one bill when the cut
+is planned.
 
 **When the read does happen**, record it here as a line reading `Editors-track read: done <date>`,
 immediately below this paragraph, before `cairn-release` is invoked. No agent pass substitutes for
@@ -105,7 +109,8 @@ writes one, so `pushScaffold`'s ignore-honoring silently no-ops and `.dev.vars`/
 one `git add -A` from a push. Re-verified 2026-08-14. Tool code, deliberately outside Pass D's
 docs scope, so it rides its own small pass or the release-one sitting checks it off first.
 
-Queue: **release one -> the three-site walk -> P.**
+Queue: **the visual layer (theme -> diagrams -> seam -> editors rewrite) -> the editors read ->
+release one -> the three-site walk -> P.**
 
 ### cairn-pub is PREPARED and deliberately not merged
 
@@ -166,8 +171,9 @@ detail lives in each plan's post-mortem and the archived entries. The T4c live s
 fake body and carries its teardown table. Pass D is now history too, on the same terms; the
 entry above holds what release one still needs from it.
 
-**Release one is the next cut** (ordering amended by Geoff 2026-08-09, and Pass D was the last
-gate on it). The entry above carries the same-cut obligations and the one human read still owed.
+**Release one is the next cut, now waiting behind the visual layer** (Geoff, 2026-08-15; the
+2026-08-09 ordering otherwise stands). The entry above carries the same-cut obligations and the
+one human read still owed.
 
 **cairn-pub's open item, not yet resolved:** the `cairn-cms` GitHub App installation does not
 carry `glw907/cairn-pub`, so a save or publish on that site cannot commit. Adding a repository to

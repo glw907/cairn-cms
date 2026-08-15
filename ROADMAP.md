@@ -330,9 +330,10 @@ The original decision framing, for the record:
   `check:` gate in the Astro missing-alt-is-a-build-failure shape; motion is out by decision, with
   its revisit trigger filed in Later; and the three locate-many-controls reproductions gain
   numbered callouts with keyed lists, which appends a callout-overlay capability to the
-  seam's stated needs. The build order stands with the theme inserted first. What remains owed
-  here is the work itself, in the rulings record's amended order, plus Geoff's release-one
-  sequencing call, which the sitting deliberately did not rule.
+  seam's stated needs. The build order stands with the theme inserted first. Geoff ruled the
+  sequencing the same day: no hurry to release, and release one waits for the visual layer so the
+  beta ships best-quality docs (recorded in `docs/STATUS.md`). What remains owed here is the work
+  itself, in the rulings record's amended order.
 
 - **The admin transcript gate was promised and never built, and there is nothing for it to check
   (found 2026-08-15).** Pass D's exit criteria name three added gates: the admin transcript check,

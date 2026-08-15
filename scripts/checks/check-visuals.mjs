@@ -18,8 +18,11 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCAN_DIRS = ['docs/admin', 'docs/editors', 'docs/extend', 'docs/reference'];
 const INDEX_FILES = ['docs/README.md'];
 
+// Directory names skipped while walking an arm, since they hold generated or fixture output
+// rather than published pages.
 const SKIP_DIRS = new Set(['__snapshots__', 'snapshots']);
 
+// The register's alt-text ceiling: "At most 150 characters."
 const MAX_ALT_LENGTH = 150;
 
 // A fenced code block's language tag and body. `$` (multiline) anchors the closing fence to its
@@ -36,6 +39,13 @@ const CODE_SPAN_RE = /`[^`\n]*`/g;
 const MD_IMAGE_RE = /!\[([^\]]*)\]\(([^)]*)\)/g;
 const HTML_IMG_ALT_RE = /<img\b[^>]*\balt="([^"]*)"[^>]*>/gi;
 
+// Spaces, not deletion: a blanked region keeps the document's line and column geometry, so an
+// offset into the stripped text still points at the same place in the original.
+/** @param {string} region */
+function blankKeepingLines(region) {
+  return region.replace(/[^\n]/g, ' ');
+}
+
 /**
  * `text` with every fenced code block and inline code span blanked to spaces (newlines kept), so
  * a documented example of image syntax never reads as an authored image. Mermaid fences are
@@ -43,8 +53,7 @@ const HTML_IMG_ALT_RE = /<img\b[^>]*\balt="([^"]*)"[^>]*>/gi;
  * @param {string} text
  */
 export function stripCodeRegions(text) {
-  const blank = (/** @type {string} */ s) => s.replace(/[^\n]/g, ' ');
-  return text.replace(FENCE_RE, blank).replace(CODE_SPAN_RE, blank);
+  return text.replace(FENCE_RE, blankKeepingLines).replace(CODE_SPAN_RE, blankKeepingLines);
 }
 
 /**
@@ -54,8 +63,8 @@ export function stripCodeRegions(text) {
  * @param {string} paragraph
  */
 export function isEmphasisCaption(paragraph) {
-  const t = paragraph.trim();
-  return /^\*(?!\*)[\s\S]*(?<!\*)\*$/.test(t) && t.length > 2;
+  const trimmed = paragraph.trim();
+  return /^\*(?!\*)[\s\S]*(?<!\*)\*$/.test(trimmed) && trimmed.length > 2;
 }
 
 /**
@@ -67,12 +76,11 @@ export function isEmphasisCaption(paragraph) {
  */
 export function nextParagraphAfter(text, fromIndex) {
   const lines = text.slice(fromIndex).split('\n');
-  let i = 0;
-  while (i < lines.length && lines[i].trim() === '') i++;
-  if (i >= lines.length) return null;
-  const para = [];
-  while (i < lines.length && lines[i].trim() !== '') para.push(lines[i++]);
-  return para.join('\n');
+  const start = lines.findIndex((line) => line.trim() !== '');
+  if (start === -1) return null;
+  let end = start;
+  while (end < lines.length && lines[end].trim() !== '') end++;
+  return lines.slice(start, end).join('\n');
 }
 
 /**
@@ -82,11 +90,9 @@ export function nextParagraphAfter(text, fromIndex) {
  */
 export function mermaidFences(text) {
   const fences = [];
-  FENCE_RE.lastIndex = 0;
-  let m;
-  while ((m = FENCE_RE.exec(text))) {
-    const [full, lang, body] = m;
-    if (lang === 'mermaid') fences.push({ body, endIndex: m.index + full.length });
+  for (const match of text.matchAll(FENCE_RE)) {
+    const [full, lang, body] = match;
+    if (lang === 'mermaid') fences.push({ body, endIndex: match.index + full.length });
   }
   return fences;
 }
@@ -118,6 +124,32 @@ export function fenceViolations(file, fence, text) {
 }
 
 /**
+ * The alt-text violations for one image: alt that is absent (or blank) where the register demands
+ * real text, or alt over the length ceiling.
+ * @param {string} file Repo-relative path, carried only to label a violation.
+ * @param {string} alt
+ * @param {'markdown' | 'html'} form Which spelling carried the image. Only the HTML form may
+ *   leave alt empty, since that is how the register has an author mark an image decorative.
+ */
+function altViolations(file, alt, form) {
+  if (form === 'markdown' && alt.trim() === '') {
+    return [{
+      file,
+      kind: 'empty-alt',
+      message: `${file}: markdown image has empty alt text (a deliberate decorative image is HTML <img alt="">)`,
+    }];
+  }
+  if (alt.length > MAX_ALT_LENGTH) {
+    return [{
+      file,
+      kind: 'alt-too-long',
+      message: `${file}: image alt text is ${alt.length} characters, over the ${MAX_ALT_LENGTH}-character limit`,
+    }];
+  }
+  return [];
+}
+
+/**
  * One document's full scan: every mermaid-fence and image violation, plus how many diagrams and
  * images it carries, so a caller can print scanned/found counts even on a clean run.
  * @param {string} file Repo-relative path, carried only to label a violation.
@@ -129,38 +161,13 @@ export function scanDocument(file, text) {
 
   const scanText = stripCodeRegions(text);
   let imageCount = 0;
-
-  MD_IMAGE_RE.lastIndex = 0;
-  let m;
-  while ((m = MD_IMAGE_RE.exec(scanText))) {
+  for (const [, alt] of scanText.matchAll(MD_IMAGE_RE)) {
     imageCount++;
-    const alt = m[1];
-    if (alt.trim() === '') {
-      violations.push({
-        file,
-        kind: 'empty-alt',
-        message: `${file}: markdown image has empty alt text (a deliberate decorative image is HTML <img alt="">)`,
-      });
-    } else if (alt.length > MAX_ALT_LENGTH) {
-      violations.push({
-        file,
-        kind: 'alt-too-long',
-        message: `${file}: image alt text is ${alt.length} characters, over the ${MAX_ALT_LENGTH}-character limit`,
-      });
-    }
+    violations.push(...altViolations(file, alt, 'markdown'));
   }
-
-  HTML_IMG_ALT_RE.lastIndex = 0;
-  while ((m = HTML_IMG_ALT_RE.exec(scanText))) {
+  for (const [, alt] of scanText.matchAll(HTML_IMG_ALT_RE)) {
     imageCount++;
-    const alt = m[1];
-    if (alt.length > MAX_ALT_LENGTH) {
-      violations.push({
-        file,
-        kind: 'alt-too-long',
-        message: `${file}: image alt text is ${alt.length} characters, over the ${MAX_ALT_LENGTH}-character limit`,
-      });
-    }
+    violations.push(...altViolations(file, alt, 'html'));
   }
 
   return { violations, diagramCount: fences.length, imageCount };

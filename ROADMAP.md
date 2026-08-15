@@ -314,6 +314,11 @@ The original decision framing, for the record:
   `docs/internal/record/2026-08-15-docs-outlines-with-visuals.md`, rebuilt from the shipped prose so
   the gate-folded facts survive.
 
+  **The sitting's research brief has been executed and banked** (2026-08-15):
+  `docs/internal/record/2026-08-15-docs-visual-practice-research.md` carries all three tiers
+  plus the diagrams-on-small-screens read and a cross-cutting synthesis, so the sitting rules
+  on findings rather than re-running the research below.
+
   **A Fable brainstorming sitting opens the next pass and settles two open questions (Geoff,
   2026-08-15).** First, **the visual approach must be researched rather than reasoned out**, in
   three tiers: the published standards cairn already follows (Google on three tracks, Microsoft on

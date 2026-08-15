@@ -56,6 +56,16 @@ and shortened rather than illustrated. Reading the track closely now would grade
 expected to change. The full finding, the evidence, and what the decision owes are the
 visual-layer entry at the top of `ROADMAP.md`'s Now tier.
 
+**The sitting's research is done and banked (2026-08-15, Opus 5 session).** Eight readers ran
+the three-tier brief; the findings, with the cross-cutting synthesis and Geoff's added
+polish constraint (diagrams carry understated professional polish, never stock-theme output),
+are at `docs/internal/record/2026-08-15-docs-visual-practice-research.md`. Headlines: the
+live-reproduction and transcript vocabularies are strongly confirmed; the extend track's
+"mermaid-first at density" default is pressured (Astro ships one diagram in 418 pages and
+zero mermaid; only Kubernetes is diagram-rich, with a caption mandate); no standard,
+platform, or style guide binds diagram legibility at 320px, and WCAG explicitly exempts
+diagrams from reflow. The Fable sitting now rules rather than researches.
+
 **The next pass opens with a Fable brainstorming sitting** (Geoff, 2026-08-15), which settles the
 visual approach before any of it is built. Two items on its agenda, both recorded in the ROADMAP
 entry and in the visuals record's own preamble: **research the visual practice of successful docs

@@ -56,12 +56,24 @@ and shortened rather than illustrated. Reading the track closely now would grade
 expected to change. The full finding, the evidence, and what the decision owes are the
 visual-layer entry at the top of `ROADMAP.md`'s Now tier.
 
-**The open question, and it is Geoff's alone: does release one cut on the prose corpus as it
-stands, with the visual layer landing in a later release, or does it wait for the rewrite?** Both
-are defensible. The corpus is correct, gated, and shippable as prose today, and four consumer sites
-are waiting on the window; against that, a first published docs corpus is a first impression, and
-the rewrite changes pages a reader would have already read. **Nothing else blocks the cut**, so
-this answer alone decides whether the next action is `cairn-release` or a docs visual pass.
+**The next pass opens with a Fable brainstorming sitting** (Geoff, 2026-08-15), which settles the
+visual approach before any of it is built. Two items on its agenda, both recorded in the ROADMAP
+entry and in the visuals record's own preamble: **research the visual practice of successful docs
+corpora** rather than reasoning it out from cairn's readers, starting with the published standards
+this repo already follows (Google and Microsoft both carry figure, screenshot, alt-text and caption
+guidance, and cairn adopted only their prose half), then **Astro** as the primary exemplar since it
+is the closest peer and its docs are open source; and **rule on whether the 320/390 legibility bar
+applies to technical diagrams at all**, since it was inherited from the family-wide site responsive
+standard and applied here unexamined. The proposed vocabulary and per-page contracts at
+`docs/internal/record/2026-08-15-docs-outlines-with-visuals.md` are that sitting's starting
+position, not a settled plan.
+
+**The open question for Geoff, unchanged and still ahead of the cut: does release one go out on the
+prose corpus as it stands, with the visual layer landing in a later release, or does it wait for the
+rewrite?** Both are defensible. The corpus is correct, gated, and shippable as prose today, and four
+consumer sites are waiting on the window; against that, a first published docs corpus is a first
+impression, and the rewrite changes pages a reader would have already read. **Nothing else blocks
+the cut.**
 
 **When the read does happen**, record it here as a line reading `Editors-track read: done <date>`,
 immediately below this paragraph, before `cairn-release` is invoked. No agent pass substitutes for

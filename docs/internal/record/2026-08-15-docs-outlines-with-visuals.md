@@ -27,6 +27,56 @@ placeholder, or a section naming a visual that does not exist. A page whose visu
 on the live-reproduction seam keeps its current shipped prose untouched until the seam exists,
 and is then rewritten once, against real reproductions. No page is rewritten twice.
 
+## This record is an input to a brainstorming sitting, not a settled plan (Geoff, 2026-08-15)
+
+Two things below are proposed rather than decided, and a Fable brainstorming sitting opens the
+next pass to settle them against research.
+
+**The 320/390 legibility bar for diagrams is an OPEN question, not a constraint.** This record
+inherited it from the family-wide responsive standard, which was written for sites and UI, and
+applied it to technical diagrams in developer documentation without asking whether it transfers.
+Geoff's challenge stands: a reader is unlikely to study an architecture diagram on a 320px phone,
+and the discipline has standard answers for this case that are not "make it legible at every
+width" (click-to-expand, a pan-and-zoom container, a horizontal-scroll figure, a simplified
+mobile variant, or an accepted minimum width). **Do not treat the 320 bar as binding until the
+sitting rules on it**, and do not silently drop it either; it is a real bar for the site
+artifacts it was written for.
+
+**The visual approach as a whole wants research grounding.** The existing competitor review
+(`2026-08-14-cms-docs-competitor-review.md`) studied structure, register, and routing across ten
+corpora. It mentions screenshots five times in passing and **never studies visual practice as a
+subject**, so the vocabulary proposed here rests on reasoning about cairn's readers rather than on
+demonstrated success elsewhere. The sitting's research brief runs in three tiers, cheapest and most
+authoritative first (Geoff, 2026-08-15).
+
+1. **The published standards cairn already follows.** The Google developer documentation style
+   guide governs three tracks and the Microsoft writing style guide governs `docs/editors`, both
+   enforced here by Vale. Both carry explicit guidance on figures, screenshots, alt text, captions,
+   and when an image earns its place. **cairn adopted their prose rules and ignored their visual
+   ones**, so the first research step is reading what the standards it is already bound by say.
+   Where they rule, cairn follows rather than deciding again.
+2. **Known-great exemplars**, studied for visual practice specifically: what kinds of visuals
+   appear, at what density per page, how they survive product change, how they behave on small
+   screens, and what tooling produces them.
+
+   **Astro is the primary one, and worth more than a sampling (Geoff, 2026-08-15).** It is
+   cairn's closest peer, a content-site framework serving the same developers on the same deploy
+   targets, so its answers transfer more directly than a payments API's do. Its docs are open
+   source, which means the *how* is inspectable and not just the output: the repo shows the
+   tooling behind each visual, the review conventions, and its own published writing guide.
+   Pass D already borrowed its tutorial devices, so it is a proven source for this project rather
+   than a guess. Read it for how a diagram earns its place, how images are kept current across
+   releases, and what it deliberately does without.
+
+   Stripe, Twilio, Tailwind, MDN, Kubernetes, and the Rails and Django guides round out the set;
+   the sitting picks the final list.
+3. **The ten corpora already reviewed**, re-read through the visual lens the first pass did not
+   apply.
+
+Where a standard rules or a competitor demonstrably succeeds, follow the convention rather than
+inventing one. The per-track vocabulary and the per-page contracts below are the starting position
+that research either confirms or revises.
+
 ## The visual vocabulary per track
 
 Decided first, because it is an input to the writing. Each track's vocabulary follows from its

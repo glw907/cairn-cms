@@ -310,13 +310,24 @@ The original decision framing, for the record:
   editors word count to fall rather than grow.**
 
   **What this entry owes:** the visual vocabulary per track, decided FIRST, because it is an input to
-  the writing and not a later layer. For the editors track, build the live-reproduction seam, then
-  rewrite against it. For the extend track, decide whether the eight diagrams return, and at what
-  legibility bar (the 320/390 floor that closed the original carry-forward is still the responsive
-  standard). Competitor evidence sits in
-  `docs/internal/record/2026-08-14-cms-docs-competitor-review.md`: the corpora reviewed lean on
-  screenshots and video heavily, which is the norm this corpus departs from, and a departure is
-  defensible only when it is chosen rather than inherited.
+  the writing and not a later layer. The proposed vocabulary and the per-page contracts are banked at
+  `docs/internal/record/2026-08-15-docs-outlines-with-visuals.md`, rebuilt from the shipped prose so
+  the gate-folded facts survive.
+
+  **A Fable brainstorming sitting opens the next pass and settles two open questions (Geoff,
+  2026-08-15).** First, **the visual approach must be researched rather than reasoned out**, in
+  three tiers: the published standards cairn already follows (Google on three tracks, Microsoft on
+  editors, both enforced by Vale, both carrying explicit figure, screenshot, alt-text and caption
+  guidance that this project adopted the prose half of and ignored the visual half of); then
+  known-great exemplars led by **Astro**, cairn's closest peer, whose docs are open source so the
+  tooling and conventions are inspectable and whose tutorial devices Pass D already borrowed; then
+  the ten already-reviewed corpora, re-read through the visual lens the first pass never applied.
+  Where a standard rules or an exemplar demonstrably succeeds, follow the convention rather than
+  invent one. Second, **the 320/390 legibility bar for diagrams is open, not binding**. It came from the family-wide responsive standard, which was written for sites and UI, and
+  nobody asked whether it transfers to a technical diagram in developer docs; a reader is unlikely to
+  study an architecture diagram on a phone, and the discipline's standard answers (click-to-expand,
+  pan-and-zoom, a scroll container, a simplified mobile variant, an accepted minimum width) were never
+  weighed. The bar still binds the site artifacts it was written for.
 
 - **The admin transcript gate was promised and never built, and there is nothing for it to check
   (found 2026-08-15).** Pass D's exit criteria name three added gates: the admin transcript check,

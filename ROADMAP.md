@@ -318,6 +318,21 @@ The original decision framing, for the record:
   screenshots and video heavily, which is the norm this corpus departs from, and a departure is
   defensible only when it is chosen rather than inherited.
 
+- **The admin transcript gate was promised and never built, and there is nothing for it to check
+  (found 2026-08-15).** Pass D's exit criteria name three added gates: the admin transcript check,
+  the symbol sweep, and the internal-index entry. The last two shipped. The transcript check has no
+  script in `scripts/checks/`, no `check:` entry in `package.json`, and no workflow step, and the
+  pass's own post-mortem listed `check:vale` in its place, so the count read three and the miss did
+  not surface. Both halves need doing together, which is why this rides the docs visual work rather
+  than standing alone: `docs/admin/` currently holds **zero fenced transcript blocks** (its four
+  fenced pages carry commands to type, not recorded tool output), so a gate built today would pass
+  over an empty set, the exact vacuous-green shape this repo already legislates against. The
+  visuals plan (`docs/internal/record/2026-08-15-docs-outlines-with-visuals.md`) restores recorded
+  transcripts as the admin track's screenshot equivalent; the gate lands with them, and is proven
+  red once by corrupting a block before it is trusted. **Precondition:** confirm the recorded-run
+  fixtures exist in consumable form, which that plan flags as unresolved; if they do not, capturing
+  them is the first step and no transcript ships until they do.
+
 - **The doctor's CSRF-handoff check silently skips on every current `sv create` scaffold,
   filed off Pass D's target-manifest work (2026-08-14).** `src/lib/doctor/checks-local.ts:90-91`
   (`configCsrfDisable`, condition `config.csrf-disable-missing`) reads

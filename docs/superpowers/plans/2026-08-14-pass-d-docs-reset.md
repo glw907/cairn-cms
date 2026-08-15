@@ -449,7 +449,20 @@ say 23, an estimate the finished tree overran by one). Three gates ship alongsid
 `check:vale` (Google's package on three tracks, Microsoft's on `docs/editors`),
 `check:symbols` (the hallucinated-symbol sweep, resolving every code-voice token a
 published page names against the source tree), and a non-recursive `docs/internal`
-arm-index entry. The old corpus is deleted at cutover; `CHANGELOG.md`'s history survives
+arm-index entry.
+
+**Correction (2026-08-15): those are not the three gates this plan promised, and the
+substitution hid a miss.** The exit criteria name "the admin transcript check, the symbol
+sweep, and the internal-index entry". The symbol sweep and the index entry shipped; **the
+transcript gate was never built** (no script in `scripts/checks/`, no `check:` script in
+`package.json`, no workflow step), and `check:vale` took its place in the count above, so
+the tally read three either way. The gate would also have passed vacuously: `docs/admin/`
+contains zero fenced transcript blocks, because the recorded tool output the original
+outline specified was silently dropped during writing. Found 2026-08-15 while verifying a
+subagent's unrelated claim, not by the close-out, which accepted the exit criteria without
+walking them item by item. **Walk a plan's exit criteria one at a time against the tree
+before declaring a pass done; a count that matches is not the same as a list that
+matches.** Filed to `ROADMAP.md` with the admin transcript work. The old corpus is deleted at cutover; `CHANGELOG.md`'s history survives
 it through a legacy-path map that self-checks (a mapped value must name a file that
 exists, a mapped key must not, and every key must still be cited by a live link).
 

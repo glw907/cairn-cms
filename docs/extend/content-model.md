@@ -28,6 +28,11 @@ of `year`, `month`, or `day`) additionally carries a leading date on the filenam
 start with a year-like number keeps it. Renaming an entry changes the filename, which is a real git
 operation on the holding branch, not a metadata field flip.
 
+The filename's date prefix only ever feeds the slug. An entry's actual date, the one a dated
+permalink resolves against and a template reads, always comes from the entry's own `date`
+frontmatter field, never from the filename. That's why a dated permalink pattern makes `date` a
+structurally required field: nothing else supplies it.
+
 ## Routing is a declared shorthand, not a convention
 
 A concept's `routing` option is one of three shorthands: `feed` (routable, dated, appears in

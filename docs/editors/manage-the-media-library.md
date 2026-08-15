@@ -58,6 +58,15 @@ to confirm you understand before it lets you continue. Deleting removes the pict
 itself, not just its entry in the library. Nobody can put it back for you afterward, so
 keep your own copy of anything you might want again.
 
+## Deleting several images at once
+
+To clear out several images together, select them first: pressing Space selects the one
+you're focused on, Shift with an arrow key extends that to a run of images, and Ctrl (or
+Cmd on a Mac) with A selects everything showing. Selecting any image opens a bar with a
+count and a **Delete** button. As with a single delete, you're shown what would break
+first; anything still in use is skipped and named rather than deleted, so a bulk delete
+never breaks a page that still needs one of the images.
+
 ## Finding orphaned files
 
 Some sites accumulate stored files that never made it into the library, left behind by

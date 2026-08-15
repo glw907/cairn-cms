@@ -199,7 +199,7 @@ export function adminAction<T>(
         try {
           const outcome = event.locals.cairnAuditSink?.(full);
           // The sink's declared type is `(record) => void`, but TypeScript's void-return
-          // bivariance admits an async function with no error (docs/guides/add-a-custom-admin-
+          // bivariance admits an async function with no error (docs/extend/add-a-custom-admin-
           // screen.md's own `waitUntil` advice is exactly the pressure that writes one). The
           // call above is never awaited, since the seam is synchronous by contract; attach a
           // rejection handler instead, fire-and-forget, so a rejecting async sink still logs.

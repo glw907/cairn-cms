@@ -26,6 +26,13 @@ ten minutes, a session thirty days, and a repeat request from the same address i
 a minute. There is no password anywhere in this path, and no third-party identity provider; the
 allowlist itself, the `editor` table, is the whole authorization surface.
 
+The request path is deliberately non-enumerating: an address that isn't on the roster gets the
+same `{ status: 'sent' }` response a real editor's address gets, so a stranger probing addresses
+can't tell allowlist membership from the response alone. The one deliberate exception is the
+cooldown above: a *repeat* request inside the one-minute window returns a distinct `throttled`
+status, which does reveal that the address is on the roster. That's an accepted trade, made so a
+real editor hammering the sign-in button doesn't flood their own inbox, not an oversight.
+
 ## The session cookie
 
 The session cookie carries the `__Host-` prefix on every https deploy: `Secure`, `Path=/`, no

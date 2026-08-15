@@ -57,6 +57,47 @@ value's effect from the token declaration alone; several of the theme's relation
 ink, the status inks, the card border and shadow pairing) are deliberately not obvious from a
 single hex value in isolation.
 
+For a layout or composition change, `/styleguide` alone isn't enough: check it against your
+site's own real entries and media too, which needs your local dev server serving real content.
+A fresh clone's markdown and committed media manifest come along with the checkout, so pages
+render locally right away; the pictures don't, since they live in R2, not git. Seed your local R2
+simulator once per clone with [`cairn-media-seed`](../reference/cli-cairn-media-seed.md), pointed
+at your deployed site:
+
+```bash
+npx cairn-media-seed --from https://your-site.com
+```
+
+Re-run it later only when the deployed library has gained objects you want locally too; it's
+idempotent, so a re-run just overwrites the same keys with the same bytes. A site with nothing
+deployed yet has nothing to seed: media you upload through the local `/admin` lands straight in
+the local bucket.
+
+With that done, `npm run dev` renders every page with real content and real images. Each
+iteration is a small, testable change followed by a look:
+
+1. **Make the change.** Hot module reload picks up a `theme.css` or component edit without a
+   manual reload.
+2. **Watch the terminal running `vite dev`.** A hot-reload failure or a console error shows there
+   before it shows in the browser. For a pure style or copy tweak, that and your own eyes on the
+   page are the whole check.
+3. **For a structural change** (a new wrapper element, a conditional render, anything touching
+   markup shape rather than just style), run the file's own test if one exists, and glance at the
+   rendered DOM. A structural bug can look right at a glance and still break a state you didn't
+   check.
+4. **Decide.** Keep it, revert it, or iterate further. A kept change is worth its own small
+   commit; commits are your undo log here, not ceremony.
+
+Skip the full test suite, the linter, and any packaging step on every single tweak, and save that
+gate for once, at the end; none of them catch a design judgment call, and running them per
+iteration is the latency this loop exists to cut. Every several iterations, step back from the
+element you were tuning and look at the whole page: check a narrow viewport and a wide one, since
+a change that reads right in isolation can still throw off the spacing or color around it.
+
+When the design is settled, run the site's full checks the way you would for any other change,
+commit, push, and deploy as usual, then load the live site once and confirm it matches what you
+saw locally.
+
 ## Extending the component model
 
 The directive registry (`cairn.config.ts`), the chrome, the page compositions, and the

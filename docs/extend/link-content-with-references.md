@@ -94,6 +94,22 @@ delete guard uses against `::include` (see [Reuse content across
 entries](./reuse-content-across-entries.md)): the engine won't let a save silently orphan another
 entry's edge, in either direction.
 
+## What blocks and what only warns
+
+The delete and rename guards read a reference index that unions two sources: the published
+manifest and every currently open holding branch, reconstructed from that branch's own edited
+file. An unpublished draft's edge still counts, so deleting or renaming its target is refused even
+though nothing about the edge is live yet. Renaming also refuses outright, naming the blocking
+editors, when a *different* open branch than the entry's own holds an inbound edge; that guard
+exists so a rename can't silently break a save someone else has in progress.
+
+A save itself is more permissive than the delete and rename guards. Saving an entry whose
+`reference` field names a missing or still-draft target only warns, it never blocks the save,
+since the target may simply not be published yet and the build-time check above is the real
+backstop. A body `cairn:` link to a missing target is stricter: that save is refused outright,
+since a body link degrades to visibly broken text for a reader in a way a resolved reference field
+never does.
+
 **You know it worked when:** the editor renders your reference field as a picker scoped to the
 right concept, a build against a dangling id fails loudly naming the source and field, and
 deleting a referenced entry is refused with the referencing entries named.

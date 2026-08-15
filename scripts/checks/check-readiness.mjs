@@ -1,5 +1,5 @@
 // cairn-cms: the readiness-checklist gate. It loads the condition registry from the built dist
-// (the same load-from-build stance as reference-coverage.mjs), reads the Cloudflare readiness
+// (the same load-from-build stance as reference-coverage.mjs), reads the admin "Is it working?"
 // checklist, and pins the two together: every condition's docsAnchor must name a real heading in
 // the doc, and every condition must carry a docsAnchor unless an allowlist entry here excuses it.
 // Fail-closed both ways, so a renamed heading or a new condition without a checklist section goes
@@ -10,18 +10,18 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { headingAnchors } from './docs-links.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const DOC = 'docs/guides/cloudflare-readiness.md';
+const DOC = 'docs/admin/is-it-working.md';
 const CONDITIONS_JS = 'dist/diagnostics/conditions.js';
 
 // Conditions deliberately absent from the checklist. An addition needs a comment naming why the
 // doc cannot carry the condition.
-const ALLOWLIST = /** @type {Set<string>} */ (
-  new Set([
-    // The packaged skill's install/freshness check is a cairn-doctor tooling nudge, not a
-    // Cloudflare deploy-readiness condition; docs/reference/doctor.md carries its guidance.
-    'skill.admin-screens-stale',
-  ])
-);
+//
+// Empty since the Pass D docs rebuild, and the mechanism stays for the next real exception.
+// Its one entry excused `skill.admin-screens-stale` on the reasoning that a tooling nudge is not
+// a Cloudflare deploy-readiness condition, which the old checklist's Cloudflare framing made
+// true. The rebuilt page asks "is it working?" instead, a question that condition answers, so it
+// earned a section and the exception died with the framing that justified it.
+const ALLOWLIST = /** @type {Set<string>} */ (new Set([]));
 
 /**
  * Compare the registry against the checklist text. Returns one problem line per offender: a
@@ -30,9 +30,12 @@ const ALLOWLIST = /** @type {Set<string>} */ (
  * @param {{ id: string, docsAnchor?: string }[]} conditions
  * @param {string} markdownText
  * @param {Set<string>} allowlist
+ * @param {string} doc Repo-relative path of the checklist; its basename is what every docsAnchor
+ *   must name, so a test can point this at a fixture.
  */
-export function checkReadiness(conditions, markdownText, allowlist = ALLOWLIST) {
+export function checkReadiness(conditions, markdownText, allowlist = ALLOWLIST, doc = DOC) {
   const anchors = headingAnchors(markdownText);
+  const expectedFile = doc.slice(doc.lastIndexOf('/') + 1);
   const problems = [];
   for (const c of conditions) {
     if (!c.docsAnchor) {
@@ -42,10 +45,20 @@ export function checkReadiness(conditions, markdownText, allowlist = ALLOWLIST) 
       continue;
     }
     const hash = c.docsAnchor.indexOf('#');
+    const file = hash === -1 ? c.docsAnchor : c.docsAnchor.slice(0, hash);
     const anchor = hash === -1 ? '' : c.docsAnchor.slice(hash + 1);
     if (!anchor) {
       problems.push(`${c.id}: docsAnchor "${c.docsAnchor}" carries no #anchor part`);
-    } else if (!anchors.has(anchor)) {
+      continue;
+    }
+    // Both halves, not just the anchor. Checking the anchor alone let a docsAnchor name a file
+    // that does not exist while still passing, since every id resolves against this one doc; a
+    // page rename would then leave 21 wrong filenames sitting green. The Pass D rebuild moved
+    // this checklist between arms, which is exactly when that silence would have cost something.
+    if (file !== expectedFile) {
+      problems.push(`${c.id}: docsAnchor names "${file}", but the checklist is ${expectedFile}`);
+    }
+    if (!anchors.has(anchor)) {
       problems.push(`${c.id}: docsAnchor "#${anchor}" matches no heading in ${DOC}`);
     }
   }

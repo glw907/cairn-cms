@@ -53,6 +53,10 @@ step and the verification.
    This overwrites the running secret immediately; the App id and installation id, which live in
    your adapter config rather than as secrets, don't change.
 
+   If you also run `wrangler dev` locally, write the same base64 value into `.dev.vars` too. Local
+   dev reads that file, never the deployed secret, so skipping this leaves your local site signing
+   with the retired key even after the deployed Worker has moved on.
+
 4. **Confirm the new key parses and signs, locally.**
 
    `cairn-doctor`'s `github.app` check assembles its credentials from `GITHUB_APP_ID`,
@@ -92,6 +96,12 @@ side. If step 4 passes but step 5's real save still fails, the Worker secret fro
 take. Re-push it and redeploy.
 
 ## If something goes wrong
+
+Before you delete the old key in step 6, you have a fast way back: re-push the old key's base64
+value with the same `wrangler secret put` command from step 3, and the site is signing with it
+again immediately. That's what makes it safe to debug a new key that isn't working without any
+pressure to restore the site first; restoring service and diagnosing the new key are two separate
+problems as long as the old key still exists.
 
 If you already deleted the old key and the new one doesn't work, generate a third key rather than
 trying to recover the deleted one; GitHub does not let you restore a deleted key. See [Is it

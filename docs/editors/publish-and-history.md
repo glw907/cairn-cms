@@ -78,10 +78,14 @@ no longer need people reading it privately.
 
 ## Getting an earlier version back
 
-Every publish is kept as a version you can return to. Open the overflow menu and select
-**History** to see them, newest first, each with who published it and when. If you have
-unpublished changes right now, they show at the top of the list too, marked as a draft
-with no way to revert to them from here since they aren't a version yet.
+Open the overflow menu and select **History** to see this entry's past publishes, newest
+first, each with who published it and when. If you have unpublished changes right now,
+they show at the top of the list too, marked as a draft with no way to revert to them
+from here since they aren't a version yet.
+
+The list shows your 25 most recent publishes, and says so on screen when there are more
+than that. If you changed the entry's address at some point, the list only goes back to
+that change; for anything further back, ask your site's developer.
 
 Select **Revert** on any earlier version, and that version's text loads back into the
 editor as your private, unpublished draft, the same as if you'd just edited it yourself.
@@ -89,6 +93,10 @@ Nothing on the live site changes yet. Review it, then publish it like any other 
 when you're ready. If someone else already has unpublished changes on this same entry,
 reverting is blocked until they publish or discard, so their work is never thrown away
 by your revert.
+
+If the version you're reverting to is old enough that a field or a tag it used has since
+been removed from your site, the draft tells you so before you save: reverting keeps
+only what the form in front of you shows, so check it before you publish.
 
 ---
 

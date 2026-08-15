@@ -43,6 +43,14 @@ GitHub redirects to an installation settings URL of the form
 `https://github.com/settings/installations/<installation_id>`; the trailing number is the
 **Installation ID**. Note it alongside the App ID.
 
+The **Contents: Read and write** permission from the previous step is repository-wide: GitHub's
+installation token can write to any path in whatever repository you install the App on, and
+cairn's confinement to its declared content directories is enforced by the engine's own code, not
+by GitHub. If you're installing on a repository that already holds other things, code, other
+teams' content, that confinement is doing more work than it would on a repository dedicated to
+this site's content. GitHub also never lets an App's permissions be reduced after installation, so
+this is a call worth making once, deliberately, rather than adjusting later.
+
 ## Encode the private key
 
 The Worker secret is the PEM's contents, base64-encoded onto a single line (the engine decodes it

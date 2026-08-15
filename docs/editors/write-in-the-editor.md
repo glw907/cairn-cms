@@ -25,7 +25,13 @@ look on your site. Every entry opens on Write.
 
 The text you type is plain text with some light formatting marks mixed in, sometimes
 called markdown. The Write tab shows those marks as you type them; the toolbar buttons
-below insert the right marks for you, so you rarely need to type them by hand.
+below insert the right marks for you, so you rarely need to type them by hand. Paste
+from a word processor or a web page, and your headings, bold, italic, links, and lists
+come across already marked; anything else, such as a table or an image, arrives as plain
+text for you to mark up yourself.
+
+Preview carries a width control, so you can check how an entry looks as a phone or a
+tablet shows it without needing one. Your choice is remembered on this device.
 
 The rest of the entry's settings, the fields that hold things like whether it's hidden
 and what address it has, live behind a **Details** panel, opened from the icon in the
@@ -82,12 +88,19 @@ into a real address when your site is published.
 
 The **Insert image** button, and dragging or pasting a picture straight into the text,
 both start the same flow. See [Add an image](./add-an-image.md) for the details,
-including alt text, which this page also uses.
+including alt text, which this page also uses. An entry can also carry its own lead
+picture, set from Details rather than the text; see
+[Setting an entry's lead picture](./add-an-image.md#setting-an-entrys-lead-picture).
 
 Write alt text for what the picture contributes where it sits, not a full description of
 everything in it. Mark an image decorative when it carries no information of its own,
 such as a plain divider or background texture. An image left with neither stays flagged
 as needing alt text until you describe it or mark it decorative.
+
+If you mark a picture in your text decorative, then close the entry and reopen it, it
+reads as needing alt text again. Nothing is wrong; there's simply nowhere in the text
+itself to remember that choice. Leave it; marking it decorative still works when you
+publish, it just doesn't stay checked the next time you look.
 
 Once an image is in your draft, you can give it a caption and choose how it sits on the
 page. Put your cursor on the image, then select the toolbar button whose tooltip reads
@@ -136,6 +149,10 @@ Placing your cursor inside a block you already inserted and selecting the pencil
 next to it reopens that same form so you can adjust it. If the pencil is grayed out, that
 block can't be edited as a form; edit its text directly instead.
 
+Every block starts out collapsed to a single line, so a block-heavy entry reads as
+writing first when you open it. Select the control in the margin, or just put your cursor
+inside a block, and it opens. You're never editing text you can't see.
+
 ## Markdown help and keyboard shortcuts
 
 Two reference sheets live in the editor itself, and neither is anything you need to
@@ -177,6 +194,10 @@ flagged. You can turn this checking off from the editor's footer, or, on a narro
 screen, from the toolbar's **More formatting** button, if you'd rather write
 without it.
 
+The same underline also catches a doubled word ("the the"), a double space, and repeated
+punctuation, each with a one-select fix. It never comments on your phrasing or style,
+only on these mechanical slips.
+
 If your site has an AI copy-edit tool turned on, a **Tidy** button appears in the
 toolbar. It reads your draft, or just the text you've selected, and proposes a set of
 small corrections: spelling, grammar, and light wording fixes. Nothing changes until you
@@ -188,6 +209,12 @@ judgment call is never applied without your say-so. **Reject all** clears everyt
 Then select **Apply**. Tidy only changes what's in the editor: your
 next save keeps it like any other edit, and one Undo takes the whole tidy back if you
 change your mind right after applying it.
+
+You can't type in the draft while a Tidy review is open, the same as on the Preview tab.
+That's the editor protecting the review in progress, not a fault. Finish the review, or
+select **Reject all**, and typing comes back. A very long draft can also outgrow what
+Tidy takes in one pass; see [When something goes wrong](./when-something-goes-wrong.md)
+for what that message means and how to work around it.
 
 ## Saving and publishing
 

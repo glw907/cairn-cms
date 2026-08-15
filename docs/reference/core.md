@@ -108,7 +108,9 @@ Declare one concept while preserving its fieldset type for typed reads, the conc
 to `defineAdapter`. It also validates the concept's URL policy at declaration, so a bad `permalink`,
 `datePrefix`, or `routing` throws at module load rather than defaulting or resolving silently. A
 concept declares its routing with `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand only)
-and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`. When the
+and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`. An omitted
+`permalink` defaults to `/:slug` for a concept named `pages` and `/<concept-id>/:slug` for any
+other; an omitted `datePrefix` defaults to `'day'`. When the
 resolved permalink uses a date token (`:year`, `:month`, or `:day`), the concept must declare a
 field named `date` of type `date`; `defineConcept` and `normalizeConcepts` both throw at
 declaration on a missing or wrong-typed one, and both normalize the declared field to

@@ -58,6 +58,16 @@ stamped row disappears from `after`, and the new key's row has no stamped counte
 filter that case out itself; the helper has no way to distinguish "genuinely new" from "renamed"
 from the manifest alone, since both look identical at the identity level it diffs on.
 
+## Deleting and recreating an entry reads as new too
+
+The same "no stamped counterpart in `before`" rule catches more than a rename. Deleting a
+published entry drops its manifest row, stamp included; publishing a new entry created under
+that same id afterward finds no prior row to carry a stamp forward from, so it re-announces
+exactly like a first publish, even if the deleted entry was years old. The general rule behind
+both cases: a row only keeps its original publish stamp while it keeps existing and stays
+published, so anything that leaves a publish with no still-existing, already-stamped
+predecessor reads as new, not only a rename.
+
 ## You know it worked when
 
 A fresh publish shows up in the loop exactly once, on the deploy immediately after it goes live,

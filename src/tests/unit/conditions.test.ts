@@ -66,7 +66,7 @@ describe('condition registry', () => {
     expect(c.why).toMatch(/url/i);
     expect(c.remediation).toContain('PUBLIC_ORIGIN');
     expect(c.remediation).toMatch(/https/);
-    expect(c.docsAnchor).toBe('cloudflare-readiness.md#set-the-public-origin');
+    expect(c.docsAnchor).toBe('is-it-working.md#set-the-public-origin');
   });
 
   it('resolves the login-probe condition (the doctor DX pass addition)', () => {
@@ -74,7 +74,7 @@ describe('condition registry', () => {
     expect(c.severity).toBe('blocker');
     expect(c.why).toMatch(/sign-in/i);
     expect(c.remediation).toMatch(/doctor/i);
-    expect(c.docsAnchor).toBe('cloudflare-readiness.md#probe-the-deployed-admin');
+    expect(c.docsAnchor).toBe('is-it-working.md#probe-the-deployed-admin');
     expect(c.logEvent).toBeUndefined();
   });
 
@@ -84,7 +84,7 @@ describe('condition registry', () => {
     expect(c.why).toMatch(/CairnAdminShell/);
     expect(c.why).toMatch(/shellLoad/);
     expect(c.remediation).toMatch(/createCairnAdmin/);
-    expect(c.docsAnchor).toBe('cloudflare-readiness.md#wire-the-admin-mount');
+    expect(c.docsAnchor).toBe('is-it-working.md#wire-the-admin-mount');
     expect(c.logEvent).toBeUndefined();
   });
 
@@ -93,7 +93,7 @@ describe('condition registry', () => {
     expect(c.severity).toBe('blocker');
     expect(c.why).toMatch(/5\.56\.1/);
     expect(c.remediation).toMatch(/reinstall/i);
-    expect(c.docsAnchor).toBe('cloudflare-readiness.md#meet-the-dependency-floors');
+    expect(c.docsAnchor).toBe('is-it-working.md#meet-the-dependency-floors');
     expect(c.logEvent).toBeUndefined();
   });
 
@@ -111,7 +111,7 @@ describe('condition registry', () => {
     expect(c.severity).toBe('warning');
     expect(c.why).toMatch(/cairn-admin-screens/);
     expect(c.remediation).toMatch(/cairn-doctor --fix/);
-    expect(c.docsAnchor).toBeUndefined();
+    expect(c.docsAnchor).toBe('is-it-working.md#refresh-the-admin-screens-skill');
     expect(c.logEvent).toBeUndefined();
   });
 
@@ -120,13 +120,13 @@ describe('condition registry', () => {
     expect(unknownRole.severity).toBe('warning');
     expect(unknownRole.why).toMatch(/vocabulary/i);
     expect(unknownRole.logEvent).toBe('auth.role.unknown');
-    expect(unknownRole.docsAnchor).toBe('cloudflare-readiness.md#provision-the-auth-store');
+    expect(unknownRole.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
 
     const badEmail = condition('auth.email-not-normalized');
     expect(badEmail.severity).toBe('warning');
     expect(badEmail.why).toMatch(/trimmed and lowercase/i);
     expect(badEmail.logEvent).toBeUndefined();
-    expect(badEmail.docsAnchor).toBe('cloudflare-readiness.md#provision-the-auth-store');
+    expect(badEmail.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
   });
 
   it('resolves the role-wiring condition (the double-wiring doctor check)', () => {
@@ -135,7 +135,7 @@ describe('condition registry', () => {
     expect(c.why).toMatch(/createAuthGuard/);
     expect(c.why).toMatch(/none capability/i);
     expect(c.remediation).toMatch(/createAuthGuard\(\{ roles \}\)/);
-    expect(c.docsAnchor).toBe('cloudflare-readiness.md#provision-the-auth-store');
+    expect(c.docsAnchor).toBe('is-it-working.md#provision-the-auth-store');
     expect(c.logEvent).toBe('auth.role.unknown');
   });
 

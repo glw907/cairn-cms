@@ -1754,3 +1754,35 @@ the named human gates only):**
   its own responses and reimplements it by hand. Filed by the 2026-08-01 ASC engine-seams adversarial
   review as a promotion candidate rather than adopted in that pass; take it up when a second audience
   actually needs it.
+
+- **The markdown-versus-WYSIWYG case, and a tool-by-tool competitor comparison, have no home in the
+  published docs (Pass D mining sweep, triaged 2026-08-14).** The deleted old corpus carried both:
+  `explanation/why-cairn.md`'s academic case for markdown over a rich-text editor (Scribe, TeX, SGML,
+  Coombs/Renear/DeRose 1987, iA Writer, Ulysses, Bear) and a tool-by-tool comparison against Sveltia,
+  Decap, Keystatic, the hosted headless services, and WordPress, whose strongest argument was that a
+  config-driven dashboard has nowhere for a site's growth to go, so a newsletter editor and a
+  membership coordinator end up in two different tools. The new `docs/why-cairn.md` carries the
+  trade-offs and the stack commitment but never justifies markdown itself and drops the comparison
+  entirely; after the old corpus's deletion, the academic case survives nowhere in the published
+  tree or the internal planning docs it once cited
+  (`docs/superpowers/plans/2026-07-03-markdown-academic-case.md` remains as history only). This is
+  page-shaped, not a sentence to fold into an existing page, and whether it belongs at all is a
+  register question for whoever owns the front door: `docs-register.md`'s "keeps the why and the
+  honest trade-offs" line for `why-cairn.md` doesn't say which why. No trigger yet; take it up if a
+  reader or reviewer asks why cairn is markdown-first, or why it isn't a rich-text or headless-CMS
+  competitor, and the current page doesn't answer.
+
+- **`check:snippets` cannot see a wrong call through a site-local import stub, which hid a real
+  defect (Pass D mining sweep, 2026-08-14).** The gate auto-stubs any site-local import (a name
+  imported from a path like `$lib/cairn.config.js`, one the gate cannot resolve) as untyped, so a
+  call routed through such a stub typechecks trivially regardless of the real signature it's
+  supposed to match. This is exactly how two docs pages (`docs/extend/wire-the-delivery-surface.md`
+  and `docs/reference/delivery-data.md`, both since fixed) called the public `SiteRender` type with
+  two positional arguments instead of the one object argument `src/lib/content/types.ts:215`
+  actually declares, and the gate never caught it because both call sites went through a
+  `cairn.rendering.render` reached off a stubbed site-local import rather than the typed package
+  export directly. The gate correctly proves an import resolves from cairn's own subpaths; it has no
+  way to prove a call made through a site-local stub matches the real signature the stubbed value
+  would have if it resolved. No concrete fix proposed yet; worth a look at whether the snippet
+  fixtures can carry a real minimal adapter shape for the common `cairn.*` call sites instead of an
+  untyped stub, weighed against the added fixture-maintenance cost.

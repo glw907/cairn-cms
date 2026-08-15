@@ -93,6 +93,27 @@ term of art Tidy would otherwise flag stops flagging for every future pass. That
 committed file (`src/content/.cairn/dictionary.txt`), owned by the editor track, not a config
 choice here.
 
+## What Tidy can't do to a document
+
+Before a proposed change ever reaches an editor, cairn checks the model's output against the
+original and discards the whole result if it fails: the directive structure, the heading count
+and levels, the fenced-code-block count, the frontmatter (byte for byte), the `media:` token
+multiset, and every code span all have to match exactly, plus a bound on how much the wording is
+allowed to diverge. A result that fails any of these never reaches the review screen, and the
+editor's buffer is left untouched. This is what makes Tidy safe against both a bad rewrite and a
+prompt injected through the draft's own text: the check is structural, not a second opinion from
+the model that wrote the change. Voice and phrasing are governed by `tidy.conventions` above and
+the prompt, not by this check, since no structural comparison can verify voice.
+
+## What a run costs and refuses
+
+A draft over roughly 24,000 characters (about 6,000 input tokens) is refused before the model is
+ever called, with a message naming the limit; select a shorter passage and tidy that instead. The
+settings screen's key-health check caches its result for ten minutes, so a key you just fixed can
+take a few minutes to show as healthy again. In local development, the SDK is never actually
+called: the dev backend injects a stubbed Anthropic client, so building and testing a site never
+reach the real API.
+
 ## What Tidy doesn't replace
 
 Tidy corrects mechanics; it's not a substitute for spellcheck's live, as-you-type underlines, and

@@ -323,7 +323,19 @@ double-submit CSRF for the admin is the guard's job, so kit's own origin check w
 Both are new keys inside the same `sveltekit({ ... })` call from Milestone 1. `checkOrigin` itself
 is deprecated as of SvelteKit 2.61 in favor of `csrf.trustedOrigins`, but stays supported across
 cairn's tested range. See [Supported toolchain](../reference/supported-toolchain.md#the-checkorigin-deprecation)
-for why cairn still relies on it:
+for why cairn still relies on it.
+
+Name `__CAIRN_DEV_BUILD__` directly at every call site that reads it, as `hooks.server.ts` does
+above, never through a shared exported constant. Vite substitutes the flag as a literal into the
+text of the module that names it, so an inlined check folds away with its dead branch; a constant
+exported from one module and imported into another survives, because the fold happens inside the
+constant's own chunk and never propagates across the module boundary. Route the check through a
+shared constant and the `@glw907/cairn-cms-dev` import ships in your deployed Worker.
+
+Add `ssr: { noExternal: ['@glw907/cairn-cms'] }` to the same config. The package ships its
+`.svelte` files straight from source under its `svelte` export condition, so Vite has to run them
+through your Svelte plugin rather than treat the package as pre-built and skip over it; without
+this line, the admin's components fail to build:
 
 ```ts
 import adapter from '@sveltejs/adapter-cloudflare';
@@ -342,6 +354,7 @@ export default defineConfig(({ command }) => ({
       csrf: { checkOrigin: false },
     }),
   ],
+  ssr: { noExternal: ['@glw907/cairn-cms'] },
 }));
 ```
 
@@ -393,6 +406,39 @@ const postsRaw = import.meta.glob('/src/content/posts/*.md', {
 export const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw });
 export const site = indexes.site;
 export const ORIGIN = 'http://localhost:5173';
+```
+
+Add the [`cairnManifest`](../reference/vite.md) plugin to `vite.config.ts`, alongside the keys
+from Milestone 2. It evaluates your content corpus at build time and fails the build if the
+committed manifest has drifted from the markdown files on disk, the same check `cairn-doctor`
+reads when it reports on your manifest:
+
+<!-- snippet-check-skip: elides the sveltekit() plugin and other vite.config.ts keys from Milestone 2 (defineConfig and sveltekit are already imported there) to focus on adding the manifest plugin -->
+```ts
+import { cairnManifest } from '@glw907/cairn-cms/vite';
+
+export default defineConfig(({ command }) => ({
+  // ...the sveltekit() plugin and other keys from Milestone 2
+  plugins: [
+    sveltekit({
+      /* ... */
+    }),
+    cairnManifest({
+      configModule: '/src/lib/cairn.config.ts',
+      content: { posts: '/src/content/posts/*.md' },
+      manifestPath: '/src/content/.cairn/index.json',
+    }),
+  ],
+  ssr: { noExternal: ['@glw907/cairn-cms'] },
+}));
+```
+
+Regenerate the manifest after any hand-edit to content outside the admin, with the
+[`cairn-manifest`](../reference/cli-cairn-manifest.md) command, which reads the same options off
+the plugin:
+
+```bash
+npx cairn-manifest
 ```
 
 Wire the catch-all public route:

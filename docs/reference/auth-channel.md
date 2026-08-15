@@ -178,8 +178,9 @@ declare const CHANNEL_SCHEMA_SQL: string;
 The factory's own D1 schema: the `cairn_channel_meta`, `cairn_channel_code`,
 `cairn_channel_session`, and `cairn_channel_budget` tables, their indexes, and one `INSERT` that
 seeds `schema_version`. **Migration-only, never a request-path statement.** Run it once, from a
-migration your own tooling applies; see [Add a login channel](../guides/add-a-login-channel.md) for
-the exact statement, copied byte for byte from this constant. `createAuthChannel`'s own actions
+migration your own tooling applies, in a `migrations_dir` separate from your site's own auth
+migrations; see [Add a second audience](../extend/add-a-second-audience.md) for the wiring.
+`createAuthChannel`'s own actions
 only ever read the `schema_version` row back to confirm a channel's binding has already been
 migrated; none of them re-runs this constant.
 

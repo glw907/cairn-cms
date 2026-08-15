@@ -85,6 +85,10 @@ screen](./add-a-custom-admin-screen.md) for the full worked route. **A page's `l
 read never gates the POST to its own action.** SvelteKit dispatches a matched form action with
 no ancestor `load` run first, so an unguarded action is reachable even behind a guarded page.
 
+Restricting `media` restricts more than the media library screen: the inline image picker inside
+every image-bearing concept's editor calls the same access-gated endpoint, so a role that edits
+one of those concepts also needs `media` reachable, or its picker breaks.
+
 ## Hiding is not denying
 
 The [`navLayout`](./organize-your-admin-nav.md) seam reads the same access map for visibility:

@@ -25,6 +25,12 @@ that exact id below; each one is a heading on this page, grouped where several i
 underlying fix. A **blocker** stops someone from signing in or your site from working correctly;
 a **warning** is real but doesn't block anyone today.
 
+A **skip** is neither: it means the check didn't run at all, most often because it needs a
+credential that isn't in the shell you ran it from. The GitHub App, Cloudflare, and D1 checks all
+need a value like your Cloudflare API token or your GitHub App's private key, and on a site set up
+through `create-cairn-site`, those live in your deployed Worker's secrets, not in your own
+terminal. A skip there isn't a pass; it's the check telling you it had nothing to check.
+
 Jump to what your doctor named:
 
 - [Force HTTPS at the edge](#force-https-at-the-edge) — `edge.https-not-forced`
@@ -109,6 +115,11 @@ nothing to send through and sessions have nowhere to be stored, so nobody can si
 named `AUTH_DB` in your `wrangler.jsonc` (or `wrangler.toml`), then redeploy; see
 [Wire the delivery surface](../extend/wire-the-delivery-surface.md) and
 [Cloudflare](../reference/cloudflare.md) for the shape.
+
+This same condition id also covers two other checks: a media bucket your site's adapter declares
+but `wrangler.jsonc` doesn't (only on a site with an image library), and a tidy AI key binding. The
+check's own detail line names which of the three actually failed, so read that rather than
+assuming it's always the `EMAIL`/`AUTH_DB` pair.
 
 ## Turn on observability
 
@@ -256,6 +267,11 @@ same failure trying to sign in.
 envelope was missing or wrong. Run the full `cairn-doctor` check against the same site and work
 through whichever of the checks above it also flags, since this probe usually fails alongside a
 more specific one.
+
+This check only runs when you pass `--probe`; a bare `npx cairn-doctor` never makes this request
+on its own. A second flag, `--send-test <address>`, sends a real sign-in email through your
+configured sender, which is the fastest way to prove sending actually works without waiting on a
+real editor to try.
 
 ## Refresh the admin-screens skill
 

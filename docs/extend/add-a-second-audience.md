@@ -109,6 +109,31 @@ anyway if you want the same consistent list-and-form scaffolding this audience's
 with your staff-facing screens, since the toolkit's primitives carry no dependency on a cairn
 editor session.
 
+Give the channel database its own `wrangler.jsonc` entry, with its own `migrations_dir` distinct
+from the one your site's `AUTH_DB` uses:
+
+```jsonc
+{
+  "d1_databases": [
+    { "binding": "AUTH_DB", "database_name": "my-site-auth", "migrations_dir": "migrations" },
+    {
+      "binding": "MEMBER_DB",
+      "database_name": "my-site-members",
+      "migrations_dir": "migrations/members"
+    }
+  ]
+}
+```
+
+A shared `migrations_dir` runs cairn's own auth migrations against the channel database, and the
+channel's schema against the site's auth store, the first time you apply either. Copy
+[`CHANNEL_SCHEMA_SQL`](../reference/auth-channel.md#channel_schema_sql) verbatim into the first
+migration in that separate directory.
+
+Test the channel against a real D1-shaped double with `@glw907/cairn-cms-dev`'s
+`createChannelDb`, which needs `node:sqlite`, unflagged only from Node 22.13 and later; it throws
+a named error below that floor.
+
 ## You know it worked when
 
 Path A: the role signs in through the same magic link, lands on its declared `home`, and can

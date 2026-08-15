@@ -47,6 +47,15 @@ page it pointed to was renamed or removed. Each broken link in the list has a **
 link** button beside it. Fix the link yourself in the text, or use the button to take
 it out, then save again.
 
+**"Saved. Note: this page links to unpublished pages (their addresses), which will 404
+until published."** Your save went through. One of the pages you linked to exists but
+isn't live yet, so anyone reading your entry hits a dead end until you publish that page
+too.
+
+**"A fragment can't include another fragment."** You used **Include a fragment** inside
+another fragment's own text. Take that inclusion back out and write the text directly
+instead; a fragment can only be included, never itself include one.
+
 **"Pick a date for this entry."** This entry needs a date, and none was set.
 
 **"An entry with that address already exists."** Or: **"An unpublished entry with that
@@ -133,6 +142,16 @@ are too large for the editor to handle, even after it tried to scale the image d
 **"The upload could not be completed. Please try again."** Something else interrupted
 the upload, most often a connection problem. Try again.
 <!-- vale Microsoft.Contractions = YES -->
+
+## Using Tidy
+
+**"This is too long to tidy at once. Select a passage and tidy that instead."** Your
+draft is past what Tidy can review in one pass. Select a section of it and run Tidy on
+that instead.
+
+**The Tidy button isn't there anymore.** Something broke in your site's connection to
+its copy-editing tool. The button comes back on its own once it's fixed; nothing you did
+caused this. Tell your site owner.
 
 ## Nothing here matches what you're seeing
 

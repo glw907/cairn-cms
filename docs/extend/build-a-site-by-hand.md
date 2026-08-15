@@ -5,11 +5,36 @@ the other route: every file, written by you, so you know exactly what wires to w
 ever hand a decision to a scaffold. Read [What the scaffold wrote](./what-the-scaffold-wrote.md)
 first if you want the tool's own output as a reference tree to compare against as you go.
 
-Work through the milestones in order. Each one leaves you with something that runs, and the
-early ones get you a deployed URL before cairn enters the picture at all, so the deploy pipeline
-is proven before there's anything content-shaped to deploy. By the end you'll have a one-concept
-site, editable through `/admin`, publishing through a real GitHub App, live on a
-`workers.dev` subdomain with no domain of your own required.
+```mermaid
+flowchart TD
+    accTitle: Diagram of the five build milestones, with the dev backend fence spanning milestones 2 through 4
+    accDescr: A linear flow from Milestone 1 through Milestone 5. Milestones 2, 3, and 4 sit inside a dev backend fence, each running the admin against an in-memory double instead of real credentials. Milestone 4 deploys the whole site while the fence still stands, so its deployed admin route falls back to the real guard with nothing behind it. Milestone 5 swaps in the real GitHub App and the auth database and redeploys.
+
+    M1["Milestone 1<br/>bare SvelteKit site<br/>deployed to workers.dev"]
+
+    subgraph FENCE["dev backend fence: milestones 2 through 4"]
+        M2["Milestone 2<br/>cairn admin<br/>local dev backend"]
+        M3["Milestone 3<br/>public site<br/>renders locally"]
+        M4["Milestone 4<br/>whole site deployed<br/>dev backend stripped from prod"]
+        M2 --> M3 --> M4
+    end
+
+    M5["Milestone 5<br/>real GitHub App and auth database<br/>redeploy"]:::focus
+
+    M1 --> M2
+    M4 -->|swap real credentials| M5
+```
+
+*Milestones 2 through 4 all run the admin against an in-memory dev backend, and Milestone 4
+deploys the whole site while that fence still stands, so its deployed admin route falls back to
+the real guard with no GitHub App or database behind it. Milestone 5 swaps in the real GitHub
+App and auth database and redeploys, the point where a save first commits to a real
+repository.*
+
+Work through the milestones in order. The map shows what each one leaves you with, and the
+early milestones prove the deploy pipeline before there's anything content-shaped to deploy. By
+the end you'll have a one-concept site, editable through `/admin`, publishing through a real
+GitHub App, live on a `workers.dev` subdomain with no domain of your own required.
 
 You'll need Node 22 or later, a GitHub account, and a Cloudflare account (the free tier covers
 everything through Milestone 3; Milestone 5 needs Workers Paid, named at the point it matters).
@@ -512,11 +537,10 @@ npm run build
 npx wrangler deploy
 ```
 
-Visit the deployed `workers.dev` URL. The public post renders. `/admin` on the deployed site
-does **not** work yet: the dev backend is stripped from a production build by design (that's the
-first layer of its fence), so `createAuthGuard()` is what's actually running there, and it has
-no GitHub App or database to check against. That's exactly right for this milestone; Milestone 5
-gives it both.
+Visit the deployed `workers.dev` URL. The public post renders. As the map shows, `/admin` on
+the deployed site still doesn't work here: the dev backend fence ends at this milestone, so
+`createAuthGuard()` runs with no GitHub App or database behind it, exactly as expected.
+Milestone 5 gives it both.
 
 **You know it worked when:** the deployed URL serves your post, and `/admin` on that same URL
 loads the sign-in page (not a crash, and not signed in).
@@ -609,7 +633,8 @@ npx wrangler deploy
 Visit `/admin/login` and sign in with the email you set as `bootstrapOwner` back in Milestone 2.
 That first request creates your owner row automatically (`editor.bootstrapped` in the logs), no
 manual database insert needed. Click the link in the email, and you're in, for real: a save now
-opens a branch and commits to your GitHub repo.
+opens a branch and commits to your GitHub repo. [Architecture](./architecture.md#the-write-path)
+walks through that write path in full, from holding branch to publish to deploy.
 
 Before you trust this deploy, run the doctor:
 

@@ -638,7 +638,7 @@ for (const entry of newlyPublishedEntries(priorManifest, deployedManifest)) {
 | `Manifest` | Extension API | `interface Manifest { version: 1; entries: ManifestEntry[] }` | The whole corpus as one committed file, with a version guard. `parseManifest` and `newlyPublishedEntries`'s `before`/`after` parameters carry this type. |
 
 The remaining rows are the export-rule closure `buildSiteManifest` and `createSiteIndexes`'s
-`CairnAdapter` generic bound names (C2 breaking-window pass, R4 ruling): every member type
+`CairnAdapter` generic bound names (CHANGELOG `0.94.0`): every member type
 `CairnAdapter`'s own structure names, down to its own nested shapes, re-exported here so a site
 importing only from this subpath can still name the value it holds. Each links to its canonical
 home, [Core](./core.md), where the full prose lives.

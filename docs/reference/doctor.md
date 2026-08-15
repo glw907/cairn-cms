@@ -8,7 +8,7 @@ condition's why and remediation, the same text the runtime error surfaces use.
 
 The package ships the command in its `bin` field, so an install puts it on the project's path. Run
 it before the first deploy and again whenever sign-in or publishing misbehaves. The
-[Cloudflare readiness guide](../guides/cloudflare-readiness.md) is the manual walkthrough of the
+[Cloudflare readiness page](../admin/is-it-working.md) is the manual walkthrough of the
 same list, one section per condition.
 
 ## How to run it
@@ -18,8 +18,11 @@ npx cairn-doctor --from editor@your-site.com --repo you/your-site
 ```
 
 The command reads local config files from the working directory, so run it from the directory that
-holds `wrangler.jsonc` (or `wrangler.toml`), `svelte.config.js`, `site.config.yaml`, and
-`package-lock.json`. In a repo
+holds `wrangler.jsonc` (or `wrangler.toml`), `site.config.yaml`, and `package-lock.json`. It also
+looks for `svelte.config.js`, since one check reads the CSRF handoff there. A current `sv create`
+scaffold writes no `svelte.config.js` at all: the adapter, and any `checkOrigin: false` setting,
+live inside `vite.config.ts`'s `sveltekit({ ... })` call instead, so that one check finds nothing
+to read on a fresh site (see the `config.csrf-disable` row below). In a repo
 whose `vite.config.ts` wires the `cairnManifest` plugin, the flags are optional; the doctor reads
 them off the adapter, so `npx cairn-doctor` alone works. The Cloudflare and GitHub checks need
 credentials from the environment. A check whose input is missing reports SKIP with a line naming
@@ -77,7 +80,7 @@ checklist gains a distinct line.
 | `config.bindings` | `config.bindings-missing` | The wrangler config declares the `send_email` binding `EMAIL` and the D1 binding `AUTH_DB`. | No wrangler config file exists. |
 | `config.media-bucket` | `config.bindings-missing` | The adapter's declared media R2 bucket has a matching `r2_buckets` binding in the wrangler config. | No media assets are configured (the adapter declares no bucket). |
 | `config.observability` | `config.observability-off` | `observability.enabled` is `true`, so Workers Logs has a sink. | No wrangler config file exists. |
-| `config.csrf-disable` | `config.csrf-disable-missing` | `svelte.config.js` carries `checkOrigin: false` outside a comment, and `src/hooks.server.ts` (or `.js`) wires the cairn guard (a heuristic text read of both files). | `svelte.config.js` is absent. |
+| `config.csrf-disable` | `config.csrf-disable-missing` | `svelte.config.js` carries `checkOrigin: false` outside a comment, and `src/hooks.server.ts` (or `.js`) wires the cairn guard (a heuristic text read of both files). | `svelte.config.js` is absent, which is every current scaffold; this check therefore skips rather than confirming the handoff, and a skip does not print differently from a pass. |
 | `config.site-config` | `config.site-config-invalid` | `site.config.yaml` parses and its URL policy validates. | `site.config.yaml` is absent. |
 | `config.public-origin` | `config.public-origin-invalid` | `PUBLIC_ORIGIN` (from the wrangler vars, or the environment as a fallback) parses as a URL and uses https, with http allowed only on `localhost` or `127.0.0.1`. The judgment is `requireOrigin`, the same rule the Worker applies. | No wrangler config file exists and `PUBLIC_ORIGIN` is not in the environment. |
 | `config.tidy-key` | `config.bindings-missing` | When `tidy.enabled` is `true` in the site config, and a literal `ANTHROPIC_API_KEY` value is readable locally (typically `.dev.vars`), the doctor actively probes it with a zero-token Anthropic call and reports valid or invalid distinctly. When only the key's name is referenced (a real deployed Worker secret, invisible to any CLI) it passes on presence alone and says so; a network failure during the probe fails soft to an unverified pass rather than claiming the key is invalid. | No `site.config.yaml` exists, or tidy is not enabled in it. |
@@ -183,8 +186,8 @@ The exit code makes the doctor a deploy gate. One job step covers it:
 
 ## See also
 
-- [Cloudflare readiness](../guides/cloudflare-readiness.md) for the manual walkthrough of the same
+- [Is it working?](../admin/is-it-working.md) for the manual walkthrough of the same
   conditions, in setup order.
-- [Deploy to Cloudflare](../guides/deploy-to-cloudflare.md) for the deploy sequence the doctor
+- [Create your site](../admin/create-your-site.md) for the deploy sequence the doctor
   gates.
 - [Log events](./log-events.md) for the runtime records the conditions correlate with.

@@ -356,6 +356,28 @@ The field vocabulary. A concept declares its fields with the `fields` constructo
 bundles them into a `fieldset`. The fieldset is the single source of truth for the editor form, the
 validator, and the inferred frontmatter type, and the descriptors it carries are plain data.
 
+Every `FieldDescriptor` arm renders one editor widget and carries its own validation. The table
+below is the fifteen-arm union at a glance; the constructor and container sections that follow
+cover the container types and the cross-field `refine` hook in full.
+
+| Type | Renders as | Validates |
+| --- | --- | --- |
+| `text` | single-line text input | `min`/`max`/`length` (string length) and `pattern` (a regular expression) |
+| `textarea` | multi-line text input (`rows` sets its height) | the same length and pattern constraints as `text` |
+| `number` | numeric input | coerced to a number; `min`/`max` bound it, `integer: true` rejects a fraction |
+| `select` | single-choice control over the closed `options` list | rejects a value outside `options` |
+| `multiselect` | checkboxes when `options` is set and `creatable` is not; a comma-separated tag input otherwise | rejects a value outside `options` whenever `options` is set, including under `creatable: true`; nothing when the field declares no `options` |
+| `url` | URL input | rejects a value that fails the URL format check |
+| `email` | email-address input | rejects a value that fails the email format check |
+| `date` | calendar-date input | must parse as `YYYY-MM-DD`; `min`/`max` bound it |
+| `datetime` | date-and-time input | accepted as a plain string today; the descriptor's `min`/`max` are not yet enforced by the validator |
+| `boolean` | checkbox | none; an absent or non-`true` value normalizes to unset |
+| `icon` | glyph picker when the adapter supplies an icon set; a plain text input when it does not | none; the stored value is the picked glyph's name |
+| `image` | hero-image control (upload, alt, optional caption) | a `required` image with no picked source is the one error this type raises |
+| `object` | a labeled group of its leaf fields | a `required` empty group errors on the group's own path; otherwise each leaf validates independently |
+| `array` | a repeatable-row editor over its `item`, or the reference picker when `item` is a `reference` | a `required` empty list errors on the array's own path; otherwise each row validates by its own item descriptor |
+| `reference` | a reference picker over one target concept's entries | rejects a value that is not a well-formed entry id |
+
 #### `fields`
 
 Stability tier: Extension API.
@@ -412,9 +434,10 @@ Containers nest one level only. An `object` holds leaves, never another containe
 leaf or a flat `object`, never another `array` and never an `object` of objects. A `reference` inside
 an `object` and an `seo` image inside any container are not supported yet, and a deeper nesting, a
 nested reference, or a nested `seo` image throws at the `fieldset()` call. No field key may contain a
-dot, top-level or nested, because the editor addresses a nested value by a dotted path. See
-[Structured fields](../guides/structured-fields.md) and [The one-level nesting
-cap](../explanation/content-model.md) for the why and the escape hatch.
+dot, top-level or nested, because the editor addresses a nested value by a dotted path. There is
+no escape hatch for a deeper shape today: flatten the fields instead of nesting them. See
+[the concept model](../extend/content-model.md) for the fuller picture of how fields, frontmatter,
+and the manifest fit together.
 
 Every constructor also accepts an optional `help`: one author-facing sentence the editor renders under
 the field in the Details panel, associated with the input through `aria-describedby`. It is not a
@@ -1030,7 +1053,7 @@ function signatures above reference these.
 | `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send a custom `SendMagicLink` implements: `(env, message) => Promise<void>`; production sends through Cloudflare Email Sending. |
 | `RepoFile` | Extension API | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | Extension API | `interface CommitAuthor` | A commit author: the signed-in editor's name and email. |
-| `TextField` | Extension API | `interface TextField` | A single-line text input: `min`/`max`/`length` and a `pattern` constraint. One of `FieldDescriptor`'s fifteen arms (export-rule sweep, C2 breaking-window pass). |
+| `TextField` | Extension API | `interface TextField` | A single-line text input: `min`/`max`/`length` and a `pattern` constraint. One of `FieldDescriptor`'s fifteen arms (CHANGELOG `0.94.0`). |
 | `TextareaField` | Extension API | `interface TextareaField` | A multi-line text input, with the same length and pattern constraints as `TextField`. |
 | `NumberField` | Extension API | `interface NumberField` | A numeric input, with `min`/`max` and an `integer` constraint. |
 | `SelectField` | Extension API | `interface SelectField` | A single-choice input over a closed `options` list. |

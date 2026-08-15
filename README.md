@@ -1,48 +1,73 @@
 # cairn
 
-Cairn is my embedded CMS and admin-interface scaffold for [SvelteKit](https://svelte.dev/docs/kit) sites on [Cloudflare](https://www.cloudflare.com/). It's an open source project: free code that (hopefully) helps people.
+cairn is an embedded, magic-link, GitHub-committing CMS for SvelteKit sites on Cloudflare.
 
-I built cairn for my own sites. I host everything on Cloudflare, because nothing else does bulletproof, security-forward hosting at almost no cost, but unfortunately committing to Cloudflare limits your choice of tools. The git-based CMSes that remain get the storage right, keeping content as plain files in your own repo, but they still ask editors to think in git, and for normal human beings who write, that's a bridge too far. I wanted the people who write content for sites to get a tool that takes their writing seriously and keeps the version control invisible.
-
-## Editor-first
-
-Cairn gives non-technical content editors a first-class writing experience with all the modern affordances: a markdown editor built for prose in the spirit of [iA Writer](https://ia.net/writer), a live preview that renders through the same function as your public pages, so editors see exactly what ships. It also has focus, typewriter, and Zen modes, a spellchecker with a per-site dictionary, and an optional AI copy-edit (tidy, built on [Claude](https://www.anthropic.com/claude)) that proposes fixes and never applies them for you. Editors sign in from an emailed link (no GitHub account, no password), and cairn exposes the signed-in identity to your own routes, so what you build next to cairn knows who's editing. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. The editors' own front door is [Welcome, editors](./docs/guides/editor-welcome.md).
-
-## Content storage and types
-
-Behind the editor, cairn stores all site content as markdown committed to the site's own GitHub repo, but in no way requires editors to understand git or version control. Saves go to a holding branch, one per entry, and a conflicting edit is refused rather than merged by guesswork. Publishing copies the entry to `main` with the editor as commit author, and from there the site deploys like any other push. (The default magic-link authentication requires a small D1 database.)
-
-Content is a fixed set of concepts you declare. Posts and Pages are available out of the box, and you can add others if you need them, each with a typed frontmatter schema. Inside the markdown, content components render through [remark](https://github.com/remarkjs/remark) directives, the accepted way of extending markdown with richer structures. The starter set covers callouts, alerts, an inline icon, pull quotes, CTAs, FAQs, video, and an expiring announcement banner, each with a schema-driven insert form in the editor. You declare your own the same way. Figures are built into the engine itself.
-
-## Small is beautiful
-
-Most of the sites I build have some degree of functionality beyond being a good CMS, so whatever managed the content had to be easy to extend once I wrote it. Nothing I found gave me all three: the hosting, the editor experience, and the room to grow.
-
-Cairn is deliberately small. It manages markdown content and the admin where editors write, and that's it. Anything else your site does (member signups, event registration, reservations, a roster), you build next to cairn, and there are documented seams where your code has to touch the engine. Your own admin screens mount inside cairn's, in the same [DaisyUI](https://daisyui.com/) and [Tailwind](https://tailwindcss.com/) idiom the scaffold is built from, so what you add and what cairn ships read as one admin to the people using it.
-
-The stack is fixed: SvelteKit, Cloudflare, GitHub, no abstraction layers over any of them. [Why cairn](./docs/explanation/why-cairn.md) explains the rationale and the limits of my choices.
-
-## An enforced design language
-
-The admin design language is written down, and cairn checks it. The admin's type scale and spacing are tokens with named roles. Each toolkit component carries measured norms, generated into a manifest you can query. A packaged audit, `npx cairn-audit`, checks your markup and your rendered screens in both themes against the same rules cairn runs over its own admin. And the standard itself ships in the package as a skill an AI coding agent can load, with annotated exemplar screens and a derivation ladder for components the toolkit doesn't cover. An agent building your next screen works from the written language instead of guessing from rendered ones. You still make the design judgments. The tokens, the norms, and the audit just stop you from having to rediscover what cairn already decided. [Why the design language is enforced](./docs/explanation/enforced-design.md) gives the reasoning and the limits.
-
-## Waymark and Topo
-
-Cairn ships with a starter template called Waymark: a complete, working site with the component library wired in, built in the DaisyUI and Tailwind idiom and meant to be restyled or replaced. The unmodified template runs live at [cairn.pub](https://cairn.pub), and a scaffolded site begins as exactly that site. For many basic sites, that's the finish line. A site that grows past a basic CMS keeps building on the same template instead of starting over. The live cairn.pub demo is neutral Waymark wearing the cairn theme, its opt-in identity layer. It is one worked example of the re-skin, covered in [Make Waymark your own](./docs/guides/make-waymark-your-own.md).
-
-A second template, Topo, is planned: a documentation-first derivative of Waymark that will carry cairn's own docs when it lands.
-
-<!-- SCREENSHOT (paired evidence): the editor mid-edit with live preview, beside the
-resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as author. Capture at the Waymark design review; never substitute a stock placeholder. -->
-
-## Quickstart
-
-```sh
-npm install @glw907/cairn-cms
+```
+npx create-cairn-site
 ```
 
-A working site needs four things from you. Write an adapter that describes your content: the concepts, the GitHub repo to commit to, your render function. Mount the admin routes, a handful of copied files, then give the Worker its three bindings in `wrangler.jsonc`: D1 for auth, an email sender for the sign-in links, and R2 for media. Then deploy. The [tutorial](./docs/tutorial/build-your-first-cairn-site.md) covers each step with the real files.
+## Where to start
 
-The [docs](./docs/README.md) go deeper when you need them. The [guides](./docs/guides/README.md) are task recipes, with the editor-facing ones grouped on their own, while the [reference](./docs/reference/README.md) keeps a page per package entry point that CI checks against the code. The [explanation](./docs/explanation/README.md) pages cover the architecture and the security model.
+- **Deciding whether cairn fits?** [Why cairn](./docs/why-cairn.md) covers the reasoning, the
+  stack, and the honest trade-offs.
+- **Writing for a site built on cairn?** [Welcome, editors](./docs/editors/welcome.md) starts with
+  signing in.
+- **Setting up a site and won't be writing code?** [The admin track](./docs/admin/README.md)
+  takes you from nothing to a live, running site with zero code. Most sites finish here.
+- **A Svelte developer extending a site?** Set the site up with the admin track first, then come
+  back to [the extend track](./docs/extend/README.md) for custom content, admin screens, and
+  everything else past the default.
+- **Working on cairn itself?** [CONTRIBUTING](./CONTRIBUTING.md) maps the repository and how a
+  change lands.
 
-Cairn is pre-1.0. It runs two production sites today, [ecxc.ski](https://ecxc.ski) and [907.life](https://907.life). If you ever remove it, your content is still plain markdown in your repo, and the rendering is what you'd rewire. Versioning and upgrades live in the [upgrade guide](./docs/guides/upgrade-cairn.md). History is in the [CHANGELOG](./CHANGELOG.md). If you want to work on cairn itself, [CONTRIBUTING](./CONTRIBUTING.md) maps the repository. Security reporting goes through the [policy](./SECURITY.md), and the license is [MIT](./LICENSE).
+## What cairn is
+
+cairn is two things built as one: an editor-first, git-backed content management system, and a
+SvelteKit toolkit a developer extends for their own organization. The premise is that the people
+who write an organization's content are often the same people who know what the organization needs
+next, and that a developer who builds directly on the editors' own admin surface, rather than a
+separate app bolted onto a headless CMS, ships those ideas faster. The admin is a UI toolkit as
+much as an editor: a developer's own screen, a member roster, an event calendar, a reservation
+form, mounts inside the same admin and shares its components and its sign-in, so what gets added
+reads as one product to the people using it, not a second app beside cairn.
+
+A developer builds those extras on cairn's seams: member signups, rosters, event and program
+registration, reservations, whatever a small organization's own site needs beyond content. cairn
+ships none of it. It ships the frame, the editor, and the documented seams a developer builds on.
+
+## Content and storage
+
+Content is markdown, committed to the site's own GitHub repository, organized as a fixed set of
+concepts you declare (Posts and Pages are available out of the box, and you can add your own).
+A save holds on a per-entry branch; publishing copies it to the main branch with the editor as
+commit author, through a GitHub App created for the site, and the site deploys the way any push
+already does. Editors sign in from an emailed link, with no GitHub account and no password, write
+in a markdown editor with a live preview rendered through the exact function the public site uses,
+and never see any of the branch or commit mechanics underneath.
+
+## Why this stack
+
+cairn commits fully to SvelteKit, Cloudflare, and GitHub, with no layer trying to hide any of the
+three, and the admin itself is built in DaisyUI and Tailwind, the idiom a developer's own screens
+extend it in. [Why cairn](./docs/why-cairn.md) has the full reasoning and the trade-offs a fixed
+stack makes.
+
+## Getting started
+
+`create-cairn-site` scaffolds a complete starter, Waymark: a working site with a component library
+already wired in, built to be restyled or replaced rather than started from a blank page. A second,
+documentation-focused template, Topo, is planned but not shipped yet.
+
+Already have a SvelteKit app and want to add cairn to it instead?
+[Add cairn to a SvelteKit app](./docs/extend/add-cairn-to-a-sveltekit-app.md) starts from
+`npm install @glw907/cairn-cms`.
+
+## Where cairn stands
+
+cairn is pre-1.0 and runs in production on two sites today, [ecxc.ski](https://ecxc.ski) and
+[907.life](https://907.life). Content stays yours regardless of what happens to cairn: it's
+markdown in your own repository, and leaving is a matter of cloning it.
+
+The [docs](./docs/README.md) are where every track above lives in full. History is in the
+[CHANGELOG](./CHANGELOG.md), security reporting goes through the [policy](./SECURITY.md), and the
+license is [MIT](./LICENSE).

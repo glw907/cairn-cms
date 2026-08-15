@@ -3,16 +3,14 @@
 General-purpose primitives a site building its own `/admin/` screen, and cairn's own admin
 screens, reach for instead of a bespoke parallel. Two tiers share this one charter. The **field**
 primitives (`FieldLabel`, `TextInput`, `SelectInput`) render one labeled control in the admin's
-label and control rhythm; they merged here from the retired `admin-fields` subpath in the C2
-breaking-window pass, since two subpaths stating the same charter is one subpath. The
+label and control rhythm; they merged here from the retired `admin-fields` subpath (CHANGELOG
+`0.94.0`), since two subpaths stating the same charter is one subpath. The
 **screen-scaffold** primitives (`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`,
 `Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`) plus the formatters compose a whole
-screen's chrome. Both tiers were born in aksailingclub-org's theme layer (a consuming site's own
-admin screens, not the ceiling) and graduated here by re-expression, not a file copy: every
-contract stays general-purpose, carrying no domain knowledge from its first consumer. Anything
-proposed here must be general-purpose across sites; a component that renders one of cairn's own
-content concepts (a `ConceptList` row, an `EditPage` field) belongs on `/components` instead, even
-though it also renders inside the admin theme.
+screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
+every contract here is general-purpose across sites, and a new addition must clear the same bar.
+A component that renders one of cairn's own content concepts (a `ConceptList` row, an `EditPage`
+field) belongs on `/components` instead, even though it also renders inside the admin theme.
 
 ```ts
 import { formatMoney, formatCivilDate, formatTimestamp, ageFromBirthdate } from '@glw907/cairn-cms/admin-toolkit';
@@ -146,8 +144,8 @@ line and `ListToolbar`'s count line both route their own `itemLabel` prop throug
 
 The field primitives a site's own custom `/admin/` screen composes, such as an events or members
 editor. They render with the admin's own label and control rhythm, matching the built-in content
-editor's fields. Merged here from the retired `admin-fields` subpath (C2 breaking-window pass, R3):
-the set is small today, `TextInput`, `SelectInput`, `FieldLabel`, and `FieldRow`; new field types
+editor's fields. Merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`): the set
+is small today, `TextInput`, `SelectInput`, `FieldLabel`, and `FieldRow`; new field types
 land as new consumers need them.
 
 ```ts
@@ -427,7 +425,7 @@ only the range line (and the page-size select, if given) if one applies.
 The range line carries `role="status"` (`aria-live="polite"`, `aria-atomic="true"`), so a page or
 page-size change announces the new range to assistive technology even though nothing moves focus.
 
-`pageSizeOptions`/`onPageSizeChange` are an additive graduation extension over the ASC-born
+`pageSizeOptions`/`onPageSizeChange` are an additive extension over the original
 contract: omit both for the original behavior unchanged, or pass both to add a page-size
 `<select>` beside the range line, reading its current value from `pageSize` and calling
 `onPageSizeChange` with the chosen size on change.
@@ -683,7 +681,7 @@ note. `action` is an optional header-right control such as a filter or a primary
 `children` is the screen's own content, rendered inside the shared bordered, theme-adaptive card
 shell.
 
-`OfficeList` moved here from `/components` in the C2 breaking-window pass (R3): `PageHeader`, this
+`OfficeList` moved here from `/components` in CHANGELOG `0.94.0`: `PageHeader`, this
 component's own later generalization above, already lived on the toolkit, and a header-plus-card
 screen scaffold belongs beside it. `PageHeader` and `OfficeList` both stay; they cover different
 shapes, a header primitive versus a full list-screen scaffold, never a duplicate. A new build

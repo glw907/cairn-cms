@@ -1,16 +1,14 @@
 # Reference
 
-One page per package export subpath. The TypeScript types in `src/lib` are the source of truth, and
-the export-coverage gate checks every page against them.
+One page per package export subpath, plus the CLI commands and the internal contracts that carry
+no subpath of their own. The TypeScript types in `src/lib` are the source of truth for the
+export-keyed pages.
 
-Two gates back these pages. `check:reference` verifies a page documents every export of its subpath.
-`check:reference:signatures` goes further for function and const-function exports: it renders each
-export's real type through the TypeScript compiler and compares it against the declared `ts`-block
-signature on the page, so a signature that drifts from the code fails the build. Copy a declared
-signature from the real export type rather than hand-writing it. A page that deliberately summarizes
-a large signature (an actions record shown as `Record<string, ...>`, say) names itself in the
-`ALLOWLIST` at the top of `scripts/checks/check-reference-signatures.mjs`, keyed `${subpath}#${name}` with a
-reason.
+Two gates hold every export-keyed page to that source of truth. `check:reference` verifies a page
+documents every export of its subpath. `check:reference:signatures` goes further for function and
+const-function exports: it renders each export's real type through the TypeScript compiler and
+compares it against the declared `ts`-block signature on the page, so a signature that drifts from
+the code fails the build. A drifted signature fails the build red.
 
 ## Stability tiers
 
@@ -35,6 +33,9 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [Core (`@glw907/cairn-cms`)](./core.md): the engine, the adapter and schema contract, render, and the runtime.
 - [SvelteKit (`/sveltekit`)](./sveltekit.md): the single-mount `createCairnAdmin` facade, the auth guard, and the per-route factories.
 - [The canonical admin mount](./admin-routes.md): the two-file catch-all mount and the composer a site copies.
+- [Admin grammar tokens](./admin-grammar-tokens.md): the admin's structural type and spacing
+  vocabulary, the role utilities that reach it from markup, and the palette/grammar boundary a
+  site's own theming respects.
 - [Components (`/components`)](./components.md): the admin Svelte UI.
 - [The admin toolkit (`/admin-toolkit`)](./admin-toolkit.md): the field, screen-scaffold, and formatter primitives a site's own custom `/admin/` screen composes.
 - [Render authoring (`/render`)](./render.md): the component-authoring toolkit for a component `build()`.
@@ -53,14 +54,29 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [The `cairn-media-seed` CLI](./cli-cairn-media-seed.md): seeds local R2 state from a deployed site's media library, for design iteration against `vite dev` with no deploy.
 - [The `cairn-audit` CLI](./cairn-audit.md): the design-language audit, and the norms query that answers a measured norm from the shipped manifest.
 - [Log events](./log-events.md): the structured diagnostic events cairn emits, and their fields.
-
-Two pages here are not export-keyed, since they document an internal contract rather than a
-package subpath:
-
-- [Content authoring syntax](./authoring-syntax.md): the `cairn:` internal-link and `media:` asset
-  token schemes, and the `::include` fragment directive, an author types in markdown.
-- [Admin grammar tokens](./admin-grammar-tokens.md): the admin's structural type and spacing
-  vocabulary, the role utilities that reach it from markup, and the palette/grammar boundary a
-  site's own theming respects.
 - [Supported toolchain](./supported-toolchain.md): the SvelteKit, Svelte, TypeScript, Vite, and
   Node versions the package promises against and the versions its own CI proves.
+
+## Also for site admins
+
+Three of the preceding pages serve a second reader beyond the extending developer: a site admin
+running a deployed site day to day, following the admin track's own setup and troubleshooting
+pages back to the underlying contract rather than a page that repeats it.
+
+- [The `cairn-doctor` CLI](./doctor.md)
+- [Log events](./log-events.md)
+- [Supported toolchain](./supported-toolchain.md)
+
+## Pages that document no subpath
+
+Eight of the preceding pages are not export-keyed, since they document a CLI command or an
+internal contract rather than a package subpath: the four CLI pages (`cairn-manifest`,
+`cairn-doctor`, `cairn-media-seed`, `cairn-audit`), [the canonical admin mount](./admin-routes.md),
+[log events](./log-events.md), [admin grammar tokens](./admin-grammar-tokens.md), and
+[supported toolchain](./supported-toolchain.md).
+
+## Superseded
+
+[Content authoring syntax](./authoring-syntax.md) is author-facing rather than a developer
+contract, so it moves into the editors track and the media reference. It still ships while the
+replacement finishes, and the next release drops it.

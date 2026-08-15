@@ -355,11 +355,11 @@ the editor's unsaved input survives in the returned payload, and nothing navigat
 own custom action should reach for the same shape, through `createSectionAction` or a hand-rolled
 `fail(...)`, rather than a throw, for a refusal its own route can answer in place.
 
-This split from the two throwing helpers above is deliberate, not an inconsistency to converge:
-
-> One security finding was deliberately not adopted: throwing for the 403/500 branches. `fail(...)`
-> is kept (type-verified, ASC-proven form UX), and the exposure it worried about closes by requiring
-> `requireAccess` in a section's `load`, so reads and writes share one fail-closed predicate.
+This split from the two throwing helpers above is deliberate, not an inconsistency to converge.
+`fail(...)` is the shape for the 403 and 500 branches specifically so the editor's unsaved input
+survives on screen rather than navigating away to an error page; the read side is closed instead,
+by requiring `requireAccess` in the section's own `load`, so reads and writes share one
+fail-closed predicate.
 
 A site that defines its own `handleError` for some other reason should know it **replaces**
 SvelteKit's own default hook (a `console.error` of every server error) rather than layering on top

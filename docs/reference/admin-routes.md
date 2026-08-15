@@ -4,11 +4,16 @@ A cairn site mounts the whole `/admin` surface with one catch-all route pair plu
 composer. The engine's `createCairnAdmin` facade serves every admin view through a single `load`
 and a single `actions` record, so the site restates no route table and wires no action names by
 hand. The showcase at `examples/showcase` is the working model of this shape; copy its files, not
-a guess at them.
+a guess at them. The showcase's own `svelte.config.js` predates the current scaffold shape below;
+it is this repo's hand-maintained config, not a fresh scaffold's output, and both settings still
+work there too.
 
-This wiring assumes the site sets `csrf: { checkOrigin: false }` in `svelte.config.js`, since
-cairn's guard owns CSRF for the admin through a double-submit token. See the
-[deploy guide](../guides/deploy-to-cloudflare.md#disable-checkorigin) for that step.
+This wiring assumes the site disables SvelteKit's own origin check for form posts, `csrf: {
+checkOrigin: false }`, since cairn's guard owns CSRF for the admin through a double-submit token.
+A current `sv create` scaffold carries no `svelte.config.js` at all: the adapter and the CSRF
+setting both go inside `vite.config.ts`'s `sveltekit({ ... })` call instead. See
+[Build a site by hand](../extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff)
+for the worked edit.
 
 ## The route files plus the composer
 

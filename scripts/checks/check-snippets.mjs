@@ -44,7 +44,7 @@ import { walk } from '../walk-files.mjs';
 import { CONFIG, runIfMain } from './reference-coverage.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-const DOC_DIRS = ['docs/tutorial', 'docs/guides', 'docs/reference'];
+const DOC_DIRS = ['docs/tutorial', 'docs/guides', 'docs/reference', 'docs/extend', 'docs/admin', 'docs/editors'];
 const PACKAGE_NAME = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).name;
 
 const SKIP_RE = /^<!--\s*snippet-check-skip:\s*(.+?)\s*-->$/;

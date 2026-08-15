@@ -2,6 +2,10 @@
 
 How to move an entry between private and live, and how to get an earlier version back.
 
+**Save** and **Publish** sit together near the top of an entry's screen. On a narrow
+screen, like a phone, they sit instead in a bar fixed to the bottom. The overflow menu
+beside them, covered below, holds **History**, **Discard changes**, and **Delete**.
+
 ## Save keeps your work, privately
 
 Select **Save** and your changes are kept. Nobody sees them on the live site yet. Other
@@ -21,6 +25,11 @@ rebuilding," which usually takes a moment.
 
 Publish stays available even when there's nothing new to send, though it's inactive
 then, and its label explains why if you hover or focus it.
+
+To see it for yourself, open the entry's own address on your site. A page usually lives
+at your site's address followed by whatever address you gave it; other kinds of entries,
+such as posts, usually live under their own section, like `/posts/`. Ask your site owner
+if you're not sure where a particular kind of entry appears.
 
 ## Where an entry stands
 
@@ -68,13 +77,17 @@ grouped by type, so you can see exactly what's about to go live before you confi
 
 ## Sharing a draft before it's live
 
-If you want someone who isn't an editor to read your unpublished draft, save it first;
-there's nothing to share until a draft exists. Open Details and select **Share preview
-link**. This creates a private web address anyone holding it can open to read the draft,
-without signing in. It's shown once, so copy it right away, and it shows its own expiry
-date beside it; after that it stops working, and you can make a new one. **Revoke all
-links** turns off every link you've created for that entry, which you should do once you
-no longer need people reading it privately.
+If your site has this turned on, you can let someone who isn't an editor read your
+unpublished draft. Save it first, since there's nothing to share until a draft exists.
+Open Details and select **Share preview link**. This creates a private web address
+anyone holding it can open to read the draft, without signing in. It's shown once, so
+copy it right away, and it shows its own expiry date beside it; after that it stops
+working, and you can make a new one. **Revoke all links** turns off every link you've
+created for that entry, which you should do once you no longer need people reading it
+privately.
+
+If you don't see **Share preview link** in Details, this feature isn't part of every
+site. Ask your site owner.
 
 ## Getting an earlier version back
 

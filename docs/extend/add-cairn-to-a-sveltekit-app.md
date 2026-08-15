@@ -31,15 +31,15 @@ is the authority on the form itself; the exact fields cairn needs from it:
 Everything else on the form, the App's name, its homepage URL, is cosmetic and never reaches an
 editor.
 
-On the App's settings page, note the **App ID**, near the top. Scroll to **Private keys** and
-click **Generate a private key**; your browser downloads a `.pem` file. Save it somewhere outside
-your repository; it's a credential, not a file to commit.
+Generate a private key from the App's settings page, GitHub's guide above covers exactly where;
+your browser downloads a `.pem` file. Note the **App ID** while you're there too. Save the `.pem`
+file somewhere outside your repository; it's a credential, not a file to commit.
 
 ## Install the App on your content repository
 
-Still on the App's settings page, go to **Install App**, choose the account that owns your
-content repository, and select the specific repository (or all repositories, if you'd rather).
-GitHub redirects to an installation settings URL of the form
+Install the App on the account that owns your content repository, choosing the specific
+repository (or all repositories, if you'd rather); GitHub's guide above covers where. GitHub
+redirects to an installation settings URL of the form
 `https://github.com/settings/installations/<installation_id>`; the trailing number is the
 **Installation ID**. Note it alongside the App ID.
 
@@ -101,12 +101,16 @@ npx wrangler d1 migrations apply my-site-auth --remote
 ```
 
 `0000_auth.sql` is the one every site needs: it creates the `editor`, `magic_token`, and
-`session` tables. Three more migrations ship in the same directory, each opt-in, and each
-applies the same way, in order, whenever you adopt the feature it backs: `0001_roles.sql` if you
-declare a role vocabulary beyond the default owner/editor pair
-([Restrict admin access by role](./restrict-admin-access.md)), `0002_audit.sql` if you wire an
-audit sink, and `0003_preview.sql` if you use [Share a draft
-preview](./share-a-draft-preview.md).
+`session` tables. Three more migrations ship alongside it in the package, each opt-in. Two extend
+the auth store's own tables and apply the same way, copied into this same `migrations/` directory
+and applied to `my-site-auth`: `0001_roles.sql` if you declare a role vocabulary beyond the
+default owner/editor pair ([Restrict admin access by role](./restrict-admin-access.md)), and
+`0003_preview.sql` if you use [Share a draft preview](./share-a-draft-preview.md). `0002_audit.sql`
+is different: it's a standalone `audit_log` table, and [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink)
+recommends a dedicated D1 binding of its own, commonly named `AUDIT_DB`, with its own
+`migrations_dir` distinct from `migrations/`, so heavy audit writes never contend with session and
+token lookups on the auth database. See that reference page for the worked `wrangler.jsonc` entry
+before you wire an audit sink.
 
 ## Wire the bindings
 
@@ -123,6 +127,19 @@ public origin to `wrangler.jsonc`:
   }
 }
 ```
+
+The `EMAIL` binding alone doesn't let a send go out. Cloudflare's Email Sending has to be
+onboarded on the domain zone your `from` address lives on, the domain in `PUBLIC_ORIGIN` above
+(a `workers.dev` subdomain has no zone to onboard, so this step needs a domain you own, connected
+to Cloudflare first):
+
+```bash
+npx wrangler email sending enable your-domain.example.com
+```
+
+That's free, on any plan, for sending to yourself. The moment a second person needs their own
+sign-in, sending to them needs Cloudflare's Workers Paid plan, $5 a month; see [the free-until
+boundary](../admin/before-you-start.md#the-free-until-boundary) for exactly when that bill starts.
 
 Set the private key as a secret, never a config value:
 

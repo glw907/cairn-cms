@@ -4,9 +4,12 @@ From nothing to signed in, and how to sign in again.
 
 ## Before you run it
 
-You need a computer with [Node.js](https://nodejs.org) 22 or later installed, and a terminal.
-Nothing else. The tool checks your Node version itself and tells you if it's too old, before it
-asks you anything.
+You need a computer with [Node.js](https://nodejs.org) 22 or later installed, a terminal, a
+[GitHub account](https://github.com/signup) and a
+[Cloudflare account](https://dash.cloudflare.com/sign-up), both free to open if you don't have
+them yet. The tool signs in to accounts you already have; it doesn't create either one for you.
+It also checks your Node version itself and tells you if it's too old, before it asks you
+anything.
 
 ## Run the command
 
@@ -30,8 +33,10 @@ can stop and pick this back up later if you'd rather not finish it in one sittin
 The tool explains what it's about to do, then asks: **Create the GitHub App and repository now?**
 Say yes, and it creates a private GitHub repository for your content, and a GitHub App that
 exists only for this site. That App is what lets the tool, and your writers, publish to your
-repository without anyone needing a GitHub account of their own. GitHub doesn't allow an App's
-permissions to be reduced after the fact, so this stays for as long as the App exists.
+repository without anyone needing a GitHub account of their own. It can also manage the
+repository's settings, including deleting it, and GitHub doesn't allow an App's permissions to be
+reduced after the fact, so that access stays for as long as the App exists. The tool says the same
+thing before it asks.
 
 This step needs two trips to your browser: one to create the App, one to install it on your new
 repository and sign you in to GitHub. The tool opens each page for you and waits.
@@ -44,8 +49,9 @@ up right where it left off, once someone with owner access approves it.
 ## Getting your site onto Cloudflare
 
 Once your repository exists, the tool asks again: **Install, build, and deploy your site now?**
-Say yes, and it installs your site's dependencies, signs in to Cloudflare (a third browser trip,
-only if you aren't signed in already), and deploys. This creates, on your own Cloudflare account:
+("Deploy" means putting your site live, answering requests the moment anyone visits it.) Say yes,
+and it installs your site's dependencies, signs in to Cloudflare (a third browser trip, only if you
+aren't signed in already), and deploys. This creates, on your own Cloudflare account:
 
 - One Worker running your site.
 - Two databases: one for who's allowed to sign in, one that's yours for whatever a developer

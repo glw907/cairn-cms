@@ -5,28 +5,28 @@ can't authenticate.
 
 ## Precondition
 
-Your site's GitHub App already exists (`define-an-adapter-and-schema` or the tool that created it
-set this up), and you can reach that App's settings page under your GitHub account or
-organization's Developer settings. You also need a way to run `wrangler secret put` against the
-site's Worker: a local checkout with `wrangler` installed, signed in to the right Cloudflare
-account.
+Your site's GitHub App already exists: [Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md#create-the-github-app)
+and [Build a site by hand](./build-a-site-by-hand.md#milestone-5-real-credentials-real-publishing)
+both create one, and `create-cairn-site` creates one too if your site started there. Whichever
+produced it, you can reach that App's settings page under your GitHub account or organization's
+Developer settings. You also need a way to run `wrangler secret put` against the site's Worker: a
+local checkout with `wrangler` installed, signed in to the right Cloudflare account.
 
 ## Why there's no downtime window
 
-A GitHub App can hold more than one private key at once, up to twenty-five. Generating a new key
-does not invalidate the old one; the App keeps signing with whichever key a caller presents until
-you delete a key by hand. That is the whole mechanism this page relies on: generate the new key,
-install it, confirm the site authenticates with it, and only then delete the old one. Skip the
-confirm step and a typo in the new key locks your site out with no working key left. See GitHub's
-own [managing private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps)
-for the exact settings-page navigation; this page covers cairn's own half, the encode-and-install
-step and the verification.
+A GitHub App can hold more than one private key at once. Generating a new key does not invalidate
+the old one; the App keeps signing with whichever key a caller presents until you delete a key by
+hand. That is the whole mechanism this page relies on: generate the new key, install it, confirm
+the site authenticates with it, and only then delete the old one. Skip the confirm step and a
+typo in the new key locks your site out with no working key left. See GitHub's own [managing
+private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps)
+for the settings-page navigation and the exact limits GitHub enforces; this page covers cairn's
+own half, the encode-and-install step and the verification.
 
 ## Steps
 
-1. **Generate a new key.** On the App's settings page (Developer settings → GitHub Apps → your
-   App → General), generate a new private key and download the `.pem` file. Leave the old key in
-   place; do not delete it yet.
+1. **Generate a new key.** On the App's settings page (linked above), generate a new private key
+   and download the `.pem` file. Leave the old key in place; do not delete it yet.
 
 2. **Base64-encode it, on one line.** cairn's Worker reads the key as `GITHUB_APP_PRIVATE_KEY_B64`,
    a base64 encoding of the PEM with no line breaks. The safest way to produce that, on any

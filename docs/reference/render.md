@@ -2,10 +2,10 @@
 
 The component-authoring toolkit a site reaches for inside a component's `build(ctx)`. These helpers
 build hast and read the component context. The render pipeline itself stays behind `createRenderer`
-on the package root. That function is the one public, safe-by-default render path. Anything
-proposed here must be a helper a component's own `build(ctx)` calls to construct or read hast; the
-render pipeline entry itself belongs on [Core](./core.md), not here, since a site calls it once to
-build its renderer, never from inside a component.
+on the package root. That function is the one public, safe-by-default render path. This subpath
+carries the helpers a component's own `build(ctx)` calls to construct or read hast; the render
+pipeline entry itself lives on [Core](./core.md), not here, since a site calls it once to build
+its renderer, never from inside a component.
 
 ```ts
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';

@@ -11,8 +11,8 @@ to cairn:
   writes, as plain markdown files. This is where your content lives on GitHub.
 - **A GitHub App**, created just for this site, that commits and publishes on your writers'
   behalf so nobody needs a GitHub account of their own to write.
-- **A Cloudflare account** running the site: one Worker, two databases, and a storage bucket for
-  images.
+- **A Cloudflare account of your own**, that the tool signs in to rather than creates for you,
+  running the site: one Worker, two databases, and a storage bucket for images.
 - **A domain**, if you connect one, registered wherever you like and pointed at Cloudflare.
 - **A database of who can sign in**, which you control from inside your own site.
 
@@ -38,22 +38,32 @@ them is money.
    ([Cloudflare Registrar](https://www.cloudflare.com/products/registrar/), as of 2026-08-11); if
    you already own a domain, there is nothing new to buy.
 3. **A Cloudflare API token you create yourself, at no cost, but read every row before you save
-   it.** The tool opens Cloudflare's own "create token" page with the permissions it needs
-   already selected, and asks you to paste the finished token back. Cloudflare's page can render
-   one of those permission rows as an empty, unselected control instead of an error when
-   something goes wrong on its end, and a token missing a permission still gets accepted here: it
-   only fails later, at the specific step that needed the missing permission. Before you click
-   Create Token, glance down the list and confirm every row it asked for is actually filled in.
+   it.** You aren't asked for one during your first run; it's the domain step,
+   [Own your domain](./own-your-domain.md), that first opens Cloudflare's own "create token" page
+   with the permissions it needs already selected, and asks you to paste the finished token back.
+   If you later connect to [Workers Builds](./own-your-domain.md#connect-to-workers-builds), that
+   step asks for a second, wider token of its own. Either time, Cloudflare's page can render one
+   of those permission rows as an empty, unselected control instead of an error when something
+   goes wrong on its end, and a token missing a permission still gets accepted here: it only fails
+   later, at the specific step that needed the missing permission. Before you click Create Token,
+   glance down the list and confirm every row it asked for is actually filled in.
+
+All in, a small site on its own domain runs about $6 a month: the $5 Workers Paid plan once a
+second person signs in, plus roughly $1 a month averaged over a year's domain renewal. The tool
+prints this same figure before it asks you anything.
 
 ## The free-until boundary
 
 Setting up your own site, running it, writing on it, and publishing to it: none of that costs
 anything, for as long as you are the only person signing in. The moment a second person needs
 their own sign-in, an editor, a co-owner, anyone, your site needs to send that person a real
-email, and sending email is what the $5-a-month Workers Paid plan buys. Until then, skip it: your
+email, and sending email is what the $5-a-month Workers Paid plan buys. It also needs a domain of
+your own connected: sign-in mail sends from that domain, so a site still living only at its
+`workers.dev` address has nowhere to send it from yet. Until both are in place, skip them: your
 site works exactly the same either way, you just stay the only one who can sign in.
-[Own your domain](./own-your-domain.md) is where you turn this on, when you're ready.
-[Invite your editors](./invite-editors.md) restates this boundary right before you add anyone.
+[Own your domain](./own-your-domain.md) is where you connect a domain and turn sign-in email on
+together, when you're ready. [Invite your editors](./invite-editors.md) restates this boundary
+right before you add anyone.
 
 ## What needs a developer
 
@@ -67,6 +77,10 @@ write and ship code:
 - **Adding functionality beyond what cairn ships**: custom admin screens, a second kind of
   sign-in, anything specific to your organization. That whole world is
   [the extend track](../extend/README.md); hand a developer that link.
+
+[Is it working?](./is-it-working.md) routes several more conditions to "Ask a developer." Most of
+those only show up on a site someone has customized or built by hand, not on the default site
+`create-cairn-site` gives you; that page says which is which as it covers each one.
 
 Everything else in this track, from first setup through day-to-day running, is yours to do
 alone.

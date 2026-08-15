@@ -31,11 +31,14 @@ async function announceNewPublishes() {
 }
 ```
 
-An entry counts as newly published when `after` carries a `publishedAt` stamp and its
-same-identity counterpart in `before` was either absent or itself unstamped. An entry that
-carried its stamp forward, one that was already live but never stamped, and a draft all fail to
-match, since none of them changes the stamp between the two manifests you pass in. An entry
-deleted from `after` never comes back through this seam, so a removal is silent here by design.
+An entry counts as newly published when it's live (not a draft) in `after`, carries a
+`publishedAt` stamp there, and its same-identity counterpart in `before` was either absent or
+itself unstamped. An entry that carried its stamp forward, and one that was already live but never
+stamped, both fail to match, since neither changes the stamp between the two manifests you pass
+in. A draft fails to match too, but for a different reason: the draft check runs first and
+excludes it outright, whether or not its stamp changed, since a currently unpublished entry can
+still carry a stamp forward from an earlier publish. An entry deleted from `after` never comes
+back through this seam, so a removal is silent here by design.
 
 The helper is pure: no I/O, no clock read. You supply both manifests and get a deterministic
 result, which is what makes it safe to run this diff anywhere, in a deploy hook, a scheduled

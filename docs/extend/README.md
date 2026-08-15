@@ -8,15 +8,18 @@ building on it.
 If you write content on a site someone else set up, you want [the editor track](../editors/welcome.md)
 instead; nothing here assumes you've ever opened `/admin` as a writer. If you're setting up a site
 and won't be writing code, start with [the admin track](../admin/README.md) and come back here once
-it's live and you want to build on it.
+it's live and you want to build on it. If you're still deciding whether cairn fits your project at
+all, that question belongs to [Why cairn](../why-cairn.md), not this track.
 
 ## Before any of this: the adapter has to exist
 
 Every page below assumes a working adapter: a site that already declares its content concepts, its
-GitHub target, and a `render` function. [Define an adapter and schema](./define-an-adapter-and-schema.md)
-produces one from nothing, through the deep path or the scaffolder. [Add cairn to a SvelteKit
-app](./add-cairn-to-a-sveltekit-app.md) produces one inside an app you already have. Neither of
-those two pages assumes the other has run; everything past this point assumes one of them has.
+GitHub target, and a `render` function. Two starting points get you there. Starting from nothing,
+[Build a site by hand](./build-a-site-by-hand.md) installs cairn and declares the adapter together,
+in one walkthrough. Starting from a SvelteKit app you already have, [Add cairn to a SvelteKit
+app](./add-cairn-to-a-sveltekit-app.md) installs cairn first, and [Define an adapter and
+schema](./define-an-adapter-and-schema.md) declares the adapter itself as a second step. Everything
+past this point assumes one of those paths has already produced a working adapter.
 
 ## The deep path
 
@@ -68,8 +71,10 @@ factories and advanced per-view components a site uses only when it recomposes r
 Full definitions and the per-page tier markers live in [the reference index](../reference/README.md#stability-tiers).
 
 Read the tiers as the target discipline, not a guarantee already fully in force: cairn is still
-`0.x`, and a documented seam has broken across a minor version more than once (`navLayout`'s own
-types moved twice, at `0.86.0` and again at `0.94.0`, both inside the Extension API tier).
+`0.x`, and a documented seam has broken across a minor version more than once, both times inside
+the Extension API tier: the nav fields on `AdminShellData` and `navFilter`'s own parameter and
+return types changed shape at `0.86.0`, the version `navLayout` itself shipped, and `navLayout`'s
+own types were renamed at `0.94.0` (`AdminNavEntry` folded into `NavLayoutEntry`).
 [Migration notes](./migration-notes.md) is the record of exactly which versions did this. Until
 `1.0`, treat every version bump as a real upgrade to verify, tier or no tier, and read
 [Upgrade cairn](./upgrade-cairn.md) for the actual bump-and-verify steps.
@@ -92,8 +97,8 @@ The system's shape, for the reasoning behind a contract rather than the contract
 
 ## Vocabulary
 
-Eight terms carry a precise meaning across this track and the reference. Nothing else here is
-jargon to avoid; these eight are jargon to use precisely, defined once here:
+These terms recur across this track and the reference, and carry exactly this meaning wherever
+they appear:
 
 - **Concept.** A first-class content kind your adapter declares under `content`, Posts and Pages by
   default, or one you declare yourself. A directory of markdown files plus a `fieldset`.

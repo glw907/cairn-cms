@@ -1,7 +1,7 @@
 # The canonical admin mount
 
-A cairn site mounts the whole `/admin` surface with one catch-all route pair plus one server
-composer. The engine's `createCairnAdmin` facade serves every admin view through a single `load`
+A cairn site mounts the whole `/admin` surface with two route pairs, the catch-all and the shared
+shell layout, plus one server composer. The engine's `createCairnAdmin` facade serves every admin view through a single `load`
 and a single `actions` record, so the site restates no route table and wires no action names by
 hand. The showcase at `examples/showcase` is the working model of this shape; copy its files, not
 a guess at them. The showcase's own `svelte.config.js` predates the current scaffold shape below;
@@ -111,14 +111,14 @@ The one route answers every admin URL. `createCairnAdmin`'s load parses `event.u
 
 | URL | View | Notes |
 | --- | --- | --- |
-| `/admin` | index | Redirects to the first concept's list. |
+| `/admin` | index | Role-aware: a role with a declared `home` redirects there; absent a `home`, an owner- or editor-capability role redirects to the first concept that session can reach; a none-capability role renders the `welcome` view. |
 | `/admin/login` | login | The magic-link request form. Public. |
 | `/admin/auth/confirm` | confirm | The magic-link landing. Public. |
 | `/admin/<concept>` | list | One concept's entries, with create, delete, and publish-all. |
 | `/admin/<concept>/<id>` | edit | The entry editor. |
 | `/admin/<concept>/<id>/history` | history | The entry's publish history, and revert to an earlier publish. A 404 for an unknown concept or id, or for a deleted entry, exactly like the edit view. |
 | `/admin/editors` | editors | The owner-gated editor management. |
-| `/admin/nav` | nav | The nav tree editor. A 404 unless the adapter configures `editor.nav`. |
+| `/admin/nav` | nav | The nav tree editor. A 404 unless the adapter configures [`editor.nav`](./core.md#nav-adapter-editor-member). |
 | `/admin/media` | media | The media library. |
 | `/admin/settings` | settings | The tidy settings screen. |
 | `/admin/vocabulary` | vocabulary | The tag-vocabulary editor: add, rename, delete an unused tag, and seed from tags already in use. |

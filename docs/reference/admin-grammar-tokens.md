@@ -1,4 +1,4 @@
-# Reference: admin grammar tokens
+# Admin grammar tokens
 
 The admin's structural type and spacing vocabulary: eighteen CSS custom properties declared once
 in `cairn-admin.css`, outside the light and dark theme blocks, plus the eleven named grammar role
@@ -107,8 +107,8 @@ specific Warm Stone values in ways that are not visible in the token names alone
 shadows keyed to a particular hue, and several text/surface pairs sitting near the accessible
 contrast floor rather than comfortably above it. A site that moves the palette away from Warm
 Stone inherits none of those relationships for free and has to re-prove them against its own
-values. The acceptance test for a re-tuned palette is a clean consumer-side rendered audit in
-both themes, once `cairn-audit` ships.
+values. The acceptance test for a re-tuned palette is a clean consumer-side `npx cairn-audit
+--rendered` run, which renders every configured page under both themes.
 
 ## A type role is not a full recipe
 

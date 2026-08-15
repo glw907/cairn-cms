@@ -66,8 +66,8 @@ tidy:
     enDashRanges: true
 ```
 
-Every convention below defaults off; declaring nothing beyond `enabled: true` runs the objective
-fixes alone.
+Only `fixes` defaults on; every other convention below defaults off. Declaring nothing beyond
+`enabled: true` runs the objective fixes alone.
 
 | Field | Values | Governs |
 | --- | --- | --- |

@@ -7,11 +7,11 @@ function sends (SMS, email, or another channel), backed by the site's own D1 bin
 flow for an audience other than cairn editors: members, athletes, boosters, or any roster the
 engine's own owner/editor auth was never meant to model.
 
-Anything proposed here must be part of the second-audience login discipline the factory owns:
-code generation and canonicalization, identity derivation and salting, the atomic budget and
-lockout mechanics, session issuance and revocation, and the D1 schema underneath all of it. The
-email magic-link stays the zero-config default and the documented primary path for cairn editors.
-A general-purpose auth primitive with no bearing on this discipline stays out. See [the security
+This subpath carries the second-audience login discipline the factory owns: code generation and
+canonicalization, identity derivation and salting, the atomic budget and lockout mechanics,
+session issuance and revocation, and the D1 schema underneath all of it. The email magic-link
+stays the zero-config default and the documented primary path for cairn editors. A general-purpose
+auth primitive with no bearing on this discipline stays out. See [the security
 model](../extend/auth-channel-security-model.md) for the threat catalogue and the rule this
 design is built from: no control keyed on the victim's identity may deny, delay, or destroy
 anything.

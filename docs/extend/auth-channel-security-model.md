@@ -1,10 +1,9 @@
 # Auth channel security model
 
 The security contract for `createAuthChannel`, cairn's supported way to add a second audience's own
-login, members, athletes, boosters, without hand-writing auth crypto. This page stands alone
-deliberately: a security contract for code that authenticates real people needs to stay findable on
-its own, not buried inside a how-to. [Add a second audience](./add-a-second-audience.md) is the
-task guide; this page is what to trust and why.
+login, members, athletes, boosters, without hand-writing auth crypto. [Add a second
+audience](./add-a-second-audience.md) walks through building one; this page is what to trust and
+why.
 
 ## What this is, and what it is not
 

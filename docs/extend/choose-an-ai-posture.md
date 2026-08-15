@@ -38,9 +38,11 @@ Leaving `aiPosture` unset is the default and states nothing: the emitted `robots
 byte-identical to a site with no opinion, which is every cairn site's behavior before this field
 existed. `'decline'` adds a `Content-Signal: ai-train=no` line and a `User-agent`/`Disallow: /`
 pair for each token in the engine's own training-crawler table. `'invite'` adds `Content-Signal:
-search=yes, ai-train=yes` and emits no `Disallow` lines at all, since no `robots.txt` directive
-grants access; the only thing a site can do to invite a crawler is state that it's welcome and
-otherwise stay out of the way.
+search=yes, ai-train=yes` and adds no crawler-specific `Disallow` lines of its own, since no
+`robots.txt` directive grants access; the only thing a site can do to invite a crawler is state
+that it's welcome and otherwise stay out of the way. Any path you pass in the general-purpose
+`disallow` option, `/admin` for instance, still emits under both postures and under no posture at
+all, since that option is a separate mechanism from `aiPosture` entirely.
 
 ## What declining actually buys you, honestly
 

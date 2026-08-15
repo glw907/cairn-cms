@@ -49,12 +49,18 @@ That's the whole adapter declaration, but `createSiteIndexes` needs a matching g
 at build time for any declared concept with no glob passed, since Vite needs the literal
 `import.meta.glob` pattern at the call site and can't have one added for it programmatically.
 Add `authors` to [the content index](./wire-the-delivery-surface.md#the-content-index) your
-delivery routes build from:
+delivery routes build from, the same `src/lib/content.ts` file that already declares `postsRaw`:
 
 ```ts
+// src/lib/content.ts
 import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
 import { cairn, siteConfig } from './cairn.config.js';
-import { postsRaw } from './content.js';
+
+const postsRaw = import.meta.glob('/src/content/posts/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
 
 const authorsRaw = import.meta.glob('/src/content/authors/*.md', {
   query: '?raw',
@@ -64,6 +70,12 @@ const authorsRaw = import.meta.glob('/src/content/authors/*.md', {
 
 export const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, authors: authorsRaw });
 ```
+
+If your site also builds the committed content manifest with the [`cairnManifest`](../reference/vite.md)
+Vite plugin, add `authors` to that plugin's own `content` option in `vite.config.ts` too. That
+option isn't read from this file, and unlike `createSiteIndexes` above, a concept missing from it
+fails silently: the manifest simply never gets any `authors` rows, with no throw and no build
+warning to catch it.
 
 ## Decide whether it gets its own page
 

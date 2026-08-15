@@ -50,10 +50,12 @@ doing anything.
 
 **What it means:** cairn's admin guard rejected the request before it ever reached the screen
 behind it, almost always because of how the site is reached rather than anything wrong with the
-content. This is covered end to end by the doctor's edge and configuration checks: start with
-[Force HTTPS at the edge](./is-it-working.md#force-https-at-the-edge),
-[Admin CSRF token rejected](./is-it-working.md#admin-csrf-token-rejected), and
-[Non-admin origin rejected](./is-it-working.md#non-admin-origin-rejected).
+content. Start with [Force HTTPS at the edge](./is-it-working.md#force-https-at-the-edge), which
+`cairn-doctor` does check, and
+[Admin CSRF token rejected](./is-it-working.md#admin-csrf-token-rejected) and
+[Non-admin origin rejected](./is-it-working.md#non-admin-origin-rejected), which cover the other
+two cases even though the doctor doesn't report them itself; each of those two shows up as a
+`guard.rejected` log record instead.
 
 If instead **every** admin page, including the sign-in page itself, shows the same branded error,
 that's a different reason: your database binding is missing, and
@@ -74,14 +76,18 @@ the GitHub App itself; check [Install the GitHub App](./is-it-working.md#install
 If the doctor reports the App healthy and saves still fail, this needs a developer; see
 [Debug your site](../extend/debug-your-site.md).
 
-Separately, if the **Publish site** button that shows a count of unpublished entries has simply
-disappeared, that isn't a failed publish: it means the site couldn't read GitHub at all to know
-what's pending, and it hides the button rather than guess at a count. Check the GitHub App the
-same way.
+Separately, the **Publish site** button only appears when something is actually waiting to
+publish, so its absence usually just means nothing is pending, or that you're inside an entry
+right now, where the button always stands down. If you know an editor has saved work that hasn't
+gone live and the button still isn't there on the main screen, that's the other case: the site
+couldn't read GitHub at all to know what's pending, and it hides the button rather than guess at a
+count. Check the GitHub App the same way.
 
 **The log events:** `commit.failed` on an ordinary save, `publish.failed` on a publish, whose
 `reason` field is `conflict` on the ordinary case, or whose `error` field names what GitHub
-actually said otherwise. The Publish site button disappearing is `github.unreachable`.
+actually said otherwise. `github.unreachable` is the one case where the Publish site button
+disappearing means something is actually wrong, rather than nothing being pending or an entry
+being open.
 
 ## Someone can sign in, but every screen refuses them
 

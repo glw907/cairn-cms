@@ -1,7 +1,10 @@
 # Manage the media library
 
-Every image ever added to your site lives in one place: the media library. This is where
-you work on those images directly, with no draft entry open.
+Every image ever added to your site lives in one place. This screen, called **Library**
+in your sidebar, is where you work on those images directly, with no draft entry open.
+
+If you don't see Library in your sidebar at all, ask whoever administers your site
+whether it's meant to be there for your account.
 
 ## Finding what you need
 

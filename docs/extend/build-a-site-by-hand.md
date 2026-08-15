@@ -147,6 +147,12 @@ The `@glw907/cairn-cms/ambient` import augments `App.Locals` with the four field
 reads and writes on every admin request. The `__CAIRN_DEV_BUILD__` constant is the build-time
 half of the dev-backend gate you'll wire into `hooks.server.ts` next.
 
+This declares `App.Locals`, not `App.Platform`. A custom admin route that reads
+`event.platform.env` for a binding of its own, an audit sink's database, say, needs
+`App.Platform` declared too, once you build one; [The canonical admin
+mount](../reference/admin-routes.md#the-guard-and-the-ambient-type) shows the worked block when
+you get there.
+
 ### Declare a concept
 
 Content lives as markdown files with frontmatter, one directory per concept. Create the
@@ -213,7 +219,8 @@ export const cairn = defineAdapter({
   }),
   email: { from: 'cms@example.com' },
   rendering: {
-    render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
+    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
+    renderMarkdown(body, { resolve, resolveMedia, resolveFragment }),
     components: registry,
   },
 });
@@ -517,6 +524,13 @@ loads the sign-in page (not a crash, and not signed in).
 **Objective:** replace the dev backend with a real GitHub App and a real auth database, so a
 save actually commits to a repository and a sign-in actually sends an email.
 
+Sending that email needs a domain zone connected to Cloudflare, since Email Sending onboards on a
+zone, and the `workers.dev` subdomain this walkthrough has used through Milestone 4 has none. Add
+cairn to a SvelteKit app, linked below, covers onboarding it once you own a zone; the moment a
+second person needs their own sign-in rather than just you, Cloudflare's Workers Paid plan, $5 a
+month, is what lets a real email reach them. See [the free-until
+boundary](../admin/before-you-start.md#the-free-until-boundary) for exactly when that bill starts.
+
 This milestone is almost entirely account setup rather than code, and it's exactly the setup
 [Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md) already walks through in full:
 creating the GitHub App and installing it on your content repo, provisioning the `AUTH_DB` D1
@@ -569,7 +583,16 @@ email: { from: 'cms@your-domain.example' },
 }
 ```
 
-**3. `hooks.server.ts` stops mattering**, without needing an edit. On a production build,
+**3. `src/lib/content.ts`'s `ORIGIN` constant stops pointing at localhost.** Milestone 3 set it to
+`'http://localhost:5173'`, and `export const prerender = true` bakes it into every canonical URL,
+the feed, and the sitemap at build time; update it to match the deployed origin below before you
+rebuild:
+
+```ts
+export const ORIGIN = 'https://my-cairn-site.<your-subdomain>.workers.dev';
+```
+
+**4. `hooks.server.ts` stops mattering**, without needing an edit. On a production build,
 `__CAIRN_DEV_BUILD__` folds to `false`, so the `import('@glw907/cairn-cms-dev')` branch never
 runs and the bundle never carries it; `createAuthGuard()` is the only path a deployed request can
 reach.

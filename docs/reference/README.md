@@ -8,7 +8,7 @@ Two gates hold every export-keyed page to that source of truth. `check:reference
 documents every export of its subpath. `check:reference:signatures` goes further for function and
 const-function exports: it renders each export's real type through the TypeScript compiler and
 compares it against the declared `ts`-block signature on the page, so a signature that drifts from
-the code fails the build. A drifted signature fails the build red.
+the code fails the build.
 
 ## Stability tiers
 

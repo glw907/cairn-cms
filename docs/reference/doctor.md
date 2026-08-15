@@ -8,7 +8,7 @@ condition's why and remediation, the same text the runtime error surfaces use.
 
 The package ships the command in its `bin` field, so an install puts it on the project's path. Run
 it before the first deploy and again whenever sign-in or publishing misbehaves. The
-[Cloudflare readiness page](../admin/is-it-working.md) is the manual walkthrough of the
+[Is it working?](../admin/is-it-working.md) page is the manual walkthrough of the
 same list, one section per condition.
 
 ## How to run it

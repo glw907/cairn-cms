@@ -1,4 +1,4 @@
-# Reference: log events
+# Log events
 
 cairn emits structured diagnostic events through `console`, which Cloudflare Workers Logs ingests
 and indexes when a site sets `observability.enabled = true`. Each record carries an envelope
@@ -14,7 +14,7 @@ in production, see the [read cairn's logs guide](../admin/troubleshooting.md).
 
 | Event | Level | Fires when | Fields |
 |---|---|---|---|
-| `auth.link.requested` | info | A magic-link request reaches `POST /admin/auth/request`. | `email` |
+| `auth.link.requested` | info | The login view's `?/request` action runs (`POST /admin/login?/request`). | `email` |
 | `auth.token.minted` | info | A token is issued for an allow-listed editor. | `email`, `expiresAt` |
 | `auth.link.send_failed` | error | The confirmation email send rejects. | `email`, `error`, `code`, `conditionId` |
 | `auth.token.confirmed` | info | A valid token is consumed at `POST /admin/auth/confirm`. | `email` |

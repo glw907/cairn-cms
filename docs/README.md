@@ -15,9 +15,13 @@ npx create-cairn-site
   signing in.
 - **Setting up a site and won't be writing code?** [The admin track](./admin/README.md) takes you
   from nothing to a live, running site with zero code. Most sites finish here.
-- **A Svelte developer extending a site?** Set the site up with the admin track first, then come
-  back to [the extend track](./extend/README.md) for custom content, admin screens, and everything
-  else past the default.
+- **A Svelte developer extending a site?** Fastest path: run the admin track's setup, then
+  [the extend track](./extend/README.md). Want to own every file, or add cairn to an app you
+  already have? [Build a site by hand](./extend/build-a-site-by-hand.md) and
+  [Add cairn to a SvelteKit app](./extend/add-cairn-to-a-sveltekit-app.md) start from nothing and
+  from an existing app.
+- **Looking up an export, a CLI flag, or a log event?** [The reference](./reference/README.md) is
+  one page per package subpath, plus the CLI commands.
 - **Working on cairn itself?** [CONTRIBUTING](../CONTRIBUTING.md) maps the repository and how a
   change lands.
 

@@ -236,7 +236,7 @@ not silence: a check that skips itself is the failure mode the audit exists to r
 
 `cairn-audit` is a design-language audit, not an accessibility conformance tool. Two rules borrow a
 number from WCAG, and neither implements the criterion it borrows from. A green run means these
-eleven questions came back clean. It isn't an accessibility result.
+fourteen questions came back clean. It isn't an accessibility result.
 
 Nothing here checks:
 

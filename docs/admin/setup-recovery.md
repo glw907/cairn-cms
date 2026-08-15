@@ -63,6 +63,7 @@ Once this finishes, your site is live and you're signed in: see
 | Waiting for your domain to switch nameservers | Your domain still points at its old nameservers, or the switch is still propagating across the internet. This is normal and can take anywhere from a few minutes to 48 hours. | **Wait:** re-run the command in a few minutes to check again; nothing needs fixing. |
 | Your domain is delegated, but to the wrong Cloudflare account | The domain points at a nameserver pair that belongs to a different Cloudflare account than the one your token is scoped to, an agency's or a previous developer's, most likely. | **Ask someone:** whoever controls that account has to release the domain first; see [the "stop and talk to whoever runs your DNS" note](./own-your-domain.md#if-this-domain-already-has-dns-records). |
 | Your domain is delegated, but not answering yet | Nameservers switched, but your domain's own record, or the HTTPS certificate, hasn't finished propagating. | **Wait:** re-run the command in a few minutes; your site keeps answering at `workers.dev` the whole time. |
+| Your account isn't on Cloudflare's Workers Paid plan yet | The tool stopped when it tried to onboard sign-in email, since that needs Workers Paid and this account isn't on it. | **Act:** turn it on at Cloudflare's own [Workers & Pages overview](https://dash.cloudflare.com/?to=/:account/workers-and-pages) for your account, then re-run the command. |
 | The domain half finished, but email sign-in didn't | You declined the Workers Paid prompt, or onboarding is still propagating. A decline is a real, saved answer, not a stuck state. | **Act, or wait:** re-run the command; a decline is re-offered, and a still-propagating onboard just needs a few more minutes. |
 
 Two full facts this table only touches: the domain-and-mail conflation and the "ask whoever runs
@@ -73,10 +74,10 @@ your DNS" branch both live in
 
 | Where you stopped | What happened | Getting back on the path |
 | --- | --- | --- |
-| You declined connecting to Workers Builds | Nothing is wrong; deploys still go through this CLI. | **Act whenever you're ready:** re-run the command with `--connect`. |
+| You declined connecting to Workers Builds | Nothing is wrong; deploys still go through this tool. | **Act whenever you're ready:** re-run the command with `--connect`. |
 | Cloudflare's GitHub App isn't authorized on your account yet | This is a one-time authorization Cloudflare needs before it can watch any repository. | **Wait, then act:** authorize it from Cloudflare's dashboard, then re-run the command with `--connect`. |
 | Your repository isn't in Cloudflare's watched list yet | The App is authorized, but only watches repositories you've explicitly added. | **Act:** add your repository at [github.com/settings/installations](https://github.com/settings/installations), then re-run with `--connect`. |
-| The connection and trigger exist, but the config commit or the first build hasn't finished | The reconcile commit needs a sign-in click, or the build simply hasn't appeared or finished yet. | **Act, or wait:** re-run with `--connect`; it resumes right where it stopped. |
+| The connection and trigger exist, but the config commit or the first build hasn't finished | That commit needs a sign-in click, or the build simply hasn't appeared or finished yet. | **Act, or wait:** re-run with `--connect`; it resumes right where it stopped. |
 | A build failed | This needs a real fix, not a re-run. | **Act:** the tool prints the build log's tail and a link to the full log in the Cloudflare dashboard; fix what it names, then re-run with `--connect` to trigger a fresh build. |
 
 ## Getting back in

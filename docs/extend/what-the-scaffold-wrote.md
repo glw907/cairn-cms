@@ -22,8 +22,9 @@ migrated). Both are valid; they're just different starting points.
 | --- | --- |
 | `svelte.config.js` | The kit config: the Cloudflare adapter, `csrf: { checkOrigin: false }`, and the `$chassis`/`$theme` path aliases. |
 | `vite.config.ts` | The build config: the `cairnManifest` plugin (regenerates the committed content manifest on build) and the `__CAIRN_DEV_BUILD__` define the dev backend gates on. |
-| `wrangler.jsonc` | The Worker's bindings: `AUTH_DB` (D1), `EMAIL` (Email Sending), `MEDIA_BUCKET` (R2), and `PUBLIC_ORIGIN`. `create-cairn-site` fills the ids in; see [Before you start](../admin/before-you-start.md) for what each binding costs. |
+| `wrangler.jsonc` | The Worker's bindings: `AUTH_DB` (D1, the auth store), `APP_DB` (D1, a second database for the `signups/` example screen below), `EMAIL` (Email Sending), `MEDIA_BUCKET` (R2), and `PUBLIC_ORIGIN`. `create-cairn-site` fills the ids in; see [Before you start](../admin/before-you-start.md) for what each binding costs. |
 | `migrations/` | The auth store's schema. See [Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md#provision-the-auth-database) for what each numbered file does. |
+| `migrations-app/` | `APP_DB`'s own schema, applied the same way (`wrangler d1 migrations apply`) but against `APP_DB`, never `migrations/`: each database walks its own directory. |
 | `package.json` | Standard SvelteKit dependencies plus `@glw907/cairn-cms`. `npm run dev` starts a local admin backed by an in-memory double; `npm run build` produces the deployable Worker. |
 
 ## Content (`src/content/`)
@@ -53,7 +54,8 @@ and `[...path]/+page.svelte` are the single catch-all that serves every built-in
 pairs are the canonical mount, reproduced exactly in [The canonical admin
 mount](../reference/admin-routes.md); you won't usually touch them. `signups/` is a worked
 example of a custom screen living alongside the catch-all, the pattern [Add a custom admin
-screen](./add-a-custom-admin-screen.md) walks through building from nothing.
+screen](./add-a-custom-admin-screen.md) walks through building from nothing; it reads from
+`APP_DB`, so apply that database's own migration before you expect its data to show.
 
 ## Public routes (`src/routes/`)
 
@@ -64,6 +66,7 @@ screen](./add-a-custom-admin-screen.md) walks through building from nothing.
 | `(site)/archive/[page]/` | A paginated post archive, built on the chassis's `archive.ts` slicing helper. |
 | `(site)/preview/[token]/` | The [share-a-draft-preview](./share-a-draft-preview.md) landing page. |
 | `(site)/styleguide/` | A living reference of the theme's own components and typography; useful while you're editing the theme, safe to delete otherwise. |
+| `probe-craft/` | A leftover fixture from the engine's own admin design work, stock DaisyUI with none of cairn's own styling. It carries no content and no link to it from anywhere else in the scaffold; safe to delete. |
 | `feed.xml/`, `feed.json/` | RSS and JSON Feed, via [`rssResponse`/`jsonFeedResponse`](../reference/delivery-data.md#rssresponse). |
 | `sitemap.xml/` | Via [`sitemapResponse`](../reference/delivery-data.md#sitemapresponse). |
 | `robots.txt/` | Via [`robotsResponse`](../reference/delivery-data.md#robotsresponse); see [Choose an AI posture](./choose-an-ai-posture.md) for the `posture` option it reads. |

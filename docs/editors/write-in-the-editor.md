@@ -16,6 +16,12 @@ To start something new, select **New post** (or whatever your site calls it) nea
 top of the list. You're asked for a title, an address, and sometimes a date, then you
 land straight in the editor with that entry open.
 
+That address becomes part of where the entry lives once it's published. Leave it blank
+and it fills in from your title as you type it, all lowercase with hyphens in place of
+spaces and punctuation: `Spring cleanup day` becomes `spring-cleanup-day`. Type your own
+instead if you'd rather choose it yourself, and you can still change it later from
+Details.
+
 ## The screen
 
 When you open an entry, its title sits in a large field at the top, and the writing
@@ -33,10 +39,10 @@ text for you to mark up yourself.
 Preview carries a width control, so you can check how an entry looks as a phone or a
 tablet shows it without needing one. Your choice is remembered on this device.
 
-The rest of the entry's settings, the fields that hold things like whether it's hidden
-and what address it has, live behind a **Details** panel, opened from the icon in the
-header. Everyday writing happens in the main text. Details holds the things you set up
-once and rarely touch again.
+The rest of the entry's settings live behind a **Details** panel, opened from the icon
+in the header. It holds things like whether it's hidden, what address it has, its tags,
+its date, and its lead picture. Everyday writing happens in the main text; Details holds
+what you set up once and don't touch again every time you write.
 
 ## The toolbar
 
@@ -87,9 +93,9 @@ into a real address when your site is published.
 ## Images
 
 The **Insert image** button, and dragging or pasting a picture straight into the text,
-both start the same flow. See [Add an image](./add-an-image.md) for the details,
-including alt text, which this page also uses. An entry can also carry its own lead
-picture, set from Details rather than the text; see
+both start the same flow. See [Add an image](./add-an-image.md) for the upload panel
+itself. An entry can also carry its own lead picture, set from Details rather than the
+text; see
 [Setting an entry's lead picture](./add-an-image.md#setting-an-entrys-lead-picture).
 
 Write alt text for what the picture contributes where it sits, not a full description of
@@ -175,7 +181,7 @@ changing what you've written:
 - **Typewriter** keeps your cursor near the middle of the screen as you type, instead of
   letting your text scroll up under it.
 - **Zen** clears away the toolbar and every button, leaving just your writing. Press
-  Escape, or the same shortcut, to bring the chrome back.
+  Escape, or the same shortcut, to bring the toolbar and buttons back.
 - The **Prose / Wide** toggle switches between a comfortable reading width, sized for
   writing, and a wider view better suited to tables and long web addresses.
 

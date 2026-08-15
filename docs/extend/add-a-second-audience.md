@@ -64,14 +64,15 @@ the sidebar (or hide everything else from it) with
 }
 ```
 
-An instructor invited this way is still added and removed through
-[`ManageEditors`](../admin/invite-editors.md): the role selector renders your declared vocabulary
-once it's larger than the default owner/editor pair.
+An instructor invited this way is still added and removed through [the same invite
+screen](../admin/invite-editors.md): the role selector renders your declared vocabulary once it's
+larger than the default owner/editor pair.
 
 ## Path B: a wholly separate login
 
-`createAuthChannel` builds request, confirm, and logout actions over an 8-digit code, delivered
-however you choose, backed by a D1 binding that is never `AUTH_DB`:
+`createAuthChannel` builds request, confirm, and logout actions over an 8-digit-by-default code
+(configurable from 8 to 10 digits), delivered however you choose, backed by a D1 binding that is
+never `AUTH_DB`:
 
 ```ts
 // src/lib/members/channel.ts

@@ -3,6 +3,10 @@
 Tags are a shared list every editor on your site picks from when they write. This screen,
 called **Tags**, is where that shared list is kept.
 
+This screen doesn't put a tag on any of your entries. To do that, open the entry and pick
+from this list in its Details panel. See
+[The screen](./write-in-the-editor.md#the-screen) for what else lives there.
+
 **Who can change it:** by default, any signed-in editor can. Your site can be set up to
 limit it to specific people, though that takes a developer's help, not something your
 site owner can do from here. If you don't see Tags in your sidebar at all, ask whoever

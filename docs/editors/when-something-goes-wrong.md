@@ -136,8 +136,9 @@ picked isn't one the editor can read.
 tried to convert the file and couldn't. Save it as a JPEG from wherever it came from,
 then try again.
 
-**"This image is too large to add, even after shrinking it."** The picture's dimensions
-are too large for the editor to handle, even after it tried to scale the image down.
+**"This image is too large to add, even after shrinking it."** Your site limits how big
+an uploaded picture's file can be. Export or save a smaller copy of the picture, then try
+again.
 
 **"The upload could not be completed. Please try again."** Something else interrupted
 the upload, most often a connection problem. Try again.

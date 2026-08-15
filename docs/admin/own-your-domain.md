@@ -26,10 +26,9 @@ the connection both run on the free plan.
 
 The tool asks: **Connect a domain you own to this site now?** Say yes and name your domain, and
 it opens Cloudflare's own "create token" page with five permissions already selected: Zone, DNS,
-Workers Scripts, SSL and Certificates, and Email Sending. This is the first of the two admission
-prices on this page: paste the finished token back, and read every row before you do, the same
-warning [Before you start](./before-you-start.md) opens with. One browser trip covers this whole
-step.
+Workers Scripts, SSL and Certificates, and Email Sending. Paste the finished token back, and read
+every row before you do, the same warning [Before you start](./before-you-start.md) opens with.
+One browser trip covers this whole step.
 
 ### Switching your domain's nameservers
 
@@ -75,13 +74,18 @@ and redeploys once. From here your site answers at both `https://yourdomain` and
 ## Turn on sign-in email
 
 This is the free-until boundary from [Before you start](./before-you-start.md): free for as long
-as you're the only one signing in, and this is the step that changes that. The tool restates the
-price the moment it asks, so you never meet it as a surprise: **Turn on Cloudflare's Workers Paid
-plan now, so anyone besides you can sign in?** That's $5 US a month, billed once per Cloudflare
-account rather than once per site, and it is not a scaling upgrade tied to how much traffic your
-site gets. Say no, and nothing changes: your site keeps serving, and you keep signing in as its
-owner through [`--sign-in`](./create-your-site.md#getting-back-in). You can turn this on later any
-time you run the command again.
+as you're the only one signing in, and this is the step that changes that. Turn Workers Paid on
+first, at Cloudflare's own
+[Workers & Pages overview](https://dash.cloudflare.com/?to=/:account/workers-and-pages) for your
+account. Saying yes to the question below doesn't subscribe you to anything by itself; it only
+tells the tool to go ahead and onboard your domain for email, and if your account isn't on Workers
+Paid yet, the run stops there and tells you so. The tool restates the price the moment it asks, so
+you never meet it as a surprise: **Turn on Cloudflare's Workers Paid plan now, so anyone besides
+you can sign in?** That's $5 US a month, billed once per Cloudflare account rather than once per
+site, and it is not a scaling upgrade tied to how much traffic your site gets. Say no, and nothing
+changes: your site keeps serving, and you keep signing in as its owner through
+[`--sign-in`](./create-your-site.md#getting-back-in). You can turn this on later any time you run
+the command again.
 
 Say yes, and the tool onboards `yourdomain` for Cloudflare's Email Sending, then sends a real test
 message to your own sign-in address to prove it actually works before it hands the feature to
@@ -92,10 +96,13 @@ enough to deliver its first messages; that trust builds on its own as the domain
 someone's first sign-in link doesn't arrive right away, this warm-up period is the usual reason,
 not a sign that anything is broken.
 
-Onboarding also writes a DMARC policy at `_dmarc.yourdomain`, set to reject mail that isn't from
-Cloudflare's own sending infrastructure. That record stays in place even if you turn Email
-Sending off again later, so if you add a newsletter tool or a mailing list to this domain
-afterward, add it to that DMARC record too, or its mail gets rejected.
+Onboarding also writes a DMARC policy at `_dmarc.yourdomain`. It tells receivers to reject any
+mail claiming to be from your domain that your domain hasn't authenticated, regardless of where it
+came from. That record stays in place even if you turn Email Sending off again later. So if you
+add a newsletter tool or a mailing list to this domain afterward, follow that tool's own
+instructions for adding itself to your domain's mail records before you send anything through it,
+or its mail gets rejected. Nothing about that lives in the record Cloudflare wrote; that one only
+sets the policy.
 
 ### You know it worked when
 
@@ -115,22 +122,25 @@ npx create-cairn-site --dir <your-site-directory> --connect
 This works as soon as your site is live, whether or not you've connected a domain yet. The tool
 explains the three things this step needs: a one-time authorization of Cloudflare's own "Workers
 and Pages" GitHub App on your account, a fresh Cloudflare API token, and one later sign-in click.
-That token is the second, separate admission price on this page: a fresh one, prefilled with eight
-permissions rather than the domain half's five (the same five, plus three Workers Builds needs).
-It becomes your Workers Builds build token, kept by Cloudflare and handed to every build your
-repository runs. It's scoped across every Cloudflare account and zone you own, so treat anyone
-who can push to your default branch as able to read a token that reaches all of them. Costs
-nothing: Workers Builds' free tier covers 3,000 build minutes a month and one build running at a
-time ([Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), as of
+That token is a second, separate one: a fresh one, prefilled with eight permissions rather than the
+domain half's five (the same five, plus three Workers Builds needs). It becomes your Workers
+Builds build token, kept by Cloudflare and handed to every build your repository runs. It's scoped
+across every Cloudflare account and zone you own, so treat anyone who can push to your default
+branch as able to read a token that reaches all of them. Costs nothing: Workers Builds' free tier
+covers 3,000 build minutes a month and one build running at a time
+([Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), as of
 2026-08-12).
 
-Two browser moments cover this step: the fresh token's create-token page, and, later in the same
-run, a sign-in click when the tool commits its own deploy-config changes back to your repository
-under your name.
+Two browser moments cover this step once Cloudflare's "Workers and Pages" GitHub App is already
+authorized on your account: the fresh token's create-token page, and, later in the same run, a
+sign-in click when the tool commits its own deploy-config changes back to your repository under
+your name. If that App isn't authorized yet, the run stops first and tells you where to do that;
+re-run with `--connect` afterward, and it picks up without asking for a fresh token.
 
 ### You know it worked when
 
 The tool watches your first Workers Builds deploy to completion and confirms your site answers
-there. From here, every commit to your default branch deploys itself; this CLI is still what you
-run for a cairn engine update, covered in
+there. From here, every commit to your default branch deploys itself. A cairn engine update is
+different: that's still a developer's job (see
+[What needs a developer](./before-you-start.md#what-needs-a-developer)), covered in
 [Upgrade cairn](../extend/upgrade-cairn.md).

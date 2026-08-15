@@ -12,9 +12,31 @@ content never renders live directly; a save lands on a holding branch, and only 
 publish, then the site's own deploy pipeline, puts anything in front of a visitor, so every change
 carries a git audit trail. That shape is what the model below is built for: the realistic risk is
 session and cookie handling, abuse of the unauthenticated magic-link request endpoint, and the cost
-of a leaked commit credential, not an anonymous public attacker reaching content directly. Public
-render safety, the concern for content a compromised or careless editor account could push live, is
-a separate model; see [Render safety](./render-safety.md).
+of a leaked commit credential, not an anonymous public attacker reaching content directly.
+
+```mermaid
+flowchart LR
+    accTitle: Diagram of the security model's two trust boundaries
+    accDescr: An editor's browser passes through the guard to the commit pipeline and repository; a deploy step then hands off to the render pipeline for a visitor's browser. This page's threat model covers the left half, render safety's model the right half.
+    EditorBrowser["Editor's browser"]
+    Deploy["Site's deploy"]
+    VisitorBrowser["Visitor's browser"]
+    subgraph pageModel["This page's model"]
+        EditorBrowser --> Guard["The guard"]
+        Guard --> CommitPipeline["Commit pipeline"]
+        CommitPipeline --> Repo["Repository"]
+    end
+    subgraph renderModel["Render safety's model"]
+        RenderPipeline["Render pipeline"]
+        RenderPipeline --> VisitorBrowser
+    end
+    Repo --> Deploy
+    Deploy --> RenderPipeline
+```
+
+*This page's model spans an editor's browser, the guard, the commit pipeline, and the
+repository. Render safety's model, on the right, spans deploy, the render pipeline, and a
+visitor's browser; see [Render safety](./render-safety.md).*
 
 ## Sign-in: magic links, not passwords
 
@@ -60,16 +82,22 @@ else in the site.
 
 ## The guard's request order
 
-`createAuthGuard()` is the site's `handle` hook, so every request passes through it in a fixed
-order: a dev-backend tripwire fails closed if a deployed runtime somehow carries the local-only
-flag; a non-admin path gets the restored `Origin` check described above; an `/admin` path over
-plain `http` on a non-local host gets a help page instead of a doomed form post; a missing
-`AUTH_DB` binding fails every admin path with a named condition rather than a raw 500 deep in a
-store call; the CSRF check runs (accepting either the double-submit field or a custom header, since
-a raw-body upload can't clone its body to read a form field); and only then does the guard resolve
-a session and attach `locals.cairnEditor` and `locals.cairnAccess` for the route to read. Every
-step that refuses a request logs a named [`guard.rejected`](../reference/log-events.md) reason, so a
-sign-in failure is diagnosable from the logs rather than guessed at.
+`createAuthGuard()` is the site's `handle` hook: every request passes through it in this fixed
+order.
+
+1. **Dev-backend tripwire.** Fails closed if a deployed runtime carries the local-only flag.
+2. **Non-admin origin check.** Restores the `Origin` check described above.
+3. **HTTPS help page.** An `/admin` path over plain `http` on a non-local host gets a help page.
+4. **Bindings check.** A missing `AUTH_DB` binding fails every admin path with a named
+   condition, not a raw 500.
+5. **CSRF check.** Accepts the double-submit field or a custom header, since a raw-body upload
+   can't clone its body to read a form field.
+6. **Session resolve.** Attaches `locals.cairnEditor` and `locals.cairnAccess` for the route to
+   read.
+
+Every step that refuses a request logs a named [`guard.rejected`](../reference/log-events.md)
+reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`. The exception is step 6: a
+missing or invalid session redirects to `/admin/login` without logging.
 
 ## Roles, capability, and the access map
 

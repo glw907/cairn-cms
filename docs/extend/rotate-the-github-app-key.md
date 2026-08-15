@@ -14,12 +14,29 @@ local checkout with `wrangler` installed, signed in to the right Cloudflare acco
 
 ## Why there's no downtime window
 
-A GitHub App can hold more than one private key at once. Generating a new key does not invalidate
-the old one; the App keeps signing with whichever key a caller presents until you delete a key by
-hand. That is the whole mechanism this page relies on: generate the new key, install it, confirm
-the site authenticates with it, and only then delete the old one. Skip the confirm step and a
-typo in the new key locks your site out with no working key left. See GitHub's own [managing
-private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps)
+```mermaid
+gantt
+    accTitle: Diagram of the old and new GitHub App keys' overlapping validity, with a milestone at the swap point
+    accDescr: The old key keeps signing commits from before the rotation starts until step 6 deletes it. The new key starts signing the moment step 1 generates it, and its window overlaps the old key's for the whole rotation. A milestone diamond marks step 5, the confirmed real save against the deployed Worker, the point after which deleting the old key is safe.
+    dateFormat  YYYY-MM-DD
+    section Old key
+    Signs until you delete it (step 6)         :active, oldkey, 2026-01-01, 2026-01-07
+    section New key
+    Signs from the moment you generate it (step 1) :newkey, 2026-01-02, 2026-01-09
+    section Swap point
+    Confirmed on the deployed Worker (step 5)  :milestone, swap, 2026-01-06, 0d
+```
+
+*The old key keeps signing from before the rotation starts until you delete it in step 6. The new
+key starts signing as soon as you generate it in step 1, so its validity window overlaps the old
+key's for the whole rotation. The milestone marks step 5, the confirmed real save against the
+deployed Worker, the point after which deleting the old key is safe.*
+
+A GitHub App can hold more than one private key at once, which is the whole mechanism this page
+relies on: generate the new key, install it, confirm the site authenticates with it, and only
+then delete the old one. Skip the confirm step and a typo in the new key locks your site out with
+no working key left. See GitHub's own [managing private keys for GitHub
+Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps)
 for the settings-page navigation and the exact limits GitHub enforces; this page covers cairn's
 own half, the encode-and-install step and the verification.
 

@@ -16,6 +16,88 @@ describes the tool's own output, which starts from Waymark and already carries a
 `svelte.config.js` (Waymark predates the current `sv create`'s inline-config shape and hasn't
 migrated). Both are valid; they're just different starting points.
 
+```
+your-site/
+├── .gitattributes
+├── .gitignore
+├── migrations/
+│   ├── 0000_auth.sql
+│   └── 0003_preview.sql
+├── migrations-app/
+│   └── 0000_signups.sql
+├── package.json
+├── README.md
+├── scripts/
+│   └── dev.mjs
+├── src/
+│   ├── app.d.ts
+│   ├── app.html
+│   ├── chassis/
+│   │   └── … (genre-free plumbing; see below)
+│   ├── content/
+│   │   ├── .cairn/
+│   │   │   ├── index.json
+│   │   │   └── media.json
+│   │   ├── fragments/
+│   │   │   └── trail-safety-notice.md
+│   │   ├── pages/
+│   │   │   ├── about.md
+│   │   │   └── the-trail-crew.md
+│   │   └── posts/
+│   │       └── … (14 sample entries)
+│   ├── hooks.server.ts
+│   ├── params/
+│   │   └── md.ts
+│   ├── routes/
+│   │   ├── admin/
+│   │   │   ├── [...path]/
+│   │   │   ├── signups/
+│   │   │   ├── +layout.server.ts
+│   │   │   └── +layout.svelte
+│   │   ├── (site)/
+│   │   │   ├── [...path]/
+│   │   │   ├── [...path=md]/
+│   │   │   ├── archive/[page]/
+│   │   │   ├── preview/[token]/
+│   │   │   ├── styleguide/
+│   │   │   ├── +layout.server.ts
+│   │   │   ├── +layout.svelte
+│   │   │   └── +page.server.ts, +page.svelte
+│   │   ├── probe-craft/
+│   │   ├── feed.json/
+│   │   ├── feed.xml/
+│   │   ├── healthz/
+│   │   ├── media/[...path]/
+│   │   ├── robots.txt/
+│   │   ├── sitemap.xml/
+│   │   ├── +error.svelte
+│   │   ├── +layout.server.ts
+│   │   └── +layout.svelte
+│   └── theme/
+│       ├── cairn.config.ts
+│       ├── components/
+│       ├── islands/
+│       ├── site-config.ts
+│       ├── site.config.yaml
+│       ├── site.css
+│       └── theme.css
+├── svelte.config.js
+├── tsconfig.json
+├── vite.config.ts
+└── wrangler.jsonc
+```
+
+*Captured from a real `create-cairn-site` run, not typed by hand, so it matches what you actually
+get. Two things worth knowing about it. First, `.gitignore` and `.gitattributes` are really there:
+the packlist defect that once dropped `.gitignore` from a published tarball is fixed, so a site
+scaffolded from the published package carries both files, not only a locally baked checkout.
+Second, the tree is complete and the map below is not: it covers the entries that are
+cairn-specific or otherwise need explaining, and skips plain SvelteKit and tooling files
+(`tsconfig.json`, `README.md`, `scripts/`, `src/app.html`, `src/app.d.ts`, `src/hooks.server.ts`,
+`src/params/`, the `src/chassis/` files not named below, and the root and route-group
+`+layout.server.ts`/`+layout.svelte`/home `+page.server.ts`/`+page.svelte` files SvelteKit's own
+routing expects) that a SvelteKit developer already recognizes.*
+
 ## Root
 
 | File | What it is |

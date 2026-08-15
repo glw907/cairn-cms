@@ -2,7 +2,7 @@
 
 cairn-cms runs two production sites today, [ecxc.ski](https://ecxc.ski) (formerly ecnordic.ski) and
 [907.life](https://907.life). It is `0.x` and breaks between minor versions; the latest published
-release is `0.90.1`. The author is still working through the core-feature roadmap, and the project stays
+release is `0.94.0`. The author is still working through the core-feature roadmap, and the project stays
 closely held until that core lands.
 
 This roadmap is a direction, not a commitment. Priorities shift as the production sites surface needs,
@@ -1565,6 +1565,15 @@ the named human gates only):**
   comments, and structure so the port later reads them as a spec. The trigger is post-1.0, after
   T4d, release one, and the site walk; the real design sitting happens then, on the spec's
   open-questions agenda.
+
+  **Rider: the admin track's missing update page arrives with the upgrade verb (filed at Pass D
+  Task 14, 2026-08-15).** Pass D killed `maintain-your-site` from the admin outline because the
+  track has no way to tell a non-developer how to move their site to a new cairn version: today
+  that is a terminal task the admin cannot do, and a page describing it would either teach the
+  extend track's job or describe a verb that does not exist. When the Go tool grows its
+  cross-site upgrade verb, that page becomes writable, and it should be written in the same pass
+  as the verb rather than filed forward again. Its precondition is P9, the machine-readable
+  `Consumers must:` contract the verb reads.
 
 - **Undelete a recently-deleted entry (filed 2026-08-06, history/revert design sitting).** History
   and revert both deliberately leave a deleted entry out of scope: `historyLoad` answers a 404 for

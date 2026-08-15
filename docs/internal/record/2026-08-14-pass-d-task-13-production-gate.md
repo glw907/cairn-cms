@@ -4016,11 +4016,13 @@ pages later in the same journey the walker read.
 
 ## Summary counts
 
-- **118 findings total.** 105 folded into the docs as CONFIRMED or NARROWED (in some cases folded
-  together where two lenses raised the same underlying gap). 3 REFUTED, no fold needed. 9 CONFIRMED
-  or NARROWED findings were not folded (the `docs/editors`/`docs/extend` first-round gap) and are
-  now owned by a ROADMAP entry. 1 finding (fishtank rank 12) has no owning fold, since its target
-  lives outside this repo.
+- **118 findings total.** 114 folded into the docs as CONFIRMED or NARROWED (in some cases folded
+  together where two lenses raised the same underlying gap). 3 REFUTED, no fold needed. 1 finding
+  (fishtank rank 12) has no owning fold, since its target lives outside this repo. The 105/9 split
+  this section first recorded was the state before the re-fold: the nine the
+  `docs/editors`/`docs/extend` first-round gap had left unapplied were folded and grep-verified
+  the same day, and the ROADMAP entry that would have owned them keeps the lesson rather than the
+  work.
 - **3 findings routed to ROADMAP as engine or cross-repo fixes rather than docs fixes:** the DMARC
   string duplicated in `create-cairn-site`'s own CLI copy and README (admin claims rank 4's
   code-side twin), the AVIF server-allow-list/client-ingest mismatch (editors claims rank 9's real

@@ -563,3 +563,38 @@ complete; verify a fold's coverage against the input list it was handed, not aga
 it says it did.** The nine missed findings are filed to `ROADMAP.md`'s Now tier rather
 than fixed here, since fixing them falls outside this close-out's own scope (no page in
 `docs/admin/`, `docs/editors/`, `docs/extend/`, or `docs/reference/` changes in this pass).
+
+### Task 14, and what the close itself corrected
+
+The close ran in a session resumed cold after the workstation lost power mid-Task-14, which
+made the pre-baked artifacts the whole handoff and tested them for real. They held: the branch
+STATUS entry named the worktree, the resume prompt, and the exact record to fold, and the
+resumed session reached the same next action from them without re-deriving the pass. What it
+did have to check by hand was how far the interrupted close had actually got, since a plan
+whose task list never ticks its own checkboxes gives a cold reader no progress signal. The
+commits answered it instead. **A pass whose plan does not tick boxes should say in its STATUS
+entry which task is in flight, not only which is next.**
+
+Three corrections landed in the close itself, each a case of a document describing an earlier
+state of the same pass:
+
+- The production-gate record's Summary counts still read 105 folded and 9 owed, the pre-re-fold
+  split, while its own Dispositions section two thousand lines above already recorded the
+  re-fold. Corrected to 114 folded.
+- The ROADMAP was reconciled except for one Task 14 item, the admin track's missing update page,
+  which is now a rider on the Go successor tool entry, where the upgrade verb it waits for
+  lives. Filing it forward without an owner is what would have lost it.
+- STATUS's consumer table said cairn-pub was a docs shell six minors behind the engine, which
+  Task 12's own correction to the table above it had already falsified. Two carry-forwards also
+  retired: no published page carries a mermaid diagram any more, so the 320/390 legibility item
+  is moot, and the breadcrumb duplication rode the deleted arm structure.
+
+### Budgets
+
+Human interaction points across the pass were low for its size: the plan gate with seven
+rulings, the Workflow opt-in for Phase 2, the rebuild ruling, and the ruling that the nine
+skipped findings be folded rather than filed. None was avoidable and none was a defect. The
+one still outstanding is deliberate and is the pass's own instrument, Geoff's read of the
+editor track. The token figure belongs to the usage console rather than this file; the shape
+worth recording is that the expensive part was not writing the corpus but verifying it, and
+the verification round the cap forced was the single largest avoidable cost.

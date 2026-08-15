@@ -322,8 +322,12 @@ The original decision framing, for the record:
   known-great exemplars led by **Astro**, cairn's closest peer, whose docs are open source so the
   tooling and conventions are inspectable and whose tutorial devices Pass D already borrowed; then
   the ten already-reviewed corpora, re-read through the visual lens the first pass never applied.
-  Where a standard rules or an exemplar demonstrably succeeds, follow the convention rather than
-  invent one. Second, **the 320/390 legibility bar for diagrams is open, not binding**. It came from the family-wide responsive standard, which was written for sites and UI, and
+  Prefer an established convention over an invented one, and **treat Google and Microsoft as a floor
+  rather than a ceiling** (Geoff, 2026-08-15): deviate or improve where real-world evidence says the
+  documentation comes out better, since excellence is the objective and compliance is only the usual
+  means to it. An evidenced, recorded deviation is legitimate; an undocumented one is drift. The rule
+  is in `docs/internal/docs-register.md`. Second, **the 320/390 legibility bar for diagrams is open,
+  not binding**. It came from the family-wide responsive standard, which was written for sites and UI, and
   nobody asked whether it transfers to a technical diagram in developer docs; a reader is unlikely to
   study an architecture diagram on a phone, and the discipline's standard answers (click-to-expand,
   pan-and-zoom, a scroll container, a simplified mobile variant, an accepted minimum width) were never

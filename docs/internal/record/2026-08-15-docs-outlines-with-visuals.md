@@ -54,7 +54,14 @@ authoritative first (Geoff, 2026-08-15).
    enforced here by Vale. Both carry explicit guidance on figures, screenshots, alt text, captions,
    and when an image earns its place. **cairn adopted their prose rules and ignored their visual
    ones**, so the first research step is reading what the standards it is already bound by say.
-   Where they rule, cairn follows rather than deciding again.
+
+   **They are a floor, not a ceiling (Geoff, 2026-08-15).** Follow them by default, because that
+   is usually right and always cheap, and deviate or improve where real-world evidence says the
+   result is better documentation. Excellent documentation is the objective; compliance is the
+   means, and where the two part company the standard yields. A deviation must be evidenced (name
+   what the guide says, what is being done instead, and why, citing a measured result or
+   demonstrated practice in a corpus known to be excellent) and recorded where the next writer
+   meets it. The full rule now lives in [`docs-register.md`](../docs-register.md).
 2. **Known-great exemplars**, studied for visual practice specifically: what kinds of visuals
    appear, at what density per page, how they survive product change, how they behave on small
    screens, and what tooling produces them.
@@ -73,9 +80,10 @@ authoritative first (Geoff, 2026-08-15).
 3. **The ten corpora already reviewed**, re-read through the visual lens the first pass did not
    apply.
 
-Where a standard rules or a competitor demonstrably succeeds, follow the convention rather than
-inventing one. The per-track vocabulary and the per-page contracts below are the starting position
-that research either confirms or revises.
+Where a standard rules or an exemplar demonstrably succeeds, prefer the established convention over
+an invented one, and depart from it deliberately and on evidence when the departure makes the docs
+better. The per-track vocabulary and the per-page contracts below are the starting position that
+research either confirms or revises.
 
 ## The visual vocabulary per track
 

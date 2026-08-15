@@ -16,6 +16,22 @@ literal than Google's, actually fits). This standard sits on top of whichever fl
 carries, and governs register, the thing Vale cannot grade. Read it before writing or
 reviewing any published docs prose, and before grading a page at a review gate.
 
+**A floor is not a ceiling (Geoff, 2026-08-15).** Google and Microsoft set the standard, and
+cairn may deviate from either, or improve on it, where real-world evidence says the result is
+better documentation. **Truly excellent documentation matters more than perfectly compliant
+documentation**, and the two are not the same goal: a style guide encodes what worked broadly
+for its authors' products, not what works best for this one. Compliance is the default because
+it is usually right and always cheap; it is not the objective.
+
+Two guardrails keep that from becoming license. A deviation is **evidenced**, not preferred:
+name what the standard says, what is being done instead, and the real-world evidence, a
+measured result, a documented failure here, or demonstrated practice in a corpus known to be
+excellent. And a deviation is **recorded** where the next writer will meet it, in this document
+if it governs a register or a track, and in the page's own contract if it is local. An
+undocumented departure is drift, and reads as a mistake to every later reader. Where a Vale
+rule is simply wrong about a specific line, that is a different case with its own procedure
+below (see "When a Vale finding is wrong").
+
 ## The keystone
 
 The docs explain a system to someone trying to use it, and have no stake in whether the

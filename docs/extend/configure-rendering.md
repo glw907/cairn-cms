@@ -144,7 +144,9 @@ that wants headings calls `renderDocument` directly rather than through the adap
 `RendererOptions` (`createRenderer`'s second argument) opens a few seams beyond components:
 `sanitizeSchema` extends the sanitize allowlist, `tableScroll` controls the default scrollable
 table wrapper, and `remarkPlugins`/`rehypePlugins` add your own [unified](https://unifiedjs.com)
-plugins, composed after cairn's own pipeline steps and before stringification. [Core's
+plugins, composed after cairn's own pipeline steps and before stringification. [Render
+safety](./render-safety.md#the-pipeline-order) diagrams exactly where cairn's own stages sit,
+including the two the `unsafeDisableSanitize` switch turns off together. [Core's
 `createRenderer` reference](../reference/core.md#createrenderer) documents each option with a
 worked example, including a rehype plugin that lazy-loads every image.
 

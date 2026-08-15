@@ -76,7 +76,10 @@ Queue: **release one -> the three-site walk -> P.**
 
 Branch `pass-d-docs-tracks` at `e7218a4` in `~/Projects/cairn-pub`, **local only, never pushed**
 (plan ruling 3). Proven against a packed tarball: 81 prerendered pages, zero broken links, a
-clean rebuild. **The site walk merges it after release one.** It also fixed a defect the rebuild
+clean rebuild. **The site walk merges it after release one**, and the ordering is forced rather
+than a preference: that branch reads the docs payload out of its installed
+`@glw907/cairn-cms`, and the published `0.94.0-rc.1` predates the restructure, so a build against
+the registry fails on the pages the restructure added until release one ships the new payload. It also fixed a defect the rebuild
 introduced there: the reference index's new "also for site admins" grouping relists three pages
 and the loader walked every bullet list, so the second occurrence won the prev/next map. Its
 link policy is a build-time throw.

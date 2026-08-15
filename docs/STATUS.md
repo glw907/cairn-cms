@@ -66,17 +66,16 @@ zero mermaid; only Kubernetes is diagram-rich, with a caption mandate); no stand
 platform, or style guide binds diagram legibility at 320px, and WCAG explicitly exempts
 diagrams from reflow. The Fable sitting now rules rather than researches.
 
-**The next pass opens with a Fable brainstorming sitting** (Geoff, 2026-08-15), which settles the
-visual approach before any of it is built. Two items on its agenda, both recorded in the ROADMAP
-entry and in the visuals record's own preamble: **research the visual practice of successful docs
-corpora** rather than reasoning it out from cairn's readers, starting with the published standards
-this repo already follows (Google and Microsoft both carry figure, screenshot, alt-text and caption
-guidance, and cairn adopted only their prose half), then **Astro** as the primary exemplar since it
-is the closest peer and its docs are open source; and **rule on whether the 320/390 legibility bar
-applies to technical diagrams at all**, since it was inherited from the family-wide site responsive
-standard and applied here unexamined. The proposed vocabulary and per-page contracts at
-`docs/internal/record/2026-08-15-docs-outlines-with-visuals.md` are that sitting's starting
-position, not a settled plan.
+**The Fable sitting ran and ruled (2026-08-15).** The rulings are banked at
+`docs/internal/record/2026-08-15-docs-visual-layer-rulings.md` and the ROADMAP Now entry
+summarizes them: the 320/390 bar released for authored diagrams (containment plus a complexity
+budget plus a two-part text alternative replace it), themed mermaid with a designed cairn diagram
+theme built first, the diagram inventory re-tested from seventeen down to twelve, a gated
+alt-and-caption standard, motion out by decision (trigger filed in Later), and numbered
+callouts with keyed lists for the three locate-many-controls screens. The per-page contracts in
+`2026-08-15-docs-outlines-with-visuals.md` stand as amended by those rulings. **Next for the
+visual work:** a plan authored against the rulings' build order, whose first deliverable is the
+cairn diagram theme in cairn-pub; nothing lands before the theme.
 
 **The open question for Geoff, unchanged and still ahead of the cut: does release one go out on the
 prose corpus as it stands, with the visual layer landing in a later release, or does it wait for the

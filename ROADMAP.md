@@ -319,24 +319,20 @@ The original decision framing, for the record:
   plus the diagrams-on-small-screens read and a cross-cutting synthesis, so the sitting rules
   on findings rather than re-running the research below.
 
-  **A Fable brainstorming sitting opens the next pass and settles two open questions (Geoff,
-  2026-08-15).** First, **the visual approach must be researched rather than reasoned out**, in
-  three tiers: the published standards cairn already follows (Google on three tracks, Microsoft on
-  editors, both enforced by Vale, both carrying explicit figure, screenshot, alt-text and caption
-  guidance that this project adopted the prose half of and ignored the visual half of); then
-  known-great exemplars led by **Astro**, cairn's closest peer, whose docs are open source so the
-  tooling and conventions are inspectable and whose tutorial devices Pass D already borrowed; then
-  the ten already-reviewed corpora, re-read through the visual lens the first pass never applied.
-  Prefer an established convention over an invented one, and **treat Google and Microsoft as a floor
-  rather than a ceiling** (Geoff, 2026-08-15): deviate or improve where real-world evidence says the
-  documentation comes out better, since excellence is the objective and compliance is only the usual
-  means to it. An evidenced, recorded deviation is legitimate; an undocumented one is drift. The rule
-  is in `docs/internal/docs-register.md`. Second, **the 320/390 legibility bar for diagrams is open,
-  not binding**. It came from the family-wide responsive standard, which was written for sites and UI, and
-  nobody asked whether it transfers to a technical diagram in developer docs; a reader is unlikely to
-  study an architecture diagram on a phone, and the discipline's standard answers (click-to-expand,
-  pan-and-zoom, a scroll container, a simplified mobile variant, an accepted minimum width) were never
-  weighed. The bar still binds the site artifacts it was written for.
+  **The Fable sitting ran and ruled (2026-08-15); the rulings are at
+  `docs/internal/record/2026-08-15-docs-visual-layer-rulings.md`.** Headlines: the 320/390 bar is
+  released for authored diagrams (an evidenced, recorded deviation; containment, a complexity
+  budget, and a two-part text alternative replace it, and the bar still binds site artifacts and
+  live reproductions); themed mermaid is the vehicle, with a designed cairn diagram theme built in
+  cairn-pub before any diagram lands and hand-authored SVG as the escalation path; the proposed
+  inventory of seventeen diagrams was re-tested against the actor-and-branching threshold and
+  twelve survive; an alt-and-caption standard lands in `docs/internal/docs-register.md` with a
+  `check:` gate in the Astro missing-alt-is-a-build-failure shape; motion is out by decision, with
+  its revisit trigger filed in Later; and the three locate-many-controls reproductions gain
+  numbered callouts with keyed lists, which appends a callout-overlay capability to the
+  seam's stated needs. The build order stands with the theme inserted first. What remains owed
+  here is the work itself, in the rulings record's amended order, plus Geoff's release-one
+  sequencing call, which the sitting deliberately did not rule.
 
 - **The admin transcript gate was promised and never built, and there is nothing for it to check
   (found 2026-08-15).** Pass D's exit criteria name three added gates: the admin transcript check,
@@ -1522,6 +1518,16 @@ the named human gates only):**
   exactly the threat model these five items assume.
 
 ## Later
+
+- **Motion in the docs visual layer, ruled out 2026-08-15 with a named revisit trigger.** The
+  visual-layer sitting (`docs/internal/record/2026-08-15-docs-visual-layer-rulings.md`, ruling 5)
+  decided the layer ships static: motion assets are the highest-maintenance surface class the
+  research studied, and no page contract fails without them. **Trigger:** the editors track
+  rewrite, running against the built live-reproduction seam, finds a page where a static
+  reproduction demonstrably cannot carry an interaction that matters; the known candidates are
+  the Tidy review flow and the figure dialog's cursor-dependent button label. If adopted, the
+  form is already banked in the ruling: silent, looping, fluid-width, per-claim, generated from
+  the seam against fixture data and pinned to the engine version, never a hand-recorded video.
 
 - **`check:symbols` spawns a `grep` per environment-variable token, and the cost scales with the
   corpus (filed at Pass D Task 10, 2026-08-14).** `envVarInSourceTree` in

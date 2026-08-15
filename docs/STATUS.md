@@ -125,15 +125,27 @@ tooling that is not installable: the engine window, `create-cairn-site`,
 `@glw907/cairn-cms-dev`, and the template repo, plus T5a' (the public repo, the first sync, the
 button spike, the C3 check). Task 7's staged button block consumes the button spike.
 
-**A defect owed BEFORE release one: a tarball-installed scaffold ships NO `.gitignore`.** npm
-drops the file from every tarball, the baked template carries none, and `scaffold.mjs` never
-writes one, so `pushScaffold`'s ignore-honoring silently no-ops and `.dev.vars`/`.wrangler` sit
-one `git add -A` from a push. Re-verified 2026-08-14. Tool code, deliberately outside Pass D's
-docs scope, so it rides its own small pass or the release-one sitting checks it off first.
+**The `.gitignore` scaffold defect is FIXED (2026-08-15).** npm's packlist strips any file
+literally named `.gitignore` from a tarball wherever it sits, so the bake now stores it dot-free
+(`gitignore`) via a new `bakeForPacking()` (the `prepack` entry point; plain `bake()` stays
+dotted for `sync-template-repo.mjs`'s git-publish overlay), and `scaffold.mjs` renames it back
+in the scaffolded site, fail-loud in both directions. Red-then-green tests plus an end-to-end
+`npm pack` proof; changelog entry under Unreleased. This also clears the capture pass's tool
+prerequisite.
 
-Queue: **the diagram-pages pass (parallel with the cairn-pub theme; merge on theme) -> the
-capture pass (scheduled with Geoff) -> the seam -> the editors rewrite -> the editors read ->
-release one -> the three-site walk -> P.**
+Queue (reordered on Geoff's 2026-08-15 parallelization call): **three parallel tracks now — the
+diagram-pages pass (this repo; merge gated on the theme), the cairn-pub theme (in process, near
+done: a11y fix and containment probe landed at `4d5e17e`/`f0de31b`), and the seam DESIGN sitting
+(cairn-pub, its own session; brief at
+`docs/internal/record/2026-08-15-live-reproduction-seam-requirements.md`, which points at the
+theme session's banked `/help` pipeline notes). The capture pass runs as soon as Geoff schedules
+his attended run (brief and protocol:
+`docs/internal/record/2026-08-15-capture-pass-brief.md`; its tool prerequisite, the `.gitignore`
+fix, is done). Then: the seam build -> the editors rewrite -> the editors read -> release one ->
+the three-site walk -> P.** Launch prompt for the seam sitting, from `~/Projects/cairn-pub`:
+"Brainstorm the live-reproduction seam design per cairn-cms
+docs/internal/record/2026-08-15-live-reproduction-seam-requirements.md; read
+docs/2026-08-15-help-pipeline-notes.md in this repo first."
 
 ### cairn-pub is PREPARED and deliberately not merged
 

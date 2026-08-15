@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
   bake,
+  bakeForPacking,
   assertInstallableSpec,
   PRUNED_SCRIPTS,
   PRUNED_DEV_DEPENDENCIES,
@@ -142,6 +143,36 @@ test('rewriteDevScript throws naming an unexpected showcase dev script', () => {
     () => rewriteDevScript(pkg),
     /expected the showcase dev script to be "vite dev", found "vite dev --host"/,
   );
+});
+
+// Plain bake() (sync-template-repo.mjs's own entry point) keeps the emitted .gitignore under its
+// real dot name: a git-hosted template repo has no npm packlist to strip it, and the sync's own
+// overlay appends its `.dev.vars.example` negation onto that exact file (OVERLAY_MERGE_RULES).
+test('bake keeps the emitted .gitignore under its real name, covering the secret-bearing entries', async (t) => {
+  const to = await tempTarget(t);
+  await bake({ to, ...PUBLISHED_SPECS });
+  await assert.rejects(
+    () => access(path.join(to, 'gitignore')),
+    'no dot-free gitignore should exist after plain bake()',
+  );
+  const gitignore = await readFile(path.join(to, '.gitignore'), 'utf8');
+  assert.match(gitignore, /\.dev\.vars/);
+  assert.match(gitignore, /\.wrangler/);
+});
+
+// The rot gate against npm's own packlist: it drops any file literally named ".gitignore" from a
+// published tarball, so bakeForPacking (create-cairn-site's own prepack entry point) must rename
+// the emitted copy to a dot-free name before packing; scaffold.mjs renames it back on the way out.
+test('bakeForPacking renames the emitted .gitignore to a dot-free "gitignore", covering the secret-bearing entries', async (t) => {
+  const to = await tempTarget(t);
+  await bakeForPacking({ to, ...PUBLISHED_SPECS });
+  await assert.rejects(
+    () => access(path.join(to, '.gitignore')),
+    'no dot-prefixed .gitignore should survive bakeForPacking',
+  );
+  const gitignore = await readFile(path.join(to, 'gitignore'), 'utf8');
+  assert.match(gitignore, /\.dev\.vars/);
+  assert.match(gitignore, /\.wrangler/);
 });
 
 test('bake writes a site README that is not the showcase README', async (t) => {

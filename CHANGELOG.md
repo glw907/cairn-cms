@@ -391,6 +391,18 @@
   with it: `docs/admin`, `docs/editors`, `docs/extend`, and `docs/why-cairn.md` ship, and the three
   retired arms no longer do. Nothing in the engine's exports, types, or runtime behavior changes.
 
+### Fixed
+
+- A tarball-installed `create-cairn-site` scaffold now ships a real `.gitignore`. npm's own
+  packlist drops any file literally named `.gitignore` from a published tarball, wherever it sits
+  in the tree, so the baked template carried none and `pushScaffold`'s own ignore-honoring
+  silently had nothing to read: `.dev.vars` and `.wrangler/` sat one `git add -A` away from
+  landing in a scaffolded site's own GitHub repository. The bake now stores the showcase's
+  `.gitignore` under the dot-free name `gitignore`, npm-safe through packing, and `scaffold.mjs`
+  renames it back to `.gitignore` when it copies the template into a new site.
+  `sync-template-repo.mjs`'s own git-hosted publish is unaffected, since it reuses the bake's
+  plain, unrenamed output. Consumers must: nothing; this is tool-side only.
+
 ## 0.94.0
 
 <!-- release-size: minor -->

@@ -8,7 +8,7 @@
 // checkout never carries one; only `npm run prepack` does) and a non-empty target directory. Both
 // would otherwise surface as a raw ENOENT or a silently overwritten file deep inside the copy
 // action, so each is checked up front and fails with a message naming the fix.
-import { access, cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { defineAction, runActions } from './runner.mjs';
 import { applySubstitutions } from './substitute.mjs';
@@ -41,6 +41,30 @@ async function assertTemplateBaked(templateDir) {
       `scaffold: no template found at ${templateDir}. Run "npm run prepack" inside ` +
         'packages/create-cairn-site to bake it before running the CLI from a checkout.',
     );
+  }
+}
+
+/**
+ * Rename the copied template's dot-free `gitignore` file (see bake-template.mjs's
+ * `renameGitignoreForPacking`, which stores it that way because npm's packlist strips any file
+ * literally named `.gitignore` from a published tarball) back to the working `.gitignore` name
+ * inside a newly scaffolded site. Throws naming the template when the file is missing, since a
+ * scaffold with no `.gitignore` leaves `pushScaffold`'s own ignore-honoring with nothing to read,
+ * and `.dev.vars`/`.wrangler/` would then be one `git add -A` away from reaching GitHub.
+ * @param {string} dir the scaffold target, already carrying the copied template
+ * @returns {Promise<void>}
+ */
+async function restoreGitignore(dir) {
+  try {
+    await rename(path.join(dir, 'gitignore'), path.join(dir, '.gitignore'));
+  } catch (cause) {
+    if (cause.code === 'ENOENT') {
+      throw new Error(
+        `scaffold: the template carries no "gitignore" file to restore as .gitignore in ${dir}. ` +
+          'Run "npm run prepack" to re-bake the template, or check examples/showcase/.gitignore.',
+      );
+    }
+    throw cause;
   }
 }
 
@@ -122,6 +146,7 @@ export async function scaffold({ templateDir, answers, dir, dryRun, log }) {
         }
         try {
           await cp(templateDir, dir, { recursive: true });
+          await restoreGitignore(dir);
         } finally {
           await rm(sentinelPath, { force: true });
         }

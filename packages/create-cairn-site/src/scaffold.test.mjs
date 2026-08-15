@@ -36,6 +36,19 @@ const WRANGLER_JSONC_FIXTURE = `{
 // mutated its answers would fail here rather than leak into the next test.
 const ANSWERS = Object.freeze({ name: 'Alpine Club', description: '', brandColor: '' });
 
+// The real showcase .gitignore's content (examples/showcase/.gitignore); templateFixture writes
+// it under the dot-free name the real bake produces, so this fixture exercises the same rename
+// restoreGitignore performs against real bake output.
+const GITIGNORE_FIXTURE = `node_modules
+.svelte-kit
+build
+.wrangler
+.dev.vars
+.dev.vars.*
+test-results
+playwright-report
+`;
+
 /**
  * Make a temporary directory that is removed when the test that asked for it finishes.
  * @param {import('node:test').TestContext} t the running test's context
@@ -85,6 +98,9 @@ async function templateFixture(t) {
     '--color-primary: oklch(45% 0.15 30);\n',
   );
   await writeFile(path.join(dir, 'wrangler.jsonc'), WRANGLER_JSONC_FIXTURE);
+  // Mirrors bake-template.mjs's renameGitignoreForPacking: the real baked template carries the
+  // showcase's own .gitignore under this dot-free name, npm-safe through packing.
+  await writeFile(path.join(dir, 'gitignore'), GITIGNORE_FIXTURE);
   return dir;
 }
 
@@ -141,6 +157,44 @@ test('real run scaffolds, renames, substitutes, and saves state outside the scaf
   assert.ok(
     !scaffoldFileNames.includes(stateFileName),
     `state record ${stateFileName} must not also exist inside the scaffold`,
+  );
+});
+
+test('a real scaffold run writes .gitignore, covering the secret-bearing entries', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: ANSWERS,
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+  const gitignore = await readFile(path.join(dir, '.gitignore'), 'utf8');
+  assert.match(gitignore, /\.dev\.vars/);
+  assert.match(gitignore, /\.wrangler/);
+  await assert.rejects(
+    () => access(path.join(dir, 'gitignore')),
+    'the dot-free template copy must not survive in the scaffold',
+  );
+});
+
+test('a template with no gitignore file to restore fails scaffold with a descriptive error', async (t) => {
+  await withStateDir(t);
+  const outDir = await tempDir(t);
+  const dir = path.join(outDir, 'site');
+  const fixtureDir = await templateFixture(t);
+  await rm(path.join(fixtureDir, 'gitignore'));
+  await assert.rejects(
+    () => scaffold({
+      templateDir: fixtureDir,
+      answers: ANSWERS,
+      dir,
+      dryRun: false,
+      log: () => {},
+    }),
+    /carries no "gitignore" file to restore/,
   );
 });
 

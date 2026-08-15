@@ -4,7 +4,7 @@
 // repo's own package.json versions keeps the baked template honest: it fails loud rather than
 // emit a devDependency spec no registry can install, which is exactly the unpublished state of
 // @glw907/cairn-cms-dev today.
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -123,6 +123,31 @@ export function pruneShowcaseOnlyPackageFields(pkg) {
   }
 }
 
+/**
+ * Rename the emitted template's copy of the showcase's `.gitignore` (which emitTemplate copies
+ * across as-is, since it is neither excluded nor gitignored itself) to the dot-free `gitignore`.
+ * npm's packlist unconditionally drops any file literally named `.gitignore` from a published
+ * tarball, wherever it sits in the tree, so without this the packed template would carry none at
+ * all; scaffold.mjs renames it back when it copies the template into a new site. Throws naming
+ * the missing file rather than let a future change to the showcase, or to the emit exclusion
+ * manifest, silently ship a template with no `.gitignore`.
+ * @param {string} emitted the emitted template's root
+ * @returns {Promise<void>}
+ */
+async function renameGitignoreForPacking(emitted) {
+  try {
+    await rename(path.join(emitted, '.gitignore'), path.join(emitted, 'gitignore'));
+  } catch (cause) {
+    if (cause.code === 'ENOENT') {
+      throw new Error(
+        'bake: expected the emitted template to carry a .gitignore copied from the showcase, ' +
+          'found none. Check examples/showcase/.gitignore and .cairn-template.json\'s exclude list.',
+      );
+    }
+    throw cause;
+  }
+}
+
 const ENGINE_PACKAGE_JSON = path.join(repoRoot, 'package.json');
 const DEV_PACKAGE_JSON = path.join(repoRoot, 'packages', 'cairn-cms-dev', 'package.json');
 
@@ -199,6 +224,21 @@ export async function bake({ to, engineSpec, devSpec }) {
   return emitted;
 }
 
+/**
+ * Bake the template, then rename its emitted `.gitignore` to the dot-free name npm's packlist
+ * will not strip. This is the entry point create-cairn-site's own `prepack` step uses to build
+ * what gets packed into the tarball. A caller that instead publishes the baked tree through git
+ * (`sync-template-repo.mjs`, whose overlay appends onto the emitted `.gitignore` directly) calls
+ * plain `bake()`, since a git-hosted template repo has no npm packlist to survive.
+ * @param {{ to: string, engineSpec?: string, devSpec?: string }} opts same as `bake`
+ * @returns {Promise<string>} the emitted tree's root (`opts.to`)
+ */
+export async function bakeForPacking(opts) {
+  const emitted = await bake(opts);
+  await renameGitignoreForPacking(emitted);
+  return emitted;
+}
+
 // CLI: node scripts/bake-template.mjs --to <dir> [--engine-spec <spec>] [--dev-spec <spec>]
 if (import.meta.url === `file://${process.argv[1]}`) {
   const USAGE = 'usage: bake-template.mjs --to <dir> [--engine-spec <spec>] [--dev-spec <spec>]';
@@ -226,7 +266,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     // Relative to the package, so `--to template` lands on the `template/` directory the package
     // gitignores and ships through its own `files` list.
     const to = path.resolve(packageDir, values.to);
-    await bake({ to, engineSpec: values['engine-spec'], devSpec: values['dev-spec'] });
+    await bakeForPacking({ to, engineSpec: values['engine-spec'], devSpec: values['dev-spec'] });
     console.log(`baked template to ${to}`);
   } catch (err) {
     console.error(err.message);

@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { startFakeGithub, pointAtFake } from '../../test/fake-github.mjs';
 import { createRepo, verifyInstallationCovers, pushScaffold, TOOL_COMMIT_MESSAGE } from './repo.mjs';
+import { scaffold } from '../scaffold.mjs';
 
 /** Seed one installation covering `fake-admin`, the fake's own hardcoded /user/repos owner. */
 function seedInstallation(github) {
@@ -46,6 +47,70 @@ async function fixtureDirWithGitignore(t) {
   await writeFile(path.join(dir, '.dev.vars'), 'SECRET=leak\n');
   await mkdir(path.join(dir, 'dist'), { recursive: true });
   await writeFile(path.join(dir, 'dist/bundle.js'), 'console.log(1)\n');
+  return dir;
+}
+
+/**
+ * A minimal but real wrangler.jsonc, carrying every string nameWranglerResources targets. Mirrors
+ * scaffold.test.mjs's own WRANGLER_JSONC_FIXTURE.
+ */
+const WRANGLER_JSONC_FIXTURE = `{
+  "name": "cairn-showcase",
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "cairn-showcase-auth",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    },
+    {
+      "binding": "APP_DB",
+      "database_name": "cairn-showcase-app",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations-app"
+    }
+  ],
+  "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "cairn-showcase-media" }],
+  "vars": { "PUBLIC_ORIGIN": "http://localhost:4173" }
+}
+`;
+
+/**
+ * Build a fixture the real `scaffold()` can copy from: the `src/theme` files applySubstitutions
+ * expects, and the dot-free `gitignore` name bake-template.mjs's own rename-for-packing produces,
+ * so `scaffold()` runs end to end against it rather than against a hand-authored scaffold.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @returns {Promise<string>} the fixture template's absolute path
+ */
+async function templateFixture(t) {
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-repo-template-'));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await writeFile(
+    path.join(dir, 'package.json'),
+    JSON.stringify({ name: 'cairn-site', dependencies: { '@glw907/cairn-cms': '^0.94.0' } }),
+  );
+  await mkdir(path.join(dir, 'src/theme'), { recursive: true });
+  await writeFile(path.join(dir, 'src/theme/site.config.yaml'), 'siteName: Waymark\n');
+  await writeFile(path.join(dir, 'src/theme/theme.css'), '--color-primary: oklch(45% 0.15 30);\n');
+  await writeFile(path.join(dir, 'wrangler.jsonc'), WRANGLER_JSONC_FIXTURE);
+  await writeFile(path.join(dir, 'gitignore'), '.wrangler\n.dev.vars\ndist\n');
+  return dir;
+}
+
+/**
+ * Point CAIRN_STATE_DIR at a fresh temporary directory for the duration of one test, mirroring
+ * scaffold.test.mjs's own helper, so a real `scaffold()` run under test saves its site record
+ * there rather than in a developer's `~/.config/cairn/sites`.
+ * @param {import('node:test').TestContext} t the running test's context
+ * @returns {Promise<string>} the state directory's absolute path
+ */
+async function freshStateDir(t) {
+  const dir = await mkdtemp(path.join(tmpdir(), 'cairn-repo-state-'));
+  process.env.CAIRN_STATE_DIR = dir;
+  t.after(() => {
+    delete process.env.CAIRN_STATE_DIR;
+    return rm(dir, { recursive: true, force: true });
+  });
   return dir;
 }
 
@@ -275,6 +340,47 @@ test('pushScaffold: honors the scaffold\'s own .gitignore, shipping neither igno
   assert.ok(!paths.some((p) => p.startsWith('dist/')), 'must not push dist contents');
   assert.ok(paths.includes('README.md'), 'a file outside .gitignore must still push');
   assert.ok(paths.includes('posts/hello.md'), 'a nested file outside .gitignore must still push');
+});
+
+// The cheap end-to-end check for the missing-.gitignore defect: before scaffold.mjs restored it,
+// a real scaffold run carried no .gitignore at all, and pushScaffold's ignore-honoring above had
+// nothing to read, so .dev.vars and .wrangler would have shipped straight to GitHub.
+test('pushScaffold: honors the .gitignore a real scaffold() run writes, not just a hand-authored fixture', async (t) => {
+  const github = await startFakeGithub();
+  t.after(() => github.close());
+  pointAtFake(t, github);
+  seedInstallation(github);
+
+  await freshStateDir(t);
+
+  const outDir = await mkdtemp(path.join(tmpdir(), 'cairn-repo-scaffold-'));
+  t.after(() => rm(outDir, { recursive: true, force: true }));
+  const dir = path.join(outDir, 'site');
+  await scaffold({
+    templateDir: await templateFixture(t),
+    answers: { name: 'Alpine Club', description: '', brandColor: '' },
+    dir,
+    dryRun: false,
+    log: () => {},
+  });
+
+  // Local material a resumed run's `npm install`/`npm run dev` would leave behind, the same shape
+  // fixtureDirWithGitignore writes above, layered onto scaffold()'s own real .gitignore.
+  await mkdir(path.join(dir, '.wrangler/state'), { recursive: true });
+  await writeFile(path.join(dir, '.wrangler/state/secret.json'), '{"token":"leak"}\n');
+  await writeFile(path.join(dir, '.dev.vars'), 'SECRET=leak\n');
+
+  const { owner, repo } = await createRepo('fake-user-token', { name: 'alpine-club', ownerType: 'user', dir });
+  await pushScaffold('fake-user-token', { owner, repo, dir, log: () => {} });
+
+  const gitEntry = github.state.gitObjects.get(`${owner}/${repo}`);
+  const commit = gitEntry.commits.get(gitEntry.refs.get('heads/main'));
+  const tree = gitEntry.trees.get(commit.tree);
+  const paths = tree.map((entry) => entry.path);
+
+  assert.ok(!paths.some((p) => p.startsWith('.wrangler/')), `must not push .wrangler contents, got: ${paths.join(', ')}`);
+  assert.ok(!paths.includes('.dev.vars'), 'must not push .dev.vars');
+  assert.ok(paths.includes('package.json'), 'the scaffold itself must still push');
 });
 
 test('pushScaffold: re-running after a completed push is idempotent, verified by request count', async (t) => {

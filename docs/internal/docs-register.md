@@ -78,6 +78,48 @@ fail.
   disagree, linking one disposes of the conflict that restating them would force you to
   reconcile.
 
+## Visuals (every page that carries one)
+
+The visual layer's governing decisions live in the 2026-08-15 sitting record
+([`2026-08-15-docs-visual-layer-rulings.md`](./record/2026-08-15-docs-visual-layer-rulings.md));
+the per-track vocabulary and per-page contracts live in
+[`2026-08-15-docs-outlines-with-visuals.md`](./record/2026-08-15-docs-outlines-with-visuals.md).
+This section carries the rules a writer needs at the page, so the records stay records.
+
+- **A visual earns its place or is absent.** Google's threshold governs: an image appears only
+  where it explains something otherwise difficult to express in words, and it replaces prose
+  rather than joining it. Never an image of text, code, or terminal output; a transcript is a
+  fenced block traced to a recorded run, and invented output never ships. A vendor's UI is
+  never pictured (the vendor-link rule above, in image form).
+- **Alt text is mandatory.** Every image carries `alt`; a decorative image gets `alt=""`, never
+  an omitted attribute. At most 150 characters. Start by naming the kind (diagram, screenshot,
+  reproduction), never "Image of", and describe what the reader learns in context, not what the
+  pixels depict. The exemplars: MDN's "The settings icon is in the navigation bar below the
+  search field", and Kubernetes' control-plane alt naming the relationship the diagram draws.
+- **Every authored diagram and live reproduction carries a caption.** Complete sentences,
+  carrying the code-verified facts the page's contract assigns to it, never redundant with the
+  alt, never referenced spatially ("the image above"). Figure numbering only where the page
+  cross-references the figure from elsewhere in its text.
+- **A complex diagram gets a two-part text alternative.** Short alt for the kind and gist; the
+  essential information stated in body text. The prose a diagram's contract preserves is that
+  text.
+- **Diagrams follow the three-part discipline, and the 320/390 bar does not apply to them.**
+  This is an evidenced, recorded deviation from the family responsive standard, ruled
+  2026-08-15: WCAG 1.4.10 exempts diagrams from reflow by name and prescribes a text
+  alternative, and no platform or style guide binds diagram legibility at 320px. In its place,
+  each diagram keeps a complexity budget (about 15 nodes; split or simplify past it), scrolls
+  inside its own `overflow-x: auto` figure at narrow widths rather than shrinking, and carries
+  the two-part alternative above. The bar still binds live reproductions and every non-docs
+  family artifact.
+- **Diagrams render in cairn's own theme.** Mermaid is the authoring form; the stock `neutral`
+  render never ships, and a diagram the themed render cannot carry at the polish bar is
+  hand-authored SVG, never a drawing-tool screenshot.
+
+The mechanical half of this section (alt presence and length, explicit decorative marks,
+caption presence, the mermaid description marker) is enforced by a `check:` gate that lands
+with the first shipped visual, in the missing-alt-is-a-build-failure shape; until that gate
+exists, review carries these rules by hand.
+
 ## When a Vale finding is wrong
 
 Vale is a floor, not an authority. Its style packages are regexes and heuristics tuned against

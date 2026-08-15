@@ -207,8 +207,9 @@ never use it alone for a port. What is cairn-specific, not in the skill:
 - **The responsive standard:** every family artifact (themes, showcase, consumer sites,
   cairn.pub, Topo) meets the five-viewport bar — 320, 390, 768, 1440, 2560, composed at
   the extremes, never merely unbroken. The gate is the CI width matrix in the showcase's
-  visual suite (baselines regenerate on CI, the canonical renderer). A ported theme beats
-  its original at 320 and 2560. Reasoning: docs/internal/public-design-system.md.
+  visual suite (baselines regenerate on CI, the canonical renderer); a ported theme beats
+  its original at 320 and 2560. Authored docs diagrams are exempt: containment plus a text
+  alternative instead (docs-register.md, Visuals). Reasoning: docs/internal/public-design-system.md.
 - **The harvest:** every theme or site built on the chassis banks its harvest before the
   pass closes — frictions and gaps land in the CHASSIS first (the showcase copy is the
   starting chassis every next theme receives), the engine where deeper. A port or rebuild

@@ -102,7 +102,13 @@ This section carries the rules a writer needs at the page, so the records stay r
   cross-references the figure from elsewhere in its text.
 - **A complex diagram gets a two-part text alternative.** Short alt for the kind and gist; the
   essential information stated in body text. The prose a diagram's contract preserves is that
-  text.
+  text. The authored form (fixed 2026-08-15 at the diagram-pages plan review): the accessible
+  name and gist live IN the fence as mermaid's native `accTitle:` and `accDescr:` directives,
+  and the caption is the first non-blank line after the closing fence, one emphasis paragraph
+  (`*...*`) of complete sentences. The renderer must surface the authored directives to
+  assistive technology, never override them with a generic label.
+- **A decorative image is authored as HTML** (`<img alt="" ...>`) so the empty alt is visibly
+  deliberate; markdown image syntax (`![...]`) always carries real alt text.
 - **Diagrams follow the three-part discipline, and the 320/390 bar does not apply to them.**
   This is an evidenced, recorded deviation from the family responsive standard, ruled
   2026-08-15: WCAG 1.4.10 exempts diagrams from reflow by name and prescribes a text

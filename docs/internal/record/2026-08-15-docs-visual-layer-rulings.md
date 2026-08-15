@@ -210,8 +210,25 @@ shrinkage applied:
 5. The editors track rewrite against real reproductions, then the three blocked one-off
    reproductions.
 
+## Corrections (2026-08-15, from the adversarial plan review, same day)
+
+Three factual claims above did not survive verification against committed code, and the living
+standard (`docs-register.md`) and the diagram-pages plan carry the corrected versions.
+First, ruling 4's mechanism: cairn-pub's `mermaid-marker.ts` is a class-survival shim with no
+role in accessible descriptions; the authored mechanism is mermaid's native
+`accTitle`/`accDescr` directives, and cairn-pub's `DocsMermaid.svelte` currently OVERRIDES
+them with a generic `aria-label="Diagram"` plus a raw-source description, which the theme work
+must fix before the directives reach assistive technology. Second, ruling 2's "an SVG still
+renders everywhere markdown does" is false on cairn-pub: the engine's sanitize floor admits no
+`svg` tag, `check:package` rejects docs paths outside the four arms, and the loader copies no
+sibling assets, so the hand-authored-SVG escalation requires its own scoped delivery-path
+proof before it can ever be invoked. Third, ruling 1's containment gate landed in a repo with
+no browser harness; until cairn-pub grows one, containment is a recorded manual check at each
+merge gate, and the in-repo `check:visuals` gate covers authored-source properties only.
+
 Two questions stay open because the sitting cannot reach them from here: whether the
-recorded-run fixtures exist in consumable form, and the seam's actual contract, both owned as
+recorded-run fixtures exist in consumable form (resolved later the same day, in the negative;
+see STATUS), and the seam's actual contract, both owned as
 before. The release-one sequencing question (prose corpus now versus waiting for the rewrite)
 is Geoff's call and is deliberately not ruled here. These rulings change its cost picture in
 both directions: the diagram waves still need no live-reproduction seam, but nothing in them

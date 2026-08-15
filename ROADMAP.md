@@ -85,12 +85,10 @@ Readiness checklist:
   connect, a trigger bound to the site's existing Worker, and deploy-config reconciliation,
   closing the silent `PUBLIC_ORIGIN` reconciliation defect through an admin-attributed `base_tree`
   commit, with the first Builds deploy watched to `success` end to end against a live scratch site
-  (the account's existing 907-life Builds usage was left untouched throughout). **The remaining
-  charge is two passes**: **T4d** is the localhost console, which now carries two inputs from T4c,
-  the build watch as a second long wait worth rendering and the grown fake-server surface its
-  plumbing extraction must cover (the T4c spec's own "What follows" section records both); **T5**
-  is the browser door (the public template repo, the Deploy button, C3 `--template`
-  compatibility). **Pass D is done** (`docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`,
+  (the account's existing 907-life Builds usage was left untouched throughout). **T4d shipped the
+  localhost console and T5 split, leaving one open item: T5a'**, the browser door's public-repo
+  half (the public template repo, the Deploy button, C3 `--template` compatibility), which rides
+  release one's cut. **Pass D is done** (`docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`,
   post-mortem appended there); the tool and template still publish in the same cut as release
   one.
 

@@ -53,10 +53,13 @@ highest novice-gap risk. Release one does not cut until that read happens.
 **A session that reaches this point with the read still outstanding hands Geoff the track and
 stops there.** No agent pass substitutes for it, and no amount of further LLM review discharges
 it; that is the whole reason the methodology names a human instrument. When the read happens,
-record it here as a dated line, so the next cold session neither re-asks nor tries to stand in
-for it.
+record it here as a line reading `Editors-track read: done <date>`, immediately below this
+paragraph, before `cairn-release` is invoked; a cold session that finds no such line treats the
+read as outstanding and stops, rather than re-asking or standing in for it.
 
-**Then invoke `cairn-release`**, verifying the next number is free first
+**Release one is cut directly from `main`**, which is where this doc and the whole window now
+live; the `cairn-release` skill needs no worktree of its own, unlike a development pass. **Then
+invoke `cairn-release`**, verifying the next number is free first
 (`npm view @glw907/cairn-cms versions --json`; numbers are immutable). Release one rolls this
 window plus the history/revert, preview, vertical-alignment, and cleanup passes plus the docs
 reset. **Its same-cut obligations, all four in one publish**, so no shipped page describes
@@ -165,6 +168,13 @@ release one per the ordering above:
 **cairn.pub is a consumer and the project's own site.** It is current on the engine, pinned at
 `0.94.0-rc.1`; what it is behind on is the docs restructure, which its prepared
 `pass-d-docs-tracks` branch carries and the site walk merges.
+
+**Two worktrees survive the Pass D cleanup, and neither is live work.**
+`.claude/worktrees/wayfinder-retheme-lab` and `.claude/worktrees/wayfinder-fixtures` hold
+token-layer design experiments from 2026-07-02, left unmerged on purpose as a reference for a
+later retheme. Nothing branches from them and no executor runs in them; the one-executor-per-worktree
+check clears against them trivially. Every other worktree and every merged branch was pruned at the
+Pass D close, so `main` plus these two is the whole local picture.
 
 **Carry-forwards (live):** admin error statuses flattening to HTTP 200 under the shell's streamed
 pending count (upstream sveltejs/kit#12987, OPEN); `config.kit.csrf.checkOrigin` is an ACTIVE

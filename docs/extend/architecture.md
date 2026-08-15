@@ -2,6 +2,46 @@
 
 The engine's shape: what cairn owns, what a site's adapter owns, and the seams between them.
 
+```mermaid
+flowchart TB
+  accTitle: Diagram of a site calling the engine's six functional groups, which read and write three stores
+  accDescr: A site's adapter, admin mount, and delivery routes call into six functional groups of the engine's export map: core and adapter, the SvelteKit layer, admin UI, rendering, delivery, and auth and platform. The SvelteKit layer reads and writes the git repository; auth and platform reads and writes D1; delivery reads and writes R2.
+
+  subgraph site["A site"]
+    adapterCfg["Adapter config"]
+    adminMount["Admin mount"]
+    deliveryRoutes["Delivery routes"]
+  end
+
+  subgraph engine["The engine"]
+    core["Core &amp; adapter<br/>(root barrel)"]
+    kit["SvelteKit layer<br/><code>/sveltekit</code>"]
+    adminUI["Admin UI<br/><code>/components</code>, <code>/admin-toolkit</code>, <code>/islands</code>"]
+    rendering["Rendering<br/><code>/render</code>"]
+    delivery["Delivery<br/><code>/delivery</code>, <code>/media</code>"]
+    authPlatform["Auth &amp; platform<br/><code>/auth-store</code>, <code>/auth-channel</code>, <code>/auth-crypto</code>, <code>/cloudflare</code>, <code>/vite</code>, <code>/ambient</code>"]
+  end
+
+  git[("Git repository")]
+  d1[("D1 database")]
+  r2[("R2 bucket")]
+
+  adapterCfg --> core
+  adminMount --> kit
+  deliveryRoutes --> kit
+  core --> kit
+  kit --> adminUI
+  kit --> rendering
+  kit --> delivery
+  kit --> authPlatform
+  kit --> git
+  authPlatform --> d1
+  delivery --> r2
+```
+
+*Each engine box groups several of the package's export subpaths by function rather than listing
+every one; the [reference index](../reference/README.md) documents each subpath individually.*
+
 ## The adapter is the one contract
 
 A site declares a single `CairnAdapter` object, typically at `src/lib/cairn.config.ts`: which
@@ -12,15 +52,12 @@ every delivery helper reads its behavior from this one object. A site that never
 adapter beyond the scaffold's defaults still gets a working owner/editor CMS; a site that extends it
 adds concepts, roles, and screens without forking anything.
 
-`@glw907/cairn-cms`'s root barrel exports the adapter-declaration functions
-(`defineAdapter`, `defineConcept`, `fields`, `fieldset`) and the reader surface a build script or
-the delivery layer composes from them (`composeRuntime`, `createRenderer`, the manifest
-functions). `@glw907/cairn-cms/sveltekit` exports the route factories and the guard, the layer
-that turns the adapter into working `/admin` and public routes inside a SvelteKit app. Nothing on
-the root barrel imports SvelteKit, and nothing on `/sveltekit` is a `.svelte` file; a Svelte admin
-component lives on `/components`. That three-way split is deliberate: the content model has to stay
-usable from a build script with no server request in scope, and the route layer has to stay
-substitutable without dragging Svelte's client runtime into it.
+The root barrel and `/sveltekit` are the split the preceding diagram draws as core/adapter and
+the SvelteKit layer. Nothing on the root barrel imports SvelteKit, and nothing on `/sveltekit` is a
+`.svelte` file; a Svelte admin component lives on `/components`. That three-way split is
+deliberate: the content model has to stay usable from a build script with no server request in
+scope, and the route layer has to stay substitutable without dragging Svelte's client runtime
+into it.
 
 ## The seams a site extends through
 
@@ -47,15 +84,38 @@ site reaches into:
 
 ## The write path
 
-An editor's save never touches the default branch directly. Saving an entry commits to a per-entry
-holding branch, named `cairn/<concept>/<id>`, through the configured Backend. A holding branch
-lets an editor iterate on a draft across multiple saves, and lets the admin show what is pending
-without it being live. Publishing is a second, deliberate action that copies the holding branch's
-content onto the default branch, which is what actually triggers a site's existing deploy. The
-commit author is the editor; the committer is `cairn-cms[bot]`, so the git history is honest about
-who wrote what while every commit still traces to the App's own identity. [Security
-model](./security-model.md) covers the authentication that gates who can reach this path at all;
-[Content model](./content-model.md) covers what a commit actually contains.
+An editor's save never touches the default branch directly.
+
+```mermaid
+sequenceDiagram
+  accTitle: Sequence diagram of an editor's save and publish through the write path
+  accDescr: An editor's save commits to a per-entry holding branch, with the editor as commit author and cairn-cms[bot] as committer. A separate publish action copies that branch onto the default branch, which triggers the site's existing deploy.
+  participant Editor
+  participant Admin
+  participant GitHubApp as GitHub App
+  participant Holding as Holding branch
+  participant Main as Default branch
+  participant Deploy as Site's deploy
+
+  Editor->>Admin: Save entry
+  Admin->>GitHubApp: Commit (author: editor, committer: cairn-cms[bot])
+  GitHubApp->>Holding: Write commit
+  Editor->>Admin: Publish
+  Admin->>GitHubApp: Copy holding branch content
+  GitHubApp->>Main: Write commit
+  Main->>Deploy: Trigger deploy
+```
+
+*Saving commits to a per-entry holding branch named `cairn/<concept>/<id>`; publishing is a
+separate, deliberate action that copies that branch's content onto the default branch, which is
+what actually triggers a site's existing deploy.*
+
+A holding branch lets an editor iterate on a draft across multiple saves, and lets the admin show
+what is pending without it being live. The commit author is the editor; the committer is
+`cairn-cms[bot]`, so the git history is honest about who wrote what while every commit still
+traces to the App's own identity. [Security model](./security-model.md) covers the authentication
+that gates who can reach this path at all; [Content model](./content-model.md) covers what a
+commit actually contains.
 
 ## The read path
 

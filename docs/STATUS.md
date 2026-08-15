@@ -43,19 +43,30 @@ reports. All nine are folded and grep-verified now. **A fold report is a claim; 
 landed costs one grep against the text the finding said was there.** The re-fold dispatches
 carried that proof requirement, and `ROADMAP.md` keeps the caution rather than the work.
 
-### Release one is next, and ONE thing is owed before it cuts
+### Release one is next, and the editors read is ON HOLD behind a visual-layer decision
 
-**Geoff's own read of the editor track.** The docs review methodology names it as the
-novice-comprehension instrument no LLM pass substitutes, and it is the one Task 13 stage that has
-not run. The track is `docs/editors/`, 8 pages, deliberately the smallest because it carries the
-highest novice-gap risk. Release one does not cut until that read happens.
+**The editors-track read is deferred, not skipped (Geoff, 2026-08-15).** On first contact with the
+finished track he asked why the docs carry no images or diagrams, and the answer changes the pages
+themselves rather than adding to them: the corpus ships zero visuals, the screenshot half was a
+real ruling whose live-reproduction replacement was never built, and the diagram half was never
+decided at all (eight diagrams went out with the deleted arms). **Prose written to stand alone
+without a picture is substantially different prose**, so pages like
+`write-in-the-editor.md`'s `## The screen`, which is a screenshot rendered in words, get rewritten
+and shortened rather than illustrated. Reading the track closely now would grade prose that is
+expected to change. The full finding, the evidence, and what the decision owes are the
+visual-layer entry at the top of `ROADMAP.md`'s Now tier.
 
-**A session that reaches this point with the read still outstanding hands Geoff the track and
-stops there.** No agent pass substitutes for it, and no amount of further LLM review discharges
-it; that is the whole reason the methodology names a human instrument. When the read happens,
-record it here as a line reading `Editors-track read: done <date>`, immediately below this
-paragraph, before `cairn-release` is invoked; a cold session that finds no such line treats the
-read as outstanding and stops, rather than re-asking or standing in for it.
+**The open question, and it is Geoff's alone: does release one cut on the prose corpus as it
+stands, with the visual layer landing in a later release, or does it wait for the rewrite?** Both
+are defensible. The corpus is correct, gated, and shippable as prose today, and four consumer sites
+are waiting on the window; against that, a first published docs corpus is a first impression, and
+the rewrite changes pages a reader would have already read. **Nothing else blocks the cut**, so
+this answer alone decides whether the next action is `cairn-release` or a docs visual pass.
+
+**When the read does happen**, record it here as a line reading `Editors-track read: done <date>`,
+immediately below this paragraph, before `cairn-release` is invoked. No agent pass substitutes for
+it; a cold session that finds no such line treats the read as outstanding and stops, rather than
+re-asking or standing in for it.
 
 **Release one is cut directly from `main`**, which is where this doc and the whole window now
 live; the `cairn-release` skill needs no worktree of its own, unlike a development pass. **Then
@@ -184,11 +195,12 @@ may never emit (ROADMAP Now, and resolving it moves the approved visual baseline
 `visual-fidelity` with Geoff's before/after); the `/admin/help` first-steps card overlap; the
 `sideEffects` coverage gate filed as mechanical hardening. The xcathletes pass-1 plan amendment
 (ruling 3) still rides the next session that touches `~/Projects/ecxc-ski`. ASC's own retrofits run
-in that repo on its own clock. **Two docs-rendering carry-forwards retired here:** no published
-page carries a mermaid diagram any more (verified across all four tracks), which closes the
-320/390 legibility item, and the section-index breadcrumb duplication rode the old arm structure,
-so it re-verifies against the rebuilt cairn-pub loader at the site walk rather than standing as a
-known defect.
+in that repo on its own clock. **One docs-rendering carry-forward retired here:** the section-index
+breadcrumb duplication rode the old arm structure, so it re-verifies against the rebuilt cairn-pub
+loader at the site walk rather than standing as a known defect. **The mermaid-legibility item is
+moot for the wrong reason, and the reason is now the open item** (see the visual-layer entry in
+`ROADMAP.md`): no published page carries a diagram because the rebuild deleted all eight along
+with the arms that held them, not because anything was fixed.
 
 ## Archives
 

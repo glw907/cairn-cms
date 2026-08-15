@@ -274,6 +274,50 @@ The original decision framing, for the record:
 
 ## Now
 
+- **The published docs have no visual layer at all, and half of that was never decided
+  (Geoff, 2026-08-15, reading the editors track).** The corpus ships zero images and zero
+  diagrams across all four tracks. Two different things produced that, and they need separating
+  because only one of them was a choice.
+
+  **Screenshots: a real ruling, with its replacement unbuilt.** Pass D ruled "no screenshots
+  anywhere" (`docs/internal/record/2026-08-14-docs-track-outlines.md`), because a screenshot goes
+  stale and cairn's no-stub rule forbids shipping a placeholder in the meantime. The evidence was
+  strong: the deleted corpus carried **17 screenshot markers that were never once filled**, across
+  six editor-facing pages. The intended replacement was a **live UI reproduction** rendered through
+  cairn-pub's `/help` pipeline, which is the right answer (it cannot go stale, because it is the
+  actual component) and is also what Geoff independently proposed on reading the track. That seam
+  was never built, and until this entry it was tracked nowhere, so the editors track today teaches
+  a visual editing interface to a non-technical reader in unbroken prose.
+
+  **Diagrams: not a ruling, collateral.** The deleted arms carried **eight mermaid diagrams**
+  (architecture, media storage, reference integrity, the security model, publish-and-discard,
+  the upgrade paths, write-in-the-editor, and the tutorial). No Pass D artifact ever discusses
+  diagrams; they went out with the pages that held them, and the close-out then retired the
+  standing "mermaid illegible at 320/390" carry-forward on the grounds that no page carries one,
+  which recorded the loss as a fix. The extend track now explains the architecture and the
+  security model with no picture at all.
+
+  **This is a rewrite of the affected pages, not a layer added on top of them (Geoff, 2026-08-15).**
+  Prose written to stand alone without a picture is substantially different prose, and it does not
+  survive the picture arriving. The clearest case is `docs/editors/write-in-the-editor.md`: its
+  `## The screen` section is a screenshot rendered in words ("its title sits in a large field at the
+  top", "a toolbar sits above the text with two tabs", "the icon in the header"), and its
+  `## Opening or starting a draft` opens by describing the sidebar the reader would simply be looking
+  at. Give those pages a reproduction and most of that text is deleted, not kept: what remains is a
+  caption plus the handful of facts an image cannot carry (that Write is the default tab, that the
+  preview width choice is remembered per device). The page's shape changes with it. **Estimate the
+  work as a rewrite of the editors track and the visual half of the extend track, and expect the
+  editors word count to fall rather than grow.**
+
+  **What this entry owes:** the visual vocabulary per track, decided FIRST, because it is an input to
+  the writing and not a later layer. For the editors track, build the live-reproduction seam, then
+  rewrite against it. For the extend track, decide whether the eight diagrams return, and at what
+  legibility bar (the 320/390 floor that closed the original carry-forward is still the responsive
+  standard). Competitor evidence sits in
+  `docs/internal/record/2026-08-14-cms-docs-competitor-review.md`: the corpora reviewed lean on
+  screenshots and video heavily, which is the norm this corpus departs from, and a departure is
+  defensible only when it is chosen rather than inherited.
+
 - **The doctor's CSRF-handoff check silently skips on every current `sv create` scaffold,
   filed off Pass D's target-manifest work (2026-08-14).** `src/lib/doctor/checks-local.ts:90-91`
   (`configCsrfDisable`, condition `config.csrf-disable-missing`) reads

@@ -586,8 +586,37 @@ state of the same pass:
   lives. Filing it forward without an owner is what would have lost it.
 - STATUS's consumer table said cairn-pub was a docs shell six minors behind the engine, which
   Task 12's own correction to the table above it had already falsified. Two carry-forwards also
-  retired: no published page carries a mermaid diagram any more, so the 320/390 legibility item
-  is moot, and the breadcrumb duplication rode the deleted arm structure.
+  retired: the breadcrumb duplication rode the deleted arm structure. The mermaid entry was
+  retired too, on the grounds that no published page carries a diagram any more. That is true and
+  it was the wrong conclusion to draw from it: the eight diagrams were deleted with the arms that
+  held them, and the close-out recorded the legibility item as closed rather than recording that
+  the corpus had lost its entire visual layer. Geoff asked the obvious question the same day, and
+  the visual layer is now a ROADMAP entry. **A carry-forward that goes quiet because its subject
+  was deleted has not been resolved; check which of the two happened before retiring one.**
+
+### The visual vocabulary was never an input, and it should have been
+
+Pass D wrote 6,700 words of editor-facing prose without deciding what the pages would show. The
+screenshot half was ruled on (no screenshots, because they go stale, with live UI reproductions as
+the replacement) and the diagram half was never discussed at all; the eight diagrams in the old
+arms went out with the pages that held them. **The visual vocabulary is an input to the writing,
+not a layer added afterward**, because prose written to stand alone without a picture is
+substantially different prose. `write-in-the-editor.md`'s `## The screen` is the proof: it is a
+screenshot rendered in words, and it exists only because there was nothing to look at. Deciding
+the vocabulary first would have produced shorter pages, not longer ones.
+
+Two things follow for any future docs pass. Settle what each track shows before a word is drafted,
+and treat "we will add visuals later" as a decision to rewrite later, not to extend later.
+
+**The five-stage production gate could not have caught this, and that is the point.** Every stage
+graded the prose against a rubric that assumed prose: the claims sweeps checked whether sentences
+were true, the persona walks checked whether a reader could finish a task by reading, the register
+pass checked voice. A corpus can pass all of it while the premise underneath, that this is a
+text-only corpus, was never examined. This is the same shape as
+[[conformance-verification-cannot-find-a-wrong-premise]]: verification answers "does this conform
+to the brief", never "is the brief right". The question that found it was Geoff's, asked in one
+line on first contact with the finished thing, and no amount of additional agent review would have
+produced it.
 
 ### Budgets
 

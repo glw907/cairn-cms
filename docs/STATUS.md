@@ -15,7 +15,42 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-14: Pass D Phase 1 is MERGED; execute Phase 2)
+## Immediate next action (2026-08-14: Pass D Phases 1 and 2 are MERGED; execute Phase 3)
+
+**Phase 2 landed** (PR #35, squashed to `main` at `55bf8184`, all six checks green). The four
+tracks are written clean-room and sit BESIDE the old arms, which stay canonical in the tarball
+until the Phase 3 cutover, so `main` stays releasable right now. Page counts hit their targets
+exactly: `docs/admin/` 8, `docs/editors/` 8, `docs/extend/` 31, plus `docs/why-cairn.md` and the
+rewritten front doors.
+
+**Next: Phase 3** (Tasks 9 through 14), in the worktree `pass-d-phase-3` off the merged `main`.
+Task 9 is the mining sweep, the FIRST and ONLY task permitted to read the old arms, and it runs
+now that the new tracks are baked. Then Task 10 the cutover, Task 11 the outside edges, Task 12
+cairn-pub prepared but NOT merged (ruling 3), Task 13 the five-stage production gate, Task 14
+the close.
+
+**Phase 2 was run as a Workflow** (Geoff opted in, 2026-08-14): 16 agents, no errors, four tracks
+written in parallel with one fresh reviewer per track and a barrier before the front doors. The
+per-track review gate did real work; the admin reviewer's 16 findings all survived verification,
+including 15 recovery-table rows that had silently dropped their instruction and a `d1 execute`
+command that bypasses migrations.
+
+**Two things Phase 2 changed that Phase 3 must not re-derive.**
+(1) **`check:snippets` now covers `docs/extend`, `docs/admin` and `docs/editors`.** The extend
+track's blocks had never been typechecked, which the extender profile's success criterion
+forbids; widening found 98 errors, three of them real API defects. **Task 10 still owns removing
+the dying directories from `DOC_DIRS`**, so its gate-bill item is half done, not done.
+(2) **`docs/README.md` and `docs/reference/README.md` each carry a short "superseded" section**
+naming the old pages that still exist until cutover. `check:arm-indexes` requires every page in
+an arm to be indexed, and the front door is the tutorial arm's index. **Task 10 deletes both
+sections along with the pages they name.**
+
+**Also carried:** `@sveltejs/kit`'s devDependency moved to `^2.68.0` (the peer floor stays
+`^2.12`); `docs/reference/supported-toolchain.md` had already claimed cairn was tested against
+`2.68.0` while the tree installed `2.61.1`. Root `CLAUDE.md` still sits a few tokens over its
+context budget, and Task 11 owes it a trim of at least as much as it adds.
+
+## Superseded: the Phase 1 close entry (2026-08-14)
 
 **Pass D Phase 1 landed** (branch `pass-d-phase-1`, four commits, full gate green including
 the two gates it adds). Tasks 1, 2, 3a and 3b are done; Task 3 was split once, into the prose

@@ -49,6 +49,14 @@ package governs these two tracks).
   (`*...*`) of complete sentences carrying the facts the page's contract assigns to the
   caption. The essential information a diagram carries also survives in body text (the
   two-part alternative); the contract's must-survive list is that text.
+- **The theme contract (confirmed by the cairn-pub theme session, 2026-08-15).** Three
+  renderer-side facts every fence must respect: (a) in-fence `%%{init}%%` theme directives are
+  neutralized by the renderer's secure config, so a fence must never rely on one; the
+  corpus-wide theme always wins. (b) A subgraph or fence title renders as an uppercase tracked
+  eyebrow, so an identifier in a title (e.g. `unsafeDisableSanitize`) must be wrapped in
+  `<code>...</code>` to keep its casing and set in the mono face. (c) `:::focus` is the
+  theme's one node-emphasis device (primary border plus subtle wash); use it on at most the
+  single taught node of a diagram (the refusing guard step, the swap point), never decoratively.
 - **Fact survival.** Each page task verifies its contract's full "must survive" list against
   the rewritten page by grepping for each fact's key phrase before committing. A rewrite that
   drops one regresses a defect the production gate already paid to find.
@@ -314,10 +322,14 @@ package governs these two tracks).
   `aria-describedby` outrank the SVG's own `<title>`/`<desc>`), so it must honor authored
   directives when present and fall back to the generic label only when absent, with a unit
   test; (b) ruling 1's containment proof (in-figure scroll at 320/390, no page-level
-  horizontal scroll) is owned by cairn-pub, as a browser check if the theme pass adds one or
-  as a recorded manual check at this merge gate otherwise; (c) the theme styles the authoring
-  convention as shipped: `accTitle`/`accDescr` in the fence, one emphasis-paragraph caption
-  after it. HOLD the merge.
+  horizontal scroll) is owned by cairn-pub as a RECORDED MANUAL CHECK at this merge gate
+  (confirmed 2026-08-15: cairn-pub has no browser harness; the theme session ran a scripted
+  playwright probe proving containment at both widths in both schemes and holds the probe
+  script to seed the future harness); (c) the theme styles the authoring convention as
+  shipped: `accTitle`/`accDescr` in the fence, one emphasis-paragraph caption after it, which
+  the theme renders as the figcaption device. All three were acknowledged by the theme session
+  the same day; (a)'s fix is landing as `src/lib/docs/mermaid-a11y.ts` with a DOM-level unit
+  test, and the merge-gate end-to-end check in step 5 still verifies it. HOLD the merge.
 - [ ] **Step 5 (at the merge gate, after the theme lands):** pack this branch and install the
   tarball into cairn-pub locally (its pin is exact, so the loader otherwise reads the old
   payload; Pass D's 81-page proof is the precedent), render every diagram page through themed

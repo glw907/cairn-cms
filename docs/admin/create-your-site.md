@@ -67,9 +67,33 @@ record straight into your new site's database and opens a sign-in page in your b
 browser moment: click **Sign in there**, and you land in your own site's admin, signed in as its
 owner.
 
-**Browser moments, in order:** creating your GitHub App, installing it on your new repository,
-signing in to Cloudflare if you aren't already, and the sign-in page the tool opens for you at
-the end. Three or four, depending on that middle one.
+```mermaid
+flowchart LR
+  accTitle: Diagram of the setup journey from scaffold to sign-in, with browser moments flagged
+  accDescr: The tool moves through four stages: scaffolding your site locally, creating it on GitHub, creating it on Cloudflare, and signing you in. Browser moments punctuate the GitHub and Cloudflare stages: creating the GitHub App, installing it on your new repository, an optional Cloudflare sign-in if you aren't already signed in, and the sign-in page the tool opens at the end.
+
+  scaffold["Scaffold<br/>locally"]
+
+  subgraph github["GitHub"]
+    createApp["Browser:<br/>create GitHub App"]
+    installApp["Browser:<br/>install on repository"]
+    createApp --> installApp
+  end
+
+  subgraph cloudflare["Cloudflare"]
+    cfSignin["Browser:<br/>sign in, if not already"]
+  end
+
+  signin["Browser:<br/>sign-in page opens"]
+
+  scaffold --> createApp
+  installApp --> cfSignin
+  cfSignin --> signin
+```
+
+*Three or four browser moments punctuate this path, depending on whether Cloudflare needs you
+to sign in: creating the GitHub App, installing it on your new repository, an optional
+Cloudflare sign-in, and the sign-in page the tool opens at the end.*
 
 ## You know it worked when
 

@@ -4,17 +4,43 @@ What you are getting into, what it costs, and what stays yours.
 
 ## What you end up owning
 
+```mermaid
+flowchart LR
+  accTitle: Diagram of create-cairn-site connecting five assets you own
+  accDescr: create-cairn-site builds and connects five things without owning any of them. It creates a GitHub repository holding your content and a GitHub App scoped to this one site, signs in to a Cloudflare account of your own rather than creating one, connects a domain if you choose to add one, and writes a database of who can sign in. All five stay yours.
+
+  tool["create-cairn-site"]
+
+  subgraph yours["Yours, not cairn's"]
+    repo["GitHub repository<br/>your content, as markdown"]
+    app["GitHub App<br/>created for this site"]
+    cf["Cloudflare account<br/>1 Worker, 2 databases, 1 bucket"]
+    domain["Domain<br/>if you connect one"]
+    authdb["Sign-in database"]
+  end
+
+  tool -->|creates| repo
+  tool -->|creates| app
+  tool -->|signs in to| cf
+  tool -->|connects| domain
+  tool -->|writes to| authdb
+```
+
+*`create-cairn-site` creates or connects five assets and owns none of them: a GitHub repository
+holding your content, a GitHub App scoped to this one site, the Cloudflare account it signs in
+to rather than creates, a domain if you connect one, and the database of who can sign in.*
+
 `create-cairn-site` builds and connects five things, and every one of them belongs to you, not
 to cairn:
 
-- **A private GitHub repository** holding your site's code and every piece of content anyone
-  writes, as plain markdown files. This is where your content lives on GitHub.
-- **A GitHub App**, created just for this site, that commits and publishes on your writers'
-  behalf so nobody needs a GitHub account of their own to write.
-- **A Cloudflare account of your own**, that the tool signs in to rather than creates for you,
-  running the site: one Worker, two databases, and a storage bucket for images.
-- **A domain**, if you connect one, registered wherever you like and pointed at Cloudflare.
-- **A database of who can sign in**, which you control from inside your own site.
+- **A private GitHub repository**, where your content lives on GitHub, holding your site's code
+  and everything anyone writes.
+- **A GitHub App** that publishes on your writers' behalf, so nobody needs a GitHub account of
+  their own.
+- **A Cloudflare account of your own**, running one Worker, two databases, and a storage bucket
+  for images.
+- **A domain**, if you connect one.
+- **A database of who can sign in**, yours to control.
 
 Nothing here is rented from cairn. If you stopped using cairn tomorrow, your repository still
 holds every word anyone wrote, in plain markdown a text editor can open. Cloning that repository

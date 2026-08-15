@@ -51,13 +51,29 @@ zone unchanged, so nothing that already worked stops working once the switch tak
 domain was already active in this Cloudflare account, there's nothing to copy: whatever the zone
 already serves is your existing setup, and it stays untouched.
 
+```mermaid
+flowchart LR
+  accTitle: Diagram of one DNS zone carrying two unrelated record groups
+  accDescr: Your domain's single Cloudflare zone carries two groups of records that are easy to conflate. Your organization's existing mail records carry over unchanged from before the switch. cairn's own sending records are added only when you turn on email sign-in. Sign-in mail leaves from no-reply@yourdomain using cairn's records alone; your organization's existing mail is untouched.
+
+  subgraph zone["Your domain's Cloudflare zone"]
+    existing["Existing mail records<br/>carried over unchanged"]
+    added["cairn's sending records<br/>added at email onboarding"]
+  end
+
+  added -->|sends| signin["no-reply@yourdomain<br/>sign-in mail"]
+```
+
+*One Cloudflare zone carries two unrelated record groups: your organization's existing mail,
+carried over unchanged, and cairn's own sending records, added only once you turn on email
+sign-in. Sign-in mail leaves from `no-reply@yourdomain` using cairn's records alone.*
+
 **Two different things share this one domain, and it's easy to conflate them:**
 
-1. **The address your site sends sign-in mail from.** Once you turn on email sign-in (below),
-   cairn sends from `no-reply@yourdomain`, using Cloudflare's own sending infrastructure.
-2. **Your organization's existing mail on this domain**, whatever you already use today: Gmail,
-   Outlook, anything else. The carry-over step above is what keeps that working unchanged; it has
-   nothing to do with cairn's own sign-in mail.
+- **The address your site sends sign-in mail from** is `no-reply@yourdomain`, added only once
+  you turn on email sign-in below.
+- **Your organization's existing mail on this domain**, whatever you already use today, carries
+  over unchanged and has nothing to do with cairn's own sign-in mail.
 
 **If you don't personally control this domain's DNS,** stop here and talk to whoever does, an
 agency, a previous developer, an IT contact, before going further. A domain already set up under

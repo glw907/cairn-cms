@@ -803,7 +803,7 @@ the named human gates only):**
   `before:` already emits `content: var(--tw-content)` for free either way.
 - **DX: a `type-scale` finding could name the matching grammar role, closing the loop toward a
   rename codemod** (design infrastructure Pass 3, 2026-07-29). The upgrade guide's rename recipe
-  (`docs/guides/upgrade-cairn.md`) has an editor look up the reported class's size in [Admin grammar
+  (`docs/extend/upgrade-cairn.md`) has an editor look up the reported class's size in [Admin grammar
   tokens](./docs/reference/admin-grammar-tokens.md) by hand; if the `type-scale` rule instead named
   the role whose size the reported class resolves to, step 2 of that recipe becomes automatic, and a
   codemod that rewrites the class in place becomes buildable on top. **Flag for Geoff:** decide
@@ -884,7 +884,7 @@ the named human gates only):**
     evidence"; that pass ran as the design-ratchet initiative (2026-07-30) and deliberately left
     the type-role scale untouched (its global constraints rule out changes to type roles), so the
     12px ruling stays unresolved. The ratchet evidence it fed now lives in
-    `docs/explanation/enforced-design.md`'s grammar-ladder section.
+    `docs/extend/add-a-custom-admin-screen.md`'s grammar-ladder section.
   - **`cairn-doctor`'s zone checks report a bare 403 on read the same way a genuinely wrong
     zone setting reads, misleading an operator into changing a correct setting (severity raised
     from DX/low, docs friction log, triaged 2026-08-14: reproduced on two live migrations, not
@@ -1392,6 +1392,31 @@ the named human gates only):**
   exactly the threat model these five items assume.
 
 ## Later
+
+- **`check:symbols` spawns a `grep` per environment-variable token, and the cost scales with the
+  corpus (filed at Pass D Task 10, 2026-08-14).** `envVarInSourceTree` in
+  `scripts/checks/check-symbols.mjs` shells out to `grep -rl` once per distinct token, memoized
+  within a run. That was cheap over 27 files in Phase 1 and takes about 33 seconds over the 74
+  the rebuild ships, which crossed vitest's 30-second default and made
+  `src/tests/unit/check-symbols.test.ts` fail on wall-clock rather than on a finding. The test
+  now carries an explicit 120-second ceiling, so this is a cost rather than a break, paid twice
+  per CI run (once in the suite, once in the gate). The fix is to read the searched tree once
+  into memory and resolve tokens against a set, which removes the subprocess entirely. Pass D
+  declined it deliberately as adjacent scope rather than folding it into the cutover.
+  **Trigger:** the gate passing roughly 60 seconds, or the published corpus growing past about
+  120 files.
+
+- **Nothing pins `CHANNEL_SCHEMA_SQL`'s literal text any more (filed at Pass D Task 10,
+  2026-08-14).** `src/tests/unit/auth-channel-guide-ddl.test.ts` asserted the exported constant
+  byte-for-byte against the DDL block reproduced in the old auth-channel guide, so a drift
+  between the two went red. The docs rebuild stopped reproducing the DDL in prose at all (both
+  `docs/extend/add-a-second-audience.md` and `docs/reference/auth-channel.md` tell a reader to
+  copy the exported constant instead), which removes the drift risk the test guarded and also
+  removes the test's subject, so the cutover deleted it. The constant's body is now unpinned by
+  anything. That is defensible, since the duplicate it guarded against no longer exists, but a
+  change to that SQL now reaches a consumer with no gate in the way. **Trigger:** the next
+  change to the auth-channel schema, which should arrive with a migration test rather than a
+  restored text pin.
 
 - **`CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it whatever
   the last action returned, successes included (docs friction log, triaged 2026-08-14).**

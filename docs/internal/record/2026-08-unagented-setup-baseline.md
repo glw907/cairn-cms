@@ -19,7 +19,7 @@ Pass T1 Task 8 (the `create-cairn-site` UX wiring) was blocked on this record an
 
 Environment: no prior cairn checkout, no wrangler login, no gh login. Each walker started from the
 root README as a stranger would and followed
-[`docs/tutorial/build-your-first-cairn-site.md`](../../tutorial/build-your-first-cairn-site.md) and the
+[`docs/tutorial/build-your-first-cairn-site.md`](../../extend/build-a-site-by-hand.md) and the
 setup guides it links, toward a deployed site with a signed-in owner. Every finding required a
 `file:line` quote; a finding that could not be evidenced was not a finding. Walkers were barred from
 reading `docs/superpowers/`, since the specs and plans would have told them the answers. Each drag

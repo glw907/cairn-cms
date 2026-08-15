@@ -45,8 +45,8 @@ Cloudflare Workers, whose runtime is `workerd`, never Node. CI's Node 22 pin exi
 `vitest-pool-workers` requires it, which is evidence about the engine's own tooling rather than
 about a consumer. The consumer-facing floor comes from Vite 8 and SvelteKit 2, both of which
 already require a current Node to build; Node 22 is stated explicitly because it is already the
-published requirement in the
-[tutorial](../tutorial/build-your-first-cairn-site.md), and the `engines.node` field in
+published requirement in
+[Build a site by hand](../extend/build-a-site-by-hand.md), and the `engines.node` field in
 `package.json` now gives npm something to check against. That check is a warning, not an install
 block: `npm install` on an older Node prints an `EBADENGINE` notice naming the mismatch, and
 installs anyway, unless the consumer's own `.npmrc` sets `engine-strict=true`, which turns the
@@ -87,6 +87,6 @@ needs to work around.
 SvelteKit deprecated `csrf.checkOrigin` in 2.61, in favor of `csrf.trustedOrigins`, but has not
 removed it ([sveltejs/kit#15992](https://github.com/sveltejs/kit/issues/15992)). Read
 "deprecated" as exactly that, not "unsupported": cairn's admin CSRF ownership still depends on
-disabling `checkOrigin` (see [Disable checkOrigin](../guides/deploy-to-cloudflare.md#disable-checkorigin)),
+disabling `checkOrigin` (see [Disable checkOrigin](../extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff)),
 and the current SvelteKit range in this matrix still ships it. A scheduled routine watches the
 upstream issue for the eventual removal; this table does not.

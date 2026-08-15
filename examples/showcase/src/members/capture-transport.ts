@@ -1,5 +1,5 @@
-// cairn-cms: the showcase's capture delivery transport, the harness pattern
-// docs/guides/add-a-login-channel.md's "Prove your channel" section names: instead of sending
+// cairn-cms: the showcase's capture delivery transport, the harness pattern that proves a
+// channel end to end (docs/extend/add-a-second-audience.md): instead of sending
 // anything, it remembers the last code and a delivery count per contact in module state, so the
 // /test/last-otp route (a later task) can read a code back without polling a real inbox or the
 // database directly. It carries devDelivery's own in-body refusal

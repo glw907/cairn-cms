@@ -1,8 +1,8 @@
 import { test, expect, type APIRequestContext } from '@playwright/test';
 
 // This suite drives the shipped ./auth-channel subpath through a real browser against the
-// showcase's members login fixture (src/members/channel.ts, docs/guides/add-a-login-channel.md's
-// worked exemplar). Each of the five specs below uses its OWN roster contact
+// showcase's members login fixture (src/members/channel.ts, the worked exemplar behind
+// docs/extend/add-a-second-audience.md). Each of the five specs below uses its OWN roster contact
 // (src/members/channel.ts's MEMBER_ROSTER): this is a requirement, not a convenience. The
 // escalation gate and the per-window send ceiling both key on the bare contact identity, so two
 // specs sharing a contact would share one budget, and CI's `retries: 2` multiplies whatever a

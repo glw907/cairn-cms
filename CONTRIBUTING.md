@@ -4,7 +4,7 @@ cairn is the embedded, git-backed CMS this repository publishes to npm as
 [`@glw907/cairn-cms`](https://www.npmjs.com/package/@glw907/cairn-cms). This guide orients you
 in the repository and describes what a change needs before it can land. For what cairn is and
 why it works the way it does, start with the [docs](./docs/README.md) and
-[Why cairn](./docs/explanation/why-cairn.md).
+[Why cairn](./docs/why-cairn.md).
 
 ## Set up and run the suite
 
@@ -44,12 +44,13 @@ Locally, `npm test` and `npm run check` catch most failures, and each `check:*` 
 - Code comments follow [TSDoc](https://tsdoc.org/), enforced by `npm run check:comments` over
   `src/lib`. Write the contract and the why, never a paraphrase of the code. The em dash is
   banned in comments.
-- Pages under `docs/reference/`, `docs/guides/`, `docs/explanation/`, and `docs/tutorial/`
-  follow the
-  [Google Developer Documentation Style Guide](https://developers.google.com/style). Those
-  four directories ship inside the npm package, so a docs edit is a product change, and a
-  public-API change is not done until its reference page matches. `npm run check:reference`
-  enforces the coverage.
+- Pages under `docs/reference/`, `docs/admin/`, and `docs/extend/` follow the
+  [Google Developer Documentation Style Guide](https://developers.google.com/style);
+  `docs/editors/` follows the
+  [Microsoft Writing Style Guide](https://learn.microsoft.com/style-guide/welcome/) instead,
+  because its reader is a non-technical writer. All four directories ship inside the npm
+  package, so a docs edit is a product change, and a public-API change is not done until its
+  reference page matches. `npm run check:reference` enforces the coverage.
 - Commit subjects are imperative, in the
   [Conventional Commits](https://www.conventionalcommits.org/) shape:
   `fix(auth): reject expired tokens`.
@@ -79,7 +80,7 @@ list here, so when the map and the tree disagree, trust the tree and fix the map
 - `examples/showcase/`: a complete consumer site and the library's proving ground. The e2e
   and visual suites run against it.
 - `examples/cairn-theme/`: the optional identity layer for
-  [Waymark](./docs/guides/make-waymark-your-own.md), the starter template, and the skin
+  [Waymark](./docs/extend/design-your-site.md), the starter template, and the skin
   [cairn.pub](https://cairn.pub) runs. The ported example themes (AstroPaper, Foxi, the
   gallery) live in their own repository,
   [glw907/cairn-themes](https://github.com/glw907/cairn-themes).

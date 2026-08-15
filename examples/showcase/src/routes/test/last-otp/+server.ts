@@ -2,8 +2,8 @@
 // recorded for a contact, or 404 when none exists. This is a roster oracle by construction
 // (delivery only ever runs for a known subject; members/channel.ts's lookupContact resolves
 // against MEMBER_ROSTER), so this route must never run against a database holding real contacts;
-// docs/guides/add-a-login-channel.md's "Prove your channel" section states that as a rule for a
-// site building its own version of this harness.
+// docs/extend/add-a-second-audience.md states that as a rule for a site building its own
+// version of this harness.
 //
 // The refusal lives in the body, `devDelivery`'s own precedent (never a caller's gate), and
 // checks two things independent of each other: `isLocalHost` closes the one path the build fold

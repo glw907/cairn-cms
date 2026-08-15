@@ -9,8 +9,8 @@ identity the caller supplied, which need not be an editor when site code calls
 [`createD1AuditSink`](./sveltekit.md#created1auditsink) directly with its own domain events. No
 record ever carries a magic-link token, a session ID, or a
 magic-link's contents (see
-[the security model](../explanation/security-model.md) for the redaction stance). To query these
-in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
+[the security model](../extend/security-model.md) for the redaction stance). To query these
+in production, see the [read cairn's logs guide](../admin/troubleshooting.md).
 
 | Event | Level | Fires when | Fields |
 |---|---|---|---|

@@ -45,7 +45,7 @@
     // cairn-template:exclude-start
     ,
     {
-      // The showcase members fixture's own D1 binding (docs/guides/add-a-login-channel.md).
+      // The showcase members fixture's own D1 binding (docs/extend/add-a-second-audience.md).
       // Its own migrations_dir, never "migrations": sharing AUTH_DB's directory would apply
       // this channel's schema against the auth store and vice versa.
       "binding": "MEMBER_DB",

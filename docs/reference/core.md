@@ -119,7 +119,7 @@ declaration on a missing or wrong-typed one, and both normalize the declared fie
 affordances until you declare `singular: 'post'`. Declare `singular` on every concept.
 
 The concept key `fragments` reserves reusable content: declare it to include one entry's body
-inside another with [the `::include` directive](./authoring-syntax.md#include-a-fragment). It
+inside another with [the `::include` directive](../editors/write-in-the-editor.md#fragments). It
 must use `routing: 'embedded'`, and `normalizeConcepts` throws otherwise. The include directive
 resolves against a non-routable concept, and an embedded entry publishing its own live page would
 make the same content reachable two ways.
@@ -273,7 +273,7 @@ Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or
 `media:<hash>`), the same shape as the `cairn:` link scheme. The hash is the content identity and the
 slug is cosmetic, so a rename never breaks a reference. At render, the handle rewrites to a delivery
 URL, and a variant becomes a `/cdn-cgi/image/<options>/...` transform over that path. See the
-[media storage explanation](../explanation/media-storage.md) for the full model. This grew from a
+[media storage explanation](../extend/data-tiers.md) for the full model. This grew from a
 reserved seam, so it is additive: a site that declares no `media` is unchanged, and the author-facing
 upload surface lands in a later phase on this substrate.
 
@@ -926,7 +926,7 @@ A role vocabulary says who has which name; the access map says what each name ma
 enforcement and visibility point reads: the guard's [`requireAccess`](./sveltekit.md#requireaccess)
 helper, the engine's own route gates, and the nav resolver. Capability is always the floor, and
 the map only narrows it, never widens it, so a site that declares no map sees no behavior change.
-See [Restrict admin access by role](../guides/restrict-admin-access.md) for the worked guide.
+See [Restrict admin access by role](../extend/restrict-admin-access.md) for the worked guide.
 
 #### `defineAccess`
 
@@ -1018,7 +1018,7 @@ function signatures above reference these.
 | `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
 | `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
 | `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named Cloudflare Images variant presets. Omitting it leaves media off. See the `assets` adapter member above. |
-| `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, named by `CairnAdapter.aiPosture` and read by [`buildRobots`](delivery-data.md#buildrobots). Unset states nothing. Declining is a request that named crawlers say they honor, not enforcement. See [Choose an AI posture](../guides/choose-an-ai-posture.md) for what each direction does and doesn't buy. |
+| `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, named by `CairnAdapter.aiPosture` and read by [`buildRobots`](delivery-data.md#buildrobots). Unset states nothing. Declining is a request that named crawlers say they honor, not enforcement. See [Choose an AI posture](../extend/choose-an-ai-posture.md) for what each direction does and doesn't buy. |
 | `CairnRuntime` | Extension API | `interface CairnRuntime` | The composed runtime the engine serves from. |
 | `ComposeInput` | Extension API | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig. |
 | `NamedField` | Extension API | `type NamedField` | A field descriptor with its frontmatter key re-attached as `name`, the normalized shape `ConceptDescriptor.fields` carries. |

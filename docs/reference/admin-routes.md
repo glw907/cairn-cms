@@ -77,7 +77,7 @@ export const load = admin.shellLoad;
 
 A site adds its own admin screen by dropping a concrete route under `/admin/` (for example
 `/admin/signups`), which wins over the catch-all and renders inside this same shell. See
-[Add a custom admin screen](../guides/add-a-custom-admin-screen.md) for the worked route.
+[Add a custom admin screen](../extend/add-a-custom-admin-screen.md) for the worked route.
 
 The composer builds the runtime once, and every server route that needs it (the admin mount,
 `/healthz`) imports it rather than re-running `composeRuntime` per route:

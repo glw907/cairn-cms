@@ -12,7 +12,7 @@ code generation and canonicalization, identity derivation and salting, the atomi
 lockout mechanics, session issuance and revocation, and the D1 schema underneath all of it. The
 email magic-link stays the zero-config default and the documented primary path for cairn editors.
 A general-purpose auth primitive with no bearing on this discipline stays out. See [the security
-model](../explanation/auth-channel-security-model.md) for the threat catalogue and the rule this
+model](../extend/auth-channel-security-model.md) for the threat catalogue and the rule this
 design is built from: no control keyed on the victim's identity may deny, delay, or destroy
 anything.
 
@@ -129,7 +129,7 @@ budget. `lookup`'s returned subject must be stable and canonical per person. `ch
 most load-bearing of the three: the factory awaits its return value and treats a truthy result as a
 passed check, with no way to distinguish a real Turnstile `siteverify` call from `async () => true`,
 and the whole economic bound on guessing a code (see [the security
-model](../explanation/auth-channel-security-model.md)) is `challenge`'s consequence.
+model](../extend/auth-channel-security-model.md)) is `challenge`'s consequence.
 
 ## Defaults and clamps
 
@@ -142,7 +142,7 @@ clamp states only a ceiling.
 | `codeLength` | Digits per code | 8 | 8 to 10 |
 | `codeTtlMs` | Code lifetime, in ms | 600000 (10 minutes) | at most 900000 (15 minutes) |
 | `attemptCap` | Wrong-guess cap per code row | 5 | at most 10 |
-| `cooldownMs` | Resend cooldown per nonce, in ms; UX only (see [Residual risks](../explanation/auth-channel-security-model.md)) | 60000 (60 seconds) | at least 30000 (30 seconds) |
+| `cooldownMs` | Resend cooldown per nonce, in ms; UX only (see [Residual risks](../extend/auth-channel-security-model.md)) | 60000 (60 seconds) | at least 30000 (30 seconds) |
 | `requesterCap` | Requester sends per hour, keyed on the address-and-identity bucket | 20 | 5 to 100 |
 | `identityCeiling` | Identity send ceiling per hour; logs [`auth.channel.ceiling_exceeded`](./log-events.md) only, never denies | 30 | at least 10 |
 | `escalationThreshold` | Identity failure-escalation threshold per hour, past which `confirm` answers `challenge-required` | 20 | at least 10 |

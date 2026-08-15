@@ -26,7 +26,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SHOWCASE_SRC = resolve(ROOT, 'examples/showcase/src');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/theme/theme.css');
 const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
-// The cairn-theme identity overlay: a documented opt-in layer (docs/guides/make-waymark-your-own.md)
+// The cairn-theme identity overlay: a documented opt-in layer (docs/extend/design-your-site.md)
 // imported directly after theme.css, retoning only the base ladder. Part (b) also checks its merged
 // contrast, so a retone that quietly drops below AA fails here instead of shipping unnoticed.
 const CAIRN_THEME_CSS = resolve(ROOT, 'examples/cairn-theme/cairn.css');
@@ -378,7 +378,7 @@ export function checkThemeContrast(css) {
 
 // ============================================================================
 // (b.1) A theme-identity overlay's base-ladder override (examples/cairn-theme/cairn.css is the
-// standing example: docs/guides/make-waymark-your-own.md documents it as an opt-in layer imported
+// standing example: docs/extend/design-your-site.md documents it as an opt-in layer imported
 // directly after theme.css, retoning only the base ladder with a plain, unlayered `:root` rule).
 // ============================================================================
 

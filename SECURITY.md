@@ -24,6 +24,6 @@ token, confirms it over POST, and stores opaque session rows in Cloudflare D1. S
 
 The render path applies a rehype-sanitize floor by default. Author markdown cannot inject raw
 HTML or a `javascript:` URL unless a site explicitly opts out. See
-[`docs/explanation/security-model.md`](./docs/explanation/security-model.md) for the auth,
-commit, and render security model, and [`docs/explanation/data-tiers.md`](./docs/explanation/data-tiers.md)
+[`docs/extend/security-model.md`](./docs/extend/security-model.md) for the auth,
+commit, and render security model, and [`docs/extend/data-tiers.md`](./docs/extend/data-tiers.md)
 for where auth state lives.

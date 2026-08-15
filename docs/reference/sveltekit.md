@@ -468,7 +468,7 @@ holds it against both failure shapes: a sink that throws synchronously, and a si
 rejecting promise. The rejecting case is reachable in practice, not theoretical: the seam's
 `(record) => void` type admits an async function through void-return bivariance, the same pressure
 that writes a sink following the `waitUntil` advice in [add a custom admin
-screen](../guides/add-a-custom-admin-screen.md#wire-the-auditsink). `ctx.audit` catches the
+screen](../extend/add-a-custom-admin-screen.md#wire-the-auditsink). `ctx.audit` catches the
 synchronous throw directly and attaches a fire-and-forget rejection handler to a promise-returning
 result, so the handler's own result still returns exactly as if the sink had succeeded either way,
 and the failure logs `admin.action.sink_threw` (see [log events](./log-events.md)) rather
@@ -596,7 +596,7 @@ optional parameter would make the shortest call the one that silently drops the 
 isolate tears down before it settles, so omitting it (typically when no `event.platform.ctx` is
 reachable) has to be a decision the caller makes on purpose, with the drop risk understood.
 
-The sink is fail-open, the same convention as [a hand-rolled one](../guides/add-a-custom-admin-screen.md#wire-the-auditsink):
+The sink is fail-open, the same convention as [a hand-rolled one](../extend/add-a-custom-admin-screen.md#wire-the-auditsink):
 it returns synchronously, before the insert settles, so a persist failure never fails the audited
 action, and a rejected insert logs `audit.sink.write_failed` (see [log events](./log-events.md))
 carrying the whole truncated record plus the error, since the audited action already completed and
@@ -823,7 +823,7 @@ a manual `wrangler d1 execute` insert. On a request whose normalized email match
 `INSERT ... WHERE NOT EXISTS` statement) before the normal magic-link flow proceeds, and logs
 `editor.bootstrapped`. Once any row exists the config grants nothing, and a non-matching email on
 an empty table behaves exactly as an unknown email. The hand-run `wrangler d1 execute` insert (the
-[configure auth and D1 guide](../guides/configure-auth-and-d1.md)) still works and stays documented
+[configure auth and D1 guide](../extend/add-cairn-to-a-sveltekit-app.md)) still works and stays documented
 as the fallback for a site that prefers it.
 
 ```ts
@@ -1046,7 +1046,7 @@ cascade, closing an id-reuse collision where a stale link could later resolve to
 entry's draft; publishing deliberately leaves the rows in place, since [`previewLoad`](#previewload)
 needs them to answer a stale link with "this preview has ended" rather than a bare 404. See [Public
 preview](#public-preview) below for the site-mounted page these actions feed, and [Share a draft
-preview](../guides/share-a-draft-preview.md) for the adopter's full walkthrough.
+preview](../extend/share-a-draft-preview.md) for the adopter's full walkthrough.
 
 `settingsLoad` and `settingsSaveAction` back the tidy settings screen. `settingsLoad` actively probes a
 present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
@@ -1175,7 +1175,7 @@ non-editor"): the edit screen's share affordance, the preceding
 draft, and a site-mounted, never-prerendered
 page renders it through the site's own public composition, so the preview is a real page in the
 site's own app rather than an approximated shell. See [Share a draft
-preview](../guides/share-a-draft-preview.md) for the full adopter walkthrough, including the
+preview](../extend/share-a-draft-preview.md) for the full adopter walkthrough, including the
 `preview_tokens` migration, the mount, and the lifecycle.
 
 **Disambiguation: two unrelated `preview` seams share a word.** [`CairnRuntime.preview`](#types)
@@ -1366,8 +1366,8 @@ with that one entry, and every engine screen the declaration omits lands in the 
 group automatically, with no need to enumerate the rest of the sidebar. Every engine door and every
 site entry's href is additionally gated by the site's declared [access
 map](./core.md#access-map), when one is declared: see [Restrict admin access by
-role](../guides/restrict-admin-access.md) for the map, and [Organize your admin
-nav](../guides/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
+role](../extend/restrict-admin-access.md) for the map, and [Organize your admin
+nav](../extend/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
 icon overrides, and the omission-fallback and `hidden` semantics in practice.
 
 ### `NavLayoutEntry`
@@ -1453,8 +1453,8 @@ shell's foot slot), in engine order; `hidden: true` on an engine reference remov
 purpose (the route itself stays live, since nav placement is never authorization). Every engine
 door and every site entry's href is additionally gated by the site's declared [access
 map](./core.md#access-map), when one is declared: see [Restrict admin access by
-role](../guides/restrict-admin-access.md) for the map, and [Organize your admin
-nav](../guides/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
+role](../extend/restrict-admin-access.md) for the map, and [Organize your admin
+nav](../extend/organize-your-admin-nav.md) for the worked guidance on grouping, collapse defaults,
 icon overrides, and the omission-fallback and `hidden` semantics in practice.
 
 ### `EngineScreenId`
@@ -1732,9 +1732,9 @@ the shell payload serializes an empty record and renders exactly as before this 
 pill on the matching visible nav entry, capped at `99+`; a collapsed section's header shows the
 sum of its visible children's counts, computed from the same live items as the leaf pills, and
 disappears once the section opens (the item pills remain); the count lives in the entry link's
-accessible name, never on the pill span itself, which is `aria-hidden`. See [Organize your admin
-nav](../guides/organize-your-admin-nav.md#badge-a-nav-entry-with-pending-work) for the worked
-guide and the rendering contract in full.
+accessible name, never on the pill span itself, which is `aria-hidden`. That is the rendering
+contract in full. See [Organize your admin nav](../extend/organize-your-admin-nav.md) for the
+layout these counts attach to.
 
 ---
 

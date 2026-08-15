@@ -31,14 +31,6 @@ also a toolkit: a developer's own screen, a roster, an event calendar, a reserva
 inside the same admin and shares its components and its sign-in, so what gets built next reads as
 one product rather than a second app bolted on beside the CMS.
 
-## Superseded pages
-
-Three older sections still sit in this repository and in the published package while the new
-tracks replace them: [the hand-build tutorial](./tutorial/build-your-first-cairn-site.md), [the
-theme tutorial](./tutorial/build-a-theme.md), the guides, and the explanation pages. Nobody
-maintains them now. Where one of them disagrees with a track listed earlier, trust the track.
-The next release drops them.
-
 ## Project files
 
 [README](../README.md), [ROADMAP](../ROADMAP.md), [SECURITY](../SECURITY.md),

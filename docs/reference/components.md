@@ -737,7 +737,7 @@ compose it.
 `PreviewBanner` is the one exception to this barrel's admin-only membership rule: a design-agnostic
 component for a page a site's own visitors reach, not the admin. See [Public
 preview](./sveltekit.md#public-preview) for the `previewLoad` seam it pairs with, and [Share a
-draft preview](../guides/share-a-draft-preview.md) for the full walkthrough.
+draft preview](../extend/share-a-draft-preview.md) for the full walkthrough.
 
 ### `PreviewBanner`
 

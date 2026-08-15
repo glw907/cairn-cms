@@ -151,4 +151,4 @@ Verify a live island on the deployed page, not in the preview.
 
 - [`hydrate` on the components reference](./components.md#hydrate-and-the-island-boundary): the directive-side declaration.
 - [`rendering.islands` on the core reference](./core.md#renderingislands-adapter-member): the adapter registration and the consistency check.
-- [Add an island](../guides/add-an-island.md): the end-to-end recipe.
+- [Add an island](../extend/add-an-island.md): the end-to-end recipe.

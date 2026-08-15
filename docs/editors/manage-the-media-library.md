@@ -38,11 +38,13 @@ format many phone cameras use, and converts it for you automatically.
 
 ## Replacing an image
 
-If you need to swap out an image's picture without touching every place that uses it, select
-**Replace image** from its details. You'll choose a new file, and the editor shows you
-what would change everywhere the image appears before it applies anything. If the new
-picture would break how it displays somewhere, you'll see that up front rather than
-after the fact.
+If you need to swap out an image's picture without touching every place that uses it,
+select **Replace image** from its details. You'll choose a new file. The editor then
+shows you the published entries that will point at the new file, plus a separate note for
+any unpublished edits elsewhere that still keep the old file until they're published.
+Type the image's address to confirm. The editor asks for that every time, whether the
+image is currently in use anywhere or not. Then select the button below it to finish. It
+names how many entries will change.
 
 ## Pushing alt text everywhere it's missing
 
@@ -63,12 +65,16 @@ keep your own copy of anything you might want again.
 
 ## Deleting several images at once
 
-To clear out several images together, select them first: pressing Space selects the one
-you're focused on, Shift with an arrow key extends that to a run of images, and Ctrl (or
-Cmd on a Mac) with A selects everything showing. Selecting any image opens a bar with a
-count and a **Delete** button. As with a single delete, you're shown what would break
-first; anything still in use is skipped and named rather than deleted, so a bulk delete
-never breaks a page that still needs one of the images.
+To clear out several images together, select them first. Each image has a small
+checkbox: in the top-left corner of its thumbnail in grid view, or as the first column
+of its row in list view. Select the checkbox on each image you want. In grid view, you
+can also select from the keyboard: pressing Space selects the one you're focused on,
+Shift with an arrow key extends that to a run of images, and Ctrl (or Cmd on a Mac) with
+A selects everything showing. Selecting any image opens a bar with a count, a **Select
+all** button for everything currently showing, and a **Delete** button. As with a single
+delete, you're shown what would break first. Anything still in use is skipped and named
+rather than deleted, so a bulk delete never breaks a page that still needs one of the
+images.
 
 ## Finding orphaned files
 

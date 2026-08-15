@@ -72,8 +72,9 @@ then come back and delete again.
 ## Publishing everything at once
 
 If several entries have unpublished changes, a **Publish site** button appears near the
-top of the editor, showing how many. Selecting it opens a list of every pending entry
-grouped by type, so you can see exactly what's about to go live before you confirm.
+top of the editor, showing how many. It isn't there while you have an entry open; close
+the entry to see it. Selecting it opens a list of every pending entry grouped by type, so
+you can see exactly what's about to go live before you confirm.
 
 ## Sharing a draft before it's live
 

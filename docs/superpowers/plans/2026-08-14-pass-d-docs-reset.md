@@ -437,3 +437,129 @@ reference lands at 23 pages with the corrected index; and no published page desc
 tooling that is not installable in the same cut, which release one satisfies by
 publishing the tool, `@glw907/cairn-cms-dev`, and the template repo together with this
 tree.
+
+## Post-mortem (2026-08-14)
+
+### What was built
+
+Four audience tracks replace the old guides, tutorial, and explanation arms: `docs/admin`
+(8 pages), `docs/editors` (8 pages), `docs/extend` (31 pages), and the kept `docs/reference`
+arm (24 pages, ledes and index corrections rather than a rebuild; the exit criteria above
+say 23, an estimate the finished tree overran by one). Three gates ship alongside:
+`check:vale` (Google's package on three tracks, Microsoft's on `docs/editors`),
+`check:symbols` (the hallucinated-symbol sweep, resolving every code-voice token a
+published page names against the source tree), and a non-recursive `docs/internal`
+arm-index entry. The old corpus is deleted at cutover; `CHANGELOG.md`'s history survives
+it through a legacy-path map that self-checks (a mapped value must name a file that
+exists, a mapped key must not, and every key must still be cited by a live link).
+
+### The gate found what four earlier rounds missed, and it failed
+
+Task 13's five-stage gate ran ten lens agents against the finished, post-cutover tree:
+four claims sweeps, four blind persona walks, one fishtank cross-track read, one register
+pass. **All four persona walks stopped short of their goal**, and this is the pass's single
+most important result, not a footnote to soften. The admin walker could not make the
+doctor's skipped Cloudflare, D1, and GitHub App checks actually run. The editor walker
+could not find the sign-in page's address, at step one of page one, the very first
+instruction in the track. The extender walker reached a `defineAccess` gate needing a role
+vocabulary no earlier page produced. The reference walker could not learn which adapter
+key turns on media or which enables the nav editor, because two pages named the same
+things two different ways. Every one of these pages had already cleared a fresh-context
+review at the end of its own writing task (stages 0, 1, and 4 of the review methodology,
+plus a single-track persona walk, per track). What caught what four earlier review rounds
+missed was knowledge suppression: an agent briefed with only what its own track states,
+told to record a gap as a guess rather than fill it silently, forced to hit the exact wall
+a first-time reader hits. Every earlier reviewer already knew the missing fact, because it
+had read the code to write the page in the first place, and that knowledge is exactly what
+a blind walk withholds. A review that already knows the answer cannot find the question a
+reader never gets to ask.
+
+### The verification cap, and what it hid
+
+The gate's own verify stage was written `verifiable.slice(0, 24)`, and the findings array
+it sliced was built in a fixed lens order: the four claims sweeps first, then the four
+walks, then the fishtank read, then the register pass. Slicing the front of that array
+drew 24 findings almost entirely from three of the four claims sweeps (`docs/admin`,
+`docs/editors`, and 2 of `docs/extend`'s 18) and reached zero findings from `docs/reference`'s
+claims sweep, zero from any of the four persona walks, zero from the fishtank read, and
+zero from the register pass, 94 findings total left dark. The cap was silent: nothing in
+the gate's own output flagged that three-quarters of its lenses went unverified. A
+follow-up run closed the gap, verifying all 93 (94 minus one, `docs/extend` claims rank 2,
+already covered) findings the cap had skipped, deliberately sampled across every lens
+rather than off the front of the array. **The lesson to carry forward: sample a capped
+verification stage across every lens the findings came from, never off the front of a
+combined array, and log what the cap drops even when time or budget forces one.**
+
+### The refutation rates, and what they say about batching
+
+The gate's own verify stage ran one verifier per finding: of the 24 it checked, 19
+confirmed, 3 narrowed, and 2 refuted, an 8% refutation rate. The follow-up run batched
+findings 8 to 16 per verifier dispatch, one dispatch per lens-and-track slice: of the 93
+it checked, 92 confirmed or narrowed and 1 refuted, a rate near 1%. State this plainly
+rather than reading it as a clean bill of health: **an order-of-magnitude drop in the
+refutation rate when the only thing that changed was batch size is a suspicious result,
+not a reassuring one, and the likeliest explanation is that batching cost rigor rather
+than that the batched findings were genuinely ten times more reliable.** A single verifier
+working eight to sixteen findings in one dispatch has less room, per finding, to run the
+kind of adversarial re-derivation (misquote check, empirical execution, refutation
+attempts) that produced the gate's own 8% and the follow-up's own occasional strong
+refutation. A future gate should keep one verifier per finding for anything blocking-tier,
+batching only for lower-stakes or advisory findings where a lower hit rate is an
+acceptable trade for coverage.
+
+### What the rebuild ruling bought
+
+The ground-up rebuild ruling (docs written clean-room against the code and the recorded
+runs, the old corpus read only by the Task 9 mining sweep after the new tracks were fully
+baked and profile-graded) meant the mining sweep found little the new tracks had lost.
+Its report found exactly one gap page-shaped enough to matter: the old corpus's academic
+case for markdown over rich-text editing and its tool-by-tool competitor comparison have
+no home in the new tree, filed to `ROADMAP.md`'s Later tier as a register question rather
+than folded as a sentence. Everything else the sweep checked against the old pages was
+already covered, or covered better, because the new pages were written from the code
+rather than migrated from prose that had drifted from it. The `sv create` and anchor-count
+corrections below are the other side of that same coin: clean-room writing does not
+protect a page from a fresh mistake, but it means the pass caught its own mistakes against
+the code rather than inheriting the old corpus's.
+
+### Verified claims that turned out wrong, as a standing caution
+
+Two claims this pass itself made, on its own record, and later corrected. Both checked a
+proxy for the tool's actual current behavior rather than the tool itself.
+
+**A `sv create` verdict that cited this repo's own showcase instead of running the tool.**
+Task 2's target manifest first read `examples/showcase/svelte.config.js`, this repo's own
+hand-maintained tree, and reported no toolchain drift on the strength of it. That answers a
+different question than the one asked (`docs/internal/record/2026-08-14-pass-d-target-manifest.md`,
+"The toolchain-drift finding"). Running `npx sv@latest create --template minimal --types ts
+--no-add-ons` (sv 0.17.0) found the real answer: a current scaffold emits no
+`svelte.config.js` at all, wiring the adapter inside `vite.config.ts` instead, which is
+worse than the baseline walk's own drag-point-11 finding had it (not merely a stale file,
+no file to edit).
+
+**An anchor count the conductor "corrected" wrongly with `grep -c`.** The track outlines
+said `is-it-working.md` keeps its 20 anchors; the target manifest's own review pass
+"corrected" that to 21, sourced from `grep -c "docsAnchor"` over `conditions.ts`, which
+counts the interface's field declaration alongside the real assignments, one too many. The
+outline had been right; the manifest's own correction was wrong, and stood until Task 9
+re-derived the true count (21 conditions, all 21 now carrying a `docsAnchor`, 17 distinct
+anchors). Both incidents are a proxy read passing for verification: a repo's own tree
+standing in for the tool it was built from, a text-matching tool count standing in for
+reading the source. Neither survived contact with running the actual thing.
+
+### A fold-coverage gap this close-out found, not the gate
+
+Writing this record's Dispositions section (2026-08-14) surfaced a defect in Task 13's own
+fold stage, after the gate had already reported done. Two of the five fold dispatches
+(`docs/editors`, `docs/extend`) were instructed to act on the gate's original 24
+first-round verdicts as well as the second-round batch each was handed, and one of them
+(`docs/editors`) acted on neither: it folded eight second-round findings and zero of its
+ten first-round claims-sweep findings, leaving eight CONFIRMED or NARROWED defects
+unfixed and unflagged in the tree it reported clean. `docs/extend` folded one of its two
+first-round findings and missed the other. `docs/admin`, the one track whose fold
+dispatch explicitly enumerated and cited every first-round rank by number in its own
+report, got all of them. **A fold agent's own summary is not evidence its scope was
+complete; verify a fold's coverage against the input list it was handed, not against what
+it says it did.** The nine missed findings are filed to `ROADMAP.md`'s Now tier rather
+than fixed here, since fixing them falls outside this close-out's own scope (no page in
+`docs/admin/`, `docs/editors/`, `docs/extend/`, or `docs/reference/` changes in this pass).

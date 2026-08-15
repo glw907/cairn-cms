@@ -3580,8 +3580,452 @@ No docs defect exists on this page; the page is accurate as written and the prop
 
 ## Dispositions
 
-Left empty. This record is the auditable input; a separate fold task triages each of the 118
-findings above (fixed and folded into the docs, promoted to a ROADMAP or friction-log entry, or
-declined with a reason) and fills this section in with what happened to each one. Until that task
-runs, nothing in this record has been acted on.
+Filled in at Pass D's close-out (2026-08-14), from the five fold-workflow reports (`fold:admin`,
+`fold:editors`, `fold:extend`, `fold:reference`, `fold:front-doors`) and the eight second-round
+verify reports (`verify:<slice>`, the ones this record's coverage table marks unverified), all in
+`wf_24b32c77-f45`. Every disposition below was checked against the current tree, not merely
+copied from a fold agent's own summary.
+
+**Headline correction to the fold, found while writing this section.** Each fold agent was
+dispatched with an explicit instruction to also act on the original 24 first-round verdicts
+("the gate's own 24 verdicts are already recorded... read the record for those"), on top of the
+second-round JSON batch it was handed. The `docs/admin` fold did this (all 13 of its claims-sweep
+findings, including the one left unverified, are folded below). The `docs/editors` and
+`docs/extend` folds did not: `docs/editors` folded zero of its ten first-round claims findings
+(eight needed action; two were REFUTED), and `docs/extend` folded one of its two
+(`build-a-site-by-hand.md` rank 2, the `ORIGIN` fix, landed; rank 1, the broken permalink example,
+did not). All nine were still present in the tree exactly as the gate quoted them, found by
+grepping the current pages for each finding's quoted text during this close-out rather than by
+reading the fold reports, which claimed completion.
+
+**All nine were then re-folded (2026-08-14), each independently verified by grep**, so none is
+outstanding. The conductor overrode the close-out's original disposition of filing them to
+`ROADMAP.md`: they are confirmed defects in the corpus this pass exists to make correct, and
+filing them would have shipped nine known-wrong statements. The re-fold dispatches carried a
+proof requirement, that each agent grep for its finding's quoted text and show zero hits, which
+is the check the first round lacked.
+
+The standing lesson is cheap to apply: a fold report is a claim, and confirming that a fold
+landed costs one grep against the text the finding said was there. `docs/reference` carried no
+first-round findings, so it has no equivalent gap.
+
+### Stage 1: the claims sweep
+
+#### `docs/admin` (13 findings)
+
+All 13 folded by `fold:admin`, verified in the tree.
+
+- **Rank 1** (own-your-domain.md, Workers Paid prerequisite) — CONFIRMED — FOLDED: a sentence
+  ahead of the prompt states the dependency, softened to "the run stops" per the verifier's own
+  caveat rather than promising a specific dashboard redirect; a matching row added to
+  `setup-recovery.md`'s domain table.
+- **Rank 2** (is-it-working.md, CSRF condition ids wrongly implied doctor-emitted) — CONFIRMED —
+  FOLDED: the jump list now cites the `guard.rejected` reason field rather than claiming doctor
+  coverage.
+- **Rank 3** (create-your-site.md, dropped `administration:write`/repo-deletion disclosure) —
+  CONFIRMED — FOLDED: the record's own verbatim rewrite restored.
+- **Rank 4** (own-your-domain.md, unexecutable DMARC instruction) — CONFIRMED — FOLDED: rewritten
+  to name SPF/DKIM as the real mechanism. Its code-side twin (the identical string in
+  `create-cairn-site`'s own CLI closing copy and README) was out of scope for a docs fold and is
+  now filed to ROADMAP (Now tier).
+- **Rank 5** (is-it-working.md, svelte.config.js gap over-generalized to every scaffold) —
+  CONFIRMED — FOLDED: scoped to hand-built sites only; a `create-cairn-site` site always has the
+  file.
+- **Rank 6** (troubleshooting.md, Publish-button-disappeared misattributed to the rare cause) —
+  CONFIRMED — FOLDED: rewritten to lead with the common case (nothing pending) before the
+  `github.unreachable` case.
+- **Rank 7** (is-it-working.md, Cloudflare token wrongly said to live in the Worker) — CONFIRMED —
+  FOLDED: split into a run-it-yourself (Cloudflare) / can't-run-it-at-all (GitHub App key,
+  write-only Worker secret) explanation, this pass's fix for the failed persona walk.
+- **Rank 8** (is-it-working.md, undisclosed `--send-test` opt-in) — CONFIRMED — FOLDED: disclosed
+  inline; the misplaced duplicate sentence under "Probe the deployed admin" removed.
+- **Rank 9** (is-it-working.md, `auth.store-unreachable` Act step promises what a re-run can't do
+  on an already-live site) — CONFIRMED — FOLDED: rewritten to the developer-facing `wrangler d1
+  execute`/seed remediation sourced from the condition's own string, since the verifier found the
+  check can only fail on a hand-wired site in the first place.
+- **Rank 10** (create-your-site.md, missing $6/month all-in figure) — NARROWED — FOLDED as
+  narrowed: the figure added; the "drop the equivalence claim" half of the proposal declined
+  (that sentence was already true).
+- **Rank 11** (is-it-working.md, "adapter" the one banned term in the track) — UNVERIFIED in the
+  gate itself — FOLDED via its duplicate, register rank 1 (CONFIRMED): "adapter" dropped.
+- **Rank 12** (own-your-domain.md, browser-moment count contradicts its own prerequisite list) —
+  CONFIRMED — FOLDED: made conditional on prior GitHub-App authorization, per the verifier's
+  wording precisions.
+- **Rank 13** (invite-editors.md, "every person is owner or editor" ignores custom roles) —
+  CONFIRMED — FOLDED in all three places the verifier found the claim repeated, not only the one
+  originally quoted.
+
+#### `docs/editors` (10 findings)
+
+**Eight of ten NOT FOLDED** (see the headline correction above); the two REFUTED findings needed
+no action.
+
+- **Rank 1** (when-something-goes-wrong.md, quoted refusal heading never the visible banner text)
+  — CONFIRMED — **NOT FOLDED by the first fold round; FOLDED in the re-fold (2026-08-14), verified by grep.**
+- **Rank 2** (write-in-the-editor.md, decorative body image never actually clears the needs-alt
+  flag) — CONFIRMED — **NOT FOLDED by the first fold round; FOLDED in the re-fold (2026-08-14), verified by grep.**
+- **Rank 3** (publish-and-history.md, Publish-site button absent while an entry is open, page
+  states only the pending-count condition) — NARROWED — **NOT FOLDED by the first fold round; FOLDED in the re-fold (2026-08-14), verified by grep.** The verifier's own
+  narrowing (the sentence is incomplete, not false; "the editor" denotes the whole admin app in
+  this track's vocabulary) should govern the eventual fix. Filed to ROADMAP.
+- **Rank 4** (README.md, "Get help" link claimed to render conditionally and open the site's own
+  contact) — REFUTED. Both empirical claims were false: the runtime composes a default support
+  contact (`cairn.pub/help`, this documentation tree itself), so the sentence is accurate as
+  written. No action; the proposed rewrite would have made the page false.
+- **Rank 5** (manage-the-media-library.md, promised "you'll see that up front" display-breakage
+  warning on replace has no code referent) — CONFIRMED — **NOT FOLDED by the first fold round; FOLDED in the re-fold (2026-08-14), verified by grep.**
+- **Rank 6** (manage-the-media-library.md, bulk-delete keyboard chords with no pointer path named)
+  — CONFIRMED — **NOT FOLDED by the first fold round; FOLDED in the re-fold (2026-08-14), verified by grep.** The verifier found the gap worse than raised (the library's list
+  view has no keyboard model at all; the per-row checkbox is the only path). Filed to ROADMAP.
+- **Rank 7** (manage-the-media-library.md, unconditional typed-confirm gate on Replace
+  undocumented) — NARROWED — **NOT FOLDED by the first fold round; FOLDED in the re-fold (2026-08-14), verified by grep.** The verifier refuted the "dead button" framing and
+  the "same as delete" wording (delete's gate is conditional, replace's is not); the surviving
+  defect is a one-clause omission. Filed to ROADMAP.
+- **Rank 8** (write-in-the-editor.md, figure-edit button label wrongly said to key on caption) —
+  CONFIRMED — **NOT FOLDED by the first fold round; FOLDED in the re-fold (2026-08-14), verified by grep.** The verifier's own refinement (key the trigger on being in a figure
+  at all, not "caption, placement, or both," since a figure with neither still flips the label)
+  should govern the fix. Filed to ROADMAP.
+- **Rank 9** (manage-the-media-library.md, AVIF omitted from the accepted-types list) — REFUTED.
+  The page is accurate: every editor upload runs through `ingestFile`, which rejects AVIF as
+  decode-unsupported, so the server-side allow-list including AVIF never reaches an editor. No
+  docs action; the genuine code-level inconsistency (allow-list permits what no upload path can
+  produce) is filed to ROADMAP as an engine fix (Now tier).
+- **Rank 10** (write-in-the-editor.md, "the pencil icon next to it" misdirects to the fold-gutter
+  chevron) — CONFIRMED — **NOT FOLDED by the first fold round; FOLDED in the re-fold (2026-08-14), verified by grep.**
+
+#### `docs/extend` (18 findings)
+
+Ranks 1-2 verified in the gate itself; ranks 3-18 verified second-round. 17 folded by
+`fold:extend`; rank 1 missed (see headline correction).
+
+- **Rank 1** (build-a-site-by-hand.md, Milestone 3 sends the reader to a 404ing
+  `/2026/08/hello`; the real permalink is `/posts/hello`, and the "routing: 'feed'" explanation is
+  itself false) — CONFIRMED — **NOT FOLDED by the first fold round; FOLDED in the re-fold (2026-08-14), verified by grep.**
+- **Rank 2** (build-a-site-by-hand.md, `ORIGIN` left at `localhost` through two deploys, baking a
+  wrong canonical URL/`og:url`/JSON-LD into prerendered pages) — CONFIRMED — FOLDED: `ORIGIN` now
+  updated to the deployed origin before the rebuild step.
+- **Rank 3** (data-tiers.md, `assets` named where the real adapter member is `media`) — NARROWED —
+  FOLDED as narrowed: renamed to `media`; the verifier's own tsc probe showed the proposed
+  "declaring `assets` is a type error" claim was wrong (the generic const-inference position
+  silently accepts and ignores it), so the fold note says so instead.
+- **Rank 4** (debug-your-site.md, same `assets`/`media` mistake in the `media.resolver_absent`
+  row) — CONFIRMED — FOLDED.
+- **Rank 5** (debug-your-site.md, `rate_limit_failed` Fix column misattributes `limit()` to the
+  config rather than the resolved limiter) — CONFIRMED — FOLDED.
+- **Rank 6** (announce-on-publish.md, definitional rule omits the draft exclusion) — NARROWED —
+  FOLDED as narrowed: the verifier found the page already states the draft exclusion one sentence
+  later, so the real defect was the shared causal clause being false for drafts specifically;
+  folded that correction rather than the original "the rule already covers it" framing.
+- **Rank 7** (what-the-scaffold-wrote.md, undocumented `APP_DB` binding and `migrations-app/`) —
+  CONFIRMED — FOLDED.
+- **Rank 8** (what-the-scaffold-wrote.md, leftover `probe-craft/` dev fixture route unlisted) —
+  CONFIRMED — FOLDED, as a doc-only fix; excluding the fixture from the bake itself is out of
+  scope.
+- **Rank 9** (configure-rendering.md, "the rest of the leaf types" wrong against the real 10-member
+  `ATTRIBUTE_TYPES`) — CONFIRMED — FOLDED with the exact enumeration; the fold agent caught its own
+  first-draft error (adding `multiselect`, which is not in `ATTRIBUTE_TYPES` either) before
+  finalizing.
+- **Rank 10** (build-a-site-by-hand.md, "named at the point it matters" unkept for Workers Paid) —
+  CONFIRMED — FOLDED: Milestone 5 now names the dependency, pointing at
+  `add-cairn-to-a-sveltekit-app.md`.
+- **Rank 11** (wire-the-delivery-surface.md, `_headers` claim and a control experiment flagged as
+  unrecorded) — NARROWED — FOLDED as narrowed: the verifier refuted the "cut it" half outright by
+  reading the shipped adapter's own source (7.2.9 copies only a root `_headers`, no Response-header
+  path into it), so the fix cites the adapter source rather than deleting the true statement.
+- **Rank 12** (define-an-adapter-and-schema.md, pointer promises nesting-cap coverage
+  `content-model.md` never delivers) — CONFIRMED — FOLDED: the explanation added to
+  `content-model.md`.
+- **Rank 13** (choose-an-ai-posture.md, `'invite'` wrongly said to emit no `Disallow` lines) —
+  CONFIRMED — FOLDED, backed by an executed repro.
+- **Rank 14** (docs/extend/README.md, `navLayout` version-history misattribution) — CONFIRMED —
+  FOLDED: corrected to name `AdminShellData`'s nav fields and `navFilter`'s types as what broke at
+  0.86.0; the same dangling-antecedent "again" fixed in `migration-notes.md`.
+- **Rank 15** (rotate-the-github-app-key.md, unsourced 25-key cap and step-6 "at least one key"
+  rule) — NARROWED — FOLDED as narrowed: the verifier fetched GitHub's own linked page and found
+  both facts stated there; only the 25-key cap is trimmed per the register's link-don't-restate
+  rule, and the load-bearing "at least one key" sentence is kept (the finding's claim that the
+  rotation order doesn't depend on it was refuted).
+- **Rank 16** (data-tiers.md, duplicated manifest-row-contents sentence) — CONFIRMED — FOLDED,
+  keeping the one non-duplicate contrast clause.
+- **Rank 17** (enable-tidy.md, "every convention below defaults off" contradicted by its own next
+  table row) — CONFIRMED — FOLDED.
+- **Rank 18** (add-a-second-audience.md, "8-digit" stated as fixed rather than
+  8-digit-by-default) — CONFIRMED — FOLDED.
+
+#### `docs/reference` (13 findings)
+
+All 13 folded by `fold:reference`, verified in the tree. None were part of the gate's first-round
+batch.
+
+- **Rank 1** (core.md, component-author helpers documented under the wrong subpath) — CONFIRMED —
+  FOLDED: the `declare function` block replaced with a pointer to `/render`, which also fixed
+  `headRow`'s stale two-parameter signature by removing the duplicate.
+- **Rank 2** (sveltekit.md, `deps.branding` is not a real path) — CONFIRMED — FOLDED to
+  `deps.auth.branding`.
+- **Rank 3** (core.md, `multiselect` missing from the leaf-attribute-types enumeration) —
+  CONFIRMED — FOLDED, added to the attribute-throw list.
+- **Rank 4** (core.md, `CairnAdapter` undercounted at six members instead of nine) — CONFIRMED —
+  FOLDED with the corrected, four-required member table.
+- **Rank 5** (auth-crypto.md, `tokensMatch` wrongly described as UTF-16) — CONFIRMED — FOLDED to
+  UTF-8 (`TextEncoder`).
+- **Rank 6** (admin-routes.md, redirect-table row terser than its siblings, omitting "not the
+  site-wide first") — CONFIRMED — FOLDED, the `/admin` index row made role-aware.
+- **Rank 7** (cairn-audit.md, "eleven questions" stale against its own "fourteen rules" forty lines
+  up) — CONFIRMED — FOLDED to "fourteen questions."
+- **Rank 8** (admin-grammar-tokens.md, future-tense `cairn-audit` mention though it has shipped) —
+  CONFIRMED — FOLDED to present tense with the real invocation.
+- **Rank 9** (admin-routes.md, opening sentence undercounts the `/admin` mount at two files instead
+  of the doctor's required four) — NARROWED — FOLDED: the opening sentence fixed; the sub-claim
+  about `README.md`'s "two-file catch-all mount" left alone per the verifier (a narrower, still-true
+  statement, not a contradiction).
+- **Rank 10** (core.md, `AssetConfig` Types row links a nonexistent `assets` adapter member) —
+  CONFIRMED — FOLDED, corrected to `media` with the working `#media-adapter-member` anchor.
+- **Rank 11** (core.md, `headRow`'s declared block carries the stale two-parameter signature) —
+  CONFIRMED — FOLDED (same fix as rank 1, the `/render` pointer).
+- **Rank 12** (admin-toolkit.md, opening tier definition names three of four field primitives) —
+  CONFIRMED — FOLDED, `FieldRow` added.
+- **Rank 13** (vite.md, showcase snippet missing the `fragments` glob and the showcase's other
+  build-time plugins) — CONFIRMED — FOLDED, with an honest note about what the snippet omits.
+
+### Stage 2: the blind persona walks
+
+#### `docs/admin` walk (6 findings)
+
+- **Rank 1** (is-it-working.md, no path to make the skipped Cloudflare/D1/GitHub App checks
+  actually run) — CONFIRMED, the walker's stopping point — FOLDED: the same fix as claims rank 7
+  (the run-it-yourself/can't-run-it-at-all split), the pass's headline fix for the failed walk.
+- **Rank 2** (create-your-site.md, no stated GitHub/Cloudflare account prerequisite) — CONFIRMED —
+  FOLDED: prerequisites, sign-up links, and "signs in, doesn't create" added.
+- **Rank 3** (before-you-start.md, workers.dev-only site cannot send sign-in email, undisclosed
+  domain dependency) — CONFIRMED, narrowed on remedy — FOLDED: the free-until boundary now states
+  the domain dependency; the verifier found the proposed rewrite of item 2's "nothing new to buy"
+  sentence was itself accurate and should not change.
+- **Rank 4** (before-you-start.md, claimed no page states which run needs a Cloudflare token) —
+  REFUTED: `own-your-domain.md` states it in detail, on page 3 of the same journey the walker read.
+  No action; folded together with register rank 14's narrower, still-real residual (the token
+  *count*, one plus a conditional second, could be clearer up front).
+- **Rank 5** (is-it-working.md, wrangler steps as written need a credential the reader was never
+  given) — NARROWED — FOLDED as narrowed: only the authorization question survives (does the
+  setup-time Cloudflare sign-in still authorize a bare `wrangler` later — yes); the "where to run
+  it" and developer-only classification sub-claims were refuted against the tree.
+- **Rank 6** (before-you-start.md, blanket claim that a default site produces every developer-routed
+  condition) — NARROWED — FOLDED as narrowed: the blanket claim was false and replaced with the
+  verified exceptions only (`config.dependency-floors-unmet` can fire unprompted;
+  `config.site-config` skips on every scaffolded site, filed separately to ROADMAP as its own
+  engine defect, see the SITE_CONFIG_PATHS entry above).
+
+#### `docs/editors` walk (7 findings)
+
+All 7 folded by `fold:editors`.
+
+- **Rank 1** (welcome.md, no page states the sign-in page's address) — CONFIRMED, the walker's
+  stopping point — FOLDED: step 1 now names the site's own address plus `/admin`, with a worked
+  example and a bookmark instruction; no configurable-path hedge, since the mount is hardcoded.
+- **Rank 2** (write-in-the-editor.md, the create dialog's address field entirely undocumented) —
+  CONFIRMED — FOLDED: auto-fill behavior, editability, and the Details-panel path described.
+- **Rank 3** (publish-and-history.md, "Select Save"/"Select Publish" used before ever being
+  located) — CONFIRMED — FOLDED: a locating paragraph added up top (header band vs. narrow-screen
+  bottom bar), plus the overflow menu's three contents named.
+- **Rank 4** (manage-your-tag-vocabulary.md, no page says where a tag is applied to an entry) —
+  CONFIRMED — FOLDED, pointing to the entry's Details panel.
+- **Rank 5** (when-something-goes-wrong.md, "too large, even after shrinking" misattributed to
+  pixel dimensions) — NARROWED — FOLDED as narrowed: rewritten to name the site-configurable
+  file-size cap (the dominant real cause) rather than a pixel number, since the dimension path is
+  reachable only through the near-unreachable HEIC re-encode branch.
+- **Rank 6** (manage-the-media-library.md, no page says how to reach the screen) — CONFIRMED —
+  FOLDED, naming the sidebar label **Library**.
+- **Rank 7** (publish-and-history.md, no way to view a published entry, no address-pattern stated)
+  — NARROWED — FOLDED as narrowed: the verifier refuted the proposed "site address + slug"
+  fallback (`defaultPermalink` gives that pattern only to Pages); folded instead as a
+  developer-set-per-kind pattern with an ask-your-owner fallback.
+
+#### `docs/extend` walk (12 findings)
+
+All 12 folded by `fold:extend`.
+
+- **Rank 1** (add-a-custom-admin-screen.md, `defineAccess` needs a role vocabulary no page produces
+  for a site without its own `defineRoles`) — NARROWED, the walker's stopping point — FOLDED: a
+  Precondition paragraph added to `restrict-admin-access.md` naming `DEFAULT_ROLES`; the
+  verifier's narrowing dropped the finding's false "only add-a-second-audience produces `roles`"
+  supporting claim (`restrict-admin-access.md` already links `defineRoles`).
+- **Rank 2** (add-a-custom-admin-screen.md, worked `hooks.server.ts` snippets each bare-overwrite
+  `handle`, silently discarding `createAuthGuard`) — CONFIRMED — FOLDED: changed to
+  `sequence(createAuthGuard(), wireAuditSink)`.
+- **Rank 3** (build-a-site-by-hand.md, "named at the point it matters" for Workers Paid unkept) —
+  CONFIRMED — FOLDED (same fix as claims rank 10).
+- **Rank 4** (build-a-site-by-hand.md, `ORIGIN` never revisited after Milestone 3) — CONFIRMED —
+  FOLDED (same fix as claims rank 2).
+- **Rank 5** (add-cairn-to-a-sveltekit-app.md, `AUDIT_DB` binding never provisioned) — NARROWED —
+  FOLDED as narrowed: the verifier refuted the "must not share the auth database" framing
+  (`sveltekit.md:528` explicitly permits it); folded as a dedicated-binding recommendation instead.
+- **Rank 6** (add-a-custom-admin-screen.md, `Env` type imported from a file no page says to write)
+  — NARROWED — FOLDED as narrowed: the verifier found `Env` already documented at the
+  `createSectionAction` anchor the page links; folded a note pointing there plus the `CLUB_DB`
+  provisioning gap.
+- **Rank 7** (declare-your-own-concept.md, `postsRaw` snippet self-imports and redeclares an export
+  `content.ts` already carries) — CONFIRMED — FOLDED, shown as a full amended `content.ts`.
+- **Rank 8** (docs/extend/README.md, "neither assumes the other has run" contradicted by
+  `define-an-adapter-and-schema.md`'s own stated precondition) — CONFIRMED — FOLDED.
+- **Rank 9** (build-a-site-by-hand.md, empty `App.Platform` namespace fails `svelte-check` on a
+  custom route reading `platform.env`) — NARROWED — FOLDED as narrowed: the verifier refuted "buried
+  in a table cell" (it's a full worked block in `admin-routes.md`) and "every page's criterion is
+  `npm run check`"; folded a forward-note linking that worked block.
+- **Rank 10** (docs/extend/README.md, evaluation named as a reason to be here with no route to
+  `why-cairn.md`) — CONFIRMED — FOLDED, a Why-cairn routing line added.
+- **Rank 11** (declare-your-own-concept.md, `cairnManifest`'s `content` map silently omits a
+  concept missing from it, unlike the throwing site-indexes path) — CONFIRMED — FOLDED (same fix
+  as rank 7, the asymmetry noted).
+- **Rank 12** (reuse-content-across-entries.md, every adapter `render` on the track drops
+  `resolveFragment`, so `::include` never resolves) — CONFIRMED — FOLDED: `resolveFragment` added
+  to all three canonical render snippets across the track.
+
+#### `docs/reference` walk (8 findings)
+
+All 8 folded by `fold:reference`.
+
+- **Rank 1** (core.md/media.md/sveltekit.md, `assets` named where the real adapter member is
+  `media`) — CONFIRMED — FOLDED across all three pages (same media/assets sweep as extend claims
+  rank 3).
+- **Rank 2** (admin-routes.md/sveltekit.md/core.md, `editor.nav` vs. `navMenu` read as a naming
+  collision) — NARROWED — FOLDED as narrowed: the verifier found both names correct at their own
+  layer (adapter vs. runtime); the real gap, `NavMenuConfig`'s members documented nowhere, closed
+  with a new `core.md` section, verified against source (not the finding's own wrong member list).
+- **Rank 3** (core.md, `CairnAdapter` undercounted at six members) — CONFIRMED — FOLDED (same fix
+  as claims rank 4).
+- **Rank 4** (render.md/core.md, `headRow`'s real three-parameter signature vs. core.md's stale
+  two-parameter copy) — CONFIRMED — FOLDED (same fix as claims rank 1/11).
+- **Rank 5** (log-events.md, `auth.link.requested` cites a nonexistent `/admin/auth/request` URL)
+  — CONFIRMED — FOLDED to the real `?/request` action.
+- **Rank 6** (sveltekit.md, `MEDIA_BUCKET` wrongly implied to be a fixed binding name) — CONFIRMED
+  — FOLDED, clarified as the conventional (not required) name.
+- **Rank 7** (components.md, worked snippet imports `siteConfig` without declaring it) — CONFIRMED
+  — FOLDED, `siteConfig` added to the import; the proposed retype of `data`'s type declined per the
+  verifier (the existing type was already correct).
+- **Rank 8** (sveltekit.md, `createCairnAdmin`'s `attention` deps-bag wiring left to inference) —
+  NARROWED — FOLDED as a low-priority DX addition, per the verifier (nothing on the page is false;
+  the answer is one table away, not a genuine unanswerability).
+
+### Stage 3: the fishtank cross-track read (15 findings)
+
+14 of 15 folded; rank 12 targets a file outside this repo and has no owning fold.
+
+- **Rank 1** (is-it-working.md, wrangler Act step requires an unproduced, uncredentialed tool) —
+  CONFIRMED — FOLDED together with admin walk rank 5 (the setup-time sign-in already authorizes
+  it).
+- **Rank 2** (is-it-working.md, svelte.config.js gap wording reads as contradicting a
+  create-cairn-site admin's own tree) — NARROWED — FOLDED together with claims rank 5 (the same
+  underlying passage, scoped to hand-built sites only).
+- **Rank 3** (own-your-domain.md, closing sentence implies this CLI is still what you run for an
+  engine update) — CONFIRMED — FOLDED, corrected to name it as a developer's job.
+- **Rank 4** (docs/README.md, "Svelte developer extending a site?" bullet states a false universal
+  precondition) — CONFIRMED — FOLDED by `fold:front-doors`, split into the two real doors.
+- **Rank 5** (write-in-the-editor.md/add-an-image.md, the alt-text round trip claimed mutual, only
+  one direction wrong) — NARROWED — FOLDED as narrowed: only the forward pointer trimmed; the
+  correctly-resolving back-pointer left untouched.
+- **Rank 6** (publish-and-history.md, Share preview link stated unconditionally though it is an
+  opt-in per-site feature) — CONFIRMED — FOLDED with the track's existing conditional idiom.
+- **Rank 7** (rotate-the-github-app-key.md, wrong page named as the App's producer, and unlinked
+  unlike its siblings) — CONFIRMED — FOLDED, the Precondition repointed.
+- **Rank 8** (welcome.md, no address given for the sign-in page — same underlying gap as editors
+  walk rank 1) — CONFIRMED — FOLDED together with editors walk rank 1.
+- **Rank 9** (is-it-working.md, two links dangling with no anchor on their target) — CONFIRMED —
+  FOLDED together with claims rank 5, both pointed at the `#wire-the-dev-backend-and-the-csrf-handoff`
+  anchor.
+- **Rank 10** (docs/README.md, no link anywhere to the reference index) — NARROWED — FOLDED by
+  `fold:front-doors`; the verifier found cairn-pub's hand-authored `/docs` page already carries a
+  Reference door, so the gap is confined to the GitHub/npm reader, and a sixth routing line was
+  added.
+- **Rank 11** (docs/admin/README.md, proposed 1-7 journey reorder to fix prev/next chaining) —
+  NARROWED — FOLDED as narrowed: the verifier found the reorder itself doesn't fix the stated
+  problem and would put recovery before verification; only the section retitle ("The journey, in
+  order" → "The pages, roughly in order") was taken.
+- **Rank 12** (`cairn-pub/_redirects`, a redirect losing its anchor fragment on a multi-way split)
+  — NARROWED — **no owning fold; not acted on.** The target file lives in the separate `cairn-pub`
+  repo, which no Pass D fold dispatch touched. The verifier's own assessment: a defensible
+  refinement resting on an unverified assumption about Cloudflare's destination-fragment
+  pass-through, and there's a real counterargument the finding doesn't weigh (landing at the arm
+  index top vs. mid-scroll). Left for whoever next touches `cairn-pub/_redirects`; not filed to
+  ROADMAP since it names a fact this repo can't verify and cairn-pub isn't this repo's roadmap.
+- **Rank 13** (doctor.md, stale "Cloudflare readiness page" link label) — CONFIRMED — FOLDED to
+  "Is it working?".
+- **Rank 14** (before-you-start.md, three-things-stand-between-you enumeration and token-count
+  precision) — NARROWED — FOLDED together with admin walk rank 4's residual: item 3 now
+  distinguishes the one token from the conditional second wider one.
+- **Rank 15** (admin-grammar-tokens.md, sole reference page with an arm prefix in its H1) —
+  NARROWED — FOLDED, and corrected in scope: the verifier found `log-events.md` carries the
+  identical prefix, so both pages had the prefix dropped, not only the one named.
+
+### Stage 4: the register pass (16 findings)
+
+All 16 folded, spread across four fold agents by page.
+
+- **Rank 1** (is-it-working.md, "adapter" the track's one banned-term leak) — CONFIRMED — FOLDED
+  by `fold:admin` (same finding as claims rank 11); the proposed parenthetical rewrite of "content
+  concepts" declined (no rule bans "concept").
+- **Rank 2** (docs/extend/README.md, Vocabulary section admiring its own precision) — CONFIRMED —
+  FOLDED by `fold:extend`, de-self-admired.
+- **Rank 3** (core.md and ten reference siblings, contributor-voice ledes addressed to a would-be
+  contributor) — NARROWED — FOLDED by `fold:reference` as narrowed: the verifier found the
+  reference arm is explicitly chartered as a shared surface, so the proposal to relocate the
+  membership rules to `docs/internal/` was declined; only the "Anything proposed here must be..."
+  phrasing was reworded to a descriptive boundary statement.
+- **Rank 4** (build-a-site-by-hand.md, Workers Paid precondition promise unkept) — CONFIRMED —
+  FOLDED by `fold:extend`, together with claims rank 10.
+- **Rank 5** (own-your-domain.md, "admission price" metaphor both defines the step and names the
+  page's own anatomy) — CONFIRMED — FOLDED by `fold:admin`, both instances removed.
+- **Rank 6** (data-tiers.md, duplicated manifest-row sentence) — CONFIRMED — FOLDED by
+  `fold:extend`, together with extend claims rank 16.
+- **Rank 7** (create-your-site.md, "deploy" never glossed at first use) — CONFIRMED — FOLDED by
+  `fold:admin`.
+- **Rank 8** (setup-recovery.md/own-your-domain.md, "CLI" the acronym) — NARROWED — FOLDED by
+  `fold:admin`: "this CLI" → "this tool," per the register's plain-language convention rather than
+  a contract breach.
+- **Rank 9** (rotate-the-github-app-key.md, states a link-don't-restate boundary and then crosses
+  it seven lines later) — CONFIRMED — FOLDED by `fold:extend`, the dashboard-navigation breadcrumb
+  trimmed.
+- **Rank 10** (add-cairn-to-a-sveltekit-app.md, GitHub console section names and scroll
+  directions) — CONFIRMED — FOLDED by `fold:extend`, trimmed behind the page's existing link to
+  GitHub's own guide.
+- **Rank 11** (reference/README.md, a sentence restating its own preceding clause) — CONFIRMED —
+  FOLDED by `fold:reference`, cut.
+- **Rank 12** (setup-recovery.md, "the reconcile commit" an engine-internal name unglossed) —
+  CONFIRMED — FOLDED by `fold:admin` to "that commit."
+- **Rank 13** (write-in-the-editor.md, "chrome" interface jargon on the plainest track) —
+  CONFIRMED — FOLDED by `fold:editors` to "the toolbar and buttons."
+- **Rank 14** (auth-channel-security-model.md, editorial rationale for the docs' own organization,
+  and a "task guide" anatomy-name citation) — CONFIRMED — FOLDED by `fold:extend`, both removed.
+- **Rank 15** (why-cairn.md, ungated `0.94.0` version pin) — NARROWED — FOLDED by
+  `fold:front-doors`: the pin is not literally false (0.94.0 is current), so the "not literally
+  true" framing was declined; the durability concern was folded, the pin dropped and the durable
+  claim about the seam moving across two minors kept.
+- **Rank 16** (add-a-second-audience.md, `ManageEditors` component-name link text used for an
+  operator-facing screen) — NARROWED — FOLDED by `fold:extend`: only the link text changed to plain
+  screen language; the routing target was already correct.
+
+## Cross-reference: the three refutations, gathered
+
+Three findings did not survive independent verification across both rounds: `docs/editors/README.md`
+claims rank 4 and `docs/editors/manage-the-media-library.md` claims rank 9 (both reasoned above in
+"The refutations, with their reasoning," both from the gate's own first-round verify), plus
+`docs/admin/before-you-start.md` walk rank 4 (second round, reasoned in its own verdict above). All
+three needed no docs fold. One produced a real, out-of-scope residue that is filed rather than
+fixed: the AVIF allow-list/ingest mismatch (`docs/editors` claims rank 9, filed to ROADMAP as an
+engine fix). The other two left nothing behind: rank 4 of the README.md finding was simply wrong,
+and the fact `before-you-start.md` walk rank 4 claimed no page states is stated in full, three
+pages later in the same journey the walker read.
+
+## Summary counts
+
+- **118 findings total.** 105 folded into the docs as CONFIRMED or NARROWED (in some cases folded
+  together where two lenses raised the same underlying gap). 3 REFUTED, no fold needed. 9 CONFIRMED
+  or NARROWED findings were not folded (the `docs/editors`/`docs/extend` first-round gap) and are
+  now owned by a ROADMAP entry. 1 finding (fishtank rank 12) has no owning fold, since its target
+  lives outside this repo.
+- **3 findings routed to ROADMAP as engine or cross-repo fixes rather than docs fixes:** the DMARC
+  string duplicated in `create-cairn-site`'s own CLI copy and README (admin claims rank 4's
+  code-side twin), the AVIF server-allow-list/client-ingest mismatch (editors claims rank 9's real
+  residue), and the doctor's `SITE_CONFIG_PATHS` gap (admin walk rank 6's revised claim, flagged
+  "worth filing separately" by its own verifier).
+- **9 findings routed to ROADMAP as still-owed docs fixes**, the `docs/editors`/`docs/extend`
+  first-round fold gap above.
 

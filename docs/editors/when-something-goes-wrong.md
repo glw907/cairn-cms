@@ -41,11 +41,13 @@ through your draft, make sure it still says what you want, and save again.
 but making it live ran into the same kind of conflict above. Nothing is lost. Select
 Publish again.
 
-**"This page links to N missing pages."** with a list of addresses: a link in your draft
-points somewhere that doesn't exist on your site, maybe because of a typo, or because the
-page it pointed to was renamed or removed. Each broken link in the list has a **Remove
-link** button beside it. Fix the link yourself in the text, or use the button to take
-it out, then save again.
+**"This page links to a page that no longer exists. Remove the broken link and save
+again."**, or, with more than one broken link, **"This page links to pages that no
+longer exist. Remove the broken links and save again."** Either way you'll see a list of
+addresses. A link in your draft points somewhere that doesn't exist on your site, maybe
+because of a typo, or because the page it pointed to was renamed or removed. Each broken
+link in the list has a **Remove link** button beside it. Fix the link yourself in the
+text, or use the button to take it out, then save again.
 
 **"Saved. Note: this page links to unpublished pages (their addresses), which will 404
 until published."** Your save went through. One of the pages you linked to exists but

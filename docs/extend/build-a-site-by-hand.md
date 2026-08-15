@@ -489,9 +489,11 @@ export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
 </article>
 ```
 
-Restart the dev server, and visit `/2026/08/hello` (posts route by date under `routing: 'feed'`;
-run `svelte-kit sync` or just reload if the route doesn't resolve on the first try). You should
-see your rendered entry.
+Restart the dev server, and visit `/posts/hello`. Every concept defaults to the permalink
+pattern `/<id>/:slug`, except `pages`, which defaults to `/:slug`, and the default `datePrefix`
+of `day` strips the entry filename's `2026-08-14-` stem from the slug. `routing: 'feed'` marks
+the entry dated and feed-eligible. It doesn't shape the URL. Run `svelte-kit sync` or reload if
+the route doesn't resolve on the first try. You should see your rendered entry.
 
 This is the minimum public surface. A real site also wants the raw-markdown twin, the feed, the
 sitemap, and `robots.txt`; [Wire the delivery surface](./wire-the-delivery-surface.md) covers all

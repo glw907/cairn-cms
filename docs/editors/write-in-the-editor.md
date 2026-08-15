@@ -101,18 +101,21 @@ text; see
 Write alt text for what the picture contributes where it sits, not a full description of
 everything in it. Mark an image decorative when it carries no information of its own,
 such as a plain divider or background texture. An image left with neither stays flagged
-as needing alt text until you describe it or mark it decorative.
+as needing alt text until you describe it.
 
-If you mark a picture in your text decorative, then close the entry and reopen it, it
-reads as needing alt text again. Nothing is wrong; there's simply nowhere in the text
-itself to remember that choice. Leave it; marking it decorative still works when you
-publish, it just doesn't stay checked the next time you look.
+Marking a picture in your text decorative doesn't clear that flag. It stays flagged as
+needing alt text the whole time you're writing, because there's nowhere in the text
+itself to record the choice. Leave it: this doesn't change what happens when you publish,
+and your published page still treats the picture as decorative either way. The one
+picture where marking it decorative does clear the flag is an entry's lead picture, set
+from Details rather than the text.
 
 Once an image is in your draft, you can give it a caption and choose how it sits on the
 page. Put your cursor on the image, then select the toolbar button whose tooltip reads
 **Wrap the image at the cursor in a figure**. It stays dim until your cursor is on an
-image, and once the image has a caption the same button reads **Edit the figure at the
-cursor**. You'll get:
+image. Once you've used it on that image, the image sits in a figure. The same button
+then reads **Edit the figure at the cursor**, whether you've given it a caption or not.
+You'll get:
 
 - A **caption**, the line of text shown under the image for everyone reading the page.
   This is different from alt text: a caption is always visible, and alt text is only read
@@ -151,9 +154,10 @@ ends.
 
 If your site offers a palette of these, the **Insert block** button opens it and walks
 you through filling one in with a short form rather than typing the marks yourself.
-Placing your cursor inside a block you already inserted and selecting the pencil icon
-next to it reopens that same form so you can adjust it. If the pencil is grayed out, that
-block can't be edited as a form; edit its text directly instead.
+Placing your cursor inside a block you already inserted and selecting the pencil button
+in the toolbar, right beside **Insert block**, reopens that same form so you can adjust
+it. If the pencil is grayed out, that block can't be edited as a form; edit its text
+directly instead.
 
 Every block starts out collapsed to a single line, so a block-heavy entry reads as
 writing first when you open it. Select the control in the margin, or just put your cursor

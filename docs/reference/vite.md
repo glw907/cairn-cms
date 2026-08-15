@@ -1,9 +1,9 @@
 # Vite (`@glw907/cairn-cms/vite`)
 
-Anything proposed here must be a plugin a site wires into its own `vite.config.ts`. This subpath
-holds the build-time manifest plugin. The `cairnManifest()` plugin evaluates a site's
+This subpath holds the build-time manifest plugin. The `cairnManifest()` plugin evaluates a site's
 content corpus through the build's own Vite resolution, verifies the committed manifest against it on
-every build, and fails the build on drift. Import it in your `vite.config.ts`. The write, verify, and
+every build, and fails the build on drift. Import it in your `vite.config.ts`. Anything proposed here
+must be a plugin a site wires into its own `vite.config.ts`. The write, verify, and
 derive machinery the plugin shares with the [`cairn-manifest`](./cli-cairn-manifest.md) and
 `cairn-doctor` bins is not public surface: a build-time helper that is not itself a Vite plugin stays
 internal. Every real caller (both bins and their unit tests) reaches

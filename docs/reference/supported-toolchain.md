@@ -79,8 +79,8 @@ internal-resolution-error` mutes three rules deliberately. Each is a structural 
 `svelte-package`'s output against `attw`'s resolver, not a masked defect: `svelte-package` ships
 `.svelte` and `.css` re-export specifiers that `attw`'s resolver cannot follow without the Svelte
 language plugin, and the package is ESM-only by design, so a CJS-resolution check does not apply.
-Both source plans that adopted this set (the engine-distribution plan and the enforced-boundary
-plan) concluded the mute stays; do not un-mute it without new evidence.
+An `attw` report against the package reflects these three structural gaps, not a defect a consumer
+needs to work around.
 
 ## The `checkOrigin` deprecation
 

@@ -20,6 +20,9 @@ export const ALLOWLIST = new Set([
   'cli-flag:--from', // cairn-doctor's and cairn-media-seed's own flag, not create-cairn-site's
   'cli-flag:--repo', // cairn-doctor's own flag, not create-cairn-site's
   'cli-flag:--header', // cairn-media-seed's own flag, not create-cairn-site's
+  'cli-flag:--template', // sv create's own flag, not create-cairn-site's
+  'cli-flag:--types', // sv create's own flag, not create-cairn-site's
+  'cli-flag:--no-add-ons', // sv create's own flag, not create-cairn-site's
 
   // Illustrative binding and secret names a reader chooses for their own site: real D1
   // bindings, rate limiters, and GitHub Actions secrets a worked example names, never a cairn
@@ -32,6 +35,7 @@ export const ALLOWLIST = new Set([
   'env-var:CAIRN_GITHUB_APP_INSTALLATION_ID', // same CI workflow, the installation id secret
   'env-var:CAIRN_GITHUB_APP_PRIVATE_KEY_B64', // same CI workflow, the private key secret
   'env-var:SOME_UNSET_VAR', // docs/reference/cloudflare.md's illustrative name for an omitted config key
+  'env-var:CLUB_DB', // docs/extend/add-a-custom-admin-screen.md's illustrative section D1 binding
 
   // Dotted-lowercase tokens sharing an area with the log-event/condition-id/check-id union
   // (auth, admin, config, editor, entry, preview, tidy) without being a member of any of the
@@ -60,6 +64,7 @@ export const ALLOWLIST = new Set([
   'log-event:preview.published', // docs/reference/sveltekit.md and components.md, PreviewData's `published` field
   'log-event:tidy.enabled', // docs/reference/doctor.md, the site config's `tidy.enabled` field
   'log-event:tidy.client', // docs/reference/sveltekit.md, ContentRoutesOptions' `tidy.client` field
+  'log-event:tidy.conventions', // docs/extend/enable-tidy.md, the site config's `tidy.conventions` field
 
   // Site-relative illustrative file paths: the conventional layout a worked example shows for a
   // reader's own site, never a path in cairn's own repo, so the filesystem check correctly
@@ -73,7 +78,31 @@ export const ALLOWLIST = new Set([
   'file-path:src/lib/cairn.access.ts', // a site's own access-map module, by convention
   'file-path:src/lib/site.config.yaml', // a site's own non-secret config file, by convention
   'file-path:src/theme/cairn.config.ts', // docs/reference/vite.md's illustrative adapter location
+  'file-path:src/theme/theme.css', // docs/extend/design-your-site.md's own convention path, the reader's re-skin file
   'file-path:src/content/.cairn/index.json', // a site's own generated manifest, by convention
   'file-path:src/content/.cairn/media.json', // a site's own generated media manifest, by convention
   'file-path:src/content/.cairn/dictionary.txt', // a site's own spellcheck dictionary, by convention
+  'file-path:src/lib/club/section.ts', // docs/extend/add-a-custom-admin-screen.md's illustrative section module
+  'file-path:src/lib/members/channel.ts', // docs/extend/add-a-second-audience.md's illustrative auth-channel module
+  'file-path:src/lib/content.ts', // docs/extend/build-a-site-by-hand.md and wire-the-delivery-surface.md's illustrative content-index module, by convention
+  'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location
+  'file-path:src/content/posts/2026-08-14-hello.md', // docs/extend/build-a-site-by-hand.md's illustrative sample entry
+  'file-path:old-site/content/posts/my-post.md', // docs/extend/migrate-existing-content.md's illustrative pre-migration source path
+  'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
+  'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
+  // Real paths in this repo's own examples/showcase/ tree, cited without that prefix because the
+  // prose describes the equivalent path in a reader's own scaffolded site (the same convention
+  // `src/theme/cairn.config.ts` above already carries).
+  'file-path:src/params/md.ts', // examples/showcase/src/params/md.ts's own convention path
+  'file-path:src/chassis/README.md', // examples/showcase/src/chassis/README.md's own convention path
+  'file-path:src/routes/robots.txt', // examples/showcase/src/routes/robots.txt/+server.ts; the `+server.ts` filename splits the extractor's run at the `+`, leaving this bare directory-shaped remainder as its own candidate
+  // A leading-dot directory name (`.svelte-kit`) is stripped by the extractor's own
+  // leading-dot/slash trim, so the literal `main` value from a Cloudflare `wrangler.jsonc`
+  // (`.svelte-kit/cloudflare/_worker.js`) is checked here as the token the trim actually produces.
+  'file-path:svelte-kit/cloudflare/_worker.js', // docs/extend/build-a-site-by-hand.md's wrangler.jsonc `main` field, mangled by the leading-dot trim
+
+  // A vendor hostname in backticked prose, dotted-lowercase like a log event but a domain name,
+  // not a registered one. docs/admin/setup-recovery.md cites the literal path an admin visits
+  // to fix a GitHub App installation's repository access.
+  'log-event:github.com', // GitHub's own hostname, cited in `github.com/settings/installations`
 ]);

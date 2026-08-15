@@ -222,7 +222,7 @@ import { CairnHead } from '@glw907/cairn-cms/delivery/head';
 Render a page's SEO head from a [`SeoMeta`](./delivery-data.md) object into `<svelte:head>`: a title,
 meta tags, link tags, and one escaped JSON-LD script. The title renders from `seo.title` by default;
 `title={false}` lets the site own the `<title>`, and a string overrides it. `titleTemplate` carries the
-site's own title-suffix convention (for example `(t) => `${t} · 907.life`\`) and applies to `seo.title`
+site's own title-suffix convention (for example `(t) => `${t} · example.org`\`) and applies to `seo.title`
 only when `title` is left undefined, so an explicit `title` or `title={false}` still wins. `markdownUrl`,
 when passed, adds a `rel="alternate" type="text/markdown"` link pointing at the entry's raw-markdown
 twin ([`markdownResponse`](./delivery-data.md#markdownresponse)); a site that has not wired the twin

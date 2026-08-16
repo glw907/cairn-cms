@@ -4,17 +4,42 @@ What you are getting into, what it costs, and what stays yours.
 
 ## What you end up owning
 
+```mermaid
+flowchart LR
+  accTitle: Diagram of create-cairn-site connecting five assets you own
+  accDescr: create-cairn-site sits outside a group of five assets it creates or connects: the GitHub repository, the GitHub App, the Cloudflare account it signs in to rather than creates, a domain if you add one, and the sign-in database. The group is labeled as yours, not cairn's.
+
+  tool["create-cairn-site"]
+
+  subgraph yours["Yours, not cairn's"]
+    repo["GitHub repository<br/>your content, as markdown"]
+    app["GitHub App<br/>created for this site"]
+    domain["Domain<br/>if you connect one"]
+    subgraph cf["Cloudflare account<br/>1 Worker, 2 databases, 1 bucket"]
+      authdb["Sign-in database"]
+    end
+  end
+
+  tool -->|creates| repo
+  tool -->|creates| app
+  tool -->|signs in to| cf
+  tool -->|connects| domain
+  tool -->|writes to| authdb
+```
+
+*`create-cairn-site` creates or connects each of these once, then holds none of them.*
+
 `create-cairn-site` builds and connects five things, and every one of them belongs to you, not
 to cairn:
 
-- **A private GitHub repository** holding your site's code and every piece of content anyone
-  writes, as plain markdown files. This is where your content lives on GitHub.
-- **A GitHub App**, created just for this site, that commits and publishes on your writers'
-  behalf so nobody needs a GitHub account of their own to write.
-- **A Cloudflare account of your own**, that the tool signs in to rather than creates for you,
-  running the site: one Worker, two databases, and a storage bucket for images.
-- **A domain**, if you connect one, registered wherever you like and pointed at Cloudflare.
-- **A database of who can sign in**, which you control from inside your own site.
+- **A private GitHub repository**, where your content lives on GitHub, holding your site's code
+  and everything anyone writes.
+- **A GitHub App** that publishes on your writers' behalf, so nobody needs a GitHub account of
+  their own.
+- **A Cloudflare account of your own**, running one Worker, two databases, and a storage bucket
+  for images.
+- **A domain**, if you connect one.
+- **A database of who can sign in**, yours to control.
 
 Nothing here is rented from cairn. If you stopped using cairn tomorrow, your repository still
 holds every word anyone wrote, in plain markdown a text editor can open. Cloning that repository
@@ -93,5 +118,4 @@ Add them as an editor on the site itself through [Invite your editors](./invite-
 they can sign in and write once they have access to both.
 
 Because every entry is a plain markdown file in a git repository, with no database that only
-cairn can read, leaving is never more complicated than cloning that repository. Nothing about
-your content depends on cairn continuing to run it.
+cairn can read, leaving is never more complicated than cloning that repository.

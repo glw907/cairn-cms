@@ -13,24 +13,59 @@ curated allowlist committing through the GitHub App with a full git history. Tha
 the failure mode. Any editor, or anyone who takes over an editor's session, can otherwise run script
 in every visitor's browser, since the render output goes straight to the public site.
 
+## The pipeline order
+
+`createRenderer` composes remark and rehype stages into one fixed order.
+
+```mermaid
+flowchart LR
+    accTitle: Diagram of the render pipeline's stage order
+    accDescr: Nine ordered stages run left to right, from markdown parsing to a site's own plugins; a subgraph marks the two the unsafeDisableSanitize switch turns off.
+
+    parse[Parse markdown]
+    raw[rehype-raw]
+    dispatch["build() dispatch"]
+    slug[Slug, task list, highlight]
+    anchorRel[Anchor hardening]
+    scroll[Table-scroll wrap]
+    site["Site's own plugins"]
+
+    subgraph off["<code>unsafeDisableSanitize</code> switch"]
+        floor[Sanitize floor]
+        sink[Sink guard]
+    end
+
+    parse --> raw --> floor
+    floor --> dispatch --> slug --> anchorRel --> sink
+    sink --> scroll --> site
+```
+
+*The render pipeline runs nine stages in this fixed order: parsing, raw-HTML admission, the
+sanitize floor, component `build()` dispatch, heading slugs with task-list and syntax
+highlighting, anchor hardening, the sink guard, the table-scroll wrap, and finally a site's own
+plugins. The `unsafeDisableSanitize` switch turns off exactly the sanitize floor and the sink
+guard, the two stages the subgraph spans; every stage between them still runs.*
+
+[Configure rendering](./configure-rendering.md#extend-the-pipeline-itself) covers the two seams
+into this pipeline: `sanitizeSchema` extends the allowlist the floor uses, and a site's own
+`remarkPlugins`/`rehypePlugins` compose at the position the diagram's last stage shows.
+
 ## A floor ships on by default
 
 Every renderer `createRenderer` builds runs a sanitize floor unless a site opts out explicitly.
 `rehype-sanitize`, seeded from its own GitHub-lineage `defaultSchema` (the same allowlist behind
 GitHub's own markdown rendering), strips `<script>` tags, inline event-handler attributes, and
 `javascript:`/`data:` URLs before anything else in the pipeline touches the tree. A site does not
-wire this up; it exists because the reference delivery path once had no floor at all, which is
-exactly the gap this design closes.
+wire this up; it exists because the reference delivery path once had no floor at all.
 
-## Extend the allowlist; never weaken the strip
+## Extend the allowlist with `sanitizeSchema`
 
 A site customizes what its own content needs through `sanitizeSchema`, a function that receives
 cairn's default schema and returns the schema to use. The pattern is additive: start from the
 argument, add the benign tags and attributes real content actually uses (an in-page `<nav>` table
 of contents, a `<details><summary>` disclosure, an anchor's `class` and `target`), and return it.
 There is no supported way to remove an entry from the dangerous-protocol strip or re-admit
-`<script>` through this option; the posture is extend-only by design, the same posture WordPress's
-`kses` filter and rehype-sanitize's own schema-spreading convention both use.
+`<script>` through this option; the posture is extend-only.
 
 A separate, code-level `unsafeDisableSanitize` switch exists for a site whose content is entirely
 developer-controlled, and it is the one true off switch: it removes both the pre-dispatch floor and
@@ -61,19 +96,21 @@ needs, so the built schema adds a small, specific set on top:
   an executable one. `javascript:` and `data:` are never in the default allowlist and stay stripped
   regardless of any of the above.
 
-## A second guard runs after the dispatch, over the whole tree
+## A second guard closes a later gap
 
-The sanitize floor runs before a site's own component `build()` functions execute, deliberately, so
-their trusted output and any inline SVG icons they emit are never sanitized away. That ordering
-opens a narrower, later gap: a `build()` function is site-developer code, but it can still route a
-raw author-supplied attribute value into a sink it constructs, one the pre-dispatch floor never saw
-built yet. `rehypeSinkGuard` runs last, over the fully built tree, and closes that gap regardless of
-which plugin or which `build()` produced the element: it strips any `on*` attribute and any inline
-`style`, and it scheme-checks every URL-bearing property (`href`, `src`, `srcSet`, and others) against
-the same safe-scheme list the floor uses, deleting one that resolves to an unsafe scheme. It runs
-under the same `unsafeDisableSanitize` switch as the floor, and it does not remove a `build()`-
-emitted `<script>`, `<style>`, or `iframe srcdoc` element outright; a component author who reaches
-for one of those is running their own code, which sits outside what a content-safety guard governs.
+The sanitize floor runs ahead of a site's own component `build()` functions deliberately, so
+their trusted output and any inline SVG icons they emit are never sanitized away (see [The
+pipeline order](#the-pipeline-order)). That ordering opens a narrower, later gap: a `build()`
+function is site-developer code, but it can still route a raw author-supplied attribute value
+into a sink it constructs, one the pre-dispatch floor never saw built yet. `rehypeSinkGuard`
+runs after anchor hardening, over the fully built tree, and closes that gap regardless of which
+plugin or which `build()` produced the element: it strips any `on*` attribute and any inline
+`style`, and it scheme-checks every URL-bearing property (`href`, `src`, `srcSet`, and others)
+against the same safe-scheme list the floor uses, deleting one that resolves to an unsafe
+scheme. It runs under the same `unsafeDisableSanitize` switch as the floor, and it does not
+remove a `build()`-emitted `<script>`, `<style>`, or `iframe srcdoc` element outright; a
+component author who reaches for one of those is running their own code, which sits outside
+what a content-safety guard governs.
 
 ## Raw HTML is cleaned, not dropped
 
@@ -86,10 +123,11 @@ never delivered verbatim and never dropped wholesale.
 ## Anchor hardening and highlighting
 
 Every anchor with `target="_blank"` gets its `rel` forced (`noopener noreferrer` by default,
-configurable, or disabled for a site that owns its own anchor hardening) as the last rehype step
-before a site's own additional plugins run, so it covers a component-built anchor the same as an
-author-typed one. Build-time syntax highlighting emits class-only output with no inline style, so it
-needs no special placement relative to either safety layer.
+configurable, or disabled for a site that owns its own anchor hardening) after highlighting and
+ahead of the sink guard (see [The pipeline order](#the-pipeline-order)), so it covers a
+component-built anchor the same as an author-typed one. Build-time syntax highlighting emits
+class-only output with no inline style, so it needs no special placement relative to either
+safety layer.
 
 ## What a site's own `render` still needs to get right
 

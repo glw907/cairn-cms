@@ -72,6 +72,7 @@ export const ALLOWLIST = new Set([
   // its own analogues at different paths (its adapter lives at `src/theme/cairn.config.ts`, not
   // `src/lib/cairn.config.ts`), which is why these are not resolved against it either.
   'file-path:src/app.d.ts', // a site's own SvelteKit ambient-types file
+  'file-path:src/app.html', // a site's own SvelteKit app shell
   'file-path:src/hooks.server.ts', // a site's own SvelteKit server hooks file
   'file-path:src/lib/cairn.config.ts', // a site's own adapter file, by convention, not a fixed path
   'file-path:src/lib/cairn.server.ts', // a site's own server-only adapter half, by convention

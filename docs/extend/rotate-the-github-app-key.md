@@ -14,23 +14,43 @@ local checkout with `wrangler` installed, signed in to the right Cloudflare acco
 
 ## Why there's no downtime window
 
-A GitHub App can hold more than one private key at once. Generating a new key does not invalidate
-the old one; the App keeps signing with whichever key a caller presents until you delete a key by
-hand. That is the whole mechanism this page relies on: generate the new key, install it, confirm
-the site authenticates with it, and only then delete the old one. Skip the confirm step and a
-typo in the new key locks your site out with no working key left. See GitHub's own [managing
-private keys for GitHub Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps)
+```mermaid
+gantt
+    accTitle: Diagram of the old and new GitHub App keys' overlapping validity, with a milestone at the swap point
+    accDescr: Two overlapping horizontal bars for the old and new keys' validity, with a milestone diamond partway through the overlap at the swap point.
+    dateFormat  YYYY-MM-DD
+    section Old key
+    Signs until you delete it (step 6)         :active, oldkey, 2026-01-01, 2026-01-07
+    section New key
+    Signs from the moment you generate it (step 1) :newkey, 2026-01-02, 2026-01-09
+    section Swap point
+    Confirmed on the deployed Worker (step 5)  :milestone, swap, 2026-01-06, 0d
+```
+
+*The old key keeps signing from before the rotation starts until you delete it in step 6. The new
+key starts signing as soon as you generate it in step 1, so its validity window overlaps the old
+key's for the whole rotation. The milestone marks step 5, the confirmed real save against the
+deployed Worker, the point after which deleting the old key is safe. The axis dates are
+placeholders that create the bar geometry; they don't name a real calendar.*
+
+A GitHub App can hold more than one private key at once, which is the whole mechanism this page
+relies on. Generating a new key does not invalidate the old one; the App keeps signing with
+whichever key a caller presents until you delete a key by hand. Skip the confirm step and a typo
+in the new key locks your site out with no working key left. See GitHub's own [managing private
+keys for GitHub
+Apps](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps)
 for the settings-page navigation and the exact limits GitHub enforces; this page covers cairn's
 own half, the encode-and-install step and the verification.
 
 ## Steps
 
-1. **Generate a new key.** On the App's settings page (linked above), generate a new private key
-   and download the `.pem` file. Leave the old key in place; do not delete it yet.
+1. **Generate a new key.** On the App's settings page (GitHub's navigation for it is linked
+   above), generate a new private key and download the `.pem` file. Leave the old key in place;
+   do not delete it yet.
 
 2. **Base64-encode it, on one line.** cairn's Worker reads the key as `GITHUB_APP_PRIVATE_KEY_B64`,
-   a base64 encoding of the PEM with no line breaks. The safest way to produce that, on any
-   platform with Node available, since this is the exact encoding cairn's own tooling produces:
+   a base64 encoding of the PEM with no line breaks. This command produces that encoding on any
+   platform with Node available, and it is the exact encoding cairn's own tooling produces:
 
    ```bash
    node -e "process.stdout.write(require('fs').readFileSync('new-key.pem').toString('base64'))" > new-key.b64
@@ -99,9 +119,9 @@ take. Re-push it and redeploy.
 
 Before you delete the old key in step 6, you have a fast way back: re-push the old key's base64
 value with the same `wrangler secret put` command from step 3, and the site is signing with it
-again immediately. That's what makes it safe to debug a new key that isn't working without any
-pressure to restore the site first; restoring service and diagnosing the new key are two separate
-problems as long as the old key still exists.
+again immediately. While the old key still exists, restoring service and diagnosing the new key
+stay separate problems, so you can debug a key that isn't working without pressure to restore the
+site first.
 
 If you already deleted the old key and the new one doesn't work, generate a third key rather than
 trying to recover the deleted one; GitHub does not let you restore a deleted key. See [Is it

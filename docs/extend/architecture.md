@@ -2,25 +2,62 @@
 
 The engine's shape: what cairn owns, what a site's adapter owns, and the seams between them.
 
+```mermaid
+flowchart TB
+  accTitle: Diagram of a site calling the engine's six functional groups, which read and write three stores
+  accDescr: A site's adapter, admin mount, and delivery routes call into six functional groups of the engine's export map: core and adapter, the SvelteKit layer, admin UI, rendering, delivery, and auth and platform. The SvelteKit layer reads and writes the git repository; auth and platform reads and writes D1; delivery reads and writes R2.
+
+  subgraph site["A site"]
+    adapterCfg["Adapter config"]
+    adminMount["Admin mount"]
+    deliveryRoutes["Delivery routes"]
+  end
+
+  subgraph engine["The engine"]
+    core["Core &amp; adapter<br/>(root barrel)"]
+    kit["SvelteKit layer<br/><code>/sveltekit</code>"]
+    adminUI["Admin UI<br/><code>/components</code>, <code>/admin-toolkit</code>, <code>/islands</code>"]
+    rendering["Rendering<br/><code>/render</code>"]
+    delivery["Delivery<br/><code>/delivery</code>, <code>/media</code>"]
+    authPlatform["Auth &amp; platform<br/><code>/auth-store</code>, <code>/auth-channel</code>, <code>/auth-crypto</code>, <code>/cloudflare</code>, <code>/vite</code>, <code>/ambient</code>"]
+  end
+
+  git[("Git repository")]
+  d1[("D1 database")]
+  r2[("R2 bucket")]
+
+  adapterCfg --> core
+  adminMount --> kit
+  deliveryRoutes --> kit
+  core --> kit
+  kit --> adminUI
+  kit --> rendering
+  kit --> delivery
+  kit --> authPlatform
+  kit --> git
+  authPlatform --> d1
+  delivery --> r2
+```
+
+*The engine boxes group the package's export subpaths by function; the [reference
+index](../reference/README.md) documents each subpath individually.*
+
 ## The adapter is the one contract
 
 A site declares a single `CairnAdapter` object, typically at `src/lib/cairn.config.ts`: which
 content concepts exist, the GitHub repository commits land on, the magic-link sender, the render
 function, and the optional extension points (roles, an access map, a nav layout, media). The engine
 never hard-codes a concept, a directory, or a field. Every route factory, every admin screen, and
-every delivery helper reads its behavior from this one object. A site that never touches the
-adapter beyond the scaffold's defaults still gets a working owner/editor CMS; a site that extends it
-adds concepts, roles, and screens without forking anything.
+every delivery helper reads its behavior from this one object. Left at the scaffold's defaults,
+the adapter yields an owner/editor CMS. Adding concepts, roles, or screens is an edit to this
+object, not a fork of the engine.
 
-`@glw907/cairn-cms`'s root barrel exports the adapter-declaration functions
-(`defineAdapter`, `defineConcept`, `fields`, `fieldset`) and the reader surface a build script or
-the delivery layer composes from them (`composeRuntime`, `createRenderer`, the manifest
-functions). `@glw907/cairn-cms/sveltekit` exports the route factories and the guard, the layer
-that turns the adapter into working `/admin` and public routes inside a SvelteKit app. Nothing on
-the root barrel imports SvelteKit, and nothing on `/sveltekit` is a `.svelte` file; a Svelte admin
-component lives on `/components`. That three-way split is deliberate: the content model has to stay
-usable from a build script with no server request in scope, and the route layer has to stay
-substitutable without dragging Svelte's client runtime into it.
+The root barrel and `/sveltekit` are the split the preceding diagram draws as core/adapter and
+the SvelteKit layer. Nothing on the root barrel imports SvelteKit, and nothing on `/sveltekit` is a
+`.svelte` file; a Svelte admin component lives on `/components`. That three-way split is
+deliberate: the content model has to stay usable from a build script with no server request in
+scope, and the route layer has to stay substitutable without dragging Svelte's client runtime
+into it.
 
 ## The seams a site extends through
 
@@ -40,26 +77,48 @@ site reaches into:
   screens with a site's custom ones. See [Organize your admin nav](./organize-your-admin-nav.md).
 - **The Backend**, the read-and-commit interface over the content repository. The packaged
   `githubApp` provider is the only shipped implementation; the interface exists so the commit path
-  is a typed contract rather than a hard-coded GitHub call threaded through every route.
+  is a typed contract rather than a hard-coded GitHub call threaded through every route. See
+  [Core](../reference/core.md).
 - **`AssetConfig`**, a site's optional media declaration, resolved into the R2 bucket binding,
   upload limits, and delivery variants a site's own routes and the admin's media library both read.
   See [Data tiers](./data-tiers.md).
 
 ## The write path
 
-An editor's save never touches the default branch directly. Saving an entry commits to a per-entry
-holding branch, named `cairn/<concept>/<id>`, through the configured Backend. A holding branch
-lets an editor iterate on a draft across multiple saves, and lets the admin show what is pending
-without it being live. Publishing is a second, deliberate action that copies the holding branch's
-content onto the default branch, which is what actually triggers a site's existing deploy. The
-commit author is the editor; the committer is `cairn-cms[bot]`, so the git history is honest about
-who wrote what while every commit still traces to the App's own identity. [Security
-model](./security-model.md) covers the authentication that gates who can reach this path at all;
-[Content model](./content-model.md) covers what a commit actually contains.
+An editor's save never touches the default branch directly.
+
+```mermaid
+sequenceDiagram
+  accTitle: Sequence diagram of an editor's save and publish through the write path
+  accDescr: An editor's save commits to a per-entry holding branch, with the editor as commit author and cairn-cms[bot] as committer. A separate publish action copies that branch onto the default branch, which triggers the site's existing deploy.
+  participant Editor
+  participant Admin
+  participant GitHubApp as GitHub App
+  participant Holding as Holding branch
+  participant Main as Default branch
+  participant Deploy as Site's deploy
+
+  Editor->>Admin: Save entry
+  Admin->>GitHubApp: Commit (author: editor, committer: cairn-cms[bot])
+  GitHubApp->>Holding: Write commit
+  Editor->>Admin: Publish
+  Admin->>GitHubApp: Copy holding branch content
+  GitHubApp->>Main: Write commit
+  Main->>Deploy: Trigger deploy
+```
+
+*The holding branch is per entry, named `cairn/<concept>/<id>`.*
+
+A holding branch lets an editor iterate on a draft across multiple saves, and lets the admin show
+what is pending without it being live. The commit author is the editor; the committer is
+`cairn-cms[bot]`, so git history attributes each change to the editor who made it, and every
+commit still traces to the App's own identity. [Security model](./security-model.md) covers the authentication
+that gates who can reach this path at all; [Content model](./content-model.md) covers what a
+commit actually contains.
 
 ## The read path
 
-Two different reads exist for two different questions. A request that needs one entry's full body
+The engine reads content two ways. A request that needs one entry's full body
 (a public page render, an edit-form load) reads that file directly through the Backend's content
 API. A request that needs to know what exists across the whole corpus, an index page, a tag list, a
 sitemap, a link-integrity check, reads the committed content manifest instead: a JSON projection of
@@ -77,7 +136,6 @@ resolution are not seams a site is meant to reach into. Each is covered by a sta
 public surface instead ([Render](../reference/render.md), [SvelteKit](../reference/sveltekit.md),
 [Auth crypto](../reference/auth-crypto.md)), so an upgrade can change the internals freely as long
 as the contract holds. If a task seems to require importing something the reference doesn't
-document, the more likely answer is that the task belongs on the site's own code, not inside the
-engine's boundary: cairn owns managing content and the editor and admin frame, and little else,
-leaving a site's own actors, auth, data, and domain logic to the developer, served through a seam
-rather than folded into the engine itself.
+document, that task usually belongs in the site's own code. cairn manages content and the editor
+and admin frame; a site's own actors, auth, data, and domain logic belong to the site and reach
+the engine through a seam.

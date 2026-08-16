@@ -75,17 +75,24 @@ alt-and-caption standard, motion out by decision (trigger filed in Later), and n
 callouts with keyed lists for the three locate-many-controls screens. The per-page contracts in
 `2026-08-15-docs-outlines-with-visuals.md` stand as amended by those rulings.
 
-**The visual work is now running on two parallel tracks (2026-08-15).** The cairn diagram theme
-is in process in cairn-pub (its own session). In this repo, the **diagram-pages pass is planned
-and ready to execute**: Geoff ruled the same day that known diagram content means the pages can
-be written now, so the pass authors the ten mermaid diagrams and rewrites their pages in a
-worktree, with the MERGE gated on the theme landing (no stock-theme render ever ships). Plan:
-`docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`. **A fresh Opus session executes
-it**; resume prompt: "Execute the docs diagram-pages pass per
-docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md, from ~/Projects/cairn-cms, via
-cairn-pass." The pass's authored diagrams feed the theme session as its representative styling
-set (plan Task 10 pushes the branch for it). The visuals standard itself already landed on
-`main` (the Visuals section of `docs/internal/docs-register.md`, plus the CLAUDE.md scope note).
+**The diagram-pages pass is EXECUTED and HELD at the merge gate (2026-08-15, workflow-executed
+on Geoff's grant).** Branch `docs-diagram-pages`, pushed to origin, eleven commits: the eleven
+mermaid diagrams authored across ten pages, the nine page rewrites (plus
+`configure-rendering.md`'s link), and the `check:visuals` gate (proven red once, wired into
+`test.yml`). Reviewed by eleven `cairn-register-editor` fan-outs plus a must-survive sweep (no
+contract fact missing; three weakenings found and restored; two sweep proposals refused on
+verification), all findings folded with per-finding dispositions, and the full gate is green on
+the branch (svelte-check 0/0, `check:visuals` OK at 11 diagrams, Vale clean, 5322 tests). Plan:
+`docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`. **The merge waits for the
+cairn-pub theme** per plan Task 10 steps 5 and 6: pack-and-install into cairn-pub, themed
+full-page reads, the end-to-end accessibility proof (SVG accessible name must be the authored
+`accTitle`, not "Diagram"), the gantt at 320/390 (its caption currently discloses the
+placeholder date axis; trim that clause if the theme hides the axis), Geoff's before/after on
+the ownership map and the architecture block diagram, then re-verify the code-derived diagrams
+against `main` and merge. The theme session already carries the a11y fix and containment probe
+(cairn-pub `4d5e17e`, `f0de31b`); the pushed branch is its representative styling set. The
+visuals standard itself is on `main` (the Visuals section of `docs/internal/docs-register.md`,
+plus the CLAUDE.md scope note).
 
 **The transcript-fixtures question is resolved, in the negative (2026-08-15).** No consumable
 recorded-run fixtures exist anywhere in the repo; the T-series stdout lives uncommitted in

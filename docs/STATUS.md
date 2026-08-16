@@ -106,6 +106,17 @@ track stays blocked on the live-reproduction seam: reproduction content is decid
 render (fixture data, crop, widths), not by an authorable source, so writing it now would mean
 writing it twice.
 
+**The admin-screen reference capture is banked (2026-08-15).** The sitting ended by capturing
+the real admin screens as writer-facing reference material for the editors rewrite and the seam
+work. The run was cut short twice, first by a transient connection error and then by the laptop
+losing power, and the recovery session re-ran it clean. The set is 44 captures under
+`docs/internal/reference-captures/2026-08-15-admin-screens/` (1440 and 390, light plus two dark
+states, one capture per editors-track visual contract), with `.capture-state.json` recording
+each capture's page contract and posed state, zero gaps. The one-off driver is
+`examples/showcase/scripts/reference-capture.mjs`; it stays in-tree until the editors rewrite
+consumes the set, then gets deleted per its own header. This is internal reference only: the
+npm `files` whitelist excludes `docs/internal`, so none of it ships.
+
 **Geoff ruled the sequencing (2026-08-15): release one waits for the visual layer.** There is no
 hurry to release, and the docs go out at best quality with the beta release. The visual work runs
 first, in the rulings record's order (the cairn diagram theme in cairn-pub, then the extend and

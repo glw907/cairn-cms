@@ -1,0 +1,269 @@
+{
+  "results": [
+    {
+      "file": "welcome--sign-in--1440.png",
+      "contract": "welcome.md step 1",
+      "state": "the /admin/login form",
+      "width": 1440
+    },
+    {
+      "file": "welcome--sign-in--390.png",
+      "contract": "welcome.md step 1",
+      "state": "the /admin/login form",
+      "width": 390
+    },
+    {
+      "file": "welcome--confirm--1440.png",
+      "contract": "welcome.md step 3",
+      "state": "the /admin/auth/confirm page (any token)",
+      "width": 1440
+    },
+    {
+      "file": "welcome--confirm--390.png",
+      "contract": "welcome.md step 3",
+      "state": "the /admin/auth/confirm page (any token)",
+      "width": 390
+    },
+    {
+      "file": "write-in-the-editor--entry-screen--1440.png",
+      "contract": "write-in-the-editor.md \"## The screen\"",
+      "state": "the seeded post open on Write",
+      "width": 1440
+    },
+    {
+      "file": "write-in-the-editor--entry-screen--390.png",
+      "contract": "write-in-the-editor.md \"## The screen\"",
+      "state": "the seeded post open on Write",
+      "width": 390
+    },
+    {
+      "file": "write-in-the-editor--entry-screen--1440--dark.png",
+      "contract": "write-in-the-editor.md \"## The screen\" (dark)",
+      "state": "the seeded post open on Write, dark theme",
+      "width": 1440
+    },
+    {
+      "file": "write-in-the-editor--sidebar-list--1440.png",
+      "contract": "write-in-the-editor.md \"## Opening or starting a draft\"",
+      "state": "the Posts list, office view",
+      "width": 1440
+    },
+    {
+      "file": "write-in-the-editor--sidebar-list--390.png",
+      "contract": "write-in-the-editor.md \"## Opening or starting a draft\"",
+      "state": "the Posts list, office view",
+      "width": 390
+    },
+    {
+      "file": "write-in-the-editor--preview-width--1440.png",
+      "contract": "write-in-the-editor.md preview width control",
+      "state": "Preview tab active, width menu visible",
+      "width": 1440
+    },
+    {
+      "file": "write-in-the-editor--preview-width--390.png",
+      "contract": "write-in-the-editor.md preview width control",
+      "state": "Preview tab active, width menu visible",
+      "width": 390
+    },
+    {
+      "file": "write-in-the-editor--details-panel--1440.png",
+      "contract": "write-in-the-editor.md \"## The details panel\"",
+      "state": "Details slide-over open on the seeded post",
+      "width": 1440
+    },
+    {
+      "file": "write-in-the-editor--details-panel--390.png",
+      "contract": "write-in-the-editor.md \"## The details panel\"",
+      "state": "Details slide-over open on the seeded post",
+      "width": 390
+    },
+    {
+      "file": "write-in-the-editor--figure-dialog--1440.png",
+      "contract": "write-in-the-editor.md \"## Images\"",
+      "state": "figure dialog open on entry 2026-08-16-figure-capture-1440-1786866440271, caption filled",
+      "width": 1440
+    },
+    {
+      "file": "write-in-the-editor--figure-dialog--390.png",
+      "contract": "write-in-the-editor.md \"## Images\"",
+      "state": "figure dialog open on entry 2026-08-16-figure-capture-390-1786866443184, caption filled",
+      "width": 390
+    },
+    {
+      "file": "write-in-the-editor--tidy-review--1440.png",
+      "contract": "write-in-the-editor.md \"## Spelling and style\"",
+      "state": "a live tidy review over the seeded copyedit post",
+      "width": 1440
+    },
+    {
+      "file": "write-in-the-editor--tidy-review--390.png",
+      "contract": "write-in-the-editor.md \"## Spelling and style\"",
+      "state": "a live tidy review over the seeded copyedit post",
+      "width": 390
+    },
+    {
+      "file": "write-in-the-editor--collapsed-block--1440.png",
+      "contract": "write-in-the-editor.md collapsed-block paragraph",
+      "state": "entry 2026-08-16-fold-capture-1440-1786866450005, fold-on-open with the gutter fold control visible",
+      "width": 1440
+    },
+    {
+      "file": "write-in-the-editor--collapsed-block--390.png",
+      "contract": "write-in-the-editor.md collapsed-block paragraph",
+      "state": "entry 2026-08-16-fold-capture-390-1786866453643, fold-on-open with the gutter fold control visible",
+      "width": 390
+    },
+    {
+      "file": "publish-and-history--header-band--1440.png",
+      "contract": "publish-and-history.md header band",
+      "state": "entry 2026-08-16-band-capture-1786866457131 (pending), overflow menu open",
+      "width": 1440
+    },
+    {
+      "file": "publish-and-history--bottom-bar--390.png",
+      "contract": "publish-and-history.md header band (phone)",
+      "state": "the seeded post, phone bottom-fixed Save/Publish bar",
+      "width": 390
+    },
+    {
+      "file": "publish-and-history--history-list--1440.png",
+      "contract": "publish-and-history.md \"## History\"",
+      "state": "entry 2026-08-16-history-capture-1786866461253: two real publishes plus a trailing unpublished draft",
+      "width": 1440
+    },
+    {
+      "file": "publish-and-history--pending-list--1440.png",
+      "contract": "publish-and-history.md \"## Publishing everything at once\"",
+      "state": "office view, Publish site dialog open over the grouped pending entries",
+      "width": 1440
+    },
+    {
+      "file": "when-something-goes-wrong--refusal-banner--1440.png",
+      "contract": "when-something-goes-wrong.md",
+      "state": "a real rename refusal (\"Leave the date out of the address.\") reached by renaming the seed post onto a date-prefixed slug",
+      "width": 1440
+    },
+    {
+      "file": "when-something-goes-wrong--refusal-banner--390.png",
+      "contract": "when-something-goes-wrong.md",
+      "state": "the same refusal at phone width",
+      "width": 390
+    },
+    {
+      "file": "add-an-image--insert-panel--1440.png",
+      "contract": "add-an-image.md \"## Inserting an image\"",
+      "state": "the Insert image popover, chooser view (upload + reuse search)",
+      "width": 1440
+    },
+    {
+      "file": "add-an-image--upload-form--1440.png",
+      "contract": "add-an-image.md \"## Naming it, and adding alt text\"",
+      "state": "the capture card: the Name field with its Suggested mark, the alt-or-decorative choice",
+      "width": 1440
+    },
+    {
+      "file": "add-an-image--insert-panel--390.png",
+      "contract": "add-an-image.md \"## Inserting an image\"",
+      "state": "the Insert image popover, chooser view (upload + reuse search)",
+      "width": 390
+    },
+    {
+      "file": "add-an-image--upload-form--390.png",
+      "contract": "add-an-image.md \"## Naming it, and adding alt text\"",
+      "state": "the capture card: the Name field with its Suggested mark, the alt-or-decorative choice",
+      "width": 390
+    },
+    {
+      "file": "add-an-image--lead-picture-dialog--1440.png",
+      "contract": "add-an-image.md \"## The lead picture\"",
+      "state": "the hero field dialog, placement view with the social-crop preview",
+      "width": 1440
+    },
+    {
+      "file": "add-an-image--lead-picture-dialog--390.png",
+      "contract": "add-an-image.md \"## The lead picture\"",
+      "state": "the hero field dialog, placement view with the social-crop preview",
+      "width": 390
+    },
+    {
+      "file": "manage-the-media-library--library-screen--1440.png",
+      "contract": "manage-the-media-library.md \"## The library\"",
+      "state": "the seeded media library, grid view",
+      "width": 1440
+    },
+    {
+      "file": "manage-the-media-library--library-screen--390.png",
+      "contract": "manage-the-media-library.md \"## The library\"",
+      "state": "the seeded media library, grid view",
+      "width": 390
+    },
+    {
+      "file": "manage-the-media-library--library-screen--1440--dark.png",
+      "contract": "manage-the-media-library.md \"## The library\" (dark)",
+      "state": "the seeded media library, grid view, dark theme",
+      "width": 1440
+    },
+    {
+      "file": "manage-the-media-library--details-panel--1440.png",
+      "contract": "manage-the-media-library.md \"## Selecting an image\"",
+      "state": "the used seeded asset (Mountain pass) detail slide-over",
+      "width": 1440
+    },
+    {
+      "file": "manage-the-media-library--bulk-selection--1440.png",
+      "contract": "manage-the-media-library.md \"## Selecting several at once\"",
+      "state": "two thumbnails checked, the sticky selection bar (count, Select all, Delete)",
+      "width": 1440
+    },
+    {
+      "file": "manage-the-media-library--delete-in-use--1440.png",
+      "contract": "manage-the-media-library.md \"## Deleting an image\"",
+      "state": "the in-use delete confirmation for Mountain pass: the what-would-break list, the typed-address confirm",
+      "width": 1440
+    },
+    {
+      "file": "manage-your-tag-vocabulary--tags-screen--1440.png",
+      "contract": "manage-your-tag-vocabulary.md",
+      "state": "the full Tags screen, seeded vocabulary (listed, in-use, and unlisted-candidate tags)",
+      "width": 1440
+    },
+    {
+      "file": "manage-your-tag-vocabulary--tags-screen--390.png",
+      "contract": "manage-your-tag-vocabulary.md",
+      "state": "the full Tags screen, seeded vocabulary (listed, in-use, and unlisted-candidate tags)",
+      "width": 390
+    },
+    {
+      "file": "invite-editors--roster--1440.png",
+      "contract": "invite-editors.md",
+      "state": "the Editors roster: the add form, the seeded rows, the signed-in owner row with disabled self-controls",
+      "width": 1440
+    },
+    {
+      "file": "invite-editors--roster--390.png",
+      "contract": "invite-editors.md",
+      "state": "the Editors roster: the add form, the seeded rows, the signed-in owner row with disabled self-controls",
+      "width": 390
+    },
+    {
+      "file": "add-a-custom-admin-screen--signups--1440.png",
+      "contract": "add-a-custom-admin-screen.md",
+      "state": "the showcase’s own /admin/signups screen, a custom screen inside CairnAdminShell, with one posed row",
+      "width": 1440
+    },
+    {
+      "file": "organize-your-admin-nav--sidebar--1440.png",
+      "contract": "organize-your-admin-nav.md",
+      "state": "the persistent sidebar; the showcase DECLARES a navLayout (cairn.config.ts editor block: Content/Site sections, a relabel, a fallback foot), not the engine default",
+      "width": 1440
+    },
+    {
+      "file": "organize-your-admin-nav--sidebar--390.png",
+      "contract": "organize-your-admin-nav.md",
+      "state": "the sidebar drawer opened at phone width via the hamburger; same declared navLayout",
+      "width": 390
+    }
+  ],
+  "gaps": []
+}

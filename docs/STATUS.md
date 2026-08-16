@@ -15,13 +15,22 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-16: execute the seam build Pass 1)
+## Immediate next action (2026-08-16: the capture pass, prerelease cut first)
 
-**Immediate next action:** execute Pass 1 of the live-reproduction seam plan
-(`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`), in a fresh Opus 5 session
-launched from `~/Projects/cairn-cms`, per the `cairn-pass` skill: dispatch per task to
-`cairn-implementer`, test-first, full gate per task, on a worktree off `main`. The
-docs-diagram-pages merge that gated it landed 2026-08-16 (merge `817d155a`).
+**Immediate next action:** execute the capture pass
+(`docs/superpowers/plans/2026-08-16-capture-pass.md`), in a fresh Opus 5 session launched
+from `~/Projects/cairn-cms`, per the `cairn-pass` skill. **Geoff's 2026-08-16 call moved this
+pass ahead of seam Pass 1** (his attended availability plus the publish ruling below); Task
+B4 of the plan restores the seam pointer when the pass closes. Order inside the pass: Task
+A0b first, a deliberate `--tag next` prerelease cut of the engine window plus the first
+`@glw907/cairn-cms-dev` publish via `cairn-release` (Geoff's F1 ruling: publish so the
+registry carries `previewLoad`/`PreviewBanner`, then capture; `latest` never moves and
+release one stays behind the visual layer). Then Part A, the attended capture run (Geoff
+present; four browser moments), then Part B on a worktree off `main`. The plan was
+adversarially reviewed 2026-08-16 (three Opus lenses; two blockers found and folded,
+including the registry-install blocker that forced the publish ruling). Seam Pass 1
+(`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`) runs next after this
+pass, per the queue below.
 
 **Pass D, the documentation reset, is complete across all three phases.** Phase 1 (PR #34) and
 Phase 2 (PR #35) merged earlier; Phase 3 (Tasks 9 through 14) closes the pass. The published

@@ -82,18 +82,19 @@ flowchart LR
 
   subgraph cloudflare["Cloudflare"]
     cfSignin["Browser:<br/>sign in, if not already"]
+    cfDeploy["Install, build,<br/>and deploy"]
+    cfSignin --> cfDeploy
   end
 
   signin["Browser:<br/>sign-in page opens"]
 
   scaffold --> createApp
   installApp --> cfSignin
-  cfSignin --> signin
+  cfDeploy --> signin
 ```
 
-*Three or four browser moments punctuate this path, depending on whether Cloudflare needs you
-to sign in: creating the GitHub App, installing it on your new repository, an optional
-Cloudflare sign-in, and the sign-in page the tool opens at the end.*
+*Three browser moments punctuate this path, or four if you aren't already signed in to
+Cloudflare.*
 
 ## You know it worked when
 

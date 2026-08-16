@@ -6,9 +6,9 @@ Move the site onto a domain you own.
 Nothing on this page is required for that. Skip straight to
 [Connect to Workers Builds](#connect-to-workers-builds) below.
 
-Everything else here has two parts, each guarded by its own Cloudflare API token: connecting your
-domain and turning on sign-in email, which share one token, and connecting to Workers Builds at
-the end, which needs a second, wider one. Both of the first two run from the same command:
+Everything else here takes two Cloudflare API tokens. Connecting your domain and turning on
+sign-in email share the first token; connecting to Workers Builds at the end needs a second,
+wider one. The first two run from the same command:
 
 ```
 npx create-cairn-site --dir <your-site-directory>
@@ -26,9 +26,9 @@ the connection both run on the free plan.
 
 The tool asks: **Connect a domain you own to this site now?** Say yes and name your domain, and
 it opens Cloudflare's own "create token" page with five permissions already selected: Zone, DNS,
-Workers Scripts, SSL and Certificates, and Email Sending. Paste the finished token back, and read
-every row before you do, the same warning [Before you start](./before-you-start.md) opens with.
-One browser trip covers this whole step.
+Workers Scripts, SSL and Certificates, and Email Sending. Read every row before you paste the
+finished token back, the same warning [Before you start](./before-you-start.md) opens with. One
+browser trip covers this whole step.
 
 ### Switching your domain's nameservers
 
@@ -53,8 +53,8 @@ already serves is your existing setup, and it stays untouched.
 
 ```mermaid
 flowchart LR
-  accTitle: Diagram of one DNS zone carrying two unrelated record groups
-  accDescr: Your domain's single Cloudflare zone carries two groups of records that are easy to conflate. Your organization's existing mail records carry over unchanged from before the switch. cairn's own sending records are added only when you turn on email sign-in. Sign-in mail leaves from no-reply@yourdomain using cairn's records alone; your organization's existing mail is untouched.
+  accTitle: Diagram of one Cloudflare zone carrying two unrelated record groups
+  accDescr: One Cloudflare zone holds two unrelated groups of records. Your organization's existing mail records sit alongside cairn's sending records, and only cairn's records carry the sign-in mail from no-reply@yourdomain.
 
   subgraph zone["Your domain's Cloudflare zone"]
     existing["Existing mail records<br/>carried over unchanged"]
@@ -64,14 +64,13 @@ flowchart LR
   added -->|sends| signin["no-reply@yourdomain<br/>sign-in mail"]
 ```
 
-*One Cloudflare zone carries two unrelated record groups: your organization's existing mail,
-carried over unchanged, and cairn's own sending records, added only once you turn on email
-sign-in. Sign-in mail leaves from `no-reply@yourdomain` using cairn's records alone.*
+*After the switch, one Cloudflare zone holds both groups of records at once. They stay separate,
+and nothing cairn adds touches the mail your organization already sends.*
 
 **Two different things share this one domain, and it's easy to conflate them:**
 
-- **The address your site sends sign-in mail from** is `no-reply@yourdomain`, added only once
-  you turn on email sign-in below.
+- **The address your site sends sign-in mail from** is `no-reply@yourdomain`, using Cloudflare's
+  own sending infrastructure, added only once you turn on email sign-in below.
 - **Your organization's existing mail on this domain**, whatever you already use today, carries
   over unchanged and has nothing to do with cairn's own sign-in mail.
 
@@ -104,7 +103,7 @@ changes: your site keeps serving, and you keep signing in as its owner through
 the command again.
 
 Say yes, and the tool onboards `yourdomain` for Cloudflare's Email Sending, then sends a real test
-message to your own sign-in address to prove it actually works before it hands the feature to
+message to your own sign-in address to prove it works before it hands the feature to
 anyone else.
 
 A domain this new has no sending history yet, so mail providers can take a while to trust it
@@ -117,13 +116,13 @@ mail claiming to be from your domain that your domain hasn't authenticated, rega
 came from. That record stays in place even if you turn Email Sending off again later. So if you
 add a newsletter tool or a mailing list to this domain afterward, follow that tool's own
 instructions for adding itself to your domain's mail records before you send anything through it,
-or its mail gets rejected. Nothing about that lives in the record Cloudflare wrote; that one only
-sets the policy.
+or its mail gets rejected. The record Cloudflare wrote only sets that policy; it carries no list
+of which senders your domain allows.
 
 ### You know it worked when
 
 Cloudflare accepts a real test message sent from your own site, to your own sign-in address. From
-here, [Invite your editors](./invite-editors.md) is what actually gets other people signed in.
+here, [Invite your editors](./invite-editors.md) is what gets other people signed in.
 
 ## Connect to Workers Builds
 
@@ -136,14 +135,15 @@ npx create-cairn-site --dir <your-site-directory> --connect
 ```
 
 This works as soon as your site is live, whether or not you've connected a domain yet. The tool
-explains the three things this step needs: a one-time authorization of Cloudflare's own "Workers
-and Pages" GitHub App on your account, a fresh Cloudflare API token, and one later sign-in click.
-That token is a second, separate one: a fresh one, prefilled with eight permissions rather than the
-domain half's five (the same five, plus three Workers Builds needs). It becomes your Workers
-Builds build token, kept by Cloudflare and handed to every build your repository runs. It's scoped
-across every Cloudflare account and zone you own, so treat anyone who can push to your default
-branch as able to read a token that reaches all of them. Costs nothing: Workers Builds' free tier
-covers 3,000 build minutes a month and one build running at a time
+explains the three things this step needs. You authorize Cloudflare's own "Workers and Pages"
+GitHub App on your account once, create a fresh Cloudflare API token, and click a sign-in link
+later in the run. That token is a second, separate one: a fresh one, prefilled with eight
+permissions rather than the domain half's five (the same five, plus three Workers Builds needs).
+It becomes your Workers Builds build token, kept by Cloudflare and handed to every build your
+repository runs. It's scoped across every Cloudflare account and zone you own, so treat anyone
+who can push to your default branch as able to read a token that reaches all of them. This costs
+nothing on Workers Builds' free tier, which covers 3,000 build minutes a month and one build
+running at a time
 ([Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), as of
 2026-08-12).
 

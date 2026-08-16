@@ -7,16 +7,17 @@ What you are getting into, what it costs, and what stays yours.
 ```mermaid
 flowchart LR
   accTitle: Diagram of create-cairn-site connecting five assets you own
-  accDescr: create-cairn-site builds and connects five things without owning any of them. It creates a GitHub repository holding your content and a GitHub App scoped to this one site, signs in to a Cloudflare account of your own rather than creating one, connects a domain if you choose to add one, and writes a database of who can sign in. All five stay yours.
+  accDescr: create-cairn-site sits outside a group of five assets it creates or connects: the GitHub repository, the GitHub App, the Cloudflare account it signs in to rather than creates, a domain if you add one, and the sign-in database. The group is labeled as yours, not cairn's.
 
   tool["create-cairn-site"]
 
   subgraph yours["Yours, not cairn's"]
     repo["GitHub repository<br/>your content, as markdown"]
     app["GitHub App<br/>created for this site"]
-    cf["Cloudflare account<br/>1 Worker, 2 databases, 1 bucket"]
     domain["Domain<br/>if you connect one"]
-    authdb["Sign-in database"]
+    subgraph cf["Cloudflare account<br/>1 Worker, 2 databases, 1 bucket"]
+      authdb["Sign-in database"]
+    end
   end
 
   tool -->|creates| repo
@@ -26,9 +27,7 @@ flowchart LR
   tool -->|writes to| authdb
 ```
 
-*`create-cairn-site` creates or connects five assets and owns none of them: a GitHub repository
-holding your content, a GitHub App scoped to this one site, the Cloudflare account it signs in
-to rather than creates, a domain if you connect one, and the database of who can sign in.*
+*`create-cairn-site` creates or connects each of these once, then holds none of them.*
 
 `create-cairn-site` builds and connects five things, and every one of them belongs to you, not
 to cairn:
@@ -119,5 +118,4 @@ Add them as an editor on the site itself through [Invite your editors](./invite-
 they can sign in and write once they have access to both.
 
 Because every entry is a plain markdown file in a git repository, with no database that only
-cairn can read, leaving is never more complicated than cloning that repository. Nothing about
-your content depends on cairn continuing to run it.
+cairn can read, leaving is never more complicated than cloning that repository.

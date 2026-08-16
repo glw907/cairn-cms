@@ -7,12 +7,12 @@ first if you want the tool's own output as a reference tree to compare against a
 
 ```mermaid
 flowchart TD
-    accTitle: Diagram of the five build milestones, with the dev backend fence spanning milestones 2 through 4
-    accDescr: A linear flow from Milestone 1 through Milestone 5. Milestones 2, 3, and 4 sit inside a dev backend fence, each running the admin against an in-memory double instead of real credentials. Milestone 4 deploys the whole site while the fence still stands, so its deployed admin route falls back to the real guard with nothing behind it. Milestone 5 swaps in the real GitHub App and the auth database and redeploys.
+    accTitle: Diagram of the five build milestones, with the dev backend in use across milestones 2 through 4
+    accDescr: A linear flow from Milestone 1 through Milestone 5. Milestones 2, 3, and 4 sit inside a group marking the span where the admin runs against an in-memory dev backend, and the arrow from Milestone 4 to Milestone 5 is labelled swap real credentials.
 
     M1["Milestone 1<br/>bare SvelteKit site<br/>deployed to workers.dev"]
 
-    subgraph FENCE["dev backend fence: milestones 2 through 4"]
+    subgraph DEVSPAN["dev backend in use: milestones 2 through 4"]
         M2["Milestone 2<br/>cairn admin<br/>local dev backend"]
         M3["Milestone 3<br/>public site<br/>renders locally"]
         M4["Milestone 4<br/>whole site deployed<br/>dev backend stripped from prod"]
@@ -25,19 +25,19 @@ flowchart TD
     M4 -->|swap real credentials| M5
 ```
 
-*Milestones 2 through 4 all run the admin against an in-memory dev backend, and Milestone 4
-deploys the whole site while that fence still stands, so its deployed admin route falls back to
-the real guard with no GitHub App or database behind it. Milestone 5 swaps in the real GitHub
-App and auth database and redeploys, the point where a save first commits to a real
-repository.*
+*The admin runs against the in-memory dev backend on your own machine from Milestone 2 on. The
+deployed site in Milestone 4 carries no dev backend in its bundle, so its `/admin` reaches the
+real guard and goes no further than the sign-in page. Milestone 5 supplies the GitHub App and
+the auth database, and is where a save first commits to a real repository.*
 
 Work through the milestones in order. The map shows what each one leaves you with, and the
 early milestones prove the deploy pipeline before there's anything content-shaped to deploy. By
 the end you'll have a one-concept site, editable through `/admin`, publishing through a real
 GitHub App, live on a `workers.dev` subdomain with no domain of your own required.
 
-You'll need Node 22 or later, a GitHub account, and a Cloudflare account (the free tier covers
-everything through Milestone 3; Milestone 5 needs Workers Paid, named at the point it matters).
+You'll need Node 22 or later, a GitHub account, and a Cloudflare account. Everything through
+Milestone 4 runs on Cloudflare's free tier. Milestone 5 needs a domain zone, and a second
+person's sign-in is what puts the site on Workers Paid.
 
 ## Milestone 1: a bare SvelteKit site, deployed
 
@@ -266,8 +266,7 @@ what each field on `defineConcept` and `fields.*` means.
 ### Mount the admin
 
 Add `createCairnAdmin` beside the runtime, then the two-file catch-all route pair plus the
-shared shell layout. This is the whole admin mount, reproduced exactly here because it's the
-one part of a hand-built site where copying beats improvising:
+shared shell layout. This is the whole admin mount:
 
 ```ts
 // src/lib/cairn.server.ts
@@ -538,7 +537,7 @@ npx wrangler deploy
 ```
 
 Visit the deployed `workers.dev` URL. The public post renders. As the map shows, `/admin` on
-the deployed site still doesn't work here: the dev backend fence ends at this milestone, so
+the deployed site still doesn't work here: the production build carries no dev backend, so
 `createAuthGuard()` runs with no GitHub App or database behind it, exactly as expected.
 Milestone 5 gives it both.
 
@@ -551,20 +550,21 @@ loads the sign-in page (not a crash, and not signed in).
 save actually commits to a repository and a sign-in actually sends an email.
 
 Sending that email needs a domain zone connected to Cloudflare, since Email Sending onboards on a
-zone, and the `workers.dev` subdomain this walkthrough has used through Milestone 4 has none. Add
-cairn to a SvelteKit app, linked below, covers onboarding it once you own a zone; the moment a
-second person needs their own sign-in rather than just you, Cloudflare's Workers Paid plan, $5 a
-month, is what lets a real email reach them. See [the free-until
-boundary](../admin/before-you-start.md#the-free-until-boundary) for exactly when that bill starts.
+zone, and the `workers.dev` subdomain this walkthrough has used through Milestone 4 has none.
+[Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md) covers onboarding a zone once
+you own one. The moment a second person needs their own sign-in rather than just you, a real
+email reaching them needs Cloudflare's Workers Paid plan. See [the free-until
+boundary](../admin/before-you-start.md#the-free-until-boundary) for what it costs and when the
+bill starts.
 
 This milestone is almost entirely account setup rather than code, and it's exactly the setup
-[Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md) already walks through in full:
+Add cairn to a SvelteKit app already walks through in full:
 creating the GitHub App and installing it on your content repo, provisioning the `AUTH_DB` D1
 database and applying its migration, and wiring the `EMAIL`, `AUTH_DB`, and
 `GITHUB_APP_PRIVATE_KEY_B64` bindings into `wrangler.jsonc` and your Worker's secrets. Follow it
 now, then come back here.
 
-With those in hand, three things change:
+With those in hand, three files change and a fourth stops mattering:
 
 **1. `cairn.config.ts`'s `backend` and `email` get their real values**, replacing the
 placeholders from Milestone 2:

@@ -1,20 +1,20 @@
 # What the scaffold wrote
 
-**Contract:** map every file `create-cairn-site` puts in your repository to the page that
-explains it, so you can find your way around a tree you didn't write by hand.
+**Contract:** map the cairn-specific files [`create-cairn-site`](../admin/create-your-site.md)
+puts in your repository to the page that explains each one, so you can find your way around a
+tree you didn't write by hand.
 
-The scaffold is Waymark, cairn's own reference theme, baked from the same source tree the engine
-tests itself against (`examples/showcase` in the cairn-cms repository) and pruned of everything
-that tree carries only for the engine's own development: its Playwright suite, its design-review
-tooling, and a members-login fixture that demonstrates a second auth channel rather than
-belonging to every site. What's left is a real, complete site: one theme, one content model, and
-every route a published site needs.
+The scaffold is Waymark, cairn's own reference theme, taken from the same source tree the engine
+tests itself against (`examples/showcase` in the cairn-cms repository). Everything that tree
+carries only for the engine's own development is pruned out: the Playwright suite, the
+design-review tooling, and a members-login fixture demonstrating a second auth channel. What's
+left runs on its own, with one theme, one content model, and the public routes listed below.
 
 This tree is not the same shape [Build a site by hand](./build-a-site-by-hand.md) walks through.
 That page starts from a bare `sv create` scaffold and adds cairn file by file; this page
 describes the tool's own output, which starts from Waymark and already carries a
 `svelte.config.js` (Waymark predates the current `sv create`'s inline-config shape and hasn't
-migrated). Both are valid; they're just different starting points.
+migrated).
 
 ```
 your-site/
@@ -87,18 +87,19 @@ your-site/
 └── wrangler.jsonc
 ```
 
-*Captured from a real `create-cairn-site` run, not typed by hand, so it matches what you actually
-get. Two things worth knowing about it. First, `.gitignore` and `.gitattributes` are really there:
-the packlist defect that once dropped `.gitignore` from a published tarball is fixed, so a site
-scaffolded from the published package carries both files, not only a locally baked checkout.
-Second, the tree is complete and the map below is not: it covers the entries that are
-cairn-specific or otherwise need explaining, and skips plain SvelteKit and tooling files
-(`tsconfig.json`, `README.md`, `scripts/`, `src/app.html`, `src/app.d.ts`, `src/hooks.server.ts`,
-`src/params/`, the `src/chassis/` files not named below, and the root and route-group
-`+layout.server.ts`/`+layout.svelte`/home `+page.server.ts`/`+page.svelte` files SvelteKit's own
-routing expects) that a SvelteKit developer already recognizes.*
+*A tree from a `create-cairn-site` run. `.gitignore` and `.gitattributes` are really there: a
+site scaffolded from the published package carries both.*
 
 ## Root
+
+The tree above is complete; the map below is not. It covers the entries that are cairn-specific
+or otherwise need explaining, and skips the tooling and plain SvelteKit files a developer already
+recognizes (`tsconfig.json`, `README.md`, `scripts/`, `src/app.html`, the `src/chassis/` files
+not named below, and the root and route-group `+layout.server.ts`/`+layout.svelte`/home
+`+page.server.ts`/`+page.svelte` files SvelteKit's own routing expects). Two files it skips are
+not plain: `src/hooks.server.ts` mounts `createAuthGuard()` behind the dev-backend gate, and
+`src/app.d.ts` declares the platform bindings and `__CAIRN_DEV_BUILD__`. [Build a site by
+hand](./build-a-site-by-hand.md) writes both from nothing.
 
 | File | What it is |
 | --- | --- |
@@ -148,7 +149,7 @@ screen](./add-a-custom-admin-screen.md) walks through building from nothing; it 
 | `(site)/archive/[page]/` | A paginated post archive, built on the chassis's `archive.ts` slicing helper. |
 | `(site)/preview/[token]/` | The [share-a-draft-preview](./share-a-draft-preview.md) landing page. |
 | `(site)/styleguide/` | A living reference of the theme's own components and typography; useful while you're editing the theme, safe to delete otherwise. |
-| `probe-craft/` | A leftover fixture from the engine's own admin design work, stock DaisyUI with none of cairn's own styling. It carries no content and no link to it from anywhere else in the scaffold; safe to delete. |
+| `probe-craft/` | A leftover fixture from the engine's own admin design work, stock DaisyUI with none of cairn's own styling. It carries no content, and nothing else in the scaffold links to it; safe to delete. |
 | `feed.xml/`, `feed.json/` | RSS and JSON Feed, via [`rssResponse`/`jsonFeedResponse`](../reference/delivery-data.md#rssresponse). |
 | `sitemap.xml/` | Via [`sitemapResponse`](../reference/delivery-data.md#sitemapresponse). |
 | `robots.txt/` | Via [`robotsResponse`](../reference/delivery-data.md#robotsresponse); see [Choose an AI posture](./choose-an-ai-posture.md) for the `posture` option it reads. |
@@ -163,5 +164,5 @@ literals, the runtime composition point (`cairn.server.ts`), the dev-backend gat
 wiring, the archive-slicing helper, the date formatter, the theme toggle, and the base design
 tokens and prose CSS every theme starts from. You'll read it more than you'll edit it; [Design
 your site](./design-your-site.md) covers the seams it exposes for a theme to override, and
-`src/chassis/README.md` in your own repository is the file-by-file reference for this directory
-specifically, since it documents itself.
+`src/chassis/README.md` in your own repository lists the directory file by file, which is why
+this page doesn't.

@@ -39,8 +39,8 @@ flowchart TB
   delivery --> r2
 ```
 
-*Each engine box groups several of the package's export subpaths by function rather than listing
-every one; the [reference index](../reference/README.md) documents each subpath individually.*
+*The engine boxes group the package's export subpaths by function; the [reference
+index](../reference/README.md) documents each subpath individually.*
 
 ## The adapter is the one contract
 
@@ -48,9 +48,9 @@ A site declares a single `CairnAdapter` object, typically at `src/lib/cairn.conf
 content concepts exist, the GitHub repository commits land on, the magic-link sender, the render
 function, and the optional extension points (roles, an access map, a nav layout, media). The engine
 never hard-codes a concept, a directory, or a field. Every route factory, every admin screen, and
-every delivery helper reads its behavior from this one object. A site that never touches the
-adapter beyond the scaffold's defaults still gets a working owner/editor CMS; a site that extends it
-adds concepts, roles, and screens without forking anything.
+every delivery helper reads its behavior from this one object. Left at the scaffold's defaults,
+the adapter yields an owner/editor CMS. Adding concepts, roles, or screens is an edit to this
+object, not a fork of the engine.
 
 The root barrel and `/sveltekit` are the split the preceding diagram draws as core/adapter and
 the SvelteKit layer. Nothing on the root barrel imports SvelteKit, and nothing on `/sveltekit` is a
@@ -77,7 +77,8 @@ site reaches into:
   screens with a site's custom ones. See [Organize your admin nav](./organize-your-admin-nav.md).
 - **The Backend**, the read-and-commit interface over the content repository. The packaged
   `githubApp` provider is the only shipped implementation; the interface exists so the commit path
-  is a typed contract rather than a hard-coded GitHub call threaded through every route.
+  is a typed contract rather than a hard-coded GitHub call threaded through every route. See
+  [Core](../reference/core.md).
 - **`AssetConfig`**, a site's optional media declaration, resolved into the R2 bucket binding,
   upload limits, and delivery variants a site's own routes and the admin's media library both read.
   See [Data tiers](./data-tiers.md).
@@ -106,20 +107,18 @@ sequenceDiagram
   Main->>Deploy: Trigger deploy
 ```
 
-*Saving commits to a per-entry holding branch named `cairn/<concept>/<id>`; publishing is a
-separate, deliberate action that copies that branch's content onto the default branch, which is
-what actually triggers a site's existing deploy.*
+*The holding branch is per entry, named `cairn/<concept>/<id>`.*
 
 A holding branch lets an editor iterate on a draft across multiple saves, and lets the admin show
 what is pending without it being live. The commit author is the editor; the committer is
-`cairn-cms[bot]`, so the git history is honest about who wrote what while every commit still
-traces to the App's own identity. [Security model](./security-model.md) covers the authentication
+`cairn-cms[bot]`, so git history attributes each change to the editor who made it, and every
+commit still traces to the App's own identity. [Security model](./security-model.md) covers the authentication
 that gates who can reach this path at all; [Content model](./content-model.md) covers what a
 commit actually contains.
 
 ## The read path
 
-Two different reads exist for two different questions. A request that needs one entry's full body
+The engine reads content two ways. A request that needs one entry's full body
 (a public page render, an edit-form load) reads that file directly through the Backend's content
 API. A request that needs to know what exists across the whole corpus, an index page, a tag list, a
 sitemap, a link-integrity check, reads the committed content manifest instead: a JSON projection of
@@ -137,7 +136,6 @@ resolution are not seams a site is meant to reach into. Each is covered by a sta
 public surface instead ([Render](../reference/render.md), [SvelteKit](../reference/sveltekit.md),
 [Auth crypto](../reference/auth-crypto.md)), so an upgrade can change the internals freely as long
 as the contract holds. If a task seems to require importing something the reference doesn't
-document, the more likely answer is that the task belongs on the site's own code, not inside the
-engine's boundary: cairn owns managing content and the editor and admin frame, and little else,
-leaving a site's own actors, auth, data, and domain logic to the developer, served through a seam
-rather than folded into the engine itself.
+document, that task usually belongs in the site's own code. cairn manages content and the editor
+and admin frame; a site's own actors, auth, data, and domain logic belong to the site and reach
+the engine through a seam.

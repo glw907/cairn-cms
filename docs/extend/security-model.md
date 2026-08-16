@@ -16,13 +16,13 @@ of a leaked commit credential, not an anonymous public attacker reaching content
 
 ```mermaid
 flowchart LR
-    accTitle: Diagram of the security model's two trust boundaries
+    accTitle: Diagram of where this page's security model ends and render safety's begins
     accDescr: An editor's browser passes through the guard to the commit pipeline and repository; a deploy step then hands off to the render pipeline for a visitor's browser. This page's threat model covers the left half, render safety's model the right half.
     EditorBrowser["Editor's browser"]
     Deploy["Site's deploy"]
     VisitorBrowser["Visitor's browser"]
     subgraph pageModel["This page's model"]
-        EditorBrowser --> Guard["The guard"]
+        EditorBrowser --> Guard["Guard"]
         Guard --> CommitPipeline["Commit pipeline"]
         CommitPipeline --> Repo["Repository"]
     end
@@ -34,46 +34,45 @@ flowchart LR
     Deploy --> RenderPipeline
 ```
 
-*This page's model spans an editor's browser, the guard, the commit pipeline, and the
-repository. Render safety's model, on the right, spans deploy, the render pipeline, and a
-visitor's browser; see [Render safety](./render-safety.md).*
+*The repository is the boundary between the two models. Everything up to it is this page's
+subject; from there the site's own deploy hands off to the render pipeline, which [Render
+safety](./render-safety.md) governs.*
 
 ## Sign-in: magic links, not passwords
 
 An editor requests a sign-in link by email. cairn mints a single-use token, stores only its SHA-256
-hash, and emails the raw token as a link; the link lives ten minutes. Consuming it creates a
-session, stored the same way (id, not the raw value the browser holds). Both TTLs, and a
-per-address send cooldown, are named constants an adapter cannot loosen: a magic-link token lives
-ten minutes, a session thirty days, and a repeat request from the same address is throttled to once
-a minute. There is no password anywhere in this path, and no third-party identity provider; the
-allowlist itself, the `editor` table, is the whole authorization surface.
+hash, and emails the raw token as a link. Consuming the link creates a session, stored the same way
+(id, not the raw value the browser holds). The token lives ten minutes, the session thirty days,
+and a repeat request from the same address is throttled to once a minute. All three are named
+constants an adapter cannot loosen. There is no password anywhere in this path, and no third-party
+identity provider; a sign-in proves only membership in the `editor` table.
 
 The request path is deliberately non-enumerating: an address that isn't on the roster gets the
 same `{ status: 'sent' }` response a real editor's address gets, so a stranger probing addresses
 can't tell allowlist membership from the response alone. The one deliberate exception is the
 cooldown above: a *repeat* request inside the one-minute window returns a distinct `throttled`
 status, which does reveal that the address is on the roster. That's an accepted trade, made so a
-real editor hammering the sign-in button doesn't flood their own inbox, not an oversight.
+real editor hammering the sign-in button doesn't flood their own inbox.
 
 ## The session cookie
 
-The session cookie carries the `__Host-` prefix on every https deploy: `Secure`, `Path=/`, no
-`Domain`, which binds the browser's enforcement of the cookie to the exact origin rather than
-trusting a `Domain` attribute nothing forges. Local `http` development drops the prefix, since
-`__Host-` requires `Secure` unconditionally and a dev cookie has no TLS to set it with. The CSRF
-double-submit cookie follows the identical naming rule.
+The session cookie carries the `__Host-` prefix on every https deploy, which requires `Secure`
+and `Path=/` and forbids `Domain`. The browser then ties the cookie to the exact origin that set
+it, rather than to a `Domain` attribute a sibling host could also set. Local `http` development
+drops the prefix, since `__Host-` requires `Secure` unconditionally and a dev cookie has no TLS to
+set it with. The CSRF double-submit cookie follows the identical naming rule.
 
 ## CSRF: cairn owns it, not the framework
 
 SvelteKit's default CSRF check compares the request's `Origin` header against the site's own
-origin and rejects a mismatch, but it is a single global switch with no per-route exception, and it
-rejects a request that carries no `Origin` header at all, which a privacy-hardened browser can send
-on an entirely legitimate same-origin form post. A site running cairn sets `csrf: { checkOrigin:
+origin and rejects a mismatch. It is a single global switch, with no per-route exception. It also
+rejects a request that carries no `Origin` header at all, which a privacy-hardened browser can
+send on a legitimate same-origin form post. A site running cairn sets `csrf: { checkOrigin:
 false }` to hand that authority to the guard instead. `checkOrigin` is deprecated as of SvelteKit
 2.61 in favor of `csrf.trustedOrigins`, but stays supported across cairn's tested range. See
 [Supported toolchain](../reference/supported-toolchain.md#the-checkorigin-deprecation). The guard
-enforces a stronger, `Origin`-independent
-rule of its own: every unsafe `/admin` form POST must carry a valid double-submit token, a random
+enforces a stronger, `Origin`-independent rule of its own: every unsafe `/admin` form POST must
+carry a valid double-submit token, a random
 value set in a cookie at page-load time and echoed back as a hidden field, compared in constant
 time. A token match cannot be forged cross-site regardless of what headers the browser did or
 didn't send. Outside `/admin`, the guard restores the framework's own `Origin` check the site
@@ -82,33 +81,37 @@ else in the site.
 
 ## The guard's request order
 
-`createAuthGuard()` is the site's `handle` hook: every request passes through it in this fixed
-order.
+[`createAuthGuard()`](../reference/sveltekit.md#createauthguard) is the site's `handle` hook:
+every request passes through it in this fixed order.
 
 1. **Dev-backend tripwire.** Fails closed if a deployed runtime carries the local-only flag.
 2. **Non-admin origin check.** Restores the `Origin` check described above.
-3. **HTTPS help page.** An `/admin` path over plain `http` on a non-local host gets a help page.
+3. **HTTPS help page.** An `/admin` path over plain `http` on a non-local host gets a help page
+   instead of a doomed form post.
 4. **Bindings check.** A missing `AUTH_DB` binding fails every admin path with a named
    condition, not a raw 500.
-5. **CSRF check.** Accepts the double-submit field or a custom header, since a raw-body upload
-   can't clone its body to read a form field.
+5. **CSRF check.** Accepts the double-submit field or a custom header, since the guard can't
+   clone a raw-body upload to read a form field.
 6. **Session resolve.** Attaches `locals.cairnEditor` and `locals.cairnAccess` for the route to
    read.
 
 Every step that refuses a request logs a named [`guard.rejected`](../reference/log-events.md)
-reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`. The exception is step 6: a
-missing or invalid session redirects to `/admin/login` without logging.
+reason: `dev_backend_in_prod`, `origin`, `https`, `bindings`, `csrf`, so a sign-in failure is
+diagnosable from the logs rather than guessed at. The exception is step 6: a missing or invalid
+session redirects to `/admin/login` without logging.
 
 ## Roles, capability, and the access map
 
 An editor's `role` (the string stored in D1) resolves to one of three capabilities, `none`,
-`editor`, or `owner`, through the site's declared role vocabulary (`defineRoles`); a zero-config
-site gets the built-in owner/editor pair with no declaration needed. Capability alone gates the
-engine's own screens. A site's own custom routes additionally read an access map (`defineAccess`),
-one declaration the guard and the admin's nav rendering both read, so a route a session can't reach
-never appears as a link it can't use. `requireAccess`'s own contract is stricter than the built-in
-screens': with no map at all it refuses every session, owner included, since an explicit call to a
-gate that found nothing to gate on is a configuration bug, not an open door.
+`editor`, or `owner`, through the site's declared role vocabulary
+([`defineRoles`](../reference/core.md#defineroles)); a zero-config site gets the built-in
+owner/editor pair with no declaration needed. Capability alone gates the engine's own screens. A
+site's own custom routes additionally consult an access map
+([`defineAccess`](../reference/core.md#defineaccess)). The guard and the admin's nav rendering
+share that one declaration, so a route a session cannot reach does not appear in the nav.
+[`requireAccess`](../reference/sveltekit.md#requireaccess)'s own contract is stricter than the
+built-in screens': with no map at all it refuses every session, owner included, since an explicit
+call to a gate that found nothing to gate on is a configuration bug.
 
 ## Response hardening
 

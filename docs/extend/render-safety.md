@@ -15,13 +15,12 @@ in every visitor's browser, since the render output goes straight to the public 
 
 ## The pipeline order
 
-`createRenderer` composes remark and rehype stages into one fixed order. This diagram carries
-that order; the sections below keep the why behind each stage and its exact allowlist details.
+`createRenderer` composes remark and rehype stages into one fixed order.
 
 ```mermaid
 flowchart LR
     accTitle: Diagram of the render pipeline's stage order
-    accDescr: Nine ordered stages run left to right, from markdown parsing to a site's own plugins; a subgraph marks the two stages, the sanitize floor and the sink guard, that the unsafeDisableSanitize switch turns off together.
+    accDescr: Nine ordered stages run left to right, from markdown parsing to a site's own plugins; a subgraph marks the two the unsafeDisableSanitize switch turns off.
 
     parse[Parse markdown]
     raw[rehype-raw]
@@ -57,18 +56,16 @@ Every renderer `createRenderer` builds runs a sanitize floor unless a site opts 
 `rehype-sanitize`, seeded from its own GitHub-lineage `defaultSchema` (the same allowlist behind
 GitHub's own markdown rendering), strips `<script>` tags, inline event-handler attributes, and
 `javascript:`/`data:` URLs before anything else in the pipeline touches the tree. A site does not
-wire this up; it exists because the reference delivery path once had no floor at all, which is
-exactly the gap this design closes.
+wire this up; it exists because the reference delivery path once had no floor at all.
 
-## Extend the allowlist; never weaken the strip
+## Extend the allowlist with `sanitizeSchema`
 
 A site customizes what its own content needs through `sanitizeSchema`, a function that receives
 cairn's default schema and returns the schema to use. The pattern is additive: start from the
 argument, add the benign tags and attributes real content actually uses (an in-page `<nav>` table
 of contents, a `<details><summary>` disclosure, an anchor's `class` and `target`), and return it.
 There is no supported way to remove an entry from the dangerous-protocol strip or re-admit
-`<script>` through this option; the posture is extend-only by design, the same posture WordPress's
-`kses` filter and rehype-sanitize's own schema-spreading convention both use.
+`<script>` through this option; the posture is extend-only.
 
 A separate, code-level `unsafeDisableSanitize` switch exists for a site whose content is entirely
 developer-controlled, and it is the one true off switch: it removes both the pre-dispatch floor and

@@ -86,7 +86,9 @@ package governs these two tracks).
 - [ ] **Step 1:** Read the page's contract (outlines record, extend track item 1) and the
   rulings' global constraints. Author the system block diagram at the top: the site (adapter,
   admin mount, delivery routes), the engine, and the three stores (git, D1, R2). **The export
-  map is 18 subpaths, not the contract's stale four** (verified 2026-08-15), so the diagram
+  map has grown far past the contract's stale four subpaths** (17 export keys, 16 real code
+  subpaths beside the `./package.json` self-entry, counted from `package.json` directly at the
+  fold; the adversarial review's "18" was itself off by one), so the diagram
   draws the engine as functional GROUPS, not subpaths: core/adapter (the root barrel), the
   SvelteKit layer, the admin UI (components, toolkit, islands), rendering, delivery, and the
   auth/platform group. The caption states that these are groupings and the full export map

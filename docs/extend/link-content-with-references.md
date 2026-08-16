@@ -34,8 +34,8 @@ const contributors = fields.array(fields.reference({ concept: 'authors', label: 
 ## What a reference actually is
 
 The stored value is the target's permanent id, nothing else: `author: a1b2c3d4`, not a title or
-a path. `extractReferenceEdges` reads every `reference` and `array(reference)` field off an
-entry's frontmatter against its concept's fields, recording each as a
+a path. The engine reads every `reference` and `array(reference)` field off an entry's
+frontmatter against its concept's fields, recording each as a
 [`ReferenceEdge`](../reference/core.md#types) (`{ field, concept, id }`), with `concept` taken
 from the field's own declaration rather than the stored value, so a hand-edited file can't
 misdirect an edge to a concept it was never typed for. The manifest records these edges per
@@ -43,8 +43,8 @@ entry, alongside the outbound `cairn:` link edges the same entry carries.
 
 Renaming a target entry doesn't break the edge. The reference rewriter is byte-preserving: it
 splices the changed id into the frontmatter by source offset rather than reformatting the file
-through a YAML round trip, so a rename updates every referencing entry's stored id with no other
-byte of those files touched, comments, key order, and line endings included.
+through a YAML round trip, so a rename updates every referencing entry's stored id and touches no
+other byte of those files. Comments, key order, and line endings survive unchanged.
 
 ## Resolving a reference on the public side
 
@@ -64,10 +64,11 @@ const author = refs.author as ResolvedReference | undefined;
 ```
 
 A `reference` field resolves to one `ResolvedReference`; an `array(reference)` field resolves to
-an array of them, in edge order. `resolveReferences` drops an id with no live target rather than
-throwing, since a build already guarantees every committed reference resolves (the next
-section); an unresolved id at request time means a mid-flight or draft target, not a broken
-build. Render the resolved value as a link to the target's page:
+an array of them, in edge order.
+[`resolveReferences`](../reference/delivery-data.md#resolvereferences) drops an id with no live
+target rather than throwing, since a build already guarantees every committed reference resolves
+(the next section); an unresolved id at request time means a mid-flight or draft target, not a
+broken build. Render the resolved value as a link to the target's page:
 
 ```svelte
 {#if author}
@@ -80,26 +81,26 @@ build. Render the resolved value as a link to the target's page:
 A dangling reference, an id naming an entry that doesn't exist, fails the build.
 [`verifyReferences`](../reference/core.md#manifest-serialize-and-verify) walks the manifest and
 throws, naming the source entry, the field, and the missing target, the moment a build runs it.
-References carry no other integrity backstop: unlike a `cairn:` link, there's no prerender-time
-resolver fallback, so this build gate is the only thing standing between a bad reference and a
-broken public page.
+Unlike a `cairn:` link, a reference has no prerender-time resolver fallback, so this build gate is
+its only integrity check.
 
 ## The delete guard
 
 An owner or editor can't delete an entry another entry still references. The delete action checks
 two things against the target before it runs: inbound `cairn:` body links from the published
 manifest, and inbound reference edges from a cross-branch index built over the manifest plus every
-open `cairn/*` edit branch. This is the same shape a fragment's delete guard uses against
-`::include` (see [Reuse content across entries](./reuse-content-across-entries.md)): the engine
-won't let a save silently orphan another entry's edge, in either direction.
+open `cairn/*` edit branch, each reported with the referencing field names. This is the same shape
+a fragment's delete guard uses against `::include` (see
+[Reuse content across entries](./reuse-content-across-entries.md)): the engine won't let a save
+silently orphan another entry's edge.
 
 ```mermaid
 flowchart TD
 accTitle: Diagram of the delete guard's refuse-or-proceed decision
-accDescr: A delete checks manifest inbound links, then builds a strict cross-branch reference index; a link, a reference, or a failed index build each refuse the delete, and a clean check on both lets it proceed.
+accDescr: A delete checks manifest inbound links, then builds a strict cross-branch reference index. An inbound link, an inbound reference, or a failed index build refuses the delete; a clean check on both lets it proceed.
 
 start(["Delete requested"]) --> linkCheck{"Inbound <code>cairn:</code> links<br/>on the manifest?"}
-linkCheck -->|Found| refuseLinks["Refuse: pages link to it"]
+linkCheck -->|Found| refuseLinks["Refuse: entries link to it"]
 linkCheck -->|None| buildIndex["Build cross-branch reference index<br/><code>strict: true</code>"]
 buildIndex -->|Build fails| refuseFail["Refuse: could not verify references"]:::focus
 buildIndex -->|Build succeeds| refCheck{"Referencing entries found?"}
@@ -107,14 +108,12 @@ refCheck -->|Found| refuseRefs["Refuse: entries reference it"]
 refCheck -->|None| proceed(["Delete proceeds"])
 ```
 
-*A delete first checks the published manifest's inbound `cairn:` links, then builds a cross-branch
-reference index over the manifest plus every open edit branch. The index build itself fails
-closed: a read error refuses the delete rather than counting as an absent reference.*
+*The index build itself fails closed: a read error refuses the delete rather than counting as an
+absent reference.*
 
 ## What blocks and what only warns
 
-Delete and rename both read that same cross-branch reference index, built with `strict: true` so
-a failed build refuses the action instead of mistaking a read error for "not referenced." An
+Delete and rename both read that same cross-branch reference index, built with `strict: true`. An
 unpublished draft's edge still counts: deleting or renaming its target is refused even though
 nothing about the edge is live yet. Renaming also refuses outright, naming the blocking entries,
 when a *different* open branch than the entry's own holds an inbound edge, so a rename can't

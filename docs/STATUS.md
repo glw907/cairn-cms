@@ -140,24 +140,31 @@ in the scaffolded site, fail-loud in both directions. Red-then-green tests plus 
 `npm pack` proof; changelog entry under Unreleased. This also clears the capture pass's tool
 prerequisite.
 
-Queue (reordered on Geoff's 2026-08-15 parallelization call): **three parallel tracks now — the
-diagram-pages pass (this repo; merge gated on the theme), the cairn-pub theme (in process, near
-done: a11y fix and containment probe landed at `4d5e17e`/`f0de31b`), and the seam DESIGN sitting
-(cairn-pub, its own session; brief at
-`docs/internal/record/2026-08-15-live-reproduction-seam-requirements.md`, which points at the
-theme session's banked `/help` pipeline notes). The capture pass runs as soon as Geoff schedules
-his attended run (brief and protocol:
+Queue (reordered on Geoff's 2026-08-15 parallelization call): **the diagram-pages pass (this
+repo; merge gated on the theme) and the cairn-pub theme (in process, near done: a11y fix and
+containment probe landed at `4d5e17e`/`f0de31b`) run in parallel. The seam DESIGN sitting ran
+2026-08-15 and is DONE:** the spec is ratified at cairn-pub
+`docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md` (branch
+`pass-d-docs-tracks`, pushed) and the two-pass implementation plan at
+`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md` (this repo, `main`). Both
+survived a 20-plus-agent adversarial review each (spec: 16 verified findings folded, 0 refuted,
+which moved fence delivery to the rehype stage past the sanitize floor and made posing the rule;
+plan: 16 verified folded, 0 refuted, which relocated the mount tests to the browser vitest
+project, added the fixture-asset route, and declared the pass split). The capture pass runs as
+soon as Geoff schedules his attended run (brief and protocol:
 `docs/internal/record/2026-08-15-capture-pass-brief.md`; its tool prerequisite, the `.gitignore`
-fix, is done). Then: the seam build -> the editors rewrite -> the editors read -> release one ->
-the three-site walk -> P.** Launch prompt for the seam sitting, from `~/Projects/cairn-pub`:
-"Brainstorm the live-reproduction seam design per cairn-cms
-docs/internal/record/2026-08-15-live-reproduction-seam-requirements.md; read
-docs/2026-08-15-help-pipeline-notes.md in this repo first."
+fix, is done). Then: the seam build (two passes, plan above) -> the editors rewrite -> the
+editors read -> release one -> the three-site walk -> P.** Launch prompt for the seam build
+Pass 1, a fresh Opus 5 session, AFTER `docs-diagram-pages` merges (its merge gate ends in
+Geoff's before/after read, an attended moment), from `~/Projects/cairn-cms`: "Execute Pass 1 of
+the live-reproduction seam plan, docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md,
+per the cairn-pass skill."
 
 ### cairn-pub is PREPARED and deliberately not merged
 
-Branch `pass-d-docs-tracks` at `e7218a4` in `~/Projects/cairn-pub`, **local only, never pushed**
-(plan ruling 3). Proven against a packed tarball: 81 prerendered pages, zero broken links, a
+Branch `pass-d-docs-tracks` in `~/Projects/cairn-pub`, **pushed to origin as of 2026-08-15**
+(Geoff's push instruction at the seam sitting close supersedes plan ruling 3's never-push;
+the branch now also carries the seam spec, and the merge gate below is unchanged). Proven against a packed tarball: 81 prerendered pages, zero broken links, a
 clean rebuild. **The site walk merges it after release one**, and the ordering is forced rather
 than a preference: that branch reads the docs payload out of its installed
 `@glw907/cairn-cms`, and the published `0.94.0-rc.1` predates the restructure, so a build against

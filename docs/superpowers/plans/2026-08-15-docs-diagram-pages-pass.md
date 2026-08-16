@@ -367,3 +367,43 @@ package governs these two tracks).
 - Deliverable count: eleven diagrams, one tree, one gate script, eleven pages touched (ten
   rewrites plus `configure-rendering.md`'s link) across two tracks. At the second in-flight
   task split, propose splitting the pass, per the standing sizing rule.
+
+## Post-mortem (2026-08-16, at the merge)
+
+**What was built.** Eleven mermaid diagrams across ten pages (the two architecture figures, the
+trust-boundary map, the media-storage flow, the delete-guard decision, the pipeline order, the
+milestone map, the key-rotation gantt, and the admin track's ownership, domain, and
+setup-journey maps), nine page rewrites plus `configure-rendering.md`'s link, the generated
+scaffold tree, and the `check:visuals` gate (proven red once, wired into `test.yml`). Eleven
+branch commits; the pass executed 2026-08-15 as a workflow on Geoff's grant.
+
+**What was verified, with evidence.**
+
+- Branch-side close (2026-08-15, commits `ab3f0de4`, `f46410a6`): `code-simplifier` over the
+  gate script, eleven `cairn-register-editor` fan-outs, the must-survive sweep (three weakenings
+  found and restored, two sweep proposals refused on verification), full gate green
+  (svelte-check 0/0, `check:visuals` OK at 11 diagrams, Vale clean, 5322 tests).
+- Merge gate in themed cairn-pub (2026-08-16, banked in the
+  `diagram-pages-merge-gate-state` memory): tarball-installed branch payload, full-page reads of
+  all ten diagram pages in both schemes, the a11y proof end to end (computed accessible name is
+  the authored `accTitle`, description the authored `accDescr`), the containment probe green
+  with the gantt holding its date axis at 320/390, Geoff's before/after on the two marquee
+  diagrams. Three theme-side fixes landed in cairn-pub as `eae4033` and `d4e7575`.
+- Merge hygiene (2026-08-16, this close): the full must-survive grep set re-run green against
+  the branch pages; the four code-derived diagrams re-verified against `main`'s current source
+  (17-key export map covered by the drawn groups, guard order and reason strings per
+  `guard.ts`, rehype order and the `unsafeDisableSanitize` span per `pipeline.ts`, D1 tables
+  and manifest keying per the migrations and `content/compose.ts`); the scaffold tree
+  regenerated from a fresh bake-and-scaffold run against `main`, matching the page exactly now
+  that the `.gitignore` packlist fix has landed, so the page's kept dotfile entries are real.
+
+**Decisions locked in.** The authoring convention (in-fence `accTitle`/`accDescr`, one
+emphasis-paragraph caption) is enforced by `check:visuals` and styled by the cairn-pub theme as
+the figcaption device. The SVG escalation path stayed closed; no diagram needed it. The gantt's
+placeholder-axis caption clause stays, since the axis renders at both probe widths.
+
+**Carried forward.** `create-your-site.md`'s transcripts and `is-it-working.md` wait on the
+capture pass, which needs scheduling with Geoff. The editors track waits on the
+live-reproduction seam (Pass 1 unblocks at this merge). The theme-side mechanic the gate
+surfaced (post-measurement metric drift in mermaid HTML labels) is filed in
+`docs/internal/record/2026-08-16-diagram-theme-harvest-findings.md`.

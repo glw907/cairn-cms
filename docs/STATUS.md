@@ -15,7 +15,13 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-15: Pass D is DONE; next is release one)
+## Immediate next action (2026-08-16: execute the seam build Pass 1)
+
+**Immediate next action:** execute Pass 1 of the live-reproduction seam plan
+(`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`), in a fresh Opus 5 session
+launched from `~/Projects/cairn-cms`, per the `cairn-pass` skill: dispatch per task to
+`cairn-implementer`, test-first, full gate per task, on a worktree off `main`. The
+docs-diagram-pages merge that gated it landed 2026-08-16 (merge `817d155a`).
 
 **Pass D, the documentation reset, is complete across all three phases.** Phase 1 (PR #34) and
 Phase 2 (PR #35) merged earlier; Phase 3 (Tasks 9 through 14) closes the pass. The published
@@ -75,24 +81,24 @@ alt-and-caption standard, motion out by decision (trigger filed in Later), and n
 callouts with keyed lists for the three locate-many-controls screens. The per-page contracts in
 `2026-08-15-docs-outlines-with-visuals.md` stand as amended by those rulings.
 
-**The diagram-pages pass is EXECUTED and HELD at the merge gate (2026-08-15, workflow-executed
-on Geoff's grant).** Branch `docs-diagram-pages`, pushed to origin, eleven commits: the eleven
-mermaid diagrams authored across ten pages, the nine page rewrites (plus
-`configure-rendering.md`'s link), and the `check:visuals` gate (proven red once, wired into
-`test.yml`). Reviewed by eleven `cairn-register-editor` fan-outs plus a must-survive sweep (no
-contract fact missing; three weakenings found and restored; two sweep proposals refused on
-verification), all findings folded with per-finding dispositions, and the full gate is green on
-the branch (svelte-check 0/0, `check:visuals` OK at 11 diagrams, Vale clean, 5322 tests). Plan:
-`docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`. **The merge waits for the
-cairn-pub theme** per plan Task 10 steps 5 and 6: pack-and-install into cairn-pub, themed
-full-page reads, the end-to-end accessibility proof (SVG accessible name must be the authored
-`accTitle`, not "Diagram"), the gantt at 320/390 (its caption currently discloses the
-placeholder date axis; trim that clause if the theme hides the axis), Geoff's before/after on
-the ownership map and the architecture block diagram, then re-verify the code-derived diagrams
-against `main` and merge. The theme session already carries the a11y fix and containment probe
-(cairn-pub `4d5e17e`, `f0de31b`); the pushed branch is its representative styling set. The
-visuals standard itself is on `main` (the Visuals section of `docs/internal/docs-register.md`,
-plus the CLAUDE.md scope note).
+**The diagram-pages pass is MERGED (2026-08-16, merge `817d155a`).** Branch
+`docs-diagram-pages`: the eleven mermaid diagrams across ten pages, the nine page rewrites
+(plus `configure-rendering.md`'s link), and the `check:visuals` gate, all reviewed on the
+branch by the eleven `cairn-register-editor` fan-outs and the must-survive sweep. The merge
+gate ran in full in themed cairn-pub: tarball-installed branch payload, full-page reads of all
+ten diagram pages in both schemes, the end-to-end accessibility proof (the SVG's computed name
+is the authored `accTitle`, its description the authored `accDescr`), the containment probe
+green with the gantt holding its date axis at 320/390 (so its caption's placeholder-axis
+clause stays), and Geoff's before/after on the two marquee diagrams (approved; his one
+finding, cluster-title spacing, fixed as cairn-pub `d4e7575`). Merge hygiene re-verified the
+full must-survive set and the four code-derived diagrams against current `main`, and
+regenerated the scaffold tree from a fresh bake (the `.gitignore` packlist fix has landed, so
+the page's kept dotfile entries are real). Post-merge full gate green on `main`: svelte-check
+0/0, every doc gate including the four CI-only checks, 5322 tests exit 0. Post-mortem in the
+plan file: `docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`. The theme-side
+mechanic the gate surfaced (post-measurement metric drift in mermaid HTML labels) is filed at
+`docs/internal/record/2026-08-16-diagram-theme-harvest-findings.md`; its fixes live in
+cairn-pub (`eae4033`, `d4e7575`).
 
 **The transcript-fixtures question is resolved, in the negative (2026-08-15).** No consumable
 recorded-run fixtures exist anywhere in the repo; the T-series stdout lives uncommitted in
@@ -151,10 +157,10 @@ in the scaffolded site, fail-loud in both directions. Red-then-green tests plus 
 `npm pack` proof; changelog entry under Unreleased. This also clears the capture pass's tool
 prerequisite.
 
-Queue (reordered on Geoff's 2026-08-15 parallelization call): **the diagram-pages pass (this
-repo; merge gated on the theme) and the cairn-pub theme (in process, near done: a11y fix and
-containment probe landed at `4d5e17e`/`f0de31b`) run in parallel. The seam DESIGN sitting ran
-2026-08-15 and is DONE:** the spec is ratified at cairn-pub
+Queue (reordered on Geoff's 2026-08-15 parallelization call): **the diagram-pages pass and the
+cairn-pub theme both LANDED: the pass merged here 2026-08-16 (`817d155a`), and the theme holds
+on cairn-pub's `pass-d-docs-tracks` for the site walk after release one. The seam DESIGN
+sitting ran 2026-08-15 and is DONE:** the spec is ratified at cairn-pub
 `docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md` (branch
 `pass-d-docs-tracks`, pushed) and the two-pass implementation plan at
 `docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md` (this repo, `main`). Both
@@ -166,8 +172,8 @@ soon as Geoff schedules his attended run (brief and protocol:
 `docs/internal/record/2026-08-15-capture-pass-brief.md`; its tool prerequisite, the `.gitignore`
 fix, is done). Then: the seam build (two passes, plan above) -> the editors rewrite -> the
 editors read -> release one -> the three-site walk -> P.** Launch prompt for the seam build
-Pass 1, a fresh Opus 5 session, AFTER `docs-diagram-pages` merges (its merge gate ends in
-Geoff's before/after read, an attended moment), from `~/Projects/cairn-cms`: "Execute Pass 1 of
+Pass 1, a fresh Opus 5 session (its `docs-diagram-pages` merge precondition landed
+2026-08-16), from `~/Projects/cairn-cms`: "Execute Pass 1 of
 the live-reproduction seam plan, docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md,
 per the cairn-pass skill."
 

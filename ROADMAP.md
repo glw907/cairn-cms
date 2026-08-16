@@ -294,8 +294,9 @@ The original decision framing, for the record:
   the upgrade paths, write-in-the-editor, and the tutorial). No Pass D artifact ever discusses
   diagrams; they went out with the pages that held them, and the close-out then retired the
   standing "mermaid illegible at 320/390" carry-forward on the grounds that no page carries one,
-  which recorded the loss as a fix. The extend track now explains the architecture and the
-  security model with no picture at all.
+  which recorded the loss as a fix. The extend track was left explaining the architecture and
+  the security model with no picture at all (restored by the diagram-pages pass, merged
+  2026-08-16).
 
   **This is a rewrite of the affected pages, not a layer added on top of them (Geoff, 2026-08-15).**
   Prose written to stand alone without a picture is substantially different prose, and it does not
@@ -330,10 +331,15 @@ The original decision framing, for the record:
   `check:` gate in the Astro missing-alt-is-a-build-failure shape; motion is out by decision, with
   its revisit trigger filed in Later; and the three locate-many-controls reproductions gain
   numbered callouts with keyed lists, which appends a callout-overlay capability to the
-  seam's stated needs. The build order stands with the theme inserted first. Geoff ruled the
-  sequencing the same day: no hurry to release, and release one waits for the visual layer so the
-  beta ships best-quality docs (recorded in `docs/STATUS.md`). What remains owed here is the work
-  itself, in the rulings record's amended order.
+  seam's stated needs. The build order stands with the theme inserted first, and its first two
+  stations have shipped: the cairn diagram theme landed in cairn-pub, and the diagram-pages pass
+  merged 2026-08-16 with eleven diagrams across the extend and admin tracks plus the
+  `check:visuals` gate (post-mortem in
+  `docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`). Geoff ruled the sequencing
+  2026-08-15: no hurry to release, and release one waits for the visual layer so the beta ships
+  best-quality docs (recorded in `docs/STATUS.md`). What remains owed here: the
+  live-reproduction seam (two passes, plan on `main`), then the editors rewrite, with the
+  capture pass scheduled separately with Geoff.
 
 - **The admin transcript gate was promised and never built, and there is nothing for it to check
   (found 2026-08-15).** Pass D's exit criteria name three added gates: the admin transcript check,

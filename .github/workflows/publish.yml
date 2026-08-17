@@ -95,11 +95,11 @@ jobs:
           echo "publishing @glw907/cairn-cms-dev@$VERSION to the '$TAG' dist-tag"
           npm publish --access public --tag "$TAG"
 
-  # Regenerates the public glw907/cairn-waymark-template repo from this release, gated on
-  # needing both publish jobs so it can only run once npm actually serves the versions the
-  # sync's own resolvability check depends on. A workflow triggered on the same `release: published` event as
-  # `publish` (a sibling job, a separate workflow) would race it and could push a template tree
-  # referencing a version the registry does not resolve yet.
+  # Regenerates the public glw907/cairn-waymark-template repo from this release, gated on both
+  # publish jobs so it can only run once npm actually serves the versions the sync's own
+  # resolvability check depends on. A workflow triggered on the same `release: published` event
+  # as those jobs (a sibling job, a separate workflow) would race them and could push a template
+  # tree referencing a version the registry does not resolve yet.
   #
   # Scoped to a real release (`github.event_name == 'release'`): publish.yml's own
   # `workflow_dispatch` exists to rehearse a publish from any branch and carries no release tag to
@@ -130,10 +130,9 @@ jobs:
       - run: npm ci
       # No --strip-dev-backend here: a real release publishes @glw907/cairn-cms-dev alongside the
       # engine, and the sync's own resolvability check is what proves that, rather than a flag
-      # asserting it in advance. --engine-spec/--dev-spec are required because the bake this script
-      # runs internally refuses its own default: `cairn-cms-dev`'s repo-declared version is 0.0.0
-      # (unpublished) today, and the released version stands in for both specs the same way
-      # test.yml's bake step does.
+      # asserting it in advance. --engine-spec/--dev-spec pin both specs to the released engine
+      # version rather than leaning on the bake's own per-package defaults, so the pushed template
+      # names the lockstep pair this release publishes, the same way test.yml's bake step does.
       - name: Sync the public template repo
         working-directory: packages/create-cairn-site
         env:

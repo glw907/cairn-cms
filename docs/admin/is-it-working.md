@@ -16,21 +16,57 @@ From your site's directory, run:
 npx cairn-doctor
 ```
 
-It reads your local config, your Cloudflare account, and your GitHub App, and reports one line
-per check: a pass, a fail, or a skip when a check has nothing to look at yet (an unconnected
-domain, say). The full command reference is [`cairn-doctor`](../reference/doctor.md).
+It reads your local config, your Cloudflare account, and your GitHub App, and prints one line per
+check. The full command reference is [`cairn-doctor`](../reference/doctor.md).
+
+This report is one real run, against a site named `cairn-capture-scratch` that
+`create-cairn-site` had just finished building. The run carried a `CLOUDFLARE_API_TOKEN` in the
+shell, the form described further down, so its Cloudflare checks report a real result rather than
+a skip:
+
+<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/03-doctor-credentialed.txt -->
+```
+PASS  Wrangler bindings: EMAIL and AUTH_DB are declared
+PASS  Media bucket binding: media bucket MEDIA_BUCKET is declared
+PASS  Workers Logs sink: observability.enabled is true
+PASS  Framework CSRF handoff: checkOrigin: false found and the hooks file wires the cairn guard (heuristic text read)
+SKIP  Site config: no site.config.yaml found (looked in site.config.yaml, src/lib/site.config.yaml, src/site.config.yaml)
+PASS  Public origin: PUBLIC_ORIGIN is https://cairn-capture-scratch.glw907.workers.dev (wrangler vars)
+SKIP  Tidy API key: no site.config.yaml found, so tidy enablement is unknown
+PASS  Custom /admin mount: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
+SKIP  admin-screens skill: the admin-screens skill is not installed at .claude/skills/cairn-admin-screens; run cairn-doctor --fix to install it
+PASS  Dependency floors: @sveltejs/kit 2.70.2 and svelte 5.56.9 satisfy the engine peer ranges
+FAIL  Email sending domain: no zone named showcase.test is visible to this token
+FAIL  Always Use HTTPS: no zone named showcase.test is visible to this token
+FAIL  Zone HSTS: no zone named showcase.test is visible to this token
+SKIP  Auth store (D1): no AUTH_DB database_id in wrangler.jsonc or wrangler.toml
+SKIP  Editor role vocabulary: no AUTH_DB database_id in wrangler.jsonc or wrangler.toml
+SKIP  Guard role wiring: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
+SKIP  Editor email normalization: no AUTH_DB database_id in wrangler.jsonc or wrangler.toml
+SKIP  GitHub App: set GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 to run this check
+PASS  AI posture, effective: no AI posture is stated (aiPosture is unset), and https://cairn-capture-scratch.glw907.workers.dev/robots.txt carries no AI-crawler directives, consistent with stating nothing.
+[...]
+8 passed, 3 failed, 8 skipped
+```
+
+The three failures are honest, not a broken site. Every `create-cairn-site` scaffold ships the
+placeholder sign-in address `cms@showcase.test`, and this site hadn't connected a domain of its
+own yet, so no Cloudflare zone named `showcase.test` exists for the token to check. A healthy
+workers.dev-only site fails those three zone-derived checks until you connect a domain of your
+own; see [Own your domain](./own-your-domain.md).
 
 Every failing check names a **condition id**, something like `email.sender-not-onboarded`. Find
 that exact id below; each one is a heading on this page, grouped where several ids share one
 underlying fix. A **blocker** stops someone from signing in or your site from working correctly;
 a **warning** is real but doesn't block anyone today.
 
-A **skip** is neither: it means the check didn't run at all, most often because it needs a
-credential that isn't in the shell you ran it from. Those checks need a value your terminal
-doesn't have: your GitHub App's private key, which setup moved into your deployed Worker and
-nowhere else, or a Cloudflare API token, which the tool held only in its own local progress file
-while setup was running and deleted once each stage finished. A skip there isn't a pass; it's the
-check telling you it had nothing to check.
+A **skip** is neither, and the report above shows why that's easy to miss: eight of its lines read
+SKIP, printed no differently from the PASS and FAIL lines beside them. A skip means the check
+didn't run at all, most often because it needs a credential that isn't in the shell you ran it
+from. Those checks need a value your terminal doesn't have: your GitHub App's private key, which
+setup moved into your deployed Worker and nowhere else, or a Cloudflare API token, which the tool
+held only in its own local progress file while setup was running and deleted once each stage
+finished. A skip there isn't a pass; it's the check telling you it had nothing to check.
 
 **Making the Cloudflare and D1 checks run.** You can supply that credential yourself, since it's
 just a token you create on Cloudflare's own site: open Cloudflare's

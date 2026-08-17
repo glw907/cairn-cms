@@ -478,6 +478,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/reproductions/manifest`
 
+- `fixtureMediaBase`: "/repro-assets"
+- `fixtureMediaFiles`: string[]
 - `manifest`: ReproManifestEntry[]
 - `ReproHeights`: { column?: number; desktop?: number; narrow?: number }
 - `ReproManifestEntry`: { id: string; heights: ReproHeights; markerKeys: string[]; pose: boolean; host: "shell" | "bare"; ownThemeRoot: boolean }

@@ -272,3 +272,23 @@ export const manifest: ReproManifestEntry[] = [
     ownThemeRoot: true,
   },
 ];
+
+/**
+ * The path segment every fixture media URL mounts under on `/repro` pages, cairn-pub's own asset
+ * route (never `/media`, the real admin's default): `${fixtureMediaBase}/<file>` for a file named in
+ * {@link fixtureMediaFiles}.
+ */
+export const fixtureMediaBase = '/repro-assets';
+
+/**
+ * The fixture media bytes' filenames, exactly as packaged under `dist/reproductions/fixtures/`, so
+ * cairn-pub's asset route (`src/routes/repro-assets/[...file]/+server.ts`) can enumerate them for
+ * `entries()` without importing the Svelte-carrying `./index.js` half of this module.
+ */
+export const fixtureMediaFiles: string[] = [
+  'trailhead-view.4dcfd814c4ebd018.png',
+  'cabin-porch.53bf374ac4d3c1fc.png',
+  'team-photo.25bb1ae176664419.png',
+  'lake-sunrise.f0225d64bbac1d37.png',
+  'trail-map.59be2d4d416f67cf.png',
+];

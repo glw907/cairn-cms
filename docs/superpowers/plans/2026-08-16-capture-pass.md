@@ -414,3 +414,80 @@ failure. `01b`, `01c`, and `02` are declared deliberately unconsumed.
 
 **Blockers for B.** None. One hand step is outstanding: deleting the GitHub App
 `cairn-cairn-capture-scratch` (id `4625928`), ledger item (10).
+
+---
+
+## Part B post-mortem (2026-08-17)
+
+**Built.** The `check:transcripts` gate (`scripts/checks/transcript-blocks.mjs`, 44 unit cases,
+wired into `test.yml` beside `check:visuals`), three marked blocks in
+`docs/admin/create-your-site.md`, one in `docs/admin/is-it-working.md`, the
+`docs/reference/doctor.md` correction B2 declared at planning, and the tracking work: the
+changelog window, the ROADMAP entries, the friction-log closure, and this post-mortem.
+
+**Verified.** The gate is green at four blocks over 72 pages, and it discriminates: changing one
+character inside a quoted line (`true` to `TRUE`) turned it red with `content-mismatch` naming the
+page, the line, and the fixture, and restoring turned it green. That live proof ran in the main
+loop, since B3 landed before any block existed to corrupt. The simplifier's own falsification
+matters as much: mutating all eight `kind` strings failed exactly the nine kind-asserting tests,
+so the refactored assertions still bite, and a golden-file compare across all twelve fixtures
+proved `renderTranscript` byte-identical through the refactor.
+
+**Task order changed, deliberately.** B3 ran first. The gate owns `renderTranscript`, which is
+what "the rendered form of a fixture" means, so building it first let B1 and B2 quote bytes
+emitted by the tested renderer rather than a hand-derived approximation needing later
+reconciliation. The plan's stated data dependency is unchanged. The cost is that the gate sat
+legitimately red between B3 and B2, reporting both page floors and three uncited fixtures, which
+the B3 dispatch named in advance as the expected end state so no implementer would quiet it.
+
+**Three plan assumptions were wrong.**
+
+1. **`docs/extend/migration-notes.md` was not optional.** B4 said it was "not required" because
+   this pass changes no consumer behavior. The link gate disagrees structurally: it fails whenever
+   `CHANGELOG.md` carries an `## Unreleased` heading and the migration record does not. The window
+   is there now, saying there is nothing to do.
+2. **The `## Unreleased` window needs a `release-size: minor` marker.** `check:version` simulates
+   the window as a cut, and any cut from here is `0.95.0` over `0.94.0`. The marker describes the
+   pending cut, not this pass.
+3. **One `check:symbols` allowlist entry was owed**, `file-path:src/site.config.yaml`, a path the
+   doctor's own SKIP line names as one of three it looked in. The plan anticipated the class; this
+   is the single instance.
+
+**The gate grew one failure mode beyond the plan's list**, `bad-fence-tag`. The plan locked
+"untagged or `text`, never `console` or a shell language" as a convention with a real reason
+(`check:symbols` extracts CLI flags from shell-tagged fences, and a fixture can never be edited to
+satisfy it) and left it unenforced. One kind and one unit case make it hold.
+
+**The register gate earned the pass.** `cairn-register-editor` found that
+`is-it-working.md`'s central navigation instruction is false: it tells a reader "Every failing
+check names a **condition id** ... Find that exact id below", and `src/lib/doctor/report.ts` never
+prints one, as both fixtures confirm by carrying no id at all. That sentence is the hinge all 21
+anchored sections turn on. **The blocks are what made it findable**: the claim was merely
+unverifiable while the page only described the report, and became visibly wrong the moment real
+output sat above it. Two more of the same shape followed, the credential explanation for skips
+(one of the eight shown skips is credential-caused) and the promise that a token makes the D1
+checks run (it does not, on a scaffolded site). All three are folded, along with six smaller
+findings, and one was refused with its reason recorded in the fold dispatch.
+
+**Four `create-cairn-site` defects are filed to `ROADMAP.md`'s Now tier**, owed before release one
+publishes the tool: the selected-repositories dead end, the non-idempotent resume, the placeholder
+from-address, and a hand-over string that tells the reader the GitHub and Cloudflare steps arrive
+in a later release, in the run that then performs both. The first two came from the live run, the
+third from the doctor report, the fourth from the register gate reading the fixture against the
+tool's behavior. The friction log is cleared to a closure note.
+
+**The plan's "each page rewritten once" clause was not kept, and it is retired loudly.** The
+visual-layer sequencing gave `create-your-site.md` two bounded edits, the diagram-pages pass and
+this one. Neither was wasted and the second did not undo the first, so the promise cost nothing
+here; it is recorded rather than quietly dropped because it was the stated reason for bundling the
+diagram and the transcripts into one pass.
+
+**One standing watch gained evidence.** Both doctor fixtures record SvelteKit warning that
+`config.kit.csrf.checkOrigin` is deprecated in favour of `csrf.trustedOrigins`, twice, on a
+freshly scaffolded site. The scheduled routine already watches kit#15992; the fixtures now hold a
+dated instance of the warning reaching a real reader's terminal. Both pages still instruct a
+reader to depend on `checkOrigin: false`, which stays correct until the removal lands, and the
+quoted block starts below those two lines, so no page contradicts itself today.
+
+**Blockers.** None. The hand step from Part A stands: deleting the GitHub App
+`cairn-cairn-capture-scratch` (id `4625928`), ledger item (10).

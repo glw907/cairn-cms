@@ -337,32 +337,42 @@ The original decision framing, for the record:
   `check:visuals` gate (post-mortem in
   `docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`). Geoff ruled the sequencing
   2026-08-15: no hurry to release, and release one waits for the visual layer so the beta ships
-  best-quality docs (recorded in `docs/STATUS.md`). What remains owed here: the
-  live-reproduction seam (two passes, plan on `main`), then the editors rewrite, with the
-  capture pass scheduled separately with Geoff.
+  best-quality docs (recorded in `docs/STATUS.md`). The capture pass ran 2026-08-17 and is
+  history: the recorded-run fixtures exist, both admin pages quote them, and `check:transcripts`
+  gates them. What remains owed here: the live-reproduction seam (two passes, plan on `main`),
+  then the editors rewrite.
 
-- **The admin transcript gate was promised and never built, and there is nothing for it to check
-  (found 2026-08-15).** Pass D's exit criteria name three added gates: the admin transcript check,
-  the symbol sweep, and the internal-index entry. The last two shipped. The transcript check has no
-  script in `scripts/checks/`, no `check:` entry in `package.json`, and no workflow step, and the
-  pass's own post-mortem listed `check:vale` in its place, so the count read three and the miss did
-  not surface. Both halves need doing together, which is why this rides the docs visual work rather
-  than standing alone: `docs/admin/` currently holds **zero fenced transcript blocks** (its four
-  fenced pages carry commands to type, not recorded tool output), so a gate built today would pass
-  over an empty set, the exact vacuous-green shape this repo already legislates against. The
-  visuals plan (`docs/internal/record/2026-08-15-docs-outlines-with-visuals.md`) restores recorded
-  transcripts as the admin track's screenshot equivalent; the gate lands with them, and is proven
-  red once by corrupting a block before it is trusted. **Precondition resolved 2026-08-15, in the
-  negative:** a thorough sweep found no consumable recorded-run fixtures anywhere in the repo. The
-  T-series spikes captured platform API bodies and scattered console excerpts, but the full stdout
-  logs live uncommitted in `~/Projects/cairn-scratch/`, T5's own method was "raw reads from the
-  real service, never the tool's own report," and no `cairn-doctor` report has ever been recorded
-  at all (the largest single gap). So capturing is the first step: a dedicated capture pass runs
-  `create-cairn-site` fresh end-to-end plus `cairn-doctor` against the real deployed result,
-  commits the raw stdout as fixture files, and only then writes `create-your-site.md` and
-  `is-it-working.md` against them (each page rewritten once, diagram and transcripts together).
-  The run costs real Cloudflare resources and the GitHub App browser moments, so it needs
-  scheduling with Geoff rather than riding a docs pass.
+- **Four first-run defects in `create-cairn-site`, found by the 2026-08-17 capture run, all
+  owed before release one publishes the tool.** The run took four invocations to reach a live
+  site where the plan expected one, and only a live run could have surfaced the first two. The
+  fourth surfaced later, at the pass's own register gate, reading the committed fixture against
+  the tool's behavior. The evidence throughout is the committed fixtures under
+  `packages/create-cairn-site/test/fixtures/transcripts/`.
+
+  1. **A first run cannot succeed with the App installed on "Only select repositories."** The
+     run creates the repository itself, so at GitHub's install step there is nothing yet to
+     select, and the App ends up with no permission to commit. The tool's own remedy text names
+     that same option as the fix, which returns the reader to the dead end. Evidence:
+     `01-create-cairn-site.txt`. Candidates: state the "All repositories" requirement at the
+     install step, and correct the remedy text to say add the repository afterwards.
+  2. **Resume is not idempotent across repository creation.** After a first run created the
+     repository and then failed, the resume refused to continue because a repository of that name
+     exists, rather than adopting one the tool itself created and owns. Recovery took deleting the
+     repository by hand, which a reader without `delete_repo` cannot do, so this one strands a
+     reader outright. Evidence: `01b-resume.txt`. Candidate: adopt an existing repository the App
+     owns that matches the saved state record.
+  3. **Every scaffold ships the placeholder sign-in from-address `cms@showcase.test`.** The
+     domain chapter never personalizes it on the workers.dev path, so a credentialed
+     `cairn-doctor` run reports three red zone-derived failures on a site that is working exactly
+     as built. `is-it-working.md` now explains that in prose, which is a docs patch over a tool
+     defect. Evidence: `03-doctor-credentialed.txt`. Candidate: derive the from-address, or report
+     those checks as not-applicable until a domain is connected.
+  4. **The scaffold hand-over still says the GitHub and Cloudflare steps have not shipped.**
+     `packages/create-cairn-site/src/scaffold.mjs:250` prints "Those steps arrive with the next
+     release", and the same run then walks the reader straight through both of them. The string
+     predates the chapters and nothing caught it, because no gate reads the tool's own prose
+     against the tool's own behavior. Evidence: `01-create-cairn-site.txt`. Candidate: rewrite the
+     hand-over to name what comes next in this run.
 
 - **The doctor's CSRF-handoff check silently skips on every current `sv create` scaffold,
   filed off Pass D's target-manifest work (2026-08-14).** `src/lib/doctor/checks-local.ts:90-91`
@@ -373,10 +383,18 @@ The original decision framing, for the record:
   `svelte.config.js` at all**, wiring the adapter inside `vite.config.ts`'s plugin call
   instead (`sveltekit({ compilerOptions: {...}, adapter: adapter() })`, `adapter` from
   `@sveltejs/adapter-auto` by default). So this check fires its skip path on every site built
-  from a current scaffold, not an edge case; it has already fired, not merely a condition
-  that could. A skip is not visually distinct from a pass in the doctor's own report, so the
-  run looks clean while the CSRF-handoff check never executed: a silent green, the worse
-  failure mode for a readiness check to have. Candidate fix: read the adapter and CSRF
+  from a current `sv create` scaffold, not an edge case; it has already fired, not merely a
+  condition that could. A skip is not visually distinct from a pass in the doctor's own report, so
+  the run looks clean while the CSRF-handoff check never executed: a silent green, the worse
+  failure mode for a readiness check to have. **Narrowed 2026-08-17 by the capture run, which
+  bounds the blast radius without dissolving the defect.** The recorded credentialed report
+  (`packages/create-cairn-site/test/fixtures/transcripts/03-doctor-credentialed.txt`) shows
+  `PASS  Framework CSRF handoff` on a site `create-cairn-site` had just built, because that tool
+  bakes its template from `examples/showcase`, which carries `svelte.config.js`. So the silent
+  skip reaches a hand-built or bare `sv create` site, never a cairn scaffold. That is the harder
+  case to notice, not the easier one, since nobody is watching those sites for it.
+  `docs/reference/doctor.md` had generalized the skip to every scaffold and was corrected in the
+  same pass. Candidate fix: read the adapter and CSRF
   configuration from `vite.config.ts` as well as `svelte.config.js` (a site may carry either,
   depending on when it was scaffolded), and make "could not find a file to check" a result
   distinct from "checked and passed" wherever the doctor reports it, so a consumer reading the

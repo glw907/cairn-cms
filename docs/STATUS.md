@@ -253,11 +253,13 @@ GitHub repository `glw907/cairn-capture-scratch`; the worker `cairn-capture-scra
 `cairn-capture-scratch-app` (`7acae31b-366a-496c-a8e1-38c352770b1d`); R2 bucket
 `cairn-capture-scratch-media`; the local state record
 `~/.config/cairn/sites/cairn-capture-scratch-e9ad36.json`; and the wrangler OAuth session.
-Everything here is API-reachable, so A6 tears it down and verifies by listing; only the App
-above needs Geoff. **No doctor token was minted**, so none is owed: the credentialed report's
-output is identical under any token (its zone checks fail because `showcase.test` exists
-nowhere, and its D1 checks skip structurally), so the run reused the existing account token
-rather than minting and revoking one for no change in bytes.
+**TORN DOWN AND VERIFIED BY LISTING, 2026-08-17.** Worker, both databases, bucket, and
+repository all confirmed gone; the state record is deleted and wrangler is logged out
+(`wrangler whoami` reports not authenticated). Only the App above needs Geoff. **No doctor
+token was minted**, so none is owed: the credentialed report's output is identical under any
+token (its zone checks fail because `showcase.test` exists nowhere, and its D1 checks skip
+structurally), so the run reused the existing account token rather than minting and revoking
+one for no change in bytes.
 
 **Carry-forwards (the tool initiative), verified against this list, not a remembered one.**
 (1) An externally registered domain still owes the branches the scratch domain cannot reach.

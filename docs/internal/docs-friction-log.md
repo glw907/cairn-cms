@@ -99,3 +99,32 @@ post-mortem and `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.
 dispositions. One item from the smaller list is code, not docs, and was already tracked
 separately before this closure: `.dev.vars` missing from the scaffold's `.gitignore` is the
 missing-`.gitignore` defect `docs/STATUS.md` holds as owed before release one.
+
+## Findings from the 2026-08-17 capture run
+
+Three findings from the live `create-cairn-site` run that produced the transcript fixtures. All
+three are engine or tool candidates rather than docs bugs, so they need ROADMAP triage; the
+evidence is the committed fixtures themselves.
+
+- **A first run cannot succeed with an install scoped to selected repositories.** `admin`. At
+  GitHub's install step the reader chooses where the App may act. Choosing "Only select
+  repositories" cannot work on a first run, because the run creates the repository itself and
+  there is nothing to select yet, so the App later has no permission to commit. The tool's own
+  remedy text names that same option as the fix, which sends the reader back to the dead end.
+  Evidence: `01-create-cairn-site.txt`. Candidates: state the "All repositories" requirement at
+  the install step, and correct the remedy text to say add the repository afterwards.
+
+- **Resume is not idempotent across repository creation.** `admin`. When a first run creates the
+  repository and then fails, the resume refuses to continue because a repository of that name
+  already exists, rather than adopting a repository the tool itself created and owns. Recovery
+  needed deleting the repository by hand and resuming again, which a reader without `delete_repo`
+  cannot do. Evidence: `01b-resume.txt`. Candidate: adopt an existing repository that the App
+  owns and that matches the saved record.
+
+- **Every scaffold ships the placeholder from-address `cms@showcase.test`.** `admin`. The domain
+  chapter never personalizes it on the workers.dev path, so a credentialed `cairn-doctor` run
+  honestly fails three zone-derived checks on a healthy new site. Useful for the docs, since it
+  gives `is-it-working.md` a real report carrying pass, fail, and skip lines together, but a
+  reader meets three red lines on a site that is working as built. Evidence:
+  `03-doctor-credentialed.txt`. Candidate: derive the from-address, or mark those checks
+  not-applicable until a domain is connected.

@@ -44,6 +44,7 @@
     "check:vale": "vale --minAlertLevel=error docs README.md examples/showcase/README.md",
     "check:arm-indexes": "node scripts/checks/check-arm-indexes.mjs",
     "check:visuals": "node scripts/checks/check-visuals.mjs",
+    "check:transcripts": "node scripts/checks/transcript-blocks.mjs",
     "check:snippets": "npm run package && node scripts/checks/check-snippets.mjs",
     "check:version": "node scripts/checks/check-version.mjs",
     "check:prose": "node scripts/checks/check-admin-prose.mjs",

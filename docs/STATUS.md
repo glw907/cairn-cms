@@ -15,9 +15,48 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-16: the capture pass, prerelease cut first)
+## Immediate next action (2026-08-16: the capture pass, A0b staged and blocked on npm auth)
 
-**Immediate next action:** execute the capture pass
+**Immediate next action: finish Task A0b's two publishes.** Everything A0b can do without a
+credential is committed on `main` at `4e725be1`, which opens the `0.95.0-rc.1` window (both
+packages bumped, the CHANGELOG heading finalized, `migration-notes.md` renamed in parity, the
+dev backend given a `files` array, the bake's refusal test updated). Nothing is published:
+`latest` is still `0.94.0`, `next` still `0.94.0-rc.2`, and `@glw907/cairn-cms-dev` is still a
+404. The gate is green at that commit (17 local checks; `npm test` 5322 pass exit 0; CI `e2e`,
+`test`, `scaffold`, `create-site`, `design` all green on its parent `c064919c`), so a resuming
+session re-verifies rather than re-derives.
+
+**The blocker is npm auth, and it is a one-time bootstrap, not a standing dependency.** npm
+will not bind a trusted publisher to a package that does not exist, so
+`@glw907/cairn-cms-dev`'s first-ever publish cannot go through OIDC the way every previous
+cairn publish has. The workstation holds no npm credential by design (nothing in `~/.npmrc`,
+`~/.local/secrets`, the age registry, or the repo's Actions secrets, which are empty). Geoff
+was running `npm login` when the session closed; `npm whoami` is the check. The fallback, if
+the browser flow is unwanted, is a publish-scoped Granular Access Token.
+
+**The sequence, once `npm whoami` answers:** (1) `npm publish --tag next` from
+`packages/cairn-cms-dev`; (2) `npm trust github @glw907/cairn-cms-dev --repo glw907/cairn-cms
+--file publish.yml --allow-publish` while still authenticated, which is what makes this
+one-time; (3) push `main` and the annotated tag `v0.95.0-rc.1`; (4) `gh workflow run
+publish.yml --ref main` for the engine over OIDC. **Use `workflow_dispatch`, not `gh release
+create`:** `publish.yml`'s `sync-template-repo` job is gated `if: github.event_name ==
+'release'` and would fire red, since `TEMPLATE_REPO_TOKEN` is unset and
+`glw907/cairn-waymark-template` does not exist (both are release-one hand steps). A plain tag
+push does not trigger the workflow, so the tag is safe. (5) Verify both versions on `next`
+with `latest` still at `0.94.0`.
+
+**Two follow-ups A0b uncovered, neither blocking.** `publish.yml` has no job that publishes the
+dev backend at all, though `sync-template-repo`'s own comment already assumes a release does;
+add one after step (2) wires its trusted publisher, or the next cut silently ships the engine
+without its dev backend. And the `code-simplifier` pass over this pass's changed code is owed
+at the close, where Task B4 already schedules it.
+
+**Plan Task A1 is now simpler than written.** The bake's default specs resolve to
+`^0.95.0-rc.1` for both packages (verified against a real bake), so A1's explicit
+`--engine-spec`/`--dev-spec` flags are no longer load-bearing. They still work; the plan's
+wording is not wrong, just no longer necessary.
+
+**Then the rest of the pass as planned:** execute the capture pass
 (`docs/superpowers/plans/2026-08-16-capture-pass.md`), in a fresh Opus 5 session launched
 from `~/Projects/cairn-cms`, per the `cairn-pass` skill. **Geoff's 2026-08-16 call moved this
 pass ahead of seam Pass 1** (his attended availability plus the publish ruling below); Task
@@ -282,7 +321,16 @@ release one per the ordering above:
 `0.94.0-rc.1`; what it is behind on is the docs restructure, which its prepared
 `pass-d-docs-tracks` branch carries and the site walk merges.
 
-**Two worktrees survive the Pass D cleanup, and neither is live work.**
+**A THIRD worktree exists and holds warm uncommitted work: `.claude/worktrees/repro-seam`**
+(branch `live-repro-seam-pass1`, created 2026-08-16). It carries an early start on seam Pass 1
+that the reordering stranded: `src/lib/reproductions/manifest.ts`, two unit tests, a 28K
+`docs/internal/record/repro-story-audit.md`, and edits to `package.json` and `vitest.config.ts`,
+none of it committed. No executor is running against it (`pgrep` clean as of the capture-pass
+session). Leave it alone until seam Pass 1 starts, then treat it as that pass's starting point
+rather than re-deriving; per the one-executor-per-worktree rule, warm uncommitted code is a
+stop-and-investigate signal, so verify it against the plan before building on it.
+
+**Two further worktrees survive the Pass D cleanup, and neither is live work.**
 `.claude/worktrees/wayfinder-retheme-lab` and `.claude/worktrees/wayfinder-fixtures` hold
 token-layer design experiments from 2026-07-02, left unmerged on purpose as a reference for a
 later retheme. Nothing branches from them and no executor runs in them; the one-executor-per-worktree

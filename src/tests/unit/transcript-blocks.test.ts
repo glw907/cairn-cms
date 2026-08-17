@@ -5,7 +5,7 @@
 // temp-directory tree built for that one mode, mirroring check-symbols.test.ts's own
 // scanTree(root) harness.
 import { describe, it, expect, afterEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import {
@@ -118,8 +118,7 @@ describe('renderTranscript: sequences that carry no visible effect', () => {
 });
 
 describe('renderTranscript: real fixture ground truths', () => {
-  it('renders the 01-create-cairn-site.txt site-name prompt as one settled line, not a keystroke trail', async () => {
-    const { readFileSync } = await import('node:fs');
+  it('renders the 01-create-cairn-site.txt site-name prompt as one settled line, not a keystroke trail', () => {
     const raw = readFileSync(join(FIXTURES_DIR, '01-create-cairn-site.txt'), 'utf8');
     const lines = renderTranscript(raw).split('\n');
     expect(lines).toContain('│  cairn-capture-scratch');
@@ -129,8 +128,7 @@ describe('renderTranscript: real fixture ground truths', () => {
     }
   });
 
-  it('renders 03-doctor-credentialed.txt to exactly 36 lines with the documented shape', async () => {
-    const { readFileSync } = await import('node:fs');
+  it('renders 03-doctor-credentialed.txt to exactly 36 lines with the documented shape', () => {
     const raw = readFileSync(join(FIXTURES_DIR, '03-doctor-credentialed.txt'), 'utf8');
     const lines = renderTranscript(raw).split('\n');
     expect(lines).toHaveLength(36);
@@ -199,10 +197,8 @@ describe('scanTree: failure modes', () => {
   const made: string[] = [];
 
   afterEach(() => {
-    let dir: string | undefined;
-    while ((dir = made.pop()) !== undefined) {
-      rmSync(dir, { recursive: true, force: true });
-    }
+    for (const dir of made) rmSync(dir, { recursive: true, force: true });
+    made.length = 0;
   });
 
   function buildTree(files: Record<string, string>): string {
@@ -214,6 +210,15 @@ describe('scanTree: failure modes', () => {
       writeFileSync(abs, content);
     }
     return root;
+  }
+
+  /**
+   * The `kind` of each violation. Asserting on kinds rather than whole violation objects keeps
+   * these tests pinned to the gate's eight-string contract and off its message wording, and a
+   * failure prints the kinds the scan actually produced.
+   */
+  function kindsOf(violations: { kind: string }[]): string[] {
+    return violations.map((violation) => violation.kind);
   }
 
   it('reports content-mismatch when a block does not appear in the fixture, in order', () => {
@@ -228,9 +233,7 @@ describe('scanTree: failure modes', () => {
       ].join('\n'),
     });
     const { violations } = scanTree(root);
-    expect(violations).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'content-mismatch' })]),
-    );
+    expect(kindsOf(violations)).toContain('content-mismatch');
   });
 
   it('reports content-mismatch when elided segments appear out of order', () => {
@@ -247,9 +250,7 @@ describe('scanTree: failure modes', () => {
       ].join('\n'),
     });
     const { violations } = scanTree(root);
-    expect(violations).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'content-mismatch' })]),
-    );
+    expect(kindsOf(violations)).toContain('content-mismatch');
   });
 
   it('accepts elided segments that appear in order, skipping the elided middle', () => {
@@ -266,9 +267,7 @@ describe('scanTree: failure modes', () => {
       ].join('\n'),
     });
     const { violations } = scanTree(root);
-    expect(violations).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'content-mismatch' })]),
-    );
+    expect(kindsOf(violations)).not.toContain('content-mismatch');
   });
 
   it('reports fixture-missing when the named fixture does not exist', () => {
@@ -282,9 +281,7 @@ describe('scanTree: failure modes', () => {
       ].join('\n'),
     });
     const { violations } = scanTree(root);
-    expect(violations).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'fixture-missing' })]),
-    );
+    expect(kindsOf(violations)).toContain('fixture-missing');
   });
 
   it('reports orphan-marker when the next non-blank line is not a fence', () => {
@@ -298,9 +295,7 @@ describe('scanTree: failure modes', () => {
       ].join('\n'),
     });
     const { violations } = scanTree(root);
-    expect(violations).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'orphan-marker' })]),
-    );
+    expect(kindsOf(violations)).toContain('orphan-marker');
   });
 
   it('reports double-marker when two markers precede one fence', () => {
@@ -317,9 +312,7 @@ describe('scanTree: failure modes', () => {
       ].join('\n'),
     });
     const { violations } = scanTree(root);
-    expect(violations).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'double-marker' })]),
-    );
+    expect(kindsOf(violations)).toContain('double-marker');
   });
 
   it('reports marker-escapes-fixtures-dir for a path that traverses outside the fixtures root', () => {
@@ -334,9 +327,7 @@ describe('scanTree: failure modes', () => {
       ].join('\n'),
     });
     const { violations } = scanTree(root);
-    expect(violations).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'marker-escapes-fixtures-dir' })]),
-    );
+    expect(kindsOf(violations)).toContain('marker-escapes-fixtures-dir');
   });
 
   it('reports bad-fence-tag for a marked fence tagged as a shell language', () => {
@@ -351,9 +342,7 @@ describe('scanTree: failure modes', () => {
       ].join('\n'),
     });
     const { violations } = scanTree(root);
-    expect(violations).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'bad-fence-tag' })]),
-    );
+    expect(kindsOf(violations)).toContain('bad-fence-tag');
   });
 
   it('reports page-below-floor per page, not globally', () => {
@@ -371,16 +360,11 @@ describe('scanTree: failure modes', () => {
       'docs/admin/create-your-site.md': 'No transcript blocks on this page.\n',
     });
     const { violations } = scanTree(root);
-    expect(violations).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ kind: 'page-below-floor', file: 'docs/admin/create-your-site.md' }),
-      ]),
-    );
-    expect(violations).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ kind: 'page-below-floor', file: 'docs/admin/is-it-working.md' }),
-      ]),
-    );
+    const belowFloor = violations
+      .filter((violation) => violation.kind === 'page-below-floor')
+      .map((violation) => violation.file);
+    expect(belowFloor).toContain('docs/admin/create-your-site.md');
+    expect(belowFloor).not.toContain('docs/admin/is-it-working.md');
   });
 
   it('reports fixture-uncited for a fixture no block quotes and the README does not excuse', () => {
@@ -389,9 +373,7 @@ describe('scanTree: failure modes', () => {
       [`${FIXTURES_DIR}/orphaned.txt`]: 'nobody quotes me\n',
     });
     const { violations } = scanTree(root);
-    expect(violations).toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'fixture-uncited' })]),
-    );
+    expect(kindsOf(violations)).toContain('fixture-uncited');
   });
 
   it('excuses a fixture the README lists under Deliberately unconsumed', () => {
@@ -404,9 +386,7 @@ describe('scanTree: failure modes', () => {
       [`${FIXTURES_DIR}/excused.txt`]: 'nobody quotes me\n',
     });
     const { violations } = scanTree(root);
-    expect(violations).not.toEqual(
-      expect.arrayContaining([expect.objectContaining({ kind: 'fixture-uncited' })]),
-    );
+    expect(kindsOf(violations)).not.toContain('fixture-uncited');
   });
 
   it('reports nothing on a fully compliant tree', () => {

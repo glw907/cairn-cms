@@ -37,6 +37,12 @@ const PAGE_FLOORS = {
 const MARKER_RE = /^<!-- transcript: (.+) -->$/;
 const FENCE_OPEN_RE = /^```([\w-]*)$/;
 
+// A CSI sequence's final byte, which terminates the parameter run and names the operation.
+const CSI_FINAL_BYTE_RE = /[\x40-\x7e]/;
+
+// The fixtures README section under which an author declares a capture deliberately unquoted.
+const UNCONSUMED_HEADING = '## Deliberately unconsumed';
+
 /** @param {string} p */
 function toPosix(p) {
   return p.split(sep).join('/');
@@ -72,11 +78,14 @@ function walkFixtures(dir) {
   /** @type {string[]} */
   const out = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...walkFixtures(full).map((p) => join(entry.name, p)));
-    else if (entry.name.endsWith('.txt')) out.push(entry.name);
+    if (entry.isDirectory()) {
+      const nested = walkFixtures(join(dir, entry.name));
+      out.push(...nested.map((p) => `${entry.name}/${p}`));
+    } else if (entry.name.endsWith('.txt')) {
+      out.push(entry.name);
+    }
   }
-  return out.map(toPosix);
+  return out;
 }
 
 /**
@@ -89,9 +98,9 @@ function readUnconsumedList(fixturesRootAbs) {
   const readmePath = join(fixturesRootAbs, 'README.md');
   if (!existsSync(readmePath)) return new Set();
   const text = readFileSync(readmePath, 'utf8');
-  const headingIdx = text.indexOf('## Deliberately unconsumed');
+  const headingIdx = text.indexOf(UNCONSUMED_HEADING);
   if (headingIdx === -1) return new Set();
-  const rest = text.slice(headingIdx + '## Deliberately unconsumed'.length);
+  const rest = text.slice(headingIdx + UNCONSUMED_HEADING.length);
   const nextHeadingIdx = rest.search(/\n## /);
   const section = nextHeadingIdx === -1 ? rest : rest.slice(0, nextHeadingIdx);
   // Only the name a list item OPENS with declares that fixture unconsumed; a `.txt` name
@@ -202,8 +211,9 @@ export function renderTranscript(raw) {
    * @param {string} final
    */
   function applyCsi(paramStr, final) {
-    const isPrivate = paramStr.startsWith('?');
-    const body = isPrivate ? paramStr.slice(1) : paramStr;
+    // A private-mode `?` prefix changes which modes the final byte names, never how the
+    // parameters parse, and every private sequence in this corpus (`?25h`/`?25l`) is a no-op here.
+    const body = paramStr.startsWith('?') ? paramStr.slice(1) : paramStr;
     const nums = body.split(';').filter((s) => s !== '').map(Number);
     /**
      * @param {number} idx
@@ -247,32 +257,14 @@ export function renderTranscript(raw) {
   let i = 0;
   while (i < chars.length) {
     const ch = chars[i];
-    if (ch === '\x00' || ch === '\x07') {
-      i++;
-      continue;
-    }
-    if (ch === '\r') {
-      col = 0;
-      i++;
-      continue;
-    }
-    if (ch === '\n') {
-      row++;
-      col = 0;
-      i++;
-      continue;
-    }
-    if (ch === '\b') {
-      col = Math.max(0, col - 1);
-      i++;
-      continue;
-    }
+    // An escape opens a multi-character sequence whose own scan decides where `i` lands, so it
+    // is handled ahead of the single-character controls below, which all advance by one.
     if (ch === '\x1b') {
       const next = chars[i + 1];
       if (next === '[') {
         let j = i + 2;
         let params = '';
-        while (j < chars.length && !/[\x40-\x7e]/.test(chars[j])) {
+        while (j < chars.length && !CSI_FINAL_BYTE_RE.test(chars[j])) {
           params += chars[j];
           j++;
         }
@@ -308,7 +300,24 @@ export function renderTranscript(raw) {
       i += 2;
       continue;
     }
-    putChar(ch);
+    switch (ch) {
+      case '\x00':
+      case '\x07':
+        // NUL padding and BEL are not printable content.
+        break;
+      case '\r':
+        col = 0;
+        break;
+      case '\n':
+        row++;
+        col = 0;
+        break;
+      case '\b':
+        col = Math.max(0, col - 1);
+        break;
+      default:
+        putChar(ch);
+    }
     i++;
   }
 
@@ -360,7 +369,7 @@ export function parseMarkedBlocks(file, text) {
       continue;
     }
 
-    const fenceMatch = lines[k].replace(/\s+$/, '').match(FENCE_OPEN_RE);
+    const fenceMatch = lines[k].trimEnd().match(FENCE_OPEN_RE);
     if (!fenceMatch) {
       violations.push({
         file,
@@ -373,7 +382,7 @@ export function parseMarkedBlocks(file, text) {
 
     const tag = fenceMatch[1];
     let j = k + 1;
-    while (j < lines.length && lines[j].replace(/\s+$/, '') !== '```') j++;
+    while (j < lines.length && lines[j].trimEnd() !== '```') j++;
     const body = lines.slice(k + 1, j).join('\n');
 
     if (tag !== '' && tag !== 'text') {
@@ -418,8 +427,7 @@ export function scanTree(root = ROOT) {
     for (const block of blocks) {
       const absFixture = resolve(root, block.markerPath);
       const relFixture = relative(fixturesRootAbs, absFixture);
-      const escapes = relFixture.startsWith('..') || isAbsolute(relFixture);
-      if (escapes) {
+      if (relFixture.startsWith('..') || isAbsolute(relFixture)) {
         violations.push({
           file,
           kind: 'marker-escapes-fixtures-dir',

@@ -15,7 +15,7 @@ import {
 import { TEMPLATE_GITHUB_APP_LITERAL } from '../src/github/finalize.mjs';
 
 // Published specs, so a bake under test never depends on what the monorepo's own versions
-// happen to be. The unresolvable defaults have their own test below.
+// happen to be. The resolved defaults have their own test below.
 const PUBLISHED_SPECS = { engineSpec: '^0.94.0', devSpec: '^0.1.0' };
 
 /**
@@ -60,10 +60,9 @@ test('the baked template\'s cairn.config.ts carries the exact githubApp(...) lit
 });
 
 // @glw907/cairn-cms-dev first published at the 0.95.0-rc.1 cut, so bake() now resolves a usable
-// default devSpec instead of refusing one. This is the update the previous version of this test
-// asked for in its own comment. The refusal it used to prove is not lost: assertInstallableSpec
-// is exercised directly below against a constructed 0.0.0, which tests the guard's contract
-// rather than a passing state of the repo's own version files.
+// default devSpec instead of refusing one. The refusal is still covered: assertInstallableSpec is
+// exercised directly below against a constructed 0.0.0, which tests the guard's contract rather
+// than a passing state of the repo's own version files.
 test('bake with no overrides resolves installable default specs', async (t) => {
   const to = await tempTarget(t);
   await bake({ to });

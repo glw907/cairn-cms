@@ -1,3 +1,55 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+### Added
+
+- The admin track quotes real recorded terminal output where it used to paraphrase it. A live
+  `create-cairn-site` run against a scratch site on workers.dev, plus two `cairn-doctor` reports
+  against the deployed result, are committed verbatim as fixtures under
+  `packages/create-cairn-site/test/fixtures/transcripts/`. Their README records what a transcript
+  means: the tool commit, the bake command and both published specs, the per-invocation
+  environment, the secret sweep, and the captures no page quotes.
+  `docs/admin/create-your-site.md` gained three blocks, the cost preamble, the GitHub App consent
+  prompt, and the deploy summary carrying the printed live address, the last replacing the
+  paraphrase that stood in for it. `docs/admin/is-it-working.md` gained one, a credentialed doctor
+  report carrying pass, fail, and skip lines together, which does work the prose could not: eight
+  of its lines read SKIP, printed no differently from the passes beside them, and that is the trap
+  the surrounding section exists to defuse. Two rules govern the fixtures. No invented output,
+  ever: a transcript is real stdout or it does not ship. And a fixture is never edited: the gate
+  normalizes, the run re-captures. Consumers must: nothing.
+
+- A new `check:transcripts` gate enforces both rules mechanically. Pass D's exit criteria named
+  this gate and it was never built; it lands here with the first blocks for it to check. Every
+  quoted block carries an HTML comment naming the fixture it came from, and the gate compares the
+  two through one tested renderer that replays the pty control stream into its final frame, so a
+  clack prompt's per-keystroke redraws collapse to the line a reader saw rather than
+  concatenating. Eight failure modes each carry a tagged kind and a unit case: a block that does
+  not match its fixture or appears out of order, a missing fixture, a marker with no fence, two
+  markers on one fence, a path escaping the fixtures directory, a fence tagged as a shell
+  language, a page below its declared block floor, and a fixture that no page quotes and the
+  README does not declare unconsumed. It runs in CI beside `check:visuals`. Consumers must:
+  nothing.
+
+### Fixed
+
+- `docs/admin/is-it-working.md` told a reader that every failing check names a condition id and to
+  find that id on the page. The doctor never prints one: its report names each check by title, as
+  both recorded reports confirm by carrying no id at all, so the instruction the whole 21-section
+  lookup surface turns on could not be followed. The page now states the real mapping and its jump
+  list leads each entry with the report titles it covers, so a reader scans for the words in front
+  of them. Two claims of the same shape went with it: a skip is now described as credential or
+  nothing-to-read without ranking them (one of the eight skips in the recorded report is the
+  credential kind), and the page no longer implies a Cloudflare token makes the sign-in-database
+  checks run, which it does not on a scaffolded site. The blocks are what made all three findable,
+  since each was merely unverifiable until real output sat above it. Consumers must: nothing.
+
+- `docs/reference/doctor.md` claimed the `config.csrf-disable` check skips on every current
+  scaffold. It skips on a bare `sv create` scaffold, which writes no `svelte.config.js`, and the
+  recorded report shows it passing on a `create-cairn-site` site, which bakes its template from
+  `examples/showcase` and so always carries that file. The prose and the check table now hold the
+  distinction. Consumers must: nothing.
+
 ## 0.95.0-rc.1
 
 <!-- release-size: minor -->

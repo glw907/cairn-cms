@@ -15,73 +15,69 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-17: the capture pass, PART A COMPLETE, Part B next)
+## Immediate next action (2026-08-17: the capture pass is CLOSED; seam Pass 1 is next)
 
-**Part A is complete and verified (2026-08-17); the fixtures exist.** Six captures plus their
-README are committed at `packages/create-cairn-site/test/fixtures/transcripts/` (`8d9871eb`),
-and every scratch resource is torn down and confirmed gone by listing (`c1aef442`). The live
-run took four invocations to reach a live site, and the README accounts for all of them; the
-short version is that a first run cannot succeed with a GitHub App installed on "Only select
-repositories" (it creates the repository itself, so there is nothing to select yet), and the
-resume then refuses a repository it created rather than adopting it. Both are filed in the
-friction log for ROADMAP triage at B4, alongside the scaffold's placeholder from-address.
+**The capture pass is complete, both parts, and merged to `main`.** Plan and post-mortems:
+`docs/superpowers/plans/2026-08-16-capture-pass.md`. Part A banked six recorded-run captures plus
+their README at `packages/create-cairn-site/test/fixtures/transcripts/` and tore the scratch estate
+down, verified by listing. Part B built the `check:transcripts` gate, wrote the four transcript
+blocks the two waiting admin pages needed, and corrected `docs/reference/doctor.md`. The gate is
+green at four blocks over 72 pages and proven red once against the real CLI, by changing one
+character inside a quoted line.
 
-**Which fixture carries which block, correcting the plan.** The plan assumed one capture, so
-B1's block list points at `01-create-cairn-site.txt` throughout. That holds for the cost
-preamble and the GitHub App prompt, which print before anything can fail and so are identical
-to a happy run's bytes. **It does not hold for the deploy summary and the live address, which
-live in `01d-resume.txt`**, the invocation that reached `printLiveInfo`. B2's doctor block
-quotes `03-doctor-credentialed.txt` as planned (8 passed, 3 failed, 8 skipped, all three line
-types in one report). `01b-resume.txt`, `01c-resume.txt`, and `02-doctor-bare.txt` are the
-deliberately-unconsumed list the README declares and `check:transcripts` must accept as their
-citation. No A4 interrupt-resume fixture was captured, so B4 files no ROADMAP line for one.
+**Immediate next action: seam Pass 1.** Launch prompt, a fresh Opus 5 session from
+`~/Projects/cairn-cms`: "Execute Pass 1 of the live-reproduction seam plan,
+docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md, per the cairn-pass skill."
+**Read the worktree note below before dispatching anything**: `.claude/worktrees/repro-seam`
+already holds warm uncommitted work for that pass, so it is that pass's starting point rather
+than a fresh branch off `main`.
 
-**One B2 premise is now confirmed by real output:** the credentialed report shows
-`PASS Framework CSRF handoff`, so `docs/reference/doctor.md`'s claim that `config.csrf-disable`
-skips on every scaffold is false exactly as B2 assumes, and the correction can cite the fixture.
+**What the capture pass changed for everything downstream.** The transcript-fixtures question,
+which STATUS carried as resolved-in-the-negative since 2026-08-15, is now resolved in the
+positive: consumable fixtures exist, in-tree, gated. `create-your-site.md` and `is-it-working.md`
+are done and no longer wait on anything. The editors track still waits on the live-reproduction
+seam, unchanged.
 
-**Immediate next action: Part B** (Tasks B1 through B4 of
-`docs/superpowers/plans/2026-08-16-capture-pass.md`), on a feature worktree off `main`,
-dispatching each task to `cairn-implementer` per the `cairn-pass` skill, the main loop
-reviewing each diff and confirming the full gate between dispatches. Part A needed no worktree
-because it only added fixtures; Part B changes pages and adds a gate, so it takes one. Launch
-from `~/Projects/cairn-cms` in a fresh Opus 5 session.
+**One promise this pass broke, retired loudly rather than quietly.** The ROADMAP's transcript
+entry justified bundling by saying each page would be "rewritten once, diagram and transcripts
+together". The visual-layer sequencing gave `create-your-site.md` two bounded edits instead, the
+diagram-pages pass and this one. Neither was wasted and the second did not undo the first, so it
+cost nothing here, but the clause was the stated reason for the bundle and is recorded as not
+kept.
 
-**A0b, now history.** Both packages are on the registry at
-`0.95.0-rc.1` under the `next` dist-tag: the engine published over OIDC via a
-`workflow_dispatch` of `publish.yml` (run green; `sync-template-repo` self-skipped on the
-non-release event as designed), and `@glw907/cairn-cms-dev` made its first-ever publish by
-hand (npm cannot bind a trusted publisher to a nonexistent package). Its trusted publisher is
-now configured (id `5bc9f6a9-a653-4ed2-9d42-5c17a8f496da`, repo `glw907/cairn-cms`, workflow
-`publish.yml`, publish allowed), and `publish.yml` gained a `publish-dev` job with an
-already-published guard, so every future cut carries both packages over OIDC with no
-credential anywhere. Engine `latest` is untouched at `0.94.0`; the published tarball carries
-`previewLoad`/`PreviewBanner` (verified by listing). Tag `v0.95.0-rc.1` is pushed. Acceptance
-per the plan: met in full. One recorded quirk: the dev package's `latest` also points at the
-rc, because a FIRST publish sets `latest` regardless of `--tag`; harmless (nothing installs it
-bare, the scaffold pins the caret-rc) and self-healing at the first stable cut. The npm login
-session was logged out after the cut; nothing on this machine holds an npm credential.
+**The register gate is what earned this pass, and the lesson generalizes.**
+`cairn-register-editor` found that `is-it-working.md`'s central navigation instruction was false:
+it told a reader "Every failing check names a **condition id** ... Find that exact id below", and
+`src/lib/doctor/report.ts` never prints one, which both fixtures confirm by carrying no id at all.
+That sentence is the hinge all 21 anchored sections turn on. Two more claims of the same shape
+went with it. **All three were merely unverifiable while the page only described the report, and
+became visibly wrong the moment real output sat above them.** Quoting real output does not only
+illustrate a page; it audits it. Expect the same when the live-reproduction seam puts real
+rendered admin screens next to the editors track's prose.
 
-The bake's DEFAULT specs resolve to `^0.95.0-rc.1` for both packages, so Part A's explicit
-`--engine-spec`/`--dev-spec` flags were belt-and-braces rather than load-bearing.
+**Four `create-cairn-site` defects are now in `ROADMAP.md`'s Now tier**, owed before release one
+publishes the tool: the selected-repositories dead end, the non-idempotent resume, the placeholder
+from-address, and a hand-over string telling the reader the GitHub and Cloudflare steps arrive in a
+later release, in the run that then performs both. The first two came from the live run, the third
+from the doctor report, the fourth from the register gate. The friction log is cleared to a closure
+note.
 
-**Owed at the pass close (Task B4), not now:** the `code-simplifier` pass over this window's
-changed code (the bake test, the `publish-dev` job), alongside everything B4 already lists.
+**The `0.95.0-rc.1` prerelease is on the registry under the `next` dist-tag** (both packages;
+engine `latest` untouched at `0.94.0`), cut at Task A0b so the capture could install from the
+registry the way a reader does. The `## Unreleased` window above it now carries this pass, and
+`check:version` reads it as a pending minor, since any cut from here is `0.95.0`.
 
-**The pass context:** execute the capture pass
-(`docs/superpowers/plans/2026-08-16-capture-pass.md`), in a fresh Opus 5 session launched
-from `~/Projects/cairn-cms`, per the `cairn-pass` skill. **Geoff's 2026-08-16 call moved this
-pass ahead of seam Pass 1** (his attended availability plus the publish ruling below); Task
-B4 of the plan restores the seam pointer when the pass closes. Order inside the pass: Task
-A0b first, a deliberate `--tag next` prerelease cut of the engine window plus the first
-`@glw907/cairn-cms-dev` publish via `cairn-release` (Geoff's F1 ruling: publish so the
-registry carries `previewLoad`/`PreviewBanner`, then capture; `latest` never moves and
-release one stays behind the visual layer). Then Part A, the attended capture run (Geoff
-present; four browser moments), then Part B on a worktree off `main`. The plan was
-adversarially reviewed 2026-08-16 (three Opus lenses; two blockers found and folded,
-including the registry-install blocker that forced the publish ruling). Seam Pass 1
-(`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`) runs next after this
-pass, per the queue below.
+**Two gate facts a cold session should not rediscover.** A feature worktree has no baked
+`packages/create-cairn-site/template/` (it is gitignored and produced by `prepack`), so that
+package's suite fails there until you bake it the way `.github/workflows/test.yml` does:
+`node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"`
+from the package directory. And `check:consumers` fails in a feature worktree on the known
+`examples/showcase/node_modules` symlink collision, not a regression; the script says so itself.
+Both were hit at this pass's close. **Also observed once and not reproduced:** immediately after
+that bake, one run of the package suite reported 825 passed and 1 failed, and the two runs after
+it were 826 clean. The likely cause is the suite racing the bake's own writes, since the bake had
+just laid down several hundred files, but that is a hypothesis and not a diagnosis. Worth
+remembering only if it recurs.
 
 **Pass D, the documentation reset, is complete across all three phases.** Phase 1 (PR #34) and
 Phase 2 (PR #35) merged earlier; Phase 3 (Tasks 9 through 14) closes the pass. The published
@@ -160,17 +156,11 @@ mechanic the gate surfaced (post-measurement metric drift in mermaid HTML labels
 `docs/internal/record/2026-08-16-diagram-theme-harvest-findings.md`; its fixes live in
 cairn-pub (`eae4033`, `d4e7575`).
 
-**The transcript-fixtures question is resolved, in the negative (2026-08-15).** No consumable
-recorded-run fixtures exist anywhere in the repo; the T-series stdout lives uncommitted in
-`~/Projects/cairn-scratch/`, and no `cairn-doctor` report was ever captured at all. So
-`create-your-site.md` and `is-it-working.md` wait for a dedicated **capture pass** (a fresh
-end-to-end `create-cairn-site` run plus a doctor run against the deployed result, stdout
-committed as fixtures), which costs real Cloudflare resources and GitHub App browser moments
-and therefore **needs scheduling with Geoff**. Each page rewrites once, so the setup-journey
-diagram rides that pass too. Full evidence in the ROADMAP transcript-gate entry. The editors
-track stays blocked on the live-reproduction seam: reproduction content is decided by the
-render (fixture data, crop, widths), not by an authorable source, so writing it now would mean
-writing it twice.
+**The transcript-fixtures question, carried here since 2026-08-15 as resolved in the negative,
+is now resolved in the positive (2026-08-17).** The capture pass ran; the fixtures exist and both
+admin pages quote them. The editors track stays blocked on the live-reproduction seam, unchanged:
+reproduction content is decided by the render (fixture data, crop, widths), not by an authorable
+source, so writing it now would mean writing it twice.
 
 **The admin-screen reference capture is banked (2026-08-15).** The sitting ended by capturing
 the real admin screens as writer-facing reference material for the editors rewrite and the seam
@@ -227,15 +217,13 @@ sitting ran 2026-08-15 and is DONE:** the spec is ratified at cairn-pub
 survived a 20-plus-agent adversarial review each (spec: 16 verified findings folded, 0 refuted,
 which moved fence delivery to the rehype stage past the sanitize floor and made posing the rule;
 plan: 16 verified folded, 0 refuted, which relocated the mount tests to the browser vitest
-project, added the fixture-asset route, and declared the pass split). The capture pass runs as
-soon as Geoff schedules his attended run (brief and protocol:
-`docs/internal/record/2026-08-15-capture-pass-brief.md`; its tool prerequisite, the `.gitignore`
-fix, is done). Then: the seam build (two passes, plan above) -> the editors rewrite -> the
-editors read -> release one -> the three-site walk -> P.** Launch prompt for the seam build
-Pass 1, a fresh Opus 5 session (its `docs-diagram-pages` merge precondition landed
-2026-08-16), from `~/Projects/cairn-cms`: "Execute Pass 1 of
-the live-reproduction seam plan, docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md,
-per the cairn-pass skill."
+project, added the fixture-asset route, and declared the pass split). **The capture pass ran
+2026-08-17 and is history** (plan and post-mortems:
+`docs/superpowers/plans/2026-08-16-capture-pass.md`; the brief it ran from is
+`docs/internal/record/2026-08-15-capture-pass-brief.md`). What remains: the seam build (two
+passes, plan above) -> the editors rewrite -> the editors read -> release one -> the three-site
+walk -> P.** The seam build Pass 1 is the immediate next action; its launch prompt and its
+warm-worktree precondition are at the top of this doc.
 
 ### cairn-pub is PREPARED and deliberately not merged
 

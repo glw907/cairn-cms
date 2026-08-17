@@ -19,10 +19,25 @@ Open a terminal and run:
 npx create-cairn-site
 ```
 
-The tool prints the honest cost picture first, the same facts as
-[Before you start](./before-you-start.md), so you see them before typing anything. Then it asks
-four short questions: your site's name, an optional one-line description, an optional brand
-color, and the folder to create it in. Press Enter to accept the shown default for any of them.
+Every terminal excerpt on this page comes from a real setup of a site named
+`cairn-capture-scratch` on the GitHub account `glw907`. Your own site's name, account, and the
+address built from both appear in their place.
+
+The tool opens with what this costs to run, the same facts as
+[Before you start](./before-you-start.md):
+
+<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt -->
+```
+Before you start, the honest cost picture.
+
+Building and running this site is free, and stays free.
+[...]
+All in, a small site on its own domain runs about $6 a month.
+```
+
+Then it asks four short questions: your site's name, an optional one-line description, an
+optional brand color, and the folder to create it in. Press Enter on the name or the folder to
+accept the value shown; press Enter on the description or brand color to leave it blank.
 
 The tool scaffolds your site locally, then keeps going: it walks you through putting that site on
 GitHub, and then onto Cloudflare, in the same run. Both stages ask before they do anything, so you
@@ -30,16 +45,25 @@ can stop and pick this back up later if you'd rather not finish it in one sittin
 
 ## Getting your site onto GitHub
 
-The tool explains what it's about to do, then asks: **Create the GitHub App and repository now?**
-Say yes, and it creates a private GitHub repository for your content, and a GitHub App that
-exists only for this site. That App is what lets the tool, and your writers, publish to your
-repository without anyone needing a GitHub account of their own. It can also manage the
-repository's settings, including deleting it, and GitHub doesn't allow an App's permissions to be
-reduced after the fact, so that access stays for as long as the App exists. The tool says the same
-thing before it asks.
+The tool explains what it's about to do, then asks:
 
-This step needs two trips to your browser: one to create the App, one to install it on your new
-repository and sign you in to GitHub. The tool opens each page for you and waits.
+<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt -->
+```
+Confirm the GitHub App and repository
+This step creates a GitHub App named cairn-cairn-capture-scratch that only this site uses, a private repository named cairn-capture-scratch, and needs two trips to your browser.
+
+The App will be able to write this site's content and manage the repository's settings, including deleting it. GitHub does not allow an App's permissions to be reduced later, so this stays for as long as the App exists. This is what lets the tool create and publish to the repository for you.
+│
+◇  Create the GitHub App and repository now?
+│  Yes
+```
+
+Saying yes creates a private GitHub repository for your content, and a GitHub App that exists
+only for this site. That App is what lets the tool, and your writers, publish to your repository
+without anyone needing a GitHub account of their own. That access, once granted, stays for as
+long as the App exists, since GitHub gives no way to walk it back later. The two browser trips are
+separate: the first creates the App, the second installs it on your new repository and signs you
+in to GitHub. The tool opens each page for you and waits.
 
 If you're creating the App under an organization rather than your personal account, GitHub may
 require an organization owner to approve the install before it continues. If that happens, the
@@ -63,9 +87,9 @@ isn't in either database: it's the markdown files already sitting in the GitHub 
 previous step created. The tool then moves
 your GitHub App's private key off your machine and into a Cloudflare Worker secret, where it
 stays, and asks for the email address you'll sign in with. Once you answer, it writes your owner
-record straight into your new site's database and opens a sign-in page in your browser, its last
-browser moment: click **Sign in there**, and you land in your own site's admin, signed in as its
-owner.
+record straight into your new site's database and opens a sign-in page in your browser. This is
+the setup's last browser moment. Click **Sign in there**. You land in your own site's admin,
+already signed in as its owner.
 
 ```mermaid
 flowchart LR
@@ -98,15 +122,26 @@ Cloudflare.*
 
 ## You know it worked when
 
-Your terminal prints your site's live address, something like `https://your-site.workers.dev`,
-and a note that you can sign in at `https://your-site.workers.dev/admin`. Open that admin address:
-if you land there already signed in, from the link the tool just opened, setup finished. Building
-and running this site costs nothing, and stays free, for as long as you are the only person who
-signs in; see [the free-until boundary](./before-you-start.md#the-free-until-boundary) for what
-changes once a second person needs their own sign-in.
+The tool finishes by printing this:
+
+<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt -->
+```
+Your site is live on GitHub: https://github.com/glw907/cairn-capture-scratch
+The App that publishes for you: https://github.com/apps/cairn-cairn-capture-scratch
+
+Your site is live at: https://cairn-capture-scratch.glw907.workers.dev
+Sign in at: https://cairn-capture-scratch.glw907.workers.dev/admin
+
+What exists now: one Worker, two databases, one storage bucket, and the GitHub App's private key, stored as a Worker secret.
+```
+
+Open your own site's admin address: if you land there already signed in, from the link the tool
+just opened, setup finished. See
+[the free-until boundary](./before-you-start.md#the-free-until-boundary) for what changes once a
+second person needs their own sign-in.
 
 Your site is now live on a Cloudflare-provided `workers.dev` address, which keeps working even
-after you connect a domain of your own. That's the next page:
+after you connect a domain of your own, covered next in
 [Own your domain](./own-your-domain.md).
 
 ## Getting back in

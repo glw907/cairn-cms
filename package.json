@@ -124,6 +124,10 @@
       "svelte": "./dist/media/index.js",
       "default": "./dist/media/index.js"
     },
+    "./reproductions/manifest": {
+      "types": "./dist/reproductions/manifest.d.ts",
+      "default": "./dist/reproductions/manifest.js"
+    },
     "./auth-store": {
       "types": "./dist/auth-store/index.d.ts",
       "default": "./dist/auth-store/index.js"

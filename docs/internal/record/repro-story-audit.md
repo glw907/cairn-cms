@@ -1,0 +1,480 @@
+# The reproduction story audit
+
+The per-story mechanism record for the live-reproduction seam. Task A1 of the plan
+`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md` produced it; tasks A3 through
+A6b execute against it, and cairn-pub's Pass 2 dispatches cite it by this path. The path is
+frozen: do not move or rename this file.
+
+The contract for what each story must SHOW is the per-page outline record,
+[`2026-08-15-docs-outlines-with-visuals.md`](./2026-08-15-docs-outlines-with-visuals.md). The
+contract for ids and flags is the spec, cairn-pub
+`docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md`. This record settles only the
+mechanism: which component mounts, `shell` or `bare`, props or pose, what has to be exported, and
+what has to become injectable.
+
+Every claim below carries file:line evidence read from the tree at
+`ed417b55`. Line numbers drift; the named symbol is the durable part.
+
+## How to read a row
+
+- **Component.** The smallest component that contains what the contract names. Framing comes from
+  picking the component, never from cropping the render.
+- **Host.** `shell` means the story renders as the child of `CairnAdminShell` with the fixture
+  `navLayout`. `bare` means it mounts on its own inside `ReproContext`.
+- **Mechanism.** `props` when the contracted state is reachable by construction, `pose` when it
+  lives in internal component state and needs a post-mount step. Props win wherever both work.
+
+## The 25 rows
+
+### `auth/login`
+
+- **Component:** `LoginPage` (`src/lib/components/LoginPage.svelte`), exported at
+  `src/lib/components/index.ts:13`.
+- **Host:** `bare`. The page renders its own `data-theme` root and is the signed-out surface, so no
+  shell wraps it.
+- **Mechanism:** props. `Props` at `LoginPage.svelte:17` takes `data` (`siteName`, `error`, `csrf`,
+  `theme`) and `form`; the resting sign-in state is `form: null`, `data.error: null`
+  (`LoginPage.svelte:22`, `:26`, `:29`).
+- **Own theme root:** yes. `data.theme` is rendered onto the page's own wrapper
+  (`LoginPage.svelte:22`), so the story takes the theme as a fixture prop.
+- **Exports needed:** none.
+- **Fixes needed:** none.
+
+### `auth/confirm`
+
+- **Component:** `ConfirmPage` (`src/lib/components/ConfirmPage.svelte`), exported at
+  `src/lib/components/index.ts:14`.
+- **Host:** `bare`, for the same reason as `auth/login`.
+- **Mechanism:** props. `Props` at `ConfirmPage.svelte:12`: `data` (`token`, `siteName`, `error`,
+  `csrf`, `theme`) and an optional `form` defaulting to null (`ConfirmPage.svelte:24`). The
+  contracted state is the resting confirm page with its **Confirm sign-in** button.
+- **Own theme root:** yes, `ConfirmPage.svelte:17`.
+- **Exports needed:** none.
+- **Fixes needed:** none.
+
+### `editor/entry-screen`
+
+- **Component:** `EditPage` (`src/lib/components/EditPage.svelte`), exported at
+  `src/lib/components/index.ts:20`.
+- **Host:** `shell`. The lifecycle band renders through the topbar context portal, not in a header
+  of `EditPage`'s own: `EditPage` registers a `desk` snippet into the holder
+  `CairnAdminShell` provides (`src/lib/components/topbar-context.ts:33`, `:41`;
+  `CairnAdminShell.svelte` calls `provideTopbar`). Outside a provider the fold is simply absent
+  (`topbar-context.ts`, the `theme` member's doc comment says so in as many words), so a bare mount
+  renders the document body with no band.
+- **Mechanism:** props. The contract wants the resting Write tab: title field, toolbar with both
+  tabs, the Details trigger in the header, the writing surface. `mode` defaults to `'write'`
+  (`EditPage.svelte:362`) and `detailsOpen` to `false` (`EditPage.svelte:1056`), which is exactly
+  the resting state. The full prop bag is `data`, `registry`, `render`, `icons`, `form`,
+  `previewMint` (`EditPage.svelte:83`).
+- **Markers:** yes. This is one of the three locate-many-controls screens. Keys frozen in the
+  manifest: `title-field`, `toolbar`, `write-preview-tabs`, `details-trigger`, `writing-surface`.
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2), inherited from `host: 'shell'`.
+
+### `editor/toolbar`
+
+- **Component:** `EditorToolbar` (`src/lib/components/EditorToolbar.svelte`). Not exported from the
+  `/components` barrel; see "The export question" below.
+- **Host:** `bare`. The toolbar is a strip that takes every input as a prop and reads no context.
+- **Mechanism:** props. `Props` at `EditorToolbar.svelte:36`: `format`, `mode`, `onMode`, `device`,
+  `onDevice`, `insertControls`, `moreExtra`, `onHelp`. The contract ("its four groups visible")
+  needs `insertControls` supplied so the Insert group renders; the rest are no-op callbacks.
+- **Exports needed:** none.
+- **Fixes needed:** none.
+
+### `editor/sidebar-list`
+
+- **Component:** `ConceptList` (`src/lib/components/ConceptList.svelte`), exported at
+  `src/lib/components/index.ts:16`.
+- **Host:** `shell`. The contract names "the concept sidebar" alongside the Posts list, and the
+  sidebar is the shell's drawer, not part of `ConceptList`.
+- **Mechanism:** props. `Props` at `ConceptList.svelte:30`: `data: ListData` and an optional `form`
+  defaulting to null (`ConceptList.svelte:39`). Status badges and the **New post** button all read
+  from `data.entries` (`ConceptList.svelte:72`).
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2).
+
+### `editor/preview-tab`
+
+- **Component:** `EditPage`.
+- **Host:** `shell`.
+- **Mechanism:** **pose**. `mode` is internal state with no prop (`EditPage.svelte:362`), and the
+  device trigger only joins the capsule while Preview shows (`EditorToolbar.svelte:36`, the
+  `onDevice` doc). The pose clicks the Preview tab. The story also needs the `render` prop so the
+  preview pane has output to show (`EditPage.svelte:83`).
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2).
+
+### `editor/details-panel`
+
+- **Component:** `EditPage`.
+- **Host:** `shell`.
+- **Mechanism:** **pose**. `detailsOpen` is internal state with no prop (`EditPage.svelte:1056`)
+  and `openDetails()` moves focus into the panel. The pose clicks the Details trigger.
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2).
+
+### `editor/figure-dialog`
+
+- **Component:** `MediaFigureControl` (`src/lib/components/MediaFigureControl.svelte`). Not
+  exported from the barrel.
+- **Host:** `bare`.
+- **Mechanism:** props. **Corrects the spec's "pose or bare" to bare-and-props.**
+  `MediaFigureControl` is a plain `<form>` root (`MediaFigureControl.svelte:92`), not a dialog of
+  its own, and every contracted control is a prop: `caption`, `role`, `mode`, `decorative`,
+  `onapply`, `onunwrap` (`MediaFigureControl.svelte:32`, `:49`). Reaching the same surface through
+  `EditPage` would need a caret-on-an-image pose against `mediaAtCaret`
+  (`EditPage.svelte:824`) and `figureDialog` (`EditPage.svelte:827`), which is a longer route to a
+  strictly larger render. `mode: 'edit'` gives the contract's **Edit the figure at the cursor**
+  face.
+- **Exports needed:** none.
+- **Fixes needed:** none.
+
+### `editor/tidy-review`
+
+- **Component:** `TidyReview` (`src/lib/components/TidyReview.svelte`). Not exported from the
+  barrel.
+- **Host:** `bare`.
+- **Mechanism:** props. The review opens itself: an `$effect` calls `dialog.showModal()` once on
+  mount (`TidyReview.svelte:161`). Every hunk, its category, and its objective flag are derived
+  from the `changes` prop (`TidyReview.svelte:39`, `:64`), so "one change marked **Review this**"
+  is a fixture-data choice, not an interaction. The prop bag is `changes`, `original`,
+  `conventions`, `model`, `title`, `api`, `onclose`, `onshow`.
+- **Exports needed:** none.
+- **Fixes needed:** none.
+
+### `editor/collapsed-layout-block`
+
+- **Component:** `MarkdownEditor` (`src/lib/components/MarkdownEditor.svelte`), exported at
+  `src/lib/components/index.ts:23`.
+- **Host:** `bare`.
+- **Mechanism:** props. **Corrects the spec's `pose` flag.** `foldOnMount` is a real prop
+  (`MarkdownEditor.svelte:144`, defaulting to false at `:185`); when true the editor calls
+  `foldContainersOnLoad(view)` right after the view mounts (`MarkdownEditor.svelte:858`,
+  `src/lib/components/editor-folding.ts:509`), so a `value` carrying a layout block opens already
+  collapsed to its pill with the gutter control beside it. The `registry` prop resolves the pill's
+  human label (`MarkdownEditor.svelte:746`).
+- **Exports needed:** none.
+- **Fixes needed:** none.
+
+### `publish/header-band`
+
+- **Component:** `EditPage`.
+- **Host:** `shell`, and load-bearing here: the band is the `desk` snippet `EditPage` registers into
+  the shell's topbar holder (`topbar-context.ts:33`). A bare mount renders no band at all, so this
+  row cannot be `bare`.
+- **Mechanism:** **pose**. The contract names the *opened* overflow menu; `actionsOpen` is internal
+  state with no prop (`EditPage.svelte:1028`). The pose opens it.
+- **Two widths:** the only row that declares `desktop` and `narrow` rather than `column`. The
+  narrow face is real and automatic: `narrow` tracks
+  `matchMedia('(max-width: 639.98px)')` (`EditPage.svelte:1040`), and an iframe's content treats
+  the iframe box as its viewport, so a 390px iframe renders the phone bottom bar with no override.
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2).
+
+### `publish/history-list`
+
+- **Component:** `CairnHistory` (`src/lib/components/CairnHistory.svelte`), exported at
+  `src/lib/components/index.ts:21`.
+- **Host:** `shell`.
+- **Mechanism:** props. `Props` at `CairnHistory.svelte:24`: `data: HistoryData` plus an optional
+  `form` defaulting to null (`:36`). The unpublished-draft row, the who-and-when, and the
+  **Revert** buttons all render from `data`.
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2).
+
+### `publish/pending-list`
+
+- **Component:** the surface belongs to `CairnAdminShell` itself: the topbar's
+  "Publish site (N)" trigger (`CairnAdminShell.svelte:644`) and the grouped confirm dialog
+  (`CairnAdminShell.svelte:731`, grouping at `:309`). The story's mounted child is `WelcomeView`
+  (`src/lib/components/index.ts:28`), a calm one-`EmptyState` body that keeps the frame on the
+  shell chrome the contract is about.
+- **Host:** `shell`.
+- **Mechanism:** **pose**. The dialog opens through `publishAllDialog.showModal()` from the trigger
+  (`CairnAdminShell.svelte:647`); there is no prop for it. The pose clicks "Publish site (N)".
+  The count and the groups themselves are prop-reachable: `data.pendingEntries` is an already
+  resolved `Promise` on the fixture (`src/lib/sveltekit/content-routes-core.ts:103`).
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2).
+
+### `publish/refusal-banner`
+
+- **Component:** `ConceptList`.
+- **Host:** `bare`, as the spec flags.
+- **Mechanism:** props. The refused-delete banner renders from `form`
+  (`ConceptList.svelte:41`, markup at `:312`), and that markup's own comment records that it
+  matches the editor's refusal banner, which is the shape `when-something-goes-wrong.md` is about.
+- **Why not `EditPage`:** `EditPage`'s broken-link banner (`EditPage.svelte:1873`, driven by
+  `form.brokenLinks` at `:1214`) is equally prop-reachable, but it drags the whole editor,
+  CodeMirror included, into a render whose whole subject is one banner. The smallest-component
+  rule picks `ConceptList`. If the editors rewrite decides the save-refusal wording specifically
+  must be the pictured one, this row moves to `EditPage` and stays `bare` and props-only; nothing
+  else about it changes.
+- **Exports needed:** none.
+- **Fixes needed:** none.
+
+### `media/insert-panel`
+
+- **Component:** `MediaInsertPopover` (`src/lib/components/MediaInsertPopover.svelte`). Not
+  exported from the barrel.
+- **Host:** `bare`.
+- **Mechanism:** **pose**. The popover mounts headless by default; `trigger: true` renders the
+  built-in button (`MediaInsertPopover.svelte:55`) and `open('chooser')` is an instance export
+  (`:134`) a DOM-only pose cannot call. The pose clicks the rendered trigger.
+- **Exports needed:** none.
+- **Fixes needed:** the media public base (fix 1): the reuse search renders thumbnails through
+  `editor-media.ts` and the picker.
+
+### `media/upload-form`
+
+- **Component:** `MediaCaptureCard` (`src/lib/components/MediaCaptureCard.svelte`). Not exported
+  from the barrel.
+- **Host:** `bare`.
+- **Mechanism:** props. The card is explicitly presentational, not a dialog
+  (`MediaCaptureCard.svelte:5`). Its `Props` are `file`, `oncapture`, `submitLabel`
+  (`MediaCaptureCard.svelte:38`). The contract's two features fall straight out of the file: a
+  real stem yields the **Suggested** tag (`:52`) and `altMode` starts unset so both the describe
+  and decorative choices show (`:60`).
+- **Note for A2:** the `file` prop is a real `File`. The fixture set must expose one constructible
+  synchronously (bytes inline, not fetched), and the stem must be a real name rather than a camera
+  stem or the Suggested tag will not render. The card previews through
+  `URL.createObjectURL(file)` (`:69`), so it needs no media base.
+- **Exports needed:** none.
+- **Fixes needed:** none.
+
+### `media/lead-picture-dialog`
+
+- **Component:** `MediaHeroField` (`src/lib/components/MediaHeroField.svelte`). Not exported from
+  the barrel.
+- **Host:** `bare`.
+- **Mechanism:** **pose**. The resting field is a slim dropzone; editing opens a native
+  `<dialog class="modal">` (`MediaHeroField.svelte:27`, element at `:477`) through
+  `dialog.showModal()` in an edit handler (`:374`), with no prop for it. The 16:9 social-crop
+  preview lives inside that dialog (`:503`). The pose clicks the edit control. The story sets
+  `lead: true` so the social-card line renders (`:63`) and a committed `value` so the preview has
+  an image.
+- **Exports needed:** none.
+- **Fixes needed:** the media public base (fix 1): the committed thumbnail resolves through
+  `publicPath` at `MediaHeroField.svelte:133`, `:237`, `:347`. Also the CSRF context
+  (`MediaHeroField.svelte:101`), which `ReproContext` supplies in A4.
+
+### `media/library`
+
+- **Component:** `CairnMediaLibrary` (`src/lib/components/CairnMediaLibrary.svelte`), exported at
+  `src/lib/components/index.ts:17`.
+- **Host:** `shell`.
+- **Mechanism:** props. The contract's resting screen is the default: `query` empty, `triage`
+  `'all'`, `density` `'grid'` (`CairnMediaLibrary.svelte:160`). Counts, search, the grid/list
+  toggle, and the three filters all render at rest.
+- **Markers:** yes. Keys frozen in the manifest: `count-header`, `search`, `view-toggle`,
+  `filters`.
+- **Exports needed:** none.
+- **Fixes needed:** the media public base (fix 1), `CairnMediaLibrary.svelte:1391`; the shell theme
+  override (fix 2); CSRF context (`:322`).
+
+### `media/details-panel`
+
+- **Component:** `CairnMediaLibrary`.
+- **Host:** `shell`.
+- **Mechanism:** **pose**. `selected` is internal state with no prop
+  (`CairnMediaLibrary.svelte:241`) and the panel is the slide-over it drives (`:249`). The pose
+  clicks one tile.
+- **Exports needed:** none.
+- **Fixes needed:** as `media/library`.
+
+### `media/bulk-selection`
+
+- **Component:** `CairnMediaLibrary`.
+- **Host:** `shell`.
+- **Mechanism:** **pose**. `selectedHashes` is an internal `Set` with no prop
+  (`CairnMediaLibrary.svelte:960`). The pose checks three thumbnails so the selection bar shows its
+  count, **Select all**, and **Delete**.
+- **Exports needed:** none.
+- **Fixes needed:** as `media/library`.
+
+### `media/delete-in-use`
+
+- **Component:** `CairnMediaLibrary`.
+- **Host:** `shell`.
+- **Mechanism:** **pose**. The confirmation is a native dialog behind internal state
+  (`CairnMediaLibrary.svelte:251`, the typed confirm at `:868`). The pose selects the fixture's
+  in-use asset and opens delete.
+- **Note for A2:** the fixture library needs one asset the usage overlay marks in use by a fixture
+  entry, or the what-would-break list renders empty and the row shows the wrong face.
+- **Exports needed:** none.
+- **Fixes needed:** as `media/library`.
+
+### `tags/screen`
+
+- **Component:** `VocabularyAdmin` (`src/lib/components/VocabularyAdmin.svelte`), exported at
+  `src/lib/components/index.ts:27`.
+- **Host:** `shell`.
+- **Mechanism:** props. `Props` at `VocabularyAdmin.svelte:42`: `data: VocabularyLoadData` and an
+  optional `form` (`:50`). Every element the contract names is data-driven: the trash icon versus
+  the use count (`:298`), the not-on-this-list section (`:339`), the Add field, and the
+  **Save changes** button. The stored-form line under the Add field appears as the author types
+  (`:193`), so it is the one contracted detail that is not in the resting render; the caption
+  carries it, per the page contract, and no pose is added for it.
+- **Markers:** yes. Keys frozen in the manifest: `add-field`, `tag-list`, `unused-tag`,
+  `not-on-list`, `save-changes`.
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2).
+
+### `roster/own-row`
+
+- **Component:** `ManageEditors` (`src/lib/components/ManageEditors.svelte`), exported at
+  `src/lib/components/index.ts:22`.
+- **Host:** `shell`.
+- **Mechanism:** props. `data.self` is the reader's own email and the row's disabled controls
+  follow from it (`ManageEditors.svelte:20`, `:32`). The story sets `data.self` to the fixture
+  editor's address.
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2).
+
+### `nav/worked-navlayout`
+
+- **Component:** the surface belongs to `CairnAdminShell`: the resolved sidebar renders from
+  `data.nav` (`src/lib/sveltekit/content-routes-core.ts:85`) in the drawer side
+  (`CairnAdminShell.svelte:850`), and the unreferenced trailing group after the divider is the
+  shell's own behavior (`CairnAdminShell.svelte:871`). The story's mounted child is `WelcomeView`,
+  as for `publish/pending-list`.
+- **Host:** `shell`.
+- **Mechanism:** props. The whole contract is `data.nav`, a `ResolvedNavLayout` the fixture
+  supplies.
+- **Not `NavTree`:** `NavTree` (`src/lib/components/NavTree.svelte`) edits the *site's public
+  menu*, not the admin sidebar; `CairnAdmin` mounts it for the nav page
+  (`src/lib/components/CairnAdmin.svelte:102`). The `organize-your-admin-nav.md` contract is about
+  `navLayout`, the admin sidebar, so `NavTree` is the wrong component for this row.
+- **Exports needed:** none.
+- **Fixes needed:** the shell theme override (fix 2).
+
+### `toolkit/custom-screen`
+
+- **Component:** none exists. **This row deviates from the spec's rule that a story mounts one of
+  the package's own components.** The contract is the worked snippet in
+  `docs/extend/add-a-custom-admin-screen.md` under "Compose the screen": a site-authored screen
+  composed from `PageHeader`, `OfficeList`, `AdminTable`, and `StatusChip`. There is no such
+  component in the package, and there should not be: the toolkit's charter is general-purpose
+  primitives, and the page's own prose says a component rendering one of cairn's content concepts
+  has no place in it. A5b through A6b build the story's component inside the reproductions module,
+  composing only the exported `@glw907/cairn-cms/admin-toolkit` primitives, and it must stay a
+  transcription of the doc snippet rather than a nicer screen.
+- **Host:** `shell`. The contract's whole point is the composed screen sitting inside
+  `CairnAdminShell`.
+- **Mechanism:** props (the snippet's own `data.events`).
+- **Exports needed:** none. The primitives are already on `/admin-toolkit`
+  (`src/lib/admin-toolkit/index.ts`).
+- **Fixes needed:** the shell theme override (fix 2).
+
+## The export question: the list is empty
+
+**No story needs a new public export.** Six of the mounted components are absent from the
+`/components` barrel (`src/lib/components/index.ts`): `EditorToolbar`, `TidyReview`,
+`MediaFigureControl`, `MediaCaptureCard`, `MediaInsertPopover`, `MediaHeroField`. The
+reproductions module ships inside this package, so `src/lib/reproductions/stories/*.ts` reaches
+each one by a relative source import; nothing crosses the package boundary, and the exported
+surface a consumer sees is `getStory(id).component`, never the component's own subpath.
+
+This **corrects the spec's assumption** that "Screen parts the contract needs that the package does
+not yet export get exported as part of the seam build." Exporting them would be net harmful, not
+merely unnecessary:
+
+- The barrel's membership rule is exact and written down (`src/lib/components/index.ts:1`): the
+  view tier, plus their composed parts, never a reusable building block. Adding six part-level
+  names for docs' sake widens a surface the library then owes an upgrade guarantee on.
+- The surface-pruning pass of 2026-07-01 *demoted* four names from this barrel on that reasoning,
+  and `src/tests/unit/components-barrel-prune.test.ts` holds the resulting keep list. Re-adding
+  parts would push against a deliberate prior decision with no consumer asking for it.
+- Every new export costs an export-map entry, a `check:surface` snapshot line, and a documented
+  reference signature. Six of them buy nothing the relative import does not already give.
+
+So tasks A5a, A5b, A6a, and A6b modify neither `src/lib/components/index.ts` nor `package.json`.
+The only export-map growth in Pass 1 is the two reproductions subpaths themselves (A1 adds
+`./reproductions/manifest` so the dist-spawn probe can resolve; A4 adds `./reproductions`).
+
+## The injectability fix list (Task A3 executes this)
+
+### Fix 1: the media public base
+
+`publicPath` takes a `publicBase` parameter defaulting to `/media`
+(`src/lib/media/naming.ts:129`, the default at `:134`). Every admin caller passes four arguments
+and takes the default, so every `img src` an admin media surface renders is hardcoded under
+`/media`:
+
+| Caller | Line |
+| --- | --- |
+| `src/lib/components/CairnMediaLibrary.svelte` | 1391 |
+| `src/lib/components/MediaPicker.svelte` | 237 |
+| `src/lib/components/MediaHeroField.svelte` | 133, 237, 347 |
+| `src/lib/components/editor-media.ts` | 89 |
+
+Four files, six call sites. The resolution `media/config.js` already implies is `publicBase`
+(`src/lib/media/config.ts:20`, resolved at `:108`); the fix honors that one mechanism rather than
+inventing a parallel one. `editor-media.ts` is the editor surface's own path, which
+`editor/entry-screen` and `media/insert-panel` both render through.
+
+### Fix 2: the shell's own theme resolution
+
+`CairnAdminShell` owns its theme and will not take direction:
+
+- The seed reads `data.theme` **untracked**, deliberately, so a later prop change does not reach it
+  (`CairnAdminShell.svelte:267`, `:269`). A mounting context cannot prop-update the theme today.
+- An `$effect` reads `document.cookie` for `cairn-admin-theme` and falls back to
+  `matchMedia('(prefers-color-scheme: dark)')` (`CairnAdminShell.svelte:275`, `:276`, `:277`). On
+  the repro route, where no admin cookie exists, a dark-OS reader gets a dark shell no matter what
+  the docs page's theme is.
+- `toggleTheme` writes the cookie back through `writeAdminCookie`
+  (`CairnAdminShell.svelte:283`, the writer at `:63`).
+
+A3 makes the theme a settable, reactive prop override that also skips both the cookie read and the
+`prefers-color-scheme` read. Fifteen of the 25 stories are `host: 'shell'`, so this fix is what
+makes `ownThemeRoot` true for all of them, and it is what lets Pass 2's `DocsRepro` prop-update
+instead of re-mounting.
+
+### Not fixes: two matchMedia reads that are already correct
+
+Recorded so a later pass does not "fix" them by mistake. An iframe's content treats the iframe box
+as its viewport, so both of these read the reproduction's own width and are exactly right:
+
+- `CairnAdminShell.svelte:222` tracks the `lg` and `xl` persistent-sidebar breakpoints.
+- `EditPage.svelte:1040` tracks `(max-width: 639.98px)` for the narrow band. This is what makes
+  `publish/header-band`'s 390px render show the phone bottom bar with no story-side override.
+
+### A watch item, not a fix: editor preferences in localStorage
+
+`EditPage` keeps zen, focus mode, typewriter, spellcheck, the surface posture, and the preview
+device in `localStorage` (`EditPage.svelte:404`, `:411`, `:414`, `:383`). The component project
+clears it per test for exactly this reason (`src/tests/component/_setup.ts`). No story's pose
+writes one of these today, and every reproduction goes `inert` after its pose, so nothing persists
+across `/repro` pages on the cairn.pub origin. **If a later pose ever toggles one of these, it will
+leak into every other story on the same origin, and a leaked `zen: true` removes the toolbar
+entirely.** Whoever adds such a pose owes a reset alongside it.
+
+## Frozen names
+
+Task A3 appends its table here: the exact prop or context names fix 1 and fix 2 expose. Tasks A4
+through A6b and cairn-pub's B3 cite that table by this path rather than re-deriving the names.
+
+## Declared heights
+
+The manifest's per-width heights are the prerendered iframe heights hydration later refines, not a
+promise about the render. Every row but one declares `column` alone, the responsive default embed;
+`publish/header-band` declares `desktop` and `narrow` alone, because the page pins both faces and a
+responsive band render is not a thing that page asks for. Deliberate: a responsive fence against
+`publish/header-band` fails gate 1 for want of a declared height, which is the correct answer.
+
+The bands used, and why:
+
+- **Bare parts, 220 to 560.** A toolbar strip, a form card, a popover, a banner. Sized to what the
+  component's own markup occupies at the docs column width with nothing under it.
+- **Modal reviews, 620.** `editor/tidy-review` and `media/lead-picture-dialog` render a centered
+  modal; the height is the dialog's comfortable box, not a full screen.
+- **Shell screens, 640 to 760.** A shell render carries the topbar, the sidebar, and the body. 640
+  suits a list or roster; 760 suits the entry screen and its posed variants, which carry the
+  editor surface as well.
+- **`publish/header-band`, 180 desktop and 300 narrow.** Desktop is the band plus its opened
+  overflow menu. Narrow is taller because the phone face puts the bar at the bottom of the shell
+  viewport, so the render has to contain the whole short screen for the bar to sit where it really
+  sits.

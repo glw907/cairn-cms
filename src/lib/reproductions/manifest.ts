@@ -1,0 +1,274 @@
+// cairn-cms: the node-safe half of the live-reproduction seam.
+//
+// This module is plain data and imports nothing. That is a contract, not an accident: the engine's
+// check:visuals gate and cairn-pub's fence validation both read the manifest from a bare `node`
+// process, so a single `.svelte` specifier anywhere in its static graph would break both gates at
+// once. src/tests/unit/reproductions-manifest.test.ts holds the source graph to that rule and
+// src/tests/unit/reproductions-manifest-dist-spawn.test.ts holds the emitted dist to it.
+//
+// The Svelte-importing half (component references, fixture props, poses, the context wrapper) is
+// ./index.ts, on the `@glw907/cairn-cms/reproductions` subpath. Nothing here may import it.
+//
+// The ids, their order, and the flags come from the story inventory in cairn-pub
+// docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md; the per-story mechanism
+// evidence is docs/internal/record/repro-story-audit.md.
+
+/**
+ * The prerendered iframe height for each embed width a docs page may ask for, in CSS pixels.
+ *
+ * A width with no declared height is a width the fence schema refuses, which is how a page is kept
+ * from pinning a story to a face nobody sized. Hydration refines the shipped height against the
+ * measured content, so these are a good first paint rather than a promise about the render.
+ */
+export interface ReproHeights {
+  /** The responsive default embed, filling the docs content column. */
+  column?: number;
+  /** The 860px pinned embed. */
+  desktop?: number;
+  /** The 390px pinned embed. */
+  narrow?: number;
+}
+
+/** One story's node-safe description: everything a gate can check without mounting anything. */
+export interface ReproManifestEntry {
+  /** The id a `repro` fence names, `<group>/<name>`, with exactly one slash. */
+  id: string;
+  /** Declared iframe heights, keyed by the embed width that uses them. */
+  heights: ReproHeights;
+  /**
+   * The stable keys the page's numbered callout list cites, one per rendered chip. Empty for a
+   * story that carries no callouts. Gate 1 counts these against the keyed list on the page that
+   * embeds the story, so a prose list cannot silently misnumber.
+   */
+  markerKeys: string[];
+  /** Whether the story needs a post-mount step to reach the state its page contract names. */
+  pose: boolean;
+  /** Whether the story renders inside `CairnAdminShell` or on its own. */
+  host: 'shell' | 'bare';
+  /**
+   * Whether the mounted component resolves its own theme rather than inheriting the repro route's
+   * `[data-repro-root]`. True for the two auth pages, which render their wrapper from `data.theme`,
+   * and for every shell-hosted story, since `CairnAdminShell` is itself an own-theme-root
+   * component. The repro route hands these stories the theme as a prop and updates it when the
+   * root attribute flips.
+   */
+  ownThemeRoot: boolean;
+}
+
+/**
+ * The 25 stories, in the spec inventory's order.
+ *
+ * Adding, removing, or renaming an entry is a spec edit: cairn-pub docs pages cite these ids, and
+ * a fence naming an id the installed manifest does not carry fails the consumer's build.
+ */
+export const manifest: ReproManifestEntry[] = [
+  {
+    id: 'auth/login',
+    heights: { column: 520 },
+    markerKeys: [],
+    pose: false,
+    host: 'bare',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'auth/confirm',
+    heights: { column: 420 },
+    markerKeys: [],
+    pose: false,
+    host: 'bare',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'editor/entry-screen',
+    heights: { column: 760 },
+    markerKeys: [
+      'title-field',
+      'toolbar',
+      'write-preview-tabs',
+      'details-trigger',
+      'writing-surface',
+    ],
+    pose: false,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'editor/toolbar',
+    heights: { column: 220 },
+    markerKeys: [],
+    pose: false,
+    host: 'bare',
+    ownThemeRoot: false,
+  },
+  {
+    id: 'editor/sidebar-list',
+    heights: { column: 640 },
+    markerKeys: [],
+    pose: false,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'editor/preview-tab',
+    heights: { column: 760 },
+    markerKeys: [],
+    pose: true,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'editor/details-panel',
+    heights: { column: 760 },
+    markerKeys: [],
+    pose: true,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'editor/figure-dialog',
+    heights: { column: 560 },
+    markerKeys: [],
+    pose: false,
+    host: 'bare',
+    ownThemeRoot: false,
+  },
+  {
+    id: 'editor/tidy-review',
+    heights: { column: 620 },
+    markerKeys: [],
+    pose: false,
+    host: 'bare',
+    ownThemeRoot: false,
+  },
+  {
+    id: 'editor/collapsed-layout-block',
+    heights: { column: 320 },
+    markerKeys: [],
+    pose: false,
+    host: 'bare',
+    ownThemeRoot: false,
+  },
+  {
+    // The only two-width row. It declares no `column` height on purpose: the page pins both faces,
+    // and a responsive band render is not a thing that page asks for, so a responsive fence
+    // against this story fails gate 1 for want of a declared height.
+    id: 'publish/header-band',
+    heights: { desktop: 180, narrow: 300 },
+    markerKeys: [],
+    pose: true,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'publish/history-list',
+    heights: { column: 640 },
+    markerKeys: [],
+    pose: false,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'publish/pending-list',
+    heights: { column: 640 },
+    markerKeys: [],
+    pose: true,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'publish/refusal-banner',
+    heights: { column: 480 },
+    markerKeys: [],
+    pose: false,
+    host: 'bare',
+    ownThemeRoot: false,
+  },
+  {
+    id: 'media/insert-panel',
+    heights: { column: 480 },
+    markerKeys: [],
+    pose: true,
+    host: 'bare',
+    ownThemeRoot: false,
+  },
+  {
+    id: 'media/upload-form',
+    heights: { column: 560 },
+    markerKeys: [],
+    pose: false,
+    host: 'bare',
+    ownThemeRoot: false,
+  },
+  {
+    id: 'media/lead-picture-dialog',
+    heights: { column: 620 },
+    markerKeys: [],
+    pose: true,
+    host: 'bare',
+    ownThemeRoot: false,
+  },
+  {
+    id: 'media/library',
+    heights: { column: 720 },
+    markerKeys: ['count-header', 'search', 'view-toggle', 'filters'],
+    pose: false,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'media/details-panel',
+    heights: { column: 720 },
+    markerKeys: [],
+    pose: true,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'media/bulk-selection',
+    heights: { column: 720 },
+    markerKeys: [],
+    pose: true,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'media/delete-in-use',
+    heights: { column: 720 },
+    markerKeys: [],
+    pose: true,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'tags/screen',
+    heights: { column: 700 },
+    markerKeys: ['add-field', 'tag-list', 'unused-tag', 'not-on-list', 'save-changes'],
+    pose: false,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'roster/own-row',
+    heights: { column: 640 },
+    markerKeys: [],
+    pose: false,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'nav/worked-navlayout',
+    heights: { column: 640 },
+    markerKeys: [],
+    pose: false,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'toolkit/custom-screen',
+    heights: { column: 640 },
+    markerKeys: [],
+    pose: false,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+];

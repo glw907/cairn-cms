@@ -476,6 +476,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `isElement`: (node: ElementContent | undefined) => node is Element
 - `strAttr`: (ctx: ComponentContext, key: string) => string | undefined
 
+## `/reproductions/manifest`
+
+- `manifest`: ReproManifestEntry[]
+- `ReproHeights`: { column?: number; desktop?: number; narrow?: number }
+- `ReproManifestEntry`: { id: string; heights: ReproHeights; markerKeys: string[]; pose: boolean; host: "shell" | "bare"; ownThemeRoot: boolean }
+
 ## `/sveltekit`
 
 - `AccessMap`: { [x: string]: string[] }

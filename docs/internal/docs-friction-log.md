@@ -99,3 +99,14 @@ post-mortem and `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.
 dispositions. One item from the smaller list is code, not docs, and was already tracked
 separately before this closure: `.dev.vars` missing from the scaffold's `.gitignore` is the
 missing-`.gitignore` defect `docs/STATUS.md` holds as owed before release one.
+
+CLOSED 2026-08-17 by the capture pass. The three findings the live `create-cairn-site` run
+produced (a first run cannot succeed with the App installed on "Only select repositories"; resume
+is not idempotent across repository creation; every scaffold ships the placeholder from-address
+`cms@showcase.test`) are all tool defects rather than docs bugs, so they moved whole to
+`ROADMAP.md`'s Now tier as one entry, owed before release one publishes the tool. A fourth
+joined them there at the pass's register gate: the scaffold hand-over still tells a reader the
+GitHub and Cloudflare steps arrive in a later release, in a run that then performs both. The committed
+fixtures under `packages/create-cairn-site/test/fixtures/transcripts/` are the evidence, and the
+pass post-mortem in `docs/superpowers/plans/2026-08-16-capture-pass.md` carries the run's own
+account. New findings start fresh below this line.

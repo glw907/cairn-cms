@@ -62,11 +62,44 @@ jobs:
           echo "publishing $VERSION to the '$TAG' dist-tag"
           npm publish --access public --tag "$TAG"
 
-  # Regenerates the public glw907/cairn-waymark-template repo from this release, gated on
-  # `needs: publish` so it can only run once npm actually serves the version the sync's own
-  # resolvability check depends on. A workflow triggered on the same `release: published` event as
-  # `publish` (a sibling job, a separate workflow) would race it and could push a template tree
-  # referencing a version the registry does not resolve yet.
+  # The dev backend publishes alongside the engine: a scaffolded site's devDependency needs
+  # @glw907/cairn-cms-dev on the registry at the version the bake writes, and the sync job's
+  # resolvability check below depends on both. Its trusted publisher was configured at the
+  # first publish (2026-08-16, done by hand because npm cannot bind a trusted publisher to a
+  # package that does not exist). The already-published guard exists because the two packages
+  # version in lockstep but can publish apart (that first cut published the dev backend
+  # manually); re-running a release must not fail on the half that already landed.
+  publish-dev:
+    needs: norms
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+      # Same npm pin as the engine job above; see its WATCH comment.
+      - run: npm install -g npm@11
+      - name: Publish @glw907/cairn-cms-dev to npm
+        working-directory: packages/cairn-cms-dev
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          case "$VERSION" in
+            *-*) TAG=next ;;
+            *)   TAG=latest ;;
+          esac
+          if npm view "@glw907/cairn-cms-dev@$VERSION" version >/dev/null 2>&1; then
+            echo "@glw907/cairn-cms-dev@$VERSION is already on the registry; skipping"
+            exit 0
+          fi
+          echo "publishing @glw907/cairn-cms-dev@$VERSION to the '$TAG' dist-tag"
+          npm publish --access public --tag "$TAG"
+
+  # Regenerates the public glw907/cairn-waymark-template repo from this release, gated on both
+  # publish jobs so it can only run once npm actually serves the versions the sync's own
+  # resolvability check depends on. A workflow triggered on the same `release: published` event
+  # as those jobs (a sibling job, a separate workflow) would race them and could push a template
+  # tree referencing a version the registry does not resolve yet.
   #
   # Scoped to a real release (`github.event_name == 'release'`): publish.yml's own
   # `workflow_dispatch` exists to rehearse a publish from any branch and carries no release tag to
@@ -74,7 +107,7 @@ jobs:
   # sync-template.yml's own `workflow_dispatch` instead (see that workflow).
   sync-template-repo:
     name: Sync the public template repo
-    needs: publish
+    needs: [publish, publish-dev]
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
     # A real sync's own install-and-build (paid whenever there is drift to push, which a version
@@ -97,10 +130,9 @@ jobs:
       - run: npm ci
       # No --strip-dev-backend here: a real release publishes @glw907/cairn-cms-dev alongside the
       # engine, and the sync's own resolvability check is what proves that, rather than a flag
-      # asserting it in advance. --engine-spec/--dev-spec are required because the bake this script
-      # runs internally refuses its own default: `cairn-cms-dev`'s repo-declared version is 0.0.0
-      # (unpublished) today, and the released version stands in for both specs the same way
-      # test.yml's bake step does.
+      # asserting it in advance. --engine-spec/--dev-spec pin both specs to the released engine
+      # version rather than leaning on the bake's own per-package defaults, so the pushed template
+      # names the lockstep pair this release publishes, the same way test.yml's bake step does.
       - name: Sync the public template repo
         working-directory: packages/create-cairn-site
         env:

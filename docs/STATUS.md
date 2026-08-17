@@ -15,13 +15,69 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-16: execute the seam build Pass 1)
+## Immediate next action (2026-08-17: the capture pass is CLOSED; seam Pass 1 is next)
 
-**Immediate next action:** execute Pass 1 of the live-reproduction seam plan
-(`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`), in a fresh Opus 5 session
-launched from `~/Projects/cairn-cms`, per the `cairn-pass` skill: dispatch per task to
-`cairn-implementer`, test-first, full gate per task, on a worktree off `main`. The
-docs-diagram-pages merge that gated it landed 2026-08-16 (merge `817d155a`).
+**The capture pass is complete, both parts, and merged to `main`.** Plan and post-mortems:
+`docs/superpowers/plans/2026-08-16-capture-pass.md`. Part A banked six recorded-run captures plus
+their README at `packages/create-cairn-site/test/fixtures/transcripts/` and tore the scratch estate
+down, verified by listing. Part B built the `check:transcripts` gate, wrote the four transcript
+blocks the two waiting admin pages needed, and corrected `docs/reference/doctor.md`. The gate is
+green at four blocks over 72 pages and proven red once against the real CLI, by changing one
+character inside a quoted line.
+
+**Immediate next action: seam Pass 1.** Launch prompt, a fresh Opus 5 session from
+`~/Projects/cairn-cms`: "Execute Pass 1 of the live-reproduction seam plan,
+docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md, per the cairn-pass skill."
+**Read the worktree note below before dispatching anything**: `.claude/worktrees/repro-seam`
+already holds warm uncommitted work for that pass, so it is that pass's starting point rather
+than a fresh branch off `main`.
+
+**What the capture pass changed for everything downstream.** The transcript-fixtures question,
+which STATUS carried as resolved-in-the-negative since 2026-08-15, is now resolved in the
+positive: consumable fixtures exist, in-tree, gated. `create-your-site.md` and `is-it-working.md`
+are done and no longer wait on anything. The editors track still waits on the live-reproduction
+seam, unchanged.
+
+**One promise this pass broke, retired loudly rather than quietly.** The ROADMAP's transcript
+entry justified bundling by saying each page would be "rewritten once, diagram and transcripts
+together". The visual-layer sequencing gave `create-your-site.md` two bounded edits instead, the
+diagram-pages pass and this one. Neither was wasted and the second did not undo the first, so it
+cost nothing here, but the clause was the stated reason for the bundle and is recorded as not
+kept.
+
+**The register gate is what earned this pass, and the lesson generalizes.**
+`cairn-register-editor` found that `is-it-working.md`'s central navigation instruction was false:
+it told a reader "Every failing check names a **condition id** ... Find that exact id below", and
+`src/lib/doctor/report.ts` never prints one, which both fixtures confirm by carrying no id at all.
+That sentence is the hinge all 21 anchored sections turn on. Two more claims of the same shape
+went with it. **All three were merely unverifiable while the page only described the report, and
+became visibly wrong the moment real output sat above them.** Quoting real output does not only
+illustrate a page; it audits it. Expect the same when the live-reproduction seam puts real
+rendered admin screens next to the editors track's prose.
+
+**Four `create-cairn-site` defects are now in `ROADMAP.md`'s Now tier**, owed before release one
+publishes the tool: the selected-repositories dead end, the non-idempotent resume, the placeholder
+from-address, and a hand-over string telling the reader the GitHub and Cloudflare steps arrive in a
+later release, in the run that then performs both. The first two came from the live run, the third
+from the doctor report, the fourth from the register gate. The friction log is cleared to a closure
+note.
+
+**The `0.95.0-rc.1` prerelease is on the registry under the `next` dist-tag** (both packages;
+engine `latest` untouched at `0.94.0`), cut at Task A0b so the capture could install from the
+registry the way a reader does. The `## Unreleased` window above it now carries this pass, and
+`check:version` reads it as a pending minor, since any cut from here is `0.95.0`.
+
+**Two gate facts a cold session should not rediscover.** A feature worktree has no baked
+`packages/create-cairn-site/template/` (it is gitignored and produced by `prepack`), so that
+package's suite fails there until you bake it the way `.github/workflows/test.yml` does:
+`node scripts/bake-template.mjs --to template --engine-spec "^$VERSION" --dev-spec "^$VERSION"`
+from the package directory. And `check:consumers` fails in a feature worktree on the known
+`examples/showcase/node_modules` symlink collision, not a regression; the script says so itself.
+Both were hit at this pass's close. **Also observed once and not reproduced:** immediately after
+that bake, one run of the package suite reported 825 passed and 1 failed, and the two runs after
+it were 826 clean. The likely cause is the suite racing the bake's own writes, since the bake had
+just laid down several hundred files, but that is a hypothesis and not a diagnosis. Worth
+remembering only if it recurs.
 
 **Pass D, the documentation reset, is complete across all three phases.** Phase 1 (PR #34) and
 Phase 2 (PR #35) merged earlier; Phase 3 (Tasks 9 through 14) closes the pass. The published
@@ -100,17 +156,11 @@ mechanic the gate surfaced (post-measurement metric drift in mermaid HTML labels
 `docs/internal/record/2026-08-16-diagram-theme-harvest-findings.md`; its fixes live in
 cairn-pub (`eae4033`, `d4e7575`).
 
-**The transcript-fixtures question is resolved, in the negative (2026-08-15).** No consumable
-recorded-run fixtures exist anywhere in the repo; the T-series stdout lives uncommitted in
-`~/Projects/cairn-scratch/`, and no `cairn-doctor` report was ever captured at all. So
-`create-your-site.md` and `is-it-working.md` wait for a dedicated **capture pass** (a fresh
-end-to-end `create-cairn-site` run plus a doctor run against the deployed result, stdout
-committed as fixtures), which costs real Cloudflare resources and GitHub App browser moments
-and therefore **needs scheduling with Geoff**. Each page rewrites once, so the setup-journey
-diagram rides that pass too. Full evidence in the ROADMAP transcript-gate entry. The editors
-track stays blocked on the live-reproduction seam: reproduction content is decided by the
-render (fixture data, crop, widths), not by an authorable source, so writing it now would mean
-writing it twice.
+**The transcript-fixtures question, carried here since 2026-08-15 as resolved in the negative,
+is now resolved in the positive (2026-08-17).** The capture pass ran; the fixtures exist and both
+admin pages quote them. The editors track stays blocked on the live-reproduction seam, unchanged:
+reproduction content is decided by the render (fixture data, crop, widths), not by an authorable
+source, so writing it now would mean writing it twice.
 
 **The admin-screen reference capture is banked (2026-08-15).** The sitting ended by capturing
 the real admin screens as writer-facing reference material for the editors rewrite and the seam
@@ -167,15 +217,13 @@ sitting ran 2026-08-15 and is DONE:** the spec is ratified at cairn-pub
 survived a 20-plus-agent adversarial review each (spec: 16 verified findings folded, 0 refuted,
 which moved fence delivery to the rehype stage past the sanitize floor and made posing the rule;
 plan: 16 verified folded, 0 refuted, which relocated the mount tests to the browser vitest
-project, added the fixture-asset route, and declared the pass split). The capture pass runs as
-soon as Geoff schedules his attended run (brief and protocol:
-`docs/internal/record/2026-08-15-capture-pass-brief.md`; its tool prerequisite, the `.gitignore`
-fix, is done). Then: the seam build (two passes, plan above) -> the editors rewrite -> the
-editors read -> release one -> the three-site walk -> P.** Launch prompt for the seam build
-Pass 1, a fresh Opus 5 session (its `docs-diagram-pages` merge precondition landed
-2026-08-16), from `~/Projects/cairn-cms`: "Execute Pass 1 of
-the live-reproduction seam plan, docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md,
-per the cairn-pass skill."
+project, added the fixture-asset route, and declared the pass split). **The capture pass ran
+2026-08-17 and is history** (plan and post-mortems:
+`docs/superpowers/plans/2026-08-16-capture-pass.md`; the brief it ran from is
+`docs/internal/record/2026-08-15-capture-pass-brief.md`). What remains: the seam build (two
+passes, plan above) -> the editors rewrite -> the editors read -> release one -> the three-site
+walk -> P.** The seam build Pass 1 is the immediate next action; its launch prompt and its
+warm-worktree precondition are at the top of this doc.
 
 ### cairn-pub is PREPARED and deliberately not merged
 
@@ -196,7 +244,7 @@ These are not gated on release one, the site walk, or each other. Item (1) in pa
 actioned now rather than batched with the rest; it is listed first because it is a live credential
 exposure, not because it is first in any sequence.
 
-**NINE outstanding, one urgent.** (1) **URGENT: rotate the estate
+**TEN outstanding, one urgent.** (1) **URGENT: rotate the estate
 Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still active; mint
 a replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the
 old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API token
@@ -204,12 +252,28 @@ old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c s
 ~/.config/cairn/store-t4c-token.sh`. (4) 907-life's push-to-deploy has been broken since
 2026-07-14. (5) Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT at release one. (6) The button
 spike's browser moment, owed at release one with T5a'. (7) Delete the GitHub App
-`cairn-t5-scratch` (id 4585219), which uninstalls installation 153531337 with it; with (2) the
-ledger stands at two Apps awaiting deletion. (8) Revoke three Cloudflare API tokens at
+`cairn-t5-scratch` (id 4585219), which uninstalls installation 153531337 with it; with (2) and
+(10) the ledger stands at three Apps awaiting deletion. (8) Revoke three Cloudflare API tokens at
 dash.cloudflare.com/profile/api-tokens, all named for `create-cairn-site`: T5 run 1's five-key
 token, T5 run 2's eight-key token, and the eight-key token minted 2026-08-13 for T4d's live proof
 and teardown. (9) Check the Workers Paid opt-in taken at T5 run 2's prompt, in case the account
-was not already on it via 907-life.
+was not already on it via 907-life. (10) Delete the GitHub App `cairn-cairn-capture-scratch`,
+created 2026-08-17 by the capture pass on the personal account, which uninstalls its
+installation with it; this is the THIRD App awaiting hand-deletion.
+
+**Capture-pass scratch estate (2026-08-17), torn down in-session at Task A6, not by hand.** The
+GitHub repository `glw907/cairn-capture-scratch`; the worker `cairn-capture-scratch`; D1
+`cairn-capture-scratch-auth` (`e8e4e453-25bc-4f26-a427-680211fa7623`) and
+`cairn-capture-scratch-app` (`7acae31b-366a-496c-a8e1-38c352770b1d`); R2 bucket
+`cairn-capture-scratch-media`; the local state record
+`~/.config/cairn/sites/cairn-capture-scratch-e9ad36.json`; and the wrangler OAuth session.
+**TORN DOWN AND VERIFIED BY LISTING, 2026-08-17.** Worker, both databases, bucket, and
+repository all confirmed gone; the state record is deleted and wrangler is logged out
+(`wrangler whoami` reports not authenticated). Only the App above needs Geoff. **No doctor
+token was minted**, so none is owed: the credentialed report's output is identical under any
+token (its zone checks fail because `showcase.test` exists nowhere, and its D1 checks skip
+structurally), so the run reused the existing account token rather than minting and revoking
+one for no change in bytes.
 
 **Carry-forwards (the tool initiative), verified against this list, not a remembered one.**
 (1) An externally registered domain still owes the branches the scratch domain cannot reach.
@@ -273,7 +337,16 @@ release one per the ordering above:
 `0.94.0-rc.1`; what it is behind on is the docs restructure, which its prepared
 `pass-d-docs-tracks` branch carries and the site walk merges.
 
-**Two worktrees survive the Pass D cleanup, and neither is live work.**
+**A THIRD worktree exists and holds warm uncommitted work: `.claude/worktrees/repro-seam`**
+(branch `live-repro-seam-pass1`, created 2026-08-16). It carries an early start on seam Pass 1
+that the reordering stranded: `src/lib/reproductions/manifest.ts`, two unit tests, a 28K
+`docs/internal/record/repro-story-audit.md`, and edits to `package.json` and `vitest.config.ts`,
+none of it committed. No executor is running against it (`pgrep` clean as of the capture-pass
+session). Leave it alone until seam Pass 1 starts, then treat it as that pass's starting point
+rather than re-deriving; per the one-executor-per-worktree rule, warm uncommitted code is a
+stop-and-investigate signal, so verify it against the plan before building on it.
+
+**Two further worktrees survive the Pass D cleanup, and neither is live work.**
 `.claude/worktrees/wayfinder-retheme-lab` and `.claude/worktrees/wayfinder-fixtures` hold
 token-layer design experiments from 2026-07-02, left unmerged on purpose as a reference for a
 later retheme. Nothing branches from them and no executor runs in them; the one-executor-per-worktree

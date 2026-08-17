@@ -30,10 +30,11 @@ const DEV_SCRIPT_NAME = 'dev';
 const DEV_SHIM_RELATIVE_PATH = path.join('scripts', 'dev.mjs');
 
 // bake() validates devSpec against the repo's own cairn-cms-dev version whenever the caller
-// leaves it unset, and that version is 0.0.0 until the dev backend publishes. --strip-dev-backend
-// deletes the devDependency entry entirely right after the bake, so the spec's actual value never
-// reaches a commit; this placeholder only has to clear assertInstallableSpec's unpublished-version
-// check, never resolve on a registry.
+// leaves it unset. --strip-dev-backend deletes the devDependency entry entirely right after the
+// bake, so the spec's actual value never reaches a commit; this placeholder only has to clear
+// assertInstallableSpec's unpublished-version check, never resolve on a registry. It predates the
+// dev backend's first publish at 0.95.0-rc.1, when that default became resolvable, and it stays
+// because the flag's contract is to need no resolvable spec at all.
 const STRIPPED_DEV_SPEC_PLACEHOLDER = '^0.0.1';
 
 // The overlay's own merge-rule table. Every overlay file replaces its bake counterpart outright

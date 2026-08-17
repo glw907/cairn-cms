@@ -11,10 +11,15 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
+Nothing to do. The window since `0.95.0-rc.1` carries documentation and a new repository gate, and
+neither reaches a consumer's build. See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+
+## 0.95.0-rc.1
+
 - **The tidy action's SDK dependency moved.** `@anthropic-ai/sdk` is now an optional peer
   dependency instead of a plain one. A site using the tidy action adds it to its own dependencies
   (`npm install @anthropic-ai/sdk`); a site not using tidy does nothing, and its install gets
-  lighter. See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+  lighter. See [`CHANGELOG.md`](../../CHANGELOG.md#0950-rc1).
 
 ## 0.94.0
 

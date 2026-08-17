@@ -230,7 +230,7 @@ These are not gated on release one, the site walk, or each other. Item (1) in pa
 actioned now rather than batched with the rest; it is listed first because it is a live credential
 exposure, not because it is first in any sequence.
 
-**NINE outstanding, one urgent.** (1) **URGENT: rotate the estate
+**TEN outstanding, one urgent.** (1) **URGENT: rotate the estate
 Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still active; mint
 a replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the
 old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API token
@@ -238,12 +238,21 @@ old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c s
 ~/.config/cairn/store-t4c-token.sh`. (4) 907-life's push-to-deploy has been broken since
 2026-07-14. (5) Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT at release one. (6) The button
 spike's browser moment, owed at release one with T5a'. (7) Delete the GitHub App
-`cairn-t5-scratch` (id 4585219), which uninstalls installation 153531337 with it; with (2) the
-ledger stands at two Apps awaiting deletion. (8) Revoke three Cloudflare API tokens at
+`cairn-t5-scratch` (id 4585219), which uninstalls installation 153531337 with it; with (2) and
+(10) the ledger stands at three Apps awaiting deletion. (8) Revoke three Cloudflare API tokens at
 dash.cloudflare.com/profile/api-tokens, all named for `create-cairn-site`: T5 run 1's five-key
 token, T5 run 2's eight-key token, and the eight-key token minted 2026-08-13 for T4d's live proof
 and teardown. (9) Check the Workers Paid opt-in taken at T5 run 2's prompt, in case the account
-was not already on it via 907-life.
+was not already on it via 907-life. (10) Delete the GitHub App `cairn-cairn-capture-scratch`,
+created 2026-08-17 by the capture pass on the personal account, which uninstalls its
+installation with it; this is the THIRD App awaiting hand-deletion.
+
+**Capture-pass scratch estate (2026-08-17), torn down in-session at Task A6, not by hand.** The
+GitHub repository `glw907/cairn-capture-scratch`, the worker and its two D1 databases and R2
+bucket, the read-scoped doctor token minted at Task A3, the local state record under
+`~/.config/cairn/sites/`, and the wrangler OAuth session. Everything here is API-reachable, so
+A6 tears it down and verifies by listing; only the App above needs Geoff. Each item is appended
+as it is created, so a crash mid-run leaves the ledger honest.
 
 **Carry-forwards (the tool initiative), verified against this list, not a remembered one.**
 (1) An externally registered domain still owes the branches the scratch domain cannot reach.

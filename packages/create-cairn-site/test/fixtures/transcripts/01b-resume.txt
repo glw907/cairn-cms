@@ -1,0 +1,12 @@
+[ok] node: Node.js 24.16.0 meets the Node 22 or later that create-cairn-site requires.
+[ok] loopback: Loopback binding on 127.0.0.1 works; the local dev server will be reachable.
+Resuming cairn-capture-scratch at installed.
+Check the local progress store
+Resuming cairn-capture-scratch's GitHub chapter at installed.
+Install the App and sign in
+Open this link if the browser did not open: https://github.com/login/oauth/authorize?client_id=Iv23liBv9bySrZpfsAuK&redirect_uri=http%3A%2F%2F127.0.0.1%3A46025%2Fcallback&state=71727b329ab17131d5017a9e54a48aa2
+Waiting for the browser step to sign you in again... keep the browser window open.
+Create the private repository cairn-capture-scratch
+Signed in as glw907
+Create the private repository cairn-capture-scratch: A repository named cairn-capture-scratch already exists under your account, so GitHub refused to create it.
+Next: re-run npx create-cairn-site --dir cairn-capture-scratch --repo-name <a-different-name> to choose a repository name that is not already taken.

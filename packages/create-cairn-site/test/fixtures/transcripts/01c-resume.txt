@@ -1,0 +1,26 @@
+[ok] node: Node.js 24.16.0 meets the Node 22 or later that create-cairn-site requires.
+[ok] loopback: Loopback binding on 127.0.0.1 works; the local dev server will be reachable.
+Resuming cairn-capture-scratch at installed.
+Check the local progress store
+Resuming cairn-capture-scratch's GitHub chapter at installed.
+Install the App and sign in
+Open this link if the browser did not open: https://github.com/login/oauth/authorize?client_id=Iv23liBv9bySrZpfsAuK&redirect_uri=http%3A%2F%2F127.0.0.1%3A34775%2Fcallback&state=6008775764c4e784537698059f587919
+Waiting for the browser step to sign you in again... keep the browser window open.
+Create the private repository cairn-capture-scratch
+Signed in as glw907
+Push your site to GitHub
+Pushing 92 files
+Deploy your site to Cloudflare
+The tool will now install your site's dependencies, build it, and deploy it to Cloudflare's free workers.dev hosting on your account: one Worker named cairn-capture-scratch (deploying again later updates it), two databases (cairn-capture-scratch-auth, cairn-capture-scratch-app), and one storage bucket (cairn-capture-scratch-media). The free plan is enough; nothing in this step costs money. One browser trip to sign in to Cloudflare if you are not already, then one click to sign in to your own site.
+[?25l[90m│[39m
+[36m◆[39m  Install, build, and deploy your site now?
+[36m│[39m  [32m●[39m Yes [2m/[22m [2m○[22m [2mNo[22m
+[36m└[39m
+[1A
+[?25h[999D[4A[1B[J[32m◇[39m  Install, build, and deploy your site now?
+[90m│[39m  [2mYes[22m
+Enter your sign-in email
+[?25l[90m│[39m
+[36m◆[39m  Sign-in email (you will use this to sign in to your own site)
+[36m│[39m  [7my[27m[2mou@example.com[22m
+[36m└[39m

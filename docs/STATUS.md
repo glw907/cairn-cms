@@ -248,11 +248,16 @@ created 2026-08-17 by the capture pass on the personal account, which uninstalls
 installation with it; this is the THIRD App awaiting hand-deletion.
 
 **Capture-pass scratch estate (2026-08-17), torn down in-session at Task A6, not by hand.** The
-GitHub repository `glw907/cairn-capture-scratch`, the worker and its two D1 databases and R2
-bucket, the read-scoped doctor token minted at Task A3, the local state record under
-`~/.config/cairn/sites/`, and the wrangler OAuth session. Everything here is API-reachable, so
-A6 tears it down and verifies by listing; only the App above needs Geoff. Each item is appended
-as it is created, so a crash mid-run leaves the ledger honest.
+GitHub repository `glw907/cairn-capture-scratch`; the worker `cairn-capture-scratch`; D1
+`cairn-capture-scratch-auth` (`e8e4e453-25bc-4f26-a427-680211fa7623`) and
+`cairn-capture-scratch-app` (`7acae31b-366a-496c-a8e1-38c352770b1d`); R2 bucket
+`cairn-capture-scratch-media`; the local state record
+`~/.config/cairn/sites/cairn-capture-scratch-e9ad36.json`; and the wrangler OAuth session.
+Everything here is API-reachable, so A6 tears it down and verifies by listing; only the App
+above needs Geoff. **No doctor token was minted**, so none is owed: the credentialed report's
+output is identical under any token (its zone checks fail because `showcase.test` exists
+nowhere, and its D1 checks skip structurally), so the run reused the existing account token
+rather than minting and revoking one for no change in bytes.
 
 **Carry-forwards (the tool initiative), verified against this list, not a remembered one.**
 (1) An externally registered domain still owes the branches the scratch domain cannot reach.

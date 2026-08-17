@@ -1,0 +1,24 @@
+⠙[1G[0K[1m[33m`config.kit.csrf.checkOrigin` has been deprecated in favour of `csrf.trustedOrigins`. It will be removed in a future version[22m[39m
+[1m[33m`config.kit.csrf.checkOrigin` has been deprecated in favour of `csrf.trustedOrigins`. It will be removed in a future version[22m[39m
+PASS  Wrangler bindings: EMAIL and AUTH_DB are declared
+PASS  Media bucket binding: media bucket MEDIA_BUCKET is declared
+PASS  Workers Logs sink: observability.enabled is true
+PASS  Framework CSRF handoff: checkOrigin: false found and the hooks file wires the cairn guard (heuristic text read)
+SKIP  Site config: no site.config.yaml found (looked in site.config.yaml, src/lib/site.config.yaml, src/site.config.yaml)
+PASS  Public origin: PUBLIC_ORIGIN is https://cairn-capture-scratch.glw907.workers.dev (wrangler vars)
+SKIP  Tidy API key: no site.config.yaml found, so tidy enablement is unknown
+PASS  Custom /admin mount: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
+SKIP  admin-screens skill: the admin-screens skill is not installed at .claude/skills/cairn-admin-screens; run cairn-doctor --fix to install it
+PASS  Dependency floors: @sveltejs/kit 2.70.2 and svelte 5.56.9 satisfy the engine peer ranges
+SKIP  Email sending domain: set CLOUDFLARE_API_TOKEN to run this check
+SKIP  Always Use HTTPS: set CLOUDFLARE_API_TOKEN to run this check
+SKIP  Zone HSTS: set CLOUDFLARE_API_TOKEN to run this check
+SKIP  Auth store (D1): set CLOUDFLARE_API_TOKEN, and CLOUDFLARE_ACCOUNT_ID or a wrangler account_id, to run this check
+SKIP  Editor role vocabulary: set CLOUDFLARE_API_TOKEN, and CLOUDFLARE_ACCOUNT_ID or a wrangler account_id, to run this check
+SKIP  Guard role wiring: no custom roles declared; the guard fallback owner/editor already matches the vocabulary
+SKIP  Editor email normalization: set CLOUDFLARE_API_TOKEN, and CLOUDFLARE_ACCOUNT_ID or a wrangler account_id, to run this check
+SKIP  GitHub App: set GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, and GITHUB_APP_PRIVATE_KEY_B64 to run this check
+PASS  AI posture, effective: no AI posture is stated (aiPosture is unset), and https://cairn-capture-scratch.glw907.workers.dev/robots.txt carries no AI-crawler directives, consistent with stating nothing.
+
+8 passed, 0 failed, 11 skipped
+⠙[1G[0K

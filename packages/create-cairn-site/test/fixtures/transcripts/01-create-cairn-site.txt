@@ -1,0 +1,109 @@
+[ok] node: Node.js 24.16.0 meets the Node 22 or later that create-cairn-site requires.
+[ok] loopback: Loopback binding on 127.0.0.1 works; the local dev server will be reachable.
+Before you start, the honest cost picture.
+
+Building and running this site is free, and stays free.
+
+A domain name costs roughly $10 to $15 a year for the common endings. You pay that to a registrar, not to Cloudflare, and it costs about that from anyone. Cloudflare sells domains at cost, and shows you the exact price before you pay (as of 2026-08-11, https://www.cloudflare.com/products/registrar/).
+
+Cloudflare's Workers Paid plan costs $5 US per month. It is what sends sign-in email, so it is needed once anyone other than you signs in, and it is billed once per account, not once per site (as of 2026-08-11, https://developers.cloudflare.com/workers/platform/pricing/).
+
+All in, a small site on its own domain runs about $6 a month.
+[90m┌[39m  create-cairn-site
+[?25l[90m│[39m
+[36m◆[39m  Site name
+[36m│[39m  [7mW[27m[2maymark[22m
+[36m└[39m
+[999D[4A[2B[2K[G[36m│[39m  c█[2B[999D[4A[2B[2K[G[36m│[39m  ca█[2B[999D[4A[2B[2K[G[36m│[39m  cai█[2B[999D[4A[2B[2K[G[36m│[39m  cair█[2B[999D[4A[2B[2K[G[36m│[39m  cairn█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-c█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-ca█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-cap█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capt█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-captu█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-captur█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capture█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capture-█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capture-s█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capture-sc█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capture-scr█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capture-scra█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capture-scrat█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capture-scratc█[2B[999D[4A[2B[2K[G[36m│[39m  cairn-capture-scratch█[2B[999D[4A[1B[J[32m◇[39m  Site name
+[90m│[39m  [2mcairn-capture-scratch[22m
+[?25h[?25l[90m│[39m
+[36m◆[39m  Short description (optional), one line
+[36m│[39m  [7mL[27m[2meave blank for none[22m
+[36m└[39m
+[999D[4A[1B[J[32m◇[39m  Short description (optional), one line
+[90m│[39m
+[?25h[?25l[90m│[39m
+[36m◆[39m  Brand color (optional): a hex color, an oklch(...) string, or a hue 0-360
+[36m│[39m  [7mL[27m[2meave blank for the Waymark default[22m
+[36m└[39m
+[999D[4A[1B[J[32m◇[39m  Brand color (optional): a hex color, an oklch(...) string, or a hue 0-360
+[90m│[39m
+[?25h[?25l[90m│[39m
+[36m◆[39m  Directory
+[36m│[39m  [7mc[27m[2mairn-capture-scratch[22m
+[36m└[39m
+[999D[4A[1B[J[32m◇[39m  Directory
+[90m│[39m  [2mcairn-capture-scratch[22m
+[?25h[90m│[39m
+[90m└[39m  Answers collected.
+
+Create cairn-capture-scratch from the template
+Set the package name
+Personalize the site
+Save the site record
+Your site is scaffolded at ./cairn-capture-scratch.
+
+Next:
+
+  cd cairn-capture-scratch
+  npm install
+  npm run dev
+
+Then open http://localhost:5173/admin (vite prints the URL it actually used).
+
+That admin runs against a local stand-in. It signs you in without an email loop, and nothing
+you write there touches GitHub or sends real email. Write a post, save it, publish it, and
+watch it appear on the site. The scaffold's own dev script turns the stand-in on.
+
+Run `npx cairn-doctor` any time to check what is set up and what is still missing.
+
+This scaffold is local only. Putting the site on the internet needs a GitHub repository, a
+Cloudflare account, and a domain you own; sending sign-in email to anyone but yourself also
+needs Cloudflare's Workers Paid plan. Those steps arrive with the next release.
+Check the local progress store
+Confirm the GitHub App and repository
+This step creates a GitHub App named cairn-cairn-capture-scratch that only this site uses, a private repository named cairn-capture-scratch, and needs two trips to your browser.
+
+The App will be able to write this site's content and manage the repository's settings, including deleting it. GitHub does not allow an App's permissions to be reduced later, so this stays for as long as the App exists. This is what lets the tool create and publish to the repository for you.
+[?25l[90m│[39m
+[36m◆[39m  Create the GitHub App and repository now?
+[36m│[39m  [32m●[39m Yes [2m/[22m [2m○[22m [2mNo[22m
+[36m└[39m
+[1A
+[?25h[999D[4A[1B[J[32m◇[39m  Create the GitHub App and repository now?
+[90m│[39m  [2mYes[22m
+Choose the GitHub account and names
+[?25l[90m│[39m
+[36m◆[39m  Where should the GitHub App and repository live?
+[36m│[39m  [32m●[39m My personal account
+[36m│[39m  [2m○[22m [2mAn organization[22m
+[36m│[39m  [2m↑/↓[22m to navigate • [2mEnter:[22m confirm
+[36m└[39m
+[999D[6A[1B[J[32m◇[39m  Where should the GitHub App and repository live?
+[90m│[39m  [2mMy personal account[22m
+[?25h[?25l[90m│[39m
+[36m◆[39m  Repository name
+[36m│[39m  [7mc[27m[2mairn-capture-scratch[22m
+[36m└[39m
+[999D[4A[1B[J[32m◇[39m  Repository name
+[90m│[39m  [2mcairn-capture-scratch[22m
+[?25h[?25l[90m│[39m
+[36m◆[39m  GitHub App name
+[36m│[39m  [7mc[27m[2mairn-cairn-capture-scratch[22m
+[36m└[39m
+[999D[4A[1B[J[32m◇[39m  GitHub App name
+[90m│[39m  [2mcairn-cairn-capture-scratch[22m
+[?25hCreate your GitHub App
+Your browser will open GitHub's "Create GitHub App" page for cairn-capture-scratch; click the "Create the GitHub App" button there to create cairn-cairn-capture-scratch.
+Sign in to GitHub first if you are not already. A signed-out click lands on "We didn't find an App Manifest for your request"; if you see that page, sign in, then return to this browser tab and click the button again (it stays open).
+Open this link if the browser did not open: http://127.0.0.1:44103
+Waiting for the browser step to finish creating cairn-cairn-capture-scratch... keep the browser window open.
+If GitHub says the name "cairn-cairn-capture-scratch" is already taken, press Ctrl+C and re-run with --app-name <a-new-name>.
+Install the App and sign in
+Your browser will open GitHub's install page for cairn-cairn-capture-scratch; choose where to install it and approve.
+Open this link if the browser did not open: https://github.com/apps/cairn-cairn-capture-scratch/installations/new
+Waiting for the browser step to finish installing and authorizing cairn-cairn-capture-scratch... keep the browser window open. (This machine is listening for GitHub's redirect on http://127.0.0.1:44103/callback.)
+Create the private repository cairn-capture-scratch
+Signed in as glw907
+Create the private repository cairn-capture-scratch: The App's installation does not include cairn-capture-scratch, so it has no permission to commit there.
+Next: open https://github.com/settings/installations, choose "Only select repositories", add cairn-capture-scratch, then re-run npx create-cairn-site --dir cairn-capture-scratch.

@@ -15,48 +15,34 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-16: the capture pass, A0b staged and blocked on npm auth)
+## Immediate next action (2026-08-16: the capture pass, A0b COMPLETE, Part A next)
 
-**Immediate next action: finish Task A0b's two publishes.** Everything A0b can do without a
-credential is committed on `main` at `4e725be1`, which opens the `0.95.0-rc.1` window (both
-packages bumped, the CHANGELOG heading finalized, `migration-notes.md` renamed in parity, the
-dev backend given a `files` array, the bake's refusal test updated). Nothing is published:
-`latest` is still `0.94.0`, `next` still `0.94.0-rc.2`, and `@glw907/cairn-cms-dev` is still a
-404. The gate is green at that commit (17 local checks; `npm test` 5322 pass exit 0; CI `e2e`,
-`test`, `scaffold`, `create-site`, `design` all green on its parent `c064919c`), so a resuming
-session re-verifies rather than re-derives.
+**Task A0b is complete and verified (2026-08-16).** Both packages are on the registry at
+`0.95.0-rc.1` under the `next` dist-tag: the engine published over OIDC via a
+`workflow_dispatch` of `publish.yml` (run green; `sync-template-repo` self-skipped on the
+non-release event as designed), and `@glw907/cairn-cms-dev` made its first-ever publish by
+hand (npm cannot bind a trusted publisher to a nonexistent package). Its trusted publisher is
+now configured (id `5bc9f6a9-a653-4ed2-9d42-5c17a8f496da`, repo `glw907/cairn-cms`, workflow
+`publish.yml`, publish allowed), and `publish.yml` gained a `publish-dev` job with an
+already-published guard, so every future cut carries both packages over OIDC with no
+credential anywhere. Engine `latest` is untouched at `0.94.0`; the published tarball carries
+`previewLoad`/`PreviewBanner` (verified by listing). Tag `v0.95.0-rc.1` is pushed. Acceptance
+per the plan: met in full. One recorded quirk: the dev package's `latest` also points at the
+rc, because a FIRST publish sets `latest` regardless of `--tag`; harmless (nothing installs it
+bare, the scaffold pins the caret-rc) and self-healing at the first stable cut. The npm login
+session was logged out after the cut; nothing on this machine holds an npm credential.
 
-**The blocker is npm auth, and it is a one-time bootstrap, not a standing dependency.** npm
-will not bind a trusted publisher to a package that does not exist, so
-`@glw907/cairn-cms-dev`'s first-ever publish cannot go through OIDC the way every previous
-cairn publish has. The workstation holds no npm credential by design (nothing in `~/.npmrc`,
-`~/.local/secrets`, the age registry, or the repo's Actions secrets, which are empty). Geoff
-was running `npm login` when the session closed; `npm whoami` is the check. The fallback, if
-the browser flow is unwanted, is a publish-scoped Granular Access Token.
+**Immediate next action: Part A, the attended capture run** (Tasks A1 through A6 of
+`docs/superpowers/plans/2026-08-16-capture-pass.md`), main loop, Geoff present, four browser
+moments. Per the standing model economy this runs in an Opus 5 session launched from
+`~/Projects/cairn-cms`. A1 is simpler than written: the bake's DEFAULT specs now resolve to
+`^0.95.0-rc.1` for both packages (verified against a real bake), so the explicit
+`--engine-spec`/`--dev-spec` flags still work but are no longer load-bearing.
 
-**The sequence, once `npm whoami` answers:** (1) `npm publish --tag next` from
-`packages/cairn-cms-dev`; (2) `npm trust github @glw907/cairn-cms-dev --repo glw907/cairn-cms
---file publish.yml --allow-publish` while still authenticated, which is what makes this
-one-time; (3) push `main` and the annotated tag `v0.95.0-rc.1`; (4) `gh workflow run
-publish.yml --ref main` for the engine over OIDC. **Use `workflow_dispatch`, not `gh release
-create`:** `publish.yml`'s `sync-template-repo` job is gated `if: github.event_name ==
-'release'` and would fire red, since `TEMPLATE_REPO_TOKEN` is unset and
-`glw907/cairn-waymark-template` does not exist (both are release-one hand steps). A plain tag
-push does not trigger the workflow, so the tag is safe. (5) Verify both versions on `next`
-with `latest` still at `0.94.0`.
+**Owed at the pass close (Task B4), not now:** the `code-simplifier` pass over this window's
+changed code (the bake test, the `publish-dev` job), alongside everything B4 already lists.
 
-**Two follow-ups A0b uncovered, neither blocking.** `publish.yml` has no job that publishes the
-dev backend at all, though `sync-template-repo`'s own comment already assumes a release does;
-add one after step (2) wires its trusted publisher, or the next cut silently ships the engine
-without its dev backend. And the `code-simplifier` pass over this pass's changed code is owed
-at the close, where Task B4 already schedules it.
-
-**Plan Task A1 is now simpler than written.** The bake's default specs resolve to
-`^0.95.0-rc.1` for both packages (verified against a real bake), so A1's explicit
-`--engine-spec`/`--dev-spec` flags are no longer load-bearing. They still work; the plan's
-wording is not wrong, just no longer necessary.
-
-**Then the rest of the pass as planned:** execute the capture pass
+**The pass context:** execute the capture pass
 (`docs/superpowers/plans/2026-08-16-capture-pass.md`), in a fresh Opus 5 session launched
 from `~/Projects/cairn-cms`, per the `cairn-pass` skill. **Geoff's 2026-08-16 call moved this
 pass ahead of seam Pass 1** (his attended availability plus the publish ruling below); Task

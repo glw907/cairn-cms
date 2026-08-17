@@ -59,20 +59,20 @@ test('the baked template\'s cairn.config.ts carries the exact githubApp(...) lit
   );
 });
 
-// @glw907/cairn-cms-dev is unpublished (version 0.0.0 in packages/cairn-cms-dev/package.json)
-// as of this writing, so bake() cannot resolve a usable default devSpec and must throw rather
-// than emit a scaffold whose devDependency install fails. Once the dev backend is published,
-// update this test to assert the resolved default matches /^\^\d+\.\d+\.\d+$/ instead.
-test('bake with no overrides throws naming the unpublished dev backend', async (t) => {
+// @glw907/cairn-cms-dev first published at the 0.95.0-rc.1 cut, so bake() now resolves a usable
+// default devSpec instead of refusing one. This is the update the previous version of this test
+// asked for in its own comment. The refusal it used to prove is not lost: assertInstallableSpec
+// is exercised directly below against a constructed 0.0.0, which tests the guard's contract
+// rather than a passing state of the repo's own version files.
+test('bake with no overrides resolves installable default specs', async (t) => {
   const to = await tempTarget(t);
-  await assert.rejects(
-    () => bake({ to }),
-    (err) => {
-      assert.match(err.message, /@glw907\/cairn-cms-dev/);
-      assert.match(err.message, /0\.0\.0/);
-      return true;
-    },
-  );
+  await bake({ to });
+  const pkg = JSON.parse(await readFile(path.join(to, 'package.json'), 'utf8'));
+  // A caret on a prerelease is admitted: the specs the bake resolves track the repo's own
+  // versions, and a release line opens on an rc before its stable exists.
+  const INSTALLABLE = /^\^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+  assert.match(pkg.dependencies['@glw907/cairn-cms'], INSTALLABLE);
+  assert.match(pkg.devDependencies['@glw907/cairn-cms-dev'], INSTALLABLE);
 });
 
 test('an explicit file: devSpec throws naming the file: spec', async (t) => {

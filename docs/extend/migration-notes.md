@@ -9,12 +9,12 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
-## Unreleased
+## 0.95.0-rc.1
 
 - **The tidy action's SDK dependency moved.** `@anthropic-ai/sdk` is now an optional peer
   dependency instead of a plain one. A site using the tidy action adds it to its own dependencies
   (`npm install @anthropic-ai/sdk`); a site not using tidy does nothing, and its install gets
-  lighter. See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+  lighter. See [`CHANGELOG.md`](../../CHANGELOG.md#0950-rc1).
 
 ## 0.94.0
 

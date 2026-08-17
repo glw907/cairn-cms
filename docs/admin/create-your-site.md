@@ -19,10 +19,24 @@ Open a terminal and run:
 npx create-cairn-site
 ```
 
+Every terminal screen quoted on this page comes from one real run, of a site named
+`cairn-capture-scratch` on the GitHub account `glw907`. Your own names appear in their place.
+
 The tool prints the honest cost picture first, the same facts as
-[Before you start](./before-you-start.md), so you see them before typing anything. Then it asks
-four short questions: your site's name, an optional one-line description, an optional brand
-color, and the folder to create it in. Press Enter to accept the shown default for any of them.
+[Before you start](./before-you-start.md), so you see them before typing anything:
+
+<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt -->
+```
+Before you start, the honest cost picture.
+
+Building and running this site is free, and stays free.
+[...]
+All in, a small site on its own domain runs about $6 a month.
+```
+
+Then it asks four short questions: your site's name, an optional one-line description, an
+optional brand color, and the folder to create it in. Press Enter to accept the shown default
+for any of them.
 
 The tool scaffolds your site locally, then keeps going: it walks you through putting that site on
 GitHub, and then onto Cloudflare, in the same run. Both stages ask before they do anything, so you
@@ -30,13 +44,24 @@ can stop and pick this back up later if you'd rather not finish it in one sittin
 
 ## Getting your site onto GitHub
 
-The tool explains what it's about to do, then asks: **Create the GitHub App and repository now?**
+The tool explains what it's about to do, then asks:
+
+<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/01-create-cairn-site.txt -->
+```
+Confirm the GitHub App and repository
+This step creates a GitHub App named cairn-cairn-capture-scratch that only this site uses, a private repository named cairn-capture-scratch, and needs two trips to your browser.
+
+The App will be able to write this site's content and manage the repository's settings, including deleting it. GitHub does not allow an App's permissions to be reduced later, so this stays for as long as the App exists. This is what lets the tool create and publish to the repository for you.
+│
+◇  Create the GitHub App and repository now?
+│  Yes
+```
+
 Say yes, and it creates a private GitHub repository for your content, and a GitHub App that
 exists only for this site. That App is what lets the tool, and your writers, publish to your
 repository without anyone needing a GitHub account of their own. It can also manage the
 repository's settings, including deleting it, and GitHub doesn't allow an App's permissions to be
-reduced after the fact, so that access stays for as long as the App exists. The tool says the same
-thing before it asks.
+reduced after the fact, so that access stays for as long as the App exists.
 
 This step needs two trips to your browser: one to create the App, one to install it on your new
 repository and sign you in to GitHub. The tool opens each page for you and waits.
@@ -98,12 +123,24 @@ Cloudflare.*
 
 ## You know it worked when
 
-Your terminal prints your site's live address, something like `https://your-site.workers.dev`,
-and a note that you can sign in at `https://your-site.workers.dev/admin`. Open that admin address:
-if you land there already signed in, from the link the tool just opened, setup finished. Building
-and running this site costs nothing, and stays free, for as long as you are the only person who
-signs in; see [the free-until boundary](./before-you-start.md#the-free-until-boundary) for what
-changes once a second person needs their own sign-in.
+The tool finishes by printing this:
+
+<!-- transcript: packages/create-cairn-site/test/fixtures/transcripts/01d-resume.txt -->
+```
+Your site is live on GitHub: https://github.com/glw907/cairn-capture-scratch
+The App that publishes for you: https://github.com/apps/cairn-cairn-capture-scratch
+
+Your site is live at: https://cairn-capture-scratch.glw907.workers.dev
+Sign in at: https://cairn-capture-scratch.glw907.workers.dev/admin
+
+What exists now: one Worker, two databases, one storage bucket, and the GitHub App's private key, stored as a Worker secret.
+```
+
+Open your own site's admin address: if you land there already signed in, from the link the tool
+just opened, setup finished. Building and running this site costs nothing, and stays free, for
+as long as you are the only person who signs in; see
+[the free-until boundary](./before-you-start.md#the-free-until-boundary) for what changes once a
+second person needs their own sign-in.
 
 Your site is now live on a Cloudflare-provided `workers.dev` address, which keeps working even
 after you connect a domain of your own. That's the next page:

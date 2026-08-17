@@ -15,9 +15,39 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-16: the capture pass, A0b COMPLETE, Part A next)
+## Immediate next action (2026-08-17: the capture pass, PART A COMPLETE, Part B next)
 
-**Task A0b is complete and verified (2026-08-16).** Both packages are on the registry at
+**Part A is complete and verified (2026-08-17); the fixtures exist.** Six captures plus their
+README are committed at `packages/create-cairn-site/test/fixtures/transcripts/` (`8d9871eb`),
+and every scratch resource is torn down and confirmed gone by listing (`c1aef442`). The live
+run took four invocations to reach a live site, and the README accounts for all of them; the
+short version is that a first run cannot succeed with a GitHub App installed on "Only select
+repositories" (it creates the repository itself, so there is nothing to select yet), and the
+resume then refuses a repository it created rather than adopting it. Both are filed in the
+friction log for ROADMAP triage at B4, alongside the scaffold's placeholder from-address.
+
+**Which fixture carries which block, correcting the plan.** The plan assumed one capture, so
+B1's block list points at `01-create-cairn-site.txt` throughout. That holds for the cost
+preamble and the GitHub App prompt, which print before anything can fail and so are identical
+to a happy run's bytes. **It does not hold for the deploy summary and the live address, which
+live in `01d-resume.txt`**, the invocation that reached `printLiveInfo`. B2's doctor block
+quotes `03-doctor-credentialed.txt` as planned (8 passed, 3 failed, 8 skipped, all three line
+types in one report). `01b-resume.txt`, `01c-resume.txt`, and `02-doctor-bare.txt` are the
+deliberately-unconsumed list the README declares and `check:transcripts` must accept as their
+citation. No A4 interrupt-resume fixture was captured, so B4 files no ROADMAP line for one.
+
+**One B2 premise is now confirmed by real output:** the credentialed report shows
+`PASS Framework CSRF handoff`, so `docs/reference/doctor.md`'s claim that `config.csrf-disable`
+skips on every scaffold is false exactly as B2 assumes, and the correction can cite the fixture.
+
+**Immediate next action: Part B** (Tasks B1 through B4 of
+`docs/superpowers/plans/2026-08-16-capture-pass.md`), on a feature worktree off `main`,
+dispatching each task to `cairn-implementer` per the `cairn-pass` skill, the main loop
+reviewing each diff and confirming the full gate between dispatches. Part A needed no worktree
+because it only added fixtures; Part B changes pages and adds a gate, so it takes one. Launch
+from `~/Projects/cairn-cms` in a fresh Opus 5 session.
+
+**A0b, now history.** Both packages are on the registry at
 `0.95.0-rc.1` under the `next` dist-tag: the engine published over OIDC via a
 `workflow_dispatch` of `publish.yml` (run green; `sync-template-repo` self-skipped on the
 non-release event as designed), and `@glw907/cairn-cms-dev` made its first-ever publish by
@@ -32,12 +62,8 @@ rc, because a FIRST publish sets `latest` regardless of `--tag`; harmless (nothi
 bare, the scaffold pins the caret-rc) and self-healing at the first stable cut. The npm login
 session was logged out after the cut; nothing on this machine holds an npm credential.
 
-**Immediate next action: Part A, the attended capture run** (Tasks A1 through A6 of
-`docs/superpowers/plans/2026-08-16-capture-pass.md`), main loop, Geoff present, four browser
-moments. Per the standing model economy this runs in an Opus 5 session launched from
-`~/Projects/cairn-cms`. A1 is simpler than written: the bake's DEFAULT specs now resolve to
-`^0.95.0-rc.1` for both packages (verified against a real bake), so the explicit
-`--engine-spec`/`--dev-spec` flags still work but are no longer load-bearing.
+The bake's DEFAULT specs resolve to `^0.95.0-rc.1` for both packages, so Part A's explicit
+`--engine-spec`/`--dev-spec` flags were belt-and-braces rather than load-bearing.
 
 **Owed at the pass close (Task B4), not now:** the `code-simplifier` pass over this window's
 changed code (the bake test, the `publish-dev` job), alongside everything B4 already lists.

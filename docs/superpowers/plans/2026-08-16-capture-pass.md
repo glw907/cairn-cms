@@ -364,3 +364,53 @@ checks for free, alongside real passes and the structural skips.
   the tool's output and belong with the tool; the rationale is corrected instead.
 - "Drop Task A4 entirely": refused; the brief's cheap-only clause stands, now with the
   disposition (README label plus ROADMAP line) that answers the no-consumer objection.
+
+---
+
+## Part A post-mortem (2026-08-17)
+
+**Built.** Six committed captures plus their README at
+`packages/create-cairn-site/test/fixtures/transcripts/` (`8d9871eb`), and a verified teardown
+(`c1aef442`). The fixtures are real stdout from a live workers.dev run on the glw907 account,
+recorded on a pty pinned to 100 columns, unedited.
+
+**Verified.** The deployed site answered 200 and its admin 303'd to sign-in; Geoff completed the
+sign-in. The bare doctor reported 8 passed, 0 failed, 11 skipped; the credentialed one 8 passed,
+3 failed, 8 skipped, carrying all three line types as the page contract requires. The captured
+bootstrap token is dead, proven rather than assumed: magic links are stored hashed and are
+single-use, and `SELECT COUNT(*) FROM magic_token` returned zero rows. Teardown was verified by
+listing every resource class, not from memory. The package suite stayed green at 826 tests.
+
+**Four plan assumptions were wrong, each caught before it reached a fixture.**
+
+1. **`script -q` does not suppress its banner in the log file** on util-linux 2.39.3; the man
+   page scopes `-q` to standard output. A committed fixture would have carried a timestamped
+   `Script started on ...` line forever. Replaced by a small pty recorder that pins the window
+   size on the pty itself and writes tool bytes only, delivering the ruling's intent.
+2. **The environment list omitted `GITHUB_APP_*`.** This workstation exports the production
+   `cairn-cms` App's credentials, so the first bare doctor run authenticated as the wrong App
+   and printed `FAIL GitHub App: repo ... returned 404`, a failure no reader can see. Caught by
+   reading the report rather than trusting its exit code, then re-captured, never edited.
+3. **A first run cannot succeed with a selected-repositories install**, since it creates the
+   repository itself and there is nothing to select yet. The tool's remedy text names that same
+   option, sending the reader back to the dead end.
+4. **Resume is not idempotent across repository creation**; it refuses a repository the tool
+   itself created rather than adopting it. Recovery needed a repository deletion, which a reader
+   without that permission cannot perform.
+
+Items 3 and 4 are tool defects that only a live run could surface, and are the clearest evidence
+this pass earned its cost. Both are in the friction log for B4's triage.
+
+**Decisions locked.** Capture method is a pinned-pty recorder, not `script`. Prompt answering is
+pattern-matched against each prompt's own text, with steps order-preserving but individually
+optional, so a resume that skips prompts cannot strand the run. No doctor token was minted,
+because the credentialed report's bytes are token-independent here: its zone checks fail because
+`showcase.test` exists nowhere, and its D1 checks skip structurally.
+
+**Deviation from the plan worth carrying.** The plan expected one capture and got four
+invocations to a live site. B1's deploy-summary block therefore quotes `01d-resume.txt`, not
+`01-create-cairn-site.txt`; the two earlier blocks still quote `01`, whose bytes precede any
+failure. `01b`, `01c`, and `02` are declared deliberately unconsumed.
+
+**Blockers for B.** None. One hand step is outstanding: deleting the GitHub App
+`cairn-cairn-capture-scratch` (id `4625928`), ledger item (10).

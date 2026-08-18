@@ -51,6 +51,20 @@ function mediaImageSrcs(container: HTMLElement): string[] {
     .filter((src) => !src.startsWith('blob:'));
 }
 
+/**
+ * Assert that every image the mounted story rendered composes from `fixtureMediaBase`, the docs
+ * origin's own asset route, never the real admin's hardcoded `/media` default.
+ * @param container - the mounted story's root
+ * @returns the srcs checked, so a story that guarantees a rendered image can assert on the count
+ */
+function expectMediaBaseSrcs(container: HTMLElement): string[] {
+  const srcs = mediaImageSrcs(container);
+  for (const src of srcs) {
+    expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
+  }
+  return srcs;
+}
+
 // A story that is not part of the real registry: it mounts the local probe component, so the
 // obligations ReproContext owns for every story (a story's own context, the fixture media base, the
 // CSRF getter, the theme root a bare story does not carry itself) are each exercised directly
@@ -608,11 +622,8 @@ describe('media/insert-panel', () => {
     // Read before any polling assertion below runs: an errored image swaps for a broken-image
     // fallback with no `img` tag at all, so the src this row exists to prove must be read at the
     // first paint, not after a wait that could outlast it.
-    const srcs = mediaImageSrcs(screen.container);
+    const srcs = expectMediaBaseSrcs(screen.container);
     expect(srcs.length).toBeGreaterThan(0);
-    for (const src of srcs) {
-      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
-    }
 
     await expect.element(screen.getByRole('button', { name: 'Upload an image' })).toBeInTheDocument();
     expect(screen.container.textContent).toContain('or reuse an image');
@@ -645,11 +656,8 @@ describe('media/lead-picture-dialog', () => {
 
       // Read before any polling assertion below: an errored image swaps for a fallback with no
       // `img` tag, so the src composition this row exists to prove is read at the first paint.
-      const srcs = mediaImageSrcs(screen.container);
+      const srcs = expectMediaBaseSrcs(screen.container);
       expect(srcs.length).toBeGreaterThan(0);
-      for (const src of srcs) {
-        expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
-      }
 
       const dialog = screen.container.querySelector<HTMLDialogElement>('dialog.modal');
       expect(dialog?.open).toBe(true);
@@ -669,11 +677,8 @@ describe('media/library', () => {
 
     // Read before any polling assertion below: an errored tile image swaps for a broken-image
     // fallback with no `img` tag, so the src composition this row exists to prove is read first.
-    const srcs = mediaImageSrcs(screen.container);
+    const srcs = expectMediaBaseSrcs(screen.container);
     expect(srcs.length).toBeGreaterThan(0);
-    for (const src of srcs) {
-      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
-    }
 
     expect(screen.container.querySelector('header p')?.textContent).toMatch(/\d+ images?, \d+ used/);
     await expect.element(screen.getByRole('searchbox', { name: /search the media library/i })).toBeInTheDocument();
@@ -692,9 +697,7 @@ describe('media/details-panel', () => {
     // A pose-reached image is already at risk of an early network error swapping it for a
     // fallback (no `img` tag), so this reads whatever is still present rather than asserting a
     // minimum count; media/library and media/insert-panel cover the guaranteed-present case.
-    for (const src of mediaImageSrcs(screen.container)) {
-      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
-    }
+    expectMediaBaseSrcs(screen.container);
 
     const panel = screen.container.querySelector('aside[role="region"]');
     expect(panel).not.toBeNull();
@@ -712,9 +715,7 @@ describe('media/bulk-selection', () => {
   it('poses three tiles selected, opening the sticky action bar with its count and controls', async () => {
     const screen = await mountPosed(getStory('media/bulk-selection'));
 
-    for (const src of mediaImageSrcs(screen.container)) {
-      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
-    }
+    expectMediaBaseSrcs(screen.container);
 
     const bar = screen.container.querySelector('[role="region"][aria-label="Selection actions"]');
     expect(bar).not.toBeNull();
@@ -728,9 +729,7 @@ describe('media/delete-in-use', () => {
   it('poses the in-use face open, naming the fixture entry the asset is used by', async () => {
     const screen = await mountPosed(getStory('media/delete-in-use'));
 
-    for (const src of mediaImageSrcs(screen.container)) {
-      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
-    }
+    expectMediaBaseSrcs(screen.container);
 
     const dialog = screen.container.querySelector<HTMLDialogElement>('dialog[role="alertdialog"]');
     expect(dialog?.open).toBe(true);

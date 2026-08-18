@@ -20,7 +20,7 @@ import { mediaToken } from '../../media/reference.js';
 import type { MediaLibraryData } from '../../sveltekit/content-routes-media.js';
 import { fixtureCaptureFile, fixtureConcept, fixtureMediaLibrary } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
-import { ENTRY, waitFor } from './support.js';
+import { ENTRY, clickWhenPresent, waitFor } from './support.js';
 
 /**
  * Look up a fixture asset by its display slug, never by its position in
@@ -95,7 +95,7 @@ const insertPanel: ReproStory = {
     trigger: true,
   },
   pose: async (root) => {
-    (await waitFor(root, 'button[aria-label="Insert image"]', 'the Insert image trigger')).click();
+    await clickWhenPresent(root, 'button[aria-label="Insert image"]', 'the Insert image trigger');
     await waitFor(root, '[role="dialog"][aria-label="Insert image"]', 'the opened insert panel');
   },
 };
@@ -146,7 +146,7 @@ const leadPictureDialog: ReproStory = {
     ondirty: () => {},
   },
   pose: async (root) => {
-    (await waitFor(root, 'button[aria-haspopup="dialog"]', 'the hero field edit control')).click();
+    await clickWhenPresent(root, 'button[aria-haspopup="dialog"]', 'the hero field edit control');
     await waitFor(root, 'dialog.modal[open]', 'the opened lead picture dialog');
   },
 };
@@ -176,8 +176,7 @@ const detailsPanel: ReproStory = {
   host: 'shell',
   props: { data: libraryData(), form: null },
   pose: async (root) => {
-    const tile = await waitFor(root, `[role="option"][aria-label^="${TEAM_PHOTO.displayName}"]`, 'the Team Photo tile');
-    tile.click();
+    await clickWhenPresent(root, `[role="option"][aria-label^="${TEAM_PHOTO.displayName}"]`, 'the Team Photo tile');
     await waitFor(root, 'aside[role="region"]', 'the asset details panel');
   },
 };
@@ -193,12 +192,11 @@ const bulkSelection: ReproStory = {
   props: { data: libraryData(), form: null },
   pose: async (root) => {
     for (const asset of [TRAILHEAD_VIEW, CABIN_PORCH, LAKE_SUNRISE]) {
-      const checkbox = await waitFor(
+      await clickWhenPresent(
         root,
         `input[type="checkbox"][aria-label="Select ${asset.displayName}"]`,
         `the "${asset.displayName}" checkbox`,
       );
-      checkbox.click();
     }
     await waitFor(root, '[role="region"][aria-label="Selection actions"]', 'the selection action bar');
   },
@@ -215,8 +213,8 @@ const deleteInUse: ReproStory = {
   host: 'shell',
   props: { data: libraryData(), form: null },
   pose: async (root) => {
-    (await waitFor(root, 'button[aria-label="List view"]', 'the list view toggle')).click();
-    (await waitFor(root, `button[aria-label="Delete ${TEAM_PHOTO.displayName}"]`, 'the row delete trigger')).click();
+    await clickWhenPresent(root, 'button[aria-label="List view"]', 'the list view toggle');
+    await clickWhenPresent(root, `button[aria-label="Delete ${TEAM_PHOTO.displayName}"]`, 'the row delete trigger');
     await waitFor(root, 'dialog[role="alertdialog"][open]', 'the opened delete confirm');
   },
 };

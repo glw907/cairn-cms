@@ -98,19 +98,14 @@ export function validateReproFence(
       `width "${RESPONSIVE_WIDTH}" is the responsive default, which a fence names by omitting "width"`,
     );
   } else if (width !== undefined) {
-    let isValid = false;
-    let pinnedWidths: string[] = [];
-    if (entry) {
-      const heights = entry.heights as Record<string, number | undefined>;
-      pinnedWidths = Object.entries(heights)
-        .filter((pair): pair is [string, number] => typeof pair[1] === 'number')
-        .map(([name]) => name)
-        .filter((name) => name !== RESPONSIVE_WIDTH)
-        .sort();
-      isValid =
-        typeof width === 'string' && width !== RESPONSIVE_WIDTH && typeof heights[width] === 'number';
-    }
-    if (!isValid) {
+    // Read off the story's own ReproHeights entry, never a list of width names kept here: a story
+    // that later declares a new pinned width needs no matching edit in this file. An unresolved
+    // story leaves the set empty, so its fence fails on the id above and on the width here.
+    const heights = (entry?.heights ?? {}) as Record<string, number | undefined>;
+    const pinnedWidths = Object.keys(heights)
+      .filter((name) => name !== RESPONSIVE_WIDTH && typeof heights[name] === 'number')
+      .sort();
+    if (typeof width !== 'string' || !pinnedWidths.includes(width)) {
       // A story with no pinned width at all is the common case (twenty of twenty-five rows), and
       // "declared: " followed by nothing reads as a bug, so that case names the remedy instead.
       const suffix =

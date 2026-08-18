@@ -12,7 +12,8 @@
 // Worker and fetches no wasm binary or dictionary per embed.
 //
 // The `EditPage` prop bag, the wait helper, and the settle they share moved to ./support.ts (Task
-// A5b) once `publish/header-band` needed the same pieces; this module imports them back.
+// A5b) once `publish/header-band` needed the same pieces; this module imports them back, along with
+// the `ConceptList` load `publish/refusal-banner` mounts against too.
 import { createRawSnippet, type Component } from 'svelte';
 import ConceptList from '../../components/ConceptList.svelte';
 import EditPage from '../../components/EditPage.svelte';
@@ -21,10 +22,17 @@ import MarkdownEditor from '../../components/MarkdownEditor.svelte';
 import MediaFigureControl from '../../components/MediaFigureControl.svelte';
 import TidyReview from '../../components/TidyReview.svelte';
 import type { TidyApi } from '../../components/editor-tidy.js';
-import type { ListData } from '../../sveltekit/content-routes-core.js';
-import { fixtureConcept, fixtureDeskPathname, fixtureEntries, fixtureTidyReview } from '../fixtures.js';
+import { fixtureDeskPathname, fixtureTidyReview } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
-import { ENTRY, editPageProps, fixtureRegistry, settleEditingSurface, waitFor } from './support.js';
+import {
+  ENTRY,
+  clickWhenPresent,
+  conceptListData,
+  editPageProps,
+  fixtureRegistry,
+  settleEditingSurface,
+  waitFor,
+} from './support.js';
 
 /**
  * The stroke-icon markup the toolbar's own glyph buttons use, for the host insert controls below.
@@ -130,19 +138,6 @@ const insertControls = createRawSnippet(() => ({
     '</span>',
 }));
 
-/** The list load behind the concept sidebar's Posts screen. */
-const fixtureListData: ListData = {
-  conceptId: fixtureConcept.id,
-  label: fixtureConcept.label,
-  singular: fixtureConcept.singular,
-  dated: true,
-  routable: true,
-  entries: fixtureEntries,
-  error: null,
-  formError: null,
-  publishedAll: null,
-};
-
 /**
  * The apply seam `TidyReview` drives the editor through. A story pictures the review at rest and
  * goes inert after mount, so nothing here is ever called; it exists because the prop is required
@@ -208,7 +203,7 @@ const sidebarList: ReproStory = {
   id: 'editor/sidebar-list',
   component: ConceptList as unknown as Component<Record<string, unknown>>,
   host: 'shell',
-  props: { data: fixtureListData, form: null },
+  props: { data: conceptListData(), form: null },
 };
 
 /** The Preview tab and its width control (`editor/preview-tab`). */
@@ -220,7 +215,7 @@ const previewTab: ReproStory = {
   props: editPageProps(),
   settle: settleEditingSurface,
   pose: async (root) => {
-    (await waitFor(root, '#cairn-tab-preview', 'the Preview tab')).click();
+    await clickWhenPresent(root, '#cairn-tab-preview', 'the Preview tab');
     // The preview render is debounced, so the pane exists before its frame does; the frame is what
     // the page is showing, and waiting for it is what keeps a capture off the empty-pane message.
     await waitFor(root, '#cairn-pane-preview iframe[title="Page preview"]', 'the preview frame');
@@ -236,7 +231,7 @@ const detailsPanel: ReproStory = {
   props: editPageProps(),
   settle: settleEditingSurface,
   pose: async (root) => {
-    (await waitFor(root, 'button[aria-label="Details"]', 'the Details trigger')).click();
+    await clickWhenPresent(root, 'button[aria-label="Details"]', 'the Details trigger');
     await waitFor(root, '[aria-label="Entry details"]:not([hidden])', 'the Details panel');
   },
 };

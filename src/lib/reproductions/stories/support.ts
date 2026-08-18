@@ -1,11 +1,11 @@
 // cairn-cms: the pieces shared by every reproduction story that mounts `EditPage`, extracted out
 // of ./editor.ts (Task A5a) once ./publish.ts (Task A5b) needed the same prop bag and the same
-// hydration wait for a second story. The `EditPage`-specific fixture composition lives here; each
-// story module still builds its own props object beyond what `editPageProps()` returns, and every
-// non-`EditPage` fixture stays in its own story module.
+// hydration wait for a second story. Each story module still builds its own props object beyond
+// what `editPageProps()` returns, and a fixture stays in its own story module until a second
+// module needs that same one.
 import type { NamedField, SiteRender } from '../../content/types.js';
 import { defineRegistry, type ComponentRegistry } from '../../render/registry.js';
-import type { EditData } from '../../sveltekit/content-routes-core.js';
+import type { EditData, ListData } from '../../sveltekit/content-routes-core.js';
 import { fixtureConcept, fixtureEntries, fixtureSiteName, fixtureTidyReview } from '../fixtures.js';
 
 /** The entry every `EditPage` story opens: the first fixture post, the one `fixtureDeskPathname` names. */
@@ -38,6 +38,19 @@ export async function waitFor(root: HTMLElement, selector: string, what: string)
     }
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
+}
+
+/**
+ * Wait for a control to appear, then click it, the two halves every pose runs to reach a state
+ * that lives in internal component state rather than a prop.
+ * @param root - the mounted story's container
+ * @param selector - what the control renders as
+ * @param what - the control's name, for the failure message a capture would otherwise report as a
+ * blank frame
+ * @throws when the control never appears
+ */
+export async function clickWhenPresent(root: HTMLElement, selector: string, what: string): Promise<void> {
+  (await waitFor(root, selector, what)).click();
 }
 
 /**
@@ -186,5 +199,27 @@ export function editPageProps(): Record<string, unknown> {
     // Fix 3: no mounted editing surface starts a spellcheck Worker or fetches its wasm and
     // dictionary, whatever the reader's own stored preference says.
     spellcheckOverride: false,
+  };
+}
+
+/**
+ * A fresh `ConceptList` load over the fixture concept, one call per story, the way
+ * {@link editPageProps} gives each `EditPage` story its own bag: `editor/sidebar-list` and
+ * `publish/refusal-banner` both mount `ConceptList` against this same load, and two mounted lists
+ * sharing one object would alias each other's state. `entries` stays the shared read-only fixture
+ * array, which no mounted list writes to.
+ * @returns the list load both `ConceptList` stories take
+ */
+export function conceptListData(): ListData {
+  return {
+    conceptId: fixtureConcept.id,
+    label: fixtureConcept.label,
+    singular: fixtureConcept.singular,
+    dated: true,
+    routable: true,
+    entries: fixtureEntries,
+    error: null,
+    formError: null,
+    publishedAll: null,
   };
 }

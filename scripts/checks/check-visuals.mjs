@@ -97,17 +97,27 @@ export function nextParagraphAfter(text, fromIndex) {
 }
 
 /**
+ * Every fence in `text` tagged `language`, each carrying its body and the index just past its
+ * closing fence line, so a caller can locate whatever the register requires after it.
+ * @param {string} text
+ * @param {string} language The fence's language tag.
+ */
+function fencesTagged(text, language) {
+  const fences = [];
+  for (const match of text.matchAll(FENCE_RE)) {
+    const [full, lang, body] = match;
+    if (lang === language) fences.push({ body, endIndex: match.index + full.length });
+  }
+  return fences;
+}
+
+/**
  * Every mermaid fence in `text`, each carrying its body and the index just past its closing
  * fence line, so a caller can locate the caption paragraph that must follow it.
  * @param {string} text
  */
 export function mermaidFences(text) {
-  const fences = [];
-  for (const match of text.matchAll(FENCE_RE)) {
-    const [full, lang, body] = match;
-    if (lang === 'mermaid') fences.push({ body, endIndex: match.index + full.length });
-  }
-  return fences;
+  return fencesTagged(text, 'mermaid');
 }
 
 /**
@@ -142,12 +152,7 @@ export function fenceViolations(file, fence, text) {
  * @param {string} text
  */
 export function reproFences(text) {
-  const fences = [];
-  for (const match of text.matchAll(FENCE_RE)) {
-    const [full, lang, body] = match;
-    if (lang === 'repro') fences.push({ body, endIndex: match.index + full.length });
-  }
-  return fences;
+  return fencesTagged(text, 'repro');
 }
 
 // A markdown ordered- or unordered-list item's leading marker, one item per line: no established
@@ -203,25 +208,17 @@ export function reproFenceViolations(file, fence, text, manifest, validateFence)
   if (!entry || entry.markerKeys.length === 0) return [];
 
   const count = nextListItemCount(text, fence.endIndex);
-  if (count === null) {
-    return [
-      {
-        file,
-        kind: 'repro-marker-count',
-        message: `${file}: repro fence for "${entry.id}" declares ${entry.markerKeys.length} marker(s) but no keyed list follows it`,
-      },
-    ];
-  }
-  if (count !== entry.markerKeys.length) {
-    return [
-      {
-        file,
-        kind: 'repro-marker-count',
-        message: `${file}: repro fence for "${entry.id}" declares ${entry.markerKeys.length} marker(s) but the page's keyed list has ${count}`,
-      },
-    ];
-  }
-  return [];
+  if (count === entry.markerKeys.length) return [];
+  // `null` is no list at all rather than a list of zero items, so it names the omission instead of
+  // reporting a count the page does not carry.
+  const found = count === null ? 'no keyed list follows it' : `the page's keyed list has ${count}`;
+  return [
+    {
+      file,
+      kind: 'repro-marker-count',
+      message: `${file}: repro fence for "${entry.id}" declares ${entry.markerKeys.length} marker(s) but ${found}`,
+    },
+  ];
 }
 
 /**
@@ -266,6 +263,8 @@ export function scanDocument(file, text, manifest = [], validateFence) {
 
   const repros = reproFences(text);
   if (repros.length > 0) {
+    // Nested rather than flattened: the throw is what narrows `validateFence` off `undefined` for
+    // the loop below, and checkJs reads that narrowing only inside this block.
     if (!validateFence) {
       throw new Error('scanDocument: a repro fence is present but no validateFence was supplied');
     }

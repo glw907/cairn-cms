@@ -14,10 +14,10 @@ import ConceptList from '../../components/ConceptList.svelte';
 import EditPage from '../../components/EditPage.svelte';
 import WelcomeView from '../../components/WelcomeView.svelte';
 import type { InboundLink } from '../../content/manifest.js';
-import type { DeleteRefusal, ListData } from '../../sveltekit/content-routes-core.js';
-import { fixtureConcept, fixtureDeskPathname, fixtureEditor, fixtureEntries, fixtureSiteName } from '../fixtures.js';
+import type { DeleteRefusal } from '../../sveltekit/content-routes-core.js';
+import { fixtureDeskPathname, fixtureEditor, fixtureEntries, fixtureSiteName } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
-import { editPageProps, settleEditingSurface, waitFor } from './support.js';
+import { clickWhenPresent, conceptListData, editPageProps, settleEditingSurface, waitFor } from './support.js';
 
 /**
  * The overflow menu's opened band (`publish/header-band`). `actionsOpen` is internal state with no
@@ -41,7 +41,7 @@ const headerBand: ReproStory = {
   // frame whose band is right and whose editor underneath it is a plain textarea.
   settle: settleEditingSurface,
   pose: async (root) => {
-    (await waitFor(root, 'button[aria-label="More actions"]', 'the overflow trigger')).click();
+    await clickWhenPresent(root, 'button[aria-label="More actions"]', 'the overflow trigger');
     await waitFor(root, 'button[aria-label="More actions"][aria-expanded="true"]', 'the opened overflow menu');
   },
 };
@@ -67,8 +67,8 @@ const REFUSAL_INBOUND_LINKS: InboundLink[] = fixtureEntries
   .map((entry) => ({ concept: entry.concept, id: entry.id, title: entry.title, permalink: `/posts/${entry.id}` }));
 
 /**
- * The two fixture entries `publish/pending-list` shows as awaiting publish, grouped under
- * {@link fixtureConcept}'s label in the dialog's own grouping: the entry that already carries an
+ * The two fixture entries `publish/pending-list` shows as awaiting publish, grouped under the
+ * fixture concept's label in the dialog's own grouping: the entry that already carries an
  * open draft ({@link HISTORY_ENTRY}, `status: 'edited'`) plus one published entry, so the group
  * reads as more than a single row.
  */
@@ -91,22 +91,9 @@ const pendingList: ReproStory = {
   shellData: { pendingEntries: Promise.resolve(PENDING_IDS) },
   props: { data: { displayName: fixtureEditor.displayName, siteName: fixtureSiteName } },
   pose: async (root) => {
-    (await waitFor(root, 'button[aria-haspopup="dialog"]', 'the "Publish site" trigger')).click();
+    await clickWhenPresent(root, 'button[aria-haspopup="dialog"]', 'the "Publish site" trigger');
     await waitFor(root, 'dialog[aria-labelledby="cairn-shell-publish-all-title"][open]', 'the opened publish confirm');
   },
-};
-
-/** The list load `publish/refusal-banner` mounts `ConceptList` against. */
-const refusalListData: ListData = {
-  conceptId: fixtureConcept.id,
-  label: fixtureConcept.label,
-  singular: fixtureConcept.singular,
-  dated: true,
-  routable: true,
-  entries: fixtureEntries,
-  error: null,
-  formError: null,
-  publishedAll: null,
 };
 
 /** The refused delete's form result: what drives the banner naming the blocking entry. */
@@ -122,7 +109,7 @@ const refusalBanner: ReproStory = {
   id: 'publish/refusal-banner',
   component: ConceptList as unknown as Component<Record<string, unknown>>,
   host: 'bare',
-  props: { data: refusalListData, form: refusalForm },
+  props: { data: conceptListData(), form: refusalForm },
 };
 
 /** The four publish stories, in manifest order. */

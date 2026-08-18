@@ -159,6 +159,48 @@ is language-neutral JSON captured from real services (the spike docs are the
 provenance chain); both engines test against the same corpus. Go fakes inherit the
 standing discipline: a fake must refuse what the real service refuses.
 
+## Platforms: Linux, macOS, and Windows (Geoff, 2026-08-18)
+
+All three are supported targets. This is the tool's answer to a limitation the Node CLI
+carries and does not fix: `create-cairn-site` cannot run on Windows at all, and that is
+disclosed in the admin track rather than repaired, because the Node CLI is a prototype for
+this tool. Windows arrives here or it does not arrive.
+
+The architecture above already earns most of this, and the reason is worth stating so a
+later decision does not give it away. **The engine is REST-first, and that is what makes
+three platforms cheap.** The GitHub App manifest flow, Builds, D1 queries, secrets, domain,
+and email are all REST peers, so the tool does not shell out to a Node-installed binary the
+way the Node CLI shells out to `npm` and `wrangler`. That shell-out is the precise mechanism
+that broke Windows: a `.cmd` shim spawned without a shell, which current Node refuses. Any
+drift back toward invoking an installed CLI re-imports that failure, so a shell-out is a
+design decision, not an implementation detail. The one that remains is the optional
+`npm run dev` developer handoff, which is already conditional on Node being present.
+
+Four consequences that do not follow for free:
+
+- **The state record's location stops being one path.** The store reads `~/.config/cairn/sites`
+  today, which is a POSIX assumption. Windows wants its own convention, so path resolution
+  becomes platform-dependent while the record format stays the single versioned contract.
+  A machine that ran both tools has records in the POSIX location regardless, which the adopt
+  path should expect rather than discover.
+- **Opening a browser is platform-specific**, and the tool does it for every prefill URL in
+  the credential UX. The Node CLI already carries a win32 branch for this.
+- **Distribution differs per platform even when the build does not.** Cross-compilation is
+  a Go strength and buys the binaries; it does not buy the install story. Brew covers two
+  targets, and Windows needs its own answer. The npm shim under consideration is the one
+  channel that covers all three uniformly, which is a point in its favor rather than an
+  aesthetic preference.
+- **The TUI's behavior across Windows terminals needs verifying at design time, not
+  assuming.** Terminal capability varies more there than on the other two, which puts more
+  load on the standing rule that status is never encoded as color alone. Golden tests need
+  line-ending normalization or they will fail for a reason that has nothing to do with the
+  UI.
+
+**The requirement becomes a CI matrix over all three, or it is prose.** This project's own
+doctrine is that a watch item converts into a failing check; a cross-platform claim tested on
+one platform is exactly the watch item that rots. The matrix is the mechanism, and it belongs
+in the tool's first CI workflow rather than in a later hardening pass.
+
 ## Exclusions
 
 No content or admin operations. No replacement of the local dev loop. No web UI (the

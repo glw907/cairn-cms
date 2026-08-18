@@ -1,9 +1,11 @@
 // cairn-cms: the node-safe half of the live-reproduction seam.
 //
-// This module is plain data and imports nothing. That is a contract, not an accident: the engine's
-// check:visuals gate and cairn-pub's fence validation both read the manifest from a bare `node`
-// process, so a single `.svelte` specifier anywhere in its static graph would break both gates at
-// once. src/tests/unit/reproductions-manifest.test.ts holds the source graph to that rule and
+// The contract that matters is not "imports nothing" (this module now re-exports ./validate.ts's
+// YAML-checking logic) but that nothing in this module's static import graph is ever a `.svelte`
+// specifier or pulls in Svelte's runtime: the engine's check:visuals gate and cairn-pub's fence
+// validation both read this module from a bare `node` process, so a single Svelte-carrying
+// specifier anywhere in the graph would break both gates at once.
+// src/tests/unit/reproductions-manifest.test.ts holds the source graph to that rule and
 // src/tests/unit/reproductions-manifest-dist-spawn.test.ts holds the emitted dist to it.
 //
 // The Svelte-importing half (component references, fixture props, poses, the context wrapper) is
@@ -316,3 +318,8 @@ export const fixtureMediaFiles: string[] = [
   'lake-sunrise.f0225d64bbac1d37.png',
   'trail-map.59be2d4d416f67cf.png',
 ];
+
+// Re-exported from ./validate.ts so a consumer of the node-safe manifest subpath (this gate,
+// cairn-pub's fence plugin) gets the validator from the same specifier as the data it checks
+// against, with no second import path to keep in sync.
+export { validateReproFence, type ReproFenceValidation } from './validate.js';

@@ -166,3 +166,117 @@ that produced it.
   the value and hiding the control, because the one prop means both "start it off" and "the site
   owns this now". Neither is urgent. Together they are the reason the seam leans on poses where
   props would have been steadier.
+
+### Backfill of the 2026-08-04 to 08-16 window (mined 2026-08-18)
+
+The log's last full clearing was 2026-07-29, and only two passes have been closed into it since (Pass D,
+the capture pass). That left roughly two weeks of shipped work unmined, including the nine-plan
+`create-cairn-site` initiative. A six-reader sweep over those post-mortems, each candidate then checked
+against the current tree by a fresh skeptic whose default was to kill, produced twenty-three candidates
+of which twelve were killed as already filed, already fixed, or speculative. The eleven below survived.
+Every one carries a quote from the tree as it stands, not from the post-mortem that first noticed it.
+Triage runs at this pass's Task A8 under the complete-or-move rule.
+
+- **Two published extend pages assert a commit-attribution fact a live commit disproves.** `extender`.
+  `docs/extend/architecture.md` tells a reader the committer is `cairn-cms[bot]` in three places, its
+  prose at `:114`, the sequence arrow at `:102`, and the diagram's `accDescr` at `:93`, so the claim
+  reaches a screen-reader user too; `docs/extend/add-cairn-to-a-sveltekit-app.md:19` repeats it. The Git
+  Data API falls back to the author when `committer` is omitted, so both fields read the editor, which
+  two independent live runs recorded (T3's `/admin` save, and every tool-made commit in T5's Task 8
+  e2e). `src/lib/github/repo.ts:261` still tells the next contributor the opposite. STATUS carry-forward
+  (2) covers only that source comment and says nothing about the published pages. Triage: the docs half
+  is a correction owed before release one publishes these pages; the engine half is a separate decision
+  about which behavior is wanted, since `CLAUDE.md` states the bot-as-committer promise as design.
+
+- **The scaffolder cannot run on Windows, which it otherwise treats as supported.** `admin`.
+  `packages/create-cairn-site/src/cloudflare/exec.mjs:120` returns `${defaultBin}.cmd` on win32 while
+  `runCommand` at `:72` passes `shell: false` unconditionally, and Node's CVE-2024-27980 fix makes a bare
+  `.cmd` spawn throw `EINVAL` on every release the package's `engines` field admits. The chapter's first
+  call is `runNpm(['install'])`, which does not catch spawn rejections, so the CLI dies on an unhandled
+  error before wrangler is reached. Where wrangler is reached, the bare catch at `:156` maps the failure
+  to `wrangler-unavailable`, telling the admin to install something already installed. Windows is a
+  claimed target: `preflight.mjs:131` carries a win32-only finding and `github/open.mjs:26` a win32
+  browser branch. Trigger: before release one publishes the tool.
+
+- **The default deployable bundle is over the Workers Free script limit, and no gate can catch it.**
+  `admin`. The showcase bundle measured about 3.17 MiB gzipped against Cloudflare's 3 MiB free-tier
+  script limit, and the scaffolded site inherits that bundle directly through the emitted template. The
+  only tripwire, `.github/workflows/e2e.yml:74`, budgets 5 MiB, so it cannot fail until well past the
+  point a free-plan deploy already has. `src/lib/doctor/` has no size check. Meanwhile the admin track
+  tells a reader the default path runs on the free plan (`create-your-site.md:85`, `own-your-domain.md:25`),
+  framing Workers Paid as needed only for a second editor's sign-in email. The measurement reached no
+  tracked list; its only home was an auth-channel post-mortem's residuals, whose own words are "filed
+  here rather than fixed". The narrow ask is a free-tier-calibrated warning, not the ROADMAP resolver
+  rewrite that entry designates this assertion as the tripwire for.
+
+- **Two sites whose names slug alike silently adopt each other's Worker, databases, and bucket.**
+  `admin`. `packages/create-cairn-site/src/cloudflare/config.mjs:55` derives the worker name as a pure
+  function of the typed display name, with no site id and no account lookup, and `deploy.mjs` then runs
+  `wrangler deploy` and `d1 migrations apply` against id-less by-name bindings with no existence or
+  ownership probe. The consent copy does print the derived names, and frames reuse as reassurance
+  ("deploying again later updates it") rather than warning that an existing resource belonging to a
+  different site will be taken over. T3's review named this and proposed three fixes; none landed, and
+  it left the plan file for no tracking surface.
+
+- **Every scaffolded site's own build prints an unexplained refusal into its owner's build log.**
+  `admin`. The baked template's footer links `/admin` on every page, the prerender crawler follows it,
+  and `src/lib/sveltekit/guard.ts:114` answers with `guard.rejected` (`reason: 'https'`) and a branded
+  400. So a new owner's first build output carries a security-shaped refusal and a `400 /admin (linked
+  from /)` that no doc explains and nothing suppresses. The sibling finding from the same live runs, the
+  kit deprecation spam, was promoted to ROADMAP; this half was left behind.
+
+- **`cairn-doctor` has no check for the one failure mode the Builds chapter was built around.** `admin`.
+  The tool's own README documents that revoking or rolling the build token breaks push-to-deploy
+  silently, and says plainly that this is not hypothetical because a production cairn site was found in
+  exactly that state. That site is still in it: STATUS hand step (4) records 907-life's deploys as broken
+  since 2026-07-14. None of the doctor's twenty-one checks reads Builds or build-token health, although
+  the analogous email silent failure already got `email.sender-onboarded`. STATUS tracks the incident;
+  nothing tracks the engine gap that leaves an admin no way to discover it short of noticing the site
+  went stale.
+
+- **The tool's prose does not know the run's own state, in two more places.** `admin`. On any chapter-2
+  park, `bin.mjs:258` calls `printLiveInfo` unconditionally, which prints "Connect your own domain any
+  time by re-running…" directly after the park message that just said the connection is in progress, so
+  the right instruction and the stale one appear back to back. Separately, `chapter3.mjs:975` titles a
+  step "Get a fresh Cloudflare API token" before `collectBuildsToken` has had the chance to revalidate a
+  saved one with no prompt and no browser trip. ROADMAP already names this root for the scaffold
+  hand-over defect, that no gate reads the tool's own prose against its own behavior, so these belong
+  with that entry rather than as unrelated copy bugs.
+
+- **The cost preamble ships the inference its own research refused to ship.** `admin`.
+  `packages/create-cairn-site/src/money.mjs:41` states "All in, a small site on its own domain runs about
+  $6 a month" with no hedge. The T4b cost research left the Advanced Certificate Manager line item open
+  and wrote, of that exact number, "I will not put an inference in owner-facing money copy", pricing the
+  downside at $10/month if the question resolved against us. The copy shipped anyway and the question
+  appears in no live tracking doc, including STATUS's hand steps, where comparable one-glance checks do
+  live. Two cheap dispositions close it: take the glance, or hedge the line until someone does.
+
+- **The bootstrap sign-in hand-copies the engine's token contract, and its test is a closed loop.**
+  `contributor`. `packages/create-cairn-site/src/cloudflare/bootstrap.mjs:19` redeclares `TOKEN_TTL_MS`
+  as a literal and `:95` re-implements the token hash, each pointing at `src/lib/auth/crypto.ts` in a
+  prose comment. The round-trip test hashes the CLI's token with the CLI's algorithm and compares it to
+  the CLI's own SQL, so it stays green if the engine changes either. T3 named the fix it wanted, a
+  cross-package contract test, and called it this repo's own gold standard for a watch item. It is the
+  clearest gate candidate in this batch.
+
+- **A revert refusal blames the editor's own entry for someone else's publish, and nothing counts how
+  often it happens.** `editor`, `contributor`. The staleness comparand's breadth is ratified spec and
+  stands; do not reopen it. Two things it did not settle remain. `CairnHistory.svelte`'s refusal reads
+  "The history changed since this page loaded. Reload and try again.", written as though the editor's own
+  entry moved, when on this design the ordinary cause is an unrelated entry being published. And the
+  deferral's condition, a future refinement if editors hit it, has no detector: `history_stale` is not in
+  the log event vocabulary, so the trigger can only ever arrive as a verbal report, in a repo whose own
+  doctrine converts a conditional watch into a machine-detectable one.
+
+- **No live run has ever taken an externally registered domain through zone creation.** `admin`.
+  `zone.mjs:30` still records that no such domain was observed going through `POST /zones`, so the
+  branches that path reaches are unproven. Carried as STATUS carry-forward (1) and worth a real trigger
+  rather than a standing note.
+
+**Three carry-forwards were audited and judged not worth filing**, recorded here so they are not
+re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package is plain JS
+by design and its own suite is the real gate, and no pass has reported a defect slipping through), the
+`paid-plan-missing` mapping keyed on entitlement wording (the call site's docstring and its test name
+both already state the risk and the reason), and the root `CLAUDE.md` context-headroom note (housekeeping,
+outside this log's charter). STATUS should shed all three at the next update rather than carry them
+further.

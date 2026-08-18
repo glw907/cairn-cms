@@ -4,12 +4,18 @@ From nothing to signed in, and how to sign in again.
 
 ## Before you run it
 
-You need a computer with [Node.js](https://nodejs.org) 22 or later installed, a terminal, a
-[GitHub account](https://github.com/signup) and a
+You need a Mac or a Linux computer with [Node.js](https://nodejs.org) 22 or later installed, a
+terminal, a [GitHub account](https://github.com/signup) and a
 [Cloudflare account](https://dash.cloudflare.com/sign-up), both free to open if you don't have
 them yet. The tool signs in to accounts you already have; it doesn't create either one for you.
 It also checks your Node version itself and tells you if it's too old, before it asks you
 anything.
+
+Windows isn't supported yet, and that includes Git Bash and PowerShell. A run on Windows gets
+partway through and then fails with an unclear error, so use a Mac, a Linux computer, or
+[Windows Subsystem for Linux](https://learn.microsoft.com/windows/wsl/install) instead. If none
+of those is available to you, a developer can set the site up from
+[the extend track](../extend/README.md) and hand it over.
 
 ## Run the command
 

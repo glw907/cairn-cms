@@ -5,8 +5,10 @@ The admin shell: a DaisyUI drawer-and-navbar that wraps every `/admin/**` route 
 payload renders the children bare with no chrome; an authed payload renders the data-driven nav
 (concepts, custom entries, the owner-only manage-editors entry), the topbar, the command palette, and
 the streamed publish-all count. The root sets `data-theme` to the resolved light or dark theme on a
-bare wrapper (never a styled element), so the admin looks identical on every host. It hands descendant
-forms a CSRF-token getter through context, so a bare `<CsrfField />` works tokenless. The two global
+bare wrapper (never a styled element), so the admin looks identical on every host; a `themeOverride`
+prop lets a mounting context own that theme outright, which suppresses both the cookie and the OS
+preference reads. It hands descendant forms a CSRF-token getter through context, so a bare
+`<CsrfField />` works tokenless. The two global
 actions (logout, publish-all) post to the absolute `/admin?/...` catch-all, so they resolve from any
 route. Failure mode: a public payload that carried chrome fields would still render bare (the
 discriminant, not the fields, gates the chrome).
@@ -43,9 +45,15 @@ discriminant, not the fields, gates the chrome).
     data: AdminShellData;
     /** The page body. */
     children: Snippet;
+    /** A theme a mounting context owns, which wins over this shell's own resolution and suppresses
+     *  both of its reads (the admin theme cookie and the OS `prefers-color-scheme` preference).
+     *  Reactive: changing it re-renders the shell in the new theme, so a host that pictures the
+     *  admin in both themes updates the prop instead of re-mounting. Absent (every real admin
+     *  mount), the shell resolves its own theme exactly as it always has. */
+    themeOverride?: 'cairn-admin' | 'cairn-admin-dark';
   }
 
-  let { data, children }: Props = $props();
+  let { data, children, themeOverride }: Props = $props();
 
   // The authed member, narrowed once. Every chrome read below goes through `shell`, which is null on
   // a public payload (the template renders only the children then, so the chrome never reads it). The
@@ -264,25 +272,42 @@ discriminant, not the fields, gates the chrome).
     publishAllDialog?.close();
   });
 
-  // Seed from the SSR'd theme once. The live theme is owned by this state and the toggle, so the
-  // initial read of data.theme is intentional and untracked to keep it out of any reactive graph.
-  let theme = $state<'cairn-admin' | 'cairn-admin-dark'>(
+  // Seed from the SSR'd theme once. The shell's own live theme is owned by this state and the
+  // toggle, so the initial read of data.theme is intentional and untracked to keep it out of any
+  // reactive graph. The override below is a separate, deliberately tracked path, so this seed stays
+  // exactly as untracked as it was: a data.theme change still never reaches the render.
+  let ownTheme = $state<'cairn-admin' | 'cairn-admin-dark'>(
     untrack(() => (data.public ? 'cairn-admin' : data.theme)),
   );
 
+  // What the root actually renders: a mounting context's override when it supplies one, this shell's
+  // own resolution otherwise. The derived is what makes the override reactive to a prop change.
+  const theme = $derived(themeOverride ?? ownTheme);
+
   // First mount with no persisted choice follows the OS preference. A returning user's cookie was
-  // already honored by the shell load (data.theme), so this only fires on a first-ever visit.
+  // already honored by the shell load (data.theme), so this only fires on a first-ever visit. An
+  // override owns the theme outright, so neither source is consulted under one: a host that mounts
+  // the admin on its own page gets the theme it asked for, not the reader's OS preference.
   $effect(() => {
+    if (themeOverride !== undefined) return;
     const hasCookie = document.cookie.split('; ').some((c) => c.startsWith('cairn-admin-theme='));
     if (!hasCookie && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-      theme = 'cairn-admin-dark';
+      ownTheme = 'cairn-admin-dark';
     }
   });
 
   function toggleTheme() {
-    theme = theme === 'cairn-admin' ? 'cairn-admin-dark' : 'cairn-admin';
-    writeAdminCookie('cairn-admin-theme', theme);
+    ownTheme = ownTheme === 'cairn-admin' ? 'cairn-admin-dark' : 'cairn-admin';
+    writeAdminCookie('cairn-admin-theme', ownTheme);
   }
+
+  // Whether this shell offers the theme flip at all. Under an override the mounting context owns
+  // the theme, so a toggle would write ownTheme and the cookie while the render stayed pinned: a
+  // focusable control with an accessible name and no visible effect (WCAG 4.1.2), whose palette
+  // label would go on announcing "Switch to dark mode" after activation. Every face of the control
+  // gates on this, the topbar button and the palette command here and the narrow-width fold
+  // EditPage renders from the mirrored toggle below.
+  const offersThemeToggle = $derived(themeOverride === undefined);
 
   // The command palette: a quick jump-to over the admin's destinations plus a couple of actions, so
   // the topbar carries something productive. Opened by the topbar trigger or Cmd/Ctrl+K.
@@ -333,9 +358,13 @@ discriminant, not the fields, gates the chrome).
   const paletteCommands = $derived<Command[]>([
     ...paletteNavItems.map((item) => ({ label: item.label, icon: item.icon, href: item.href })),
     { label: 'View the live site', icon: ExternalLinkIcon, href: '/', external: true },
-    theme === 'cairn-admin'
-      ? { label: 'Switch to dark mode', icon: MoonIcon, action: toggleTheme }
-      : { label: 'Switch to light mode', icon: SunIcon, action: toggleTheme },
+    ...(offersThemeToggle
+      ? [
+          theme === 'cairn-admin'
+            ? { label: 'Switch to dark mode', icon: MoonIcon, action: toggleTheme }
+            : { label: 'Switch to light mode', icon: SunIcon, action: toggleTheme },
+        ]
+      : []),
   ]);
   const paletteResults = $derived(
     paletteCommands.filter((c) => c.label.toLowerCase().includes(paletteQuery.trim().toLowerCase())),
@@ -425,11 +454,13 @@ discriminant, not the fields, gates the chrome).
   // can fold the standalone theme toggle in below the width cutoff where this shell hides it (the
   // desk band collision fix, admin-papercuts pass): the direction reverses from desk/zen above,
   // the shell writes and EditPage reads through the same portal. toggleTheme is stable for the
-  // component's life, so it is assigned once here; only the live theme value is reactive, so the
-  // effect below tracks it alone rather than rewriting the stable function on every theme flip.
-  topbar.toggleTheme = toggleTheme;
+  // component's life, so what the effect below writes is either that one function or nothing.
+  // Nothing under an override: the holder's toggleTheme is documented as optional and EditPage's
+  // fold renders only while it is present, so leaving it unset is how the third face of the theme
+  // control disappears alongside the two this component renders itself.
   $effect(() => {
     topbar.theme = theme;
+    topbar.toggleTheme = offersThemeToggle ? toggleTheme : undefined;
   });
 
   // Whether the drawer currently renders as the persistent sidebar rather than an overlay: the same
@@ -654,11 +685,13 @@ discriminant, not the fields, gates the chrome).
         <!-- Below the sm cutoff a desk route folds this into EditPage's own overflow menu instead
              of shrinking it in place (the desk band collision fix, audit finding 2): the office
              routes keep it visible at every width, since only the desk band runs out of room. -->
+        {#if offersThemeToggle}
         <div class="flex-none" class:max-sm:hidden={isDeskRoute}>
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
             {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
           </button>
         </div>
+        {/if}
       </div>
       {/if}
 

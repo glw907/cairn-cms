@@ -274,6 +274,75 @@ The original decision framing, for the record:
 
 ## Now
 
+- **The reproduction seam does not contain what it mounts, and `inert` alone cannot fix it.** Three
+  mechanisms, all verified at the seam pass's review gate, and all of them reach the reader of a
+  published docs page. `TidyReview` calls `showModal()` in its mount effect, which runs the dialog
+  focusing steps and pulls the host page's focus into the embed before any route-level `inert` step
+  can run. `CairnAdminShell` binds `<svelte:window onkeydown>`, and `inert` does not remove a window
+  listener, so each of the fifteen shell-hosted reproductions answers Ctrl/Cmd+K with a fake command
+  palette once focus is inside its frame. And `ReproContext` itself applies no `inert`, no focus
+  containment, and no tabindex management, so a keyboard reader tabs through a full admin screen's
+  dead controls per embed before reaching the next paragraph. Pass 2's `/repro` route was to own
+  this, and the first two mechanisms prove it cannot: the fix belongs in the engine, where
+  `ReproContext` is already the single provider both consumers share. Shape: an `openOnMount` prop on
+  `TidyReview` (not a public export, so it costs no surface), a chromeless flag or context that skips
+  the shell's window binding, and `inert` applied to the mounted subtree inside `ReproContext` after
+  the pose resolves. **Owed before Pass 2 ships the `/repro` route**, which is what publishes these
+  frames.
+
+- **The story suite proves the media reproductions against images it never serves.** Nothing maps
+  `/repro-assets/*` in the browser test project, so every fixture image 404s during the engine's own
+  story-mount run and `CairnMediaLibrary`'s `onerror` swaps the tile for its "Image missing" block,
+  which renders no `img` at all. The media-base assertions read `img[src]` at first paint to beat that
+  swap, which is a deliberate race and the flaky-gate shape: on a slower runner, or on the second
+  story to request an already-404-cached URL, the read loses and three stories fail for a reason that
+  has nothing to do with them. Worse, nothing anywhere proves a fixture image decodes, so a cairn-pub
+  asset-route regression would ship "Image missing" chips into published docs past a green gate. Fix:
+  serve `src/lib/reproductions/fixtures/` at `/repro-assets/` from the browser project (the filenames
+  are already enumerated in `manifest.ts`), then assert `complete && naturalWidth > 0` rather than
+  the composed string. Found by the seam pass's Svelte review.
+
+- **`media/insert-panel` pictures a control the real admin never renders.** The story sets
+  `MediaInsertPopover`'s `trigger: true` so a DOM-only pose has something to click, which renders a
+  visible text button reading "Insert image" that survives in the DOM after the panel opens. The real
+  editor mounts the popover headless (`trigger={false}`) and opens it by calling the component's
+  exported `open('chooser')` from the toolbar's icon button. So the one reproduction whose whole job
+  is fidelity ships a control that exists nowhere in `/admin`. The seam limitation behind it is that
+  `ReproStory.pose` receives only the mount root, never the mounted instance, so it cannot reach the
+  mechanism the real host uses. Fix: widen the pose signature to receive the instance and keep
+  `trigger: false`. **Owed before a docs page embeds this story.** Found by the seam pass's Svelte
+  review.
+
+- **A site with a non-default `assets.publicBase` has broken admin thumbnails today, and the
+  reproduction seam just made the fix cheap.** `media/config.ts` makes the base site-configurable
+  and `render/resolve-media.ts` honors it for rendered output, but every admin surface resolved
+  `publicPath`'s hardcoded `/media` until the seam pass made the base injectable through
+  `MEDIA_BASE_CONTEXT_KEY`. That pass wired only the fixture value into the new key. Closing this
+  for real is one provider: the admin layout supplies the resolved config value through the same
+  key, every thumbnail follows, and the reproductions module keeps working unchanged. Found at the
+  seam pass's review gate, in `docs/internal/record/repro-story-audit.md`'s fix 1.
+
+- **`EditPage`'s Edit block control is disabled the way the file's own comment forbids.** It uses
+  `class:btn-disabled` (`EditPage.svelte:2079`), which DaisyUI gives `pointer-events: none`, so the
+  `title` tooltip naming *why* it is off never reaches a mouse user, and the icon sits at the
+  20%-alpha treatment `cairn-admin.css` describes as reading "as an empty gap rather than a disabled
+  control". The Figure button one snippet below does it correctly with `cairn-btn-guarded`, and its
+  comment states the rule Edit block breaks. Pre-existing; found by the seam pass's accessibility
+  review. Fixing it also updates the `editor/toolbar` reproduction, which transcribes the control as
+  it is today.
+
+- **`check:reference` cannot see a subpath nobody told it about.** `scripts/checks/reference-coverage.mjs`
+  holds a hardcoded `CONFIG` list, so a new export subpath ships with no reference page while the gate
+  reports OK across the subpaths it does know. The seam pass added two subpaths and hit exactly this.
+  Deriving the list from `package.json`'s `exports` (with an explicit, asserted exclusion list for
+  anything deliberately undocumented) turns a silent gap into a failure. The same shape of hole exists
+  for component props: the gate matches exported names, so a new public prop is invisible to it, and
+  the live-reproduction seam pass proved it twice in one window: `CairnAdminShell` and `EditPage` each
+  gained a public prop (`themeOverride`, `spellcheckOverride`) while `docs/reference/components.md`
+  kept printing the older, shorter signature until a later manual pass caught both. Converting this
+  into a failing check, not a watch note, is this repo's own preferred form for a mechanically
+  detectable, silent-failure gap.
+
 - **The published docs have no visual layer at all, and half of that was never decided
   (Geoff, 2026-08-15, reading the editors track).** The corpus ships zero images and zero
   diagrams across all four tracks. Two different things produced that, and they need separating
@@ -372,7 +441,13 @@ The original decision framing, for the record:
      release", and the same run then walks the reader straight through both of them. The string
      predates the chapters and nothing caught it, because no gate reads the tool's own prose
      against the tool's own behavior. Evidence: `01-create-cairn-site.txt`. Candidate: rewrite the
-     hand-over to name what comes next in this run.
+     hand-over to name what comes next in this run. Two more instances of the same root surfaced
+     in the 2026-08-18 backfill mining: `bin.mjs:258` calls `printLiveInfo` unconditionally on any
+     chapter-2 park, so "Connect your own domain any time by re-running..." prints directly after
+     the park message that just said the connection is in progress, and `chapter3.mjs:975` titles
+     a step "Get a fresh Cloudflare API token" before `collectBuildsToken` has had the chance to
+     revalidate a saved one, with no prompt and no browser trip. Both belong to this entry's root
+     rather than as unrelated copy bugs.
 
 - **The doctor's CSRF-handoff check silently skips on every current `sv create` scaffold,
   filed off Pass D's target-manifest work (2026-08-14).** `src/lib/doctor/checks-local.ts:90-91`
@@ -610,6 +685,55 @@ The original decision framing, for the record:
   ignored. Fix the doc comment to state the strict behavior, and weigh dropping the index
   signature, which still advertises an openness the parser does not honor.
 
+- **The delete-refusal banner uses the plural concept label in a singular sentence (docs friction
+  log, live-reproduction seam harvest, 2026-08-18).** `ConceptList.svelte:316` renders `This
+  {data.label.toLowerCase()} could not be deleted`, so a reader sees "This posts could not be
+  deleted." `:255` composes the same sentence for the polite live region, so an assistive-tech
+  user hears it too. `:211` in the same file already reaches for `data.singular ?? data.label`, so
+  the component carries the right noun and these two strings take the wrong one. Trigger: fix
+  before any docs page embeds the `publish/refusal-banner` reproduction, which reproduces that
+  sentence at full size.
+
+- **Two published extend pages assert a commit-attribution fact a live commit disproves (docs
+  friction log, backfill mining, 2026-08-18).** `docs/extend/architecture.md` tells a reader the
+  committer is `cairn-cms[bot]` in three places, its prose at `:114`, the sequence arrow at `:102`,
+  and the diagram's `accDescr` at `:93`, so the claim reaches a screen-reader user too;
+  `docs/extend/add-cairn-to-a-sveltekit-app.md:19` repeats it. The Git Data API falls back to the
+  author when `committer` is omitted, so both fields read the editor, which two independent live
+  runs recorded (T3's `/admin` save, and every tool-made commit in T5's Task 8 e2e).
+  `src/lib/github/repo.ts:261` still tells the next contributor the opposite. This entry carries
+  two decisions, not one: the docs half is a correction owed before release one publishes these
+  pages, and the engine half (whether `cairn-cms[bot]` should actually be the committer, as
+  `CLAUDE.md` states as design) is a separate decision that needs its own ruling before the code
+  changes.
+
+- **The default deployable bundle is over the Workers Free script limit, and no gate can catch it
+  (docs friction log, backfill mining, 2026-08-18).** The showcase bundle measured about 3.17 MiB
+  gzipped against Cloudflare's 3 MiB free-tier script limit, and the scaffolded site inherits that
+  bundle directly through the emitted template. The only tripwire, `.github/workflows/e2e.yml:74`,
+  budgets 5 MiB, so it cannot fail until well past the point a free-plan deploy already has.
+  `src/lib/doctor/` has no size check. Meanwhile the admin track tells a reader the default path
+  runs on the free plan (`create-your-site.md:85`, `own-your-domain.md:25`), framing Workers Paid
+  as needed only for a second editor's sign-in email. The narrow ask is a free-tier-calibrated
+  warning, not a resolver rewrite. Outlives the Node CLI and touches release one.
+
+- **Two sites whose names slug alike silently adopt each other's Worker, databases, and bucket
+  (docs friction log, backfill mining, 2026-08-18).**
+  `packages/create-cairn-site/src/cloudflare/config.mjs:55` derives the worker name as a pure
+  function of the typed display name, with no site id and no account lookup, and `deploy.mjs` then
+  runs `wrangler deploy` and `d1 migrations apply` against id-less by-name bindings with no
+  existence or ownership probe. The consent copy does print the derived names, and frames reuse as
+  reassurance ("deploying again later updates it") rather than warning that an existing resource
+  belonging to a different site will be taken over. T3's review named this and proposed three
+  fixes; none landed. Account-safety, and it outlives the Node CLI.
+
+- **Every scaffolded site's own build prints an unexplained refusal into its owner's build log
+  (docs friction log, backfill mining, 2026-08-18).** The baked template's footer links `/admin`
+  on every page, the prerender crawler follows it, and `src/lib/sveltekit/guard.ts:114` answers
+  with `guard.rejected` (`reason: 'https'`) and a branded 400. So a new owner's first build output
+  carries a security-shaped refusal and a `400 /admin (linked from /)` that no doc explains and
+  nothing suppresses.
+
 **The pre-beta sequence (Geoff, 2026-07-02; the order is the plan, executed continuously with
 the named human gates only):**
 
@@ -668,6 +792,38 @@ the named human gates only):**
   review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
+
+- **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
+  primitives a site composes directly, and the first is the one an extender meets first. (1)
+  `OfficeList` hardcodes `<h1>` for what is a section heading (`OfficeList.svelte:46`), so it cannot
+  be composed under a page title without emitting a second `<h1>`; no engine screen mounts it, so the
+  published snippet was the only place the collision appeared, and that snippet now uses `OfficeList`
+  alone. `EmptyState`'s `headingLevel` prop (additive, original default unchanged) is the established
+  shape for fixing this properly. (2) `AdminTable` wraps its table in `overflow-x: auto` with no
+  `tabindex="0"`, no role, and no accessible name, and forces `white-space: nowrap` on every cell, so
+  horizontal overflow at narrow widths is guaranteed and a keyboard-only user cannot scroll to reach
+  it (axe-core `scrollable-region-focusable`). Nesting it inside `OfficeList`'s own `overflow-x-auto`
+  stacks two such regions. (3) `StatusChip`'s own prop doc says `'bounded'`'s hairline inherits its
+  color from the chip's ancestor and can drop under the 3:1 border-contrast floor inside a muted-text
+  ancestor, telling the reader to verify each new call site; the documented example ships a new call
+  site (a chip inside a table cell) with no measurement recorded.
+
+- **A marker anchor may bind to a Tailwind class, and the gate only checks that it resolves.** Three
+  of `tags/screen`'s five frozen callout anchors select on styling classes
+  (`div.overflow-hidden.card-shell.card-shadow`, `div.rounded-box.border-dashed`,
+  `button.btn-primary[type="submit"]`), and the first is unique only because one of two cards built
+  from the same shared class constant happens to carry `overflow-hidden` as well. The universal
+  contract asserts the anchor resolves and nothing more, so a styling refactor that moves a class can
+  silently repoint a published numbered callout at the wrong element with every gate green. The same
+  story already shows the durable form twice, an id and an `aria-label`. Give the three a stable hook
+  and treat a class-shaped anchor as a review smell across the seam.
+
+- **The editor preview frame declares no document language** (WCAG 3.1.1, Level A).
+  `buildPreviewDoc` emits `<html data-cairn-preview>` with no `lang`, so a screen-reader user proofing
+  in Preview hears the entry read in the synthesizer's default voice. Every cairn site's live preview
+  inherits it, and the seam now publishes it through `editor/preview-tab`. The narrow fix is a
+  literal; the right one threads the site's language through `ResolvedPreview` so a non-English site
+  is correct too.
 
 - **The `checkOrigin` migration pass, before P (moved up from Later, Geoff 2026-08-13).** The
   deprecation warning now prints six-plus times in every first-time owner's build (observed live in
@@ -1550,7 +1706,67 @@ the named human gates only):**
   strangers running it unsupervised against their own GitHub and Cloudflare accounts, which is
   exactly the threat model these five items assume.
 
+- **The shell decides which chrome to render by parsing a pathname string, and is silently wrong
+  off the shape it expects (docs friction log, live-reproduction seam harvest, 2026-08-18).**
+  `isDeskRoute` wants exactly three segments with a declared concept in the second. Off that path
+  it renders office chrome instead: the sidebar breakpoint moves, the narrow band compaction stops
+  applying, and the theme toggle stops folding away. Nothing warns. The seam had to freeze a
+  fixture pathname to keep three stories from quietly picturing the wrong layout, and a site
+  adding a screen at a path of its own choosing gets whatever the parse happens to yield. A custom
+  screen has no way to state which chrome it wants. It bites the first extender who mounts a
+  custom screen through the documented `CairnAdminShell` seam at a path `isDeskRoute` does not
+  expect.
+
+- **Two components seize the page in ways an embedding host cannot undo (docs friction log,
+  live-reproduction seam harvest, 2026-08-18).** `TidyReview` calls `showModal()` at mount, which
+  pulls the host page's focus into the reproduction before the route's own `inert` step can run.
+  Separately, the command palette binds its shortcut through `svelte:window`, and `inert` does not
+  remove a window listener, so an inert reproduction still answers Ctrl+K. Both are fine for a
+  component that owns its page and hostile to one that does not. The engine question is whether a
+  host can ask a component not to grab focus or global keys.
+
+- **`cairn-doctor` has no check for the one failure mode the Builds chapter was built around
+  (docs friction log, backfill mining, 2026-08-18).** The tool's own README documents that
+  revoking or rolling the build token breaks push-to-deploy silently, and says plainly that this
+  is not hypothetical because a production cairn site was found in exactly that state (STATUS
+  hand step tracked 907-life's deploys as broken since 2026-07-14). None of the doctor's
+  twenty-one checks reads Builds or build-token health, although the analogous email silent
+  failure already got `email.sender-onboarded`. A scheduled routine is the tripwire that would
+  actually catch this in production, not a dashboard an admin has to remember to open; the doctor
+  check is still worth adding so a local run can also surface it.
+
+- **The bootstrap sign-in hand-copies the engine's token contract, and its test is a closed loop
+  (docs friction log, backfill mining, 2026-08-18).**
+  `packages/create-cairn-site/src/cloudflare/bootstrap.mjs:19` redeclares `TOKEN_TTL_MS` as a
+  literal and `:95` re-implements the token hash, each pointing at `src/lib/auth/crypto.ts` in a
+  prose comment. The round-trip test hashes the CLI's token with the CLI's algorithm and compares
+  it to the CLI's own SQL, so it stays green if the engine changes either. The fix is a
+  cross-package contract test, run from the CLI's own suite against the engine's real
+  `src/lib/auth/crypto.ts`, so a drift between the two fails loudly instead of passing a closed
+  loop.
+
+- **A revert refusal blames the editor's own entry for someone else's publish, and nothing counts
+  how often it happens (docs friction log, backfill mining, 2026-08-18).** The staleness
+  comparand's breadth is ratified spec and stays closed; this entry is only the two things it did
+  not settle. `CairnHistory.svelte`'s refusal reads "The history changed since this page loaded.
+  Reload and try again.", written as though the editor's own entry moved, when on this design the
+  ordinary cause is an unrelated entry being published; the copy should name that. And the
+  deferral's condition, a future refinement if editors hit it, has no detector: `history_stale` is
+  not in the log event vocabulary (see `docs/reference/log-events.md`), so the trigger can only
+  ever arrive as a verbal report today.
+
 ## Later
+
+- **Three pieces of engine hygiene the reproduction seam surfaced, none urgent.** `CairnAdminShell`
+  writes `<svelte:head><title>` and injects a `body { margin: 0 }` style into the host document, which
+  is harmless while every reproduction is iframed and would let the last-mounted story overwrite a
+  docs page's own title if one were ever mounted inline; the reference page should say `ReproContext`
+  belongs in its own document, or the shell should guard it. The `editor/toolbar` story's
+  `createRawSnippet` transcription wraps its buttons in a `<span style="display:contents">` the real
+  toolbar does not have, which is a structural divergence in a file whose whole purpose is fidelity
+  and will trip a strict `style-src` CSP on a docs origin. And the story-mount harness pins only the
+  first width a manifest entry declares, so a two-width row is proven at one of its two faces by the
+  universal contract; the second face is covered today only by a bespoke test.
 
 - **Motion in the docs visual layer, ruled out 2026-08-15 with a named revisit trigger.** The
   visual-layer sitting (`docs/internal/record/2026-08-15-docs-visual-layer-rulings.md`, ruling 5)
@@ -1872,6 +2088,18 @@ the named human gates only):**
   accumulate entries against a paginated newest-first list, so any future list-click assumption
   re-inherits the fragility. A per-spec content reset, or a seed post dated in the future so it
   stays on page one, removes the whole class.
+- **State a host can only reach by calling an instance method is state a host cannot pose (docs
+  friction log, live-reproduction seam harvest, 2026-08-18).** `MediaInsertPopover` mounts headless
+  and opens through an instance export, with no prop that drives the open state, so a declarative
+  host has to synthesize a click instead of describing what it wants. `spellcheckOverride`'s double
+  duty (one prop meaning both "start it off" and "the site owns this now") was raised alongside
+  this and was decided already: accepted as shipped, with the resulting drift, if any, tracked in
+  a reproduction's own caption rather than in a prop redesign.
+- **No live run has ever taken an externally registered domain through zone creation (docs
+  friction log, backfill mining, 2026-08-18).** `zone.mjs:30` still records that no such domain
+  was observed going through `POST /zones`, so the branches that path reaches are unproven. Worth
+  a real trigger (the first live run against an externally registered domain) rather than a
+  standing note.
 
 ## Considering
 

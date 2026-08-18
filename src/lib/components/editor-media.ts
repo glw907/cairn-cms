@@ -23,6 +23,7 @@ import {
 import { RangeSetBuilder, type Extension, type Range } from '@codemirror/state';
 import { parseMediaToken } from '../media/reference.js';
 import { publicPath } from '../media/naming.js';
+import { DEFAULT_MEDIA_BASE } from './media-base-context.js';
 import { fenceScan, figureRoleAtLine } from './markdown-directives.js';
 // The decoration reads MediaLibrary/MediaLibraryEntry (the shared node-safe projection) for the
 // thumbnail path, the display name, and the alt-empty test.
@@ -56,7 +57,10 @@ interface MediaImageMatch {
 // marker (a glyph plus a label, never hue alone) when the alt is empty. A library miss renders a
 // neutral fallback chip named from the token slug. The widget never throws on a missing entry.
 class MediaChipWidget extends WidgetType {
-  constructor(readonly match: MediaImageMatch) {
+  constructor(
+    readonly match: MediaImageMatch,
+    readonly publicBase: string,
+  ) {
     super();
   }
 
@@ -68,6 +72,7 @@ class MediaChipWidget extends WidgetType {
     // identity (its slug/ext/hash drive the thumbnail src and the name). Comparing those keeps the
     // widget stable across a rebuild that did not change the chip.
     return (
+      this.publicBase === other.publicBase &&
       a.token === b.token &&
       a.alt === b.alt &&
       a.figureRole === b.figureRole &&
@@ -86,7 +91,7 @@ class MediaChipWidget extends WidgetType {
     if (entry) {
       const img = document.createElement('img');
       img.className = 'cm-cairn-media-thumb';
-      img.src = publicPath(entry.slug, entry.hash, entry.ext, 'slug');
+      img.src = publicPath(entry.slug, entry.hash, entry.ext, 'slug', this.publicBase);
       img.alt = '';
       img.setAttribute('aria-hidden', 'true');
       chip.appendChild(img);
@@ -204,10 +209,18 @@ function visibleMatches(view: EditorView, library: MediaLibrary): MediaImageMatc
  * Replace decorations for each visible media image's reference token: the chip widget over the URL
  *  token, the alt left untouched. The same spans seed the atomic-range set.
  */
-function buildMediaDecorations(view: EditorView, library: MediaLibrary): DecorationSet {
+function buildMediaDecorations(
+  view: EditorView,
+  library: MediaLibrary,
+  publicBase: string,
+): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();
   for (const match of visibleMatches(view, library)) {
-    builder.add(match.from, match.to, Decoration.replace({ widget: new MediaChipWidget(match) }));
+    builder.add(
+      match.from,
+      match.to,
+      Decoration.replace({ widget: new MediaChipWidget(match, publicBase) }),
+    );
   }
   return builder.finish();
 }
@@ -232,21 +245,29 @@ function buildAtomicRanges(view: EditorView, library: MediaLibrary): DecorationS
  * `mediaLibrary` projection EditData carries; MarkdownEditor holds it in a compartment and rebuilds
  * this extension when the library changes, so a just-uploaded image decorates once it is in the
  * library. An empty library is valid: nothing decorates.
+ *
+ * This module is a CodeMirror extension, not a component, so it cannot read the media base from
+ * Svelte context: MarkdownEditor reads that context and hands the resolved base in here. Omitted,
+ * the base is the same `/media` default `publicPath` carries, so an editor mounted outside any
+ * provider decorates exactly as it did before the base became injectable.
  */
-export function cairnMediaDecorations(library: MediaLibrary): Extension {
+export function cairnMediaDecorations(
+  library: MediaLibrary,
+  publicBase = DEFAULT_MEDIA_BASE,
+): Extension {
   const plugin = ViewPlugin.fromClass(
     class {
       decorations: DecorationSet;
       atomic: DecorationSet;
       constructor(view: EditorView) {
-        this.decorations = buildMediaDecorations(view, library);
+        this.decorations = buildMediaDecorations(view, library, publicBase);
         this.atomic = buildAtomicRanges(view, library);
       }
       update(update: ViewUpdate) {
         // A doc edit changes the tokens; a viewport change brings new lines into view. A caret move
         // alone changes neither, so it is not a rebuild trigger here.
         if (update.docChanged || update.viewportChanged) {
-          this.decorations = buildMediaDecorations(update.view, library);
+          this.decorations = buildMediaDecorations(update.view, library, publicBase);
           this.atomic = buildAtomicRanges(update.view, library);
         }
       }

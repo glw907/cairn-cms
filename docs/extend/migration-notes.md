@@ -11,8 +11,11 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
-Nothing to do. The window since `0.95.0-rc.1` carries documentation and a new repository gate, and
-neither reaches a consumer's build. See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+Nothing to do. The window since `0.95.0-rc.1` carries the reproduction seam and its two mounting
+overrides (`CairnAdminShell.themeOverride`, `EditPage.spellcheckOverride`), a CodeMirror theme
+rendering fix, a new repository gate, and documentation. Every new prop is optional and off by
+default, and none of it reaches a consumer's build without a deliberate opt-in. See
+[`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
 
 ## 0.95.0-rc.1
 

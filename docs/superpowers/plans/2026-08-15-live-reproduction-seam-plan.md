@@ -219,6 +219,65 @@ raised, not resolved silently.
 - [ ] **Step 3:** `check:surface` snapshot asserts both subpaths appear in
   `docs/internal/api-surface.md`. Run the engine gate. Commit.
 
+### Task A4b: the amendment (added at execution, 2026-08-17)
+
+**Why this task exists.** After A4 landed, an eleven-agent read-only sweep verified the A1 audit's
+25 rows against the real components. The audit had settled which component each story mounts and
+how to reach its state, correctly, and had never asked whether the render would be wide enough to
+show the subject. Three stories failed that question and two engine breakpoints were the reason,
+both since verified in the main loop against source. Five further mechanism gaps came out of the
+same sweep. Geoff ruled the fix in: `wide` joins the pinned widths (the spec is amended, cairn-pub
+`4d9e492`), and the whole set lands here as one amendment task rather than being spread across the
+story tasks or deferred to Pass 2. The full ranked findings are the sweep's own record; this task
+is the fold.
+
+**Split into two dispatches** (A4b-1 code, A4b-2 fixtures and records) because the deliverable count
+crossed four. This is the pass's FIRST task split; a second is the prompt to propose splitting the
+pass itself.
+
+**Files:**
+- Modify: `src/lib/reproductions/manifest.ts` (`ReproHeights` gains `wide`, four rows re-declare)
+- Modify: `src/lib/reproductions/index.ts` (`ReproStory` gains `settle`)
+- Modify: `src/lib/components/EditPage.svelte` (fix 3), `src/lib/components/MarkdownEditor.svelte`
+  (fix 4)
+- Modify: `src/lib/reproductions/fixtures.ts` (the Tidy fixture, the frozen admin pathname)
+- Modify: `docs/internal/record/repro-story-audit.md` (the corrections and the two new fixes)
+- Test: `src/tests/unit/reproductions-manifest.test.ts`, `src/tests/component/`
+
+**Interfaces:**
+- Produces: `ReproHeights` carrying `wide`, so a page may pin 1280 and the schema still refuses a
+  width with no declared height. `ReproStory.settle?: (root: HTMLElement) => Promise<void>`, run
+  after mount and before `pose`, for the four rows whose contracted surface exists only after
+  hydration. Fix 3 and fix 4 join the audit's fix list with the same opt-in-and-absent-by-default
+  bar A3 held: no real admin mount changes behavior.
+
+- [ ] **A4b-1 Step 1:** `wide` through the manifest and its test. `editor/sidebar-list` and
+  `nav/worked-navlayout` declare `wide` alone; `editor/entry-screen` and `editor/preview-tab`
+  declare `desktop` alone. A row declaring only the widths its page may pin is the mechanism that
+  refuses to picture a screen at a size that cannot show it.
+- [ ] **A4b-1 Step 2:** Fix 3, the `EditPage` spellcheck lever, so a reproduction does not spawn a
+  real Worker and fetch a wasm binary and a dictionary per embed. Fix 4, CodeMirror's `isDark`,
+  which is read once in `onMount` and baked into three `EditorView.theme` calls, so A3's
+  prop-update-rather-than-re-mount promise is unsafe for every editor story until it reconfigures.
+- [ ] **A4b-1 Step 3:** `ReproStory.settle`, wired into the story-mount test's universal loop. Plus
+  the theme root A4 left to the host: `ReproContext` renders bare stories with no `[data-theme]`
+  ancestor of its own, and every admin token is scoped under one, so the eight bare stories that do
+  not own their theme root load the stylesheet and take none of it. A4's own contract was that a
+  bare story "renders styled wherever they mount", which today holds only inside cairn-pub's
+  `[data-repro-root]`. The wrapper renders its own bare `data-theme` element from the same `theme`
+  prop, per the admin design system's never-on-a-styled-element rule. Engine gate. Commit.
+- [ ] **A4b-2 Step 1:** The Tidy fixture composed so one change lands outside the four objective
+  kinds, which is what makes the contracted **Review this** state appear. The fixture admin
+  pathname frozen at `/admin/<conceptId>/<id>`, since the shell reads exactly three segments to
+  decide desk versus office chrome and a wrong path silently changes the sidebar breakpoint.
+- [ ] **A4b-2 Step 2:** The audit corrections: the `editor/figure-dialog` justification names a
+  string that component never renders, `editor/toolbar`'s "four groups" is a count the component
+  contradicts, `media/insert-panel`'s fix-1 attribution names the wrong module and its prop bag
+  wants a Note for A2, and four citations point at `interface Props {` rather than the symbol. The
+  export-question section is retitled to what it actually establishes, since the same pass does add
+  a prop to a publicly exported component.
+- [ ] **A4b-2 Step 3:** Engine gate. Commit.
+
 ### Task A5a: the editor stories (8)
 
 **Files:**
@@ -332,9 +391,16 @@ raised, not resolved silently.
 - Produces: `validateReproFence(body: string, manifest: ReproManifestEntry[]):
   { issues: string[] }` on the `/reproductions/manifest` subpath, one implementation for
   both gates and B2. Checks, per the spec's gate 1: YAML parses (error names the problem),
-  required keys present, no unknown keys, `width` absent or `narrow`/`desktop`, alt names
-  the kind and is ≤ 150 characters, the story id resolves, the fence's width has a
-  declared height.
+  required keys present, no unknown keys, alt names the kind and is ≤ 150 characters, the
+  story id resolves, and `width` is absent or names a width the story's manifest entry
+  declares a height for.
+  **Amended 2026-08-18, at the Pass 1b premise check.** This clause used to enumerate the
+  pinned widths as `narrow`/`desktop`, written before A4b ratified `wide` (1280) as a third.
+  Built literally it would have refused `editor/sidebar-list` and `nav/worked-navlayout`,
+  which declare `wide` as their only height, leaving both embeddable at no width at all: the
+  precise gap A4b existed to close. The enumeration is deleted rather than extended, since
+  `ReproHeights` is already the schema (`manifest.ts`: a width with no declared height is a
+  width the fence schema refuses) and a list duplicated beside it goes stale a second time.
 - Produces: `check-visuals.mjs` additionally scans docs pages for `repro` fences, runs the
   validator, reads captions from inside the body for `repro` (after the fence for
   `mermaid`), and for a fence whose story has `markerKeys` verifies the page carries a
@@ -374,7 +440,15 @@ raised, not resolved silently.
   `ReproManifestEntry` shapes, `getStory`, `validateReproFence`, `fixtureMediaBase`, the
   fence schema table reproduced from the spec. `npm run check:reference` and
   `npm run check:reference:signatures` green with the two CONFIG rows in place.
-- [ ] **Step 2:** The register edit, the ritual line, and the changelog entry. Vale clean.
+- [ ] **Step 2:** The register edit, the ritual line, and the changelog entry. Vale clean. **Three
+  items the changelog must carry beyond the new subpaths**, all from A4b-1 and all recorded in the
+  audit: `spellcheckOverride` and `themeOverride` are new props on exported components, and fix 4 is
+  a real behavior change for existing admin mounts, since an editor whose theme root flips after
+  mount now follows it where it used to hold its first-mount polarity. That last one needs an entry
+  even though no consumer action follows, per the changelog convention, so an upgrader who notices
+  the editor chrome changing has a reference. **Also settle `docs/reference/components.md`**, which
+  understates `CairnAdminShell` and now `EditPage` too; the audit's "For A8" section states the
+  decision and the one behavior that belongs in the sentence if the props are advertised.
 - [ ] **Step 3:** Run the engine gate. Fold `cairn-register-editor` findings on the two
   repo prose files. Commit.
 
@@ -568,3 +642,208 @@ raised, not resolved silently.
 - If any story task splits again at execution, that is the pass-sizing signal: count the
   splits and propose trimming scope before adding a third dispatch, per the workstation
   rule.
+
+---
+
+## Pass 1 post-mortem (2026-08-17): the pass was SPLIT, and this is its first half
+
+**Pass 1 was cut short deliberately, at Geoff's call, after A5a.** It ran long, and he raised the
+size question three times before the orchestrator proposed anything, which is the failure mode the
+workstation pass-sizing rule names by name. The cut point is the last self-contained boundary: the
+engine's reproduction substrate plus one complete, proven story group. **Pass 1b carries A5b, A6a,
+A6b, A7, A8, and the close**, including the merge.
+
+### What shipped
+
+A1 through A5a plus an unplanned A4b, seven commits on `live-repro-seam-pass1`:
+
+- **A1**, the node-safe manifest and the 25-row story audit. The manifest imports nothing, held to
+  that by a source-graph walk and a plain-`node` dist probe.
+- **A2**, the fixture set and five real PNGs. It writes no URL of its own: each image's bytes sit on
+  disk under the exact name `publicPath` composes from `fixtureMediaBase`.
+- **A3**, the injectability fixes. A media-base context key in the CSRF key's shape, and
+  `CairnAdminShell.themeOverride` in front of a deliberately untracked theme seed.
+- **A4**, the harness. `ReproStory`, `getStory`, and `ReproContext` as the one wrapper both the
+  engine's test and cairn-pub's route mount through.
+- **A4b**, unplanned, folding a verification sweep (below).
+- **A5a**, the eight editor stories, the mount-sizing pattern, and `settle` in practice.
+
+Ten of 25 stories are registered. The suite names the other fifteen explicitly in
+`PENDING_STORY_IDS`, so a later task that registers a group without shrinking that list fails on an
+id that resolves while still marked pending.
+
+### The pass's own lesson: conformance cannot find a wrong premise
+
+The A1 audit was careful and correct about the question it asked, which was *which component does a
+story mount, and how is its state reached*. Every row held under verification. **What no row asked
+was whether the render would be wide enough to show the subject**, and three stories failed that,
+because the shell's sidebar is a drawer until `lg` and the Write/Preview tablist is hidden below
+`sm`. A conformance check against the audit would have passed forever. It took an eleven-agent
+sweep asking a different question, and a lens explicitly told to ask "is this document trustworthy",
+to surface it. Geoff ratified `wide` (1280) as a third pinned width in response; the spec is amended
+at cairn-pub `4d9e492` and `2bdca80`.
+
+The sweep is banked at `docs/internal/record/2026-08-17-repro-audit-verification-sweep.md`. Its
+`notFullyChecked` section earned its keep immediately: it flagged one thing it could not check
+because an agent was writing in that directory, and checking it once free found a ninth defect
+(bare stories mounting with no `[data-theme]` ancestor, so eight of them imported the admin
+stylesheet and took none of it).
+
+### The review gate found more than usual, and most of it was real
+
+Two fresh-context reviewers produced two WCAG 4.1.2 failures, two theme defects wrong in the
+engine's own render, and two fidelity drifts in a transcribed toolbar. All eight folded in
+`d11863fa`. The fold agent then found a **third** dead-control face neither reviewer named, the
+theme toggle mirrored into `EditPage`'s below-`sm` overflow. Worth carrying: **a review that only
+reads the diff misses a control reached through a holder the diff does not touch.**
+
+### Verification
+
+Every PR-gating workflow re-derived with `grep -l pull_request` rather than recalled, then run by
+name. All green except `check:consumers`, which fails in any feature worktree on the known
+`examples/showcase/node_modules` symlink collision and says so itself. Full suite 423 files, 5468
+tests, exit 0; svelte-check 0/0 across 1626 files.
+
+### Decisions locked
+
+1. **`wide` (1280) is a third pinned width.** A story declares only the widths its page can render
+   at, so the fence schema refuses to picture a screen at a size that cannot show it.
+2. **`ReproContext` is the single provider** of the media base and CSRF context, so the engine's
+   test and cairn-pub's route cannot disagree. Pass 2's B3 inherits this rather than repeating it.
+3. **Fix 4 (CodeMirror theme polarity) is the one exception to the opt-in bar**, and it is a repair:
+   the real admin's topbar toggle has always left the editor's own chrome at first-mount polarity.
+4. **Pass 1 does not merge.** Two new public subpaths with no reference page would violate the
+   repo's own rule; A8 writes it and Pass 1b merges.
+
+### Open, and owed by Pass 1b
+
+- **`docs/reference/reproductions.md` and the two `reference-coverage.mjs` CONFIG rows.** Without
+  the rows the reference gates pass vacuously over the new subpaths.
+- **`docs/reference/components.md` understates `CairnAdminShell` and `EditPage`**, both of which
+  gained public props. No gate catches a new prop; the gates match exported names.
+- **A decision the fold created:** `spellcheckOverride` now hides the footer chip, so the three
+  `EditPage` reproductions picture three chips where a reader's editor shows four. Hiding is right
+  for a real admin route and wrong for a picture, because one prop is doing two jobs (start-off, and
+  the-site-owns-this). Either split it, or let the reproductions accept the drift and say so in
+  their captions. Nothing catches this today.
+- **Two Pass 2 constraints, both established here.** `TidyReview` calls `showModal()` at mount,
+  which pulls the parent page's focus into the iframe *before* the route's `inert` step can run, so
+  inert is not sufficient on its own. And `inert` does not remove `svelte:window` key listeners, so
+  a focused reproduction would still answer Ctrl+K with a command palette.
+- **`createRawSnippet` under prerender-then-hydrate is unproven.** The toolbar story builds its
+  Insert group from an HTML string; worth one explicit check for a hydration mismatch on a real
+  `/repro` page before it ships.
+
+---
+
+## Pass 1b post-mortem (2026-08-18): the seam's engine half is complete and merged
+
+Pass 1b carried A5b, A6a, A6b, A7, A8, and the close, and it finished them. Fifteen commits,
+`f554c2cb` through `ec70bdb6`, 33 files, +2430/-316.
+
+### What shipped
+
+- **A5b**, the four publish stories, plus two things the plan did not name. The shared `EditPage`
+  prop bag and wait helpers moved out of `editor.ts` into `stories/support.ts`, since
+  `publish/header-band` mounts the same component. And `ReproStory.shellPathname` became a general
+  `shellData` partial, because `publish/pending-list` needs a resolved pending set and a second
+  narrow knob beside the pathname would have drifted. `ReproContext` merges it once, non-reactively,
+  which sweep finding 9 makes load-bearing.
+- **A6a**, the seven media stories. **A6b**, the last four, which empties `PENDING_STORY_IDS` and
+  binds the full 25-story inventory. `toolkit/custom-screen` mounts a transcription of the worked
+  snippet in `docs/extend/add-a-custom-admin-screen.md`, and that snippet was checked against the
+  current toolkit exports and found undrifted, so the page's example is now backed by a mounted,
+  tested render.
+- **A7**, `validateReproFence` on the `/reproductions/manifest` subpath and the `check:visuals`
+  growth, with the gate proven red once against a scratch page and then clean.
+- **A8**, split into A8a (the reference page, its two `reference-coverage.mjs` CONFIG rows, the arm
+  index row, and the `components.md` corrections) and A8b (the register entry, the release-ritual
+  line, the changelog and per-version record, and the friction-log triage).
+
+### The pass ran wider than its plan, at Geoff's direction
+
+Three additions, all his: harvest engine DX findings as a standing pass dimension, backfill the
+same from the passes the friction log never received, and disclose rather than fix the
+scaffolder's Windows limitation. The last came with a ruling that now governs triage:
+`create-cairn-site` is a prototype for the Go successor, so a deficiency found in it is disclosed
+and carried there rather than paid down twice. The Go spec gained a Platforms section requiring
+Linux, macOS, and Windows, and recording that the REST-first engine is what makes three platforms
+cheap, so a later drift back toward shelling out to an installed CLI is a design decision rather
+than an implementation detail.
+
+### Three sweeps ran, and each found something conformance could not
+
+- **A premise check over A6a, A6b, A7, and A8** before dispatching them: four readers, then one
+  skeptic per finding. Eight findings refuted, one confirmed. A7's rule text still enumerated the
+  pinned widths as `narrow`/`desktop`, written before A4b ratified `wide`, and `git log -L` proved
+  the amendment commits never touched that line. Built literally it would have refused the two rows
+  that declare `wide` as their only height, leaving both embeddable at no width at all: the exact
+  gap A4b existed to close. The fix deletes the enumeration rather than extending it, since
+  `ReproHeights` is already the schema.
+- **The DX harvest**, six findings, of which one is a verified editor-facing defect: the
+  delete-refusal banner puts the plural concept label in a singular sentence, in the visible alert
+  and the polite live region both, while the same file already reaches for `data.singular` elsewhere.
+- **The backfill**, twenty-three candidates from the unharvested 2026-08-04 to 08-16 window, eleven
+  surviving refutation. The pattern worth keeping: the highest-yield findings were **defects a pass
+  consciously noticed and deferred into a plan file's residuals**, where no tracking surface ever
+  collected them. Two were spot-checked by hand and held: four published assertions across two
+  extend pages state a commit attribution that live commits disprove, and the e2e bundle gate
+  budgets 5 MiB against a 3 MiB free-tier limit, so it cannot fail before a free-plan deploy already
+  has.
+
+### The review gate found nineteen, and the two blockers were both self-inflicted in a specific way
+
+Eight fixed here, seven filed to `ROADMAP.md` consolidated by theme, one dismissed with evidence
+(the narrow face the Svelte reviewer called unproven is covered by a bespoke test A5b added).
+
+The two blockers share a shape worth carrying. **The published snippet extenders copy emits two
+`<h1>`**, because `PageHeader` and `OfficeList` each render one and no engine screen mounts
+`OfficeList`, so the only place the two are composed is the page we tell people to copy. And **the
+Insert image control omits `aria-haspopup="dialog"`** while the surface it opens is
+`role="dialog" aria-modal="true"` and that component's own trigger carries the property. The
+reproduction transcribed the omission faithfully, which was right, then wrote a comment declaring it
+a deliberate convention, and a test pinned the absence as expected. **A fidelity artifact that
+transcribes a defect must say so, or it launders the defect into a standard.** The existing Edit
+block transcription does exactly that and is the model.
+
+The Svelte blocker is aimed at Pass 2: `ReproContext` is half-reactive to `story`, safe only if one
+instance mounts one story for its lifetime, and that rule lived in an engine code comment on the
+wrong side of the package boundary from the consumer who must obey it. cairn-pub mounts through
+`/repro/[id]`, where SvelteKit reuses the page component across a param change. It is now a thrown
+guard naming `{#key story.id}` as the fix, and a stated rule on the reference page.
+
+### The plan's own deferral was disproved
+
+Both reviewers independently showed that Pass 2's `/repro` route cannot contain what it mounts.
+`TidyReview` calls `showModal()` in its mount effect, which grabs focus before any route-level
+`inert` runs, and `CairnAdminShell` binds `<svelte:window onkeydown>`, which `inert` does not
+remove. Containment therefore belongs in `ReproContext`, which Pass 1's own Decision 2 already names
+as the single provider both consumers share. Filed as the first ROADMAP Now entry, owed before
+Pass 2 ships the route.
+
+### Verification
+
+The PR-gating workflow list was re-derived with `grep -l pull_request` rather than recalled: five
+workflows, 24 `check:*` targets plus `test:emit`, `test:reskin`, and the suite. All green except
+`check:consumers`, which fails in any feature worktree on the known `examples/showcase/node_modules`
+symlink collision and diagnoses itself in its own output. Full suite 424 files, 5599 tests, exit 0;
+svelte-check 0/0 across 1633 files. The four CI-only gates were run by name.
+
+### Decisions locked
+
+1. **`shellData` is the one seam for shaping a shell story's payload**, merged once and
+   non-reactively. Pass 2 inherits it rather than adding a second knob.
+2. **A fence's `width` is derived from the story's own `ReproHeights`, never an enumerated list**,
+   and `column` is refused by role, since the responsive embed is what omitting `width` means.
+3. **`create-cairn-site` is a prototype for the Go successor** (Geoff), so its deficiencies are
+   disclosed and carried there unless they outlive the Node CLI.
+4. **A transcription that reproduces a defect records it as a defect.**
+
+### Owed by Pass 2
+
+- The containment work above, before the `/repro` route ships.
+- The cairn-pub spec's gate-1 bullet still reads "`width` one of the two listed values" while its own
+  fence-body table lists three; the amendment updated the table and missed the bullet.
+- `check:visuals` now runs `npm run package` itself, which is a third redundant rebuild in
+  `test.yml`, where `check:package` and `check:surface` already package before it. Correctness is
+  unaffected; a later pass may want to dedupe that sequence.

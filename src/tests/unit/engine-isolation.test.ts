@@ -21,7 +21,11 @@ describe('engine isolation', () => {
   });
 
   it('imports only allowlisted stylesheets, so it injects no surprise global CSS', () => {
-    const allow = ['./cairn-admin.css', '@rodrigodagostino/svelte-sortable-list/styles.css'];
+    const allow = [
+      './cairn-admin.css',
+      '../components/cairn-admin.css',
+      '@rodrigodagostino/svelte-sortable-list/styles.css',
+    ];
     const cssImports = files
       .filter((f) => f.endsWith('.svelte') || f.endsWith('.ts'))
       .flatMap((f) => [...readFileSync(f, 'utf8').matchAll(/import\s+['"]([^'"]+\.css)['"]/g)].map((m) => m[1]));
@@ -36,18 +40,29 @@ describe('engine isolation', () => {
     expect(css).not.toMatch(/(^|\})\s*(:root|html|body|\*)\s*\{/);
   });
 
-  it('imports the admin stylesheet only from the admin root components, so it loads only on /admin', () => {
+  it('imports the admin stylesheet only from the admin and reproduction roots, so it loads only there', () => {
     // The compiled cairn-admin.css carries DaisyUI @keyframes and Tailwind @property rules that are
     // document-global by CSS spec. They cannot collide with a host's CSS because the sheet is
-    // code-split to the routes that import it, and only the admin roots do, so it never loads on a
-    // host page. Chrome isolation keeps host CSS off /admin from the other side. This pins that
-    // boundary; importing the sheet anywhere else would leak the globals onto host pages.
+    // code-split to the routes that import it, and only these roots do, so it never loads on a host
+    // page. Chrome isolation keeps host CSS off /admin from the other side. This pins that boundary;
+    // importing the sheet anywhere else would leak the globals onto host pages. ReproContext.svelte
+    // (src/lib/reproductions/) reaches the same file one directory up, so both relative specifiers
+    // are matched.
+    //
+    // The reproduction root is the one importer that is not an admin route: a consumer reaches it
+    // through @glw907/cairn-cms/reproductions and mounts it on an ordinary page, so the globals do
+    // load there. That is the point of the root rather than a hole in the boundary. A mounted story
+    // is a piece of the admin rendered outside it, and it needs the same sheet the admin does; the
+    // page that mounts one is asking for exactly that, the way a docs page asks for a live editor.
+    // The globals themselves are additive (named @keyframes and registered custom properties, no
+    // element or :root selectors, which the scoping assertion above holds), so what they reach on a
+    // host page is a name nothing else claims.
     const importers = files
       .filter((f) => f.endsWith('.svelte'))
-      .filter((f) => /import\s+['"]\.\/cairn-admin\.css['"]/.test(readFileSync(f, 'utf8')))
+      .filter((f) => /import\s+['"](?:\.\/|\.\.\/components\/)cairn-admin\.css['"]/.test(readFileSync(f, 'utf8')))
       .map((f) => f.slice(f.lastIndexOf('/') + 1))
       .sort();
-    expect(importers).toEqual(['CairnAdminShell.svelte', 'ConfirmPage.svelte', 'LoginPage.svelte']);
+    expect(importers).toEqual(['CairnAdminShell.svelte', 'ConfirmPage.svelte', 'LoginPage.svelte', 'ReproContext.svelte']);
   });
 
   it('defines a dark Warm Stone palette under the dark theme root', () => {

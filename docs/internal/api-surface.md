@@ -476,6 +476,23 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `isElement`: (node: ElementContent | undefined) => node is Element
 - `strAttr`: (ctx: ComponentContext, key: string) => string | undefined
 
+## `/reproductions`
+
+- `getStory`: (id: string) => ReproStory
+- `ReproContext`: Component<Props, {}, "">
+- `ReproStory`: { id: string; component: Component<Record<string, unknown>, {}, string>; host: "shell" | "bare"; shellData?: Partial<{ public: false; siteName: string; user: { displayName: string; email: string; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null>; attention: Record<string, { count: number; label: string }> }>; props: { [x: string]: unknown }; context?: Record<string | symbol, unknown>; settle?: ((root: HTMLElement) => Promise<void>); pose?: ((root: HTMLElement) => Promise<void>); markers?: { n: number; anchor: string; key: string }[] }
+- `stories`: ReproStory[]
+
+## `/reproductions/manifest`
+
+- `fixtureMediaBase`: "/repro-assets"
+- `fixtureMediaFiles`: string[]
+- `manifest`: ReproManifestEntry[]
+- `ReproFenceValidation`: { issues: string[] }
+- `ReproHeights`: { column?: number; wide?: number; desktop?: number; narrow?: number }
+- `ReproManifestEntry`: { id: string; heights: ReproHeights; markerKeys: string[]; pose: boolean; host: "shell" | "bare"; ownThemeRoot: boolean }
+- `validateReproFence`: (body: string, manifest: ReproManifestEntry[]) => ReproFenceValidation
+
 ## `/sveltekit`
 
 - `AccessMap`: { [x: string]: string[] }

@@ -101,9 +101,17 @@ persistent "?" carries Markdown help, design-arc D2).
      *  screen until it is ready, rather than showing a control whose every use fails.
      */
     previewMint?: boolean;
+    /**
+     * The spellcheck posture a mounting context owns, for a host that renders the editing surface
+     *  outside a real editing session (the reproductions seam mounts several on one page). Present,
+     *  it wins over the stored per-browser preference and the footer toggle, so `false` opens an
+     *  editor that never starts the spellcheck Worker or fetches its wasm and dictionary. Absent,
+     *  the author's own preference decides exactly as before.
+     */
+    spellcheckOverride?: boolean;
   }
 
-  let { data, registry, render, icons, form, previewMint = true }: Props = $props();
+  let { data, registry, render, icons, form, previewMint = true, spellcheckOverride }: Props = $props();
 
   /** One action row in an advisory notice: an `href` row renders a link, an `onAct` row a button. */
   type AdvisoryRow = { rowLabel?: string; rowCode?: boolean; label: string; href?: string; onAct?: () => void };
@@ -403,7 +411,16 @@ persistent "?" carries Markdown help, design-arc D2).
   const spellcheckStorageKey = 'cairn-editor-spellcheck';
   let focusMode = $state(false);
   let typewriter = $state(false);
-  let spellcheck = $state(true);
+  let ownSpellcheck = $state(true);
+  // What the editor actually runs with: a mounting context's override when it supplies one, this
+  // page's own preference otherwise. The stored read below and the footer toggle keep writing the
+  // author's own value, so removing the override restores exactly what the author chose.
+  const spellcheck = $derived(spellcheckOverride ?? ownSpellcheck);
+  // Whether this page offers the spellcheck flip at all. Under an override it does not: the toggle
+  // would announce an aria-pressed state it cannot change (WCAG 4.1.2) and would overwrite the
+  // author's stored preference on the way. Both faces gate on this, the card footer's toggle and
+  // the below-sm overflow pick, which is the only one a phone editor can reach.
+  const offersSpellcheckToggle = $derived(spellcheckOverride === undefined);
   // Zen: the manuscript alone on the recessed ground. The band, the document title, the toolbar
   // strip, and the footer go; the editing surface stays. It joins the editor-preference family on
   // the same pattern (a localStorage key, read once below, written by the setter), and composes
@@ -418,7 +435,7 @@ persistent "?" carries Markdown help, design-arc D2).
     zen = localStorage.getItem(zenStorageKey) === 'true';
     if (localStorage.getItem(surfaceStorageKey) === 'markup') surface = 'markup';
     // Spellcheck is on unless the author explicitly stored it off.
-    spellcheck = localStorage.getItem(spellcheckStorageKey) !== 'false';
+    ownSpellcheck = localStorage.getItem(spellcheckStorageKey) !== 'false';
   });
   function setFocusMode(on: boolean) {
     focusMode = on;
@@ -429,7 +446,7 @@ persistent "?" carries Markdown help, design-arc D2).
     localStorage.setItem(typewriterStorageKey, String(on));
   }
   function setSpellcheck(on: boolean) {
-    spellcheck = on;
+    ownSpellcheck = on;
     localStorage.setItem(spellcheckStorageKey, String(on));
   }
 
@@ -2112,6 +2129,7 @@ persistent "?" carries Markdown help, design-arc D2).
             type="button"
             class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11"
             disabled={insertDisabled}
+            aria-haspopup="dialog"
             aria-label="Insert image"
             title="Insert image"
             onclick={() => mediaPopover?.open('chooser')}
@@ -2181,7 +2199,9 @@ persistent "?" carries Markdown help, design-arc D2).
           {@render moreDivider()}
           {@render moreToggle('Focus mode', focusMode, () => { setFocusMode(!focusMode); closeMenu(); })}
           {@render moreToggle('Typewriter', typewriter, () => { setTypewriter(!typewriter); closeMenu(); })}
-          {@render moreToggle('Spellcheck', spellcheck, () => { setSpellcheck(!spellcheck); closeMenu(); })}
+          {#if offersSpellcheckToggle}
+            {@render moreToggle('Spellcheck', spellcheck, () => { setSpellcheck(!spellcheck); closeMenu(); })}
+          {/if}
           {@render moreToggle('Zen', zen, () => { setZen(!zen); closeMenu(); })}
           {@render moreDivider()}
           <li class="sm:hidden">
@@ -2364,7 +2384,9 @@ persistent "?" carries Markdown help, design-arc D2).
               Typewriter
             </button>
             <!-- Spellcheck: the markdown-aware lint underlines. Off reconfigures the lint compartment
-                 to empty and idles the Worker. Same check-and-tint grammar as the modes beside it. -->
+                 to empty and idles the Worker. Same check-and-tint grammar as the modes beside it.
+                 Absent under a mounting context's override, which owns the posture outright. -->
+            {#if offersSpellcheckToggle}
             <button
               type="button"
               class={ftrToggleClass(spellcheck)}
@@ -2374,6 +2396,7 @@ persistent "?" carries Markdown help, design-arc D2).
               {#if spellcheck}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Spellcheck
             </button>
+            {/if}
             <!-- Zen enters from the footer (and Ctrl+Shift+.); it reads as a peer writing-mode
                  toggle here, but once on it hides the whole footer, so the chip carries the way out. -->
             <button

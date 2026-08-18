@@ -26,7 +26,11 @@ export interface TopbarHolder {
    * Undefined outside a themed shell (a bare component-test harness) leaves the fold absent.
    */
   theme?: 'cairn-admin' | 'cairn-admin-dark';
-  /** Flips the mirrored `theme` above; undefined alongside it. */
+  /**
+   * Flips the mirrored `theme` above. Undefined outside a themed shell, and undefined under a
+   * `themeOverride`, where the mounting context owns the theme and the fold would otherwise offer a
+   * control that changes nothing.
+   */
   toggleTheme?: () => void;
 }
 

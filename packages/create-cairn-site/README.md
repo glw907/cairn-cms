@@ -13,6 +13,12 @@ The command asks for the site's name, description, brand color, and target direc
 a ready-to-run SvelteKit site. Node.js 22 or later is required, tracking the `@glw907/cairn-cms`
 engine's own floor.
 
+**macOS and Linux only.** Windows is not supported, including Git Bash and PowerShell. The
+Cloudflare chapter shells out to `npm` and `wrangler` in a way Windows rejects, so a run there
+fails partway through with an unclear error rather than refusing up front. Windows Subsystem for
+Linux works, since it is Linux. Windows support is planned for the tool that replaces this one,
+not for this one.
+
 Answer any prompt ahead of time with a flag, and the command skips it:
 
 | Flag | Effect |

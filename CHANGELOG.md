@@ -4,6 +4,36 @@
 
 ### Added
 
+- A reproduction seam, so a documentation page can show a real admin screen instead of describing
+  one. `@glw907/cairn-cms/reproductions` carries a story registry and the `ReproContext` wrapper
+  that mounts any of them with fixture data; `@glw907/cairn-cms/reproductions/manifest` is its
+  node-safe half, plain data a bare `node` process can read, which is what lets a documentation
+  build validate a reference to a story without loading Svelte. A story names the smallest
+  component containing what it shows, so framing comes from picking the component rather than from
+  cropping a picture, and nothing is captured, so a reproduction cannot fall behind the code it
+  reproduces. All twenty-five planned stories ship here. `validateReproFence`, exported from the
+  manifest subpath, checks a `repro` fence's raw YAML body against the installed manifest, so this
+  engine's own `check:visuals` gate and a consuming site's build-time fence validation run the same
+  rule set and cannot drift apart; `check:visuals` now scans every `repro` fence in the corpus
+  alongside its existing mermaid-diagram and image checks. The full surface, both subpaths and the
+  fence schema, is documented at `docs/reference/reproductions.md`. No page embeds a `repro` fence
+  yet: this engine exports the machinery, and a consuming docs build is where a fence resolves to a
+  rendered figure. Consumers must: nothing.
+
+- `CairnAdminShell` takes an optional `themeOverride`, and `EditPage` an optional
+  `spellcheckOverride`, so a context that mounts either outside a real admin route owns what it
+  renders. With `themeOverride` set the shell reads neither the admin theme cookie nor the OS
+  color-scheme preference, and it renders no theme toggle at all, in the top bar or in `EditPage`'s
+  own folded overflow control, rather than a control it can no longer honor;
+  `spellcheckOverride` starts the editor with spellcheck off and hides the same, which also stops
+  each mount constructing a spellcheck worker and fetching a dictionary. Absent, both behave exactly
+  as before. Consumers must: nothing.
+
+- Admin media surfaces resolve their delivery base from a Svelte context key rather than a
+  hardcoded `/media`, falling back to `/media` when nothing provides one. This is the mechanism a
+  later fix will use to close a real defect: a site with a non-default `assets.publicBase` has
+  broken admin thumbnails today. Consumers must: nothing.
+
 - The admin track quotes real recorded terminal output where it used to paraphrase it. A live
   `create-cairn-site` run against a scratch site on workers.dev, plus two `cairn-doctor` reports
   against the deployed result, are committed verbatim as fixtures under
@@ -32,6 +62,13 @@
   nothing.
 
 ### Fixed
+
+- The editor's own chrome no longer keeps the theme it was born with. CodeMirror bakes its dark flag
+  into a theme extension at construction, so toggling the admin theme with an editor open left its
+  autocomplete tooltip, panels, and selection layer at first-mount polarity: a light editor inside a
+  dark admin. The base theme now lives in a compartment that follows a later theme change. This is a
+  behavior change for existing sites, and it needs no action from anyone; it is recorded because an
+  upgrader who notices the editor finally matching the shell deserves a reference for why.
 
 - `docs/admin/is-it-working.md` told a reader that every failing check names a condition id and to
   find that id on the page. The doctor never prints one: its report names each check by title, as

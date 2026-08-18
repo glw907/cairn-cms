@@ -1,7 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import { scanDocument } from '../../../scripts/checks/check-visuals.mjs';
+import { validateReproFence } from '../../lib/reproductions/validate.js';
+import type { ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 
 const FILE = 'fixture.md';
+
+// A small fixture manifest, not the real 25-story one: one marked story (numbered callouts) and
+// one unmarked story, enough to exercise both the validator pass-through and the keyed-list check.
+const MANIFEST: ReproManifestEntry[] = [
+  {
+    id: 'media/library',
+    heights: { column: 720 },
+    markerKeys: ['count-header', 'search'],
+    pose: false,
+    host: 'shell',
+    ownThemeRoot: true,
+  },
+  {
+    id: 'auth/login',
+    heights: { column: 520 },
+    markerKeys: [],
+    pose: false,
+    host: 'bare',
+    ownThemeRoot: true,
+  },
+];
 
 describe('scanDocument: mermaid fences', () => {
   it('flags a fence missing accTitle and accDescr', () => {
@@ -137,6 +160,88 @@ describe('scanDocument: images', () => {
     const text = ['```md', '![](media:cat.deadbeef)', '```', ''].join('\n');
     const { violations, imageCount } = scanDocument(FILE, text);
     expect(imageCount).toBe(0);
+    expect(violations).toEqual([]);
+  });
+});
+
+describe('scanDocument: repro fences', () => {
+  it('flags a repro fence the validator rejects', () => {
+    const text = [
+      '```repro',
+      'story: nonexistent/story',
+      'alt: Reproduction of a screen that does not exist.',
+      'caption: This story is not registered.',
+      '```',
+      '',
+    ].join('\n');
+    const { violations, reproCount } = scanDocument(FILE, text, MANIFEST, validateReproFence);
+    expect(reproCount).toBe(1);
+    expect(violations).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'repro-invalid' })]),
+    );
+  });
+
+  it('passes a well-formed fence for an unmarked story with nothing following it', () => {
+    const text = [
+      '```repro',
+      'story: auth/login',
+      'alt: Reproduction of the sign-in page.',
+      'caption: The sign-in form asks for an email address.',
+      '```',
+      '',
+    ].join('\n');
+    const { violations, reproCount } = scanDocument(FILE, text, MANIFEST, validateReproFence);
+    expect(reproCount).toBe(1);
+    expect(violations).toEqual([]);
+  });
+
+  it('flags a marked story whose fence has no keyed list after it', () => {
+    const text = [
+      '```repro',
+      'story: media/library',
+      'alt: Reproduction of the media library in grid view.',
+      'caption: The library shows five images in a grid.',
+      '```',
+      '',
+      'Just prose, no keyed list.',
+      '',
+    ].join('\n');
+    const { violations } = scanDocument(FILE, text, MANIFEST, validateReproFence);
+    expect(violations).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'repro-marker-count' })]),
+    );
+  });
+
+  it('flags a marked story whose keyed list has the wrong entry count', () => {
+    const text = [
+      '```repro',
+      'story: media/library',
+      'alt: Reproduction of the media library in grid view.',
+      'caption: The library shows five images in a grid.',
+      '```',
+      '',
+      '1. The item count.',
+      '',
+    ].join('\n');
+    const { violations } = scanDocument(FILE, text, MANIFEST, validateReproFence);
+    expect(violations).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: 'repro-marker-count' })]),
+    );
+  });
+
+  it('passes a marked story whose keyed list matches the marker count', () => {
+    const text = [
+      '```repro',
+      'story: media/library',
+      'alt: Reproduction of the media library in grid view.',
+      'caption: The library shows five images in a grid.',
+      '```',
+      '',
+      '1. The item count.',
+      '2. The search field.',
+      '',
+    ].join('\n');
+    const { violations } = scanDocument(FILE, text, MANIFEST, validateReproFence);
     expect(violations).toEqual([]);
   });
 });

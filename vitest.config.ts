@@ -35,12 +35,13 @@ export default defineConfig({
             'src/tests/lab/**/*.test.ts',
             'packages/cairn-cms-dev/src/**/*.test.ts'
           ],
-          // Both specs spawn a child process (npm pack, a plain Node resolver probe) against the
+          // These specs spawn a child process (npm pack, a plain Node resolver probe) against the
           // built dist. Under the full run's concurrent IO that spawn starves and flakes, so they
           // run in their own single-fork project below; exclude them here so they do not run twice.
           exclude: [
             'src/tests/unit/delivery-data-dist-spawn.test.ts',
             'src/tests/unit/packaging-boundary.test.ts',
+            'src/tests/unit/reproductions-manifest-dist-spawn.test.ts',
           ],
           environment: 'node',
           // A few unit tests are CPU-bound (the admin CSS Tailwind+DaisyUI compile, the export
@@ -57,12 +58,13 @@ export default defineConfig({
           // These specs each spawn a child process (a cold-import of the built barrel, an npm pack,
           // a Node resolver probe) against the built dist, and that spawn flakes under the full
           // run's concurrent IO. They get their own non-concurrent project: a single fork, no file
-          // parallelism, so each spawn runs alone. Both specs are excluded from the `unit` project
-          // above so they run here exactly once.
+          // parallelism, so each spawn runs alone. Every spec here is excluded from the `unit`
+          // project above so they run exactly once.
           name: 'unit-dist-spawn',
           include: [
             'src/tests/unit/delivery-data-dist-spawn.test.ts',
             'src/tests/unit/packaging-boundary.test.ts',
+            'src/tests/unit/reproductions-manifest-dist-spawn.test.ts',
           ],
           environment: 'node',
           // Vitest 4 retired `poolOptions.forks.singleFork`; a single fork is now `maxWorkers: 1` on a

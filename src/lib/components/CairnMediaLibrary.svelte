@@ -56,6 +56,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   import { publicPath } from '../media/naming.js';
   import { mediaToken } from '../media/reference.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
+  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
   import {
     ingestFile,
     buildUploadRequest,
@@ -1387,8 +1388,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   function typeLabel(asset: MediaLibraryEntry): string {
     return asset.ext.toUpperCase();
   }
+
+  // The delivery base the tile thumbnails compose under. A mounting context (the reproductions
+  // module) hands one down through this key; the admin tree provides none, so a real mount resolves
+  // to the same /media default publicPath already carries.
+  const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
+
   function thumbSrc(asset: MediaLibraryEntry): string {
-    return publicPath(asset.slug, asset.hash, asset.ext, 'slug');
+    return publicPath(asset.slug, asset.hash, asset.ext, 'slug', mediaBase);
   }
 
   function densityButtonClass(on: boolean): string {

@@ -1,0 +1,188 @@
+<!--
+@component
+The one mounting wrapper both a docs route and the engine's own story-mount test render a
+reproduction story through, so the two consumers can never disagree about what a story needs to
+render correctly. It applies the story's own `context` entries, supplies the fixture media base
+and a CSRF-token getter every media surface reads (so no call site injects either itself), hosts
+`shell` stories inside `CairnAdminShell` with the fixture `navLayout`, and carries the admin
+stylesheet unconditionally. A bare story that resolves no theme root of its own also gets one here,
+from the same `theme` prop, plus the surface the theme root itself does not paint: between the
+three, such a story renders styled on the admin's own ground wherever it mounts, rather than only
+inside a host that happens to provide a root.
+-->
+<script lang="ts">
+  import { setContext, untrack } from 'svelte';
+  import CairnAdminShell from '../components/CairnAdminShell.svelte';
+  import { MEDIA_BASE_CONTEXT_KEY } from '../components/media-base-context.js';
+  import { CSRF_CONTEXT_KEY } from '../components/csrf-context.js';
+  import type { AdminShellData } from '../sveltekit/content-routes-core.js';
+  import { fixtureConcept, fixtureCsrf, fixtureEditor, fixtureNavLayout, fixtureSiteName } from './fixtures.js';
+  import { fixtureMediaBase, manifest } from './manifest.js';
+  import type { ReproStory } from './index.js';
+  import '../components/cairn-admin.css';
+
+  interface Props {
+    /** The story to mount. */
+    story: ReproStory;
+    /**
+     * The admin theme the mounting page owns. Resolved once below and then routed by host:
+     * `CairnAdminShell`'s `themeOverride` for a `shell` host (every `shell` entry is
+     * `ownThemeRoot: true` in `manifest.ts`, since the shell resolves its own theme root); merged
+     * into the story's own `data.theme` for a `bare` host whose manifest entry is also
+     * `ownThemeRoot: true` (the two auth pages, which render their wrapper from `data.theme`);
+     * carried by this component's own theme root for every other `bare` story, which owns none.
+     * Absent, every one of those falls back to the light admin theme, so a page carrying both kinds
+     * of story cannot render half of them light and half dark.
+     */
+    theme?: 'cairn-admin' | 'cairn-admin-dark';
+  }
+
+  let { story, theme }: Props = $props();
+
+  // Context application runs once, during initialization: setContext must be called while this
+  // component is being created, so the story's own value (read once here, since a story does not
+  // change identity across ReproContext's lifetime) is enough. untrack makes that one-time read
+  // explicit rather than leaving it a warned-about accident of reading a prop outside a tracking
+  // context.
+  const storyContext = untrack(() => story.context);
+  if (storyContext) {
+    for (const key of Reflect.ownKeys(storyContext)) {
+      setContext(key, storyContext[key]);
+    }
+  }
+
+  // Unconditional: every mounted story's media surfaces resolve their base through this context
+  // rather than the real admin's hardcoded default, and every mounted story's CSRF-reading form
+  // gets a getter. A shell-hosted story's own CairnAdminShell instance sets a more specific CSRF
+  // getter for its own descendants (from its fixture `data.csrf`), which simply shadows this one.
+  setContext(MEDIA_BASE_CONTEXT_KEY, fixtureMediaBase);
+  setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf);
+
+  // The id of the story this instance was created to mount, read once and never again: everything
+  // below (context, the manifest entry, the shell payload) is resolved for THIS story only. The
+  // guard effect below is what makes that an enforced invariant rather than an assumption a caller
+  // could quietly violate by swapping the `story` prop in place.
+  const mountedStoryId = untrack(() => story.id);
+
+  // One ReproContext instance mounts exactly one story for its lifetime; the init-time reads above
+  // and the untracked shell payload below are only correct under that invariant. A consumer that
+  // reuses one instance across a story change (SvelteKit reusing a `/repro/[id]` page component
+  // across a param change, for instance) would otherwise silently keep the previous story's
+  // context, manifest entry, and shell payload while swapping in the new story's component. Throw
+  // loudly instead of drifting: the fix at the call site is `{#key story.id}` around the mount.
+  $effect(() => {
+    if (story.id !== mountedStoryId) {
+      throw new Error(
+        `ReproContext mounted story "${mountedStoryId}", but its story prop changed to ` +
+          `"${story.id}". One ReproContext instance mounts exactly one story for its lifetime; ` +
+          'wrap the mount in {#key story.id} to remount instead of swapping the story in place.',
+      );
+    }
+  });
+
+  const manifestEntry = untrack(() => manifest.find((entry) => entry.id === story.id));
+
+  /**
+   * `props` with the resolved theme merged into its `data` field, for a `bare` story that owns its
+   * theme root. Returns `props` unchanged when there is no `data` object to merge it into.
+   */
+  function withTheme(props: Record<string, unknown>, resolvedTheme: 'cairn-admin' | 'cairn-admin-dark') {
+    const data = props.data;
+    if (typeof data !== 'object' || data === null) return props;
+    return { ...props, data: { ...data, theme: resolvedTheme } };
+  }
+
+  /**
+   * Drops every explicitly-`undefined`-valued key from a partial override before it is spread over
+   * a default object. A bare `{ ...overrides }` spread type-checks fine against a `Partial` and
+   * still overwrites the default with `undefined` for any key the caller mentions but leaves
+   * unset, which reads at the call site as "no opinion" and behaves as "erase this field".
+   */
+  function definedOnly<T extends object>(overrides: T | undefined): Partial<T> {
+    if (!overrides) return {};
+    const result: Partial<T> = {};
+    for (const key of Object.keys(overrides) as (keyof T)[]) {
+      const value = overrides[key];
+      if (value !== undefined) result[key] = value;
+    }
+    return result;
+  }
+
+  // One resolution for all three host branches below. Resolving here rather than per branch is what
+  // keeps a page that carries both kinds of story from rendering half of them light and half dark:
+  // an undefined override handed to CairnAdminShell falls through to the shell's own resolution,
+  // which reads the theme cookie on the docs origin and then prefers-color-scheme, while a bare
+  // story would have taken the light fallback. Passing the resolved value suppresses both reads,
+  // which is what this prop is for.
+  const resolvedTheme = $derived(theme ?? 'cairn-admin');
+
+  // Whether the mounted component resolves a theme root itself: the shell for a `shell` story, the
+  // two auth pages' own wrappers for a `bare` one. A story with no manifest entry (a test probe) is
+  // treated as owning none, which is the case that needs the wrapper below. A plain `const`, not
+  // `$derived`: `manifestEntry` is itself resolved once at init from the mounted story's id, so
+  // marking this reactive would misstate a value that never actually recomputes.
+  const ownThemeRoot = manifestEntry?.ownThemeRoot ?? false;
+
+  const bareProps = $derived(
+    story.host === 'bare' && ownThemeRoot ? withTheme(story.props, resolvedTheme) : story.props,
+  );
+
+  // The shell payload every `host: 'shell'` story mounts against: one signed-in editor, the
+  // worked navLayout example, the office default pathname, a resolved-null pending set, and
+  // `story.shellData`'s fields laid over that default. `data.theme` is the SSR seed
+  // CairnAdminShell reads untracked; `themeOverride` is what actually drives the render, so this
+  // field's own value never shows through.
+  //
+  // The merge is read once, non-reactively (the same `untrack` precedent this field used for the
+  // pathname before `shellData` existed), and the whole object below is computed exactly once
+  // during initialization rather than derived: CairnAdminShell runs its own `$effect` that reads
+  // `shell?.pathname` off this `data` prop and closes the posed publish dialog on any change to it
+  // (sweep finding 9). A `$derived` here would re-run that effect on every one of ReproContext's
+  // own reactive updates (a theme flip, for instance) and silently undo `publish/pending-list`'s
+  // pose the moment a capture read it.
+  const shellOverride = untrack(() => story.shellData);
+  const shellData: Extract<AdminShellData, { public: false }> = {
+    public: false,
+    siteName: fixtureSiteName,
+    user: {
+      displayName: fixtureEditor.displayName,
+      email: fixtureEditor.email,
+      role: fixtureEditor.role,
+      capability: fixtureEditor.capability,
+    },
+    concepts: [{ id: fixtureConcept.id, label: fixtureConcept.label }],
+    nav: fixtureNavLayout,
+    pathname: `/admin/${fixtureConcept.id}`,
+    theme: 'cairn-admin',
+    collapsedNav: null,
+    csrf: fixtureCsrf,
+    pendingEntries: Promise.resolve(null),
+    attention: {},
+    ...definedOnly(shellOverride),
+  };
+</script>
+
+{#if story.host === 'shell'}
+  <CairnAdminShell data={shellData} themeOverride={resolvedTheme}>
+    <story.component {...story.props} />
+  </CairnAdminShell>
+{:else if ownThemeRoot}
+  <story.component {...bareProps} />
+{:else}
+  <!-- The theme root a bare story does not carry itself. Every admin token is scoped under
+       [data-theme='cairn-admin'], so without this the stylesheet above loads and the story takes
+       none of it. Bare wrapper, no classes: the admin's scoped rules are descendant selectors, so a
+       class on the theme element itself would never match. It follows the prop rather than
+       resolving a theme of its own, since a host that flips [data-repro-root] outside this wrapper
+       feeds the new value straight back down through it.
+       The child paints the surface, which the theme root itself does not: cairn-admin.css declares
+       no background-color and no color on either theme root, so a bare story would otherwise render
+       the host document's ink over the host's background. Every other theme root in the engine
+       pairs the bare wrapper with the same surface child (CairnAdminShell, LoginPage, ConfirmPage);
+       this is that pairing for a story that brings no root of its own. -->
+  <div data-theme={resolvedTheme}>
+    <div class="bg-base-200 text-base-content">
+      <story.component {...bareProps} />
+    </div>
+  </div>
+{/if}

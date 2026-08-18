@@ -50,6 +50,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   import { uploadOutcome, type UploadEnvelope } from './media-upload-outcome.js';
   import { parseMediaToken } from '../media/reference.js';
   import { publicPath } from '../media/naming.js';
+  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
   import type { MediaEntry } from '../media/manifest.js';
 
   interface Props {
@@ -100,6 +101,12 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   // shell, where the empty token fails the guard's check, the intended fail-closed signal.
   const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
 
+  // The delivery base every thumbnail below composes under (the resting row, a picked asset, and a
+  // just-uploaded one). A mounting context (the reproductions module) hands one down through this
+  // key; the admin tree provides none, so a real mount resolves to the same /media default
+  // publicPath already carries.
+  const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
+
   // A stable id base for the dialog's labelled regions.
   const uid = $props.id();
   const titleId = `cairn-hero-title-${uid}`;
@@ -130,7 +137,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
   const committedEntry = $derived(hasHero ? entryForSrc(committedSrc) : null);
   const committedThumb = $derived(
     committedEntry
-      ? publicPath(committedEntry.slug, committedEntry.hash, committedEntry.ext, 'slug')
+      ? publicPath(committedEntry.slug, committedEntry.hash, committedEntry.ext, 'slug', mediaBase)
       : '',
   );
   const committedName = $derived(
@@ -234,7 +241,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
    *  and the manifest alt prefilled into describe mode when non-empty. */
   function onPick(sel: MediaSelection) {
     workRef = sel.ref;
-    workThumb = publicPath(sel.entry.slug, sel.entry.hash, sel.entry.ext, 'slug');
+    workThumb = publicPath(sel.entry.slug, sel.entry.hash, sel.entry.ext, 'slug', mediaBase);
     workCaption = '';
     if (sel.alt.trim() !== '') {
       workAltMode = 'describe';
@@ -344,7 +351,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     onuploaded(outcome.record);
     const r = outcome.record;
     workRef = outcome.reference;
-    workThumb = publicPath(r.slug, r.hash, r.ext, 'slug');
+    workThumb = publicPath(r.slug, r.hash, r.ext, 'slug', mediaBase);
     workAltMode = null;
     workAltText = '';
     workCaption = '';

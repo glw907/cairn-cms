@@ -8,13 +8,14 @@ selection transforms through the registerFormat seam; the design-accurate previe
 through the adapter's render. Swapping the editor stays a one-file change.
 -->
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  import { onMount, onDestroy, getContext } from 'svelte';
   import { applyMarkdownFormat, figureAtImage, insertImage as insertImageFormat, insertInlineLink, type FigureAtImage, type FormatKind, type FormatResult } from './markdown-format.js';
   import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
   import { firstImageFile, guardDropTarget } from './client-ingest.js';
   import { htmlToMarkdown } from './paste-html-to-markdown.js';
   import type { MediaLibrary } from '../media/library-entry.js';
   import type { ComponentRegistry } from '../render/registry.js';
+  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
 
   /** The directive container at the caret: the opener's name, the block's markdown, and the
    *  document character offsets of its inclusive line range. */
@@ -185,6 +186,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
     foldOnMount = false,
     registry,
   }: Props = $props();
+
+  // The delivery base the media chips compose their thumbnails under. editor-media.ts is a
+  // CodeMirror extension and cannot read Svelte context itself, so the base is read here at init and
+  // handed to it. A mounting context (the reproductions module) hands one down through this key; the
+  // admin tree provides none, so a real mount resolves to the /media default.
+  const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
 
   let host = $state<HTMLDivElement | null>(null);
   let mounted = $state(false);
@@ -755,7 +762,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // The media: source decoration, in its own compartment so a mediaLibrary prop change
           // reconfigures it without rebuilding the editor. The chip and the atomic ranges read the
           // library; an empty library decorates nothing.
-          mediaCompartment.of(mediaMod.cairnMediaDecorations(mediaLibrary)),
+          mediaCompartment.of(mediaMod.cairnMediaDecorations(mediaLibrary, mediaBase)),
           // The include: source decoration, in its own compartment so a fragmentTitles prop change
           // reconfigures it without rebuilding the editor. A resolved include line always chips,
           // named by its title when the lookup has one and by its raw id otherwise.
@@ -914,7 +921,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
   $effect(() => {
     const library = mediaLibrary;
     if (!mounted || !view || !mediaMod || !mediaCompartment) return;
-    view.dispatch({ effects: mediaCompartment.reconfigure(mediaMod.cairnMediaDecorations(library)) });
+    view.dispatch({
+      effects: mediaCompartment.reconfigure(mediaMod.cairnMediaDecorations(library, mediaBase)),
+    });
   });
 
   // Reconfigure the include decoration when the fragmentTitles prop changes, so a fragment renamed

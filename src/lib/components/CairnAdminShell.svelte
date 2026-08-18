@@ -5,8 +5,10 @@ The admin shell: a DaisyUI drawer-and-navbar that wraps every `/admin/**` route 
 payload renders the children bare with no chrome; an authed payload renders the data-driven nav
 (concepts, custom entries, the owner-only manage-editors entry), the topbar, the command palette, and
 the streamed publish-all count. The root sets `data-theme` to the resolved light or dark theme on a
-bare wrapper (never a styled element), so the admin looks identical on every host. It hands descendant
-forms a CSRF-token getter through context, so a bare `<CsrfField />` works tokenless. The two global
+bare wrapper (never a styled element), so the admin looks identical on every host; a `themeOverride`
+prop lets a mounting context own that theme outright, which suppresses both the cookie and the OS
+preference reads. It hands descendant forms a CSRF-token getter through context, so a bare
+`<CsrfField />` works tokenless. The two global
 actions (logout, publish-all) post to the absolute `/admin?/...` catch-all, so they resolve from any
 route. Failure mode: a public payload that carried chrome fields would still render bare (the
 discriminant, not the fields, gates the chrome).
@@ -43,9 +45,15 @@ discriminant, not the fields, gates the chrome).
     data: AdminShellData;
     /** The page body. */
     children: Snippet;
+    /** A theme a mounting context owns, which wins over this shell's own resolution and suppresses
+     *  both of its reads (the admin theme cookie and the OS `prefers-color-scheme` preference).
+     *  Reactive: changing it re-renders the shell in the new theme, so a host that pictures the
+     *  admin in both themes updates the prop instead of re-mounting. Absent (every real admin
+     *  mount), the shell resolves its own theme exactly as it always has. */
+    themeOverride?: 'cairn-admin' | 'cairn-admin-dark';
   }
 
-  let { data, children }: Props = $props();
+  let { data, children, themeOverride }: Props = $props();
 
   // The authed member, narrowed once. Every chrome read below goes through `shell`, which is null on
   // a public payload (the template renders only the children then, so the chrome never reads it). The
@@ -264,24 +272,33 @@ discriminant, not the fields, gates the chrome).
     publishAllDialog?.close();
   });
 
-  // Seed from the SSR'd theme once. The live theme is owned by this state and the toggle, so the
-  // initial read of data.theme is intentional and untracked to keep it out of any reactive graph.
-  let theme = $state<'cairn-admin' | 'cairn-admin-dark'>(
+  // Seed from the SSR'd theme once. The shell's own live theme is owned by this state and the
+  // toggle, so the initial read of data.theme is intentional and untracked to keep it out of any
+  // reactive graph. The override below is a separate, deliberately tracked path, so this seed stays
+  // exactly as untracked as it was: a data.theme change still never reaches the render.
+  let ownTheme = $state<'cairn-admin' | 'cairn-admin-dark'>(
     untrack(() => (data.public ? 'cairn-admin' : data.theme)),
   );
 
+  // What the root actually renders: a mounting context's override when it supplies one, this shell's
+  // own resolution otherwise. The derived is what makes the override reactive to a prop change.
+  const theme = $derived(themeOverride ?? ownTheme);
+
   // First mount with no persisted choice follows the OS preference. A returning user's cookie was
-  // already honored by the shell load (data.theme), so this only fires on a first-ever visit.
+  // already honored by the shell load (data.theme), so this only fires on a first-ever visit. An
+  // override owns the theme outright, so neither source is consulted under one: a host that mounts
+  // the admin on its own page gets the theme it asked for, not the reader's OS preference.
   $effect(() => {
+    if (themeOverride !== undefined) return;
     const hasCookie = document.cookie.split('; ').some((c) => c.startsWith('cairn-admin-theme='));
     if (!hasCookie && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-      theme = 'cairn-admin-dark';
+      ownTheme = 'cairn-admin-dark';
     }
   });
 
   function toggleTheme() {
-    theme = theme === 'cairn-admin' ? 'cairn-admin-dark' : 'cairn-admin';
-    writeAdminCookie('cairn-admin-theme', theme);
+    ownTheme = ownTheme === 'cairn-admin' ? 'cairn-admin-dark' : 'cairn-admin';
+    writeAdminCookie('cairn-admin-theme', ownTheme);
   }
 
   // The command palette: a quick jump-to over the admin's destinations plus a couple of actions, so

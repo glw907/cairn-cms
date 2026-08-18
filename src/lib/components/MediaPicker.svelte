@@ -39,11 +39,13 @@ while a site stores images only.
 </script>
 
 <script lang="ts">
+  import { getContext } from 'svelte';
   import { mediaToken } from '../media/reference.js';
   // The bare delivery path under transformations: false (the same path the Task 3 source chip uses).
   // SEAM: when transformations are on, the row thumbnail should request the `thumb` preset URL
   // instead of the bare path; that is a later transformations-on refinement.
   import { publicPath } from '../media/naming.js';
+  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
 
   interface Props {
     /** The committed media library projection, keyed by the 16-hex content hash. */
@@ -53,6 +55,11 @@ while a site stores images only.
   }
 
   let { library, onselect }: Props = $props();
+
+  // The delivery base the option thumbnails compose under. A mounting context (the reproductions
+  // module) hands one down through this key; the admin tree provides none, so a real mount resolves
+  // to the same /media default publicPath already carries.
+  const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
 
   // A stable id base so the listbox and each option carry unique ids the combobox can point at.
   // $props.id() is Svelte's deterministic, hydration-stable id source (the same value SSR and the
@@ -234,7 +241,7 @@ while a site stores images only.
           onclick={() => select(entry)}
         >
           <img
-            src={publicPath(entry.slug, entry.hash, entry.ext, 'slug')}
+            src={publicPath(entry.slug, entry.hash, entry.ext, 'slug', mediaBase)}
             alt=""
             aria-hidden="true"
             class="h-10 w-10 flex-none rounded-box border border-[var(--cairn-card-border)] object-cover"

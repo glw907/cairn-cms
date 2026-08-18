@@ -452,10 +452,52 @@ across `/repro` pages on the cairn.pub origin. **If a later pose ever toggles on
 leak into every other story on the same origin, and a leaked `zen: true` removes the toolbar
 entirely.** Whoever adds such a pose owes a reset alongside it.
 
+### Out of fix 1's reach: the editor preview's own media resolver
+
+**A5a's `editor/preview-tab` fixture body must carry no media image.** Fix 1 makes every media
+surface's base injectable, but the editor's preview pane is not one of them. `EditPage` builds its
+own resolver internally (`EditPage.svelte:1436`, `manifestMediaResolver` from
+`src/lib/render/resolve-media.ts:140`) out of `data.mediaTargets` and hands it to the render at
+`:1545`. That resolver takes `publicPath`'s hardcoded `/media` default and no story can reach past
+it. The narrowing is deliberate and predates this pass: `src/lib/sveltekit/preview.ts:236` names it
+in a code comment, and the C2 breaking-window agenda records it. So an image in the preview pane
+would request `cairn.pub/media/...` from a `/repro` page, which is the production R2 bucket rather
+than the fixture bytes.
+
+Keeping the image out of that one fixture body is the whole fix, and it costs the story nothing:
+`write-in-the-editor.md`'s contract for this row is the Preview tab and its width control, not an
+illustrated preview. Widening the resolver is a separate decision against a deliberate prior
+narrowing, and it is not this pass's to make.
+
+### For A8: the shell's reference page understates its props
+
+`docs/reference/components.md` prints `CairnAdminShell`'s signature as
+`let { data, children }: { data: AdminShellData; children: Snippet }`, which A3's `themeOverride`
+now makes incomplete. No gate catches it: `check:reference` and `check:reference:signatures` read
+`.d.ts` exports, not Svelte prop interfaces. A8 decides whether the prop is advertised as an
+Extension-API prop, with the upgrade guarantee that tier implies, or documented as the mounting
+seam the reproductions module uses. Either way the page stops understating the component. If it is
+advertised, one behavior belongs in the same sentence: under an override the topbar's theme toggle
+still flips the shell's own theme and writes the `cairn-admin-theme` cookie, while the render keeps
+showing the override, so the control reads as inert. Reproductions never click it, since a story
+goes `inert` after its pose.
+
 ## Frozen names
 
-Task A3 appends its table here: the exact prop or context names fix 1 and fix 2 expose. Tasks A4
-through A6b and cairn-pub's B3 cite that table by this path rather than re-deriving the names.
+The exact names fix 1 and fix 2 expose, plus the two Task A2 froze beyond the plan's list. Tasks A4
+through A6b and cairn-pub's B3 cite this table rather than re-deriving the names.
+
+| Name | Kind | Where | What it is |
+| --- | --- | --- | --- |
+| `MEDIA_BASE_CONTEXT_KEY` | Svelte context key, value `'cairn:media-base'` | `src/lib/components/media-base-context.ts` | The key a mounting context sets to a plain string base. Read by `CairnMediaLibrary`, `MediaPicker`, `MediaHeroField`, and `MarkdownEditor`, each falling back to `DEFAULT_MEDIA_BASE` when absent. |
+| `DEFAULT_MEDIA_BASE` | exported const, `'/media'` | `src/lib/components/media-base-context.ts` | The fallback every media surface resolves to with no provider, the same default `publicPath` carries. |
+| `publicBase` | second parameter of `cairnMediaDecorations`, defaulting to `DEFAULT_MEDIA_BASE` | `src/lib/components/editor-media.ts` | The editor chip's base. `editor-media.ts` is a CodeMirror extension, not a component, so `MarkdownEditor` reads the context and hands the base in here. Nothing else constructs this extension. |
+| `themeOverride` | prop on `CairnAdminShell`, `'cairn-admin' \| 'cairn-admin-dark'` optional | `src/lib/components/CairnAdminShell.svelte` | The theme a mounting context owns. Reactive: a prop change re-renders the shell, so `DocsRepro` updates the prop instead of re-mounting. Present, it suppresses both the `cairn-admin-theme` cookie read and the `prefers-color-scheme` read. Absent, the shell resolves its own theme exactly as before. |
+| `fixtureCaptureFile` | exported const, a `File` | `src/lib/reproductions/fixtures.ts` | A synchronously constructible `File` (bytes inline, never fetched), the `MediaCaptureCard` prop `media/upload-form` mounts. Its stem is a real name, so the Suggested tag renders. |
+| `FixtureEntry` | exported interface | `src/lib/reproductions/fixtures.ts` | `EntrySummary` plus `concept` (always `fixtureConcept.id`) and an optional `history` (`HistoryData`, present only on the entry `publish/history-list` mounts). The element type of `fixtureEntries`. |
+
+Both new capabilities are opt-in and absent by default: the admin tree sets no media-base context and
+passes no `themeOverride`, so a real admin mount renders exactly what it rendered before A3.
 
 ## Declared heights
 

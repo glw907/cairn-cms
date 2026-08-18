@@ -236,6 +236,14 @@ through the adapter's render. Swapping the editor stays a one-file change.
   // contest it on adoption order). Built in onMount beside the base theme.
   let proseTheme: import('@codemirror/state').Extension | null = null;
   let markupTheme: import('@codemirror/state').Extension | null = null;
+  // The base theme lives in its own compartment because CodeMirror's dark flag is baked into a
+  // theme extension at construction, and the admin theme can flip under a mounted editor (the
+  // topbar toggle, or a host driving CairnAdminShell's themeOverride). A flip rebuilds all three
+  // themes at the new polarity and reconfigures this compartment and the surface one together, so
+  // the base chrome the admin sheet does not reach (the autocomplete tooltip, the panels) follows
+  // the theme instead of holding its first-mount polarity. The observer below is what notices.
+  let themeCompartment: import('@codemirror/state').Compartment | null = null;
+  let themeObserver: MutationObserver | null = null;
 
   onMount(async () => {
     const viewMod = await import('@codemirror/view');
@@ -259,8 +267,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
 
     const { EditorView, keymap } = viewMod;
     // Mirror the admin theme into CodeMirror's own dark flag, so its base chrome (the autocomplete
-    // tooltip above all) renders dark-on-dark instead of light-on-dark.
-    const isDark = host.closest('[data-theme]')?.getAttribute('data-theme')?.includes('dark') ?? false;
+    // tooltip above all) renders dark-on-dark instead of light-on-dark. The theme root is an
+    // ancestor element, not a prop, so the value is read from the DOM and re-read whenever that
+    // element's attribute changes; themeRoot is held for the observer set up after the view exists.
+    const themeRoot = host.closest('[data-theme]');
+    const readIsDark = () => themeRoot?.getAttribute('data-theme')?.includes('dark') ?? false;
+    let isDark = readIsDark();
     // The directive machinery treatment: rails, not bands. A row at depth N draws every rail
     // 1..N as literal nested brackets: 2px accent bars on an 8px pitch (x offsets 0-2, 8-10,
     // and 16-18) with 6px of surface between them (three times the bar weight, so nested bars
@@ -306,7 +318,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
       railRules[row('')] = { boxShadow: rails(depth) };
       railRules[row('.cm-cairn-caret-block')] = { boxShadow: rails(depth, true) };
     }
-    const theme = EditorView.theme(
+    // Built per polarity rather than once: a theme extension carries CodeMirror's dark flag, so a
+    // later theme flip rebuilds these at the new value and reconfigures them in.
+    const buildBaseTheme = (dark: boolean) => EditorView.theme(
       {
         '&': { backgroundColor: 'var(--color-base-100)', color: 'var(--color-base-content)', fontSize: '1rem' },
         // The 60vh floor keeps the surface reading as the page's center stage even when the
@@ -676,22 +690,33 @@ through the adapter's render. Swapping the editor stays a one-file change.
           '&::before': { content: '"+"', fontSize: '0.8em', opacity: '0.7', marginRight: '1px' },
         },
       },
-      { dark: isDark },
+      { dark },
     );
 
     // The prose posture: the writing instrument. A 72ch measure centered in the card, one type
     // step up, looser leading. Markup posture (the base theme) keeps the dense fill for tables,
     // directives, and long URLs. Placed after the base theme in the extension list, so its keys
     // win the spec-order ties.
-    proseTheme = EditorView.theme(
-      {
-        // Scoped to the content node (not the editor root) so the base theme's root font-size
-        // never contests it, and so the 72ch measure resolves against the prose type step.
-        '.cm-content': { fontSize: '1.125rem', lineHeight: '1.85', maxWidth: '72ch', margin: '0 auto' },
-      },
-      { dark: isDark },
-    );
-    markupTheme = EditorView.theme({ '.cm-content': { lineHeight: '1.8' } }, { dark: isDark });
+    const buildProseTheme = (dark: boolean) =>
+      EditorView.theme(
+        {
+          // Scoped to the content node (not the editor root) so the base theme's root font-size
+          // never contests it, and so the 72ch measure resolves against the prose type step.
+          '.cm-content': { fontSize: '1.125rem', lineHeight: '1.85', maxWidth: '72ch', margin: '0 auto' },
+        },
+        { dark },
+      );
+    const buildMarkupTheme = (dark: boolean) =>
+      EditorView.theme({ '.cm-content': { lineHeight: '1.8' } }, { dark });
+
+    // The three themes at one polarity. The posture pair lands in the module-level holders the
+    // surface compartment and its effect read; the base theme is returned for this compartment.
+    const buildThemes = (dark: boolean) => {
+      proseTheme = buildProseTheme(dark);
+      markupTheme = buildMarkupTheme(dark);
+      return buildBaseTheme(dark);
+    };
+    const theme = buildThemes(isDark);
 
     modes = modesMod;
     focusCompartment = new stateMod.Compartment();
@@ -700,6 +725,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     mediaCompartment = new stateMod.Compartment();
     includeCompartment = new stateMod.Compartment();
     spellcheckCompartment = new stateMod.Compartment();
+    themeCompartment = new stateMod.Compartment();
     tidyCompartment = new stateMod.Compartment();
     tidyReadonlyCompartment = new stateMod.Compartment();
     // The read-only posture while a tidy review is open: EditorState.readOnly bars edits, and
@@ -825,8 +851,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // "off", autocapitalize "off". The cairn lint source replaces the browser's spellcheck
           // (running both would double-underline), and autocorrect/autocapitalize stay off so a browser
           // never silently rewrites a `media:` token, a directive name, or frontmatter.
-          theme,
-          surfaceCompartment.of(surface === 'prose' ? proseTheme : markupTheme),
+          themeCompartment.of(theme),
+          // The `?? []` mirrors the posture effect below: buildThemes has just assigned both, so
+          // neither is null here, but they are assigned through a call the checker cannot follow.
+          surfaceCompartment.of((surface === 'prose' ? proseTheme : markupTheme) ?? []),
           // The live content's accessible name (WCAG 4.1.2): the only aria-label in this file otherwise
           // sits on the SSR-fallback textarea below, which hydration removes, so the same string carries
           // across the swap. A public facet, so this adds no CodeMirror-internal coupling.
@@ -859,6 +887,27 @@ through the adapter's render. Swapping the editor stays a one-file change.
       }),
     });
 
+    // Follow a later theme flip. The polarity comes from an ancestor's attribute rather than a
+    // prop, so a mutation observer is what makes it reactive; the reconfigure rebuilds the three
+    // themes at the new value and swaps both compartments in one transaction, which keeps the doc,
+    // the history, and the caret (a re-mount would lose all three). No theme root above the editor
+    // means nothing to observe, and the mount polarity stays the light default.
+    if (themeRoot) {
+      themeObserver = new MutationObserver(() => {
+        const nowDark = readIsDark();
+        if (nowDark === isDark || !view || !themeCompartment || !surfaceCompartment) return;
+        isDark = nowDark;
+        const nextBase = buildThemes(nowDark);
+        view.dispatch({
+          effects: [
+            themeCompartment.reconfigure(nextBase),
+            surfaceCompartment.reconfigure((surface === 'prose' ? proseTheme : markupTheme) ?? []),
+          ],
+        });
+      });
+      themeObserver.observe(themeRoot, { attributes: true, attributeFilter: ['data-theme'] });
+    }
+
     // Fold every component block before the author can act, so an entry opens with its blocks
     // collapsed and only the prose reads at a glance. One transaction, before any registration
     // below hands out a live api, so nothing observes the pre-fold state.
@@ -886,7 +935,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
     mounted = true;
   });
 
-  onDestroy(() => view?.destroy());
+  onDestroy(() => {
+    themeObserver?.disconnect();
+    view?.destroy();
+  });
 
   // Reconcile an externally reassigned `value` into the mounted editor. A no-op until `view` exists,
   // and the doc-equality guard ignores the updateListener's own writes so the two never feed back.

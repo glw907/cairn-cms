@@ -433,7 +433,15 @@ pass itself.
   `ReproManifestEntry` shapes, `getStory`, `validateReproFence`, `fixtureMediaBase`, the
   fence schema table reproduced from the spec. `npm run check:reference` and
   `npm run check:reference:signatures` green with the two CONFIG rows in place.
-- [ ] **Step 2:** The register edit, the ritual line, and the changelog entry. Vale clean.
+- [ ] **Step 2:** The register edit, the ritual line, and the changelog entry. Vale clean. **Three
+  items the changelog must carry beyond the new subpaths**, all from A4b-1 and all recorded in the
+  audit: `spellcheckOverride` and `themeOverride` are new props on exported components, and fix 4 is
+  a real behavior change for existing admin mounts, since an editor whose theme root flips after
+  mount now follows it where it used to hold its first-mount polarity. That last one needs an entry
+  even though no consumer action follows, per the changelog convention, so an upgrader who notices
+  the editor chrome changing has a reference. **Also settle `docs/reference/components.md`**, which
+  understates `CairnAdminShell` and now `EditPage` too; the audit's "For A8" section states the
+  decision and the one behavior that belongs in the sentence if the props are advertised.
 - [ ] **Step 3:** Run the engine gate. Fold `cairn-register-editor` findings on the two
   repo prose files. Commit.
 

@@ -101,9 +101,17 @@ persistent "?" carries Markdown help, design-arc D2).
      *  screen until it is ready, rather than showing a control whose every use fails.
      */
     previewMint?: boolean;
+    /**
+     * The spellcheck posture a mounting context owns, for a host that renders the editing surface
+     *  outside a real editing session (the reproductions seam mounts several on one page). Present,
+     *  it wins over the stored per-browser preference and the footer toggle, so `false` opens an
+     *  editor that never starts the spellcheck Worker or fetches its wasm and dictionary. Absent,
+     *  the author's own preference decides exactly as before.
+     */
+    spellcheckOverride?: boolean;
   }
 
-  let { data, registry, render, icons, form, previewMint = true }: Props = $props();
+  let { data, registry, render, icons, form, previewMint = true, spellcheckOverride }: Props = $props();
 
   /** One action row in an advisory notice: an `href` row renders a link, an `onAct` row a button. */
   type AdvisoryRow = { rowLabel?: string; rowCode?: boolean; label: string; href?: string; onAct?: () => void };
@@ -403,7 +411,11 @@ persistent "?" carries Markdown help, design-arc D2).
   const spellcheckStorageKey = 'cairn-editor-spellcheck';
   let focusMode = $state(false);
   let typewriter = $state(false);
-  let spellcheck = $state(true);
+  let ownSpellcheck = $state(true);
+  // What the editor actually runs with: a mounting context's override when it supplies one, this
+  // page's own preference otherwise. The stored read below and the footer toggle keep writing the
+  // author's own value, so removing the override restores exactly what the author chose.
+  const spellcheck = $derived(spellcheckOverride ?? ownSpellcheck);
   // Zen: the manuscript alone on the recessed ground. The band, the document title, the toolbar
   // strip, and the footer go; the editing surface stays. It joins the editor-preference family on
   // the same pattern (a localStorage key, read once below, written by the setter), and composes
@@ -418,7 +430,7 @@ persistent "?" carries Markdown help, design-arc D2).
     zen = localStorage.getItem(zenStorageKey) === 'true';
     if (localStorage.getItem(surfaceStorageKey) === 'markup') surface = 'markup';
     // Spellcheck is on unless the author explicitly stored it off.
-    spellcheck = localStorage.getItem(spellcheckStorageKey) !== 'false';
+    ownSpellcheck = localStorage.getItem(spellcheckStorageKey) !== 'false';
   });
   function setFocusMode(on: boolean) {
     focusMode = on;
@@ -429,7 +441,7 @@ persistent "?" carries Markdown help, design-arc D2).
     localStorage.setItem(typewriterStorageKey, String(on));
   }
   function setSpellcheck(on: boolean) {
-    spellcheck = on;
+    ownSpellcheck = on;
     localStorage.setItem(spellcheckStorageKey, String(on));
   }
 

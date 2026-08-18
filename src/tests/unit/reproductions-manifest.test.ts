@@ -44,6 +44,23 @@ const IDS = [
 // The three locate-many-controls screens the spec gives numbered callouts.
 const MARKED = ['editor/entry-screen', 'media/library', 'tags/screen'];
 
+// The four rows whose page cannot render its subject at every width, and the exact widths each may
+// therefore be pinned to. A row declaring only the widths its page can show is what makes the fence
+// schema refuse to picture a screen at a size that cannot show it, so these are asserted exactly:
+// restoring `column` to any of them is the failure this test exists to catch.
+//
+// `editor/sidebar-list` and `nav/worked-navlayout` name the shell's sidebar, a drawer that becomes
+// persistent at `lg` off a desk path and at `xl` on one (CairnAdminShell.svelte:561-563), so only
+// `wide` (1280) shows it. `editor/entry-screen` and `editor/preview-tab` name the Write/Preview
+// tablist and the device trigger, both inside an `sm:`-gated wrapper (EditorToolbar.svelte:423), so
+// the render needs at least 640 and `desktop` (860) is the pinned width that clears it.
+const PINNED_WIDTHS: Record<string, string[]> = {
+  'editor/sidebar-list': ['wide'],
+  'nav/worked-navlayout': ['wide'],
+  'editor/entry-screen': ['desktop'],
+  'editor/preview-tab': ['desktop'],
+};
+
 const MANIFEST_SOURCE = resolve(process.cwd(), 'src/lib/reproductions/manifest.ts');
 
 // A bound specifier (`import x from './a.js'`, `export * from './b.js'`) and a side-effect one
@@ -115,6 +132,16 @@ describe('reproductions manifest', () => {
     for (const entry of manifest) {
       const declared = Object.values(entry.heights).filter((h) => typeof h === 'number');
       expect(declared.length, `${entry.id} heights`).toBeGreaterThan(0);
+    }
+  });
+
+  it('declares only the widths each width-constrained row can actually render at', () => {
+    for (const [id, widths] of Object.entries(PINNED_WIDTHS)) {
+      const declared = Object.entries(byId(id).heights)
+        .filter(([, height]) => typeof height === 'number')
+        .map(([width]) => width)
+        .sort();
+      expect(declared, `${id} declared widths`).toEqual([...widths].sort());
     }
   });
 

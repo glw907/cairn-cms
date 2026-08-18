@@ -5,7 +5,10 @@ reproduction story through, so the two consumers can never disagree about what a
 render correctly. It applies the story's own `context` entries, supplies the fixture media base
 and a CSRF-token getter every media surface reads (so no call site injects either itself), hosts
 `shell` stories inside `CairnAdminShell` with the fixture `navLayout`, and carries the admin
-stylesheet unconditionally so a `bare` story renders styled wherever it mounts.
+stylesheet unconditionally. A bare story that resolves no theme root of its own also gets one here,
+from the same `theme` prop, since every admin token is scoped under a theme root: between the two,
+such a story renders styled wherever it mounts rather than only inside a host that happens to
+provide a root.
 -->
 <script lang="ts">
   import { setContext, untrack } from 'svelte';
@@ -29,8 +32,9 @@ stylesheet unconditionally so a `bare` story renders styled wherever it mounts.
      * `shell` host (every `shell` entry is `ownThemeRoot: true` in `manifest.ts`, since the shell
      * resolves its own theme root); merged into the story's own `data.theme` for a `bare` host
      * whose manifest entry is also `ownThemeRoot: true` (the two auth pages, which render their
-     * wrapper from `data.theme`). Absent for every other `bare` story, which inherits the ambient
-     * `[data-repro-root]` theme instead and needs nothing from this prop.
+     * wrapper from `data.theme`); carried by this component's own theme root for every other
+     * `bare` story, which owns none. Absent, that root falls back to the light admin theme, so a
+     * story mounted with no instruction still renders styled rather than untokenized.
      */
     theme?: 'cairn-admin' | 'cairn-admin-dark';
   }
@@ -70,8 +74,13 @@ stylesheet unconditionally so a `bare` story renders styled wherever it mounts.
     return { ...props, data: { ...data, theme: override } };
   }
 
+  // Whether the mounted component resolves a theme root itself: the shell for a `shell` story, the
+  // two auth pages' own wrappers for a `bare` one. A story with no manifest entry (a test probe) is
+  // treated as owning none, which is the case that needs the wrapper below.
+  const ownThemeRoot = $derived(manifestEntry?.ownThemeRoot ?? false);
+
   const bareProps = $derived(
-    story.host === 'bare' && manifestEntry?.ownThemeRoot ? withTheme(story.props, theme) : story.props,
+    story.host === 'bare' && ownThemeRoot ? withTheme(story.props, theme) : story.props,
   );
 
   // The shell payload every `host: 'shell'` story mounts against: one signed-in editor, the
@@ -102,6 +111,16 @@ stylesheet unconditionally so a `bare` story renders styled wherever it mounts.
   <CairnAdminShell data={shellData} themeOverride={theme}>
     <story.component {...story.props} />
   </CairnAdminShell>
-{:else}
+{:else if ownThemeRoot}
   <story.component {...bareProps} />
+{:else}
+  <!-- The theme root a bare story does not carry itself. Every admin token is scoped under
+       [data-theme='cairn-admin'], so without this the stylesheet above loads and the story takes
+       none of it. Bare wrapper, no classes: the admin's scoped rules are descendant selectors, so a
+       class on the theme element itself would never match. It follows the prop rather than
+       resolving a theme of its own, since a host that flips [data-repro-root] outside this wrapper
+       feeds the new value straight back down through it. -->
+  <div data-theme={theme ?? 'cairn-admin'}>
+    <story.component {...bareProps} />
+  </div>
 {/if}

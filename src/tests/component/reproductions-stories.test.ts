@@ -46,6 +46,31 @@ function renderedTheme(container: HTMLElement): string | null {
   return container.querySelector('[data-theme]')?.getAttribute('data-theme') ?? null;
 }
 
+// A story that is not part of the real registry: it mounts the local probe component, so the
+// obligations ReproContext owns for every story (a story's own context, the fixture media base, the
+// CSRF getter, the theme root a bare story does not carry itself) are each exercised directly
+// rather than only implicitly through whichever future story happens to read them.
+const probeStory: ReproStory = {
+  id: 'test/probe',
+  component: ProbeComponent as Component<Record<string, unknown>>,
+  host: 'bare',
+  props: {},
+  context: { [PROBE_CONTEXT_KEY]: 'story-supplied-value' },
+};
+
+/**
+ * Mount a story and bring it to the state its page contract names: `settle` first (the contracted
+ * surface that only exists after hydration), then `pose` (the state that lives in internal
+ * component state). Both of a story's consumers, this suite and cairn-pub's capture, run the two in
+ * this order, so the harness expresses it once here.
+ */
+async function mountPosed(story: ReproStory) {
+  const screen = render(ReproContext, { props: { story } });
+  if (story.settle) await story.settle(screen.container);
+  if (story.pose) await story.pose(screen.container);
+  return screen;
+}
+
 describe('the manifest-to-story inventory', () => {
   it('has a pending list naming only real manifest ids', () => {
     const manifestIds = new Set(manifest.map((entry) => entry.id));
@@ -117,23 +142,54 @@ describe('auth/confirm through ReproContext', () => {
 });
 
 describe('ReproContext: the context and fixture obligations every story relies on', () => {
-  // A story that is not part of the real registry: it mounts the local probe component so the
-  // three obligations ReproContext owns unconditionally (a story's own context, the fixture
-  // media base, the CSRF getter) are each exercised directly, rather than only implicitly through
-  // whichever future story happens to read them.
-  const probeStory: ReproStory = {
-    id: 'test/probe',
-    component: ProbeComponent as Component<Record<string, unknown>>,
-    host: 'bare',
-    props: {},
-    context: { [PROBE_CONTEXT_KEY]: 'story-supplied-value' },
-  };
-
   it('applies the story context, the fixture media base, and the CSRF getter', async () => {
     const screen = render(ReproContext, { props: { story: probeStory } });
     await expect.element(screen.getByTestId('story-context')).toHaveTextContent('story-supplied-value');
     await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/repro-assets');
     await expect.element(screen.getByTestId('csrf')).toHaveTextContent('repro-fixture-csrf');
+  });
+});
+
+describe('ReproStory.settle: the hydration wait a props-only story cannot express', () => {
+  it('runs against the mounted root, and before the pose', async () => {
+    const seen: string[] = [];
+    const story: ReproStory = {
+      ...probeStory,
+      id: 'test/settle-probe',
+      settle: async (root) => {
+        // The probe's own markup proves the root handed to settle is the mounted tree, not an
+        // empty container: a settle that ran too early could not find anything to wait for.
+        seen.push(root.querySelector('[data-testid="csrf"]') ? 'settle' : 'settle-before-mount');
+      },
+      pose: async () => {
+        seen.push('pose');
+      },
+    };
+
+    await mountPosed(story);
+
+    expect(seen).toEqual(['settle', 'pose']);
+  });
+});
+
+describe('ReproContext: the theme root a bare story does not own', () => {
+  it('mounts a bare story with no theme root of its own under a cairn-admin root', async () => {
+    const screen = render(ReproContext, { props: { story: probeStory } });
+    expect(renderedTheme(screen.container)).toBe('cairn-admin');
+  });
+
+  it('follows the theme prop rather than shadowing it with a value of its own', async () => {
+    const screen = render(ReproContext, { props: { story: probeStory, theme: 'cairn-admin-dark' } });
+    expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
+
+    await screen.rerender({ story: probeStory, theme: 'cairn-admin' });
+
+    expect(renderedTheme(screen.container)).toBe('cairn-admin');
+  });
+
+  it('adds no second root to a story that already owns one', async () => {
+    const screen = render(ReproContext, { props: { story: getStory('auth/login') } });
+    expect(screen.container.querySelectorAll('[data-theme]')).toHaveLength(1);
   });
 });
 
@@ -151,9 +207,8 @@ for (const story of stories) {
       expect((story.markers ?? []).map((marker) => marker.key)).toEqual(entry?.markerKeys ?? []);
     });
 
-    it('resolves every marker anchor and runs its pose without throwing', async () => {
-      const screen = render(ReproContext, { props: { story } });
-      if (story.pose) await story.pose(screen.container);
+    it('resolves every marker anchor and runs its settle and pose without throwing', async () => {
+      const screen = await mountPosed(story);
       for (const marker of story.markers ?? []) {
         const anchorEl = screen.container.querySelector(marker.anchor);
         expect(anchorEl, `marker "${marker.key}" anchor "${marker.anchor}" did not resolve`).not.toBeNull();

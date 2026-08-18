@@ -23,6 +23,8 @@
 export interface ReproHeights {
   /** The responsive default embed, filling the docs content column. */
   column?: number;
+  /** The 1280px pinned embed, the only width that renders the shell's persistent sidebar. */
+  wide?: number;
   /** The 860px pinned embed. */
   desktop?: number;
   /** The 390px pinned embed. */
@@ -79,8 +81,12 @@ export const manifest: ReproManifestEntry[] = [
     ownThemeRoot: true,
   },
   {
+    // Pinned, not responsive: the frozen marker `write-preview-tabs` names an element inside the
+    // toolbar's `sm:`-gated wrapper (EditorToolbar.svelte:423), which a docs column narrower than
+    // 640 hides outright. 860 clears that gate and stays under the shell's 1024 sidebar
+    // breakpoint, so the whole width goes to the document body the row is about.
     id: 'editor/entry-screen',
-    heights: { column: 760 },
+    heights: { desktop: 760 },
     markerKeys: [
       'title-field',
       'toolbar',
@@ -101,16 +107,24 @@ export const manifest: ReproManifestEntry[] = [
     ownThemeRoot: false,
   },
   {
+    // Pinned wide: half this row's contract is the concept sidebar, which is a DaisyUI drawer that
+    // only sits persistently open from `lg` (1024) off a desk path and `xl` (1280) on one
+    // (CairnAdminShell.svelte:561-563). Below that the sidebar is off-canvas and the story shows
+    // half its subject. At 1280 the fixed nav stack governs the height rather than the four-entry
+    // list beside it, since the content column is the part that widens.
     id: 'editor/sidebar-list',
-    heights: { column: 640 },
+    heights: { wide: 620 },
     markerKeys: [],
     pose: false,
     host: 'shell',
     ownThemeRoot: true,
   },
   {
+    // Pinned to the same width and box as `editor/entry-screen`: the pose clicks the Preview tab,
+    // which lives in the same `sm:`-gated toolbar wrapper, and a page showing both faces should
+    // read as one screen switching tabs rather than two differently sized screens.
     id: 'editor/preview-tab',
-    heights: { column: 760 },
+    heights: { desktop: 760 },
     markerKeys: [],
     pose: true,
     host: 'shell',
@@ -256,8 +270,12 @@ export const manifest: ReproManifestEntry[] = [
     ownThemeRoot: true,
   },
   {
+    // Pinned wide for the same reason as `editor/sidebar-list`, and more strictly: the nav groups
+    // render inside `.drawer-side`, so below the persistent breakpoint the whole subject is
+    // off-canvas. The contract names the fallback group under the divider, the bottom of the same
+    // nav stack, so both rows are sized by that one measurement.
     id: 'nav/worked-navlayout',
-    heights: { column: 640 },
+    heights: { wide: 620 },
     markerKeys: [],
     pose: false,
     host: 'shell',

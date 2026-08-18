@@ -38,6 +38,16 @@ export interface ReproStory {
    */
   context?: Record<symbol | string, unknown>;
   /**
+   * A post-mount wait for the contracted surface to exist at all, run before {@link ReproStory.pose}.
+   * Several stories show something no server render contains: `MarkdownEditor` renders a hidden
+   * input, an empty div, and a fallback textarea until CodeMirror arrives through dynamic imports
+   * in `onMount`, and `publish/pending-list` builds its trigger and dialog inside an `{#await}` with
+   * no pending branch. A props-only story has nothing else to tell a capture to wait, so an early
+   * frame would show the fallback rather than the face the page names. Absent when the story's
+   * contracted surface is in the server render.
+   */
+  settle?: (root: HTMLElement) => Promise<void>;
+  /**
    * A post-mount step that drives a state that lives in internal component state rather than a
    * prop (an opened dialog, a selection). Absent when the resting prop bag already shows the
    * contracted state.

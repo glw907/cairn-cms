@@ -433,6 +433,41 @@ A3 makes the theme a settable, reactive prop override that also skips both the c
 makes `ownThemeRoot` true for all of them, and it is what lets Pass 2's `DocsRepro` prop-update
 instead of re-mounting.
 
+### Fix 3: the editing surface's spellcheck Worker (Task A4b-1 executes this)
+
+Added by the 2026-08-17 verification sweep, whose finding 7 the fix list was one item short of. The
+editing surface checks spelling by default (`MarkdownEditor.svelte:179`), the lint plugin schedules
+its first run from its own constructor, and that run calls `ensureWorker()`
+(`src/lib/components/spellcheck.ts:730`), which starts a module Worker and fetches a wasm binary and
+a 1.5MB dictionary through `import.meta.url`. `EditPage` took no lever: its `spellcheck` was
+`$state(true)` seeded from `localStorage` (`:406`, `:421`) and its prop bag was `data`, `registry`,
+`render`, `icons`, `form`, `previewMint`. Five editor stories therefore paid a Worker and two asset
+fetches per embed.
+
+The chain was confirmed by running it, not by reading it:
+`src/tests/component/edit-page-spellcheck-override.test.ts` counts Worker constructions with the
+global constructor swapped, and the no-override case constructs one within a second of mount.
+
+A4b-1 adds `spellcheckOverride` on `EditPage` (the frozen-names table below). Opt-in and absent by
+default: with no override the stored preference and the footer toggle decide exactly as before.
+
+### Fix 4: CodeMirror's theme polarity (Task A4b-1 executes this)
+
+Added by the same sweep, finding 8. `const isDark = host.closest('[data-theme]')…` was read once
+inside `onMount` (`MarkdownEditor.svelte:263`) and baked into three `EditorView.theme(…, { dark })`
+calls, with no reactive re-read. A theme flip under a mounted editor therefore left CodeMirror's own
+base chrome (the autocomplete tooltip, the panels, the selection layer, the parts the admin sheet
+does not reach) on its first-mount polarity: a light editor inside a dark shell. That defeats fix
+2's headline benefit, since prop-updating `themeOverride` is exactly such a flip, and it is a
+standing defect in the real admin too, where the topbar toggle flips the same attribute.
+
+A4b-1 puts the base theme in its own compartment beside the media and include ones, rebuilds all
+three themes at the new polarity on a change, and swaps both compartments in one transaction, so the
+doc, the history, and the caret survive. A `MutationObserver` on the theme root is what notices,
+since the polarity comes from an ancestor's attribute rather than a prop. A mount is unchanged: the
+polarity read and the extensions built from it are the same, and an editor under no theme root
+observes nothing.
+
 ### Not fixes: two matchMedia reads that are already correct
 
 Recorded so a later pass does not "fix" them by mistake. An iframe's content treats the iframe box
@@ -495,17 +530,40 @@ through A6b and cairn-pub's B3 cite this table rather than re-deriving the names
 | `themeOverride` | prop on `CairnAdminShell`, `'cairn-admin' \| 'cairn-admin-dark'` optional | `src/lib/components/CairnAdminShell.svelte` | The theme a mounting context owns. Reactive: a prop change re-renders the shell, so `DocsRepro` updates the prop instead of re-mounting. Present, it suppresses both the `cairn-admin-theme` cookie read and the `prefers-color-scheme` read. Absent, the shell resolves its own theme exactly as before. |
 | `fixtureCaptureFile` | exported const, a `File` | `src/lib/reproductions/fixtures.ts` | A synchronously constructible `File` (bytes inline, never fetched), the `MediaCaptureCard` prop `media/upload-form` mounts. Its stem is a real name, so the Suggested tag renders. |
 | `FixtureEntry` | exported interface | `src/lib/reproductions/fixtures.ts` | `EntrySummary` plus `concept` (always `fixtureConcept.id`) and an optional `history` (`HistoryData`, present only on the entry `publish/history-list` mounts). The element type of `fixtureEntries`. |
+| `spellcheckOverride` | prop on `EditPage`, optional boolean | `src/lib/components/EditPage.svelte` | The spellcheck posture a mounting context owns (fix 3). Present, it wins over the stored preference and the footer toggle, so `false` opens an editor that starts no Worker and fetches no wasm or dictionary. Absent, the author's own preference decides exactly as before. |
+| `settle` | optional member of `ReproStory`, `(root: HTMLElement) => Promise<void>` | `src/lib/reproductions/index.ts` | The post-mount wait for a contracted surface that exists only after hydration, run before `pose`. The four rows that need one are `editor/collapsed-layout-block`, `editor/entry-screen`, `editor/preview-tab`, and `editor/details-panel` through `MarkdownEditor`, plus `publish/pending-list` through its `{#await}`. A5a and A5b write them. |
 
-Both new capabilities are opt-in and absent by default: the admin tree sets no media-base context and
-passes no `themeOverride`, so a real admin mount renders exactly what it rendered before A3.
+Every new capability is opt-in and absent by default: the admin tree sets no media-base context,
+passes no `themeOverride` and no `spellcheckOverride`, so a real admin mount renders exactly what it
+rendered before A3 and A4b. Fix 4 is the one exception worth naming, and it is a repair rather than
+a new capability: an editor whose theme root changes after mount now follows it, which no host could
+opt into, and which the real admin's own topbar toggle has always wanted.
 
 ## Declared heights
 
 The manifest's per-width heights are the prerendered iframe heights hydration later refines, not a
-promise about the render. Every row but one declares `column` alone, the responsive default embed;
-`publish/header-band` declares `desktop` and `narrow` alone, because the page pins both faces and a
-responsive band render is not a thing that page asks for. Deliberate: a responsive fence against
-`publish/header-band` fails gate 1 for want of a declared height, which is the correct answer.
+promise about the render. Twenty rows declare `column` alone, the responsive default embed. Five do
+not, and a row declaring only the widths its page can render at is what makes the fence schema
+refuse to picture a screen at a size that cannot show it. A responsive fence against one of those
+five fails gate 1 for want of a declared height, which is the correct answer.
+
+- **`publish/header-band`, `desktop` and `narrow`.** The page pins both faces, and a responsive band
+  render is not a thing that page asks for.
+- **`editor/sidebar-list` and `nav/worked-navlayout`, `wide` alone.** Half of the first row's
+  contract and all of the second's is the shell's sidebar, a drawer that sits persistently open only
+  from `lg` (1024) off a desk path and `xl` (1280) on one
+  (`CairnAdminShell.svelte:561-563`). Below that the subject is off-canvas. At 1280 the fixed nav
+  stack governs the height (the content column is the part that widens), so both are sized by that
+  one measurement: 620.
+- **`editor/entry-screen` and `editor/preview-tab`, `desktop` alone.** Both name controls inside the
+  toolbar's `sm:`-gated wrapper (`EditorToolbar.svelte:423`): the frozen `write-preview-tabs` marker
+  on the first, the Preview tab the second's pose clicks. 860 clears that 640 gate and stays under
+  the sidebar breakpoint, so the width goes to the document body. Both keep 760, the same box, so a
+  page showing them together reads as one screen switching tabs.
+
+The `wide` width itself is an amendment: the spec's fence schema carried `narrow` (390) and
+`desktop` (860) only, which is why the sweep found three rows pinned to widths that cannot show
+their subject. Geoff ratified `wide` (1280) in response (cairn-pub spec `4d9e492`).
 
 The bands used, and why:
 
@@ -513,7 +571,8 @@ The bands used, and why:
   component's own markup occupies at the docs column width with nothing under it.
 - **Modal reviews, 620.** `editor/tidy-review` and `media/lead-picture-dialog` render a centered
   modal; the height is the dialog's comfortable box, not a full screen.
-- **Shell screens, 640 to 760.** A shell render carries the topbar, the sidebar, and the body. 640
+- **Shell screens, 620 to 760.** A shell render carries the topbar, the sidebar, and the body. 620
+  suits the two rows pinned wide, where the nav stack is the tallest column; 640
   suits a list or roster; 760 suits the entry screen and its posed variants, which carry the
   editor surface as well.
 - **`publish/header-band`, 180 desktop and 300 narrow.** Desktop is the band plus its opened

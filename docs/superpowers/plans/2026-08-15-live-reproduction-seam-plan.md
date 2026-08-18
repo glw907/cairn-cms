@@ -391,9 +391,16 @@ pass itself.
 - Produces: `validateReproFence(body: string, manifest: ReproManifestEntry[]):
   { issues: string[] }` on the `/reproductions/manifest` subpath, one implementation for
   both gates and B2. Checks, per the spec's gate 1: YAML parses (error names the problem),
-  required keys present, no unknown keys, `width` absent or `narrow`/`desktop`, alt names
-  the kind and is ≤ 150 characters, the story id resolves, the fence's width has a
-  declared height.
+  required keys present, no unknown keys, alt names the kind and is ≤ 150 characters, the
+  story id resolves, and `width` is absent or names a width the story's manifest entry
+  declares a height for.
+  **Amended 2026-08-18, at the Pass 1b premise check.** This clause used to enumerate the
+  pinned widths as `narrow`/`desktop`, written before A4b ratified `wide` (1280) as a third.
+  Built literally it would have refused `editor/sidebar-list` and `nav/worked-navlayout`,
+  which declare `wide` as their only height, leaving both embeddable at no width at all: the
+  precise gap A4b existed to close. The enumeration is deleted rather than extended, since
+  `ReproHeights` is already the schema (`manifest.ts`: a width with no declared height is a
+  width the fence schema refuses) and a list duplicated beside it goes stale a second time.
 - Produces: `check-visuals.mjs` additionally scans docs pages for `repro` fences, runs the
   validator, reads captions from inside the body for `repro` (after the fence for
   `mermaid`), and for a fence whose story has `markerKeys` verifies the page carries a

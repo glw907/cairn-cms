@@ -105,7 +105,32 @@ describe('validateReproFence', () => {
     const body = [VALID_BODY, 'width: narrow'].join('\n');
     const { issues } = validateReproFence(body, MANIFEST);
     expect(issues).toContain(
-      'width "narrow" is not a declared height for this story (declared: column)',
+      'width "narrow" is not a declared height for this story (this story pins no width; omit "width" for the responsive embed)',
+    );
+  });
+
+  it('names the story\'s own pinned widths when it has some and the fence picked another', () => {
+    const body = [
+      'story: editor/sidebar-list',
+      'alt: Reproduction of the sidebar list view.',
+      'caption: The sidebar lists four entries.',
+      'width: desktop',
+    ].join('\n');
+    const { issues } = validateReproFence(body, MANIFEST);
+    expect(issues).toContain(
+      'width "desktop" is not a declared height for this story (declared: wide)',
+    );
+  });
+
+  it('refuses the responsive default named explicitly, which a fence asks for by omission', () => {
+    // `column` IS a declared height on this story, so the rule that admits a width by looking it up
+    // in ReproHeights would let it through. The spec's schema does not: `width` names a PINNED
+    // width, and the responsive embed is what leaving `width` out means. Two spellings of one
+    // intent is the drift this refusal exists to stop.
+    const body = [VALID_BODY, 'width: column'].join('\n');
+    const { issues } = validateReproFence(body, MANIFEST);
+    expect(issues).toContain(
+      'width "column" is the responsive default, which a fence names by omitting "width"',
     );
   });
 

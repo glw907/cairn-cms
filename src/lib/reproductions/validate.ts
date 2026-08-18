@@ -15,6 +15,17 @@ export interface ReproFenceValidation {
   issues: string[];
 }
 
+/**
+ * The `ReproHeights` key that is not a pinnable width.
+ *
+ * It is excluded from `width` by its role rather than by absence from a list: `column` IS the
+ * responsive default, which a fence asks for by leaving `width` out, so naming it explicitly is a
+ * second way to say one thing and the spec's schema does not admit it. Excluding by role keeps the
+ * amendment that removed the old width allowlist intact, since a story that later declares a new
+ * PINNED width still needs no edit here.
+ */
+const RESPONSIVE_WIDTH = 'column';
+
 const REQUIRED_KEYS = ['story', 'alt', 'caption'] as const;
 const ALLOWED_KEYS = new Set<string>([...REQUIRED_KEYS, 'width']);
 const MAX_ALT_LENGTH = 150;
@@ -82,19 +93,32 @@ export function validateReproFence(
   }
 
   const width = data.width;
-  if (width !== undefined) {
+  if (width === RESPONSIVE_WIDTH) {
+    issues.push(
+      `width "${RESPONSIVE_WIDTH}" is the responsive default, which a fence names by omitting "width"`,
+    );
+  } else if (width !== undefined) {
     let isValid = false;
-    let declaredWidths: string[] = [];
+    let pinnedWidths: string[] = [];
     if (entry) {
       const heights = entry.heights as Record<string, number | undefined>;
-      declaredWidths = Object.entries(heights)
+      pinnedWidths = Object.entries(heights)
         .filter((pair): pair is [string, number] => typeof pair[1] === 'number')
         .map(([name]) => name)
+        .filter((name) => name !== RESPONSIVE_WIDTH)
         .sort();
-      isValid = typeof width === 'string' && typeof heights[width] === 'number';
+      isValid =
+        typeof width === 'string' && width !== RESPONSIVE_WIDTH && typeof heights[width] === 'number';
     }
     if (!isValid) {
-      const suffix = declaredWidths.length > 0 ? ` (declared: ${declaredWidths.join(', ')})` : '';
+      // A story with no pinned width at all is the common case (twenty of twenty-five rows), and
+      // "declared: " followed by nothing reads as a bug, so that case names the remedy instead.
+      const suffix =
+        pinnedWidths.length > 0
+          ? ` (declared: ${pinnedWidths.join(', ')})`
+          : entry
+            ? ' (this story pins no width; omit "width" for the responsive embed)'
+            : '';
       issues.push(`width ${JSON.stringify(width)} is not a declared height for this story${suffix}`);
     }
   }

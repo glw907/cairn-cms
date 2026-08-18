@@ -274,6 +274,45 @@ The original decision framing, for the record:
 
 ## Now
 
+- **The reproduction seam does not contain what it mounts, and `inert` alone cannot fix it.** Three
+  mechanisms, all verified at the seam pass's review gate, and all of them reach the reader of a
+  published docs page. `TidyReview` calls `showModal()` in its mount effect, which runs the dialog
+  focusing steps and pulls the host page's focus into the embed before any route-level `inert` step
+  can run. `CairnAdminShell` binds `<svelte:window onkeydown>`, and `inert` does not remove a window
+  listener, so each of the fifteen shell-hosted reproductions answers Ctrl/Cmd+K with a fake command
+  palette once focus is inside its frame. And `ReproContext` itself applies no `inert`, no focus
+  containment, and no tabindex management, so a keyboard reader tabs through a full admin screen's
+  dead controls per embed before reaching the next paragraph. Pass 2's `/repro` route was to own
+  this, and the first two mechanisms prove it cannot: the fix belongs in the engine, where
+  `ReproContext` is already the single provider both consumers share. Shape: an `openOnMount` prop on
+  `TidyReview` (not a public export, so it costs no surface), a chromeless flag or context that skips
+  the shell's window binding, and `inert` applied to the mounted subtree inside `ReproContext` after
+  the pose resolves. **Owed before Pass 2 ships the `/repro` route**, which is what publishes these
+  frames.
+
+- **The story suite proves the media reproductions against images it never serves.** Nothing maps
+  `/repro-assets/*` in the browser test project, so every fixture image 404s during the engine's own
+  story-mount run and `CairnMediaLibrary`'s `onerror` swaps the tile for its "Image missing" block,
+  which renders no `img` at all. The media-base assertions read `img[src]` at first paint to beat that
+  swap, which is a deliberate race and the flaky-gate shape: on a slower runner, or on the second
+  story to request an already-404-cached URL, the read loses and three stories fail for a reason that
+  has nothing to do with them. Worse, nothing anywhere proves a fixture image decodes, so a cairn-pub
+  asset-route regression would ship "Image missing" chips into published docs past a green gate. Fix:
+  serve `src/lib/reproductions/fixtures/` at `/repro-assets/` from the browser project (the filenames
+  are already enumerated in `manifest.ts`), then assert `complete && naturalWidth > 0` rather than
+  the composed string. Found by the seam pass's Svelte review.
+
+- **`media/insert-panel` pictures a control the real admin never renders.** The story sets
+  `MediaInsertPopover`'s `trigger: true` so a DOM-only pose has something to click, which renders a
+  visible text button reading "Insert image" that survives in the DOM after the panel opens. The real
+  editor mounts the popover headless (`trigger={false}`) and opens it by calling the component's
+  exported `open('chooser')` from the toolbar's icon button. So the one reproduction whose whole job
+  is fidelity ships a control that exists nowhere in `/admin`. The seam limitation behind it is that
+  `ReproStory.pose` receives only the mount root, never the mounted instance, so it cannot reach the
+  mechanism the real host uses. Fix: widen the pose signature to receive the instance and keep
+  `trigger: false`. **Owed before a docs page embeds this story.** Found by the seam pass's Svelte
+  review.
+
 - **A site with a non-default `assets.publicBase` has broken admin thumbnails today, and the
   reproduction seam just made the fix cheap.** `media/config.ts` makes the base site-configurable
   and `render/resolve-media.ts` honors it for rendered output, but every admin surface resolved
@@ -753,6 +792,38 @@ the named human gates only):**
   review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
+
+- **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
+  primitives a site composes directly, and the first is the one an extender meets first. (1)
+  `OfficeList` hardcodes `<h1>` for what is a section heading (`OfficeList.svelte:46`), so it cannot
+  be composed under a page title without emitting a second `<h1>`; no engine screen mounts it, so the
+  published snippet was the only place the collision appeared, and that snippet now uses `OfficeList`
+  alone. `EmptyState`'s `headingLevel` prop (additive, original default unchanged) is the established
+  shape for fixing this properly. (2) `AdminTable` wraps its table in `overflow-x: auto` with no
+  `tabindex="0"`, no role, and no accessible name, and forces `white-space: nowrap` on every cell, so
+  horizontal overflow at narrow widths is guaranteed and a keyboard-only user cannot scroll to reach
+  it (axe-core `scrollable-region-focusable`). Nesting it inside `OfficeList`'s own `overflow-x-auto`
+  stacks two such regions. (3) `StatusChip`'s own prop doc says `'bounded'`'s hairline inherits its
+  color from the chip's ancestor and can drop under the 3:1 border-contrast floor inside a muted-text
+  ancestor, telling the reader to verify each new call site; the documented example ships a new call
+  site (a chip inside a table cell) with no measurement recorded.
+
+- **A marker anchor may bind to a Tailwind class, and the gate only checks that it resolves.** Three
+  of `tags/screen`'s five frozen callout anchors select on styling classes
+  (`div.overflow-hidden.card-shell.card-shadow`, `div.rounded-box.border-dashed`,
+  `button.btn-primary[type="submit"]`), and the first is unique only because one of two cards built
+  from the same shared class constant happens to carry `overflow-hidden` as well. The universal
+  contract asserts the anchor resolves and nothing more, so a styling refactor that moves a class can
+  silently repoint a published numbered callout at the wrong element with every gate green. The same
+  story already shows the durable form twice, an id and an `aria-label`. Give the three a stable hook
+  and treat a class-shaped anchor as a review smell across the seam.
+
+- **The editor preview frame declares no document language** (WCAG 3.1.1, Level A).
+  `buildPreviewDoc` emits `<html data-cairn-preview>` with no `lang`, so a screen-reader user proofing
+  in Preview hears the entry read in the synthesizer's default voice. Every cairn site's live preview
+  inherits it, and the seam now publishes it through `editor/preview-tab`. The narrow fix is a
+  literal; the right one threads the site's language through `ResolvedPreview` so a non-English site
+  is correct too.
 
 - **The `checkOrigin` migration pass, before P (moved up from Later, Geoff 2026-08-13).** The
   deprecation warning now prints six-plus times in every first-time owner's build (observed live in
@@ -1685,6 +1756,17 @@ the named human gates only):**
   ever arrive as a verbal report today.
 
 ## Later
+
+- **Three pieces of engine hygiene the reproduction seam surfaced, none urgent.** `CairnAdminShell`
+  writes `<svelte:head><title>` and injects a `body { margin: 0 }` style into the host document, which
+  is harmless while every reproduction is iframed and would let the last-mounted story overwrite a
+  docs page's own title if one were ever mounted inline; the reference page should say `ReproContext`
+  belongs in its own document, or the shell should guard it. The `editor/toolbar` story's
+  `createRawSnippet` transcription wraps its buttons in a `<span style="display:contents">` the real
+  toolbar does not have, which is a structural divergence in a file whose whole purpose is fidelity
+  and will trip a strict `style-src` CSP on a docs origin. And the story-mount harness pins only the
+  first width a manifest entry declares, so a two-width row is proven at one of its two faces by the
+  universal contract; the second face is covered today only by a bespoke test.
 
 - **Motion in the docs visual layer, ruled out 2026-08-15 with a named revisit trigger.** The
   visual-layer sitting (`docs/internal/record/2026-08-15-docs-visual-layer-rulings.md`, ruling 5)

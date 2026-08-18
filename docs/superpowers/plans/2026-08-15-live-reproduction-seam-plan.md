@@ -733,3 +733,117 @@ tests, exit 0; svelte-check 0/0 across 1626 files.
 - **`createRawSnippet` under prerender-then-hydrate is unproven.** The toolbar story builds its
   Insert group from an HTML string; worth one explicit check for a hydration mismatch on a real
   `/repro` page before it ships.
+
+---
+
+## Pass 1b post-mortem (2026-08-18): the seam's engine half is complete and merged
+
+Pass 1b carried A5b, A6a, A6b, A7, A8, and the close, and it finished them. Fifteen commits,
+`f554c2cb` through `ec70bdb6`, 33 files, +2430/-316.
+
+### What shipped
+
+- **A5b**, the four publish stories, plus two things the plan did not name. The shared `EditPage`
+  prop bag and wait helpers moved out of `editor.ts` into `stories/support.ts`, since
+  `publish/header-band` mounts the same component. And `ReproStory.shellPathname` became a general
+  `shellData` partial, because `publish/pending-list` needs a resolved pending set and a second
+  narrow knob beside the pathname would have drifted. `ReproContext` merges it once, non-reactively,
+  which sweep finding 9 makes load-bearing.
+- **A6a**, the seven media stories. **A6b**, the last four, which empties `PENDING_STORY_IDS` and
+  binds the full 25-story inventory. `toolkit/custom-screen` mounts a transcription of the worked
+  snippet in `docs/extend/add-a-custom-admin-screen.md`, and that snippet was checked against the
+  current toolkit exports and found undrifted, so the page's example is now backed by a mounted,
+  tested render.
+- **A7**, `validateReproFence` on the `/reproductions/manifest` subpath and the `check:visuals`
+  growth, with the gate proven red once against a scratch page and then clean.
+- **A8**, split into A8a (the reference page, its two `reference-coverage.mjs` CONFIG rows, the arm
+  index row, and the `components.md` corrections) and A8b (the register entry, the release-ritual
+  line, the changelog and per-version record, and the friction-log triage).
+
+### The pass ran wider than its plan, at Geoff's direction
+
+Three additions, all his: harvest engine DX findings as a standing pass dimension, backfill the
+same from the passes the friction log never received, and disclose rather than fix the
+scaffolder's Windows limitation. The last came with a ruling that now governs triage:
+`create-cairn-site` is a prototype for the Go successor, so a deficiency found in it is disclosed
+and carried there rather than paid down twice. The Go spec gained a Platforms section requiring
+Linux, macOS, and Windows, and recording that the REST-first engine is what makes three platforms
+cheap, so a later drift back toward shelling out to an installed CLI is a design decision rather
+than an implementation detail.
+
+### Three sweeps ran, and each found something conformance could not
+
+- **A premise check over A6a, A6b, A7, and A8** before dispatching them: four readers, then one
+  skeptic per finding. Eight findings refuted, one confirmed. A7's rule text still enumerated the
+  pinned widths as `narrow`/`desktop`, written before A4b ratified `wide`, and `git log -L` proved
+  the amendment commits never touched that line. Built literally it would have refused the two rows
+  that declare `wide` as their only height, leaving both embeddable at no width at all: the exact
+  gap A4b existed to close. The fix deletes the enumeration rather than extending it, since
+  `ReproHeights` is already the schema.
+- **The DX harvest**, six findings, of which one is a verified editor-facing defect: the
+  delete-refusal banner puts the plural concept label in a singular sentence, in the visible alert
+  and the polite live region both, while the same file already reaches for `data.singular` elsewhere.
+- **The backfill**, twenty-three candidates from the unharvested 2026-08-04 to 08-16 window, eleven
+  surviving refutation. The pattern worth keeping: the highest-yield findings were **defects a pass
+  consciously noticed and deferred into a plan file's residuals**, where no tracking surface ever
+  collected them. Two were spot-checked by hand and held: four published assertions across two
+  extend pages state a commit attribution that live commits disprove, and the e2e bundle gate
+  budgets 5 MiB against a 3 MiB free-tier limit, so it cannot fail before a free-plan deploy already
+  has.
+
+### The review gate found nineteen, and the two blockers were both self-inflicted in a specific way
+
+Eight fixed here, seven filed to `ROADMAP.md` consolidated by theme, one dismissed with evidence
+(the narrow face the Svelte reviewer called unproven is covered by a bespoke test A5b added).
+
+The two blockers share a shape worth carrying. **The published snippet extenders copy emits two
+`<h1>`**, because `PageHeader` and `OfficeList` each render one and no engine screen mounts
+`OfficeList`, so the only place the two are composed is the page we tell people to copy. And **the
+Insert image control omits `aria-haspopup="dialog"`** while the surface it opens is
+`role="dialog" aria-modal="true"` and that component's own trigger carries the property. The
+reproduction transcribed the omission faithfully, which was right, then wrote a comment declaring it
+a deliberate convention, and a test pinned the absence as expected. **A fidelity artifact that
+transcribes a defect must say so, or it launders the defect into a standard.** The existing Edit
+block transcription does exactly that and is the model.
+
+The Svelte blocker is aimed at Pass 2: `ReproContext` is half-reactive to `story`, safe only if one
+instance mounts one story for its lifetime, and that rule lived in an engine code comment on the
+wrong side of the package boundary from the consumer who must obey it. cairn-pub mounts through
+`/repro/[id]`, where SvelteKit reuses the page component across a param change. It is now a thrown
+guard naming `{#key story.id}` as the fix, and a stated rule on the reference page.
+
+### The plan's own deferral was disproved
+
+Both reviewers independently showed that Pass 2's `/repro` route cannot contain what it mounts.
+`TidyReview` calls `showModal()` in its mount effect, which grabs focus before any route-level
+`inert` runs, and `CairnAdminShell` binds `<svelte:window onkeydown>`, which `inert` does not
+remove. Containment therefore belongs in `ReproContext`, which Pass 1's own Decision 2 already names
+as the single provider both consumers share. Filed as the first ROADMAP Now entry, owed before
+Pass 2 ships the route.
+
+### Verification
+
+The PR-gating workflow list was re-derived with `grep -l pull_request` rather than recalled: five
+workflows, 24 `check:*` targets plus `test:emit`, `test:reskin`, and the suite. All green except
+`check:consumers`, which fails in any feature worktree on the known `examples/showcase/node_modules`
+symlink collision and diagnoses itself in its own output. Full suite 424 files, 5599 tests, exit 0;
+svelte-check 0/0 across 1633 files. The four CI-only gates were run by name.
+
+### Decisions locked
+
+1. **`shellData` is the one seam for shaping a shell story's payload**, merged once and
+   non-reactively. Pass 2 inherits it rather than adding a second knob.
+2. **A fence's `width` is derived from the story's own `ReproHeights`, never an enumerated list**,
+   and `column` is refused by role, since the responsive embed is what omitting `width` means.
+3. **`create-cairn-site` is a prototype for the Go successor** (Geoff), so its deficiencies are
+   disclosed and carried there unless they outlive the Node CLI.
+4. **A transcription that reproduces a defect records it as a defect.**
+
+### Owed by Pass 2
+
+- The containment work above, before the `/repro` route ships.
+- The cairn-pub spec's gate-1 bullet still reads "`width` one of the two listed values" while its own
+  fence-body table lists three; the amendment updated the table and missed the bullet.
+- `check:visuals` now runs `npm run package` itself, which is a third redundant rebuild in
+  `test.yml`, where `check:package` and `check:surface` already package before it. Correctness is
+  unaffected; a later pass may want to dedupe that sequence.

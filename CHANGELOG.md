@@ -11,14 +11,20 @@
   build validate a reference to a story without loading Svelte. A story names the smallest
   component containing what it shows, so framing comes from picking the component rather than from
   cropping a picture, and nothing is captured, so a reproduction cannot fall behind the code it
-  reproduces. Ten of the planned twenty-five stories ship here (the two auth pages and the eight
-  editor screens); the rest, the fence validator, and the reference page follow in the next pass,
-  which is why no page embeds one yet. Consumers must: nothing.
+  reproduces. All twenty-five planned stories ship here. `validateReproFence`, exported from the
+  manifest subpath, checks a `repro` fence's raw YAML body against the installed manifest, so this
+  engine's own `check:visuals` gate and a consuming site's build-time fence validation run the same
+  rule set and cannot drift apart; `check:visuals` now scans every `repro` fence in the corpus
+  alongside its existing mermaid-diagram and image checks. The full surface, both subpaths and the
+  fence schema, is documented at `docs/reference/reproductions.md`. No page embeds a `repro` fence
+  yet: this engine exports the machinery, and a consuming docs build is where a fence resolves to a
+  rendered figure. Consumers must: nothing.
 
 - `CairnAdminShell` takes an optional `themeOverride`, and `EditPage` an optional
   `spellcheckOverride`, so a context that mounts either outside a real admin route owns what it
   renders. With `themeOverride` set the shell reads neither the admin theme cookie nor the OS
-  color-scheme preference, and it hides the theme controls it can no longer honor;
+  color-scheme preference, and it renders no theme toggle at all, in the top bar or in `EditPage`'s
+  own folded overflow control, rather than a control it can no longer honor;
   `spellcheckOverride` starts the editor with spellcheck off and hides the same, which also stops
   each mount constructing a spellcheck worker and fetching a dictionary. Absent, both behave exactly
   as before. Consumers must: nothing.

@@ -87,6 +87,16 @@ Point-in-time observations; verify against the code before acting on them.
    A deep or relative import reaches any internal, and `attw`'s `internal-resolution-error` rule is
    muted. `check:version` enforces size-marker consistency, not breakage disclosure, and breaking
    changes ship under `minor` across `0.x`.
+4. **A component that reads its own environment has no way for an outside host to supply it
+   instead (live-reproduction seam pass, 2026-08-17 to 08-18).** Building the reproductions module
+   mounts every admin surface from outside a real admin session, the same position a site extending
+   the admin stands in, and it hit this wall directly: three injectability fixes (a media-base
+   context key, `CairnAdminShell`'s `themeOverride`, `EditPage`'s `spellcheckOverride`) had to land
+   before a single story could mount. Each component resolved a piece of its environment itself,
+   from a hardcoded default, a cookie, or `localStorage`, with no way for a host to supply it. A
+   developer composing a custom admin screen through the documented `CairnAdminShell` seam meets
+   the same walls in the same order. The fixes are shipped and narrow; the open question for the
+   next component that lands is which of its inputs a host can reach.
 
 ## How to build toward it now (without starting the redesign)
 

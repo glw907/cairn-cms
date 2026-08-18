@@ -107,6 +107,13 @@ This section carries the rules a writer needs at the page, so the records stay r
   and the caption is the first non-blank line after the closing fence, one emphasis paragraph
   (`*...*`) of complete sentences. The renderer must surface the authored directives to
   assistive technology, never override them with a generic label.
+- **A `repro` fence departs from that caption form in two ways.** First, the caption lives INSIDE
+  the fence body, as the `caption` key, rather than as the emphasis paragraph after the fence: the
+  body must be self-describing where the plugin does not run (GitHub, the tarball), and the
+  rendered `<figcaption>` wears the same visual treatment as a diagram caption, so a page carrying
+  both reads as one system. Second, widths are where reproductions and diagrams part company: the
+  320/390 bar the diagram bullet below is ruled exempt from still binds every live reproduction,
+  which is what a `repro` fence's `width` key exists to satisfy.
 - **A decorative image is authored as HTML** (`<img alt="" ...>`) so the empty alt is visibly
   deliberate; markdown image syntax (`![...]`) always carries real alt text.
 - **Diagrams follow the three-part discipline, and the 320/390 bar does not apply to them.**

@@ -110,3 +110,59 @@ GitHub and Cloudflare steps arrive in a later release, in a run that then perfor
 fixtures under `packages/create-cairn-site/test/fixtures/transcripts/` are the evidence, and the
 pass post-mortem in `docs/superpowers/plans/2026-08-16-capture-pass.md` carries the run's own
 account. New findings start fresh below this line.
+
+### The live-reproduction seam's harvest (Pass 1 and 1b, 2026-08-17 to 2026-08-18)
+
+Building reproductions is a harder DX probe than writing a doc about the same screen, because it
+mounts every admin surface from outside a real admin session. That is the same position a site
+extending the admin stands in. These findings come from the seam build; each names the evidence
+that produced it.
+
+- **Nothing in the admin could be mounted outside a real session without changing the engine
+  first.** `extender`. Three injectability fixes had to land before a single story rendered: a
+  media-base context key, `CairnAdminShell.themeOverride`, and `EditPage.spellcheckOverride`. Each
+  component resolved a piece of its environment itself, from a hardcoded default, a cookie, or
+  `localStorage`, with no way for a host to supply it. A site composing a custom admin screen meets
+  the same walls in the same order, and the documented `CairnAdminShell` seam is the surface that
+  invites it to. The fixes are shipped and narrow; the pattern behind them is the finding, and the
+  question worth asking before the next component lands is which of its inputs a host can reach.
+
+- **The shell decides which chrome to render by parsing a pathname string, and is silently wrong
+  off the shape it expects.** `extender`. `isDeskRoute` wants exactly three segments with a
+  declared concept in the second. Off that path it renders office chrome instead: the sidebar
+  breakpoint moves, the narrow band compaction stops applying, and the theme toggle stops folding
+  away. Nothing warns. The seam had to freeze a fixture pathname to keep three stories from
+  quietly picturing the wrong layout, and a site adding a screen at a path of its own choosing gets
+  whatever the parse happens to yield. A custom screen has no way to state which chrome it wants.
+
+- **No gate catches a new prop on an exported component.** `contributor`. `check:reference` and
+  `check:reference:signatures` both read `.d.ts` exports, so a Svelte prop interface can grow
+  without the reference page noticing. It already happened twice in one pass: `CairnAdminShell` and
+  `EditPage` each gained a public prop while `docs/reference/components.md` kept printing the older,
+  shorter signature. This is the strongest gate candidate the pass produced, since the condition is
+  mechanically detectable and the failure is silent. A watch note in a backlog would not catch it a
+  third time.
+
+- **The delete-refusal banner uses the plural concept label in a singular sentence.** `editor`.
+  `ConceptList.svelte:316` renders `This {data.label.toLowerCase()} could not be deleted`, so a
+  reader sees "This posts could not be deleted." `:255` composes the same sentence for the polite
+  live region, so an assistive-tech user hears it too. `:211` in the same file already reaches for
+  `data.singular ?? data.label`, so the component carries the right noun and these two strings take
+  the wrong one. Trigger: fix it before any docs page embeds `publish/refusal-banner`, which
+  reproduces that sentence at full size.
+
+- **Two components seize the page in ways an embedding host cannot undo.** `extender`. `TidyReview`
+  calls `showModal()` at mount, which pulls the host page's focus into the reproduction before the
+  route's own `inert` step can run. Separately, the command palette binds its shortcut through
+  `svelte:window`, and `inert` does not remove a window listener, so an inert reproduction still
+  answers Ctrl+K. Both are fine for a component that owns its page and hostile to one that does
+  not. Pass 2 carries them as constraints; the engine question is whether a host can ask a
+  component not to grab focus or global keys.
+
+- **State a host can only reach by calling an instance method is state a host cannot pose.**
+  `extender`. `MediaInsertPopover` mounts headless and opens through an instance export, with no
+  prop that drives the open state, so a declarative host has to synthesize a click instead of
+  describing what it wants. Related in shape: `spellcheckOverride` does two jobs at once, forcing
+  the value and hiding the control, because the one prop means both "start it off" and "the site
+  owns this now". Neither is urgent. Together they are the reason the seam leans on poses where
+  props would have been steadier.

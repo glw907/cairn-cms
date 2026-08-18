@@ -189,6 +189,12 @@ Triage runs at this pass's Task A8 under the complete-or-move rule.
   about which behavior is wanted, since `CLAUDE.md` states the bot-as-committer promise as design.
 
 - **The scaffolder cannot run on Windows, which it otherwise treats as supported.** `admin`.
+  **RULED 2026-08-18 (Geoff): not fixed, disclosed.** `create-cairn-site` is effectively a prototype
+  for the Go and Bubbletea tool that replaces it, and Windows support is picked up there rather than
+  paid down here. The limitation is now stated in `packages/create-cairn-site/README.md` and in
+  `docs/admin/create-your-site.md`, which also points a Windows reader at WSL or at handing setup to a
+  developer. What follows is the mechanism, kept because the successor tool inherits the requirement
+  and because the disclosure has to stay true.
   `packages/create-cairn-site/src/cloudflare/exec.mjs:120` returns `${defaultBin}.cmd` on win32 while
   `runCommand` at `:72` passes `shell: false` unconditionally, and Node's CVE-2024-27980 fix makes a bare
   `.cmd` spawn throw `EINVAL` on every release the package's `engines` field admits. The chapter's first
@@ -196,7 +202,8 @@ Triage runs at this pass's Task A8 under the complete-or-move rule.
   error before wrangler is reached. Where wrangler is reached, the bare catch at `:156` maps the failure
   to `wrangler-unavailable`, telling the admin to install something already installed. Windows is a
   claimed target: `preflight.mjs:131` carries a win32-only finding and `github/open.mjs:26` a win32
-  browser branch. Trigger: before release one publishes the tool.
+  browser branch, so the codebase reads as though the platform were supported. Those two win32
+  branches are now the misleading part and should go when someone next touches either file.
 
 - **The default deployable bundle is over the Workers Free script limit, and no gate can catch it.**
   `admin`. The showcase bundle measured about 3.17 MiB gzipped against Cloudflare's 3 MiB free-tier

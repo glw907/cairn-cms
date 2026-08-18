@@ -527,6 +527,9 @@ describe('publish/header-band', () => {
 
       const story = getStory('publish/header-band');
       const screen = render(ReproContext, { props: { story } });
+      // Settle then pose, the order both of the seam's consumers run in: pinning the viewport by
+      // hand is the only thing this test does differently from `mountPosed`.
+      if (story.settle) await story.settle(screen.container);
       if (story.pose) await story.pose(screen.container);
 
       // The narrow face this row exists to picture: the back link, the truncating title, and the

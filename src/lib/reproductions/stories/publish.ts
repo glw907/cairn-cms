@@ -17,7 +17,7 @@ import type { InboundLink } from '../../content/manifest.js';
 import type { DeleteRefusal, ListData } from '../../sveltekit/content-routes-core.js';
 import { fixtureConcept, fixtureDeskPathname, fixtureEditor, fixtureEntries, fixtureSiteName } from '../fixtures.js';
 import type { ReproStory } from '../index.js';
-import { editPageProps, waitFor } from './support.js';
+import { editPageProps, settleEditingSurface, waitFor } from './support.js';
 
 /**
  * The overflow menu's opened band (`publish/header-band`). `actionsOpen` is internal state with no
@@ -34,6 +34,12 @@ const headerBand: ReproStory = {
   // own compaction).
   shellData: { pathname: fixtureDeskPathname },
   props: editPageProps(),
+  // The band is in the server render, so this row's own subject needs no wait. The narrow face
+  // does: the manifest sizes it to contain the whole short screen so the bottom bar sits where it
+  // really sits, which puts the document body inside the frame, and `MarkdownEditor` is a fallback
+  // textarea until CodeMirror arrives through dynamic imports. Without this, a capture can read a
+  // frame whose band is right and whose editor underneath it is a plain textarea.
+  settle: settleEditingSurface,
   pose: async (root) => {
     (await waitFor(root, 'button[aria-label="More actions"]', 'the overflow trigger')).click();
     await waitFor(root, 'button[aria-label="More actions"][aria-expanded="true"]', 'the opened overflow menu');

@@ -248,6 +248,26 @@ describe('ReproStory.settle: the hydration wait a props-only story cannot expres
   });
 });
 
+describe('waitFor: a detached root', () => {
+  it('throws as soon as the root disconnects, rather than polling to the 20-second deadline', async () => {
+    const root = document.createElement('div');
+    document.body.appendChild(root);
+
+    const pending = waitFor(root, '[data-repro-never-appears]', 'a test surface');
+
+    // Give the poll loop a turn against the still-connected root before removing it, so the
+    // failure this proves is the disconnect check, not a root that was never connected at all.
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    root.remove();
+
+    const started = Date.now();
+    await expect(pending).rejects.toThrow(/disconnected|removed from the document/i);
+    // Well under SETTLE_TIMEOUT_MS (20s): proves the throw came from the disconnect check, not
+    // from the loop eventually reaching its deadline anyway.
+    expect(Date.now() - started).toBeLessThan(1000);
+  });
+});
+
 describe('ReproContext: the surface a bare story mounts on', () => {
   it('paints the admin surface under the theme root, so a story is not left on the host page ink', async () => {
     const screen = render(ReproContext, { props: { story: probeStory } });
@@ -339,6 +359,47 @@ describe('ReproContext: the theme root a bare story does not own', () => {
   });
 });
 
+describe('ReproContext: one instance mounts exactly one story for its lifetime', () => {
+  it('throws a named error rather than silently swapping the mounted story in place', async () => {
+    const secondStory: ReproStory = { ...probeStory, id: 'test/probe-second' };
+
+    const screen = render(ReproContext, { props: { story: probeStory } });
+
+    let caught: unknown;
+    try {
+      await screen.rerender({ story: secondStory });
+    } catch (error) {
+      caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toContain('ReproContext mounted story "test/probe"');
+    expect((caught as Error).message).toContain('"test/probe-second"');
+    expect((caught as Error).message).toContain('{#key story.id}');
+  });
+});
+
+describe('ReproContext: shellData overrides an explicit undefined field falls through', () => {
+  it('does not erase the default pathname when a story sets shellData.pathname to undefined', async () => {
+    const story: ReproStory = {
+      id: 'test/shell-probe-undefined-override',
+      component: ProbeComponent as Component<Record<string, unknown>>,
+      host: 'shell',
+      props: {},
+      shellData: { pathname: undefined },
+    };
+
+    const screen = render(ReproContext, { props: { story } });
+
+    // The default shellData.pathname is `/admin/${fixtureConcept.id}` ('/admin/posts'), which the
+    // fixture nav layout's own 'Posts' item names as its href; a spread that let `undefined`
+    // through would erase it and leave every nav item inactive.
+    await expect
+      .element(screen.getByRole('link', { name: 'Posts' }))
+      .toHaveAttribute('aria-current', 'page');
+  });
+});
+
 // The eight editor stories (Task A5a). The universal loop below already binds every marker anchor,
 // every settle, and every pose, so what these add is the one thing each page contract names
 // specifically: the face the reader is being shown, which a mount that merely did not throw would
@@ -393,12 +454,12 @@ describe('editor/toolbar', () => {
       'Tidy',
       'Place the cursor on an image to add a figure',
     ]);
-    // The one Insert control that opens a popover rather than a dialog carries no aria-haspopup in
-    // the real toolbar (EditPage.svelte's Insert image), and a reproduction that advertised the
-    // property anyway would be drift of exactly the kind this seam exists to prevent.
+    // Every Insert control opens a role="dialog" surface, Insert image included (it opens
+    // MediaInsertPopover, which carries role="dialog" aria-modal="true"), so every one of them
+    // carries aria-haspopup="dialog" in the real toolbar.
     const byName = (name: string) =>
       screen.container.querySelector(`[role="group"][aria-label="Insert"] button[aria-label="${name}"]`);
-    expect(byName('Insert image')?.hasAttribute('aria-haspopup')).toBe(false);
+    expect(byName('Insert image')?.getAttribute('aria-haspopup')).toBe('dialog');
     expect(byName('Insert block')?.getAttribute('aria-haspopup')).toBe('dialog');
   });
 });
@@ -825,14 +886,25 @@ describe('nav/worked-navlayout', () => {
 });
 
 describe('toolkit/custom-screen', () => {
-  it("renders the doc snippet's composed screen: the header, the office list, and each event's status chip", async () => {
+  it("renders the doc snippet's composed screen: one heading, the office list, and each event's status chip", async () => {
     const screen = await mountPosed(getStory('toolkit/custom-screen'));
 
+    // OfficeList alone supplies the page's one h1; the doc snippet no longer composes it with
+    // PageHeader, so there is exactly one heading here (WCAG 1.3.1: a page names one title).
+    const headings = screen.container.querySelectorAll('h1');
+    expect(headings).toHaveLength(1);
     await expect.element(screen.getByRole('heading', { name: 'Events', exact: true })).toBeInTheDocument();
     expect(screen.container.textContent).toContain('Club');
     expect(screen.container.textContent).toContain('3 upcoming');
 
-    await expect.element(screen.getByRole('heading', { name: 'All events' })).toBeInTheDocument();
+    // The column headers, transcribed with `scope="col"` (WCAG 1.3.1: an association a data
+    // table needs to be programmatically determinable).
+    const headerCells = [...screen.container.querySelectorAll('thead th')];
+    expect(headerCells).toHaveLength(2);
+    for (const cell of headerCells) {
+      expect(cell.getAttribute('scope')).toBe('col');
+    }
+
     const rows = [...screen.container.querySelectorAll('tbody tr')];
     expect(rows).toHaveLength(3);
     expect(screen.container.textContent).toContain('Spring Cleanup');
@@ -859,6 +931,19 @@ for (const story of stories) {
       expect((story.markers ?? []).map((marker) => marker.key)).toEqual(entry?.markerKeys ?? []);
     });
 
+    // ReproContext picks its render branch off `story.host`, but the theme root a bare story owns
+    // (or does not) comes from `manifestEntry.ownThemeRoot`, resolved separately in ReproContext.
+    // Nothing else binds `story.host` to `entry.host`, so a story and its manifest entry could drift
+    // (a story mounted `bare` while its manifest entry claims `shell`, or vice versa) with every
+    // other assertion here still green: this closes that gap.
+    it('mounts under the host its manifest entry declares', () => {
+      expect(story.host).toBe(entry?.host);
+    });
+
+    it('declares a pose function exactly when its manifest entry says it needs one', () => {
+      expect(Boolean(story.pose)).toBe(entry?.pose);
+    });
+
     it(
       'resolves every marker anchor and runs its settle and pose without throwing',
       async () => {
@@ -866,6 +951,12 @@ for (const story of stories) {
         for (const marker of story.markers ?? []) {
           const anchorEl = screen.container.querySelector(marker.anchor);
           expect(anchorEl, `marker "${marker.key}" anchor "${marker.anchor}" did not resolve`).not.toBeNull();
+        }
+        if (story.host === 'bare') {
+          expect(
+            screen.container.querySelector('[data-theme]'),
+            'a bare-host story mounted with no [data-theme] root',
+          ).not.toBeNull();
         }
       },
       EDITOR_MOUNT_TIMEOUT,

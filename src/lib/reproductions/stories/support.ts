@@ -33,6 +33,17 @@ export async function waitFor(root: HTMLElement, selector: string, what: string)
   for (;;) {
     const found = root.querySelector<HTMLElement>(selector);
     if (found) return found;
+    // An unmount mid-settle (a teardown between story mounts, an aborted capture, a docs page
+    // navigating away) removes the root from the document while this loop is still running. Left
+    // unchecked, the loop polls a detached subtree for the full deadline and then rejects with a
+    // message that blames the story for what was actually an unmount; throw as soon as it happens
+    // instead.
+    if (!root.isConnected) {
+      throw new Error(
+        `cairn reproductions: ${what} ("${selector}") never appeared, and the mounted root was ` +
+          'removed from the document while waiting (the root disconnected, not a slow story)',
+      );
+    }
     if (Date.now() > deadline) {
       throw new Error(`cairn reproductions: ${what} ("${selector}") never appeared under the mounted story`);
     }

@@ -58,7 +58,29 @@ inside a host that happens to provide a root.
   setContext(MEDIA_BASE_CONTEXT_KEY, fixtureMediaBase);
   setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf);
 
-  const manifestEntry = manifest.find((entry) => entry.id === story.id);
+  // The id of the story this instance was created to mount, read once and never again: everything
+  // below (context, the manifest entry, the shell payload) is resolved for THIS story only. The
+  // guard effect below is what makes that an enforced invariant rather than an assumption a caller
+  // could quietly violate by swapping the `story` prop in place.
+  const mountedStoryId = untrack(() => story.id);
+
+  // One ReproContext instance mounts exactly one story for its lifetime; the init-time reads above
+  // and the untracked shell payload below are only correct under that invariant. A consumer that
+  // reuses one instance across a story change (SvelteKit reusing a `/repro/[id]` page component
+  // across a param change, for instance) would otherwise silently keep the previous story's
+  // context, manifest entry, and shell payload while swapping in the new story's component. Throw
+  // loudly instead of drifting: the fix at the call site is `{#key story.id}` around the mount.
+  $effect(() => {
+    if (story.id !== mountedStoryId) {
+      throw new Error(
+        `ReproContext mounted story "${mountedStoryId}", but its story prop changed to ` +
+          `"${story.id}". One ReproContext instance mounts exactly one story for its lifetime; ` +
+          'wrap the mount in {#key story.id} to remount instead of swapping the story in place.',
+      );
+    }
+  });
+
+  const manifestEntry = untrack(() => manifest.find((entry) => entry.id === story.id));
 
   /**
    * `props` with the resolved theme merged into its `data` field, for a `bare` story that owns its
@@ -68,6 +90,22 @@ inside a host that happens to provide a root.
     const data = props.data;
     if (typeof data !== 'object' || data === null) return props;
     return { ...props, data: { ...data, theme: resolvedTheme } };
+  }
+
+  /**
+   * Drops every explicitly-`undefined`-valued key from a partial override before it is spread over
+   * a default object. A bare `{ ...overrides }` spread type-checks fine against a `Partial` and
+   * still overwrites the default with `undefined` for any key the caller mentions but leaves
+   * unset, which reads at the call site as "no opinion" and behaves as "erase this field".
+   */
+  function definedOnly<T extends object>(overrides: T | undefined): Partial<T> {
+    if (!overrides) return {};
+    const result: Partial<T> = {};
+    for (const key of Object.keys(overrides) as (keyof T)[]) {
+      const value = overrides[key];
+      if (value !== undefined) result[key] = value;
+    }
+    return result;
   }
 
   // One resolution for all three host branches below. Resolving here rather than per branch is what
@@ -80,8 +118,10 @@ inside a host that happens to provide a root.
 
   // Whether the mounted component resolves a theme root itself: the shell for a `shell` story, the
   // two auth pages' own wrappers for a `bare` one. A story with no manifest entry (a test probe) is
-  // treated as owning none, which is the case that needs the wrapper below.
-  const ownThemeRoot = $derived(manifestEntry?.ownThemeRoot ?? false);
+  // treated as owning none, which is the case that needs the wrapper below. A plain `const`, not
+  // `$derived`: `manifestEntry` is itself resolved once at init from the mounted story's id, so
+  // marking this reactive would misstate a value that never actually recomputes.
+  const ownThemeRoot = manifestEntry?.ownThemeRoot ?? false;
 
   const bareProps = $derived(
     story.host === 'bare' && ownThemeRoot ? withTheme(story.props, resolvedTheme) : story.props,
@@ -118,7 +158,7 @@ inside a host that happens to provide a root.
     csrf: fixtureCsrf,
     pendingEntries: Promise.resolve(null),
     attention: {},
-    ...shellOverride,
+    ...definedOnly(shellOverride),
   };
 </script>
 

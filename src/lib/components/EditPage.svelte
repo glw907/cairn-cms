@@ -2129,6 +2129,7 @@ persistent "?" carries Markdown help, design-arc D2).
             type="button"
             class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11"
             disabled={insertDisabled}
+            aria-haspopup="dialog"
             aria-label="Insert image"
             title="Insert image"
             onclick={() => mediaPopover?.open('chooser')}

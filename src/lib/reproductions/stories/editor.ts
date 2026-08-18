@@ -61,21 +61,6 @@ function insertButton(label: string, inner: string): string {
 }
 
 /**
- * The one insert control that opens a popover rather than a dialog, so it carries no
- * `aria-haspopup`. Insert image is the real toolbar's only such control; stamping the property on
- * it here would advertise something the control it reproduces does not have.
- * @param label - the control's accessible name and tooltip
- * @param inner - the icon's shapes
- * @returns one button's markup
- */
-function popoverButton(label: string, inner: string): string {
-  return (
-    '<button type="button" class="btn btn-sm btn-ghost btn-square" ' +
-    `aria-label="${label}" title="${label}">${glyph(inner)}</button>`
-  );
-}
-
-/**
  * The Insert group's contents, which the toolbar takes from its host rather than wiring itself.
  * `EditPage` renders these as a Svelte snippet; a story module has no markup of its own, so it
  * builds the same strip through `createRawSnippet`. Seven controls, the number the real Insert
@@ -115,7 +100,7 @@ const insertControls = createRawSnippet(() => ({
       '<path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h7"/>' +
         '<path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="m10 18 3-3-3-3"/>',
     ) +
-    popoverButton(
+    insertButton(
       'Insert image',
       '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/>' +
         '<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',

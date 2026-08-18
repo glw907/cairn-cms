@@ -5,23 +5,20 @@
 story exists to prove. No component in the package renders one of a site's own content concepts
 (the doc's own rule, repro-story-audit.md's `toolkit/custom-screen` row), so this file lives inside
 the reproductions module rather than `src/lib/components`, and composes only the toolkit primitives
-the doc snippet names: `PageHeader`, `OfficeList`, `AdminTable`, `StatusChip`. Keep this in lockstep
-with the doc snippet rather than improving on it; a drift here is a drift a reader of that page would
-hit.
+the doc snippet names: `OfficeList`, `AdminTable`, `StatusChip`. Keep this in lockstep with the doc
+snippet rather than improving on it; a drift here is a drift a reader of that page would hit.
 -->
 <script lang="ts">
-  import { PageHeader, OfficeList, AdminTable, StatusChip } from '../../admin-toolkit/index.js';
+  import { OfficeList, AdminTable, StatusChip } from '../../admin-toolkit/index.js';
 
   let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
 </script>
 
-<PageHeader eyebrow="Club" title="Events" meta={`${data.events.length} upcoming`} />
-
-<OfficeList title="All events">
+<OfficeList eyebrow="Club" title="Events" subtitle={`${data.events.length} upcoming`}>
   <AdminTable rowCount={data.events.length}>
     {#snippet header()}
-      <th>Name</th>
-      <th>Status</th>
+      <th scope="col">Name</th>
+      <th scope="col">Status</th>
     {/snippet}
     {#snippet children()}
       {#each data.events as event (event.id)}

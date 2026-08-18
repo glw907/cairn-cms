@@ -1107,6 +1107,9 @@ describe('EditPage', () => {
     expect(image).not.toBeNull();
     expect(image!.disabled).toBe(false);
     expect(image!.closest('[role="toolbar"]')).not.toBeNull();
+    // The control opens a role="dialog" surface (MediaInsertPopover), same as every sibling
+    // insert control; WCAG 4.1.2 wants that advertised before the surface opens.
+    expect(image!.getAttribute('aria-haspopup')).toBe('dialog');
   });
 
   it('disables the Insert-media control in Preview mode', async () => {

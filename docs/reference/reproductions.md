@@ -1,9 +1,14 @@
 # Reproductions (`@glw907/cairn-cms/reproductions`)
 
 This subpath is the story registry backing a `repro` fenced code block: a docs page names a story
-id, and the fence resolves to a live, interactive-free render of the real admin component the id
-names. It ships in the tarball beside the docs corpus for a site that builds a docs corpus against
-it, notably cairn-pub; it carries no general-purpose admin UI a site mounts on its own.
+id, and the fence resolves to a live render of the real admin component the id names, mounted with
+its fixture data and driven to the state its page contract describes. It ships in the tarball
+beside the docs corpus for a site that builds a docs corpus against it, notably cairn-pub; it
+carries no general-purpose admin UI a site mounts on its own. The engine mounts the real,
+interactive component as-is: the render carries no `inert` attribute and no focus containment of
+its own. Keeping a rendered story from acting as a live admin surface once it is embedded in a
+docs page (an `iframe`'s own sandboxing, `inert`, focus containment) is the consuming site's
+obligation, not something this subpath does for it.
 
 ```ts
 import { getStory, ReproContext } from '@glw907/cairn-cms/reproductions';
@@ -70,8 +75,11 @@ as Svelte context before mounting; a component that reads no context beyond what
 [`ReproContext`](#reprocontext) already supplies unconditionally leaves it unset. `settle` waits
 for a client-only surface to exist at all before `pose` runs, for a story whose contracted content
 does not appear in the server render. `pose` drives a state that lives in the component's own
-internal state rather than a prop. `markers` are the numbered callout anchors a story exposes,
-mirroring its manifest entry's `markerKeys`.
+internal state rather than a prop. Both take `root`, the element `ReproContext` mounted the story
+into, never `document`: a posed dialog and the editor's fixed-position insert panel render inside
+that element rather than appended to `document.body`, so a `settle` or `pose` that queries
+`document` instead of `root` misses them. `markers` are the numbered callout anchors a story
+exposes, mirroring its manifest entry's `markerKeys`.
 
 ### `stories`
 
@@ -117,6 +125,21 @@ falls back to the light admin theme. A `'bare'` story that resolves no theme roo
 row except the two auth pages) gets one from `ReproContext` itself, painted with the admin surface
 colors, so it renders correctly wherever it mounts rather than only inside a host that happens to
 supply a theme root.
+
+One `ReproContext` instance mounts exactly one story for its lifetime. Its context, its manifest
+lookup, and its shell payload all resolve once, from the `story` this instance first mounted; they
+do not update if a later render hands it a different `story` with a different `id`. A consumer that
+reuses one instance across a story change, such as a `/repro/[id]` route where the framework reuses
+one page component across a param change, must key the mount on the story id
+(`{#key story.id}<ReproContext {story} />{/key}`) so a story change remounts a fresh instance
+instead of silently keeping the previous story's context and shell data under the new story's
+component. `ReproContext` itself throws if its `story` prop's `id` ever changes in place, so a
+missing `{#key}` fails loudly rather than rendering a mismatched story.
+
+The media-base and CSRF context keys `ReproContext` sets (see
+[`fixtureMediaBase`](#fixturemediabase) below) are reserved: `ReproContext` applies `story.context`
+first and then sets both unconditionally, so a story's own `context` entry under either key is
+shadowed by the value `ReproContext` supplies, never the other way around.
 
 ---
 

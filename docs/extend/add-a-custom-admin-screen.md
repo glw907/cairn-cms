@@ -97,18 +97,16 @@ usual build and can use anything your stack supports.
 
 ```svelte
 <script lang="ts">
-  import { PageHeader, OfficeList, AdminTable, StatusChip } from '@glw907/cairn-cms/admin-toolkit';
+  import { OfficeList, AdminTable, StatusChip } from '@glw907/cairn-cms/admin-toolkit';
 
   let { data }: { data: { events: { id: string; name: string; status: string }[] } } = $props();
 </script>
 
-<PageHeader eyebrow="Club" title="Events" meta={`${data.events.length} upcoming`} />
-
-<OfficeList title="All events">
+<OfficeList eyebrow="Club" title="Events" subtitle={`${data.events.length} upcoming`}>
   <AdminTable rowCount={data.events.length}>
     {#snippet header()}
-      <th>Name</th>
-      <th>Status</th>
+      <th scope="col">Name</th>
+      <th scope="col">Status</th>
     {/snippet}
     {#snippet children()}
       {#each data.events as event (event.id)}

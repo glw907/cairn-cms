@@ -15,81 +15,68 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-17: seam Pass 1 is CLOSED and SPLIT; Pass 1b is next)
+## Immediate next action (2026-08-18: seam Pass 1b is CLOSED and MERGED; Pass 2 is next)
 
-**Seam Pass 1 ran and was cut short deliberately, at Geoff's call, after Task A5a.** It ran long,
-and the orchestrator did not propose the split until asked three times, which is recorded in the
-post-mortem as the miss it was. Plan and post-mortem:
-`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`.
+**The live-reproduction seam's engine half is complete and on `main`** (merge `bd716ac7`). Plan and
+both post-mortems: `docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`.
 
-**THE BRANCH IS NOT MERGED, AND THAT IS DELIBERATE.** Pass 1 added two public export subpaths
-(`@glw907/cairn-cms/reproductions` and `/reproductions/manifest`) with no reference page yet, and
-this repo's rule is that a public-API change is not done until its reference page matches. Task A8
-writes it; Pass 1b merges. `main` is untouched and carries none of this work.
+**Immediate next action: seam Pass 2, in a different repo.** Launch prompt, a fresh Opus 5 session
+from `~/Projects/cairn-pub`: "Execute Pass 2 of the live-reproduction seam plan, cairn-cms
+`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`, from Task B1."
 
-**Immediate next action: seam Pass 1b.** Launch prompt, a fresh Opus 5 session from
-`~/Projects/cairn-cms`: "Execute Pass 1b of the live-reproduction seam plan,
-docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md, from Task A5b, per the cairn-pass
-skill."
+**BRANCH TOPOLOGY, the thing a cold session gets wrong by default.** Pass 2 runs in
+`~/Projects/cairn-pub` on the existing branch `pass-d-docs-tracks`, NOT in this repo and not off a
+fresh branch. It consumes the engine through a packed tarball (`npm pack` plus a `file:` pin), which
+is Task B1's whole job, because the registry's published version predates all of this. Run the
+one-executor check there first (`pgrep -f cairn-pub`, warm `git status`).
 
-**BRANCH TOPOLOGY, the thing a cold session gets wrong by default.** Pass 1b continues **on the
-existing branch `live-repro-seam-pass1`, in the existing worktree
-`.claude/worktrees/repro-seam`**. It does NOT branch off `main`: `main` has no reproductions module
-at all, so a fresh branch would build against the wrong engine and every story task would fail on
-imports that do not exist. The worktree is clean and pushed as of this entry.
+**What Pass 1b shipped**, fifteen commits `f554c2cb` through `ec70bdb6`, plus the merge. **All 25
+stories are registered and mounted under test**, so `PENDING_STORY_IDS` is now empty and the suite's
+inventory tests bind the full manifest. `ReproStory.shellPathname` became a general `shellData`
+partial, merged once and non-reactively. `validateReproFence` rides the `/reproductions/manifest`
+subpath and `check:visuals` grew into the repro-fence gate, proven red once against a scratch page.
+Both new subpaths now have `docs/reference/reproductions.md` and the two `reference-coverage.mjs`
+CONFIG rows without which the reference gates passed vacuously over them.
 
-**What Pass 1b carries**, in order: A5b (4 publish stories), A6a (7 media stories), A6b (4 for
-tags, roster, nav, and toolkit), A7 (the shared `validateReproFence` and the `check:visuals`
-growth, a new gate that must be proven red once), A8 (the reference page, the register edit, the
-release-ritual line, and the reference-arm corrections listed below), and A9 (the close and the
-merge to `main`).
+**Three things Pass 2 is owed, and the first one contradicts the plan.**
 
-**What Pass 1 shipped**, seven commits, `9762089d` through `d11863fa`: the node-safe manifest and
-the 25-row story audit, the fixture set with five real PNGs, the injectability fixes (a media-base
-context key and `CairnAdminShell.themeOverride`), the harness (`ReproStory`, `getStory`,
-`ReproContext`), an unplanned amendment task, and the eight editor stories. **Ten of 25 stories are
-registered**; the suite names the other fifteen explicitly in `PENDING_STORY_IDS`, so a task that
-registers a group without shrinking that list fails on an id that resolves while still marked
-pending.
+1. **The seam does not contain what it mounts, and the plan's answer cannot work.** Pass 2's
+   `/repro` route was to apply `inert`. Two fresh-context reviewers independently showed that is
+   insufficient: `TidyReview` calls `showModal()` in its mount effect, which grabs the host page's
+   focus before any route-level step runs, and `CairnAdminShell` binds `<svelte:window onkeydown>`,
+   which `inert` does not remove, so each of the fifteen shell-hosted reproductions answers Ctrl+K
+   with a fake command palette. Containment belongs in `ReproContext`, which Pass 1's own Decision 2
+   already names as the single provider both consumers share. Filed as the first `ROADMAP.md` Now
+   entry, **owed before Pass 2 ships the route**.
+2. **The cairn-pub spec is stale against itself.** Its gate-1 bullet still reads "`width` one of the
+   two listed values" while its own fence-body table, amended in the same commit series, lists
+   three. The engine implements the correct rule (derived from `ReproHeights`, with `column` refused
+   by role); the spec bullet wants the matching one-line fix.
+3. `check:visuals` now runs `npm run package` itself, a third redundant rebuild in `test.yml` where
+   `check:package` and `check:surface` already package before it. Correctness unaffected; a later
+   pass may dedupe that sequence.
 
-**Geoff ratified a third pinned width, `wide` (1280), and the spec is amended** (cairn-pub
-`4d9e492` and `2bdca80`, branch `pass-d-docs-tracks`, pushed). The reason is durable: the admin
-sidebar is a drawer until `lg`, and the Write/Preview tablist is hidden below `sm`, so four stories
-declare only the widths at which their subject is actually visible. **The audit did not catch this
-and could not have**: it settled which component each story mounts and how its state is reached,
-correctly, and never asked whether the render would be wide enough to show the subject. An
-eleven-agent verification sweep found it, banked at
-`docs/internal/record/2026-08-17-repro-audit-verification-sweep.md`.
+**The pass ran wider than its plan, at Geoff's direction, and two of those are now standing rules.**
+Engine DX findings are harvested into `docs/internal/docs-friction-log.md` as a pass dimension, and
+the same was backfilled from the 2026-08-04 to 08-16 window the log never received. **`create-cairn-site`
+is a prototype for the Go successor** (Geoff, 2026-08-18), so a deficiency found in it is disclosed
+and carried there rather than paid down twice; the worked example is Windows, now disclosed in
+`docs/admin/create-your-site.md` and the package README rather than fixed. **The Go tool must support
+Linux, macOS, and Windows**, recorded in that spec's new Platforms section.
 
-**The review gate found two WCAG 4.1.2 failures in shipped props and they are fixed** (`d11863fa`):
-`themeOverride` and `spellcheckOverride` both left controls operable that could no longer do
-anything, the second one advertising `aria-pressed` while overwriting the author's stored
-preference. A third dead face, the theme toggle mirrored into `EditPage`'s below-`sm` overflow,
-was found by the fold agent and neither reviewer. **Carry the lesson: a review that only reads the
-diff misses a control reached through a holder the diff does not touch.**
+**Seventeen findings were triaged out of the friction log**, sixteen into `ROADMAP.md` and one folded
+into the extending-developer lens; the review gate then filed seven more. The log holds exactly one
+live finding, listed under the hand steps below because only Geoff can close it.
 
-**Owed by Pass 1b, beyond its task list.** (1) `docs/reference/reproductions.md` plus two
-`reference-coverage.mjs` CONFIG rows, without which the reference gates pass vacuously over the new
-subpaths. (2) `docs/reference/components.md` understates `CairnAdminShell` and `EditPage`, which
-both gained public props; no gate catches a new prop. (3) A decision the fold created:
-`spellcheckOverride` now hides the footer chip, so three reproductions picture three chips where a
-reader's editor shows four, because one prop is doing two jobs (start-off, and the-site-owns-this).
-Either split it or accept the drift in the captions, but decide it. (4) Two Pass 2 constraints
-established here: `TidyReview` calls `showModal()` at mount, which pulls the parent page's focus
-into the iframe **before** the route's `inert` step can run, and `inert` does not remove
-`svelte:window` key listeners, so a focused reproduction still answers Ctrl+K.
+**Gate state at the close.** The PR-gating workflow list was re-derived with `grep -l pull_request`
+rather than recalled: five workflows, 24 `check:*` targets plus `test:emit`, `test:reskin`, and the
+suite. All green except `check:consumers`, which fails in any feature worktree on the known
+`examples/showcase/node_modules` symlink collision and says so in its own output. Full suite 424
+files, 5599 tests, exit 0; svelte-check 0/0 across 1633 files. `CHANGELOG.md`'s `## Unreleased`
+window carries this pass; no version bump, no publish.
 
-**Three roadmap entries opened by this pass**, all in the Now tier: a site with a non-default
-`assets.publicBase` has broken admin thumbnails today and the new context key makes the fix one
-provider; `EditPage`'s Edit block control is disabled the way that file's own comment forbids; and
-`check:reference` cannot see a subpath nobody told it about, which is how two undocumented subpaths
-shipped past a green gate.
+**The `repro-seam` worktree is merged and can be pruned.** Nothing branches from it.
 
-**Gate state at the close.** Every PR-gating workflow re-derived with `grep -l pull_request` rather
-than recalled, then run by name: all green except `check:consumers`, which fails in any feature
-worktree on the known `examples/showcase/node_modules` symlink collision and says so itself. Full
-suite 423 files, 5468 tests, exit 0; svelte-check 0/0 across 1626 files. The `CHANGELOG.md`
-`## Unreleased` window carries this pass; no version bump, no publish.
 
 ### The visual layer runs before release one (Geoff, 2026-08-15)
 
@@ -230,7 +217,7 @@ These are not gated on release one, the site walk, or each other. Item (1) in pa
 actioned now rather than batched with the rest; it is listed first because it is a live credential
 exposure, not because it is first in any sequence.
 
-**TEN outstanding, one urgent.** (1) **URGENT: rotate the estate
+**ELEVEN outstanding, one urgent.** (1) **URGENT: rotate the estate
 Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still active; mint
 a replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the
 old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API token
@@ -245,7 +232,12 @@ token, T5 run 2's eight-key token, and the eight-key token minted 2026-08-13 for
 and teardown. (9) Check the Workers Paid opt-in taken at T5 run 2's prompt, in case the account
 was not already on it via 907-life. (10) Delete the GitHub App `cairn-cairn-capture-scratch`,
 created 2026-08-17 by the capture pass on the personal account, which uninstalls its
-installation with it; this is the THIRD App awaiting hand-deletion.
+installation with it; this is the THIRD App awaiting hand-deletion. (11) **Take one browser glance at
+the Advanced Certificate Manager line item**, the last open number in `create-cairn-site`'s cost
+copy. `packages/create-cairn-site/src/money.mjs:41` ships "about $6 a month" unhedged, and the T4b
+research that produced it explicitly refused to put an inference in owner-facing money copy, pricing
+the downside at $10/month if the question resolved against us. Either answer closes it: take the
+glance, or hedge the line. This is the one finding still live in the friction log.
 
 **Capture-pass scratch estate (2026-08-17), torn down in-session at Task A6, not by hand.** The
 GitHub repository `glw907/cairn-capture-scratch`; the worker `cairn-capture-scratch`; D1
@@ -261,7 +253,16 @@ token (its zone checks fail because `showcase.test` exists nowhere, and its D1 c
 structurally), so the run reused the existing account token rather than minting and revoking
 one for no change in bytes.
 
-**Carry-forwards (the tool initiative), verified against this list, not a remembered one.**
+**Carry-forwards (the tool initiative). AUDITED ONE BY ONE 2026-08-18 against the code, not against
+these sentences.** Three are hereby dropped rather than carried a sixth window, each checked and
+judged not worth filing: (3) `packages/create-cairn-site` having neither a comment nor a type gate
+(the package is plain JS by design, its own suite is the real gate, and no pass has reported a defect
+slipping through), (4) the `paid-plan-missing` mapping keyed on entitlement wording (the call site's
+docstring and its test name both already state the risk and the reason), and (6) the root `CLAUDE.md`
+context-headroom note (housekeeping, outside any tracking doc's charter). Of the rest, (1) and (2)
+moved to `ROADMAP.md` with real triggers, and (2) grew: four published assertions across two extend
+pages state a commit attribution that live commits disprove, which the carry-forward's source-comment
+scope never covered. The remainder stand as written:
 (1) An externally registered domain still owes the branches the scratch domain cannot reach.
 (2) The engine committer-attribution drift from T3 (`src/lib/github/repo.ts` versus spec 7.4).
 (3) `check:comments` and the root type-check cover `src/lib` only, so `packages/create-cairn-site`
@@ -323,11 +324,9 @@ release one per the ordering above:
 `0.94.0-rc.1`; what it is behind on is the docs restructure, which its prepared
 `pass-d-docs-tracks` branch carries and the site walk merges.
 
-**The seam Pass 1 worktree is `.claude/worktrees/repro-seam`** (branch `live-repro-seam-pass1`).
-It is CLEAN and pushed as of the Pass 1 close, and it is where Pass 1b continues. The warm
-uncommitted work this entry used to describe was Task A1; it was verified against the plan, one
-defect fixed (its node-safety assertion matched only `from`-shaped imports, so a side-effect
-`import './x.svelte'` walked straight past it), and committed as `9762089d`.
+**The seam worktree `.claude/worktrees/repro-seam` is MERGED (`bd716ac7`) and can be pruned.**
+Nothing branches from it. Pass 2 does not run here at all; it runs in `~/Projects/cairn-pub` on
+`pass-d-docs-tracks`.
 
 **Two further worktrees survive the Pass D cleanup, and neither is live work.**
 `.claude/worktrees/wayfinder-retheme-lab` and `.claude/worktrees/wayfinder-fixtures` hold

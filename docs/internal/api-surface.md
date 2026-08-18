@@ -476,6 +476,13 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `isElement`: (node: ElementContent | undefined) => node is Element
 - `strAttr`: (ctx: ComponentContext, key: string) => string | undefined
 
+## `/reproductions`
+
+- `getStory`: (id: string) => ReproStory
+- `ReproContext`: Component<Props, {}, "">
+- `ReproStory`: { id: string; component: Component<Record<string, unknown>, {}, string>; host: "shell" | "bare"; props: { [x: string]: unknown }; context?: Record<string | symbol, unknown>; pose?: ((root: HTMLElement) => Promise<void>); markers?: { n: number; anchor: string; key: string }[] }
+- `stories`: ReproStory[]
+
 ## `/reproductions/manifest`
 
 - `fixtureMediaBase`: "/repro-assets"

@@ -1,0 +1,73 @@
+// cairn-cms: the Svelte-importing half of the live-reproduction seam.
+//
+// This module holds the story registry: component references, fixture props, poses, and the
+// context wrapper both a docs route and the engine's own story-mount test render through. It is
+// the `@glw907/cairn-cms/reproductions` subpath; the node-safe half (ids, heights, marker keys,
+// per-story flags) lives on `./manifest.js`, importable from a bare `node` process. This module
+// may freely import Svelte components; ./manifest.ts may never import this one.
+//
+// The ids, their order, and the flags come from the story inventory in cairn-pub
+// docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md; the per-story mechanism
+// evidence is docs/internal/record/repro-story-audit.md. Story groups register from
+// ./stories/*.ts, one module per task (A4 auth, A5a editor, A5b publish, A6a media, A6b the rest),
+// and this file's `stories` array grows by concatenation as each group lands.
+import type { Component } from 'svelte';
+import { authStories } from './stories/auth.js';
+
+/**
+ * One story's full mount description: a manifest entry plus everything a mounting context needs
+ * to render it, which no node-safe module can carry.
+ */
+export interface ReproStory {
+  /** The id a `repro` fence names, matching exactly one `manifest.ts` entry. */
+  id: string;
+  /**
+   * The smallest package component that contains what the story shows. Story modules reach a
+   * component not on the `/components` barrel through a relative source import; see the audit's
+   * "The export question" for why that stays unexported.
+   */
+  component: Component<Record<string, unknown>>;
+  /** Whether the story renders inside `CairnAdminShell` with the fixture `navLayout`, or on its own. */
+  host: 'shell' | 'bare';
+  /** The full prop bag the component's own contract takes, not only `data` and `form`. */
+  props: Record<string, unknown>;
+  /**
+   * Session-shaped fixture values `ReproContext` applies as Svelte context before mounting (a
+   * signed-in editor, a capability). Absent when the mounted component reads no context beyond
+   * what `ReproContext` already supplies unconditionally (the media base, the CSRF getter).
+   */
+  context?: Record<symbol | string, unknown>;
+  /**
+   * A post-mount step that drives a state that lives in internal component state rather than a
+   * prop (an opened dialog, a selection). Absent when the resting prop bag already shows the
+   * contracted state.
+   */
+  pose?: (root: HTMLElement) => Promise<void>;
+  /**
+   * The numbered callout markers this story's manifest entry declares (empty array on the
+   * manifest entry means this field is absent here too). Keys mirror `manifest.ts`'s
+   * `markerKeys` exactly; anchors resolve against the mounted DOM after mount and pose.
+   */
+  markers?: { n: number; anchor: string; key: string }[];
+}
+
+/**
+ * The registered stories. Grows from 2 (A4's auth pair) to the full 25 as A5a through A6b land;
+ * `src/tests/component/reproductions-stories.test.ts` binds this array against `manifest.ts`.
+ */
+export const stories: ReproStory[] = [...authStories];
+
+/**
+ * Look up a registered story by id.
+ * @param id - a story id, matching a `manifest.ts` entry
+ * @returns the matching story
+ * @throws when no story is registered under `id`
+ */
+export function getStory(id: string): ReproStory {
+  const story = stories.find((entry) => entry.id === id);
+  if (!story) throw new Error(`No reproduction story registered for id "${id}"`);
+  return story;
+}
+
+/** The one mounting wrapper both a docs route and the engine's story-mount test render a story through. */
+export { default as ReproContext } from './ReproContext.svelte';

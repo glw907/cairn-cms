@@ -635,3 +635,94 @@ pass itself.
 - If any story task splits again at execution, that is the pass-sizing signal: count the
   splits and propose trimming scope before adding a third dispatch, per the workstation
   rule.
+
+---
+
+## Pass 1 post-mortem (2026-08-17): the pass was SPLIT, and this is its first half
+
+**Pass 1 was cut short deliberately, at Geoff's call, after A5a.** It ran long, and he raised the
+size question three times before the orchestrator proposed anything, which is the failure mode the
+workstation pass-sizing rule names by name. The cut point is the last self-contained boundary: the
+engine's reproduction substrate plus one complete, proven story group. **Pass 1b carries A5b, A6a,
+A6b, A7, A8, and the close**, including the merge.
+
+### What shipped
+
+A1 through A5a plus an unplanned A4b, seven commits on `live-repro-seam-pass1`:
+
+- **A1**, the node-safe manifest and the 25-row story audit. The manifest imports nothing, held to
+  that by a source-graph walk and a plain-`node` dist probe.
+- **A2**, the fixture set and five real PNGs. It writes no URL of its own: each image's bytes sit on
+  disk under the exact name `publicPath` composes from `fixtureMediaBase`.
+- **A3**, the injectability fixes. A media-base context key in the CSRF key's shape, and
+  `CairnAdminShell.themeOverride` in front of a deliberately untracked theme seed.
+- **A4**, the harness. `ReproStory`, `getStory`, and `ReproContext` as the one wrapper both the
+  engine's test and cairn-pub's route mount through.
+- **A4b**, unplanned, folding a verification sweep (below).
+- **A5a**, the eight editor stories, the mount-sizing pattern, and `settle` in practice.
+
+Ten of 25 stories are registered. The suite names the other fifteen explicitly in
+`PENDING_STORY_IDS`, so a later task that registers a group without shrinking that list fails on an
+id that resolves while still marked pending.
+
+### The pass's own lesson: conformance cannot find a wrong premise
+
+The A1 audit was careful and correct about the question it asked, which was *which component does a
+story mount, and how is its state reached*. Every row held under verification. **What no row asked
+was whether the render would be wide enough to show the subject**, and three stories failed that,
+because the shell's sidebar is a drawer until `lg` and the Write/Preview tablist is hidden below
+`sm`. A conformance check against the audit would have passed forever. It took an eleven-agent
+sweep asking a different question, and a lens explicitly told to ask "is this document trustworthy",
+to surface it. Geoff ratified `wide` (1280) as a third pinned width in response; the spec is amended
+at cairn-pub `4d9e492` and `2bdca80`.
+
+The sweep is banked at `docs/internal/record/2026-08-17-repro-audit-verification-sweep.md`. Its
+`notFullyChecked` section earned its keep immediately: it flagged one thing it could not check
+because an agent was writing in that directory, and checking it once free found a ninth defect
+(bare stories mounting with no `[data-theme]` ancestor, so eight of them imported the admin
+stylesheet and took none of it).
+
+### The review gate found more than usual, and most of it was real
+
+Two fresh-context reviewers produced two WCAG 4.1.2 failures, two theme defects wrong in the
+engine's own render, and two fidelity drifts in a transcribed toolbar. All eight folded in
+`d11863fa`. The fold agent then found a **third** dead-control face neither reviewer named, the
+theme toggle mirrored into `EditPage`'s below-`sm` overflow. Worth carrying: **a review that only
+reads the diff misses a control reached through a holder the diff does not touch.**
+
+### Verification
+
+Every PR-gating workflow re-derived with `grep -l pull_request` rather than recalled, then run by
+name. All green except `check:consumers`, which fails in any feature worktree on the known
+`examples/showcase/node_modules` symlink collision and says so itself. Full suite 423 files, 5468
+tests, exit 0; svelte-check 0/0 across 1626 files.
+
+### Decisions locked
+
+1. **`wide` (1280) is a third pinned width.** A story declares only the widths its page can render
+   at, so the fence schema refuses to picture a screen at a size that cannot show it.
+2. **`ReproContext` is the single provider** of the media base and CSRF context, so the engine's
+   test and cairn-pub's route cannot disagree. Pass 2's B3 inherits this rather than repeating it.
+3. **Fix 4 (CodeMirror theme polarity) is the one exception to the opt-in bar**, and it is a repair:
+   the real admin's topbar toggle has always left the editor's own chrome at first-mount polarity.
+4. **Pass 1 does not merge.** Two new public subpaths with no reference page would violate the
+   repo's own rule; A8 writes it and Pass 1b merges.
+
+### Open, and owed by Pass 1b
+
+- **`docs/reference/reproductions.md` and the two `reference-coverage.mjs` CONFIG rows.** Without
+  the rows the reference gates pass vacuously over the new subpaths.
+- **`docs/reference/components.md` understates `CairnAdminShell` and `EditPage`**, both of which
+  gained public props. No gate catches a new prop; the gates match exported names.
+- **A decision the fold created:** `spellcheckOverride` now hides the footer chip, so the three
+  `EditPage` reproductions picture three chips where a reader's editor shows four. Hiding is right
+  for a real admin route and wrong for a picture, because one prop is doing two jobs (start-off, and
+  the-site-owns-this). Either split it, or let the reproductions accept the drift and say so in
+  their captions. Nothing catches this today.
+- **Two Pass 2 constraints, both established here.** `TidyReview` calls `showModal()` at mount,
+  which pulls the parent page's focus into the iframe *before* the route's `inert` step can run, so
+  inert is not sufficient on its own. And `inert` does not remove `svelte:window` key listeners, so
+  a focused reproduction would still answer Ctrl+K with a command palette.
+- **`createRawSnippet` under prerender-then-hydrate is unproven.** The toolbar story builds its
+  Insert group from an HTML string; worth one explicit check for a hydration mismatch on a real
+  `/repro` page before it ships.

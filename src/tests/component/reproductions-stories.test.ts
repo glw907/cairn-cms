@@ -8,7 +8,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import type { Component } from 'svelte';
-import { manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
+import { fixtureMediaBase, manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 import { stories, getStory, ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
 import { waitFor } from '../../lib/reproductions/stories/support.js';
 import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
@@ -18,13 +18,6 @@ import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
 // the pending list honest" test below rather than silently passing. A5a through A6b each remove
 // their own group's ids here as they land; by A6b this set is empty.
 const PENDING_STORY_IDS = new Set([
-  'media/insert-panel',
-  'media/upload-form',
-  'media/lead-picture-dialog',
-  'media/library',
-  'media/details-panel',
-  'media/bulk-selection',
-  'media/delete-in-use',
   'tags/screen',
   'roster/own-row',
   'nav/worked-navlayout',
@@ -47,6 +40,19 @@ function isRegistered(id: string): boolean {
 /** The rendered `data-theme` root's own attribute value, for a story that owns its theme root. */
 function renderedTheme(container: HTMLElement): string | null {
   return container.querySelector('[data-theme]')?.getAttribute('data-theme') ?? null;
+}
+
+/**
+ * Every `img` src the mounted story rendered, excluding a local object-URL preview (`blob:`), which
+ * carries no media base at all. Reads the attribute rather than the resolved property, since the
+ * property widens a relative path to an absolute URL on the test origin.
+ * @param container - the mounted story's root
+ * @returns each non-blob `img` src attribute
+ */
+function mediaImageSrcs(container: HTMLElement): string[] {
+  return [...container.querySelectorAll<HTMLImageElement>('img[src]')]
+    .map((img) => img.getAttribute('src') ?? '')
+    .filter((src) => !src.startsWith('blob:'));
 }
 
 // A story that is not part of the real registry: it mounts the local probe component, so the
@@ -590,6 +596,154 @@ describe('publish/refusal-banner', () => {
     for (const title of ['Welcome to the Club', 'Team Retreat Recap', 'Spring Newsletter']) {
       expect(banner?.textContent, `the refusal banner does not name "${title}"`).toContain(title);
     }
+  });
+});
+
+// The seven media stories (Task A6a). As with the editor and publish stories above, the universal
+// loop below already binds every marker anchor, settle, and pose; these add the one thing each page
+// contract names specifically, plus the media-base assertion the task calls out by name: every
+// image these stories render composes from `fixtureMediaBase`, the docs origin's own asset route,
+// never the real admin's hardcoded `/media` default.
+
+describe('media/insert-panel', () => {
+  it('poses the insert panel open with the upload-first chooser and the reuse picker', async () => {
+    const screen = await mountPosed(getStory('media/insert-panel'));
+
+    // Read before any polling assertion below runs: an errored image swaps for a broken-image
+    // fallback with no `img` tag at all, so the src this row exists to prove must be read at the
+    // first paint, not after a wait that could outlast it.
+    const srcs = mediaImageSrcs(screen.container);
+    expect(srcs.length).toBeGreaterThan(0);
+    for (const src of srcs) {
+      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
+    }
+
+    await expect.element(screen.getByRole('button', { name: 'Upload an image' })).toBeInTheDocument();
+    expect(screen.container.textContent).toContain('or reuse an image');
+    // The reuse picker's own listbox, populated from the fixture library.
+    await expect.element(screen.getByRole('option', { name: /Trailhead View/ })).toBeInTheDocument();
+  });
+});
+
+describe('media/upload-form', () => {
+  it('renders the capture card with the Suggested name tag and both alt choices', async () => {
+    const screen = await mountPosed(getStory('media/upload-form'));
+
+    await expect.element(screen.getByText('Suggested')).toBeInTheDocument();
+    await expect.element(screen.getByRole('radio', { name: 'Write a description' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('radio', { name: 'Mark as decorative' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: 'Insert image' })).toBeInTheDocument();
+
+    // The card previews the file through a local object URL, never a media-base path; the real
+    // /media default never shows through even though there is no fixtureMediaBase image here.
+    const srcs = mediaImageSrcs(screen.container);
+    expect(srcs.every((src) => !src.startsWith('/media/'))).toBe(true);
+  });
+});
+
+describe('media/lead-picture-dialog', () => {
+  it(
+    'poses the placement view open with the 16:9 preview, the alt choice, and the social-card note',
+    async () => {
+      const screen = await mountPosed(getStory('media/lead-picture-dialog'));
+
+      // Read before any polling assertion below: an errored image swaps for a fallback with no
+      // `img` tag, so the src composition this row exists to prove is read at the first paint.
+      const srcs = mediaImageSrcs(screen.container);
+      expect(srcs.length).toBeGreaterThan(0);
+      for (const src of srcs) {
+        expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
+      }
+
+      const dialog = screen.container.querySelector<HTMLDialogElement>('dialog.modal');
+      expect(dialog?.open).toBe(true);
+      expect(dialog?.textContent).toContain('This image is also the picture shown when the post is shared to social.');
+      await expect.element(screen.getByRole('radio', { name: 'Describe it' })).toBeInTheDocument();
+      await expect.element(screen.getByRole('radio', { name: 'Decorative' })).toBeInTheDocument();
+      await expect.element(screen.getByLabelText('Caption')).toBeInTheDocument();
+      await expect.element(screen.getByRole('button', { name: 'Replace' })).toBeInTheDocument();
+      await expect.element(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
+    },
+  );
+});
+
+describe('media/library', () => {
+  it('renders the resting screen: counts, search, the view toggle, and the three filters', async () => {
+    const screen = await mountPosed(getStory('media/library'));
+
+    // Read before any polling assertion below: an errored tile image swaps for a broken-image
+    // fallback with no `img` tag, so the src composition this row exists to prove is read first.
+    const srcs = mediaImageSrcs(screen.container);
+    expect(srcs.length).toBeGreaterThan(0);
+    for (const src of srcs) {
+      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
+    }
+
+    expect(screen.container.querySelector('header p')?.textContent).toMatch(/\d+ images?, \d+ used/);
+    await expect.element(screen.getByRole('searchbox', { name: /search the media library/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: 'Grid view' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: 'List view' })).toBeInTheDocument();
+    for (const label of ['All', 'Needs alt', 'No references found']) {
+      await expect.element(screen.getByRole('radio', { name: label })).toBeInTheDocument();
+    }
+  });
+});
+
+describe('media/details-panel', () => {
+  it('poses the detail slide-over open over the selected tile, with its where-used link', async () => {
+    const screen = await mountPosed(getStory('media/details-panel'));
+
+    // A pose-reached image is already at risk of an early network error swapping it for a
+    // fallback (no `img` tag), so this reads whatever is still present rather than asserting a
+    // minimum count; media/library and media/insert-panel cover the guaranteed-present case.
+    for (const src of mediaImageSrcs(screen.container)) {
+      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
+    }
+
+    const panel = screen.container.querySelector('aside[role="region"]');
+    expect(panel).not.toBeNull();
+    expect(panel?.textContent).toContain('Team Photo');
+    expect(panel?.textContent).toContain('Default alt text');
+    await expect.element(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    // The where-used link the fixture's usage overlay names.
+    await expect
+      .element(screen.getByRole('link', { name: 'Team Retreat Recap' }))
+      .toBeInTheDocument();
+  });
+});
+
+describe('media/bulk-selection', () => {
+  it('poses three tiles selected, opening the sticky action bar with its count and controls', async () => {
+    const screen = await mountPosed(getStory('media/bulk-selection'));
+
+    for (const src of mediaImageSrcs(screen.container)) {
+      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
+    }
+
+    const bar = screen.container.querySelector('[role="region"][aria-label="Selection actions"]');
+    expect(bar).not.toBeNull();
+    expect(bar?.textContent).toContain('3 selected');
+    await expect.element(screen.getByRole('button', { name: /Select all/ })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /Delete 3/ })).toBeInTheDocument();
+  });
+});
+
+describe('media/delete-in-use', () => {
+  it('poses the in-use face open, naming the fixture entry the asset is used by', async () => {
+    const screen = await mountPosed(getStory('media/delete-in-use'));
+
+    for (const src of mediaImageSrcs(screen.container)) {
+      expect(src.startsWith(fixtureMediaBase), `"${src}" does not compose from fixtureMediaBase`).toBe(true);
+    }
+
+    const dialog = screen.container.querySelector<HTMLDialogElement>('dialog[role="alertdialog"]');
+    expect(dialog?.open).toBe(true);
+    expect(dialog?.textContent).toContain('These would break');
+    // The fixture entry the in-use asset breaks: named by title, under the published grouping.
+    expect(dialog?.textContent).toContain('Team Retreat Recap');
+    await expect.element(screen.getByRole('button', { name: 'Delete anyway' })).toBeInTheDocument();
+    // The typed-confirm gate: disabled until the asset's own slug is typed.
+    expect(screen.container.querySelector<HTMLButtonElement>('button[type="submit"].btn-error')?.disabled).toBe(true);
   });
 });
 

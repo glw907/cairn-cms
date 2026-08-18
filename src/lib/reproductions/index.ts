@@ -15,6 +15,7 @@ import type { Component } from 'svelte';
 import type { AdminShellData } from '../sveltekit/content-routes-core.js';
 import { authStories } from './stories/auth.js';
 import { editorStories } from './stories/editor.js';
+import { mediaStories } from './stories/media.js';
 import { publishStories } from './stories/publish.js';
 
 /**
@@ -80,7 +81,7 @@ export interface ReproStory {
  * The registered stories, in manifest order. Grows to the full 25 as A5b through A6b land;
  * `src/tests/component/reproductions-stories.test.ts` binds this array against `manifest.ts`.
  */
-export const stories: ReproStory[] = [...authStories, ...editorStories, ...publishStories];
+export const stories: ReproStory[] = [...authStories, ...editorStories, ...publishStories, ...mediaStories];
 
 /**
  * Look up a registered story by id.

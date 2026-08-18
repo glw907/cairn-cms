@@ -219,6 +219,65 @@ raised, not resolved silently.
 - [ ] **Step 3:** `check:surface` snapshot asserts both subpaths appear in
   `docs/internal/api-surface.md`. Run the engine gate. Commit.
 
+### Task A4b: the amendment (added at execution, 2026-08-17)
+
+**Why this task exists.** After A4 landed, an eleven-agent read-only sweep verified the A1 audit's
+25 rows against the real components. The audit had settled which component each story mounts and
+how to reach its state, correctly, and had never asked whether the render would be wide enough to
+show the subject. Three stories failed that question and two engine breakpoints were the reason,
+both since verified in the main loop against source. Five further mechanism gaps came out of the
+same sweep. Geoff ruled the fix in: `wide` joins the pinned widths (the spec is amended, cairn-pub
+`4d9e492`), and the whole set lands here as one amendment task rather than being spread across the
+story tasks or deferred to Pass 2. The full ranked findings are the sweep's own record; this task
+is the fold.
+
+**Split into two dispatches** (A4b-1 code, A4b-2 fixtures and records) because the deliverable count
+crossed four. This is the pass's FIRST task split; a second is the prompt to propose splitting the
+pass itself.
+
+**Files:**
+- Modify: `src/lib/reproductions/manifest.ts` (`ReproHeights` gains `wide`, four rows re-declare)
+- Modify: `src/lib/reproductions/index.ts` (`ReproStory` gains `settle`)
+- Modify: `src/lib/components/EditPage.svelte` (fix 3), `src/lib/components/MarkdownEditor.svelte`
+  (fix 4)
+- Modify: `src/lib/reproductions/fixtures.ts` (the Tidy fixture, the frozen admin pathname)
+- Modify: `docs/internal/record/repro-story-audit.md` (the corrections and the two new fixes)
+- Test: `src/tests/unit/reproductions-manifest.test.ts`, `src/tests/component/`
+
+**Interfaces:**
+- Produces: `ReproHeights` carrying `wide`, so a page may pin 1280 and the schema still refuses a
+  width with no declared height. `ReproStory.settle?: (root: HTMLElement) => Promise<void>`, run
+  after mount and before `pose`, for the four rows whose contracted surface exists only after
+  hydration. Fix 3 and fix 4 join the audit's fix list with the same opt-in-and-absent-by-default
+  bar A3 held: no real admin mount changes behavior.
+
+- [ ] **A4b-1 Step 1:** `wide` through the manifest and its test. `editor/sidebar-list` and
+  `nav/worked-navlayout` declare `wide` alone; `editor/entry-screen` and `editor/preview-tab`
+  declare `desktop` alone. A row declaring only the widths its page may pin is the mechanism that
+  refuses to picture a screen at a size that cannot show it.
+- [ ] **A4b-1 Step 2:** Fix 3, the `EditPage` spellcheck lever, so a reproduction does not spawn a
+  real Worker and fetch a wasm binary and a dictionary per embed. Fix 4, CodeMirror's `isDark`,
+  which is read once in `onMount` and baked into three `EditorView.theme` calls, so A3's
+  prop-update-rather-than-re-mount promise is unsafe for every editor story until it reconfigures.
+- [ ] **A4b-1 Step 3:** `ReproStory.settle`, wired into the story-mount test's universal loop. Plus
+  the theme root A4 left to the host: `ReproContext` renders bare stories with no `[data-theme]`
+  ancestor of its own, and every admin token is scoped under one, so the eight bare stories that do
+  not own their theme root load the stylesheet and take none of it. A4's own contract was that a
+  bare story "renders styled wherever they mount", which today holds only inside cairn-pub's
+  `[data-repro-root]`. The wrapper renders its own bare `data-theme` element from the same `theme`
+  prop, per the admin design system's never-on-a-styled-element rule. Engine gate. Commit.
+- [ ] **A4b-2 Step 1:** The Tidy fixture composed so one change lands outside the four objective
+  kinds, which is what makes the contracted **Review this** state appear. The fixture admin
+  pathname frozen at `/admin/<conceptId>/<id>`, since the shell reads exactly three segments to
+  decide desk versus office chrome and a wrong path silently changes the sidebar breakpoint.
+- [ ] **A4b-2 Step 2:** The audit corrections: the `editor/figure-dialog` justification names a
+  string that component never renders, `editor/toolbar`'s "four groups" is a count the component
+  contradicts, `media/insert-panel`'s fix-1 attribution names the wrong module and its prop bag
+  wants a Note for A2, and four citations point at `interface Props {` rather than the symbol. The
+  export-question section is retitled to what it actually establishes, since the same pass does add
+  a prop to a publicly exported component.
+- [ ] **A4b-2 Step 3:** Engine gate. Commit.
+
 ### Task A5a: the editor stories (8)
 
 **Files:**

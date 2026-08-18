@@ -12,8 +12,10 @@
 // ./stories/*.ts, one module per task (A4 auth, A5a editor, A5b publish, A6a media, A6b the rest),
 // and this file's `stories` array grows by concatenation as each group lands.
 import type { Component } from 'svelte';
+import type { AdminShellData } from '../sveltekit/content-routes-core.js';
 import { authStories } from './stories/auth.js';
 import { editorStories } from './stories/editor.js';
+import { publishStories } from './stories/publish.js';
 
 /**
  * One story's full mount description: a manifest entry plus everything a mounting context needs
@@ -31,13 +33,17 @@ export interface ReproStory {
   /** Whether the story renders inside `CairnAdminShell` with the fixture `navLayout`, or on its own. */
   host: 'shell' | 'bare';
   /**
-   * The admin pathname a `shell` story's shell resolves its chrome from, when the office default
-   * (`/admin/<concept>`) is the wrong frame. A story that mounts `EditPage` sets
-   * `fixtureDeskPathname`: `isDeskRoute` reads exactly three segments with a declared concept
-   * in the second, and off that path the shell renders office chrome instead, which moves the
-   * sidebar breakpoint and drops the narrow band compaction. Ignored by a `bare` story.
+   * The fields of the fixture shell payload this story overrides, for a `shell` story whose
+   * subject is chrome the shell derives from its own load data rather than from `story.props`: the
+   * desk pathname (`isDeskRoute` reads exactly three segments with a declared concept in the
+   * second, and off that path the shell renders office chrome instead, which moves the sidebar
+   * breakpoint and drops the narrow band compaction) or the pending-publish set (the topbar's
+   * "Publish site (N)" trigger and its confirm dialog render only while `pendingEntries` resolves
+   * non-empty). `ReproContext` merges this once, non-reactively, over its own fixture payload
+   * before the first render; a story for which the office-default payload already renders
+   * correctly leaves it absent. Ignored by a `bare` story.
    */
-  shellPathname?: string;
+  shellData?: Partial<Extract<AdminShellData, { public: false }>>;
   /** The full prop bag the component's own contract takes, not only `data` and `form`. */
   props: Record<string, unknown>;
   /**
@@ -74,7 +80,7 @@ export interface ReproStory {
  * The registered stories, in manifest order. Grows to the full 25 as A5b through A6b land;
  * `src/tests/component/reproductions-stories.test.ts` binds this array against `manifest.ts`.
  */
-export const stories: ReproStory[] = [...authStories, ...editorStories];
+export const stories: ReproStory[] = [...authStories, ...editorStories, ...publishStories];
 
 /**
  * Look up a registered story by id.

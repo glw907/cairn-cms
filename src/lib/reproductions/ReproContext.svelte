@@ -88,9 +88,19 @@ inside a host that happens to provide a root.
   );
 
   // The shell payload every `host: 'shell'` story mounts against: one signed-in editor, the
-  // worked navLayout example, a resolved (already-Promise) pending set. `data.theme` is the SSR
-  // seed CairnAdminShell reads untracked; `themeOverride` is what actually drives the render, so
-  // this field's own value never shows through.
+  // worked navLayout example, the office default pathname, a resolved-null pending set, and
+  // `story.shellData`'s fields laid over that default. `data.theme` is the SSR seed
+  // CairnAdminShell reads untracked; `themeOverride` is what actually drives the render, so this
+  // field's own value never shows through.
+  //
+  // The merge is read once, non-reactively (the same `untrack` precedent this field used for the
+  // pathname before `shellData` existed), and the whole object below is computed exactly once
+  // during initialization rather than derived: CairnAdminShell runs its own `$effect` that reads
+  // `shell?.pathname` off this `data` prop and closes the posed publish dialog on any change to it
+  // (sweep finding 9). A `$derived` here would re-run that effect on every one of ReproContext's
+  // own reactive updates (a theme flip, for instance) and silently undo `publish/pending-list`'s
+  // pose the moment a capture read it.
+  const shellOverride = untrack(() => story.shellData);
   const shellData: Extract<AdminShellData, { public: false }> = {
     public: false,
     siteName: fixtureSiteName,
@@ -102,16 +112,13 @@ inside a host that happens to provide a root.
     },
     concepts: [{ id: fixtureConcept.id, label: fixtureConcept.label }],
     nav: fixtureNavLayout,
-    // The office default: a list, roster, or library screen sits at /admin/<concept>. A story that
-    // mounts an open document overrides it with the desk pathname, since the shell reads the path
-    // (not its child) to decide desk versus office chrome. Read once with the story's context, for
-    // the same reason: a story does not change identity across this component's lifetime.
-    pathname: untrack(() => story.shellPathname) ?? `/admin/${fixtureConcept.id}`,
+    pathname: `/admin/${fixtureConcept.id}`,
     theme: 'cairn-admin',
     collapsedNav: null,
     csrf: fixtureCsrf,
     pendingEntries: Promise.resolve(null),
     attention: {},
+    ...shellOverride,
   };
 </script>
 

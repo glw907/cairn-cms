@@ -10,6 +10,7 @@ import { page } from 'vitest/browser';
 import type { Component } from 'svelte';
 import { manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 import { stories, getStory, ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
+import { waitFor } from '../../lib/reproductions/stories/support.js';
 import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
 
 // The manifest ids not yet backed by a registered story, named explicitly (not derived from
@@ -17,10 +18,6 @@ import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
 // the pending list honest" test below rather than silently passing. A5a through A6b each remove
 // their own group's ids here as they land; by A6b this set is empty.
 const PENDING_STORY_IDS = new Set([
-  'publish/header-band',
-  'publish/history-list',
-  'publish/pending-list',
-  'publish/refusal-banner',
   'media/insert-panel',
   'media/upload-form',
   'media/lead-picture-dialog',
@@ -257,6 +254,15 @@ describe('ReproContext: one theme resolution for both hosts', () => {
   // for a dark-OS reader: with no theme prop the bare branch falls back to the light admin theme,
   // so the shell branch has to be handed that same resolved value rather than an undefined override
   // it answers with a cookie read and a prefers-color-scheme read on the docs origin.
+  // Captured once, before any test overrides it: this browser exposes `matchMedia` as an own
+  // property of `window` rather than one inherited through `Window.prototype`, so a bare `delete`
+  // in the restore below (the seam's original form) does not un-shadow a prototype method, it
+  // erases the only definition there ever was, for the rest of this file's shared browser page.
+  // `EditPage`'s own `narrow` state reads `window.matchMedia` and silently no-ops when it is
+  // missing (`if (!window.matchMedia) return;`), so that erasure surfaces far downstream, as every
+  // later `EditPage` story mount rendering permanently desktop-shaped regardless of viewport.
+  const originalMatchMedia = window.matchMedia;
+
   function probeDarkOs(): string[] {
     const queries: string[] = [];
     Object.defineProperty(window, 'matchMedia', {
@@ -279,7 +285,7 @@ describe('ReproContext: one theme resolution for both hosts', () => {
   }
 
   afterEach(() => {
-    delete (window as { matchMedia?: unknown }).matchMedia;
+    Object.defineProperty(window, 'matchMedia', { configurable: true, writable: true, value: originalMatchMedia });
   });
 
   it('renders a bare and a shell story at the same theme when no theme prop is supplied', async () => {
@@ -484,8 +490,108 @@ describe('editor/collapsed-layout-block', () => {
   );
 });
 
+// The four publish stories (Task A5b). As with the editor stories above, the universal loop below
+// already binds every marker anchor, settle, and pose; these add the one thing each page contract
+// names specifically.
+
+describe('publish/header-band', () => {
+  it(
+    'poses the opened overflow menu with its actions, at the desktop width',
+    async () => {
+      const screen = await mountPosed(getStory('publish/header-band'));
+
+      const trigger = screen.container.querySelector('button[aria-label="More actions"]');
+      expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+
+      const menu = screen.container.querySelector('#cairn-edit-actions-menu');
+      const actionLabels = [...(menu?.querySelectorAll('li > a, li > button') ?? [])].map((el) => el.textContent?.trim());
+      expect(actionLabels).toEqual(['Details', 'History', 'Delete']);
+
+      // The desktop face: the document status cluster and the lifecycle pair, not the narrow
+      // width's compacted band. Scoped to the shell's own navbar: EditPage additionally renders a
+      // fixed bottom action bar (its own Publish/Save pair, same form attribute) once narrow, so an
+      // unscoped count reads the same at both widths.
+      expect(screen.container.querySelector('a[aria-label^="Back to"]')).toBeNull();
+      expect(screen.container.querySelectorAll('.navbar button[form="cairn-edit-form"]')).toHaveLength(3);
+    },
+    EDITOR_MOUNT_TIMEOUT,
+  );
+
+  it(
+    'poses the same opened menu over the compacted band at its narrow width',
+    async () => {
+      // viewportFor picks `desktop` first when a story declares both, so the narrow face needs its
+      // own explicit pin rather than mountPosed's own choice.
+      await page.viewport(390, 300);
+      viewportPinned = true;
+
+      const story = getStory('publish/header-band');
+      const screen = render(ReproContext, { props: { story } });
+      if (story.pose) await story.pose(screen.container);
+
+      // The narrow face this row exists to picture: the back link, the truncating title, and the
+      // status pill replace the desktop status cluster (EditPage's `narrow` branch), and the
+      // band's own lifecycle pair (Save, Publish) moves out to a separate fixed bottom bar, leaving
+      // only the sr-only default-submit button inside the navbar under the same form attribute.
+      await waitFor(screen.container, 'a[aria-label^="Back to"]', 'the narrow band\'s back link');
+      expect(screen.container.querySelector('span[role="status"].badge')).not.toBeNull();
+      expect(screen.container.querySelectorAll('.navbar button[form="cairn-edit-form"]')).toHaveLength(1);
+
+      const trigger = screen.container.querySelector('button[aria-label="More actions"]');
+      expect(trigger?.getAttribute('aria-expanded')).toBe('true');
+    },
+    EDITOR_MOUNT_TIMEOUT,
+  );
+});
+
+describe('publish/history-list', () => {
+  it('renders the recent-versions list with the open-draft row and per-publish revert', async () => {
+    const screen = await mountPosed(getStory('publish/history-list'));
+
+    await expect.element(screen.getByRole('heading', { name: 'Recent versions' })).toBeInTheDocument();
+    // The synthetic draft row pins on top, credits the editor mid-save, and carries no revert
+    // affordance of its own, since it is not itself a publish.
+    await expect.element(screen.getByText('Draft')).toBeInTheDocument();
+    expect(screen.container.textContent).toContain('Jamie Torres');
+    const revertButtons = screen.container.querySelectorAll('button[aria-label^="Revert to the version"]');
+    expect(revertButtons).toHaveLength(2);
+  });
+});
+
+describe('publish/pending-list', () => {
+  it('poses the publish confirm open, showing the count and the grouped entries', async () => {
+    const screen = await mountPosed(getStory('publish/pending-list'));
+
+    const dialog = screen.container.querySelector<HTMLDialogElement>('dialog[aria-labelledby="cairn-shell-publish-all-title"]');
+    expect(dialog?.open).toBe(true);
+    await expect.element(screen.getByRole('button', { name: /Publish site \(2\)/ })).toBeInTheDocument();
+    // The grouped list, under the concept's own nav label.
+    expect(dialog?.textContent).toContain('Posts');
+    expect(dialog?.textContent).toContain('2026-06-24-spring-newsletter');
+    expect(dialog?.textContent).toContain('2026-06-10-welcome-to-the-club');
+  });
+});
+
+describe('publish/refusal-banner', () => {
+  it('renders the refusal banner naming the blocking entry, with its inbound-link list', async () => {
+    const screen = await mountPosed(getStory('publish/refusal-banner'));
+
+    const banner = screen.container.querySelector('.alert-error');
+    expect(banner?.textContent).toContain('could not be deleted');
+    // The row the banner is about: the blocked entry, still listed by its own title in the table
+    // right below the banner.
+    await expect
+      .element(screen.getByRole('link', { name: 'A Guide to the North Ridge Trailhead' }))
+      .toBeInTheDocument();
+    // The inbound linkers the banner names.
+    for (const title of ['Welcome to the Club', 'Team Retreat Recap', 'Spring Newsletter']) {
+      expect(banner?.textContent, `the refusal banner does not name "${title}"`).toContain(title);
+    }
+  });
+});
+
 // The universal contract every registered story must satisfy, exercised for whichever stories are
-// registered today (10 of 25) and automatically covering the rest as A5b through A6b add them.
+// registered today (14 of 25) and automatically covering the rest as A6a and A6b add them.
 for (const story of stories) {
   const entry = manifest.find((candidate) => candidate.id === story.id);
 

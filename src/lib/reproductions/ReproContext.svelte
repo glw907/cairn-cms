@@ -16,7 +16,7 @@ provide a root.
   import { MEDIA_BASE_CONTEXT_KEY } from '../components/media-base-context.js';
   import { CSRF_CONTEXT_KEY } from '../components/csrf-context.js';
   import type { AdminShellData } from '../sveltekit/content-routes-core.js';
-  import { fixtureConcept, fixtureEditor, fixtureNavLayout } from './fixtures.js';
+  import { fixtureConcept, fixtureEditor, fixtureNavLayout, fixtureSiteName } from './fixtures.js';
   import { fixtureMediaBase, manifest } from './manifest.js';
   import type { ReproStory } from './index.js';
   import '../components/cairn-admin.css';
@@ -89,7 +89,7 @@ provide a root.
   // this field's own value never shows through.
   const shellData: Extract<AdminShellData, { public: false }> = {
     public: false,
-    siteName: 'Reproduction fixtures',
+    siteName: fixtureSiteName,
     user: {
       displayName: fixtureEditor.displayName,
       email: fixtureEditor.email,
@@ -98,7 +98,11 @@ provide a root.
     },
     concepts: [{ id: fixtureConcept.id, label: fixtureConcept.label }],
     nav: fixtureNavLayout,
-    pathname: '/admin/posts',
+    // The office default: a list, roster, or library screen sits at /admin/<concept>. A story that
+    // mounts an open document overrides it with the desk pathname, since the shell reads the path
+    // (not its child) to decide desk versus office chrome. Read once with the story's context, for
+    // the same reason: a story does not change identity across this component's lifetime.
+    pathname: untrack(() => story.shellPathname) ?? `/admin/${fixtureConcept.id}`,
     theme: 'cairn-admin',
     collapsedNav: null,
     csrf: FIXTURE_CSRF_TOKEN,

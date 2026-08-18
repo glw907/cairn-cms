@@ -4,10 +4,11 @@
 // src/lib/reproductions/index.ts's `stories` array, the "universal story contract" block below
 // exercises it automatically with no further edits here, and the pending-inventory block only
 // needs its PENDING_STORY_IDS set to shrink.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { page } from 'vitest/browser';
 import type { Component } from 'svelte';
-import { manifest } from '../../lib/reproductions/manifest.js';
+import { manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 import { stories, getStory, ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
 import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
 
@@ -16,14 +17,6 @@ import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
 // the pending list honest" test below rather than silently passing. A5a through A6b each remove
 // their own group's ids here as they land; by A6b this set is empty.
 const PENDING_STORY_IDS = new Set([
-  'editor/entry-screen',
-  'editor/toolbar',
-  'editor/sidebar-list',
-  'editor/preview-tab',
-  'editor/details-panel',
-  'editor/figure-dialog',
-  'editor/tidy-review',
-  'editor/collapsed-layout-block',
   'publish/header-band',
   'publish/history-list',
   'publish/pending-list',
@@ -58,18 +51,89 @@ const probeStory: ReproStory = {
   context: { [PROBE_CONTEXT_KEY]: 'story-supplied-value' },
 };
 
+// The component project's own ambient size (src/tests/component/_setup.ts sets it once per file).
+// Every viewport this suite pins is restored to it, so a pinned story cannot leak its width into a
+// later test in this file or the next.
+const BASELINE_VIEWPORT = { width: 1280, height: 720 };
+
+// Whether a test moved the viewport off the baseline, so the restore below only pays for a resize
+// that actually happened (a resize per test measurably slows the component run).
+let viewportPinned = false;
+
 /**
- * Mount a story and bring it to the state its page contract names: `settle` first (the contracted
- * surface that only exists after hydration), then `pose` (the state that lives in internal
- * component state). Both of a story's consumers, this suite and cairn-pub's capture, run the two in
- * this order, so the harness expresses it once here.
+ * The viewport size a story's manifest entry declares it can render at.
+ *
+ * A pinned width is not decoration. `editor/entry-screen` and `editor/preview-tab` declare
+ * `desktop` alone because the Write/Preview tablist and the preview device trigger sit inside the
+ * toolbar's `sm:`-gated wrapper, which a viewport under 640 hides outright; `editor/sidebar-list`
+ * declares `wide` alone because the shell's sidebar is a drawer that only sits persistently open
+ * from `lg`, and from `xl` on a desk path. Mounting either at the ambient width would fail for a
+ * reason that has nothing to do with the story. A `column` story pins nothing, since the responsive
+ * embed fills whatever the docs column gives it, so it takes the baseline; its declared height is a
+ * first-paint hint the docs page refines at hydration, never a width the render depends on.
+ */
+function viewportFor(entry: ReproManifestEntry | undefined) {
+  const heights = entry?.heights;
+  if (heights?.wide !== undefined) return { width: 1280, height: heights.wide };
+  if (heights?.desktop !== undefined) return { width: 860, height: heights.desktop };
+  if (heights?.narrow !== undefined) return { width: 390, height: heights.narrow };
+  return BASELINE_VIEWPORT;
+}
+
+/**
+ * Mount a story and bring it to the state its page contract names: the declared viewport first
+ * (the widths above), then `settle` (the contracted surface that only exists after hydration), then
+ * `pose` (the state that lives in internal component state). Both of a story's consumers, this
+ * suite and cairn-pub's capture, run settle before pose, so the harness expresses it once here.
  */
 async function mountPosed(story: ReproStory) {
+  const size = viewportFor(manifest.find((candidate) => candidate.id === story.id));
+  if (size.width !== BASELINE_VIEWPORT.width || size.height !== BASELINE_VIEWPORT.height) {
+    await page.viewport(size.width, size.height);
+    viewportPinned = true;
+  }
   const screen = render(ReproContext, { props: { story } });
   if (story.settle) await story.settle(screen.container);
   if (story.pose) await story.pose(screen.container);
   return screen;
 }
+
+afterEach(async () => {
+  if (!viewportPinned) return;
+  viewportPinned = false;
+  await page.viewport(BASELINE_VIEWPORT.width, BASELINE_VIEWPORT.height);
+});
+
+// A story mount that pays a CodeMirror cold start (every EditPage story and the bare editor one)
+// runs past the browser project's 15s default, so those tests carry their own ceiling. A real hang
+// still trips it; an assertion failure still fails at once.
+const EDITOR_MOUNT_TIMEOUT = 40_000;
+
+// Swap the global Worker constructor for one that records its calls and speaks to nobody, so the
+// spellcheck Worker an editor story must NOT start is counted rather than assumed absent. The real
+// constructor would start a module worker and fetch a wasm binary and a 1.5MB dictionary.
+const realWorker = globalThis.Worker;
+let workersConstructed = 0;
+
+class CountingWorker {
+  constructor() {
+    workersConstructed += 1;
+  }
+  postMessage() {}
+  addEventListener() {}
+  removeEventListener() {}
+  terminate() {}
+}
+
+function countWorkers() {
+  workersConstructed = 0;
+  globalThis.Worker = CountingWorker as unknown as typeof Worker;
+  return () => workersConstructed;
+}
+
+afterEach(() => {
+  globalThis.Worker = realWorker;
+});
 
 describe('the manifest-to-story inventory', () => {
   it('has a pending list naming only real manifest ids', () => {
@@ -193,8 +257,151 @@ describe('ReproContext: the theme root a bare story does not own', () => {
   });
 });
 
+// The eight editor stories (Task A5a). The universal loop below already binds every marker anchor,
+// every settle, and every pose, so what these add is the one thing each page contract names
+// specifically: the face the reader is being shown, which a mount that merely did not throw would
+// not prove.
+
+describe('editor/entry-screen', () => {
+  it(
+    'settles onto the real editing surface and starts no spellcheck Worker',
+    async () => {
+      const workers = countWorkers();
+      const screen = await mountPosed(getStory('editor/entry-screen'));
+
+      // CodeMirror, not the pre-hydration fallback: MarkdownEditor's server render is a hidden
+      // input, an empty div, and a textarea, so a story with no settle would picture the fallback.
+      expect(screen.container.querySelector('#cairn-pane-write .cm-content')).not.toBeNull();
+      expect(screen.container.querySelector('#cairn-pane-write textarea')).toBeNull();
+
+      // The lint plugin schedules its first run shortly after mount and that run is what reaches
+      // ensureWorker, so the absence is only real after the same wait the override test uses.
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      expect(workers()).toBe(0);
+    },
+    EDITOR_MOUNT_TIMEOUT,
+  );
+});
+
+describe('editor/toolbar', () => {
+  it('renders the three labelled clusters with the host insert controls in place', async () => {
+    const screen = await mountPosed(getStory('editor/toolbar'));
+
+    const groups = [...screen.container.querySelectorAll('[role="toolbar"] [role="group"]')].map(
+      (group) => group.getAttribute('aria-label'),
+    );
+    expect(groups).toEqual(['Format', 'Structure', 'Insert']);
+    // The Insert cluster renders the host's controls rather than sitting empty, the one thing this
+    // row's props have to supply.
+    expect(screen.container.querySelector('[role="group"][aria-label="Insert"] button')).not.toBeNull();
+  });
+});
+
+describe('editor/sidebar-list', () => {
+  it('renders the persistent concept sidebar beside the Posts list', async () => {
+    const screen = await mountPosed(getStory('editor/sidebar-list'));
+
+    // Half this row's contract is the sidebar, and at its declared width the drawer is persistent
+    // rather than an overlay: an overlay drawer carries role="dialog", a persistent one does not.
+    const sidebar = screen.container.querySelector('nav[aria-label="Site content"]');
+    expect(sidebar).not.toBeNull();
+    expect(sidebar?.getAttribute('role')).toBeNull();
+
+    await expect.element(screen.getByRole('link', { name: /North Ridge Trailhead/i })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: /new post/i })).toBeInTheDocument();
+  });
+});
+
+describe('editor/preview-tab', () => {
+  it(
+    'poses onto the Preview pane with its width control',
+    async () => {
+      const screen = await mountPosed(getStory('editor/preview-tab'));
+
+      expect(screen.container.querySelector('#cairn-tab-preview')?.getAttribute('aria-selected')).toBe('true');
+      expect(screen.container.querySelector('#cairn-pane-preview')).not.toBeNull();
+      // The width control joins the capsule only while Preview shows; it is what the page's own
+      // sentence about checking a phone width points at.
+      await expect.element(screen.getByRole('button', { name: /preview width/i })).toBeInTheDocument();
+    },
+    EDITOR_MOUNT_TIMEOUT,
+  );
+});
+
+describe('editor/details-panel', () => {
+  it(
+    'poses the Details panel open over the entry settings',
+    async () => {
+      const screen = await mountPosed(getStory('editor/details-panel'));
+
+      const panel = screen.container.querySelector('[aria-label="Entry details"]');
+      expect(panel).not.toBeNull();
+      expect(panel?.hasAttribute('hidden')).toBe(false);
+      // The enumeration the page contract turns from prose into visible content: the panel's own
+      // groups, plus the fields the fixture concept declares. Read off the panel rather than the
+      // page, since several of these words also appear in the dialogs the panel's triggers open.
+      const groups = [...(panel?.querySelectorAll('legend') ?? [])].map((legend) => legend.textContent?.trim());
+      expect(groups).toContain('Visibility');
+      expect(groups).toContain('Address');
+      for (const field of ['Date', 'Tags', 'Lead picture']) {
+        expect(panel?.textContent, `the Details panel does not name "${field}"`).toContain(field);
+      }
+    },
+    EDITOR_MOUNT_TIMEOUT,
+  );
+});
+
+describe('editor/figure-dialog', () => {
+  it('renders the caption field, the placement choices, and the edit-mode actions', async () => {
+    const screen = await mountPosed(getStory('editor/figure-dialog'));
+
+    await expect.element(screen.getByLabelText('Caption')).toBeInTheDocument();
+    for (const placement of ['Measure', 'Center', 'Wide', 'Full']) {
+      await expect.element(screen.getByRole('radio', { name: placement })).toBeInTheDocument();
+    }
+    // `mode: 'edit'` is what renders the fold this row exists to picture.
+    await expect.element(screen.getByRole('button', { name: 'Unwrap' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('button', { name: 'Update figure' })).toBeInTheDocument();
+  });
+});
+
+describe('editor/tidy-review', () => {
+  it('opens the review with exactly one change marked Review this', async () => {
+    const screen = await mountPosed(getStory('editor/tidy-review'));
+
+    const hunks = [...screen.container.querySelectorAll('[data-testid="tidy-hunk"]')];
+    expect(hunks.length).toBeGreaterThan(1);
+    // The judgment hunk is the fixture's whole point: **Review this** is the state a non-objective
+    // change gets, and it comes from the joint original/changes/conventions composition, never from
+    // an interaction.
+    const judgment = hunks.filter((hunk) => hunk.getAttribute('data-objective') === 'false');
+    expect(judgment).toHaveLength(1);
+    expect(judgment[0]?.textContent).toContain('Review this');
+  });
+});
+
+describe('editor/collapsed-layout-block', () => {
+  it(
+    'renders the block collapsed to its labelled pill, with the gutter control beside it',
+    async () => {
+      const workers = countWorkers();
+      const screen = await mountPosed(getStory('editor/collapsed-layout-block'));
+
+      const pill = screen.container.querySelector('.cm-cairn-fold-pill');
+      expect(pill).not.toBeNull();
+      // The registry resolves the pill's human label; without it the pill reads the raw directive.
+      expect(pill?.textContent).toContain('Two-up layout');
+      expect(screen.container.querySelector('.cm-cairn-fold-btn')).not.toBeNull();
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      expect(workers()).toBe(0);
+    },
+    EDITOR_MOUNT_TIMEOUT,
+  );
+});
+
 // The universal contract every registered story must satisfy, exercised for whichever stories are
-// registered today (2 of 25) and automatically covering the rest as A5a through A6b add them.
+// registered today (10 of 25) and automatically covering the rest as A5b through A6b add them.
 for (const story of stories) {
   const entry = manifest.find((candidate) => candidate.id === story.id);
 
@@ -207,12 +414,16 @@ for (const story of stories) {
       expect((story.markers ?? []).map((marker) => marker.key)).toEqual(entry?.markerKeys ?? []);
     });
 
-    it('resolves every marker anchor and runs its settle and pose without throwing', async () => {
-      const screen = await mountPosed(story);
-      for (const marker of story.markers ?? []) {
-        const anchorEl = screen.container.querySelector(marker.anchor);
-        expect(anchorEl, `marker "${marker.key}" anchor "${marker.anchor}" did not resolve`).not.toBeNull();
-      }
-    });
+    it(
+      'resolves every marker anchor and runs its settle and pose without throwing',
+      async () => {
+        const screen = await mountPosed(story);
+        for (const marker of story.markers ?? []) {
+          const anchorEl = screen.container.querySelector(marker.anchor);
+          expect(anchorEl, `marker "${marker.key}" anchor "${marker.anchor}" did not resolve`).not.toBeNull();
+        }
+      },
+      EDITOR_MOUNT_TIMEOUT,
+    );
   });
 }

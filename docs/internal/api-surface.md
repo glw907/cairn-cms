@@ -480,7 +480,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 - `getStory`: (id: string) => ReproStory
 - `ReproContext`: Component<Props, {}, "">
-- `ReproStory`: { id: string; component: Component<Record<string, unknown>, {}, string>; host: "shell" | "bare"; props: { [x: string]: unknown }; context?: Record<string | symbol, unknown>; settle?: ((root: HTMLElement) => Promise<void>); pose?: ((root: HTMLElement) => Promise<void>); markers?: { n: number; anchor: string; key: string }[] }
+- `ReproStory`: { id: string; component: Component<Record<string, unknown>, {}, string>; host: "shell" | "bare"; shellPathname?: string; props: { [x: string]: unknown }; context?: Record<string | symbol, unknown>; settle?: ((root: HTMLElement) => Promise<void>); pose?: ((root: HTMLElement) => Promise<void>); markers?: { n: number; anchor: string; key: string }[] }
 - `stories`: ReproStory[]
 
 ## `/reproductions/manifest`

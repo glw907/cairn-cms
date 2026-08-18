@@ -43,6 +43,13 @@ export const fixtureConcept: ConceptDescriptor = {
 };
 
 /**
+ * The site name every reproduction shows, in the shell's brand tile and on the signed-out pages
+ * alike. One constant because a story and the shell around it render it in two different places, and
+ * two literals drifting apart is visible on any reproduction wide enough to show both.
+ */
+export const fixtureSiteName = 'Trailhead Club';
+
+/**
  * The signed-in identity every story mounts as: `roster/own-row` matches its `data.self` to this
  *  email, and the history entries below credit it as the editor of the most recent publish and the
  *  open draft.

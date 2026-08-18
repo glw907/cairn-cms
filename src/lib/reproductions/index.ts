@@ -13,6 +13,7 @@
 // and this file's `stories` array grows by concatenation as each group lands.
 import type { Component } from 'svelte';
 import { authStories } from './stories/auth.js';
+import { editorStories } from './stories/editor.js';
 
 /**
  * One story's full mount description: a manifest entry plus everything a mounting context needs
@@ -29,6 +30,14 @@ export interface ReproStory {
   component: Component<Record<string, unknown>>;
   /** Whether the story renders inside `CairnAdminShell` with the fixture `navLayout`, or on its own. */
   host: 'shell' | 'bare';
+  /**
+   * The admin pathname a `shell` story's shell resolves its chrome from, when the office default
+   * (`/admin/<concept>`) is the wrong frame. A story that mounts `EditPage` sets
+   * `fixtureDeskPathname`: `isDeskRoute` reads exactly three segments with a declared concept
+   * in the second, and off that path the shell renders office chrome instead, which moves the
+   * sidebar breakpoint and drops the narrow band compaction. Ignored by a `bare` story.
+   */
+  shellPathname?: string;
   /** The full prop bag the component's own contract takes, not only `data` and `form`. */
   props: Record<string, unknown>;
   /**
@@ -62,10 +71,10 @@ export interface ReproStory {
 }
 
 /**
- * The registered stories. Grows from 2 (A4's auth pair) to the full 25 as A5a through A6b land;
+ * The registered stories, in manifest order. Grows to the full 25 as A5b through A6b land;
  * `src/tests/component/reproductions-stories.test.ts` binds this array against `manifest.ts`.
  */
-export const stories: ReproStory[] = [...authStories];
+export const stories: ReproStory[] = [...authStories, ...editorStories];
 
 /**
  * Look up a registered story by id.

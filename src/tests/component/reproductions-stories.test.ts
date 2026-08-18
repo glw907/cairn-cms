@@ -16,13 +16,9 @@ import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
 // The manifest ids not yet backed by a registered story, named explicitly (not derived from
 // `stories`) so a task that registers a group without updating this set is caught by the "keeps
 // the pending list honest" test below rather than silently passing. A5a through A6b each remove
-// their own group's ids here as they land; by A6b this set is empty.
-const PENDING_STORY_IDS = new Set([
-  'tags/screen',
-  'roster/own-row',
-  'nav/worked-navlayout',
-  'toolkit/custom-screen',
-]);
+// their own group's ids here as they land; A6b (the last group) empties this set, so the
+// inventory tests below bind the full 25.
+const PENDING_STORY_IDS = new Set<string>([]);
 
 /**
  * Whether a story is registered under this id, asked through `getStory` (whose throw is the only
@@ -747,8 +743,111 @@ describe('media/delete-in-use', () => {
   });
 });
 
-// The universal contract every registered story must satisfy, exercised for whichever stories are
-// registered today (14 of 25) and automatically covering the rest as A6a and A6b add them.
+// The four site stories (Task A6b), the last group: tags, roster, nav, and the site-authored
+// toolkit screen. As with the earlier groups, the universal loop below already binds every marker
+// anchor, settle, and pose; these add the one thing each page contract names specifically.
+
+describe('tags/screen', () => {
+  it('renders the resting screen: the add field, the tag list, an unused delete, and the unlisted seed', async () => {
+    const screen = await mountPosed(getStory('tags/screen'));
+
+    await expect.element(screen.getByRole('heading', { name: 'Your tags' })).toBeInTheDocument();
+    // The stored-form line under the Add field is the one contracted detail the audit says is not
+    // in the resting render (it appears as the author types), so this row asserts no pose for it.
+    expect(screen.container.textContent).toContain('Editors see the name; posts keep a short slug.');
+
+    // The trash icon versus the use count: an in-use tag's delete is guarded (aria-disabled), the
+    // fixture's zero-usage tag's own delete stays the active, ungated control.
+    const guardedDelete = screen.container.querySelector('button[aria-label^="Cannot remove Trail Guide"]');
+    expect(guardedDelete?.getAttribute('aria-disabled')).toBe('true');
+    const unusedDelete = screen.container.querySelector('button[aria-label="Remove Gear"]');
+    expect(unusedDelete?.hasAttribute('aria-disabled')).toBe(false);
+
+    // The not-on-this-list section, seeded from a tag in use but absent from the vocabulary.
+    await expect.element(screen.getByRole('heading', { name: 'Already on your posts' })).toBeInTheDocument();
+    expect(screen.container.textContent).toContain('volunteer-spotlight');
+
+    await expect.element(screen.getByRole('button', { name: 'Save changes' })).toBeInTheDocument();
+  });
+});
+
+describe('roster/own-row', () => {
+  it("disables the signed-in editor's own row while leaving another editor's controls active", async () => {
+    const screen = await mountPosed(getStory('roster/own-row'));
+
+    // data.self matches the fixture editor's address, so Jamie Torres's own row is disabled: no
+    // self role-change, no self-removal, mirroring the anti-lockout rule's own row-level guard.
+    const ownToggle = screen.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Toggle role for Jamie Torres"]',
+    );
+    expect(ownToggle?.disabled).toBe(true);
+    const ownRemove = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Remove Jamie Torres"]');
+    expect(ownRemove?.disabled).toBe(true);
+
+    // The peer editor is not the signed-in reader, so their row stays fully active.
+    const peerToggle = screen.container.querySelector<HTMLButtonElement>(
+      'button[aria-label="Toggle role for Robin Lake"]',
+    );
+    expect(peerToggle?.disabled).toBe(false);
+    const peerRemove = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Remove Robin Lake"]');
+    expect(peerRemove?.disabled).toBe(false);
+  });
+});
+
+describe('nav/worked-navlayout', () => {
+  it('renders the resolved sidebar: the nested section and the trailing fallback group below the divider', async () => {
+    const screen = await mountPosed(getStory('nav/worked-navlayout'));
+
+    // Half this row's contract is the sidebar, and at its declared wide width the drawer is
+    // persistent rather than an overlay: an overlay drawer carries role="dialog", a persistent one
+    // does not (the same assertion editor/sidebar-list makes for the same reason).
+    const sidebar = screen.container.querySelector('nav[aria-label="Site content"]');
+    expect(sidebar).not.toBeNull();
+    expect(sidebar?.getAttribute('role')).toBeNull();
+
+    // The fixture navLayout's own nested "Club" section, a collapsible group with its two children.
+    // Scoped to the sidebar's own <summary>, since the site name ("Trailhead Club") elsewhere on
+    // the page also contains the word "Club".
+    const sectionLabel = [...(sidebar?.querySelectorAll('summary') ?? [])].find(
+      (el) => el.textContent?.trim() === 'Club',
+    );
+    expect(sectionLabel, 'the "Club" section header did not render').toBeDefined();
+    await expect.element(screen.getByRole('link', { name: 'Events' })).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Members' })).toBeInTheDocument();
+
+    // The unreferenced trailing group after the divider: the three engine screens the worked
+    // example's own tree never names.
+    const fallback = screen.container.querySelector('[data-testid="cairn-nav-fallback"]');
+    expect(fallback).not.toBeNull();
+    expect(fallback?.textContent).toContain('Tags');
+    expect(fallback?.textContent).toContain('Editors');
+    expect(fallback?.textContent).toContain('Help');
+  });
+});
+
+describe('toolkit/custom-screen', () => {
+  it("renders the doc snippet's composed screen: the header, the office list, and each event's status chip", async () => {
+    const screen = await mountPosed(getStory('toolkit/custom-screen'));
+
+    await expect.element(screen.getByRole('heading', { name: 'Events', exact: true })).toBeInTheDocument();
+    expect(screen.container.textContent).toContain('Club');
+    expect(screen.container.textContent).toContain('3 upcoming');
+
+    await expect.element(screen.getByRole('heading', { name: 'All events' })).toBeInTheDocument();
+    const rows = [...screen.container.querySelectorAll('tbody tr')];
+    expect(rows).toHaveLength(3);
+    expect(screen.container.textContent).toContain('Spring Cleanup');
+    expect(screen.container.textContent).toContain('Trail Work Day');
+    expect(screen.container.textContent).toContain('Annual Meeting');
+    // Every row's status chip, transcribed straight from the doc snippet's own `tone="info"`.
+    expect(screen.container.querySelectorAll('.status-chip')).toHaveLength(3);
+    expect(screen.container.textContent).toContain('Confirmed');
+    expect(screen.container.textContent).toContain('Pending');
+  });
+});
+
+// The universal contract every registered story must satisfy, exercised across the full inventory
+// now that A4 through A6b have registered all 25.
 for (const story of stories) {
   const entry = manifest.find((candidate) => candidate.id === story.id);
 

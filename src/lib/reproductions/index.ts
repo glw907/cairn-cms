@@ -17,6 +17,7 @@ import { authStories } from './stories/auth.js';
 import { editorStories } from './stories/editor.js';
 import { mediaStories } from './stories/media.js';
 import { publishStories } from './stories/publish.js';
+import { siteStories } from './stories/site.js';
 
 /**
  * One story's full mount description: a manifest entry plus everything a mounting context needs
@@ -78,10 +79,16 @@ export interface ReproStory {
 }
 
 /**
- * The registered stories, in manifest order. Grows to the full 25 as A5b through A6b land;
+ * The registered stories, in manifest order: the full 25.
  * `src/tests/component/reproductions-stories.test.ts` binds this array against `manifest.ts`.
  */
-export const stories: ReproStory[] = [...authStories, ...editorStories, ...publishStories, ...mediaStories];
+export const stories: ReproStory[] = [
+  ...authStories,
+  ...editorStories,
+  ...publishStories,
+  ...mediaStories,
+  ...siteStories,
+];
 
 /**
  * Look up a registered story by id.

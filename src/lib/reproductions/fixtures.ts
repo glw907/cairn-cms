@@ -50,6 +50,13 @@ export const fixtureConcept: ConceptDescriptor = {
 export const fixtureSiteName = 'Trailhead Club';
 
 /**
+ * The CSRF token every reproduction's forms carry: the value a story bakes into its own `data.csrf`
+ * and the one `ReproContext` hands descendants through the CSRF context. One constant because the
+ * two are written in different modules and a static reproduction shows nothing when they disagree.
+ */
+export const fixtureCsrf = 'repro-fixture-csrf';
+
+/**
  * The signed-in identity every story mounts as: `roster/own-row` matches its `data.self` to this
  *  email, and the history entries below credit it as the editor of the most recent publish and the
  *  open draft.
@@ -71,6 +78,21 @@ export interface FixtureEntry extends EntrySummary {
   /** This entry's own `CairnHistory` data, present only on the entry `publish/history-list` mounts. */
   history?: HistoryData;
 }
+
+/**
+ * The one entry `media/delete-in-use` marks the image below as in use by. Declared beside the list
+ * rather than reached out of it by position, so the usage overlay and the row a reader sees stay
+ * the same entry however the list is later reordered.
+ */
+const IN_USE_ENTRY: FixtureEntry = {
+  concept: fixtureConcept.id,
+  id: '2026-06-18-team-retreat-recap',
+  title: 'Team Retreat Recap',
+  date: '2026-06-18',
+  draft: false,
+  status: 'published',
+  summary: 'Photos and notes from the spring retreat.',
+};
 
 /**
  * A handful of entries, one sample concept: a published pair, the entry `media/delete-in-use`
@@ -96,15 +118,7 @@ export const fixtureEntries: FixtureEntry[] = [
     status: 'published',
     summary: 'What to expect at your first meetup.',
   },
-  {
-    concept: fixtureConcept.id,
-    id: '2026-06-18-team-retreat-recap',
-    title: 'Team Retreat Recap',
-    date: '2026-06-18',
-    draft: false,
-    status: 'published',
-    summary: 'Photos and notes from the spring retreat.',
-  },
+  IN_USE_ENTRY,
   {
     concept: fixtureConcept.id,
     id: '2026-06-24-spring-newsletter',
@@ -124,12 +138,6 @@ export const fixtureEntries: FixtureEntry[] = [
     },
   },
 ];
-
-/**
- * The one entry `media/delete-in-use` marks the image below as in use by, named once here so the
- * fixture stays internally consistent by construction rather than by two hand-typed ids agreeing.
- */
-const IN_USE_ENTRY = fixtureEntries[2]!;
 
 /**
  * The admin pathname `CairnAdminShell`'s `isDeskRoute` recognizes as a genuine open document:

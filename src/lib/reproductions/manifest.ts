@@ -99,8 +99,14 @@ export const manifest: ReproManifestEntry[] = [
     ownThemeRoot: true,
   },
   {
+    // Pinned to the same width as `editor/entry-screen`, and for the same `sm:` gate seen from the
+    // other side: the strip is this row's whole subject, and below 640 EditorToolbar.svelte:423
+    // hides the Write/Preview tablist (the real editor folds it into `moreExtra`, which this story
+    // does not supply) and every cluster's micro-eyebrow goes with it. A responsive `column` embed
+    // renders in a narrow docs column, so it would show the subject stripped of the parts the row
+    // exists to name.
     id: 'editor/toolbar',
-    heights: { column: 220 },
+    heights: { desktop: 220 },
     markerKeys: [],
     pose: false,
     host: 'bare',

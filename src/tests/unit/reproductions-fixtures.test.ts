@@ -5,7 +5,8 @@
 // process with no `.svelte` in the static graph.
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
+import { staticImportGraph } from './_static-import-graph.js';
 import {
   fixtureConcept,
   fixtureEditor,
@@ -23,36 +24,6 @@ import { categorize, isObjective } from '../../lib/components/tidy-categorize.js
 
 const FIXTURES_SOURCE = resolve(process.cwd(), 'src/lib/reproductions/fixtures.ts');
 const FIXTURES_DIR = resolve(process.cwd(), 'src/lib/reproductions/fixtures');
-
-// Mirrors reproductions-manifest.test.ts's own graph walk: a bound specifier and a side-effect one
-// are both static edges, and a `.svelte` specifier resolving anywhere in the graph is exactly the
-// failure this exists to catch.
-const BOUND_IMPORT = /(?:^|\n)\s*(?:import|export)[\s\S]*?\bfrom\s*['"](\.[^'"]+)['"]/g;
-const SIDE_EFFECT_IMPORT = /(?:^|\n)\s*import\s*['"](\.[^'"]+)['"]/g;
-
-function relativeImports(source: string): string[] {
-  const out: string[] = [];
-  for (const pattern of [BOUND_IMPORT, SIDE_EFFECT_IMPORT]) {
-    for (const match of source.matchAll(pattern)) out.push(match[1]);
-  }
-  return out;
-}
-
-function staticImportGraph(entry: string): string[] {
-  const seen = new Set<string>();
-  const queue = [entry];
-  while (queue.length) {
-    const file = queue.shift();
-    if (!file || seen.has(file)) continue;
-    seen.add(file);
-    const source = readFileSync(file, 'utf8');
-    for (const specifier of relativeImports(source)) {
-      const resolved = resolve(dirname(file), specifier.replace(/\.js$/, '.ts'));
-      queue.push(resolved);
-    }
-  }
-  return [...seen];
-}
 
 describe('reproduction fixtures', () => {
   it('imports no .svelte module anywhere in its static graph', () => {

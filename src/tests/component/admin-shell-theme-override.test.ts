@@ -87,6 +87,17 @@ function renderedTheme(container: HTMLElement): string | null {
   return container.querySelector('[data-theme]')?.getAttribute('data-theme') ?? null;
 }
 
+/**
+ * Every control the shell renders that offers the theme flip, by accessible name: the topbar's icon
+ * button (named through aria-label) and the command palette's theme command (named by its text).
+ * The palette's list is in the DOM whether or not the dialog is open, so both are reachable here.
+ */
+function themeControlNames(container: HTMLElement): string[] {
+  return [...container.querySelectorAll('button')]
+    .map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim() ?? '')
+    .filter((name) => /toggle theme|switch to (dark|light) mode/i.test(name));
+}
+
 afterEach(() => {
   // Both accessors live on a prototype; deleting the own override restores the real one.
   delete (document as { cookie?: unknown }).cookie;
@@ -126,6 +137,20 @@ describe('CairnAdminShell theme override', () => {
     expect(cookie.reads).toBe(0);
     expect(media.queries).not.toContain('(prefers-color-scheme: dark)');
   });
+
+  it('renders no theme control at all, since the mounting context owns the theme (WCAG 4.1.2)', async () => {
+    probeCookie('');
+    probeMatchMedia(false);
+    const screen = render(CairnAdminShell, {
+      props: { data: data('cairn-admin'), children: child, themeOverride: 'cairn-admin-dark' },
+    } as never);
+    // Both the topbar button and the palette command would still write ownTheme and the cookie
+    // under an override while the render stayed pinned, so each would be a focusable control with
+    // an accessible name and no visible effect. The palette's label is worse still: it would keep
+    // announcing "Switch to dark mode" after activation. Hiding beats disabling, since a control
+    // the mounting context has taken over has nothing to say.
+    expect(themeControlNames(screen.container)).toEqual([]);
+  });
 });
 
 describe('CairnAdminShell theme without an override (the real admin mount)', () => {
@@ -147,6 +172,15 @@ describe('CairnAdminShell theme without an override (the real admin mount)', () 
       props: { data: data('cairn-admin'), children: child },
     } as never);
     expect(renderedTheme(screen.container)).toBe('cairn-admin');
+  });
+
+  it('renders both theme controls, so the override case above hides something real', async () => {
+    probeCookie('');
+    probeMatchMedia(false);
+    const screen = render(CairnAdminShell, {
+      props: { data: data('cairn-admin'), children: child },
+    } as never);
+    expect(themeControlNames(screen.container)).toEqual(['Toggle theme', 'Switch to dark mode']);
   });
 
   it('still writes the theme cookie when the toggle flips the theme', async () => {

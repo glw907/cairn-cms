@@ -6,8 +6,8 @@
 // reproductions-manifest-dist-spawn.test.ts makes the same claim against the emitted dist, where a
 // packaging rewrite could reintroduce what the source walk cannot see.
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { resolve } from 'node:path';
+import { staticImportGraph } from './_static-import-graph.js';
 import { manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 
 // The 25 ids the spec's story inventory freezes (cairn-pub
@@ -44,7 +44,7 @@ const IDS = [
 // The three locate-many-controls screens the spec gives numbered callouts.
 const MARKED = ['editor/entry-screen', 'media/library', 'tags/screen'];
 
-// The four rows whose page cannot render its subject at every width, and the exact widths each may
+// The five rows whose page cannot render its subject at every width, and the exact widths each may
 // therefore be pinned to. A row declaring only the widths its page can show is what makes the fence
 // schema refuse to picture a screen at a size that cannot show it, so these are asserted exactly:
 // restoring `column` to any of them is the failure this test exists to catch.
@@ -54,49 +54,18 @@ const MARKED = ['editor/entry-screen', 'media/library', 'tags/screen'];
 // `wide` (1280) shows it. `editor/entry-screen` and `editor/preview-tab` name the Write/Preview
 // tablist and the device trigger, both inside an `sm:`-gated wrapper (EditorToolbar.svelte:423), so
 // the render needs at least 640 and `desktop` (860) is the pinned width that clears it.
+// `editor/toolbar` is the same `sm:` gate seen from the other side: the strip is the whole subject,
+// and below 640 it loses that tablist (with no `moreExtra` under this story to compensate) and
+// every cluster's micro-eyebrow, so a responsive `column` render would show the subject stripped.
 const PINNED_WIDTHS: Record<string, string[]> = {
   'editor/sidebar-list': ['wide'],
   'nav/worked-navlayout': ['wide'],
   'editor/entry-screen': ['desktop'],
   'editor/preview-tab': ['desktop'],
+  'editor/toolbar': ['desktop'],
 };
 
 const MANIFEST_SOURCE = resolve(process.cwd(), 'src/lib/reproductions/manifest.ts');
-
-// A bound specifier (`import x from './a.js'`, `export * from './b.js'`) and a side-effect one
-// (`import './c.svelte'`) are both static graph edges, and the side-effect form is the one that
-// pulls in a stylesheet or a component for its effects alone. Matching only the `from` shape let
-// `import './probe.svelte'` walk straight past this test, so both forms are matched.
-const BOUND_IMPORT = /(?:^|\n)\s*(?:import|export)[\s\S]*?\bfrom\s*['"](\.[^'"]+)['"]/g;
-const SIDE_EFFECT_IMPORT = /(?:^|\n)\s*import\s*['"](\.[^'"]+)['"]/g;
-
-/** Every relative specifier a module names. A dynamic import is not a static graph edge. */
-function relativeImports(source: string): string[] {
-  const out: string[] = [];
-  for (const pattern of [BOUND_IMPORT, SIDE_EFFECT_IMPORT]) {
-    for (const match of source.matchAll(pattern)) out.push(match[1]);
-  }
-  return out;
-}
-
-/** Walk the manifest's static import graph, resolving each NodeNext `.js` specifier to its `.ts`. */
-function staticImportGraph(entry: string): string[] {
-  const seen = new Set<string>();
-  const queue = [entry];
-  while (queue.length) {
-    const file = queue.shift();
-    if (!file || seen.has(file)) continue;
-    seen.add(file);
-    const source = readFileSync(file, 'utf8');
-    for (const specifier of relativeImports(source)) {
-      // NodeNext specifiers name the emitted `.js`; the source beside it is `.ts`. A `.svelte`
-      // specifier resolves to itself, which is exactly the case this test exists to catch.
-      const resolved = resolve(dirname(file), specifier.replace(/\.js$/, '.ts'));
-      queue.push(resolved);
-    }
-  }
-  return [...seen];
-}
 
 function byId(id: string): ReproManifestEntry {
   const entry = manifest.find((e) => e.id === id);

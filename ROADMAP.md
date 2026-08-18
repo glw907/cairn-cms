@@ -274,6 +274,31 @@ The original decision framing, for the record:
 
 ## Now
 
+- **A site with a non-default `assets.publicBase` has broken admin thumbnails today, and the
+  reproduction seam just made the fix cheap.** `media/config.ts` makes the base site-configurable
+  and `render/resolve-media.ts` honors it for rendered output, but every admin surface resolved
+  `publicPath`'s hardcoded `/media` until the seam pass made the base injectable through
+  `MEDIA_BASE_CONTEXT_KEY`. That pass wired only the fixture value into the new key. Closing this
+  for real is one provider: the admin layout supplies the resolved config value through the same
+  key, every thumbnail follows, and the reproductions module keeps working unchanged. Found at the
+  seam pass's review gate, in `docs/internal/record/repro-story-audit.md`'s fix 1.
+
+- **`EditPage`'s Edit block control is disabled the way the file's own comment forbids.** It uses
+  `class:btn-disabled` (`EditPage.svelte:2079`), which DaisyUI gives `pointer-events: none`, so the
+  `title` tooltip naming *why* it is off never reaches a mouse user, and the icon sits at the
+  20%-alpha treatment `cairn-admin.css` describes as reading "as an empty gap rather than a disabled
+  control". The Figure button one snippet below does it correctly with `cairn-btn-guarded`, and its
+  comment states the rule Edit block breaks. Pre-existing; found by the seam pass's accessibility
+  review. Fixing it also updates the `editor/toolbar` reproduction, which transcribes the control as
+  it is today.
+
+- **`check:reference` cannot see a subpath nobody told it about.** `scripts/checks/reference-coverage.mjs`
+  holds a hardcoded `CONFIG` list, so a new export subpath ships with no reference page while the gate
+  reports OK across the subpaths it does know. The seam pass added two subpaths and hit exactly this.
+  Deriving the list from `package.json`'s `exports` (with an explicit, asserted exclusion list for
+  anything deliberately undocumented) turns a silent gap into a failure. The same shape of hole exists
+  for component props: the gate matches exported names, so a new public prop is invisible to it.
+
 - **The published docs have no visual layer at all, and half of that was never decided
   (Geoff, 2026-08-15, reading the editors track).** The corpus ships zero images and zero
   diagrams across all four tracks. Two different things produced that, and they need separating

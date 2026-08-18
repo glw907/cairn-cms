@@ -34,6 +34,19 @@ const PENDING_STORY_IDS = new Set([
   'toolkit/custom-screen',
 ]);
 
+/**
+ * Whether a story is registered under this id, asked through `getStory` (whose throw is the only
+ * answer the seam gives) rather than by reading `stories` behind its back.
+ */
+function isRegistered(id: string): boolean {
+  try {
+    getStory(id);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** The rendered `data-theme` root's own attribute value, for a story that owns its theme root. */
 function renderedTheme(container: HTMLElement): string | null {
   return container.querySelector('[data-theme]')?.getAttribute('data-theme') ?? null;
@@ -146,26 +159,12 @@ describe('the manifest-to-story inventory', () => {
     const missing = manifest
       .filter((entry) => !PENDING_STORY_IDS.has(entry.id))
       .map((entry) => entry.id)
-      .filter((id) => {
-        try {
-          getStory(id);
-          return false;
-        } catch {
-          return true;
-        }
-      });
+      .filter((id) => !isRegistered(id));
     expect(missing).toEqual([]);
   });
 
   it('keeps the pending list honest: every pending id is still unregistered', () => {
-    const wronglyPending = [...PENDING_STORY_IDS].filter((id) => {
-      try {
-        getStory(id);
-        return true;
-      } catch {
-        return false;
-      }
-    });
+    const wronglyPending = [...PENDING_STORY_IDS].filter((id) => isRegistered(id));
     expect(wronglyPending).toEqual([]);
   });
 
@@ -236,6 +235,67 @@ describe('ReproStory.settle: the hydration wait a props-only story cannot expres
   });
 });
 
+describe('ReproContext: the surface a bare story mounts on', () => {
+  it('paints the admin surface under the theme root, so a story is not left on the host page ink', async () => {
+    const screen = render(ReproContext, { props: { story: probeStory } });
+
+    // The theme root stays a bare classless wrapper, since the admin's scoped rules are descendant
+    // selectors and a class on the theme element itself would never match. So the paint goes one
+    // level in, the way CairnAdminShell, LoginPage, and ConfirmPage each pair their own root with a
+    // bg-base-200/text-base-content child. cairn-admin.css declares neither background-color nor
+    // color on either theme root, so without this child a story inherits the host document's ink
+    // over the host's background wherever it mounts. The assertion reads the class rather than the
+    // computed style because the source sheet ships the tokens, not the compiled utilities.
+    const surface = screen.container.querySelector('[data-theme]')?.firstElementChild;
+    expect(surface?.className).toContain('bg-base-200');
+    expect(surface?.className).toContain('text-base-content');
+  });
+});
+
+describe('ReproContext: one theme resolution for both hosts', () => {
+  // A docs page that carries both kinds of story must not render half of them light and half dark
+  // for a dark-OS reader: with no theme prop the bare branch falls back to the light admin theme,
+  // so the shell branch has to be handed that same resolved value rather than an undefined override
+  // it answers with a cookie read and a prefers-color-scheme read on the docs origin.
+  function probeDarkOs(): string[] {
+    const queries: string[] = [];
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: (query: string): MediaQueryList => {
+        queries.push(query);
+        return {
+          matches: query === '(prefers-color-scheme: dark)',
+          media: query,
+          onchange: null,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          addListener: () => {},
+          removeListener: () => {},
+          dispatchEvent: () => false,
+        } as unknown as MediaQueryList;
+      },
+    });
+    return queries;
+  }
+
+  afterEach(() => {
+    delete (window as { matchMedia?: unknown }).matchMedia;
+  });
+
+  it('renders a bare and a shell story at the same theme when no theme prop is supplied', async () => {
+    const queries = probeDarkOs();
+
+    const bare = render(ReproContext, { props: { story: probeStory } });
+    expect(renderedTheme(bare.container)).toBe('cairn-admin');
+
+    const shell = await mountPosed(getStory('editor/sidebar-list'));
+    expect(renderedTheme(shell.container)).toBe('cairn-admin');
+    // The prop's whole point is that a docs origin's cookie and the reader's OS never reach a
+    // mounted story, so the shell must not have asked either.
+    expect(queries).not.toContain('(prefers-color-scheme: dark)');
+  });
+});
+
 describe('ReproContext: the theme root a bare story does not own', () => {
   it('mounts a bare story with no theme root of its own under a cairn-admin root', async () => {
     const screen = render(ReproContext, { props: { story: probeStory } });
@@ -291,9 +351,33 @@ describe('editor/toolbar', () => {
       (group) => group.getAttribute('aria-label'),
     );
     expect(groups).toEqual(['Format', 'Structure', 'Insert']);
-    // The Insert cluster renders the host's controls rather than sitting empty, the one thing this
-    // row's props have to supply.
-    expect(screen.container.querySelector('[role="group"][aria-label="Insert"] button')).not.toBeNull();
+    // The Insert cluster is the one thing this row's props have to supply, and its contents are a
+    // transcription, so the assertion is the whole roster in order rather than "a button exists".
+    // Seven controls is what EditPage renders for this story's own fixture: Insert block and Edit
+    // block from `hasComponents` (fixtureRegistry declares an insertable two-up), Web link, Link to
+    // page, Insert image, Tidy from `tidy.enabled`, and the always-rendered figure control. Only
+    // "Include a fragment" is absent, gated off by the fixture's `fragmentTargets: null`. A gate
+    // this story's fixture opens but the transcription drops is exactly the drift a reader would
+    // see as a reproduction with fewer controls than the editor open beside it.
+    const insertNames = [...screen.container.querySelectorAll('[role="group"][aria-label="Insert"] button')].map(
+      (button) => button.getAttribute('aria-label'),
+    );
+    expect(insertNames).toEqual([
+      'Insert block',
+      'Place the cursor in a component to edit it',
+      'Web link (Ctrl+K)',
+      'Link to page',
+      'Insert image',
+      'Tidy',
+      'Place the cursor on an image to add a figure',
+    ]);
+    // The one Insert control that opens a popover rather than a dialog carries no aria-haspopup in
+    // the real toolbar (EditPage.svelte's Insert image), and a reproduction that advertised the
+    // property anyway would be drift of exactly the kind this seam exists to prevent.
+    const byName = (name: string) =>
+      screen.container.querySelector(`[role="group"][aria-label="Insert"] button[aria-label="${name}"]`);
+    expect(byName('Insert image')?.hasAttribute('aria-haspopup')).toBe(false);
+    expect(byName('Insert block')?.getAttribute('aria-haspopup')).toBe('dialog');
   });
 });
 

@@ -416,6 +416,11 @@ persistent "?" carries Markdown help, design-arc D2).
   // page's own preference otherwise. The stored read below and the footer toggle keep writing the
   // author's own value, so removing the override restores exactly what the author chose.
   const spellcheck = $derived(spellcheckOverride ?? ownSpellcheck);
+  // Whether this page offers the spellcheck flip at all. Under an override it does not: the toggle
+  // would announce an aria-pressed state it cannot change (WCAG 4.1.2) and would overwrite the
+  // author's stored preference on the way. Both faces gate on this, the card footer's toggle and
+  // the below-sm overflow pick, which is the only one a phone editor can reach.
+  const offersSpellcheckToggle = $derived(spellcheckOverride === undefined);
   // Zen: the manuscript alone on the recessed ground. The band, the document title, the toolbar
   // strip, and the footer go; the editing surface stays. It joins the editor-preference family on
   // the same pattern (a localStorage key, read once below, written by the setter), and composes
@@ -2193,7 +2198,9 @@ persistent "?" carries Markdown help, design-arc D2).
           {@render moreDivider()}
           {@render moreToggle('Focus mode', focusMode, () => { setFocusMode(!focusMode); closeMenu(); })}
           {@render moreToggle('Typewriter', typewriter, () => { setTypewriter(!typewriter); closeMenu(); })}
-          {@render moreToggle('Spellcheck', spellcheck, () => { setSpellcheck(!spellcheck); closeMenu(); })}
+          {#if offersSpellcheckToggle}
+            {@render moreToggle('Spellcheck', spellcheck, () => { setSpellcheck(!spellcheck); closeMenu(); })}
+          {/if}
           {@render moreToggle('Zen', zen, () => { setZen(!zen); closeMenu(); })}
           {@render moreDivider()}
           <li class="sm:hidden">
@@ -2376,7 +2383,9 @@ persistent "?" carries Markdown help, design-arc D2).
               Typewriter
             </button>
             <!-- Spellcheck: the markdown-aware lint underlines. Off reconfigures the lint compartment
-                 to empty and idles the Worker. Same check-and-tint grammar as the modes beside it. -->
+                 to empty and idles the Worker. Same check-and-tint grammar as the modes beside it.
+                 Absent under a mounting context's override, which owns the posture outright. -->
+            {#if offersSpellcheckToggle}
             <button
               type="button"
               class={ftrToggleClass(spellcheck)}
@@ -2386,6 +2395,7 @@ persistent "?" carries Markdown help, design-arc D2).
               {#if spellcheck}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
               Spellcheck
             </button>
+            {/if}
             <!-- Zen enters from the footer (and Ctrl+Shift+.); it reads as a peer writing-mode
                  toggle here, but once on it hides the whole footer, so the chip carries the way out. -->
             <button

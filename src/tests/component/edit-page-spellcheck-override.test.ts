@@ -8,6 +8,7 @@
 // rather than assumed and the override is proven to cost nothing.
 import { describe, it, expect, afterEach } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { page as browserPage } from 'vitest/browser';
 import EditPage from './_EditPageDesk.svelte';
 import type { NamedField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
@@ -85,6 +86,20 @@ afterEach(() => {
   globalThis.Worker = realWorker;
 });
 
+/**
+ * Every control that offers the spellcheck flip, by its label. Two render it: the card footer's
+ * toggle and the below-sm pick in the toolbar's More popover, which mounts its extra items only
+ * while the menu is open, so this opens the menu first.
+ * @param container - the rendered EditPage harness's root
+ * @returns one label per rendered control, footer first
+ */
+async function spellcheckControls(container: HTMLElement): Promise<string[]> {
+  await browserPage.getByRole('button', { name: /more formatting/i }).click();
+  return [...container.querySelectorAll('button')]
+    .map((button) => button.textContent?.trim() ?? '')
+    .filter((label) => /^spellcheck$/i.test(label));
+}
+
 describe('EditPage spellcheck override', () => {
   it('spawns the spellcheck Worker with no override, the cost the lever exists to remove', async () => {
     const workers = countWorkers();
@@ -115,14 +130,24 @@ describe('EditPage spellcheck override', () => {
     expect(localStorage.getItem('cairn-editor-spellcheck')).toBe('false');
   });
 
-  it('leaves the footer toggle reading the override, not the stored preference', async () => {
+  it('offers no spellcheck control at all, since the mounting context owns the posture (WCAG 4.1.2)', async () => {
     localStorage.setItem('cairn-editor-spellcheck', 'true');
     countWorkers();
     const page = render(EditPage, props({ spellcheckOverride: false }));
     await expect.element(page.getByLabelText('Markdown source')).toBeInTheDocument();
-    await expect.element(page.getByRole('button', { name: /spellcheck/i })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    );
+    // Both faces of the control go: the card footer's toggle and the below-sm overflow pick, which
+    // is the only one a phone editor can reach. Left in place, each would announce an aria-pressed
+    // state it cannot change and would overwrite the author's stored preference on the way.
+    expect(await spellcheckControls(page.container)).toEqual([]);
+    // The author's own preference survives untouched, which is the other half of the defect: a
+    // dead toggle that still writes localStorage would lose it.
+    expect(localStorage.getItem('cairn-editor-spellcheck')).toBe('true');
+  });
+
+  it('offers both spellcheck controls with no override, so the case above hides something real', async () => {
+    countWorkers();
+    const page = render(EditPage, props());
+    await expect.element(page.getByLabelText('Markdown source')).toBeInTheDocument();
+    expect(await spellcheckControls(page.container)).toEqual(['Spellcheck', 'Spellcheck']);
   });
 });

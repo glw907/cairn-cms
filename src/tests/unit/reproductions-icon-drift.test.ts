@@ -18,7 +18,7 @@ const STORY_SOURCE = resolve(process.cwd(), 'src/lib/reproductions/stories/edito
 const LUCIDE_ICONS = resolve(process.cwd(), 'node_modules/@lucide/svelte/dist/icons');
 
 /** The lucide icons `editor/toolbar` transcribes, in the order the Insert group renders them. */
-const TRANSCRIBED = ['blocks', 'link', 'file-symlink', 'image', 'sparkles'];
+const TRANSCRIBED = ['blocks', 'square-pen', 'link', 'file-symlink', 'image', 'sparkles'];
 
 /** Every `d` attribute in one icon's `iconNode`, the part a redraw actually changes. */
 function iconPaths(name: string): string[] {

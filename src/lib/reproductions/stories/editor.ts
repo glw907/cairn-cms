@@ -219,7 +219,7 @@ function glyph(inner: string): string {
 }
 
 /**
- * One host insert control, in the icon-button shape `EditPage` gives its own.
+ * One host insert control that opens a dialog, in the icon-button shape `EditPage` gives its own.
  * @param label - the control's accessible name and tooltip
  * @param inner - the icon's shapes
  * @returns one button's markup
@@ -232,10 +232,28 @@ function insertButton(label: string, inner: string): string {
 }
 
 /**
+ * The one insert control that opens a popover rather than a dialog, so it carries no
+ * `aria-haspopup`. Insert image is the real toolbar's only such control; stamping the property on
+ * it here would advertise something the control it reproduces does not have.
+ * @param label - the control's accessible name and tooltip
+ * @param inner - the icon's shapes
+ * @returns one button's markup
+ */
+function popoverButton(label: string, inner: string): string {
+  return (
+    '<button type="button" class="btn btn-sm btn-ghost btn-square" ' +
+    `aria-label="${label}" title="${label}">${glyph(inner)}</button>`
+  );
+}
+
+/**
  * The Insert group's contents, which the toolbar takes from its host rather than wiring itself.
  * `EditPage` renders these as a Svelte snippet; a story module has no markup of its own, so it
- * builds the same strip through `createRawSnippet`. The resting states are the real ones: the Tidy
- * action is a labelled button, and the figure control sits guarded until a caret lands on an image.
+ * builds the same strip through `createRawSnippet`. Seven controls, the number the real Insert
+ * group renders for this story's fixture: only "Include a fragment" is missing, gated off by the
+ * fixture's `fragmentTargets: null`. The resting states are the real ones: the Tidy action is a
+ * labelled button, and Edit block and the figure control each sit guarded until a caret lands on
+ * what they act upon.
  */
 const insertControls = createRawSnippet(() => ({
   render: () =>
@@ -245,6 +263,19 @@ const insertControls = createRawSnippet(() => ({
       '<path d="M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2"/>' +
         '<rect x="14" y="2" width="8" height="8" rx="1"/>',
     ) +
+    // Edit block, at rest: `hasComponents` opens the same gate that renders Insert block beside it,
+    // and with no caret in a component the control is unavailable. Transcribed as it stands today,
+    // btn-disabled and all, rather than as it should be: the class costs a mouse user the tooltip
+    // that names the reason (pointer-events: none suppresses it), which is a defect of the real
+    // control, recorded against EditPage rather than quietly repaired in its reproduction.
+    '<button type="button" class="btn btn-sm btn-ghost btn-square btn-disabled" ' +
+    'aria-haspopup="dialog" aria-label="Place the cursor in a component to edit it" ' +
+    'title="Place the cursor in a component to edit it" aria-disabled="true">' +
+    glyph(
+      '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>' +
+        '<path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',
+    ) +
+    '</button>' +
     insertButton(
       'Web link (Ctrl+K)',
       '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
@@ -255,7 +286,7 @@ const insertControls = createRawSnippet(() => ({
       '<path d="M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h7"/>' +
         '<path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="m10 18 3-3-3-3"/>',
     ) +
-    insertButton(
+    popoverButton(
       'Insert image',
       '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/>' +
         '<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',

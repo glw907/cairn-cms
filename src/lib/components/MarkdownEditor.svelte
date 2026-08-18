@@ -236,6 +236,13 @@ through the adapter's render. Swapping the editor stays a one-file change.
   // contest it on adoption order). Built in onMount beside the base theme.
   let proseTheme: import('@codemirror/state').Extension | null = null;
   let markupTheme: import('@codemirror/state').Extension | null = null;
+  // The posture theme the surface compartment carries, at initial configure and at every later
+  // reconfigure. The `?? []` is a checker artifact rather than a reachable state: onMount assigns
+  // both holders before anything here runs, but it assigns them through a call the checker cannot
+  // follow, so the null branch has to be spelled out.
+  function surfaceTheme(posture: 'prose' | 'markup'): import('@codemirror/state').Extension {
+    return (posture === 'prose' ? proseTheme : markupTheme) ?? [];
+  }
   // The base theme lives in its own compartment because CodeMirror's dark flag is baked into a
   // theme extension at construction, and the admin theme can flip under a mounted editor (the
   // topbar toggle, or a host driving CairnAdminShell's themeOverride). A flip rebuilds all three
@@ -852,9 +859,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // (running both would double-underline), and autocorrect/autocapitalize stay off so a browser
           // never silently rewrites a `media:` token, a directive name, or frontmatter.
           themeCompartment.of(theme),
-          // The `?? []` mirrors the posture effect below: buildThemes has just assigned both, so
-          // neither is null here, but they are assigned through a call the checker cannot follow.
-          surfaceCompartment.of((surface === 'prose' ? proseTheme : markupTheme) ?? []),
+          surfaceCompartment.of(surfaceTheme(surface)),
           // The live content's accessible name (WCAG 4.1.2): the only aria-label in this file otherwise
           // sits on the SSR-fallback textarea below, which hydration removes, so the same string carries
           // across the swap. A public facet, so this adds no CodeMirror-internal coupling.
@@ -901,7 +906,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
         view.dispatch({
           effects: [
             themeCompartment.reconfigure(nextBase),
-            surfaceCompartment.reconfigure((surface === 'prose' ? proseTheme : markupTheme) ?? []),
+            surfaceCompartment.reconfigure(surfaceTheme(surface)),
           ],
         });
       });
@@ -962,7 +967,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
       effects: [
         focusCompartment.reconfigure(focus ? modes.focusMode() : []),
         typewriterCompartment.reconfigure(typing ? modes.typewriterScroll() : []),
-        surfaceCompartment.reconfigure((posture === 'prose' ? proseTheme : markupTheme) ?? []),
+        surfaceCompartment.reconfigure(surfaceTheme(posture)),
       ],
     });
   });

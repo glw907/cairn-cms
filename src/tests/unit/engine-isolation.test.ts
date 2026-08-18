@@ -48,6 +48,15 @@ describe('engine isolation', () => {
     // importing the sheet anywhere else would leak the globals onto host pages. ReproContext.svelte
     // (src/lib/reproductions/) reaches the same file one directory up, so both relative specifiers
     // are matched.
+    //
+    // The reproduction root is the one importer that is not an admin route: a consumer reaches it
+    // through @glw907/cairn-cms/reproductions and mounts it on an ordinary page, so the globals do
+    // load there. That is the point of the root rather than a hole in the boundary. A mounted story
+    // is a piece of the admin rendered outside it, and it needs the same sheet the admin does; the
+    // page that mounts one is asking for exactly that, the way a docs page asks for a live editor.
+    // The globals themselves are additive (named @keyframes and registered custom properties, no
+    // element or :root selectors, which the scoping assertion above holds), so what they reach on a
+    // host page is a name nothing else claims.
     const importers = files
       .filter((f) => f.endsWith('.svelte'))
       .filter((f) => /import\s+['"](?:\.\/|\.\.\/components\/)cairn-admin\.css['"]/.test(readFileSync(f, 'utf8')))

@@ -301,6 +301,14 @@ discriminant, not the fields, gates the chrome).
     writeAdminCookie('cairn-admin-theme', ownTheme);
   }
 
+  // Whether this shell offers the theme flip at all. Under an override the mounting context owns
+  // the theme, so a toggle would write ownTheme and the cookie while the render stayed pinned: a
+  // focusable control with an accessible name and no visible effect (WCAG 4.1.2), whose palette
+  // label would go on announcing "Switch to dark mode" after activation. Every face of the control
+  // gates on this, the topbar button and the palette command here and the narrow-width fold
+  // EditPage renders from the mirrored toggle below.
+  const offersThemeToggle = $derived(themeOverride === undefined);
+
   // The command palette: a quick jump-to over the admin's destinations plus a couple of actions, so
   // the topbar carries something productive. Opened by the topbar trigger or Cmd/Ctrl+K.
   interface Command {
@@ -350,9 +358,13 @@ discriminant, not the fields, gates the chrome).
   const paletteCommands = $derived<Command[]>([
     ...paletteNavItems.map((item) => ({ label: item.label, icon: item.icon, href: item.href })),
     { label: 'View the live site', icon: ExternalLinkIcon, href: '/', external: true },
-    theme === 'cairn-admin'
-      ? { label: 'Switch to dark mode', icon: MoonIcon, action: toggleTheme }
-      : { label: 'Switch to light mode', icon: SunIcon, action: toggleTheme },
+    ...(offersThemeToggle
+      ? [
+          theme === 'cairn-admin'
+            ? { label: 'Switch to dark mode', icon: MoonIcon, action: toggleTheme }
+            : { label: 'Switch to light mode', icon: SunIcon, action: toggleTheme },
+        ]
+      : []),
   ]);
   const paletteResults = $derived(
     paletteCommands.filter((c) => c.label.toLowerCase().includes(paletteQuery.trim().toLowerCase())),
@@ -442,11 +454,13 @@ discriminant, not the fields, gates the chrome).
   // can fold the standalone theme toggle in below the width cutoff where this shell hides it (the
   // desk band collision fix, admin-papercuts pass): the direction reverses from desk/zen above,
   // the shell writes and EditPage reads through the same portal. toggleTheme is stable for the
-  // component's life, so it is assigned once here; only the live theme value is reactive, so the
-  // effect below tracks it alone rather than rewriting the stable function on every theme flip.
-  topbar.toggleTheme = toggleTheme;
+  // component's life, so what the effect below writes is either that one function or nothing.
+  // Nothing under an override: the holder's toggleTheme is documented as optional and EditPage's
+  // fold renders only while it is present, so leaving it unset is how the third face of the theme
+  // control disappears alongside the two this component renders itself.
   $effect(() => {
     topbar.theme = theme;
+    topbar.toggleTheme = offersThemeToggle ? toggleTheme : undefined;
   });
 
   // Whether the drawer currently renders as the persistent sidebar rather than an overlay: the same
@@ -671,11 +685,13 @@ discriminant, not the fields, gates the chrome).
         <!-- Below the sm cutoff a desk route folds this into EditPage's own overflow menu instead
              of shrinking it in place (the desk band collision fix, audit finding 2): the office
              routes keep it visible at every width, since only the desk band runs out of room. -->
+        {#if offersThemeToggle}
         <div class="flex-none" class:max-sm:hidden={isDeskRoute}>
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
             {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
           </button>
         </div>
+        {/if}
       </div>
       {/if}
 

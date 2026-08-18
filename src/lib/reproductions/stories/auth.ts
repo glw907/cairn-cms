@@ -4,7 +4,7 @@
 // (docs/internal/record/repro-story-audit.md), so ReproContext routes an override theme into
 // `data.theme` rather than a shell prop. Neither needs a pose or markers; the contracted state
 // (an empty sign-in form, the resting "Confirm sign-in" button) is the resting render.
-import { fixtureSiteName } from '../fixtures.js';
+import { fixtureCsrf, fixtureSiteName } from '../fixtures.js';
 import type { Component } from 'svelte';
 import LoginPage from '../../components/LoginPage.svelte';
 import ConfirmPage from '../../components/ConfirmPage.svelte';
@@ -16,7 +16,7 @@ const login: ReproStory = {
   component: LoginPage as unknown as Component<Record<string, unknown>>,
   host: 'bare',
   props: {
-    data: { siteName: fixtureSiteName, error: null, csrf: 'repro-fixture-csrf', theme: 'cairn-admin' },
+    data: { siteName: fixtureSiteName, error: null, csrf: fixtureCsrf, theme: 'cairn-admin' },
     form: null,
   },
 };
@@ -31,7 +31,7 @@ const confirm: ReproStory = {
       token: 'repro-fixture-token',
       siteName: fixtureSiteName,
       error: null,
-      csrf: 'repro-fixture-csrf',
+      csrf: fixtureCsrf,
       theme: 'cairn-admin',
     },
     form: null,

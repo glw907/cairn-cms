@@ -5,10 +5,12 @@
 // ResolvedNavLayout) so a story's props are exactly what a real admin route would hand the same
 // component. Node-safe like ./manifest.ts: no `.svelte` import, no @sveltejs/kit, no DOM outside the
 // `atob`/`File` globals both Node and a browser carry. Every module this file value-imports
-// (./fixtures.js excepted) is plain data or a pure function with the same guarantee; every heavier
-// shape (ConceptDescriptor, EntrySummary, HistoryData, MediaLibraryData, VocabularyLoadData,
-// ResolvedNavLayout) is a type-only import, so a file that pulls in @sveltejs/kit or the GitHub
-// client to declare its interface never drags that weight in here.
+// (./fixtures.js excepted) is plain data or a pure function with the same guarantee, including
+// `diffChanges` (tidy-diff.ts) and `resolveTidyConventions` (nav/site-config.ts), both leaf modules
+// with no relative imports of their own; every heavier shape (ConceptDescriptor, EntrySummary,
+// HistoryData, MediaLibraryData, VocabularyLoadData, ResolvedNavLayout) is a type-only import, so a
+// file that pulls in @sveltejs/kit or the GitHub client to declare its interface never drags that
+// weight in here.
 //
 // docs/internal/record/repro-story-audit.md is the per-story mechanism record these fixtures serve;
 // its "Note for A2" paragraphs on `media/upload-form` and `media/delete-in-use` are load-bearing
@@ -22,6 +24,8 @@ import type { MediaLibraryData, MediaUsageInfo } from '../sveltekit/content-rout
 import type { MediaLibraryEntry } from '../media/library-entry.js';
 import type { VocabularyLoadData } from '../sveltekit/content-routes-settings.js';
 import type { ResolvedNavLayout } from '../sveltekit/admin-nav.js';
+import { diffChanges, type Change } from '../components/tidy-diff.js';
+import { resolveTidyConventions, type TidyConventions } from '../nav/site-config.js';
 
 /** The one sample concept every fixture entry belongs to: a dated, routable "posts" concept. */
 export const fixtureConcept: ConceptDescriptor = {
@@ -119,6 +123,17 @@ export const fixtureEntries: FixtureEntry[] = [
  * fixture stays internally consistent by construction rather than by two hand-typed ids agreeing.
  */
 const IN_USE_ENTRY = fixtureEntries[2]!;
+
+/**
+ * The admin pathname `CairnAdminShell`'s `isDeskRoute` recognizes as a genuine open document:
+ * exactly three segments, `admin`, then a concept id present in `data.concepts`
+ * (`CairnAdminShell.svelte:431-434`). Composed from {@link fixtureConcept} and a real
+ * {@link fixtureEntries} id rather than hand-typed, so it cannot drift from either. A shell story
+ * that mounts `EditPage` (the entry screen and its posed variants, the header band) needs this
+ * pathname or the shell silently renders office chrome instead: the sidebar breakpoint moves lg to
+ * xl, the `max-sm` desk band compaction stops applying, and the theme toggle stops folding away.
+ */
+export const fixtureDeskPathname = `/admin/${fixtureConcept.id}/${fixtureEntries[0]!.id}`;
 
 /**
  * A small media library: five real, small PNGs (bytes under `./fixtures/`, named
@@ -292,3 +307,41 @@ function bytesFromBase64(base64: string): Uint8Array<ArrayBuffer> {
 export const fixtureCaptureFile: File = new File([bytesFromBase64(CAPTURE_IMAGE_BASE64)], 'lighthouse-cove.png', {
   type: 'image/png',
 });
+
+/**
+ * The uncorrected draft {@link fixtureTidyReview} diffs against: a doubled word and a misspelling
+ * (both objective) plus a clause `fixtureTidyReview`'s corrected text appends (a multi-token
+ * reword, the one non-objective hunk).
+ */
+const TIDY_ORIGINAL = [
+  'Meet at the the trailhead kiosk by eight, and bring extra water for the climb.',
+  'The loop passes a shaded overlook before it reachs the ridge line.',
+].join('\n');
+
+/**
+ * The corrected text {@link fixtureTidyReview}'s changes are computed against `TIDY_ORIGINAL`:
+ * collapses the doubled "the the", fixes "reachs" to "reaches", and appends a clause with no
+ * single-word counterpart in the original, so that hunk cannot categorize as spelling, typo,
+ * doubled, or whitespace.
+ */
+const TIDY_CORRECTED = [
+  'Meet at the trailhead kiosk by eight, and bring extra water for the climb.',
+  'The loop passes a shaded overlook before it reaches the ridge line and circles back through the aspen grove.',
+].join('\n');
+
+/**
+ * `editor/tidy-review`'s `original`, `changes`, and `conventions` props, composed jointly rather
+ * than derived from `changes` alone. `TidyReview.svelte:85` infers each hunk's category from
+ * `categorize(c, original, conventions)`, and `conventions` is the ONLY data source for that
+ * inference (`tidy-categorize.ts:34-41`): `isObjective` is true only for spelling, typo, doubled,
+ * and whitespace, and **Review this** is the `undecided` state a non-objective hunk gets
+ * (`TidyReview.svelte:129`). With `resolveTidyConventions(undefined)` (no normalization enabled,
+ * the same conventions the tidy-review component test uses), the doubled word and the misspelling
+ * categorize as objective and the appended clause categorizes as `grammar`, so exactly one hunk
+ * renders **Review this**.
+ */
+export const fixtureTidyReview: { original: string; changes: Change[]; conventions: TidyConventions } = {
+  original: TIDY_ORIGINAL,
+  changes: diffChanges(TIDY_ORIGINAL, TIDY_CORRECTED),
+  conventions: resolveTidyConventions(undefined),
+};

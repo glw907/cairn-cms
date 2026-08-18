@@ -14,9 +14,12 @@ import {
   fixtureVocabulary,
   fixtureNavLayout,
   fixtureCaptureFile,
+  fixtureTidyReview,
+  fixtureDeskPathname,
 } from '../../lib/reproductions/fixtures.js';
 import { fixtureMediaBase, fixtureMediaFiles } from '../../lib/reproductions/manifest.js';
 import { publicPath } from '../../lib/media/naming.js';
+import { categorize, isObjective } from '../../lib/components/tidy-categorize.js';
 
 const FIXTURES_SOURCE = resolve(process.cwd(), 'src/lib/reproductions/fixtures.ts');
 const FIXTURES_DIR = resolve(process.cwd(), 'src/lib/reproductions/fixtures');
@@ -146,5 +149,34 @@ describe('reproduction fixtures', () => {
     for (const child of fixtureNavLayout.fallback) {
       expect('screen' in child, 'fallback carries only engine references').toBe(true);
     }
+  });
+
+  it('composes original, changes, and conventions so one change is non-objective, for editor/tidy-review', () => {
+    // TidyReview.svelte:85 derives each hunk's category from `categorize(c, original, conventions)`,
+    // and conventions is the ONLY data source for that inference (tidy-categorize.ts). A fixture
+    // built from `changes` alone (the audit's original, wrong claim) cannot control which hunks are
+    // objective, so this composes all three jointly and proves at least one hunk lands outside the
+    // four objective kinds (spelling, typo, doubled, whitespace), which is what renders "Review this".
+    expect(fixtureTidyReview.changes.length).toBeGreaterThan(0);
+    const categories = fixtureTidyReview.changes.map((c) =>
+      categorize(c, fixtureTidyReview.original, fixtureTidyReview.conventions),
+    );
+    expect(categories.some((cat) => isObjective(cat)), 'at least one objective hunk').toBe(true);
+    expect(categories.some((cat) => !isObjective(cat)), 'at least one non-objective (Review this) hunk').toBe(
+      true,
+    );
+  });
+
+  it('freezes the admin desk pathname so it satisfies isDeskRoute (CairnAdminShell.svelte:431-434)', () => {
+    // isDeskRoute requires exactly three segments, the first "admin", and the second a real concept
+    // id; a fixture pathname that misses this silently yields the office layout instead of the desk
+    // one. Composed from fixtureConcept and a real fixtureEntries id so it cannot drift from either.
+    const segs = fixtureDeskPathname.split('/').filter(Boolean);
+    expect(segs.length).toBe(3);
+    expect(segs[0]).toBe('admin');
+    expect(segs[1]).toBe(fixtureConcept.id);
+    expect(fixtureEntries.some((e) => e.id === segs[2]), 'the third segment is a real fixture entry id').toBe(
+      true,
+    );
   });
 });

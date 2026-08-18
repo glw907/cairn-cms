@@ -78,8 +78,15 @@ Every claim below carries file:line evidence read from the tree at
   `/components` barrel; see "The export question" below.
 - **Host:** `bare`. The toolbar is a strip that takes every input as a prop and reads no context.
 - **Mechanism:** props. `Props` at `EditorToolbar.svelte:36`: `format`, `mode`, `onMode`, `device`,
-  `onDevice`, `insertControls`, `moreExtra`, `onHelp`. The contract ("its four groups visible")
-  needs `insertControls` supplied so the Insert group renders; the rest are no-op callbacks.
+  `onDevice`, `insertControls`, `moreExtra`, `onHelp`. The contract's own instruction is "one
+  toolbar reproduction at the section top locates the groups," not "its four groups visible," a
+  phrase that appears nowhere but a prior draft of this row: the component names three labelled
+  clusters (Format, Structure, Insert) plus a persistent help control it deliberately does not call
+  a cluster, never four groups. `insertControls` must be supplied so the Insert group renders
+  rather than sitting empty; the rest are no-op callbacks. The clusters' own micro-eyebrow labels
+  are themselves `sm:`-and-up, a fact the manifest's `column`-alone declaration does not yet act
+  on; this row stays a watch item, not a fix, since no contracted control it names is hidden below
+  a breakpoint the way `write-preview-tabs` was.
 - **Exports needed:** none.
 - **Fixes needed:** none.
 
@@ -126,8 +133,11 @@ Every claim below carries file:line evidence read from the tree at
   `onapply`, `onunwrap` (`MediaFigureControl.svelte:32`, `:49`). Reaching the same surface through
   `EditPage` would need a caret-on-an-image pose against `mediaAtCaret`
   (`EditPage.svelte:824`) and `figureDialog` (`EditPage.svelte:827`), which is a longer route to a
-  strictly larger render. `mode: 'edit'` gives the contract's **Edit the figure at the cursor**
-  face.
+  strictly larger render. `mode: 'edit'` renders the same fold this row exists to picture, `Unwrap`
+  and `Update figure` (`MediaFigureControl.svelte:242-244`), not the strings a prior draft of this
+  sentence claimed: **Edit the figure at the cursor** is `EditPage`'s own toolbar label
+  (`EditPage.svelte:847`) and **Edit figure** its dialog heading (`EditPage.svelte:2685`), neither
+  of which `MediaFigureControl` renders itself.
 - **Exports needed:** none.
 - **Fixes needed:** none.
 
@@ -137,10 +147,19 @@ Every claim below carries file:line evidence read from the tree at
   barrel.
 - **Host:** `bare`.
 - **Mechanism:** props. The review opens itself: an `$effect` calls `dialog.showModal()` once on
-  mount (`TidyReview.svelte:161`). Every hunk, its category, and its objective flag are derived
-  from the `changes` prop (`TidyReview.svelte:39`, `:64`), so "one change marked **Review this**"
-  is a fixture-data choice, not an interaction. The prop bag is `changes`, `original`,
+  mount (`TidyReview.svelte:161`). Every hunk's category and objective flag are derived from
+  `categorize(c, original, conventions)` (`TidyReview.svelte:85`), not from `changes` alone: `original`
+  and `conventions` are the ONLY data source for the category inference
+  (`TidyReview.svelte`'s own `conventions` doc comment). `isObjective` is true only for spelling,
+  typo, doubled, and whitespace (`tidy-categorize.ts:34-41`); **Review this** is the `undecided`
+  state a non-objective hunk gets (`TidyReview.svelte:129`). So "one change marked
+  **Review this**" is a joint `original`/`changes`/`conventions` fixture-data choice, not an
+  interaction and not `changes` alone. The prop bag is `changes`, `original`,
   `conventions`, `model`, `title`, `api`, `onclose`, `onshow`.
+- **Note for A2:** the fixture must compose `original`, `changes`, and `conventions` jointly, so at
+  least one change lands outside the four objective kinds. `fixtureTidyReview` (frozen names below)
+  does this: `resolveTidyConventions(undefined)` enables no normalization, so a doubled word and a
+  misspelling categorize as objective and an appended multi-token clause categorizes as `grammar`.
 - **Exports needed:** none.
 - **Fixes needed:** none.
 
@@ -223,9 +242,18 @@ Every claim below carries file:line evidence read from the tree at
 - **Mechanism:** **pose**. The popover mounts headless by default; `trigger: true` renders the
   built-in button (`MediaInsertPopover.svelte:55`) and `open('chooser')` is an instance export
   (`:134`) a DOM-only pose cannot call. The pose clicks the rendered trigger.
+- **Note for A2:** the fattest required prop bag of any row. `editor` is a four-method seam object
+  (`MediaInsertPopover.svelte:64`); `open()` calls `editor.caretCoords()` synchronously
+  (`:135`), the very thing the pose triggers, so the fixture stub must exist and *deliberately*
+  return `null` (the documented centered fallback), not be omitted. `onuploaded` is a callback
+  (`:72`), `library` a hash-keyed record (`:60`). The row also reads `CSRF_CONTEXT_KEY`
+  (`MediaInsertPopover.svelte:82`), which `ReproContext` supplies in A4, matching the two other
+  media rows this table already flags for it.
 - **Exports needed:** none.
-- **Fixes needed:** the media public base (fix 1): the reuse search renders thumbnails through
-  `editor-media.ts` and the picker.
+- **Fixes needed:** the media public base (fix 1). The popover composes `MediaPicker` for its reuse
+  search, and `MediaPicker`'s thumbnails resolve through `publicPath` at `MediaPicker.svelte:244`.
+  `editor-media.ts` is the CodeMirror chip decoration `MarkdownEditor` builds, a different call
+  site, not this row's; it stays correctly listed under `editor/entry-screen`'s fix.
 
 ### `media/upload-form`
 
@@ -250,11 +278,13 @@ Every claim below carries file:line evidence read from the tree at
   the barrel.
 - **Host:** `bare`.
 - **Mechanism:** **pose**. The resting field is a slim dropzone; editing opens a native
-  `<dialog class="modal">` (`MediaHeroField.svelte:27`, element at `:477`) through
-  `dialog.showModal()` in an edit handler (`:374`), with no prop for it. The 16:9 social-crop
-  preview lives inside that dialog (`:503`). The pose clicks the edit control. The story sets
-  `lead: true` so the social-card line renders (`:63`) and a committed `value` so the preview has
-  an image.
+  `<dialog class="modal">` (`MediaHeroField.svelte:27`, element at `:477`) through `openDialog()`'s
+  own `dialog.showModal()` (`:194`, `:202`), invoked from the edit control's
+  `onclick={() => openDialog('placement')}` (`:427`), with no prop for it. The pose reaches this
+  path, not `:374`, which lands in the drop handler (`onDropzoneDrop`) and its own separate
+  `showModal()` call. The 16:9 social-crop preview lives inside that dialog (`:503`). The pose
+  clicks the edit control. The story sets `lead: true` so the social-card line renders (`:63`) and a
+  committed `value` so the preview has an image.
 - **Exports needed:** none.
 - **Fixes needed:** the media public base (fix 1): the committed thumbnail resolves through
   `publicPath` at `MediaHeroField.svelte:133`, `:237`, `:347`. Also the CSRF context
@@ -327,9 +357,11 @@ Every claim below carries file:line evidence read from the tree at
 - **Component:** `ManageEditors` (`src/lib/components/ManageEditors.svelte`), exported at
   `src/lib/components/index.ts:22`.
 - **Host:** `shell`.
-- **Mechanism:** props. `data.self` is the reader's own email and the row's disabled controls
-  follow from it (`ManageEditors.svelte:20`, `:32`). The story sets `data.self` to the fixture
-  editor's address.
+- **Mechanism:** props. `data.self` is the reader's own email; `Props` is declared at
+  `ManageEditors.svelte:20` and destructured at `:32`. The disabling logic itself is
+  `isSelf = editor.email === data.self` (`:106`), read by the `disabled` bindings on both
+  branches' role control (`:122`, `:133`, `:140`) and the row's Remove action (`:146`). The story
+  sets `data.self` to the fixture editor's address.
 - **Exports needed:** none.
 - **Fixes needed:** the shell theme override (fix 2).
 
@@ -368,7 +400,7 @@ Every claim below carries file:line evidence read from the tree at
   (`src/lib/admin-toolkit/index.ts`).
 - **Fixes needed:** the shell theme override (fix 2).
 
-## The export question: the list is empty
+## The export question: no new export-map entry
 
 **No story needs a new public export.** Six of the mounted components are absent from the
 `/components` barrel (`src/lib/components/index.ts`): `EditorToolbar`, `TidyReview`,
@@ -394,6 +426,14 @@ So tasks A5a, A5b, A6a, and A6b modify neither `src/lib/components/index.ts` nor
 The only export-map growth in Pass 1 is the two reproductions subpaths themselves (A1 adds
 `./reproductions/manifest` so the dist-spawn probe can resolve; A4 adds `./reproductions`).
 
+**One caveat scoped narrower than "the list is empty" would read: a prop still widens an
+already-exported component.** Task A3 adds `themeOverride` to `CairnAdminShell`, which is already
+on the barrel, and A4b-1 similarly adds `spellcheckOverride` to `EditPage` (fix 3). Neither is a
+barrel or export-map change, so this section's own claim holds; but each still grows what a
+publicly exported component takes, and no gate catches it (`check:reference` and
+`check:reference:signatures` read `.d.ts` exports, not Svelte prop interfaces). "For A8" below
+carries the follow-up decision for `themeOverride`.
+
 ## The injectability fix list (Task A3 executes this)
 
 ### Fix 1: the media public base
@@ -412,8 +452,11 @@ and takes the default, so every `img src` an admin media surface renders is hard
 
 Four files, six call sites. The resolution `media/config.js` already implies is `publicBase`
 (`src/lib/media/config.ts:20`, resolved at `:108`); the fix honors that one mechanism rather than
-inventing a parallel one. `editor-media.ts` is the editor surface's own path, which
-`editor/entry-screen` and `media/insert-panel` both render through.
+inventing a parallel one. `editor-media.ts` is the editor surface's own path, the CodeMirror chip
+decoration `MarkdownEditor` builds, so it is `editor/entry-screen`'s call site. `media/insert-panel`
+renders through a different one in this same table: the popover composes `MediaPicker`, whose
+reuse-search thumbnails resolve through `MediaPicker.svelte`'s own listed line, not
+`editor-media.ts`. Fix 1 covers both.
 
 ### Fix 2: the shell's own theme resolution
 
@@ -532,6 +575,8 @@ through A6b and cairn-pub's B3 cite this table rather than re-deriving the names
 | `FixtureEntry` | exported interface | `src/lib/reproductions/fixtures.ts` | `EntrySummary` plus `concept` (always `fixtureConcept.id`) and an optional `history` (`HistoryData`, present only on the entry `publish/history-list` mounts). The element type of `fixtureEntries`. |
 | `spellcheckOverride` | prop on `EditPage`, optional boolean | `src/lib/components/EditPage.svelte` | The spellcheck posture a mounting context owns (fix 3). Present, it wins over the stored preference and the footer toggle, so `false` opens an editor that starts no Worker and fetches no wasm or dictionary. Absent, the author's own preference decides exactly as before. |
 | `settle` | optional member of `ReproStory`, `(root: HTMLElement) => Promise<void>` | `src/lib/reproductions/index.ts` | The post-mount wait for a contracted surface that exists only after hydration, run before `pose`. The four rows that need one are `editor/collapsed-layout-block`, `editor/entry-screen`, `editor/preview-tab`, and `editor/details-panel` through `MarkdownEditor`, plus `publish/pending-list` through its `{#await}`. A5a and A5b write them. |
+| `fixtureTidyReview` | exported const, `{ original: string; changes: Change[]; conventions: TidyConventions }` | `src/lib/reproductions/fixtures.ts` | `editor/tidy-review`'s `original`, `changes`, and `conventions` props, composed jointly (not derived from `changes` alone, the audit's own earlier, wrong claim) so one hunk categorizes outside the four objective kinds and renders **Review this**. |
+| `fixtureDeskPathname` | exported const, a string | `src/lib/reproductions/fixtures.ts` | The `/admin/<fixtureConcept.id>/<id>` pathname `CairnAdminShell`'s `isDeskRoute` recognizes (three segments, `segs[1]` a real concept id), composed from `fixtureConcept` and a real `fixtureEntries` id so it cannot drift from either. A shell story mounting `EditPage` needs this pathname or the shell silently renders office chrome. |
 
 Every new capability is opt-in and absent by default: the admin tree sets no media-base context,
 passes no `themeOverride` and no `spellcheckOverride`, so a real admin mount renders exactly what it

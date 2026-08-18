@@ -85,13 +85,27 @@ not do. The showcase mounts it like this:
 Stability tier: Extension API.
 
 ```ts
-let { data, children }: { data: AdminShellData; children: Snippet };
+let { data, children, themeOverride }: {
+  data: AdminShellData;
+  children: Snippet;
+  themeOverride?: 'cairn-admin' | 'cairn-admin-dark';
+};
 ```
 
 The exported admin chrome shell: the sidebar nav, the top bar, the command palette, and the content
 slot. Mount it from a shared `/admin/+layout.svelte` so every `/admin/**` route, the engine's own
 views and any custom screen a site adds, renders inside one chrome. `data` is the `AdminShellData`
 the shell load (`/admin/+layout.server.ts`) returns.
+
+`themeOverride` is the mounting seam a host outside a real admin session uses to own the shell's
+theme outright: present, it wins over the shell's own resolution and suppresses both the reads that
+resolution would otherwise make, the `cairn-admin-theme` cookie and the `prefers-color-scheme`
+media query. It is reactive, so a host that pictures the shell in both themes updates the prop
+rather than re-mounting the component. Absent, which every real admin mount leaves it, the shell
+resolves its own theme exactly as it always has. Under an override the shell renders no theme
+toggle at all, in the top bar or in `EditPage`'s own folded overflow control: neither reads nor
+writes the theme the mounting host already owns, so there is no stray control that would flip the
+shell's theme out from under the override.
 
 `AdminShellData` is a discriminated union. A `{ public: true }` payload (the login and confirm pages)
 renders the children bare with no chrome; an authed payload renders the full chrome from its
@@ -225,13 +239,14 @@ surfaces in the slide-over.
 Stability tier: Unstable API.
 
 ```ts
-let { data, registry, render, icons, form, previewMint = true }: {
+let { data, registry, render, icons, form, previewMint = true, spellcheckOverride }: {
   data: EditData & { siteName: string };
   registry?: ComponentRegistry;
   render?: SiteRender;
   icons?: IconSet;
   form?: ContentFormFailure | null;
   previewMint?: boolean;
+  spellcheckOverride?: boolean;
 };
 ```
 
@@ -251,6 +266,15 @@ mounted and carry their own full entry-scoped authorization regardless of whethe
 offers any button that posts to them. Hiding the group is a product choice about what an editor
 sees on this screen, never an access-control decision: a site that wants a role unable to mint a
 preview link at all should restrict the concept in its [access map](./core.md#access-map) instead.
+
+`spellcheckOverride` is the mounting seam a host outside a real editing session uses to own the
+spellcheck posture outright (the reproductions seam mounts several editing surfaces on one docs
+page, where the spellcheck Worker and its wasm and dictionary fetches would otherwise run for
+every one of them). Present, it wins over the author's stored per-browser preference; `false` opens
+an editor that never starts the spellcheck Worker or fetches its wasm and dictionary. It also hides
+the footer's Spellcheck chip and its overflow-menu equivalent below the `sm` breakpoint, rather than
+leaving a control that carries no effect. Absent, which every real editing session leaves it, the
+author's own stored preference and the footer toggle decide exactly as before.
 
 The page lays out in four zones. A sticky translucent header holds a breadcrumb back to the
 concept list, the entry's status badge (New, Edited, or Published, with a separate Hidden badge

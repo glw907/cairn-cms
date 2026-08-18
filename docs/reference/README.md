@@ -37,6 +37,7 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
   vocabulary, the role utilities that reach it from markup, and the palette/grammar boundary a
   site's own theming respects.
 - [Components (`/components`)](./components.md): the admin Svelte UI.
+- [Reproductions (`/reproductions`)](./reproductions.md): the story registry backing a docs page's `repro` fence, and its node-safe manifest at `/reproductions/manifest`.
 - [The admin toolkit (`/admin-toolkit`)](./admin-toolkit.md): the field, screen-scaffold, and formatter primitives a site's own custom `/admin/` screen composes.
 - [Render authoring (`/render`)](./render.md): the component-authoring toolkit for a component `build()`.
 - [Islands (`/islands`)](./islands.md): the client runtime that mounts a site's live components over the static fallbacks.

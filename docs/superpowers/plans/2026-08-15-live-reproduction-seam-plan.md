@@ -847,3 +847,125 @@ svelte-check 0/0 across 1633 files. The four CI-only gates were run by name.
 - `check:visuals` now runs `npm run package` itself, which is a third redundant rebuild in
   `test.yml`, where `check:package` and `check:surface` already package before it. Correctness is
   unaffected; a later pass may want to dedupe that sequence.
+
+---
+
+## Task B0 post-mortem (2026-08-18): containment, and the pass split at B0/B1
+
+**B0 did not exist when this plan was written.** Pass 1b's review gate disproved the plan's
+containment answer, STATUS filed it as the first of three things Pass 2 was owed, and it had to land
+in the engine and merge to `main` before B1 could pack a tarball. It merged as `f252bf71` plus
+`9ce23df2`. **Geoff then split Pass 2 at the B0/B1 boundary**, so B1 through B5, the cairn-pub
+delivery half, are a separate pass with a fresh session.
+
+### What shipped
+
+Containment lives in `ReproContext`, registered from the instance body so it is in place before any
+child's mount effect runs, and holding from first paint rather than after a pose, which the engine
+does not run at all. Three mechanisms: an `inert` `display: contents` wrapper over all three host
+branches; a capture-phase `focusin` firewall that marks an opening modal dialog `inert` and releases
+the host's focus pin; and a window capture firewall over `keydown`, `pointerdown`, `dragover`,
+`drop`, and `beforeunload`. No admin component was edited, nothing new was exported, and no module
+was created.
+
+A second, unrelated commit hedged `create-cairn-site`'s cost total on Geoff's ruling, which cleared
+the last live finding in the friction log.
+
+### The design phase was worth more than the build
+
+An eight-agent workflow (four investigation lenses, one synthesis, three adversarial skeptics) ran
+before any code. It paid three ways, and the pattern is worth reusing at any gate where a previous
+answer has already been wrong once.
+
+**It found four leak mechanisms beyond the two on file.** `EditPage`'s `beforeunload`,
+`CairnMediaLibrary`'s window `dragover`/`drop` (a file dropped anywhere over an embed opens the
+upload flow, with no focus involved), and `ListToolbar`'s `pointerdown`, which arrives through a
+shared toolkit primitive reached by two different hosts and is therefore invisible to any per-story
+review. The lens that found them was the one told to ask a different question from the audit's.
+
+**The skeptics broke the synthesis in four places, all with evidence.** The synthesized design's
+self-named "highest-value test" was unimplementable: three skeptics independently compiled the
+proposed shape against this repo's own Svelte 5.56.3 and showed `<svelte:window onkeydown={cond ?
+undefined : h}>` emits an unconditional `addEventListener` with the ternary inside the wrapper, so a
+registration spy can never discriminate. The proposed `frameElement instanceof HTMLElement` guard is
+cross-realm broken, false in exactly the two engines where the blur works. And "nothing degrades"
+was false.
+
+**The scope skeptic made the design smaller.** The synthesis wanted a new `picture-context.ts`
+module read by four publicly exported admin components, for a docs-only concern. One window-capture
+listener in `ReproContext` covers all five types and strictly more, including any future component
+that grows a `<svelte:window>` binding with nobody remembering to gate it. `ListToolbar` is the
+standing proof that case is live.
+
+### The review gate found what the design phase could not
+
+**A fix that was worse than the leak.** The firewall stopped `dragover`/`drop` without
+`preventDefault()`, and `CairnMediaLibrary`'s own comment says why that breaks: its `preventDefault`
+is what makes the window a valid drop target. Without it the browser navigates to the dropped file
+and replaces the picture. Containment is now type-aware, cancelling those two types and only those
+two.
+
+**A published safety claim that measurement refuted.** Four documents were about to state that a
+page marks the embedding `<iframe>` `inert` and that this releases the host's focus pin in WebKit.
+The accessibility reviewer measured all nine engine-and-attribute combinations; six contradicted us,
+including the WebKit cell the sentence was about, and in all nine the reader's focused input was
+blurred regardless. Four production sites read that page. Geoff ruled the real mitigation: the
+embedding page records `document.activeElement` before the frame loads and restores it after.
+
+**A teardown hazard two reviewers found independently.** `onDestroy(fn)` compiles to
+`onMount(() => () => untrack(fn))`, so the cleanup only exists once the mount effect runs while the
+six listeners are live from the instance body. Anything throwing in that window leaks them with no
+handle to remove them. The test that appeared to prove teardown was passing by accident of
+`describe` ordering.
+
+### Lessons
+
+1. **Cheap to write, expensive to verify.** The containment code is a few dozen lines. Nearly all
+   the pass's cost was checking whether what we were about to publish about it was true, and that
+   check overturned the design twice and the docs once.
+2. **A verification probe that cannot fail is decoration.** The design prescribed T2b's red proof as
+   dropping the `display: contents` rule and watching a geometry assertion fail. It does not fail: a
+   block wrapper is width- and top-neutral. The implementer caught it and added
+   `getClientRects().length === 0` as the discriminating assertion. An ASSUMPTION marked in a design
+   still needs its proof checked for falsifiability.
+3. **A masked exit code nearly recorded a false green.** The first showcase e2e run was piped to
+   `tail`, so the reported exit was `tail`'s while Playwright had actually failed on a held port.
+   Never pipe a gate.
+4. **Closing a finding means closing every copy of it.** The unhedged cost claim was live in two
+   admin docs pages besides `money.mjs`. Deleting the friction-log entry without them would have
+   been a false close.
+
+### Verification
+
+Every PR-gating workflow re-derived with `grep -l pull_request` rather than recalled: five
+workflows, and every `check:*` target they invoke run by name, including the four CI-only gates
+(`check:comments`, `check:reference:signatures`, `check:surface`, `check:snippets`). All green.
+`npm run check` 0/0 across 1634 files; full suite 425 files, 5625 tests, exit 0;
+`packages/create-cairn-site` 827 tests, exit 0. `norms:check` ran post-merge on `main` against a
+live showcase preview (it cannot run in a worktree, where the showcase symlink resolves `main`'s
+engine and would prove the wrong thing) and reports the manifest fresh. No version bump, no publish.
+
+### Decisions locked
+
+1. **Containment is the engine's, and it holds from first paint.** Not the route's, and not
+   after a pose, which the engine does not run.
+2. **No admin component pays for a docs-only concern.** One listener in the single provider both
+   consumers share beats a context flag threaded through four public components.
+3. **The engine cannot repair a stolen focus, so the embedding page owns it** (Geoff, 2026-08-18).
+   No host-side `iframe` attribute prevents the steal; the page records and restores
+   `document.activeElement` itself.
+4. **A containment change that alters a picture is recorded** (Pass 1b decision 4, inverted).
+   Seven stories lose a `:focus-visible` ring and flip from the keyboard face to the mouse face;
+   the audit record carries the table and alt text must not describe a ring.
+
+### Owed by the B1-B5 pass
+
+- **Three cairn-pub spec amendments**, not the two STATUS previously recorded. The route's
+  responsibility clause ("marks the mounted content `inert` after any pose completes") is false in
+  both halves; the gate-1 bullet still says "`width` one of the two listed values" while the body
+  lists three and the implemented rule enumerates none; and the focus-restore obligation is new.
+- **The route applies no containment of its own.** Its acceptance criterion changes from "applies
+  `inert` after the pose" to "applies none, because the content is contained at first paint", plus
+  the focus record-and-restore, which B5's probe verifies.
+- The four accessibility findings filed to `ROADMAP.md`'s Now tier, two of which trigger on the
+  route task and the editors rewrite respectively.

@@ -274,22 +274,31 @@ The original decision framing, for the record:
 
 ## Now
 
-- **The reproduction seam does not contain what it mounts, and `inert` alone cannot fix it.** Three
-  mechanisms, all verified at the seam pass's review gate, and all of them reach the reader of a
-  published docs page. `TidyReview` calls `showModal()` in its mount effect, which runs the dialog
-  focusing steps and pulls the host page's focus into the embed before any route-level `inert` step
-  can run. `CairnAdminShell` binds `<svelte:window onkeydown>`, and `inert` does not remove a window
-  listener, so each of the fifteen shell-hosted reproductions answers Ctrl/Cmd+K with a fake command
-  palette once focus is inside its frame. And `ReproContext` itself applies no `inert`, no focus
-  containment, and no tabindex management, so a keyboard reader tabs through a full admin screen's
-  dead controls per embed before reaching the next paragraph. Pass 2's `/repro` route was to own
-  this, and the first two mechanisms prove it cannot: the fix belongs in the engine, where
-  `ReproContext` is already the single provider both consumers share. Shape: an `openOnMount` prop on
-  `TidyReview` (not a public export, so it costs no surface), a chromeless flag or context that skips
-  the shell's window binding, and `inert` applied to the mounted subtree inside `ReproContext` after
-  the pose resolves. **Owed before Pass 2 ships the `/repro` route**, which is what publishes these
-  frames.
+- **A reproduction's iframe is announced as an enterable frame containing nothing, and its alt text
+  is doing all the work.** Measured at the containment pass's review gate with a CDP accessibility-tree
+  dump: an `inert` subtree contributes zero nodes, not ignored nodes, so a screen reader entering a
+  `.docs-repro` iframe finds an empty document. `<figcaption>` plus the iframe's accessible name are the
+  whole experience, which meets WCAG 1.1.1 at the short-text-alternative level and reads as a dead end.
+  Adding `role="img" aria-label="<alt>"` to the iframe exposes it as an image rather than a frame
+  (measured), which is what it actually is. This is the cairn-pub `docsReproEmbed` emitter's call, not
+  the engine's. **Trigger: the Pass 2 route task, which writes that emitter.**
 
+- **Two reproduction-authoring rules have no home yet.** Both surfaced at the containment pass's
+  accessibility review and both bind the editors rewrite rather than the engine. Numbered marker chips
+  must render *inside* `[data-cairn-picture]`, because a chip appended as a sibling of the inert wrapper
+  becomes the only accessibility-tree content in the frame and a screen reader hears "1 2 3" with no
+  context; inside, the chips are silent and the page's keyed prose list carries them. And a 150-character
+  accessible name is thin for the three locate-many-controls screens, so a reproduction whose surrounding
+  prose does not already describe the screen needs a longer description than its name (WCAG 1.1.1,
+  techniques G73/G74). **Trigger: the editors rewrite, which authors the alt and caption text.**
+
+- **`cairn-audit`'s rendered focus-indicator rule passes vacuously on a page with no tab stops.**
+  `src/lib/audit/rules/rendered/focus-renders.ts:181` returns `[]` when the tab order is empty, which is
+  indistinguishable from "checked everything and found nothing". Containment makes this reachable for the
+  first time: point the audit at a `/repro` route and every tab stop is gone, so the rule reports green
+  having checked nothing. The repo's own preference is a gate that fails over a note that waits, so the
+  fix is to report "no tab stops to check" as its own outcome rather than folding it into no-findings.
+  Found at the containment pass's review gate. **Trigger: the next pass that touches `cairn-audit`.**
 - **The story suite proves the media reproductions against images it never serves.** Nothing maps
   `/repro-assets/*` in the browser test project, so every fixture image 404s during the engine's own
   story-mount run and `CairnMediaLibrary`'s `onerror` swaps the tile for its "Image missing" block,

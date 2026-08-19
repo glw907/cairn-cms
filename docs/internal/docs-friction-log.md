@@ -42,102 +42,33 @@ clearings.
 
 ## Open findings
 
-The log was cleared 2026-07-16, 2026-07-19 (the dev-backend pass), and 2026-07-29 (the
-post-0.91.0 clearing): every open finding was verified against the code and then either
-shipped, filed into `ROADMAP.md` with its trigger, or found already resolved and pruned.
-The 2026-07-29 clearing shipped four gate tightenings the Pass 2 entries had proposed (the
-safelist count assertion, `norms:check` riding the e2e workflow after the 0.91.0 cut proved
-the staleness window bites, `check:version` reading the `## Unreleased` window, and the
-upgrade-guide/CHANGELOG Unreleased-heading parity check), moved the field-label weight
-question (cairn 500 vs the consumer ruling's 600) into ROADMAP as a future design ruling,
-and pruned the rest as filed, closed in-pass, shipped (the rendered-allowlist `rule` field;
-the own-tree error tier cleared by Pass 3), or resolved by the 24x24 ruling (the 43.78px
-tag-filter chip clears the ratified floor; the gate's own header documents it as inert).
-Git history holds the full record of all three clearings. The 2026-07-29 ASC Assets-trial
-harvest (ten findings across two batches, staged in the consumer repo while a cairn worktree
-held live workerd) was folded at the 0.91.1 hotfix pass under the same complete-or-move rule:
-finding 1, the 0.91.0 shipped-sheet regression, shipped as the hotfix itself; the
-status-flattening finding folded into ROADMAP's standing kit entry with the upstream issue
-repointed from the closed kit#12533 to the open kit#12987; and the other eight were verified
-and filed into `ROADMAP.md` (the reachable-vocabulary contract, the audit's missing path
-filter, the `.ts`-module scan blind spot, the 12px role gap, the doctor's bare-403 zone
-reads, the identity-guard/non-2xx hole, the mismatched rendered-summary totals, and the
-CodeMirror decoration throw on a consumer edit desk). The same harvest disproved the ASC
-edit-desk hydration defect the STATUS carry-forwards had held (corpus C had configured
-cairn's internal route shape, which 404s on ASC's single-mount admin; the real desks proved
-hydration-clean across 24 runs). The 2026-07-30 Assets-trial BUILD harvest (six findings from
-the pass that rebuilt `/admin/club/assets` and `/admin/club/asset-requests` under the
-design-capture trial's control conditions, a different staging file from the 2026-07-29
-harvest above) was folded at the design-ratchet pass under the same rule. Findings 1 and 6 (the
-packaged admin sheet ships no user-agent reset, so a bare `textarea` rendered the browser's
-monospace default and daisyUI's `.list` kept the UA's 40px bullet gutter) shipped as the pass's
-`base` cascade layer (Task 1). Finding 2 (`form-anatomy.md`'s own worked example prescribed
-`gap-x-6 gap-y-4`, which never compiled) shipped as a standing compile gate over the skill's own
-reference exemplars, plus a labeled safelist addition (Task 2). Finding 3 (the stacked field
-register that already worked inside the package was never exported) shipped as
-`register: 'inline' | 'stacked'` on `FieldLabel`/`TextField`/`SelectField`, `'stacked'` now the
-default (Task 3, a deliberate breaking change, ratified by Geoff 2026-07-30). Finding 4
-(`one-filled-action` and the grader prompt disagreed about what one surface is) was ruled and
-shipped: the partition narrows to `nav`/`aside` plus the topmost open dialog layer, and the dark
-theme's `.btn-active` selected state gains a visible lightness step (Task 4). Finding 5 (daisyUI
-pins every `.list-row` child to `grid-row-start: 1`, so overriding the container's
-`grid-template-columns` alone does nothing) is the one finding this pass deliberately did not
-repair; it files as a live entry in `ROADMAP.md`'s Next tier with the harvest's own measurement,
-since site-side overrides exist and the engine-side repair needs its own design. The pass also
-lands the grammar-ladder doctrine the harvest's pattern argued for, in
-`docs/explanation/enforced-design.md`: every composition claim gets either a component or a
-check, prose alone being the demonstrated failure mode. New findings start fresh below this
-line.
+**None.** The log is empty, which is the state it is supposed to spend most of its time in.
 
-CLOSED 2026-08-14 by Pass D. The setup-walk entry (five blind vantages, four classes of gap:
-prerequisites arriving late, the tutorial's toolchain drift, troubleshooting scoped only to live
-sites, the front door burying the first command) is what the docs rebuild's admin track,
-front-door task, and Task 13 production gate were built to answer. The baseline record stays at
-[`2026-08-unagented-setup-baseline.md`](./record/2026-08-unagented-setup-baseline.md) as the
-evidence trail; the shipped disposition is `docs/superpowers/plans/2026-08-14-pass-d-docs-reset.md`'s
-post-mortem and `docs/internal/record/2026-08-14-pass-d-task-13-production-gate.md`'s
-dispositions. One item from the smaller list is code, not docs, and was already tracked
-separately before this closure: `.dev.vars` missing from the scaffold's `.gitignore` is the
-missing-`.gitignore` defect `docs/STATUS.md` holds as owed before release one.
+New findings start below this line, one per finding, with its perspective and a short note.
 
-CLOSED 2026-08-17 by the capture pass. The three findings the live `create-cairn-site` run
-produced (a first run cannot succeed with the App installed on "Only select repositories"; resume
-is not idempotent across repository creation; every scaffold ships the placeholder from-address
-`cms@showcase.test`) are all tool defects rather than docs bugs, so they moved whole to
-`ROADMAP.md`'s Now tier as one entry, owed before release one publishes the tool. A fourth
-joined them there at the pass's register gate: the scaffold hand-over still tells a reader the
-GitHub and Cloudflare steps arrive in a later release, in a run that then performs both. The committed
-fixtures under `packages/create-cairn-site/test/fixtures/transcripts/` are the evidence, and the
-pass post-mortem in `docs/superpowers/plans/2026-08-16-capture-pass.md` carries the run's own
-account. New findings start fresh below this line.
+## Clearings
 
-CLOSED 2026-08-18 by this pass's triage (Task A8b). Of the six live-reproduction seam findings: the
-mounting-injectability finding folded as a paragraph into
-`docs/internal/extending-developer-lens.md`'s Baseline (item 4), the persona brief it belongs in;
-the pathname-parsed chrome finding and the focus/global-key seizure finding filed to `ROADMAP.md`'s
-Next tier; the missing prop-drift gate and the plural refusal-banner label filed to its Now tier;
-and the instance-export-only state finding filed to its Later tier, its `spellcheckOverride`
-double-duty half recorded there as already decided (accepted, drift tracked in a reproduction's own
-caption) rather than filed as an open question. Every filed entry carries its own file:line
-evidence and needs no cross-reference back here.
+The detail of a cleared finding lives in the pass post-mortem that cleared it and in
+`docs/STATUS.md`, never here; this ledger exists only so a reader can find which pass to open. Git
+history holds every pruned entry in full.
 
-CLOSED 2026-08-18 by this pass's triage (Task A8b). Of the eleven backfill findings: the
-commit-attribution mismatch, the free-tier bundle-size gap, the same-name resource collision, and
-the unexplained `guard.rejected` build refusal filed to `ROADMAP.md`'s Now tier; the missing
-`cairn-doctor` Builds check, the bootstrap token-contract duplication, and the revert-refusal copy
-plus missing `history_stale` detector filed to its Next tier; the externally-registered-domain gap
-filed to its Later tier; the tool-prose-doesn't-know-the-run's-state finding folded into the
-existing ROADMAP entry that already names that root (the scaffold hand-over defect); the
-cost-preamble finding is DONE, closed 2026-08-18 by hedging the total rather than by taking the
-glance, in `packages/create-cairn-site/src/money.mjs` and in `docs/admin/before-you-start.md`, both
-of which now name the certificate question as unconfirmed and point an owner at the first bill; and
-the Windows finding is DONE, already ruled and disclosed 2026-08-18, with the Go successor tool's
-Platforms section carrying it forward. New findings start fresh below this line.
+| Cleared | By | What went where |
+| --- | --- | --- |
+| 2026-06-28 | extensibility Plan 1 | the append-only prose accumulated through 2026-06-26, pruned |
+| 2026-07-16 | the friction-triage pass | every open finding verified against the code, then shipped, filed to `ROADMAP.md` with a trigger, or pruned as already resolved |
+| 2026-07-19 | the dev-backend pass | same rule |
+| 2026-07-29 | the post-0.91.0 clearing | four gate tightenings shipped; the field-label weight question moved to `ROADMAP.md` |
+| 2026-07-29 | the 0.91.1 hotfix pass | the ASC Assets-trial harvest, ten findings: one shipped as the hotfix, one folded into a ROADMAP entry, eight filed |
+| 2026-07-30 | the design-ratchet pass | the Assets-trial BUILD harvest, six findings: five shipped (the `base` cascade layer, the exemplar compile gate, `register` on the field components, the one-filled-action ruling), one filed to Next |
+| 2026-08-14 | Pass D | the setup-walk entry, five blind vantages and four classes of gap, answered by the docs rebuild's admin track and front-door task |
+| 2026-08-17 | the capture pass | three live-run `create-cairn-site` defects plus one register-gate finding, all moved whole to `ROADMAP.md`'s Now tier |
+| 2026-08-18 | seam Pass 1b (A8b) | six live-reproduction seam findings: one folded into the extending-developer lens, five filed across all three ROADMAP tiers |
+| 2026-08-18 | seam Pass 1b (A8b) | eleven backfill findings from the unharvested 2026-08-04 to 08-16 window, filed across all three tiers; the Windows finding ruled and disclosed rather than fixed |
+| 2026-08-18 | seam Pass 2 Task B0 | the cost-preamble finding, the last live one. Geoff ruled the copy hedges rather than waiting on a browser glance; `money.mjs` and two admin pages now scope the total to the confirmed figures, with a test pinning the hedge |
 
-**Three carry-forwards were audited and judged not worth filing**, recorded here so they are not
-re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package is plain JS
-by design and its own suite is the real gate, and no pass has reported a defect slipping through), the
-`paid-plan-missing` mapping keyed on entitlement wording (the call site's docstring and its test name
-both already state the risk and the reason), and the root `CLAUDE.md` context-headroom note (housekeeping,
-outside this log's charter). STATUS should shed all three at the next update rather than carry them
-further.
+**Three carry-forwards were audited 2026-08-18 and judged not worth filing**, recorded here so they
+are not re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package
+is plain JS by design and its own suite is the real gate, and no pass has reported a defect slipping
+through), the `paid-plan-missing` mapping keyed on entitlement wording (the call site's docstring and
+its test name both already state the risk and the reason), and the root `CLAUDE.md` context-headroom
+note (housekeeping, outside this log's charter). STATUS shed all three at the B0 close.

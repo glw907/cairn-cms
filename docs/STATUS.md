@@ -15,68 +15,71 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-18: seam Pass 1b is CLOSED and MERGED; Pass 2 is next)
+## Immediate next action (2026-08-18: seam Pass 2 SPLIT; its Task B0 is CLOSED and MERGED)
 
-**The live-reproduction seam's engine half is complete and on `main`** (merge `bd716ac7`). Plan and
-both post-mortems: `docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`.
+**The reproduction seam now contains what it mounts, and that half is on `main`** (commits
+`f252bf71` and `9ce23df2`, merged). Plan and all three post-mortems:
+`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`.
 
-**Immediate next action: seam Pass 2, in a different repo.** Launch prompt, a fresh Opus 5 session
-from `~/Projects/cairn-pub`: "Execute Pass 2 of the live-reproduction seam plan, cairn-cms
-`docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`, from Task B1."
+**Pass 2 was split at the B0/B1 boundary (Geoff, 2026-08-18).** B0 was owed before the `/repro`
+route could ship and had to merge to `main` before B1 could pack a tarball from it, so it closed as
+its own pass. **B1 through B5, the cairn-pub delivery half, are the next pass.**
 
-**BRANCH TOPOLOGY, the thing a cold session gets wrong by default.** Pass 2 runs in
+**Immediate next action: the seam's delivery half, in a different repo.** Launch prompt, a fresh
+Opus 5 session from `~/Projects/cairn-pub`: "Execute Tasks B1 through B5 of the live-reproduction
+seam plan, cairn-cms `docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`. Read that
+plan's Task B0 post-mortem first: it changes B3's acceptance criteria and adds a third cairn-pub
+spec amendment."
+
+**BRANCH TOPOLOGY, the thing a cold session gets wrong by default.** That pass runs in
 `~/Projects/cairn-pub` on the existing branch `pass-d-docs-tracks`, NOT in this repo and not off a
 fresh branch. It consumes the engine through a packed tarball (`npm pack` plus a `file:` pin), which
-is Task B1's whole job, because the registry's published version predates all of this. Run the
-one-executor check there first (`pgrep -f cairn-pub`, warm `git status`).
+is Task B1's whole job, because the registry's published `0.95.0-rc.1` predates all of this and
+carries no `reproductions` subpath at all. Run the one-executor check there first
+(`pgrep -f cairn-pub`, warm `git status`).
 
-**What Pass 1b shipped**, fifteen commits `f554c2cb` through `ec70bdb6`, plus the merge. **All 25
-stories are registered and mounted under test**, so `PENDING_STORY_IDS` is now empty and the suite's
-inventory tests bind the full manifest. `ReproStory.shellPathname` became a general `shellData`
-partial, merged once and non-reactively. `validateReproFence` rides the `/reproductions/manifest`
-subpath and `check:visuals` grew into the repro-fence gate, proven red once against a scratch page.
-Both new subpaths now have `docs/reference/reproductions.md` and the two `reference-coverage.mjs`
-CONFIG rows without which the reference gates passed vacuously over them.
+**What B0 shipped.** Containment lives in `ReproContext`, registered from the instance body so it is
+in place before any child's mount effect runs, and holding from first paint rather than after a
+pose, which the engine does not run. Three mechanisms: an `inert` `display: contents` wrapper over
+all 25 stories; a capture-phase `focusin` firewall marking an opening modal dialog `inert`, since a
+modal escapes an ancestor's inertness by design; and a window capture firewall over `keydown`,
+`pointerdown`, `dragover`, `drop`, and `beforeunload`, with `preventDefault` on the two drag types
+only. No admin component was edited and nothing new was exported. A second commit hedged
+`create-cairn-site`'s cost total on Geoff's ruling, which **cleared the last live finding in the
+friction log**.
 
-**Three things Pass 2 is owed, and the first one contradicts the plan.**
+**Three things the B1-B5 pass is owed, and the first one grew.**
 
-1. **The seam does not contain what it mounts, and the plan's answer cannot work.** Pass 2's
-   `/repro` route was to apply `inert`. Two fresh-context reviewers independently showed that is
-   insufficient: `TidyReview` calls `showModal()` in its mount effect, which grabs the host page's
-   focus before any route-level step runs, and `CairnAdminShell` binds `<svelte:window onkeydown>`,
-   which `inert` does not remove, so each of the fifteen shell-hosted reproductions answers Ctrl+K
-   with a fake command palette. Containment belongs in `ReproContext`, which Pass 1's own Decision 2
-   already names as the single provider both consumers share. Filed as the first `ROADMAP.md` Now
-   entry, **owed before Pass 2 ships the route**.
-2. **The cairn-pub spec is stale against itself.** Its gate-1 bullet still reads "`width` one of the
-   two listed values" while its own fence-body table, amended in the same commit series, lists
-   three. The engine implements the correct rule (derived from `ReproHeights`, with `column` refused
-   by role); the spec bullet wants the matching one-line fix.
-3. `check:visuals` now runs `npm run package` itself, a third redundant rebuild in `test.yml` where
-   `check:package` and `check:surface` already package before it. Correctness unaffected; a later
-   pass may dedupe that sequence.
+1. **THREE cairn-pub spec amendments, not the two previously recorded here.** The route's
+   responsibility clause ("marks the mounted content `inert` after any pose completes") is now false
+   in both halves, since the engine does it and it does not wait for a pose. The gate-1 bullet still
+   reads "`width` one of the two listed values" while the fence-body table lists three and the
+   implemented rule enumerates none. And the focus-restore obligation below is new.
+2. **The route applies no containment of its own, and owns one repair the engine cannot make.**
+   B3's acceptance changes from "applies `inert` after the pose" to "applies none, because the
+   content is contained at first paint." Measured across Chromium, Firefox, and WebKit at B0's review
+   gate: a frame that loads and focuses a control takes the reader's focus, and NO host-side `iframe`
+   attribute prevents it. Geoff ruled the mitigation: the embedding page records
+   `document.activeElement` before the frame loads and restores it after. B5's probe verifies it.
+3. `check:visuals` still runs `npm run package` itself, a third redundant rebuild in `test.yml`
+   where `check:package` and `check:surface` already package before it. Correctness unaffected; a
+   later pass may dedupe.
 
-**The pass ran wider than its plan, at Geoff's direction, and two of those are now standing rules.**
-Engine DX findings are harvested into `docs/internal/docs-friction-log.md` as a pass dimension, and
-the same was backfilled from the 2026-08-04 to 08-16 window the log never received. **`create-cairn-site`
-is a prototype for the Go successor** (Geoff, 2026-08-18), so a deficiency found in it is disclosed
-and carried there rather than paid down twice; the worked example is Windows, now disclosed in
-`docs/admin/create-your-site.md` and the package README rather than fixed. **The Go tool must support
-Linux, macOS, and Windows**, recorded in that spec's new Platforms section.
+**Four accessibility findings from B0's review gate are filed to `ROADMAP.md`'s Now tier**, each
+with a real trigger rather than a someday note. Two of them trigger on this next pass: the iframe
+should carry `role="img"` rather than being announced as an enterable frame containing nothing, and
+marker chips must render inside `[data-cairn-picture]` or they become the only accessibility-tree
+content in the frame.
 
-**Seventeen findings were triaged out of the friction log**, sixteen into `ROADMAP.md` and one folded
-into the extending-developer lens; the review gate then filed seven more. The log holds exactly one
-live finding, listed under the hand steps below because only Geoff can close it.
+**Gate state at the close.** Every PR-gating workflow re-derived with `grep -l pull_request` rather
+than recalled: five workflows, every `check:*` target they invoke run by name, including the four
+CI-only gates. `npm run check` 0/0 across 1634 files; full suite 425 files, 5625 tests, exit 0;
+`packages/create-cairn-site` 827 tests, exit 0. `norms:check` ran post-merge on `main` against a
+live showcase preview and reports the manifest fresh; **it cannot run in a worktree**, where the
+showcase's symlinked `node_modules` resolves `main`'s engine and would prove the wrong thing.
+`CHANGELOG.md`'s `## Unreleased` window carries this pass; no version bump, no publish.
 
-**Gate state at the close.** The PR-gating workflow list was re-derived with `grep -l pull_request`
-rather than recalled: five workflows, 24 `check:*` targets plus `test:emit`, `test:reskin`, and the
-suite. All green except `check:consumers`, which fails in any feature worktree on the known
-`examples/showcase/node_modules` symlink collision and says so in its own output. Full suite 424
-files, 5599 tests, exit 0; svelte-check 0/0 across 1633 files. `CHANGELOG.md`'s `## Unreleased`
-window carries this pass; no version bump, no publish.
-
-**The `repro-seam` worktree is merged and can be pruned.** Nothing branches from it.
-
+**The `repro-containment` worktree is merged and pruned.** Nothing branches from it.
 
 ### The visual layer runs before release one (Geoff, 2026-08-15)
 
@@ -217,7 +220,7 @@ These are not gated on release one, the site walk, or each other. Item (1) in pa
 actioned now rather than batched with the rest; it is listed first because it is a live credential
 exposure, not because it is first in any sequence.
 
-**ELEVEN outstanding, one urgent.** (1) **URGENT: rotate the estate
+**TEN outstanding, one urgent.** (The former item 11, a browser glance at the Advanced Certificate Manager line item, is CLOSED 2026-08-18: Geoff ruled the copy hedges instead, so `money.mjs` and two admin pages now scope the total to the two confirmed figures and disclose the open item, with a test pinning the hedge. The friction log holds no live finding.) (1) **URGENT: rotate the estate
 Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still active; mint
 a replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the
 old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API token
@@ -232,13 +235,7 @@ token, T5 run 2's eight-key token, and the eight-key token minted 2026-08-13 for
 and teardown. (9) Check the Workers Paid opt-in taken at T5 run 2's prompt, in case the account
 was not already on it via 907-life. (10) Delete the GitHub App `cairn-cairn-capture-scratch`,
 created 2026-08-17 by the capture pass on the personal account, which uninstalls its
-installation with it; this is the THIRD App awaiting hand-deletion. (11) **Take one browser glance at
-the Advanced Certificate Manager line item**, the last open number in `create-cairn-site`'s cost
-copy. `packages/create-cairn-site/src/money.mjs:41` ships "about $6 a month" unhedged, and the T4b
-research that produced it explicitly refused to put an inference in owner-facing money copy, pricing
-the downside at $10/month if the question resolved against us. Either answer closes it: take the
-glance, or hedge the line. This is the one finding still live in the friction log.
-
+installation with it; this is the THIRD App awaiting hand-deletion.
 **Capture-pass scratch estate (2026-08-17), torn down in-session at Task A6, not by hand.** The
 GitHub repository `glw907/cairn-capture-scratch`; the worker `cairn-capture-scratch`; D1
 `cairn-capture-scratch-auth` (`e8e4e453-25bc-4f26-a427-680211fa7623`) and
@@ -262,21 +259,20 @@ docstring and its test name both already state the risk and the reason), and (6)
 context-headroom note (housekeeping, outside any tracking doc's charter). Of the rest, (1) and (2)
 moved to `ROADMAP.md` with real triggers, and (2) grew: four published assertions across two extend
 pages state a commit attribution that live commits disprove, which the carry-forward's source-comment
-scope never covered. The remainder stand as written:
+scope never covered. **The dropped three are gone from the list below, which the 2026-08-18 entry declared and then
+contradicted by relisting them** (found and fixed at the B0 close; the friction log's own closing
+paragraph had asked for exactly this). The remainder stand as written, renumbered:
 (1) An externally registered domain still owes the branches the scratch domain cannot reach.
 (2) The engine committer-attribution drift from T3 (`src/lib/github/repo.ts` versus spec 7.4).
-(3) `check:comments` and the root type-check cover `src/lib` only, so `packages/create-cairn-site`
-has neither a comment gate nor a type gate; its own `npm test` is the real gate. (4) The
-`paid-plan-missing` mapping keys on entitlement wording rather than a code. (5) The deferred
-defect list per the T4a spec's ruling 2. (6) Root `CLAUDE.md` has no context headroom left; the
-next addition there must trim first. (7) `--yes` with `CAIRN_CF_API_TOKEN` equal to a saved token
-that fails validation throws rather than re-validating, a deliberate narrowing. (8) `runStep`
-exists as an identical one-liner in four modules; the hoist is right but is a cross-cutting
-refactor of pre-existing code. (9) A first `--yes` run cannot reach `builds-live`, since the
-reconcile hash gate has no prior hash. (10) The bake couples the template's installability to the
-publish window. (11) No gate proves a scaffold against the registry. (12) The console scenario is
-mirrored in `test/console-hold.test.mjs` and `.github/workflows/create-site.yml` with nothing
-linking them. (13) No spawned-child test covers the pre-first-probe interrupt window. **CLOSED by
+(3) The deferred defect list per the T4a spec's ruling 2. (4) `--yes` with `CAIRN_CF_API_TOKEN`
+equal to a saved token that fails validation throws rather than re-validating, a deliberate
+narrowing. (5) `runStep` exists as an identical one-liner in four modules; the hoist is right but
+is a cross-cutting refactor of pre-existing code. (6) A first `--yes` run cannot reach
+`builds-live`, since the reconcile hash gate has no prior hash. (7) The bake couples the template's
+installability to the publish window. (8) No gate proves a scaffold against the registry. (9) The
+console scenario is mirrored in `test/console-hold.test.mjs` and
+`.github/workflows/create-site.yml` with nothing linking them. (10) No spawned-child test covers
+the pre-first-probe interrupt window. **CLOSED by
 Pass D:** the browser-moment counts (the admin track's domain page states them) and the
 umbrella's resume table (now `docs/admin/setup-recovery.md`).
 

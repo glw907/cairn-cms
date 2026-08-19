@@ -50,8 +50,10 @@ import { editorShortcuts } from '../../lib/components/editor-shortcuts.js';
 // The same module instance EditPage receives for $app/navigation via the project alias.
 import { beforeNavigateCallbacks } from './_app-navigation.js';
 // The same module instance EditPage receives for $app/state via the project alias.
-import { page as appPage } from './_app-state.js';
+import { page as appPage, __setPrerenderingUrl } from './_app-state.js';
 import { COLD_START } from './_fake-spell-worker.js';
+// The same module instance EditPage receives for $app/environment via the project alias.
+import { __setBuilding } from '../_app-environment.js';
 // The compiled sheet's text (daisyUI's real .badge/.btn sizing), injected only for the desk band
 // phone-width tests below so their bounding-box measurements reflect production control
 // footprints, never the UA-default widths the source partial alone leaves.
@@ -302,6 +304,23 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps({ saved: true }));
     expect(screen.container.querySelector('.alert-warning')).toBeNull();
     expect(screen.container.querySelector('.alert-success')).not.toBeNull();
+  });
+
+  it('does not read page.url.searchParams while prerendering', async () => {
+    const originalUrl = appPage.url;
+    __setBuilding(true);
+    __setPrerenderingUrl('http://localhost/admin/posts/2026-05-hello?drafts=pages/about');
+    try {
+      const screen = render(EditPage, postProps({ saved: true }));
+      // A component that reads page.url.searchParams unconditionally during prerendering throws
+      // (SvelteKit's real "Cannot access url.searchParams on a page with prerendering enabled"
+      // guard); rendering without throwing is the proof the guard fires.
+      expect(screen.container.querySelector('.alert-warning')).toBeNull();
+      expect(screen.container.querySelector('.alert-success')).not.toBeNull();
+    } finally {
+      __setBuilding(false);
+      appPage.url = originalUrl;
+    }
   });
 
   it('renders the preview into a sandboxed iframe inside the pane', async () => {

@@ -107,6 +107,14 @@
   `examples/showcase` and so always carries that file. The prose and the check table now hold the
   distinction. Consumers must: nothing.
 
+- `EditPage` no longer throws on a prerendered route. It read the post-save redirect flags
+  (`?drafts=`, `?refs=`) off `page.url.searchParams` unconditionally, and SvelteKit refuses that
+  read on a page with prerendering enabled, since a prerendered page cannot depend on a query
+  string. Any prerendered route mounting `EditPage`, including the reproduction seam's own
+  `/repro/<story>` pages, 500'd with no HTML. Both reads now guard on `building`, so a
+  prerendered mount renders with the warning strips absent and a real server-rendered request
+  still gets the search-string-derived flash unchanged. Consumers must: nothing.
+
 ## 0.95.0-rc.1
 
 <!-- release-size: minor -->

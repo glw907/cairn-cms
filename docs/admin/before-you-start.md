@@ -73,9 +73,12 @@ them is money.
    later, at the specific step that needed the missing permission. Before you click Create Token,
    glance down the list and confirm every row it asked for is actually filled in.
 
-All in, a small site on its own domain runs about $6 a month: the $5 Workers Paid plan once a
-second person signs in, plus roughly $1 a month averaged over a year's domain renewal. The tool
-prints this same figure before it asks you anything.
+Those two come to about $6 a month for a small site on its own domain: the $5 Workers Paid plan
+once a second person signs in, plus roughly $1 a month averaged over a year's domain renewal. One
+more item is not confirmed. Putting your site on your own domain issues a certificate for that
+domain, and Cloudflare does not say whether that certificate is included in your plan or charged as
+an add-on (as of 2026-08-11). Your first bill is where it would show up. The tool prints these same
+figures before it asks you anything.
 
 ## The free-until boundary
 

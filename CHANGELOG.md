@@ -11,7 +11,18 @@
   build validate a reference to a story without loading Svelte. A story names the smallest
   component containing what it shows, so framing comes from picking the component rather than from
   cropping a picture, and nothing is captured, so a reproduction cannot fall behind the code it
-  reproduces. All twenty-five planned stories ship here. `validateReproFence`, exported from the
+  reproduces. All twenty-five planned stories ship here. A mounted story is contained from first
+  paint, so an embedded reproduction cannot be driven as if it were a live admin screen:
+  `ReproContext` renders what it mounts inside an inert wrapper, marks a modal dialog inert as the
+  story opens it, and stops window-level keyboard, pointer, drag, and unload events before any
+  handler sees them. None of that waits on a pose, which a consumer runs. Two things stay with the
+  site, because no code inside the frame can do them: a screen reader reaches none of an inert
+  subtree, so the alt text a page authors is the whole accessible content of the embed, and a frame
+  that loads and focuses a control takes the focus a reader had, in every engine and under every
+  host-side `iframe` attribute, so the embedding page records `document.activeElement` before the
+  frame loads and restores it after. Mount `ReproContext` only in a document dedicated to one
+  reproduction: its event containment covers that whole document, not just what it renders.
+  `validateReproFence`, exported from the
   manifest subpath, checks a `repro` fence's raw YAML body against the installed manifest, so this
   engine's own `check:visuals` gate and a consuming site's build-time fence validation run the same
   rule set and cannot drift apart; `check:visuals` now scans every `repro` fence in the corpus
@@ -69,6 +80,15 @@
   dark admin. The base theme now lives in a compartment that follows a later theme change. This is a
   behavior change for existing sites, and it needs no action from anyone; it is recorded because an
   upgrader who notices the editor finally matching the shell deserves a reference for why.
+
+- The scaffolding tool's cost preamble no longer states a total the research behind it declined to
+  state. `create-cairn-site` opened with "All in, a small site on its own domain runs about $6 a
+  month", while the T4b cost research had left one line item open, whether the certificate a Workers
+  custom domain issues is billed as an add-on, and had said of that exact figure that it would not
+  put an inference in owner-facing money copy. The preamble now adds up only the two figures it
+  knows, names the certificate question as unconfirmed, and points an owner at their first bill.
+  `docs/admin/before-you-start.md` carries the same hedge, and `docs/admin/create-your-site.md`
+  stops quoting the superseded total from its recorded run. Consumers must: nothing.
 
 - `docs/admin/is-it-working.md` told a reader that every failing check names a condition id and to
   find that id on the page. The doctor never prints one: its report names each check by title, as

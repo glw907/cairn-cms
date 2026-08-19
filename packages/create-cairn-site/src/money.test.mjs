@@ -42,6 +42,17 @@ test('costPreamble names all four things: free to build, the domain cost, the pl
   assert.ok(text.includes('$6'), `expected the all-in total, got: ${text}`);
 });
 
+test('costPreamble hedges the total with the certificate line item nobody has confirmed', () => {
+  const text = costPreamble();
+  // The T4b research (docs/internal/record/2026-08-11-t4b-email-console-cost-research.md) left one
+  // number open: whether the certificate a Workers custom domain issues bills as an add-on. It said
+  // of this exact figure that it would not put an inference in owner-facing money copy, so the
+  // total may not stand here as if the question were closed.
+  assert.ok(text.includes('certificate'), `expected the certificate line item named, got: ${text}`);
+  assert.ok(text.includes('not confirmed'), `expected the item marked unconfirmed, got: ${text}`);
+  assert.ok(text.includes('bill'), `expected the owner told where it would appear, got: ${text}`);
+});
+
 test('costPreamble never promises a new account 3,000 messages in month one', () => {
   const text = costPreamble();
   assert.equal(text.includes('3,000'), false, `expected no "3,000" figure, got: ${text}`);

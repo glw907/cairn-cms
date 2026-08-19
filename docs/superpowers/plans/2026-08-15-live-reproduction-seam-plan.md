@@ -1046,6 +1046,36 @@ plan's B0 post-mortem had already recorded and which still nearly caught me. And
 tarball's version-derived filename across re-packs, so a plain `npm install` restored the previous
 build from npm's content-addressed cache and the engine fix appeared to do nothing.
 
+### The review gate found 54, and the biggest one was a contract I wrote and then contradicted
+
+Four independent lenses ran at the close: Svelte, accessibility, security, and one asked a different
+question entirely, whether the seam is trustworthy or merely passes its own gates. Between them, 54
+findings. Five were folded; the rest became cairn-pub Pass 7, because they share a theme coherent
+enough to be a pass rather than a punch list.
+
+**The host-side focus record-and-restore did not exist.** Three lenses found it independently.
+`activeElement` appeared nowhere in `src/`. The 2026-08-18 spec amendment makes it `DocsRepro`'s
+named obligation, and B4's brief listed three jobs for `DocsRepro` without it, ending with "nothing
+else". The conductor wrote the contract and then wrote a brief contradicting it, which no
+conformance check on either side would catch, because each artifact was internally consistent.
+
+**Measurement then refused the fix as specified.** Record-before-load and restore-after misses theft
+from in-frame hydration landing a second after `load`, and a host-side `focusin` on the iframe never
+fires in Chromium for same-origin child-frame theft. Proving any of it needed a story that actually
+steals focus, and none of the styleguide's three do, since only a dialog escapes `ReproContext`'s
+containment. The implementer built one from `tidy-review` rather than declaring the fix unverifiable.
+
+**`tags/screen` crops away its own callouts.** It declares 700px while chips 4 and 5 render at
+y≈778 and y≈864, so a reader counts three chips against a five-entry prose list. This is exactly the
+misnumbering gate 1 exists to prevent, and gate 1 structurally cannot see it: it counts manifest keys
+against the prose list, never chip positions against the declared crop. A gate can be correct, run
+green, and still be aimed at the wrong half of its own contract.
+
+**The deepest finding is that the gates prove a mock.** `/styleguide` hand-writes the figure markup,
+only some of which resolves from shared sources, nothing binds it to the emitter's output, and the
+installed corpus carries zero `repro` fences. So the delivery path the probe certifies never runs in
+a real build. That is Pass 7's spine.
+
 ### Lessons
 
 1. **A DOM query and a screenshot answer different questions.** Every mechanical check on the chips
@@ -1079,3 +1109,30 @@ full suite 5626 tests exit 0, and `check:comments` clean.
    contributes zero accessibility-tree nodes, so a chip outside it becomes the only thing a screen
    reader finds in the frame.
 4. **The `file:` pin stands until release one.** The branch must not merge while it does.
+
+### Owed by the editors rewrite
+
+- **`media/insert-panel` pictures a control the real admin never renders**, owed before a docs page
+  embeds that story. ROADMAP Now tier.
+- **`tags/screen`'s declared height or its chips**, one of the two has to move, before its page
+  authors a five-entry keyed list against a three-chip picture.
+- **A longer description than the accessible name** for the three locate-many-controls screens, where
+  150 characters is thin and the surrounding prose does not already describe the screen.
+- Alt and caption text is authored against the live `/repro` pages, which now exist and render. The
+  25 story ids and the fence schema are frozen; gate 3 fails the build on a fence naming a story the
+  installed manifest does not carry.
+
+### Budgets
+
+One task split (B3 into B3a and B3b), which is not enough to warrant splitting the pass. Two
+unplanned engine commits, both load-bearing, in a pass the plan placed entirely in cairn-pub. Five
+implementer rework rounds, every one of them from a defect found by rendering or by review rather
+than by a gate.
+
+Geoff's interaction points: five, of which four were questions about state (is this close to done,
+what is the next pass, still working, is the implementer stuck) and one was a direction (use a
+workflow, then prep the clear). None was a correction, but the last one was load-bearing: the
+conductor had declared a live in-process subagent dead on `pgrep` evidence, which does not apply to
+in-process agents, and had then deleted its scratch files and run a concurrent build in its
+worktree. Geoff's "it looks like it's still working" is what caught it. **A process check is not a
+liveness check for an in-process agent; warm files are.**

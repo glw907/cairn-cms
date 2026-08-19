@@ -1345,26 +1345,24 @@ persistent "?" carries Markdown help, design-arc D2).
     });
   });
 
-  // After a save that links to a draft target, the redirect carries ?drafts=<tokens>. page.url
-  // is reactive kit state, so a client-side navigation that swaps the search string re-derives
-  // this. A prerendered route cannot depend on a query string, so SvelteKit throws on this read
+  // Reads one post-save redirect flag off the search string as a display list. page.url is
+  // reactive kit state, so a client-side navigation that swaps the search string re-derives every
+  // caller. A prerendered route cannot depend on a query string, so SvelteKit throws on this read
   // during prerendering; `building` guards it, since a real SSR request (building is false) still
   // needs the search-string-derived flash.
-  const draftWarning = $derived.by(() => {
+  function redirectFlagList(key: string): string {
     if (building) return '';
-    const drafts = page.url.searchParams.get('drafts');
-    return drafts ? drafts.split(',').filter(Boolean).join(', ') : '';
-  });
+    const flag = page.url.searchParams.get(key);
+    return flag ? flag.split(',').filter(Boolean).join(', ') : '';
+  }
+
+  // After a save that links to a draft target, the redirect carries ?drafts=<tokens>.
+  const draftWarning = $derived(redirectFlagList('drafts'));
 
   // A save whose frontmatter references an absent or draft target carries ?refs=<concept/id list>,
   // the advisory reference warning the save threads through (mirroring ?drafts=). It never blocks the
   // save; the build's verifyReferences is the integrity authority, so this is informational only.
-  // Guarded the same way as draftWarning above, for the same prerendering reason.
-  const referenceWarning = $derived.by(() => {
-    if (building) return '';
-    const refs = page.url.searchParams.get('refs');
-    return refs ? refs.split(',').filter(Boolean).join(', ') : '';
-  });
+  const referenceWarning = $derived(redirectFlagList('refs'));
 
   // The one transient feedback strip under the sticky header. The redirect flags are mutually
   // exclusive in practice; the chain picks one so a surprise overlap still renders a single strip.

@@ -274,15 +274,6 @@ The original decision framing, for the record:
 
 ## Now
 
-- **A reproduction's iframe is announced as an enterable frame containing nothing, and its alt text
-  is doing all the work.** Measured at the containment pass's review gate with a CDP accessibility-tree
-  dump: an `inert` subtree contributes zero nodes, not ignored nodes, so a screen reader entering a
-  `.docs-repro` iframe finds an empty document. `<figcaption>` plus the iframe's accessible name are the
-  whole experience, which meets WCAG 1.1.1 at the short-text-alternative level and reads as a dead end.
-  Adding `role="img" aria-label="<alt>"` to the iframe exposes it as an image rather than a frame
-  (measured), which is what it actually is. This is the cairn-pub `docsReproEmbed` emitter's call, not
-  the engine's. **Trigger: the Pass 2 route task, which writes that emitter.**
-
 - **Two reproduction-authoring rules have no home yet.** Both surfaced at the containment pass's
   accessibility review and both bind the editors rewrite rather than the engine. Numbered marker chips
   must render *inside* `[data-cairn-picture]`, because a chip appended as a sibling of the inert wrapper
@@ -1728,11 +1719,15 @@ the named human gates only):**
 
 - **Two components seize the page in ways an embedding host cannot undo (docs friction log,
   live-reproduction seam harvest, 2026-08-18).** `TidyReview` calls `showModal()` at mount, which
-  pulls the host page's focus into the reproduction before the route's own `inert` step can run.
-  Separately, the command palette binds its shortcut through `svelte:window`, and `inert` does not
-  remove a window listener, so an inert reproduction still answers Ctrl+K. Both are fine for a
-  component that owns its page and hostile to one that does not. The engine question is whether a
-  host can ask a component not to grab focus or global keys.
+  pulls the host page's focus into the reproduction, and the HTML inert algorithm exempts the
+  topmost modal dialog from an ancestor's inertness, so no wrapper can contain it. Separately, the
+  command palette binds its shortcut through `svelte:window`, and `inert` does not remove a window
+  listener, so an inert reproduction still answers Ctrl+K. Both are fine for a component that owns
+  its page and hostile to one that does not. The reproduction seam no longer suffers either:
+  `ReproContext` marks an opening dialog inert and firewalls five window event types from its own
+  instance body. That is containment from outside, not consent from the component, so the engine
+  question stands for any other embedding host. Whether a component can be asked not to grab focus
+  or global keys is still unanswered.
 
 - **`cairn-doctor` has no check for the one failure mode the Builds chapter was built around
   (docs friction log, backfill mining, 2026-08-18).** The tool's own README documents that

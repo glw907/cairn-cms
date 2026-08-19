@@ -15,70 +15,66 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-18: seam Pass 2 SPLIT; its Task B0 is CLOSED and MERGED)
+## Immediate next action (2026-08-19: the reproduction seam is BUILT, both halves)
 
-**The reproduction seam now contains what it mounts, and that half is on `main`** (commits
-`f252bf71` and `9ce23df2`, merged). Plan and all three post-mortems:
+**The live-reproduction seam is complete end to end.** A `repro` fence in a docs source renders as a
+live, themed, contained reproduction of a real admin component. Plan and all five post-mortems:
 `docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`.
 
-**Pass 2 was split at the B0/B1 boundary (Geoff, 2026-08-18).** B0 was owed before the `/repro`
-route could ship and had to merge to `main` before B1 could pack a tarball from it, so it closed as
-its own pass. **B1 through B5, the cairn-pub delivery half, are the next pass.**
+The delivery half shipped in **cairn-pub** on `pass-d-docs-tracks`, eight commits, `8bef4f0` through
+`e182f36`. That repo's own `docs/STATUS.md` holds the site-side detail and the queued Pass 7. Two
+engine commits landed here alongside it, neither planned and both load-bearing: `42b9d105` lets a
+prerendered route mount `EditPage` (four of the 25 story pages emitted no HTML at all without it),
+and `a5a069a8` binds a story's chip numbers rather than only its marker keys.
 
-**Immediate next action: the seam's delivery half, in a different repo.** Launch prompt, a fresh
-Opus 5 session from `~/Projects/cairn-pub`: "Execute Tasks B1 through B5 of the live-reproduction
-seam plan, cairn-cms `docs/superpowers/plans/2026-08-15-live-reproduction-seam-plan.md`. Read that
-plan's Task B0 post-mortem first: it changes B3's acceptance criteria and adds a third cairn-pub
-spec amendment."
+**Immediate next action: the editors rewrite**, the pass this seam was built to unblock. It runs in
+`~/Projects/cairn-pub` on the SAME branch `pass-d-docs-tracks`, not here and not off a fresh branch.
+Launch prompt for a fresh session from `~/Projects/cairn-pub`: "Execute the editors rewrite against
+the built live-reproduction seam. Read cairn-pub `docs/STATUS.md` Pass 6 and 7, and the seam spec at
+`docs/superpowers/specs/2026-08-15-live-reproduction-seam-design.md` including its 2026-08-18 and
+2026-08-19 amendments." Run the one-executor check there first (`pgrep -f cairn-pub`, warm
+`git status`). This is taste-and-prose work against a frozen contract, so it is a Fable sitting
+rather than an execution session.
 
-**BRANCH TOPOLOGY, the thing a cold session gets wrong by default.** That pass runs in
-`~/Projects/cairn-pub` on the existing branch `pass-d-docs-tracks`, NOT in this repo and not off a
-fresh branch. It consumes the engine through a packed tarball (`npm pack` plus a `file:` pin), which
-is Task B1's whole job, because the registry's published `0.95.0-rc.1` predates all of this and
-carries no `reproductions` subpath at all. Run the one-executor check there first
-(`pgrep -f cairn-pub`, warm `git status`).
+**What the rewrite inherits.** The 25 story ids and the fence schema are frozen; gate 3 fails the
+build on a fence naming a story the installed manifest does not carry. Alt and caption text is
+authored against the live `/repro` pages, which now exist and render. Three pages owe keyed prose
+lists matching the numbered chips: `editor/entry-screen`, `media/library`, and `tags/screen`.
 
-**What B0 shipped.** Containment lives in `ReproContext`, registered from the instance body so it is
-in place before any child's mount effect runs, and holding from first paint rather than after a
-pose, which the engine does not run. Three mechanisms: an `inert` `display: contents` wrapper over
-all 25 stories; a capture-phase `focusin` firewall marking an opening modal dialog `inert`, since a
-modal escapes an ancestor's inertness by design; and a window capture firewall over `keydown`,
-`pointerdown`, `dragover`, `drop`, and `beforeunload`, with `preventDefault` on the two drag types
-only. No admin component was edited and nothing new was exported. A second commit hedged
-`create-cairn-site`'s cost total on Geoff's ruling, which **cleared the last live finding in the
-friction log**.
+**Three things owed before a docs page embeds a story:**
 
-**Three things the B1-B5 pass is owed, and the first one grew.**
+1. **`media/insert-panel` pictures a control the real admin never renders.** The story sets the
+   popover's `trigger: true` so a DOM-only pose has something to click, which renders a visible
+   "Insert image" button; the real editor mounts it headless. The one reproduction whose whole job is
+   fidelity ships a control that exists nowhere in `/admin`. ROADMAP Now tier.
+2. **`tags/screen` crops away its own callouts.** It declares a 700px column height while chips 4 and
+   5 render at y≈778 and y≈864, so a reader counts three chips against a five-entry prose list. Gate 1
+   structurally cannot see this: it counts manifest keys against the prose list, never chip positions
+   against the crop. The declared height is the engine's to change.
+3. **A 150-character accessible name is thin for the three locate-many-controls screens**, so a
+   reproduction whose surrounding prose does not already describe the screen needs a longer
+   description than its name. ROADMAP Now tier.
 
-1. **THREE cairn-pub spec amendments, not the two previously recorded here.** The route's
-   responsibility clause ("marks the mounted content `inert` after any pose completes") is now false
-   in both halves, since the engine does it and it does not wait for a pose. The gate-1 bullet still
-   reads "`width` one of the two listed values" while the fence-body table lists three and the
-   implemented rule enumerates none. And the focus-restore obligation below is new.
-2. **The route applies no containment of its own, and owns one repair the engine cannot make.**
-   B3's acceptance changes from "applies `inert` after the pose" to "applies none, because the
-   content is contained at first paint." Measured across Chromium, Firefox, and WebKit at B0's review
-   gate: a frame that loads and focuses a control takes the reader's focus, and NO host-side `iframe`
-   attribute prevents it. Geoff ruled the mitigation: the embedding page records
-   `document.activeElement` before the frame loads and restores it after. B5's probe verifies it.
-3. `check:visuals` still runs `npm run package` itself, a third redundant rebuild in `test.yml`
-   where `check:package` and `check:surface` already package before it. Correctness unaffected; a
-   later pass may dedupe.
+**BRANCH TOPOLOGY AND THE PIN, the things a cold session gets wrong by default.** cairn-pub consumes
+the engine through `"@glw907/cairn-cms": "file:/home/glw907/Projects/cairn-scratch/glw907-cairn-cms-0.95.0-rc.1.tgz"`,
+an absolute local path recorded as such in the lockfile, because the published `0.95.0-rc.1` predates
+all of this and carries no `reproductions` subpath. **That branch must not merge while the pin
+stands**; release one's registry bump is the un-pin. If anyone re-packs the engine, note that the
+tarball keeps its version-derived filename, so a plain `npm install` restores the OLD build from
+npm's content-addressed cache and the change appears to do nothing. Re-install by explicit path
+instead.
 
-**Four accessibility findings from B0's review gate are filed to `ROADMAP.md`'s Now tier**, each
-with a real trigger rather than a someday note. Two of them trigger on this next pass: the iframe
-should carry `role="img"` rather than being announced as an enterable frame containing nothing, and
-marker chips must render inside `[data-cairn-picture]` or they become the only accessibility-tree
-content in the frame.
+**Gate state at the close.** In cairn-pub: `npm run check` 0 errors across 850 files, `npm test`
+exit 0, `npm run build` exit 0, 25 of 25 story pages emitting HTML, and the probe reporting 21 checks
+exit 0 against a built preview with every check proven able to fail. Here: `npm run check` 0/0 across
+1634 files, the full suite exit 0, `check:comments` clean. `CHANGELOG.md`'s `## Unreleased` window
+carries the `EditPage` fix in consumer terms. No version bump, no publish.
 
-**Gate state at the close.** Every PR-gating workflow re-derived with `grep -l pull_request` rather
-than recalled: five workflows, every `check:*` target they invoke run by name, including the four
-CI-only gates. `npm run check` 0/0 across 1634 files; full suite 425 files, 5625 tests, exit 0;
-`packages/create-cairn-site` 827 tests, exit 0. `norms:check` ran post-merge on `main` against a
-live showcase preview and reports the manifest fresh; **it cannot run in a worktree**, where the
-showcase's symlinked `node_modules` resolves `main`'s engine and would prove the wrong thing. The
-showcase e2e ran post-merge on `main` too: 153 passed, exit 0.
-`CHANGELOG.md`'s `## Unreleased` window carries this pass; no version bump, no publish.
+**A four-lens review gate found 54 findings.** Five were folded into the pass; the rest are cairn-pub
+Pass 7, which is coherent enough to be a pass rather than a punch list: the seam's gates prove a
+hand-transcribed mock rather than the shipping path, and no `repro` fence exists in the installed
+corpus for the delivery path to run against.
+
 
 **The `repro-containment` worktree is merged and pruned.** Nothing branches from it.
 

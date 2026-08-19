@@ -971,3 +971,111 @@ rather than through a pipe. No version bump, no publish.
   the focus record-and-restore, which B5's probe verifies.
 - The four accessibility findings filed to `ROADMAP.md`'s Now tier, two of which trigger on the
   route task and the editors rewrite respectively.
+
+---
+
+## Pass B1-B5 post-mortem (2026-08-19): the delivery half, and two trips back into the engine
+
+The seam is built end to end. A `repro` fence in any docs source now renders as a live, themed,
+contained reproduction of a real admin component, and the editors rewrite has something to author
+against. The pass ran in `~/Projects/cairn-pub` on `pass-d-docs-tracks`, as planned, and twice in
+cairn-cms `main`, which was not planned and was load-bearing both times.
+
+### What shipped
+
+Eight commits in cairn-pub. The tarball bridge and the three owed spec amendments (`8bef4f0`), the
+two fence plugins (`6fbc2aa`), the `/repro` and `/repro-assets` routes (`ba26e4a`), the re-pin
+(`d64fb73`), the numbered callout chips (`dc8fd4c`), `DocsRepro` with the figure treatment and the
+styleguide section (`f76772a`), the browser probe (`08d36bc`), and a verified code-simplifier fold
+(`3f298c5`).
+
+Two in cairn-cms. `42b9d105` lets a prerendered route mount `EditPage`, and `a5a069a8` binds a
+story's chip numbers rather than only its marker keys.
+
+Task B3 was split into B3a and B3b at dispatch. One split, made because the task carried six
+deliverables and the chips brought their own positioning problem. Not enough to warrant splitting
+the pass.
+
+### The plan put Pass 2 entirely in cairn-pub, and that was wrong twice
+
+Neither engine trip was scope creep. Both were the consumer discovering something only a consumer
+could.
+
+`EditPage` read `page.url.searchParams` in two `$derived.by` blocks, and SvelteKit refuses that read
+on a page with prerendering enabled. Four of the 25 story pages emitted no HTML at all. The engine
+owns that fix: it ships the story registry, its own stories name `EditPage`, and the seam promises a
+prerendered un-posed state for the no-JavaScript reader, which a component the consumer cannot
+prerender does not keep.
+
+The second trip was smaller and more interesting. A consumer-side test had started growing its own
+copy of a contract the engine already proved, and needed a whole second vitest project to do it. The
+duplicate was deleted. What survived was the one assertion with no home anywhere, the chip numbers
+themselves, and it went to the engine beside the key assertion it complements. A consumer test
+reaching for an engine contract is a filing-altitude signal, not a coverage win.
+
+### Three defects that no gate could have caught, all found by rendering
+
+The chips: a DOM query reported five present, correctly numbered, and inside the inert wrapper on
+every marked story. Two of them were cut in half at the page edge, because `translate(-50%, -50%)`
+centres a chip on its anchor's own top-left corner and an anchor flush against an edge puts half the
+disc outside the page. Screenshots made it obvious in a second.
+
+The heights: `DocsRepro` refined every embed to its measured content, which is correct for two
+stories and wrong for the third. `publish/header-band` grew from a declared 300 to 1070 and turned a
+story named for a header band into a whole editing screen. The declared heights are framing
+decisions, not first-paint estimates, which the engine's own story audit says outright. Refinement
+now only shrinks.
+
+The styleguide: its three declared heights and its pinned-width table were transcribed literals
+beside the emitter's own copies. They matched on the day they were written. That section's entire
+claim is to be the exact markup the emitter ships, and the probe binds it, so a literal there is the
+one value that could quietly falsify the claim.
+
+The second of those was my own fault as conductor. The dispatch told the implementer the bar was
+"no clipped content and no dead band", which is the sentence that licensed the growth.
+
+### A green build hid a quarter-broken deliverable
+
+`svelte.config.js` sets `handleHttpError: 'warn'`, so a prerender failure is a warning. `npm run
+build` exited 0 with four of 25 pages missing, and the only thing that caught it was counting files
+on disk. That count is now a test that derives its list from the installed manifest, so a story
+added later is covered with no edit.
+
+The same shape appeared twice more. A gate piped to `tail` reports the pipe's exit code, which this
+plan's B0 post-mortem had already recorded and which still nearly caught me. And `npm pack` keeps the
+tarball's version-derived filename across re-packs, so a plain `npm install` restored the previous
+build from npm's content-addressed cache and the engine fix appeared to do nothing.
+
+### Lessons
+
+1. **A DOM query and a screenshot answer different questions.** Every mechanical check on the chips
+   passed while two of them were visibly clipped. For anything with a position, the render is the
+   evidence and the query is a proxy.
+2. **Verify the dispatch, not only the diff.** The height defect entered through my own acceptance
+   wording. A brief that states a bar the domain does not actually hold produces an implementer that
+   correctly satisfies the wrong thing.
+3. **An exit code is not an outcome.** Three separate mechanisms in this pass reported success over a
+   failure: a masking pipe, a warn-level prerender policy, and a package cache. Each needed its own
+   artifact check.
+4. **A fake must refuse what the real thing refuses.** The `EditPage` guard was untestable until the
+   `$app/state` stub could throw the way SvelteKit's prerender guard throws. Before that, "it did not
+   throw" passed with and without the fix.
+
+### Verification
+
+`npm run check` 0 errors across 850 files, `npm test` 97 tests exit 0, `npm run build` exit 0, and
+25 of 25 story pages emitting HTML, each command run by name and its own exit code read. The probe
+records 21 checks and exit 0 against a built preview, with every check broken deliberately and
+confirmed to fail before being restored. In cairn-cms, `npm run check` 0/0 across 1634 files, the
+full suite 5626 tests exit 0, and `check:comments` clean.
+
+### Decisions locked
+
+1. **Height refinement only ever shrinks.** A declared height is framing. An under-declared height is
+   a manifest defect, fixed where it is declared, never by a consumer re-framing the picture.
+2. **The styleguide's embed shape resolves from the emitter's own sources.** Nothing about it is
+   transcribed, because the probe binds that page as proof of what a fence ships.
+3. **Chips render inside the inert wrapper, positioned in document coordinates.** An inert subtree
+   contributes zero accessibility-tree nodes, so a chip outside it becomes the only thing a screen
+   reader finds in the frame.
+4. **The `file:` pin stands until release one.** The branch must not merge while it does.

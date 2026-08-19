@@ -221,25 +221,28 @@ These are not gated on release one, the site walk, or each other. Item (1) in pa
 actioned now rather than batched with the rest; it is listed first because it is a live credential
 exposure, not because it is first in any sequence.
 
-**TEN outstanding, none urgent.** (The former item 11, a browser glance at the Advanced Certificate Manager line item, is CLOSED 2026-08-18: Geoff ruled the copy hedges instead, so `money.mjs` and two admin pages now scope the total to the two confirmed figures and disclose the open item, with a test pinning the hedge. The friction log holds no live finding.) (1) Rotate the estate Cloudflare token
-(`Cloudflare Admin 2026-07`) at convenience; mint a replacement, run
-`~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the old one.
-**DOWNGRADED from urgent 2026-08-18 by Geoff: the screen was secured, so the transcript exposure
-did not reach anyone.** The token stands unrotated by his call, not by oversight. Recorded so a
-later session does not re-escalate it on the old framing; the residual is that the value is at
-rest in a transcript file rather than on a screen, which he has weighed. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API token
+**NINE outstanding, none urgent.** Two closed 2026-08-18, both by Geoff's ruling rather than by
+action: the browser glance at the Advanced Certificate Manager line item (the copy hedges instead,
+so `money.mjs` and two admin pages scope the total to the two confirmed figures and disclose the
+open item, with a test pinning the hedge; the friction log now holds no live finding), and the
+estate Cloudflare token (`Cloudflare Admin 2026-07`), which he closed outright: the screen was
+secured, so the transcript exposure reached nobody. **That token is off this list by decision, not
+by oversight, and is not to be re-raised on the old "URGENT, leaked and still active" framing.**
+
+(1) Delete the GitHub App `cairn-t4b-live-03cd31`. (2) Revoke the T4c spike API token
 `d07b2a25f05151591830c45053186979`, then `rm -f ~/.config/cairn/t4c-spike-token
-~/.config/cairn/store-t4c-token.sh`. (4) 907-life's push-to-deploy has been broken since
-2026-07-14. (5) Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT at release one. (6) The button
-spike's browser moment, owed at release one with T5a'. (7) Delete the GitHub App
-`cairn-t5-scratch` (id 4585219), which uninstalls installation 153531337 with it; with (2) and
-(10) the ledger stands at three Apps awaiting deletion. (8) Revoke three Cloudflare API tokens at
+~/.config/cairn/store-t4c-token.sh`. (3) 907-life's push-to-deploy has been broken since
+2026-07-14. (4) Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT at release one. (5) The button
+spike's browser moment, owed at release one with T5a'. (6) Delete the GitHub App
+`cairn-t5-scratch` (id 4585219), which uninstalls installation 153531337 with it; with (1) and
+(9) the ledger stands at three Apps awaiting deletion. (7) Revoke three Cloudflare API tokens at
 dash.cloudflare.com/profile/api-tokens, all named for `create-cairn-site`: T5 run 1's five-key
 token, T5 run 2's eight-key token, and the eight-key token minted 2026-08-13 for T4d's live proof
-and teardown. (9) Check the Workers Paid opt-in taken at T5 run 2's prompt, in case the account
-was not already on it via 907-life. (10) Delete the GitHub App `cairn-cairn-capture-scratch`,
+and teardown. (8) Check the Workers Paid opt-in taken at T5 run 2's prompt, in case the account
+was not already on it via 907-life. (9) Delete the GitHub App `cairn-cairn-capture-scratch`,
 created 2026-08-17 by the capture pass on the personal account, which uninstalls its
 installation with it; this is the THIRD App awaiting hand-deletion.
+
 **Capture-pass scratch estate (2026-08-17), torn down in-session at Task A6, not by hand.** The
 GitHub repository `glw907/cairn-capture-scratch`; the worker `cairn-capture-scratch`; D1
 `cairn-capture-scratch-auth` (`e8e4e453-25bc-4f26-a427-680211fa7623`) and

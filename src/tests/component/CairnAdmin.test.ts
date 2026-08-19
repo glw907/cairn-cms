@@ -26,6 +26,7 @@ function shell(): AdminShellData {
     csrf: 'test-csrf',
     pendingEntries: Promise.resolve(null),
     attention: {},
+    mediaBase: '/media',
   };
 }
 

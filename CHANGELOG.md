@@ -81,6 +81,17 @@
 
 ### Fixed
 
+- The admin's own media surfaces now render correct thumbnails on a site with a non-default
+  `assets.publicBase`. The media-base context seam landed unwired: every reader (`MediaPicker`,
+  `CairnMediaLibrary`, `MediaHeroField`, the editor's inline media chips) already honored an
+  injected base, but no admin mount ever provided one, so every thumbnail composed against the
+  hardcoded `/media` default regardless of the site's own resolved config. `AdminShellData`'s authed
+  payload now carries the resolved `mediaBase`, `shellLoad` populates it from
+  `runtime.resolvedAssets.publicBase`, and `CairnAdminShell` hands it down through the existing
+  context key. Consumers must: nothing. Every site reaches `shellLoad` through
+  `admin.shellLoad`, never by hand-assembling the shell payload, so the fix applies on upgrade with
+  no site-side change.
+
 - The editor's own chrome no longer keeps the theme it was born with. CodeMirror bakes its dark flag
   into a theme extension at construction, so toggling the admin theme with an editor open left its
   autocomplete tooltip, panels, and selection layer at first-mount polarity: a light editor inside a

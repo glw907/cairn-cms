@@ -28,6 +28,7 @@ function data(theme: 'cairn-admin' | 'cairn-admin-dark' = 'cairn-admin') {
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
     attention: {},
+    mediaBase: '/media',
   };
 }
 

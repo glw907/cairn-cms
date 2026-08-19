@@ -480,7 +480,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 - `getStory`: (id: string) => ReproStory
 - `ReproContext`: Component<Props, {}, "">
-- `ReproStory`: { id: string; component: Component<Record<string, unknown>, {}, string>; host: "shell" | "bare"; shellData?: Partial<{ public: false; siteName: string; user: { displayName: string; email: string; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null>; attention: Record<string, { count: number; label: string }> }>; props: { [x: string]: unknown }; context?: Record<string | symbol, unknown>; settle?: ((root: HTMLElement) => Promise<void>); pose?: ((root: HTMLElement) => Promise<void>); markers?: { n: number; anchor: string; key: string }[] }
+- `ReproInstance`: { [x: string]: unknown }
+- `ReproStory`: { id: string; component: Component<Record<string, unknown>, {}, string>; host: "shell" | "bare"; shellData?: Partial<{ public: false; siteName: string; user: { displayName: string; email: string; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null>; attention: Record<string, { count: number; label: string }> }>; props: { [x: string]: unknown }; context?: Record<string | symbol, unknown>; settle?: ((root: HTMLElement) => Promise<void>); pose?: ((root: HTMLElement, instance: ReproInstance) => Promise<void>); markers?: { n: number; anchor: string; key: string }[] }
 - `stories`: ReproStory[]
 
 ## `/reproductions/manifest`

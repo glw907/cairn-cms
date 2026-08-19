@@ -4,11 +4,24 @@ This subpath is the story registry backing a `repro` fenced code block: a docs p
 id, and the fence resolves to a live render of the real admin component the id names, mounted with
 its fixture data and driven to the state its page contract describes. It ships in the tarball
 beside the docs corpus for a site that builds a docs corpus against it, notably cairn-pub; it
-carries no general-purpose admin UI a site mounts on its own. The engine mounts the real,
-interactive component as-is: the render carries no `inert` attribute and no focus containment of
-its own. Keeping a rendered story from acting as a live admin surface once it is embedded in a
-docs page (an `iframe`'s own sandboxing, `inert`, focus containment) is the consuming site's
-obligation, not something this subpath does for it.
+carries no general-purpose admin UI a site mounts on its own. The engine mounts the real component
+and contains it, so an embedded story cannot act as a live admin surface. The mounted subtree is
+inert, a modal dialog a story opens is marked inert as it opens, and window-level keyboard,
+pointer, drag, and unload events stop before any handler sees them. Containment holds from first
+paint and does not depend on a pose, which a consumer runs. An inert subtree also contributes no
+node to the accessibility tree, so a screen reader reaches none of the mounted markup. Whatever alt
+text a page authors for the embed is the entire accessible content of that embed, which is worth
+knowing before writing it.
+
+The embed itself stays with the site, and so does one repair the engine cannot make. A frame that
+loads and focuses a control takes the focus a reader had, measured in Chromium, Firefox, and
+WebKit. No attribute on the host side prevents it: `tabindex="-1"` takes the `iframe` out of the
+host's tab order, `inert` also blocks hit-testing on it, and neither releases the host's focus pin
+except in Firefox under `inert`. A page that embeds a story therefore records
+`document.activeElement` before the frame loads and restores it after. Nothing inside the frame can
+stand in for that. The `loading` attribute, a `sandbox` value if the page wants one, the `noindex`
+meta tag, and the no-JavaScript fallback are the site's too. A `sandbox` value must keep
+`allow-same-origin`, which the theme sync and the frame's own focus release both need.
 
 ```ts
 import { getStory, ReproContext } from '@glw907/cairn-cms/reproductions';
@@ -125,6 +138,14 @@ falls back to the light admin theme. A `'bare'` story that resolves no theme roo
 row except the two auth pages) gets one from `ReproContext` itself, painted with the admin surface
 colors, so it renders correctly wherever it mounts rather than only inside a host that happens to
 supply a theme root.
+
+Mount `ReproContext` in a document dedicated to one reproduction, its own route inside an `iframe`,
+never on a page that carries anything else. Its containment is not scoped to what it renders: it
+takes over `keydown`, `pointerdown`, `dragover`, `drop`, and `beforeunload` for the whole document,
+for as long as the instance lives, and it takes them over ahead of anything registered after it. On
+a shared page that removes every keyboard shortcut, every control a page dismisses on pointer
+press, and the unsaved-work prompt `beforeunload` raises, so an editor can lose work with no
+warning.
 
 One `ReproContext` instance mounts exactly one story for its lifetime. Its context, its manifest
 lookup, and its shell payload all resolve once, from the `story` this instance first mounted; they

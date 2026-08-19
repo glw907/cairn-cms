@@ -2691,6 +2691,38 @@ describe('EditPage', () => {
       expect(editControl(screen)!.disabled).toBe(false);
     });
 
+    describe('guarded emphasis parity with Figure (audit finding 7)', () => {
+      // Same rationale as the Figure suite below: the compiled sheet carries daisyUI's real
+      // .btn-disabled pointer-events: none, so only this harness (source markup plus real CSS)
+      // can catch a control that is unavailable but wired with the wrong class.
+      let sheet: HTMLStyleElement;
+
+      beforeAll(() => {
+        document.documentElement.setAttribute('data-theme', 'cairn-admin');
+        sheet = document.createElement('style');
+        sheet.textContent = compiledAdminCss;
+        document.head.appendChild(sheet);
+      });
+
+      afterAll(() => {
+        document.documentElement.removeAttribute('data-theme');
+        sheet.remove();
+      });
+
+      it('keeps the unavailable Edit block control reachable to a mouse, not suppressed by pointer-events: none', async () => {
+        const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+        await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+        await expect.poll(() => editControl(screen)).not.toBeNull();
+        const control = editControl(screen)!;
+        expect(control.getAttribute('aria-disabled')).toBe('true');
+        // btn-disabled sets pointer-events: none, which would suppress the title tooltip a mouse
+        // user reads for the why. control.focus() cannot see this (programmatic focus ignores
+        // pointer-events), so the earlier focus assertion above does not cover this defect.
+        const style = getComputedStyle(control);
+        expect(style.pointerEvents).not.toBe('none');
+      });
+    });
+
     it('resolves editability to whichever component the caret settles on, never a stale in-flight answer', async () => {
       // Two distinct safe blocks with opposite eventual outcomes (A safe, B unsafe), so a wrongly
       // applied answer is unambiguous: if A's slow, stale check ever won, the control would read

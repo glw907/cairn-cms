@@ -133,6 +133,13 @@
   prerendered mount renders with the warning strips absent and a real server-rendered request
   still gets the search-string-derived flash unchanged. Consumers must: nothing.
 
+- The editor toolbar's Edit block control now names its reason to a mouse user, the way the
+  Figure control beside it already does. The unavailable state rode `btn-disabled`, which sets
+  `pointer-events: none`, so the `title` naming why the control was off never reached a mouse
+  (only a keyboard user tabbing to it could read it). The control now dims through
+  `cairn-btn-guarded` and `cursor-not-allowed`, the same guarded pattern as Figure, and keeps its
+  tooltip reachable at every pointer. Consumers must: nothing.
+
 ## 0.95.0-rc.1
 
 <!-- release-size: minor -->

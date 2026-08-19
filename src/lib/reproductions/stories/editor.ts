@@ -78,11 +78,10 @@ const insertControls = createRawSnippet(() => ({
         '<rect x="14" y="2" width="8" height="8" rx="1"/>',
     ) +
     // Edit block, at rest: `hasComponents` opens the same gate that renders Insert block beside it,
-    // and with no caret in a component the control is unavailable. Transcribed as it stands today,
-    // btn-disabled and all, rather than as it should be: the class costs a mouse user the tooltip
-    // that names the reason (pointer-events: none suppresses it), which is a defect of the real
-    // control, recorded against EditPage rather than quietly repaired in its reproduction.
-    '<button type="button" class="btn btn-sm btn-ghost btn-square btn-disabled" ' +
+    // and with no caret in a component the control is unavailable, guarded the same way as the
+    // figure control below (cairn-btn-guarded and cursor-not-allowed, never btn-disabled, which
+    // would set pointer-events: none and suppress the title tooltip a mouse user reads for the why).
+    '<button type="button" class="btn btn-sm btn-ghost btn-square cairn-btn-guarded cursor-not-allowed" ' +
     'aria-haspopup="dialog" aria-label="Place the cursor in a component to edit it" ' +
     'title="Place the cursor in a component to edit it" aria-disabled="true">' +
     glyph(

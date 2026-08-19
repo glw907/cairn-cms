@@ -2079,12 +2079,15 @@ persistent "?" carries Markdown help, design-arc D2).
                  unavailable while Preview shows (like the insert controls) and whenever the caret is
                  not on a safe, schema-bearing component; the tooltip names the reason in each state.
                  The unavailable state uses aria-disabled, not the native disabled attribute, so the
-                 control stays focusable and its reason reaches assistive technology; the disabled
-                 look rides a class and editBlock() early-returns so the dead click is inert. -->
+                 control stays focusable and its reason reaches assistive technology; editBlock()
+                 early-returns so the dead click is inert. cairn-btn-guarded and cursor-not-allowed
+                 give the dimmed look (the Figure control's pattern below), never .btn-disabled, which
+                 sets pointer-events: none and would suppress the title tooltip a mouse user reads for
+                 the why. -->
             <button
               type="button"
-              class="btn btn-sm btn-ghost btn-square"
-              class:btn-disabled={editBlockUnavailable}
+              class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
+              class:cursor-not-allowed={editBlockUnavailable}
               aria-haspopup="dialog"
               aria-label={editBlockLabel}
               title={editBlockLabel}

@@ -15,7 +15,42 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-19: the reproduction seam is BUILT, both halves)
+## Immediate next action (2026-08-19 evening: the release-debt engine pass)
+
+**Geoff reordered the queue and rescoped the next pass (2026-08-19, both answered directly).**
+
+1. **The next engine pass is the release-debt pass**: the six consumer-facing library defects a
+   site actually feels, listed in `docs/superpowers/plans/2026-08-19-release-debt-pass.md`. It is a
+   CUT, not the Now tier: the four `create-cairn-site` first-run defects, the site-name slug
+   collision, and the four verification holes are all deliberately out, and each stays filed in
+   ROADMAP Now.
+2. **The release comes after that pass, ahead of the editors rewrite and the recorded
+   editors-track read.** This SUPERSEDES the 2026-08-15 sequencing ruling further down this file
+   ("release one waits for the visual layer"), which is left in place as the record of what it
+   replaced. The stated plan after the cut is Geoff's own: he updates all current sites, then
+   starts live site work while the docs get updated in parallel.
+
+**What that reordering leaves open, and the cut must answer.** The four same-cut obligations
+(engine, `create-cairn-site`, `@glw907/cairn-cms-dev`, the template repo) plus T5a' were written
+against the old ordering, and ROADMAP records the four `create-cairn-site` first-run defects as
+"owed before release one publishes the tool". One of them strands a reader outright: after a failed
+first run the resume refuses to continue because the repository the tool itself created exists, and
+recovery needs a `delete_repo` permission the reader may not have. So the cut has to decide whether
+the tool ships in it or holds. That is a `cairn-release` gate question for Geoff, not something a
+pass settles on its own.
+
+**Immediate next action: execute
+`docs/superpowers/plans/2026-08-19-release-debt-pass.md`.** Launch from `~/Projects/cairn-cms`. It
+runs on a worktree off `main`, one `cairn-implementer` dispatch per task, test-first, with the main
+loop reviewing each diff and clearing the full gate between dispatches.
+
+**Run the whole CI-derived gate list before committing, not a remembered subset.** This session
+shipped `main` red on `check:surface` doing exactly that, and fixed it in `0f1ab10a`. Derive with
+`grep -l pull_request .github/workflows/*.yml` then
+`grep -nE "run: npm( run)? " .github/workflows/test.yml`; `check:surface` needs
+`-- --update` and a committed `docs/internal/api-surface.md` whenever an exported type moves.
+
+### The reproduction seam is BUILT, both halves (2026-08-19, earlier)
 
 **The live-reproduction seam is complete end to end.** A `repro` fence in a docs source renders as a
 live, themed, contained reproduction of a real admin component. Plan and all five post-mortems:
@@ -27,7 +62,8 @@ engine commits landed here alongside it, neither planned and both load-bearing: 
 prerendered route mount `EditPage` (four of the 25 story pages emitted no HTML at all without it),
 and `a5a069a8` binds a story's chip numbers rather than only its marker keys.
 
-**Immediate next action: the editors rewrite**, the pass this seam was built to unblock. It runs in
+**The editors rewrite** is the pass this seam was built to unblock, and it is now the track AFTER
+the release rather than before it (see the reordering at the top of this file). It runs in
 `~/Projects/cairn-pub` on the SAME branch `pass-d-docs-tracks`, not here and not off a fresh branch.
 Launch prompt for a fresh session from `~/Projects/cairn-pub`: "Execute the editors rewrite against
 the built live-reproduction seam. Read cairn-pub `docs/STATUS.md` Pass 6 and 7, and the seam spec at
@@ -167,6 +203,10 @@ each capture's page contract and posed state, zero gaps. The one-off driver is
 `examples/showcase/scripts/reference-capture.mjs`; it stays in-tree until the editors rewrite
 consumes the set, then gets deleted per its own header. This is internal reference only: the
 npm `files` whitelist excludes `docs/internal`, so none of it ships.
+
+**SUPERSEDED 2026-08-19 by the reordering at the top of this file: the release now comes after the
+release-debt engine pass, ahead of the rewrite and the read. The paragraph below is kept as the
+record of what it replaced, and its same-cut obligations still stand.**
 
 **Geoff ruled the sequencing (2026-08-15): release one waits for the visual layer.** There is no
 hurry to release, and the docs go out at best quality with the beta release. The visual work runs

@@ -221,10 +221,13 @@ These are not gated on release one, the site walk, or each other. Item (1) in pa
 actioned now rather than batched with the rest; it is listed first because it is a live credential
 exposure, not because it is first in any sequence.
 
-**TEN outstanding, one urgent.** (The former item 11, a browser glance at the Advanced Certificate Manager line item, is CLOSED 2026-08-18: Geoff ruled the copy hedges instead, so `money.mjs` and two admin pages now scope the total to the two confirmed figures and disclose the open item, with a test pinning the hedge. The friction log holds no live finding.) (1) **URGENT: rotate the estate
-Cloudflare token** (`Cloudflare Admin 2026-07`), leaked into a transcript and still active; mint
-a replacement, run `~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the
-old one. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API token
+**TEN outstanding, none urgent.** (The former item 11, a browser glance at the Advanced Certificate Manager line item, is CLOSED 2026-08-18: Geoff ruled the copy hedges instead, so `money.mjs` and two admin pages now scope the total to the two confirmed figures and disclose the open item, with a test pinning the hedge. The friction log holds no live finding.) (1) Rotate the estate Cloudflare token
+(`Cloudflare Admin 2026-07`) at convenience; mint a replacement, run
+`~/.dotfiles/scripts/secrets/secret-set.sh CLOUDFLARE_API_TOKEN`, delete the old one.
+**DOWNGRADED from urgent 2026-08-18 by Geoff: the screen was secured, so the transcript exposure
+did not reach anyone.** The token stands unrotated by his call, not by oversight. Recorded so a
+later session does not re-escalate it on the old framing; the residual is that the value is at
+rest in a transcript file rather than on a screen, which he has weighed. (2) Delete the GitHub App `cairn-t4b-live-03cd31`. (3) Revoke the T4c spike API token
 `d07b2a25f05151591830c45053186979`, then `rm -f ~/.config/cairn/t4c-spike-token
 ~/.config/cairn/store-t4c-token.sh`. (4) 907-life's push-to-deploy has been broken since
 2026-07-14. (5) Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT at release one. (6) The button

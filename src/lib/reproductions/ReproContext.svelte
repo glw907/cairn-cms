@@ -57,7 +57,7 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
   import type { AdminShellData } from '../sveltekit/content-routes-core.js';
   import { fixtureConcept, fixtureCsrf, fixtureEditor, fixtureNavLayout, fixtureSiteName } from './fixtures.js';
   import { fixtureMediaBase, manifest } from './manifest.js';
-  import type { ReproStory } from './index.js';
+  import type { ReproInstance, ReproStory } from './index.js';
   import '../components/cairn-admin.css';
 
   interface Props {
@@ -74,9 +74,38 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
      * of story cannot render half of them light and half dark.
      */
     theme?: 'cairn-admin' | 'cairn-admin-dark';
+    /**
+     * Called once with the mounted component's own exports, as the mount happens. A host that runs
+     * poses passes this and hands the value back to `story.pose`, which is how a pose reaches a
+     * state the real admin reaches by calling an exported method rather than by clicking (see
+     * `ReproStory.pose`). A host that only renders a resting story needs none of it.
+     */
+    oninstance?: (instance: ReproInstance) => void;
   }
 
-  let { story, theme }: Props = $props();
+  let { story, theme, oninstance }: Props = $props();
+
+  // The mounted component's exports, handed out through a property setter rather than assigned to
+  // a plain variable. `bind:this` writes to any assignable target and a member expression is one,
+  // so the handoff below runs synchronously inside the mount's own render effect. An $effect would
+  // not: a host that mounts and then immediately poses (the engine's own story suite does exactly
+  // that) would read the instance before any effect had flushed. `bind:this` also writes undefined
+  // on teardown, which is not a mount, so only a truthy value is handed on.
+  //
+  // `$state.raw`, not a plain `let`: Svelte's dev-mode binding validation reads the bound property
+  // inside an effect and warns `binding_property_non_reactive` when that read registers no
+  // dependency, which a plain variable behind a getter does not. Raw rather than deep, so the
+  // instance handed on is the component's own exports object and not a proxy of it.
+  let mountedInstance = $state.raw<ReproInstance | undefined>(undefined);
+  const mount = {
+    get instance(): ReproInstance | undefined {
+      return mountedInstance;
+    },
+    set instance(value: ReproInstance | undefined) {
+      mountedInstance = value;
+      if (value) oninstance?.(value);
+    },
+  };
 
   // The teardown handle for the containment listeners below, declared out here so the rest of init
   // can release them if it throws. Undefined on the server, where none of them registers.
@@ -308,10 +337,10 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
 <div data-cairn-picture inert>
 {#if story.host === 'shell'}
   <CairnAdminShell data={shellData} themeOverride={resolvedTheme}>
-    <story.component {...story.props} />
+    <story.component bind:this={mount.instance} {...story.props} />
   </CairnAdminShell>
 {:else if ownThemeRoot}
-  <story.component {...bareProps} />
+  <story.component bind:this={mount.instance} {...bareProps} />
 {:else}
   <!-- The theme root a bare story does not carry itself. Every admin token is scoped under
        [data-theme='cairn-admin'], so without this the stylesheet above loads and the story takes
@@ -326,7 +355,7 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
        this is that pairing for a story that brings no root of its own. -->
   <div data-theme={resolvedTheme}>
     <div class="bg-base-200 text-base-content">
-      <story.component {...bareProps} />
+      <story.component bind:this={mount.instance} {...bareProps} />
     </div>
   </div>
 {/if}

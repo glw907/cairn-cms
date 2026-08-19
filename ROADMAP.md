@@ -283,6 +283,18 @@ The original decision framing, for the record:
   prose does not already describe the screen needs a longer description than its name (WCAG 1.1.1,
   techniques G73/G74). **Trigger: the editors rewrite, which authors the alt and caption text.**
 
+- **A numbered callout is only proven to fit at ONE width.** The new crop gate
+  (`src/tests/component/reproductions-marker-crop.test.ts`) mounts a markered story at the width its
+  embed renders at and fails when a chip falls outside the declared height, which is what caught
+  `tags/screen` cutting two of its five callouts. For a responsive `column` story that width is the
+  docs measure, 704px, hardcoded in the test from cairn-pub's `--container-measure`. A phone renders
+  the same embed at roughly 320, where the same content reflows taller against the same fixed
+  declared height, so a chip that clears the crop on a desk can fall out of it on a phone and no gate
+  sees it. Two ways out, and the choice is a framing decision rather than a bug fix: declare a height
+  per width the way `publish/header-band` already declares two, or let a callout-carrying story pin a
+  width so it stops being responsive at all. **Trigger: the editors rewrite, which is the first pass
+  to publish a callout-carrying reproduction.**
+
 - **`cairn-audit`'s rendered focus-indicator rule passes vacuously on a page with no tab stops.**
   `src/lib/audit/rules/rendered/focus-renders.ts:181` returns `[]` when the tab order is empty, which is
   indistinguishable from "checked everything and found nothing". Containment makes this reachable for the
@@ -301,17 +313,6 @@ The original decision framing, for the record:
   serve `src/lib/reproductions/fixtures/` at `/repro-assets/` from the browser project (the filenames
   are already enumerated in `manifest.ts`), then assert `complete && naturalWidth > 0` rather than
   the composed string. Found by the seam pass's Svelte review.
-
-- **`media/insert-panel` pictures a control the real admin never renders.** The story sets
-  `MediaInsertPopover`'s `trigger: true` so a DOM-only pose has something to click, which renders a
-  visible text button reading "Insert image" that survives in the DOM after the panel opens. The real
-  editor mounts the popover headless (`trigger={false}`) and opens it by calling the component's
-  exported `open('chooser')` from the toolbar's icon button. So the one reproduction whose whole job
-  is fidelity ships a control that exists nowhere in `/admin`. The seam limitation behind it is that
-  `ReproStory.pose` receives only the mount root, never the mounted instance, so it cannot reach the
-  mechanism the real host uses. Fix: widen the pose signature to receive the instance and keep
-  `trigger: false`. **Owed before a docs page embeds this story.** Found by the seam pass's Svelte
-  review.
 
 - **A site with a non-default `assets.publicBase` has broken admin thumbnails today, and the
   reproduction seam just made the fix cheap.** `media/config.ts` makes the base site-configurable

@@ -15,7 +15,14 @@
   paint, so an embedded reproduction cannot be driven as if it were a live admin screen:
   `ReproContext` renders what it mounts inside an inert wrapper, marks a modal dialog inert as the
   story opens it, and stops window-level keyboard, pointer, drag, and unload events before any
-  handler sees them. None of that waits on a pose, which a consumer runs. Two things stay with the
+  handler sees them. None of that waits on a pose, which a consumer runs, and a pose receives the
+  mounted component's own exports alongside the mount root, so a story can reach a state the admin
+  itself reaches by calling a method rather than by clicking: the editor's insert panel is mounted
+  headless and opened from the toolbar, and the reproduction now does the same instead of rendering
+  a trigger button that screen has not got. A declared height is a hard crop rather than a hint, so
+  a story carrying numbered callouts is held to its own box by a gate that mounts it at the width
+  its embed renders at and fails when a chip falls outside; `tags/screen` shipped a height that cut
+  two of its five callouts off a page whose prose list still numbered them. Two things stay with the
   site, because no code inside the frame can do them: a screen reader reaches none of an inert
   subtree, so the alt text a page authors is the whole accessible content of the embed, and a frame
   that loads and focuses a control takes the focus a reader had, in every engine and under every

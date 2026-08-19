@@ -17,6 +17,7 @@ import { render } from 'vitest-browser-svelte';
 import { cdp, page, userEvent } from 'vitest/browser';
 import { manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 import { getStory, ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
+import { renderStory } from './_repro-mount.js';
 
 /** The wrapper M2 puts around everything `ReproContext` mounts. */
 const PICTURE = '[data-cairn-picture]';
@@ -44,9 +45,9 @@ function viewportFor(entry: ReproManifestEntry | undefined) {
 }
 
 /**
- * Mount a story the way both its consumers do: the declared viewport, then `settle`, then `pose`.
- * The same shape `reproductions-stories.test.ts` uses, so a containment assertion is made against
- * exactly the render a docs page captures.
+ * Mount a story the way both its consumers do: the declared viewport, then the shared `renderStory`
+ * harness. The same shape `reproductions-stories.test.ts` uses, so a containment assertion is made
+ * against exactly the render a docs page captures.
  */
 async function mountPosed(story: ReproStory) {
   const size = viewportFor(manifest.find((candidate) => candidate.id === story.id));
@@ -54,10 +55,7 @@ async function mountPosed(story: ReproStory) {
     await page.viewport(size.width, size.height);
     viewportPinned = true;
   }
-  const screen = render(ReproContext, { props: { story } });
-  if (story.settle) await story.settle(screen.container);
-  if (story.pose) await story.pose(screen.container);
-  return screen;
+  return renderStory(story);
 }
 
 // The elements a test appended to the document itself, torn down after it. `appendChild`, not

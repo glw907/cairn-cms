@@ -67,10 +67,14 @@ function libraryData(): MediaLibraryData {
 }
 
 /**
- * The at-caret insert panel, posed open (`media/insert-panel`). The popover mounts headless by
- * default, so `trigger: true` renders the button the pose clicks; `open()` calls
- * `editor.caretCoords()` synchronously, so the stub must exist and deliberately return `null` (the
- * documented centered fallback) rather than be omitted (sweep finding 12).
+ * The at-caret insert panel, posed open (`media/insert-panel`). It mounts headless, exactly as the
+ * real editor mounts it, and the pose calls the exported `open('chooser')` on the mounted
+ * instance, which is the same mechanism the toolbar's icon button uses. The story shipped its
+ * first version with `trigger: true` instead, so the one reproduction whose whole job is fidelity
+ * rendered a visible "Insert image" button that exists nowhere in `/admin`; widening the pose
+ * signature to carry the instance is what retired it. `open()` calls `editor.caretCoords()`
+ * synchronously, so the stub must exist and deliberately return `null` (the documented centered
+ * fallback) rather than be omitted (sweep finding 12).
  */
 const insertPanel: ReproStory = {
   id: 'media/insert-panel',
@@ -92,10 +96,17 @@ const insertPanel: ReproStory = {
       insertImage: () => {},
     },
     onuploaded: () => {},
-    trigger: true,
   },
-  pose: async (root) => {
-    await clickWhenPresent(root, 'button[aria-label="Insert image"]', 'the Insert image trigger');
+  pose: async (root, instance) => {
+    const popover = instance as { open?: (signal: 'chooser' | 'capture', file?: File) => void } | undefined;
+    if (typeof popover?.open !== 'function') {
+      throw new Error(
+        'cairn reproductions: media/insert-panel poses through MediaInsertPopover\'s exported ' +
+          'open(), so its mounting host must pass ReproContext an `oninstance` callback and hand ' +
+          'that value to pose() as its second argument',
+      );
+    }
+    popover.open('chooser');
     await waitFor(root, '[role="dialog"][aria-label="Insert image"]', 'the opened insert panel');
   },
 };

@@ -20,6 +20,15 @@ import { publishStories } from './stories/publish.js';
 import { siteStories } from './stories/site.js';
 
 /**
+ * A mounted story component's own exports, the handle a pose reaches a component method through.
+ *
+ * Untyped by design: each story knows which component it mounts and casts to that component's own
+ * exported signature at the one call site that uses it, which is cheaper than teaching this
+ * interface every mountable component's exports.
+ */
+export type ReproInstance = Record<string, unknown>;
+
+/**
  * One story's full mount description: a manifest entry plus everything a mounting context needs
  * to render it, which no node-safe module can carry.
  */
@@ -68,8 +77,16 @@ export interface ReproStory {
    * A post-mount step that drives a state that lives in internal component state rather than a
    * prop (an opened dialog, a selection). Absent when the resting prop bag already shows the
    * contracted state.
+   *
+   * The second argument is the mounted component's own exports, which `ReproContext` hands its
+   * host through `oninstance`. A pose takes it when the real admin reaches that state by calling
+   * an exported method rather than by clicking something (`media/insert-panel` is the case that
+   * forced it: the real editor mounts the popover headless and opens it from the toolbar's icon
+   * button, so a click-only pose had to render a trigger button that exists nowhere in `/admin`).
+   * It is a required parameter so a host that cannot supply it fails to type-check rather than
+   * posing half the story.
    */
-  pose?: (root: HTMLElement) => Promise<void>;
+  pose?: (root: HTMLElement, instance: ReproInstance) => Promise<void>;
   /**
    * The numbered callout markers this story's manifest entry declares (empty array on the
    * manifest entry means this field is absent here too). Keys mirror `manifest.ts`'s

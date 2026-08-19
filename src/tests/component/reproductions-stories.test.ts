@@ -12,6 +12,7 @@ import { fixtureMediaBase, manifest, type ReproManifestEntry } from '../../lib/r
 import { stories, getStory, ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
 import { waitFor } from '../../lib/reproductions/stories/support.js';
 import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
+import { renderStory } from './_repro-mount.js';
 
 // The manifest ids not yet backed by a registered story, named explicitly (not derived from
 // `stories`) so a task that registers a group without updating this set is caught by the "keeps
@@ -107,10 +108,9 @@ function viewportFor(entry: ReproManifestEntry | undefined) {
 }
 
 /**
- * Mount a story and bring it to the state its page contract names: the declared viewport first
- * (the widths above), then `settle` (the contracted surface that only exists after hydration), then
- * `pose` (the state that lives in internal component state). Both of a story's consumers, this
- * suite and cairn-pub's capture, run settle before pose, so the harness expresses it once here.
+ * Mount a story at the viewport its manifest entry declares (the widths above), then bring it to
+ * the state its page contract names through the shared `renderStory` harness. The viewport is the
+ * half that differs between this suite and its siblings, so it is the half that stays here.
  */
 async function mountPosed(story: ReproStory) {
   const size = viewportFor(manifest.find((candidate) => candidate.id === story.id));
@@ -118,10 +118,7 @@ async function mountPosed(story: ReproStory) {
     await page.viewport(size.width, size.height);
     viewportPinned = true;
   }
-  const screen = render(ReproContext, { props: { story } });
-  if (story.settle) await story.settle(screen.container);
-  if (story.pose) await story.pose(screen.container);
-  return screen;
+  return renderStory(story);
 }
 
 afterEach(async () => {
@@ -602,12 +599,9 @@ describe('publish/header-band', () => {
       await page.viewport(390, 300);
       viewportPinned = true;
 
-      const story = getStory('publish/header-band');
-      const screen = render(ReproContext, { props: { story } });
-      // Settle then pose, the order both of the seam's consumers run in: pinning the viewport by
-      // hand is the only thing this test does differently from `mountPosed`.
-      if (story.settle) await story.settle(screen.container);
-      if (story.pose) await story.pose(screen.container);
+      // Pinning the viewport by hand is the only thing this test does differently from
+      // `mountPosed`; the mount itself runs the same settle-then-pose sequence.
+      const screen = await renderStory(getStory('publish/header-band'));
 
       // The narrow face this row exists to picture: the back link, the truncating title, and the
       // status pill replace the desktop status cluster (EditPage's `narrow` branch), and the
@@ -690,6 +684,20 @@ describe('media/insert-panel', () => {
     expect(screen.container.textContent).toContain('or reuse an image');
     // The reuse picker's own listbox, populated from the fixture library.
     await expect.element(screen.getByRole('option', { name: /Trailhead View/ })).toBeInTheDocument();
+  });
+
+  it('renders no built-in trigger, the way the real editor mounts the popover', async () => {
+    const screen = await mountPosed(getStory('media/insert-panel'));
+
+    // `trigger` renders a text button labelled "Insert image" that stays in the DOM after the
+    // panel opens. The real editor mounts the popover headless and opens it from the toolbar's
+    // icon button, so a story carrying that trigger pictures a control `/admin` never renders,
+    // in the one reproduction whose whole job is fidelity. The pose calls the exported `open()`
+    // instead, which is the mechanism the real host uses.
+    const triggers = [...screen.container.querySelectorAll('button[aria-haspopup="dialog"]')];
+    expect(triggers.map((button) => button.getAttribute('aria-label'))).not.toContain('Insert image');
+    // The panel is nonetheless open, so the pose reached its state through the exported method.
+    expect(screen.container.querySelector('[role="dialog"][aria-label="Insert image"]')).not.toBeNull();
   });
 });
 

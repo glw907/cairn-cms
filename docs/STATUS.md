@@ -41,19 +41,33 @@ build on a fence naming a story the installed manifest does not carry. Alt and c
 authored against the live `/repro` pages, which now exist and render. Three pages owe keyed prose
 lists matching the numbered chips: `editor/entry-screen`, `media/library`, and `tags/screen`.
 
-**Three things owed before a docs page embeds a story:**
+**Two of the three things owed before a docs page embeds a story are now closed** (2026-08-19, this
+repo, engine-side). One remains, and it belongs to the rewrite rather than to the engine.
 
-1. **`media/insert-panel` pictures a control the real admin never renders.** The story sets the
-   popover's `trigger: true` so a DOM-only pose has something to click, which renders a visible
-   "Insert image" button; the real editor mounts it headless. The one reproduction whose whole job is
-   fidelity ships a control that exists nowhere in `/admin`. ROADMAP Now tier.
-2. **`tags/screen` crops away its own callouts.** It declares a 700px column height while chips 4 and
-   5 render at y≈778 and y≈864, so a reader counts three chips against a five-entry prose list. Gate 1
-   structurally cannot see this: it counts manifest keys against the prose list, never chip positions
-   against the crop. The declared height is the engine's to change.
+1. **`media/insert-panel` pictured a control the real admin never renders. CLOSED.** `ReproStory.pose`
+   now receives the mounted component's own exports as a second argument, which `ReproContext` hands
+   its host through a new `oninstance` prop. The story mounts headless, exactly as the real editor
+   mounts it, and poses through the exported `open('chooser')`, so the "Insert image" text button is
+   gone. The handoff runs synchronously inside the mount rather than from an effect, since a host
+   that mounts and immediately poses would otherwise read `undefined`. The second parameter is
+   required on purpose: a host that cannot supply an instance fails to compile.
+2. **`tags/screen` cropped away its own callouts. CLOSED.** Its declared column height went from 700
+   to 940. What makes it stay closed is a new geometric gate,
+   `src/tests/component/reproductions-marker-crop.test.ts`: it mounts every markered story at the
+   width its embed renders at, resolves each anchor against the posed DOM, and fails when the chip
+   centred on that anchor falls outside the declared box. Run against the old height it names the two
+   offenders and their positions (chip 4 at 814px, chip 5 at 900px), which is the falsification
+   proof. Its one blind spot is filed in ROADMAP Now: a `column` story is proven at the docs measure
+   only, and the same content reflows taller on a phone against the same fixed height.
 3. **A 150-character accessible name is thin for the three locate-many-controls screens**, so a
    reproduction whose surrounding prose does not already describe the screen needs a longer
-   description than its name. ROADMAP Now tier.
+   description than its name. ROADMAP Now tier. **Still owed; the rewrite authors it.**
+
+**What cairn-pub owes on its next engine install.** Widening `pose` is a compile-time break for a
+host that calls it. `src/lib/docs/repro-story-lifecycle.ts` calls `story.pose?.(element)` and
+`src/routes/repro/[...story]/+page.svelte` mounts `ReproContext` without `oninstance`, so both need
+the instance threaded through. Nothing breaks until that repo re-packs the engine, since it is pinned
+to the `0.95.0-rc.1` tarball, and the break is a type error rather than a silent misrender.
 
 **BRANCH TOPOLOGY AND THE PIN, the things a cold session gets wrong by default.** cairn-pub consumes
 the engine through `"@glw907/cairn-cms": "file:/home/glw907/Projects/cairn-scratch/glw907-cairn-cms-0.95.0-rc.1.tgz"`,
@@ -69,6 +83,14 @@ exit 0, `npm run build` exit 0, 25 of 25 story pages emitting HTML, and the prob
 exit 0 against a built preview with every check proven able to fail. Here: `npm run check` 0/0 across
 1634 files, the full suite exit 0, `check:comments` clean. `CHANGELOG.md`'s `## Unreleased` window
 carries the `EditPage` fix in consumer terms. No version bump, no publish.
+
+**Gate state after the two owed engine items landed (2026-08-19).** `npm run check` 0 errors, 0
+warnings across 1636 files; `npm test` 426 files and 5656 tests, exit 0; `check:comments`, `lint`,
+`check:reference`, `check:reference:signatures`, `check:visuals`, and `check:vale` all clean. Both
+new assertions were proven able to fail before the fix went in. The changelog folds both into the
+existing unreleased reproduction-seam entry rather than opening a new one, since the seam itself has
+never published: no consumer can be broken by a signature it has never had. Still no version bump and
+no publish.
 
 **A four-lens review gate found 54 findings.** Five were folded into the pass; the rest are cairn-pub
 Pass 7, which is coherent enough to be a pass rather than a punch list: the seam's gates prove a

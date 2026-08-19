@@ -262,8 +262,14 @@ export const manifest: ReproManifestEntry[] = [
     ownThemeRoot: true,
   },
   {
+    // Sized to its own callouts rather than to a comfortable screen box: chips 4 and 5 anchor on
+    // the not-on-the-list panel and the Save changes button, which land at roughly 814 and 900 at
+    // the docs measure, and a declared height is a hard crop (cairn-pub's boundHeight only ever
+    // shrinks a render, never grows it), so the 700 this row shipped with cut two of the five
+    // chips off a page whose prose list still numbered them.
+    // src/tests/component/reproductions-marker-crop.test.ts is what holds this to the anchors.
     id: 'tags/screen',
-    heights: { column: 700 },
+    heights: { column: 940 },
     markerKeys: ['add-field', 'tag-list', 'unused-tag', 'not-on-list', 'save-changes'],
     pose: false,
     host: 'shell',

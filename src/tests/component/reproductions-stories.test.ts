@@ -931,6 +931,18 @@ for (const story of stories) {
       expect((story.markers ?? []).map((marker) => marker.key)).toEqual(entry?.markerKeys ?? []);
     });
 
+    // The chip numbers a reader sees, checked separately from the keys above because they are a
+    // different contract: the keys bind a story to its manifest entry, while `n` is what the docs
+    // page's keyed prose list counts off against the picture. A gap or a repeat there misnumbers
+    // the list against the render with every other assertion here still green, and no gate on
+    // either side of the seam was watching it (cairn-pub's own build cannot: it never mounts a
+    // story). Sequential from 1 in declaration order, so the chips read top to bottom the way the
+    // list does.
+    it('numbers its markers 1..n with no gap or repeat', () => {
+      const numbers = (story.markers ?? []).map((marker) => marker.n);
+      expect(numbers).toEqual(numbers.map((_, index) => index + 1));
+    });
+
     // ReproContext picks its render branch off `story.host`, but the theme root a bare story owns
     // (or does not) comes from `manifestEntry.ownThemeRoot`, resolved separately in ReproContext.
     // Nothing else binds `story.host` to `entry.host`, so a story and its manifest entry could drift

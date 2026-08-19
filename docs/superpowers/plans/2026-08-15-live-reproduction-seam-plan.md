@@ -943,7 +943,9 @@ workflows, and every `check:*` target they invoke run by name, including the fou
 `npm run check` 0/0 across 1634 files; full suite 425 files, 5625 tests, exit 0;
 `packages/create-cairn-site` 827 tests, exit 0. `norms:check` ran post-merge on `main` against a
 live showcase preview (it cannot run in a worktree, where the showcase symlink resolves `main`'s
-engine and would prove the wrong thing) and reports the manifest fresh. No version bump, no publish.
+engine and would prove the wrong thing) and reports the manifest fresh. The showcase e2e, the
+consumer-build gate, ran post-merge on `main`: 153 passed, exit 0, with the exit code read directly
+rather than through a pipe. No version bump, no publish.
 
 ### Decisions locked
 

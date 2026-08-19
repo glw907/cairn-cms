@@ -76,7 +76,8 @@ than recalled: five workflows, every `check:*` target they invoke run by name, i
 CI-only gates. `npm run check` 0/0 across 1634 files; full suite 425 files, 5625 tests, exit 0;
 `packages/create-cairn-site` 827 tests, exit 0. `norms:check` ran post-merge on `main` against a
 live showcase preview and reports the manifest fresh; **it cannot run in a worktree**, where the
-showcase's symlinked `node_modules` resolves `main`'s engine and would prove the wrong thing.
+showcase's symlinked `node_modules` resolves `main`'s engine and would prove the wrong thing. The
+showcase e2e ran post-merge on `main` too: 153 passed, exit 0.
 `CHANGELOG.md`'s `## Unreleased` window carries this pass; no version bump, no publish.
 
 **The `repro-containment` worktree is merged and pruned.** Nothing branches from it.

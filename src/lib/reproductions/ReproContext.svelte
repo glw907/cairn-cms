@@ -9,9 +9,48 @@ stylesheet unconditionally. A bare story that resolves no theme root of its own 
 from the same `theme` prop, plus the surface the theme root itself does not paint: between the
 three, such a story renders styled on the admin's own ground wherever it mounts, rather than only
 inside a host that happens to provide a root.
+
+It also contains what it mounts, so a reader cannot drive a reproduction as if it were a live admin
+screen. Three mechanisms hold that. Everything it mounts sits inside an `inert`, `display: contents`
+element carrying `data-cairn-picture`, so no control in it is focusable, tabbable, or hit-testable,
+and, since an inert subtree contributes no node to the accessibility tree, nothing in it reaches
+assistive technology either: the alt text an embedding page authors is the whole accessible content
+of the embed. A capture-phase `focusin` listener marks a modal dialog inert as it opens and releases
+the focus the dialog took, which is the only way to contain one: the HTML inert algorithm exempts
+the topmost modal dialog from an ancestor's inertness. And capture-phase listeners on `window` stop
+`keydown`, `pointerdown`, `dragover`, `drop`, and `beforeunload` before any handler sees them,
+cancelling the two drag types as well, since stopping the media library's own `dragover` handler
+without taking over its `preventDefault` would leave the browser to navigate to a dropped file.
+Between them they cover the window-level bindings the shell, the editor, the media library, and the
+list toolbar each register.
+
+All three register from the instance body, so they are live before any child exists and hold from
+first paint. None depends on a pose, which a consumer runs and this component never does.
+
+Mount this in a document dedicated to one reproduction, its own route inside an `<iframe>`, never
+beside a live admin surface. The window firewall reaches the whole document rather than the wrapper,
+and it wins by registration order rather than by phase, so a listener already on `window` when this
+component mounts still answers first. On a shared page it takes away every keyboard shortcut, every
+pointer-dismissed control, and the unsaved-work guard `beforeunload` carries, which is how an editor
+loses work with no signal.
+
+Containment is otherwise frame-local, with one deliberate reach outward: focus landing inside a
+same-origin frame pins the host document's `activeElement` to the `<iframe>` element, and the focus
+listener calls `blur()` on that element to release it. That works in Chromium and Firefox, not in
+WebKit. What no code in here can do is give a reader back the focus the load took. Measured across
+all three engines, a frame that loads and focuses a control blurs whatever the reader had focused,
+and neither `inert` nor `tabindex="-1"` on the host's `<iframe>` prevents it: `tabindex="-1"` only
+takes the frame out of the host's tab order, `inert` also blocks hit-testing on it, and only Firefox
+under `inert` even changes where the stolen focus lands. The page that embeds a reproduction owns
+that repair, by recording `document.activeElement` before the frame loads and restoring it after.
+
+One thing changes because containment holds: the seven stories that focused a control on open no
+longer paint the admin's `:focus-visible` ring, so each shows the mouse face of its screen rather
+than the keyboard one. `docs/internal/record/repro-story-audit.md` records which seven.
 -->
 <script lang="ts">
-  import { setContext, untrack } from 'svelte';
+  import { onDestroy, setContext, untrack } from 'svelte';
+  import { BROWSER } from 'esm-env';
   import CairnAdminShell from '../components/CairnAdminShell.svelte';
   import { MEDIA_BASE_CONTEXT_KEY } from '../components/media-base-context.js';
   import { CSRF_CONTEXT_KEY } from '../components/csrf-context.js';
@@ -39,33 +78,169 @@ inside a host that happens to provide a root.
 
   let { story, theme }: Props = $props();
 
-  // Context application runs once, during initialization: setContext must be called while this
-  // component is being created, so the story's own value (read once here, since a story does not
-  // change identity across ReproContext's lifetime) is enough. untrack makes that one-time read
-  // explicit rather than leaving it a warned-about accident of reading a prop outside a tracking
-  // context.
-  const storyContext = untrack(() => story.context);
-  if (storyContext) {
-    for (const key of Reflect.ownKeys(storyContext)) {
-      setContext(key, storyContext[key]);
+  // The teardown handle for the containment listeners below, declared out here so the rest of init
+  // can release them if it throws. Undefined on the server, where none of them registers.
+  let release: (() => void) | undefined;
+
+  // Containment, registered here in the instance body rather than in onMount or an $effect. The
+  // placement is load-bearing: the instance body runs before the template creates any child, so a
+  // child that opens a modal from its own mount effect (TidyReview does) is already covered by the
+  // time it runs, and no parent-versus-child effect ordering question arises.
+  // src/tests/component/reproductions-containment.test.ts is what proves that ordering holds.
+  if (BROWSER) {
+    // A modal dialog escapes the wrapper's inertness: the HTML inert algorithm exempts the topmost
+    // modal dialog and its flat-tree descendants from an ancestor's, so showModal() still lands
+    // focus inside the dialog and the dialog's own buttons stay tabbable. Marking the dialog itself
+    // inert is what removes them, and it costs the picture nothing: the dialog stays open, stays
+    // top-layered, and still paints its backdrop.
+    const containFocus = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest('[data-cairn-picture]')) return;
+      const dialog = target.closest<HTMLDialogElement>('dialog[open]');
+      if (dialog) dialog.inert = true;
+      const active = document.activeElement;
+      if (active instanceof HTMLElement) active.blur();
+      // Across documents the host's activeElement becomes the <iframe> element, which a same-frame
+      // blur does not release. window.frameElement resolves in the PARENT realm, so it fails an
+      // `instanceof HTMLElement` check in exactly the engines where the blur works; feature-test the
+      // method instead. The try guards an engine that throws rather than returning null for a
+      // cross-origin embed. This releases the pin in Chromium and Firefox and nothing in WebKit,
+      // and even where it works it resets focus to <body> rather than restoring what the reader
+      // had, which is the repair the embedding page owns and no attribute on the frame supplies.
+      try {
+        const frame = window.frameElement as { blur?: () => void } | null;
+        if (typeof frame?.blur === 'function') frame.blur();
+      } catch {
+        // Cross-origin: frameElement is unreachable, and no code inside the frame can reach the pin.
+      }
+    };
+    document.addEventListener('focusin', containFocus, true);
+
+    // One capture listener per type, registered here so it is first in window's capture queue and
+    // stops the event before anything a child registers later. That is registration order, not
+    // phase precedence: capture listeners on one target fire in the order they were added, and
+    // CairnAdminShell binds a capture handler of its own (`onkeydowncapture`), so the firewall wins
+    // only because a parent's instance body runs before any child template exists. The precondition
+    // is that no window listener is already registered when ReproContext mounts, which holds on a
+    // page whose only job is to be a picture and is why this component must own its document.
+    // src/tests/component/reproductions-containment.test.ts records the boundary with a capture
+    // sentinel registered before the mount.
+    //
+    // This covers more than a per-component opt-out could: EditPage registers its keydown and
+    // beforeunload handlers imperatively, ListToolbar arrives through a shared toolkit primitive
+    // rather than as a story's own component, and a component that grows a window binding in one of
+    // these five types later is covered with nobody remembering to gate it. Scoping to the wrapper
+    // is not available, since the shell's Ctrl/Cmd+K handler fires whatever the event target is.
+    const firewalled = ['keydown', 'pointerdown', 'dragover', 'drop', 'beforeunload'] as const;
+    // A drag is the one case where stopping the handler is not enough to contain it. The media
+    // library's window dragover handler is what makes this document a valid drop target, and its
+    // own preventDefault is what makes it one; stopping that handler and leaving the default action
+    // in place means the browser navigates to the dropped file, replacing the picture with a raw
+    // image. So the firewall takes over the cancellation for those two types, and only those two:
+    // cancelling keydown would take away Tab and space-scroll, and cancelling beforeunload IS the
+    // unload prompt, which is the thing suppressing beforeunload exists to avoid.
+    const cancelled = new Set<string>(['dragover', 'drop']);
+    const stopEvent = (event: Event) => {
+      event.stopImmediatePropagation();
+      if (cancelled.has(event.type)) event.preventDefault();
+    };
+    for (const type of firewalled) window.addEventListener(type, stopEvent, true);
+
+    release = () => {
+      document.removeEventListener('focusin', containFocus, true);
+      for (const type of firewalled) window.removeEventListener(type, stopEvent, true);
+    };
+    onDestroy(release);
+  }
+
+  /**
+   * Everything this instance takes from the story it was created to mount, resolved once here:
+   * the story's own context entries applied, the media base and CSRF getter every mounted story
+   * gets, the id its one-story invariant is checked against, its manifest entry, and its shell
+   * payload. One call, so the containment listeners have one failure path to be released on.
+   */
+  function resolveMount() {
+    try {
+      // Context application runs once, during initialization: setContext must be called while this
+      // component is being created, so the story's own value (read once here, since a story does not
+      // change identity across ReproContext's lifetime) is enough. untrack makes that one-time read
+      // explicit rather than leaving it a warned-about accident of reading a prop outside a tracking
+      // context.
+      const storyContext = untrack(() => story.context);
+      if (storyContext) {
+        for (const key of Reflect.ownKeys(storyContext)) {
+          setContext(key, storyContext[key]);
+        }
+      }
+
+      // Unconditional: every mounted story's media surfaces resolve their base through this context
+      // rather than the real admin's hardcoded default, and every mounted story's CSRF-reading form
+      // gets a getter. A shell-hosted story's own CairnAdminShell instance sets a more specific CSRF
+      // getter for its own descendants (from its fixture `data.csrf`), which simply shadows this one.
+      setContext(MEDIA_BASE_CONTEXT_KEY, fixtureMediaBase);
+      setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf);
+
+      // The id of the story this instance was created to mount, read once and never again:
+      // everything this function resolves (the context above, the manifest entry, the shell payload)
+      // is resolved for THIS story only. The guard effect below is what makes that an enforced
+      // invariant rather than an assumption a caller could quietly violate by swapping the `story`
+      // prop in place.
+      const mountedStoryId = untrack(() => story.id);
+
+      const manifestEntry = untrack(() => manifest.find((entry) => entry.id === story.id));
+
+      // The shell payload every `host: 'shell'` story mounts against: one signed-in editor, the
+      // worked navLayout example, the office default pathname, a resolved-null pending set, and
+      // `story.shellData`'s fields laid over that default. `data.theme` is the SSR seed
+      // CairnAdminShell reads untracked; `themeOverride` is what actually drives the render, so this
+      // field's own value never shows through.
+      //
+      // The merge is read once, non-reactively (the same `untrack` precedent this field used for the
+      // pathname before `shellData` existed), and the whole object below is computed exactly once
+      // during initialization rather than derived: CairnAdminShell runs its own `$effect` that reads
+      // `shell?.pathname` off this `data` prop and closes the posed publish dialog on any change to it
+      // (sweep finding 9). A `$derived` here would re-run that effect on every one of ReproContext's
+      // own reactive updates (a theme flip, for instance) and silently undo `publish/pending-list`'s
+      // pose the moment a capture read it.
+      const shellOverride = untrack(() => story.shellData);
+      const shellData: Extract<AdminShellData, { public: false }> = {
+        public: false,
+        siteName: fixtureSiteName,
+        user: {
+          displayName: fixtureEditor.displayName,
+          email: fixtureEditor.email,
+          role: fixtureEditor.role,
+          capability: fixtureEditor.capability,
+        },
+        concepts: [{ id: fixtureConcept.id, label: fixtureConcept.label }],
+        nav: fixtureNavLayout,
+        pathname: `/admin/${fixtureConcept.id}`,
+        theme: 'cairn-admin',
+        collapsedNav: null,
+        csrf: fixtureCsrf,
+        pendingEntries: Promise.resolve(null),
+        attention: {},
+        ...definedOnly(shellOverride),
+      };
+
+      return { mountedStoryId, manifestEntry, shellData };
+    } catch (error) {
+      // The containment listeners above are live from the instance body, while their onDestroy
+      // teardown is not: Svelte compiles onDestroy to a mount effect whose return value is the
+      // cleanup, so nothing can remove them until effects flush. A throw in that window (a story
+      // whose own init fails, a fixture that does not resolve) aborts the mount with the focus
+      // firewall and five window capture listeners installed and no handle left on them, which
+      // costs the document its keyboard, pointer, and drag handling for the rest of its life.
+      // Release them, then rethrow: swallowing the error would hide the defect that caused it.
+      release?.();
+      throw error;
     }
   }
 
-  // Unconditional: every mounted story's media surfaces resolve their base through this context
-  // rather than the real admin's hardcoded default, and every mounted story's CSRF-reading form
-  // gets a getter. A shell-hosted story's own CairnAdminShell instance sets a more specific CSRF
-  // getter for its own descendants (from its fixture `data.csrf`), which simply shadows this one.
-  setContext(MEDIA_BASE_CONTEXT_KEY, fixtureMediaBase);
-  setContext(CSRF_CONTEXT_KEY, () => fixtureCsrf);
+  const { mountedStoryId, manifestEntry, shellData } = resolveMount();
 
-  // The id of the story this instance was created to mount, read once and never again: everything
-  // below (context, the manifest entry, the shell payload) is resolved for THIS story only. The
-  // guard effect below is what makes that an enforced invariant rather than an assumption a caller
-  // could quietly violate by swapping the `story` prop in place.
-  const mountedStoryId = untrack(() => story.id);
-
-  // One ReproContext instance mounts exactly one story for its lifetime; the init-time reads above
-  // and the untracked shell payload below are only correct under that invariant. A consumer that
+  // One ReproContext instance mounts exactly one story for its lifetime; every read `resolveMount`
+  // makes, including the untracked shell payload, is only correct under that invariant. A consumer that
   // reuses one instance across a story change (SvelteKit reusing a `/repro/[id]` page component
   // across a param change, for instance) would otherwise silently keep the previous story's
   // context, manifest entry, and shell payload while swapping in the new story's component. Throw
@@ -79,8 +254,6 @@ inside a host that happens to provide a root.
       );
     }
   });
-
-  const manifestEntry = untrack(() => manifest.find((entry) => entry.id === story.id));
 
   /**
    * `props` with the resolved theme merged into its `data` field, for a `bare` story that owns its
@@ -126,42 +299,13 @@ inside a host that happens to provide a root.
   const bareProps = $derived(
     story.host === 'bare' && ownThemeRoot ? withTheme(story.props, resolvedTheme) : story.props,
   );
-
-  // The shell payload every `host: 'shell'` story mounts against: one signed-in editor, the
-  // worked navLayout example, the office default pathname, a resolved-null pending set, and
-  // `story.shellData`'s fields laid over that default. `data.theme` is the SSR seed
-  // CairnAdminShell reads untracked; `themeOverride` is what actually drives the render, so this
-  // field's own value never shows through.
-  //
-  // The merge is read once, non-reactively (the same `untrack` precedent this field used for the
-  // pathname before `shellData` existed), and the whole object below is computed exactly once
-  // during initialization rather than derived: CairnAdminShell runs its own `$effect` that reads
-  // `shell?.pathname` off this `data` prop and closes the posed publish dialog on any change to it
-  // (sweep finding 9). A `$derived` here would re-run that effect on every one of ReproContext's
-  // own reactive updates (a theme flip, for instance) and silently undo `publish/pending-list`'s
-  // pose the moment a capture read it.
-  const shellOverride = untrack(() => story.shellData);
-  const shellData: Extract<AdminShellData, { public: false }> = {
-    public: false,
-    siteName: fixtureSiteName,
-    user: {
-      displayName: fixtureEditor.displayName,
-      email: fixtureEditor.email,
-      role: fixtureEditor.role,
-      capability: fixtureEditor.capability,
-    },
-    concepts: [{ id: fixtureConcept.id, label: fixtureConcept.label }],
-    nav: fixtureNavLayout,
-    pathname: `/admin/${fixtureConcept.id}`,
-    theme: 'cairn-admin',
-    collapsedNav: null,
-    csrf: fixtureCsrf,
-    pendingEntries: Promise.resolve(null),
-    attention: {},
-    ...definedOnly(shellOverride),
-  };
 </script>
 
+<!-- The containment wrapper every host branch below renders inside. It carries `inert`, which
+     reaches every flat-tree descendant regardless of layout, and the attribute the focus firewall
+     above scopes itself by. Deliberately not `[data-repro-root]`: that is the consuming route's own
+     theme-flip hook, it sits outside this wrapper, and it must keep working. -->
+<div data-cairn-picture inert>
 {#if story.host === 'shell'}
   <CairnAdminShell data={shellData} themeOverride={resolvedTheme}>
     <story.component {...story.props} />
@@ -186,3 +330,16 @@ inside a host that happens to provide a root.
     </div>
   </div>
 {/if}
+</div>
+
+<style>
+  /* The wrapper must generate no box. Two of the three branches above (a `shell` story and the two
+     auth pages) render with no wrapper of their own, so a block here would insert a layout box the
+     real admin does not have, and the mounted story would no longer be the flex or grid item its
+     host gave it. `inert` is not layout-dependent, so it still applies to every flat-tree
+     descendant. Scoped here rather than in cairn-admin.css, which ships to consumer sites and must
+     not carry a reproduction-only rule. */
+  [data-cairn-picture] {
+    display: contents;
+  }
+</style>

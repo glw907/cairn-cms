@@ -38,7 +38,6 @@ Before you start, the honest cost picture.
 
 Building and running this site is free, and stays free.
 [...]
-All in, a small site on its own domain runs about $6 a month.
 ```
 
 Then it asks four short questions: your site's name, an optional one-line description, an

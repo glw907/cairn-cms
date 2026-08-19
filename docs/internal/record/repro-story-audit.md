@@ -624,3 +624,41 @@ The bands used, and why:
   overflow menu. Narrow is taller because the phone face puts the bar at the bottom of the shell
   viewport, so the render has to contain the whole short screen for the bar to sit where it really
   sits.
+
+## Containment, and the one fidelity change it costs
+
+Seam Pass 2 moved containment into `ReproContext` itself (the ratified design is
+`docs/internal/record/2026-08-18-repro-containment-design.md`). A mounted story is inert from first
+paint, a modal dialog a story opens is marked inert as it opens, and five window-level event types
+are stopped before any handler sees them.
+
+One thing about the picture changes, in seven of the 25 rows, and it is recorded here rather than
+denied. `cairn-admin.css:519` paints `outline: 2px solid var(--color-primary)` at `2px` offset on
+any `:focus-visible` element under either admin theme root, and both `showModal()` and a plain
+programmatic `.focus()` flip `:focus-visible` to true with no prior real user interaction. A
+reproduction frame receives no real user interaction, so every one of these seven sat in the
+keyboard-focus branch and painted the ring. Containment removes it, because nothing ends up focused.
+
+| Story | Focused by | What loses the ring |
+|---|---|---|
+| `editor/tidy-review` | `TidyReview.svelte:163` `showModal()` | the "Cancel review" icon button |
+| `publish/pending-list` | `CairnAdminShell.svelte:678` `showModal()` | the dialog header's Close button |
+| `media/lead-picture-dialog` | `MediaHeroField.svelte:202` `showModal()` | the dialog header's Close button |
+| `media/delete-in-use` | `CairnMediaLibrary.svelte:305` `showModal()` | the first in-use entry's link, in the alertdialog's "These would break" list |
+| `editor/details-panel` | `EditPage.svelte:1080` `detailsClose?.focus()` | the panel's Close X |
+| `media/details-panel` | `CairnMediaLibrary.svelte:261` `closeButton?.focus()` | the slide-over close |
+| `media/insert-panel` | `MediaInsertPopover.svelte:145` `panel?.focus()` | the whole panel container, which carries `tabindex="-1"`; the largest single delta in the set |
+
+The direction the change runs is not obvious and matters. A real mouse user opening Tidy or the
+Details panel sees no ring, because a trusted pointer interaction flips `:focus-visible` off. So
+these seven reproductions used to show the KEYBOARD face of each screen, and containment flips all
+seven to the MOUSE face. That is arguably the more faithful picture, since a reader arriving at a
+docs page has not tabbed into anything. It is still a change, so: **alt text and captions authored
+later against any of these seven must not describe a focus ring.**
+
+`src/tests/component/reproductions-containment.test.ts` holds the claim to a falsifiable form, one
+case per row: the element named above is still in the mounted container, and the container matches
+no `:focus-visible` element. The first assertion is what makes the case discriminate, since a
+container that rendered nothing at all matches no `:focus-visible` element either. If a future
+change re-introduces a focused control in one of these stories, that case fails and this table is
+what gets corrected.

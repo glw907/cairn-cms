@@ -121,24 +121,18 @@ double-duty half recorded there as already decided (accepted, drift tracked in a
 caption) rather than filed as an open question. Every filed entry carries its own file:line
 evidence and needs no cross-reference back here.
 
-CLOSED 2026-08-18 by this pass's triage (Task A8b), except the cost-preamble finding, held live
-below pending a browser glance only Geoff can take. Of the eleven backfill findings: the
+CLOSED 2026-08-18 by this pass's triage (Task A8b). Of the eleven backfill findings: the
 commit-attribution mismatch, the free-tier bundle-size gap, the same-name resource collision, and
 the unexplained `guard.rejected` build refusal filed to `ROADMAP.md`'s Now tier; the missing
 `cairn-doctor` Builds check, the bootstrap token-contract duplication, and the revert-refusal copy
 plus missing `history_stale` detector filed to its Next tier; the externally-registered-domain gap
 filed to its Later tier; the tool-prose-doesn't-know-the-run's-state finding folded into the
-existing ROADMAP entry that already names that root (the scaffold hand-over defect); and the
-Windows finding is DONE, already ruled and disclosed 2026-08-18, with the Go successor tool's
+existing ROADMAP entry that already names that root (the scaffold hand-over defect); the
+cost-preamble finding is DONE, closed 2026-08-18 by hedging the total rather than by taking the
+glance, in `packages/create-cairn-site/src/money.mjs` and in `docs/admin/before-you-start.md`, both
+of which now name the certificate question as unconfirmed and point an owner at the first bill; and
+the Windows finding is DONE, already ruled and disclosed 2026-08-18, with the Go successor tool's
 Platforms section carrying it forward. New findings start fresh below this line.
-
-- **The cost preamble ships the inference its own research refused to ship.** `admin`.
-  `packages/create-cairn-site/src/money.mjs:41` states "All in, a small site on its own domain runs about
-  $6 a month" with no hedge. The T4b cost research left the Advanced Certificate Manager line item open
-  and wrote, of that exact number, "I will not put an inference in owner-facing money copy", pricing the
-  downside at $10/month if the question resolved against us. The copy shipped anyway and the question
-  appears in no live tracking doc, including STATUS's hand steps, where comparable one-glance checks do
-  live. Two cheap dispositions close it: take the glance, or hedge the line until someone does.
 
 **Three carry-forwards were audited and judged not worth filing**, recorded here so they are not
 re-mined: `packages/create-cairn-site` having neither a comment nor a type gate (the package is plain JS

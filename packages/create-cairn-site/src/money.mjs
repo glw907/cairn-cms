@@ -20,7 +20,9 @@ const REGISTRAR_URL = 'https://www.cloudflare.com/products/registrar/';
 
 /**
  * Build the cost preamble: the four things an owner needs to know about money before starting,
- * in order, each figure dated and linked.
+ * in order, each figure dated and linked, then the one line item nobody has confirmed. The
+ * certificate question was open when the figures were researched and is open still, so the total
+ * is stated as the sum of what is known rather than as the whole bill.
  * @returns {string} the preamble, ready to print as one block
  */
 export function costPreamble() {
@@ -38,7 +40,11 @@ export function costPreamble() {
       'it is needed once anyone other than you signs in, and it is billed once per account, ' +
       `not once per site (${AS_OF}, ${WORKERS_PRICING_URL}).`,
     '',
-    'All in, a small site on its own domain runs about $6 a month.',
+    'Those two together come to about $6 a month for a small site on its own domain.',
+    '',
+    'One more item is not confirmed. Putting your site on your own domain issues a certificate ' +
+      'for that domain, and Cloudflare does not say whether that certificate is included in your ' +
+      `plan or charged as an add-on (${AS_OF}). Your first bill is where it would show up.`,
   ].join('\n');
 }
 

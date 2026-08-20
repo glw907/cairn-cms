@@ -2,6 +2,23 @@
 
 ### Changed
 
+- `npm run link:consumer -- <site-dir>` points a consumer site at a local engine build, and
+  `--restore` puts it back on a registry range. It builds, packs, installs, and then verifies every
+  file in the consumer's installed copy against the tarball it just built. Both directions matter:
+  a `file:` path cannot merge, so the un-pin has to be as cheap as the pin. It exists because the
+  hand loop walks into a trap that survives a green install. `npm pack` derives the tarball name
+  from the version, so re-packing changed code at one version reuses the filename, and a later plain
+  `npm install` restores the older build from npm's content-addressed cache. Reproduced 2026-08-20:
+  a tarball built with a change removed still installed the changed build, with npm reporting "up to
+  date". Each pack is now named with a hash of its own contents, so a filename cannot outlive its
+  bytes, and the file-by-file comparison fails loud rather than trusting npm's exit code. Pruning
+  old packs matches the digest suffix rather than the package stem, so it can only delete tarballs
+  this script wrote: a hand-packed one carries no digest and is never swept, which matters because
+  cairn-pub pins `glw907-cairn-cms-0.95.0-rc.1.tgz` by absolute path and a prune that took it would
+  break that repo's install with no signal here. The stem alone would also be unsafe, since
+  `glw907-cairn-cms-` is a prefix of `glw907-cairn-cms-dev-`. Internal development tooling; it ships
+  in no tarball. Consumers must: nothing.
+
 - The Waymark deploy template moved into this repository at `templates/waymark/`, and the
   cross-repo sync that maintained a separate `glw907/cairn-waymark-template` is deleted. Cloudflare's
   deploy-buttons documentation allows a button URL to name a subdirectory, and their own template

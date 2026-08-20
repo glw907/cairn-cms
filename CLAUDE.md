@@ -230,20 +230,16 @@ current when the design language changes, the same as any other doc.
 When troubleshooting a deployed or local cairn site's runtime behavior, read the structured logs
 before reaching for `console.log` or guesswork. The engine emits a JSON record for every operationally
 meaningful event through one internal chokepoint, `src/lib/log/`. Each record carries an envelope
-(`level`, `event`, `timestamp`) and event-specific fields. The vocabulary covers the auth flow
-(`auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`, `auth.token.confirmed`,
-`auth.session.created`, `auth.session.destroyed`), the commit pipeline (`commit.succeeded`,
-`commit.failed`), and the admin guard's pre-resolve refusals (`guard.rejected` with a `reason` of
-`csrf`, `origin`, `https`, or `bindings`). The full table, with each event's trigger and fields, is
-[`docs/reference/log-events.md`](docs/reference/log-events.md).
+(`level`, `event`, `timestamp`) plus event-specific fields. The full table, with every event's
+trigger and fields, is [`docs/reference/log-events.md`](docs/reference/log-events.md).
 
-Map the symptom to its event. An admin who cannot sign in points at `auth.link.send_failed` or a
-`guard.rejected` with its `reason`. A save that does nothing points at `commit.failed`: a `reason` of
-`conflict` is a stale-edit collision, and an `error` field is the GitHub failure to act on. On
-Cloudflare the query surface is Workers Logs, which a site turns on with `observability.enabled = true`
-in `wrangler.jsonc`; filter by `event` or by `editor`. The operator how-to opens
-[`docs/admin/troubleshooting.md`](docs/admin/troubleshooting.md). The records carry an editor's email
-for attribution and never a token or a session id, so a log is safe to read and paste.
+Map the symptom to its event. An admin who cannot sign in points at a send-failure or a guard
+rejection; check the `reason` field. A save that does nothing points at a commit failure: a
+`conflict` reason is a stale-edit collision, and an `error` field is the GitHub failure to act on.
+On Cloudflare the query surface is Workers Logs, which a site turns on with
+`observability.enabled = true` in `wrangler.jsonc`; filter by `event` or by `editor`. The operator
+how-to opens [`docs/admin/troubleshooting.md`](docs/admin/troubleshooting.md). The records carry an
+editor's email for attribution and never a token or a session id, so a log is safe to read and paste.
 
 When a pass adds a diagnosable code path, give it an event in the vocabulary rather than a bare
 `console` call, and update the reference table in the same pass. The logger is internal (exported from
@@ -251,21 +247,28 @@ no package subpath), so its API is free to grow; the event names are the public-
 
 ## Durable gotcha (Cloudflare email)
 
-**Two surfaces, two error vocabularies; the `E_` table does not cross between them.** The binding
+Two surfaces, two error vocabularies; the `E_` table does not cross between them. The binding
 `env.EMAIL.send({...})` throws `E_SENDER_NOT_VERIFIED`, the same string Routing uses for an
-unverified destination (how the ecxc outage hid), and `src/lib/email.ts` parses that. The REST
-send (`POST /accounts/{id}/email/sending/send`) throws no `E_` codes: **two codes, `10203` and
-`10204` (both HTTP 403), cover an unready sender (never onboarded, or still propagating)**;
-`10204` appeared only on never-onboarded domains. Elapsed time since onboarding is the only
-discriminator. `cloudflare:email`'s `EmailMessage` is *Routing*'s forward call, verified
-destinations only.
+unverified destination, which is how the ecxc outage hid; `src/lib/email.ts` parses that. The
+REST send (`POST /accounts/{id}/email/sending/send`) throws no `E_` codes: `10203` and `10204`
+(both HTTP 403) cover an unready sender, never onboarded or still propagating. Elapsed time since
+onboarding is the only discriminator.
 
-**Onboarding** is `wrangler email sending enable <domain>` or `POST
-/zones/{zoneId}/email/sending/subdomains` with the zone's **apex** name; no dashboard visit, and
-the create reports `enabled: true` at once. Arbitrary recipients need Workers Paid. It writes the
-`cf-bounce` MX, SPF, and DKIM plus an apex DMARC at `p=reject`, leaving the domain's own mail
-records alone, and deleting the subdomain **leaves that `p=reject` record behind**. Measured
-propagation and every captured body: `docs/internal/2026-08-11-t4b-email-spike.md`.
+Onboarding is `wrangler email sending enable <domain>` with the zone's apex name; arbitrary
+recipients need Workers Paid. It writes DNS records including an apex DMARC at `p=reject`, and
+deleting the subdomain leaves that record behind. Full detail, measured propagation, and every
+captured body: `docs/internal/2026-08-11-t4b-email-spike.md`.
+
+## Pointing a consumer at unreleased engine work
+
+`npm run link:consumer -- <site-dir>` builds, packs, installs, and verifies; `--restore` puts the
+site back on `^<version>` from the registry. A `file:` path cannot merge, so the un-pin has to be
+as cheap as the pin.
+
+It exists because `npm pack` derives the tarball name from the version, so re-packing changed code
+reuses the filename, and a later plain `npm install` can serve the OLD build from npm's cache while
+printing "up to date." The script content-hashes each pack and verifies every installed file
+against it.
 
 ## Durable gotcha (a worktree showcase e2e proves MAIN's engine)
 

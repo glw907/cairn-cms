@@ -155,10 +155,19 @@ to the `0.95.0-rc.1` tarball, and the break is a type error rather than a silent
 the engine through `"@glw907/cairn-cms": "file:/home/glw907/Projects/cairn-scratch/glw907-cairn-cms-0.95.0-rc.1.tgz"`,
 an absolute local path recorded as such in the lockfile, because the published `0.95.0-rc.1` predates
 all of this and carries no `reproductions` subpath. **That branch must not merge while the pin
-stands**; release one's registry bump is the un-pin. If anyone re-packs the engine, note that the
-tarball keeps its version-derived filename, so a plain `npm install` restores the OLD build from
-npm's content-addressed cache and the change appears to do nothing. Re-install by explicit path
-instead.
+stands**; `0.95.0` on the registry is the un-pin, and it carries the `reproductions` subpath the pin
+existed to supply.
+
+**Do both halves with `npm run link:consumer` (2026-08-20) rather than by hand.**
+`npm run link:consumer -- ~/Projects/cairn-pub` builds, packs, installs, and then verifies every
+file in the consumer's installed copy against the tarball; `--restore` puts it back on `^<version>`
+from the registry and refuses to report success unless the lockfile resolves to an `https://` URL.
+The verification is the point. `npm pack` names a tarball from the version, so re-packing changed
+code at one version reuses the filename, and a later plain `npm install` restores the OLD build out
+of npm's content-addressed cache. Reproduced 2026-08-20: a tarball with the change removed still
+installed the changed build, with npm printing "up to date". The script names each pack with a hash
+of its own contents, so a filename cannot outlive its bytes, and it fails loud if the installed tree
+ever disagrees with the tarball.
 
 **Gate state at the close.** In cairn-pub: `npm run check` 0 errors across 850 files, `npm test`
 exit 0, `npm run build` exit 0, 25 of 25 story pages emitting HTML, and the probe reporting 21 checks

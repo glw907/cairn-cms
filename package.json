@@ -75,7 +75,8 @@
     "test:emit": "node --test scripts/build/emit-template.test.mjs",
     "design:mockup-css": "npm run package && node scripts/build/build-mockup-css.mjs",
     "emit:template": "node packages/create-cairn-site/scripts/emit-template-dir.mjs",
-    "check:template": "node packages/create-cairn-site/scripts/emit-template-dir.mjs --check"
+    "check:template": "node packages/create-cairn-site/scripts/emit-template-dir.mjs --check",
+    "link:consumer": "node scripts/lab/link-consumer.mjs"
   },
   "exports": {
     ".": {

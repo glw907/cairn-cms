@@ -140,6 +140,16 @@
   `cairn-btn-guarded` and `cursor-not-allowed`, the same guarded pattern as Figure, and keeps its
   tooltip reachable at every pointer. Consumers must: nothing.
 
+- A delete refusal no longer names the concept in the plural where the sentence wants the singular.
+  The showcase's Posts concept read "This posts could not be deleted."; both the concept list's
+  banner and the editor's own copy of the same refusal interpolated `label`, the concept's plural
+  noun, into a singular sentence. `EditData` gains a `singular` field (mirroring `ListData.singular`,
+  populated the same way from the descriptor's own default to `label`), and all four call sites
+  across `ConceptList` and `EditPage` now read the singular. Consumers must: nothing. Every site
+  reaches `EditData` through `editLoad` (whether wrapped by `createCairnAdmin` or called directly
+  through the advanced `createContentRoutes` seam), never by hand-assembling the edit payload, so
+  the new field arrives populated on upgrade with no site-side change.
+
 ## 0.95.0-rc.1
 
 <!-- release-size: minor -->

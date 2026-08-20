@@ -179,6 +179,11 @@ export interface EditData {
   conceptId: string;
   id: string;
   label: string;
+  /**
+   * The singular noun for the delete refusal's copy ("This post could not be deleted."); from the
+   *  descriptor, which defaults it to `label`, mirroring {@link ListData.singular}.
+   */
+  singular: string;
   fields: NamedField[];
   frontmatter: Record<string, unknown>;
   body: string;
@@ -1074,6 +1079,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       conceptId: concept.id,
       id,
       label: concept.label,
+      singular: concept.singular,
       fields: editFields,
       frontmatter: formValues(editFields, loadFrontmatter),
       body: parsed.body,

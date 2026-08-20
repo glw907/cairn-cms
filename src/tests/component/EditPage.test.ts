@@ -65,6 +65,7 @@ function postProps(over = {}) {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
+      singular: 'Post',
       fields: [
         { type: 'text', name: 'title', label: 'Title', required: true },
         { type: 'date', name: 'date', label: 'Date' },
@@ -766,6 +767,8 @@ describe('EditPage', () => {
   });
 
   it('surfaces a refused delete naming the new linkers', async () => {
+    // `singular` ("Post") set apart from `label` ("Posts") makes a wrong plural-noun render
+    // unambiguous: task 3's defect rendered "This posts could not be deleted."
     const props = postProps();
     (props as Record<string, unknown>).form = {
       error: 'Cannot delete 2026-05-hi: 1 page links to it.',
@@ -774,7 +777,7 @@ describe('EditPage', () => {
     };
     const screen = render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
-      (el.textContent ?? '').includes('could not be deleted'),
+      (el.textContent ?? '').includes('This post could not be deleted.'),
     );
     expect(banner).toBeTruthy();
     expect(banner!.textContent ?? '').toContain('Post B');
@@ -783,7 +786,9 @@ describe('EditPage', () => {
   });
 
   it('surfaces a refused fragment delete with inclusion-naming copy', async () => {
-    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragment' });
+    // `label` plural ("Fragments") against `singular` ("Fragment") makes a wrong plural-noun
+    // render unambiguous, the same defect the post-concept case above pins.
+    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragments', singular: 'Fragment' });
     (props as Record<string, unknown>).form = {
       error: 'Cannot delete welcome: 1 entry includes it. Remove the include first.',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
@@ -792,7 +797,7 @@ describe('EditPage', () => {
     };
     const screen = render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
-      (el.textContent ?? '').includes('could not be deleted'),
+      (el.textContent ?? '').includes('This fragment could not be deleted.'),
     );
     expect(banner).toBeTruthy();
     expect(banner!.textContent ?? '').toMatch(/1 entry includes it/i);
@@ -807,7 +812,7 @@ describe('EditPage', () => {
     // The links gate runs before the fragments gate, and a fragment can itself be a link target, so
     // the concept alone does not identify the blocker. The copy follows the refusal's own kind;
     // naming an include here would send the author hunting for one that does not exist.
-    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragment' });
+    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragments', singular: 'Fragment' });
     (props as Record<string, unknown>).form = {
       error: 'Cannot delete welcome: 1 page links to it.',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
@@ -815,8 +820,9 @@ describe('EditPage', () => {
     };
     const screen = render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
-      (el.textContent ?? '').includes('could not be deleted'),
+      (el.textContent ?? '').includes('This fragment could not be deleted.'),
     );
+    expect(banner).toBeTruthy();
     expect(banner!.textContent ?? '').toMatch(/link to it/i);
     expect(banner!.textContent ?? '').not.toMatch(/includes it/i);
     expect(banner!.textContent ?? '').not.toMatch(/remove the include first/i);

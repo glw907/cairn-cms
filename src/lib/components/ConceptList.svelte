@@ -252,7 +252,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       deleteRefused.inboundKind === 'include'
         ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
         : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
-    return `This ${data.label.toLowerCase()} could not be deleted. ${blocker}`;
+    return `This ${(data.singular ?? data.label).toLowerCase()} could not be deleted. ${blocker}`;
   });
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
@@ -313,7 +313,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
        so the author sees why without re-opening a dialog. The polite region above announces it, so
        the box itself carries no role or label (a bare div with an aria-label gets no accessible name). -->
   <div class="alert alert-error mb-4 flex-col items-start type-body">
-    <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
+    <p class="font-medium">This {(data.singular ?? data.label).toLowerCase()} could not be deleted.</p>
     {#if deleteRefused.inboundKind === 'include'}
       <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
     {:else}

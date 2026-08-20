@@ -1393,7 +1393,7 @@ persistent "?" carries Markdown help, design-arc D2).
       const detail = deleteRefusedByInclusion
         ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
         : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
-      return `This ${data.label.toLowerCase()} could not be deleted. ${detail}`;
+      return `This ${data.singular.toLowerCase()} could not be deleted. ${detail}`;
     }
     if (visibleBrokenLinks.length) {
       const count = visibleBrokenLinks.length;
@@ -1876,7 +1876,7 @@ persistent "?" carries Markdown help, design-arc D2).
 {/if}
 {#if deleteRefusedLinks.length}
   <div class="alert alert-error mb-4 flex-col items-start type-body">
-    <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
+    <p class="font-medium">This {data.singular.toLowerCase()} could not be deleted.</p>
     {#if deleteRefusedByInclusion}
       <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
     {:else}

@@ -23,6 +23,7 @@ function props() {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
+      singular: 'Post',
       fields,
       frontmatter: {
         count: '3',

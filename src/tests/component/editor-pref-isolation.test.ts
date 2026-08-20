@@ -20,6 +20,7 @@ function postProps() {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
+      singular: 'Post',
       fields: [{ type: 'text', name: 'title', label: 'Title', required: true }] satisfies NamedField[],
       frontmatter: { title: 'Hello', date: '2026-05-01', draft: false },
       body: 'The body.',

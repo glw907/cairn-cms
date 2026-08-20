@@ -25,6 +25,7 @@ function props(overrides: Record<string, unknown> = {}) {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
+      singular: 'Post',
       fields: schema,
       frontmatter: { title: 'Hello' },
       body: BODY,

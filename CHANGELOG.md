@@ -160,6 +160,19 @@
   where a `Record<string, unknown>` was expected, gets a compile error and should read the field by
   name or narrow explicitly; the parser was already refusing that same unknown key at runtime.
 
+- `docs/admin/create-your-site.md` claimed the Worker `create-cairn-site` deploys runs entirely on
+  Cloudflare's free plan. It does not: a default site's built bundle already runs over Cloudflare's
+  3 MiB (3,145,728-byte) Workers Free script limit (measured 2026-08-19: 3,246,163 bytes gzipped,
+  about 100 KB over), so the Worker itself needs Workers Paid, $5 a month, independent of the
+  sign-in-email boundary `docs/admin/before-you-start.md` already documents. The page now says so
+  plainly, and `docs/admin/own-your-domain.md`'s domain-connection cost, which is genuinely free
+  regardless of the Worker's own plan, now points a reader at that fact instead of standing alone
+  and inviting the wrong generalization. The e2e workflow's bundle-size step gains a matching
+  free-tier threshold that warns (never fails) whenever the gzipped bundle crosses that same 3 MiB
+  line, so the overage stays visible in every CI run instead of only in a doc someone might not
+  reread. Consumers must: know that a default cairn site needs Cloudflare's Workers Paid plan
+  ($5/month) to deploy at all, not only once a second person needs to sign in.
+
 ## 0.95.0-rc.1
 
 <!-- release-size: minor -->

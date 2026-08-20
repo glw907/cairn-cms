@@ -20,9 +20,10 @@ step here fails or gets interrupted.
 ## Connect your domain
 
 You need a domain already registered, at any registrar, before you start; this step connects one
-you already own, it doesn't sell you one. Connecting it costs nothing: creating the Cloudflare
-zone, Cloudflare's own name for the settings and records it holds on your domain's behalf, and
-the connection both run on the free plan.
+you already own, it doesn't sell you one. Connecting it costs nothing on its own: creating the
+Cloudflare zone, Cloudflare's own name for the settings and records it holds on your domain's
+behalf, and the connection both run on the free plan, separately from what the Worker itself
+needs (see [Getting your site onto Cloudflare](./create-your-site.md#getting-your-site-onto-cloudflare)).
 
 The tool asks: **Connect a domain you own to this site now?** Say yes and name your domain, and
 it opens Cloudflare's own "create token" page with five permissions already selected: Zone, DNS,

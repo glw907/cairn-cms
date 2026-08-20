@@ -87,9 +87,12 @@ aren't signed in already), and deploys. This creates, on your own Cloudflare acc
   builds on your site later.
 - One storage bucket for images.
 
-All of this runs on Cloudflare's free plan; nothing in this step costs money. Your content itself
-isn't in either database: it's the markdown files already sitting in the GitHub repository the
-previous step created. The tool then moves
+The Worker needs Cloudflare's Workers Paid plan, $5 a month, because the site's built code is
+bigger than Cloudflare allows on its free plan (as of 2026-08-19,
+https://developers.cloudflare.com/workers/platform/limits/). The two databases, the storage
+bucket, and the GitHub repository from the step before all cost nothing at this scale. Your
+content itself isn't in either database: it's the markdown files already sitting in the GitHub
+repository the previous step created. The tool then moves
 your GitHub App's private key off your machine and into a Cloudflare Worker secret, where it
 stays, and asks for the email address you'll sign in with. Once you answer, it writes your owner
 record straight into your new site's database and opens a sign-in page in your browser. This is

@@ -4,6 +4,11 @@
   "description": "Local-development fake backend for cairn-cms sites. Never install in production.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/glw907/cairn-cms.git",
+    "directory": "packages/cairn-cms-dev"
+  },
   "engines": {
     "node": ">=22.13.0"
   },

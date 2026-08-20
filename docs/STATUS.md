@@ -34,6 +34,14 @@ sites, the editors rewrite runs in `~/Projects/cairn-pub` on `pass-d-docs-tracks
 is unchanged and sits further down this file. That branch's `file:` tarball pin is now un-pinnable
 against the registry: `0.95.0` carries the `reproductions` subpath the pin existed to supply.
 
+**Parallel track opened 2026-08-20: the Go `cairn` tool, sub-project 1.** Design approved by
+Geoff in a Fable brainstorm and written to
+`docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md` (chapter spine ported as Go
+types, read-only health HUD with adopt-to-watch, poplar's architecture and design language, split
+credential model, `tool/` in-repo with a three-platform matrix). Next step on that track: the
+implementation plan via `superpowers:writing-plans`, then execution in a fresh Opus 5 session. It
+does not block the site updates or the editors rewrite.
+
 ### Three things the cut decided, and one it could not
 
 **`create-cairn-site` HELD, not shipped.** It has never published (`npm view` 404s), so holding

@@ -15,60 +15,69 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-19 night: cut the release)
+## Immediate next action (2026-08-20: the release is CUT and PUBLISHED)
 
-**The release-debt pass is DONE, MERGED to `main`, and the release is next.** All six
-consumer-facing defects are closed: thirteen commits `8832920b` through `0585150e`, merged as
-`b179e6c6`, full CI-derived gate list green, `npm test` exit 0 at 426 files and 5664 tests. No
-version bump, no publish: the cut is a separate deliberate act. Post-mortem, evidence, and every
-decision: `docs/superpowers/plans/2026-08-19-release-debt-pass.md`.
+**`0.95.0` is on npm.** Both packages serve it on the `latest` dist-tag: `@glw907/cairn-cms@0.95.0`
+and `@glw907/cairn-cms-dev@0.95.0`. GitHub release `v0.95.0` is cut against `main` at `e0033063`,
+and its body carries every `Consumers must:` line in the window since `0.94.0`. The window promotes
+`0.95.0-rc.1`, which only ever reached the `next` tag, so a site coming from `0.94.0` crosses both
+changelog sections; `docs/extend/migration-notes.md` says so at the top of its `0.95.0` entry.
 
-**`main` is merged but NOT pushed: 15 commits ahead of `origin/main`.** Push before cutting, since
-`gh release create --target main` fires the OIDC publish workflow against the remote, which cannot
-see an unpushed commit. The `release-debt` branch and its worktree are already pruned and nothing
-branches from them; the two `wayfinder-*` worktrees are unrelated and untouched by this pass.
+All five CI workflows were green at the release commit before the tag (`test`, `e2e`, `design`,
+`scaffold`, `create-site`), and the four doc gates plus Vale were re-run locally after the heading
+rename.
 
-Verified on `main` after the merge, not merely on the branch: the CI-derived gate list green and
-`npm test` exit 0 at 426 files and 5664 tests.
+**Immediate next action: Geoff updates the consumer sites** to `^0.95.0`, per his 2026-08-19
+sequencing (release-debt pass -> release -> site updates -> live site work with the docs updated in
+parallel). Publish precedes any site code importing new exports, which is now satisfied. After the
+sites, the editors rewrite runs in `~/Projects/cairn-pub` on `pass-d-docs-tracks`; its launch prompt
+is unchanged and sits further down this file. That branch's `file:` tarball pin is now un-pinnable
+against the registry: `0.95.0` carries the `reproductions` subpath the pin existed to supply.
 
-**Immediate next action: invoke the `cairn-release` skill** to cut the release from `main`. Launch
-from `~/Projects/cairn-cms`. Geoff's sequencing (2026-08-19): this pass, then the release, then he
-updates all current sites, then live site work with the docs updated in parallel. This supersedes
-the 2026-08-15 "release one waits for the visual layer" ruling, which is left below as the record of
-what it replaced.
+### Three things the cut decided, and one it could not
 
-### What the cut must decide, and what this pass added to that decision
+**`create-cairn-site` HELD, not shipped.** It has never published (`npm view` 404s), so holding
+breaks nobody, and shipping it would strand a reader: a first run cannot succeed with the App on
+"Only select repositories", and a failed run's resume refuses to continue because the repository the
+tool itself created already exists, with recovery needing a `delete_repo` permission the reader may
+not have. Its cost-narrative plan is drafted and NOT approved
+(`docs/superpowers/plans/2026-08-20-cli-cost-narrative-pass.md`, two open questions that are Geoff's
+calls). A first publish of a new package name also cannot bootstrap over OIDC, so it needs Geoff's
+npm login regardless. The engine's own docs payload ships the admin track that names the tool; the
+release body states plainly that the tool is not on the registry and why.
 
-**The open question is unchanged and still unanswered: does `create-cairn-site` ship in this cut or
-hold?** The four same-cut obligations (engine, `create-cairn-site`, `@glw907/cairn-cms-dev`, the
-template repo) plus T5a' were written against the old ordering, and `ROADMAP.md` records four
-`create-cairn-site` first-run defects as owed before the tool publishes. One strands a reader
-outright: after a failed first run the resume refuses to continue because the repository the tool
-created already exists, and recovery needs a `delete_repo` permission the reader may not have.
+**The dev backend failed its first OIDC publish, and the cause is now gated.** npm validates a
+provenance bundle against the manifest's own `repository.url` and answered `422` because
+`packages/cairn-cms-dev/package.json` carried no `repository` field at all. The dev backend's first
+publish (`0.95.0-rc.1`) was done by hand, so the OIDC path had never run against that manifest and no
+gate read the field. Fixed in `48961469`: the field is added, `check:dev-package` now asserts it
+(proven red by removing it), and the engine's publish job gained the same already-published guard
+`publish-dev` already carried, so re-running a release to recover one half no longer dies on the half
+that already landed. The recovery ran as a `workflow_dispatch` rather than by moving the `v0.95.0`
+tag, so the published engine's provenance still points at the commit the tag names.
 
-**This pass added a fifth reason to that column.** The tool's own interactive consent text
-(`packages/create-cairn-site/src/cloudflare/chapter.mjs:106-113`) still promises "Cloudflare's free
-workers.dev hosting ... The free plan is enough; nothing in this step costs money." The measured
-bundle is 3,246,163 bytes gzipped against a 3,145,728-byte Workers Free limit, so that deploy fails
-and the tool breaks a promise it just made at the moment a reader consents. Fixing it is flow and
-consent work, not copy: `chapter2.mjs` depends on chapter 1 having said "nothing up to here costs
-money", and a later prompt is premised on Paid arriving later. **Geoff scoped it as its own pass
-(2026-08-19), deliberately cut rather than absorbed.** It is filed in `ROADMAP.md`'s Now tier, and
-its plan is drafted and committed at
-`docs/superpowers/plans/2026-08-20-cli-cost-narrative-pass.md`. **That plan is NOT approved: it ends
-with two open questions that are Geoff's calls (whether the tool asks about Workers Paid before it
-deploys, and whether it verifies the account's plan), and task 4 must not start until the first is
-answered.** Resume prompt for a fresh session, from `~/Projects/cairn-cms`: "Execute the CLI
-cost-narrative pass (`docs/superpowers/plans/2026-08-20-cli-cost-narrative-pass.md`). Answer its two
-open questions first." 
+**The `--strip-dev-backend` watch FIRED and is discharged** (`ae839697`). `0.95.0` published the dev
+backend through the release path, which never strips, so the weekly drift compare had to stop
+stripping or measure a stripped bake against an unstripped repo and go red every Monday. The flag is
+off in the cron and in the dispatch default, and the `WATCH` comment is replaced by the rule it
+leaves behind. Its sibling obligation, retiring the template repo's pre-release notice, was
+deliberately NOT done: the notice defers the Deploy button and completion checklist to a live
+verification that has not run, and the tool they belong to is held, so dropping it would promise a
+button that does not exist. It is refiled onto its real trigger, a `WATCH` on the notice itself plus
+a ROADMAP entry beside the defects holding the tool.
 
-So: if the tool holds, that pass lands before it ever publishes. If it ships, the cut publishes a
-tool that promises a free deploy which fails.
+**What the cut could not do: the public template repo.** `glw907/cairn-waymark-template` does not
+exist, and `gh secret list --repo glw907/cairn-cms` returns nothing, so `TEMPLATE_REPO_TOKEN` is
+unset. The sync fails on `TEMPLATE_REPO_TOKEN is required to push to an https remote`, which is not
+new: the 2026-08-17 scheduled run failed the same way, before this cut touched anything. Both halves
+need Geoff, a repo creation and a credential. Until then `publish.yml`'s `sync-template-repo` job
+fails on every release and the weekly cron keeps crying wolf. Filed in `ROADMAP.md`'s Now tier; the
+natural home is the tool's own publish, whose clean-clone build the registry now satisfies.
 
 ### What consumers owe on this window
 
 Five type-level changes, all compile errors rather than runtime failures, plus one operational fact.
-`docs/extend/migration-notes.md`'s `## Unreleased` section carries the full list; the short form:
+`docs/extend/migration-notes.md`'s `## 0.95.0` section carries the full list; the short form:
 `SiteConfig` lost its index signature, `AdminShellData.mediaBase` and `EditData.singular` are new
 required fields, and `DeleteDialog` and `RenameDialog` renamed `label` to `singular`. **And a cairn
 site runs on Cloudflare's Workers Paid plan, $5 a month, from its first deploy** (Geoff, 2026-08-19:

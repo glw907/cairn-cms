@@ -454,6 +454,17 @@ The original decision framing, for the record:
   `0.95.0`. What remains owed here is the editors rewrite, which runs in cairn-pub against the
   built seam.
 
+- **The public template repo does not exist and its sync has no credential, so the weekly drift
+  tripwire fails every Monday.** `glw907/cairn-waymark-template` returns "could not resolve to a
+  Repository", and `gh secret list --repo glw907/cairn-cms` returns nothing, so `TEMPLATE_REPO_TOKEN`
+  is unset. Both halves of T5a' (create the public repo, mint the token) need Geoff: a repo creation
+  and a credential. Evidence that this is not new: the 2026-08-17 scheduled run already failed, as did
+  the 2026-08-20 dispatch at the `0.95.0` cut, both on `TEMPLATE_REPO_TOKEN is required to push to an
+  https remote`. Until it is fixed the `sync-template-repo` job in `publish.yml` fails on every
+  release, and the cron failure is exactly the cries-wolf state that workflow's own comment warns
+  about. Fix it with the tool's publish, since the template repo cannot build from a clean clone
+  without the engine on the registry, which `0.95.0` has now satisfied.
+
 - **The template repo's pre-release notice comes off when `create-cairn-site` publishes.**
   `packages/create-cairn-site/template-repo/README.md` still opens "generated, pre-release" and
   defers the Deploy button and completion checklist to a live button verification. `0.95.0` was

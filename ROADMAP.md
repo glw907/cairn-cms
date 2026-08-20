@@ -445,12 +445,14 @@ The original decision framing, for the record:
   stations have shipped: the cairn diagram theme landed in cairn-pub, and the diagram-pages pass
   merged 2026-08-16 with eleven diagrams across the extend and admin tracks plus the
   `check:visuals` gate (post-mortem in
-  `docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`). Geoff ruled the sequencing
-  2026-08-15: no hurry to release, and release one waits for the visual layer so the beta ships
-  best-quality docs (recorded in `docs/STATUS.md`). The capture pass ran 2026-08-17 and is
+  `docs/superpowers/plans/2026-08-15-docs-diagram-pages-pass.md`). Geoff reordered the sequencing
+  2026-08-19, superseding his 2026-08-15 ruling that release one waits for the visual layer: the
+  release-debt engine pass, then the release, then the site updates, then the live site work with
+  the docs updated alongside (recorded in `docs/STATUS.md`). The capture pass ran 2026-08-17 and is
   history: the recorded-run fixtures exist, both admin pages quote them, and `check:transcripts`
-  gates them. What remains owed here: the live-reproduction seam (two passes, plan on `main`),
-  then the editors rewrite.
+  gates them. The live-reproduction seam is built, both halves, and its engine surface shipped in
+  `0.95.0`. What remains owed here is the editors rewrite, which runs in cairn-pub against the
+  built seam.
 
 - **Four first-run defects in `create-cairn-site`, found by the 2026-08-17 capture run, all
   owed before release one publishes the tool.** The run took four invocations to reach a live

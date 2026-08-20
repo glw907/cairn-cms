@@ -9,7 +9,10 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
-## Unreleased
+## 0.95.0
+
+This release promotes `0.95.0-rc.1`, which only ever reached the `next` dist-tag, so a site coming
+from `0.94.0` crosses the `0.95.0-rc.1` section below as well as this one.
 
 The reproduction seam and its two mounting overrides (`CairnAdminShell.themeOverride`,
 `EditPage.spellcheckOverride`) need nothing: every new prop is optional and off by default. The
@@ -31,7 +34,7 @@ errors rather than runtime failures, and one operational fact.
   singular noun rather than its plural label: these dialogs write sentences about one entry, and the
   plural rendered "Delete this posts?"
 
-See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+See [`CHANGELOG.md`](../../CHANGELOG.md#0950).
 
 ## 0.95.0-rc.1
 

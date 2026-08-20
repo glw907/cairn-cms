@@ -238,7 +238,6 @@
     "@arethetypeswrong/cli": "^0.18.3",
     "@cloudflare/vitest-pool-workers": "^0.16",
     "@cloudflare/workers-types": "^4.20260501.0",
-    "@sveltejs/adapter-cloudflare": "^7.2.9",
     "@sveltejs/kit": "^2.68.0",
     "@sveltejs/package": "^2",
     "@sveltejs/vite-plugin-svelte": "^7.1",

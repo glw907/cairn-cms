@@ -20,7 +20,12 @@
   cut: the emitted `package.json` names the engine version, so a version bump drifts the tree and
   `check:template` goes red until `npm run emit:template` runs and the result is committed. That is
   the gate doing its job rather than a defect, and it is deliberately a failing check rather than a
-  line in a checklist, so it cannot be forgotten. Consumers must: nothing; none of this ships in the
+  line in a checklist, so it cannot be forgotten. One cosmetic artifact stays: `svelte-check` scans
+  every subdirectory for a `svelte.config.js` and has no way to skip one, so it prints a
+  module-resolution block for the committed template, which has no `node_modules` of its own. The
+  run still reports 0 errors. Adding `@sveltejs/adapter-cloudflare` to the root devDependencies
+  silences it and is the wrong fix, because that adapter's ambient `App.Platform` augmentation
+  collides with cairn's own and breaks `check:snippets`; `test.yml` carries the note. Consumers must: nothing; none of this ships in the
   engine tarball.
 
 ## 0.95.0

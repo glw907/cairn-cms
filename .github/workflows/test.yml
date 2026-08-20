@@ -16,6 +16,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # svelte-check scans every subdirectory for a svelte.config.js and cannot be told to skip one
+      # (its --ignore flag applies only under --no-tsconfig), so it tries to load
+      # templates/waymark/svelte.config.js and prints a module-resolution block. That tree is a
+      # committed template with no node_modules of its own, which is correct, and the step still
+      # exits 0 reporting 0 errors. Do NOT silence it by adding @sveltejs/adapter-cloudflare to the
+      # root devDependencies: the adapter ships an ambient App.Platform augmentation that collides
+      # with cairn's own and breaks check:snippets on the Handle type (tried and reverted,
+      # 2026-08-20).
       - run: npm run check
       # The component test project runs in real Chromium via @vitest/browser-playwright.
       - run: npx playwright install --with-deps chromium

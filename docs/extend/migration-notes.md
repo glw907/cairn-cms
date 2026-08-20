@@ -11,11 +11,27 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
-Nothing to do. The window since `0.95.0-rc.1` carries the reproduction seam and its two mounting
-overrides (`CairnAdminShell.themeOverride`, `EditPage.spellcheckOverride`), a CodeMirror theme
-rendering fix, a new repository gate, and documentation. Every new prop is optional and off by
-default, and none of it reaches a consumer's build without a deliberate opt-in. See
-[`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+The reproduction seam and its two mounting overrides (`CairnAdminShell.themeOverride`,
+`EditPage.spellcheckOverride`) need nothing: every new prop is optional and off by default. The
+release-debt pass that followed carries five type-level changes, all of which surface as compile
+errors rather than runtime failures, and one operational fact.
+
+- **A cairn site runs on Cloudflare's Workers Paid plan, $5 a month, from its first deploy.** No
+  code action. The admin documentation previously described the Worker as running on the free plan,
+  which the built bundle's size has outgrown. Nothing about your site changes; the docs now state
+  what it costs.
+- **`SiteConfig` no longer carries an index signature.** Reading a parsed config by its declared
+  fields, the supported way, is unaffected. Code that indexed one with a dynamic key, or passed one
+  where a `Record<string, unknown>` was expected, now fails to compile; read the field by name.
+  `parseSiteConfig` was already refusing those same unknown keys at runtime.
+- **`AdminShellData` gained a required `mediaBase`, and `EditData` a required `singular`.** Both
+  arrive populated through `shellLoad` and `editLoad`, so a site reaching them the normal way does
+  nothing. A site that hand-builds either payload, including in its own tests, adds the field.
+- **`DeleteDialog` and `RenameDialog` renamed their `label` prop to `singular`.** Pass the concept's
+  singular noun rather than its plural label: these dialogs write sentences about one entry, and the
+  plural rendered "Delete this posts?"
+
+See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
 
 ## 0.95.0-rc.1
 

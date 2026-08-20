@@ -210,3 +210,113 @@ created already exists, and recovery needs a `delete_repo` permission the reader
 
 **So the cut must decide whether the tool ships in it or holds.** That is a `cairn-release` gate
 question for Geoff. This pass does not settle it, and must not quietly assume either answer.
+
+---
+
+## Post-mortem (2026-08-19, executed and closed)
+
+**All six defects are closed, on branch `release-debt` off `main`, nine commits `8832920b` through
+`5086d184`. No version bump, no publish.** The pass ran as planned through task 6, then closed at
+Geoff's ruling rather than absorbing a seventh thing it found.
+
+### What shipped
+
+1. **The admin resolves its own media base.** `AdminShellData`'s authed branch carries the resolved
+   base, `shellLoad` populates it from `runtime.resolvedAssets`, `CairnAdminShell` provides it
+   through the existing context key. No reader changed. The test mounts the real shell around a
+   `MediaPicker`, so it proves the shell *injects* rather than that a component *honors*.
+2. **The Edit block control is guarded, not disabled.** `cairn-btn-guarded` plus
+   `cursor-not-allowed`, matching Figure. The test injects the compiled admin stylesheet and reads
+   `getComputedStyle().pointerEvents`, the only harness that can see the defect.
+3. **A delete refusal names one entry.** Four components, not the one the plan named: `ConceptList`,
+   `EditPage`, `DeleteDialog`, `RenameDialog`. `EditData` gained the `singular` field `ListData`
+   already had.
+4. **`SiteConfig`'s doc and type match its parser.** The index signature is gone and the doc states
+   the throwing behavior.
+5. **A free-tier bundle warning that can fire, and a corrected cost story.** The doctor check was
+   dropped as unbuildable; CI reports the real number; the CLI preamble, its fixture, and three
+   admin pages now state Workers Paid as the baseline.
+6. **The scaffold stops printing a refusal.** Three `/admin` link sources carry `rel="external"`,
+   behind one shared predicate, and `handleHttpError` now throws unless a case is named.
+
+### Evidence
+
+Full CI-derived gate list green, derived from the workflows rather than memory: `check`, `test:emit`,
+the `create-cairn-site` suite, `check:package`, `check:reference`, `check:reference:signatures`,
+`check:surface`, `check:custom-surface`, `check:chassis-boundary`, `check:cm-internals`,
+`check:invisible-craft`, `check:admin-css-classes`, `check:readiness`, `check:docs`,
+`check:arm-indexes`, `check:visuals`, `check:transcripts`, `check:symbols`, `check:snippets`,
+`check:prose`, `check:version`, `check:dev-package`, `check:consumers`, the showcase's own `check`,
+`check:vale`, `check:comments`, `check:public-tokens`, `test:reskin`. `npm test` exits 0 at 426 files
+and 5664 tests. `npm --prefix examples/showcase run build` succeeds.
+
+Every fix was proven red first. The measurement that task 5 turns on was taken, not cited: a fresh
+showcase install in this worktree, a real build, `wrangler deploy --dry-run`, `gzip -9`, giving
+**3,246,163 bytes against the 3,145,728-byte Workers Free limit**.
+
+### What the plan got wrong, and how it was caught
+
+The plan was verified against the tree before dispatching, per the `cairn-plan-assumptions-need-verifying`
+memory. That verification paid for itself four times:
+
+- **Task 3 was half its real size.** The plan named two call sites in one component. The defect was in
+  four components. Its own acceptance criterion (tighten `EditPage.test.ts`'s assertions) could not
+  have gone green at the scope it specified.
+- **Task 6's paths did not exist.** `packages/create-cairn-site/template/` is not a directory; the
+  template is emitted from `examples/showcase`. This cut in our favor: the plan assumed nothing local
+  reached the baked template, so a local build turned out to be a real gate.
+- **Task 6's mechanism did not work.** `data-sveltekit-prerender="false"` does not stop the crawl; it
+  governs whether an already-reached route is written to disk. The implementer read kit's `crawl.js`
+  and switched to `rel="external"`. Shipping the plan's attribute would have left every gate green and
+  the build still printing the refusal.
+- **Task 5's doctor check could not be built at all.** A `DoctorCheck` gets `readFile` only, and the
+  deployable bundle exists only after a wrangler dry-run.
+
+### What the review gate caught that the pass did not
+
+The four-lens habit earned its cost. Two reviewers, fresh context, found a regression the pass had
+introduced and a component it had missed.
+
+- **Task 2 made a control lie.** Guarding the Edit block restored the tooltip `btn-disabled` had
+  suppressed, but `editBlockLabel` branches only on `editable` and never sees `insertDisabled`, so in
+  Preview the control announced "Edit the component at the cursor" over a click it had made inert.
+  Figure did not have this bug: `figureAvailable` folds in `!insertDisabled`. **The pass copied the
+  pattern's class list and missed its behavior**, with every gate green.
+- **`DeleteDialog` rendered "Delete this posts?" as an alertdialog's accessible name, and "2 postss
+  link here".** Worse than the defect task 3 fixed, on the surface an author hits on every delete.
+- **Five comments described the code the pass replaced**, including four at the exact line a
+  maintainer reads to decide whether the media-base context is wired.
+- **A copy-in template documented a SvelteKit attribute that does not exist.** That error was the
+  orchestrator's, written into a dispatch and propagated faithfully.
+
+### Decisions
+
+- **The doctor bundle check is dropped, not deferred silently** (Geoff, 2026-08-19). Filed with the
+  exec-seam blocker named, so nobody re-plans it blind.
+- **Workers Paid is the expectation** (Geoff, 2026-08-19), stated as a baseline with no apology, no
+  hedge, and no pitch. This supersedes the 2026-08-18 B0 ruling that the copy should hedge; that
+  ruling addressed a total that was uncertain, not a claim that was false. The reader-facing copy
+  deliberately does NOT justify the price by the bundle measurement, so it will not rot when the
+  number moves; the measurement lives in the CI comment and the changelog.
+- **The pass closes at task 6** (Geoff, 2026-08-19). The CLI's own consent prompt still promises a
+  free deploy, which is flow-and-consent work rather than copy, and it is filed as its own pass.
+
+### Budgets
+
+Human interaction points: **five.** One batched two-part question (the doctor check and the
+free-plan claim), two unprompted rulings from Geoff reframing the cost copy, and one approval to
+close at task 6. The batched question was load-bearing, since both halves changed what got built.
+The pass-split proposal came **one growth too late**, which is the process defect to carry forward.
+
+Task growth, counted honestly because the count is the evidence: task 3 grew from two call sites to
+four components; task 5 changed shape entirely (a check dropped, a docs correction enlarged); 5b was
+added outright; and a fourth growth was proposed and declined. The doctrine says a second growth
+prompts the split proposal and a third makes it overdue. It was raised at the fourth.
+
+### Carried forward
+
+Four ROADMAP entries filed: the CLI money narrative as its own pass, `check:surface`'s blindness to
+an index signature, the now-fired `checkOrigin` deprecation watch, and the dropped doctor check.
+Left unfixed and named in the reviews: the focus-ring contrast under the toolbar's `opacity-50`
+wrapper, a `cairn-audit` static rule for this defect class, `VocabularyAdmin`'s retired dimming, and
+`components.md`'s missing `RenameDialog.routable` prop.

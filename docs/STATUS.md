@@ -17,14 +17,15 @@ library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-08-19 night: cut the release)
 
-**The release-debt pass is DONE and the release is next.** All six consumer-facing defects are
-closed on branch `release-debt` off `main`, nine commits `8832920b` through `5086d184`, full
-CI-derived gate list green, `npm test` exit 0 at 426 files and 5664 tests. No version bump, no
-publish: the cut is a separate deliberate act. Post-mortem, evidence, and every decision:
-`docs/superpowers/plans/2026-08-19-release-debt-pass.md`.
+**The release-debt pass is DONE, MERGED to `main`, and the release is next.** All six
+consumer-facing defects are closed: thirteen commits `8832920b` through `0585150e`, merged as
+`b179e6c6`, full CI-derived gate list green, `npm test` exit 0 at 426 files and 5664 tests. No
+version bump, no publish: the cut is a separate deliberate act. Post-mortem, evidence, and every
+decision: `docs/superpowers/plans/2026-08-19-release-debt-pass.md`.
 
-**The branch is NOT merged.** Merge `release-debt` to `main` first, then cut. Nothing else branches
-from it.
+**`main` is merged but NOT pushed.** Push before cutting, since `gh release create --target main`
+fires the OIDC publish workflow against the remote. The `release-debt` branch and its worktree at
+`.claude/worktrees/release-debt` are spent; prune both. Nothing else branches from it.
 
 **Immediate next action: invoke the `cairn-release` skill** to cut the release from `main`. Launch
 from `~/Projects/cairn-cms`. Geoff's sequencing (2026-08-19): this pass, then the release, then he

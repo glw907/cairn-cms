@@ -187,6 +187,19 @@
   that a default cairn site runs on Cloudflare's Workers Paid plan ($5/month) from its first
   deploy, not only once a second person needs to sign in.
 
+- A scaffolded site's very first build no longer prints a branded 400 for its own `/admin` link.
+  The public footer, header, and styleguide page all link `/admin`, SvelteKit's prerender crawler
+  followed every one of them, and the admin guard answered each with a `guard.rejected` (`reason:
+  'https'`) the crawler logged as `400 /admin` under the template's `handleHttpError: 'warn'`
+  policy, with no doc explaining it. Each anchor now renders `rel="external"`, the one attribute
+  SvelteKit's crawler honors to skip queuing a link, keyed on the URL rather than threading a new
+  field through the engine's `NavNode` type; the link itself is unchanged and still clickable for
+  a reader. Consumers must: know this fixes only a newly scaffolded site, since `SiteFooter.svelte`,
+  `SiteHeader.svelte`, and `site.config.yaml` are copy-in template files a site owns after
+  scaffolding, not imports from the package. A site that already sees `400 /admin` in its own build
+  output can add `rel="external"` to its footer and header `/admin` anchors (and to any other
+  `/admin` link it has added) the same way.
+
 ## 0.95.0-rc.1
 
 <!-- release-size: minor -->

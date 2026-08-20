@@ -8,13 +8,21 @@ reading column, so the footer's left edge lines up with the body copy above it. 
 this file; the look re-skins from `theme.css`.
 -->
 <script lang="ts">
-  /** A footer-nav entry: the visible label and the path it links to. */
-  type NavItem = { label: string; href: string };
+  /**
+   * A footer-nav entry: the visible label and the path it links to. `crawl: false` marks a link
+   * SvelteKit's prerender crawler should not follow (the target answers every crawl-time request
+   * with an error by design, `/admin` for example), while leaving the link itself in the footer
+   * and clickable for a reader. It renders as `rel="external"`, the one attribute SvelteKit's
+   * crawler actually honours to skip queuing a link (`data-sveltekit-prerender` governs only
+   * whether a route the crawler already reached gets written to disk, not whether it is
+   * reached at all).
+   */
+  type NavItem = { label: string; href: string; crawl?: boolean };
 
   /** The footer's nav targets. A scaffolded site owner edits this list. */
   const nav: NavItem[] = [
     { label: 'Writing', href: '/' },
-    { label: 'Admin', href: '/admin' },
+    { label: 'Admin', href: '/admin', crawl: false },
     { label: 'Feed', href: '/feed.xml' },
   ];
 </script>
@@ -42,6 +50,7 @@ this file; the look re-skins from `theme.css`.
       {#each nav as item (item.href)}
         <a
           href={item.href}
+          rel={item.crawl === false ? 'external' : undefined}
           class="inline-flex min-h-11 items-center px-xs text-muted no-underline hover:text-base-content"
         >
           {item.label}

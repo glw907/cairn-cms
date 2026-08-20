@@ -136,11 +136,12 @@ Poplar's shape, transplanted: one process, three layers.
 - **Background engines:** the probes the CLI cannot hold today: DNS and negative-cache
   checks, certificate issuance, the Builds watch, park re-checks. A park becomes an
   ambient state the console monitors and offers to resume, not an exit.
-- **UI:** bubbletea per elm-conventions as poplar realizes them: root `App` split
-  across per-concern files, feature areas as packages under `internal/ui/` (each with
-  `model.go`, `msgs.go`, `keys.go`, `cmds.go`, golden tests), typed exported upward
-  Msgs routed by the root, shared primitives hoisted into `uicore`, models hold state
-  only, all I/O in `tea.Cmd`.
+- **UI:** bubbletea, with golden tests and the `uicore` primitives carried over from
+  poplar. The component architecture is NOT settled here (reopened 2026-08-20 by the
+  TUI skills setup brief): this line originally banked poplar's per-component
+  `tea.Model` shape as a chassis-transplant assumption, and Charm's own production
+  guidance for Crush (`internal/ui/AGENTS.md`) takes the opposite shape. See the open
+  question below.
 
 **Engine:** the chapters as the Node CLI defines them, re-ordered cloud-build-first.
 GitHub App manifest flow (loopback listener plus REST), repo create and base64-blob
@@ -236,6 +237,14 @@ competitors.
 
 The second sitting added five, and the last is the hardest:
 
+- **The component architecture.** Poplar's doctrine is per-component `tea.Model`
+  with Msg-driven child-to-parent signaling (its `elm-conventions` skill). Charm's
+  production practice, stated in Crush's `internal/ui/AGENTS.md`, is one centralized
+  model with sub-components as plain stateful structs and imperative methods, "do not
+  nest models." Both ship real software. Decide it here, record it as this repo's ADR,
+  and only then fork `elm-conventions` into a cairn variant (lipgloss v2 box math,
+  poplar Rule 10, ports unchanged either way). Source:
+  `docs/superpowers/2026-08-18-tui-skills-setup-brief.md`, Task 2.
 - **The v1 view cut.** Which dashboard views ship first, and what a site's row shows
   when it is healthy and boring.
 - **What "health" means per site, concretely.** Which checks run, and what each

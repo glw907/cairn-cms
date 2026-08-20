@@ -25,22 +25,29 @@ Every skill the TUI work needs is user-scoped and loads in any repo:
   README captures. The `vhs` binary is not installed yet; on first
   use run `go install github.com/charmbracelet/vhs@latest` and
   `sudo apt install gifsicle`.
-- `ts-conventions`, `svelte-conventions`, `visual-fidelity`, `ship`:
-  already in use here; unchanged.
+- `ts-conventions`, `svelte-conventions`, `visual-fidelity`: already
+  in use here; unchanged. `ship` (make check, make install) does not
+  apply until the Go tool has a Makefile, and `cairn-pass` owns the
+  pass ritual regardless.
 
 ## Task 1: wire CLAUDE.md
 
-Add the Go and TUI skill lines to this repo's CLAUDE.md, next to the
-existing Svelte wiring. Poplar's CLAUDE.md Conventions section
-(`~/Projects/poplar/CLAUDE.md`) is the template; adapt its four
-bullets rather than drafting fresh. Done when a fresh session reading
+Add the TUI skill lines to this repo's CLAUDE.md, next to the
+existing Svelte wiring. Keep it to two or three lines: CLAUDE.md sits
+at its context budget, and the global CLAUDE.md already mandates
+`go-conventions` for every Go file, so only `bubbletea-design`, the
+future cairn elm variant, and `tui-design` as optional need naming.
+Poplar's Conventions section (`~/Projects/poplar/CLAUDE.md`) shows
+the shape. Done when a fresh session reading
 CLAUDE.md knows which skill is mandatory for a Go file and which for
 TUI layout work.
 
 ## Task 2: settle the architecture before forking elm-conventions
 
 Do not copy poplar's `elm-conventions` skill into this repo as-is.
-Two reasons. First, it is poplar-scoped: its paths, ADR citations,
+(Reconciled 2026-08-20: the design spec had banked poplar's shape as a
+decision; it now lists this fork under its open questions.) Two
+reasons. First, it is poplar-scoped: its paths, ADR citations,
 and helpers (`clipPane`, `displayCells`) name poplar internals.
 Second, and larger, it encodes one side of a genuine fork that this
 tool has not decided yet. Poplar's doctrine is per-component
@@ -66,23 +73,30 @@ keybinding philosophy at brainstorm time, and the `tui-design`
 plugin's discoverability patterns (footer hints, `?` help, command
 palettes, leader keys) are live options here, not excluded ones.
 
-## Task 4: extend the Vale gate to Go comments
+## Task 4: gate Go comment prose with Vale, on the Go side
 
 This repo already runs Vale over docs (`check:vale` in package.json,
-in-tree `.vale.ini`). When the first Go file lands, extend that
-config to lint `.go` comment prose and re-sync the `glw907` overlay
-with `~/.dotfiles/scripts/glw907-vendor.sh ~/Projects/cairn-cms
---sync`. Extend the existing `.vale.ini`; do not replace it, or the
-docs coverage silently drops. Poplar's `.vale.ini` and its
-`vale-comments` make target show the wired shape. Done when the
-repo's check pipeline fails on an error-level finding in a Go
-comment.
+in-tree `.vale.ini`), but that script passes explicit doc paths, so a
+`[*.go]` section in the config alone would never run. The Go tool
+keeps its own Makefile and path-filtered CI (Go stays out of `npm
+test` by decision), so the comment gate lives there: a `vale-comments`
+target in the tool's Makefile, wired into its `check`, shaped like
+poplar's (`~/Projects/poplar/Makefile`, `.vale.ini`: `[formats] go =
+md`, `[*.go] BasedOnStyles = glw907`). The `glw907` overlay is not
+installed here yet (`.vale/styles/` holds Cairn, Google, Microsoft);
+install it with `~/.dotfiles/scripts/glw907-vendor.sh
+~/Projects/cairn-cms --sync`. Extend the existing `.vale.ini`; do not
+replace it, or the docs coverage silently drops. Done when the Go
+tool's `make check` fails on an error-level finding in a Go comment
+and `npm run check:vale` output is unchanged.
 
 ## Task 5: use Crush as prior art, not a skill
 
 Crush (`github.com/charmbracelet/crush`, FSL-1.1-MIT) is the
 reference production bubbletea v2 app; read its source when
-implementing the analogous feature. Do not install the third-party
+implementing the analogous feature. The license is source-available,
+not MIT, so read the patterns and write the code fresh; nothing is
+lifted into this MIT package. Do not install the third-party
 `charm-crush` skill: it was evaluated on 2026-08-18 and skipped
 because its worked examples assume the centralized model and would
 contradict whichever convention this repo adopts. The patterns worth
@@ -98,9 +112,11 @@ reading directly, with their files:
 
 ## Task 6 (optional): a project simplify skill
 
-Poplar keeps a project-local Go-only `simplify` skill
-(`~/Projects/poplar/.claude/skills/simplify/SKILL.md`). If this repo
-wants one, adapt rather than copy: cairn diffs mix Go and
+Default: skip. The workstation rule already runs `code-simplifier`
+before every commit here; poplar's Go-only `simplify` skill
+(`~/Projects/poplar/.claude/skills/simplify/SKILL.md`) is the
+exception, not the model. If this repo ever wants one, adapt rather
+than copy: cairn diffs mix Go and
 TypeScript, so the language-neutral checks stay, the Go voice agent
 keeps its existing self-gate on Go files, and TS-specific checks
 come from `ts-conventions`. Skip this task entirely if the

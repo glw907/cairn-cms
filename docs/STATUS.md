@@ -48,7 +48,14 @@ bundle is 3,246,163 bytes gzipped against a 3,145,728-byte Workers Free limit, s
 and the tool breaks a promise it just made at the moment a reader consents. Fixing it is flow and
 consent work, not copy: `chapter2.mjs` depends on chapter 1 having said "nothing up to here costs
 money", and a later prompt is premised on Paid arriving later. **Geoff scoped it as its own pass
-(2026-08-19), deliberately cut rather than absorbed.** It is filed in `ROADMAP.md`'s Now tier.
+(2026-08-19), deliberately cut rather than absorbed.** It is filed in `ROADMAP.md`'s Now tier, and
+its plan is drafted and committed at
+`docs/superpowers/plans/2026-08-20-cli-cost-narrative-pass.md`. **That plan is NOT approved: it ends
+with two open questions that are Geoff's calls (whether the tool asks about Workers Paid before it
+deploys, and whether it verifies the account's plan), and task 4 must not start until the first is
+answered.** Resume prompt for a fresh session, from `~/Projects/cairn-cms`: "Execute the CLI
+cost-narrative pass (`docs/superpowers/plans/2026-08-20-cli-cost-narrative-pass.md`). Answer its two
+open questions first." 
 
 So: if the tool holds, that pass lands before it ever publishes. If it ships, the cut publishes a
 tool that promises a free deploy which fails.

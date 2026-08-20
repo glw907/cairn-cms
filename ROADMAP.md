@@ -274,6 +274,20 @@ The original decision framing, for the record:
 
 ## Now
 
+- **A pre-existing media-chip test is flaky and will redden `main` at random (release-debt pass,
+  2026-08-19).** `src/tests/component/media-public-base.test.ts:86`, "renders the editor media chip
+  thumbnail under the injected base", polls for a CodeMirror decoration (`.cm-cairn-media-thumb`) to
+  mount and asserts exactly one. It failed once across five full-suite runs during this pass,
+  exhausting both retries at 6.9s (`expected +0 to be 1`, "Matcher did not succeed in time"), then
+  passed 3/3 when the file was run in isolation. The assertion is verbatim at `5a6a4901`, so this
+  pass did not cause it; the suite simply ran it under enough load to lose the race. Its sibling at
+  `:115` ("keeps the editor media chip thumbnail under /media") has the identical shape and the same
+  exposure. This is a different mechanism from the already-filed story-suite image race below: that
+  one is a 404 swapping an `img` out, this one is a CodeMirror decoration not having mounted yet.
+  A poll with no upper bound on decoration mount is the wrong shape for a gate; wait on a signal
+  CodeMirror actually emits, or raise the timeout deliberately and say why. **Trigger: fired once
+  already. The next unexplained red `main` on a media test is this.**
+
 - **`create-cairn-site` tells a reader the deploy is free, then deploys something that is not
   (release-debt pass, 2026-08-19).** The engine and docs now state that a cairn site runs on
   Workers Paid from its first deploy, but the tool's own interactive flow still says the opposite at

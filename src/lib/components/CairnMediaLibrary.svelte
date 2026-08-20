@@ -1389,9 +1389,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     return asset.ext.toUpperCase();
   }
 
-  // The delivery base the tile thumbnails compose under. A mounting context (the reproductions
-  // module) hands one down through this key; the admin tree provides none, so a real mount resolves
-  // to the same /media default publicPath already carries.
+  // The delivery base the tile thumbnails compose under. `CairnAdminShell` provides the site's
+  // resolved base to every authed descendant through this key; a bare mount outside it (the
+  // reproductions module, a test) resolves to the same /media default publicPath already carries.
   const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
 
   function thumbSrc(asset: MediaLibraryEntry): string {

@@ -189,8 +189,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
 
   // The delivery base the media chips compose their thumbnails under. editor-media.ts is a
   // CodeMirror extension and cannot read Svelte context itself, so the base is read here at init and
-  // handed to it. A mounting context (the reproductions module) hands one down through this key; the
-  // admin tree provides none, so a real mount resolves to the /media default.
+  // handed to it. `CairnAdminShell` provides the site's resolved base to every authed descendant
+  // through this key; a bare mount outside it (the reproductions module, a test) resolves to the
+  // /media default.
   const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
 
   let host = $state<HTMLDivElement | null>(null);

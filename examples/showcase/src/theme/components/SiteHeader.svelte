@@ -14,8 +14,8 @@ root layout server load and edited from `/admin/nav`; a site owner still edits t
 the chrome itself (structure, markup, the theme toggle), and the look re-skins from `theme.css` with
 no edit here. The `/admin` entry renders `rel="external"`, the one attribute SvelteKit's prerender
 crawler honours to skip queuing a link (the target answers every crawl-time request with a 400 by
-design), so this stays a plain presentational check keyed on the URL rather than a change to the
-`NavNode` type an editor edits through `/admin/nav`.
+design), decided by the shared `isAdminHref` predicate (`admin-link.ts`, also used by `SiteFooter`)
+rather than a change to the `NavNode` type an editor edits through `/admin/nav`.
 
 The theme toggle sets `data-theme` on `<html>` between `cairn` (light) and `cairn-dark`, and
 persists the choice to a `cairn-site-theme` cookie (path `/`, a year) so it survives a reload; the
@@ -54,6 +54,7 @@ The primary nav reads as a tracked eyebrow at every width, not only on the phone
     type ThemeToggleConfig,
   } from '$chassis/theme-toggle.js';
   import type { NavNode } from '@glw907/cairn-cms';
+  import { isAdminHref } from './admin-link.js';
 
   // The root layout server load resolves menus.primary into NavNode[] and hands it down through
   // page.data (both mounts of this component, the (site) layout and the root +error.svelte, sit
@@ -128,7 +129,7 @@ The primary nav reads as a tracked eyebrow at every width, not only on the phone
           <a
             href={item.url}
             aria-current={current ? 'page' : undefined}
-            rel={item.url === '/admin' ? 'external' : undefined}
+            rel={isAdminHref(item.url) ? 'external' : undefined}
             class="inline-flex min-h-11 items-center px-xs no-underline {current
               ? 'font-semibold text-primary'
               : 'font-medium text-muted hover:text-base-content'}"

@@ -128,7 +128,7 @@ describe('the real admin shell composes the media-base context from its resolved
   });
 });
 
-describe('the media public base defaults to /media with no provider (the real admin mount)', () => {
+describe('the media public base defaults to /media with no provider (a bare mount outside CairnAdminShell)', () => {
   it('keeps MediaPicker option thumbnails under /media', async () => {
     const screen = render(MediaPicker, { library: LIBRARY, onselect: () => {} } as never);
     expect(thumbPaths(screen.container)[0]).toBe(`/media/first-light.${HASH}.webp`);

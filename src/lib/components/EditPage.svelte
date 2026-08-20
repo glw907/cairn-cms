@@ -2775,7 +2775,7 @@ persistent "?" carries Markdown help, design-arc D2).
   trigger={false}
   conceptId={data.conceptId}
   id={data.id}
-  label={data.label}
+  singular={singularNoun}
   slug={data.slug}
   routable={data.routable}
   onsubmitting={() => (leaving = true)}

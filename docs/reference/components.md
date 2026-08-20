@@ -714,10 +714,10 @@ its unsaved-changes guard. `EditPage` composes it.
 Stability tier: Unstable API.
 
 ```ts
-let { conceptId, id, label, slug, trigger = true, onsubmitting }: {
+let { conceptId, id, singular, slug, trigger = true, onsubmitting }: {
   conceptId: string;
   id: string;
-  label: string;
+  singular: string;
   slug: string;
   trigger?: boolean;
   onsubmitting?: () => void;
@@ -725,14 +725,15 @@ let { conceptId, id, label, slug, trigger = true, onsubmitting }: {
 ```
 
 A confirm dialog that renames one entry's slug. `conceptId` and `id` identify the entry and post
-with the confirm, `label` names the concept in the prompts, and `slug` prefills the input with the
-current slug. With `trigger={false}` the component renders only the dialog, no visible button, and
-the exported `open()` method shows it; the sidebar's Change URL button drives it that way.
-`onsubmitting` fires when the rename form submits, before the document navigates; `EditPage` uses
-it to stand down its unsaved-changes guard. `EditPage` composes it.
+with the confirm, `singular` names the entry's own concept in the singular for the title and the
+non-routable "Entries that include this X" copy (for example "Post"), and `slug` prefills the
+input with the current slug. With `trigger={false}` the component renders only the dialog, no
+visible button, and the exported `open()` method shows it. The sidebar's Change URL button drives
+it that way. `onsubmitting` fires when the rename form submits, before the document navigates.
+`EditPage` uses it to stand down its unsaved-changes guard, and composes it.
 
 ```svelte
-<RenameDialog conceptId="posts" id="2026-06-04-hello" label="Post" slug="hello" />
+<RenameDialog conceptId="posts" id="2026-06-04-hello" singular="Post" slug="hello" />
 ```
 
 ### `CsrfField`

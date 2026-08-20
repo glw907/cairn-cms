@@ -154,16 +154,19 @@
   already-plural noun ("2 postss link here") whenever more than one entry linked in. `DeleteDialog`
   now takes `singular` directly instead of deriving a noun from `label`, and the inbound-linker
   count names an anonymous "entry"/"entries" instead of the deleted entry's own noun, since a
-  linker or includer can belong to a wholly different concept than the one being deleted. Consumers
+  linker or includer can belong to a wholly different concept than the one being deleted.
+  `RenameDialog` carried the identical defect, the same `label.toLowerCase()` self-derivation in
+  its title ("Change this posts URL") and its non-routable "Entries that include this posts"
+  copy, missed by the same count; it now takes `singular` too. Consumers
   must: nothing to keep running; `EditPage` reaches `EditData` through `editLoad` and `ConceptList`
   reaches `ListData` (which already carried `singular`) through `listLoad`, whether wrapped by
   `createCairnAdmin` or called directly through the advanced `createContentRoutes` seam, never by
   hand-assembling either payload, so the fix applies on upgrade with no site-side change. Two
   breaks land at the type level: `EditData.singular` is a required field, so a hand-built payload (a
-  test double, a custom edit route) needs one; and `DeleteDialog`'s `label` prop is renamed to
-  `singular`, so a site that mounts `DeleteDialog` directly, the way `ConceptList` and `EditPage`
-  both do, renames the prop it passes (the value itself is unchanged, since the doc always asked
-  for the singular, e.g. "Post").
+  test double, a custom edit route) needs one; and `DeleteDialog`'s and `RenameDialog`'s `label`
+  prop is renamed to `singular` on each, so a site that mounts either directly, the way
+  `ConceptList` and `EditPage` both do, renames the prop it passes (the value itself is unchanged,
+  since the doc always asked for the singular, e.g. "Post").
 
 - `SiteConfig`'s doc comment and its type both claimed an openness the parser refuses.
   `parseSiteConfig` has always thrown on a top-level `site.config.yaml` key outside its known set
@@ -207,13 +210,22 @@
   followed every one of them, and the admin guard answered each with a `guard.rejected` (`reason:
   'https'`) the crawler logged as `400 /admin` under the template's `handleHttpError: 'warn'`
   policy, with no doc explaining it. Each anchor now renders `rel="external"`, the one attribute
-  SvelteKit's crawler honors to skip queuing a link, keyed on the URL rather than threading a new
-  field through the engine's `NavNode` type; the link itself is unchanged and still clickable for
-  a reader. Consumers must: know this fixes only a newly scaffolded site, since `SiteFooter.svelte`,
-  `SiteHeader.svelte`, and `site.config.yaml` are copy-in template files a site owns after
-  scaffolding, not imports from the package. A site that already sees `400 /admin` in its own build
-  output can add `rel="external"` to its footer and header `/admin` anchors (and to any other
-  `/admin` link it has added) the same way.
+  SvelteKit's crawler honors to skip queuing a link, decided by one shared `isAdminHref` predicate
+  (`examples/showcase/src/theme/components/admin-link.ts`) `SiteHeader` and `SiteFooter` both read,
+  rather than a hand-set per-entry flag and a separate exact-string comparison modeling the same
+  exclusion two different ways; the link itself is unchanged and still clickable for a reader.
+  `handleHttpError` itself is no longer a blanket `'warn'`, which is exactly what let the original
+  `400 /admin` sit unnoticed alongside anything else that might go wrong during a build-time crawl:
+  it now throws on every prerender HTTP error the crawl encounters, with no exception, so a link
+  into `/admin` that reappears without `rel="external"` (or any other route that legitimately
+  4xx/5xxs mid-crawl) fails the build red instead of printing a warning nobody reads. Consumers
+  must: know this fixes only a newly scaffolded site, since `SiteFooter.svelte`, `SiteHeader.svelte`,
+  `admin-link.ts`, and `site.config.yaml` are copy-in template files a site owns after scaffolding,
+  not imports from the package. A site that already sees `400 /admin` in its own build output can
+  add `rel="external"` to its footer and header `/admin` anchors (and to any other `/admin` link it
+  has added) the same way, and should confirm its own `svelte.config.js` no longer downgrades
+  `handleHttpError` to `'warn'` across the board, since SvelteKit's own default (`'fail'`) is what
+  catches a link like this reappearing.
 
 ## 0.95.0-rc.1
 

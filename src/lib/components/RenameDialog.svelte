@@ -14,8 +14,11 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
     conceptId: string;
     /** The entry id within its concept. Posted with the confirm. */
     id: string;
-    /** A human label for the concept, e.g. "Post", used in the prompts. */
-    label: string;
+    /**
+     * The singular noun for the entry being renamed, e.g. "Post", used in the title and the
+     *  "Entries that include this X" copy; mirrors DeleteDialog's own doc voice.
+     */
+    singular: string;
     /** The current slug, prefilled into the input. */
     slug: string;
     /**
@@ -32,7 +35,10 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
     onsubmitting?: () => void;
   }
 
-  let { conceptId, id, label, slug, routable = true, trigger = true, onsubmitting }: Props = $props();
+  let { conceptId, id, singular, slug, routable = true, trigger = true, onsubmitting }: Props = $props();
+
+  // The entry's own noun, for the title and the non-routable "Entries that include this X" copy.
+  const noun = $derived(singular.toLowerCase());
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let slugInput = $state<HTMLInputElement | null>(null);
@@ -67,7 +73,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
       <h2 id="cairn-rename-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">
-        {routable ? `Change this ${label.toLowerCase()} URL` : `Rename this ${label.toLowerCase()}`}
+        {routable ? `Change this ${noun} URL` : `Rename this ${noun}`}
       </h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
@@ -84,7 +90,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
           Links from other pages update automatically, so nothing breaks. The new address will be
           <code class="type-meta">{nextSlug}</code>.
         {:else}
-          Entries that include this {label.toLowerCase()} update automatically, so nothing breaks. The
+          Entries that include this {noun} update automatically, so nothing breaks. The
           new name will be <code class="type-meta">{nextSlug}</code>.
         {/if}
       </p>

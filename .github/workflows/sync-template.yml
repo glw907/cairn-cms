@@ -23,10 +23,11 @@ on:
       strip-dev-backend:
         description: >-
           Strip the @glw907/cairn-cms-dev devDependency, its dev script, and the dev shim from the
-          synced tree. Leave this on until the dev backend's first publish: a template referencing
-          an unpublished package fails npm install for anyone who uses it before then.
+          synced tree. Off since 0.95.0, the release that first published the dev backend through
+          the release path; a template referencing an unpublished package fails npm install, which
+          is what this existed to prevent.
         type: boolean
-        default: true
+        default: false
   schedule:
     # Monday 06:00 UTC. Weekly is frequent enough that drift never accumulates for long and rare
     # enough not to be noise; the exact hour has no significance beyond sitting outside the
@@ -101,14 +102,11 @@ jobs:
       # compare that does not match the no-op line also fails it, so neither an error nor silent
       # drift can pass as healthy.
       #
-      # WATCH: --strip-dev-backend below is hardcoded on, and it comes off at release one, in the
-      # same edit that drops the dispatch input's default and the overlay README's pre-release
-      # notice. The release path (publish.yml) never strips, so the moment a release publishes
-      # @glw907/cairn-cms-dev this compare starts measuring a stripped bake against an unstripped
-      # repo and goes red every Monday forever. A tripwire that cries wolf weekly is worse than no
-      # tripwire: the next real drift arrives in a notification everyone has learned to delete. The
-      # obligation is filed in CHANGELOG.md as a release-checklist item, and this comment is the
-      # copy that sits where the edit has to happen.
+      # This compare no longer strips the dev backend, and must not start again: 0.95.0 published
+      # @glw907/cairn-cms-dev through the release path, which never strips, so a stripped bake here
+      # would measure against an unstripped repo and go red every Monday forever. A tripwire that
+      # cries wolf weekly is worse than no tripwire, because the next real drift arrives in a
+      # notification everyone has learned to delete.
       - name: Compare the public template repo against a fresh bake
         working-directory: packages/create-cairn-site
         env:
@@ -116,7 +114,7 @@ jobs:
         run: |
           VERSION="$(node -p "require('../../package.json').version")"
           node scripts/sync-template-repo.mjs --remote https://github.com/glw907/cairn-waymark-template.git \
-            --engine-spec "^$VERSION" --dev-spec "^$VERSION" --strip-dev-backend --dry-run \
+            --engine-spec "^$VERSION" --dev-spec "^$VERSION" --dry-run \
             --verify-build | tee sync-dry-run.log
           if ! grep -q "up to date at .* (no changes)" sync-dry-run.log; then
             echo "::error::the public template repo has drifted from a fresh bake; run the sync-template.yml workflow_dispatch to sync it"

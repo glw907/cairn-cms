@@ -454,6 +454,15 @@ The original decision framing, for the record:
   `0.95.0`. What remains owed here is the editors rewrite, which runs in cairn-pub against the
   built seam.
 
+- **The template repo's pre-release notice comes off when `create-cairn-site` publishes.**
+  `packages/create-cairn-site/template-repo/README.md` still opens "generated, pre-release" and
+  defers the Deploy button and completion checklist to a live button verification. `0.95.0` was
+  written to retire it (the obligation rides that release's own changelog entry), and the release
+  deliberately did not: the tool is held on the defects below, and the live button spike that
+  supplies the replacement content is unrun, so dropping the notice would promise a button that
+  does not exist. A `WATCH` comment sits on the notice itself. Retire both in the change that
+  publishes the tool.
+
 - **Four first-run defects in `create-cairn-site`, found by the 2026-08-17 capture run, all
   owed before release one publishes the tool.** The run took four invocations to reach a live
   site where the plan expected one, and only a live run could have surfaced the first two. The

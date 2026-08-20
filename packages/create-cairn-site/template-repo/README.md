@@ -6,3 +6,10 @@ directly: every sync regenerates the whole tree, and a hand edit survives at mos
 
 This template is pre-release. The Deploy button, the completion checklist, and the rest of
 this file's user-facing content land once the button flow has been verified live.
+
+<!-- WATCH: this notice comes off when `create-cairn-site` publishes, not at the next engine
+     release. 0.95.0 was expected to retire it, but the tool is held on four first-run defects and
+     the live button spike that supplies this file's replacement content is unrun, so dropping the
+     notice now would promise a Deploy button that does not exist. Retire it in the same change
+     that publishes the tool. Filed in ROADMAP.md beside those defects. -->
+

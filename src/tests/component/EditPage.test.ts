@@ -785,6 +785,33 @@ describe('EditPage', () => {
     expect(banner!.querySelector('a[href="/admin/posts/b"]')).toBeTruthy();
   });
 
+  it('re-announces a repeated identical delete refusal in the assertive live region', async () => {
+    const props = postProps();
+    (props as Record<string, unknown>).form = {
+      error: 'Cannot delete 2026-05-hi: 1 page links to it.',
+      inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+      id: '2026-05-hi',
+    };
+    const screen = render(EditPage, props);
+    const region = () => screen.container.querySelector('[aria-live="assertive"]')!;
+    expect(region().textContent ?? '').toContain('This post could not be deleted.');
+    const first = region().textContent ?? '';
+    // A second click submits the same delete against the same still-unresolved link, so the
+    // author hears the identical sentence: a fresh form object with the identical error string.
+    // Svelte skips a textContent write when the derived text is unchanged, so without a nonce the
+    // region never mutates and a screen reader stays silent on the repeat (WCAG 4.1.3).
+    await screen.rerender({
+      ...props,
+      form: {
+        error: 'Cannot delete 2026-05-hi: 1 page links to it.',
+        inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+        id: '2026-05-hi',
+      },
+    });
+    expect(region().textContent ?? '').toContain('This post could not be deleted.');
+    expect(region().textContent).not.toBe(first);
+  });
+
   it('surfaces a refused fragment delete with inclusion-naming copy', async () => {
     // `label` plural ("Fragments") against `singular` ("Fragment") makes a wrong plural-noun
     // render unambiguous, the same defect the post-concept case above pins.
@@ -2630,7 +2657,7 @@ describe('EditPage', () => {
       // The Insert and Edit controls share the SquarePen/Blocks glyphs; the Edit control is the
       // one whose aria-label speaks to editing (the label varies by state, so match the verb).
       return screen.container.querySelector<HTMLButtonElement>(
-        'button[aria-label*="Edit the component"], button[aria-label*="cursor in a component"], button[aria-label*="edited in the form"]',
+        'button[aria-label*="Edit the component"], button[aria-label*="cursor in a component"], button[aria-label*="edited in the form"], button[aria-label*="Switch to Write to edit"]',
       );
     }
 
@@ -2682,6 +2709,23 @@ describe('EditPage', () => {
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
       expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit the component at the cursor');
+    });
+
+    it('does not promise an action from the Edit-block control when Preview hides the Write surface', async () => {
+      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await clickLine(screen, ':::callout[Heads up]');
+      await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
+      // The Write pane stays mounted under Preview (so CodeMirror keeps caret and undo history),
+      // which means editable survives the tab switch too. The control must not go on claiming
+      // "Edit the component at the cursor" once Preview has made the click inert; that promise is
+      // what a mouse user's tooltip and a screen reader's announcement both read.
+      await screen.getByRole('tab', { name: 'Preview' }).click();
+      await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('true');
+      const control = editControl(screen)!;
+      expect(control.getAttribute('aria-label')).not.toBe('Edit the component at the cursor');
+      expect(control.getAttribute('aria-label')).toBe('Switch to Write to edit this component');
+      expect(control.getAttribute('title')).toBe('Switch to Write to edit this component');
     });
 
     it('disables Edit block with the unsafe reason on a component the safety check refuses', async () => {
@@ -3294,6 +3338,30 @@ describe('EditPage', () => {
       // Figure control's square footprint reads as a deliberately disabled control rather than empty
       // space.
       expect(style.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    });
+
+    it('does not promise an action from the Figure control when Preview hides the Write surface', async () => {
+      const hash = '0123456789abcdef';
+      const screen = render(EditPage, postProps({ body: `plain prose\n![A cat](media:cat.${hash})\ntail prose` }));
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const line = await vi.waitFor(() =>
+        Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+          (l.textContent ?? '').includes('cat'),
+        ),
+      );
+      await userEvent.click(line!);
+      const figureControl = () =>
+        screen.container.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"][aria-label*="figure" i]');
+      await expect.poll(() => figureControl()?.getAttribute('aria-disabled')).toBe('false');
+      // The caret sits on a bare image; switching to Preview must not leave the control's reason
+      // reading "Place the cursor on an image to add a figure", which is false once the cursor
+      // already IS on that image and the real reason Preview has disabled the control.
+      await screen.getByRole('tab', { name: 'Preview' }).click();
+      await expect.poll(() => figureControl()?.getAttribute('aria-disabled')).toBe('true');
+      const control = figureControl()!;
+      expect(control.getAttribute('aria-label')).not.toBe('Place the cursor on an image to add a figure');
+      expect(control.getAttribute('aria-label')).toBe('Switch to Write to wrap this image in a figure');
+      expect(control.getAttribute('title')).toBe('Switch to Write to wrap this image in a figure');
     });
   });
 });

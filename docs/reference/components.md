@@ -683,10 +683,10 @@ control.
 Stability tier: Unstable API.
 
 ```ts
-let { conceptId, id, label, inboundLinks, pending = false, trigger = true, onsubmitting }: {
+let { conceptId, id, singular, inboundLinks, pending = false, trigger = true, onsubmitting }: {
   conceptId: string;
   id: string;
-  label: string;
+  singular: string;
   inboundLinks: InboundLink[];
   pending?: boolean;
   trigger?: boolean;
@@ -695,17 +695,18 @@ let { conceptId, id, label, inboundLinks, pending = false, trigger = true, onsub
 ```
 
 A confirm dialog that deletes one entry, with a guard that blocks the delete while other entries
-link to it. `conceptId` and `id` identify the entry and post with the confirm, `label` names the
-concept in the prompts, and `inboundLinks` is the list of entries that link here. A non-empty list
-shows the linkers and blocks the delete until they are repointed. Pass `pending` for an entry with
-unpublished edits; the confirm copy then warns that those edits are discarded too, since the delete
-cascades to the entry's pending branch. With `trigger={false}` the component renders only the
-dialog, no visible button, and the exported `open()` method shows it; `EditPage`'s overflow menu
-drives it that way. `onsubmitting` fires when the confirm form submits, before the document
-navigates; `EditPage` uses it to stand down its unsaved-changes guard. `EditPage` composes it.
+link to it. `conceptId` and `id` identify the entry and post with the confirm, `singular` names the
+entry's own concept in the singular for the title and confirm prompts, for example "Post," and
+`inboundLinks` is the list of entries that link here. A non-empty list shows the linkers and blocks
+the delete until they are repointed. Pass `pending` for an entry with unpublished edits; the confirm
+copy then warns that those edits are discarded too, since the delete cascades to the entry's pending
+branch. With `trigger={false}` the component renders only the dialog, no visible button, and the
+exported `open()` method shows it; `EditPage`'s overflow menu drives it that way. `onsubmitting`
+fires when the confirm form submits, before the document navigates; `EditPage` uses it to stand down
+its unsaved-changes guard. `EditPage` composes it.
 
 ```svelte
-<DeleteDialog conceptId="posts" id="2026-06-04-hello" label="Post" inboundLinks={[]} />
+<DeleteDialog conceptId="posts" id="2026-06-04-hello" singular="Post" inboundLinks={[]} />
 ```
 
 ### `RenameDialog`

@@ -847,12 +847,19 @@ persistent "?" carries Markdown help, design-arc D2).
   // showing (the insert controls disable together with the Write surface). The control is always
   // rendered (it never mounts on caret move); only its enabled state changes.
   const figureAvailable = $derived(mediaAtCaret != null && !insertDisabled);
+  // mediaAtCaret survives the tab switch the same way editable does (the Write pane stays mounted
+  // under Preview), so when the caret already sits on an image and Preview is the reason the
+  // control is unavailable, the fallback reason must say so rather than claim no image is there.
   const figureLabel = $derived(
     figureAvailable
       ? mediaAtCaret?.figure
         ? 'Edit the figure at the cursor'
         : 'Wrap the image at the cursor in a figure'
-      : 'Place the cursor on an image to add a figure',
+      : mediaAtCaret
+        ? mediaAtCaret.figure
+          ? 'Switch to Write to edit this figure'
+          : 'Switch to Write to wrap this image in a figure'
+        : 'Place the cursor on an image to add a figure',
   );
   // Whether the image at the caret is decorative (empty or whitespace-only alt). The token came from
   // a parsed image node, so the alt is the source between `![` and the closing `]` before `](`. An
@@ -926,10 +933,18 @@ persistent "?" carries Markdown help, design-arc D2).
     };
   });
   // The Edit-block control's accessible label and tooltip: a plain reason in each state. Enabled
-  // names the action; the two disabled reasons are honest about why.
+  // names the action; every disabled reason is honest about why, including when Preview hides the
+  // Write surface. The Write pane stays mounted under Preview, so editable survives the tab switch;
+  // without the insertDisabled branch below, the label would keep claiming "Edit the component at
+  // the cursor" over a click Preview has made inert (a mouse user's tooltip and a screen reader's
+  // announcement both read that promise). editReason, driven purely by the caret, is unaffected by
+  // Preview: an unsafe block stays unsafe, and switching to Write would not change that, so its
+  // reason is left as-is rather than folded into the Preview branch.
   const editBlockLabel = $derived(
     editable
-      ? 'Edit the component at the cursor'
+      ? insertDisabled
+        ? 'Switch to Write to edit this component'
+        : 'Edit the component at the cursor'
       : editReason === 'unsafe'
         ? 'This block can’t be edited in the form. Edit it as markdown.'
         : 'Place the cursor in a component to edit it',
@@ -1296,6 +1311,13 @@ persistent "?" carries Markdown help, design-arc D2).
       : []),
   ]);
 
+  // The entry's singular noun, defaulting to label the way ConceptList's own refusedNoun/createNoun
+  // do (EditData.singular is typed required, but this is the one path an author already hit
+  // something going wrong on: a plain-JS caller that skips the type and omits it should degrade to
+  // the plural rather than throw mid-refusal). Every read of the entry's singular noun below shares
+  // this one fallback, so EditPage and ConceptList agree on the convention.
+  const singularNoun = $derived(data.singular ?? data.label);
+
   // The delete guard's inbound linkers, from a refused delete (fail 409). Empty when the delete was
   // not refused. When set, a delete was blocked by a link that appeared since the page loaded.
   const deleteRefusedLinks = $derived(form?.inboundLinks ?? []);
@@ -1393,7 +1415,7 @@ persistent "?" carries Markdown help, design-arc D2).
       const detail = deleteRefusedByInclusion
         ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
         : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
-      return `This ${data.singular.toLowerCase()} could not be deleted. ${detail}`;
+      return `This ${singularNoun.toLowerCase()} could not be deleted. ${detail}`;
     }
     if (visibleBrokenLinks.length) {
       const count = visibleBrokenLinks.length;
@@ -1401,6 +1423,30 @@ persistent "?" carries Markdown help, design-arc D2).
     }
     return '';
   });
+
+  // The assertive region's text re-announces only when it changes, so a repeated identical
+  // refusal (a second Delete click blocked by the same still-unresolved links) would go silent.
+  // An invisible nonce flips on every fresh submit so the region text always mutates and the
+  // screen reader speaks again (ConceptList's own discipline, ported here since both files share
+  // the same live-region contract). The nonce is a zero-width space, never voiced, so the heard
+  // sentence is unchanged.
+  let assertiveNonce = $state(0);
+  function assertiveNonceMark(): string {
+    return assertiveNonce % 2 === 0 ? '' : '​';
+  }
+  // Each submit hands a fresh `form` object, so the nonce bumps once per submit, keying the
+  // re-announce to the submit rather than to a string change the live region would swallow. The
+  // guard reads a plain non-reactive `lastAssertiveSubmit`, so the bump fires only when the submit
+  // identity changes, never on the re-render the bump itself causes.
+  let lastAssertiveSubmit: unknown;
+  $effect(() => {
+    const submit = form ?? data;
+    if (submit !== lastAssertiveSubmit) {
+      lastAssertiveSubmit = submit;
+      if (assertiveMessage) assertiveNonce++;
+    }
+  });
+  const assertiveAnnouncement = $derived(assertiveMessage ? `${assertiveMessage}${assertiveNonceMark()}` : '');
 
   // One line of body text reduced to its prose: inline directives drop wholesale, then the
   // markdown marker characters become spaces. Spacing rather than deleting keeps "[text](url)"
@@ -1852,7 +1898,7 @@ persistent "?" carries Markdown help, design-arc D2).
      so only the template rebuilds. -->
 {#key entryKey}
 <div class="sr-only" aria-live="polite">{politeMessage}</div>
-<div class="sr-only" aria-live="assertive">{assertiveMessage}</div>
+<div class="sr-only" aria-live="assertive">{assertiveAnnouncement}</div>
 
 <!-- The feedback strip slides in directly under the one header band: @starting-style drives the
      entry, so the motion is pure CSS and the admin sheet's prefers-reduced-motion rule squashes it. -->
@@ -1876,7 +1922,7 @@ persistent "?" carries Markdown help, design-arc D2).
 {/if}
 {#if deleteRefusedLinks.length}
   <div class="alert alert-error mb-4 flex-col items-start type-body">
-    <p class="font-medium">This {data.singular.toLowerCase()} could not be deleted.</p>
+    <p class="font-medium">This {singularNoun.toLowerCase()} could not be deleted.</p>
     {#if deleteRefusedByInclusion}
       <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
     {:else}
@@ -2814,7 +2860,7 @@ persistent "?" carries Markdown help, design-arc D2).
   trigger={false}
   conceptId={data.conceptId}
   id={data.id}
-  label={data.label}
+  singular={singularNoun}
   inboundLinks={data.inboundLinks}
   inboundKind={data.conceptId === FRAGMENTS_CONCEPT_ID ? 'include' : 'link'}
   pending={data.pending}

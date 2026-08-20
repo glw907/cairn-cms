@@ -424,7 +424,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
             <td class="w-12 px-2 py-2 text-right sm:px-4">
               {#if deleteRefused?.id === entry.id}
                 <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
-                <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} inboundKind={deleteRefused.inboundKind} pending={entry.status !== 'published'} />
+                <DeleteDialog conceptId={data.conceptId} id={entry.id} singular={data.singular ?? data.label} inboundLinks={deleteRefused.inboundLinks} inboundKind={deleteRefused.inboundKind} pending={entry.status !== 'published'} />
               {:else}
                 <form method="POST" action="?/delete">
                   <CsrfField />

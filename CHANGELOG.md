@@ -88,9 +88,11 @@
   hardcoded `/media` default regardless of the site's own resolved config. `AdminShellData`'s authed
   payload now carries the resolved `mediaBase`, `shellLoad` populates it from
   `runtime.resolvedAssets.publicBase`, and `CairnAdminShell` hands it down through the existing
-  context key. Consumers must: nothing. Every site reaches `shellLoad` through
+  context key. Consumers must: nothing to keep running; every site reaches `shellLoad` through
   `admin.shellLoad`, never by hand-assembling the shell payload, so the fix applies on upgrade with
-  no site-side change.
+  no site-side change. `mediaBase` is a required field on the authed `AdminShellData`, so a site
+  that constructs that shape itself, a test double or a custom shell payload, gets a compile error
+  until it supplies one.
 
 - The editor's own chrome no longer keeps the theme it was born with. CodeMirror bakes its dark flag
   into a theme extension at construction, so toggling the admin theme with an editor open left its
@@ -144,11 +146,24 @@
   The showcase's Posts concept read "This posts could not be deleted."; both the concept list's
   banner and the editor's own copy of the same refusal interpolated `label`, the concept's plural
   noun, into a singular sentence. `EditData` gains a `singular` field (mirroring `ListData.singular`,
-  populated the same way from the descriptor's own default to `label`), and all four call sites
-  across `ConceptList` and `EditPage` now read the singular. Consumers must: nothing. Every site
-  reaches `EditData` through `editLoad` (whether wrapped by `createCairnAdmin` or called directly
-  through the advanced `createContentRoutes` seam), never by hand-assembling the edit payload, so
-  the new field arrives populated on upgrade with no site-side change.
+  populated the same way from the descriptor's own default to `label`), and four call sites
+  across `ConceptList` and `EditPage` now read the singular. That count missed the confirm dialog
+  every one of those four Delete controls opens: `DeleteDialog` still took the plural `label` and
+  lowercased it itself, so "Delete this posts?" and "Delete this posts" stood in the dialog's own
+  title and confirm button, and the inbound-linker count doubled the mistake, pluralizing an
+  already-plural noun ("2 postss link here") whenever more than one entry linked in. `DeleteDialog`
+  now takes `singular` directly instead of deriving a noun from `label`, and the inbound-linker
+  count names an anonymous "entry"/"entries" instead of the deleted entry's own noun, since a
+  linker or includer can belong to a wholly different concept than the one being deleted. Consumers
+  must: nothing to keep running; `EditPage` reaches `EditData` through `editLoad` and `ConceptList`
+  reaches `ListData` (which already carried `singular`) through `listLoad`, whether wrapped by
+  `createCairnAdmin` or called directly through the advanced `createContentRoutes` seam, never by
+  hand-assembling either payload, so the fix applies on upgrade with no site-side change. Two
+  breaks land at the type level: `EditData.singular` is a required field, so a hand-built payload (a
+  test double, a custom edit route) needs one; and `DeleteDialog`'s `label` prop is renamed to
+  `singular`, so a site that mounts `DeleteDialog` directly, the way `ConceptList` and `EditPage`
+  both do, renames the prop it passes (the value itself is unchanged, since the doc always asked
+  for the singular, e.g. "Post").
 
 - `SiteConfig`'s doc comment and its type both claimed an openness the parser refuses.
   `parseSiteConfig` has always thrown on a top-level `site.config.yaml` key outside its known set

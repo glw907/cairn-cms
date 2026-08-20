@@ -5,8 +5,8 @@
 //
 // No prompt lives here: nothing is decided at this point in the run, so there is nothing to ask.
 
-/** The date every figure below is pinned to, since Email Sending is in beta and none of these
- * numbers is a hardcoded promise. */
+/** The date the pricing and registrar figures below are pinned to, since Email Sending is in
+ * beta and none of these numbers is a hardcoded promise. */
 const AS_OF = 'as of 2026-08-11';
 /** Cloudflare's own Workers pricing page, backing the $5 Workers Paid figure. */
 const WORKERS_PRICING_URL = 'https://developers.cloudflare.com/workers/platform/pricing/';
@@ -29,18 +29,18 @@ export function costPreamble() {
   return [
     'Before you start, the honest cost picture.',
     '',
-    'Building and running this site is free, and stays free.',
+    "Cloudflare's Workers Paid plan costs $5 US per month, billed once per account, not once " +
+      `per site (${AS_OF}, ${WORKERS_PRICING_URL}). That runs your site on Cloudflare's own ` +
+      'global network, from the day you deploy it.',
     '',
     'A domain name costs roughly $10 to $15 a year for the common endings. You pay that to a ' +
       'registrar, not to Cloudflare, and it costs about that from anyone. Cloudflare sells ' +
       `domains at cost, and shows you the exact price before you pay (${AS_OF}, ` +
       `${REGISTRAR_URL}).`,
     '',
-    "Cloudflare's Workers Paid plan costs $5 US per month. It is what sends sign-in email, so " +
-      'it is needed once anyone other than you signs in, and it is billed once per account, ' +
-      `not once per site (${AS_OF}, ${WORKERS_PRICING_URL}).`,
-    '',
-    'Those two together come to about $6 a month for a small site on its own domain.',
+    'Those two together come to about $6 a month for a small site on its own domain. The two ' +
+      'databases this site uses, its storage bucket, and its GitHub repository cost nothing at ' +
+      'this size, and stay free.',
     '',
     'One more item is not confirmed. Putting your site on your own domain issues a certificate ' +
       'for that domain, and Cloudflare does not say whether that certificate is included in your ' +

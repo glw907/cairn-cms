@@ -170,8 +170,22 @@
   and inviting the wrong generalization. The e2e workflow's bundle-size step gains a matching
   free-tier threshold that warns (never fails) whenever the gzipped bundle crosses that same 3 MiB
   line, so the overage stays visible in every CI run instead of only in a doc someone might not
-  reread. Consumers must: know that a default cairn site needs Cloudflare's Workers Paid plan
-  ($5/month) to deploy at all, not only once a second person needs to sign in.
+  reread. That first fix left the same false premise standing in three places it also governs: the
+  `create-cairn-site` CLI's own printed cost preamble (`packages/create-cairn-site/src/money.mjs`)
+  said "Building and running this site is free, and stays free," quoted verbatim in its recorded
+  transcript fixture and in `docs/admin/create-your-site.md`'s transcript block; and
+  `docs/admin/before-you-start.md`'s "What it costs" and "The free-until boundary" sections built
+  their whole story on a second person's sign-in being the first bill. All three now state the
+  $5-a-month Workers Paid plan as a plain baseline fact from the first deploy, the same way a
+  domain is: what running a cairn site on Cloudflare's own network costs, not an exception the
+  bundle's own size explains away (that measurement stays where a developer, not a site owner,
+  reads it: the e2e workflow comment above and this entry). The "the free-until boundary" section,
+  no longer honestly named since nothing is deferred, is renamed "What a second editor needs" and
+  reshaped into what it actually is, a capability story: a second person needs a domain connected
+  and sign-in email turned on, both already covered elsewhere on the page, not a new bill. Every
+  inbound link across the docs tree is repointed at the new anchor and text. Consumers must: know
+  that a default cairn site runs on Cloudflare's Workers Paid plan ($5/month) from its first
+  deploy, not only once a second person needs to sign in.
 
 ## 0.95.0-rc.1
 

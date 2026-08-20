@@ -138,8 +138,9 @@ npx wrangler email sending enable your-domain.example.com
 ```
 
 That's free, on any plan, for sending to yourself. The moment a second person needs their own
-sign-in, sending to them needs Cloudflare's Workers Paid plan, $5 a month; see [the free-until
-boundary](../admin/before-you-start.md#the-free-until-boundary) for exactly when that bill starts.
+sign-in, sending to them needs Cloudflare's Workers Paid plan, $5 a month; see
+[what a second editor needs](../admin/before-you-start.md#what-a-second-editor-needs) for exactly
+when that bill starts.
 
 Set the private key as a secret, never a config value:
 

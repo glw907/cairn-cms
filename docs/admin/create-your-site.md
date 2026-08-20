@@ -36,7 +36,7 @@ The tool opens with what this costs to run, the same facts as
 ```
 Before you start, the honest cost picture.
 
-Building and running this site is free, and stays free.
+Cloudflare's Workers Paid plan costs $5 US per month, billed once per account, not once per site (as of 2026-08-11, https://developers.cloudflare.com/workers/platform/pricing/). That runs your site on Cloudflare's own global network, from the day you deploy it.
 [...]
 ```
 
@@ -87,12 +87,10 @@ aren't signed in already), and deploys. This creates, on your own Cloudflare acc
   builds on your site later.
 - One storage bucket for images.
 
-The Worker needs Cloudflare's Workers Paid plan, $5 a month, because the site's built code is
-bigger than Cloudflare allows on its free plan (as of 2026-08-19,
-https://developers.cloudflare.com/workers/platform/limits/). The two databases, the storage
-bucket, and the GitHub repository from the step before all cost nothing at this scale. Your
-content itself isn't in either database: it's the markdown files already sitting in the GitHub
-repository the previous step created. The tool then moves
+The Worker runs on Cloudflare's Workers Paid plan, $5 a month, from the day it deploys. The two
+databases, the storage bucket, and the GitHub repository from the step before all cost nothing at
+this scale. Your content itself isn't in either database: it's the markdown files already sitting
+in the GitHub repository the previous step created. The tool then moves
 your GitHub App's private key off your machine and into a Cloudflare Worker secret, where it
 stays, and asks for the email address you'll sign in with. Once you answer, it writes your owner
 record straight into your new site's database and opens a sign-in page in your browser. This is
@@ -145,8 +143,8 @@ What exists now: one Worker, two databases, one storage bucket, and the GitHub A
 
 Open your own site's admin address: if you land there already signed in, from the link the tool
 just opened, setup finished. See
-[the free-until boundary](./before-you-start.md#the-free-until-boundary) for what changes once a
-second person needs their own sign-in.
+[what a second editor needs](./before-you-start.md#what-a-second-editor-needs) for what changes
+once a second person needs their own sign-in.
 
 Your site is now live on a Cloudflare-provided `workers.dev` address, which keeps working even
 after you connect a domain of your own, covered next in

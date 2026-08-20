@@ -75,11 +75,11 @@ organization's specific need would make the engine bigger and slower to build on
 including the organizations that never touch that feature.
 
 **Setup has real moving parts, even automated.** `create-cairn-site` runs the whole process, but it
-still needs a GitHub account and a Cloudflare account, and, once a second person needs to sign in, a
-paid Cloudflare plan and possibly a domain purchase. None of it is complicated with the tool driving
-it, but it is not a single sign-up screen. [Before you start](./admin/before-you-start.md#what-it-costs)
-has the complete cost picture, including [the free-until boundary](./admin/before-you-start.md#the-free-until-boundary)
-that determines when the paid plan actually applies.
+still needs a GitHub account, a Cloudflare account, a paid Cloudflare plan from the first deploy,
+and possibly a domain purchase once a second person needs to sign in. None of it is complicated
+with the tool driving it, but it is not a single sign-up screen.
+[Before you start](./admin/before-you-start.md#what-it-costs) has the complete cost picture,
+including [what a second editor needs](./admin/before-you-start.md#what-a-second-editor-needs).
 
 **Committing to git-backed content is itself a choice.** Every publish is a commit, which is a real
 feature (free history, free attribution, free rollback) and a real constraint: your content lives

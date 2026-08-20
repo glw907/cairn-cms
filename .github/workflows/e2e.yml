@@ -66,17 +66,16 @@ jobs:
         # step above already produced (`wrangler deploy --dry-run`), not a second measurement, and
         # gates on gzip size, the figure Cloudflare's own script-size limits are measured against.
         #
-        # Two thresholds, two purposes. The 5 MiB HARD budget is picked with roughly 60% headroom
-        # over the size measured when this gate was added (about 3.1 MB gzipped); the narrowed
-        # manifest-backed resolver (ROADMAP) replaces the full corpus with a per-entry read when
-        # this budget starts to bite. The 3 MiB (3,145,728-byte) FREE-TIER threshold is Cloudflare's
-        # own Workers Free script-size limit, not a v1 headroom pick: a default site's default build
-        # already exceeds it (measured 2026-08-19: 3,246,163 bytes, about 100 KB over). It warns
-        # rather than fails, since whether a consumer site stays on Workers Free or upgrades to
-        # Workers Paid is that consumer's call, not this repo's to make for them by turning CI red;
-        # it exists so the overage stays visible on every run instead of silently assumed away, which
-        # is the defect this pass exists to close (docs/admin/create-your-site.md carries the same
-        # fact for a site owner).
+        # The 5 MiB HARD budget is picked with roughly 60% headroom over the size measured when this
+        # gate was added (about 3.1 MB gzipped); the narrowed manifest-backed resolver (ROADMAP)
+        # replaces the full corpus with a per-entry read when this budget starts to bite. It sits
+        # well under Workers Paid's own 10 MiB script limit, which is the ceiling that binds cairn:
+        # a cairn site runs on Workers Paid, so free-tier fitness is not a goal this gate chases.
+        # The free-tier figure is still echoed on every run, because bundle size is worth watching
+        # and the 3 MiB (3,145,728-byte) Workers Free limit is a familiar yardstick for it (measured
+        # 2026-08-19: 3,246,163 bytes, about 100 KB over). It is reported, never annotated: a
+        # warning that fires on every single run carries no signal, which is the same defect class,
+        # inverted, as a budget that can never fire.
         working-directory: examples/showcase
         run: |
           size=$(gzip -9 -c /tmp/dev-fold-default/_worker.js | wc -c)
@@ -84,14 +83,15 @@ jobs:
           free_tier_budget=$((3 * 1024 * 1024))
           echo "Worker bundle (gzip): ${size} bytes; hard budget: ${budget} bytes; free-tier threshold: ${free_tier_budget} bytes"
           if [ "$size" -gt "$free_tier_budget" ]; then
-            overage=$((size - free_tier_budget))
-            echo "::warning::FREE-TIER WARNING: Worker bundle ${size} bytes (gzip) exceeds Cloudflare's ${free_tier_budget}-byte Workers Free script limit by ${overage} bytes; a default build will not deploy on Workers Free"
+            echo "note: bundle is $((size - free_tier_budget)) bytes over the ${free_tier_budget}-byte Workers Free limit (expected; cairn runs on Workers Paid)"
+          else
+            echo "note: bundle is $((free_tier_budget - size)) bytes under the ${free_tier_budget}-byte Workers Free limit"
           fi
           if [ "$size" -gt "$budget" ]; then
             echo "FAIL: Worker bundle ${size} bytes (gzip) exceeds the ${budget}-byte v1 hard budget"
             exit 1
           fi
-          echo "OK: Worker bundle ${size} bytes (gzip) is under the ${budget}-byte v1 hard budget (see the free-tier line above for whether it fits Workers Free)"
+          echo "OK: Worker bundle ${size} bytes (gzip) is under the ${budget}-byte v1 hard budget"
       - name: "Gate self-test: the markers ARE present in a flagged build's deployable bundle"
         # A grep that can never match again is how this gate rotted before: adapter-cloudflare 7
         # stopped bundling and the old grep target (.svelte-kit/cloudflare) held no server code, so

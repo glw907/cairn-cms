@@ -274,6 +274,50 @@ The original decision framing, for the record:
 
 ## Now
 
+- **`create-cairn-site` tells a reader the deploy is free, then deploys something that is not
+  (release-debt pass, 2026-08-19).** The engine and docs now state that a cairn site runs on
+  Workers Paid from its first deploy, but the tool's own interactive flow still says the opposite at
+  the point it matters. `packages/create-cairn-site/src/cloudflare/chapter.mjs:106-113` is the
+  consent text a reader approves before deploying, and it promises "Cloudflare's free workers.dev
+  hosting ... The free plan is enough; nothing in this step costs money." At 3.2 MiB gzipped that
+  deploy fails on a free plan, so the tool breaks the promise it just made. This is not a copy fix:
+  `chapter2.mjs`'s `EMAIL_ADMISSION_DETAIL` and its JSDoc both depend on chapter 1 having
+  established "nothing up to here costs money", and the later "Turn on Workers Paid now, so anyone
+  besides you can sign in?" prompt is premised on Paid arriving later. Fixing it means reworking the
+  tool's money narrative and probably its prompt order, plus the `01c-resume.txt` and
+  `01d-resume.txt` fixtures. **Scoped as its own pass (Geoff, 2026-08-19), deliberately cut from the
+  release-debt pass rather than absorbed into it. Trigger: before `create-cairn-site` publishes,
+  which is the same decision the release cut already owes.**
+
+- **`check:surface` is blind to an index signature, so a real breaking change passes it silently
+  (release-debt pass, 2026-08-19).** That pass removed `[key: string]: unknown` from the exported
+  `SiteConfig` interface, which breaks dynamic indexing and `Record<string, unknown>` assignability
+  for a consumer, and `npm run check:surface -- --update` produced zero diff: the snapshot's member
+  listing never renders index signatures at all. The gate exists to catch public-surface drift and
+  cannot see this whole class of it. Same shape as the `check:reference` subpath hole below, and the
+  same preferred form applies: make the snapshot render index signatures so the drift fails the gate
+  rather than relying on a reviewer noticing. **Trigger: the next pass that touches an exported
+  interface's shape.**
+
+- **The SvelteKit `checkOrigin` deprecation has LANDED; the watch has tripped (release-debt pass,
+  2026-08-19).** A real showcase build now prints "`config.kit.csrf.checkOrigin` has been deprecated
+  in favour of `csrf.trustedOrigins`. It will be removed in a future version." This is the standing
+  watch item `CLAUDE.md` tracks as kit#15992, and it has moved from a future bet to an active
+  warning on every build, both here and in every consumer site. Migrating is small; leaving it means
+  every scaffolded site's build log carries a framework deprecation nobody explains, and a future
+  SvelteKit major breaks the guard outright. **Trigger: fired. Schedule it rather than watch it.**
+
+- **A `cairn doctor` bundle-size check needs an exec seam it does not have (release-debt pass,
+  2026-08-19, deliberately dropped).** The pass planned a doctor check measuring the built Worker
+  against the free-tier ceiling. It cannot be built: a `DoctorCheck` gets `ctx.readFile` only, and
+  the deployable bundle exists solely after `npx wrangler deploy --dry-run --outdir=...`, since
+  adapter-cloudflare 7 leaves `.svelte-kit/cloudflare/_worker.js` as a loader that imports the
+  server bundle by relative path. Measuring anything else would report an approximate number against
+  a hard limit, which is the defect class the pass existed to close. Either `DoctorContext` grows a
+  subprocess seam (a new engine capability, and a full build per doctor run), or bundle size stays a
+  CI concern where the real artifact already lives, which is where the pass left it. **Trigger: a
+  decision that the doctor should measure build output at all.**
+
 - **Two reproduction-authoring rules have no home yet.** Both surfaced at the containment pass's
   accessibility review and both bind the editors rewrite rather than the engine. Numbered marker chips
   must render *inside* `[data-cairn-picture]`, because a chip appended as a sibling of the inert wrapper
@@ -313,24 +357,6 @@ The original decision framing, for the record:
   serve `src/lib/reproductions/fixtures/` at `/repro-assets/` from the browser project (the filenames
   are already enumerated in `manifest.ts`), then assert `complete && naturalWidth > 0` rather than
   the composed string. Found by the seam pass's Svelte review.
-
-- **A site with a non-default `assets.publicBase` has broken admin thumbnails today, and the
-  reproduction seam just made the fix cheap.** `media/config.ts` makes the base site-configurable
-  and `render/resolve-media.ts` honors it for rendered output, but every admin surface resolved
-  `publicPath`'s hardcoded `/media` until the seam pass made the base injectable through
-  `MEDIA_BASE_CONTEXT_KEY`. That pass wired only the fixture value into the new key. Closing this
-  for real is one provider: the admin layout supplies the resolved config value through the same
-  key, every thumbnail follows, and the reproductions module keeps working unchanged. Found at the
-  seam pass's review gate, in `docs/internal/record/repro-story-audit.md`'s fix 1.
-
-- **`EditPage`'s Edit block control is disabled the way the file's own comment forbids.** It uses
-  `class:btn-disabled` (`EditPage.svelte:2079`), which DaisyUI gives `pointer-events: none`, so the
-  `title` tooltip naming *why* it is off never reaches a mouse user, and the icon sits at the
-  20%-alpha treatment `cairn-admin.css` describes as reading "as an empty gap rather than a disabled
-  control". The Figure button one snippet below does it correctly with `cairn-btn-guarded`, and its
-  comment states the rule Edit block breaks. Pre-existing; found by the seam pass's accessibility
-  review. Fixing it also updates the `editor/toolbar` reproduction, which transcribes the control as
-  it is today.
 
 - **`check:reference` cannot see a subpath nobody told it about.** `scripts/checks/reference-coverage.mjs`
   holds a hardcoded `CONFIG` list, so a new export subpath ships with no reference page while the gate
@@ -673,28 +699,6 @@ The original decision framing, for the record:
   source closes the classic docs-drift hole before it opens. Rider: the in-product sheet
   omits undo/redo; add the rows when touching it.
 
-- **`SiteConfig`'s doc comment says unknown keys are ignored; the parser throws on them
-  (docs friction log, triaged 2026-08-14).** `src/lib/nav/site-config.ts:74-76` still reads
-  "Unknown keys are ignored so the file can grow without an engine change," and the interface
-  still carries a `[key: string]: unknown` index signature (`:104`) that says the same thing.
-  `KNOWN_TOP_LEVEL_KEYS` (`:293`) and `parseSiteConfig`'s check (`:337`) throw `unrecognized
-  key` on anything outside the set instead. The strict behavior is the one worth keeping (it
-  catches a typo and a misplaced adapter setting, with its own `ADAPTER_MISPLACEMENTS` table
-  for exactly that), so the comment and the index signature are the stale half, and this
-  already cost real breakage: it is what let the scaffolder ship a `tagline:` key that broke
-  every scaffolded site's build, since the shape a reader consults said the key would be
-  ignored. Fix the doc comment to state the strict behavior, and weigh dropping the index
-  signature, which still advertises an openness the parser does not honor.
-
-- **The delete-refusal banner uses the plural concept label in a singular sentence (docs friction
-  log, live-reproduction seam harvest, 2026-08-18).** `ConceptList.svelte:316` renders `This
-  {data.label.toLowerCase()} could not be deleted`, so a reader sees "This posts could not be
-  deleted." `:255` composes the same sentence for the polite live region, so an assistive-tech
-  user hears it too. `:211` in the same file already reaches for `data.singular ?? data.label`, so
-  the component carries the right noun and these two strings take the wrong one. Trigger: fix
-  before any docs page embeds the `publish/refusal-banner` reproduction, which reproduces that
-  sentence at full size.
-
 - **Two published extend pages assert a commit-attribution fact a live commit disproves (docs
   friction log, backfill mining, 2026-08-18).** `docs/extend/architecture.md` tells a reader the
   committer is `cairn-cms[bot]` in three places, its prose at `:114`, the sequence arrow at `:102`,
@@ -708,16 +712,6 @@ The original decision framing, for the record:
   `CLAUDE.md` states as design) is a separate decision that needs its own ruling before the code
   changes.
 
-- **The default deployable bundle is over the Workers Free script limit, and no gate can catch it
-  (docs friction log, backfill mining, 2026-08-18).** The showcase bundle measured about 3.17 MiB
-  gzipped against Cloudflare's 3 MiB free-tier script limit, and the scaffolded site inherits that
-  bundle directly through the emitted template. The only tripwire, `.github/workflows/e2e.yml:74`,
-  budgets 5 MiB, so it cannot fail until well past the point a free-plan deploy already has.
-  `src/lib/doctor/` has no size check. Meanwhile the admin track tells a reader the default path
-  runs on the free plan (`create-your-site.md:85`, `own-your-domain.md:25`), framing Workers Paid
-  as needed only for a second editor's sign-in email. The narrow ask is a free-tier-calibrated
-  warning, not a resolver rewrite. Outlives the Node CLI and touches release one.
-
 - **Two sites whose names slug alike silently adopt each other's Worker, databases, and bucket
   (docs friction log, backfill mining, 2026-08-18).**
   `packages/create-cairn-site/src/cloudflare/config.mjs:55` derives the worker name as a pure
@@ -727,13 +721,6 @@ The original decision framing, for the record:
   reassurance ("deploying again later updates it") rather than warning that an existing resource
   belonging to a different site will be taken over. T3's review named this and proposed three
   fixes; none landed. Account-safety, and it outlives the Node CLI.
-
-- **Every scaffolded site's own build prints an unexplained refusal into its owner's build log
-  (docs friction log, backfill mining, 2026-08-18).** The baked template's footer links `/admin`
-  on every page, the prerender crawler follows it, and `src/lib/sveltekit/guard.ts:114` answers
-  with `guard.rejected` (`reason: 'https'`) and a branded 400. So a new owner's first build output
-  carries a security-shaped refusal and a `400 /admin (linked from /)` that no doc explains and
-  nothing suppresses.
 
 **The pre-beta sequence (Geoff, 2026-07-02; the order is the plan, executed continuously with
 the named human gates only):**

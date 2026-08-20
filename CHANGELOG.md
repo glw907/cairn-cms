@@ -150,6 +150,16 @@
   through the advanced `createContentRoutes` seam), never by hand-assembling the edit payload, so
   the new field arrives populated on upgrade with no site-side change.
 
+- `SiteConfig`'s doc comment and its type both claimed an openness the parser refuses.
+  `parseSiteConfig` has always thrown on a top-level `site.config.yaml` key outside its known set
+  (naming the key's correct home in `cairn.config.ts` when one exists), but the doc comment said
+  unknown keys are ignored, and the type carried a matching `[key: string]: unknown` index
+  signature. Both now state the strict, throwing behavior; the runtime behavior is unchanged.
+  Consumers must: nothing for code that reads `SiteConfig` by its declared fields, the supported
+  way. A site whose own TypeScript indexed a parsed `SiteConfig` with a dynamic key, or passed one
+  where a `Record<string, unknown>` was expected, gets a compile error and should read the field by
+  name or narrow explicitly; the parser was already refusing that same unknown key at runtime.
+
 ## 0.95.0-rc.1
 
 <!-- release-size: minor -->

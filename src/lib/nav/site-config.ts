@@ -72,8 +72,10 @@ export function validateNavTree(value: unknown, maxDepth: number): NavNode[] {
 }
 
 /**
- * Shape of the YAML site-config file. Unknown keys are ignored so the file can grow without an
- * engine change. Read at build time by the public site.
+ * Shape of the YAML site-config file, read at build time by the public site. Every top-level key
+ * is one of the fields declared below. parseSiteConfig throws on anything else rather than passing
+ * it through, so a misspelled key, or one misplaced from cairn.config.ts, fails loudly at parse
+ * time. ADAPTER_MISPLACEMENTS names the correct home for the keys that commonly land here.
  */
 export interface SiteConfig {
   siteName: string;
@@ -101,7 +103,6 @@ export interface SiteConfig {
    *  per-concept. Absent means the taxonomy field stays the open creatable multiselect (opt-in).
    */
   vocabulary?: VocabularyEntry[];
-  [key: string]: unknown;
 }
 
 /**

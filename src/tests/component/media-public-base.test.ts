@@ -6,8 +6,7 @@ import MediaHeroField from '../../lib/components/MediaHeroField.svelte';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
 import { MEDIA_BASE_CONTEXT_KEY } from '../../lib/components/media-base-context.js';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
-import type { MediaLibraryData } from '../../lib/sveltekit/content-routes.js';
-import type { AdminShellData } from '../../lib/sveltekit/content-routes.js';
+import type { AdminShellData, MediaLibraryData } from '../../lib/sveltekit/content-routes.js';
 import CairnAdminShellMediaHarness from './_CairnAdminShellMediaHarness.svelte';
 
 // The base a mounting context injects. It is the reproductions module's own fixture base, the first

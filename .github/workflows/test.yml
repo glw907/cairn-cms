@@ -55,6 +55,10 @@ jobs:
       - run: npm run check:prose
       - run: npm run check:version
       - run: npm run check:dev-package
+      # templates/waymark is generated from examples/showcase by the bake, so it can go stale the
+      # moment the showcase changes. This is the tripwire that used to be a weekly cross-repo drift
+      # cron: it needs no push credential and fails on the change that caused the drift.
+      - run: npm run check:template
       # The showcase lockfile is committed and installed with `npm ci` so this job resolves the
       # exact toolchain a developer reproduces locally, the same convention e2e.yml follows.
       - run: npm ci --prefix examples/showcase

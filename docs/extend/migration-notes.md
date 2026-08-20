@@ -9,6 +9,14 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
+## Unreleased
+
+Nothing. The Waymark deploy template moved into this repository at `templates/waymark/`, replacing
+its cross-repo sync. That changes how cairn maintains the template and touches no engine export,
+type, or runtime behavior. None of it ships in the package tarball.
+
+See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+
 ## 0.95.0
 
 This release promotes `0.95.0-rc.1`, which only ever reached the `next` dist-tag, so a site coming

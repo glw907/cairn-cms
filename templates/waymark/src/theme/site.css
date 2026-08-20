@@ -1,0 +1,172 @@
+/* examples/showcase/src/theme/site.css
+   The reading-column container and the cairn figure-placement contract for the public (site) pages.
+   The chrome (header, nav, footer) moved to owned token-driven components (SiteHeader.svelte,
+   SiteFooter.svelte); this sheet now carries only the centered `.site-main` measure and the figure
+   role classes, on the public theme's tokens (theme.css), so they re-skin with the rest. The bespoke
+   article surface (every prose element) lives in prose.css, which theme.css @import-s; this sheet
+   keeps only the layout container and the figure-placement geometry the article sits inside.
+
+   The sheet is referenced only through Vite ?url imports: the (site) layout links the resolved URL,
+   and the adapter's preview knob hands the same URL to the editor's preview frame. The preview's
+   `containerClass` is `site-main prose`, so the frame's one wrapper div reproduces both the site's
+   centered column (this sheet) and the article's typography (prose.css); the figure rules below are
+   scoped to `.site-main` for that reason. A static `import './site.css'`
+   in the layout would fold the sheet into the layout's CSS chunk, whose basename differs between the
+   client and server builds, so the server-resolved ?url would 404 in the browser. Referenced only as
+   an asset, both builds emit site.<hash>.css under one content hash, and the URL holds.
+
+   TIER MAP (docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md):
+     - Tier 2 (owned): the `.site-main` reading column and the `.cairn-place-center/wide/full` figure
+       contract. cairn defines the figure class contract; the site owns the pixels by styling them.
+     - Tier 2 (owned): the `.banner*` demo block below. It reads the theme info tokens, so re-skinning
+       the theme re-skins the demo along with the rest of the page. */
+
+/* The ultrawide posture (locked; see docs/internal/public-design-system.md). Every layout dimension
+   in this theme is rem-based, the reading measure included, so growing the root font-size grows the
+   whole surface proportionally with no separate wide-layout reflow. Below ~1440px (phone through a
+   laptop screen) the clamp floors at exactly 1rem; nothing here changes at or under that breakpoint.
+   From ~1440px to ~2200px it scales smoothly to ~112.5% (18px), then holds flat past the cap, so a
+   2560px render fills meaningfully more of the viewport while the 44rem measure keeps its
+   proportions rather than stretching into an over-wide line. The two constants below are the fluid
+   formula's intercept and slope for that 1440-to-2200 range (16px to 18px), rounded down a touch so
+   the floor breakpoint (1440px) never computes a hair above 1rem. */
+html {
+  font-size: clamp(1rem, 0.7631rem + 0.2631vw, 1.125rem);
+
+  /* The sticky-header scroll offset. SiteHeader is `sticky top-0`, so an in-page anchor jump or a
+     focused heading would otherwise land under the band (WCAG 2.4.11, focus not obscured). This sizes
+     the gap to the header from the same tokens the header uses: the nav links' own `min-h-11` touch
+     target (2.75rem, the tallest thing in the row, taller than the wordmark) plus its vertical
+     `--spacing-xs` padding, plus a 1rem cushion, so the offset re-skins with the space scale. At a
+     1280px desktop viewport the rendered header is about 72px (~4.5rem) and this resolves to about
+     87px (~5.4rem), so a jumped-to or focused heading clears the band with a comfortable margin. */
+  scroll-padding-top: calc(2.75rem + 2 * var(--spacing-xs) + 1rem);
+}
+
+/* The centered reading column at the measure. The chrome components (SiteHeader, SiteFooter) cap
+   their inner content at this same measure, so their left edge lines up with the body copy instead
+   of centering independently at a wider band; this is the container the editor preview frame
+   reproduces. */
+.site-main {
+  /* `width: 100%` is load-bearing, not decorative: `.site-main` is `flex-1` (a flex item on the
+     CROSS axis of the (site) layout's column-direction shell), and a flex item's width defaults to
+     auto, which does not stretch to the flex line the way a plain block's width does. Auto-width
+     cross-axis sizing instead shrinks-to-fit the item's own content, with two visible symptoms
+     depending on what that content is: a descendant intrinsically wider than the column (a code
+     block or table with its own `overflow-x: auto`) grows the shrink-wrapped box past the column,
+     and that growth bubbles up through every auto-sized ancestor, pushing the document past the
+     viewport at a narrow width; a page with no such descendant (a short post with a short h1 and
+     little body text) instead shrink-wraps NARROWER than the measure, and `margin-inline: auto`
+     then centers that undersized box, reading as the whole reading column drifted off the shared
+     gutter relative to every other page. `min-width: 0` alone fixes neither; only an explicit
+     width does. Chassis's own `.cairn-site-main` recipe (composition.css) documents and bakes in
+     this exact fix; this hand-rolled shell needs the same explicit width. */
+  width: 100%;
+  min-width: 0;
+  /* margin-inline, not the margin: 0 auto shorthand: the shorthand also zeroes the block
+     (top/bottom) margins, which would silently beat a future sibling's own Tailwind `mt-*`/`mb-*`
+     utility (an unlayered plain CSS rule always wins over a layered one; see the chassis README's
+     cascade-layers note, hit for real on the Foxi and gallery ports). */
+  max-width: var(--container-measure);
+  margin-inline: auto;
+  padding: var(--spacing-l) var(--spacing-m);
+}
+
+/* cairn figure placement: the default reader CSS for the :::figure role classes (media 3a). cairn
+   defines the class contract; a site owns the pixels by overriding these. The breakout centers a
+   figure on the viewport from inside the centered, max-width .site-main column. overflow-x: clip on
+   the body keeps the full-bleed figure from adding a horizontal scrollbar (clip is sticky-safe). */
+body {
+  overflow-x: clip;
+}
+.site-main figure {
+  margin: var(--spacing-l) 0;
+}
+.site-main figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-box);
+}
+/* A caption is normally a real <figcaption> (the figure render step promotes the trailing text when
+   the image is a managed `media:` reference). A raw external image URL, media 3a's other supported
+   authoring path, never matches that promotion's media-reference check, so its trailing text stays a
+   plain sibling <p> with no figcaption tag; `> * + *` catches that fallback (the image is always the
+   figure's first child, whichever form it took) so the caption reads the same whichever path the
+   author used. */
+.site-main figure figcaption,
+.site-main figure > * + * {
+  margin-top: var(--spacing-2xs);
+  font-size: var(--text-step--1);
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+/* Hero, wide, and full figures run at the column or the viewport width with no height limit, so an
+   extreme-ratio photo (a tall portrait crop, a rare panorama) can blow the column height out. Cap the
+   box and let object-fit: cover crop only what the cap cannot hold, so a normal-ratio photo (like every
+   image in the showcase content) renders at its own proportions, well under the cap, completely
+   unaffected; cover never stretches, so even a capped image keeps its true aspect. The centered figure
+   (below) is exempt: it is already bounded to a small width for a portrait or a detail shot, and
+   forcing a landscape crop there would defeat that shape. */
+.site-main figure:not(.cairn-place-center) img {
+  max-height: 32rem;
+  object-fit: cover;
+}
+
+/* center: a below-measure image, centered in the column. for a portrait or a detail shot. */
+.site-main .cairn-place-center {
+  text-align: center;
+}
+.site-main .cairn-place-center img {
+  max-width: min(100%, 22rem);
+  margin-inline: auto;
+}
+
+/* wide: break past the measure to a wider band, centered on the viewport. always at most
+   100vw - 3rem, so it never adds a scrollbar. */
+.site-main .cairn-place-wide {
+  width: min(var(--container-measure-wide), 100vw - 3rem);
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* full: full-bleed across the viewport, corners squared to read as a deliberate bleed. the caption
+   returns to the measure so it reads as a line of text, not a banner. */
+.site-main .cairn-place-full {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.site-main .cairn-place-full img {
+  border-radius: 0;
+}
+/* The gutter the caption returns to (see the figcaption comment above for why the selector also
+   catches the plain-<p> fallback): without it, a full-bleed figure's caption inherited the figure's
+   own 100vw breakout with no inset of its own, so its text ran to the literal viewport edge (x=0)
+   instead of reading as a line under the image. */
+.site-main .cairn-place-full figcaption,
+.site-main .cairn-place-full > * + * {
+  max-width: var(--container-measure);
+  margin-inline: auto;
+  padding: 0 var(--spacing-m);
+  box-sizing: border-box;
+}
+
+/* Island demo: the expiring-announcement banner and its no-JS fallback share these classes, so the
+   swap on hydration never shifts the layout. Minimal styling, reading the theme info tokens the way
+   the alert directive does. */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-s);
+  padding: var(--spacing-s) var(--spacing-m);
+  border-left: 3px solid var(--cairn-info-ink);
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, var(--color-info) 10%, var(--color-base-100));
+}
+.banner-message {
+  margin: 0;
+}

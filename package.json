@@ -73,7 +73,9 @@
     "test:component": "vitest run --project component",
     "emit-template": "node scripts/build/emit-template.mjs",
     "test:emit": "node --test scripts/build/emit-template.test.mjs",
-    "design:mockup-css": "npm run package && node scripts/build/build-mockup-css.mjs"
+    "design:mockup-css": "npm run package && node scripts/build/build-mockup-css.mjs",
+    "emit:template": "node packages/create-cairn-site/scripts/emit-template-dir.mjs",
+    "check:template": "node packages/create-cairn-site/scripts/emit-template-dir.mjs --check"
   },
   "exports": {
     ".": {
@@ -236,6 +238,7 @@
     "@arethetypeswrong/cli": "^0.18.3",
     "@cloudflare/vitest-pool-workers": "^0.16",
     "@cloudflare/workers-types": "^4.20260501.0",
+    "@sveltejs/adapter-cloudflare": "^7.2.9",
     "@sveltejs/kit": "^2.68.0",
     "@sveltejs/package": "^2",
     "@sveltejs/vite-plugin-svelte": "^7.1",

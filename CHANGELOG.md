@@ -1,3 +1,28 @@
+## Unreleased
+
+### Changed
+
+- The Waymark deploy template moved into this repository at `templates/waymark/`, and the
+  cross-repo sync that maintained a separate `glw907/cairn-waymark-template` is deleted. Cloudflare's
+  deploy-buttons documentation allows a button URL to name a subdirectory, and their own template
+  gallery is a monorepo, so the second repository was never load-bearing; C3's `--template` accepts
+  the same `owner/repo/subdir` shape. The tree is still generated wholesale from `examples/showcase`
+  by the bake plus the repo-only overlay, now through
+  `packages/create-cairn-site/scripts/emit-template-dir.mjs` (`npm run emit:template`), and
+  `npm run check:template` fails when the committed tree and a fresh bake disagree. That gate
+  replaces the weekly cross-repo drift cron: it needs no push credential and fails on the change that
+  caused the drift rather than the following Monday. Deleted with the sync: `sync-template.yml`,
+  `publish.yml`'s `sync-template-repo` job and its release-ordering race, and
+  `sync-template-repo.mjs` with its test. The template deliberately sits outside the root
+  `package.json`'s `packages/*` workspace glob, because Cloudflare treats the subdirectory as the
+  root of the repository it creates and requires the application be fully isolated within it, which a
+  workspace member (hoisted to the root lockfile) would not be. One consequence rides every future
+  cut: the emitted `package.json` names the engine version, so a version bump drifts the tree and
+  `check:template` goes red until `npm run emit:template` runs and the result is committed. That is
+  the gate doing its job rather than a defect, and it is deliberately a failing check rather than a
+  line in a checklist, so it cannot be forgotten. Consumers must: nothing; none of this ships in the
+  engine tarball.
+
 ## 0.95.0
 
 <!-- release-size: minor -->

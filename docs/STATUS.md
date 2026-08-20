@@ -66,13 +66,17 @@ verification that has not run, and the tool they belong to is held, so dropping 
 button that does not exist. It is refiled onto its real trigger, a `WATCH` on the notice itself plus
 a ROADMAP entry beside the defects holding the tool.
 
-**What the cut could not do: the public template repo.** `glw907/cairn-waymark-template` does not
-exist, and `gh secret list --repo glw907/cairn-cms` returns nothing, so `TEMPLATE_REPO_TOKEN` is
-unset. The sync fails on `TEMPLATE_REPO_TOKEN is required to push to an https remote`, which is not
-new: the 2026-08-17 scheduled run failed the same way, before this cut touched anything. Both halves
-need Geoff, a repo creation and a credential. Until then `publish.yml`'s `sync-template-repo` job
-fails on every release and the weekly cron keeps crying wolf. Filed in `ROADMAP.md`'s Now tier; the
-natural home is the tool's own publish, whose clean-clone build the registry now satisfies.
+**What the cut could not do, and what replaced it: the public template repo.** At the cut,
+`glw907/cairn-waymark-template` did not exist and `TEMPLATE_REPO_TOKEN` was unset, so the sync
+failed on `TEMPLATE_REPO_TOKEN is required to push to an https remote` (the 2026-08-17 scheduled run
+had already failed the same way). **Geoff ruled the fix 2026-08-20: move the template into this repo
+and delete the sync.** It now lives at `templates/waymark/`, emitted by
+`packages/create-cairn-site/scripts/emit-template-dir.mjs` and gated by `npm run check:template` in
+`test.yml`. Cloudflare's deploy-buttons doc allows a subdirectory in a button URL and their own
+gallery is a monorepo, and C3's `--template` takes `owner/repo/subdir`, so the second repo bought
+nothing the subdirectory does not. Deleted with it: `sync-template.yml` and its weekly cron,
+`publish.yml`'s `sync-template-repo` job, and `sync-template-repo.mjs` plus its test. No push
+credential, no second copy, and drift now fails on the change that caused it.
 
 ### What consumers owe on this window
 
@@ -332,7 +336,7 @@ by oversight, and is not to be re-raised on the old "URGENT, leaked and still ac
 (1) Delete the GitHub App `cairn-t4b-live-03cd31`. (2) Revoke the T4c spike API token
 `d07b2a25f05151591830c45053186979`, then `rm -f ~/.config/cairn/t4c-spike-token
 ~/.config/cairn/store-t4c-token.sh`. (3) 907-life's push-to-deploy has been broken since
-2026-07-14. (4) Mint the fine-grained `TEMPLATE_REPO_TOKEN` PAT at release one. (5) The button
+2026-07-14. (4) `TEMPLATE_REPO_TOKEN` is no longer owed: the 2026-08-20 template move deleted the cross-repo sync that needed it. (5) The button
 spike's browser moment, owed at release one with T5a'. (6) Delete the GitHub App
 `cairn-t5-scratch` (id 4585219), which uninstalls installation 153531337 with it; with (1) and
 (9) the ledger stands at three Apps awaiting deletion. (7) Revoke three Cloudflare API tokens at

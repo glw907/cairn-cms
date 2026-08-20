@@ -1,0 +1,117 @@
+/* ============================================================================
+   The chassis's composition primitives: card, band, section, hero, and sidebar-layout. These are
+   the "generous, not minimal" ruling made concrete (Geoff, 2026-07-05): a theme reaches for one of
+   these recipes instead of hand-rolling its own card or two-column layout from scratch, the same
+   way it reaches for a token instead of a literal color. Nothing in the showcase's current markup
+   uses any of these yet; adopting one is a theme's choice, never a requirement, and every recipe
+   below is overridable per-instance through its own `--cairn-<primitive>-*` custom properties
+   (documented at each rule) rather than only through the shared design-scale tokens.
+
+   Every rule here reads chassis/tokens.css tokens exclusively (spacing, radius, and DaisyUI color
+   roles); none declares a literal color or a theme-specific value, so a re-skin (or an entirely
+   different theme) carries these forward unchanged. See src/chassis/README.md for the full
+   override-seam list, including how to add a new primitive.
+   ============================================================================ */
+@layer components {
+  /* Card: a bordered, padded surface. The callout/alert/video-facade directives already hand-roll
+     this shape in prose.css (scoped to their own class names, since a directive's markup is fixed
+     by the engine); .cairn-card is the same recipe for a theme's OWN chrome or composed-page
+     markup, where the class name is free to pick. */
+  .cairn-card {
+    --cairn-card-padding: var(--spacing-m);
+    --cairn-card-radius: var(--radius-box);
+    --cairn-card-bg: var(--color-base-100);
+    --cairn-card-border: var(--border) solid var(--color-card-border);
+    padding: var(--cairn-card-padding);
+    border-radius: var(--cairn-card-radius);
+    background: var(--cairn-card-bg);
+    border: var(--cairn-card-border);
+  }
+
+  /* Band: a full-bleed horizontal strip (a page-width section with its own background), for a
+     home-page CTA panel or a marketing strip that wants to break out of the reading column. Pairs
+     with .site-main-style centering inside it: put a max-width container as the band's child. */
+  .cairn-band {
+    --cairn-band-padding-block: var(--spacing-xl);
+    --cairn-band-bg: var(--color-base-200);
+    padding-block: var(--cairn-band-padding-block);
+    background: var(--cairn-band-bg);
+  }
+
+  /* Section: a vertical rhythm block within the reading column, for grouping a composed page's
+     pieces (a home page's "latest" block, an about page's "team" block) with consistent spacing
+     above and below, without each caller re-deriving the gap by hand. */
+  .cairn-section {
+    --cairn-section-gap: var(--spacing-l);
+    margin-block: var(--cairn-section-gap);
+  }
+  .cairn-section > * + * {
+    margin-top: var(--cairn-section-gap);
+  }
+
+  /* Hero: an introductory block with a large display heading over a recessed sub-line, the shape
+     the showcase's own home masthead and the styleguide both hand-roll today in scoped `<style>`
+     blocks. A theme adopts .cairn-hero to get the same rhythm without repeating the declarations. */
+  .cairn-hero {
+    --cairn-hero-gap: var(--spacing-s);
+    display: flex;
+    flex-direction: column;
+    gap: var(--cairn-hero-gap);
+  }
+  .cairn-hero-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--text-step-5);
+    font-weight: 600;
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+  }
+  .cairn-hero-lead {
+    margin: 0;
+    max-width: var(--container-measure);
+    font-size: var(--text-step-1);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
+  }
+
+  /* Sidebar layout: a main column plus a narrower aside, stacking below a fixed 48rem breakpoint
+     (a media query condition cannot read a custom property, so the breakpoint itself is not a
+     token seam) so a phone reader never gets a squeezed two-column layout. A theme that wants a
+     docs-style side nav or an article's related-posts rail reaches for this instead of a bespoke
+     grid. The aside's own width is overridable per instance via --cairn-sidebar-width. */
+  .cairn-sidebar-layout {
+    --cairn-sidebar-width: 16rem;
+    --cairn-sidebar-gap: var(--spacing-l);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--cairn-sidebar-gap);
+  }
+  @media (min-width: 48rem) {
+    .cairn-sidebar-layout {
+      grid-template-columns: 1fr var(--cairn-sidebar-width);
+    }
+  }
+
+  /* Site shell: a sticky-footer flex column (header, growing main, footer), for a theme whose
+     chrome wants the footer pinned to the viewport bottom on a short page (the AstroPaper port's
+     shape). `.cairn-site-shell` is the flex column; `.cairn-site-main` is the growing item. A
+     flex item's own width is auto, and auto does not resolve against the flex line on the CROSS
+     axis the way a plain block's width does (this is a different bug from the well-known
+     main-axis min-content gotcha): when a descendant intrinsically wider than the column (a
+     table with nowrap cells, any box with its own overflow-x: auto) sits anywhere inside
+     `.cairn-site-main`, the item shrinks-to-fit that descendant's content width instead of
+     stretching, and the growth silently bubbles up through every auto-sized ancestor, breaking
+     the layout at narrow viewports. `min-width: 0` alone does not fix this (confirmed by
+     bisection: only an explicit width does). `.cairn-site-main` bakes the fix in, so a theme
+     adopting this shell never rediscovers the bug the AstroPaper port hit. */
+  .cairn-site-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .cairn-site-main {
+    flex: 1 1 0%;
+    width: 100%;
+    min-width: 0;
+  }
+}

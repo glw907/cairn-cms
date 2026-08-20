@@ -1,0 +1,256 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "trail-safety-notice",
+      "concept": "fragments",
+      "title": "Trail safety notice",
+      "permalink": "/fragments/trail-safety-notice",
+      "summary": "Check current avalanche and trail conditions before you set out, and carry the ten essentials above treeline.",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "about",
+      "concept": "pages",
+      "title": "About",
+      "permalink": "/about",
+      "summary": "This is Waymark, cairn's starter template, running here as the engine's own development showcase. Every post and page on this site is deliberate placeholder content that a real site replaces. Each…",
+      "draft": false,
+      "links": [],
+      "includes": [
+        "trail-safety-notice"
+      ]
+    },
+    {
+      "id": "the-trail-crew",
+      "concept": "pages",
+      "title": "The Trail Crew",
+      "permalink": "/the-trail-crew",
+      "summary": "The small crew who write the trail notes on this showcase: three people who split the season between guidebook research, gear testing, and the actual walking. Like the rest of this showcase, this…",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "2026-01-15-hello",
+      "concept": "posts",
+      "title": "Hello, cairn",
+      "date": "2026-01-15",
+      "permalink": "/posts/hello",
+      "summary": "The first showcase post, and a placeholder demonstrating the hero image, gallery, FAQ, and related-post fields together.",
+      "draft": false,
+      "links": [
+        {
+          "concept": "pages",
+          "id": "about"
+        }
+      ],
+      "mediaRefs": [
+        "00112233445566aa"
+      ],
+      "references": [
+        {
+          "field": "author",
+          "concept": "pages",
+          "id": "about"
+        },
+        {
+          "field": "related",
+          "concept": "posts",
+          "id": "2026-02-20-second"
+        }
+      ],
+      "tags": [
+        "Markdown",
+        "Svelte"
+      ]
+    },
+    {
+      "id": "2026-02-20-second",
+      "concept": "posts",
+      "title": "A second post",
+      "date": "2026-02-20",
+      "permalink": "/posts/second",
+      "summary": "A placeholder proving the archive and feed list more than one entry.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "Cloudflare",
+        "Svelte"
+      ]
+    },
+    {
+      "id": "2026-03-10-callout",
+      "concept": "posts",
+      "title": "A post with a callout",
+      "date": "2026-03-10",
+      "permalink": "/posts/callout",
+      "summary": "A placeholder exercising the callout directive and the shared trail-safety fragment.",
+      "draft": false,
+      "links": [],
+      "includes": [
+        "trail-safety-notice"
+      ]
+    },
+    {
+      "id": "2026-04-05-the-reading-surface",
+      "concept": "posts",
+      "title": "The reading surface",
+      "date": "2026-04-05",
+      "permalink": "/posts/the-reading-surface",
+      "summary": "A working tour of every element this theme styles, written as the markdown an author actually types.",
+      "draft": false,
+      "links": [
+        {
+          "concept": "pages",
+          "id": "about"
+        }
+      ],
+      "references": [
+        {
+          "field": "author",
+          "concept": "pages",
+          "id": "the-trail-crew"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-01-spring-thaw",
+      "concept": "posts",
+      "title": "Spring thaw on the lower loop",
+      "date": "2026-05-01",
+      "permalink": "/posts/spring-thaw",
+      "summary": "Snowmelt opens the lower loop early this year — placeholder trail notes exercising the topics filter's Trail Reports and Weather tags.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "trail-reports",
+        "weather"
+      ]
+    },
+    {
+      "id": "2026-05-08-boot-fit",
+      "concept": "posts",
+      "title": "Getting your boot fit right",
+      "date": "2026-05-08",
+      "permalink": "/posts/boot-fit",
+      "summary": "A quick checklist for dialing in a comfortable boot, one of several placeholder posts that pad the archive past its first page.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear"
+      ]
+    },
+    {
+      "id": "2026-05-15-ridge-route",
+      "concept": "posts",
+      "title": "The ridge route, end to end",
+      "date": "2026-05-15",
+      "permalink": "/posts/ridge-route",
+      "summary": "A full traverse of the ridge with notes on the cruxes, placeholder trail notes carrying the Routes tag.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes",
+        "trail-reports"
+      ]
+    },
+    {
+      "id": "2026-05-22-layering",
+      "concept": "posts",
+      "title": "Layering for shoulder season",
+      "date": "2026-05-22",
+      "permalink": "/posts/layering",
+      "summary": "What to wear when the mornings bite and the afternoons bake — placeholder trail notes pairing the Gear and Weather tags.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear",
+        "weather"
+      ]
+    },
+    {
+      "id": "2026-05-29-first-frost",
+      "concept": "posts",
+      "title": "Reading the first frost",
+      "date": "2026-05-29",
+      "permalink": "/posts/first-frost",
+      "summary": "Early-season frost and what it tells you about the snowpack, placeholder trail notes carrying the Season Notes tag.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "season-notes",
+        "weather"
+      ]
+    },
+    {
+      "id": "2026-06-05-valley-loop",
+      "concept": "posts",
+      "title": "The valley loop in a morning",
+      "date": "2026-06-05",
+      "permalink": "/posts/valley-loop",
+      "summary": "A relaxed loop you can finish before lunch — another placeholder entry filling out the archive's second page.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes"
+      ]
+    },
+    {
+      "id": "2026-06-12-pack-list",
+      "concept": "posts",
+      "title": "A pack list that travels light",
+      "date": "2026-06-12",
+      "permalink": "/posts/pack-list",
+      "summary": "Trimming the kit down to what actually earns its weight, placeholder trail notes rounding out the Gear tag.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear",
+        "trail-reports"
+      ]
+    },
+    {
+      "id": "2026-06-19-storm-window",
+      "concept": "posts",
+      "title": "Catching the storm window",
+      "date": "2026-06-19",
+      "permalink": "/posts/storm-window",
+      "summary": "Timing a route around an incoming weather window — placeholder trail notes pairing the Routes and Weather tags.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes",
+        "weather"
+      ]
+    },
+    {
+      "id": "2026-06-26-late-season",
+      "concept": "posts",
+      "title": "Late-season notes from the high col",
+      "date": "2026-06-26",
+      "permalink": "/posts/late-season",
+      "summary": "What changes up high as the season turns over, placeholder trail notes rounding out the Season Notes tag.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "season-notes",
+        "trail-reports"
+      ]
+    },
+    {
+      "id": "2026-07-03-trail-mix",
+      "concept": "posts",
+      "title": "On trail mix and small comforts",
+      "date": "2026-07-03",
+      "permalink": "/posts/trail-mix",
+      "summary": "The little rituals that keep a long day pleasant — the last of the placeholder trail notes filling out the topics-filter fixtures.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear",
+        "season-notes"
+      ]
+    }
+  ]
+}

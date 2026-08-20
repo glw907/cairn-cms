@@ -226,9 +226,9 @@ async function renameGitignoreForPacking(emitted) {
 /**
  * Bake the template, then store its `.gitignore` under the dot-free name a published tarball can
  * carry (see `renameGitignoreForPacking`). This is the entry point create-cairn-site's own
- * `prepack` step uses to build what gets packed. A caller that instead publishes the baked tree
- * through git (`sync-template-repo.mjs`, whose overlay appends onto the emitted `.gitignore`
- * directly) calls plain `bake()`, since a git-hosted template repo has no npm packlist to survive.
+ * `prepack` step uses to build what gets packed. A caller that instead commits the baked tree to
+ * this repo (`emit-template-dir.mjs`, whose overlay appends onto the emitted `.gitignore`
+ * directly) calls plain `bake()`, since a committed tree has no npm packlist to survive.
  * @param {{ to: string, engineSpec?: string, devSpec?: string }} opts same as `bake`
  * @returns {Promise<string>} the emitted tree's root (`opts.to`)
  */

@@ -1,0 +1,28 @@
+siteName: Waymark
+menus:
+  primary:
+    - label: Writing
+      url: /
+    - label: Styleguide
+      url: /styleguide
+    - label: Admin
+      url: /admin
+vocabulary:
+  - value: trail-reports
+    label: Trail Reports
+  - value: gear
+    label: Gear
+  - value: weather
+    label: Weather
+  - value: routes
+    label: Routes
+  - value: season-notes
+    label: Season Notes
+spellcheck:
+  dialect: en-US
+tidy:
+  enabled: true
+  conventions:
+    fixes: true
+    oxfordComma: always
+    smartQuotes: true

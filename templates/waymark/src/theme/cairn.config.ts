@@ -1,0 +1,520 @@
+// The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
+// a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
+import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, githubApp } from '@glw907/cairn-cms';
+import { cardShell, headRow, strAttr } from '@glw907/cairn-cms/render';
+import { normalizeAssets, buildMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
+import type { IconSet } from '@glw907/cairn-cms';
+import { h } from 'hastscript';
+import type { ElementContent } from 'hast';
+import { siteIslands } from '$theme/islands/registry.js';
+import { isBannerExpired } from '$theme/islands/banner-expiry.js';
+import { makeIconRenderer, proseTypography } from '$chassis/render.js';
+// The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
+// a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
+// sheet must stay ?url-only; see the header comment in site.css.
+import themeCss from './theme.css?url';
+import siteCss from './site.css?url';
+
+const icons: IconSet = {
+  snowflake: 'M128 24v208M44 76l168 104M212 76L44 180',
+  leaf: 'M48 208c0-88 72-160 160-160 0 88-72 160-160 160Z',
+  // A speech glyph for the callout picker row and a triangle-bang for the alert row.
+  callout: 'M216 48H40a8 8 0 0 0-8 8v160l40-32h144a8 8 0 0 0 8-8V56a8 8 0 0 0-8-8Z',
+  alert: 'M128 24 8 224h240L128 24Zm0 72v56m0 32v8',
+  // A trail-marker pennant: the icon component's own picker row, a selectable content glyph, and the
+  // banner component's picker row (a banner is, literally, a flag).
+  flag: 'M64 24v208M64 32h128l-32 32 32 32H64',
+  // A solid right-pointing triangle, the video facade's picker row and its thumbnail glyph.
+  play: 'M80 32v192l152-96Z',
+  // Two stylized quote marks, for the pull-quote picker row.
+  quote: 'M48 64h64v64c0 35-29 64-64 64v-32c18 0 32-14 32-32H48Zm112 0h64v64c0 35-29 64-64 64v-32c18 0 32-14 32-32h-32Z',
+  // A thick right arrow, for the CTA picker row and its link glyph.
+  'arrow-right': 'M32 104h128v-32l96 56-96 56v-32H32Z',
+  // A thick downward chevron, echoing the native <details> disclosure marker for the FAQ picker row.
+  'chevron-down': 'M32 64 128 176 224 64 224 104 128 216 32 104Z',
+};
+
+const callout = defineComponent({
+  name: 'callout',
+  label: 'Callout',
+  description: 'A highlighted note with an optional icon.',
+  use: 'Draw the reader to one important idea.',
+  group: 'Callouts',
+  icon: 'callout',
+  // A structured sample so the configure step opens two-pane with a live preview.
+  preview: {
+    attributes: { tone: 'note' },
+    slots: {
+      title: 'A worked example',
+      body: 'This is what the callout looks like while you fill it in.',
+      points: ['First takeaway', 'Second takeaway'],
+    },
+  },
+  build: (ctx) =>
+    h('aside', { className: ['callout', `callout-${String(ctx.attributes.tone ?? 'note')}`] }, [
+      h('p', { className: ['callout-title'] }, ctx.slot('title')),
+      h('div', { className: ['callout-body'] }, ctx.slot('body')),
+      h('ul', { className: ['callout-points'] }, ctx.items('points').map((item: ElementContent[]) => h('li', item))),
+    ]),
+  attributes: {
+    tone: fields.select({ label: 'Tone', required: true, options: ['note', 'tip', 'warning'] }),
+    icon: fields.icon({ label: 'Icon' }),
+  },
+  slots: [
+    { name: 'title', label: 'Title', kind: 'inline', required: true },
+    { name: 'body', label: 'Body', kind: 'markdown' },
+    { name: 'points', label: 'Points', kind: 'repeatable', itemFields: { text: fields.text({ label: 'Item' }) } },
+  ],
+});
+
+// The chassis wires the icon set into the render helpers; this theme owns only the glyph data
+// (the `icons` set above) and where each build() function calls makeIcon.
+const makeIcon = makeIconRenderer(icons);
+
+// The video facade's URL parser. Names the platform from the host so a reader knows where the link
+// goes before they click; a host outside the declared set is a build-time error (loud, same posture
+// as the icon component's unknown-name check).
+function parseVideoUrl(raw: string): { platform: string } {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error(`cairn: video component references URL "${raw}", which is not a valid absolute URL`);
+  }
+  const host = parsed.hostname.replace(/^(www|m)\./, '');
+  if (host === 'youtube.com' || host === 'youtube-nocookie.com' || host === 'youtu.be') {
+    return { platform: 'YouTube' };
+  }
+  if (host === 'vimeo.com' || host === 'player.vimeo.com') {
+    return { platform: 'Vimeo' };
+  }
+  throw new Error(`cairn: video component references URL "${raw}", which is not a supported YouTube or Vimeo link`);
+}
+
+const alert = defineComponent({
+  name: 'alert',
+  label: 'Alert',
+  description: 'A bordered note whose icon defaults from its role.',
+  use: 'Flag a caution in the flow of a post.',
+  group: 'Notices',
+  icon: 'alert',
+  defaultIconByRole: { caution: 'leaf' },
+  build: (ctx) => {
+    const name = strAttr(ctx, 'icon');
+    const role = strAttr(ctx, 'role');
+    const icon = name ? makeIcon(name, role) : undefined;
+    return cardShell(['alert', `alert-${role ?? 'note'}`], [
+      headRow(ctx.slot('title'), icon),
+      h('div', { className: ['alert-body'] }, ctx.slot('body')),
+    ]);
+  },
+  attributes: {
+    role: fields.select({ label: 'Role', options: ['note', 'caution'] }),
+    icon: fields.icon({ label: 'Icon' }),
+  },
+  slots: [
+    // The title is required: headRow always emits an <h2>, so a titleless alert would render an empty
+    // heading (axe empty-heading). Mirror the callout, whose title is required for the same reason.
+    { name: 'title', label: 'Title', kind: 'inline', required: true },
+    { name: 'body', label: 'Body', kind: 'markdown' },
+  ],
+});
+
+// A single glyph from the declared icon set, for a note that wants a small marker of its own without a
+// card around it. The directive vocabulary is container-only (a bare colon or double-colon directive
+// always restores to literal prose, never dispatches), so this renders at its own block position rather
+// than truly inline in a sentence; it still serves a standalone line or a short aside. An icon name
+// outside the declared set is an author-input error that only a hand-edited directive can reach (the
+// picker only offers declared names), so it fails loud at render, the same build-backstop posture
+// resolveMedia and resolveLinks use for a broken reference: preview catches the throw and shows the
+// failed state (EditPage's preview effect), a public build lets it propagate and fails the build.
+const icon = defineComponent({
+  name: 'icon',
+  label: 'Icon',
+  description: 'A single glyph from the site icon set, for a note that wants a small marker of its own.',
+  use: 'Mark a short standalone line without wrapping it in a card.',
+  group: 'Notices',
+  icon: 'flag',
+  preview: { attributes: { name: 'flag' } },
+  attributes: {
+    name: fields.icon({ label: 'Icon', required: true }),
+  },
+  build: (ctx) => {
+    const name = strAttr(ctx, 'name');
+    if (!name || !(name in icons)) {
+      throw new Error(`cairn: icon component references "${name ?? ''}", which is not in the declared icon set`);
+    }
+    return makeIcon(name);
+  },
+});
+
+// The video facade: a link-out to the source platform, never an embedded player. cairn ships no
+// iframe embed. A closed <details> reveal cannot promise "no request before consent" across
+// browsers (a closed disclosure still loads its nested resources in several engines), and an
+// island-hydrated click-to-embed would need the sanitize allowlist widened to iframe, a real engine
+// change outside this task's scope. A static link-out gives a stronger, browser-independent
+// guarantee (literally zero requests to the video platform until the reader navigates there) at no
+// engine cost, so it is the only facade this component offers. The thumbnail is a generic play glyph,
+// not the platform's real thumbnail image: hot-linking the real one would itself be the third-party
+// request the facade exists to avoid.
+const video = defineComponent({
+  name: 'video',
+  label: 'Video',
+  description: 'A link out to a YouTube or Vimeo video, with no third-party request until the reader clicks through.',
+  use: 'Point to an off-site video without loading a third-party player on every page view.',
+  group: 'Media',
+  icon: 'play',
+  preview: { attributes: { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', title: 'A short walkthrough' } },
+  attributes: {
+    url: fields.url({ label: 'Video URL', required: true, help: 'A YouTube or Vimeo link.' }),
+    title: fields.text({ label: 'Title', required: true }),
+  },
+  build: (ctx) => {
+    const url = strAttr(ctx, 'url') ?? '';
+    const title = strAttr(ctx, 'title') ?? '';
+    const { platform } = parseVideoUrl(url);
+    return h('figure', { className: ['video-facade'] }, [
+      h(
+        'a',
+        {
+          className: ['video-facade-link'],
+          href: url,
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          ariaLabel: `Watch "${title}" on ${platform} (opens in a new tab)`,
+        },
+        [
+          h('span', { className: ['video-facade-thumb'] }, [makeIcon('play')]),
+          h('span', { className: ['video-facade-platform'] }, [platform]),
+        ],
+      ),
+      h('figcaption', { className: ['video-facade-caption'] }, [title]),
+    ]);
+  },
+});
+
+// A single sentence pulled out of the flow and set large, styled by reusing the manual `.pullquote`
+// hook this site's writing guide already documents (see the-reading-surface.md), so the component and
+// the raw-HTML tip render identically. The quote is a required inline slot (a pull quote is one line,
+// not a paragraph); attribution is optional, since most pulled lines are the author's own words.
+const pullQuote = defineComponent({
+  name: 'pull-quote',
+  label: 'Pull quote',
+  description: 'One striking sentence, pulled out of the flow and set large.',
+  use: 'Land a single sentence hard, once per post at most.',
+  group: 'Quotes',
+  icon: 'quote',
+  preview: { slots: { title: 'Write the post you wish someone had handed you on your first day.' } },
+  attributes: {
+    attribution: fields.text({ label: 'Attribution' }),
+  },
+  slots: [{ name: 'title', label: 'Quote', kind: 'inline', required: true }],
+  build: (ctx) => {
+    const attribution = strAttr(ctx, 'attribution');
+    const children: ElementContent[] = [
+      h('p', { className: ['pull-quote-text', 'pullquote'] }, ctx.slot('title')),
+    ];
+    if (attribution) children.push(h('figcaption', { className: ['pull-quote-attribution'] }, [attribution]));
+    return h('figure', { className: ['pull-quote'] }, children);
+  },
+});
+
+// A single restrained link-button. The fuller marketing-panel CTA (title, sub-copy, a card ground)
+// the styleguide already demonstrates (`.sg-cta`) is a bigger design call the design review owns; this
+// component stays a label-plus-link so a post can point at one next step without pre-empting that
+// question. `variant` is a closed two-value choice for the same reason.
+const cta = defineComponent({
+  name: 'cta',
+  label: 'Call to action',
+  description: 'A single prominent link, for pointing the reader at the one next step that matters.',
+  use: 'Send the reader toward one destination: another post, an external tool, a signup form.',
+  group: 'Actions',
+  icon: 'arrow-right',
+  preview: { attributes: { label: 'Read the guide', url: 'https://example.com', variant: 'primary' } },
+  attributes: {
+    label: fields.text({ label: 'Label', required: true }),
+    url: fields.url({ label: 'URL', required: true }),
+    variant: fields.select({ label: 'Variant', options: ['primary', 'secondary'] }),
+  },
+  build: (ctx) => {
+    const label = strAttr(ctx, 'label') ?? '';
+    const url = strAttr(ctx, 'url') ?? '';
+    const variant = strAttr(ctx, 'variant') || 'primary';
+    return h('p', { className: ['cta'] }, [
+      h('a', { className: ['cta-link', `cta-${variant}`], href: url }, [label, makeIcon('arrow-right')]),
+    ]);
+  },
+});
+
+// The cta's compact sibling: a further-reading pointer at the end of a section, not a marketing
+// button. It carries the same label-plus-link shape but drops the primary/secondary variant
+// choice (a micro-cta is always the same restrained chip) and adds an optional note line for a
+// short gloss on where the link goes.
+const microCta = defineComponent({
+  name: 'micro-cta',
+  label: 'Micro CTA',
+  description: 'A compact pointer link, for further reading at the end of a section.',
+  use: 'Point the reader at one related page without the weight of a full call to action.',
+  group: 'Actions',
+  icon: 'arrow-right',
+  preview: { attributes: { label: 'Read the guide', url: 'https://example.com', note: 'a short gloss on the link' } },
+  attributes: {
+    label: fields.text({ label: 'Label', required: true }),
+    url: fields.url({ label: 'URL', required: true }),
+    note: fields.text({ label: 'Note' }),
+  },
+  build: (ctx) => {
+    const label = strAttr(ctx, 'label') ?? '';
+    const url = strAttr(ctx, 'url') ?? '';
+    const note = strAttr(ctx, 'note');
+    const children: ElementContent[] = [h('span', { className: ['micro-cta-label'] }, [label])];
+    if (note) children.push(h('span', { className: ['micro-cta-note'] }, [note]));
+    children.push(makeIcon('arrow-right'));
+    return h('p', { className: ['micro-cta'] }, [h('a', { className: ['micro-cta-link'], href: url }, children)]);
+  },
+});
+
+// A frequently-asked question on the native <details>/<summary> disclosure, so it works with no JS: a
+// closed question is still fully readable by a screen reader and keyboard, it is simply collapsed. The
+// question is an attribute (one line, no inline formatting need) rather than a slot, unlike the
+// callout/alert title, which is a heading and so takes the inline-markdown slot treatment.
+const faq = defineComponent({
+  name: 'faq',
+  label: 'FAQ question',
+  description: 'One question and its answer, on a native disclosure widget.',
+  use: 'Answer a question a reader is likely to have without lengthening the main flow.',
+  group: 'Structure',
+  icon: 'chevron-down',
+  preview: { attributes: { question: 'Does this work without JavaScript?' }, slots: { body: 'Yes. The disclosure is native `<details>`/`<summary>`.' } },
+  attributes: {
+    question: fields.text({ label: 'Question', required: true }),
+  },
+  slots: [{ name: 'body', label: 'Answer', kind: 'markdown', required: true }],
+  build: (ctx) => {
+    const question = strAttr(ctx, 'question') ?? '';
+    return h('details', { className: ['faq'] }, [
+      h('summary', { className: ['faq-question'] }, [
+        h('span', { className: ['faq-question-text'] }, [question]),
+        h('span', { className: ['faq-marker'] }, [makeIcon('chevron-down')]),
+      ]),
+      h('div', { className: ['faq-answer'] }, ctx.slot('body')),
+    ]);
+  },
+});
+
+// A hydrate (island) component: a time-boxed announcement that removes itself once its `expires` date
+// passes, on the server and independently again at hydration (see banner-expiry.ts, which build() and
+// the live component (Banner.svelte) both call). A missing or unparsable `expires` counts as expired
+// too, so a broken date fails silent-to-hidden rather than showing forever or throwing: a banner is a
+// low-stakes aside, and hiding it is always the safe failure. The fallback is class-driven (no inline
+// style, since rehypeSinkGuard strips it) and states the same message the live component shows, so the
+// swap on mount never shifts the layout.
+const banner = defineComponent({
+  name: 'banner',
+  label: 'Announcement banner',
+  description: 'A time-boxed announcement that removes itself once its expiry date passes.',
+  use: 'Post a launch, a closure, or any other announcement that should not linger past its date.',
+  group: 'Notices',
+  icon: 'flag',
+  hydrate: true,
+  insertTemplate: ':::banner{message="Announcement text" expires="2026-12-31"}\n:::',
+  preview: { attributes: { message: 'The trailhead lot reopens in the spring.', expires: '2999-01-01' } },
+  attributes: {
+    message: fields.text({ label: 'Announcement', required: true }),
+    expires: fields.date({
+      label: 'Expires',
+      required: true,
+      help: 'The banner shows through the end of this date, then renders nothing.',
+    }),
+  },
+  build: (ctx) => {
+    const message = strAttr(ctx, 'message') ?? '';
+    const expires = strAttr(ctx, 'expires');
+    if (isBannerExpired(expires)) {
+      // An expired banner never needs a live re-check: a past expires date stays past, so hydration
+      // has nothing to catch that this build() has not already caught. The engine serializes
+      // ctx.attributes into data-cairn-props right after build() returns, reading the same object
+      // this function holds, so clearing it here keeps the announcement text and date out of the
+      // static markup entirely rather than shipping them inert in an attribute a reader's view-source
+      // still exposes. The island still mounts with no props, and Banner.svelte's own expiry check (a
+      // missing expires counts as expired) renders the same empty output.
+      ctx.attributes = {};
+      return h('div', { hidden: true, className: ['banner-expired'] }, []);
+    }
+    return h('div', { className: ['banner'], role: 'status' }, [h('p', { className: ['banner-message'] }, [message])]);
+  },
+});
+
+const registry = defineRegistry({ components: [callout, alert, icon, video, pullQuote, cta, microCta, faq, banner] });
+
+// The real render path: parse markdown through the engine so registered components render. The
+// chassis's proseTypography remark plugin smartens quotes, dashes, and ellipses in body prose;
+// wiring it here, at the one createRenderer call, means both the public render and the editor's
+// live preview inherit it, since both read the renderMarkdown this composes.
+const { renderMarkdown } = createRenderer(registry, { remarkPlugins: proseTypography });
+
+// The committed media manifest the public render resolver reads. A bare {} until an editor uploads.
+// Read through import.meta.glob so a fresh site with no committed media.json degrades to {} rather
+// than failing the build: a static import of a missing file is a build-time module-not-found, but a
+// glob with no match returns {}, and readCommittedManifest parses that to an empty manifest.
+const mediaManifest = readCommittedManifest(
+  import.meta.glob('../content/.cairn/media.json', { eager: true, import: 'default' }),
+);
+
+// The default public media resolver, backing the public build over the committed manifest. The
+// preview path injects its own resolveMedia from the edit page's mediaTargets; this default keeps a
+// published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
+// public route can inject the same resolver for the frontmatter hero, one source of truth.
+const resolvedAssets = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' });
+export const publicMediaResolver = buildMediaResolver(mediaManifest, resolvedAssets);
+
+// Whether media is configured on. The public route threads it as `assetsEnabled` so the engine logs
+// `media.resolver_absent` if a future edit drops the resolveMedia wiring while media stays on.
+export const mediaEnabled = resolvedAssets.enabled;
+
+export const cairn = defineAdapter({
+  content: {
+    posts: defineConcept({
+      dir: 'src/content/posts',
+      label: 'Posts',
+      // The create affordances read in the singular ("New post"); an omitted `singular` would
+      // fall back to `label` and read "New Posts" instead (ConceptList.svelte's documented
+      // fallback, exercised deliberately without one in the engine's own component tests).
+      singular: 'post',
+      summaryFields: ['description'],
+      routing: 'feed',
+      fields: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        date: fields.date({ label: 'Date' }),
+        // The post files carry a description the SEO head reads; declare it so it survives the
+        // validate-once read. Every frontmatter key a site reads must be in its schema.
+        description: fields.textarea({ label: 'Description' }),
+        image: fields.image({ label: 'Hero image', seo: true }),
+        // A single reference to a pages entry: the typed frontmatter author edge. The editor picks
+        // it from the pages concept, the build verifies it resolves, and the public route renders the
+        // resolved page title linked to its permalink (the reference e2e pins the round-trip and the
+        // resolved render end to end).
+        author: fields.reference({ concept: 'pages', label: 'Author' }),
+        // A many reference to other posts: array(reference) exercising the chip-list editor arm and
+        // the multi-edge extractor, delivered as a list of resolved targets.
+        related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related posts' }),
+        // The taxonomy marker: one creatable multiselect per concept whose validated values surface on
+        // ContentSummary.tags and feed categories. cairn ships no public tag pages; a site filters its
+        // own archive over this data (the size-gated template filter), so the marker carries no routing.
+        topics: fields.multiselect({ label: 'Topics', creatable: true, taxonomy: true }),
+        // A closed select exercising a brand-new v2 scalar arm end to end: the editor renders a
+        // <select>, the value round-trips through save and reload (the golden-path e2e pins it).
+        status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),
+        // A repeatable flat object: array(object) exercising the v2 container editor end to end. The
+        // object carries no label of its own (the array labels the group, itemLabel summarizes a row),
+        // and the container e2e pins the add/reorder/remove and the save-and-reload round-trip.
+        faq: fields.array(
+          fields.object({
+            fields: {
+              question: fields.text({ label: 'Question', required: true }),
+              answer: fields.textarea({ label: 'Answer', required: true }),
+            },
+          }),
+          { label: 'FAQ', itemLabel: 'question' },
+        ),
+        // A repeatable image: array(image) exercising the leaf-array editor arm, each row a hero-style
+        // image field whose structured value round-trips through save and reload.
+        gallery: fields.array(fields.image({ label: 'Image' }), { label: 'Gallery' }),
+      }),
+    }),
+    pages: defineConcept({
+      dir: 'src/content/pages',
+      label: 'Pages',
+      // The create affordances read in the singular ("New page"); an omitted `singular` would fall
+      // back to `label` and read "New Pages" instead (the same fallback `posts` names above).
+      singular: 'page',
+      routing: 'page',
+      fields: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+        robots: fields.text({ label: 'Robots' }),
+      }),
+    }),
+    // The Fragments concept (the reusable-content design): keyed right after pages, per the
+    // documented convention, so the flat zero-config nav places it beside the other authored
+    // concepts. routing: 'embedded' is required for this key; the engine's own concept
+    // normalization enforces it, since the include directive resolves a fragment body through
+    // this concept staying non-routable. The fieldset stays minimal: a fragment is a body plus a
+    // name for the picker to show, not a full entry.
+    fragments: defineConcept({
+      dir: 'src/content/fragments',
+      label: 'Fragments',
+      singular: 'fragment',
+      routing: 'embedded',
+      fields: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+      }),
+    }),
+  },
+  backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
+  email: { from: 'cms@showcase.test' },
+  // The media R2 binding. The fake R2 double rides platform.env in dev; a real site binds it in
+  // wrangler.jsonc and mounts the /media delivery route.
+  media: { bucketBinding: 'MEDIA_BUCKET' },
+  // aiPosture?: 'invite' | 'decline' states this site's stance toward AI training crawlers; the
+  // site's robots.txt route (docs/extend/wire-the-delivery-surface.md) passes it to
+  // robotsResponse, and CairnAdapter.aiPosture (docs/reference/core.md) documents both values.
+  // Left unset here on purpose: an unset posture states nothing, which is itself a legitimate
+  // choice, and cairn never guesses one on a site's behalf. Set it once you have decided.
+  rendering: {
+    // Render through the engine so registered components (the callout) produce their markup; the
+    // engine's own pipeline already wraps every table in a scrollable, labeled region by default
+    // (RendererOptions.tableScroll). The default media resolver backs the public build; the
+    // preview path injects its own resolveMedia. resolveFragment forwards the same way: the build
+    // passes a site-resolver-backed resolver (createPublicRoutes), the preview a manifest-backed
+    // one (EditPage), and this site's render never needs to vary fragment resolution itself.
+    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
+      renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver, resolveFragment }),
+    components: registry,
+    icons,
+    islands: siteIslands,
+  },
+  editor: {
+    nav: { configPath: 'src/theme/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+    // The site's whole declared sidebar (spec §2, the organize-your-admin-nav guide's own worked
+    // shape): a Content group for what an editor authors and owns, then a trailing Site group for
+    // site management, inbound data, configuration, and roster. Two taxonomy rulings (design arc
+    // 2026-07-15) place the custom and engine doors by the same razor, what an editor authors
+    // versus what the site operates: Library joins Content, since uploaded, described media is
+    // the editor's own material the same way posts and pages are (the WordPress-era convention of
+    // Media beside Posts/Pages also matches a volunteer editor's muscle memory), while the custom
+    // Signups screen lands in Site, not Content, since signups are inbound visitor data,
+    // operations rather than manuscript. Tags stays in Site: vocabulary management is
+    // configuration, not authoring. Settings and Editors stay trailing as admin config. Help
+    // stays unreferenced, so it falls back to the shell's foot slot exactly where the default
+    // arrangement already leaves it.
+    navLayout: [
+      {
+        label: 'Content',
+        children: [{ screen: 'posts' }, { screen: 'pages' }, { screen: 'fragments' }, { screen: 'media' }],
+      },
+      {
+        label: 'Site',
+        children: [
+          { screen: 'vocabulary' },
+          { screen: 'nav' },
+          { label: 'Signups', icon: 'inbox', href: '/admin/signups' },
+          { screen: 'settings', label: 'Site settings' },
+          { screen: 'editors' },
+        ],
+      },
+    ],
+    // The preview knob: the (site) layout renders an entry inside
+    // <main class="site-main"><article class="prose">, and every typography rule in prose.css is
+    // scoped to .prose, so the frame needs both classes on its one wrapper div (buildPreviewDoc
+    // renders a single element, not the nested main/article pair). Neither sheet declares a
+    // descendant rule between the two classes (site.css's figure-placement rules key off .site-main
+    // alone; prose.css's typography keys off .prose alone), so naming both on one element reproduces
+    // the real page's rendering exactly.
+    preview: { stylesheets: [themeCss, siteCss], containerClass: 'site-main prose' },
+  },
+});
+
+// Re-exported rather than parsed here: site-config.ts owns the one parseSiteConfig call, so a
+// lean reader (the root layout server load) can pull just the parsed config and its primary menu
+// without importing this whole adapter (the renderer, the icon set, the registered components).
+export { siteConfig } from './site-config.js';

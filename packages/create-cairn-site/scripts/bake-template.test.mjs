@@ -144,8 +144,8 @@ test('rewriteDevScript throws naming an unexpected showcase dev script', () => {
   );
 });
 
-// Plain bake() (sync-template-repo.mjs's own entry point) keeps the emitted .gitignore under its
-// real dot name: a git-hosted template repo has no npm packlist to strip it, and the sync's own
+// Plain bake() (emit-template-dir.mjs's own entry point) keeps the emitted .gitignore under its
+// real dot name: a committed template tree has no npm packlist to strip it, and the emitter's
 // overlay appends its `.dev.vars.example` negation onto that exact file (OVERLAY_MERGE_RULES).
 test('bake keeps the emitted .gitignore under its real name, covering the secret-bearing entries', async (t) => {
   const to = await tempTarget(t);

@@ -1,0 +1,9 @@
+/* The craft chapter's acceptance fixture: a self-contained Tailwind/DaisyUI build with NO cairn
+   token, theme, or exclusion list. `themes: false` is deliberately absent, so DaisyUI's own
+   bundled `light`/`dark` themes are on, the stock pair a fresh, un-customized DaisyUI project
+   ships with; the fixture route toggles between them with `data-theme`, never cairn's own
+   `cairn-admin`/`cairn-admin-dark`. Automatic source detection is on (no `source(none)`, no
+   `@source` restriction), so this file scans the whole showcase project the same way
+   `chassis/tokens.css` already does. */
+@import 'tailwindcss';
+@plugin 'daisyui';

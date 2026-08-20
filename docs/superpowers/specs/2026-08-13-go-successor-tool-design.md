@@ -1,9 +1,12 @@
 # The Go successor tool (pre-design, post-1.0)
 
-> **Superseded in part, 2026-08-20.** The third sitting closed the open questions below and
-> scoped sub-project 1 in `2026-08-20-cairn-tool-spine-and-hud-design.md`. The nine decisions
-> here stand unless that spec amends them (it amends decision 3: administrative operations
-> may be replicated in the tool). Read that spec first; this one is the decision record behind it.
+> **Superseded in part, 2026-08-20.** The third sitting closed five of the ten open questions
+> below, re-homed the other five, and scoped sub-project 1 in
+> `2026-08-20-cairn-tool-spine-and-hud-design.md`. The nine decisions here stand unless that spec
+> amends them; it amends decision 3 (the tool IS an operator cockpit and replicates admin
+> operations) and corrects two premises stated below as facts: the language-neutral fixture
+> corpus was an instruction never carried out, and "poplar's shape" is one `ui` package with a
+> root model and screen registry. Read that spec first; this one is the decision record behind it.
 
 **Status: pre-design. AMENDED 2026-08-13 by a second sitting, which moved the start date
 in.** The first sitting happened during T5 Task 8's DNS-propagation wait and banked the

@@ -36,9 +36,11 @@ against the registry: `0.95.0` carries the `reproductions` subpath the pin exist
 
 **Parallel track opened 2026-08-20: the Go `cairn` tool, sub-project 1.** Design approved by
 Geoff in a Fable brainstorm and written to
-`docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md` (chapter spine ported as Go
-types, read-only health HUD with adopt-to-watch, poplar's architecture and design language, split
-credential model, `tool/` in-repo with a three-platform matrix). Next step on that track: the
+`docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`, then revised the same day
+after a five-vantage adversarial review and a 24-agent verify pass (chapter spine as Go types,
+read-only health HUD with adopt-to-watch and a log view, poplar's root-model-plus-registry shape
+and design language, split credential model, `tool/` in-repo with a three-platform matrix; the
+fixture corpus is extracted as a first task, since it did not exist as the pre-design claimed). Next step on that track: the
 implementation plan via `superpowers:writing-plans`, then execution in a fresh Opus 5 session. It
 does not block the site updates or the editors rewrite.
 

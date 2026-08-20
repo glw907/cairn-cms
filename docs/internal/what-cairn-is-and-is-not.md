@@ -77,6 +77,17 @@ This single rule adjudicates any scope question without an enumerated denylist:
   occurrence. Keeping the surface narrow is what keeps that promise cheap to honor, one more reason the
   answer to a new need is the thinnest seam.
 
+### The `cairn` tool is the operator's cockpit, not engine surface
+
+The boundary above governs the engine a consumer site inherits. The Go `cairn` tool
+(`docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md`) is a different thing:
+an owner-side product over every cairn site a machine knows, and by decision an operator
+cockpit (Geoff, 2026-08-20). It replicates administrative operations the web admin also offers,
+user management and site settings among them, as a second front over the same contracts, and it
+never adds to the engine's public surface or models a domain actor. "Little else" is a rule
+about what a consumer inherits; the operator's own console is where the owner's work
+accumulates, and it stays lean by the same test, one job served by the thinnest mechanism.
+
 ## The failure mode this resists
 
 Over-building: speculative generality, abstraction layers, and "a developer might want…" features that

@@ -1922,11 +1922,16 @@ the named human gates only):**
   tailing. The pre-design, with the full decision record (why successor rather than protocol
   frontend, the Node-TUI option declined on taste not capability, the parity contract via the
   language-neutral fixture corpus, poplar's three-layer shape) is
-  `docs/superpowers/specs/2026-08-13-go-successor-tool-design.md`. **One part is effective
-  now:** the spec's "standing input for the current track" section tunes the Node tool's docs,
-  comments, and structure so the port later reads them as a spec. The trigger is post-1.0, after
-  T4d, release one, and the site walk; the real design sitting happens then, on the spec's
-  open-questions agenda.
+  `docs/superpowers/specs/2026-08-13-go-successor-tool-design.md`. **The trigger was met and
+  the design sitting happened 2026-08-20:** sub-project 1 (chapter spine, read-only health HUD
+  with adopt-to-watch, read-only log view) is specified in
+  `docs/superpowers/specs/2026-08-20-cairn-tool-spine-and-hud-design.md` and awaits its plan.
+  Sub-project 2 is provisioning, adopt-to-manage, infra and auth-store settings including user
+  management, the `go:embed` bake, and distribution; sub-project 3 is upgrades over P9, ordered
+  rollout, upgrade rollback, deploy rollback, and repo-held settings. The 2026-08-20 spec
+  corrects two of the pre-design's premises: the language-neutral fixture corpus does not exist
+  yet (its extraction from the Node fakes is a sub-project 1 task), and poplar's shape is one
+  `ui` package with a root model and a screen registry, not three layers of nested models.
 
   **Rider: the admin track's missing update page arrives with the upgrade verb (filed at Pass D
   Task 14, 2026-08-15).** Pass D killed `maintain-your-site` from the admin outline because the

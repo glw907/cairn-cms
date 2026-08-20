@@ -46,20 +46,18 @@ the functional spec at `docs/superpowers/specs/2026-05-28-cairn-rebuild-function
 supersedes the older plan and architecture writeups (now under `docs/internal/history/`), which
 remain only as history. Read the spec at the start of a rebuild session.
 
-The rebuild ran as a numbered plan series, 00 (foundation) through 08 (cutover), each plan
-written just-in-time after the prior one landed, under `docs/superpowers/plans/`. Plans 00 through
-08 have landed and merged to `main`, and the package publishes to npm under `@glw907/cairn-cms`.
+The rebuild ran as a numbered plan series, 00 through 08, each plan written just-in-time after
+the prior one landed, under `docs/superpowers/plans/`; all have landed and merged to `main`.
 Later engine work continues on feature worktrees off `main`, one worktree per pass, so `main` stays
 releasable. The current published version, the unpublished window on `main`, and the next action all
-live in `docs/STATUS.md`; read it for where the work is now.
+live in `docs/STATUS.md`.
 
 Execute a plan task-by-task by dispatching each well-specified task to `cairn-implementer`
 (pinned Sonnet), test-first against the suite; the main loop reviews each diff and confirms the
 full gate before the next dispatch, and implements inline (or upshifts the dispatch model) only
 for novel correctness-critical logic the plan does not fully specify. The **`cairn-pass`** skill
 marks pass start and the pass-end ritual for this
-initiative. Honor this repo's own skills and conventions while working in it. Do not human-scale
-time-estimate; describe relative complexity.
+initiative. Honor this repo's own skills and conventions while working in it.
 
 The rolling status lives in `docs/STATUS.md` (read and written by `cairn-pass`, canonical on
 `main`). Per-plan post-mortems live with the plans in `docs/superpowers/plans/`. This file stays
@@ -119,6 +117,11 @@ and the per-plan post-mortems, not in the roadmap.
 Four production sites depend on the package, each on its own version range, so a stale doc costs
 real users. See the
 `docs-is-a-pass-dimension` memory.
+
+cairn.pub renders the doc arms shipped inside the npm tarball from its installed engine
+version, so its dependency pin is the docs version selector: docs on `main` describe `main`'s
+engine and go public at the next release and pin bump. No separate docs deploy, no dev-docs
+channel (record: cairn-pub `docs/architecture.md`, "Docs versioning").
 
 ## Releases (cadence and scheme)
 

@@ -47,16 +47,14 @@ is enough to leave with everything.
 
 ## What it costs
 
-Building and running a cairn site is free, and stays free, for as long as you are the only
-person who ever signs in. Three things stand between you and a finished setup, and only one of
-them is money.
+Three things stand between you and a finished setup, and two of them are money.
 
-1. **Cloudflare's Workers Paid plan, $5 a month, once a second person needs to sign in.** Sending
-   a real sign-in email needs it; running the site does not. It's billed once per Cloudflare
-   account, not once per site, so a second site on the same account adds nothing
+1. **Cloudflare's Workers Paid plan, $5 a month.** That's what running a cairn site on
+   Cloudflare costs, from your first deploy: your site runs on Cloudflare's own global network,
+   and Workers Paid is how you pay for it. It's billed once per Cloudflare account, not once per
+   site, so a second site on the same account adds nothing
    ([Workers pricing](https://developers.cloudflare.com/workers/platform/pricing/), as of
-   2026-08-11). See [the free-until boundary](#the-free-until-boundary) below for exactly when
-   this bill starts.
+   2026-08-11).
 2. **A payment method, only if you connect your own domain.** A domain name costs roughly $10 to
    $15 a year for the common endings, paid to whichever registrar you buy it from. Cloudflare
    sells domains at cost and shows the exact price before you pay
@@ -73,25 +71,22 @@ them is money.
    later, at the specific step that needed the missing permission. Before you click Create Token,
    glance down the list and confirm every row it asked for is actually filled in.
 
-Those two come to about $6 a month for a small site on its own domain: the $5 Workers Paid plan
-once a second person signs in, plus roughly $1 a month averaged over a year's domain renewal. One
-more item is not confirmed. Putting your site on your own domain issues a certificate for that
-domain, and Cloudflare does not say whether that certificate is included in your plan or charged as
-an add-on (as of 2026-08-11). Your first bill is where it would show up. The tool prints these same
-figures before it asks you anything.
+Those two come to about $6 a month for a small site on its own domain: the $5 Workers Paid plan,
+plus roughly $1 a month averaged over a year's domain renewal. One more item is not confirmed.
+Putting your site on your own domain issues a certificate for that domain, and Cloudflare does not
+say whether that certificate is included in your plan or charged as an add-on (as of 2026-08-11).
+Your first bill is where it would show up. The tool prints these same figures before it asks you
+anything.
 
-## The free-until boundary
+## What a second editor needs
 
-Setting up your own site, running it, writing on it, and publishing to it: none of that costs
-anything, for as long as you are the only person signing in. The moment a second person needs
-their own sign-in, an editor, a co-owner, anyone, your site needs to send that person a real
-email, and sending email is what the $5-a-month Workers Paid plan buys. It also needs a domain of
-your own connected: sign-in mail sends from that domain, so a site still living only at its
-`workers.dev` address has nowhere to send it from yet. Until both are in place, skip them: your
-site works exactly the same either way, you just stay the only one who can sign in.
-[Own your domain](./own-your-domain.md) is where you connect a domain and turn sign-in email on
-together, when you're ready. [Invite your editors](./invite-editors.md) restates this boundary
-right before you add anyone.
+Adding an editor, a co-owner, anyone besides you, takes two things beyond what your site already
+has: a domain of your own connected, and Cloudflare's Email Sending turned on for it. Sign-in mail
+sends from that domain, so a site still living only at its `workers.dev` address has nowhere to
+send it from yet. Until you're ready to add someone, skip both: your site works exactly the same
+either way, you just stay the only one who can sign in. [Own your domain](./own-your-domain.md) is
+where you connect a domain and turn sign-in email on together, when you're ready.
+[Invite your editors](./invite-editors.md) picks up from there.
 
 ## What needs a developer
 

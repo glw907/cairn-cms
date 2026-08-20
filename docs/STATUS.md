@@ -15,40 +15,68 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-08-19 evening: the release-debt engine pass)
+## Immediate next action (2026-08-19 night: cut the release)
 
-**Geoff reordered the queue and rescoped the next pass (2026-08-19, both answered directly).**
+**The release-debt pass is DONE and the release is next.** All six consumer-facing defects are
+closed on branch `release-debt` off `main`, nine commits `8832920b` through `5086d184`, full
+CI-derived gate list green, `npm test` exit 0 at 426 files and 5664 tests. No version bump, no
+publish: the cut is a separate deliberate act. Post-mortem, evidence, and every decision:
+`docs/superpowers/plans/2026-08-19-release-debt-pass.md`.
 
-1. **The next engine pass is the release-debt pass**: the six consumer-facing library defects a
-   site actually feels, listed in `docs/superpowers/plans/2026-08-19-release-debt-pass.md`. It is a
-   CUT, not the Now tier: the four `create-cairn-site` first-run defects, the site-name slug
-   collision, and the four verification holes are all deliberately out, and each stays filed in
-   ROADMAP Now.
-2. **The release comes after that pass, ahead of the editors rewrite and the recorded
-   editors-track read.** This SUPERSEDES the 2026-08-15 sequencing ruling further down this file
-   ("release one waits for the visual layer"), which is left in place as the record of what it
-   replaced. The stated plan after the cut is Geoff's own: he updates all current sites, then
-   starts live site work while the docs get updated in parallel.
+**The branch is NOT merged.** Merge `release-debt` to `main` first, then cut. Nothing else branches
+from it.
 
-**What that reordering leaves open, and the cut must answer.** The four same-cut obligations
-(engine, `create-cairn-site`, `@glw907/cairn-cms-dev`, the template repo) plus T5a' were written
-against the old ordering, and ROADMAP records the four `create-cairn-site` first-run defects as
-"owed before release one publishes the tool". One of them strands a reader outright: after a failed
-first run the resume refuses to continue because the repository the tool itself created exists, and
-recovery needs a `delete_repo` permission the reader may not have. So the cut has to decide whether
-the tool ships in it or holds. That is a `cairn-release` gate question for Geoff, not something a
-pass settles on its own.
+**Immediate next action: invoke the `cairn-release` skill** to cut the release from `main`. Launch
+from `~/Projects/cairn-cms`. Geoff's sequencing (2026-08-19): this pass, then the release, then he
+updates all current sites, then live site work with the docs updated in parallel. This supersedes
+the 2026-08-15 "release one waits for the visual layer" ruling, which is left below as the record of
+what it replaced.
 
-**Immediate next action: execute
-`docs/superpowers/plans/2026-08-19-release-debt-pass.md`.** Launch from `~/Projects/cairn-cms`. It
-runs on a worktree off `main`, one `cairn-implementer` dispatch per task, test-first, with the main
-loop reviewing each diff and clearing the full gate between dispatches.
+### What the cut must decide, and what this pass added to that decision
 
-**Run the whole CI-derived gate list before committing, not a remembered subset.** This session
-shipped `main` red on `check:surface` doing exactly that, and fixed it in `0f1ab10a`. Derive with
-`grep -l pull_request .github/workflows/*.yml` then
-`grep -nE "run: npm( run)? " .github/workflows/test.yml`; `check:surface` needs
-`-- --update` and a committed `docs/internal/api-surface.md` whenever an exported type moves.
+**The open question is unchanged and still unanswered: does `create-cairn-site` ship in this cut or
+hold?** The four same-cut obligations (engine, `create-cairn-site`, `@glw907/cairn-cms-dev`, the
+template repo) plus T5a' were written against the old ordering, and `ROADMAP.md` records four
+`create-cairn-site` first-run defects as owed before the tool publishes. One strands a reader
+outright: after a failed first run the resume refuses to continue because the repository the tool
+created already exists, and recovery needs a `delete_repo` permission the reader may not have.
+
+**This pass added a fifth reason to that column.** The tool's own interactive consent text
+(`packages/create-cairn-site/src/cloudflare/chapter.mjs:106-113`) still promises "Cloudflare's free
+workers.dev hosting ... The free plan is enough; nothing in this step costs money." The measured
+bundle is 3,246,163 bytes gzipped against a 3,145,728-byte Workers Free limit, so that deploy fails
+and the tool breaks a promise it just made at the moment a reader consents. Fixing it is flow and
+consent work, not copy: `chapter2.mjs` depends on chapter 1 having said "nothing up to here costs
+money", and a later prompt is premised on Paid arriving later. **Geoff scoped it as its own pass
+(2026-08-19), deliberately cut rather than absorbed.** It is filed in `ROADMAP.md`'s Now tier, and
+its plan is drafted and committed at
+`docs/superpowers/plans/2026-08-20-cli-cost-narrative-pass.md`. **That plan is NOT approved: it ends
+with two open questions that are Geoff's calls (whether the tool asks about Workers Paid before it
+deploys, and whether it verifies the account's plan), and task 4 must not start until the first is
+answered.** Resume prompt for a fresh session, from `~/Projects/cairn-cms`: "Execute the CLI
+cost-narrative pass (`docs/superpowers/plans/2026-08-20-cli-cost-narrative-pass.md`). Answer its two
+open questions first." 
+
+So: if the tool holds, that pass lands before it ever publishes. If it ships, the cut publishes a
+tool that promises a free deploy which fails.
+
+### What consumers owe on this window
+
+Five type-level changes, all compile errors rather than runtime failures, plus one operational fact.
+`docs/extend/migration-notes.md`'s `## Unreleased` section carries the full list; the short form:
+`SiteConfig` lost its index signature, `AdminShellData.mediaBase` and `EditData.singular` are new
+required fields, and `DeleteDialog` and `RenameDialog` renamed `label` to `singular`. **And a cairn
+site runs on Cloudflare's Workers Paid plan, $5 a month, from its first deploy** (Geoff, 2026-08-19:
+Paid is the expectation, stated plainly, no hedge and no pitch). That supersedes the 2026-08-18 B0
+ruling that the cost copy should hedge; the friction log records the supersession.
+
+### Watches this pass changed
+
+- **The SvelteKit `checkOrigin` watch has FIRED.** A real build now prints the deprecation. It is no
+  longer a future bet, and `CLAUDE.md`'s standing scheduled-agent example is now describing a
+  tripped watch. ROADMAP Now.
+- **`check:surface` is blind to an index signature.** Removing one from an exported interface is a
+  real breaking change and produced zero snapshot diff. ROADMAP Now.
 
 ### The reproduction seam is BUILT, both halves (2026-08-19, earlier)
 

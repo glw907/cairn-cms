@@ -249,6 +249,11 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
         csrf: fixtureCsrf,
         pendingEntries: Promise.resolve(null),
         attention: {},
+        // The same fixture value the setContext call above already hands every mounted story
+        // directly: CairnAdminShell now sets its own MEDIA_BASE_CONTEXT_KEY from this field too
+        // (shadowing the one above for its own descendants, the way its CSRF getter already does),
+        // so this keeps that shadow carrying the identical value rather than reverting to /media.
+        mediaBase: fixtureMediaBase,
         ...definedOnly(shellOverride),
       };
 

@@ -8,7 +8,25 @@ reading column, so the footer's left edge lines up with the body copy above it. 
 this file; the look re-skins from `theme.css`.
 -->
 <script lang="ts">
-  /** A footer-nav entry: the visible label and the path it links to. */
+  import { isAdminHref } from './admin-link.js';
+
+  /**
+   * A footer-nav entry: the visible label and the path it links to. A link into `/admin` (decided
+   * by the shared `isAdminHref` predicate, also used by `SiteHeader`) renders `rel="external"`, the
+   * one attribute SvelteKit's prerender crawler actually honours to skip queuing a link
+   * (`@sveltejs/kit`'s crawler tests `rel` against `/\bexternal\b/i`); the target answers every
+   * crawl-time request with an error by design, so this keeps the link itself in the footer and
+   * clickable for a reader while the build never queues it. There is no `data-sveltekit-prerender`
+   * link option: SvelteKit's `data-sveltekit-*` attributes are `preload-data`, `preload-code`,
+   * `reload`, `replacestate`, `keepfocus`, and `noscroll`, none of which touch whether the crawler
+   * reaches a route. The route-level control for whether a reached route is written to disk is
+   * `export const prerender` (`/admin`'s own `+page.server.ts` sets it to `false`);
+   * `rel="external"` is what keeps the crawler from reaching the route at all. HTML defines
+   * `rel="external"` to mean "not part of the same site," which `/admin` technically is not, so
+   * this is a deliberate build-tool hint rather than a literal claim: it is the only attribute the
+   * crawler honours, and it also opts the link out of SvelteKit's client-side router, which is
+   * correct for a full navigation into the admin surface anyway.
+   */
   type NavItem = { label: string; href: string };
 
   /** The footer's nav targets. A scaffolded site owner edits this list. */
@@ -42,6 +60,7 @@ this file; the look re-skins from `theme.css`.
       {#each nav as item (item.href)}
         <a
           href={item.href}
+          rel={isAdminHref(item.href) ? 'external' : undefined}
           class="inline-flex min-h-11 items-center px-xs text-muted no-underline hover:text-base-content"
         >
           {item.label}

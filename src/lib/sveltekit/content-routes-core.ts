@@ -23,6 +23,7 @@ import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pe
 import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, stampFirstPublish, upsertEntry, removeEntry, inboundLinks, inboundReferences, inboundIncludes, type Manifest, type ManifestEntry, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
+import { DEFAULT_MEDIA_BASE } from '../components/media-base-context.js';
 import { isConflict, isBranchExists } from '../github/types.js';
 import { logCommitFailed } from './commit-log.js';
 import { log } from '../log/index.js';
@@ -108,6 +109,13 @@ export type AdminShellData =
        *  cannot see it. Empty when the site configures no dep.
        */
       attention: Record<string, { count: number; label: string }>;
+      /**
+       * The delivery base every descendant media surface composes its thumbnail `src` under, resolved
+       *  from the runtime's `assets.publicBase` when media is on, or the `/media` default otherwise.
+       *  `CairnAdminShell` hands this down through the media-base context, so a site whose media lives
+       *  at a non-default path gets working thumbnails without every reader threading the base itself.
+       */
+      mediaBase: string;
     };
 
 /** One row in a concept's list view. */
@@ -171,6 +179,11 @@ export interface EditData {
   conceptId: string;
   id: string;
   label: string;
+  /**
+   * The singular noun for the delete refusal's copy ("This post could not be deleted."); from the
+   *  descriptor, which defaults it to `label`, mirroring {@link ListData.singular}.
+   */
+  singular: string;
   fields: NamedField[];
   frontmatter: Record<string, unknown>;
   body: string;
@@ -631,6 +644,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',
         pendingEntries,
         attention,
+        mediaBase: runtime.resolvedAssets.enabled ? runtime.resolvedAssets.publicBase : DEFAULT_MEDIA_BASE,
       },
     };
   }
@@ -1065,6 +1079,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       conceptId: concept.id,
       id,
       label: concept.label,
+      singular: concept.singular,
       fields: editFields,
       frontmatter: formValues(editFields, loadFrontmatter),
       body: parsed.body,

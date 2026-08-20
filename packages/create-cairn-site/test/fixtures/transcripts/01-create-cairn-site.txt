@@ -2,13 +2,13 @@
 [ok] loopback: Loopback binding on 127.0.0.1 works; the local dev server will be reachable.
 Before you start, the honest cost picture.
 
-Building and running this site is free, and stays free.
+Cloudflare's Workers Paid plan costs $5 US per month, billed once per account, not once per site (as of 2026-08-11, https://developers.cloudflare.com/workers/platform/pricing/). That runs your site on Cloudflare's own global network, from the day you deploy it.
 
 A domain name costs roughly $10 to $15 a year for the common endings. You pay that to a registrar, not to Cloudflare, and it costs about that from anyone. Cloudflare sells domains at cost, and shows you the exact price before you pay (as of 2026-08-11, https://www.cloudflare.com/products/registrar/).
 
-Cloudflare's Workers Paid plan costs $5 US per month. It is what sends sign-in email, so it is needed once anyone other than you signs in, and it is billed once per account, not once per site (as of 2026-08-11, https://developers.cloudflare.com/workers/platform/pricing/).
+Those two together come to about $6 a month for a small site on its own domain. The two databases this site uses, its storage bucket, and its GitHub repository cost nothing at this size, and stay free.
 
-All in, a small site on its own domain runs about $6 a month.
+One more item is not confirmed. Putting your site on your own domain issues a certificate for that domain, and Cloudflare does not say whether that certificate is included in your plan or charged as an add-on (as of 2026-08-11). Your first bill is where it would show up.
 [90m┌[39m  create-cairn-site
 [?25l[90m│[39m
 [36m◆[39m  Site name

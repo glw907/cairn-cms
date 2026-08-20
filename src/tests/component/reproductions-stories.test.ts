@@ -651,7 +651,9 @@ describe('publish/refusal-banner', () => {
     const screen = await mountPosed(getStory('publish/refusal-banner'));
 
     const banner = screen.container.querySelector('.alert-error');
-    expect(banner?.textContent).toContain('could not be deleted');
+    // The fixture concept's singular ("Post") differs from its label ("Posts"), so the exact
+    // sentence pins the singular render: task 3's defect rendered "This posts could not be deleted."
+    expect(banner?.textContent).toContain('This post could not be deleted.');
     // The row the banner is about: the blocked entry, still listed by its own title in the table
     // right below the banner.
     await expect

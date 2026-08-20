@@ -305,7 +305,10 @@ or extend it; nothing here is a literal a re-skin would miss.
         <p class="sg-cta-title">Start writing on cairn</p>
         <p class="sg-cta-sub">A static site you edit in markdown and publish from your browser.</p>
       </div>
-      <a href="/admin" class="sg-cta-btn">Open the editor</a>
+      <!-- rel="external" keeps SvelteKit's prerender crawler from queuing /admin (it answers a
+           build-time crawl with an error by design) and opts the link out of the client-side
+           router, the same isAdminHref-decided pattern SiteHeader and SiteFooter use. -->
+      <a href="/admin" rel="external" class="sg-cta-btn">Open the editor</a>
     </div>
 
     <h3 class="sg-h3">Stat</h3>

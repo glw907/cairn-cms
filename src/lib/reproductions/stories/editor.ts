@@ -61,6 +61,24 @@ function insertButton(label: string, inner: string): string {
 }
 
 /**
+ * One host insert control at rest in its unavailable state, the way `EditPage` guards a control
+ * whose target the caret has not reached: `aria-disabled` rather than the native attribute, so it
+ * stays focusable, and the dimmed look from `cairn-btn-guarded` plus `cursor-not-allowed`, never
+ * `btn-disabled`, whose `pointer-events: none` would suppress the title tooltip a mouse user reads
+ * for the why.
+ * @param label - the control's accessible name and tooltip, naming what the caret must reach
+ * @param inner - the icon's shapes
+ * @returns one button's markup
+ */
+function guardedButton(label: string, inner: string): string {
+  return (
+    '<button type="button" class="btn btn-sm btn-ghost btn-square cairn-btn-guarded cursor-not-allowed" ' +
+    `aria-haspopup="dialog" aria-disabled="true" aria-label="${label}" title="${label}">` +
+    `${glyph(inner)}</button>`
+  );
+}
+
+/**
  * The Insert group's contents, which the toolbar takes from its host rather than wiring itself.
  * `EditPage` renders these as a Svelte snippet; a story module has no markup of its own, so it
  * builds the same strip through `createRawSnippet`. Seven controls, the number the real Insert
@@ -78,18 +96,13 @@ const insertControls = createRawSnippet(() => ({
         '<rect x="14" y="2" width="8" height="8" rx="1"/>',
     ) +
     // Edit block, at rest: `hasComponents` opens the same gate that renders Insert block beside it,
-    // and with no caret in a component the control is unavailable. Transcribed as it stands today,
-    // btn-disabled and all, rather than as it should be: the class costs a mouse user the tooltip
-    // that names the reason (pointer-events: none suppresses it), which is a defect of the real
-    // control, recorded against EditPage rather than quietly repaired in its reproduction.
-    '<button type="button" class="btn btn-sm btn-ghost btn-square btn-disabled" ' +
-    'aria-haspopup="dialog" aria-label="Place the cursor in a component to edit it" ' +
-    'title="Place the cursor in a component to edit it" aria-disabled="true">' +
-    glyph(
+    // and with no caret in a component the control is unavailable, guarded the same way as the
+    // figure control below.
+    guardedButton(
+      'Place the cursor in a component to edit it',
       '<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>' +
         '<path d="M18.375 2.625a1 1 0 0 1 3 3l-9.013 9.014a2 2 0 0 1-.853.505l-2.873.84a.5.5 0 0 1-.62-.62l.84-2.873a2 2 0 0 1 .506-.852z"/>',
     ) +
-    '</button>' +
     insertButton(
       'Web link (Ctrl+K)',
       '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>' +
@@ -112,14 +125,13 @@ const insertControls = createRawSnippet(() => ({
         '<path d="M20 2v4"/><path d="M22 4h-4"/><circle cx="4" cy="20" r="2"/>',
     ) +
     'Tidy</button>' +
-    '<button type="button" class="btn btn-sm btn-ghost btn-square cairn-btn-guarded cursor-not-allowed" ' +
-    'aria-haspopup="dialog" aria-disabled="true" aria-label="Place the cursor on an image to add a figure" ' +
-    'title="Place the cursor on an image to add a figure">' +
-    glyph(
+    // The figure control, at rest: always rendered, and unavailable until the caret sits on a media
+    // image.
+    guardedButton(
+      'Place the cursor on an image to add a figure',
       '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/>' +
         '<path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
     ) +
-    '</button>' +
     '</span>',
 }));
 

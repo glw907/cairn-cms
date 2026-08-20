@@ -65,6 +65,7 @@ function postProps(over = {}) {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
+      singular: 'Post',
       fields: [
         { type: 'text', name: 'title', label: 'Title', required: true },
         { type: 'date', name: 'date', label: 'Date' },
@@ -766,6 +767,8 @@ describe('EditPage', () => {
   });
 
   it('surfaces a refused delete naming the new linkers', async () => {
+    // `singular` ("Post") set apart from `label` ("Posts") makes a wrong plural-noun render
+    // unambiguous: task 3's defect rendered "This posts could not be deleted."
     const props = postProps();
     (props as Record<string, unknown>).form = {
       error: 'Cannot delete 2026-05-hi: 1 page links to it.',
@@ -774,7 +777,7 @@ describe('EditPage', () => {
     };
     const screen = render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
-      (el.textContent ?? '').includes('could not be deleted'),
+      (el.textContent ?? '').includes('This post could not be deleted.'),
     );
     expect(banner).toBeTruthy();
     expect(banner!.textContent ?? '').toContain('Post B');
@@ -782,8 +785,37 @@ describe('EditPage', () => {
     expect(banner!.querySelector('a[href="/admin/posts/b"]')).toBeTruthy();
   });
 
+  it('re-announces a repeated identical delete refusal in the assertive live region', async () => {
+    const props = postProps();
+    (props as Record<string, unknown>).form = {
+      error: 'Cannot delete 2026-05-hi: 1 page links to it.',
+      inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+      id: '2026-05-hi',
+    };
+    const screen = render(EditPage, props);
+    const region = () => screen.container.querySelector('[aria-live="assertive"]')!;
+    expect(region().textContent ?? '').toContain('This post could not be deleted.');
+    const first = region().textContent ?? '';
+    // A second click submits the same delete against the same still-unresolved link, so the
+    // author hears the identical sentence: a fresh form object with the identical error string.
+    // Svelte skips a textContent write when the derived text is unchanged, so without a nonce the
+    // region never mutates and a screen reader stays silent on the repeat (WCAG 4.1.3).
+    await screen.rerender({
+      ...props,
+      form: {
+        error: 'Cannot delete 2026-05-hi: 1 page links to it.',
+        inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+        id: '2026-05-hi',
+      },
+    });
+    expect(region().textContent ?? '').toContain('This post could not be deleted.');
+    expect(region().textContent).not.toBe(first);
+  });
+
   it('surfaces a refused fragment delete with inclusion-naming copy', async () => {
-    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragment' });
+    // `label` plural ("Fragments") against `singular` ("Fragment") makes a wrong plural-noun
+    // render unambiguous, the same defect the post-concept case above pins.
+    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragments', singular: 'Fragment' });
     (props as Record<string, unknown>).form = {
       error: 'Cannot delete welcome: 1 entry includes it. Remove the include first.',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
@@ -792,7 +824,7 @@ describe('EditPage', () => {
     };
     const screen = render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
-      (el.textContent ?? '').includes('could not be deleted'),
+      (el.textContent ?? '').includes('This fragment could not be deleted.'),
     );
     expect(banner).toBeTruthy();
     expect(banner!.textContent ?? '').toMatch(/1 entry includes it/i);
@@ -807,7 +839,7 @@ describe('EditPage', () => {
     // The links gate runs before the fragments gate, and a fragment can itself be a link target, so
     // the concept alone does not identify the blocker. The copy follows the refusal's own kind;
     // naming an include here would send the author hunting for one that does not exist.
-    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragment' });
+    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragments', singular: 'Fragment' });
     (props as Record<string, unknown>).form = {
       error: 'Cannot delete welcome: 1 page links to it.',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
@@ -815,8 +847,9 @@ describe('EditPage', () => {
     };
     const screen = render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
-      (el.textContent ?? '').includes('could not be deleted'),
+      (el.textContent ?? '').includes('This fragment could not be deleted.'),
     );
+    expect(banner).toBeTruthy();
     expect(banner!.textContent ?? '').toMatch(/link to it/i);
     expect(banner!.textContent ?? '').not.toMatch(/includes it/i);
     expect(banner!.textContent ?? '').not.toMatch(/remove the include first/i);
@@ -2624,7 +2657,7 @@ describe('EditPage', () => {
       // The Insert and Edit controls share the SquarePen/Blocks glyphs; the Edit control is the
       // one whose aria-label speaks to editing (the label varies by state, so match the verb).
       return screen.container.querySelector<HTMLButtonElement>(
-        'button[aria-label*="Edit the component"], button[aria-label*="cursor in a component"], button[aria-label*="edited in the form"]',
+        'button[aria-label*="Edit the component"], button[aria-label*="cursor in a component"], button[aria-label*="edited in the form"], button[aria-label*="Switch to Write to edit"]',
       );
     }
 
@@ -2678,6 +2711,23 @@ describe('EditPage', () => {
       expect(editControl(screen)!.getAttribute('aria-label')).toBe('Edit the component at the cursor');
     });
 
+    it('does not promise an action from the Edit-block control when Preview hides the Write surface', async () => {
+      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await clickLine(screen, ':::callout[Heads up]');
+      await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
+      // The Write pane stays mounted under Preview (so CodeMirror keeps caret and undo history),
+      // which means editable survives the tab switch too. The control must not go on claiming
+      // "Edit the component at the cursor" once Preview has made the click inert; that promise is
+      // what a mouse user's tooltip and a screen reader's announcement both read.
+      await screen.getByRole('tab', { name: 'Preview' }).click();
+      await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('true');
+      const control = editControl(screen)!;
+      expect(control.getAttribute('aria-label')).not.toBe('Edit the component at the cursor');
+      expect(control.getAttribute('aria-label')).toBe('Switch to Write to edit this component');
+      expect(control.getAttribute('title')).toBe('Switch to Write to edit this component');
+    });
+
     it('disables Edit block with the unsafe reason on a component the safety check refuses', async () => {
       const screen = render(EditPage, { ...postProps({ body: bodyWith(UNSAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
@@ -2689,6 +2739,38 @@ describe('EditPage', () => {
         .toBe("This block can’t be edited in the form. Edit it as markdown.");
       expect(editControl(screen)!.getAttribute('aria-disabled')).toBe('true');
       expect(editControl(screen)!.disabled).toBe(false);
+    });
+
+    describe('guarded emphasis parity with Figure (audit finding 7)', () => {
+      // Same rationale as the Figure suite below: the compiled sheet carries daisyUI's real
+      // .btn-disabled pointer-events: none, so only this harness (source markup plus real CSS)
+      // can catch a control that is unavailable but wired with the wrong class.
+      let sheet: HTMLStyleElement;
+
+      beforeAll(() => {
+        document.documentElement.setAttribute('data-theme', 'cairn-admin');
+        sheet = document.createElement('style');
+        sheet.textContent = compiledAdminCss;
+        document.head.appendChild(sheet);
+      });
+
+      afterAll(() => {
+        document.documentElement.removeAttribute('data-theme');
+        sheet.remove();
+      });
+
+      it('keeps the unavailable Edit block control reachable to a mouse, not suppressed by pointer-events: none', async () => {
+        const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+        await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+        await expect.poll(() => editControl(screen)).not.toBeNull();
+        const control = editControl(screen)!;
+        expect(control.getAttribute('aria-disabled')).toBe('true');
+        // btn-disabled sets pointer-events: none, which would suppress the title tooltip a mouse
+        // user reads for the why. control.focus() cannot see this (programmatic focus ignores
+        // pointer-events), so the earlier focus assertion above does not cover this defect.
+        const style = getComputedStyle(control);
+        expect(style.pointerEvents).not.toBe('none');
+      });
     });
 
     it('resolves editability to whichever component the caret settles on, never a stale in-flight answer', async () => {
@@ -3256,6 +3338,30 @@ describe('EditPage', () => {
       // Figure control's square footprint reads as a deliberately disabled control rather than empty
       // space.
       expect(style.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    });
+
+    it('does not promise an action from the Figure control when Preview hides the Write surface', async () => {
+      const hash = '0123456789abcdef';
+      const screen = render(EditPage, postProps({ body: `plain prose\n![A cat](media:cat.${hash})\ntail prose` }));
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const line = await vi.waitFor(() =>
+        Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+          (l.textContent ?? '').includes('cat'),
+        ),
+      );
+      await userEvent.click(line!);
+      const figureControl = () =>
+        screen.container.querySelector<HTMLButtonElement>('button[aria-haspopup="dialog"][aria-label*="figure" i]');
+      await expect.poll(() => figureControl()?.getAttribute('aria-disabled')).toBe('false');
+      // The caret sits on a bare image; switching to Preview must not leave the control's reason
+      // reading "Place the cursor on an image to add a figure", which is false once the cursor
+      // already IS on that image and the real reason Preview has disabled the control.
+      await screen.getByRole('tab', { name: 'Preview' }).click();
+      await expect.poll(() => figureControl()?.getAttribute('aria-disabled')).toBe('true');
+      const control = figureControl()!;
+      expect(control.getAttribute('aria-label')).not.toBe('Place the cursor on an image to add a figure');
+      expect(control.getAttribute('aria-label')).toBe('Switch to Write to wrap this image in a figure');
+      expect(control.getAttribute('title')).toBe('Switch to Write to wrap this image in a figure');
     });
   });
 });

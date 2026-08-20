@@ -131,8 +131,8 @@ function tidyModelLabel(model: string): string {
 
 /**
  * The result of {@link parseSiteConfigOrFail}: a literal `ok` discriminant, not a bare union of
- *  `SiteConfig` and `ActionFailure`, since `SiteConfig`'s open index signature defeats both `in`
- *  narrowing and `isActionFailure`'s negative branch on that union.
+ *  `SiteConfig` and `ActionFailure`, for a clear read at each call site regardless of how well `in`
+ *  narrowing or `isActionFailure`'s negative branch happen to work on that union.
  */
 type ParsedSiteConfig =
   | { ok: true; config: SiteConfig }

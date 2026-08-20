@@ -81,6 +81,19 @@
 
 ### Fixed
 
+- The admin's own media surfaces now render correct thumbnails on a site with a non-default
+  `assets.publicBase`. The media-base context seam landed unwired: every reader (`MediaPicker`,
+  `CairnMediaLibrary`, `MediaHeroField`, the editor's inline media chips) already honored an
+  injected base, but no admin mount ever provided one, so every thumbnail composed against the
+  hardcoded `/media` default regardless of the site's own resolved config. `AdminShellData`'s authed
+  payload now carries the resolved `mediaBase`, `shellLoad` populates it from
+  `runtime.resolvedAssets.publicBase`, and `CairnAdminShell` hands it down through the existing
+  context key. Consumers must: nothing to keep running; every site reaches `shellLoad` through
+  `admin.shellLoad`, never by hand-assembling the shell payload, so the fix applies on upgrade with
+  no site-side change. `mediaBase` is a required field on the authed `AdminShellData`, so a site
+  that constructs that shape itself, a test double or a custom shell payload, gets a compile error
+  until it supplies one.
+
 - The editor's own chrome no longer keeps the theme it was born with. CodeMirror bakes its dark flag
   into a theme extension at construction, so toggling the admin theme with an editor open left its
   autocomplete tooltip, panels, and selection layer at first-mount polarity: a light editor inside a
@@ -121,6 +134,98 @@
   `/repro/<story>` pages, 500'd with no HTML. Both reads now guard on `building`, so a
   prerendered mount renders with the warning strips absent and a real server-rendered request
   still gets the search-string-derived flash unchanged. Consumers must: nothing.
+
+- The editor toolbar's Edit block control now names its reason to a mouse user, the way the
+  Figure control beside it already does. The unavailable state rode `btn-disabled`, which sets
+  `pointer-events: none`, so the `title` naming why the control was off never reached a mouse
+  (only a keyboard user tabbing to it could read it). The control now dims through
+  `cairn-btn-guarded` and `cursor-not-allowed`, the same guarded pattern as Figure, and keeps its
+  tooltip reachable at every pointer. Consumers must: nothing.
+
+- A delete refusal no longer names the concept in the plural where the sentence wants the singular.
+  The showcase's Posts concept read "This posts could not be deleted."; both the concept list's
+  banner and the editor's own copy of the same refusal interpolated `label`, the concept's plural
+  noun, into a singular sentence. `EditData` gains a `singular` field (mirroring `ListData.singular`,
+  populated the same way from the descriptor's own default to `label`), and four call sites
+  across `ConceptList` and `EditPage` now read the singular. That count missed the confirm dialog
+  every one of those four Delete controls opens: `DeleteDialog` still took the plural `label` and
+  lowercased it itself, so "Delete this posts?" and "Delete this posts" stood in the dialog's own
+  title and confirm button, and the inbound-linker count doubled the mistake, pluralizing an
+  already-plural noun ("2 postss link here") whenever more than one entry linked in. `DeleteDialog`
+  now takes `singular` directly instead of deriving a noun from `label`, and the inbound-linker
+  count names an anonymous "entry"/"entries" instead of the deleted entry's own noun, since a
+  linker or includer can belong to a wholly different concept than the one being deleted.
+  `RenameDialog` carried the identical defect, the same `label.toLowerCase()` self-derivation in
+  its title ("Change this posts URL") and its non-routable "Entries that include this posts"
+  copy, missed by the same count; it now takes `singular` too. Consumers
+  must: nothing to keep running; `EditPage` reaches `EditData` through `editLoad` and `ConceptList`
+  reaches `ListData` (which already carried `singular`) through `listLoad`, whether wrapped by
+  `createCairnAdmin` or called directly through the advanced `createContentRoutes` seam, never by
+  hand-assembling either payload, so the fix applies on upgrade with no site-side change. Two
+  breaks land at the type level: `EditData.singular` is a required field, so a hand-built payload (a
+  test double, a custom edit route) needs one; and `DeleteDialog`'s and `RenameDialog`'s `label`
+  prop is renamed to `singular` on each, so a site that mounts either directly, the way
+  `ConceptList` and `EditPage` both do, renames the prop it passes (the value itself is unchanged,
+  since the doc always asked for the singular, e.g. "Post").
+
+- `SiteConfig`'s doc comment and its type both claimed an openness the parser refuses.
+  `parseSiteConfig` has always thrown on a top-level `site.config.yaml` key outside its known set
+  (naming the key's correct home in `cairn.config.ts` when one exists), but the doc comment said
+  unknown keys are ignored, and the type carried a matching `[key: string]: unknown` index
+  signature. Both now state the strict, throwing behavior; the runtime behavior is unchanged.
+  Consumers must: nothing for code that reads `SiteConfig` by its declared fields, the supported
+  way. A site whose own TypeScript indexed a parsed `SiteConfig` with a dynamic key, or passed one
+  where a `Record<string, unknown>` was expected, gets a compile error and should read the field by
+  name or narrow explicitly; the parser was already refusing that same unknown key at runtime.
+
+- `docs/admin/create-your-site.md` claimed the Worker `create-cairn-site` deploys runs entirely on
+  Cloudflare's free plan. It does not: a default site's built bundle already runs over Cloudflare's
+  3 MiB (3,145,728-byte) Workers Free script limit (measured 2026-08-19: 3,246,163 bytes gzipped,
+  about 100 KB over), so the Worker itself needs Workers Paid, $5 a month, independent of the
+  sign-in-email boundary `docs/admin/before-you-start.md` already documents. The page now says so
+  plainly, and `docs/admin/own-your-domain.md`'s domain-connection cost, which is genuinely free
+  regardless of the Worker's own plan, now points a reader at that fact instead of standing alone
+  and inviting the wrong generalization. The e2e workflow's bundle-size step gains a matching
+  free-tier threshold that warns (never fails) whenever the gzipped bundle crosses that same 3 MiB
+  line, so the overage stays visible in every CI run instead of only in a doc someone might not
+  reread. That first fix left the same false premise standing in three places it also governs: the
+  `create-cairn-site` CLI's own printed cost preamble (`packages/create-cairn-site/src/money.mjs`)
+  said "Building and running this site is free, and stays free," quoted verbatim in its recorded
+  transcript fixture and in `docs/admin/create-your-site.md`'s transcript block; and
+  `docs/admin/before-you-start.md`'s "What it costs" and "The free-until boundary" sections built
+  their whole story on a second person's sign-in being the first bill. All three now state the
+  $5-a-month Workers Paid plan as a plain baseline fact from the first deploy, the same way a
+  domain is: what running a cairn site on Cloudflare's own network costs, not an exception the
+  bundle's own size explains away (that measurement stays where a developer, not a site owner,
+  reads it: the e2e workflow comment above and this entry). The "the free-until boundary" section,
+  no longer honestly named since nothing is deferred, is renamed "What a second editor needs" and
+  reshaped into what it actually is, a capability story: a second person needs a domain connected
+  and sign-in email turned on, both already covered elsewhere on the page, not a new bill. Every
+  inbound link across the docs tree is repointed at the new anchor and text. Consumers must: know
+  that a default cairn site runs on Cloudflare's Workers Paid plan ($5/month) from its first
+  deploy, not only once a second person needs to sign in.
+
+- A scaffolded site's very first build no longer prints a branded 400 for its own `/admin` link.
+  The public footer, header, and styleguide page all link `/admin`, SvelteKit's prerender crawler
+  followed every one of them, and the admin guard answered each with a `guard.rejected` (`reason:
+  'https'`) the crawler logged as `400 /admin` under the template's `handleHttpError: 'warn'`
+  policy, with no doc explaining it. Each anchor now renders `rel="external"`, the one attribute
+  SvelteKit's crawler honors to skip queuing a link, decided by one shared `isAdminHref` predicate
+  (`examples/showcase/src/theme/components/admin-link.ts`) `SiteHeader` and `SiteFooter` both read,
+  rather than a hand-set per-entry flag and a separate exact-string comparison modeling the same
+  exclusion two different ways; the link itself is unchanged and still clickable for a reader.
+  `handleHttpError` itself is no longer a blanket `'warn'`, which is exactly what let the original
+  `400 /admin` sit unnoticed alongside anything else that might go wrong during a build-time crawl:
+  it now throws on every prerender HTTP error the crawl encounters, with no exception, so a link
+  into `/admin` that reappears without `rel="external"` (or any other route that legitimately
+  4xx/5xxs mid-crawl) fails the build red instead of printing a warning nobody reads. Consumers
+  must: know this fixes only a newly scaffolded site, since `SiteFooter.svelte`, `SiteHeader.svelte`,
+  `admin-link.ts`, and `site.config.yaml` are copy-in template files a site owns after scaffolding,
+  not imports from the package. A site that already sees `400 /admin` in its own build output can
+  add `rel="external"` to its footer and header `/admin` anchors (and to any other `/admin` link it
+  has added) the same way, and should confirm its own `svelte.config.js` no longer downgrades
+  `handleHttpError` to `'warn'` across the board, since SvelteKit's own default (`'fail'`) is what
+  catches a link like this reappearing.
 
 ## 0.95.0-rc.1
 

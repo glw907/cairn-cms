@@ -553,9 +553,9 @@ Sending that email needs a domain zone connected to Cloudflare, since Email Send
 zone, and the `workers.dev` subdomain this walkthrough has used through Milestone 4 has none.
 [Add cairn to a SvelteKit app](./add-cairn-to-a-sveltekit-app.md) covers onboarding a zone once
 you own one. The moment a second person needs their own sign-in rather than just you, a real
-email reaching them needs Cloudflare's Workers Paid plan. See [the free-until
-boundary](../admin/before-you-start.md#the-free-until-boundary) for what it costs and when the
-bill starts.
+email reaching them needs Cloudflare's Workers Paid plan. See
+[what a second editor needs](../admin/before-you-start.md#what-a-second-editor-needs) for what it
+costs and when the bill starts.
 
 This milestone is almost entirely account setup rather than code, and it's exactly the setup
 Add cairn to a SvelteKit app already walks through in full:

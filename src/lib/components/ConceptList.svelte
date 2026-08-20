@@ -209,6 +209,11 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   // `one` when `singular` is set, and passing a bare string through `itemNoun` returns it unchanged
   // for a `singular`-less older caller on the descriptor's own default, which is the label (plural).
   const createNoun = $derived(itemNoun(1, data.singular ?? data.label));
+  // A delete refusal is about the one entry the author tried to delete, so its copy reads in the
+  // singular too ("This post could not be deleted."), on the same fallback as the create noun
+  // above. The announcement and the visible banner below share this one resolution so they never
+  // drift apart.
+  const refusedNoun = $derived((data.singular ?? data.label).toLowerCase());
 
   // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
   // flex layout and a hover affordance on top of this.
@@ -252,7 +257,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       deleteRefused.inboundKind === 'include'
         ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
         : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
-    return `This ${data.label.toLowerCase()} could not be deleted. ${blocker}`;
+    return `This ${refusedNoun} could not be deleted. ${blocker}`;
   });
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
@@ -313,7 +318,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
        so the author sees why without re-opening a dialog. The polite region above announces it, so
        the box itself carries no role or label (a bare div with an aria-label gets no accessible name). -->
   <div class="alert alert-error mb-4 flex-col items-start type-body">
-    <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
+    <p class="font-medium">This {refusedNoun} could not be deleted.</p>
     {#if deleteRefused.inboundKind === 'include'}
       <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
     {:else}
@@ -419,7 +424,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
             <td class="w-12 px-2 py-2 text-right sm:px-4">
               {#if deleteRefused?.id === entry.id}
                 <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
-                <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} inboundKind={deleteRefused.inboundKind} pending={entry.status !== 'published'} />
+                <DeleteDialog conceptId={data.conceptId} id={entry.id} singular={data.singular ?? data.label} inboundLinks={deleteRefused.inboundLinks} inboundKind={deleteRefused.inboundKind} pending={entry.status !== 'published'} />
               {:else}
                 <form method="POST" action="?/delete">
                   <CsrfField />

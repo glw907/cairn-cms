@@ -14,8 +14,11 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
     conceptId: string;
     /** The entry id within its concept. Posted with the confirm. */
     id: string;
-    /** A human label for the concept, e.g. "Post", used in the prompts. */
-    label: string;
+    /**
+     * The singular noun for the entry being deleted, e.g. "Post", used in "Delete this X?" and
+     *  the confirm prompts; mirrors ListData.singular's own doc voice.
+     */
+    singular: string;
     /** The entries that link to (or include) this one; non-empty blocks the delete. */
     inboundLinks: InboundLink[];
     /** Which copy family the blocked view renders: "link" for an entry other entries link to,
@@ -31,20 +34,23 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
     onsubmitting?: () => void;
   }
 
-  let { conceptId, id, label, inboundLinks, inboundKind = 'link', pending = false, trigger = true, onsubmitting }: Props = $props();
+  let { conceptId, id, singular, inboundLinks, inboundKind = 'link', pending = false, trigger = true, onsubmitting }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   const blocked = $derived(inboundLinks.length > 0);
-  const noun = $derived(label.toLowerCase());
-  // One inbound link reads "1 post links here ... repoint it"; many reads "2 posts link here ...
-  // repoint them". The subject-verb agreement inverts the usual plural-s, so derive each form once.
+  // The deleted entry's own noun, for "Delete this X?" and the confirm prompts only.
+  const noun = $derived(singular.toLowerCase());
+  // One inbound link reads "1 entry links here ... repoint it"; many reads "2 entries link
+  // here ... repoint them". The subject-verb agreement inverts the usual plural-s, so derive each
+  // form once.
   const single = $derived(inboundLinks.length === 1);
-  const nouns = $derived(single ? noun : `${noun}s`);
   const verb = $derived(single ? 'links' : 'link');
   const pronoun = $derived(single ? 'it' : 'them');
-  // The inclusion copy names an anonymous "entry"/"entries" count rather than the deleted entry's
-  // own label, since the includers are never fragments themselves (a fragment cannot include
-  // another fragment); "entry"/"entries" stays accurate no matter what concept includes it.
+  // Both the link count and the inclusion count name an anonymous "entry"/"entries" noun rather
+  // than the deleted entry's own singular: a linker or includer can belong to a wholly different
+  // concept than the one being deleted (a page linking to a post, several concepts including one
+  // fragment), so "entry"/"entries" is the only noun that stays accurate regardless of what
+  // points here.
   const entryNoun = $derived(single ? 'entry' : 'entries');
 
   /** Open the confirm. Exported so a trigger={false} host can drive the dialog itself. */
@@ -65,7 +71,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
 <dialog class="modal" role="alertdialog" aria-modal="true" aria-labelledby="cairn-delete-dialog-title" bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-delete-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Delete this {label.toLowerCase()}?</h2>
+      <h2 id="cairn-delete-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Delete this {noun}?</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
 
@@ -75,7 +81,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
           This {noun} is included by {inboundLinks.length} {entryNoun}. Remove the include first, then delete
           again.
         {:else}
-          {inboundLinks.length} {nouns} {verb} here. Remove or repoint {pronoun} before deleting, so no link is left
+          {inboundLinks.length} {entryNoun} {verb} here. Remove or repoint {pronoun} before deleting, so no link is left
           broken.
         {/if}
       </p>
@@ -96,7 +102,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
         <input type="hidden" name="concept" value={conceptId} />
         <input type="hidden" name="id" value={id} />
         <button type="button" class="btn btn-sm" onclick={close}>Cancel</button>
-        <button type="submit" class="btn btn-sm btn-error">Delete this {label.toLowerCase()}</button>
+        <button type="submit" class="btn btn-sm btn-error">Delete this {noun}</button>
       </form>
     {/if}
   </div>

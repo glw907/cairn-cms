@@ -719,12 +719,13 @@ alongside the component recipes above and below it.
   and a placement. It is the persistent Edit-block pattern: a toolbar Figure button, always rendered,
   enabled only when the caret sits on a media image (bare or already in a `:::figure`), opening a
   headless dialog over a caret snapshot so a later caret move never re-targets it. The unavailable
-  button uses `aria-disabled` (not the native `disabled`) with a stateful `aria-label`, dimmed with
-  `opacity`/`cursor` utilities rather than `.btn-disabled` (which sets `pointer-events: none` and would
-  kill the title tooltip). DaisyUI 5.6 added `[aria-disabled="true"]` to the `.btn` disabled selector
-  with the same `pointer-events: none`, so a guarded button that must keep its tooltip carries the
-  `cairn-btn-guarded` marker; an unlayered rule in `cairn-admin.css` restores `pointer-events` for it
-  (the click handler already guards inertness). The form carries a caption field (with the hint that the caption is shown to
+  button uses `aria-disabled` (not the native `disabled`) with a stateful `aria-label`, dimmed by the
+  same guarded-button pattern as Publish above (`cairn-btn-guarded`, the `not-allowed` cursor, no
+  `opacity` utility layered on top): DaisyUI 5.6 added `[aria-disabled="true"]` to the `.btn` disabled
+  selector with `pointer-events: none`, which would kill the title tooltip naming why the control is
+  off, so a guarded button that must keep its tooltip carries the `cairn-btn-guarded` marker; an
+  unlayered rule in `cairn-admin.css` restores `pointer-events` for it (the click handler already
+  guards inertness). The form carries a caption field (with the hint that the caption is shown to
   everyone and is not the alt text), an alt-status row that names the image's alt state distinct from
   the caption, and the placement as the segmented check-and-tint recipe rendered as a roving-tabindex
   radiogroup (Measure, Center, Wide, Full; Measure is the null role). The decorative-plus-caption

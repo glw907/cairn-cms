@@ -18,6 +18,7 @@ discriminant, not the fields, gates the chrome).
   import type { AdminShellData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
+  import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
   import { provideTopbar, type TopbarHolder } from './topbar-context.js';
   import { MenuIcon, LogOutIcon, SunIcon, MoonIcon, ChevronRightIcon, SearchIcon } from './admin-icons.js';
   import CairnLogo from './CairnLogo.svelte';
@@ -64,6 +65,14 @@ discriminant, not the fields, gates the chrome).
   // correct even if the token ever rotates mid-session. A public payload has no token, so the getter
   // yields the empty string (no descendant form renders on the bare login/confirm pages anyway).
   setContext(CSRF_CONTEXT_KEY, () => (data.public ? '' : data.csrf));
+
+  // Hand every descendant media surface (MediaPicker, CairnMediaLibrary, MediaHeroField, the editor's
+  // media chips) the site's resolved delivery base, so a non-default `assets.publicBase` reaches
+  // their thumbnails instead of each reader's own /media fallback. A public payload carries no
+  // resolved base (it renders no media surface, the login/confirm pages), so the context still
+  // carries the shared default rather than leaving the key unset. Context application runs once, at
+  // creation, so the one-time read is untracked the same way the theme seed below reads data.theme.
+  setContext(MEDIA_BASE_CONTEXT_KEY, untrack(() => (data.public ? DEFAULT_MEDIA_BASE : data.mediaBase)));
 
   // Persist an admin preference for a year, path-scoped to /admin so the cookie never reaches the
   // host's own pages.

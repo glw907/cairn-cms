@@ -297,13 +297,15 @@ describe('ConceptList', () => {
         { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },
       ],
     };
-    const screen = render(ConceptList, { data: data(), form });
+    // `singular` set apart from `label` ("Post" vs "Posts") makes a wrong plural-noun render
+    // unambiguous: task 3's defect rendered "This posts could not be deleted."
+    const screen = render(ConceptList, { data: data({ singular: 'Post' }), form });
     // The visible refusal banner names the blocker count and the linking entry. It no longer carries
     // role="alert" (one polite live region announces the lifecycle errors now), so scope the assertion
     // to the .alert-error banner element rather than the alert role, which also keeps it off the
     // entry's own list row.
     const banner = screen.container.querySelector('.alert-error');
-    expect(banner?.textContent ?? '').toMatch(/could not be deleted/i);
+    expect(banner?.textContent ?? '').toContain('This post could not be deleted.');
     expect(banner?.querySelector('a')?.textContent ?? '').toContain('Post 03');
   });
 
@@ -319,12 +321,14 @@ describe('ConceptList', () => {
     const entries = [
       { id: 'welcome', title: 'Welcome', date: null, draft: false, status: 'published' as const, summary: null },
     ];
+    // `label` plural ("Fragments") against `singular` ("Fragment") makes a wrong plural-noun
+    // render unambiguous, the same defect the post-concept case above pins.
     const screen = render(ConceptList, {
-      data: data({ conceptId: 'fragments', label: 'Fragment', dated: false, entries }),
+      data: data({ conceptId: 'fragments', label: 'Fragments', singular: 'Fragment', dated: false, entries }),
       form,
     });
     const banner = screen.container.querySelector('.alert-error');
-    expect(banner?.textContent ?? '').toMatch(/could not be deleted/i);
+    expect(banner?.textContent ?? '').toContain('This fragment could not be deleted.');
     expect(banner?.textContent ?? '').toMatch(/1 entry includes it/i);
     expect(banner?.textContent ?? '').toMatch(/remove the include first/i);
     expect(banner?.textContent ?? '').not.toMatch(/link to it/i);

@@ -25,6 +25,7 @@ function props(frontmatter: Record<string, unknown>) {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
+      singular: 'Post',
       fields,
       frontmatter,
       body: 'The body.',

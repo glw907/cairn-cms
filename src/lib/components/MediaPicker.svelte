@@ -56,9 +56,9 @@ while a site stores images only.
 
   let { library, onselect }: Props = $props();
 
-  // The delivery base the option thumbnails compose under. A mounting context (the reproductions
-  // module) hands one down through this key; the admin tree provides none, so a real mount resolves
-  // to the same /media default publicPath already carries.
+  // The delivery base the option thumbnails compose under. `CairnAdminShell` provides the site's
+  // resolved base to every authed descendant through this key; a bare mount outside it (the
+  // reproductions module, a test) resolves to the same /media default publicPath already carries.
   const mediaBase = getContext<string | undefined>(MEDIA_BASE_CONTEXT_KEY) ?? DEFAULT_MEDIA_BASE;
 
   // A stable id base so the listbox and each option carry unique ids the combobox can point at.

@@ -26,6 +26,7 @@ function shell(): AdminShellData {
     csrf: 'test-csrf',
     pendingEntries: Promise.resolve(null),
     attention: {},
+    mediaBase: '/media',
   };
 }
 
@@ -113,6 +114,7 @@ function editData(): AdminData {
       conceptId: 'posts',
       id: '2026-05-hello',
       label: 'Posts',
+      singular: 'Post',
       fields: [{ type: 'text', name: 'title', label: 'Title', required: true }] satisfies NamedField[],
       frontmatter: { title: 'Hello' },
       body: 'The body.',

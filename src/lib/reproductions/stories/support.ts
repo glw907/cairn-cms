@@ -166,6 +166,7 @@ export function editPageProps(): Record<string, unknown> {
     conceptId: fixtureConcept.id,
     id: ENTRY.id,
     label: fixtureConcept.label,
+    singular: fixtureConcept.singular,
     fields: fixtureFields,
     frontmatter: {
       title: ENTRY.title,

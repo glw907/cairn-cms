@@ -23,9 +23,13 @@ consumer-facing defects are closed: thirteen commits `8832920b` through `0585150
 version bump, no publish: the cut is a separate deliberate act. Post-mortem, evidence, and every
 decision: `docs/superpowers/plans/2026-08-19-release-debt-pass.md`.
 
-**`main` is merged but NOT pushed.** Push before cutting, since `gh release create --target main`
-fires the OIDC publish workflow against the remote. The `release-debt` branch and its worktree at
-`.claude/worktrees/release-debt` are spent; prune both. Nothing else branches from it.
+**`main` is merged but NOT pushed: 15 commits ahead of `origin/main`.** Push before cutting, since
+`gh release create --target main` fires the OIDC publish workflow against the remote, which cannot
+see an unpushed commit. The `release-debt` branch and its worktree are already pruned and nothing
+branches from them; the two `wayfinder-*` worktrees are unrelated and untouched by this pass.
+
+Verified on `main` after the merge, not merely on the branch: the CI-derived gate list green and
+`npm test` exit 0 at 426 files and 5664 tests.
 
 **Immediate next action: invoke the `cairn-release` skill** to cut the release from `main`. Launch
 from `~/Projects/cairn-cms`. Geoff's sequencing (2026-08-19): this pass, then the release, then he

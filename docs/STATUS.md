@@ -15,7 +15,17 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Session handoff (2026-08-21: dependency upgrade landed, e2e baselines regenerating)
+## Immediate next action (2026-08-21, evening): the newest-toolchain pass is EXECUTING
+
+Geoff ruled 2026-08-21: push every dependency and floor to the newest stable before beta so admins
+upgrade less later, and give admins a dependency map. Plan:
+`docs/superpowers/plans/2026-08-21-newest-toolchain-before-beta.md`, seven tasks, workflow mode, on
+worktree `newest-toolchain` off `13726d57`. Resume prompt if this session is lost: "Continue the
+newest-toolchain pass via cairn-pass; read the plan, check the worktree's git log for which tasks
+landed, and run the rest." Close-out chore for this pass: migrate this file's history to
+`docs/HISTORY.md` per the 2026-08-21 ledger rule (STATUS present tense, under 60 lines).
+
+## Session handoff (2026-08-21, earlier: dependency upgrade landed, e2e baselines regenerated)
 
 `main` is at `8c9de10f` plus whatever the e2e regeneration bot commits on top. The upgrade is in
 three commits (`9b30e756`, `d633ad5f`, `8c9de10f`): DaisyUI 5.7.20, Tailwind 4.3.3, SvelteKit

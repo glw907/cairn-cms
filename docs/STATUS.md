@@ -22,7 +22,12 @@ upgrade less later, and give admins a dependency map. Plan:
 `docs/superpowers/plans/2026-08-21-newest-toolchain-before-beta.md`, seven tasks, workflow mode, on
 worktree `newest-toolchain` off `13726d57`. Resume prompt if this session is lost: "Continue the
 newest-toolchain pass via cairn-pass; read the plan, check the worktree's git log for which tasks
-landed, and run the rest." Close-out chore for this pass: migrate this file's history to
+landed, and run the rest." Two rulings added mid-pass (Geoff, 2026-08-21 evening), to run as tasks after the seven-task chain
+returns: (a) **the floors are the versions just installed** (peer ranges and template pins move to
+the current SvelteKit, Svelte, adapter, and Wrangler, and the engine may use their full capabilities
+with no guards for older minors); (b) **a ranked survey of improvement opportunities the new
+toolchain offers** (running as a read-only agent) is triaged into this pass where small and safe,
+and into ROADMAP where it changes behavior or public surface. Close-out chore for this pass: migrate this file's history to
 `docs/HISTORY.md` per the 2026-08-21 ledger rule (STATUS present tense, under 60 lines).
 
 ## Session handoff (2026-08-21, earlier: dependency upgrade landed, e2e baselines regenerated)

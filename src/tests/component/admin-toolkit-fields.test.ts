@@ -16,7 +16,7 @@ describe('FieldLabel', () => {
   // asserts only that the label text and the composed control both render, not their position.
   it('renders the label with its control', async () => {
     const control = createRawSnippet(() => ({ render: () => '<input name="x" />' }));
-    const screen = render(FieldLabel, { label: 'Instructor', children: control });
+    const screen = await render(FieldLabel, { label: 'Instructor', children: control });
     await expect.element(screen.getByText('Instructor')).toBeInTheDocument();
     expect(screen.container.querySelector('input[name="x"]')).not.toBeNull();
   });
@@ -28,7 +28,7 @@ describe('FieldLabel', () => {
   // once FieldLabel renders one label with a conditional class list.
   it('keeps the control element and its focus across a live register flip', async () => {
     const control = createRawSnippet(() => ({ render: () => '<input name="x" />' }));
-    const screen = render(FieldLabel, { label: 'Instructor', children: control, register: 'inline' });
+    const screen = await render(FieldLabel, { label: 'Instructor', children: control, register: 'inline' });
     const input = screen.container.querySelector('input[name="x"]') as HTMLInputElement;
     input.focus();
     expect(document.activeElement).toBe(input);
@@ -52,7 +52,7 @@ describe('SelectInput', () => {
   ];
 
   it('renders a labeled select with the given options and posts by name', async () => {
-    const screen = render(SelectInput, { label: 'Status', name: 'status', value: 'open', options });
+    const screen = await render(SelectInput, { label: 'Status', name: 'status', value: 'open', options });
     await expect.element(screen.getByText('Status')).toBeInTheDocument();
     const select = screen.container.querySelector('select[name="status"]') as unknown as HTMLSelectElement;
     expect(select).not.toBeNull();
@@ -64,7 +64,7 @@ describe('SelectInput', () => {
 
 describe('TextInput', () => {
   it('renders a labeled text input, defaulting the type', async () => {
-    const screen = render(TextInput, { label: 'Search', name: 'q', value: '' });
+    const screen = await render(TextInput, { label: 'Search', name: 'q', value: '' });
     await expect.element(screen.getByText('Search')).toBeInTheDocument();
     const input = screen.container.querySelector('input[name="q"]') as HTMLInputElement;
     expect(input).not.toBeNull();
@@ -72,7 +72,7 @@ describe('TextInput', () => {
   });
 
   it('applies a narrower type and a placeholder', async () => {
-    const screen = render(TextInput, { label: 'Search', name: 'q', value: '', type: 'search', placeholder: 'Find a member' });
+    const screen = await render(TextInput, { label: 'Search', name: 'q', value: '', type: 'search', placeholder: 'Find a member' });
     const input = screen.container.querySelector('input[name="q"]') as HTMLInputElement;
     expect(input.getAttribute('type')).toBe('search');
     expect(input.getAttribute('placeholder')).toBe('Find a member');
@@ -99,19 +99,19 @@ describe('the stacked register', () => {
   });
 
   it('is the default: a bare TextInput renders the label above the control', async () => {
-    const screen = render(TextInput, { label: 'Search', name: 'q', value: '' });
+    const screen = await render(TextInput, { label: 'Search', name: 'q', value: '' });
     const label = screen.container.querySelector('label')!;
     expect(label.className).toContain('flex-col');
   });
 
   it('opts into the inline register explicitly', async () => {
-    const screen = render(TextInput, { label: 'Search', name: 'q', value: '', register: 'inline' });
+    const screen = await render(TextInput, { label: 'Search', name: 'q', value: '', register: 'inline' });
     const label = screen.container.querySelector('label')!;
     expect(label.className).toContain('items-center');
   });
 
   it('aligns two stacked controls sharing a grid column, regardless of label length, and fills the cell', async () => {
-    const screen = render(StackedFieldGrid);
+    const screen = await render(StackedFieldGrid);
     const inputs = Array.from(screen.container.querySelectorAll('input'));
     expect(inputs).toHaveLength(2);
     const [first, second] = inputs.map((el) => el.getBoundingClientRect());
@@ -130,7 +130,7 @@ describe('the stacked register', () => {
   // both controls fit at their unshrunk ~320px default inside the harness's 900px container; with
   // the pre-fix descendant selector, the pair overflows the row and shrinks well past 400px each.
   it("lets a nested compact row keep daisyUI's default width instead of filling the label", async () => {
-    const screen = render(StackedCompactRow);
+    const screen = await render(StackedCompactRow);
     const inputs = Array.from(screen.container.querySelectorAll('input'));
     expect(inputs).toHaveLength(2);
     for (const input of inputs) {

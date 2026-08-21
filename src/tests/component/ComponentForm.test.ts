@@ -19,7 +19,7 @@ const callout = defineComponent({
 
 describe('ComponentForm fields', () => {
   it('renders a labeled field for each attribute and non-repeatable slot', async () => {
-    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
     await expect.element(screen.getByRole('combobox', { name: /tone/i })).toBeInTheDocument();
     await expect.element(screen.getByRole('checkbox', { name: /pinned/i })).toBeInTheDocument();
     await expect.element(screen.getByRole('textbox', { name: /title/i })).toBeInTheDocument();
@@ -27,12 +27,12 @@ describe('ComponentForm fields', () => {
   });
 
   it('lists the select options from the schema', async () => {
-    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
     expect(screen.container.querySelectorAll('select option').length).toBeGreaterThanOrEqual(2);
   });
 
   it('names a flat field by its visible label without a redundant aria-label', async () => {
-    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
     // The textbox is found by its visible <label> text, proving the for/id pairing names it.
     const title = screen.getByRole('textbox', { name: 'Title' });
     await expect.element(title).toBeInTheDocument();
@@ -51,7 +51,7 @@ const grid: ComponentDef = {
 
 describe('ComponentForm repeatable slot', () => {
   it('adds and removes items in a repeatable slot', async () => {
-    const screen = render(ComponentForm, { def: grid, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: grid, onInsert: () => {}, onBack: () => {} } as never);
     await screen.getByRole('button', { name: /add item/i }).click();
     await screen.getByRole('button', { name: /add item/i }).click();
     expect(screen.container.querySelectorAll('input[aria-label^="Points "]').length).toBe(2);
@@ -60,7 +60,7 @@ describe('ComponentForm repeatable slot', () => {
   });
 
   it('gives each repeatable item input a 1-based indexed accessible name', async () => {
-    const screen = render(ComponentForm, { def: grid, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: grid, onInsert: () => {}, onBack: () => {} } as never);
     const add = screen.getByRole('button', { name: /add item/i });
     await add.click();
     await add.click();
@@ -69,7 +69,7 @@ describe('ComponentForm repeatable slot', () => {
   });
 
   it('keeps repeatable item values in order after a mid-list removal', async () => {
-    const screen = render(ComponentForm, { def: grid, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: grid, onInsert: () => {}, onBack: () => {} } as never);
     const add = screen.getByRole('button', { name: /add item/i });
     await add.click();
     await add.click();
@@ -95,7 +95,7 @@ describe('ComponentForm repeatable slot', () => {
 describe('ComponentForm submit', () => {
   it('inserts serialized markdown when valid', async () => {
     const onInsert = vi.fn();
-    const screen = render(ComponentForm, { def: callout, onInsert, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert, onBack: () => {} } as never);
     await screen.getByRole('combobox', { name: /tone/i }).selectOptions('note');
     await screen.getByRole('textbox', { name: /title/i }).fill('Heads up');
     await screen.getByRole('button', { name: /^insert$/i }).click();
@@ -104,7 +104,7 @@ describe('ComponentForm submit', () => {
 
   it('shows an inline required error on a touched-empty field and keeps Insert disabled', async () => {
     const onInsert = vi.fn();
-    const screen = render(ComponentForm, { def: callout, onInsert, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert, onBack: () => {} } as never);
     // Touch the required title by filling then clearing it, the way the incomplete state arises.
     const title = screen.getByRole('textbox', { name: /title/i });
     await title.fill('x');
@@ -119,7 +119,7 @@ describe('ComponentForm submit', () => {
 
 describe('ComponentForm required-field marking and Insert gating', () => {
   it('marks a required field with an asterisk and aria-required', async () => {
-    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
     const tone = screen.getByRole('combobox', { name: /tone/i });
     await expect.element(tone).toHaveAttribute('aria-required', 'true');
     // The visible asterisk sits beside the required field's label.
@@ -127,7 +127,7 @@ describe('ComponentForm required-field marking and Insert gating', () => {
   });
 
   it('disables Insert while a required field is empty and enables it once filled', async () => {
-    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
     const insert = screen.getByRole('button', { name: /^insert$/i });
     await expect.element(insert).toBeDisabled();
     await screen.getByRole('combobox', { name: /tone/i }).selectOptions('note');
@@ -136,7 +136,7 @@ describe('ComponentForm required-field marking and Insert gating', () => {
   });
 
   it('marks required slot inputs with aria-required', async () => {
-    const screen = render(ComponentForm, { def: requiredSlots, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: requiredSlots, onInsert: () => {}, onBack: () => {} } as never);
     // The required inline (text) slot and the required markdown (textarea) slot both expose
     // requiredness programmatically, not only through the visible asterisk.
     await expect.element(screen.getByRole('textbox', { name: /headline/i })).toHaveAttribute('aria-required', 'true');
@@ -165,7 +165,7 @@ const repeatable: ComponentDef = {
 
 describe('ComponentForm itemLabel', () => {
   it('labels a repeatable row from itemLabel and falls back to the index when it is empty', async () => {
-    const screen = render(ComponentForm, { def: repeatable, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: repeatable, onInsert: () => {}, onBack: () => {} } as never);
     const add = screen.getByRole('button', { name: /add/i });
     await add.click();
     // Empty item: itemLabel returns '', so the row falls back to the indexed label.
@@ -188,13 +188,13 @@ const previewCallout = defineComponent({
 
 describe('ComponentForm preview seeding', () => {
   it('seeds the form from previewValues when the def declares a preview', async () => {
-    const screen = render(ComponentForm, { def: previewCallout, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: previewCallout, onInsert: () => {}, onBack: () => {} } as never);
     await expect.element(screen.getByRole('textbox', { name: /title/i })).toHaveValue('Sample title');
     await expect.element(screen.getByRole('combobox', { name: /tone/i })).toHaveValue('note');
   });
 
   it('focuses the first field on mount', async () => {
-    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert: () => {}, onBack: () => {} } as never);
     const tone = screen.getByRole('combobox', { name: /tone/i });
     await expect.element(tone).toBeInTheDocument();
     expect(document.activeElement).toBe(tone.element());
@@ -207,7 +207,7 @@ describe('ComponentForm initial values', () => {
       attributes: { tone: 'warning', pinned: true },
       slots: { title: 'Edited title', body: 'Edited body' },
     };
-    const screen = render(ComponentForm, {
+    const screen = await render(ComponentForm, {
       def: previewCallout, onInsert: () => {}, initial,
     } as never);
     await expect.element(screen.getByRole('textbox', { name: /title/i })).toHaveValue('Edited title');
@@ -217,12 +217,12 @@ describe('ComponentForm initial values', () => {
 
 describe('ComponentForm submit label', () => {
   it('renders the submit button with the default Insert label', async () => {
-    const screen = render(ComponentForm, { def: callout, onInsert: () => {} } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert: () => {} } as never);
     await expect.element(screen.getByRole('button', { name: /^insert$/i })).toBeInTheDocument();
   });
 
   it('renders the submit button with a custom submitLabel', async () => {
-    const screen = render(ComponentForm, { def: callout, onInsert: () => {}, submitLabel: 'Update' } as never);
+    const screen = await render(ComponentForm, { def: callout, onInsert: () => {}, submitLabel: 'Update' } as never);
     await expect.element(screen.getByRole('button', { name: /^update$/i })).toBeInTheDocument();
     await expect.element(screen.getByRole('button', { name: /^insert$/i })).not.toBeInTheDocument();
   });

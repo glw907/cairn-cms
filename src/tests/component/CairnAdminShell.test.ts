@@ -124,12 +124,12 @@ describe('CairnAdminShell', () => {
   });
 
   it('zeroes the body margin while mounted (the fixed sidebar and the flowing content misalign under the UA default)', async () => {
-    render(CairnAdminShell, { data: data(true), children: child });
+    await render(CairnAdminShell, { data: data(true), children: child });
     expect(getComputedStyle(document.body).margin).toBe('0px');
   });
 
   it('applies the cairn-admin theme and renders the concept nav and child', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('page body')).toBeInTheDocument();
     // Scope to the sidebar nav: the topbar breadcrumb also renders a concept link at this depth.
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
@@ -139,7 +139,7 @@ describe('CairnAdminShell', () => {
   });
 
   it('carries a CSRF field in every POST form', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const postForms = screen.container.querySelectorAll('form[method="POST"]');
     const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
     expect(postForms.length).toBeGreaterThan(0);
@@ -147,12 +147,12 @@ describe('CairnAdminShell', () => {
   });
 
   it('shows the Cairn brand in the sidebar', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('Cairn', { exact: true })).toBeInTheDocument();
   });
 
   it('opens the command palette from the topbar trigger', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     await expect.element(screen.getByRole('textbox', { name: /search or jump to/i })).toBeInTheDocument();
     // A palette-only command confirms the dialog is open (a nav link like Posts also exists in the sidebar).
@@ -163,7 +163,7 @@ describe('CairnAdminShell', () => {
     // A touch tablet at or above sm has no ⌘K to press, so the hint must not show there; the
     // width-only `sm:inline` a touch device at that width would still match, `pointer:fine` names
     // the actual capability instead of guessing it from viewport width.
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const kbd = screen.container.querySelector('kbd')!;
     expect(kbd.className).toContain('hidden');
     expect(kbd.className).toContain('sm:pointer-fine:inline');
@@ -174,7 +174,7 @@ describe('CairnAdminShell', () => {
     // A destination command is a plain link that navigates; the palette closes itself from the
     // pathname effect after the route changes, rather than racing a close() against the link's own
     // navigation (which cancelled it). Re-rendering with a new pathname stands in for that nav.
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     expect(document.querySelector<HTMLDialogElement>('dialog.modal')?.open).toBe(true);
     await screen.rerender({ data: data(true, null, '/admin/pages'), children: child });
@@ -182,7 +182,7 @@ describe('CairnAdminShell', () => {
   });
 
   it('renders the built-in engine entries as loose top-level links, not inside a section', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
     const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
     expect(sidebar.querySelectorAll('details').length).toBe(0);
@@ -191,12 +191,12 @@ describe('CairnAdminShell', () => {
   });
 
   it('shows the manage-editors link to an owner', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByRole('link', { name: /editors/i })).toBeInTheDocument();
   });
 
   it('hides the manage-editors link from an editor', async () => {
-    const screen = render(CairnAdminShell, { data: data(false), children: child });
+    const screen = await render(CairnAdminShell, { data: data(false), children: child });
     await expect.element(screen.getByRole('link', { name: /editors/i })).not.toBeInTheDocument();
   });
 
@@ -207,7 +207,7 @@ describe('CairnAdminShell', () => {
     const layout = flatLayoutWith([{ label: 'Roster', icon: 'inbox', href: '/admin/roster' }], {
       navMenuLabel: 'Primary nav',
     });
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: dataWithLayout(layout, { capability: 'none', pathname: '/admin/roster', navMenuLabel: 'Primary nav' }),
       children: child,
     });
@@ -222,7 +222,7 @@ describe('CairnAdminShell', () => {
   });
 
   it('renders every engine nav item for an editor-capability session (regression pin)', async () => {
-    const screen = render(CairnAdminShell, { data: data(false, 'Primary nav', '/admin/posts', 'editor'), children: child });
+    const screen = await render(CairnAdminShell, { data: data(false, 'Primary nav', '/admin/posts', 'editor'), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
     await expect.element(sidebar.getByRole('link', { name: 'Posts' })).toBeInTheDocument();
     await expect.element(sidebar.getByRole('link', { name: 'Library' })).toBeInTheDocument();
@@ -234,36 +234,36 @@ describe('CairnAdminShell', () => {
   });
 
   it('shows the navigation link when a nav menu is configured', async () => {
-    const screen = render(CairnAdminShell, { data: data(false, 'Primary nav'), children: child });
+    const screen = await render(CairnAdminShell, { data: data(false, 'Primary nav'), children: child });
     await expect.element(screen.getByRole('link', { name: 'Primary nav' })).toBeInTheDocument();
   });
 
   it('labels the media-library nav entry Library, not Media', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByRole('link', { name: 'Library' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Media', exact: true }).query()).toBeNull();
   });
 
   it('shows the user identity and a sign-out control in the sidebar', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('ed@example.com')).toBeInTheDocument();
     await expect.element(screen.getByText('Ed', { exact: true })).toBeInTheDocument();
     await expect.element(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
   });
 
   it('shows the owner role in the user menu', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText(/owner/i)).toBeInTheDocument();
   });
 
   it('derives breadcrumbs from the path inside an entry route', async () => {
-    const screen = render(CairnAdminShell, { data: data(true, null, '/admin/posts/2026-05-hello'), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true, null, '/admin/posts/2026-05-hello'), children: child });
     await expect.element(screen.getByRole('navigation', { name: /breadcrumb/i })).toBeInTheDocument();
     await expect.element(screen.getByText('2026-05-hello')).toBeInTheDocument();
   });
 
   it('links the entry crumb back to the desk and adds a History leaf on the history route', async () => {
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: data(true, null, '/admin/posts/2026-05-hello/history'),
       children: child,
     });
@@ -283,7 +283,7 @@ describe('CairnAdminShell', () => {
   it('renders the registered desk snippet in the band on a desk route', async () => {
     // A descendant document fills the topbar holder; the shell renders it after the breadcrumb on
     // a desk route (/admin/<concept>/<id>). DeskChild stands in for EditPage's registration.
-    const screen = render(CairnAdminShellDeskHarness, {
+    const screen = await render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     await expect.element(screen.getByTestId('desk-control')).toBeInTheDocument();
@@ -291,7 +291,7 @@ describe('CairnAdminShell', () => {
 
   it('stands down the palette trigger and the site Publish button on a desk route', async () => {
     const pending = [{ concept: 'posts', id: '2026-05-hello' }];
-    const screen = render(CairnAdminShellDeskHarness, {
+    const screen = await render(CairnAdminShellDeskHarness, {
       data: { ...data(true, null, '/admin/posts/2026-05-hello'), pendingEntries: Promise.resolve(pending) },
     });
     // The band has one job on a desk route: no command-palette trigger, no site-wide Publish in
@@ -304,7 +304,7 @@ describe('CairnAdminShell', () => {
   });
 
   it('keeps the palette trigger and band as is on a list route (the office is unchanged)', async () => {
-    const screen = render(CairnAdminShellDeskHarness, { data: data(true) });
+    const screen = await render(CairnAdminShellDeskHarness, { data: data(true) });
     // On the office routes the desk snippet never renders, and the palette trigger stays.
     expect(screen.container.textContent ?? '').toContain('Search or jump to');
     expect(screen.container.querySelector('[data-testid="desk-control"]')).toBeNull();
@@ -323,7 +323,7 @@ describe('CairnAdminShell', () => {
       },
     });
     try {
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       const root = () => screen.container.querySelector('[data-theme]');
       expect(root()?.getAttribute('data-theme')).toBe('cairn-admin');
       await screen.getByRole('button', { name: /dark mode|light mode|toggle theme/i }).click();
@@ -341,7 +341,7 @@ describe('CairnAdminShell', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation((...args) => {
       errors.push(args.join(' '));
     });
-    render(CairnAdminShell, { data: data(true), children: child });
+    await render(CairnAdminShell, { data: data(true), children: child });
     await new Promise((resolve) => setTimeout(resolve, 0)); // let onMount run
     spy.mockRestore();
     expect(errors.join(' ')).not.toContain('rendering inside host chrome');
@@ -354,7 +354,7 @@ describe('CairnAdminShell', () => {
       { concept: 'pages', id: 'about' },
       { concept: 'widgets', id: 'w1' },
     ];
-    const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
+    const screen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await expect.element(screen.getByRole('button', { name: 'Publish site (4)' })).toBeInTheDocument();
   });
 
@@ -365,7 +365,7 @@ describe('CairnAdminShell', () => {
       { concept: 'pages', id: 'about' },
       { concept: 'widgets', id: 'w1' },
     ];
-    const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
+    const screen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await screen.getByRole('button', { name: 'Publish site (4)' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-shell-publish-all-title"]') as HTMLDialogElement;
     expect(dialog.open).toBe(true);
@@ -386,7 +386,7 @@ describe('CairnAdminShell', () => {
 
   it('closes the publish-all dialog once a navigation lands', async () => {
     const pending = [{ concept: 'posts', id: '2026-05-01-a' }];
-    const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
+    const screen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await screen.getByRole('button', { name: 'Publish site (1)' }).click();
     const dialog = () =>
       screen.container.querySelector('dialog[aria-labelledby="cairn-shell-publish-all-title"]') as HTMLDialogElement;
@@ -398,7 +398,7 @@ describe('CairnAdminShell', () => {
   it('shows the publish-site trigger even when no concepts are configured', async () => {
     // The confirm posts the named ?/publishAll action to the current page, so a stray pending
     // ref with zero configured concepts no longer reads data.concepts[0].
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: { ...data(true), concepts: [], pendingEntries: Promise.resolve([{ concept: 'posts', id: 'a' }]) },
       children: child,
     });
@@ -411,7 +411,7 @@ describe('CairnAdminShell', () => {
       { concept: 'posts', id: '2026-05-01-a' },
       { concept: 'pages', id: 'about' },
     ];
-    const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
+    const screen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await screen.getByRole('button', { name: 'Publish site (2)' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-shell-publish-all-title"]')!;
     const lists = Array.from(dialog.querySelectorAll('ul[aria-labelledby]'));
@@ -423,9 +423,9 @@ describe('CairnAdminShell', () => {
   });
 
   it('hides the publish-site trigger when nothing is pending', async () => {
-    const nullScreen = render(CairnAdminShell, { data: data(true), children: child });
+    const nullScreen = await render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(nullScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
-    const emptyScreen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve([]) }, children: child });
+    const emptyScreen = await render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve([]) }, children: child });
     await expect.element(emptyScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
   });
 
@@ -434,7 +434,7 @@ describe('CairnAdminShell', () => {
     // toggle through the lg-xl tablet band and persists it again at xl (the desk rider, spec §5).
     // The class is conditional in the rendered markup (no effect flips it), so the chrome state
     // resolves at SSR and never flashes.
-    const screen = render(CairnAdminShellDeskHarness, {
+    const screen = await render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const drawer = screen.container.querySelector('.drawer')!;
@@ -443,7 +443,7 @@ describe('CairnAdminShell', () => {
   });
 
   it('keeps the persistent nav drawer at lg on a list (office) route, with no xl-only gate', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const drawer = screen.container.querySelector('.drawer')!;
     expect(drawer.classList.contains('lg:drawer-open')).toBe(true);
     expect(drawer.classList.contains('xl:drawer-open')).toBe(false);
@@ -452,7 +452,7 @@ describe('CairnAdminShell', () => {
   it('treats the four-segment history route as an office route, not a desk', async () => {
     // Only the edit desk (/admin/<concept>/<id>, exactly three segments) gets desk chrome; a
     // deeper concept path like the history view keeps the office sidebar breakpoint.
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: data(true, null, '/admin/posts/2026-05-hello/history'),
       children: child,
     });
@@ -466,12 +466,12 @@ describe('CairnAdminShell', () => {
     // fixed` (cairn-admin.css), which needs `drawer-content` to reserve its own width instead of
     // relying on grid track sizing (an out-of-flow item contributes no track width). An office
     // route reserves it at lg; a desk route reserves it at xl instead (the desk rider).
-    const listScreen = render(CairnAdminShell, { data: data(true), children: child });
+    const listScreen = await render(CairnAdminShell, { data: data(true), children: child });
     const listContent = listScreen.container.querySelector('.drawer-content')!;
     expect(listContent.classList.contains('lg:ml-56')).toBe(true);
     expect(listContent.classList.contains('xl:ml-56')).toBe(false);
 
-    const deskScreen = render(CairnAdminShellDeskHarness, {
+    const deskScreen = await render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const deskContent = deskScreen.container.querySelector('.drawer-content')!;
@@ -488,7 +488,7 @@ describe('CairnAdminShell', () => {
     const layout: NavLayout = [
       { label: 'Club', children: [{ label: 'Events', icon: 'calendar', href: '/admin/club/events' }] },
     ];
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: dataWithLayout(layout, { pathname: '/admin/club/events' }),
       children: child,
     });
@@ -506,7 +506,7 @@ describe('CairnAdminShell', () => {
     const layout: NavLayout = [
       { label: 'Club', children: [{ label: 'Events', icon: 'calendar', href: '/admin/club/events' }] },
     ];
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     await expect.element(screen.getByText('Club', { exact: true })).toBeInTheDocument();
     await screen.rerender({ data: dataWithLayout(layout, { pathname: '/admin/pages' }), children: child });
     const details = screen.container.querySelector('details')!;
@@ -518,14 +518,14 @@ describe('CairnAdminShell', () => {
     // A desk route recedes the sidebar behind the toggle through lg-xl (the desk rider), so the
     // toggle stays visible there and only hides once the sidebar persists again at xl. An office
     // route's persistent sidebar stands in for the toggle starting at lg.
-    const deskScreen = render(CairnAdminShellDeskHarness, {
+    const deskScreen = await render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const deskToggleWrap = deskScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
     expect(deskToggleWrap.classList.contains('lg:hidden')).toBe(false);
     expect(deskToggleWrap.classList.contains('xl:hidden')).toBe(true);
 
-    const listScreen = render(CairnAdminShell, { data: data(true), children: child });
+    const listScreen = await render(CairnAdminShell, { data: data(true), children: child });
     const listToggleWrap = listScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
     expect(listToggleWrap.classList.contains('lg:hidden')).toBe(true);
     expect(listToggleWrap.classList.contains('xl:hidden')).toBe(false);
@@ -536,7 +536,7 @@ describe('CairnAdminShell', () => {
     // the brand-band alignment argument (h-16/min-h-16) does not bind there: a desk route rules its
     // band down to max-sm:h-12/min-h-12, matching the C1 phone-desk band (EditPage's own
     // Details aside offset follows the same ruling).
-    const deskScreen = render(CairnAdminShellDeskHarness, {
+    const deskScreen = await render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const deskNavbar = deskScreen.container.querySelector('.navbar')!;
@@ -547,7 +547,7 @@ describe('CairnAdminShell', () => {
 
     // An office route (a concept list) keeps the full 64px band at every width: only the desk band
     // runs out of room below sm.
-    const listScreen = render(CairnAdminShell, { data: data(true), children: child });
+    const listScreen = await render(CairnAdminShell, { data: data(true), children: child });
     const listNavbar = listScreen.container.querySelector('.navbar')!;
     expect(listNavbar.classList.contains('h-16')).toBe(true);
     expect(listNavbar.classList.contains('min-h-16')).toBe(true);
@@ -561,7 +561,7 @@ describe('CairnAdminShell', () => {
     // topbar in stepping back so the manuscript takes the whole frame, at every width, not just the
     // desk route's tablet band. The overlay checkbox keeps reaching the nav under zen; only the
     // persistent breakpoint classes recede.
-    const screen = render(CairnAdminShellDeskHarness, {
+    const screen = await render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
       zen: true,
     });
@@ -583,7 +583,7 @@ describe('CairnAdminShell', () => {
     // guards the structure itself, the drawer regions present and correctly nested. data(true) is an
     // owner on the default /admin/posts list route (the persistent office shell). The first arg of
     // data(...) selects owner vs editor; the pathname stays /admin/posts, a list route.
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const drawer = screen.container.querySelector('.drawer')!;
     expect(drawer).not.toBeNull();
     // :scope > so a regression that flattens or detaches a region (the display:block failure mode)
@@ -598,7 +598,7 @@ describe('CairnAdminShell', () => {
   });
 
   it('toggles the drawer with Ctrl+B', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const toggle = () => screen.container.querySelector('#cairn-shell-drawer') as HTMLInputElement;
     const before = toggle().checked;
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
@@ -613,7 +613,7 @@ describe('CairnAdminShell', () => {
     // false at the suite's ambient 1280x720 (the persistent-sidebar breakpoint), so this test drops
     // below lg itself and restores the ambient default after (the palette-inset block's pattern).
     await page.viewport(768, 700);
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const searchTrigger = (await screen.getByRole('button', { name: /search or jump to/i }).element()) as HTMLElement;
     searchTrigger.focus();
     expect(document.activeElement).toBe(searchTrigger);
@@ -639,7 +639,7 @@ describe('CairnAdminShell', () => {
 
     it('gives the open overlay drawer role="dialog" and aria-modal="true", absent while closed', async () => {
       await page.viewport(768, 700);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       const nav = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"]')!;
       expect(nav.getAttribute('role')).toBeNull();
       expect(nav.getAttribute('aria-modal')).toBeNull();
@@ -654,7 +654,7 @@ describe('CairnAdminShell', () => {
       // still flip true (Ctrl+B always toggles it) while the drawer renders beside the document,
       // never over it.
       await page.viewport(1280, 720);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       const nav = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"]')!;
       const toggle = screen.container.querySelector<HTMLInputElement>('#cairn-shell-drawer')!;
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
@@ -665,7 +665,7 @@ describe('CairnAdminShell', () => {
 
     it('marks the document content inert while the overlay is open, interactive again once it closes', async () => {
       await page.viewport(768, 700);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       const content = screen.container.querySelector<HTMLElement>('.drawer-content')!;
       expect(content.inert).toBe(false);
 
@@ -680,7 +680,7 @@ describe('CairnAdminShell', () => {
 
     it('never marks the document content inert at the persistent-sidebar breakpoint', async () => {
       await page.viewport(1280, 720);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       const content = screen.container.querySelector<HTMLElement>('.drawer-content')!;
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
       const toggle = screen.container.querySelector<HTMLInputElement>('#cairn-shell-drawer')!;
@@ -690,7 +690,7 @@ describe('CairnAdminShell', () => {
 
     it('traps Tab within the drawer nav while it is an open overlay', async () => {
       await page.viewport(768, 700);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
       const nav = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"]')!;
       await expect.poll(() => nav.getAttribute('role')).toBe('dialog');
@@ -714,7 +714,7 @@ describe('CairnAdminShell', () => {
 
     it('does not trap Tab at the persistent-sidebar breakpoint', async () => {
       await page.viewport(1280, 720);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
       const toggle = screen.container.querySelector<HTMLInputElement>('#cairn-shell-drawer')!;
       await expect.poll(() => toggle.checked).toBe(true);
@@ -732,7 +732,7 @@ describe('CairnAdminShell', () => {
 
     it('closes the overlay drawer on Escape without also triggering another window Escape handler', async () => {
       await page.viewport(768, 700);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       const toggle = screen.container.querySelector<HTMLInputElement>('#cairn-shell-drawer')!;
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
       await expect.poll(() => toggle.checked).toBe(true);
@@ -755,7 +755,7 @@ describe('CairnAdminShell', () => {
 
     it('restores focus on an Escape close, the same contract the Ctrl+B close keeps', async () => {
       await page.viewport(768, 700);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       const searchTrigger = (await screen.getByRole('button', { name: /search or jump to/i }).element()) as HTMLElement;
       searchTrigger.focus();
 
@@ -776,7 +776,7 @@ describe('CairnAdminShell', () => {
       // label, since the checkbox is the real DaisyUI drawer-state input) proves the fix is keyed
       // on isDrawerOverlay rather than living in the keydown handler.
       await page.viewport(768, 700);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       const searchTrigger = (await screen.getByRole('button', { name: /search or jump to/i }).element()) as HTMLElement;
       searchTrigger.focus();
       expect(document.activeElement).toBe(searchTrigger);
@@ -795,7 +795,7 @@ describe('CairnAdminShell', () => {
 
     it('leaves Escape alone while the drawer is closed, so another window handler still sees it', async () => {
       await page.viewport(768, 700);
-      render(CairnAdminShell, { data: data(true), children: child });
+      await render(CairnAdminShell, { data: data(true), children: child });
       const otherEscapeHandler = vi.fn();
       window.addEventListener('keydown', otherEscapeHandler);
       try {
@@ -808,7 +808,7 @@ describe('CairnAdminShell', () => {
   });
 
   it('posts the logout form to the absolute /admin?/logout catch-all', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const form = screen.container.querySelector('form[action="/admin?/logout"]');
     expect(form).not.toBeNull();
     expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
@@ -816,7 +816,7 @@ describe('CairnAdminShell', () => {
 
   it('renders a custom navLayout entry as a sidebar link to its href', async () => {
     const layout = flatLayoutWith([{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }]);
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
     await expect.element(sidebar.getByRole('link', { name: 'Signups' })).toBeInTheDocument();
   });
@@ -825,7 +825,7 @@ describe('CairnAdminShell', () => {
     const layout = flatLayoutWith([
       { label: 'Club', children: [{ label: 'Events', icon: 'calendar', href: '/admin/club/events' }] },
     ]);
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     await expect.element(screen.getByText('Club')).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Events' })).toBeInTheDocument();
     // Club is the only collapsible group: the flat default's concepts and engine screens render as
@@ -845,7 +845,7 @@ describe('CairnAdminShell', () => {
     const layout = flatLayoutWith([
       { label: 'Core', children: [{ label: 'Roster', icon: 'users', href: '/admin/roster' }] },
     ]);
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
     const details = sidebar.querySelectorAll('details');
     expect(details).toHaveLength(1);
@@ -859,12 +859,12 @@ describe('CairnAdminShell', () => {
   it('omits an owner-only custom entry the payload has already role-filtered out', async () => {
     // The shell receives an already-role-filtered customNav (the server hides an owner-only entry
     // from a non-owner), so an editor payload simply carries no such entry and the link is absent.
-    const screen = render(CairnAdminShell, { data: data(false), children: child });
+    const screen = await render(CairnAdminShell, { data: data(false), children: child });
     expect(screen.container.querySelector('a[href="/admin/signups"]')).toBeNull();
   });
 
   it('renders only the children bare for a public payload, with no chrome', async () => {
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: { public: true as const, siteName: 'Test Site', theme: 'cairn-admin' as const },
       children: child,
     });
@@ -883,7 +883,7 @@ describe('CairnAdminShell', () => {
     const layout = flatLayoutWith([{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }], {
       navMenuLabel: 'Primary nav',
     });
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: dataWithLayout(layout, { navMenuLabel: 'Primary nav' }),
       children: child,
     });
@@ -921,7 +921,7 @@ describe('CairnAdminShell', () => {
       },
       // help is deliberately unreferenced: it falls back to the foot band.
     ];
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
     const sections = Array.from(sidebar.querySelectorAll('details')).map((d) => ({
       label: d.querySelector('summary')!.textContent?.trim(),
@@ -938,7 +938,7 @@ describe('CairnAdminShell', () => {
 
   it('renders an engine ref icon override in place of the engine-owned glyph', async () => {
     const layout: NavLayout = [{ screen: 'settings', icon: 'banknote' }];
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
     const settingsLink = sidebar.getByRole('link', { name: 'Settings' }).element() as HTMLElement;
     expect(settingsLink.querySelector('svg.lucide-banknote')).not.toBeNull();
@@ -947,7 +947,7 @@ describe('CairnAdminShell', () => {
 
   it('renders the engine-owned glyph when the ref declares no icon override', async () => {
     const layout: NavLayout = [{ screen: 'settings' }];
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
     const settingsLink = sidebar.getByRole('link', { name: 'Settings' }).element() as HTMLElement;
     expect(settingsLink.querySelector('svg.lucide-settings')).not.toBeNull();
@@ -958,7 +958,7 @@ describe('CairnAdminShell', () => {
       { label: 'Content', children: [{ screen: 'posts' }, { screen: 'pages' }] },
       { label: 'Site', collapsed: true, children: [{ screen: 'settings' }] },
     ];
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
     const details = Array.from(sidebar.querySelectorAll('details'));
     const content = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Content')!;
@@ -974,7 +974,7 @@ describe('CairnAdminShell', () => {
     ];
     // The cookie reopens the declared-collapsed "Content" and closes the declared-open "Site":
     // its set wins entirely, regardless of what the declaration says either way.
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: dataWithLayout(layout, { collapsedNav: ['Site'] }),
       children: child,
     });
@@ -994,7 +994,7 @@ describe('CairnAdminShell', () => {
       { label: 'Content', children: [{ screen: 'posts' }, { screen: 'pages' }] },
       { label: 'Site', collapsed: true, children: [{ screen: 'settings' }] },
     ];
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: dataWithLayout(layout, { collapsedNav: [] }),
       children: child,
     });
@@ -1020,7 +1020,7 @@ describe('CairnAdminShell', () => {
     });
     try {
       const layout: NavLayout = [{ label: 'Site', children: [{ screen: 'settings' }] }];
-      const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+      const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
       const details = screen.container.querySelector('details')!;
       expect(details.open).toBe(true);
       details.querySelector<HTMLElement>('summary')!.click();
@@ -1038,7 +1038,7 @@ describe('CairnAdminShell', () => {
       { label: 'Site', children: [{ screen: 'settings' }] },
       { label: 'Roster', icon: 'inbox', href: '/admin/roster' },
     ];
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
     await expect.element(screen.getByRole('link', { name: 'Posts' })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'Roster' })).toBeInTheDocument();
@@ -1055,7 +1055,7 @@ describe('CairnAdminShell', () => {
     // and every engine screen is stripped for a none-capability session: the sidebar renders no
     // loose links and no section at all, and the fallback foot stays empty too (Help is itself an
     // engine screen, gated the same way).
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: data(false, 'Primary nav', '/admin/posts', 'none'),
       children: child,
     });
@@ -1073,7 +1073,7 @@ describe('CairnAdminShell', () => {
     const layout = flatLayoutWith([{ label: 'Roster', icon: 'inbox', href: '/admin/roster' }], {
       navMenuLabel: 'Primary nav',
     });
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       data: dataWithLayout(layout, { capability: 'none', pathname: '/admin/roster', navMenuLabel: 'Primary nav' }),
       children: child,
     });
@@ -1088,7 +1088,7 @@ describe('CairnAdminShell', () => {
     const layout: NavLayout = [
       { label: 'Content', children: [{ screen: 'posts' }] },
     ];
-    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const screen = await render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     // Posts is a section child, not a top-level loose node: before this task the palette derived
     // only from the Core section's own children, so a non-Core section's child was absent.
@@ -1101,7 +1101,7 @@ describe('CairnAdminShell', () => {
   // stretches the list into a dead band. The desk manages its own manuscript width, so the cap
   // applies only off the desk route.
   it('caps the office content column at a readable, centered width', async () => {
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true), children: child });
     const main = screen.container.querySelector('main')!;
     const capped = main.querySelector<HTMLElement>('.max-w-5xl');
     expect(capped).not.toBeNull();
@@ -1112,7 +1112,7 @@ describe('CairnAdminShell', () => {
   });
 
   it('does not add the office content cap on a desk route, which caps its own manuscript', async () => {
-    const screen = render(CairnAdminShellDeskHarness, {
+    const screen = await render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const main = screen.container.querySelector('main')!;
@@ -1124,7 +1124,7 @@ describe('CairnAdminShell', () => {
   // children up into one pill on its header while it stays closed.
   describe('attention pills and collapsed-header sums', () => {
     it('renders a quiet count pill on the matching link, capped at 99+', async () => {
-      const screen = render(CairnAdminShell, {
+      const screen = await render(CairnAdminShell, {
         data: data(true, null, '/admin/posts', 'owner', {
           '/admin/posts': { count: 250, label: 'pending items' },
         }),
@@ -1137,7 +1137,7 @@ describe('CairnAdminShell', () => {
     });
 
     it('renders no pill when the href carries no attention entry', async () => {
-      const screen = render(CairnAdminShell, {
+      const screen = await render(CairnAdminShell, {
         data: data(true, null, '/admin/posts', 'owner', {
           '/admin/posts': { count: 3, label: 'pending items' },
         }),
@@ -1149,7 +1149,7 @@ describe('CairnAdminShell', () => {
     });
 
     it('never renders a pill for a zero count, even if a fixture carries one (defense in depth)', async () => {
-      const screen = render(CairnAdminShell, {
+      const screen = await render(CairnAdminShell, {
         data: data(true, null, '/admin/posts', 'owner', {
           '/admin/posts': { count: 0, label: 'pending items' },
         }),
@@ -1161,7 +1161,7 @@ describe('CairnAdminShell', () => {
     });
 
     it("joins the pending count into the link's accessible name", async () => {
-      const screen = render(CairnAdminShell, {
+      const screen = await render(CairnAdminShell, {
         data: data(true, null, '/admin/posts', 'owner', {
           '/admin/posts': { count: 3, label: 'pending requests' },
         }),
@@ -1177,7 +1177,7 @@ describe('CairnAdminShell', () => {
       const layout: NavLayout = [
         { label: 'Content', collapsed: true, children: [{ screen: 'posts' }, { screen: 'pages' }] },
       ];
-      const screen = render(CairnAdminShell, {
+      const screen = await render(CairnAdminShell, {
         data: dataWithLayout(layout, {
           attention: {
             '/admin/posts': { count: 3, label: 'pending items' },
@@ -1199,7 +1199,7 @@ describe('CairnAdminShell', () => {
       const layout: NavLayout = [
         { label: 'Content', collapsed: true, children: [{ screen: 'posts' }, { screen: 'pages' }] },
       ];
-      const screen = render(CairnAdminShell, {
+      const screen = await render(CairnAdminShell, {
         data: dataWithLayout(layout, {
           attention: {
             '/admin/posts': { count: 3, label: 'pending items' },
@@ -1250,7 +1250,7 @@ describe('CairnAdminShell', () => {
 
     it('gives the palette a top inset below sm instead of sitting flush against the viewport', async () => {
       await page.viewport(390, 700);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       await screen.getByRole('button', { name: /search or jump to/i }).click();
       const box = screen.container.ownerDocument.querySelector<HTMLElement>(
         'dialog[aria-label="Search or jump to"] .modal-box',
@@ -1264,7 +1264,7 @@ describe('CairnAdminShell', () => {
 
     it('gives the palette input the admin brand-violet focus ring, not a bare UA outline', async () => {
       await page.viewport(390, 700);
-      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const screen = await render(CairnAdminShell, { data: data(true), children: child });
       await screen.getByRole('button', { name: /search or jump to/i }).click();
       const input = screen.container.ownerDocument.querySelector<HTMLInputElement>(
         'dialog[aria-label="Search or jump to"] input[aria-label="Search or jump to"]',

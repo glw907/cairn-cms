@@ -8,15 +8,15 @@ const targets: FragmentTarget[] = [
   { id: 'newsletter-cta', title: 'Newsletter CTA', body: 'CTA body.' },
 ];
 
-function open(fragmentTargets: FragmentTarget[] | null = targets) {
+async function open(fragmentTargets: FragmentTarget[] | null = targets) {
   const calls: string[] = [];
-  const screen = render(FragmentPicker, { fragmentTargets, insert: (text) => calls.push(text) });
+  const screen = await render(FragmentPicker, { fragmentTargets, insert: (text) => calls.push(text) });
   return { screen, calls };
 }
 
 describe('FragmentPicker', () => {
   it('opens the dialog from the trigger and lists fragment titles', async () => {
-    const { screen } = open();
+    const { screen } = await open();
     await screen.getByRole('button', { name: /include a fragment/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     expect(dialog.open).toBe(true);
@@ -26,7 +26,7 @@ describe('FragmentPicker', () => {
   });
 
   it('filters by a case-insensitive title substring', async () => {
-    const { screen } = open();
+    const { screen } = await open();
     await screen.getByRole('button', { name: /include a fragment/i }).click();
     await screen.getByRole('searchbox', { name: /search fragments/i }).fill('welcome');
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
@@ -35,7 +35,7 @@ describe('FragmentPicker', () => {
   });
 
   it('inserts the exact include directive for the picked fragment and closes', async () => {
-    const { screen, calls } = open();
+    const { screen, calls } = await open();
     await screen.getByRole('button', { name: /include a fragment/i }).click();
     await screen.getByRole('button', { name: /Welcome banner/ }).click();
     expect(calls).toEqual(['::include{fragment="welcome"}']);
@@ -43,7 +43,7 @@ describe('FragmentPicker', () => {
   });
 
   it('shows an honest empty state naming the next step, including where, when none are published', async () => {
-    const { screen } = open([]);
+    const { screen } = await open([]);
     await screen.getByRole('button', { name: /include a fragment/i }).click();
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).toMatch(/create one on the fragments screen/i);
@@ -51,7 +51,7 @@ describe('FragmentPicker', () => {
   });
 
   it('hides the trigger and mounts no dialog when no fragments concept is declared', async () => {
-    const { screen } = open(null);
+    const { screen } = await open(null);
     await expect.element(screen.getByRole('button', { name: /include a fragment/i })).not.toBeInTheDocument();
     expect(screen.container.querySelector('dialog')).toBeNull();
   });

@@ -29,7 +29,7 @@ describe('suggestion popover', () => {
 
   it('renders no built-in lint tooltip on hover (it is suppressed by tooltipFilter)', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the', 'ten'] });
-    const { container } = render(MarkdownEditor, {
+    const { container } = await render(MarkdownEditor, {
       value: 'teh cat', name: 'body', spellcheck: true,
       spellcheckTest: { createWorker: fake.create, assumeReady: true },
     });
@@ -44,7 +44,7 @@ describe('suggestion popover', () => {
 
   it('renders a recipe popover (role=group, message, action buttons) and applies a suggestion', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the', 'ten'] });
-    const { container } = render(MarkdownEditor, props(fake));
+    const { container } = await render(MarkdownEditor, props(fake));
     const popover = await openPopover(container);
     expect(popover.getAttribute('role')).toBe('group');
     expect(popover.getAttribute('aria-label')).toContain('teh');
@@ -59,7 +59,7 @@ describe('suggestion popover', () => {
 
   it('adds a word to the dictionary and clears every underline (survives relint)', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-    const { container } = render(MarkdownEditor, props(fake));
+    const { container } = await render(MarkdownEditor, props(fake));
     const popover = await openPopover(container);
     const add = [...popover.querySelectorAll('button')].find((b) => b.textContent === 'Add to dictionary')!;
     await userEvent.click(add);
@@ -69,7 +69,7 @@ describe('suggestion popover', () => {
 
   it('ignores a word for the session and clears its underline', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-    const { container } = render(MarkdownEditor, props(fake));
+    const { container } = await render(MarkdownEditor, props(fake));
     const popover = await openPopover(container);
     const ignore = [...popover.querySelectorAll('button')].find((b) => b.textContent === 'Ignore')!;
     await userEvent.click(ignore);
@@ -78,7 +78,7 @@ describe('suggestion popover', () => {
 
   it('moves focus into the popover on Alt-Enter and restores it on Escape (WCAG 1.4.13, dismissable)', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-    const { container } = render(MarkdownEditor, props(fake));
+    const { container } = await render(MarkdownEditor, props(fake));
     await openPopover(container);
     await userEvent.keyboard('{Alt>}{Enter}{/Alt}');
     await expect.poll(() => document.activeElement?.closest('.cairn-cm-suggest'), COLD_START).toBeTruthy();
@@ -88,7 +88,7 @@ describe('suggestion popover', () => {
 
   it('dismisses the ambient popover on Escape with focus still in .cm-content, and reappears at the next diagnostic (WCAG 1.4.13, dismissable)', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-    const { container } = render(MarkdownEditor, props(fake));
+    const { container } = await render(MarkdownEditor, props(fake));
     await openPopover(container); // clicks the first underline: caret in range, focus in .cm-content
     expect(document.activeElement?.closest('.cm-content')).toBeTruthy();
     await userEvent.keyboard('{Escape}');
@@ -105,7 +105,7 @@ describe('suggestion popover', () => {
 
   it('does not steal focus when the popover appears (WCAG 1.4.13, no focus theft)', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-    const { container } = render(MarkdownEditor, props(fake));
+    const { container } = await render(MarkdownEditor, props(fake));
     await openPopover(container); // clicks the underline, which focuses the content
     expect(document.activeElement?.closest('.cairn-cm-suggest')).toBeNull();
     expect(document.activeElement?.closest('.cm-content')).toBeTruthy();
@@ -122,7 +122,7 @@ describe('suggestion popover', () => {
       value: 'teh cat teh dog ![pic](media:unrelated.aaaabbbbccccdddd)',
       mediaLibrary: {},
     };
-    const screen = render(MarkdownEditor, withImage);
+    const screen = await render(MarkdownEditor, withImage);
     const popover = await openPopover(screen.container);
     await screen.rerender({
       ...withImage,
@@ -155,7 +155,7 @@ describe('suggestion popover', () => {
     // forEachDiagnostic documents no ordering contract, so the expected winner is derived from what
     // actually renders, never a hardcoded emission order.
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-    const { container } = render(MarkdownEditor, {
+    const { container } = await render(MarkdownEditor, {
       value: 'teh teh cat dog', name: 'body', spellcheck: true,
       spellcheckTest: { createWorker: fake.create, assumeReady: true },
     });
@@ -172,7 +172,7 @@ describe('suggestion popover', () => {
 
   it('announces availability through a polite live region when the caret enters a misspelling', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-    const { container } = render(MarkdownEditor, props(fake));
+    const { container } = await render(MarkdownEditor, props(fake));
     await openPopover(container);
     // Poll for the announcement text (the region mounts empty and fills when the caret enters the range),
     // then re-query for the element itself (a poll assertion resolves to void, not the node).
@@ -188,7 +188,7 @@ describe('suggestion popover', () => {
     const unpin = pinWarningInk();
     try {
       const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-      const { container } = render(MarkdownEditor, props(fake));
+      const { container } = await render(MarkdownEditor, props(fake));
       await expect.poll(() => container.querySelector('.cm-lintRange-info'), COLD_START).toBeTruthy();
       const mark = container.querySelector<HTMLElement>('.cm-lintRange-info')!;
       const style = getComputedStyle(mark);

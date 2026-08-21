@@ -9,7 +9,7 @@ const targets: LinkTarget[] = [
   { concept: 'posts', id: '2026-02-02-draft', permalink: '/2026/02/draft', title: 'Secret Draft', date: '2026-02-02', draft: true },
 ];
 
-function open(
+async function open(
   props: Partial<{
     targets: LinkTarget[];
     choose: (t: LinkTarget) => void;
@@ -21,7 +21,7 @@ function open(
   }> = {},
 ) {
   const picked: LinkTarget[] = [];
-  const screen = render(EntryPicker, {
+  const screen = await render(EntryPicker, {
     targets: props.targets ?? targets,
     choose: props.choose ?? ((t) => picked.push(t)),
     conceptFilter: props.conceptFilter,
@@ -35,7 +35,7 @@ function open(
 
 describe('EntryPicker', () => {
   it('opens from the trigger and lists targets grouped with Pages first', async () => {
-    const { screen } = open();
+    const { screen } = await open();
     await screen.getByRole('button', { name: /link to page/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     expect(dialog.open).toBe(true);
@@ -48,7 +48,7 @@ describe('EntryPicker', () => {
   });
 
   it('filters by a case-insensitive title substring', async () => {
-    const { screen } = open();
+    const { screen } = await open();
     await screen.getByRole('button', { name: /link to page/i }).click();
     await screen.getByRole('searchbox', { name: /search/i }).fill('wax');
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
@@ -57,14 +57,14 @@ describe('EntryPicker', () => {
   });
 
   it('fires choose with the picked target', async () => {
-    const { screen, picked } = open();
+    const { screen, picked } = await open();
     await screen.getByRole('button', { name: /link to page/i }).click();
     await screen.getByRole('button', { name: /About Us/ }).click();
     expect(picked).toEqual([targets[0]]);
   });
 
   it('narrows the list to conceptFilter', async () => {
-    const { screen } = open({ conceptFilter: 'posts' });
+    const { screen } = await open({ conceptFilter: 'posts' });
     await screen.getByRole('button', { name: /link to page/i }).click();
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).toContain('Waxing Guide');
@@ -72,7 +72,7 @@ describe('EntryPicker', () => {
   });
 
   it('renders a passed heading as the dialog title and focuses the search box on open', async () => {
-    const { screen } = open({ heading: 'Choose Author' });
+    const { screen } = await open({ heading: 'Choose Author' });
     await screen.getByRole('button', { name: /link to page/i }).click();
     // The passed heading becomes the dialog title.
     await expect.element(screen.getByRole('heading', { name: 'Choose Author' })).toBeInTheDocument();
@@ -83,7 +83,7 @@ describe('EntryPicker', () => {
   });
 
   it('marks an already-selected row', async () => {
-    const { screen } = open({ selectedIds: ['about'] });
+    const { screen } = await open({ selectedIds: ['about'] });
     await screen.getByRole('button', { name: /link to page/i }).click();
     // A selected row exposes aria-disabled and a Selected badge, so the host can show what it holds.
     const text = screen.container.querySelector('dialog')!.textContent ?? '';

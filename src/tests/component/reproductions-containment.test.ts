@@ -275,7 +275,7 @@ describe('the picture wrapper (M2)', () => {
       expect(picture!.inert, `${id}'s wrapper is not inert`).toBe(true);
       expect(getComputedStyle(picture!).display).toBe('contents');
       expect(picture!.childElementCount).toBeGreaterThan(0);
-      screen.unmount();
+      await screen.unmount();
     }
   });
 
@@ -337,7 +337,7 @@ describe('the focus firewall (M1)', () => {
     expectContainedModal(pending.container, publishDialog!);
     await nextFrame();
     expectContainedModal(pending.container, publishDialog!);
-    pending.unmount();
+    await pending.unmount();
 
     // The second half is what the superseded "apply inert after the pose resolves" design had no
     // hook to hang on: ReproContext does not run poses, its consumer does.
@@ -456,12 +456,12 @@ describe('the containment teardown', () => {
     // cleaned up makes the proof an accident of file order, which a reorder silently removes.
     expect(typesReachingWindow()).toEqual([]);
 
-    screen.unmount();
+    await screen.unmount();
 
     expect(typesReachingWindow()).toEqual([...FIREWALLED_TYPES]);
   });
 
-  it('removes every listener when the mount throws during init', () => {
+  it('removes every listener when the mount throws during init', async () => {
     // The window the release has to cover. `onDestroy` compiles to a mount effect whose return
     // value is the cleanup, so no teardown exists until effects flush, while the six listeners are
     // live from the instance body. A throw in between aborts the mount with all six installed and
@@ -477,7 +477,9 @@ describe('the containment teardown', () => {
       },
     };
 
-    expect(() => render(ReproContext, { props: { story } })).toThrow('story init failed');
+    // render is async-only (vitest-browser-svelte 3), so a throw during Svelte's own mount surfaces
+    // as a rejection rather than a synchronous throw.
+    await expect(render(ReproContext, { props: { story } })).rejects.toThrow('story init failed');
 
     expect(typesReachingWindow()).toEqual([...FIREWALLED_TYPES]);
   });

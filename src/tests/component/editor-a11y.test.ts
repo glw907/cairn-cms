@@ -9,7 +9,7 @@ import type { LinkTarget } from '../../lib/content/manifest.js';
 
 describe('editor accessible name', () => {
   it('gives the .cm-content textbox an accessible name', async () => {
-    const { container } = render(MarkdownEditor, { value: 'hello', name: 'body' });
+    const { container } = await render(MarkdownEditor, { value: 'hello', name: 'body' });
     await expect.poll(() => container.querySelector('.cm-content'), COLD_START).toBeTruthy();
     const content = container.querySelector('.cm-content')!;
     expect(content.getAttribute('role')).toBe('textbox');
@@ -20,7 +20,7 @@ describe('editor accessible name', () => {
 describe('diagnostics-summary announcer', () => {
   it('announces a settled diagnostics summary through a polite region', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-    const { container } = render(MarkdownEditor, {
+    const { container } = await render(MarkdownEditor, {
       value: 'teh cat teh dog',
       name: 'body',
       spellcheck: true,
@@ -35,7 +35,7 @@ describe('diagnostics-summary announcer', () => {
 describe('diagnostic traversal', () => {
   it('F8 selects the next diagnostic and opens the popover, not the stock tooltip', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the', 'ten'] });
-    const { container } = render(MarkdownEditor, {
+    const { container } = await render(MarkdownEditor, {
       value: 'teh cat teh dog', name: 'body', spellcheck: true,
       spellcheckTest: { createWorker: fake.create, assumeReady: true },
     });
@@ -52,7 +52,7 @@ describe('diagnostic traversal', () => {
 describe('fold-control disclosure semantics', () => {
   it('fold control exposes aria-expanded and a state-neutral name', async () => {
     const doc = ':::note\nbody line one\nbody line two\n:::\n';
-    const { container } = render(MarkdownEditor, { value: doc, name: 'body' });
+    const { container } = await render(MarkdownEditor, { value: doc, name: 'body' });
     await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
     const btn = container.querySelector('.cm-cairn-fold-btn')!;
     expect(btn.getAttribute('aria-expanded')).toBe('true'); // expanded at rest
@@ -65,7 +65,7 @@ describe('fold-control name stays in sync with an in-place directive rename', ()
   it('updates the gutter aria-label when the opener directive is renamed in place', async () => {
     const doc = ':::note\nbody line one\nbody line two\n:::\n';
     let replace: ((from: number, to: number, text: string) => void) | undefined;
-    const { container } = render(MarkdownEditor, {
+    const { container } = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       registerReplaceRange: (fn: (from: number, to: number, text: string) => void) => {
@@ -113,7 +113,7 @@ describe('a folded container unfolds on an in-place directive rename, revealing 
     });
     const doc = ':::note\nbody line one\nbody line two\n:::\n';
     let replace: ((from: number, to: number, text: string) => void) | undefined;
-    const { container } = render(MarkdownEditor, {
+    const { container } = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       registry,
@@ -150,7 +150,7 @@ describe('autocomplete ARIA regression guard', () => {
     const targets: LinkTarget[] = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
     ];
-    const { container } = render(MarkdownEditor, {
+    const { container } = await render(MarkdownEditor, {
       value: '',
       name: 'body',
       completionSources: [cairnLinkCompletionSource(targets)],

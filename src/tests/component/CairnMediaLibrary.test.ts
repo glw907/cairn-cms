@@ -87,7 +87,7 @@ describe('CairnMediaLibrary toolkit adoption', () => {
   // through the toolkit's own components, not a bespoke fork. Each assertion pins a structural
   // signature the toolkit component itself owns, so a regression back to a local fork trips it.
   it('renders its header and toolbar through the admin toolkit', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     expect(screen.container.querySelector('header.mb-10')).not.toBeNull();
     expect(screen.container.querySelector('.toolkit-toolbar')).not.toBeNull();
   });
@@ -95,7 +95,7 @@ describe('CairnMediaLibrary toolkit adoption', () => {
 
 describe('CairnMediaLibrary grid', () => {
   it('renders a roving listbox of tiles with names, alt-status glyphs, and usage markers', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     expect(screen.container.querySelector('[role="listbox"]')).not.toBeNull();
     const options = [...screen.container.querySelectorAll('[role="option"]')];
     expect(options.length).toBe(4);
@@ -123,7 +123,7 @@ describe('CairnMediaLibrary grid', () => {
   });
 
   it('has one tabbable option (roving tabindex) and arrows move the roving focus', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')];
     expect(options().filter((o) => o.getAttribute('tabindex') === '0').length).toBe(1);
 
@@ -141,7 +141,7 @@ describe('CairnMediaLibrary grid', () => {
   });
 
   it('activates an option with Enter, opening the detail slide-over (not a selection)', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')];
     const first = options()[0];
     first.focus();
@@ -172,7 +172,7 @@ describe('CairnMediaLibrary grid', () => {
     });
 
     it('gives the Needs-alt and Described tiles the same title width at a narrow card size', async () => {
-      const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+      const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
       screen.container.style.width = '220px';
       const describedTitle = [...screen.container.querySelectorAll('.cairn-ml-name')].find((n) =>
         (n.textContent ?? '').includes('first-light'),
@@ -208,7 +208,7 @@ describe('CairnMediaLibrary handles a null alt crossing the trust boundary', () 
     };
     const projected = mediaLibraryEntry(rawRow);
 
-    const screen = render(CairnMediaLibrary, {
+    const screen = await render(CairnMediaLibrary, {
       data: fixture({ assets: [projected], usage: {} }),
     } as never);
 
@@ -222,7 +222,7 @@ describe('CairnMediaLibrary handles a null alt crossing the trust boundary', () 
 
 describe('CairnMediaLibrary list density', () => {
   it('flips to a real table with a sortable Added header carrying aria-sort and a usage pill', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await screen.getByRole('button', { name: /list view/i }).click();
     expect(screen.container.querySelector('table')).not.toBeNull();
 
@@ -237,7 +237,7 @@ describe('CairnMediaLibrary list density', () => {
   });
 
   it('sorts by Added when the header button toggles', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await screen.getByRole('button', { name: /list view/i }).click();
 
     const names = () => [...screen.container.querySelectorAll('tbody .cairn-ml-name')].map((el) => el.textContent?.trim());
@@ -252,7 +252,7 @@ describe('CairnMediaLibrary list density', () => {
   });
 
   it('keeps a per-row delete button always visible in the table', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await screen.getByRole('button', { name: /list view/i }).click();
     const deletes = [...screen.container.querySelectorAll('tbody button')].filter((b) =>
       /delete/i.test(b.getAttribute('aria-label') ?? ''),
@@ -263,7 +263,7 @@ describe('CairnMediaLibrary list density', () => {
 
 describe('CairnMediaLibrary triage radiogroup', () => {
   it('is a pick-one radiogroup with aria-checked carrying live counts', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     expect(screen.container.querySelector('[role="radiogroup"]')).not.toBeNull();
     const radios = [...screen.container.querySelectorAll('[role="radio"]')];
     expect(radios.length).toBe(3);
@@ -276,7 +276,7 @@ describe('CairnMediaLibrary triage radiogroup', () => {
   });
 
   it('implements the ARIA radio keyboard pattern: one tab stop, arrows move selection and focus', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const radios = () => [...screen.container.querySelectorAll<HTMLElement>('[role="radio"]')];
     // One tab stop: only the checked radio (All, by default) is tabbable.
     expect(radios().filter((r) => r.getAttribute('tabindex') === '0').length).toBe(1);
@@ -303,7 +303,7 @@ describe('CairnMediaLibrary triage radiogroup', () => {
   });
 
   it('filters to Needs alt and to No references found', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const radios = () => [...screen.container.querySelectorAll<HTMLElement>('[role="radio"]')];
 
     await radios().find((r) => /needs alt/i.test(r.textContent ?? ''))!.click();
@@ -318,7 +318,7 @@ describe('CairnMediaLibrary triage radiogroup', () => {
   });
 
   it('searches across name and alt', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     // "running" appears only in the DESCRIBED_USED alt, not in any name.
     await screen.getByRole('searchbox').fill('running');
     await expect.poll(() => screen.container.querySelectorAll('[role="option"]').length).toBe(1);
@@ -335,7 +335,7 @@ describe('CairnMediaLibrary pagination', () => {
     const many = Array.from({ length: 30 }, (_, i) =>
       entry({ hash: `e${String(i).padStart(15, '0')}`, slug: `asset-${i}`, displayName: `asset-${i}` }),
     );
-    const screen = render(CairnMediaLibrary, { data: fixture({ assets: many, usage: {} }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ assets: many, usage: {} }) } as never);
     const visible = () => screen.container.querySelectorAll('[role="option"]').length;
     const before = visible();
     expect(before).toBeLessThan(30);
@@ -356,7 +356,7 @@ describe('CairnMediaLibrary pagination', () => {
 
 describe('CairnMediaLibrary empty and broken states', () => {
   it('shows the empty-state dropzone when there are no assets, hiding triage and search', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
     expect(screen.container.textContent ?? '').toMatch(/no media yet/i);
     expect(screen.container.textContent ?? '').toMatch(/drop a file/i);
     expect(screen.container.querySelector('[role="radiogroup"]')).toBeNull();
@@ -364,13 +364,13 @@ describe('CairnMediaLibrary empty and broken states', () => {
   });
 
   it('renders an inline error when data.error is set', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture({ error: 'Could not read the media library.' }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ error: 'Could not read the media library.' }) } as never);
     const alert = screen.container.querySelector('[role="alert"]');
     expect(alert?.textContent ?? '').toContain('Could not read the media library.');
   });
 
   it('renders the success strip for the deleted flash in a polite live region', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture({ flash: 'deleted' }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ flash: 'deleted' }) } as never);
     const strip = screen.container.querySelector('[aria-live="polite"]');
     expect(strip).not.toBeNull();
     expect(screen.container.textContent ?? '').toContain('Asset deleted.');
@@ -379,12 +379,12 @@ describe('CairnMediaLibrary empty and broken states', () => {
   });
 
   it('renders the success strip for the updated flash', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture({ flash: 'updated' }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ flash: 'updated' }) } as never);
     expect(screen.container.textContent ?? '').toContain('Changes saved.');
   });
 
   it('renders nothing for a query-derived flashError now that the field is gone from the load', async () => {
-    const screen = render(CairnMediaLibrary, {
+    const screen = await render(CairnMediaLibrary, {
       data: { ...fixture(), flashError: 'The media manifest changed. Reload and try again.' } as never,
     });
     const alert = screen.container.querySelector('[role="alert"]');
@@ -392,7 +392,7 @@ describe('CairnMediaLibrary empty and broken states', () => {
   });
 
   it('lists a missing-bytes asset with a broken-image affordance once its thumbnail fails', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const brokenTile = [...screen.container.querySelectorAll('[role="option"]')].find((o) => /old-pylon/.test(o.textContent ?? ''))!;
     const img = brokenTile.querySelector('img') as HTMLImageElement;
     expect(img).not.toBeNull();
@@ -418,7 +418,7 @@ function mixedUsage(): MediaUsageInfo {
 }
 
 /** Open the first asset's slide-over by activating its tile with Enter, and return the region. */
-async function openSlideOver(screen: ReturnType<typeof render>, name: RegExp) {
+async function openSlideOver(screen: Awaited<ReturnType<typeof render>>, name: RegExp) {
   const option = [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => name.test(o.textContent ?? ''))!;
   option.focus();
   option.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
@@ -428,7 +428,7 @@ async function openSlideOver(screen: ReturnType<typeof render>, name: RegExp) {
 
 describe('CairnMediaLibrary detail slide-over', () => {
   it('opens non-modal (the listbox stays in the a11y tree), Escape closes it, focus returns to the origin', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const tile = [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => /first-light/.test(o.textContent ?? ''))!;
     tile.focus();
     tile.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
@@ -448,7 +448,7 @@ describe('CairnMediaLibrary detail slide-over', () => {
   });
 
   it('does not close the slide-over when Escape fires with focus in the search box (the native search clear keeps the panel)', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const panel = await openSlideOver(screen, /first-light/);
 
     // Move focus out of the panel and into the search input. The browser handles Escape there
@@ -467,7 +467,7 @@ describe('CairnMediaLibrary detail slide-over', () => {
 
   it('groups where-used published vs branch, links each entry to its editor, names a branch, and shows the empty case', async () => {
     const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
-    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
     const panel = await openSlideOver(screen, /first-light/);
 
     expect(panel.textContent ?? '').toContain('Published on the site');
@@ -489,7 +489,7 @@ describe('CairnMediaLibrary detail slide-over', () => {
   });
 
   it('carries the media: reference and the alt editor + rename in one ?/mediaUpdate form', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const panel = await openSlideOver(screen, /first-light/);
 
     // The media: reference is shown.
@@ -516,7 +516,7 @@ describe('CairnMediaLibrary detail slide-over', () => {
 
   it('surfaces a ?/mediaUpdate failure error in the slide-over', async () => {
     const failed = { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.' };
-    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
     const panel = await openSlideOver(screen, /first-light/);
     expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid address');
   });
@@ -526,7 +526,7 @@ describe('CairnMediaLibrary detail slide-over', () => {
     // failing carries no hash at all, so the re-surface effect cannot re-home it to a specific
     // asset. It must still be visible somewhere, not silently dropped.
     const failed = { error: 'Something went wrong and your changes were not saved.' };
-    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
     const alert = screen.container.querySelector('[role="alert"]');
     expect(alert?.textContent ?? '').toContain('Something went wrong');
     // No slide-over opened for it.
@@ -537,7 +537,7 @@ describe('CairnMediaLibrary detail slide-over', () => {
     // A 404 "not committed" whose hash is not in data.assets either: the re-surface effect finds
     // no target and returns early, so this must still fall through to the top-level banner.
     const failed = { error: 'That asset is not committed.', hash: 'ffffffffffffffff' };
-    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
     const alert = screen.container.querySelector('[role="alert"]');
     expect(alert?.textContent ?? '').toContain('That asset is not committed.');
     expect(screen.container.querySelector('[role="region"]')).toBeNull();
@@ -548,7 +548,7 @@ describe('CairnMediaLibrary detail slide-over', () => {
     // is NOT an in-use block (a 404 "not committed", or an invalid-address update carrying the hash)
     // must re-select the asset and open the slide-over so the error renders.
     const failed = { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.', hash: DESCRIBED_USED.hash };
-    const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
     // No manual open: the effect re-selects from the hash and opens the region.
     await expect.poll(() => screen.container.querySelector('[role="region"]')).not.toBeNull();
     const panel = screen.container.querySelector('[role="region"]') as HTMLElement;
@@ -563,7 +563,7 @@ describe('CairnMediaLibrary detail slide-over', () => {
 describe('CairnMediaLibrary safe-delete alertdialog', () => {
   it('shows the in-use face: lists entries, gates Delete behind the typed slug, posts confirmSlug', async () => {
     const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
-    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
     await openSlideOver(screen, /first-light/);
 
     // Open the delete from the slide-over.
@@ -593,7 +593,7 @@ describe('CairnMediaLibrary safe-delete alertdialog', () => {
   });
 
   it('shows the orphan face: a calm confirm, no confirmSlug, Delete enabled', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await openSlideOver(screen, /meadow-fence/);
     await screen.getByRole('button', { name: /^delete$/i }).click();
     const dialog = screen.container.querySelector('dialog[role="alertdialog"]') as HTMLDialogElement;
@@ -611,7 +611,7 @@ describe('CairnMediaLibrary safe-delete alertdialog', () => {
   });
 
   it('opens the dialog directly on the row-delete intent from the table', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await screen.getByRole('button', { name: /list view/i }).click();
     const rowDelete = [...screen.container.querySelectorAll<HTMLButtonElement>('tbody button')].find((b) => /delete meadow-fence/i.test(b.getAttribute('aria-label') ?? ''))!;
     rowDelete.click();
@@ -630,7 +630,7 @@ describe('CairnMediaLibrary safe-delete alertdialog', () => {
       foundIn: 1,
       usage: [{ concept: 'posts', id: 'late-edit', title: 'A late edit', origin: { kind: 'published' as const } }],
     };
-    const screen = render(CairnMediaLibrary, { data: fixture(), form: refusal } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture(), form: refusal } as never);
     const dialog = screen.container.querySelector('dialog[role="alertdialog"]') as HTMLDialogElement;
     await expect.poll(() => dialog.open).toBe(true);
     // The in-use face with the fresh list, not the stale "no references".
@@ -709,7 +709,7 @@ function stubPreviewFetch(body: string) {
 
 // Open the Replace dialog: open the slide-over for an asset, click "Replace image", and wait for the
 // dialog to open on the upload step.
-async function openReplace(screen: ReturnType<typeof render>, name: RegExp) {
+async function openReplace(screen: Awaited<ReturnType<typeof render>>, name: RegExp) {
   await openSlideOver(screen, name);
   const replaceButton = screen.container.querySelector<HTMLButtonElement>('[data-cairn-replace-open]')!;
   replaceButton.click();
@@ -720,7 +720,7 @@ async function openReplace(screen: ReturnType<typeof render>, name: RegExp) {
 
 // Drive the upload step to a held record, then resolve the preview, so the dialog reaches the review
 // (or fail-closed) step. Returns the dialog.
-async function uploadThroughReplace(screen: ReturnType<typeof render>, name: RegExp) {
+async function uploadThroughReplace(screen: Awaited<ReturnType<typeof render>>, name: RegExp) {
   const dialog = await openReplace(screen, name);
   const fileInput = dialog.querySelector('input[type="file"]') as HTMLInputElement;
   const file = new File([PNG_BYTES], 'first-light-v2.png', { type: 'image/png' });
@@ -767,7 +767,7 @@ afterEach(() => {
 
 describe('CairnMediaLibrary Replace entry point and dialog', () => {
   it('places both new entry points beside Delete in the slide-over actions block', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const panel = await openSlideOver(screen, /first-light/);
     // The Replace and Push-alt entry points carry aria-haspopup="dialog" beside the Delete control.
     const replace = panel.querySelector('[data-cairn-replace-open]') as HTMLButtonElement;
@@ -778,7 +778,7 @@ describe('CairnMediaLibrary Replace entry point and dialog', () => {
   });
 
   it('opens the Replace dialog as an alertdialog on the upload step, Cancel focused', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await openReplace(screen, /first-light/);
     expect(dialog.getAttribute('role')).toBe('alertdialog');
     expect(dialog.getAttribute('aria-modal')).toBe('true');
@@ -797,7 +797,7 @@ describe('CairnMediaLibrary Replace entry point and dialog', () => {
   });
 
   it('closing the dialog restores focus to the Replace entry point', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await openReplace(screen, /first-light/);
     const opener = screen.container.querySelector<HTMLButtonElement>('[data-cairn-replace-open]')!;
     // Cancel the dialog; focus returns to the entry-point button.
@@ -813,7 +813,7 @@ describe('CairnMediaLibrary Replace impact review', () => {
     const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
     stubUpload(newRecord());
     stubPreviewFetch(successBody(REPLACE_PLAN));
-    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
     const dialog = await uploadThroughReplace(screen, /first-light/);
 
     // The preview resolved into the impact review: the affected entries are listed.
@@ -834,7 +834,7 @@ describe('CairnMediaLibrary Replace impact review', () => {
     const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
     stubUpload(newRecord());
     stubPreviewFetch(successBody(REPLACE_PLAN));
-    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
     const dialog = await uploadThroughReplace(screen, /first-light/);
     await expect.poll(() => dialog.textContent ?? '').toContain('A season on the early tracks');
 
@@ -870,7 +870,7 @@ describe('CairnMediaLibrary Replace fail-closed surface', () => {
       foundIn: 0,
     };
     stubPreviewFetch(failureBody(failure));
-    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
     const dialog = await uploadThroughReplace(screen, /first-light/);
 
     // The blocked face renders: no apply form at all (not a disabled button).
@@ -898,7 +898,7 @@ describe('CairnMediaLibrary Replace fail-closed surface', () => {
       foundIn: 0,
     };
     stubPreviewFetch(failureBody(failure));
-    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
     const dialog = await uploadThroughReplace(screen, /first-light/);
 
     await expect.poll(() => dialog.textContent ?? '').toMatch(/on hold|could not.*verif/i);
@@ -912,7 +912,7 @@ describe('CairnMediaLibrary direct upload', () => {
   it('uploads a chosen file from the Upload button and refreshes', async () => {
     stubUpload(newRecord({ slug: 'trailhead', hash: 'ffff222233334444' }));
     const gotoCallsBefore = gotoCalls.length;
-    const screen = render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
 
     // The header Upload button (exact accessible name, distinct from the empty-state "Upload an
     // image" CTA) opens the native file chooser through the hidden input.
@@ -942,7 +942,7 @@ describe('CairnMediaLibrary direct upload', () => {
   });
 
   it('accepts a dropped file on the page dropzone', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
     const file = new File([PNG_BYTES], 'trailhead.png', { type: 'image/png' });
     const dt = new DataTransfer();
     dt.items.add(file);
@@ -959,7 +959,7 @@ describe('CairnMediaLibrary direct upload', () => {
     // dataTransfer.types is readable at that stage. A script-constructed DragEvent's DataTransfer does
     // not reproduce that restriction (items.add() populates .files too), so a plain Event with a
     // stubbed dataTransfer models the real browser shape: types carries 'Files', files does not exist.
-    render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
+    await render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
     const event = new Event('dragover', { bubbles: true, cancelable: true });
     Object.defineProperty(event, 'dataTransfer', { value: { types: ['Files'] }, configurable: true });
     window.dispatchEvent(event);
@@ -1006,7 +1006,7 @@ const ALT_PLAN: MediaAltPreviewPlan = {
 
 // Open the Push-alt dialog: open the slide-over for an asset, click "Push alt to placements", and wait
 // for the dialog to open. Mirrors openReplace.
-async function openPushAlt(screen: ReturnType<typeof render>, name: RegExp) {
+async function openPushAlt(screen: Awaited<ReturnType<typeof render>>, name: RegExp) {
   await openSlideOver(screen, name);
   const button = screen.container.querySelector<HTMLButtonElement>('[data-cairn-pushalt-open]')!;
   button.click();
@@ -1016,7 +1016,7 @@ async function openPushAlt(screen: ReturnType<typeof render>, name: RegExp) {
 }
 
 // Open the dialog and resolve the preview, so it reaches the review state. Returns the dialog.
-async function pushAltThroughPreview(screen: ReturnType<typeof render>, name: RegExp) {
+async function pushAltThroughPreview(screen: Awaited<ReturnType<typeof render>>, name: RegExp) {
   stubPreviewFetch(successBody(ALT_PLAN));
   const dialog = await openPushAlt(screen, name);
   await expect.poll(() => dialog.textContent ?? '').toContain('A season on the early tracks');
@@ -1026,7 +1026,7 @@ async function pushAltThroughPreview(screen: ReturnType<typeof render>, name: Re
 describe('CairnMediaLibrary Push-alt dialog', () => {
   it('opens with native dialog semantics (no redundant role or aria-modal), labelled and described', async () => {
     stubPreviewFetch(successBody(ALT_PLAN));
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await openPushAlt(screen, /first-light/);
     // The everyday register: no explicit role, so it relies on the native <dialog> default rather
     // than the alertdialog Replace uses.
@@ -1040,7 +1040,7 @@ describe('CairnMediaLibrary Push-alt dialog', () => {
 
   it('closing the dialog restores focus to the Push-alt entry point', async () => {
     stubPreviewFetch(successBody(ALT_PLAN));
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await openPushAlt(screen, /first-light/);
     const opener = screen.container.querySelector<HTMLButtonElement>('[data-cairn-pushalt-open]')!;
     const cancel = [...dialog.querySelectorAll('button')].find((b) => /^cancel$/i.test(b.textContent?.trim() ?? ''))!;
@@ -1052,7 +1052,7 @@ describe('CairnMediaLibrary Push-alt dialog', () => {
 
 describe('CairnMediaLibrary Push-alt three buckets', () => {
   it('shows the work-tuned headline, the alt being pushed once, and each entry title in its bucket', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await pushAltThroughPreview(screen, /first-light/);
 
     // The headline is tuned to the will-fill count.
@@ -1068,7 +1068,7 @@ describe('CairnMediaLibrary Push-alt three buckets', () => {
   });
 
   it('renders the will-fill bucket with the body-vs-hero caveat beside it', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await pushAltThroughPreview(screen, /first-light/);
     // The will-fill row shows the (no alt) -> default arrow.
     expect(dialog.textContent ?? '').toMatch(/no alt/i);
@@ -1077,7 +1077,7 @@ describe('CairnMediaLibrary Push-alt three buckets', () => {
   });
 
   it('renders the decorative-skipped bucket as listed and muted with no input', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await pushAltThroughPreview(screen, /first-light/);
     const skip = dialog.querySelector('[data-cairn-alt-skip]') as HTMLElement;
     expect(skip).not.toBeNull();
@@ -1090,7 +1090,7 @@ describe('CairnMediaLibrary Push-alt three buckets', () => {
 
 describe('CairnMediaLibrary Push-alt overwrite opt-in', () => {
   it('exposes a real native checkbox in the a11y tree, kept-before and struck was->default after', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await pushAltThroughPreview(screen, /first-light/);
 
     // The opt-in is a real native <input type="checkbox"> inside its label.
@@ -1117,7 +1117,7 @@ describe('CairnMediaLibrary Push-alt overwrite opt-in', () => {
   });
 
   it('moves the committed total in the footer button and the live region when the opt-in toggles', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await pushAltThroughPreview(screen, /first-light/);
 
     const applyButton = () => [...dialog.querySelectorAll('button')].find((b) => /fill \d|update \d/i.test(b.textContent ?? ''))!;
@@ -1136,7 +1136,7 @@ describe('CairnMediaLibrary Push-alt overwrite opt-in', () => {
   });
 
   it('posts the apply form to ?/mediaAltPropagate with the hash and the overwrite flag tracking the opt-in', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await pushAltThroughPreview(screen, /first-light/);
 
     const form = [...dialog.querySelectorAll('form')].find((f) => f.getAttribute('action') === '?/mediaAltPropagate')!;
@@ -1164,7 +1164,7 @@ describe('CairnMediaLibrary Push-alt fail-closed surface', () => {
   it('shows a blocked surface with no apply form and a Check usage again control when the preview fails closed', async () => {
     const failure: MediaAltPropagateFailure = { error: 'Could not verify where this asset is used. Try again.' };
     stubPreviewFetch(failureBody(failure));
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await openPushAlt(screen, /first-light/);
 
     // The blocked face: a quiet "could not verify" surface, no apply form, a re-run control.
@@ -1213,7 +1213,7 @@ describe('CairnMediaLibrary "Show all" moves focus to the first revealed row', (
     const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
     stubUpload(newRecord());
     stubPreviewFetch(successBody(REPLACE_PLAN_MANY));
-    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
     const dialog = await uploadThroughReplace(screen, /first-light/);
     await expect.poll(() => dialog.textContent ?? '').toContain('Entry number 0');
 
@@ -1234,7 +1234,7 @@ describe('CairnMediaLibrary "Show all" moves focus to the first revealed row', (
 
   it('Push-alt: clicking "Show all" focuses a revealed will-fill row, not the body', async () => {
     stubPreviewFetch(successBody(ALT_PLAN_MANY));
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await openPushAlt(screen, /first-light/);
     await expect.poll(() => dialog.textContent ?? '').toContain('Fill entry 0');
 
@@ -1256,7 +1256,7 @@ describe('CairnMediaLibrary Replace review live region', () => {
     const usage = { [DESCRIBED_USED.hash]: mixedUsage() };
     stubUpload(newRecord());
     stubPreviewFetch(successBody(REPLACE_PLAN));
-    const screen = render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture({ usage }) } as never);
     const dialog = await uploadThroughReplace(screen, /first-light/);
     await expect.poll(() => dialog.textContent ?? '').toContain('A season on the early tracks');
 
@@ -1300,7 +1300,7 @@ describe('CairnMediaLibrary preview in-flight guard', () => {
       }),
     );
 
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     // First open (its preview is in flight, deferred).
     const dialog = await openPushAlt(screen, /first-light/);
     const cancel = () => [...dialog.querySelectorAll('button')].find((b) => /^cancel$/i.test(b.textContent?.trim() ?? ''))!;
@@ -1326,20 +1326,20 @@ describe('CairnMediaLibrary multi-select', () => {
   // The grid is an APG multiselectable listbox: focus and selection are decoupled. Space toggles the
   // focused tile, Shift+Arrow extends a range, Ctrl/Cmd+A selects every visible asset, and Escape
   // clears. The sticky action bar appears once a selection exists, with a live count.
-  const grid = (screen: ReturnType<typeof render>) =>
+  const grid = (screen: Awaited<ReturnType<typeof render>>) =>
     screen.container.querySelector('[role="listbox"]')!;
-  const options = (screen: ReturnType<typeof render>) =>
+  const options = (screen: Awaited<ReturnType<typeof render>>) =>
     [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')];
-  const selectionBar = (screen: ReturnType<typeof render>) =>
+  const selectionBar = (screen: Awaited<ReturnType<typeof render>>) =>
     screen.container.querySelector<HTMLElement>('[aria-label="Selection actions"]');
   // The selection-count live region is its own sr-only role=status node carrying "N selected".
-  const selectionStatus = (screen: ReturnType<typeof render>) =>
+  const selectionStatus = (screen: Awaited<ReturnType<typeof render>>) =>
     [...screen.container.querySelectorAll('[role="status"]')].find((n) =>
       /\bselected\b/i.test(n.textContent ?? ''),
     );
 
   it('advertises the grid as aria-multiselectable and the table as a selectable-checkbox table', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     // The grid is a real APG multiselectable listbox.
     expect(grid(screen).getAttribute('aria-multiselectable')).toBe('true');
 
@@ -1355,7 +1355,7 @@ describe('CairnMediaLibrary multi-select', () => {
   });
 
   it('toggles selection on the focused tile with Space, never opening the slide-over', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const first = options(screen)[0];
     first.focus();
 
@@ -1372,7 +1372,7 @@ describe('CairnMediaLibrary multi-select', () => {
   });
 
   it('updates the role=status live region and shows the sticky action bar with the count', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     // No selection: no bar.
     expect(selectionBar(screen)).toBeNull();
 
@@ -1394,7 +1394,7 @@ describe('CairnMediaLibrary multi-select', () => {
   });
 
   it('offers a Clear in the sticky bar that empties the selection', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const first = options(screen)[0];
     first.focus();
     first.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
@@ -1410,7 +1410,7 @@ describe('CairnMediaLibrary multi-select', () => {
   });
 
   it('selects all visible assets with Ctrl/Cmd+A and clears the selection with Escape', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const first = options(screen)[0];
     first.focus();
 
@@ -1429,7 +1429,7 @@ describe('CairnMediaLibrary multi-select', () => {
   });
 
   it('extends a contiguous range with Shift+Arrow from the toggle anchor', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const first = options(screen)[0];
     first.focus();
     // Anchor at index 0.
@@ -1453,7 +1453,7 @@ describe('CairnMediaLibrary multi-select', () => {
   });
 
   it('exposes a native checkbox per tile that toggles selection without opening the slide-over', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const opt = options(screen)[0];
     const box = opt.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
     expect(box).toBeTruthy();
@@ -1467,7 +1467,7 @@ describe('CairnMediaLibrary multi-select', () => {
   });
 
   it('carries the selection into the table with a leading native checkbox column', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await screen.getByRole('button', { name: /list view/i }).click();
 
     const rowBoxes = [...screen.container.querySelectorAll<HTMLInputElement>('tbody input[type="checkbox"]')];
@@ -1482,14 +1482,14 @@ describe('CairnMediaLibrary multi-select', () => {
 
 describe('CairnMediaLibrary the no-references rename', () => {
   it('names the triage facet "No references found", never "Unused"', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const radios = [...screen.container.querySelectorAll('[role="radio"]')];
     expect(radios.some((r) => /no references found/i.test(r.textContent ?? ''))).toBe(true);
     expect(radios.some((r) => /unused/i.test(r.textContent ?? ''))).toBe(false);
   });
 
   it('carries the raw-HTML blind-spot caveat on the No references found facet', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     const radios = [...screen.container.querySelectorAll<HTMLElement>('[role="radio"]')];
     radios.find((r) => /no references found/i.test(r.textContent ?? ''))!.click();
     await expect.poll(() => screen.container.querySelectorAll('[role="option"]').length).toBe(2);
@@ -1503,7 +1503,7 @@ describe('CairnMediaLibrary the no-references rename', () => {
 describe('CairnMediaLibrary bulk-delete dialog', () => {
   // Select the three assets the rev.2 mockup splits: two with no references (UNUSED, BROKEN) and one
   // still in use (DESCRIBED_USED, found in 3 entries). The selection rides the grid checkboxes.
-  async function selectFor(screen: ReturnType<typeof render>) {
+  async function selectFor(screen: Awaited<ReturnType<typeof render>>) {
     const opts = [...screen.container.querySelectorAll<HTMLElement>('[role="option"]')];
     for (const name of [/meadow-fence/, /old-pylon/, /first-light/]) {
       const box = opts.find((o) => name.test(o.textContent ?? ''))!.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
@@ -1511,15 +1511,15 @@ describe('CairnMediaLibrary bulk-delete dialog', () => {
     }
     await expect.poll(() => screen.container.querySelector('[aria-label="Selection actions"]')).not.toBeNull();
   }
-  const barDelete = (screen: ReturnType<typeof render>) =>
+  const barDelete = (screen: Awaited<ReturnType<typeof render>>) =>
     [...screen.container.querySelector('[aria-label="Selection actions"]')!.querySelectorAll('button')].find((b) =>
       /^delete\s/i.test(b.textContent?.trim() ?? ''),
     )!;
-  const bulkDialog = (screen: ReturnType<typeof render>) =>
+  const bulkDialog = (screen: Awaited<ReturnType<typeof render>>) =>
     screen.container.querySelector('[data-testid="cairn-bulk-dialog"]') as HTMLDialogElement;
 
   it('opens an alertdialog with the will-delete and will-skip groups and an outcome-naming apply', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await selectFor(screen);
     barDelete(screen).click();
 
@@ -1547,7 +1547,7 @@ describe('CairnMediaLibrary bulk-delete dialog', () => {
   });
 
   it('uses a plain confirm: no typed-slug input inside the bulk dialog', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await selectFor(screen);
     barDelete(screen).click();
     const dialog = bulkDialog(screen);
@@ -1558,7 +1558,7 @@ describe('CairnMediaLibrary bulk-delete dialog', () => {
   });
 
   it('restores focus to the bar Delete button when the dialog is cancelled', async () => {
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await selectFor(screen);
     const trigger = barDelete(screen);
     trigger.click();
@@ -1592,7 +1592,7 @@ describe('CairnMediaLibrary bulk-delete dialog', () => {
       vi.fn(async () => ({ status: 200, text: async () => successBody(result) }) as unknown as Response),
     );
 
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     await selectFor(screen);
     barDelete(screen).click();
     const dialog = bulkDialog(screen);
@@ -1613,9 +1613,9 @@ describe('CairnMediaLibrary bulk-delete dialog', () => {
 // sections, the irreversible purge typed-count confirm, the read-only broken-references readout) ---
 describe('CairnMediaLibrary orphan scan surface', () => {
   // The scan modal opened from the toolbar's "Find orphaned files" office control.
-  const scanDialog = (screen: ReturnType<typeof render>) =>
+  const scanDialog = (screen: Awaited<ReturnType<typeof render>>) =>
     screen.container.querySelector('[data-testid="cairn-orphan-dialog"]') as HTMLDialogElement;
-  const findButton = (screen: ReturnType<typeof render>) =>
+  const findButton = (screen: Awaited<ReturnType<typeof render>>) =>
     [...screen.container.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
       /find orphaned files/i.test(b.textContent ?? ''),
     )!;
@@ -1644,7 +1644,7 @@ describe('CairnMediaLibrary orphan scan surface', () => {
       ),
     );
 
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     findButton(screen).click();
     const dialog = scanDialog(screen);
     await expect.poll(() => dialog.open).toBe(true);
@@ -1672,7 +1672,7 @@ describe('CairnMediaLibrary orphan scan surface', () => {
       }),
     );
 
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     findButton(screen).click();
     const dialog = scanDialog(screen);
     await expect.poll(() => dialog.open).toBe(true);
@@ -1687,7 +1687,7 @@ describe('CairnMediaLibrary orphan scan surface', () => {
       vi.fn(async () => ({ status: 200, text: async () => successBody(SCAN) }) as unknown as Response),
     );
 
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     findButton(screen).click();
     const dialog = scanDialog(screen);
     await expect.poll(() => dialog.open).toBe(true);
@@ -1745,7 +1745,7 @@ describe('CairnMediaLibrary orphan scan surface', () => {
       vi.fn(async () => ({ status: 200, text: async () => successBody(SCAN) }) as unknown as Response),
     );
 
-    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    const screen = await render(CairnMediaLibrary, { data: fixture() } as never);
     findButton(screen).click();
     const dialog = scanDialog(screen);
     await expect.poll(() => dialog.open).toBe(true);

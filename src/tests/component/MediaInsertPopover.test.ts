@@ -121,7 +121,7 @@ beforeEach(() => {
 describe('MediaInsertPopover routing', () => {
   it('open("chooser") leads with upload and shows the picker', async () => {
     const { api } = fakePlaceholders();
-    const screen = render(MediaInsertPopover, {
+    const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',
       library: {},
@@ -136,7 +136,7 @@ describe('MediaInsertPopover routing', () => {
 
   it('open("capture", file) goes straight to the capture card', async () => {
     const { api } = fakePlaceholders();
-    const screen = render(MediaInsertPopover, {
+    const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',
       library: {},
@@ -158,7 +158,7 @@ describe('MediaInsertPopover focus restore', () => {
   it('restores focus to the editor on Escape', async () => {
     const { api } = fakePlaceholders();
     const editor = fakeEditor(api);
-    const screen = render(MediaInsertPopover, {
+    const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',
       library: {},
@@ -188,7 +188,7 @@ describe('MediaInsertPopover optimistic loop', () => {
     );
     const { api, calls } = fakePlaceholders();
     const onuploaded = vi.fn();
-    const screen = render(MediaInsertPopover, {
+    const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',
       library: {},
@@ -224,7 +224,7 @@ describe('MediaInsertPopover optimistic loop', () => {
       }),
     );
     const { api, calls } = fakePlaceholders();
-    const screen = render(MediaInsertPopover, {
+    const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',
       library: {},
@@ -247,7 +247,7 @@ describe('MediaInsertPopover optimistic loop', () => {
     stubSend(failureBody('too_large'));
     const { api, calls } = fakePlaceholders();
     const editor = fakeEditor(api);
-    const screen = render(MediaInsertPopover, {
+    const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',
       library: {},
@@ -285,7 +285,7 @@ describe('MediaInsertPopover optimistic loop', () => {
     const { api, calls } = fakePlaceholders();
     const onuploaded = vi.fn();
     const editor = fakeEditor(api);
-    const screen = render(MediaInsertPopover, {
+    const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',
       library: {},
@@ -311,7 +311,7 @@ describe('MediaInsertPopover optimistic loop', () => {
     stubIngest();
     stubSend('', 'opaqueredirect', 0);
     const { api, calls } = fakePlaceholders();
-    const screen = render(MediaInsertPopover, {
+    const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',
       library: {},
@@ -334,7 +334,7 @@ describe('MediaInsertPopover picker path', () => {
   it('inserts a picked reference directly without an upload', async () => {
     const { api } = fakePlaceholders();
     const editor = fakeEditor(api);
-    const screen = render(MediaInsertPopover, {
+    const screen = await render(MediaInsertPopover, {
       conceptId: 'posts',
       id: 'hello',
       library: {

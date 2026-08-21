@@ -58,17 +58,17 @@ function props(frontmatter: Record<string, unknown>) {
   };
 }
 
-async function openDetails(page: ReturnType<typeof render>) {
+async function openDetails(page: Awaited<ReturnType<typeof render>>) {
   await page.getByRole('button', { name: 'Details' }).click();
 }
 
-function hiddenInputs(page: ReturnType<typeof render>, name: string): HTMLInputElement[] {
+function hiddenInputs(page: Awaited<ReturnType<typeof render>>, name: string): HTMLInputElement[] {
   return [...page.container.querySelectorAll<HTMLInputElement>(`input[type="hidden"][name="${name}"]`)];
 }
 
 describe('ReferenceField editor arm', () => {
   it('renders a single reference resolved to its target title and emits a hidden input', async () => {
-    const page = render(EditPage, props({ author: 'jane-doe' }));
+    const page = await render(EditPage, props({ author: 'jane-doe' }));
     await openDetails(page);
     // The combobox trigger shows the resolved title, not the bare id (the picker dialog also lists the
     // title, so scope the assertion to the trigger button by its field-label accessible name).
@@ -80,7 +80,7 @@ describe('ReferenceField editor arm', () => {
   });
 
   it('changes the single reference on pick, setting the hidden input to the new id', async () => {
-    const page = render(EditPage, props({ author: 'jane-doe' }));
+    const page = await render(EditPage, props({ author: 'jane-doe' }));
     await openDetails(page);
     // Open the picker scoped to pages, then pick John Roe.
     await page.getByRole('button', { name: /author/i }).click();
@@ -91,7 +91,7 @@ describe('ReferenceField editor arm', () => {
   });
 
   it('renders an array reference as chips with one hidden input per id', async () => {
-    const page = render(EditPage, props({ related: ['a-post', 'b-post'] }));
+    const page = await render(EditPage, props({ related: ['a-post', 'b-post'] }));
     await openDetails(page);
     // The chips carry the resolved titles (the picker dialog lists them too, so read the chips by
     // their remove-control accessible names, which name the resolved title).
@@ -102,7 +102,7 @@ describe('ReferenceField editor arm', () => {
   });
 
   it('appends a hidden input when an array id is added through the picker', async () => {
-    const page = render(EditPage, props({ related: ['a-post'] }));
+    const page = await render(EditPage, props({ related: ['a-post'] }));
     await openDetails(page);
     await page.getByRole('button', { name: /add related/i }).click();
     await page.getByRole('button', { name: /B Post/ }).click();
@@ -111,7 +111,7 @@ describe('ReferenceField editor arm', () => {
   });
 
   it('drops the hidden input when a chip is removed', async () => {
-    const page = render(EditPage, props({ related: ['a-post', 'b-post'] }));
+    const page = await render(EditPage, props({ related: ['a-post', 'b-post'] }));
     await openDetails(page);
     await page.getByRole('button', { name: /remove A Post/i }).click();
     const inputs = hiddenInputs(page, 'related');
@@ -122,7 +122,7 @@ describe('ReferenceField editor arm', () => {
     // An existing entry (not ?new=1), so Save starts disabled until a real edit. A reference change
     // writes to a hidden input, whose programmatic value change does not fire the form's oninput, so
     // the field must signal dirty through ondirty for Save to enable.
-    const page = render(EditPage, props({ author: 'jane-doe' }));
+    const page = await render(EditPage, props({ author: 'jane-doe' }));
     const save = () =>
       page.container.querySelector<HTMLButtonElement>(
         '[data-testid="cairn-band"] button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)',

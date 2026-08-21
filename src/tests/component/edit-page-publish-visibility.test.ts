@@ -62,7 +62,7 @@ function publishButton(screen: { container: HTMLElement }) {
 // Edits the body through the registered format seam (an empty-selection bold wrap), the same
 // approach EditPage.test.ts's makeDirty helper uses, and waits for the save-state indicator to
 // acknowledge the change.
-async function makeDirty(screen: ReturnType<typeof render>) {
+async function makeDirty(screen: Awaited<ReturnType<typeof render>>) {
   await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
   const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
   card.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true }));
@@ -73,7 +73,7 @@ async function makeDirty(screen: ReturnType<typeof render>) {
 
 describe('EditPage Publish visibility', () => {
   it('guards Publish on a clean published entry: present, aria-disabled, inert on click', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const publish = publishButton(screen);
     expect(publish).not.toBeNull();
     expect(publish.getAttribute('aria-disabled')).toBe('true');
@@ -96,19 +96,19 @@ describe('EditPage Publish visibility', () => {
   });
 
   it('renders Publish actionable when edits are pending', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     const publish = publishButton(screen);
     expect(publish.getAttribute('aria-disabled')).toBe(null);
   });
 
   it('renders Publish actionable for a brand-new entry', async () => {
-    const screen = render(EditPage, postProps({ isNew: true, pending: false, published: false }));
+    const screen = await render(EditPage, postProps({ isNew: true, pending: false, published: false }));
     const publish = publishButton(screen);
     expect(publish.getAttribute('aria-disabled')).toBe(null);
   });
 
   it('flips a clean published entry from guarded to actionable after a body edit, and the click submits', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const publish = publishButton(screen);
     expect(publish.getAttribute('aria-disabled')).toBe('true');
     await makeDirty(screen);
@@ -131,7 +131,7 @@ describe('EditPage Publish visibility', () => {
     // The default clean state is exactly the new case: Publish now renders (guarded) even with
     // nothing pending, so the tree-order invariant (Enter saves, never publishes) must hold here
     // too, not only in the pending state the pre-existing coverage exercised.
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const owned = Array.from(
       screen.container.querySelectorAll<HTMLButtonElement>(
         'button[type="submit"][form="cairn-edit-form"], #cairn-edit-form button[type="submit"]',
@@ -144,28 +144,28 @@ describe('EditPage Publish visibility', () => {
   });
 
   it('reads the status badge as New for a brand-new never-published entry', async () => {
-    const screen = render(EditPage, postProps({ isNew: true, pending: false, published: false }));
+    const screen = await render(EditPage, postProps({ isNew: true, pending: false, published: false }));
     const badge = screen.container.querySelector('.badge.badge-sm.font-medium');
     expect(badge?.textContent?.trim()).toBe('New');
     expect(badge?.classList.contains('badge-info')).toBe(true);
   });
 
   it('reads the status badge as Published when main matches and nothing is pending', async () => {
-    const screen = render(EditPage, postProps({ pending: false, published: true }));
+    const screen = await render(EditPage, postProps({ pending: false, published: true }));
     const badge = screen.container.querySelector('.badge.badge-sm.font-medium');
     expect(badge?.textContent?.trim()).toBe('Published');
     expect(badge?.classList.contains('cairn-chip-quiet')).toBe(true);
   });
 
   it('reads the status badge as Edited for a pending branch over a published copy', async () => {
-    const screen = render(EditPage, postProps({ pending: true, published: true }));
+    const screen = await render(EditPage, postProps({ pending: true, published: true }));
     const badge = screen.container.querySelector('.badge.badge-sm.font-medium');
     expect(badge?.textContent?.trim()).toBe('Edited');
     expect(badge?.classList.contains('badge-warning')).toBe(true);
   });
 
   it('no-ops the Ctrl+Shift+S chord on a clean, guarded entry', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     let submitted = false;
     const stop = (e: Event) => {
@@ -183,7 +183,7 @@ describe('EditPage Publish visibility', () => {
   });
 
   it('fires the Publish submit on Ctrl+Shift+S once a clean entry becomes dirty', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await makeDirty(screen);
     let formaction: string | null = 'unset';
     const stop = (e: SubmitEvent) => {

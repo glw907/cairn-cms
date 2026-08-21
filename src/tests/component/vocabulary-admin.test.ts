@@ -31,14 +31,14 @@ describe('VocabularyAdmin', () => {
   it('renders its header through the admin toolkit, meta line carrying the lede', async () => {
     // The admin-toolkit organization pass's T7 adoption sweep: the header band renders through
     // PageHeader, not a bespoke fork; the ledger below stays its own hand-rolled grid.
-    const screen = render(VocabularyAdmin, { data: data() });
+    const screen = await render(VocabularyAdmin, { data: data() });
     const header = screen.container.querySelector('header.mb-10');
     expect(header).not.toBeNull();
     expect(header?.textContent).toContain('A tag groups related posts.');
   });
 
   it('renders each entry with its label and its in-use count', async () => {
-    const screen = render(VocabularyAdmin, { data: data() });
+    const screen = await render(VocabularyAdmin, { data: data() });
     // The labels ride editable rename inputs, named by the immutable slug so the accessible name is
     // stable mid-edit; the in-use count reads on the in-use row.
     await expect.element(screen.getByLabelText('Tag name (snow-report)')).toHaveValue('Snow report');
@@ -47,7 +47,7 @@ describe('VocabularyAdmin', () => {
   });
 
   it('flows a rename into the posted vocabulary JSON (the deep bind:value path)', async () => {
-    const screen = render(VocabularyAdmin, { data: data() });
+    const screen = await render(VocabularyAdmin, { data: data() });
     const rename = screen.container.querySelector<HTMLInputElement>(
       'input[aria-label="Tag name (gear)"]',
     )!;
@@ -58,7 +58,7 @@ describe('VocabularyAdmin', () => {
   });
 
   it('guards the in-use delete with aria-disabled (not native disabled), names the count, and does not remove the row', async () => {
-    const screen = render(VocabularyAdmin, { data: data() });
+    const screen = await render(VocabularyAdmin, { data: data() });
     const guarded = screen.container.querySelector<HTMLButtonElement>(
       'button[aria-disabled="true"][data-value="snow-report"]',
     )!;
@@ -74,7 +74,7 @@ describe('VocabularyAdmin', () => {
   });
 
   it('the unused delete is enabled and removes the row from the working copy', async () => {
-    const screen = render(VocabularyAdmin, { data: data() });
+    const screen = await render(VocabularyAdmin, { data: data() });
     const del = screen.container.querySelector<HTMLButtonElement>('button[data-value="gear"]')!;
     expect(del.getAttribute('aria-disabled')).not.toBe('true');
     await userEvent.click(del);
@@ -82,7 +82,7 @@ describe('VocabularyAdmin', () => {
   });
 
   it('previews a clean slug and appends it on add', async () => {
-    const screen = render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
+    const screen = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
     const input = screen.container.querySelector<HTMLInputElement>('input[name="new-label"]')!;
     await userEvent.fill(input, 'Trip Reports');
     // The live preview shows the derived slug.
@@ -94,7 +94,7 @@ describe('VocabularyAdmin', () => {
   });
 
   it('rejects a label deriving to an empty or invalid slug and appends nothing', async () => {
-    const screen = render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
+    const screen = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
     const input = screen.container.querySelector<HTMLInputElement>('input[name="new-label"]')!;
     const add = screen.getByRole('button', { name: /add tag/i });
     for (const bad of ['!!!', '   ']) {
@@ -105,7 +105,7 @@ describe('VocabularyAdmin', () => {
   });
 
   it('rejects a second label that collides with an existing value', async () => {
-    const screen = render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
+    const screen = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [] }) });
     const input = screen.container.querySelector<HTMLInputElement>('input[name="new-label"]')!;
     const add = screen.getByRole('button', { name: /add tag/i });
     await userEvent.fill(input, 'Trip Reports');
@@ -117,7 +117,7 @@ describe('VocabularyAdmin', () => {
   });
 
   it('seeds an unlisted candidate into the posted vocabulary', async () => {
-    const screen = render(VocabularyAdmin, { data: data() });
+    const screen = await render(VocabularyAdmin, { data: data() });
     expect(postedVocabulary(screen.container).map((e) => e.value)).not.toContain('trip-reports');
     const seed = screen.container.querySelector<HTMLButtonElement>('button[data-seed="trip-reports"]')!;
     await userEvent.click(seed);
@@ -130,7 +130,7 @@ describe('VocabularyAdmin', () => {
   });
 
   it('posts the working copy as a hidden vocabulary JSON field with a CSRF field to ?/vocabularySave', async () => {
-    const screen = render(VocabularyAdmin, { data: data() });
+    const screen = await render(VocabularyAdmin, { data: data() });
     const form = screen.container.querySelector<HTMLFormElement>('form[action="?/vocabularySave"]')!;
     expect(form).not.toBeNull();
     expect(form.getAttribute('method')?.toUpperCase()).toBe('POST');
@@ -140,7 +140,7 @@ describe('VocabularyAdmin', () => {
   });
 
   it('the always-present role=status region narrates a change after an add and after a seed', async () => {
-    const screen = render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [{ value: 'trip-reports', count: 3 }] }) });
+    const screen = await render(VocabularyAdmin, { data: data({ vocabulary: [], usage: {}, unlisted: [{ value: 'trip-reports', count: 3 }] }) });
     const live = screen.container.querySelector<HTMLElement>('[data-testid="vocab-mutation-live"]')!;
     expect(live).not.toBeNull();
     expect(live.textContent?.trim()).toBe('');
@@ -156,13 +156,13 @@ describe('VocabularyAdmin', () => {
   });
 
   it('carries no retired muted/subtle bracket token in the rendered markup', async () => {
-    const screen = render(VocabularyAdmin, { data: data() });
+    const screen = await render(VocabularyAdmin, { data: data() });
     expect(screen.container.innerHTML).not.toContain('var(--color-muted)');
     expect(screen.container.innerHTML).not.toContain('var(--color-subtle)');
   });
 
   it('renders nothing for a query-derived error now that data.error is gone from the load', async () => {
-    const screen = render(VocabularyAdmin, {
+    const screen = await render(VocabularyAdmin, {
       data: { ...data(), error: 'Something went wrong and your changes were not saved.' } as never,
     });
     const alert = screen.container.querySelector('.alert-error');
@@ -172,7 +172,7 @@ describe('VocabularyAdmin', () => {
   it('surfaces a refused save\'s fail() error read from form, not only from data', async () => {
     // A validation or conflict refusal now answers in place through `form`, not a ?error= redirect
     // read back into `data.error`; the shell must wire `form` through for the message to reach here.
-    const screen = render(VocabularyAdmin, {
+    const screen = await render(VocabularyAdmin, {
       data: data(),
       form: { error: 'The site config changed since you opened it.' },
     });

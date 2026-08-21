@@ -2,13 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import RenameDialog from '../../lib/components/RenameDialog.svelte';
 
-function open(props: { conceptId: string; id: string; singular: string; slug: string; routable?: boolean }) {
-  return render(RenameDialog, props);
+async function open(props: { conceptId: string; id: string; singular: string; slug: string; routable?: boolean }) {
+  return await render(RenameDialog, props);
 }
 
 describe('RenameDialog', () => {
   it('opens a dialog prefilled with the current slug and posts to ?/rename', async () => {
-    const screen = open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
+    const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
     await screen.getByRole('button', { name: /change url/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     expect(dialog.open).toBe(true);
@@ -20,14 +20,14 @@ describe('RenameDialog', () => {
     expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
   });
   it('seeds focus into the slug input when the dialog opens', async () => {
-    const screen = open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
+    const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
     await screen.getByRole('button', { name: /change url/i }).click();
     const input = screen.container.querySelector<HTMLInputElement>('input[name="slug"]')!;
     await expect.poll(() => document.activeElement).toBe(input);
   });
 
   it('notes that links update automatically', async () => {
-    const screen = open({ conceptId: 'pages', id: 'home', singular: 'Page', slug: 'home' });
+    const screen = await open({ conceptId: 'pages', id: 'home', singular: 'Page', slug: 'home' });
     await screen.getByRole('button', { name: /change url/i }).click();
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).toMatch(/links/i);
@@ -38,7 +38,7 @@ describe('RenameDialog', () => {
   // rename. Naming a URL here would promise an address the entry does not have, and naming links
   // would point the author at the wrong thing to check.
   it('renames a name, not a URL, for a non-routable concept', async () => {
-    const screen = open({ conceptId: 'fragments', id: 'welcome', singular: 'Fragment', slug: 'welcome', routable: false });
+    const screen = await open({ conceptId: 'fragments', id: 'welcome', singular: 'Fragment', slug: 'welcome', routable: false });
     await screen.getByRole('button', { name: /^rename$/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     expect(dialog.open).toBe(true);
@@ -55,7 +55,7 @@ describe('RenameDialog', () => {
     // A concept whose singular differs from its plural label the way every real call site's data
     // provides (label "Posts", singular "Post"); the component must never lowercase a plural
     // itself.
-    const screen = open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
+    const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', slug: 'hi' });
     await screen.getByRole('button', { name: /change url/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     const heading = dialog.querySelector('#cairn-rename-dialog-title')!;

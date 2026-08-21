@@ -27,7 +27,7 @@ describe('ObjectGroupField', () => {
       label: 'Meta',
       fields: { note: { type: 'text', label: 'Note' } },
     } as NamedField & ObjectField;
-    render(ObjectGroupField, { field, name: 'meta', frontmatter: { note: 'hi' }, ...shared() });
+    await render(ObjectGroupField, { field, name: 'meta', frontmatter: { note: 'hi' }, ...shared() });
     const input = document.querySelector<HTMLInputElement>('input[name="meta.note"]');
     expect(input).not.toBeNull();
     expect(input?.value).toBe('hi');
@@ -39,7 +39,7 @@ describe('ObjectGroupField', () => {
       name: 'social_card',
       fields: { handle: { type: 'text', label: 'Handle' } },
     } as NamedField & ObjectField;
-    render(ObjectGroupField, { field, name: 'social_card', frontmatter: {}, ...shared() });
+    await render(ObjectGroupField, { field, name: 'social_card', frontmatter: {}, ...shared() });
     const legend = document.querySelector<HTMLElement>('legend')!;
     await expect.element(legend).toHaveTextContent('Social card');
   });

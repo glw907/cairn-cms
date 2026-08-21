@@ -4,7 +4,7 @@ import MediaFigureControl from '../../lib/components/MediaFigureControl.svelte';
 
 describe('MediaFigureControl pre-fill', () => {
   it('pre-fills the caption and the active role segment from an existing figure', async () => {
-    const screen = render(MediaFigureControl, {
+    const screen = await render(MediaFigureControl, {
       caption: 'A quiet shore at dusk.',
       role: 'wide',
       mode: 'edit',
@@ -27,7 +27,7 @@ describe('MediaFigureControl pre-fill', () => {
   });
 
   it('shows the Wrap in figure primary in wrap mode and no Unwrap', async () => {
-    const screen = render(MediaFigureControl, {
+    const screen = await render(MediaFigureControl, {
       mode: 'wrap',
       onapply: () => {},
     } as never);
@@ -38,7 +38,7 @@ describe('MediaFigureControl pre-fill', () => {
 
 describe('MediaFigureControl placement segmented control', () => {
   it('is a radiogroup whose active segment shows the check (the pressed-state cue)', async () => {
-    const screen = render(MediaFigureControl, {
+    const screen = await render(MediaFigureControl, {
       role: 'center',
       mode: 'edit',
       onapply: () => {},
@@ -56,7 +56,7 @@ describe('MediaFigureControl placement segmented control', () => {
 
   it('is keyboard-operable: clicking a segment selects it and emits the chosen role', async () => {
     const onapply = vi.fn();
-    const screen = render(MediaFigureControl, {
+    const screen = await render(MediaFigureControl, {
       role: null,
       mode: 'wrap',
       onapply,
@@ -73,7 +73,7 @@ describe('MediaFigureControl placement segmented control', () => {
 
   it('maps the Measure segment to the null role on submit', async () => {
     const onapply = vi.fn();
-    const screen = render(MediaFigureControl, {
+    const screen = await render(MediaFigureControl, {
       caption: 'A caption.',
       role: 'wide',
       mode: 'edit',
@@ -88,7 +88,7 @@ describe('MediaFigureControl placement segmented control', () => {
 
 describe('MediaFigureControl decorative-plus-caption warning', () => {
   it('shows the warning only when decorative AND the caption is non-empty', async () => {
-    const screen = render(MediaFigureControl, {
+    const screen = await render(MediaFigureControl, {
       caption: 'The junction sign at the top.',
       role: null,
       mode: 'edit',
@@ -100,7 +100,7 @@ describe('MediaFigureControl decorative-plus-caption warning', () => {
   });
 
   it('hides the warning when decorative but the caption is empty', async () => {
-    const screen = render(MediaFigureControl, {
+    const screen = await render(MediaFigureControl, {
       caption: '',
       role: null,
       mode: 'edit',
@@ -112,7 +112,7 @@ describe('MediaFigureControl decorative-plus-caption warning', () => {
   });
 
   it('hides the warning when the image is described, even with a caption', async () => {
-    const screen = render(MediaFigureControl, {
+    const screen = await render(MediaFigureControl, {
       caption: 'A described image with a caption.',
       role: null,
       mode: 'edit',
@@ -127,7 +127,7 @@ describe('MediaFigureControl decorative-plus-caption warning', () => {
 describe('MediaFigureControl unwrap', () => {
   it('emits onunwrap from the ghost action in edit mode', async () => {
     const onunwrap = vi.fn();
-    const screen = render(MediaFigureControl, {
+    const screen = await render(MediaFigureControl, {
       caption: 'A caption.',
       role: 'wide',
       mode: 'edit',

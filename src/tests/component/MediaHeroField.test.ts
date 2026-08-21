@@ -32,8 +32,8 @@ const LIBRARY = {
 
 const FIELD = { name: 'image', label: 'Hero image' };
 
-function mount(props: Record<string, unknown> = {}) {
-  return render(MediaHeroField, {
+async function mount(props: Record<string, unknown> = {}) {
+  return await render(MediaHeroField, {
     field: FIELD,
     mediaLibrary: LIBRARY,
     conceptId: 'posts',
@@ -64,7 +64,7 @@ function hiddenValues(container: HTMLElement) {
 
 describe('MediaHeroField resting state', () => {
   it('renders the resting row from a described value: thumbnail, name, Described chip, caption preview', async () => {
-    const screen = mount({
+    const screen = await mount({
       value: {
         src: 'media:first-light.0123456789abcdef',
         alt: 'Dawn light over the groomed tracks',
@@ -84,7 +84,7 @@ describe('MediaHeroField resting state', () => {
   });
 
   it('reads Needs alt for an empty alt on a non-decorative hero', async () => {
-    const screen = mount({
+    const screen = await mount({
       value: { src: 'media:valley-ridge.fedcba9876543210', alt: '' },
     });
     // The resting row is the markup outside the dialog (which always renders the chooser).
@@ -94,7 +94,7 @@ describe('MediaHeroField resting state', () => {
   });
 
   it('reads Decorative for an explicitly decorative hero', async () => {
-    const screen = mount({
+    const screen = await mount({
       value: { src: 'media:first-light.0123456789abcdef', alt: '', caption: '' },
       decorative: true,
     });
@@ -104,7 +104,7 @@ describe('MediaHeroField resting state', () => {
   });
 
   it('seeds the hidden inputs from the initial value', async () => {
-    const screen = mount({
+    const screen = await mount({
       value: {
         src: 'media:first-light.0123456789abcdef',
         alt: 'Dawn light over the groomed tracks',
@@ -120,7 +120,7 @@ describe('MediaHeroField resting state', () => {
 
 describe('MediaHeroField persists the decorative choice', () => {
   it('carries the decorative flag and an empty alt on a seeded decorative hero', async () => {
-    const screen = mount({
+    const screen = await mount({
       value: { src: 'media:first-light.0123456789abcdef', alt: '', caption: '' },
       decorative: true,
     });
@@ -132,7 +132,7 @@ describe('MediaHeroField persists the decorative choice', () => {
   });
 
   it('leaves the decorative input empty for a described hero', async () => {
-    const screen = mount({
+    const screen = await mount({
       value: { src: 'media:first-light.0123456789abcdef', alt: 'Dawn over the tracks' },
     });
     const row = restingText(screen.container);
@@ -141,7 +141,7 @@ describe('MediaHeroField persists the decorative choice', () => {
   });
 
   it('leaves the decorative input empty for a left-blank hero', async () => {
-    const screen = mount({
+    const screen = await mount({
       value: { src: 'media:valley-ridge.fedcba9876543210', alt: '' },
     });
     const row = restingText(screen.container);
@@ -152,25 +152,25 @@ describe('MediaHeroField persists the decorative choice', () => {
 
 describe('MediaHeroField empty state', () => {
   it('shows the dropzone and the lead line for a lead hero, with no hidden src value', async () => {
-    const screen = mount({ lead: true });
+    const screen = await mount({ lead: true });
     await expect.element(screen.getByRole('button', { name: /add hero image/i })).toBeInTheDocument();
     expect(screen.container.textContent ?? '').toMatch(/shown when the post is shared/i);
     expect(hiddenValues(screen.container).src).toBe('');
   });
 
   it('drops the lead line for a non-lead image (a gallery or nested item)', async () => {
-    const screen = mount();
+    const screen = await mount();
     await expect.element(screen.getByRole('button', { name: /add hero image/i })).toBeInTheDocument();
     expect(screen.container.textContent ?? '').not.toMatch(/shown when the post is shared/i);
   });
 
   it('derives the empty-state CTA from the field label', async () => {
-    const screen = mount({ field: { name: 'gallery', label: 'Photo' } });
+    const screen = await mount({ field: { name: 'gallery', label: 'Photo' } });
     await expect.element(screen.getByRole('button', { name: /add photo/i })).toBeInTheDocument();
   });
 
   it('opens the chooser dialog showing upload and the picker', async () => {
-    const screen = mount();
+    const screen = await mount();
     await screen.getByRole('button', { name: /add hero image/i }).click();
     await tick();
     // The chooser leads with an upload control and the library combobox below.
@@ -182,7 +182,7 @@ describe('MediaHeroField empty state', () => {
 describe('MediaHeroField pick and confirm', () => {
   it('picks a library asset, describes it, sets a caption, and confirms into the hidden inputs', async () => {
     const ondirty = vi.fn();
-    const screen = mount({ ondirty });
+    const screen = await mount({ ondirty });
     await screen.getByRole('button', { name: /add hero image/i }).click();
     await tick();
     // Pick the alt-bearing asset; the placement view seeds Describe with the manifest alt.
@@ -207,7 +207,7 @@ describe('MediaHeroField pick and confirm', () => {
   });
 
   it('confirms a decorative pick with an empty alt hidden input', async () => {
-    const screen = mount();
+    const screen = await mount();
     await screen.getByRole('button', { name: /add hero image/i }).click();
     await tick();
     await screen.getByRole('option', { name: /valley ridge/i }).click();
@@ -225,7 +225,7 @@ describe('MediaHeroField pick and confirm', () => {
 describe('MediaHeroField remove', () => {
   it('clears the hidden src and marks dirty', async () => {
     const ondirty = vi.fn();
-    const screen = mount({
+    const screen = await mount({
       value: { src: 'media:first-light.0123456789abcdef', alt: 'Dawn light', caption: 'x' },
       ondirty,
     });
@@ -243,7 +243,7 @@ describe('MediaHeroField remove', () => {
 describe('MediaHeroField is the persistent field', () => {
   it('renders without an editor instance (not a contextual toolbar)', async () => {
     // No editor prop, no caret seam: the field stands on its own as a details-panel field.
-    const screen = mount();
+    const screen = await mount();
     expect(screen.container.querySelector('input[type="hidden"][name="image.src"]')).not.toBeNull();
   });
 });
@@ -251,7 +251,7 @@ describe('MediaHeroField is the persistent field', () => {
 describe('MediaHeroField needs-alt signal', () => {
   it('reports needsAlt true for a hero with an empty alt', async () => {
     const onneedsaltchange = vi.fn();
-    mount({
+    await mount({
       value: { src: 'media:valley-ridge.fedcba9876543210', alt: '' },
       onneedsaltchange,
     });
@@ -261,7 +261,7 @@ describe('MediaHeroField needs-alt signal', () => {
 
   it('reports needsAlt false for a described hero', async () => {
     const onneedsaltchange = vi.fn();
-    mount({
+    await mount({
       value: { src: 'media:first-light.0123456789abcdef', alt: 'Dawn light over the tracks' },
       onneedsaltchange,
     });
@@ -272,7 +272,7 @@ describe('MediaHeroField needs-alt signal', () => {
 
   it('reports needsAlt false for a decorative hero', async () => {
     const onneedsaltchange = vi.fn();
-    mount({
+    await mount({
       value: { src: 'media:first-light.0123456789abcdef', alt: '' },
       decorative: true,
       onneedsaltchange,
@@ -284,14 +284,14 @@ describe('MediaHeroField needs-alt signal', () => {
 
   it('reports needsAlt false for an empty field (no hero)', async () => {
     const onneedsaltchange = vi.fn();
-    mount({ onneedsaltchange });
+    await mount({ onneedsaltchange });
     await tick();
     expect(onneedsaltchange).toHaveBeenCalledWith(false);
   });
 
   it('re-reports needsAlt false after an empty-alt hero gains a description', async () => {
     const onneedsaltchange = vi.fn();
-    const screen = mount({
+    const screen = await mount({
       value: { src: 'media:valley-ridge.fedcba9876543210', alt: '' },
       onneedsaltchange,
     });
@@ -311,7 +311,7 @@ describe('MediaHeroField needs-alt signal', () => {
 
 describe('MediaHeroField focusAlt remediation', () => {
   it('opens the dialog and moves focus into the alt text input', async () => {
-    const screen = mount({
+    const screen = await mount({
       value: { src: 'media:valley-ridge.fedcba9876543210', alt: '' },
     });
     await tick();

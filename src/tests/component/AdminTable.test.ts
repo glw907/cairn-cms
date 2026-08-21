@@ -9,8 +9,8 @@ function staticSnippet(html: string) {
 }
 
 describe('AdminTable', () => {
-  it('defaults to the sm density with no zebra stripe', () => {
-    const screen = render(AdminTable, {
+  it('defaults to the sm density with no zebra stripe', async () => {
+    const screen = await render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
       rowCount: 1,
@@ -20,8 +20,8 @@ describe('AdminTable', () => {
     expect(table.className).not.toContain('table-zebra');
   });
 
-  it('switches to the xs density and turns on zebra on request', () => {
-    const screen = render(AdminTable, {
+  it('switches to the xs density and turns on zebra on request', async () => {
+    const screen = await render(AdminTable, {
       density: 'xs',
       zebra: true,
       header: staticSnippet('<th>Household</th>'),
@@ -33,11 +33,11 @@ describe('AdminTable', () => {
     expect(table.className).toContain('table-zebra');
   });
 
-  it('renders the header snippet inside the thead and the body snippet inside the tbody', () => {
+  it('renders the header snippet inside the thead and the body snippet inside the tbody', async () => {
     // createRawSnippet requires a single-element root per render, so the header cell is one <th>
     // here; a caller's real Svelte template renders as many <th>/<td> siblings as it likes, since
     // production markup compiles through Svelte's own template handling, not a raw-string snippet.
-    const screen = render(AdminTable, {
+    const screen = await render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),
       children: staticSnippet('<tr><td>Alvarez</td><td>Current</td></tr>'),
       rowCount: 1,
@@ -49,8 +49,8 @@ describe('AdminTable', () => {
     expect(tbody.textContent).toContain('Current');
   });
 
-  it('renders the empty-state snippet instead of the body when rowCount is 0', () => {
-    const screen = render(AdminTable, {
+  it('renders the empty-state snippet instead of the body when rowCount is 0', async () => {
+    const screen = await render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
       rowCount: 0,
@@ -63,8 +63,8 @@ describe('AdminTable', () => {
     expect(cell.getAttribute('colspan')).toBe('4');
   });
 
-  it('renders an empty tbody, not a padded empty row, when empty is omitted', () => {
-    const screen = render(AdminTable, {
+  it('renders an empty tbody, not a padded empty row, when empty is omitted', async () => {
+    const screen = await render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),
       children: staticSnippet(''),
       rowCount: 0,
@@ -74,8 +74,8 @@ describe('AdminTable', () => {
     expect(screen.container.querySelector('.toolkit-admin-table-empty-row')).toBeNull();
   });
 
-  it('defaults the empty-state colspan to 100 (HTML clamps it to the real column count)', () => {
-    const screen = render(AdminTable, {
+  it('defaults the empty-state colspan to 100 (HTML clamps it to the real column count)', async () => {
+    const screen = await render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),
       children: staticSnippet(''),
       rowCount: 0,
@@ -85,8 +85,8 @@ describe('AdminTable', () => {
     expect(cell.getAttribute('colspan')).toBe('100');
   });
 
-  it('renders the wrapper with the horizontal-scroll fallback', () => {
-    const screen = render(AdminTable, {
+  it('renders the wrapper with the horizontal-scroll fallback', async () => {
+    const screen = await render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),
       children: staticSnippet('<tr><td>Alvarez</td></tr>'),
       rowCount: 1,
@@ -94,8 +94,8 @@ describe('AdminTable', () => {
     expect(screen.container.querySelector('.toolkit-admin-table-wrap')).not.toBeNull();
   });
 
-  it('enforces single-line cells: every cell computes white-space: nowrap', () => {
-    const screen = render(AdminTable, {
+  it('enforces single-line cells: every cell computes white-space: nowrap', async () => {
+    const screen = await render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),
       children: staticSnippet('<tr><td>A very long value that would otherwise wrap</td></tr>'),
       rowCount: 1,

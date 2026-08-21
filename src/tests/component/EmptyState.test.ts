@@ -9,13 +9,13 @@ function staticSnippet(html: string) {
 }
 
 describe('EmptyState', () => {
-  it('renders the default cairn mark when no icon is given', () => {
-    const screen = render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
+  it('renders the default cairn mark when no icon is given', async () => {
+    const screen = await render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
     expect(screen.container.querySelector('svg')).not.toBeNull();
   });
 
-  it('renders a caller-supplied icon instead of the default mark', () => {
-    const screen = render(EmptyState, {
+  it('renders a caller-supplied icon instead of the default mark', async () => {
+    const screen = await render(EmptyState, {
       heading: 'No media yet',
       message: 'Upload an image and it shows up here.',
       icon: staticSnippet('<span data-testid="custom-icon"></span>'),
@@ -24,18 +24,18 @@ describe('EmptyState', () => {
     expect(screen.container.querySelector('[data-testid="custom-icon"]')).not.toBeNull();
   });
 
-  it('renders the heading and the muted message', () => {
-    const screen = render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
+  it('renders the heading and the muted message', async () => {
+    const screen = await render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
     expect(screen.container.textContent).toContain('No posts yet');
     expect(screen.container.textContent).toContain('Stack your first one.');
   });
 
-  it('renders the heading as a plain <p> by default, and as the requested element on request', () => {
-    const bare = render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
+  it('renders the heading as a plain <p> by default, and as the requested element on request', async () => {
+    const bare = await render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
     expect(bare.container.querySelector('p')?.textContent).toBe('No posts yet');
     expect(bare.container.querySelector('h1, h2, h3')).toBeNull();
 
-    const withHeading = render(EmptyState, {
+    const withHeading = await render(EmptyState, {
       heading: 'Welcome, Ada',
       headingLevel: 'h1',
       message: 'There is nothing to manage yet.',
@@ -44,11 +44,11 @@ describe('EmptyState', () => {
     expect(h1.textContent).toBe('Welcome, Ada');
   });
 
-  it('omits the action when not given, and renders it below the copy when given', () => {
-    const bare = render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
+  it('omits the action when not given, and renders it below the copy when given', async () => {
+    const bare = await render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
     expect(bare.container.querySelector('button')).toBeNull();
 
-    const withAction = render(EmptyState, {
+    const withAction = await render(EmptyState, {
       heading: 'No posts yet',
       message: 'Stack your first one.',
       action: staticSnippet('<button type="button">New post</button>'),

@@ -59,7 +59,7 @@ describe('editor preference isolation', () => {
   });
 
   it('renders the next EditPage with its toolbar, because localStorage is cleared between tests', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     expect(screen.container.querySelector('[role="toolbar"]')).not.toBeNull();
   });

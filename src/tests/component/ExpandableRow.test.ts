@@ -6,8 +6,8 @@ import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 import ExpandableRow from '../../lib/admin-toolkit/ExpandableRow.svelte';
 
 /** vitest-browser-svelte 2.2 stopped exporting its `RenderResult` type, so derive it from `render`.
- *  `Awaited` strips the `PromiseLike` half of that return, the half these synchronous renders never
- *  reach for. */
+ *  `Awaited` unwraps the `Promise` `render` now always returns (vitest-browser-svelte 3 made
+ *  `render` async-only). */
 type RenderResult = Awaited<ReturnType<typeof render<typeof ExpandableRow>>>;
 
 /** A snippet with no render-time params, e.g. a header row or a fixed body. */
@@ -29,8 +29,8 @@ const panel = createRawSnippet<[unknown]>((getDatum) => ({
 }));
 
 describe('ExpandableRow', () => {
-  it('renders the collapsed state with aria-expanded=false and no panel row', () => {
-    const screen = render(ExpandableRow, {
+  it('renders the collapsed state with aria-expanded=false and no panel row', async () => {
+    const screen = await render(ExpandableRow, {
       expanded: false,
       onToggle: () => {},
       datum: { name: 'Alvarez' },
@@ -46,8 +46,8 @@ describe('ExpandableRow', () => {
     expect(screen.container.textContent).toContain('▸');
   });
 
-  it('renders the expanded state with aria-expanded=true and the panel row carrying the datum and colspan', () => {
-    const screen = render(ExpandableRow, {
+  it('renders the expanded state with aria-expanded=true and the panel row carrying the datum and colspan', async () => {
+    const screen = await render(ExpandableRow, {
       expanded: true,
       onToggle: () => {},
       datum: { name: 'Alvarez' },
@@ -64,8 +64,8 @@ describe('ExpandableRow', () => {
     expect(screen.container.textContent).toContain('▾');
   });
 
-  it('renders the summary cells inside the summary row regardless of expanded state', () => {
-    const screen = render(ExpandableRow, {
+  it('renders the summary cells inside the summary row regardless of expanded state', async () => {
+    const screen = await render(ExpandableRow, {
       expanded: false,
       onToggle: () => {},
       datum: { name: 'Alvarez' },
@@ -78,8 +78,8 @@ describe('ExpandableRow', () => {
     expect(summaryRow.querySelector('td')?.textContent).toBe('Alvarez');
   });
 
-  it('uses a real button as the trigger control, so Enter/Space activation is native rather than reimplemented', () => {
-    const screen = render(ExpandableRow, {
+  it('uses a real button as the trigger control, so Enter/Space activation is native rather than reimplemented', async () => {
+    const screen = await render(ExpandableRow, {
       expanded: false,
       onToggle: () => {},
       datum: { name: 'Alvarez' },
@@ -121,7 +121,7 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
   /** Mounts one or more rows directly into a real `<tbody>` (optionally zebra-striped), the
    *  ancestor context the sticky trigger cell's zebra-parity rule and the row-hover wash both key
    *  off of. Returns each row's own render result alongside the summary `<tr>` element itself. */
-  function mountRows(count: number, { zebra = false }: { zebra?: boolean } = {}) {
+  async function mountRows(count: number, { zebra = false }: { zebra?: boolean } = {}) {
     const table = document.createElement('table');
     table.className = zebra ? 'table table-zebra' : 'table';
     const tbody = document.createElement('tbody');
@@ -131,7 +131,7 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
 
     const rows: { screen: RenderResult; tr: Element }[] = [];
     for (let i = 0; i < count; i++) {
-      const screen = render(
+      const screen = await render(
         ExpandableRow,
         {
           props: {
@@ -165,32 +165,32 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
     return resolved;
   }
 
-  it('defaults the sticky trigger cell to base-100 outside a zebra table', () => {
+  it('defaults the sticky trigger cell to base-100 outside a zebra table', async () => {
     document.documentElement.setAttribute('data-theme', 'cairn-admin');
-    const { rows } = mountRows(1);
+    const { rows } = await mountRows(1);
     const triggerCell = rows[0]!.tr.querySelector('.toolkit-expandable-row-trigger-cell')!;
     expect(getComputedStyle(triggerCell).backgroundColor).toBe(resolve('var(--color-base-100)'));
   });
 
-  it('follows zebra parity on a striped table: the sticky trigger cell matches base-200 on the even row, base-100 on the odd row', () => {
+  it('follows zebra parity on a striped table: the sticky trigger cell matches base-200 on the even row, base-100 on the odd row', async () => {
     document.documentElement.setAttribute('data-theme', 'cairn-admin');
-    const { rows } = mountRows(2, { zebra: true });
+    const { rows } = await mountRows(2, { zebra: true });
     const oddTrigger = rows[0]!.tr.querySelector('.toolkit-expandable-row-trigger-cell')!;
     const evenTrigger = rows[1]!.tr.querySelector('.toolkit-expandable-row-trigger-cell')!;
     expect(getComputedStyle(oddTrigger).backgroundColor).toBe(resolve('var(--color-base-100)'));
     expect(getComputedStyle(evenTrigger).backgroundColor).toBe(resolve('var(--color-base-200)'));
   });
 
-  it('follows zebra parity in the dark theme too', () => {
+  it('follows zebra parity in the dark theme too', async () => {
     document.documentElement.setAttribute('data-theme', 'cairn-admin-dark');
-    const { rows } = mountRows(2, { zebra: true });
+    const { rows } = await mountRows(2, { zebra: true });
     const evenTrigger = rows[1]!.tr.querySelector('.toolkit-expandable-row-trigger-cell')!;
     expect(getComputedStyle(evenTrigger).backgroundColor).toBe(resolve('var(--color-base-200)'));
   });
 
   it('washes the whole summary row on hover, the caller cells with a transparent-based tint, the sticky trigger cell with an opaque one', async () => {
     document.documentElement.setAttribute('data-theme', 'cairn-admin');
-    const { rows } = mountRows(1);
+    const { rows } = await mountRows(1);
     const regularCell = rows[0]!.tr.querySelector('td:not(.toolkit-expandable-row-trigger-cell)')!;
     const triggerCell = rows[0]!.tr.querySelector('.toolkit-expandable-row-trigger-cell')!;
     const regularWashed = resolve('color-mix(in oklab, var(--color-base-content) 5%, transparent)');
@@ -214,7 +214,7 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
   // pinned column, invisible to any test that only hovered a non-zebra row.
   it('washes the sticky trigger cell on hover even on a zebra-striped row, opaque and mixed toward that row\'s own parity color', async () => {
     document.documentElement.setAttribute('data-theme', 'cairn-admin');
-    const { rows } = mountRows(2, { zebra: true });
+    const { rows } = await mountRows(2, { zebra: true });
     const oddTriggerWashed = resolve('color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100))');
     const evenTriggerWashed = resolve('color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-200))');
     const oddTrigger = rows[0]!.tr.querySelector('.toolkit-expandable-row-trigger-cell')!;
@@ -229,10 +229,10 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
     expect(getComputedStyle(evenTrigger).backgroundColor).not.toBe(resolve('var(--color-base-200)'));
   });
 
-  it('recesses the panel cell with a base-300 background and an inset top hairline, in both themes', () => {
+  it('recesses the panel cell with a base-300 background and an inset top hairline, in both themes', async () => {
     for (const theme of ['cairn-admin', 'cairn-admin-dark']) {
       document.documentElement.setAttribute('data-theme', theme);
-      const screen = render(ExpandableRow, {
+      const screen = await render(ExpandableRow, {
         expanded: true,
         onToggle: () => {},
         datum: { name: 'Alvarez' },

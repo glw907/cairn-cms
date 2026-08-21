@@ -61,7 +61,7 @@ const EDITOR_DOC = `Here is ![A trail map](media:first-light.${HASH}) the map.`;
 
 describe('the media public base is injectable through context', () => {
   it('renders MediaPicker option thumbnails under the injected base', async () => {
-    const screen = render(
+    const screen = await render(
       MediaPicker,
       withBase({ library: LIBRARY, onselect: () => {} }) as never,
     );
@@ -71,21 +71,21 @@ describe('the media public base is injectable through context', () => {
   });
 
   it('renders CairnMediaLibrary tile thumbnails under the injected base', async () => {
-    const screen = render(CairnMediaLibrary, withBase({ data: LIBRARY_DATA }) as never);
+    const screen = await render(CairnMediaLibrary, withBase({ data: LIBRARY_DATA }) as never);
     const paths = thumbPaths(screen.container);
     expect(paths.length).toBeGreaterThan(0);
     expect(paths[0]).toBe(`${INJECTED}/first-light.${HASH}.webp`);
   });
 
   it('renders the MediaHeroField resting thumbnail under the injected base', async () => {
-    const screen = render(MediaHeroField, withBase(HERO_PROPS) as never);
+    const screen = await render(MediaHeroField, withBase(HERO_PROPS) as never);
     const paths = thumbPaths(screen.container);
     expect(paths.length).toBeGreaterThan(0);
     expect(paths[0]).toBe(`${INJECTED}/first-light.${HASH}.webp`);
   });
 
   it('renders the editor media chip thumbnail under the injected base', async () => {
-    const screen = render(
+    const screen = await render(
       MarkdownEditor,
       withBase({ value: EDITOR_DOC, name: 'body', mediaLibrary: LIBRARY }) as never,
     );
@@ -121,7 +121,7 @@ function shellData(): AdminShellData {
 
 describe('the real admin shell composes the media-base context from its resolved shell data', () => {
   it('renders a descendant media surface under the shell-resolved base, not the /media default', async () => {
-    const screen = render(CairnAdminShellMediaHarness, { data: shellData(), library: LIBRARY });
+    const screen = await render(CairnAdminShellMediaHarness, { data: shellData(), library: LIBRARY });
     const paths = thumbPaths(screen.container);
     expect(paths.length).toBeGreaterThan(0);
     expect(paths[0]).toBe(`${NON_DEFAULT_BASE}/first-light.${HASH}.webp`);
@@ -130,22 +130,22 @@ describe('the real admin shell composes the media-base context from its resolved
 
 describe('the media public base defaults to /media with no provider (a bare mount outside CairnAdminShell)', () => {
   it('keeps MediaPicker option thumbnails under /media', async () => {
-    const screen = render(MediaPicker, { library: LIBRARY, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, { library: LIBRARY, onselect: () => {} } as never);
     expect(thumbPaths(screen.container)[0]).toBe(`/media/first-light.${HASH}.webp`);
   });
 
   it('keeps CairnMediaLibrary tile thumbnails under /media', async () => {
-    const screen = render(CairnMediaLibrary, { data: LIBRARY_DATA } as never);
+    const screen = await render(CairnMediaLibrary, { data: LIBRARY_DATA } as never);
     expect(thumbPaths(screen.container)[0]).toBe(`/media/first-light.${HASH}.webp`);
   });
 
   it('keeps the MediaHeroField resting thumbnail under /media', async () => {
-    const screen = render(MediaHeroField, HERO_PROPS as never);
+    const screen = await render(MediaHeroField, HERO_PROPS as never);
     expect(thumbPaths(screen.container)[0]).toBe(`/media/first-light.${HASH}.webp`);
   });
 
   it('keeps the editor media chip thumbnail under /media', async () => {
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: EDITOR_DOC,
       name: 'body',
       mediaLibrary: LIBRARY,

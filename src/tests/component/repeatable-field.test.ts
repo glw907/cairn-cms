@@ -46,7 +46,7 @@ function dirtyCounter() {
 
 describe('RepeatableField', () => {
   it('keeps an edited row and its focus when an earlier row is removed (B1)', async () => {
-    render(RepeatableField, {
+    await render(RepeatableField, {
       field: faq,
       name: 'faq',
       rows: [{ q: 'first', a: '' }, { q: 'second', a: '' }],
@@ -71,7 +71,7 @@ describe('RepeatableField', () => {
   });
 
   it('reorders rows via the move controls and re-sequences the input name indices', async () => {
-    render(RepeatableField, {
+    await render(RepeatableField, {
       field: faq,
       name: 'faq',
       rows: [{ q: 'alpha', a: '' }, { q: 'beta', a: '' }],
@@ -86,7 +86,7 @@ describe('RepeatableField', () => {
   });
 
   it('appends a row on Add and focuses its first input', async () => {
-    render(RepeatableField, { field: faq, name: 'faq', rows: [], ...shared() });
+    await render(RepeatableField, { field: faq, name: 'faq', rows: [], ...shared() });
     expect(document.querySelectorAll('[data-cairn-row-remove]').length).toBe(0);
     await page.getByRole('button', { name: /add faq/i }).click();
     expect(document.querySelectorAll('[data-cairn-row-remove]').length).toBe(1);
@@ -96,7 +96,7 @@ describe('RepeatableField', () => {
   });
 
   it('shows the itemLabel value as the collapsed row summary', async () => {
-    render(RepeatableField, {
+    await render(RepeatableField, {
       field: faq,
       name: 'faq',
       rows: [{ q: 'How do I publish?', a: '' }],
@@ -108,7 +108,7 @@ describe('RepeatableField', () => {
 
   it('marks the form dirty on a structural mutation', async () => {
     const dirty = dirtyCounter();
-    render(RepeatableField, {
+    await render(RepeatableField, {
       field: faq,
       name: 'faq',
       rows: [{ q: 'one', a: '' }],
@@ -120,7 +120,7 @@ describe('RepeatableField', () => {
   });
 
   it('renders one FieldInput per row for a leaf item', async () => {
-    render(RepeatableField, {
+    await render(RepeatableField, {
       field: aliases,
       name: 'aliases',
       rows: ['one', 'two'],
@@ -132,7 +132,7 @@ describe('RepeatableField', () => {
   });
 
   it('announces add and remove through the polite live region', async () => {
-    render(RepeatableField, { field: faq, name: 'faq', rows: [], ...shared() });
+    await render(RepeatableField, { field: faq, name: 'faq', rows: [], ...shared() });
     const region = document.querySelector('[role="status"][aria-live="polite"]');
     expect(region).not.toBeNull();
     // Mounted empty so the first add is a genuine text change a screen reader re-announces.
@@ -164,7 +164,7 @@ describe('RepeatableField scopes focus to its own instance', () => {
   }
 
   it('focuses the second list on Add in the second list', async () => {
-    render(TwoRepeatableFields, twoLists() as never);
+    await render(TwoRepeatableFields, twoLists() as never);
     const listB = listFor('b');
     // The Add button is the trailing button in the list; query by its text.
     const addBtns = Array.from(listB.querySelectorAll<HTMLButtonElement>('button')).filter((b) =>
@@ -179,7 +179,7 @@ describe('RepeatableField scopes focus to its own instance', () => {
   });
 
   it('keeps focus in the second list on a remove in the second list', async () => {
-    render(TwoRepeatableFields, twoLists() as never);
+    await render(TwoRepeatableFields, twoLists() as never);
     const listB = listFor('b');
     const firstRemoveB = listB.querySelector<HTMLButtonElement>('[data-cairn-row-remove]')!;
     firstRemoveB.focus();

@@ -109,7 +109,7 @@ describe('CairnAdminShell theme override', () => {
   it('renders the override instead of the payload theme', async () => {
     probeCookie('');
     probeMatchMedia(false);
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child, themeOverride: 'cairn-admin-dark' },
     } as never);
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
@@ -118,7 +118,7 @@ describe('CairnAdminShell theme override', () => {
   it('re-renders when the override prop changes', async () => {
     probeCookie('');
     probeMatchMedia(false);
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child, themeOverride: 'cairn-admin-dark' },
     } as never);
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
@@ -131,7 +131,7 @@ describe('CairnAdminShell theme override', () => {
     // a light override. Consulting either would show through as a dark render.
     const cookie = probeCookie('cairn-admin-theme=cairn-admin-dark');
     const media = probeMatchMedia(true);
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin-dark'), children: child, themeOverride: 'cairn-admin' },
     } as never);
     expect(renderedTheme(screen.container)).toBe('cairn-admin');
@@ -142,7 +142,7 @@ describe('CairnAdminShell theme override', () => {
   it('renders no theme control at all, since the mounting context owns the theme (WCAG 4.1.2)', async () => {
     probeCookie('');
     probeMatchMedia(false);
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child, themeOverride: 'cairn-admin-dark' },
     } as never);
     // Both the topbar button and the palette command would still write ownTheme and the cookie
@@ -158,7 +158,7 @@ describe('CairnAdminShell theme without an override (the real admin mount)', () 
   it('follows the OS dark preference on a first visit with no theme cookie', async () => {
     const cookie = probeCookie('');
     const media = probeMatchMedia(true);
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child },
     } as never);
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
@@ -169,7 +169,7 @@ describe('CairnAdminShell theme without an override (the real admin mount)', () 
   it('keeps the payload theme when a theme cookie already exists', async () => {
     probeCookie('cairn-admin-theme=cairn-admin');
     probeMatchMedia(true);
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child },
     } as never);
     expect(renderedTheme(screen.container)).toBe('cairn-admin');
@@ -178,7 +178,7 @@ describe('CairnAdminShell theme without an override (the real admin mount)', () 
   it('renders both theme controls, so the override case above hides something real', async () => {
     probeCookie('');
     probeMatchMedia(false);
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child },
     } as never);
     expect(themeControlNames(screen.container)).toEqual(['Toggle theme', 'Switch to dark mode']);
@@ -187,7 +187,7 @@ describe('CairnAdminShell theme without an override (the real admin mount)', () 
   it('still writes the theme cookie when the toggle flips the theme', async () => {
     const cookie = probeCookie('cairn-admin-theme=cairn-admin');
     probeMatchMedia(false);
-    const screen = render(CairnAdminShell, {
+    const screen = await render(CairnAdminShell, {
       props: { data: data('cairn-admin'), children: child },
     } as never);
     await screen.getByRole('button', { name: /dark mode|light mode|toggle theme/i }).click();

@@ -17,7 +17,7 @@ function fileNamed(name: string): File {
 
 describe('MediaCaptureCard display name', () => {
   it('pre-fills and tags Suggested for a real filename stem', async () => {
-    const screen = render(MediaCaptureCard, {
+    const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture: () => {},
     } as never);
@@ -27,7 +27,7 @@ describe('MediaCaptureCard display name', () => {
   });
 
   it('leaves the name empty, required, and untagged for a generic stem', async () => {
-    const screen = render(MediaCaptureCard, {
+    const screen = await render(MediaCaptureCard, {
       file: fileNamed('IMG_4821.jpg'),
       oncapture: () => {},
     } as never);
@@ -40,7 +40,7 @@ describe('MediaCaptureCard display name', () => {
 
 describe('MediaCaptureCard alt radiogroup', () => {
   it('exposes a real radiogroup with aria-required and grouped error text via aria-describedby', async () => {
-    const screen = render(MediaCaptureCard, {
+    const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture: () => {},
     } as never);
@@ -58,7 +58,7 @@ describe('MediaCaptureCard alt radiogroup', () => {
   });
 
   it('is keyboard-operable: a radio takes focus and Space selects it', async () => {
-    const screen = render(MediaCaptureCard, {
+    const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture: () => {},
     } as never);
@@ -72,7 +72,7 @@ describe('MediaCaptureCard alt radiogroup', () => {
 
 describe('MediaCaptureCard submit', () => {
   it('never disables the insert control across states', async () => {
-    const screen = render(MediaCaptureCard, {
+    const screen = await render(MediaCaptureCard, {
       file: fileNamed('IMG_4821.jpg'),
       oncapture: () => {},
     } as never);
@@ -86,7 +86,7 @@ describe('MediaCaptureCard submit', () => {
 
   it('emits alt="" when decorative is chosen', async () => {
     const oncapture = vi.fn();
-    const screen = render(MediaCaptureCard, {
+    const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture,
     } as never);
@@ -101,7 +101,7 @@ describe('MediaCaptureCard submit', () => {
 
   it('emits an empty alt (needs-alt) when the author proceeds with no alt choice', async () => {
     const oncapture = vi.fn();
-    const screen = render(MediaCaptureCard, {
+    const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture,
     } as never);
@@ -112,7 +112,7 @@ describe('MediaCaptureCard submit', () => {
 
   it('emits the written alt when described', async () => {
     const oncapture = vi.fn();
-    const screen = render(MediaCaptureCard, {
+    const screen = await render(MediaCaptureCard, {
       file: fileNamed('blue-shoes.png'),
       oncapture,
     } as never);

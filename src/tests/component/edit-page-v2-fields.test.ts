@@ -64,13 +64,13 @@ function props() {
   };
 }
 
-async function openDetails(page: ReturnType<typeof render>) {
+async function openDetails(page: Awaited<ReturnType<typeof render>>) {
   await page.getByRole('button', { name: 'Details' }).click();
 }
 
 describe('EditPage v2 field arms', () => {
   it('renders a number input with its bounds and step', async () => {
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     await openDetails(page);
     const count = page.getByLabelText('Count');
     await expect.element(count).toHaveAttribute('type', 'number');
@@ -80,7 +80,7 @@ describe('EditPage v2 field arms', () => {
   });
 
   it('renders a select with a leading empty option and the stored value selected', async () => {
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     await openDetails(page);
     const status = page.getByLabelText('Status');
     await expect.element(status).toHaveValue('published');
@@ -89,19 +89,19 @@ describe('EditPage v2 field arms', () => {
   });
 
   it('renders a url input typed as url', async () => {
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     await openDetails(page);
     await expect.element(page.getByLabelText('Site')).toHaveAttribute('type', 'url');
   });
 
   it('renders an email input typed as email', async () => {
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     await openDetails(page);
     await expect.element(page.getByLabelText('Contact')).toHaveAttribute('type', 'email');
   });
 
   it('renders a datetime-local input carrying the naive-local value', async () => {
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     await openDetails(page);
     const when = page.getByLabelText('When');
     await expect.element(when).toHaveAttribute('type', 'datetime-local');
@@ -109,7 +109,7 @@ describe('EditPage v2 field arms', () => {
   });
 
   it('renders a closed multiselect as a checkbox group with the stored value checked', async () => {
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     await openDetails(page);
     const training = page.getByRole('checkbox', { name: 'training' });
     await expect.element(training).toBeChecked();
@@ -117,7 +117,7 @@ describe('EditPage v2 field arms', () => {
   });
 
   it('renders a creatable multiselect as a comma-joined text input', async () => {
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     await openDetails(page);
     await expect.element(page.getByLabelText('Keywords')).toHaveValue('alpha, beta');
   });
@@ -141,7 +141,7 @@ function containerProps() {
 
 describe('EditPage container field arms', () => {
   it('renders a RepeatableField for an array(object) field in the Details panel', async () => {
-    const page = render(EditPage, containerProps());
+    const page = await render(EditPage, containerProps());
     await openDetails(page);
     await expect.element(page.getByRole('button', { name: /add faq/i })).toBeInTheDocument();
     // The single seeded row shows its itemLabel value as the collapsed summary.

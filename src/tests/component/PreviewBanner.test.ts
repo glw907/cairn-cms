@@ -10,7 +10,7 @@ describe('PreviewBanner', () => {
       expiresAt: '2026-08-20T12:00:00.000Z',
       published: null,
     };
-    const screen = render(PreviewBanner, { preview });
+    const screen = await render(PreviewBanner, { preview });
     await expect.element(screen.getByText(/draft preview/i)).toBeInTheDocument();
     await expect.element(screen.getByText(/expires/i)).toBeInTheDocument();
     expect(screen.container.textContent).toMatch(/2026/);
@@ -22,7 +22,7 @@ describe('PreviewBanner', () => {
       expiresAt: '2026-08-20T12:00:00.000Z',
       published: { permalink: '/blog/my-post' },
     };
-    const screen = render(PreviewBanner, { preview });
+    const screen = await render(PreviewBanner, { preview });
     await expect.element(screen.getByText(/this preview has ended/i)).toBeInTheDocument();
     await expect
       .element(screen.getByRole('link', { name: /view the published page/i }))
@@ -35,7 +35,7 @@ describe('PreviewBanner', () => {
       expiresAt: '2026-08-20T12:00:00.000Z',
       published: null,
     };
-    const screen = render(PreviewBanner, { preview });
+    const screen = await render(PreviewBanner, { preview });
     await expect.element(screen.getByText(/this preview has ended/i)).toBeInTheDocument();
     expect(screen.container.querySelector('a')).toBeNull();
     // The claim is only that the preview ended, never that the draft went live.
@@ -48,7 +48,7 @@ describe('PreviewBanner', () => {
       expiresAt: '2026-08-20T12:00:00.000Z',
       published: null,
     };
-    const screen = render(PreviewBanner, { preview });
+    const screen = await render(PreviewBanner, { preview });
     expect(screen.container.querySelectorAll('button, form, input').length).toBe(0);
   });
 
@@ -58,7 +58,7 @@ describe('PreviewBanner', () => {
       expiresAt: '2026-08-20T12:00:00.000Z',
       published: null,
     };
-    const screen = render(PreviewBanner, { preview });
+    const screen = await render(PreviewBanner, { preview });
     await expect.element(screen.getByRole('complementary', { name: /preview/i })).toBeInTheDocument();
     expect(screen.container.querySelector('[role="status"]')).toBeNull();
   });
@@ -77,7 +77,7 @@ describe('PreviewBanner', () => {
     preflight.textContent = 'a { text-decoration: inherit; }';
     document.head.appendChild(preflight);
     try {
-      const screen = render(PreviewBanner, { preview });
+      const screen = await render(PreviewBanner, { preview });
       const link = screen.getByRole('link', { name: /view the published page/i }).element() as HTMLElement;
       expect(getComputedStyle(link).textDecorationLine).toBe('underline');
     } finally {
@@ -93,7 +93,7 @@ describe('PreviewBanner', () => {
     };
     document.documentElement.style.setProperty('--cairn-preview-bg', 'rgb(10, 20, 30)');
     try {
-      const screen = render(PreviewBanner, { preview });
+      const screen = await render(PreviewBanner, { preview });
       const banner = screen.container.querySelector('.cairn-preview-banner') as HTMLElement;
       // A property Svelte's scoping class declared directly on this element would win over any
       // ancestor no matter its specificity (a directly declared value always beats an inherited

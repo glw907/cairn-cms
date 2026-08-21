@@ -104,7 +104,7 @@ async function spellcheckControls(container: HTMLElement): Promise<string[]> {
 describe('EditPage spellcheck override', () => {
   it('spawns the spellcheck Worker with no override, the cost the lever exists to remove', async () => {
     const workers = countWorkers();
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     await expect.element(page.getByLabelText('Markdown source')).toBeInTheDocument();
     // The lint plugin schedules its first run on a delay, so the Worker arrives shortly after mount.
     await expect.poll(workers, { timeout: 5000 }).toBeGreaterThan(0);
@@ -112,7 +112,7 @@ describe('EditPage spellcheck override', () => {
 
   it('spawns no Worker when the mounting context starts with spellcheck off', async () => {
     const workers = countWorkers();
-    const page = render(EditPage, props({ spellcheckOverride: false }));
+    const page = await render(EditPage, props({ spellcheckOverride: false }));
     await expect.element(page.getByLabelText('Markdown source')).toBeInTheDocument();
     // Long enough for the same scheduled run that fires above, so this is a real absence.
     await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -121,7 +121,7 @@ describe('EditPage spellcheck override', () => {
 
   it('leaves the footer toggle owning the posture when no override is supplied', async () => {
     countWorkers();
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     const toggle = page.getByRole('button', { name: /spellcheck/i });
     await expect.element(toggle).toHaveAttribute('aria-pressed', 'true');
 
@@ -134,7 +134,7 @@ describe('EditPage spellcheck override', () => {
   it('offers no spellcheck control at all, since the mounting context owns the posture (WCAG 4.1.2)', async () => {
     localStorage.setItem('cairn-editor-spellcheck', 'true');
     countWorkers();
-    const page = render(EditPage, props({ spellcheckOverride: false }));
+    const page = await render(EditPage, props({ spellcheckOverride: false }));
     await expect.element(page.getByLabelText('Markdown source')).toBeInTheDocument();
     // Both faces of the control go: the card footer's toggle and the below-sm overflow pick, which
     // is the only one a phone editor can reach. Left in place, each would announce an aria-pressed
@@ -147,7 +147,7 @@ describe('EditPage spellcheck override', () => {
 
   it('offers both spellcheck controls with no override, so the case above hides something real', async () => {
     countWorkers();
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     await expect.element(page.getByLabelText('Markdown source')).toBeInTheDocument();
     expect(await spellcheckControls(page.container)).toEqual(['Spellcheck', 'Spellcheck']);
   });

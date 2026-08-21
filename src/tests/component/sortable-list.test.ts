@@ -5,7 +5,7 @@ import SortableProbe from './_SortableProbe.svelte';
 
 describe('svelte-sortable-list under Svelte 5', () => {
   it('mounts a sortable list and renders its items', async () => {
-    const screen = render(SortableProbe);
+    const screen = await render(SortableProbe);
     await expect.element(screen.getByText('Alpha')).toBeInTheDocument();
     await expect.element(screen.getByText('Bravo')).toBeInTheDocument();
   });

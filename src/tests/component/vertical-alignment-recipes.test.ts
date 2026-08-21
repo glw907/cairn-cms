@@ -105,8 +105,8 @@ function firstLineBoxCentre(el: Element): number {
 }
 
 /** The toolbar in its Write mode, the state whose tab carries the repaired glyph wrapper. */
-function renderWriteToolbar() {
-  return render(EditorToolbar, { format: () => {}, mode: 'write' as const, onMode: () => {} });
+async function renderWriteToolbar() {
+  return await render(EditorToolbar, { format: () => {}, mode: 'write' as const, onMode: () => {} });
 }
 
 function settingsData(over: Partial<SettingsData> = {}): SettingsData {
@@ -178,7 +178,7 @@ describe('the icon-plus-word label exposes its own text baseline', () => {
   for (const width of [768, 1280]) {
     it(`levels the label's baseline on its value's at ${width}px`, async () => {
       await page.viewport(width, 720);
-      const screen = render(CairnTidySettings, { data: settingsData() });
+      const screen = await render(CairnTidySettings, { data: settingsData() });
       const labels = screen.container.querySelectorAll<HTMLElement>('.cairn-icon-label');
 
       expect(labels.length).toBe(3);
@@ -235,7 +235,7 @@ describe('an icon-plus-word label pairs its glyph with the FIRST line, wrapped o
 describe('a painted chip levels on the line box it labels', () => {
   it('centres the developer pill on the heading beside it', async () => {
     await page.viewport(1280, 720);
-    const screen = render(CairnTidySettings, { data: settingsData() });
+    const screen = await render(CairnTidySettings, { data: settingsData() });
     const heading = elementWithText(screen.container, 'Tidy is set up for this site');
     const slot = screen.container.querySelector('.cairn-line-slot');
     if (!slot) throw new Error('the head row rendered no line slot');
@@ -253,7 +253,7 @@ describe('a painted chip levels on the line box it labels', () => {
 describe('an icon sharing a row with text centres on the line, not on its baseline', () => {
   it('puts the Write tab glyph on the cap centre of its own label', async () => {
     await page.viewport(1280, 720);
-    const screen = renderWriteToolbar();
+    const screen = await renderWriteToolbar();
     const tab = screen.container.querySelector('#cairn-tab-write');
     if (!tab) throw new Error('the toolbar rendered no Write tab');
     const glyph = tab.querySelector('svg');
@@ -270,7 +270,7 @@ describe('an icon sharing a row with text centres on the line, not on its baseli
     // control's own markup is untouched by this pass, so it also measures what the repair did NOT
     // move.
     await page.viewport(1280, 720);
-    const screen = renderWriteToolbar();
+    const screen = await renderWriteToolbar();
     const control = document.createElement('div');
     control.innerHTML = `<button type="button" class="btn btn-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 6 9 17l-5-5" /></svg>Write</button>`;
     document.body.appendChild(control);
@@ -294,7 +294,7 @@ describe('an icon sharing a row with text centres on the line, not on its baseli
 describe('FieldRow', () => {
   it('levels a stacked field and a bare control on their bottom edges', async () => {
     await page.viewport(1280, 720);
-    const screen = render(FieldRowHarness, {});
+    const screen = await render(FieldRowHarness, {});
 
     const control = screen.container.querySelector('[data-testid="field-control"]');
     const bare = screen.container.querySelector('[data-testid="bare-control"]');
@@ -316,7 +316,7 @@ describe('FieldRow', () => {
     await page.viewport(1280, 720);
     document.documentElement.removeAttribute('data-theme');
     try {
-      const screen = render(FieldRowHarness, {});
+      const screen = await render(FieldRowHarness, {});
       const row = screen.container.querySelector('div');
       if (!row) throw new Error('the harness rendered no row');
 

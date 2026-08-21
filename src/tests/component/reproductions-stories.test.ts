@@ -185,14 +185,14 @@ describe('the manifest-to-story inventory', () => {
 
 describe('auth/login through ReproContext', () => {
   it('renders without error, showing the resting sign-in form at the baked theme', async () => {
-    const screen = render(ReproContext, { props: { story: getStory('auth/login') } });
+    const screen = await render(ReproContext, { props: { story: getStory('auth/login') } });
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
     await expect.element(screen.getByRole('button', { name: /send sign-in link/i })).toBeInTheDocument();
     expect(renderedTheme(screen.container)).toBe('cairn-admin');
   });
 
   it('routes an override theme into data.theme, since the story owns its own theme root', async () => {
-    const screen = render(ReproContext, {
+    const screen = await render(ReproContext, {
       props: { story: getStory('auth/login'), theme: 'cairn-admin-dark' },
     });
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
@@ -201,13 +201,13 @@ describe('auth/login through ReproContext', () => {
 
 describe('auth/confirm through ReproContext', () => {
   it('renders without error, showing the resting confirm button at the baked theme', async () => {
-    const screen = render(ReproContext, { props: { story: getStory('auth/confirm') } });
+    const screen = await render(ReproContext, { props: { story: getStory('auth/confirm') } });
     await expect.element(screen.getByRole('button', { name: /confirm sign-in/i })).toBeInTheDocument();
     expect(renderedTheme(screen.container)).toBe('cairn-admin');
   });
 
   it('routes an override theme into data.theme, since the story owns its own theme root', async () => {
-    const screen = render(ReproContext, {
+    const screen = await render(ReproContext, {
       props: { story: getStory('auth/confirm'), theme: 'cairn-admin-dark' },
     });
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
@@ -216,7 +216,7 @@ describe('auth/confirm through ReproContext', () => {
 
 describe('ReproContext: the context and fixture obligations every story relies on', () => {
   it('applies the story context, the fixture media base, and the CSRF getter', async () => {
-    const screen = render(ReproContext, { props: { story: probeStory } });
+    const screen = await render(ReproContext, { props: { story: probeStory } });
     await expect.element(screen.getByTestId('story-context')).toHaveTextContent('story-supplied-value');
     await expect.element(screen.getByTestId('media-base')).toHaveTextContent('/repro-assets');
     await expect.element(screen.getByTestId('csrf')).toHaveTextContent('repro-fixture-csrf');
@@ -267,7 +267,7 @@ describe('waitFor: a detached root', () => {
 
 describe('ReproContext: the surface a bare story mounts on', () => {
   it('paints the admin surface under the theme root, so a story is not left on the host page ink', async () => {
-    const screen = render(ReproContext, { props: { story: probeStory } });
+    const screen = await render(ReproContext, { props: { story: probeStory } });
 
     // The theme root stays a bare classless wrapper, since the admin's scoped rules are descendant
     // selectors and a class on the theme element itself would never match. So the paint goes one
@@ -324,7 +324,7 @@ describe('ReproContext: one theme resolution for both hosts', () => {
   it('renders a bare and a shell story at the same theme when no theme prop is supplied', async () => {
     const queries = probeDarkOs();
 
-    const bare = render(ReproContext, { props: { story: probeStory } });
+    const bare = await render(ReproContext, { props: { story: probeStory } });
     expect(renderedTheme(bare.container)).toBe('cairn-admin');
 
     const shell = await mountPosed(getStory('editor/sidebar-list'));
@@ -337,12 +337,12 @@ describe('ReproContext: one theme resolution for both hosts', () => {
 
 describe('ReproContext: the theme root a bare story does not own', () => {
   it('mounts a bare story with no theme root of its own under a cairn-admin root', async () => {
-    const screen = render(ReproContext, { props: { story: probeStory } });
+    const screen = await render(ReproContext, { props: { story: probeStory } });
     expect(renderedTheme(screen.container)).toBe('cairn-admin');
   });
 
   it('follows the theme prop rather than shadowing it with a value of its own', async () => {
-    const screen = render(ReproContext, { props: { story: probeStory, theme: 'cairn-admin-dark' } });
+    const screen = await render(ReproContext, { props: { story: probeStory, theme: 'cairn-admin-dark' } });
     expect(renderedTheme(screen.container)).toBe('cairn-admin-dark');
 
     await screen.rerender({ story: probeStory, theme: 'cairn-admin' });
@@ -351,7 +351,7 @@ describe('ReproContext: the theme root a bare story does not own', () => {
   });
 
   it('adds no second root to a story that already owns one', async () => {
-    const screen = render(ReproContext, { props: { story: getStory('auth/login') } });
+    const screen = await render(ReproContext, { props: { story: getStory('auth/login') } });
     expect(screen.container.querySelectorAll('[data-theme]')).toHaveLength(1);
   });
 });
@@ -360,7 +360,7 @@ describe('ReproContext: one instance mounts exactly one story for its lifetime',
   it('throws a named error rather than silently swapping the mounted story in place', async () => {
     const secondStory: ReproStory = { ...probeStory, id: 'test/probe-second' };
 
-    const screen = render(ReproContext, { props: { story: probeStory } });
+    const screen = await render(ReproContext, { props: { story: probeStory } });
 
     let caught: unknown;
     try {
@@ -386,7 +386,7 @@ describe('ReproContext: shellData overrides an explicit undefined field falls th
       shellData: { pathname: undefined },
     };
 
-    const screen = render(ReproContext, { props: { story } });
+    const screen = await render(ReproContext, { props: { story } });
 
     // The default shellData.pathname is `/admin/${fixtureConcept.id}` ('/admin/posts'), which the
     // fixture nav layout's own 'Posts' item names as its href; a spread that let `undefined`

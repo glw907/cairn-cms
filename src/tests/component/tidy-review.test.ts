@@ -44,7 +44,7 @@ async function mountReview(
 ) {
   let api: TidyApi | null = null;
   let undo: () => void = () => {};
-  const editor = render(MarkdownEditor, {
+  const editor = await render(MarkdownEditor, {
     value: original,
     name: 'body',
     registerTidy: (a: TidyApi) => (api = a),
@@ -54,7 +54,7 @@ async function mountReview(
   const changes = diffChanges(original, corrected);
   api!.enter(changes);
   let closedWith: boolean | null = null;
-  const review = render(TidyReview, {
+  const review = await render(TidyReview, {
     changes,
     original,
     conventions: CONVENTIONS,
@@ -265,7 +265,7 @@ describe('TidyReview (real browser)', () => {
     const original = 'Bring skins, a layer and a thermos.';
     const corrected = 'Bring skins, a layer, and a thermos.';
     const conv = resolveTidyConventions({ oxfordComma: 'always' });
-    render(MarkdownEditor, {
+    await render(MarkdownEditor, {
       value: original,
       name: 'body',
       registerTidy: (a: TidyApi) => (api = a),
@@ -273,7 +273,7 @@ describe('TidyReview (real browser)', () => {
     await expect.poll(() => api, COLD_START).not.toBeNull();
     const changes = diffChanges(original, corrected);
     api!.enter(changes);
-    const review = render(TidyReview, {
+    const review = await render(TidyReview, {
       changes,
       original,
       conventions: conv,

@@ -10,7 +10,7 @@ npm create cairn-site
 ```
 
 The command asks for the site's name, description, brand color, and target directory, then writes
-a ready-to-run SvelteKit site. Node.js 22 or later is required, tracking the `@glw907/cairn-cms`
+a ready-to-run SvelteKit site. Node.js 24 or later is required, tracking the `@glw907/cairn-cms`
 engine's own floor.
 
 **macOS and Linux only.** Windows is not supported, including Git Bash and PowerShell. The

@@ -9,7 +9,7 @@ why it works the way it does, start with the [docs](./docs/README.md) and
 ## Set up and run the suite
 
 ```sh
-npm install       # needs Node 22 or newer, the version CI runs
+npm install       # needs Node 24 or newer, the version CI runs
 npm test          # vitest: the unit, integration, and component projects
 npm run check     # svelte-check
 ```

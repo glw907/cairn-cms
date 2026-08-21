@@ -26,8 +26,8 @@ jobs:
     name: Norms manifest freshness
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           # Node 22 LTS, matching test.yml and e2e.yml, so the render runs on the toolchain the
           # rest of CI proves.

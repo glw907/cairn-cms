@@ -19,7 +19,7 @@ const PAGE_PATH = resolve(ROOT, 'docs/reference/supported-toolchain.md');
  * is not stripped; a label passed here must appear in the table exactly as written.
  * @param {string} pageText the page's raw Markdown
  * @param {string} label the row's exact first-column text, for example "Node, on your machine"
- * @returns {string} the row's `Target today` cell, with inline code spans and emphasis stripped
+ * @returns {string} the row's `Target today` cell, with a wrapping inline code span stripped
  */
 export function targetCell(pageText, label) {
   const rowPattern = new RegExp(

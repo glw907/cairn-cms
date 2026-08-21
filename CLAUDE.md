@@ -79,10 +79,9 @@ durable orientation only.
   economy governs the assignments: `cairn-implementer` pins Sonnet (upshift per dispatch only for
   novel correctness-critical logic), the four reviewer agents pin `claude-opus-5` deliberately
   (Sonnet implements, Opus 5 reviews, and the fresh-context gate with model diversity is part of
-  the gate), and the `code-simplifier` plugin agent pins Opus in its own frontmatter. Fable keeps
-  the planning and taste work (brainstorms, specs, plans, post-mortems, final prose) and ends a
-  planning sitting at plan approval; execution sessions run on Opus 5 per the global model
-  economy.
+  the gate), and the `code-simplifier` plugin agent pins Opus in its own frontmatter. The
+  conductor (Fable) runs plan and execution in one session and never reads diffs itself; the
+  `diff-reviewer` agent does, per the global "Conducting a pass" rule.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
   for the auth store. Prefer it over the dashboard.
 

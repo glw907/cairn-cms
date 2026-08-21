@@ -40,7 +40,7 @@ Geoff in a Fable brainstorm and written to
 after a five-vantage adversarial review and a 24-agent verify pass (chapter spine as Go types,
 read-only health HUD with adopt-to-watch and a log view, poplar's root-model-plus-registry shape
 and design language, split credential model, `tool/` in-repo with a three-platform matrix; the
-fixture corpus is extracted as a first task, since it did not exist as the pre-design claimed). Plan written: `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`, three passes (A foundation, B checks and CLI, C the HUD), 29 tasks. **Next step on that track: execute Pass A in a fresh Opus 5 session** from `~/Projects/cairn-cms` with the prompt "Start Pass A of `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md` via cairn-pass; read the spec it names first." Task 10 needs Geoff to mint two tokens. It
+fixture corpus is extracted as a first task, since it did not exist as the pre-design claimed). Plan written: `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`, three passes (A foundation, B checks and CLI, C the HUD), 29 tasks. **Next step on that track: execute Pass A in this session or a fresh Fable session** from `~/Projects/cairn-cms` with the prompt "Start Pass A of `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md` via cairn-pass; read the spec it names first." Task 10 needs Geoff to mint two tokens. It
 does not block the site updates or the editors rewrite.
 
 ### Three things the cut decided, and one it could not

@@ -65,10 +65,12 @@ export function buildSanitizeSchema(
  * `anchorRel` option (default `noopener noreferrer`); a site can override it or disable it entirely.
  */
 export function rehypeAnchorRel(rel: string) {
+  // hast models `rel` as a token list; the serializer joins it back with spaces.
+  const tokens = rel.split(/\s+/).filter(Boolean);
   return (tree: Root) => {
     visit(tree, 'element', (node: Element) => {
       if (node.tagName === 'a' && node.properties?.target === '_blank') {
-        node.properties.rel = rel;
+        node.properties.rel = tokens;
       }
     });
   };

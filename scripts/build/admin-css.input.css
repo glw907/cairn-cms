@@ -53,6 +53,12 @@
    rhythm for a desk's related-data lists. A class leaves this block only as a deliberate,
    changelog-carried act, the same discipline the compatibility safelist above holds to. */
 @source inline("gap-x-6 gap-y-4 divide-y divide-[var(--cairn-card-border)] first:pt-0 last:pb-0");
+/* UPSTREAM-DROP SAFELIST (DaisyUI 5.7 upgrade, 2026-08-21). Same de facto public API as the
+   compatibility safelist above, with the cause upstream instead of in cairn's own tree: DaisyUI 5.6
+   emitted `footer-center` beside a class the admin tree does use, and 5.7 stopped, so the class
+   would leave the shipped sheet as a side effect of a dependency bump. Held so consumer markup that
+   rode it keeps resolving; it leaves only as a deliberate, changelog-carried act. */
+@source inline("footer-center");
 @import "../../src/lib/components/cairn-admin.css";
 
 /* The named secondary-text roles. Rule 2: a component writes `text-muted`/`text-subtle`, never an

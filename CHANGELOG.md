@@ -2,6 +2,23 @@
 
 ### Changed
 
+- Dependencies moved to their current releases: DaisyUI 5.7.20 (from 5.6.6), Tailwind 4.3.3,
+  SvelteKit 2.70.3, Svelte 5.56.10, Vite 8.2.2, Wrangler 4.125.0, ESLint 10, and
+  `@cloudflare/vitest-pool-workers` 0.22. Two upstream shifts reach the shipped admin sheet.
+  DaisyUI 5.7 now emits a component's modifier classes alongside the base class the admin tree
+  uses, so the sheet carries 31 more DaisyUI names than before (the `tabs-*`, `modal-*`,
+  `dropdown-*`, `drawer-*`, `footer-*`, `stats-*`, `steps-*`, `divider-*` placements,
+  `avatar-group`, and `aura`); they are stock DaisyUI, additive, and scoped the same way as the rest of the sheet.
+  DaisyUI 5.7 also stopped emitting `footer-center` as a side effect of a neighbor, so the input
+  sheet now safelists it explicitly and it stays in the sheet. Light-theme `.btn-active` follows
+  upstream's new stock border (a 7% mix toward black where a plain `.btn` mixes 5%, about 0.02
+  oklch lightness); the dark-theme hairline, fill, and hover repairs are unchanged. Held back on
+  purpose: TypeScript 7 (svelte-check cannot run on the Go compiler until 7.1's compiler API),
+  `@cloudflare/workers-types` 5 (its new global `Buffer: any` collides with `@types/node` in the
+  repo's own build scripts; the library uses only the D1 and R2 types, which v4 carries), and
+  `vitest-browser-svelte` 3 (its async-only `render` touches about a thousand call sites and
+  earns its own pass). Consumers must: nothing.
+
 - `npm run link:consumer -- <site-dir>` points a consumer site at a local engine build, and
   `--restore` puts it back on a registry range. It builds, packs, installs, and then verifies every
   file in the consumer's installed copy against the tarball it just built. Both directions matter:

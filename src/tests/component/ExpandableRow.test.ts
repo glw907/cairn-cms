@@ -1,9 +1,14 @@
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { createRawSnippet } from 'svelte';
-import { render, type RenderResult } from 'vitest-browser-svelte';
+import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 import ExpandableRow from '../../lib/admin-toolkit/ExpandableRow.svelte';
+
+/** vitest-browser-svelte 2.2 stopped exporting its `RenderResult` type, so derive it from `render`.
+ *  `Awaited` strips the `PromiseLike` half of that return, the half these synchronous renders never
+ *  reach for. */
+type RenderResult = Awaited<ReturnType<typeof render<typeof ExpandableRow>>>;
 
 /** A snippet with no render-time params, e.g. a header row or a fixed body. */
 function staticSnippet(html: string) {
@@ -124,7 +129,7 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
     document.body.appendChild(table);
     tables.push(table);
 
-    const rows: { screen: RenderResult<typeof ExpandableRow>; tr: Element }[] = [];
+    const rows: { screen: RenderResult; tr: Element }[] = [];
     for (let i = 0; i < count; i++) {
       const screen = render(
         ExpandableRow,

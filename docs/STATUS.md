@@ -105,6 +105,16 @@ ruling that the cost copy should hedge; the friction log records the supersessio
 - **`check:surface` is blind to an index signature.** Removing one from an exported interface is a
   real breaking change and produced zero snapshot diff. ROADMAP Now.
 
+- **Three dependency majors held on 2026-08-21, each with a trigger.** TypeScript 7 waits on a
+  `svelte-check` release that runs on the Go compiler (TS 7.1 is the announced compiler-API
+  milestone). `@cloudflare/workers-types` 5 waits on upstream dropping its new global
+  `Buffer: any`, which collides with `@types/node` in the build scripts this repo type-checks; v4
+  is frozen at `4.20260702.1` and carries the only two types the library uses. `vitest-browser-svelte`
+  3 makes `render` async-only across about a thousand call sites; a mechanical pass of its own.
+  Also imminent: `@cloudflare/vitest-pool-workers` 0.22 is the last version under that name, and
+  1.0 renames it to `@cloudflare/vitest-plugin` with a codemod
+  (`npx @cloudflare/codemods vitest:pool-workers-to-vitest-plugin`).
+
 ### The reproduction seam is BUILT, both halves (2026-08-19, earlier)
 
 **The live-reproduction seam is complete end to end.** A `repro` fence in a docs source renders as a

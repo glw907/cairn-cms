@@ -246,11 +246,15 @@ describe('the light theme .btn-active', () => {
     sheet.remove();
   });
 
-  it('keeps daisyUI stock: a border matching a plain .btn and no dark-side hairline', () => {
-    const plain = mount('btn');
-    const active = mount('btn btn-active');
+  // Stock daisyUI (5.7) mixes the active border 7% toward black where a plain .btn mixes 5%, a step
+  // of roughly 0.02 oklch lightness. The dark hairline sits at 57% L, more than 0.3 below either, so
+  // a stock border reads within a hair of plain and nowhere near the hairline.
+  it('keeps daisyUI stock: a border within a hair of a plain .btn and no dark-side hairline', () => {
+    const plainL = oklchLightness(getComputedStyle(mount('btn')).borderTopColor);
+    const activeL = oklchLightness(getComputedStyle(mount('btn btn-active')).borderTopColor);
 
-    expect(getComputedStyle(active).borderTopColor).toBe(getComputedStyle(plain).borderTopColor);
+    expect(Math.abs(activeL - plainL)).toBeLessThan(0.03);
+    expect(activeL).toBeGreaterThan(0.8);
   });
 
   // Design ratchet D3 items 1-2: stock daisyUI fills an active outline button (a color-mix toward

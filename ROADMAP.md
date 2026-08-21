@@ -843,8 +843,10 @@ the named human gates only):**
 - **Platform features now available and unused (surveyed 2026-08-21).** Tailwind 4.3 ships
   `scrollbar-*` utilities, logical-property spacing (`pbs-*`, `mbs-*`, `inset-s-*`), `@container-size`,
   and stacked `@variant`; DaisyUI 5.7 ships `menu-paged` for keyboard travel through nested menus.
-  Cloudflare D1's Sessions API (`withSession`, read replicas) and Email Sending's named recipients
-  (`{email, name}` on `from`/`to`) are both GA. None closes a live defect, so none is a task; each is
+  Email Sending's named recipients (`{email, name}` on `from`/`to`) are GA. Cloudflare D1's Sessions
+  API (`withSession`, read replicas) is NOT: D1's release notes carry only the 2025-04-10 public-beta
+  entry and no GA entry as of 2026-08-21 (re-verified after a survey claimed GA), so it stays a
+  watch, not a sanctioned form, until a GA entry appears. None closes a live defect, so none is a task; each is
   the sanctioned form to reach for when its shape next comes up (a scrollable admin pane, an RTL
   audit, a nested admin menu, a branded sender name). The `.btn-active` hand-repairs in
   `cairn-admin.css` were re-verified against 5.7.20: the dark-theme rules still earn their place,

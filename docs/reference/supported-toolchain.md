@@ -17,7 +17,7 @@ no stability tier and the export-coverage gate does not check it.
 | `svelte` | `^5.56.3` (peer dependency) | `5.56.4` |
 | `vite` | no declared floor | `8.1.0` |
 | `typescript` | `5.0` | `6.0.3` |
-| `node` | `>=22` | `>=22` (CI's pin) |
+| `node` | `>=24` | `>=24` (CI's pin) |
 
 **`@sveltejs/kit` `^2.12`.** The floor is deliberate, not stale. The edit page reads `$app/state`,
 which shipped in kit 2.12.0, and the `0.51.0` changelog entry made the range an enforced
@@ -40,12 +40,11 @@ That is a separate number from the `5.0` floor, and it describes a different aud
 consumer's own `typescript` version needs only to satisfy the floor, not match the engine's own
 development version.
 
-**`node` `>=22`.** This is a build-toolchain floor, not a runtime claim: the package runs on
-Cloudflare Workers, whose runtime is `workerd`, never Node. CI's Node 22 pin exists because
-`vitest-pool-workers` requires it, which is evidence about the engine's own tooling rather than
-about a consumer. The consumer-facing floor comes from Vite 8 and SvelteKit 2, both of which
-already require a current Node to build; Node 22 is stated explicitly because it is already the
-published requirement in
+**`node` `>=24`.** This is a build-toolchain floor, not a runtime claim: the package runs on
+Cloudflare Workers, whose runtime is `workerd`, never Node. CI's Node 24 pin follows the same
+floor, which is evidence about the engine's own tooling rather than about a consumer. The
+consumer-facing floor comes from Vite 8 and SvelteKit 2, both of which already require a current
+Node to build; Node 24 is stated explicitly because it is already the published requirement in
 [Build a site by hand](../extend/build-a-site-by-hand.md), and the `engines.node` field in
 `package.json` now gives npm something to check against. That check is a warning, not an install
 block: `npm install` on an older Node prints an `EBADENGINE` notice naming the mismatch, and

@@ -4,7 +4,7 @@
   "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "workspaces": [
     "packages/*"
@@ -243,7 +243,7 @@
     "@sveltejs/package": "^2",
     "@sveltejs/vite-plugin-svelte": "^7.1",
     "@tailwindcss/postcss": "^4.3.2",
-    "@types/node": "^22.19.19",
+    "@types/node": "^24.13.3",
     "@vitest/browser": "^4.1.7",
     "@vitest/browser-playwright": "^4.1.7",
     "culori": "^4.0.2",

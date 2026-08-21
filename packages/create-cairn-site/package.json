@@ -4,7 +4,7 @@
   "description": "Create a cairn CMS site: scaffold a branded Waymark starter and run it locally.",
   "license": "MIT",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": { "node": ">=24" },
   "bin": { "create-cairn-site": "./bin.mjs" },
   "files": ["bin.mjs", "src", "template", "README.md"],
   "scripts": {

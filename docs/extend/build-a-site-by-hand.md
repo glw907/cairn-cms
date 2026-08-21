@@ -35,7 +35,7 @@ early milestones prove the deploy pipeline before there's anything content-shape
 the end you'll have a one-concept site, editable through `/admin`, publishing through a real
 GitHub App, live on a `workers.dev` subdomain with no domain of your own required.
 
-You'll need Node 22 or later, a GitHub account, and a Cloudflare account. Everything through
+You'll need Node 24 or later, a GitHub account, and a Cloudflare account. Everything through
 Milestone 4 runs on Cloudflare's free tier. Milestone 5 needs a domain zone, and a second
 person's sign-in is what puts the site on Workers Paid. Keep `typescript` on 6 for now: `svelte-check`, which types your site and cairn's shipped declarations, can't run on TypeScript 7 until the 7.1 compiler API lands, and `npx sv create` already pins the right major. cairn's own code and the types it ships are 7-clean, so the move is a dependency bump when the tooling catches up.
 

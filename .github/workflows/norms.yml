@@ -29,9 +29,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          # Node 22 LTS, matching test.yml and e2e.yml, so the render runs on the toolchain the
+          # Node 24 LTS, matching test.yml and e2e.yml, so the render runs on the toolchain the
           # rest of CI proves.
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       # The showcase lockfile is committed and installed with `npm ci`, the same convention e2e.yml

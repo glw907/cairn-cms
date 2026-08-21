@@ -12,8 +12,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          # Pin Node 22 LTS: vitest-pool-workers has a known console bug on Node 24.
-          node-version: 22
+          # Node 24 (Active LTS). vitest-pool-workers once carried a console bug on Node 24;
+          # this run is the proof it no longer blocks the pinned pool-workers version.
+          node-version: 24
           cache: npm
       - run: npm ci
       # svelte-check scans every subdirectory for a svelte.config.js and cannot be told to skip one
@@ -102,7 +103,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npm install --no-save "@typescript/native@npm:typescript@7"

@@ -27,7 +27,10 @@ returns: (a) **the floors are the versions just installed** (peer ranges and tem
 the current SvelteKit, Svelte, adapter, and Wrangler, and the engine may use their full capabilities
 with no guards for older minors); (b) **a ranked survey of improvement opportunities the new
 toolchain offers** (running as a read-only agent) is triaged into this pass where small and safe,
-and into ROADMAP where it changes behavior or public surface. Close-out chore for this pass: migrate this file's history to
+and into ROADMAP where it changes behavior or public surface. **After the pass (Geoff, 2026-08-21): cut a release carrying the new floors** (via `cairn-release`;
+the floors are breaking, so the changelog entry carries one `Consumers must:` line per floor: Node 24,
+SvelteKit and Svelte at the new peer ranges, and `migration-notes.md` gets the entry), **then write
+the update instructions for all four consumer sites** against that release. Close-out chore for this pass: migrate this file's history to
 `docs/HISTORY.md` per the 2026-08-21 ledger rule (STATUS present tense, under 60 lines).
 
 ## Session handoff (2026-08-21, earlier: dependency upgrade landed, e2e baselines regenerated)

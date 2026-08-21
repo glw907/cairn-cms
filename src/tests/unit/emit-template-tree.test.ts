@@ -149,7 +149,7 @@ describe('the showcase source tree', () => {
     for (const filePath of await walkSourceFiles(SHOWCASE)) {
       const buffer = await readFile(filePath).catch(() => null);
       if (buffer === null || buffer.includes(0)) continue;
-      const content = buffer.toString('utf8');
+      const content = new TextDecoder().decode(buffer);
       starts += content.split(EXCLUDE_START).length - 1;
       ends += content.split(EXCLUDE_END).length - 1;
     }

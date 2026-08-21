@@ -12,10 +12,11 @@
   DaisyUI 5.7 also stopped emitting `footer-center` as a side effect of a neighbor, so the input
   sheet now safelists it explicitly and it stays in the sheet. Light-theme `.btn-active` follows
   upstream's new stock border (a 7% mix toward black where a plain `.btn` mixes 5%, about 0.02
-  oklch lightness); the dark-theme hairline, fill, and hover repairs are unchanged. Held back on
-  purpose: TypeScript 7 (svelte-check cannot run on the Go compiler until 7.1's compiler API),
-  `@cloudflare/workers-types` 5 (its new global `Buffer: any` collides with `@types/node` in the
-  repo's own build scripts; the library uses only the D1 and R2 types, which v4 carries), and
+  oklch lightness); the dark-theme hairline, fill, and hover repairs are unchanged.
+  `@cloudflare/workers-types` moved to 5 (wrangler 4.125 peers on it), whose new global
+  `Buffer: any` shadows `Buffer.toString(encoding)` wherever `@types/node` shares the program;
+  the two build-script sites that called it now use `TextDecoder`. Held back on purpose:
+  TypeScript 7 (svelte-check cannot run on the Go compiler until 7.1's compiler API) and
   `vitest-browser-svelte` 3 (its async-only `render` touches about a thousand call sites and
   earns its own pass). Consumers must: nothing.
 

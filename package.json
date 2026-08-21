@@ -238,7 +238,7 @@
     "@anthropic-ai/sdk": "^0.105.0",
     "@arethetypeswrong/cli": "^0.18.3",
     "@cloudflare/vitest-pool-workers": "^0.22.0",
-    "@cloudflare/workers-types": "^4.20260702.1",
+    "@cloudflare/workers-types": "^5.20260821.1",
     "@sveltejs/kit": "^2.68.0",
     "@sveltejs/package": "^2",
     "@sveltejs/vite-plugin-svelte": "^7.1",

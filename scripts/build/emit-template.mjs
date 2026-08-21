@@ -66,7 +66,9 @@ async function stripMarkedBlocksInTree(dir) {
   for (const filePath of walk(dir, () => true)) {
     const buffer = await readFile(filePath);
     if (buffer.includes(0)) continue;
-    const content = buffer.toString('utf8');
+    // WATCH: `buffer.toString('utf8')` type-checks as zero-arg once @cloudflare/workers-types 5's
+    // global `Buffer: any` is in the program; TextDecoder is the runtime-neutral form.
+    const content = new TextDecoder().decode(buffer);
     if (!content.includes(EXCLUDE_START)) continue;
     await writeFile(filePath, stripMarkedBlocks(content, filePath));
   }

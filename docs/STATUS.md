@@ -15,6 +15,29 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
+## Session handoff (2026-08-21: dependency upgrade landed, e2e baselines regenerating)
+
+`main` is at `8c9de10f` plus whatever the e2e regeneration bot commits on top. The upgrade is in
+three commits (`9b30e756`, `d633ad5f`, `8c9de10f`): DaisyUI 5.7.20, Tailwind 4.3.3, SvelteKit
+2.70.3, Svelte 5.56.10, Vite 8.2.2, Wrangler 4.125, ESLint 10, `@cloudflare/workers-types` 5,
+`@cloudflare/vitest-pool-workers` 0.22. Every local gate and the `test`, `scaffold`, `design`, and
+`create-site` workflows are green on `d633ad5f`. The `e2e` workflow was red only on visual
+baselines: DaisyUI 5.7.19's `.alert` grid fix lets the alert body take its full column, so the
+paragraph drops a line and the page shortens 20px at 320. Read side by side on the styleguide and
+the article; an upstream improvement, not a regression. The regeneration dispatch
+(`gh workflow run e2e.yml --ref main -f update_snapshots=true`, run 32523096119) was in progress at
+handoff and commits the new PNGs straight to `main`.
+
+**Resume prompt.** (1) `git pull`, then confirm the bot commit "chore(e2e): regenerate the
+admin-visual and site-visual baselines" landed and the push-triggered `e2e` run after it is green
+(`gh run list --workflow=e2e.yml --limit 3`). If the dispatch failed, read its log before
+re-dispatching. (2) Ask Geoff one question: build the advisory `check:tsgo` CI job (side-by-side
+`typescript@~6` plus `@typescript/native@npm:typescript@7`, `svelte-check --tsgo`, non-blocking,
+green meaning TypeScript 7 is a bump)? He wants the 7.x edges resolved before beta; the spike
+findings are in the `typescript-7-readiness-spike` memory and the watch entry below. (3) Fix the
+one implicit `any` the Go compiler flags in `scripts/checks/check-snippets.mjs:211`, ours to fix
+regardless.
+
 ## Immediate next action (2026-08-20: the release is CUT and PUBLISHED)
 
 **`0.95.0` is on npm.** Both packages serve it on the `latest` dist-tag: `@glw907/cairn-cms@0.95.0`

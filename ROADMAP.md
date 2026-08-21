@@ -291,9 +291,10 @@ The original decision framing, for the record:
   `svelte-check --tsgo`, and when it matches the TS 6 result drop the alias, bump, and run the
   full `test.yml` gate list plus the clean-install showcase proof. Manual check meanwhile:
   `npx -y @typescript/native-preview -p tsconfig.json --noEmit | grep -c 'error TS'`, where any
-  count past the `.svelte` errors is a new finding. **Open call: build the advisory `check:tsgo`
-  CI job now (earliest signal, one job's CI minutes) or at 7.1 (free until October, and the watch
-  can be forgotten, which the `CLAUDE.md` watch-item rule exists to prevent).**
+  count past the `.svelte` errors is a new finding. **The advisory `check-tsgo` job is built in
+  `.github/workflows/test.yml`: it installs the side-by-side layout with `--no-save` and runs
+  `svelte-check --tsgo` under `continue-on-error: true`, so a red result never blocks and a green
+  run is the signal that the crossing above is ready.**
 
 - **A pre-existing media-chip test is flaky and will redden `main` at random (release-debt pass,
   2026-08-19).** `src/tests/component/media-public-base.test.ts:86`, "renders the editor media chip

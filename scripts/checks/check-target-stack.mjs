@@ -1,8 +1,8 @@
-// cairn-cms: the target-stack gate. `docs/admin/what-to-run-and-when.md` names an exact version
-// for every part of the stack an admin's site depends on, so an agent or a person reading the page
-// gets a real target rather than a stale guess. This gate is what keeps that promise honest: it
-// derives each expected value from the same source the number actually comes from (the root
-// package.json's own version, engines, and peer ranges; the showcase's package.json and
+// cairn-cms: the target-stack gate. `docs/reference/supported-toolchain.md` names an exact
+// version for every part of the stack a cairn site depends on, so a developer or an agent reading
+// the page gets a real target rather than a stale guess. This gate is what keeps that promise
+// honest: it derives each expected value from the same source the number actually comes from (the
+// root package.json's own version, engines, and peer ranges; the showcase's package.json and
 // wrangler.jsonc, the source the public template is emitted from) and fails when the page's table
 // disagrees. A cell can only go stale silently if this gate stops running.
 import { readFileSync } from 'node:fs';
@@ -10,12 +10,13 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const PAGE_PATH = resolve(ROOT, 'docs/admin/what-to-run-and-when.md');
+const PAGE_PATH = resolve(ROOT, 'docs/reference/supported-toolchain.md');
 
 /**
  * Pull the `Target today` cell for a named row out of the target-stack table. The row label is
- * matched literally against the table's first column, ignoring surrounding Markdown emphasis, so a
- * prose rewrite of the row's other cells cannot silently detach the check from the row it names.
+ * matched literally against the table's first column, so a prose rewrite of the row's other cells
+ * cannot silently detach the check from the row it names. Markdown emphasis around the label itself
+ * is not stripped; a label passed here must appear in the table exactly as written.
  * @param {string} pageText the page's raw Markdown
  * @param {string} label the row's exact first-column text, for example "Node, on your machine"
  * @returns {string} the row's `Target today` cell, with inline code spans and emphasis stripped

@@ -3,8 +3,7 @@
   // This package is a library and is never deployed; this file exists solely
   // to give the integration tests a real miniflare D1 binding.
   "name": "cairn-cms-test",
-  "compatibility_date": "2026-05-28",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2026-08-21",
   "d1_databases": [
     {
       "binding": "AUTH_DB",

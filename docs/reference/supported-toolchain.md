@@ -2,22 +2,29 @@
 
 The versions the package promises against and the versions its own CI proves. This page names
 both, since they are different claims: the package's `peerDependencies` are the promise a
-consumer's install resolves against, and the showcase's `package-lock.json` is what the engine's
-own test suite actually runs against. The two need not match, and where they differ the gap is
-the safety margin between what is promised and what is exercised.
+consumer's install resolves against, and the showcase's `package.json` and `wrangler.jsonc` are
+what the engine's own test suite and its scaffolded template actually run against. The two need
+not match, and where they differ the gap is the safety margin between what is promised and what
+is exercised.
 
 This page documents the package's own requirements rather than an export subpath, so it carries
-no stability tier and the export-coverage gate does not check it.
+no stability tier and the export-coverage gate does not check it. The target-stack table below is
+its own gate, `check:target-stack`, which derives each `Target today` cell from the same source
+the number actually comes from and fails when this page's table disagrees; a cell can only go
+stale silently if that gate stops running.
 
 ## Framework and runtime
 
-| Dependency | Minimum supported | Proven against |
-|---|---|---|
-| `@sveltejs/kit` | `^2.12` (peer dependency) | `2.68.0` |
-| `svelte` | `^5.56.3` (peer dependency) | `5.56.4` |
-| `vite` | no declared floor | `8.1.0` |
-| `typescript` | `5.0` | `6.0.3` |
-| `node` | `>=24` | `>=24` (CI's pin) |
+| Part | Target today | Where it's set | How often it moves |
+|---|---|---|---|
+| The cairn package | `0.95.0` | `package.json`, the `@glw907/cairn-cms` version | On a release whose changelog carries a `Consumers must:` line |
+| Node, on your machine | `>=24` | `engines.node` in cairn's own `package.json` | Rarely, on Node's own Active LTS calendar |
+| SvelteKit | `^2.12` | cairn's `peerDependencies` | Rarely, only when a feature needs a newer SvelteKit capability |
+| Svelte | `^5.56.3` | cairn's `peerDependencies` | Rarely, on the same cadence as SvelteKit |
+| Wrangler | `^4` | the template's `package.json`, set once when a site is scaffolded | Whenever Cloudflare ships a new Wrangler major |
+| `@sveltejs/adapter-cloudflare` | `^7` | the template's `package.json` | Follows SvelteKit's own release line |
+| The Workers `compatibility_date` | `2026-08-21` | the template's `wrangler.jsonc`, set once when a site is scaffolded | Moves forward when a new template pulls in a later date; a deployed site's own date never changes on its own |
+| TypeScript | `^6` | the template's `package.json` | Held deliberately for now; see the note below |
 
 **`@sveltejs/kit` `^2.12`.** The floor is deliberate, not stale. The edit page reads `$app/state`,
 which shipped in kit 2.12.0, and the `0.51.0` changelog entry made the range an enforced
@@ -27,18 +34,23 @@ consumer requirement rather than an advisory.
 groupings, and a consumer compiles the package's shipped `.svelte` sources directly, so a lower
 floor would let a broken svelte compile a broken component.
 
-**`vite`.** The package declares no `vite` peer dependency, so `8.1.0` is a proven-against fact
-about the showcase's own lockfile, never a promise.
+**`vite`.** The package declares no `vite` peer dependency, so this table names no target for it.
+The showcase's own lockfile pins a current Vite 8, which is a fact about the engine's own
+toolchain, not a promise this gate tracks.
 
-**`typescript` `5.0`.** The floor is forced by `const` type parameters on the public surface:
-`defineAdapter`, `defineConcept`, `fieldset`, and every `fields.*` constructor capture their
-argument with a `const` type parameter so the call site's literal types (`required: true`, a
-`select` option union) survive into the inferred descriptor. A consumer's own `tsc` run over a
-site that calls these constructors needs `const` type parameter support to type-check correctly.
-The package's root `devDependency` range is `^6.0.3`, the version the engine develops against.
-That is a separate number from the `5.0` floor, and it describes a different audience: a
-consumer's own `typescript` version needs only to satisfy the floor, not match the engine's own
-development version.
+**TypeScript is held at `^6`.** The floor a consumer's own `tsc` needs is forced by `const` type
+parameters on the public surface: `defineAdapter`, `defineConcept`, `fieldset`, and every
+`fields.*` constructor capture their argument with a `const` type parameter so the call site's
+literal types (`required: true`, a `select` option union) survive into the inferred descriptor.
+That floor is TypeScript `5.0`; cairn's own code and its shipped `.d.ts` files are already
+TypeScript 7-clean. The `^6` target above is a separate, higher number: it is what the scaffolded
+template installs, and it is held there because three of the tools cairn's own build and a
+consumer's own `check` script depend on still require TypeScript 6. TypeScript 7.0 shipped
+without a programmatic compiler API, and 7.1 (the first release expected to add one) is not out
+yet; `svelte-check`, the tool that type-checks a consumer's site and cairn's shipped
+declarations, is one of the three, and cannot run on TypeScript 7 until that API lands. The `^6`
+target moves the same way every row in this table does: on a release whose changelog carries a
+`Consumers must:` line, once the compiler API ships and the pin is verified.
 
 **`node` `>=24`.** This is a build-toolchain floor, not a runtime claim: the package runs on
 Cloudflare Workers, whose runtime is `workerd`, never Node. CI's Node 24 pin follows the same

@@ -111,8 +111,7 @@ Cloudflare's adapter needs a Worker config file, which `sv create` doesn't write
 ```jsonc
 {
   "name": "my-cairn-site",
-  "compatibility_date": "2026-08-14",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2026-08-21",
   "main": ".svelte-kit/cloudflare/_worker.js",
   "assets": {
     "directory": ".svelte-kit/cloudflare",
@@ -586,8 +585,7 @@ email: { from: 'cms@your-domain.example' },
 ```jsonc
 {
   "name": "my-cairn-site",
-  "compatibility_date": "2026-08-14",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2026-08-21",
   "main": ".svelte-kit/cloudflare/_worker.js",
   "observability": { "enabled": true },
   "assets": {

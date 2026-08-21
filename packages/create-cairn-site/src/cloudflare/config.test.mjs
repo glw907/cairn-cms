@@ -18,7 +18,6 @@ const BAKED_WRANGLER_JSONC = `{
   // swaps the names and ids. Modeled on the live 907-life cairn site.
   "name": "cairn-showcase",
   "compatibility_date": "2026-08-21",
-  "compatibility_flags": ["nodejs_compat"],
   "main": ".svelte-kit/cloudflare/_worker.js",
   "observability": { "enabled": true },
   "assets": {

@@ -129,5 +129,7 @@ jobs:
             echo "No baseline changes to commit."
           else
             git commit -m "chore(e2e): regenerate the admin-visual and site-visual baselines"
+            # A push that lands while the browsers run makes this non-fast-forward.
+            git pull --rebase
             git push
           fi

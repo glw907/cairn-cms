@@ -203,7 +203,7 @@ export function stripGlobalAugmentations(code) {
 }
 
 /**
- * Every fenced ```ts/```typescript/```svelte block in a Markdown doc, with its 1-based fence
+ * Every fenced `ts`, `typescript`, or `svelte` block in a Markdown doc, with its 1-based fence
  * line and, when the line immediately above (skipping blanks) carries a `snippet-check-skip:`
  * comment, the opt-out reason.
  * @param {string} markdown

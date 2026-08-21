@@ -105,9 +105,10 @@ ruling that the cost copy should hedge; the friction log records the supersessio
 - **`check:surface` is blind to an index signature.** Removing one from an exported interface is a
   real breaking change and produced zero snapshot diff. ROADMAP Now.
 
-- **Two dependency majors held on 2026-08-21, each with a trigger.** TypeScript 7 waits on a
-  `svelte-check` release that runs on the Go compiler (TS 7.1 is the announced compiler-API
-  milestone). `vitest-browser-svelte` 3 makes `render` async-only across about a thousand call
+- **Two dependency majors held on 2026-08-21, each with a trigger.** TypeScript 7.0 (stable 2026-07-08)
+  shipped with no public programmatic compiler API, so `svelte-check`, this repo's type gate, has
+  nothing to call; the API is scheduled for 7.1 (targeted October 2026), and the Svelte tooling
+  follows it. `vitest-browser-svelte` 3 makes `render` async-only across about a thousand call
   sites; a mechanical pass of its own. One landed with a scar: `@cloudflare/workers-types` 5's
   global `Buffer: any` shadows `Buffer.toString(encoding)` in any program that also loads
   `@types/node`; the two sites here use `TextDecoder` now, and a `WATCH` comment on

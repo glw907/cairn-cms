@@ -274,6 +274,27 @@ The original decision framing, for the record:
 
 ## Now
 
+- **TypeScript 7 is held on the toolchain, not the code; the hold ends when `svelte-check --tsgo`
+  goes green (2026-08-21).** TypeScript 7.0 (stable 2026-07-08) shipped without a programmatic
+  compiler API, and 7.1 (October 2026) is the first release that adds one. Three dependencies call
+  that API and so pin `typescript` to 6: `svelte-check` 4.7.6 (its `--tsgo` mode mis-types `.ts`
+  imports of `.svelte`, scans template trees, and fights `outDir`/`rootDir`), `svelte2tsx` 0.7.61
+  under `@sveltejs/package` (it builds the shipped `.d.ts`), and `typescript-estree` 8.56 under
+  `eslint-plugin-tsdoc` (peer `<6.1.0`; it gates `check:comments` only). The 2026-08-21 spike ran
+  `tsgo` and `tsc` 6 on the same `tsconfig`: cairn's own code differed by one finding, a JSDoc
+  comment whose triple backticks hid a `@param` from `tsgo`'s parser (fixed the same day); the
+  shipped `.d.ts` and the showcase consumer see identical results under both; every remaining
+  `tsgo` error is `.svelte` resolution, the hold itself. The gain is speed alone, roughly 3 to 4x
+  on a 38-second `check`. Geoff's ruling: resolve the 7.x edges before beta, or stay on 6 a long
+  time. The crossing is a bump: install `typescript@~6` beside
+  `@typescript/native@npm:typescript@7` (the layout `svelte-check` documents), run
+  `svelte-check --tsgo`, and when it matches the TS 6 result drop the alias, bump, and run the
+  full `test.yml` gate list plus the clean-install showcase proof. Manual check meanwhile:
+  `npx -y @typescript/native-preview -p tsconfig.json --noEmit | grep -c 'error TS'`, where any
+  count past the `.svelte` errors is a new finding. **Open call: build the advisory `check:tsgo`
+  CI job now (earliest signal, one job's CI minutes) or at 7.1 (free until October, and the watch
+  can be forgotten, which the `CLAUDE.md` watch-item rule exists to prevent).**
+
 - **A pre-existing media-chip test is flaky and will redden `main` at random (release-debt pass,
   2026-08-19).** `src/tests/component/media-public-base.test.ts:86`, "renders the editor media chip
   thumbnail under the injected base", polls for a CodeMirror decoration (`.cm-cairn-media-thumb`) to

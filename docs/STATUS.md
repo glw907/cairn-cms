@@ -28,15 +28,15 @@ the article; an upstream improvement, not a regression. The regeneration dispatc
 (`gh workflow run e2e.yml --ref main -f update_snapshots=true`, run 32523096119) was in progress at
 handoff and commits the new PNGs straight to `main`.
 
-**Resume prompt.** (1) `git pull`, then confirm the bot commit "chore(e2e): regenerate the
-admin-visual and site-visual baselines" landed and the push-triggered `e2e` run after it is green
-(`gh run list --workflow=e2e.yml --limit 3`). If the dispatch failed, read its log before
-re-dispatching. (2) Ask Geoff one question: build the advisory `check:tsgo` CI job (side-by-side
+**Resume prompt.** (1) Done 2026-08-21: the first regeneration dispatch (run 32523096119) lost a
+push race to the STATUS handoff commit (non-fast-forward); the re-dispatch landed the baselines as
+`25dae7ad`, and `e2e.yml` now rebases before the bot push so the race cannot recur. (2) Ask Geoff one question: build the advisory `check:tsgo` CI job (side-by-side
 `typescript@~6` plus `@typescript/native@npm:typescript@7`, `svelte-check --tsgo`, non-blocking,
 green meaning TypeScript 7 is a bump)? He wants the 7.x edges resolved before beta; the spike
-findings are in the `typescript-7-readiness-spike` memory and the watch entry below. (3) Fix the
-one implicit `any` the Go compiler flags in `scripts/checks/check-snippets.mjs:211`, ours to fix
-regardless.
+findings are in the `typescript-7-readiness-spike` memory and the watch entry below. (3) Done
+2026-08-21: the one implicit `any` the Go compiler flagged in `scripts/checks/check-snippets.mjs`
+was a JSDoc comment whose triple backticks hid the `@param` from `tsgo`; reworded. The full
+TypeScript 7 posture (holders, spike evidence, trigger, crossing plan) is the ROADMAP Now entry.
 
 ## Immediate next action (2026-08-20: the release is CUT and PUBLISHED)
 

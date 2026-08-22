@@ -13,6 +13,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm
       - run: npm ci
       # Build and pack the engine and the dev backend into tarballs the emitted template installs,
       # which mirrors a scaffolded user's npm-range resolution without needing the registry.

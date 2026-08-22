@@ -138,8 +138,8 @@ describe('dependencyFloorsResult', () => {
 describe('readEnginePeers', () => {
   it('reads the engine package.json peers, including the svelte floor', () => {
     const peers = readEnginePeers();
-    expect(peers.svelte).toBe('^5.56.3');
-    expect(peers['@sveltejs/kit']).toBe('^2.12');
+    expect(peers.svelte).toBe('^5.56.10');
+    expect(peers['@sveltejs/kit']).toBe('^2.70');
   });
 
   it('leaves out an optional peer, whose absence is a site choice rather than an unmet floor', () => {
@@ -165,7 +165,7 @@ describe('config.dependency-floors', () => {
 
   it('passes a fixture site whose lockfile satisfies the real engine peers', async () => {
     const result = await configDependencyFloors.run(
-      ctx({ 'package-lock.json': lockV3({ svelte: '5.56.3', '@sveltejs/kit': '2.61.1' }) })
+      ctx({ 'package-lock.json': lockV3({ svelte: '5.56.10', '@sveltejs/kit': '2.70.0' }) })
     );
     expect(result.status).toBe('pass');
   });

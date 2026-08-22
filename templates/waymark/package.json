@@ -19,7 +19,7 @@
     "@fontsource-variable/source-code-pro": "^5.2.5",
     "@fontsource-variable/source-sans-3": "^5.2.5",
     "@glw907/cairn-cms-dev": "^0.95.0",
-    "@sveltejs/adapter-cloudflare": "^7",
+    "@sveltejs/adapter-cloudflare": "^7.2.9",
     "@sveltejs/kit": "^2",
     "@sveltejs/vite-plugin-svelte": "^7",
     "@tailwindcss/vite": "^4.3.2",
@@ -32,6 +32,6 @@
     "tailwindcss": "^4.3.2",
     "typescript": "^6",
     "vite": "^8",
-    "wrangler": "^4"
+    "wrangler": "^4.125.0"
   }
 }

@@ -36,6 +36,7 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+          cache: npm
       # Trusted publishing requires npm >= 11.5.1 (newer than the bundled version).
       # WATCH: pinned to the 11.x line because npm 12.0.0 (2026-07-08) ships without its
       # sigstore module and every publish fails on MODULE_NOT_FOUND in libnpmpublish;
@@ -87,6 +88,7 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+          cache: npm
       # Same npm pin as the engine job above; see its WATCH comment.
       - run: npm install -g npm@11
       - name: Publish @glw907/cairn-cms-dev to npm

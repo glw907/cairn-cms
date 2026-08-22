@@ -21,15 +21,18 @@ describe('package dependency contract', () => {
     for (const p of peers) expect(pkg.dependencies?.[p], `${p} must not be a dependency`).toBeUndefined();
   });
 
-  it('floors svelte at ^5.56.3, above the 5.56.1 guard-clause miscompile', () => {
-    // svelte 5.56.1 misprints parenthesized boolean groupings when compiling the shipped
-    // .svelte sources, so the floor is a correctness contract, not a feature minimum. The
-    // doctor's dependency-floors check reads this same range at runtime; raise it knowingly.
-    expect(pkg.peerDependencies?.svelte).toBe('^5.56.3');
+  it('floors svelte at ^5.56.10, the version cairn develops and tests against', () => {
+    // Geoff's 2026-08-21 ruling: the floor tracks the versions cairn actually develops and
+    // tests against, not a historical minimum, so the engine may use their full capabilities
+    // with no guards for older minors. ^5.56.3 was itself raised past the 5.56.1 guard-clause
+    // miscompile (svelte 5.56.1 misprints parenthesized boolean groupings when compiling the
+    // shipped .svelte sources); that correctness floor still holds, just below this newer one.
+    // The doctor's dependency-floors check reads this same range at runtime; raise it knowingly.
+    expect(pkg.peerDependencies?.svelte).toBe('^5.56.10');
   });
 
-  it('keeps the @sveltejs/kit floor at ^2.12', () => {
-    expect(pkg.peerDependencies?.['@sveltejs/kit']).toBe('^2.12');
+  it('floors @sveltejs/kit at ^2.70, the version cairn develops and tests against', () => {
+    expect(pkg.peerDependencies?.['@sveltejs/kit']).toBe('^2.70');
   });
 
   it('no longer declares carta-md anywhere', () => {

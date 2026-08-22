@@ -19,20 +19,24 @@ stale silently if that gate stops running.
 |---|---|---|---|
 | The cairn package | `0.95.0` | `package.json`, the `@glw907/cairn-cms` version | On a release whose changelog carries a `Consumers must:` line |
 | Node, on your machine | `>=24` | `engines.node` in cairn's own `package.json` | Rarely, on Node's own Active LTS calendar |
-| SvelteKit | `^2.12` | cairn's `peerDependencies` | Rarely, only when a feature needs a newer SvelteKit capability |
-| Svelte | `^5.56.3` | cairn's `peerDependencies` | Rarely, on the same cadence as SvelteKit |
-| Wrangler | `^4` | the template's `package.json`, set once when a site is scaffolded | Whenever Cloudflare ships a new Wrangler major |
-| `@sveltejs/adapter-cloudflare` | `^7` | the template's `package.json` | Follows SvelteKit's own release line |
+| SvelteKit | `^2.70` | cairn's `peerDependencies` | Rarely, only when a feature needs a newer SvelteKit capability |
+| Svelte | `^5.56.10` | cairn's `peerDependencies` | Rarely, on the same cadence as SvelteKit |
+| Wrangler | `^4.125.0` | the template's `package.json`, set once when a site is scaffolded | Whenever Cloudflare ships a new Wrangler major |
+| `@sveltejs/adapter-cloudflare` | `^7.2.9` | the template's `package.json` | Follows SvelteKit's own release line |
 | The Workers `compatibility_date` | `2026-08-21` | the template's `wrangler.jsonc`, set once when a site is scaffolded | Moves forward when a new template pulls in a later date; a deployed site's own date never changes on its own |
 | TypeScript | `^6` | the template's `package.json` | Held deliberately for now; see the note below |
 
-**`@sveltejs/kit` `^2.12`.** The floor is deliberate, not stale. The edit page reads `$app/state`,
-which shipped in kit 2.12.0, and the `0.51.0` changelog entry made the range an enforced
-consumer requirement rather than an advisory.
+**`@sveltejs/kit` `^2.70`.** The floor tracks the version cairn develops and tests against
+(Geoff's 2026-08-21 ruling), so the engine may use kit's full current capabilities with no guard
+for an older minor. The edit page's `$app/state` dependency, which forced the earlier `^2.12`
+floor (the `0.51.0` changelog entry made that range an enforced consumer requirement rather than
+an advisory), still holds; `^2.70` simply raises the floor to the installed line.
 
-**`svelte` `^5.56.3`.** Also deliberate: svelte `5.56.1` miscompiles parenthesized boolean
-groupings, and a consumer compiles the package's shipped `.svelte` sources directly, so a lower
-floor would let a broken svelte compile a broken component.
+**`svelte` `^5.56.10`.** Same ruling: the floor is the version cairn develops and tests against.
+The correctness history behind the earlier `^5.56.3` floor still stands underneath it: svelte
+`5.56.1` miscompiles parenthesized boolean groupings, and a consumer compiles the package's
+shipped `.svelte` sources directly, so a lower floor would let a broken svelte compile a broken
+component.
 
 **`vite`.** The package declares no `vite` peer dependency, so this table names no target for it.
 The showcase's own lockfile pins a current Vite 8, which is a fact about the engine's own

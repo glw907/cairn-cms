@@ -31,6 +31,7 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24
+          cache: npm
       - run: npm ci
       # The showcase lockfile is committed (not gitignored) and installed with `npm ci` so CI resolves
       # the exact toolchain a developer reproduces locally. A floating `npm install` once drifted CI onto

@@ -15,10 +15,12 @@
   oklch lightness); the dark-theme hairline, fill, and hover repairs are unchanged.
   `@cloudflare/workers-types` moved to 5 (wrangler 4.125 peers on it), whose new global
   `Buffer: any` shadows `Buffer.toString(encoding)` wherever `@types/node` shares the program;
-  the two build-script sites that called it now use `TextDecoder`. Held back on purpose:
-  TypeScript 7 (svelte-check cannot run on the Go compiler until 7.1's compiler API) and
-  `vitest-browser-svelte` 3 (its async-only `render` touches about a thousand call sites and
-  earns its own pass). Consumers must: nothing.
+  the two build-script sites that called it now use `TextDecoder`. `vitest-browser-svelte` moved
+  to 3 as well, whose `render`/`unmount` calls are now async; every call site in the component
+  suite now awaits them. The `@anthropic-ai/sdk` devDependency moved to 0.120, and the optional
+  peer range widened to `>=0.105.0 <1` so a site pinned to either the old or the new SDK line
+  satisfies it. Held back on purpose: TypeScript 7 (svelte-check cannot run on the Go compiler
+  until 7.1's compiler API). Consumers must: nothing.
 
 - `npm run link:consumer -- <site-dir>` points a consumer site at a local engine build, and
   `--restore` puts it back on a registry range. It builds, packs, installs, and then verifies every

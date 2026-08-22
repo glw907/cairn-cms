@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 const pkg = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf8')) as {
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional: boolean }>;
 };
 
 describe('package dependency contract', () => {
@@ -38,5 +39,13 @@ describe('package dependency contract', () => {
 
   it('bundles the codemirror packages as hard dependencies', () => {
     for (const d of editorDeps) expect(pkg.dependencies?.[d], `${d} must be a dependency`).toBeTruthy();
+  });
+
+  it('widens the optional @anthropic-ai/sdk peer range to admit both 0.105.0 and 0.120.0', () => {
+    // No @types/semver is installed, so this pins the exact range string rather than parsing it:
+    // '>=0.105.0 <1' admits both versions by construction, and a narrower range (back to a caret
+    // that stops at the next minor) would fail this exact-string check the moment it regresses.
+    expect(pkg.peerDependenciesMeta?.['@anthropic-ai/sdk']).toEqual({ optional: true });
+    expect(pkg.peerDependencies?.['@anthropic-ai/sdk']).toBe('>=0.105.0 <1');
   });
 });

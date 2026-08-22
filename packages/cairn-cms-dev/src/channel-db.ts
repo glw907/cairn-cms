@@ -7,10 +7,19 @@
 // site's real schema and the store's real SQL against a real engine, node:sqlite's in-memory
 // DatabaseSync, so unknown SQL executes rather than throwing, the deliberate opposite of
 // fake-auth-db's fail-loud dispatch table.
+import { readFileSync } from 'node:fs';
 import type { SQLInputValue } from 'node:sqlite';
 
-/** The floor node:sqlite is unflagged from; createChannelDb throws below it. */
-const NODE_SQLITE_FLOOR = '22.13.0';
+/**
+ * The floor createChannelDb throws below, read from this package's own `engines.node` so the
+ * two numbers can never drift apart. node:sqlite itself was unflagged earlier (Node.js 22.13),
+ * but the package's engines floor is now the higher, more current number.
+ */
+const NODE_SQLITE_FLOOR: string = (
+  JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+    engines: { node: string };
+  }
+).engines.node.replace(/^\D+/, '');
 
 /**
  * Compare two `major.minor.patch` version strings. A missing component reads as 0, so `'22'` and
@@ -61,7 +70,7 @@ export interface ChannelDb {
  * Build an in-memory `node:sqlite` database, apply `schemaSql` once, and wrap it in the surface
  * the channel store touches. `withSession` ignores its constraint argument and shares this one
  * database: single-node SQLite already satisfies D1's first-primary session guarantee.
- * @throws When running below the node:sqlite floor (Node.js 22.13).
+ * @throws When running below this package's Node.js floor.
  */
 export async function createChannelDb(schemaSql: string): Promise<ChannelDb> {
   checkNodeSqliteFloor(process.versions.node);

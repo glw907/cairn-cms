@@ -90,9 +90,9 @@ jobs:
       - run: npm run check:comments
 
   # Advisory only: TypeScript 7 has no programmatic compiler API until 7.1 (October 2026), so
-  # svelte-check, svelte2tsx, and typescript-estree still pin typescript@~6 (see ROADMAP.md,
+  # svelte-check, svelte2tsx, and typescript-estree still pin typescript@^6 (see ROADMAP.md,
   # "TypeScript 7 is held on the toolchain"). This job installs the side-by-side layout
-  # svelte-check's own README documents (typescript@~6 plus @typescript/native@npm:typescript@7,
+  # svelte-check's own README documents (typescript@^6 plus @typescript/native@npm:typescript@7,
   # `--no-save` so neither package.json nor the lockfile moves) and runs the same check under
   # `--tsgo`. `continue-on-error: true` means a red result here never blocks a merge; a green
   # result is the signal that the 7.x edges have closed and the bump in ROADMAP.md is ready to run.

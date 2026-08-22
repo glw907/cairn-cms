@@ -132,9 +132,9 @@ test('the mint conditional-upsert contract behaves through the double: fresh, in
   expect(postCooldown).toBe(true);
 });
 
-test('checkNodeSqliteFloor throws naming 22.13 below the floor and passes at or above it', () => {
-  expect(() => checkNodeSqliteFloor('22.12.0')).toThrow(/22\.13/);
-  expect(() => checkNodeSqliteFloor('20.0.0')).toThrow(/22\.13/);
-  expect(() => checkNodeSqliteFloor('22.13.0')).not.toThrow();
+test('checkNodeSqliteFloor throws naming the package engines floor and passes at or above it', () => {
+  expect(() => checkNodeSqliteFloor('23.11.0')).toThrow(/24/);
+  expect(() => checkNodeSqliteFloor('20.0.0')).toThrow(/24/);
+  expect(() => checkNodeSqliteFloor('24.0.0')).not.toThrow();
   expect(() => checkNodeSqliteFloor('24.16.0')).not.toThrow();
 });

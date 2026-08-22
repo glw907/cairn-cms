@@ -132,8 +132,8 @@ channel's schema against the site's auth store, the first time you apply either.
 migration in that separate directory.
 
 Test the channel against a real D1-shaped double with `@glw907/cairn-cms-dev`'s
-`createChannelDb`, which needs `node:sqlite`, unflagged only from Node 22.13 and later; it throws
-a named error below that floor.
+`createChannelDb`, which needs `node:sqlite` and enforces that package's own Node.js engines
+floor; it throws a named error below it.
 
 ## You know it worked when
 

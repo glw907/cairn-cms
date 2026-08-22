@@ -5,9 +5,9 @@ import { userEvent } from 'vitest/browser';
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 import ExpandableRow from '../../lib/admin-toolkit/ExpandableRow.svelte';
 
-/** vitest-browser-svelte 2.2 stopped exporting its `RenderResult` type, so derive it from `render`.
- *  `Awaited` unwraps the `Promise` `render` now always returns (vitest-browser-svelte 3 made
- *  `render` async-only). */
+/** vitest-browser-svelte exports a generic `RenderResult<C, W>`; deriving it from `render`'s own
+ *  return type avoids repeating that generic here. `Awaited` unwraps the `Promise` `render` now
+ *  always returns (vitest-browser-svelte 3 made `render` async-only). */
 type RenderResult = Awaited<ReturnType<typeof render<typeof ExpandableRow>>>;
 
 /** A snippet with no render-time params, e.g. a header row or a fixed body. */

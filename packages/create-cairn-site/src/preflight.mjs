@@ -19,7 +19,7 @@ import net from 'node:net';
 
 /**
  * Parse the leading `major.minor.patch` numbers out of a version string or range, defaulting
- * missing parts to zero. Tolerant of a range prefix (`>=22`) since the same parser reads both
+ * missing parts to zero. Tolerant of a range prefix (`>=24`) since the same parser reads both
  * a concrete `process.versions.node` string and the package's `engines.node` floor.
  * @param {string} version the version string or range to parse
  * @returns {[number, number, number]} the major, minor, and patch numbers
@@ -60,7 +60,7 @@ async function checkNode(nodeVersion) {
   const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   const floorSpec = pkg.engines.node;
   const ok = compareVersions(nodeVersion, floorSpec) >= 0;
-  // The floor is a range (`>=22`), so the prose quotes the bare major instead: "Node.js >=22 or
+  // The floor is a range (`>=24`), so the prose quotes the bare major instead: "Node.js >=24 or
   // later is required" reads as a typo to the admin this message exists for.
   const floorMajor = parseVersionParts(floorSpec)[0];
   return {

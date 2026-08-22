@@ -1,5 +1,5 @@
-// npm pack --json can print a real document with unrelated text ahead of it. On npm 10.x
-// (bundled with Node 22, the version pinned in CI), `--ignore-scripts` does not suppress the
+// npm pack --json can print a real document with unrelated text ahead of it. On npm 11.x
+// (bundled with Node 24, the version pinned in CI), `--ignore-scripts` does not suppress the
 // `prepare` lifecycle script when npm pack targets the local project itself: prepare re-runs
 // `npm run package`, and svelte-package's own build notices ("src/lib -> dist" and its
 // packaging diagnostics) land on stdout ahead of the `--json` manifest. `--loglevel=silent`

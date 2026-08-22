@@ -42,9 +42,12 @@ clearings.
 
 ## Open findings
 
-**None.** The log is empty, which is the state it is supposed to spend most of its time in.
-
 New findings start below this line, one per finding, with its perspective and a short note.
+
+- **contributor:** `ROADMAP.md`'s "Platform watch: Cloudflare" heading text is a machine key, not
+  just a title: the `cairn Cloudflare capability review (monthly)` cloud routine (created
+  2026-08-22) reads the list by that exact heading, so renaming the heading requires updating the
+  routine in the same change.
 
 ## Clearings
 

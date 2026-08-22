@@ -844,10 +844,12 @@ the named human gates only):**
 - **Platform features now available and unused (surveyed 2026-08-21).** Tailwind 4.3 ships
   logical-property spacing (`pbs-*`, `mbs-*`, `inset-s-*`), `@container-size`, and stacked
   `@variant`; DaisyUI 5.7 ships `menu-paged` for keyboard travel through nested menus. Cloudflare
-  D1's Sessions API (`withSession`, read replicas) and Email Sending's named recipients
-  (`{email, name}` on `from`/`to`) are both GA. None closes a live defect, so none is a task; each is
-  the sanctioned form to reach for when its shape next comes up (an RTL audit, a nested admin menu,
-  a branded sender name). Tailwind 4.3's `scrollbar-*` utilities are no longer on this list: the
+  Email Sending's named recipients (`{email, name}` on `from`/`to`) is GA. Neither closes a live
+  defect, so neither is a task; each is the sanctioned form to reach for when its shape next comes
+  up (an RTL audit, a nested admin menu, a branded sender name). D1's Sessions API moved to
+  Later's "Platform watch: Cloudflare" list: 2026-08-21 re-verification against D1's own release
+  notes found no GA entry, correcting this entry's earlier "both GA" claim. Tailwind 4.3's
+  `scrollbar-*` utilities are no longer on this list: the
   newest-toolchain pass replaced `cairn-admin.css`'s hand-written `scrollbar-width`/
   `scrollbar-color` declarations with them. The `.btn-active` hand-repairs in `cairn-admin.css`
   were re-verified against 5.7.20: the dark-theme rules still earn their place, and the light
@@ -2169,6 +2171,55 @@ the named human gates only):**
   was observed going through `POST /zones`, so the branches that path reaches are unproven. Worth
   a real trigger (the first live run against an externally registered domain) rather than a
   standing note.
+
+### Platform watch: Cloudflare
+
+This is a tracked list of Cloudflare platform features cairn has evaluated and judged not to
+adopt, each carrying its status, the reason it was declined, and the trigger that would change
+the verdict. A monthly cloud routine (`cairn Cloudflare capability review (monthly)`, created
+2026-08-22) reads this list by this exact heading and emails a report; the owner folds any
+status change in here, and an item whose trigger fires moves up to Now or Next.
+
+- **R2 Local Uploads.** Status as of 2026-08-21: open beta since 2026-02-03
+  (https://developers.cloudflare.com/changelog/post/2026-02-03-r2-local-uploads/). What cairn does
+  today: `MEDIA_BUCKET` uses the default upload path, a plain `bucket.put()` call
+  (`src/lib/media/store.ts:59`). Why not adopted: it is an operator's per-bucket switch, not engine
+  code, so cairn has nothing to change. Trigger: general availability, at which point
+  `docs/admin` gets the one-line tip pointing an operator at the toggle.
+
+- **Secrets Store, for the shared GitHub App key.** Status as of 2026-08-21: beta since
+  2025-04-09 (https://developers.cloudflare.com/changelog/post/2025-04-09-secrets-store-beta/).
+  What cairn does today: both production sites (ecxc.ski, 907.life) hold the same
+  `GITHUB_APP_PRIVATE_KEY_B64` value as separate per-Worker secrets. Why not adopted: where a
+  secret lives is the operator's domain, not the engine's; `create-cairn-site`'s scaffolder, not
+  the runtime library, is where cairn would offer a Secrets Store option. Trigger: general
+  availability plus a wrangler binding shape the scaffolder can write into a generated
+  `wrangler.jsonc`.
+
+- **Email Sending event subscriptions (bounce, deferred, failed, complained), via Queues.**
+  Status as of 2026-08-21: shipped 2026-07-15
+  (https://developers.cloudflare.com/changelog/post/2026-07-15-event-subscriptions/). What cairn
+  does today: `src/lib/email.ts` only sees a synchronous send failure at the moment of
+  `env.EMAIL.send()`; a bounce or complaint that arrives later is invisible to the engine. Why not
+  adopted: not yet, single-use magic-link mail does not justify standing up a Queue consumer.
+  Trigger: a consumer site reports silent bounce loss, or the engine gains any other reason to run
+  a Queue consumer.
+
+- **D1 Sessions API and read replication.** Status as of 2026-08-21: public beta since
+  2025-04-10 per D1's own release notes
+  (https://developers.cloudflare.com/d1/platform/release-notes/); no GA entry as of this writing
+  (corrects the "both GA" claim the Next-tier platform-features entry made for this feature).
+  What cairn does today: the auth store (`src/lib/auth/store.ts`) uses the plain D1 binding, no
+  session, no read replica. Why not adopted: not yet, the auth store's traffic is low-volume and
+  correctness-critical, exactly where a beta consistency model warrants waiting for GA. Trigger: a
+  GA entry appears in D1's release notes.
+
+- **Cloudflare Images binding.** Status as of 2026-08-21: GA since 2026-06-10
+  (https://developers.cloudflare.com/changelog/post/2026-06-10-hosted-images-binding/). What
+  cairn does today: cairn builds `/cdn-cgi/image/<options>/` transform URLs directly
+  (`src/lib/media/transform-url.ts:57`). Why not adopted: the URL design is edge-cached with zero
+  Worker CPU per request, and stays; the binding would trade that for CPU time cairn does not need
+  to spend. Trigger: a transform a consumer needs that the URL API cannot express.
 
 ## Considering
 

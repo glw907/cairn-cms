@@ -9,22 +9,19 @@ only the present.
 
 ## Current state
 
-Published version: **`0.95.0`**, on npm for both `@glw907/cairn-cms` and
-`@glw907/cairn-cms-dev`. `main` carries an unpublished window on top: the newest-toolchain pass
-(merged `d2972d11`), which raises the floors to Node `>=24`, `@sveltejs/kit ^2.70`,
-`svelte ^5.56.10`, and `@cloudflare/workers-types ^5` as a hard peer, and adds the admin upgrade
-map and its `check:target-stack` gate. Every floor bump carries a `Consumers must:` line in
-`CHANGELOG.md`'s `## Unreleased` section.
+Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
+`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. It raises the floors
+to Node `>=24`, `@sveltejs/kit ^2.70`, `svelte ^5.56.10`, and `@cloudflare/workers-types ^5`,
+moves Tidy to `claude-sonnet-5`, ships the admin upgrade map with `check:target-stack`, and fixes
+the five aksailingclub-org 0.95 adoption defects. `main` carries nothing unpublished.
 
 ## Immediate next action
 
-Cut the release carrying this window: invoke the `cairn-release` skill, verifying the next
-version number is free first (`npm view @glw907/cairn-cms versions --json`; `0.96.0` is the
-candidate, since the window adds a new peer floor, a new admin page, and new CI gates). Then
-write per-site update instructions for the four consumer sites: `ecxc-ski`, `aksailingclub-org`,
-and `xcathletes-org` already run `^0.95.0` on Node 24 CI, so each only needs the new peer floors
-and the Node 24 confirmation; `907-life` is still on `^0.84.4` and crosses every
-`Consumers must:` line from `0.85` forward, so its instructions are the full migration walk.
+**Geoff updates the four consumer sites onto `0.96.0`.** Each site repo has its sheet committed
+locally (unpushed) at `docs/2026-08-22-cairn-0.96-update-instructions.md`: ecxc-ski, aksailingclub-org,
+and xcathletes-org are a bump plus the peer floors; 907-life is eleven releases behind and its
+sheet says to run it as a numbered site pass over the migration-notes entries. After the sites,
+the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable against the registry).
 
 ## Parallel tracks
 

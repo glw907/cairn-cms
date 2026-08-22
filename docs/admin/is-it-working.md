@@ -36,7 +36,7 @@ PASS  Public origin: PUBLIC_ORIGIN is https://cairn-capture-scratch.glw907.worke
 SKIP  Tidy API key: no site.config.yaml found, so tidy enablement is unknown
 PASS  Custom /admin mount: the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)
 SKIP  admin-screens skill: the admin-screens skill is not installed at .claude/skills/cairn-admin-screens; run cairn-doctor --fix to install it
-PASS  Dependency floors: @sveltejs/kit 2.70.3 and svelte 5.56.10 satisfy the engine peer ranges
+PASS  Dependency floors: @sveltejs/kit 2.70.2 and svelte 5.56.9 satisfy the engine peer ranges
 FAIL  Email sending domain: no zone named showcase.test is visible to this token
 FAIL  Always Use HTTPS: no zone named showcase.test is visible to this token
 FAIL  Zone HSTS: no zone named showcase.test is visible to this token
@@ -49,6 +49,9 @@ PASS  AI posture, effective: no AI posture is stated (aiPosture is unset), and h
 [...]
 8 passed, 3 failed, 8 skipped
 ```
+
+This report reflects an earlier engine release; the dependency-floor version numbers you see when
+you run this yourself are newer.
 
 Every `create-cairn-site` scaffold ships the placeholder sign-in address `cms@showcase.test`, and
 this site hadn't connected a domain yet, so no Cloudflare zone named `showcase.test` exists for the

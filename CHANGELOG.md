@@ -34,6 +34,15 @@
   `normalizeAssets` validates the three new fit values and `upscale` the same way it already
   validates `fit` and `gravity`. Consumers must: nothing; additive.
 
+### Removed
+
+- `checkNodeSqliteFloor` (`@glw907/cairn-cms-dev`, `channel-db.ts`), the runtime Node version guard
+  `createChannelDb` ran before touching `node:sqlite`. The package's `engines.node` (`>=24`) already
+  enforces the same floor at install time, and `node:sqlite` has been unflagged since Node.js 22.13,
+  well below that floor, so the runtime check was redundant. Consumers must: stop importing
+  `checkNodeSqliteFloor` from `@glw907/cairn-cms-dev`; the package's `engines.node` carries the floor
+  now.
+
 ### Changed
 
 - Tidy's default model is now `claude-sonnet-5`, run at the low effort tier since a proofread

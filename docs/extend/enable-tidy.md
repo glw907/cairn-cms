@@ -48,8 +48,10 @@ tidy:
 
 The default is `claude-sonnet-5`, the judgment floor for a light copy-edit, run at the low effort
 tier since a proofread doesn't need extended reasoning. `claude-haiku-4-5` is the cheaper, faster
-alternative for a site running many tidy passes. Both are visible and changeable from the settings
-screen, so this is a starting default rather than a one-way choice.
+alternative for a site running many tidy passes. The chosen model is a developer-tier setting: an
+editor sees it, labeled plainly, on the settings screen, but changing it means editing
+`tidy.model` here and redeploying, so this is a starting default rather than a one-way choice, not
+a control an editor flips themselves.
 
 ## Choose the conventions
 

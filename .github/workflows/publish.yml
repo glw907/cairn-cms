@@ -46,6 +46,9 @@ jobs:
       # Validate the published package shape before releasing.
       - run: npm run check:package
       # The repo is public, so OIDC trusted publishing attaches build provenance automatically.
+      # `--provenance` is passed explicitly anyway: npm's OIDC helper can swallow an attestation
+      # failure and publish without one rather than failing the command, so the flag is what turns
+      # a silent gap into a loud one.
       #
       # The dist-tag is derived from the version rather than left to npm's default, which is
       # `latest` whatever the version's shape. A prerelease published to `latest` would serve a
@@ -70,7 +73,7 @@ jobs:
             exit 0
           fi
           echo "publishing $VERSION to the '$TAG' dist-tag"
-          npm publish --access public --tag "$TAG"
+          npm publish --access public --tag "$TAG" --provenance
 
   # The dev backend publishes alongside the engine: a scaffolded site's devDependency needs
   # @glw907/cairn-cms-dev on the registry at the version the bake writes, which is also the spec
@@ -104,4 +107,4 @@ jobs:
             exit 0
           fi
           echo "publishing @glw907/cairn-cms-dev@$VERSION to the '$TAG' dist-tag"
-          npm publish --access public --tag "$TAG"
+          npm publish --access public --tag "$TAG" --provenance

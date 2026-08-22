@@ -861,7 +861,10 @@ the named human gates only):**
   required secret unset throws (wrangler 4.125, `addRequiredSecretsInheritBindings`); wrangler
   supports `--secrets-file` on `deploy`, which would let
   `packages/create-cairn-site/src/cloudflare/chapter.mjs` keep the declaration in the baked
-  template. Size: small-to-medium. Trigger: the next `create-cairn-site` pass.
+  template. That same pass should also re-record every transcript fixture under
+  `packages/create-cairn-site/test/fixtures/transcripts/`: the `01-*` fixtures still print "Node
+  22 or later" and `03-doctor-credentialed` predates the `@sveltejs/kit` 2.70 and `svelte`
+  5.56.10 floors. Size: small-to-medium. Trigger: the next `create-cairn-site` pass.
 
 - **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
   primitives a site composes directly, and the first is the one an extender meets first. (1)

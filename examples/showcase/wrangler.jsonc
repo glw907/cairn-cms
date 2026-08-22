@@ -78,6 +78,12 @@
   // and every doc-guided manual site (docs/extend/add-cairn-to-a-sveltekit-app.md, docs/extend/build-a-site-by-hand.md),
   // always sets this secret on an already-existing Worker before its next `wrangler deploy`, so
   // the declaration holds there.
+  //
+  // Declaring "secrets" also changes local dev: wrangler 4.125 sets includeProcessEnv whenever
+  // "secrets" is present, so `wrangler dev` reads the required secret's value from the ambient
+  // shell environment when no `.dev.vars` file exists, rather than refusing to start. Keep a
+  // `.dev.vars` present in this directory for local dev (the showcase carries no
+  // `.dev.vars.example`; see docs/extend/add-cairn-to-a-sveltekit-app.md for the values it needs).
   ,
   "secrets": {
     "required": ["GITHUB_APP_PRIVATE_KEY_B64"]

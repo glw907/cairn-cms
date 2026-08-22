@@ -21,9 +21,11 @@ window raises two toolchain floors.
   against.** Be on `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`)
   before installing; npm's default peer resolution refuses the install otherwise.
 
-One more entry carries a conditional action: the exported `TidyClient` type gained an optional
+Two more entries carry a conditional action. The exported `TidyClient` type gained an optional
 `output_config` field, which matters only to a hand-rolled `TidyClient` fake that rejects unknown
-body fields.
+body fields. `@glw907/cairn-cms-dev` dropped `checkNodeSqliteFloor`, which matters only to a
+consumer that imported it directly, since the package's `engines.node` (`>=24`) already carries
+the same floor.
 
 Nothing else in this window asks anything of a consumer. The dependency bumps stay inside their
 own ranges. Tidy's default model changed, and a site that set `tidy.model` explicitly is

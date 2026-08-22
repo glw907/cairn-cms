@@ -8,6 +8,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { githubApp } from '../../lib/index.js';
 import { createContentRoutes, type TidyClient } from '../../lib/sveltekit/content-routes.js';
 import { keyKnownUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
+import { supportsEffort } from '../../lib/sveltekit/content-routes-tidy.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
@@ -79,6 +80,26 @@ function fakeAnthropic(create: TidyClient['messages']['create']): (opts: { apiKe
   return () => ({ messages: { create } });
 }
 
+/** A fake Anthropic client that mirrors the real service's own rejection: `output_config` on a
+ *  model without effort tiers is a 400 `invalid_request_error`, never silently accepted. Wired to
+ *  `supportsEffort` (the same predicate the action itself must consult) so this proves the wiring,
+ *  not just the predicate: an action that forgets to guard the call site sends `output_config` for
+ *  every model and this fake throws for `claude-haiku-4-5` exactly as the real API would. */
+function strictAnthropic(create: (text: string) => string): (opts: { apiKey: string }) => TidyClient {
+  return () => ({
+    messages: {
+      create: async (body) => {
+        if (body.output_config && !supportsEffort(body.model)) {
+          throw Object.assign(new Error(`output_config.effort: is not supported for model '${body.model}'`), {
+            status: 400,
+          });
+        }
+        return cannedMessage(create(body.messages[0]!.content));
+      },
+    },
+  });
+}
+
 /** A canned successful Message: one text block, an end_turn stop, and a usage record. */
 function cannedMessage(text: string) {
   return {
@@ -114,6 +135,28 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     // parameter (budget_tokens 400s on Sonnet 5).
     expect(call.output_config).toEqual({ effort: 'low' });
     expect(call).not.toHaveProperty('thinking');
+  });
+
+  it('sends no output_config to a model without effort tiers (claude-haiku-4-5) and still succeeds', async () => {
+    const routes = createContentRoutes(runtime({ tidy: { enabled: true, model: 'claude-haiku-4-5', conventions: {} } }), {
+      tidy: { client: strictAnthropic(() => 'the cat') },
+    });
+    const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
+
+    // The strict fake would throw a 400 here if the action sent output_config anyway, so a clean
+    // result proves the call site is actually guarded, not just the predicate in isolation.
+    expect(res.corrected).toBe('the cat');
+    expect(res.status).toBeUndefined();
+  });
+
+  it('sends output_config: { effort: "low" } to a model with effort tiers (claude-sonnet-5)', async () => {
+    const create = vi.fn<TidyClient['messages']['create']>(async () => cannedMessage('the cat'));
+    const routes = createContentRoutes(runtime({ tidy: { enabled: true, model: 'claude-sonnet-5', conventions: {} } }), {
+      tidy: { client: fakeAnthropic(create) },
+    });
+    await routes.tidyAction(tidyEvent({ text: 'teh cat' }));
+
+    expect(create.mock.calls[0]![0].output_config).toEqual({ effort: 'low' });
   });
 
   it('refuses fail(403) on a bad CSRF header, before the session read and any model call', async () => {
@@ -263,6 +306,24 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
 
     expect(res.status).toBe(502);
     expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'timeout' }));
+  });
+
+  it('maps a 400 invalid_request_error to a non-retryable message naming the model setting', async () => {
+    const create = vi.fn(async () => {
+      throw Object.assign(new Error("output_config.effort: is not supported for model 'claude-haiku-4-5'"), { status: 400 });
+    }) as unknown as TidyClient['messages']['create'];
+    const routes = createContentRoutes(runtime({ tidy: { enabled: true, model: 'claude-haiku-4-5', conventions: {} } }), {
+      tidy: { client: fakeAnthropic(create) },
+    });
+    const warn = vi.spyOn(log, 'warn');
+    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+
+    expect(res.status).toBe(503);
+    expect(res.data?.error).toContain('claude-haiku-4-5');
+    expect(res.data?.error).not.toMatch(/try again/i);
+    expect(warn).toHaveBeenCalledWith('tidy.failed', expect.objectContaining({ reason: 'invalid_request' }));
+    // Not a key problem: the key-health cache stays untouched.
+    expect(keyKnownUnhealthy()).toBe(false);
   });
 
   it('a plain model error logs reason model (retryable)', async () => {

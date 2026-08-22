@@ -20,7 +20,10 @@
   suite now awaits them. The `@anthropic-ai/sdk` devDependency moved to 0.120, and the optional
   peer range widened to `>=0.105.0 <1` so a site pinned to either the old or the new SDK line
   satisfies it. Held back on purpose: TypeScript 7 (svelte-check cannot run on the Go compiler
-  until 7.1's compiler API). Consumers must: nothing.
+  until 7.1's compiler API). The published peer ranges also rose, to `@sveltejs/kit ^2.70` and
+  `svelte ^5.56.10`, the versions cairn now develops and tests against. Consumers must: raise the
+  `svelte` and `@sveltejs/kit` devDependency ranges in their site's `package.json` to at least
+  those floors and reinstall so the lockfile re-resolves.
 
 - `npm run link:consumer -- <site-dir>` points a consumer site at a local engine build, and
   `--restore` puts it back on a registry range. It builds, packs, installs, and then verifies every

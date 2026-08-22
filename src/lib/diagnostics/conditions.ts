@@ -121,8 +121,8 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		id: 'config.dependency-floors-unmet',
 		severity: 'blocker',
 		title: 'A framework dependency sits below the engine floor',
-		why: 'The lockfile resolves svelte or @sveltejs/kit below the range the engine declares as a peer. Consumer sites compile the shipped .svelte sources, so a below-floor compiler bites silently at build time; svelte 5.56.1 miscompiles parenthesized boolean groupings, which is why the svelte floor is ^5.56.3.',
-		remediation: "Raise the devDependency range in the site's package.json to the engine peer range and reinstall so the lockfile re-resolves, for example `npm install --save-dev svelte@^5.56.3`.",
+		why: 'The lockfile resolves svelte or @sveltejs/kit below the range the engine declares as a peer. Consumer sites compile the shipped .svelte sources, so a below-floor compiler bites silently at build time; the svelte floor is ^5.56.10, the version cairn develops and tests against, and it sits above the 5.56.1 release that miscompiles parenthesized boolean groupings.',
+		remediation: "Raise the devDependency range in the site's package.json to the engine peer range and reinstall so the lockfile re-resolves, for example `npm install --save-dev svelte@^5.56.10`.",
 		docsAnchor: 'is-it-working.md#meet-the-dependency-floors',
 	},
 	'edge.hsts-off': {

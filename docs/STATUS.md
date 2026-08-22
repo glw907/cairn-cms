@@ -22,7 +22,14 @@ upgrade less later, and give admins a dependency map. Plan:
 `docs/superpowers/plans/2026-08-21-newest-toolchain-before-beta.md`, seven tasks, workflow mode, on
 worktree `newest-toolchain` off `13726d57`. Resume prompt if this session is lost: "Continue the
 newest-toolchain pass via cairn-pass; read the plan, check the worktree's git log for which tasks
-landed, and run the rest." **Checkpoint 2026-08-21 late: all seven chain tasks landed on `newest-toolchain`** (`310aa92c`..`fc1c1bd7`:
+landed, and run the rest." **Checkpoint 2026-08-22 early: the second chain landed** (`ea218ea9`..`0829b001`: escalation fixes, review fold,
+peer floors at kit ^2.70 / svelte ^5.56.10, `cache: npm`, Tailwind scrollbar utilities, Tidy on `claude-sonnet-5`
+at low effort, CHANGELOG + migration notes). Cumulative spend 3.05M; ceiling raised to 4.5M for the third chain
+(Geoff's items: `secrets.required` in the template, Images `aspect-crop`/`scale-up`/`upscale`; the ROADMAP
+"Platform watch: Cloudflare" list; the residual review folds), then the pass-end ritual and the release. A
+monthly Cloudflare review routine exists (trig_01GnFPkfx7EjrWKAuTBrXVdx) and reads that ROADMAP section.
+
+**Checkpoint 2026-08-21 late: all seven chain tasks landed on `newest-toolchain`** (`310aa92c`..`fc1c1bd7`:
 Actions v7, SDK 0.120 + peer widened, compatibility_date 2026-08-21, advisory `check:tsgo` job, Node floor 24,
 vitest-browser-svelte 3 with the async render sweep, the admin target-stack page + `check:target-stack`).
 Spend: 1.43M subagent tokens against the 1.5M ceiling; ceiling raised to 3M under Geoff's "proceed to the

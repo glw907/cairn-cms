@@ -128,6 +128,20 @@ describe('the emitted template tree', () => {
     const bindings = databases.map((entry) => entry.binding).sort();
     expect(bindings).toEqual(['APP_DB', 'AUTH_DB']);
   });
+
+  it('emits a wrangler.jsonc carrying no secrets declaration, since create-cairn-site deploys a brand-new worker before any secret exists (wrangler refuses a first deploy of an unknown worker with a required secret unset)', async () => {
+    const text = await readFile(join(emittedTo, 'wrangler.jsonc'), 'utf8');
+    const config = parseJsonc(text);
+    expect(config.secrets).toBeUndefined();
+  });
+});
+
+describe('examples/showcase/wrangler.jsonc', () => {
+  it('declares GITHUB_APP_PRIVATE_KEY_B64 as a required secret', async () => {
+    const text = await readFile(join(SHOWCASE, 'wrangler.jsonc'), 'utf8');
+    const config = parseJsonc(text) as { secrets?: { required?: string[] } };
+    expect(config.secrets?.required).toEqual(['GITHUB_APP_PRIVATE_KEY_B64']);
+  });
 });
 
 describe('examples/showcase/.cairn-template.json', () => {

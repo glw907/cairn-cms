@@ -2,6 +2,14 @@
 
 ### Added
 
+- `examples/showcase/wrangler.jsonc` declares `GITHUB_APP_PRIVATE_KEY_B64` as a required secret
+  (Cloudflare's `secrets` configuration property, GA 2026-03-25), so `wrangler deploy` refuses to
+  ship an existing Worker that's missing it. It stays out of `templates/waymark/wrangler.jsonc`
+  and the `create-cairn-site` template: the scaffolder's automated chapter deploys a brand-new
+  Worker to learn its workers.dev URL before it has anywhere to push the App's key, and wrangler
+  refuses the first deploy of a Worker that doesn't exist yet when a required secret is unset.
+  Consumers must: nothing; an existing site keeps its own config, and may copy the declaration.
+
 - A new admin page, `docs/admin/what-to-run-and-when.md`, names today's target for the parts of a
   cairn site's stack an admin can act on directly (cairn itself, Node on your machine, your
   Cloudflare hosting tooling, the GitHub App key) and how to tell your site is still on target; it

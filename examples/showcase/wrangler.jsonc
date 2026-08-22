@@ -60,4 +60,27 @@
     // Canonical origin for magic-link confirmation links, never read from a request header.
     "PUBLIC_ORIGIN": "http://localhost:4173"
   }
+  // cairn-template:exclude-start
+  //
+  // Declares the one Worker secret the engine cannot run without: the GitHub App's private key
+  // (src/lib/env.ts's GITHUB_APP_PRIVATE_KEY_B64, `wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`).
+  // With this declared, `wrangler deploy` refuses to ship an existing Worker that is missing it,
+  // rather than deploying a build no editor can ever publish through. AUTH_DB, EMAIL, and
+  // PUBLIC_ORIGIN above are bindings and vars, not secrets, so they stay out of this list; the
+  // optional ANTHROPIC_API_KEY (Tidy) stays out too, since the schema has no "optional" entry and
+  // declaring it required would fail a deploy that simply never opted into Tidy.
+  //
+  // Excluded from create-cairn-site's own baked template (scripts/build/emit-template.mjs's
+  // marker strip removes this whole block): the scaffolder's automated chapter deploys a
+  // brand-new Worker to learn its workers.dev URL before it has anywhere to push the App's key,
+  // and wrangler refuses the very first deploy of a Worker that does not exist yet when a
+  // required secret is unset (there is no earlier version to inherit it from). A showcase deploy,
+  // and every doc-guided manual site (docs/extend/add-cairn-to-a-sveltekit-app.md, docs/extend/build-a-site-by-hand.md),
+  // always sets this secret on an already-existing Worker before its next `wrangler deploy`, so
+  // the declaration holds there.
+  ,
+  "secrets": {
+    "required": ["GITHUB_APP_PRIVATE_KEY_B64"]
+  }
+  // cairn-template:exclude-end
 }

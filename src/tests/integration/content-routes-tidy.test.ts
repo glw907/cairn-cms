@@ -29,7 +29,7 @@ function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
     manifestPath: 'src/content/.cairn/manifest.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },
-    tidy: { enabled: true, model: 'claude-sonnet-4-6', conventions: {} },
+    tidy: { enabled: true, model: 'claude-sonnet-5', conventions: {} },
     ...overrides,
   } as CairnRuntime;
 }
@@ -83,7 +83,7 @@ function fakeAnthropic(create: TidyClient['messages']['create']): (opts: { apiKe
 function cannedMessage(text: string) {
   return {
     content: [{ type: 'text' as const, text }],
-    model: 'claude-sonnet-4-6',
+    model: 'claude-sonnet-5',
     stop_reason: 'end_turn' as const,
     usage: { input_tokens: 12, output_tokens: 8 },
   };
@@ -103,13 +103,17 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
 
     expect(res.corrected).toBe('the cat');
-    expect(res.model).toBe('claude-sonnet-4-6');
+    expect(res.model).toBe('claude-sonnet-5');
     expect(res.tokens).toEqual({ input_tokens: 12, output_tokens: 8 });
     expect(create).toHaveBeenCalledTimes(1);
     // The user text rides as the user message, never interpolated into the system prompt.
     const call = create.mock.calls[0]![0];
     expect(call.messages[0]).toEqual({ role: 'user', content: 'teh cat' });
     expect(call.system).not.toContain('teh cat');
+    // A short proofread runs at the low effort tier: no extended reasoning, and no thinking
+    // parameter (budget_tokens 400s on Sonnet 5).
+    expect(call.output_config).toEqual({ effort: 'low' });
+    expect(call).not.toHaveProperty('thinking');
   });
 
   it('refuses fail(403) on a bad CSRF header, before the session read and any model call', async () => {
@@ -196,7 +200,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
   it('maps a model refusal to fail(422)', async () => {
     const create = vi.fn(async () => ({
       content: [],
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       stop_reason: 'refusal' as const,
       usage: { input_tokens: 5, output_tokens: 0 },
     })) as unknown as TidyClient['messages']['create'];

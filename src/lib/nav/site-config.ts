@@ -123,14 +123,14 @@ export interface VocabularyEntry {
 export interface TidyConfig {
   /** Master switch. Default false; tidy is opt-in (spec 2.8, decision 1). */
   enabled?: boolean;
-  /** The model id. Default `claude-sonnet-4-6`; the alternative is `claude-haiku-4-5` (spec 2.2). */
+  /** The model id. Default `claude-sonnet-5`; the alternative is `claude-haiku-4-5` (spec 2.2). */
   model?: string;
   /** The per-convention toggles that build the prompt's CONVENTIONS section. */
   conventions?: Partial<TidyConventions>;
 }
 
-/** The default tidy model when a site sets none: Sonnet, the judgment floor for a light copy-edit. */
-export const DEFAULT_TIDY_MODEL = 'claude-sonnet-4-6';
+/** The default tidy model when a site sets none: Sonnet 5, the judgment floor for a light copy-edit. */
+export const DEFAULT_TIDY_MODEL = 'claude-sonnet-5';
 
 /**
  * The corrected convention set (spec "The corrected convention set"), the resolved shape the prompt

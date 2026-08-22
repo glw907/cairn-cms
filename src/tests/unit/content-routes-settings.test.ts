@@ -43,7 +43,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
   return baseRuntime({
     concepts: [],
     navMenu: { configPath: CONFIG_PATH, menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
-    tidy: { enabled: true, model: 'claude-sonnet-4-6' },
+    tidy: { enabled: true, model: 'claude-sonnet-5' },
     ...over,
   });
 }
@@ -190,7 +190,7 @@ describe('settingsLoad', () => {
     expect(data.tidyEnabled).toBe(true);
     expect(data.keyConfigured).toBe(true);
     expect(data.keyStatus).toBe('valid');
-    expect(data.modelLabel).toBe('Claude Sonnet');
+    expect(data.modelLabel).toBe('Claude Sonnet 5');
     expect(data.conventions.fixes).toBe(true);
   });
 

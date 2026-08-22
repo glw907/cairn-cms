@@ -37,6 +37,10 @@ export interface TidyClient {
         max_tokens: number;
         system: string;
         messages: { role: 'user'; content: string }[];
+        // The effort tier for a model that runs adaptive thinking by default (Sonnet 5 and later),
+        // so a short proofread does not reason at length. Optional so a fake client stubbing an
+        // older shape still satisfies this type.
+        output_config?: { effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' };
       },
       // The SDK signature is create(body, options). The abort signal belongs in the second argument
       // (RequestOptions), not the body, so the request actually cancels when the deadline fires.

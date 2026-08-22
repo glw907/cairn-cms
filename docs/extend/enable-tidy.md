@@ -46,9 +46,10 @@ tidy:
   model: claude-haiku-4-5
 ```
 
-The default is `claude-sonnet-4-6`, the judgment floor for a light copy-edit; `claude-haiku-4-5`
-is the cheaper, faster alternative for a site running many tidy passes. Both are visible and
-changeable from the settings screen, so this is a starting default rather than a one-way choice.
+The default is `claude-sonnet-5`, the judgment floor for a light copy-edit, run at the low effort
+tier since a proofread doesn't need extended reasoning. `claude-haiku-4-5` is the cheaper, faster
+alternative for a site running many tidy passes. Both are visible and changeable from the settings
+screen, so this is a starting default rather than a one-way choice.
 
 ## Choose the conventions
 

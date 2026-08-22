@@ -124,7 +124,9 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     const system = buildTidyPrompt(resolveTidyConventions(tidy.conventions));
     const model = tidy.model || DEFAULT_TIDY_MODEL;
     // max_tokens sized to comfortably exceed the input token count: a proofread runs at roughly input
-    // length, never lowballed. The character cap is ~6k input tokens, so this leaves generous headroom.
+    // length, never lowballed. Sonnet 5's tokenizer counts up to about 1.35x more tokens than the
+    // prior generation, and the 24,000-character cap is at most about 8,000 input tokens even at that
+    // rate, so this ceiling still leaves generous headroom.
     const maxTokens = 16_000;
 
     // Bound the model call with the Worker's own deadline (shorter than the platform limit), so a slow
@@ -148,6 +150,10 @@ export function createTidyActions(ctx: ContentRoutesContext) {
           max_tokens: maxTokens,
           system,
           messages: [{ role: 'user', content: text }],
+          // A short proofread does not need extended reasoning; Sonnet 5 runs adaptive thinking by
+          // default, so this caps it at the low effort tier rather than sending a thinking parameter
+          // (budget_tokens 400s on Sonnet 5).
+          output_config: { effort: 'low' },
         },
         // The signal rides the request options, so the deadline timer above actually cancels the call.
         { signal: controller.signal },

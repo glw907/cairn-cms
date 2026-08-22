@@ -2,6 +2,10 @@
 
 ### Changed
 
+- Tidy's default model is now `claude-sonnet-5`, run at the low effort tier since a proofread
+  doesn't need extended reasoning. Same list price as `claude-sonnet-4-6`. A site that set
+  `tidy.model` explicitly is unaffected.
+
 - Dependencies moved to their current releases: DaisyUI 5.7.20 (from 5.6.6), Tailwind 4.3.3,
   SvelteKit 2.70.3, Svelte 5.56.10, Vite 8.2.2, Wrangler 4.125.0, ESLint 10, and
   `@cloudflare/vitest-pool-workers` 0.22. Two upstream shifts reach the shipped admin sheet.

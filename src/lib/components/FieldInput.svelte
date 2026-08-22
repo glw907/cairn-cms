@@ -268,7 +268,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   </label>
 {:else if field.type === 'image'}
   {@const heroValue = frontmatter[field.name] as ImageValue | undefined}
-  <!-- The binding_property_non_reactive warning this logs is benign: the parent owns the $state
+  <!-- The ownership_invalid_mutation warning this logs is benign: the parent owns the $state
        proxy and mutates it by reference, and the hero-alt focus flow reads the same prefixed key. -->
   <MediaHeroField
     bind:this={heroFieldRefs[name]}

@@ -38,8 +38,9 @@ export interface TidyClient {
         system: string;
         messages: { role: 'user'; content: string }[];
         // The effort tier for a model that runs adaptive thinking by default (Sonnet 5 and later),
-        // so a short proofread does not reason at length. Optional so a fake client stubbing an
-        // older shape still satisfies this type.
+        // so a short proofread does not reason at length. This exported type is a consumer
+        // contract, and the field is optional because the engine sends it only for a model with
+        // effort tiers (content-routes-tidy.ts's supportsEffort), never for one without.
         output_config?: { effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' };
       },
       // The SDK signature is create(body, options). The abort signal belongs in the second argument

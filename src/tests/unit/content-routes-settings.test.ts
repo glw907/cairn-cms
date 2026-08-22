@@ -194,6 +194,14 @@ describe('settingsLoad', () => {
     expect(data.conventions.fixes).toBe(true);
   });
 
+  it('labels a site pinned to claude-sonnet-4-6 with its plain name, not the bare id', async () => {
+    const routes = createContentRoutes(runtime({ tidy: { enabled: true, model: 'claude-sonnet-4-6' } }), {
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    expect(data.modelLabel).toBe('Claude Sonnet 4.6');
+  });
+
   it('keeps the gate closed when the key is missing, even with tidy enabled (no probe attempted)', async () => {
     const routes = createContentRoutes(runtime());
     const data = await routes.settingsLoad(loadEvent({}) as never);

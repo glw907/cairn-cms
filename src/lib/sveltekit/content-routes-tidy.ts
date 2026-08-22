@@ -38,10 +38,11 @@ export interface TidyFailure {
 }
 
 /**
- * The input cap for a single tidy request: 24000 characters (~6k input tokens). A proofread runs at
- * roughly input length, so this stays comfortably inside the 30s deadline; a longer entry refuses with
- * fail(413) and the author tidies a selection instead. The cap is enforced BEFORE the model call, so an
- * over-long body never spends a token or risks the deadline.
+ * The input cap for a single tidy request: 24000 characters (at most about 8,000 under Sonnet 5's
+ * tokenizer). A proofread runs at roughly input length, so this stays comfortably inside the 30s
+ * deadline; a longer entry refuses with fail(413) and the author tidies a selection instead. The
+ * cap is enforced BEFORE the model call, so an over-long body never spends a token or risks the
+ * deadline.
  */
 const MAX_TIDY_CHARS = 24_000;
 

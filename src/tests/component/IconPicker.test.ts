@@ -34,20 +34,24 @@ describe('IconPicker', () => {
 
   it('moves DOM focus to the newly selected radio on ArrowRight', async () => {
     // The parent owns value, so feed onChange back through rerender like ComponentForm does.
+    // onChange fires synchronously from the keydown handler, so its rerender() promise cannot be
+    // awaited in place; collect it and await it after the keyboard step instead of letting it float.
     let value = 'snowflake';
+    const pending: Promise<unknown>[] = [];
     const screen = await render(IconPicker, {
       icons,
       value,
       required: true,
       onChange: (name: string) => {
         value = name;
-        screen.rerender({ icons, value, required: true, onChange: () => {} });
+        pending.push(screen.rerender({ icons, value, required: true, onChange: () => {} }));
       },
     });
 
     const first = screen.getByRole('radio', { name: /snowflake/i });
     await first.element().focus();
     await userEvent.keyboard('{ArrowRight}');
+    await Promise.all(pending);
 
     const leaf = screen.getByRole('radio', { name: /leaf/i });
     await expect.element(leaf).toHaveAttribute('aria-checked', 'true');
@@ -58,20 +62,24 @@ describe('IconPicker', () => {
   it('selects the focused-relative neighbor, not the value-relative one, from an unselected required group', async () => {
     // Required group with no value: Tab lands on the first radio, ArrowRight must select the
     // second (focus-relative), never skip it by computing from the empty value.
+    // onChange fires synchronously from the keydown handler, so its rerender() promise cannot be
+    // awaited in place; collect it and await it after the keyboard step instead of letting it float.
     let value = '';
+    const pending: Promise<unknown>[] = [];
     const screen = await render(IconPicker, {
       icons,
       value,
       required: true,
       onChange: (name: string) => {
         value = name;
-        screen.rerender({ icons, value, required: true, onChange: () => {} });
+        pending.push(screen.rerender({ icons, value, required: true, onChange: () => {} }));
       },
     });
 
     const first = screen.getByRole('radio', { name: /snowflake/i });
     await first.element().focus();
     await userEvent.keyboard('{ArrowRight}');
+    await Promise.all(pending);
 
     // names = [snowflake, leaf]; from the focused first radio, ArrowRight lands on leaf.
     const leaf = screen.getByRole('radio', { name: /leaf/i });

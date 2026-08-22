@@ -2,14 +2,6 @@
 
 ### Added
 
-- `examples/showcase/wrangler.jsonc` declares `GITHUB_APP_PRIVATE_KEY_B64` as a required secret
-  (Cloudflare's `secrets` configuration property, GA 2026-03-25), so `wrangler deploy` refuses to
-  ship an existing Worker that's missing it. It stays out of `templates/waymark/wrangler.jsonc`
-  and the `create-cairn-site` template: the scaffolder's automated chapter deploys a brand-new
-  Worker to learn its workers.dev URL before it has anywhere to push the App's key, and wrangler
-  refuses the first deploy of a Worker that doesn't exist yet when a required secret is unset.
-  Consumers must: nothing; an existing site keeps its own config, and may copy the declaration.
-
 - A new admin page, `docs/admin/what-to-run-and-when.md`, names today's target for the parts of a
   cairn site's stack an admin can act on directly (cairn itself, Node on your machine, your
   Cloudflare hosting tooling, the GitHub App key) and how to tell your site is still on target; it
@@ -20,33 +12,27 @@
   public template is emitted from) and fails when the table drifts from it. Consumers must:
   nothing.
 
-- An advisory `check-tsgo` CI job, run alongside the rest of `test.yml` under
-  `continue-on-error: true`, installs the side-by-side `typescript@^6` plus
-  `@typescript/native@npm:typescript@7` layout `svelte-check`'s own README documents and runs
-  `svelte-check --tsgo` against it. A red result does not block a merge. A green one is the
-  trigger the TypeScript 7 hold is defined by (ROADMAP.md, "TypeScript 7 is held on the
-  toolchain"). Consumers must: nothing.
+- An advisory `check-tsgo` CI job, in its own `.github/workflows/tsgo.yml` and run weekly
+  (`schedule`, Monday 16:00 UTC) plus `workflow_dispatch` rather than on every push, installs the
+  side-by-side `typescript@^6` plus `@typescript/native@npm:typescript@7` layout `svelte-check`'s
+  own README documents and runs `svelte-check --tsgo` against it. A red result on a scheduled run
+  blocks nothing else, since it never gates a PR. A green run is the trigger the TypeScript 7 hold
+  is defined by (ROADMAP.md, "TypeScript 7 is held on the toolchain"). Consumers must: nothing.
 
 - `VariantSpec.fit` (`/media`) accepts Cloudflare Images' `aspect-crop`, `scale-up`, and
   `squeeze` fit modes, and a new `VariantSpec.upscale` option (`interpolate` or `generate`)
   picks the algorithm a fit mode that upscales uses, both from Cloudflare's 2026-06-16
   optimization GA. `upscale` joins the `/cdn-cgi/image` option string only when set.
-  `normalizeAssets` validates the three new fit values and `upscale` the same way it already
-  validates `fit` and `gravity`. Consumers must: nothing; additive.
-
-### Removed
-
-- `checkNodeSqliteFloor` (`@glw907/cairn-cms-dev`, `channel-db.ts`), the runtime Node version guard
-  `createChannelDb` ran before touching `node:sqlite`. The package's `engines.node` (`>=24`) already
-  enforces the same floor at install time, and `node:sqlite` has been unflagged since Node.js 22.13,
-  well below that floor, so the runtime check was redundant. Consumers must: stop importing
-  `checkNodeSqliteFloor` from `@glw907/cairn-cms-dev`; the package's `engines.node` carries the floor
-  now.
+  `VariantSpec.gravity` also accepts the `entropy` keyword, carried in
+  `@cloudflare/workers-types` 5's `BasicImageTransformations` union.
+  `normalizeAssets` validates the three new fit values, `upscale`, and `entropy` the same way it
+  already validates `fit` and `gravity`. Consumers must: nothing; additive.
 
 ### Changed
 
 - Tidy's default model is now `claude-sonnet-5`, run at the low effort tier since a proofread
-  doesn't need extended reasoning. A site that set `tidy.model` explicitly is unaffected.
+  doesn't need extended reasoning. A site that set `tidy.model` explicitly keeps its own model
+  and now sends `effort: 'low'` too, when that model supports effort tiers.
 
 - cairn's own Node floor rose to `>=24` (from `>=22`), in the engine package, the
   `create-cairn-site` CLI, and the `cairn-cms-dev` dev backend. Every CI `node-version: 22` moved
@@ -142,11 +128,14 @@
   `messages.create` options, matching the effort-tier option Tidy's own call already sends.
   Consumers must: nothing, unless a hand-rolled `TidyClient` fake rejects unknown body fields.
 
-- `@glw907/cairn-cms-dev`'s `createChannelDb` no longer carries a runtime Node.js floor guard.
-  npm warns on an `engines` mismatch (`create-cairn-site`'s own preflight is what refuses
-  outright, elsewhere in this family), and `node:sqlite` has been unflagged since Node.js 22.13,
-  well below the `>=24` floor, so the guard checked a condition that could not occur. Consumers
-  must: nothing; this package ships in no tarball a site installs for production.
+- `@glw907/cairn-cms-dev`'s `createChannelDb` no longer carries a runtime Node.js floor guard, and
+  the `checkNodeSqliteFloor` helper that ran it is gone. npm warns on an `engines` mismatch
+  (`create-cairn-site`'s own preflight is what refuses outright, elsewhere in this family), and
+  `node:sqlite` has been unflagged since Node.js 22.13, well below the `>=24` floor, so the guard
+  checked a condition that could not occur. `checkNodeSqliteFloor` was an internal change, not a
+  public-API removal: the package's exports map has only ever exposed `.`, and `index.ts` never
+  re-exported it, so no supported import path could reach it. Consumers must: nothing; this
+  package ships in no tarball a site installs for production.
 
 ## 0.95.0
 

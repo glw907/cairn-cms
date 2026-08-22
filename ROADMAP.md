@@ -291,10 +291,11 @@ The original decision framing, for the record:
   `svelte-check --tsgo`, and when it matches the TS 6 result drop the alias, bump, and run the
   full `test.yml` gate list plus the clean-install showcase proof. Manual check meanwhile:
   `npx -y @typescript/native-preview -p tsconfig.json --noEmit | grep -c 'error TS'`, where any
-  count past the `.svelte` errors is a new finding. **The advisory `check-tsgo` job is built in
-  `.github/workflows/test.yml`: it installs the side-by-side layout with `--no-save` and runs
-  `svelte-check --tsgo` under `continue-on-error: true`, so a red result never blocks and a green
-  run is the signal that the crossing above is ready.**
+  count past the `.svelte` errors is a new finding. **The advisory `check-tsgo` job lives in its
+  own `.github/workflows/tsgo.yml`, run weekly (`schedule`, Monday 16:00 UTC) plus
+  `workflow_dispatch` rather than on every push: it installs the side-by-side layout with
+  `--no-save --no-package-lock` and runs `svelte-check --tsgo`, and a green run is the signal that
+  the crossing above is ready.**
 
 - **A pre-existing media-chip test is flaky and will redden `main` at random (release-debt pass,
   2026-08-19).** `src/tests/component/media-public-base.test.ts:86`, "renders the editor media chip
@@ -839,6 +840,14 @@ the named human gates only):**
   from a template whose components are still landing would test the wrong artifact); the design
   review can interleave, with the two re-expressions as its field evidence.
 
+- **FieldInput mutates EditPage's `$state` through a plain prop (`ownership_invalid_mutation` on
+  every mount).** `src/lib/components/FieldInput.svelte:274` binds `bind:this={heroFieldRefs[name]}`
+  on a non-`$bindable` prop that is `EditPage.svelte:777`'s `$state` proxy, passed straight through
+  at `EditPage.svelte:2516`. Svelte logs `ownership_invalid_mutation` on essentially every `EditPage`
+  mount in the component suite. Fix is `$bindable()` on `FieldInput`'s `heroFieldRefs` prop plus
+  `bind:heroFieldRefs` at the `EditPage.svelte:2516` call site, or a `registerHeroField` callback
+  prop instead of the raw record. Pre-existing, not newest-toolchain's.
+
 ## Next
 
 - **Platform features now available and unused (surveyed 2026-08-21).** Tailwind 4.3 ships
@@ -848,23 +857,36 @@ the named human gates only):**
   for when its shape next comes up (an RTL audit, a nested admin menu). Every Cloudflare
   platform item this survey turns up lives in Later's "Platform watch: Cloudflare" list
   instead, so a single heading carries the whole tracked set for the monthly routine that
-  reads it. Tailwind 4.3's `scrollbar-*` utilities are no longer on this list: the
-  newest-toolchain pass replaced `cairn-admin.css`'s hand-written
-  `scrollbar-width`/`scrollbar-color` declarations with them. The `.btn-active` hand-repairs
-  in `cairn-admin.css` were re-verified against 5.7.20: the dark-theme rules still earn their
-  place, and the light theme follows stock.
+  reads it. Tailwind 4.3's `scrollbar-*` utilities compile to the identical
+  `scrollbar-width`/`scrollbar-color` mix `cairn-admin.css` already hand-writes, but the
+  newest-toolchain pass found that sheet is imported raw by `src/lib/reproductions/ReproContext.svelte`
+  and the component test project runs no Tailwind step, so an `@apply` there is dropped in the
+  browser; the source sheet stays plain CSS until the component project runs the Tailwind step.
+  The `.btn-active` hand-repairs in `cairn-admin.css` were re-verified against 5.7.20: the
+  dark-theme rules still earn their place, and the light theme follows stock.
 
-- **Route the scaffolder's App key through `wrangler deploy --secrets-file` so a scaffolded site
-  gets the `secrets.required` deploy guard too.** The showcase `wrangler.jsonc` declares
-  `secrets.required` (this pass) inside a `cairn-template:exclude` block, because
-  `create-cairn-site` deploys before the App's key exists and a first deploy of a Worker with a
-  required secret unset throws (wrangler 4.125, `addRequiredSecretsInheritBindings`); wrangler
-  supports `--secrets-file` on `deploy`, which would let
-  `packages/create-cairn-site/src/cloudflare/chapter.mjs` keep the declaration in the baked
-  template. That same pass should also re-record every transcript fixture under
-  `packages/create-cairn-site/test/fixtures/transcripts/`: the `01-*` fixtures still print "Node
-  22 or later" and `03-doctor-credentialed` predates the `@sveltejs/kit` 2.70 and `svelte`
-  5.56.10 floors. Size: small-to-medium. Trigger: the next `create-cairn-site` pass.
+- **Declare required Worker secrets without breaking local dev.** A pass on newest-toolchain
+  tried declaring `wrangler.jsonc`'s `secrets.required` for `GITHUB_APP_PRIVATE_KEY_B64` and
+  withdrew it after the Workers reviewer found three problems. (1) wrangler 4.125 filters
+  `.dev.vars` down to only the names already listed in `vars` or `secrets.required` once a
+  `secrets` block exists at all, so `wrangler dev` silently stopped seeing `ANTHROPIC_API_KEY`
+  and the GitHub App id pair, which the showcase's `.dev.vars` also carries; the same change
+  turns on `includeProcessEnv`, so a required secret with no `.dev.vars` entry reads from the
+  ambient shell instead of refusing to start. (2) A first `wrangler deploy` of a Worker that
+  does not exist yet throws when a required secret is unset (`addRequiredSecretsInheritBindings`),
+  which is exactly the order `create-cairn-site`'s automated chapter deploys in, before the App's
+  key has anywhere to go. (3) A scaffolded site would never get the guard at all unless the
+  scaffolder itself appended the `secrets` block after `wrangler secret put`, since the baked
+  template strips anything wrapped in `cairn-template:exclude`. The next `create-cairn-site` pass
+  should design: declare every runtime secret a site actually uses (or add the optional ones,
+  like `ANTHROPIC_API_KEY`, to `vars` instead so they survive the `.dev.vars` filter), append the
+  `secrets` block in `packages/create-cairn-site/src/cloudflare/chapter.mjs` only after the key is
+  pushed rather than baking it into the template, and keep a `.dev.vars` present in every
+  generated site so the filtered read still resolves locally. That same pass should also
+  re-record every transcript fixture under `packages/create-cairn-site/test/fixtures/transcripts/`:
+  the `01-*` fixtures still print "Node 22 or later" and `03-doctor-credentialed` predates the
+  `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: the next
+  `create-cairn-site` pass.
 
 - **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
   primitives a site composes directly, and the first is the one an extender meets first. (1)

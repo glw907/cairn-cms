@@ -46,9 +46,16 @@ test('meta.changes reflects a multi-row delete', async () => {
   expect(remaining).toEqual({ id: 'w4' });
 });
 
+test('withSession() throws on a constraint other than first-primary, the only one the engine ever passes', async () => {
+  const db = await createChannelDb(WIDGETS_SCHEMA);
+
+  expect(() => db.withSession()).toThrow();
+  expect(() => db.withSession('first-unconstrained')).toThrow();
+});
+
 test('batch() applies its statements in order and atomically, rolling back on a failing statement', async () => {
   const db = await createChannelDb(WIDGETS_SCHEMA);
-  const session = db.withSession();
+  const session = db.withSession('first-primary');
   await session.prepare('INSERT INTO widgets (id, name, bucket, value) VALUES (?, ?, ?, ?)').bind('seed', 'seed', 'b', 0).run();
 
   await expect(
@@ -68,7 +75,7 @@ test('batch() applies its statements in order and atomically, rolling back on a 
 
 test('batch() applies its statements in the order given', async () => {
   const db = await createChannelDb(WIDGETS_SCHEMA);
-  const session = db.withSession();
+  const session = db.withSession('first-primary');
 
   // The update reads the row the insert creates, so it can only succeed if the batch runs the
   // statements in array order.

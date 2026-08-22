@@ -121,6 +121,7 @@ const DEFAULT_SITE_CONFIG_PATH = 'src/lib/site.config.yaml';
  */
 const TIDY_MODEL_LABELS: Record<string, string> = {
   'claude-sonnet-5': 'Claude Sonnet 5',
+  'claude-sonnet-4-6': 'Claude Sonnet 4.6',
   'claude-haiku-4-5': 'Claude Haiku',
 };
 

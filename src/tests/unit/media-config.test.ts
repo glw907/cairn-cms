@@ -59,6 +59,12 @@ describe('normalizeAssets', () => {
     ).toThrow(/cairn:/);
   });
 
+  it('accepts the entropy gravity keyword', () => {
+    const resolved = normalizeAssets({ bucketBinding: 'X', variants: { hero: { gravity: 'entropy' } } });
+    if (!resolved.enabled) throw new Error('expected enabled');
+    expect(resolved.variants.hero).toEqual({ gravity: 'entropy' });
+  });
+
   it('accepts the aspect-crop, scale-up, and squeeze fit modes', () => {
     const resolved = normalizeAssets({
       bucketBinding: 'X',

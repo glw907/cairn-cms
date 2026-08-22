@@ -33,6 +33,12 @@ jobs:
           # rest of CI proves.
           node-version: 24
           cache: npm
+          # This job also installs the showcase's own lockfile below, so the cache key has to
+          # cover both, or the cache silently keys on the root lockfile alone and never warms
+          # for the showcase install.
+          cache-dependency-path: |
+            package-lock.json
+            examples/showcase/package-lock.json
       - run: npm ci
       # The showcase lockfile is committed and installed with `npm ci`, the same convention e2e.yml
       # follows, so the rendered admin is the exact build a developer reproduces locally.

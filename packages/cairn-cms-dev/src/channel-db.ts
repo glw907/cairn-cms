@@ -30,8 +30,11 @@ export interface ChannelDb {
 
 /**
  * Build an in-memory `node:sqlite` database, apply `schemaSql` once, and wrap it in the surface
- * the channel store touches. `withSession` ignores its constraint argument and shares this one
- * database: single-node SQLite already satisfies D1's first-primary session guarantee.
+ * the channel store touches. `withSession` refuses any constraint other than `'first-primary'`,
+ * the only one the engine ever passes: a real D1 session's read/write guarantees vary by
+ * constraint, and this double implements only the one it was built to serve, so silently
+ * accepting another would let a fixture pass a check a real D1 session under that constraint
+ * would not.
  *
  * No runtime floor guard: `node:sqlite` has been unflagged since Node.js 22.13, well below this
  * package's own `engines.node` (`>=24`). npm only warns when the running version misses that
@@ -90,7 +93,12 @@ export async function createChannelDb(schemaSql: string): Promise<ChannelDb> {
 
   return {
     prepare: statement,
-    withSession() {
+    withSession(constraint?: string) {
+      if (constraint !== 'first-primary') {
+        throw new Error(
+          `cairn-cms-dev: channel-db double's withSession() only implements the 'first-primary' constraint the engine always passes, got ${JSON.stringify(constraint)}`,
+        );
+      }
       return session();
     },
   };

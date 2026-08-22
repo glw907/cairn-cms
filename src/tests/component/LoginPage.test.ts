@@ -28,8 +28,8 @@ describe('LoginPage', () => {
   });
 
   it('dismisses the confirmation panel for the full engine result shape', async () => {
-    // Pins the dismissed-banner branch ((form?.status === 'sent' || form?.sent) && !dismissed),
-    // the exact expression svelte 5.56.1 miscompiled by dropping the parentheses.
+    // Pins the dismissed-banner branch ((form?.status === 'sent' || form?.sent) && !dismissed);
+    // see src/tests/unit/peer-deps.test.ts for the correctness floor this shape guards.
     const screen = await render(LoginPage, {
       data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' },
       form: { sent: true, status: 'sent' },

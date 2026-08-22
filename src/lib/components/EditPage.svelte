@@ -277,8 +277,8 @@ persistent "?" carries Markdown help, design-arc D2).
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       if (dirty && !busy && !leaving) e.preventDefault();
     };
-    // Guard-clause style on purpose: svelte 5.56.1 misprints `(a || b) && c` by dropping the
-    // parentheses, and consumers compile this source with their own svelte.
+    // Guard-clause style on purpose: see src/tests/unit/peer-deps.test.ts for the correctness
+    // floor this shape guards, which the ^5.56.10 peer range now sits comfortably above.
     const onWindowKeydown = (e: KeyboardEvent) => {
       // Escape precedence, top to bottom: an open dialog claims Escape natively, so step aside
       // when one is up. Otherwise the details slide-over closes first (Task 8: it is a region, not

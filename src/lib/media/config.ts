@@ -72,6 +72,7 @@ const GRAVITY_KEYWORDS: ReadonlySet<string> = new Set([
   'top',
   'bottom',
   'center',
+  'entropy',
 ]);
 /** A gravity coordinate string, e.g. "0.5x0.5". */
 const GRAVITY_COORD_RE = /^\d+(\.\d+)?x\d+(\.\d+)?$/;

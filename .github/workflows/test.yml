@@ -16,6 +16,12 @@ jobs:
           # this run is the proof it no longer blocks the pinned pool-workers version.
           node-version: 24
           cache: npm
+          # This job also installs the showcase's own lockfile below, so the cache key has to
+          # cover both, or the cache silently keys on the root lockfile alone and never warms
+          # for the showcase install.
+          cache-dependency-path: |
+            package-lock.json
+            examples/showcase/package-lock.json
       - run: npm ci
       # svelte-check scans every subdirectory for a svelte.config.js and cannot be told to skip one
       # (its --ignore flag applies only under --no-tsconfig), so it tries to load
@@ -88,24 +94,3 @@ jobs:
       # this runs offline against the exact rules committed to the repo.
       - run: npm run check:vale
       - run: npm run check:comments
-
-  # Advisory only: TypeScript 7 has no programmatic compiler API until 7.1 (October 2026), so
-  # svelte-check, svelte2tsx, and typescript-estree still pin typescript@^6 (see ROADMAP.md,
-  # "TypeScript 7 is held on the toolchain"). This job installs the side-by-side layout
-  # svelte-check's own README documents (typescript@^6 plus @typescript/native@npm:typescript@7,
-  # `--no-save` so neither package.json nor the lockfile moves) and runs the same check under
-  # `--tsgo`. `continue-on-error: true` means a red result here never blocks a merge; a green
-  # result is the signal that the 7.x edges have closed and the bump in ROADMAP.md is ready to run.
-  check-tsgo:
-    name: "check:tsgo (advisory; green means TypeScript 7 is a bump)"
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm install --no-save "@typescript/native@npm:typescript@7"
-      - run: npx svelte-check --tsconfig ./tsconfig.json --tsgo

@@ -20,6 +20,12 @@ jobs:
           # Node 24 (Active LTS), matching the other workflows.
           node-version: 24
           cache: npm
+          # This job also installs the showcase's own lockfile below, so the cache key has to
+          # cover both, or the cache silently keys on the root lockfile alone and never warms
+          # for the showcase install.
+          cache-dependency-path: |
+            package-lock.json
+            examples/showcase/package-lock.json
       - run: npm ci
       # Build the engine dist the showcase resolves through, so the token gates and the e2e read the
       # current render output (the styleguide renders prose through the packaged engine).

@@ -42,7 +42,7 @@ function isAtLeast(version: string, floor: string): boolean {
 export function checkNodeSqliteFloor(nodeVersion: string): void {
   if (!isAtLeast(nodeVersion, NODE_SQLITE_FLOOR)) {
     throw new Error(
-      `createChannelDb requires node:sqlite, unflagged from Node.js ${NODE_SQLITE_FLOOR}; this process is running Node.js ${nodeVersion}.`,
+      `createChannelDb requires node:sqlite; this package requires Node.js ${NODE_SQLITE_FLOOR} or later, and this process is running Node.js ${nodeVersion}.`,
     );
   }
 }

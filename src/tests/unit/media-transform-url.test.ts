@@ -41,40 +41,21 @@ describe('variantUrl', () => {
     );
   });
 
-  it('carries the aspect-crop fit mode', () => {
-    const out = variantUrl(PUBLIC_PATH, { width: 500, height: 500, fit: 'aspect-crop' });
-    expect(out).toContain('fit=aspect-crop');
+  it.each(['aspect-crop', 'scale-up', 'squeeze'] as const)('carries the %s fit mode', (fit) => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, height: 600, fit });
+    expect(out).toContain(`fit=${fit}`);
   });
 
-  it('carries the scale-up fit mode', () => {
-    const out = variantUrl(PUBLIC_PATH, { width: 800, height: 600, fit: 'scale-up' });
-    expect(out).toContain('fit=scale-up');
+  // interpolate is Cloudflare's own default when upscale is unset, so an explicit one still has
+  // to reach the URL rather than being optimized away.
+  it.each(['generate', 'interpolate'] as const)('carries an explicit upscale=%s', (upscale) => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up', upscale });
+    expect(out).toContain(`upscale=${upscale}`);
   });
 
-  it('carries the squeeze fit mode', () => {
-    const out = variantUrl(PUBLIC_PATH, { width: 800, height: 600, fit: 'squeeze' });
-    expect(out).toContain('fit=squeeze');
-  });
-
-  it('carries an explicit upscale option', () => {
-    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up', upscale: 'generate' });
-    expect(out).toContain('upscale=generate');
-  });
-
-  it('carries the default-named interpolate upscale option when set explicitly', () => {
-    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up', upscale: 'interpolate' });
-    expect(out).toContain('upscale=interpolate');
-  });
-
-  it('emits upscale only when the spec sets it', () => {
-    const withUpscale = variantUrl(PUBLIC_PATH, {
-      width: 800,
-      fit: 'scale-up',
-      upscale: 'generate',
-    });
-    const withoutUpscale = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up' });
-    expect(withUpscale).toContain('upscale=generate');
-    expect(withoutUpscale).not.toContain('upscale');
+  it('omits upscale when the spec leaves it unset', () => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up' });
+    expect(out).not.toContain('upscale');
   });
 });
 

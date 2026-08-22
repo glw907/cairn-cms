@@ -129,7 +129,9 @@ describe('the emitted template tree', () => {
     expect(bindings).toEqual(['APP_DB', 'AUTH_DB']);
   });
 
-  it('emits a wrangler.jsonc carrying no secrets declaration, since create-cairn-site deploys a brand-new worker before any secret exists (wrangler refuses a first deploy of an unknown worker with a required secret unset)', async () => {
+  // create-cairn-site deploys a brand-new worker before any secret exists, and wrangler refuses a
+  // first deploy of an unknown worker whose required secret is unset.
+  it('emits a wrangler.jsonc carrying no secrets declaration', async () => {
     const text = await readFile(join(emittedTo, 'wrangler.jsonc'), 'utf8');
     const config = parseJsonc(text);
     expect(config.secrets).toBeUndefined();

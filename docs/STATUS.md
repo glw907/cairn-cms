@@ -22,7 +22,32 @@ upgrade less later, and give admins a dependency map. Plan:
 `docs/superpowers/plans/2026-08-21-newest-toolchain-before-beta.md`, seven tasks, workflow mode, on
 worktree `newest-toolchain` off `13726d57`. Resume prompt if this session is lost: "Continue the
 newest-toolchain pass via cairn-pass; read the plan, check the worktree's git log for which tasks
-landed, and run the rest." Close-out chore for this pass: migrate this file's history to
+landed, and run the rest." **Checkpoint 2026-08-22 early: the second chain landed** (`ea218ea9`..`0829b001`: escalation fixes, review fold,
+peer floors at kit ^2.70 / svelte ^5.56.10, `cache: npm`, Tailwind scrollbar utilities, Tidy on `claude-sonnet-5`
+at low effort, CHANGELOG + migration notes). Cumulative spend 3.05M; ceiling raised to 4.5M for the third chain
+(Geoff's items: `secrets.required` in the template, Images `aspect-crop`/`scale-up`/`upscale`; the ROADMAP
+"Platform watch: Cloudflare" list; the residual review folds), then the pass-end ritual and the release. A
+monthly Cloudflare review routine exists (trig_01GnFPkfx7EjrWKAuTBrXVdx) and reads that ROADMAP section.
+
+**Checkpoint 2026-08-21 late: all seven chain tasks landed on `newest-toolchain`** (`310aa92c`..`fc1c1bd7`:
+Actions v7, SDK 0.120 + peer widened, compatibility_date 2026-08-21, advisory `check:tsgo` job, Node floor 24,
+vitest-browser-svelte 3 with the async render sweep, the admin target-stack page + `check:target-stack`).
+Spend: 1.43M subagent tokens against the 1.5M ceiling; ceiling raised to 3M under Geoff's "proceed to the
+release" ruling. Two escalations decided by the conductor: the workerd test harness also moves to the new
+compatibility date (and `nodejs_compat` drops from the template); the gated exact-version table moves to
+`docs/reference/supported-toolchain.md` because the admin register bans engine-internal names, and the
+admin page keeps plain rows + signals and links it. Next: a second chain (escalation fixes, review-finding
+fold, peer floors at current + `cache: npm` + scrollbar utilities, Tidy to `claude-sonnet-5` with
+`effort: low`, CHANGELOG `Consumers must:` lines + migration notes), then the pass-end ritual and the release.
+Two rulings added mid-pass (Geoff, 2026-08-21 evening), to run as tasks after the seven-task chain
+returns: (a) **the floors are the versions just installed** (peer ranges and template pins move to
+the current SvelteKit, Svelte, adapter, and Wrangler, and the engine may use their full capabilities
+with no guards for older minors); (b) **a ranked survey of improvement opportunities the new
+toolchain offers** (running as a read-only agent) is triaged into this pass where small and safe,
+and into ROADMAP where it changes behavior or public surface. **After the pass (Geoff, 2026-08-21): cut a release carrying the new floors** (via `cairn-release`;
+the floors are breaking, so the changelog entry carries one `Consumers must:` line per floor: Node 24,
+SvelteKit and Svelte at the new peer ranges, and `migration-notes.md` gets the entry), **then write
+the update instructions for all four consumer sites** against that release. Close-out chore for this pass: migrate this file's history to
 `docs/HISTORY.md` per the 2026-08-21 ledger rule (STATUS present tense, under 60 lines).
 
 ## Session handoff (2026-08-21, earlier: dependency upgrade landed, e2e baselines regenerated)

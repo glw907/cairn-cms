@@ -191,6 +191,28 @@ describe('previewLoad: the build-time guard', () => {
     const { event } = loadEvent('x'.repeat(43));
     await expect(previewLoad(runtime(), publicConfig(), event as never)).rejects.toThrow(/prerender = false/);
   });
+
+  // The build-time guard's dynamic `import('$app/environment')` is wrapped in try/catch so a
+  // consumer bundling the /sveltekit barrel with a plain, non-Vite esbuild pass (no SvelteKit
+  // plugin to resolve the virtual module) gets a bundle-time-clean build rather than a resolve
+  // error. This models that absence directly, rather than only through the esbuild reproduction
+  // in dist-sveltekit-app-import-boundary.test.ts, by making the aliased `$app/environment` throw
+  // on its next import: previewLoad must fall back to `building = false` and proceed to its
+  // ordinary token gate instead of surfacing the "not building" branch's own error.
+  it('falls back to building = false and proceeds when $app/environment cannot be imported', async () => {
+    vi.doMock('$app/environment', () => {
+      throw new Error("Cannot find module '$app/environment'");
+    });
+    try {
+      const { event } = loadEvent('too-short');
+      // A malformed token still answers its own ordinary 404, proving the fallback did not
+      // short-circuit as "building" and did not itself throw.
+      const result = await expectNotFound(() => previewLoad(runtime(), publicConfig(), event as never));
+      expect(result.status).toBe(404);
+    } finally {
+      vi.doUnmock('$app/environment');
+    }
+  });
 });
 
 describe('previewLoad: the malformed-token gate', () => {
@@ -349,6 +371,25 @@ describe('previewLoad: the draft render', () => {
     expect(data.html).toContain('[link:/posts/sibling]');
     expect(data.html).toContain('[broken]');
     expect(headers).toContainEqual(EXPECTED_HEADERS);
+  });
+
+  it('strips canonical, og:url, and jsonLd.url from seo, since a preview must not self-canonicalize onto a not-yet-live URL', async () => {
+    const gh = freshGithub({
+      branch: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody' },
+      main: { [MANIFEST_PATH]: manifestWith([]) },
+    });
+    gh.install();
+    const token = await mintValidToken();
+    const { event } = loadEvent(token);
+    const data = (await previewLoad(runtime(), publicConfig(), event as never)) as PreviewData;
+
+    expect(data.seo.links.find((l) => l.rel === 'canonical')).toBeUndefined();
+    expect(data.seo.meta.find((m) => m.property === 'og:url')).toBeUndefined();
+    expect(data.seo.jsonLd).not.toHaveProperty('url');
+    // The rest of the head survives the strip untouched: this is a targeted removal, not a
+    // stand-in for a whole different (impoverished) preview head.
+    expect(data.seo.title).toBeTruthy();
+    expect(data.seo.meta.find((m) => m.property === 'og:title')).toBeDefined();
   });
 
   it('resolves media from the branch media.json, not the (stale) default branch copy', async () => {

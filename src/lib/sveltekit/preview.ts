@@ -7,7 +7,6 @@
 // since the token itself is the credential, and it never reads locals.cairnEditor or
 // locals.cairnAccess.
 import { error } from '@sveltejs/kit';
-import { building } from '$app/environment';
 import type { D1Database } from '@cloudflare/workers-types';
 import { generateToken, hashToken } from '../auth/crypto.js';
 import { insertPreviewToken, findPreviewToken, findPreviewTokenAnyExpiry, type PreviewTokenRow } from '../auth/preview-store.js';
@@ -28,6 +27,7 @@ import {
 import { parseMarkdown } from '../content/frontmatter.js';
 import { createContentIndex } from '../delivery/content-index.js';
 import { composeEntryData, type PublicRoutesConfig, type EntryData } from '../delivery/public-routes.js';
+import type { SeoMeta } from '../delivery/seo.js';
 import type { LinkResolve } from '../content/links.js';
 import type { FragmentResolve } from '../render/resolve-include.js';
 import { buildMediaResolver, type MediaResolve } from '../render/resolve-media.js';
@@ -250,6 +250,25 @@ async function buildPreviewResolvers(
 }
 
 /**
+ * Strip the entry's eventual public permalink out of a composed page's SEO data, for a preview
+ *  render: the `canonical` link, the `og:url` meta tag, and `jsonLd.url`. A preview is `noindex`ed
+ *  already ({@link PREVIEW_HEADERS}'s `x-robots-tag`), but a self-referential `canonical`/`og:url`
+ *  pointing at a URL that is not yet live (or, for the ended page, already superseded) invites a
+ *  crawler to consolidate the preview onto that URL anyway, and an unfurler that ignores
+ *  `noindex` still reads these fields directly. This is about the page's own advertised identity,
+ *  not the token: the token is the sole credential and lives only in the route path, never in the
+ *  page.
+ */
+function stripPreviewSeo(seo: SeoMeta): SeoMeta {
+  return {
+    ...seo,
+    meta: seo.meta.filter((m) => m.property !== 'og:url'),
+    links: seo.links.filter((l) => l.rel !== 'canonical'),
+    jsonLd: Object.fromEntries(Object.entries(seo.jsonLd).filter(([key]) => key !== 'url')),
+  };
+}
+
+/**
  * Serve a public preview link: verify the token, then render the shared draft (or, once the
  *  branch is gone, the ended page) through the site's own public composition, so a preview and a
  *  published page can never structurally drift. `config` is the site's own `PublicRoutesConfig`,
@@ -274,13 +293,38 @@ async function buildPreviewResolvers(
  *  the hash. Steering a chosen plaintext's digest to collide with a stored hash under a B-tree
  *  index scan would require a partial SHA-256 preimage, a problem timing a comparison does not
  *  make easier; `tokensMatch` (crypto.ts) is deliberately not used here.
+ *
+ * The returned `seo` ({@link stripPreviewSeo}) never carries `canonical`, `og:url`, or
+ *  `jsonLd.url`: a preview render must not self-canonicalize while it is `noindex`ed, and must not
+ *  let a crawler or unfurler consolidate onto a URL that is not yet live (or, for the ended page,
+ *  already superseded). This is unrelated to the token, the sole credential, which lives only in
+ *  the route path and never appears on the page at all.
  * @throws Error naming `export const prerender = false` when `building` (`$app/environment`) is
  *  true, so a site that lets this route prerender gets a red build instead of a token-bearing
- *  static asset.
+ *  static asset. `$app/environment` is imported dynamically, at call time, rather than at module
+ *  scope: this module is reachable through the `/sveltekit` barrel, and a barrel re-export pulls
+ *  in every other export's own top-level imports, so a module-scope `$app/environment` import
+ *  here would break a consumer that bundles a single barrel export (for example
+ *  `createD1AuditSink`, for a Cloudflare Cron handler) with a plain, non-Vite esbuild pass that
+ *  has no SvelteKit plugin to resolve the virtual module. The dynamic import is further wrapped in
+ *  `try`/`catch`: esbuild resolves an unwrapped `import()` literal the same way it resolves a
+ *  static import at bundle time, and still fails the same build even without a barrel re-export in
+ *  the way. A `try`/`catch` around it is esbuild's own documented escape hatch, downgrading the
+ *  unresolvable specifier to a runtime concern instead of a bundle-time error. Outside a real
+ *  SvelteKit build the import always rejects (there is no `$app/environment` module to resolve),
+ *  and `building` falls back to `false`: a `/preview/[token]` route carries a token in its own
+ *  path and is never prerendered, so `false`, meaning "proceed, we are not prerendering," is the
+ *  correct value for every context this fallback can run in.
  */
 export async function previewLoad(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
   event.setHeaders(PREVIEW_HEADERS);
 
+  let building = false;
+  try {
+    ({ building } = await import('$app/environment'));
+  } catch {
+    building = false;
+  }
   if (building) {
     throw new Error(
       'cairn: previewLoad ran during the build. A preview link is a bearer credential; prerendering ' +
@@ -349,6 +393,7 @@ export async function previewLoad(runtime: CairnRuntime, config: PublicRoutesCon
     const data = await composeEntryData(config, publishedEntry, resolvers);
     return {
       ...data,
+      seo: stripPreviewSeo(data.seo),
       preview: {
         state: 'published',
         expiresAt: new Date(row.expiresAt).toISOString(),
@@ -366,6 +411,7 @@ export async function previewLoad(runtime: CairnRuntime, config: PublicRoutesCon
   const data = await composeEntryData(config, draftEntry, resolvers);
   return {
     ...data,
+    seo: stripPreviewSeo(data.seo),
     preview: {
       state: 'draft',
       expiresAt: new Date(row.expiresAt).toISOString(),

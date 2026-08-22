@@ -71,6 +71,48 @@ Mounting outside the route group reproduces an unstyled page, the shape an earli
 this feature was rejected for; the group is what carries your site's stylesheets and chrome down
 to this route.
 
+## Override the banner's palette
+
+`PreviewBanner` ships a light and a dark default, switched only by `prefers-color-scheme`, the
+visitor's OS-level preference. Your site may theme by its own toggle instead, a `data-theme`
+attribute or a class. A visitor can then land on your toggle's dark mode while their OS preference
+stays light, or the reverse, and the banner renders its built-in palette against your site's own
+chrome instead of matching it.
+
+The fix is to declare the banner's four custom properties yourself, in your site's own style
+sheet, so the banner always follows your toggle rather than the OS signal:
+
+```css
+:root {
+  --cairn-preview-bg: #fff6dd;
+  --cairn-preview-fg: #3a2f12;
+  --cairn-preview-border: #e6cf8a;
+  --cairn-preview-link: #7a4f00;
+}
+
+/* Follow the OS preference when the visitor has not chosen. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --cairn-preview-bg: #3a2f12;
+    --cairn-preview-fg: #f5e7bc;
+    --cairn-preview-border: #6b5420;
+    --cairn-preview-link: #ffd066;
+  }
+}
+
+/* Follow the site's own toggle once one is set, regardless of the OS preference. */
+:root[data-theme='dark'] {
+  --cairn-preview-bg: #3a2f12;
+  --cairn-preview-fg: #f5e7bc;
+  --cairn-preview-border: #6b5420;
+  --cairn-preview-link: #ffd066;
+}
+```
+
+Declaring the four properties on `:root`, or any ancestor, always wins: the banner reads each one
+through a `var(--cairn-preview-bg, <fallback>)` and never declares one on its own scoped element,
+so there's no specificity fight to win.
+
 ## What the link is good for, and what it isn't
 
 The token alone is the credential. `previewLoad` reads no cookie and touches neither

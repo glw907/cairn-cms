@@ -21,7 +21,7 @@ describe('MarkdownEditor spellcheck (real browser)', () => {
       // The misspelled prose word, an inline code span whose contents would be "wrong" if checked, and a
       // bare media: token. The skip authority keeps the lint off the code and the media token.
       const doc = 'teh start with `teh` code and media:abcdef0123456789 done';
-      const screen = render(MarkdownEditor, {
+      const screen = await render(MarkdownEditor, {
         value: doc,
         name: 'body',
         spellcheck: true,
@@ -61,7 +61,7 @@ describe('MarkdownEditor spellcheck (real browser)', () => {
     const unpin = pinWarningInk();
     try {
       const { create } = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-      const screen = render(MarkdownEditor, {
+      const screen = await render(MarkdownEditor, {
         value: 'teh ridge',
         name: 'body',
         spellcheck: true,
@@ -114,7 +114,7 @@ describe('MarkdownEditor spellcheck (real browser)', () => {
         'inside the panel with :icon[ski]{s=1} inline',
         ':::',
       ].join('\n');
-      const screen = render(MarkdownEditor, {
+      const screen = await render(MarkdownEditor, {
         value: doc,
         name: 'body',
         mediaLibrary,

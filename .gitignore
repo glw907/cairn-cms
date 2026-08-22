@@ -7,6 +7,8 @@ dist/
 .env.*
 .dev.vars
 .dev.vars.*
+*.pem
+*.b64
 .superpowers/
 
 # vitest browser-mode artifacts

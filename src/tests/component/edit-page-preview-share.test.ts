@@ -63,13 +63,13 @@ function stubFetchOnce(envelope: { type: 'success' | 'failure'; status: number; 
   vi.stubGlobal('fetch', spy);
 }
 
-async function openDetails(screen: ReturnType<typeof render>) {
+async function openDetails(screen: Awaited<ReturnType<typeof render>>) {
   await screen.getByRole('button', { name: 'Details' }).click();
 }
 
 describe('EditPage Share preview', () => {
   it('shows the Share preview group by default (the previewMint facade key is present)', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await expect
       .element(screen.getByRole('button', { name: 'Share preview link' }))
@@ -80,7 +80,7 @@ describe('EditPage Share preview', () => {
   });
 
   it('hides the Share preview group when the facade key is absent', async () => {
-    const screen = render(EditPage, { ...postProps(), previewMint: false });
+    const screen = await render(EditPage, { ...postProps(), previewMint: false });
     await openDetails(screen);
     await expect
       .element(screen.getByRole('button', { name: 'Share preview link' }))
@@ -97,7 +97,7 @@ describe('EditPage Share preview', () => {
       status: 200,
       data: { url: 'https://example.com/preview/abc123', expiresAt },
     });
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await screen.getByRole('button', { name: 'Share preview link' }).click();
     const urlField = screen.getByLabelText('Preview link');
@@ -119,7 +119,7 @@ describe('EditPage Share preview', () => {
       status: 400,
       data: { error: 'This entry has no unpublished draft to share. Save an edit first.' },
     });
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await screen.getByRole('button', { name: 'Share preview link' }).click();
     await expect
@@ -135,7 +135,7 @@ describe('EditPage Share preview', () => {
       status: 500,
       data: { error: 'The preview_tokens table is missing. Apply migrations/0003_preview.sql to AUTH_DB, then try again.' },
     });
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await screen.getByRole('button', { name: 'Share preview link' }).click();
     await expect
@@ -146,7 +146,7 @@ describe('EditPage Share preview', () => {
 
   it('revokes and reports the count', async () => {
     stubFetchOnce({ type: 'success', status: 200, data: { count: 2 } });
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await screen.getByRole('button', { name: 'Revoke all links' }).click();
     await expect.element(screen.getByText('Revoked 2 links.')).toBeInTheDocument();
@@ -155,7 +155,7 @@ describe('EditPage Share preview', () => {
 
   it('reports the zero-count variant when nothing was outstanding', async () => {
     stubFetchOnce({ type: 'success', status: 200, data: { count: 0 } });
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await screen.getByRole('button', { name: 'Revoke all links' }).click();
     await expect.element(screen.getByText('No preview links to revoke.')).toBeInTheDocument();
@@ -169,7 +169,7 @@ describe('EditPage Share preview', () => {
       status: 200,
       data: { url: 'https://example.com/preview/abc123', expiresAt },
     });
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await screen.getByRole('button', { name: 'Share preview link' }).click();
     await expect.element(screen.getByLabelText('Preview link')).toBeInTheDocument();
@@ -186,7 +186,7 @@ describe('EditPage Share preview', () => {
 
   it('never renders a stale revoke result under a freshly minted URL', async () => {
     stubFetchOnce({ type: 'success', status: 200, data: { count: 2 } });
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await screen.getByRole('button', { name: 'Revoke all links' }).click();
     await expect.element(screen.getByText('Revoked 2 links.')).toBeInTheDocument();
@@ -211,7 +211,7 @@ describe('EditPage Share preview', () => {
       status: 400,
       data: { error: 'This entry has no unpublished draft to share. Save an edit first.' },
     });
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await screen.getByRole('button', { name: 'Share preview link' }).click();
     await expect
@@ -233,7 +233,7 @@ describe('EditPage Share preview', () => {
       status: 200,
       data: { url: 'https://example.com/preview/entry-a', expiresAt: Date.UTC(2026, 7, 20, 18, 30) },
     });
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await openDetails(screen);
     await screen.getByRole('button', { name: 'Share preview link' }).click();
     await expect.element(screen.getByLabelText('Preview link')).toBeInTheDocument();

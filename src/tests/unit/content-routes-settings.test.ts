@@ -43,7 +43,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
   return baseRuntime({
     concepts: [],
     navMenu: { configPath: CONFIG_PATH, menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
-    tidy: { enabled: true, model: 'claude-sonnet-4-6' },
+    tidy: { enabled: true, model: 'claude-sonnet-5' },
     ...over,
   });
 }
@@ -190,8 +190,16 @@ describe('settingsLoad', () => {
     expect(data.tidyEnabled).toBe(true);
     expect(data.keyConfigured).toBe(true);
     expect(data.keyStatus).toBe('valid');
-    expect(data.modelLabel).toBe('Claude Sonnet');
+    expect(data.modelLabel).toBe('Claude Sonnet 5');
     expect(data.conventions.fixes).toBe(true);
+  });
+
+  it('labels a site pinned to claude-sonnet-4-6 with its plain name, not the bare id', async () => {
+    const routes = createContentRoutes(runtime({ tidy: { enabled: true, model: 'claude-sonnet-4-6' } }), {
+      tidy: { client: fakeTidyClient('valid') },
+    });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    expect(data.modelLabel).toBe('Claude Sonnet 4.6');
   });
 
   it('keeps the gate closed when the key is missing, even with tidy enabled (no probe attempted)', async () => {

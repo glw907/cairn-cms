@@ -23,14 +23,14 @@ test('no finding ever lacks a remedy', async () => {
 });
 
 test('the node check compares numerically, not as strings', async () => {
-  const passing = await runPreflight({ nodeVersion: '22.10.0', platform: 'linux' });
-  assert.equal(passing.find((f) => f.check === 'node').ok, true, '22.10.0 should meet a >=22 floor');
+  const passing = await runPreflight({ nodeVersion: '24.1.0', platform: 'linux' });
+  assert.equal(passing.find((f) => f.check === 'node').ok, true, '24.1.0 should meet a >=24 floor');
 
   const failing = await runPreflight({ nodeVersion: '9.0.0', platform: 'linux' });
   assert.equal(
     failing.find((f) => f.check === 'node').ok,
     false,
-    '9.0.0 should fail a >=22 floor even though "9.0.0" > "22.0.0" as a string'
+    '9.0.0 should fail a >=24 floor even though "9.0.0" > "24.0.0" as a string'
   );
 });
 

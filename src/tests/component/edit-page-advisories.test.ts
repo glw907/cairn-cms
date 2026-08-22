@@ -62,7 +62,7 @@ describe('EditPage advisory region', () => {
         actions: [{ label: 'Open About', href: '/admin/pages/about' }],
       },
     ];
-    const screen = render(EditPage, postProps({ advisories }));
+    const screen = await render(EditPage, postProps({ advisories }));
     await expect
       .element(screen.getByText('Another page already uses the address /about', { exact: false }))
       .toBeInTheDocument();
@@ -72,7 +72,7 @@ describe('EditPage advisory region', () => {
 
   it('renders the needs-alt notice through the same region', async () => {
     const hash = '0123456789abcdef';
-    const screen = render(EditPage, postProps({ body: `![](media:cat.${hash})` }));
+    const screen = await render(EditPage, postProps({ body: `![](media:cat.${hash})` }));
     const notice = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
       (el.textContent ?? '').includes('alt text'),
     );

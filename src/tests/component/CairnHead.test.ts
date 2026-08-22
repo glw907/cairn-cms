@@ -15,7 +15,7 @@ const seo: SeoMeta = {
 
 describe('CairnHead', () => {
   it('renders the title, meta, link, and an escaped JSON-LD script in the head', async () => {
-    render(CairnHead, { seo });
+    await render(CairnHead, { seo });
     expect(document.title).toBe('Welcome');
     expect(document.head.querySelector('meta[property="og:title"]')?.getAttribute('content')).toBe('Welcome');
     expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('https://x.test/p');
@@ -28,33 +28,33 @@ describe('CairnHead', () => {
 
   it('omits the title when title is false', async () => {
     document.title = 'site-owned';
-    render(CairnHead, { seo, title: false });
+    await render(CairnHead, { seo, title: false });
     expect(document.title).toBe('site-owned');
   });
 
   it('applies titleTemplate to seo.title when title is left undefined', async () => {
-    render(CairnHead, { seo, titleTemplate: (t) => `${t} · 907.life` });
+    await render(CairnHead, { seo, titleTemplate: (t) => `${t} · 907.life` });
     expect(document.title).toBe('Welcome · 907.life');
   });
 
   it('lets an explicit title win over titleTemplate', async () => {
-    render(CairnHead, { seo, title: 'Custom', titleTemplate: (t) => `${t} · 907.life` });
+    await render(CairnHead, { seo, title: 'Custom', titleTemplate: (t) => `${t} · 907.life` });
     expect(document.title).toBe('Custom');
   });
 
   it('lets title={false} win over titleTemplate', async () => {
     document.title = 'site-owned';
-    render(CairnHead, { seo, title: false, titleTemplate: (t) => `${t} · 907.life` });
+    await render(CairnHead, { seo, title: false, titleTemplate: (t) => `${t} · 907.life` });
     expect(document.title).toBe('site-owned');
   });
 
   it('emits the markdown alternate link only when markdownUrl is passed', async () => {
-    render(CairnHead, { seo });
+    await render(CairnHead, { seo });
     expect(document.head.querySelector('link[rel="alternate"][type="text/markdown"]')).toBeNull();
   });
 
   it('emits a rel="alternate" type="text/markdown" link pointing at the twin when markdownUrl is passed', async () => {
-    render(CairnHead, { seo, markdownUrl: 'https://x.test/p.md' });
+    await render(CairnHead, { seo, markdownUrl: 'https://x.test/p.md' });
     const link = document.head.querySelector('link[rel="alternate"][type="text/markdown"]');
     expect(link?.getAttribute('href')).toBe('https://x.test/p.md');
   });

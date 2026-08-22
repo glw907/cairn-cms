@@ -131,7 +131,7 @@ describe('EditPage', () => {
   });
 
   it('renders the rich frontmatter fields for a post', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect.element(screen.getByLabelText(/title/i)).toHaveValue('Hello');
     await expect.element(screen.getByLabelText(/date/i)).toBeInTheDocument();
     // The draft boolean renders as the Visibility group's Hidden toggle.
@@ -139,7 +139,7 @@ describe('EditPage', () => {
   });
 
   it('carries a CSRF field in every POST form', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const postForms = screen.container.querySelectorAll('form[method="POST"]');
     const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
     expect(postForms.length).toBeGreaterThan(0);
@@ -147,13 +147,13 @@ describe('EditPage', () => {
   });
 
   it('renders only the minimal field for a page', async () => {
-    const screen = render(EditPage, pageProps());
+    const screen = await render(EditPage, pageProps());
     await expect.element(screen.getByLabelText(/title/i)).toBeInTheDocument();
     await expect.element(screen.getByLabelText(/date/i)).not.toBeInTheDocument();
   });
 
   it('shows the preview pane inside the editor card when the Preview tab is selected', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     expect(screen.container.querySelector('#cairn-pane-preview')).toBeNull();
     await screen.getByRole('tab', { name: 'Preview' }).click();
     const pane = screen.container.querySelector('#cairn-pane-preview');
@@ -164,7 +164,7 @@ describe('EditPage', () => {
   });
 
   it('aligns the title with the manuscript edge and dims it under focus mode', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const title = screen.container.querySelector('input.cairn-doc-title')!;
     // The surface fills the card, so the title aligns by carrying the surface's inline padding.
     const wrapper = title.parentElement!;
@@ -176,7 +176,7 @@ describe('EditPage', () => {
   });
 
   it('caps the editor column by posture in Write and frees it in Preview', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const column = screen.container.querySelector('form#cairn-edit-form > div')!;
     // Prose posture (the default) hugs the 72ch measure.
     expect(column.classList.contains('max-w-[49rem]')).toBe(true);
@@ -193,7 +193,7 @@ describe('EditPage', () => {
 
   it('seeds the surface posture from the persisted choice with a prose default', async () => {
     localStorage.setItem('cairn-editor-surface', 'markup');
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect
       .element(screen.getByRole('button', { name: 'Wide', exact: true }))
       .toHaveAttribute('aria-pressed', 'true');
@@ -204,7 +204,7 @@ describe('EditPage', () => {
 
   it('dresses the posture pair as one bordered segmented control with the active check glyph', async () => {
     localStorage.removeItem('cairn-editor-surface');
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const group = screen.container.querySelector<HTMLElement>('[role="group"][aria-label="Editing surface"]')!;
     // One bordered segmented control: a single border carries the pick-one semantics, so the
     // wrapper is bordered and rounded and the two postures are its only buttons (no group label).
@@ -225,7 +225,7 @@ describe('EditPage', () => {
   });
 
   it('dresses Focus mode and Typewriter as standalone check-and-tint toggles', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     for (const name of ['Focus mode', 'Typewriter']) {
       const toggle = screen.getByRole('button', { name, exact: true });
       const el = Array.from(screen.container.querySelectorAll<HTMLButtonElement>('button')).find(
@@ -250,7 +250,7 @@ describe('EditPage', () => {
     // The footer no longer carries its own copy: the toolbar's strip-level "?" is the one
     // Markdown-help affordance, reachable at every width, so EditPage need only wire it to the
     // same dialog the strip itself opens (EditorToolbar.test.ts pins the control's own shape).
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
     await expect.element(help).toBeInTheDocument();
     expect(help.element().closest('[role="toolbar"]')).not.toBeNull();
@@ -259,7 +259,7 @@ describe('EditPage', () => {
   });
 
   it('keeps the editor mounted but hidden in preview and restores it intact on Write', async () => {
-    const screen = render(EditPage, postProps({ body: 'Round trip body' }));
+    const screen = await render(EditPage, postProps({ body: 'Round trip body' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     await screen.getByRole('tab', { name: 'Preview' }).click();
     const surface = screen.container.querySelector('#cairn-pane-write')!;
@@ -275,14 +275,14 @@ describe('EditPage', () => {
 
   it('never touches the legacy preview preference key', async () => {
     localStorage.removeItem('cairn-admin:preview');
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await screen.getByRole('tab', { name: 'Write' }).click();
     expect(localStorage.getItem('cairn-admin:preview')).toBeNull();
   });
 
   it('shows a saved confirmation', async () => {
-    const screen = render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ saved: true }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/saved/i);
   });
@@ -291,7 +291,7 @@ describe('EditPage', () => {
     const originalUrl = appPage.url;
     appPage.url = new URL('http://localhost/admin/posts/2026-05-hello?drafts=pages/about');
     try {
-      const screen = render(EditPage, postProps({ saved: true }));
+      const screen = await render(EditPage, postProps({ saved: true }));
       const warning = screen.container.querySelector('.alert-warning');
       expect(warning?.textContent ?? '').toContain('pages/about');
       // The saved flash yields to the draft warning, so one strip shows.
@@ -302,7 +302,7 @@ describe('EditPage', () => {
   });
 
   it('shows no draft-link warning without the drafts flag', async () => {
-    const screen = render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ saved: true }));
     expect(screen.container.querySelector('.alert-warning')).toBeNull();
     expect(screen.container.querySelector('.alert-success')).not.toBeNull();
   });
@@ -312,7 +312,7 @@ describe('EditPage', () => {
     __setBuilding(true);
     __setPrerenderingUrl('http://localhost/admin/posts/2026-05-hello?drafts=pages/about');
     try {
-      const screen = render(EditPage, postProps({ saved: true }));
+      const screen = await render(EditPage, postProps({ saved: true }));
       // A component that reads page.url.searchParams unconditionally during prerendering throws
       // (SvelteKit's real "Cannot access url.searchParams on a page with prerendering enabled"
       // guard); rendering without throwing is the proof the guard fires.
@@ -326,7 +326,7 @@ describe('EditPage', () => {
 
   it('renders the preview into a sandboxed iframe inside the pane', async () => {
     const props = { ...postProps({ body: 'Hello world' }), render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`) };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('<p>Hello world</p>');
     const frame = screen.container.querySelector('iframe[title="Page preview"]')!;
@@ -347,7 +347,7 @@ describe('EditPage', () => {
       }),
       render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`),
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('<p>Styled body</p>');
     const doc = previewSrcdoc(screen);
@@ -362,7 +362,7 @@ describe('EditPage', () => {
       ...postProps({ body: 'safe text\n\n<img src=x onerror="alert(1)">' }),
       render: ({ body }: Parameters<SiteRender>[0]) => renderMarkdown(body),
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('safe text');
     expect(previewSrcdoc(screen)).not.toContain('onerror');
@@ -377,7 +377,7 @@ describe('EditPage', () => {
       }),
       render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('href="/about"');
     expect(previewSrcdoc(screen)).toContain('cairn-broken-link');
@@ -396,7 +396,7 @@ describe('EditPage', () => {
       // live resolve path the way EditPage wires it.
       render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect
       .poll(() => previewSrcdoc(screen))
@@ -412,7 +412,7 @@ describe('EditPage', () => {
       }),
       render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('Included fragment content.');
   });
@@ -426,7 +426,7 @@ describe('EditPage', () => {
       }),
       render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('cairn-fragment-boundary');
     const doc = previewSrcdoc(screen);
@@ -443,7 +443,7 @@ describe('EditPage', () => {
       }),
       render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('cairn-fragment-boundary');
     expect(previewSrcdoc(screen)).toContain('From “welcome”');
@@ -458,7 +458,7 @@ describe('EditPage', () => {
       }),
       render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('cairn-include-missing');
     expect(previewSrcdoc(screen)).toContain('Missing fragment: gone');
@@ -509,7 +509,7 @@ describe('EditPage', () => {
       ...postProps({ body: '', mediaTargets: {} }),
       render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
 
     // Drive the real insert UI: open the popover, choose a file, describe it, and insert. The capture
     // card's submit and the toolbar trigger share the "Insert image" name, so the card submit is
@@ -532,7 +532,7 @@ describe('EditPage', () => {
   });
 
   it('centers the editor column with no two-column grid in either posture', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     // The details column moved behind a slide-over, so the form is no longer a two-column grid.
     // The editor column centers truly in both Write postures and in Preview.
     const form = screen.container.querySelector('#cairn-edit-form')!;
@@ -546,7 +546,7 @@ describe('EditPage', () => {
 
   it('switches the frame width from the device menu and persists the choice', async () => {
     const props = { ...postProps({ body: 'sized' }), render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`) };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     const frame = () => screen.container.querySelector<HTMLElement>('.cairn-preview-frame')!;
     expect(frame().style.width).toBe('100%');
@@ -557,7 +557,7 @@ describe('EditPage', () => {
   });
 
   it('toggles focus mode from the card footer and persists the flip', async () => {
-    const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
+    const screen = await render(EditPage, postProps({ body: 'one\n\ntwo' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     // The writing modes live visible in the footer strip, not behind the More overflow.
     const focusToggle = () => screen.getByRole('button', { name: 'Focus mode', exact: true });
@@ -571,7 +571,7 @@ describe('EditPage', () => {
   });
 
   it('toggles typewriter scrolling from the card footer and persists the flip', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const toggle = () => screen.getByRole('button', { name: 'Typewriter', exact: true });
     await expect.element(toggle()).toHaveAttribute('aria-pressed', 'false');
     await toggle().click();
@@ -582,7 +582,7 @@ describe('EditPage', () => {
   it('seeds the writing modes from the persisted choices', async () => {
     localStorage.setItem('cairn-editor-focus-mode', 'true');
     localStorage.setItem('cairn-editor-typewriter', 'true');
-    const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
+    const screen = await render(EditPage, postProps({ body: 'one\n\ntwo' }));
     // Focus mode arrives enabled: the editor dims the paragraph away from the mount caret.
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
     await expect
@@ -595,7 +595,7 @@ describe('EditPage', () => {
 
   it('seeds the device from the persisted choice with a Desktop default', async () => {
     localStorage.setItem('cairn-editor-preview-device', 'phone');
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect
       .poll(() => screen.container.querySelector<HTMLElement>('.cairn-preview-frame')!.style.width)
@@ -603,7 +603,7 @@ describe('EditPage', () => {
   });
 
   it('captions a non-desktop width above the frame and stays quiet on Desktop', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('tab', { name: 'Preview' }).click();
     const pane = () => screen.container.querySelector('#cairn-pane-preview')!;
     expect(pane().textContent ?? '').not.toContain('Desktop');
@@ -616,13 +616,13 @@ describe('EditPage', () => {
     "Preview shows unstyled markup until the adapter's preview option names the site's stylesheets.";
 
   it('hints at the missing preview knob when the adapter sets none', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('tab', { name: 'Preview' }).click();
     expect(screen.container.querySelector('#cairn-pane-preview')!.textContent ?? '').toContain(previewHint);
   });
 
   it('drops the hint once the adapter names its stylesheets', async () => {
-    const screen = render(EditPage, postProps({ preview: { stylesheets: ['/site.css'] } }));
+    const screen = await render(EditPage, postProps({ preview: { stylesheets: ['/site.css'] } }));
     await screen.getByRole('tab', { name: 'Preview' }).click();
     expect(screen.container.querySelector('#cairn-pane-preview')!.textContent ?? '').not.toContain(previewHint);
   });
@@ -632,7 +632,7 @@ describe('EditPage', () => {
     props.data.linkTargets = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
     ];
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('button', { name: /link to page/i }).click();
     await screen.getByRole('button', { name: /About Us/ }).click();
     await expect
@@ -644,7 +644,7 @@ describe('EditPage', () => {
     const props = postProps({
       fragmentTargets: [{ id: 'welcome', title: 'Welcome banner', body: 'Welcome body.' }],
     });
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('button', { name: /include a fragment/i }).click();
     await screen.getByRole('button', { name: /Welcome banner/ }).click();
     await expect
@@ -653,14 +653,14 @@ describe('EditPage', () => {
   });
 
   it('hides the fragment picker trigger when no fragments concept is declared', async () => {
-    const screen = render(EditPage, postProps({ fragmentTargets: null }));
+    const screen = await render(EditPage, postProps({ fragmentTargets: null }));
     await expect
       .element(screen.getByRole('button', { name: /include a fragment/i }))
       .not.toBeInTheDocument();
   });
 
   it('shows the fragment picker trigger with an honest empty state when none are published', async () => {
-    const screen = render(EditPage, postProps({ fragmentTargets: [] }));
+    const screen = await render(EditPage, postProps({ fragmentTargets: [] }));
     await screen.getByRole('button', { name: /include a fragment/i }).click();
     // EditPage mounts several headless dialogs; querySelector('dialog') would grab whichever one
     // is first in DOM order (the Web link dialog), not the one this test just opened.
@@ -675,20 +675,20 @@ describe('EditPage', () => {
       label: 'Fragment',
       fragmentTargets: [{ id: 'other', title: 'Other fragment', body: 'Other body.' }],
     });
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await expect
       .element(screen.getByRole('button', { name: /include a fragment/i }))
       .not.toBeInTheDocument();
   });
 
   it('renders the delete control', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('button', { name: 'More actions' }).click();
     await expect.element(screen.getByRole('button', { name: /^delete$/i })).toBeInTheDocument();
   });
 
   it('renders the change-url control', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     // The Address group lives in the details slide-over; open it to reach the control.
     await screen.getByRole('button', { name: 'Details' }).click();
     await expect.element(screen.getByRole('button', { name: /change url/i })).toBeInTheDocument();
@@ -697,7 +697,7 @@ describe('EditPage', () => {
   it('surfaces a rename collision error', async () => {
     const props = postProps();
     (props as Record<string, unknown>).form = { error: 'An entry with that address already exists.' };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('[role="alert"], .alert')).find((el) =>
       (el.textContent ?? '').includes('already exists'),
     );
@@ -705,20 +705,20 @@ describe('EditPage', () => {
   });
 
   it('announces a rename success naming the new slug through the polite live region', async () => {
-    const screen = render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
+    const screen = await render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
     const region = screen.container.querySelector('[aria-live="polite"]');
     expect(region).not.toBeNull();
     expect(region!.textContent ?? '').toMatch(/new-slug/);
   });
 
   it('shows a rename success banner', async () => {
-    const screen = render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
+    const screen = await render(EditPage, postProps({ renamed: true, slug: 'new-slug' }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/new-slug/);
   });
 
   it('announces a saved message through a persistent live region', async () => {
-    const screen = render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ saved: true }));
     const region = screen.container.querySelector('[aria-live="polite"]');
     expect(region).not.toBeNull();
     expect(region!.textContent ?? '').toMatch(/saved/i);
@@ -727,7 +727,7 @@ describe('EditPage', () => {
   it('announces an error through a persistent assertive region', async () => {
     const props = postProps();
     (props as Record<string, unknown>).form = { error: 'An entry with that address already exists.' };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     const region = screen.container.querySelector('[aria-live="assertive"]');
     expect(region).not.toBeNull();
     expect(region!.textContent ?? '').toMatch(/already exists/i);
@@ -743,7 +743,7 @@ describe('EditPage', () => {
       brokenLinks: ['cairn:pages/gone'],
       body: props.data.body,
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     const banner = screen.container.querySelector('.alert');
     expect(banner?.textContent ?? '').toContain('cairn:pages/gone');
     expect(screen.container.querySelectorAll('.alert')).toHaveLength(1);
@@ -760,7 +760,7 @@ describe('EditPage', () => {
       brokenLinks: ['cairn:pages/gone'],
       body: 'edited [gone](cairn:pages/gone) text',
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await expect
       .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
       .toBe('edited [gone](cairn:pages/gone) text');
@@ -775,7 +775,7 @@ describe('EditPage', () => {
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
       id: '2026-05-hi',
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
       (el.textContent ?? '').includes('This post could not be deleted.'),
     );
@@ -792,7 +792,7 @@ describe('EditPage', () => {
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
       id: '2026-05-hi',
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     const region = () => screen.container.querySelector('[aria-live="assertive"]')!;
     expect(region().textContent ?? '').toContain('This post could not be deleted.');
     const first = region().textContent ?? '';
@@ -822,7 +822,7 @@ describe('EditPage', () => {
       inboundKind: 'include',
       id: 'welcome',
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
       (el.textContent ?? '').includes('This fragment could not be deleted.'),
     );
@@ -845,7 +845,7 @@ describe('EditPage', () => {
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
       id: 'welcome',
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
       (el.textContent ?? '').includes('This fragment could not be deleted.'),
     );
@@ -863,7 +863,7 @@ describe('EditPage', () => {
       brokenLinks: ['cairn:pages/gone'],
       body: props.data.body,
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     const banner = screen.container.querySelector('.alert');
     expect(banner?.textContent ?? '').toContain('cairn:pages/gone');
     await screen.getByRole('button', { name: /remove link/i }).click();
@@ -877,7 +877,7 @@ describe('EditPage', () => {
 
   it('surfaces the needs-alt count when a placed image lacks alt text', async () => {
     const hash = '0123456789abcdef';
-    const screen = render(EditPage, postProps({ body: `![](media:cat.${hash}) and ![A dog](media:dog.${hash})` }));
+    const screen = await render(EditPage, postProps({ body: `![](media:cat.${hash}) and ![A dog](media:dog.${hash})` }));
     const notice = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
       (el.textContent ?? '').includes('alt text'),
     );
@@ -891,14 +891,14 @@ describe('EditPage', () => {
 
   it('shows no needs-alt notice when every placed image carries alt text', async () => {
     const hash = '0123456789abcdef';
-    const screen = render(EditPage, postProps({ body: `![A cat](media:cat.${hash})` }));
+    const screen = await render(EditPage, postProps({ body: `![A cat](media:cat.${hash})` }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     expect(screen.container.textContent ?? '').not.toContain('alt text');
   });
 
   it('keeps the needs-alt role="status" live region mounted (empty) when the count is zero', async () => {
     const hash = '0123456789abcdef';
-    const screen = render(EditPage, postProps({ body: `![A cat](media:cat.${hash})` }));
+    const screen = await render(EditPage, postProps({ body: `![A cat](media:cat.${hash})` }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     // The live region is present at load even with no debt, so a later first debt announces (WCAG
     // 4.1.3). It carries no visible notice while empty.
@@ -910,7 +910,7 @@ describe('EditPage', () => {
 
   it('jumps to the image lacking alt and clears the notice once alt is typed', async () => {
     const hash = '0123456789abcdef';
-    const screen = render(EditPage, postProps({ body: `![](media:cat.${hash})` }));
+    const screen = await render(EditPage, postProps({ body: `![](media:cat.${hash})` }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const notice = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
       (el.textContent ?? '').includes('alt text'),
@@ -930,25 +930,25 @@ describe('EditPage', () => {
   });
 
   it('shows the Edited badge in the header when the live site lags the edits', async () => {
-    const screen = render(EditPage, postProps({ pending: true, published: true }));
+    const screen = await render(EditPage, postProps({ pending: true, published: true }));
     const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-warning');
     expect(badge?.textContent?.trim()).toBe('Edited');
   });
 
   it('shows the New badge in the header for a pending new entry', async () => {
-    const screen = render(EditPage, postProps({ pending: true, published: false }));
+    const screen = await render(EditPage, postProps({ pending: true, published: false }));
     const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-info');
     expect(badge?.textContent?.trim()).toBe('New');
   });
 
   it('shows the Published badge when the live site matches', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const badge = screen.container.querySelector('[data-testid="cairn-band"] .cairn-chip-quiet');
     expect(badge?.textContent?.trim()).toBe('Published');
   });
 
   it('drops the standing pending banner in favor of the header badge', async () => {
-    const screen = render(EditPage, postProps({ pending: true, published: true }));
+    const screen = await render(EditPage, postProps({ pending: true, published: true }));
     const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
       (el.textContent ?? '').includes('Unpublished changes'),
     );
@@ -957,7 +957,7 @@ describe('EditPage', () => {
   });
 
   it('offers a Publish button riding the edit form when edits are pending', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     const publish = screen.container.querySelector('button[formaction="?/publish"][form="cairn-edit-form"]');
     expect(publish).not.toBeNull();
     expect(publish!.classList.contains('btn-primary')).toBe(true);
@@ -966,12 +966,12 @@ describe('EditPage', () => {
   it('hides the Discard control when nothing is pending', async () => {
     // Publish itself stays visible in this state now (guarded, not hidden); its guarded posture
     // and click inertness are covered in edit-page-publish-visibility.test.ts.
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect.element(screen.getByRole('button', { name: 'Discard changes' })).not.toBeInTheDocument();
   });
 
   it('confirms a discard by naming the live version it restores', async () => {
-    const screen = render(EditPage, postProps({ pending: true, published: true }));
+    const screen = await render(EditPage, postProps({ pending: true, published: true }));
     await screen.getByRole('button', { name: 'More actions' }).click();
     await screen.getByRole('button', { name: 'Discard changes' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-discard-dialog-title"]') as HTMLDialogElement;
@@ -983,7 +983,7 @@ describe('EditPage', () => {
   });
 
   it('confirms a discard of a never-published entry by naming the delete', async () => {
-    const screen = render(EditPage, postProps({ pending: true, published: false }));
+    const screen = await render(EditPage, postProps({ pending: true, published: false }));
     await screen.getByRole('button', { name: 'More actions' }).click();
     await screen.getByRole('button', { name: 'Discard changes' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-discard-dialog-title"]') as HTMLDialogElement;
@@ -992,13 +992,13 @@ describe('EditPage', () => {
   });
 
   it('shows a published confirmation strip', async () => {
-    const screen = render(EditPage, postProps({ publishedFlash: true }));
+    const screen = await render(EditPage, postProps({ publishedFlash: true }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/published/i);
   });
 
   it('renders the site\'s publish-action links alongside a published confirmation', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({
         publishedFlash: true,
@@ -1010,12 +1010,12 @@ describe('EditPage', () => {
   });
 
   it('renders no publish-action links when the site declares none (absent-config no-op)', async () => {
-    const screen = render(EditPage, postProps({ publishedFlash: true, publishActions: [] }));
+    const screen = await render(EditPage, postProps({ publishedFlash: true, publishActions: [] }));
     expect(screen.container.querySelector('a.link-primary')).toBeNull();
   });
 
   it('holds the publish-action links back until the publish-success moment (the render gate)', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({
         publishedFlash: false,
@@ -1026,13 +1026,13 @@ describe('EditPage', () => {
   });
 
   it('shows a discarded confirmation strip', async () => {
-    const screen = render(EditPage, postProps({ discardedFlash: true }));
+    const screen = await render(EditPage, postProps({ discardedFlash: true }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/discarded/i);
   });
 
   it('adds the pending-edits sentence to the delete confirm when edits are pending', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     await screen.getByRole('button', { name: 'More actions' }).click();
     await screen.getByRole('button', { name: /^delete$/i }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
@@ -1040,7 +1040,7 @@ describe('EditPage', () => {
   });
 
   it('threads inboundKind=include to the preemptive DeleteDialog on a fragments-concept screen', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({
         conceptId: 'fragments',
@@ -1056,7 +1056,7 @@ describe('EditPage', () => {
   });
 
   it('keeps the preemptive DeleteDialog\'s link copy for every other concept', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({ inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }] }),
     );
@@ -1068,7 +1068,7 @@ describe('EditPage', () => {
   });
 
   it('flips only the Publish button to its working state and disables both on publish', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     // The edit form posts for real; cancel the default navigation (which would replace the test
     // page) while letting the component's own onsubmit handler still run and read the submitter.
     const stop = (e: Event) => e.preventDefault();
@@ -1091,7 +1091,7 @@ describe('EditPage', () => {
   });
 
   it('flips only the Save button to its working state and disables both on save', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     // Save stays disabled while clean, so edit the body before clicking it.
     await makeDirty(screen);
     const stop = (e: Event) => e.preventDefault();
@@ -1114,7 +1114,7 @@ describe('EditPage', () => {
   });
 
   it('renders Publish as the outline variant beside the solid Save', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     const publish = screen.container.querySelector('button[formaction="?/publish"]')!;
     expect(publish.classList.contains('btn-outline')).toBe(true);
     expect(publish.classList.contains('btn-primary')).toBe(true);
@@ -1125,7 +1125,7 @@ describe('EditPage', () => {
   });
 
   it('wires the tabs to their panes with aria-controls and tabpanel roles', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const writeTab = screen.getByRole('tab', { name: 'Write' });
     const previewTab = screen.getByRole('tab', { name: 'Preview' });
     await expect.element(writeTab).toHaveAttribute('aria-selected', 'true');
@@ -1145,7 +1145,7 @@ describe('EditPage', () => {
   });
 
   it('hosts the toolbar inside the editor card with the editor surface', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const toolbar = screen.container.querySelector('[role="toolbar"]');
     expect(toolbar).not.toBeNull();
     const card = toolbar!.closest('.card-shell');
@@ -1154,7 +1154,7 @@ describe('EditPage', () => {
   });
 
   it('offers an enabled Insert-media control in the toolbar in Write mode', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const image = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Insert image"]');
     expect(image).not.toBeNull();
     expect(image!.disabled).toBe(false);
@@ -1165,7 +1165,7 @@ describe('EditPage', () => {
   });
 
   it('disables the Insert-media control in Preview mode', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('tab', { name: 'Preview' }).click();
     const image = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Insert image"]');
     expect(image).not.toBeNull();
@@ -1173,14 +1173,14 @@ describe('EditPage', () => {
   });
 
   it('opens the media popover when the Insert-media control is clicked', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const image = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Insert image"]');
     image!.click();
     await expect.element(screen.getByRole('dialog', { name: 'Insert image' })).toBeInTheDocument();
   });
 
   it('serializes the empty uploaded-records set in the hidden media field', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const field = screen.container.querySelector<HTMLInputElement>(
       'form#cairn-edit-form input[name="media"]',
     );
@@ -1200,7 +1200,7 @@ describe('EditPage', () => {
         } as unknown as ComponentDef,
       ],
     });
-    const screen = render(EditPage, { ...postProps(), registry });
+    const screen = await render(EditPage, { ...postProps(), registry });
     const toolbar = screen.container.querySelector('[role="toolbar"]')!;
     const link = screen.container.querySelector('button[aria-label="Link to page"]');
     const insert = screen.container.querySelector('button[aria-label="Insert block"]');
@@ -1215,7 +1215,7 @@ describe('EditPage', () => {
 
   it('switching the toolbar tab to Preview shows the preview pane', async () => {
     const props = { ...postProps({ body: 'Tab body' }), render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`) };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('Tab body');
     await expect.element(screen.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'true');
@@ -1226,7 +1226,7 @@ describe('EditPage', () => {
     // registered bold transform inserts an empty `****` wrap there. Asserting that marker in the
     // hidden body input proves the whole seam (card keydown -> format state -> applyFormat ->
     // CodeMirror dispatch -> hidden-input mirror) without simulating a CodeMirror selection.
-    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    const screen = await render(EditPage, postProps({ body: 'plain prose' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     const event = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true });
@@ -1239,7 +1239,7 @@ describe('EditPage', () => {
 
   // Edits the body through the registered format seam (an empty-selection bold wrap) and waits
   // for the save-state indicator to acknowledge the change.
-  async function makeDirty(screen: ReturnType<typeof render>) {
+  async function makeDirty(screen: Awaited<ReturnType<typeof render>>) {
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     card.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true }));
@@ -1249,7 +1249,7 @@ describe('EditPage', () => {
   }
 
   it('disables Save on a clean page and enables it once edited', async () => {
-    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    const screen = await render(EditPage, postProps({ body: 'plain prose' }));
     const save = () =>
       screen.container.querySelector<HTMLButtonElement>(
         '[data-testid="cairn-band"] button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)',
@@ -1260,7 +1260,7 @@ describe('EditPage', () => {
   });
 
   it('keeps Save enabled for a new entry before any edit', async () => {
-    const screen = render(EditPage, postProps({ isNew: true }));
+    const screen = await render(EditPage, postProps({ isNew: true }));
     const save = screen.container.querySelector<HTMLButtonElement>(
       '[data-testid="cairn-band"] button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)',
     )!;
@@ -1268,18 +1268,18 @@ describe('EditPage', () => {
   });
 
   it('shows no save-state text on a clean mount', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     expect(screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '').toBe('');
   });
 
   it('flags unsaved changes when the body diverges from the committed text', async () => {
-    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    const screen = await render(EditPage, postProps({ body: 'plain prose' }));
     await makeDirty(screen);
   });
 
   it('flags unsaved changes when a sidebar field receives input', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const date = screen.container.querySelector('input[name="date"]')!;
     date.dispatchEvent(new Event('input', { bubbles: true }));
     await expect
@@ -1292,7 +1292,7 @@ describe('EditPage', () => {
     props.data.linkTargets = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
     ];
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('button', { name: /link to page/i }).click();
     const search = screen.container.querySelector('dialog input[type="search"]')!;
     search.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1300,14 +1300,14 @@ describe('EditPage', () => {
   });
 
   it('shows Saved after a save lands with nothing edited', async () => {
-    const screen = render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ saved: true }));
     await expect
       .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
       .toBe('Saved');
   });
 
   it('submits the edit form on Ctrl+S once the page is dirty', async () => {
-    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    const screen = await render(EditPage, postProps({ body: 'plain prose' }));
     await makeDirty(screen);
     let submitted = false;
     const stop = (e: Event) => {
@@ -1326,7 +1326,7 @@ describe('EditPage', () => {
   });
 
   it('ignores Ctrl+S while the page is clean', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     let submitted = false;
     const stop = (e: Event) => {
@@ -1347,7 +1347,7 @@ describe('EditPage', () => {
   });
 
   it('ignores Ctrl+S from inside an open dialog', async () => {
-    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    const screen = await render(EditPage, postProps({ body: 'plain prose' }));
     await makeDirty(screen);
     await screen.getByRole('button', { name: /web link/i }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
@@ -1382,9 +1382,9 @@ describe('EditPage', () => {
       if (type === 'beforeunload' && typeof fn === 'function') handlers.push(fn);
       callOriginal(type, fn, opts);
     }) as typeof window.addEventListener;
-    let screen: ReturnType<typeof render>;
+    let screen: Awaited<ReturnType<typeof render>>;
     try {
-      screen = render(EditPage, postProps({ body: 'plain prose' }));
+      screen = await render(EditPage, postProps({ body: 'plain prose' }));
       await expect.poll(() => handlers.length).toBe(1);
     } finally {
       window.addEventListener = originalAdd;
@@ -1401,7 +1401,7 @@ describe('EditPage', () => {
 
   it('registers a navigation guard that cancels a dirty leave the editor declines', async () => {
     const countBefore = beforeNavigateCallbacks.length;
-    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    const screen = await render(EditPage, postProps({ body: 'plain prose' }));
     expect(beforeNavigateCallbacks.length).toBe(countBefore + 1);
     const guard = beforeNavigateCallbacks[beforeNavigateCallbacks.length - 1];
     const originalConfirm = window.confirm;
@@ -1434,7 +1434,7 @@ describe('EditPage', () => {
 
   it('cancels a dirty full-page unload without a confirm prompt', async () => {
     const countBefore = beforeNavigateCallbacks.length;
-    const screen = render(EditPage, postProps({ body: 'plain prose' }));
+    const screen = await render(EditPage, postProps({ body: 'plain prose' }));
     expect(beforeNavigateCallbacks.length).toBe(countBefore + 1);
     const guard = beforeNavigateCallbacks[beforeNavigateCallbacks.length - 1];
     const originalConfirm = window.confirm;
@@ -1464,7 +1464,7 @@ describe('EditPage', () => {
   });
 
   it('opens the web link dialog on Ctrl+K inside the editor card', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true });
@@ -1490,7 +1490,7 @@ describe('EditPage', () => {
   ];
   for (const { name, init, marker } of cardFormatKeys) {
     it(`dispatches its format on ${name} inside the editor card`, async () => {
-      const screen = render(EditPage, postProps({ body: 'plain prose' }));
+      const screen = await render(EditPage, postProps({ body: 'plain prose' }));
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
       const event = new KeyboardEvent('keydown', { ...init, bubbles: true, cancelable: true });
@@ -1503,7 +1503,7 @@ describe('EditPage', () => {
   }
 
   it('requests the publish submit on Ctrl+Shift+S while pending', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     let formaction: string | null = 'unset';
     const stop = (e: SubmitEvent) => {
@@ -1522,7 +1522,7 @@ describe('EditPage', () => {
   });
 
   it('no-ops Ctrl+Shift+S when nothing is pending', async () => {
-    const screen = render(EditPage, postProps({ pending: false }));
+    const screen = await render(EditPage, postProps({ pending: false }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     let submitted = false;
     const stop = (e: Event) => {
@@ -1540,7 +1540,7 @@ describe('EditPage', () => {
   });
 
   it('toggles Write/Preview on Ctrl+Alt+P', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     expect(screen.container.querySelector('#cairn-pane-preview')).toBeNull();
     const toPreview = new KeyboardEvent('keydown', { key: 'p', code: 'KeyP', ctrlKey: true, altKey: true, cancelable: true });
@@ -1553,7 +1553,7 @@ describe('EditPage', () => {
   });
 
   it('toggles focus mode on Ctrl+Shift+F', async () => {
-    const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
+    const screen = await render(EditPage, postProps({ body: 'one\n\ntwo' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const focusToggle = () => screen.getByRole('button', { name: 'Focus mode', exact: true });
     await expect.element(focusToggle()).toHaveAttribute('aria-pressed', 'false');
@@ -1571,7 +1571,7 @@ describe('EditPage', () => {
   ];
   for (const { name, init } of windowKeysGatingOnDialog) {
     it(`ignores ${name} from inside an open dialog`, async () => {
-      const screen = render(EditPage, postProps({ pending: true, body: 'one\n\ntwo' }));
+      const screen = await render(EditPage, postProps({ pending: true, body: 'one\n\ntwo' }));
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await screen.getByRole('button', { name: /web link/i }).click();
       const dialog = screen.container.querySelector<HTMLDialogElement>(
@@ -1601,7 +1601,7 @@ describe('EditPage', () => {
   }
 
   it('inserts a web link from the toolbar dialog', async () => {
-    const screen = render(EditPage, postProps({ body: '' }));
+    const screen = await render(EditPage, postProps({ body: '' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     await screen.getByRole('button', { name: /web link/i }).click();
     await screen.getByLabelText('Web address').fill('https://example.com/guide');
@@ -1613,7 +1613,7 @@ describe('EditPage', () => {
   });
 
   it('wraps the editor selection as the link text through the web link dialog', async () => {
-    const screen = render(EditPage, postProps({ body: 'me first' }));
+    const screen = await render(EditPage, postProps({ body: 'me first' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
     content.focus();
@@ -1629,7 +1629,7 @@ describe('EditPage', () => {
   });
 
   it('disables the format and insert controls while Preview shows', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('tab', { name: 'Preview' }).click();
     const bold = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Bold (Ctrl+B)"]')!;
     expect(bold.disabled).toBe(true);
@@ -1645,20 +1645,20 @@ describe('EditPage', () => {
   it('carries no second breadcrumb in the page body (the band owns the way back)', async () => {
     // The breadcrumb is the shell's, rendered once in the topbar. EditPage's body must not
     // render its own back link or a second breadcrumb under the one band.
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     expect(screen.container.querySelector('main a[href="/admin/posts"]')).toBeNull();
     expect(screen.container.querySelector('main nav[aria-label="Breadcrumb"]')).toBeNull();
   });
 
   it('keeps the page accessible name as the manuscript h1 and drops the id sub-line', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     expect(screen.container.querySelector('main h1')?.textContent).toBe('Hello');
     const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
     expect(band.textContent ?? '').not.toContain('2026-05-hello');
   });
 
   it('stacks the Hidden badge beside the status badge for a hidden entry', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({ frontmatter: { title: 'Hello', date: '2026-05-01', draft: true } }),
     );
@@ -1668,12 +1668,12 @@ describe('EditPage', () => {
   });
 
   it('hosts the save-state indicator inside the header', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     expect(screen.container.querySelector('[data-testid="cairn-band"] .cairn-save-state')).not.toBeNull();
   });
 
   it('wires the header Save and Publish to the edit form by id', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     expect(screen.container.querySelector('form[action="?/save"]')?.id).toBe('cairn-edit-form');
     const header = screen.container.querySelector('[data-testid="cairn-band"]')!;
     expect(header.querySelector('button[type="submit"][form="cairn-edit-form"]:not([formaction])')).not.toBeNull();
@@ -1686,7 +1686,7 @@ describe('EditPage', () => {
     // 5.3). Without new=1 riding the action/formaction itself, editLoad would see isNew=false
     // for an entry that was never actually committed and throw a 404, discarding the refusal
     // and the draft (the Task 12 regression this test pins).
-    const screen = render(EditPage, postProps({ isNew: true }));
+    const screen = await render(EditPage, postProps({ isNew: true }));
     expect(screen.container.querySelector('form#cairn-edit-form')?.getAttribute('action')).toBe('?/save&new=1');
     const publishButtons = screen.container.querySelectorAll('button[form="cairn-edit-form"][formaction]');
     expect(publishButtons.length).toBeGreaterThan(0);
@@ -1696,7 +1696,7 @@ describe('EditPage', () => {
   });
 
   it('leaves the form action and formaction untouched (no new=1) for an existing entry', async () => {
-    const screen = render(EditPage, postProps({ isNew: false }));
+    const screen = await render(EditPage, postProps({ isNew: false }));
     expect(screen.container.querySelector('form#cairn-edit-form')?.getAttribute('action')).toBe('?/save');
     const publishButtons = screen.container.querySelectorAll('button[form="cairn-edit-form"][formaction]');
     expect(publishButtons.length).toBeGreaterThan(0);
@@ -1706,20 +1706,20 @@ describe('EditPage', () => {
   });
 
   it('lists Delete in the overflow menu and omits Discard changes while clean', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     expect(menu.textContent ?? '').toContain('Delete');
     expect(menu.textContent ?? '').not.toContain('Discard changes');
   });
 
   it('hides the History link for a never-saved new entry, since historyLoad 404s with no main file and no branch', async () => {
-    const screen = render(EditPage, postProps({ isNew: true, published: false, pending: false }));
+    const screen = await render(EditPage, postProps({ isNew: true, published: false, pending: false }));
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     expect(menu.textContent ?? '').not.toContain('History');
   });
 
   it('shows the History link for a published entry', async () => {
-    const screen = render(EditPage, postProps({ published: true }));
+    const screen = await render(EditPage, postProps({ published: true }));
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     const link = menu.querySelector('a[href="/admin/posts/2026-05-hello/history"]');
     expect(link).not.toBeNull();
@@ -1728,7 +1728,7 @@ describe('EditPage', () => {
 
   // Task 6: the desk controls live in the one header band, fed through the topbar context portal.
   it('renders the desk controls inside the one header band', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
     // Save and Publish ride the edit form from the band.
     expect(band.querySelector('button[type="submit"][form="cairn-edit-form"]:not([formaction]):not(.sr-only)')).not.toBeNull();
@@ -1741,7 +1741,7 @@ describe('EditPage', () => {
   });
 
   it('renders no second header band in the page body', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     // The sticky glass header is gone: the page body (EditPage's own render) carries no <header>
     // and no second copy of the lifecycle controls.
     const main = screen.container.querySelector('main')!;
@@ -1750,7 +1750,7 @@ describe('EditPage', () => {
   });
 
   it('renders the feedback strip directly under the band', async () => {
-    const screen = render(EditPage, postProps({ saved: true }));
+    const screen = await render(EditPage, postProps({ saved: true }));
     const band = screen.container.querySelector('[data-testid="cairn-band"]')!;
     const flash = screen.container.querySelector('.cairn-feedback')!;
     expect(flash).not.toBeNull();
@@ -1760,7 +1760,7 @@ describe('EditPage', () => {
   });
 
   it('opens the details slide-over from the band trigger as a labeled region', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const aside = screen.container.querySelector('aside')!;
     // Closed by default: the hidden attribute keeps the panel out of the a11y tree and tab order.
     expect(aside.hasAttribute('hidden')).toBe(true);
@@ -1773,7 +1773,7 @@ describe('EditPage', () => {
   });
 
   it('moves focus to the close button on open and back to the trigger on close', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const trigger = screen.getByRole('button', { name: 'Details' });
     await trigger.click();
     const close = screen.getByRole('button', { name: 'Close details' });
@@ -1783,7 +1783,7 @@ describe('EditPage', () => {
   });
 
   it('closes the details slide-over on Escape', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const aside = screen.container.querySelector('aside')!;
     await screen.getByRole('button', { name: 'Details' }).click();
     expect(aside.hasAttribute('hidden')).toBe(false);
@@ -1793,7 +1793,7 @@ describe('EditPage', () => {
   });
 
   it('toggles the details slide-over on Ctrl+.', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const aside = screen.container.querySelector('aside')!;
     expect(aside.hasAttribute('hidden')).toBe(true);
     const open = new KeyboardEvent('keydown', { key: '.', ctrlKey: true, cancelable: true });
@@ -1806,7 +1806,7 @@ describe('EditPage', () => {
   });
 
   it('submits a detail field edited while the panel is closed and hidden', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const aside = screen.container.querySelector('aside')!;
     // Edit a detail field through the open panel, then close it.
     await screen.getByRole('button', { name: 'Details' }).click();
@@ -1830,7 +1830,7 @@ describe('EditPage', () => {
       ] satisfies NamedField[],
       frontmatter: { title: 'Hello', author: '' },
     });
-    const screen = render(EditPage, { ...props });
+    const screen = await render(EditPage, { ...props });
     const aside = screen.container.querySelector('aside')!;
     // The required Author field lives in the closed (hidden) panel; the browser cannot report on
     // an invisible control, so the capture-phase invalid handler opens the panel first.
@@ -1842,14 +1842,14 @@ describe('EditPage', () => {
   });
 
   it('adds Discard changes to the overflow menu while pending', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     expect(menu.textContent ?? '').toContain('Delete');
     expect(menu.textContent ?? '').toContain('Discard changes');
   });
 
   it('opens the delete confirm from the overflow menu and closes the menu', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('button', { name: 'More actions' }).click();
     await screen.getByRole('button', { name: /^delete$/i }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
@@ -1861,7 +1861,7 @@ describe('EditPage', () => {
   });
 
   it('drives the header overflow as a popover with aria-expanded and Escape', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const trigger = screen.getByRole('button', { name: 'More actions' });
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await trigger.click();
@@ -1874,7 +1874,7 @@ describe('EditPage', () => {
   });
 
   it('keeps the sidebar groups to Change URL plus the Share preview pair', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     // The panel header adds a Close button; the field groups themselves carry Change URL plus the
     // Share preview group's mint and revoke controls (spec part 3, "Public preview for a
     // non-editor"), and no other action.
@@ -1891,7 +1891,7 @@ describe('EditPage', () => {
   });
 
   it('hoists the title input above the editor card inside the form', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const form = screen.container.querySelector('#cairn-edit-form')!;
     const title = form.querySelector<HTMLInputElement>('input[name="title"]');
     expect(title).not.toBeNull();
@@ -1907,12 +1907,12 @@ describe('EditPage', () => {
       fields: [{ type: 'date', name: 'date', label: 'Date' }] satisfies NamedField[],
       frontmatter: { date: '2026-05-01' },
     });
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     expect(screen.container.querySelector('input[name="title"]')).toBeNull();
   });
 
   it('groups the sidebar under the Details, Visibility, Address, and Share preview eyebrows', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const legends = Array.from(screen.container.querySelectorAll('aside legend')).map((l) =>
       l.textContent?.trim(),
     );
@@ -1922,7 +1922,7 @@ describe('EditPage', () => {
   it('omits Details without remaining fields and Visibility without a draft boolean', async () => {
     // The page concept carries only the title field, which is hoisted, so Address and Share
     // preview stand alone (Share preview renders regardless of concept, spec part 3).
-    const screen = render(EditPage, pageProps());
+    const screen = await render(EditPage, pageProps());
     const legends = Array.from(screen.container.querySelectorAll('aside legend')).map((l) =>
       l.textContent?.trim(),
     );
@@ -1930,7 +1930,7 @@ describe('EditPage', () => {
   });
 
   it("shows the fragment's own Included in group, listing the same consumers the delete guard names", async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({
         conceptId: 'fragments',
@@ -1955,7 +1955,7 @@ describe('EditPage', () => {
   });
 
   it('shows an honest empty state in the Included in group when nothing includes the fragment yet', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({ conceptId: 'fragments', label: 'Fragment', slug: 'welcome', routable: false, inboundLinks: [] }),
     );
@@ -1967,7 +1967,7 @@ describe('EditPage', () => {
   });
 
   it('omits the Included in group on a non-fragments concept', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const legends = Array.from(screen.container.querySelectorAll('aside legend')).map((l) =>
       l.textContent?.trim(),
     );
@@ -1975,7 +1975,7 @@ describe('EditPage', () => {
   });
 
   it('names the publish blast radius in the status notice region for a fragment with includers, pluralized', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({
         conceptId: 'fragments',
@@ -1994,7 +1994,7 @@ describe('EditPage', () => {
   });
 
   it('uses the singular form for exactly one includer', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({
         conceptId: 'fragments',
@@ -2009,7 +2009,7 @@ describe('EditPage', () => {
   });
 
   it('omits the publish blast-radius line for a fragment with no includers', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({ conceptId: 'fragments', label: 'Fragment', slug: 'welcome', routable: false, inboundLinks: [] }),
     );
@@ -2018,7 +2018,7 @@ describe('EditPage', () => {
   });
 
   it('omits the publish blast-radius line on a normal post, even with inboundLinks set', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({ inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }] }),
     );
@@ -2027,7 +2027,7 @@ describe('EditPage', () => {
   });
 
   it('renders the draft boolean as the Hidden toggle with its hint', async () => {
-    const screen = render(
+    const screen = await render(
       EditPage,
       postProps({ frontmatter: { title: 'Hello', date: '2026-05-01', draft: true } }),
     );
@@ -2041,7 +2041,7 @@ describe('EditPage', () => {
   });
 
   it('shows the address and opens the rename dialog from its Change URL button', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const aside = screen.container.querySelector('aside')!;
     expect(aside.querySelector('code')?.textContent).toBe('/hello');
     // Open the slide-over so the Address group's Change URL control is in the a11y tree.
@@ -2054,13 +2054,13 @@ describe('EditPage', () => {
   });
 
   it('drops Change URL from the header overflow menu', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     expect(menu.textContent ?? '').not.toContain('Change URL');
   });
 
   it('shows the name treatment for a non-routable concept, keeping the rename affordance', async () => {
-    const screen = render(EditPage, postProps({ conceptId: 'fragments', label: 'Fragment', slug: 'welcome', routable: false }));
+    const screen = await render(EditPage, postProps({ conceptId: 'fragments', label: 'Fragment', slug: 'welcome', routable: false }));
     const aside = screen.container.querySelector('aside')!;
     const legends = Array.from(aside.querySelectorAll('legend')).map((l) => l.textContent?.trim());
     expect(legends).toContain('Name');
@@ -2072,7 +2072,7 @@ describe('EditPage', () => {
   });
 
   it('keeps a routable concept\'s Address block byte-identical', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const aside = screen.container.querySelector('aside')!;
     const legends = Array.from(aside.querySelectorAll('legend')).map((l) => l.textContent?.trim());
     expect(legends).toContain('Address');
@@ -2082,7 +2082,7 @@ describe('EditPage', () => {
   });
 
   it('flags unsaved changes when the hoisted title receives input', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const title = screen.container.querySelector('#cairn-edit-form input[name="title"]')!;
     title.dispatchEvent(new Event('input', { bubbles: true }));
     await expect
@@ -2105,7 +2105,7 @@ describe('EditPage', () => {
   ];
   for (const { name, over, message } of flashCases) {
     it(`renders the ${name} flash as the one feedback strip`, async () => {
-      const screen = render(EditPage, postProps(over));
+      const screen = await render(EditPage, postProps(over));
       const strips = screen.container.querySelectorAll('.cairn-feedback');
       expect(strips.length).toBe(1);
       expect(strips[0].classList.contains('alert-success')).toBe(true);
@@ -2119,7 +2119,7 @@ describe('EditPage', () => {
   }
 
   it('shows one strip even when several flash flags arrive together', async () => {
-    const screen = render(EditPage, postProps({ saved: true, renamed: true }));
+    const screen = await render(EditPage, postProps({ saved: true, renamed: true }));
     expect(screen.container.querySelectorAll('.alert-success').length).toBe(1);
     expect(screen.container.querySelector('.cairn-feedback')?.textContent?.trim()).toBe(
       'Saved. Your site keeps showing the published version until you publish.',
@@ -2127,7 +2127,7 @@ describe('EditPage', () => {
   });
 
   it('shows the word count in the editor card footer', async () => {
-    const screen = render(EditPage, postProps({ body: '' }));
+    const screen = await render(EditPage, postProps({ body: '' }));
     const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     const count = screen.getByText('0 words');
     await expect.element(count).toBeInTheDocument();
@@ -2135,33 +2135,33 @@ describe('EditPage', () => {
   });
 
   it('uses the singular for a one-word body', async () => {
-    const screen = render(EditPage, postProps({ body: 'hello' }));
+    const screen = await render(EditPage, postProps({ body: 'hello' }));
     await expect.element(screen.getByText('1 word')).toBeInTheDocument();
   });
 
   it('leaves directive lines and table rows out of the word count', async () => {
     const body = ':::gallery\nthree words here\n:::\n\n| Col | Col |\n| --- | --- |\n';
-    const screen = render(EditPage, postProps({ body }));
+    const screen = await render(EditPage, postProps({ body }));
     await expect.element(screen.getByText('3 words')).toBeInTheDocument();
   });
 
   it('does not count bold markers as part of a word', async () => {
-    const screen = render(EditPage, postProps({ body: '**bold** word' }));
+    const screen = await render(EditPage, postProps({ body: '**bold** word' }));
     await expect.element(screen.getByText('2 words')).toBeInTheDocument();
   });
 
   it('leaves heading markers out of the word count', async () => {
-    const screen = render(EditPage, postProps({ body: '## Heading' }));
+    const screen = await render(EditPage, postProps({ body: '## Heading' }));
     await expect.element(screen.getByText('1 word')).toBeInTheDocument();
   });
 
   it('leaves inline directives out of the word count', async () => {
-    const screen = render(EditPage, postProps({ body: ':icon[ski]{s=1} after' }));
+    const screen = await render(EditPage, postProps({ body: ':icon[ski]{s=1} after' }));
     await expect.element(screen.getByText('1 word')).toBeInTheDocument();
   });
 
   it('counts a link as its text plus its URL, markers spaced out rather than mashed', async () => {
-    const screen = render(EditPage, postProps({ body: '[text](https://example.com)' }));
+    const screen = await render(EditPage, postProps({ body: '[text](https://example.com)' }));
     await expect.element(screen.getByText('2 words')).toBeInTheDocument();
   });
 
@@ -2170,7 +2170,7 @@ describe('EditPage', () => {
     props.data.linkTargets = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
     ];
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await expect.element(screen.getByText('0 words')).toBeInTheDocument();
     // Inserting "[About Us](cairn:pages/about)" through the picker adds three words once the
     // link markers space out: the two-word link text plus its destination.
@@ -2182,7 +2182,7 @@ describe('EditPage', () => {
   it('shows a live, aria-hidden issue count in the footer sourced from the same diagnostics as the announcer', async () => {
     // "the the" is a deterministic objective-error finding (spellcheck.ts's objective source runs
     // without a Worker), so the count settles without a fake spell Worker.
-    const screen = render(EditPage, postProps({ body: 'the the cat' }));
+    const screen = await render(EditPage, postProps({ body: 'the the cat' }));
     const count = () => screen.container.querySelector('[data-testid="cairn-issue-count"]');
     await expect.element(screen.getByText('3 words')).toBeInTheDocument(); // the editor has mounted
     expect(count()?.textContent).toBe('Nothing to review');
@@ -2194,7 +2194,7 @@ describe('EditPage', () => {
   });
 
   it('opens the Markdown help dialog from the toolbar strip and lists the cheat rows', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('button', { name: 'Markdown help' }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
       'dialog[aria-labelledby="cairn-markdown-help-title"]',
@@ -2209,7 +2209,7 @@ describe('EditPage', () => {
   });
 
   it('opens the shortcuts sheet on Ctrl+/ and lists every binding', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     const event = new KeyboardEvent('keydown', { key: '/', ctrlKey: true, cancelable: true });
     window.dispatchEvent(event);
     const dialog = screen.container.querySelector<HTMLDialogElement>(
@@ -2236,7 +2236,7 @@ describe('EditPage', () => {
   });
 
   it('dismisses the shortcuts sheet on Escape (native dialog behavior)', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '/', ctrlKey: true, cancelable: true }));
     const dialog = screen.container.querySelector<HTMLDialogElement>(
       'dialog[aria-labelledby="cairn-shortcuts-title"]',
@@ -2250,7 +2250,7 @@ describe('EditPage', () => {
   });
 
   it('lists the same shortcut rows in the Markdown help dialog and documents #### as an H4', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await screen.getByRole('button', { name: 'Markdown help' }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
       'dialog[aria-labelledby="cairn-markdown-help-title"]',
@@ -2266,7 +2266,7 @@ describe('EditPage', () => {
   });
 
   it('makes a hidden save button the form default so Enter never publishes', async () => {
-    const screen = render(EditPage, postProps({ pending: true }));
+    const screen = await render(EditPage, postProps({ pending: true }));
     // The default button for implicit submission (Enter in a single-line field) is the first
     // form-owned submit button in tree order, INCLUDING the header's external submitters, which
     // precede the form element. querySelectorAll returns tree order across the comma groups.
@@ -2291,7 +2291,7 @@ describe('EditPage', () => {
     // routes through the first associated submit button in tree order. The band precedes the form,
     // so the sr-only default Save submitter (no formaction) is that button, never Publish. A real
     // Enter keypress (not requestSubmit) is the only way to exercise the default-button choice.
-    const screen = render(EditPage, postProps({ pending: true, isNew: true }));
+    const screen = await render(EditPage, postProps({ pending: true, isNew: true }));
     let formaction: string | null = 'unset';
     const stop = (e: SubmitEvent) => {
       e.preventDefault();
@@ -2324,7 +2324,7 @@ describe('EditPage', () => {
     props.data.linkTargets = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
     ];
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     // The toolbar still offers all three triggers...
     const toolbar = screen.container.querySelector('[role="toolbar"]')!;
     expect(toolbar.querySelector('button[aria-label="Insert block"]')).not.toBeNull();
@@ -2336,12 +2336,12 @@ describe('EditPage', () => {
   });
 
   it('hides the Insert block trigger when the registry offers nothing insertable', async () => {
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     expect(screen.container.querySelector('button[aria-label="Insert block"]')).toBeNull();
   });
 
   it('remounts the edit surface when navigation lands on another entry', async () => {
-    const screen = render(EditPage, postProps({ body: 'first body' }));
+    const screen = await render(EditPage, postProps({ body: 'first body' }));
     await makeDirty(screen);
     await screen.rerender(postProps({ body: 'second body', id: '2026-06-other', slug: 'other' }));
     await expect
@@ -2366,9 +2366,9 @@ describe('EditPage', () => {
       if (type === 'beforeunload' && typeof fn === 'function') handlers.push(fn);
       callOriginal(type, fn, opts);
     }) as typeof window.addEventListener;
-    let screen: ReturnType<typeof render>;
+    let screen: Awaited<ReturnType<typeof render>>;
     try {
-      screen = render(EditPage, postProps({ pending: true, published: true, body: 'plain prose' }));
+      screen = await render(EditPage, postProps({ pending: true, published: true, body: 'plain prose' }));
       await expect.poll(() => handlers.length).toBe(1);
     } finally {
       window.addEventListener = originalAdd;
@@ -2396,7 +2396,7 @@ describe('EditPage', () => {
 
   it('shows a quiet line when the preview has nothing to render', async () => {
     const props = { ...postProps({ body: '' }), render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(body ? `<p>${body}</p>` : '') };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.element(screen.getByText('Nothing to preview yet.')).toBeInTheDocument();
   });
@@ -2408,7 +2408,7 @@ describe('EditPage', () => {
         throw new Error('boom');
       },
     };
-    const screen = render(EditPage, props);
+    const screen = await render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.element(screen.getByText('The preview could not render this content.')).toBeInTheDocument();
   });
@@ -2419,7 +2419,7 @@ describe('EditPage', () => {
     const calls: { md: string; resolve: (html: string) => void }[] = [];
     const slowRender = ({ body }: { body: string }) =>
       new Promise<string>((resolve) => calls.push({ md: body, resolve }));
-    const screen = render(EditPage, { ...postProps({ body: 'first body' }), render: slowRender });
+    const screen = await render(EditPage, { ...postProps({ body: 'first body' }), render: slowRender });
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => calls.length).toBe(1);
     // Navigate to entry B while A's render is still in flight; the entry-key reset remounts the
@@ -2446,7 +2446,7 @@ describe('EditPage', () => {
     // validation report. The capture-phase invalid handler flips back to Write so the report
     // lands on a visible control. The body textarea stands in for that write-pane control: firing
     // a capture-phase invalid from inside #cairn-pane-write must flip the pane.
-    const screen = render(EditPage, postProps());
+    const screen = await render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => screen.container.querySelector('#cairn-pane-preview')).not.toBeNull();
@@ -2466,7 +2466,7 @@ describe('EditPage', () => {
     });
 
     it('hides the band, title, strip, and footer behind the chip when the footer Zen toggle enters', async () => {
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       // Out of zen: the band, the document title, the toolbar strip, and the footer are all up,
       // and there is no chip.
@@ -2492,7 +2492,7 @@ describe('EditPage', () => {
     });
 
     it('gates the zen Esc hint on pointer:coarse and marks the editor card zen for the resting-frame CSS (audit finding 10)', async () => {
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       const editorCard = screen.container.querySelector('[role="group"][aria-label="Editor"]')!;
       expect(editorCard.className).not.toContain('cairn-editor-zen');
@@ -2506,7 +2506,7 @@ describe('EditPage', () => {
     });
 
     it('enters and exits zen on Ctrl+Shift+.', async () => {
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       const enter = new KeyboardEvent('keydown', { key: '.', ctrlKey: true, shiftKey: true, cancelable: true });
       window.dispatchEvent(enter);
       expect(enter.defaultPrevented).toBe(true);
@@ -2520,7 +2520,7 @@ describe('EditPage', () => {
     });
 
     it('exits zen on Escape and restores the chrome', async () => {
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       await screen.getByRole('button', { name: 'Zen', exact: true }).click();
       await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
       const esc = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
@@ -2533,7 +2533,7 @@ describe('EditPage', () => {
     });
 
     it('exits zen from the chip Exit control', async () => {
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       await screen.getByRole('button', { name: 'Zen', exact: true }).click();
       await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
       await screen.getByRole('button', { name: /exit zen/i }).click();
@@ -2542,7 +2542,7 @@ describe('EditPage', () => {
     });
 
     it('closes an open details panel before exiting zen (Escape precedence)', async () => {
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       // Enter zen, then open the details panel; Escape must close the panel first, not exit zen.
       await screen.getByRole('button', { name: 'Zen', exact: true }).click();
       await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
@@ -2560,7 +2560,7 @@ describe('EditPage', () => {
     });
 
     it('moves focus into the editor when entering zen hides the focused control', async () => {
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       // Focus the footer's Zen toggle (a control that hides under zen), then enter zen via the
       // keyboard so focus is on a hiding control at the moment of entry.
@@ -2577,7 +2577,7 @@ describe('EditPage', () => {
       // The title input is hoisted above the editor card and hides under zen, the same stranding
       // class as a band action (Publish/Save), which lives outside the card too. Entering zen with
       // focus there must move focus into the surface, not leave it on the detached title.
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       const title = screen.container.querySelector('input.cairn-doc-title') as HTMLInputElement;
       title.focus();
@@ -2589,21 +2589,21 @@ describe('EditPage', () => {
     });
 
     it('persists the zen preference and re-applies it on mount', async () => {
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       await screen.getByRole('button', { name: 'Zen', exact: true }).click();
       expect(localStorage.getItem('cairn-editor-zen')).toBe('true');
       await screen.getByRole('button', { name: /exit zen/i }).click();
       expect(localStorage.getItem('cairn-editor-zen')).toBe('false');
       // A fresh mount with the stored choice arrives in zen.
       localStorage.setItem('cairn-editor-zen', 'true');
-      const reborn = render(EditPage, postProps());
+      const reborn = await render(EditPage, postProps());
       await expect.poll(() => reborn.container.querySelector('.cairn-zen-chip')).not.toBeNull();
       expect(reborn.container.querySelector('[data-testid="cairn-band"]')).toBeNull();
     });
 
     it('composes with focus mode: both on means chrome gone and machinery dimmed', async () => {
       localStorage.setItem('cairn-editor-focus-mode', 'true');
-      const screen = render(EditPage, postProps({ body: 'one\n\ntwo' }));
+      const screen = await render(EditPage, postProps({ body: 'one\n\ntwo' }));
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       // Focus mode is on: a paragraph away from the mount caret dims.
       await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
@@ -2615,7 +2615,7 @@ describe('EditPage', () => {
     });
 
     it('keeps the chip save-state live: dirtying the body flips the dot', async () => {
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await screen.getByRole('button', { name: 'Zen', exact: true }).click();
       const chip = () => screen.container.querySelector('.cairn-zen-chip')!;
@@ -2677,7 +2677,7 @@ describe('EditPage', () => {
     }
 
     it('disables Edit block with a plain reason when the caret is not on a component', async () => {
-      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await expect.poll(() => editControl(screen)).not.toBeNull();
       const control = editControl(screen)!;
@@ -2691,7 +2691,7 @@ describe('EditPage', () => {
     });
 
     it('keeps the unavailable Edit block focusable and announced through aria-disabled', async () => {
-      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await expect.poll(() => editControl(screen)).not.toBeNull();
       const control = editControl(screen)!;
@@ -2704,7 +2704,7 @@ describe('EditPage', () => {
     });
 
     it('enables Edit block when the caret sits in a safe component', async () => {
-      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
@@ -2712,7 +2712,7 @@ describe('EditPage', () => {
     });
 
     it('does not promise an action from the Edit-block control when Preview hides the Write surface', async () => {
-      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
@@ -2729,7 +2729,7 @@ describe('EditPage', () => {
     });
 
     it('disables Edit block with the unsafe reason on a component the safety check refuses', async () => {
-      const screen = render(EditPage, { ...postProps({ body: bodyWith(UNSAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(UNSAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       // The block carries an undeclared attribute key, so the gate refuses it. The control stays
@@ -2760,7 +2760,7 @@ describe('EditPage', () => {
       });
 
       it('keeps the unavailable Edit block control reachable to a mouse, not suppressed by pointer-events: none', async () => {
-        const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+        const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
         await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
         await expect.poll(() => editControl(screen)).not.toBeNull();
         const control = editControl(screen)!;
@@ -2791,7 +2791,7 @@ describe('EditPage', () => {
           resolvers.push(resolve);
         });
       vi.mocked(componentGrammar.componentRoundTripSafety).mockImplementationOnce(pending).mockImplementationOnce(pending);
-      const screen = render(EditPage, { ...postProps({ body }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, 'Block A');
       await expect.poll(() => resolvers.length).toBe(1);
@@ -2811,7 +2811,7 @@ describe('EditPage', () => {
     });
 
     it('opens the dialog in edit mode seeded from the parsed block when activated', async () => {
-      const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
+      const screen = await render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await clickLine(screen, ':::callout[Heads up]');
       await expect.poll(() => editControl(screen)?.getAttribute('aria-disabled')).toBe('false');
@@ -2865,7 +2865,7 @@ describe('EditPage', () => {
     it('a no-op (corrected equals the source) shows Nothing to fix and opens no review', async () => {
       const body = 'The body reads clean.';
       stubTidyFetch(body); // the model returned the text unchanged
-      const screen = render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }) as never);
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -2882,7 +2882,7 @@ describe('EditPage', () => {
       // must show the honest message and write nothing.
       const body = '# Title\n\nA paragraph that is fine.';
       stubTidyFetch('## Title\n\nA paragraph that is fine.');
-      const screen = render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }) as never);
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -2899,7 +2899,7 @@ describe('EditPage', () => {
     it('a clean validated result opens the review with the change set', async () => {
       const body = 'We can accomodate the crowd.';
       stubTidyFetch('We can accommodate the crowd.');
-      const screen = render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }) as never);
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -2953,7 +2953,7 @@ describe('EditPage', () => {
       // must splice over the actually-selected occurrence (the later offset), never the first match.
       const body = 'I like colour. I also like colour very much.';
       stubTidyFetch('color');
-      const screen = render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }) as never);
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       // CodeMirror renders "colour" verbatim (no syntax markers), so the text node carries both copies.
       await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('colour');
@@ -2980,7 +2980,7 @@ describe('EditPage', () => {
       // that the focus trap and Escape are live.
       const body = 'The body reads clean.';
       stubTidyFetch(body);
-      const screen = render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }) as never);
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3024,7 +3024,7 @@ describe('EditPage', () => {
       // independent of whether the abort flag happened to flip first.
       const body = 'We can accomodate the crowd.';
       const deferred = deferredTidyFetch();
-      const screen = render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }) as never);
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3057,7 +3057,7 @@ describe('EditPage', () => {
       vi.mocked(tidyValidateModule.validateTidy).mockImplementationOnce(() => {
         throw new Error('boom');
       });
-      const screen = render(EditPage, tidyProps({ body }) as never);
+      const screen = await render(EditPage, tidyProps({ body }) as never);
       await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
       await expect.poll(() => tidyButton(screen)).toBeTruthy();
       tidyButton(screen)!.click();
@@ -3123,7 +3123,7 @@ describe('EditPage', () => {
     for (const width of [768]) {
       it(`keeps every desk-band control unobstructed at ${width}px on a published entry`, async () => {
         await page.viewport(width, 700);
-        const screen = render(EditPage, postProps());
+        const screen = await render(EditPage, postProps());
         await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
         const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
         assertNoOverlap(bandRects(band));
@@ -3142,7 +3142,7 @@ describe('EditPage', () => {
 
       it(`keeps every desk-band control unobstructed at ${width}px on a dirty entry (the widest save-state text)`, async () => {
         await page.viewport(width, 700);
-        const screen = render(EditPage, postProps());
+        const screen = await render(EditPage, postProps());
         await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
         const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
         content.focus();
@@ -3175,7 +3175,7 @@ describe('EditPage', () => {
     for (const width of [320, 390]) {
       it(`renders the bottom action bar with Save and Publish at a 44px floor at ${width}px, and drops the band's own pair`, async () => {
         await page.viewport(width, 700);
-        const screen = render(EditPage, postProps());
+        const screen = await render(EditPage, postProps());
         await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
         const bar = screen.container.querySelector<HTMLElement>('[data-testid="cairn-edit-actionbar"]');
         await expect.poll(() => bar).not.toBeNull();
@@ -3210,13 +3210,13 @@ describe('EditPage', () => {
       // so the desk route's band rules down to 48px there (max-sm:h-12/min-h-12 on the real
       // CairnAdminShell navbar, mirrored by the harness). At sm and up it stays the full 64px.
       await page.viewport(390, 700);
-      const narrowScreen = render(EditPage, postProps());
+      const narrowScreen = await render(EditPage, postProps());
       await expect.poll(() => narrowScreen.container.querySelector('.cm-content')).not.toBeNull();
       const narrowBand = narrowScreen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
       expect(narrowBand.getBoundingClientRect().height).toBeCloseTo(48, 0);
 
       await page.viewport(768, 700);
-      const wideScreen = render(EditPage, postProps());
+      const wideScreen = await render(EditPage, postProps());
       await expect.poll(() => wideScreen.container.querySelector('.cm-content')).not.toBeNull();
       const wideBand = wideScreen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
       expect(wideBand.getBoundingClientRect().height).toBeCloseTo(64, 0);
@@ -3224,7 +3224,7 @@ describe('EditPage', () => {
 
     it('keeps the sr-only default submit first among the form\'s submit buttons in tree order, ahead of the bottom action bar', async () => {
       await page.viewport(390, 700);
-      const screen = render(EditPage, postProps({ pending: true }));
+      const screen = await render(EditPage, postProps({ pending: true }));
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       await expect.poll(() => screen.container.querySelector('[data-testid="cairn-edit-actionbar"]')).not.toBeNull();
       const owned = Array.from(
@@ -3249,7 +3249,7 @@ describe('EditPage', () => {
 
     it('carries one status pill whose aria-label spells out the Published + Hidden + dirty triple', async () => {
       await page.viewport(320, 700);
-      const screen = render(
+      const screen = await render(
         EditPage,
         postProps({ frontmatter: { title: 'Hello', date: '2026-05-01', draft: true } }),
       );
@@ -3272,7 +3272,7 @@ describe('EditPage', () => {
     for (const width of [320, 390]) {
       it(`does not render the editor footer strip at ${width}px; its controls stay reachable through the toolbar overflow, and Markdown help stays reachable from the strip itself`, async () => {
         await page.viewport(width, 700);
-        const screen = render(EditPage, postProps());
+        const screen = await render(EditPage, postProps());
         await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
         // Not merely hidden: the strip leaves the DOM outright at this width, so a plain-text
         // query for its word count can never resolve two ambiguous copies against the popover's
@@ -3320,7 +3320,7 @@ describe('EditPage', () => {
 
     it('renders the unavailable Figure control as visibly disabled, not an empty gap, with its tooltip intact', async () => {
       // Default caret placement (no media at the caret): the toolbar's Figure control is guarded.
-      const screen = render(EditPage, postProps());
+      const screen = await render(EditPage, postProps());
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       const button = screen.container.querySelector<HTMLButtonElement>(
         'button[aria-label="Place the cursor on an image to add a figure"]',
@@ -3342,7 +3342,7 @@ describe('EditPage', () => {
 
     it('does not promise an action from the Figure control when Preview hides the Write surface', async () => {
       const hash = '0123456789abcdef';
-      const screen = render(EditPage, postProps({ body: `plain prose\n![A cat](media:cat.${hash})\ntail prose` }));
+      const screen = await render(EditPage, postProps({ body: `plain prose\n![A cat](media:cat.${hash})\ntail prose` }));
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       const line = await vi.waitFor(() =>
         Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>

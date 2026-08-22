@@ -4,7 +4,7 @@ From nothing to signed in, and how to sign in again.
 
 ## Before you run it
 
-You need a Mac or a Linux computer with [Node.js](https://nodejs.org) 22 or later installed, a
+You need a Mac or a Linux computer with [Node.js](https://nodejs.org) 24 or later installed, a
 terminal, a [GitHub account](https://github.com/signup) and a
 [Cloudflare account](https://dash.cloudflare.com/sign-up), both free to open if you don't have
 them yet. The tool signs in to accounts you already have; it doesn't create either one for you.

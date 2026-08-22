@@ -40,6 +40,23 @@ describe('variantUrl', () => {
       '/cdn-cgi/image/width=800,format=auto,gravity=auto/media/x.a1b2c3d4e5f6a7b8.webp',
     );
   });
+
+  it.each(['aspect-crop', 'scale-up', 'squeeze'] as const)('carries the %s fit mode', (fit) => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, height: 600, fit });
+    expect(out).toContain(`fit=${fit}`);
+  });
+
+  // interpolate is Cloudflare's own default when upscale is unset, so an explicit one still has
+  // to reach the URL rather than being optimized away.
+  it.each(['generate', 'interpolate'] as const)('carries an explicit upscale=%s', (upscale) => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up', upscale });
+    expect(out).toContain(`upscale=${upscale}`);
+  });
+
+  it('omits upscale when the spec leaves it unset', () => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up' });
+    expect(out).not.toContain('upscale');
+  });
 });
 
 describe('presetUrl', () => {

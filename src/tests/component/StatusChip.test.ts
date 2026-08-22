@@ -15,9 +15,9 @@ describe('STATUS_CHIP_DOT_CLASS', () => {
 });
 
 describe('StatusChip', () => {
-  it('renders every tone as a badge carrying its status dot and label', () => {
+  it('renders every tone as a badge carrying its status dot and label', async () => {
     for (const [tone, dotClass] of Object.entries(STATUS_CHIP_DOT_CLASS)) {
-      const screen = render(StatusChip, { tone: tone as never, label: 'Current' });
+      const screen = await render(StatusChip, { tone: tone as never, label: 'Current' });
       const chip = screen.container.querySelector('.status-chip')!;
       expect(chip.className).toContain('badge');
       expect(chip.className).toContain('badge-outline');
@@ -26,28 +26,28 @@ describe('StatusChip', () => {
     }
   });
 
-  it('never lets the badge fill carry the tone color, only the status dot', () => {
-    const screen = render(StatusChip, { tone: 'danger', label: 'Overdue' });
+  it('never lets the badge fill carry the tone color, only the status dot', async () => {
+    const screen = await render(StatusChip, { tone: 'danger', label: 'Overdue' });
     const chip = screen.container.querySelector('.status-chip')!;
     for (const badgeToneClass of ['badge-error', 'badge-success', 'badge-warning', 'badge-info', 'badge-neutral']) {
       expect(chip.className).not.toContain(badgeToneClass);
     }
   });
 
-  it('defaults to the sm size and switches to xs on request', () => {
-    const sm = render(StatusChip, { tone: 'neutral', label: 'Former' });
+  it('defaults to the sm size and switches to xs on request', async () => {
+    const sm = await render(StatusChip, { tone: 'neutral', label: 'Former' });
     const smChip = sm.container.querySelector('.status-chip')!;
     expect(smChip.className).toContain('badge-sm');
     expect(smChip.querySelector('.status-sm')).not.toBeNull();
 
-    const xs = render(StatusChip, { tone: 'neutral', label: 'Former', size: 'xs' });
+    const xs = await render(StatusChip, { tone: 'neutral', label: 'Former', size: 'xs' });
     const xsChip = xs.container.querySelector('.status-chip')!;
     expect(xsChip.className).toContain('badge-xs');
     expect(xsChip.querySelector('.status-xs')).not.toBeNull();
   });
 
-  it('demotes the badge-outline border to a 55% currentColor hairline, not the full-strength default', () => {
-    const screen = render(StatusChip, { tone: 'danger', label: 'Overdue' });
+  it('demotes the badge-outline border to a 55% currentColor hairline, not the full-strength default', async () => {
+    const screen = await render(StatusChip, { tone: 'danger', label: 'Overdue' });
     const chip = screen.container.querySelector('.status-chip')!;
     expect(chip.className).toContain('status-chip-bounded');
     const style = getComputedStyle(chip);
@@ -64,13 +64,13 @@ describe('StatusChip', () => {
     expect(alpha).toBeCloseTo(0.55, 2);
   });
 
-  it('defaults to the bounded register and switches to quiet on request', () => {
-    const bounded = render(StatusChip, { tone: 'neutral', label: 'Current' });
+  it('defaults to the bounded register and switches to quiet on request', async () => {
+    const bounded = await render(StatusChip, { tone: 'neutral', label: 'Current' });
     const boundedChip = bounded.container.querySelector('.status-chip')!;
     expect(boundedChip.className).toContain('status-chip-bounded');
     expect(boundedChip.className).not.toContain('status-chip-quiet');
 
-    const quiet = render(StatusChip, { tone: 'neutral', label: 'Published', register: 'quiet' });
+    const quiet = await render(StatusChip, { tone: 'neutral', label: 'Published', register: 'quiet' });
     const quietChip = quiet.container.querySelector('.status-chip')!;
     expect(quietChip.className).toContain('status-chip-quiet');
     expect(quietChip.className).not.toContain('status-chip-bounded');
@@ -81,18 +81,18 @@ describe('StatusChip', () => {
     expect(getComputedStyle(quietChip).borderWidth).toBe('0px');
   });
 
-  it('keeps the sm size at a 5rem min-width floor (hugging was adversarially refuted) while xs stays floor-free', () => {
-    const sm = render(StatusChip, { tone: 'neutral', label: 'Former' });
+  it('keeps the sm size at a 5rem min-width floor (hugging was adversarially refuted) while xs stays floor-free', async () => {
+    const sm = await render(StatusChip, { tone: 'neutral', label: 'Former' });
     const smChip = sm.container.querySelector('.status-chip')!;
     expect(getComputedStyle(smChip).minWidth).toBe('80px'); // 5rem at the default 16px root
 
-    const xs = render(StatusChip, { tone: 'neutral', label: 'Former', size: 'xs' });
+    const xs = await render(StatusChip, { tone: 'neutral', label: 'Former', size: 'xs' });
     const xsChip = xs.container.querySelector('.status-chip')!;
     expect(getComputedStyle(xsChip).minWidth).toBe('0px');
   });
 
-  it('carries an optional legend into the tooltip and a visually-hidden text node, and omits both without one', () => {
-    const withLegend = render(StatusChip, {
+  it('carries an optional legend into the tooltip and a visually-hidden text node, and omits both without one', async () => {
+    const withLegend = await render(StatusChip, {
       tone: 'warning',
       label: 'Overdue',
       legend: 'Full benefits continue for 30 days.',
@@ -108,7 +108,7 @@ describe('StatusChip', () => {
     // trimming matches how running text (and an accessible-name computation) collapses it.
     expect((withLegendChip.textContent ?? '').trim()).toBe('Overdue: Full benefits continue for 30 days.');
 
-    const withoutLegend = render(StatusChip, { tone: 'warning', label: 'Overdue' });
+    const withoutLegend = await render(StatusChip, { tone: 'warning', label: 'Overdue' });
     const withoutLegendChip = withoutLegend.container.querySelector('.status-chip')!;
     expect(withoutLegendChip.getAttribute('title')).toBeNull();
     expect(withoutLegendChip.getAttribute('aria-label')).toBeNull();

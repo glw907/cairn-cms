@@ -48,7 +48,18 @@ const BUILT_IN_PRESETS: Record<string, VariantSpec> = {
 };
 
 /** The fit values Cloudflare Images accepts. A variant whose fit is set to anything else is rejected. */
-const FIT_VALUES: ReadonlySet<string> = new Set(['scale-down', 'contain', 'cover', 'crop', 'pad']);
+const FIT_VALUES: ReadonlySet<string> = new Set([
+  'scale-down',
+  'contain',
+  'cover',
+  'crop',
+  'pad',
+  'aspect-crop',
+  'scale-up',
+  'squeeze',
+]);
+/** The upscale algorithm values Cloudflare Images accepts. */
+const UPSCALE_VALUES: ReadonlySet<string> = new Set(['interpolate', 'generate']);
 /**
  * The named gravity keywords Cloudflare Images accepts. A gravity is also valid as a coordinate
  *  string; everything else is rejected.
@@ -61,14 +72,15 @@ const GRAVITY_KEYWORDS: ReadonlySet<string> = new Set([
   'top',
   'bottom',
   'center',
+  'entropy',
 ]);
 /** A gravity coordinate string, e.g. "0.5x0.5". */
 const GRAVITY_COORD_RE = /^\d+(\.\d+)?x\d+(\.\d+)?$/;
 
 /**
- * Validate one variant's fit and gravity, throwing a cairn:-prefixed error naming the offending
- *  preset and value. The type system collapses VariantSpec.gravity to string, so the gravity check
- *  is the only guard against a bogus value reaching the transform URL.
+ * Validate one variant's fit, gravity, and upscale, throwing a cairn:-prefixed error naming the
+ *  offending preset and value. The type system collapses VariantSpec.gravity to string, so the
+ *  gravity check is the only guard against a bogus value reaching the transform URL.
  */
 function validateVariant(name: string, spec: VariantSpec): void {
   if (spec.fit !== undefined && !FIT_VALUES.has(spec.fit)) {
@@ -80,6 +92,9 @@ function validateVariant(name: string, spec: VariantSpec): void {
     !GRAVITY_COORD_RE.test(spec.gravity)
   ) {
     throw new Error(`cairn: media variant "${name}" has an unknown gravity "${spec.gravity}"`);
+  }
+  if (spec.upscale !== undefined && !UPSCALE_VALUES.has(spec.upscale)) {
+    throw new Error(`cairn: media variant "${name}" has an unknown upscale "${spec.upscale}"`);
   }
 }
 

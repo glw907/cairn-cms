@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type { D1DatabaseSession } from '@cloudflare/workers-types';
-import { createChannelDb, checkNodeSqliteFloor } from './channel-db.js';
+import { createChannelDb } from './channel-db.js';
 import { CHANNEL_SCHEMA_SQL, mintCode } from '../../../src/lib/auth-channel/store.js';
 
 const WIDGETS_SCHEMA = `
@@ -46,9 +46,16 @@ test('meta.changes reflects a multi-row delete', async () => {
   expect(remaining).toEqual({ id: 'w4' });
 });
 
+test('withSession() throws on a constraint other than first-primary, the only one the engine ever passes', async () => {
+  const db = await createChannelDb(WIDGETS_SCHEMA);
+
+  expect(() => db.withSession()).toThrow();
+  expect(() => db.withSession('first-unconstrained')).toThrow();
+});
+
 test('batch() applies its statements in order and atomically, rolling back on a failing statement', async () => {
   const db = await createChannelDb(WIDGETS_SCHEMA);
-  const session = db.withSession();
+  const session = db.withSession('first-primary');
   await session.prepare('INSERT INTO widgets (id, name, bucket, value) VALUES (?, ?, ?, ?)').bind('seed', 'seed', 'b', 0).run();
 
   await expect(
@@ -68,7 +75,7 @@ test('batch() applies its statements in order and atomically, rolling back on a 
 
 test('batch() applies its statements in the order given', async () => {
   const db = await createChannelDb(WIDGETS_SCHEMA);
-  const session = db.withSession();
+  const session = db.withSession('first-primary');
 
   // The update reads the row the insert creates, so it can only succeed if the batch runs the
   // statements in array order.
@@ -130,11 +137,4 @@ test('the mint conditional-upsert contract behaves through the double: fresh, in
     'bucket-1',
   );
   expect(postCooldown).toBe(true);
-});
-
-test('checkNodeSqliteFloor throws naming 22.13 below the floor and passes at or above it', () => {
-  expect(() => checkNodeSqliteFloor('22.12.0')).toThrow(/22\.13/);
-  expect(() => checkNodeSqliteFloor('20.0.0')).toThrow(/22\.13/);
-  expect(() => checkNodeSqliteFloor('22.13.0')).not.toThrow();
-  expect(() => checkNodeSqliteFloor('24.16.0')).not.toThrow();
 });

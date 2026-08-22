@@ -9,12 +9,19 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          # Pin Node 22 LTS: vitest-pool-workers has a known console bug on Node 24.
-          node-version: 22
+          # Node 24 (Active LTS). vitest-pool-workers once carried a console bug on Node 24;
+          # this run is the proof it no longer blocks the pinned pool-workers version.
+          node-version: 24
           cache: npm
+          # This job also installs the showcase's own lockfile below, so the cache key has to
+          # cover both, or the cache silently keys on the root lockfile alone and never warms
+          # for the showcase install.
+          cache-dependency-path: |
+            package-lock.json
+            examples/showcase/package-lock.json
       - run: npm ci
       # svelte-check scans every subdirectory for a svelte.config.js and cannot be told to skip one
       # (its --ignore flag applies only under --no-tsconfig), so it tries to load
@@ -27,6 +34,14 @@ jobs:
       - run: npm run check
       # The component test project runs in real Chromium via @vitest/browser-playwright.
       - run: npx playwright install --with-deps chromium
+      # dist-sveltekit-app-import-boundary.test.ts (and packaging-boundary.test.ts) need a real
+      # dist/ to run their gate against. `npm ci` above already triggers this through the
+      # `prepare` life cycle script, but that is an implicit dependency on a hook a future
+      # refactor could drop; a step named for its own purpose here is the explicit guarantee.
+      # `npm run package` is otherwise idempotent (svelte-package is a full rebuild every time),
+      # so running it again ahead of the later check:package/check:reference/etc. steps (which
+      # each call it themselves) costs a rebuild, not a correctness risk.
+      - run: npm run package
       - run: npm test
       # Two node:test suites vitest does not reach. The emitter's own tests were never wired into
       # any workflow; the create-cairn-site package is new. Both gate the scaffolded output, so a
@@ -55,6 +70,7 @@ jobs:
       - run: npm run check:admin-css-classes
       - run: npm run check:readiness
       - run: npm run check:docs
+      - run: npm run check:target-stack
       - run: npm run check:arm-indexes
       - run: npm run check:visuals
       - run: npm run check:transcripts

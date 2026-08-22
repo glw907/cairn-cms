@@ -30,7 +30,7 @@ const oneInsertControl = createRawSnippet(() => ({
 
 describe('EditorToolbar', () => {
   it('renders the primary controls with accessible names', async () => {
-    const screen = render(EditorToolbar, baseProps());
+    const screen = await render(EditorToolbar, baseProps());
     const labels = [
       'Bold (Ctrl+B)',
       'Italic (Ctrl+I)',
@@ -50,7 +50,7 @@ describe('EditorToolbar', () => {
   });
 
   it('groups the strip into Format, then Structure, then the persistent help control, keeping every control (design-arc D2)', async () => {
-    const screen = render(EditorToolbar, baseProps());
+    const screen = await render(EditorToolbar, baseProps());
     // Every control the strip carried before D2's regrouping is still here, none dropped, just
     // clustered: Format (bold, italic, strike, inline code), Structure (headings, lists, quote,
     // table, More), the Write/Preview tablist, and the persistent "?" help control at the row's
@@ -75,7 +75,7 @@ describe('EditorToolbar', () => {
   });
 
   it('never labels a cluster "Blocks": the word appears only inside Insert block and Edit block', async () => {
-    const screen = render(EditorToolbar, baseProps({ insertControls: oneInsertControl }));
+    const screen = await render(EditorToolbar, baseProps({ insertControls: oneInsertControl }));
     for (const name of ['Format', 'Structure', 'Insert']) {
       await expect.element(screen.getByRole('group', { name })).toBeInTheDocument();
     }
@@ -84,7 +84,7 @@ describe('EditorToolbar', () => {
   });
 
   it('names each cluster with an aria group whose presentational eyebrow matches it', async () => {
-    const screen = render(EditorToolbar, baseProps({ insertControls: oneInsertControl }));
+    const screen = await render(EditorToolbar, baseProps({ insertControls: oneInsertControl }));
     for (const name of ['Format', 'Structure', 'Insert']) {
       const group = screen.getByRole('group', { name });
       await expect.element(group).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe('EditorToolbar', () => {
   });
 
   it('keeps code block, horizontal rule, and task list behind the ellipsis', async () => {
-    const screen = render(EditorToolbar, baseProps());
+    const screen = await render(EditorToolbar, baseProps());
     await screen.getByRole('button', { name: 'More formatting' }).click();
     const menu = screen.container.querySelector('#cairn-more-formatting-menu')!;
     const itemLabels = Array.from(menu.querySelectorAll<HTMLButtonElement>('li > button')).map((el) =>
@@ -107,14 +107,14 @@ describe('EditorToolbar', () => {
 
   it('asks the host to apply a format on a primary click', async () => {
     const format = vi.fn();
-    const screen = render(EditorToolbar, baseProps({ format }));
+    const screen = await render(EditorToolbar, baseProps({ format }));
     await screen.getByRole('button', { name: 'Bold (Ctrl+B)' }).click();
     await screen.getByRole('button', { name: 'Numbered list (Ctrl+Shift+7)' }).click();
     expect(format.mock.calls).toEqual([['bold'], ['ol']]);
   });
 
   it('disables the format buttons and the More trigger in Preview but not the tabs', async () => {
-    const screen = render(EditorToolbar, baseProps({ mode: 'preview' }));
+    const screen = await render(EditorToolbar, baseProps({ mode: 'preview' }));
     const bold = screen.container.querySelector<HTMLButtonElement>('button[aria-label="Bold (Ctrl+B)"]')!;
     expect(bold.disabled).toBe(true);
     const more = screen.container.querySelector<HTMLButtonElement>('button[aria-label="More formatting"]')!;
@@ -127,7 +127,7 @@ describe('EditorToolbar', () => {
 
   it('lists the overflow formats in the More menu and applies one', async () => {
     const format = vi.fn();
-    const screen = render(EditorToolbar, baseProps({ format }));
+    const screen = await render(EditorToolbar, baseProps({ format }));
     // The menu is a popover, hidden until the trigger opens it.
     await screen.getByRole('button', { name: 'More formatting' }).click();
     for (const label of ['Code block', 'Horizontal rule', 'Task list']) {
@@ -142,7 +142,7 @@ describe('EditorToolbar', () => {
 
   it('applies a promoted strip format on a direct click', async () => {
     const format = vi.fn();
-    const screen = render(EditorToolbar, baseProps({ format }));
+    const screen = await render(EditorToolbar, baseProps({ format }));
     await screen.getByRole('button', { name: 'Table', exact: true }).click();
     await screen.getByRole('button', { name: 'Inline code (Ctrl+E)' }).click();
     await screen.getByRole('button', { name: 'Strikethrough', exact: true }).click();
@@ -152,7 +152,7 @@ describe('EditorToolbar', () => {
   describe('the persistent "?" help control (design-arc D2)', () => {
     it('is present and reachable by its accessible name, and calls the host on click', async () => {
       const onHelp = vi.fn();
-      const screen = render(EditorToolbar, baseProps({ onHelp }));
+      const screen = await render(EditorToolbar, baseProps({ onHelp }));
       const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
       await expect.element(help).toBeInTheDocument();
       await help.click();
@@ -160,13 +160,13 @@ describe('EditorToolbar', () => {
     });
 
     it('stays enabled in Preview, unlike the formatting controls beside it', async () => {
-      const screen = render(EditorToolbar, baseProps({ mode: 'preview' }));
+      const screen = await render(EditorToolbar, baseProps({ mode: 'preview' }));
       const help = screen.container.querySelector<HTMLButtonElement>('button[title="Markdown help"]')!;
       expect(help.disabled).toBe(false);
     });
 
     it('is a no-op without a host onHelp handler', async () => {
-      const screen = render(EditorToolbar, baseProps());
+      const screen = await render(EditorToolbar, baseProps());
       const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
       // No onHelp supplied; the click must not throw.
       await help.click();
@@ -196,7 +196,7 @@ describe('EditorToolbar', () => {
         const host = document.createElement('div');
         host.style.width = width;
         document.body.appendChild(host);
-        const screen = render(EditorToolbar, baseProps(), { baseElement: host });
+        const screen = await render(EditorToolbar, baseProps(), { baseElement: host });
         const items = controls(screen.container);
         expect(items.length).toBeGreaterThan(0);
         const first = items[0].offsetTop;
@@ -225,7 +225,7 @@ describe('EditorToolbar', () => {
     });
 
     it('keeps each tab its own width across the selected/unselected swap', async () => {
-      const screen = render(EditorToolbar, baseProps({ mode: 'write' }));
+      const screen = await render(EditorToolbar, baseProps({ mode: 'write' }));
       const writeTab = () => screen.getByRole('tab', { name: 'Write' }).element() as HTMLElement;
       const previewTab = () => screen.getByRole('tab', { name: 'Preview' }).element() as HTMLElement;
 
@@ -246,7 +246,7 @@ describe('EditorToolbar', () => {
   });
 
   it('drives the More menu as a popover with aria-expanded and Escape', async () => {
-    const screen = render(EditorToolbar, baseProps());
+    const screen = await render(EditorToolbar, baseProps());
     const trigger = screen.getByRole('button', { name: 'More formatting' });
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await trigger.click();
@@ -260,7 +260,7 @@ describe('EditorToolbar', () => {
 
   it('reflects the mode on the tablist and reports a switch', async () => {
     const onMode = vi.fn();
-    const screen = render(EditorToolbar, baseProps({ onMode }));
+    const screen = await render(EditorToolbar, baseProps({ onMode }));
     await expect.element(screen.getByRole('tab', { name: 'Write' })).toHaveAttribute('aria-selected', 'true');
     await expect.element(screen.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'false');
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -268,13 +268,13 @@ describe('EditorToolbar', () => {
   });
 
   it('marks the Preview tab selected when the mode says so', async () => {
-    const screen = render(EditorToolbar, baseProps({ mode: 'preview' }));
+    const screen = await render(EditorToolbar, baseProps({ mode: 'preview' }));
     await expect.element(screen.getByRole('tab', { name: 'Preview' })).toHaveAttribute('aria-selected', 'true');
     await expect.element(screen.getByRole('tab', { name: 'Write' })).toHaveAttribute('aria-selected', 'false');
   });
 
   it('keeps the roving stop in sync through a Preview round trip', async () => {
-    const screen = render(EditorToolbar, baseProps());
+    const screen = await render(EditorToolbar, baseProps());
     await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
     const items = controls(screen.container);
     items[0].focus();
@@ -300,11 +300,11 @@ describe('EditorToolbar', () => {
 
   it('shows the device trigger only while Preview is active with a handler', async () => {
     const onDevice = vi.fn();
-    const inWrite = render(EditorToolbar, baseProps({ onDevice }));
+    const inWrite = await render(EditorToolbar, baseProps({ onDevice }));
     expect(inWrite.container.querySelector('[popovertarget="cairn-preview-device-menu"]')).toBeNull();
-    const withoutHandler = render(EditorToolbar, baseProps({ mode: 'preview' }));
+    const withoutHandler = await render(EditorToolbar, baseProps({ mode: 'preview' }));
     expect(withoutHandler.container.querySelector('[popovertarget="cairn-preview-device-menu"]')).toBeNull();
-    const inPreview = render(EditorToolbar, baseProps({ mode: 'preview', onDevice }));
+    const inPreview = await render(EditorToolbar, baseProps({ mode: 'preview', onDevice }));
     const trigger = inPreview.container.querySelector('[popovertarget="cairn-preview-device-menu"]')!;
     // ARIA required children: the tablist holds only the two tabs, and the trigger reads as the
     // capsule's third segment from the flex row right after the tablist wrapper, never inside it.
@@ -317,7 +317,7 @@ describe('EditorToolbar', () => {
 
   it('lists the four widths with their pixel values, presses the active one, and reports a pick', async () => {
     const onDevice = vi.fn();
-    const screen = render(EditorToolbar, baseProps({ mode: 'preview', device: 'tablet', onDevice }));
+    const screen = await render(EditorToolbar, baseProps({ mode: 'preview', device: 'tablet', onDevice }));
     await screen.getByRole('button', { name: /preview width/i }).click();
     const items = Array.from(
       screen.container.querySelectorAll<HTMLButtonElement>('#cairn-preview-device-menu button'),
@@ -338,7 +338,7 @@ describe('EditorToolbar', () => {
   });
 
   it('drives the device menu as a popover with aria-expanded and Escape', async () => {
-    const screen = render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
+    const screen = await render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
     const trigger = screen.getByRole('button', { name: /preview width/i });
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await trigger.click();
@@ -357,7 +357,7 @@ describe('EditorToolbar', () => {
   });
 
   it('keeps one roving tab stop and moves it with the arrow keys', async () => {
-    const screen = render(EditorToolbar, baseProps());
+    const screen = await render(EditorToolbar, baseProps());
     await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
     const items = controls(screen.container);
     expect(items[0].tabIndex).toBe(0);
@@ -380,7 +380,7 @@ describe('menu item resting chrome', () => {
   afterAll(() => document.documentElement.removeAttribute('data-theme'));
 
   it('renders a More-menu button item flat, with no UA button border or fill', async () => {
-    const screen = render(EditorToolbar, baseProps());
+    const screen = await render(EditorToolbar, baseProps());
     await screen.getByRole('button', { name: 'More formatting' }).click();
     const item = screen.container.querySelector<HTMLButtonElement>('#cairn-more-formatting-menu li > button')!;
     const computed = getComputedStyle(item);
@@ -391,7 +391,7 @@ describe('menu item resting chrome', () => {
   });
 
   it('renders a device-menu button item flat too', async () => {
-    const screen = render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
+    const screen = await render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
     await screen.getByRole('button', { name: /preview width/i }).click();
     const item = screen.container.querySelector<HTMLButtonElement>('#cairn-preview-device-menu li > button')!;
     const computed = getComputedStyle(item);
@@ -426,7 +426,7 @@ describe('popover menu focus visibility', () => {
   });
 
   it('keeps a visible focus outline on a More-menu item', async () => {
-    const screen = render(EditorToolbar, baseProps());
+    const screen = await render(EditorToolbar, baseProps());
     await screen.getByRole('button', { name: 'More formatting' }).click();
     // Tab moves keyboard focus from the trigger into the open popover's first item, so
     // :focus-visible applies the way it does for a keyboard user.
@@ -439,7 +439,7 @@ describe('popover menu focus visibility', () => {
   });
 
   it('keeps a visible focus outline on a device-menu item', async () => {
-    const screen = render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
+    const screen = await render(EditorToolbar, baseProps({ mode: 'preview', onDevice: vi.fn() }));
     await screen.getByRole('button', { name: /preview width/i }).click();
     await userEvent.tab();
     const item = document.activeElement as HTMLElement;

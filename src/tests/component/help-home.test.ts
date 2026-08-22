@@ -27,7 +27,7 @@ describe('HelpHome', () => {
   it('renders its masthead through the admin toolkit', async () => {
     // The admin-toolkit organization pass's T7 adoption sweep: the masthead renders through
     // PageHeader; the section sub-headers below stay their own recipe this wave.
-    const screen = render(HelpHome, { data: fixture() });
+    const screen = await render(HelpHome, { data: fixture() });
     const header = screen.container.querySelector('header.mb-10');
     expect(header).not.toBeNull();
     expect(header?.textContent).toContain('Help');
@@ -35,7 +35,7 @@ describe('HelpHome', () => {
   });
 
   it('renders the masthead, the 1-of-3 progress with a Done tag, the reference table, and the email hand-off', async () => {
-    render(HelpHome, { data: fixture() });
+    await render(HelpHome, { data: fixture() });
 
     await expect
       .element(page.getByRole('heading', { name: 'Find formatting help and get your site set up.' }))
@@ -56,7 +56,7 @@ describe('HelpHome', () => {
   });
 
   it('renders the hosted-help default as a Get help link', async () => {
-    render(HelpHome, { data: fixture({ supportContact: 'https://cairn.pub/help' }) });
+    await render(HelpHome, { data: fixture({ supportContact: 'https://cairn.pub/help' }) });
 
     const link = page.getByRole('link', { name: /Get help/ });
     await expect.element(link).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('HelpHome', () => {
   });
 
   it('renders the self-serve get-help line and no email link when supportContact is unset', async () => {
-    render(HelpHome, {
+    await render(HelpHome, {
       data: fixture({
         supportContact: undefined,
         gettingStarted: {
@@ -87,7 +87,7 @@ describe('HelpHome', () => {
   });
 
   it('omits the whole getting-started section at 3 of 3 while the reference table still renders', async () => {
-    render(HelpHome, {
+    await render(HelpHome, {
       data: fixture({
         gettingStarted: {
           wrotePost: true,

@@ -59,6 +59,38 @@ describe('normalizeAssets', () => {
     ).toThrow(/cairn:/);
   });
 
+  it('accepts the entropy gravity keyword', () => {
+    const resolved = normalizeAssets({ bucketBinding: 'X', variants: { hero: { gravity: 'entropy' } } });
+    if (!resolved.enabled) throw new Error('expected enabled');
+    expect(resolved.variants.hero).toEqual({ gravity: 'entropy' });
+  });
+
+  it('accepts the aspect-crop, scale-up, and squeeze fit modes', () => {
+    const resolved = normalizeAssets({
+      bucketBinding: 'X',
+      variants: { crop: { fit: 'aspect-crop' }, up: { fit: 'scale-up' }, sq: { fit: 'squeeze' } },
+    });
+    if (!resolved.enabled) throw new Error('expected enabled');
+    expect(resolved.variants.crop).toEqual({ fit: 'aspect-crop' });
+    expect(resolved.variants.up).toEqual({ fit: 'scale-up' });
+    expect(resolved.variants.sq).toEqual({ fit: 'squeeze' });
+  });
+
+  it('accepts an explicit upscale value', () => {
+    const resolved = normalizeAssets({
+      bucketBinding: 'X',
+      variants: { up: { fit: 'scale-up', upscale: 'generate' } },
+    });
+    if (!resolved.enabled) throw new Error('expected enabled');
+    expect(resolved.variants.up).toEqual({ fit: 'scale-up', upscale: 'generate' });
+  });
+
+  it('throws cairn: for a variant with a bad upscale', () => {
+    expect(() =>
+      normalizeAssets({ bucketBinding: 'X', variants: { hero: { upscale: 'nope' as 'generate' } } }),
+    ).toThrow(/cairn:/);
+  });
+
   it('returns disabled media when no assets block is declared', () => {
     expect(normalizeAssets(undefined)).toEqual({ enabled: false });
   });

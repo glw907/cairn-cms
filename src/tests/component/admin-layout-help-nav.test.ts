@@ -29,7 +29,7 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
 
 describe('CairnAdminShell Help home', () => {
   it('pins a Help home that is current on /admin/help', async () => {
-    const screen = render(CairnAdminShell, { data: data(true, null, '/admin/help'), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true, null, '/admin/help'), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
     const help = sidebar.getByRole('link', { name: 'Help' });
     await expect.element(help).toHaveAttribute('href', '/admin/help');
@@ -37,7 +37,7 @@ describe('CairnAdminShell Help home', () => {
   });
 
   it('the Help home is not current on another route', async () => {
-    const screen = render(CairnAdminShell, { data: data(true, null, '/admin/posts'), children: child });
+    const screen = await render(CairnAdminShell, { data: data(true, null, '/admin/posts'), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
     const help = sidebar.getByRole('link', { name: 'Help' });
     await expect.element(help).not.toHaveAttribute('aria-current');

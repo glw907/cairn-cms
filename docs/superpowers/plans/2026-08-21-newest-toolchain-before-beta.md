@@ -100,23 +100,41 @@ and both sub-packages lists exactly `typescript` 6.0.3 (7.0.2), `vitest-browser-
       into green.
 - [ ] Acceptance: `npm run check` 0/0, `npm test` exit 0 twice in a row.
 
-## Task 7: The admin upgrade map
+## Task 7: The admin upgrade map (a target stack an agent can read)
 
-- [ ] A new page in `docs/admin/`, linked from `docs/admin/README.md`'s ordered list after "Is it
-      working?", for the admin audience (no code, Microsoft register; read
-      `docs/internal/docs-register.md` and the admin pages beside it first). It tells an admin what
-      their site depends on, how often each part moves, what signal means "act now", and what to do,
-      with the developer-track page (`docs/extend/upgrade-cairn.md`) linked for the how.
-- [ ] The shape follows the research report the conductor supplies with the dispatch (a survey of how
-      Ghost, Django, Node.js, Laravel, and similar projects document supported versions and upgrade
-      cadence). The page states cairn's own promise plainly: floors sit on current tooling at beta and
-      move only at a cairn major; a `Consumers must:` line in the changelog is the one signal that an
-      engine upgrade needs a developer.
-- [ ] The parts, at minimum: the cairn package itself, SvelteKit and Svelte, Node on the admin's
-      machine, Wrangler and the Cloudflare adapter, the Workers `compatibility_date`, and the GitHub App
-      key (link `docs/extend/rotate-the-github-app-key.md`).
-- [ ] Acceptance: `npm run check:docs`, Vale error-free on the page, and the `cairn-register-editor`
-      agent's findings folded before the task reports done.
+Geoff's bar (2026-08-21): an admin, human or agent, should find it easy to know which tools and
+dependency versions to target when installing or upgrading the engine. The 2026-08-21 research sweep
+(Django's supported-versions table, Laravel's support policy, Ghost's Node matrix, WordPress's
+requirements page, Grafana's when-to-upgrade page) converges on a shape: one cadence sentence up top,
+a scannable table, a plain "you're fine if" line per row, concrete act-now signals, and the commands on
+a separate developer page. Two pages by audience, which matches the admin and extend tracks.
+
+- [ ] A new page `docs/admin/what-to-run-and-when.md` (or a better name in the admin register), linked
+      from `docs/admin/README.md`'s ordered list after "Is it working?". Microsoft register; read
+      `docs/internal/docs-register.md` and the admin pages beside it first. No terminal commands on this
+      page; the how lives on `docs/extend/upgrade-cairn.md`, linked as the thing to hand a developer.
+- [ ] Section 1, the target stack: a table with exact version strings, one row per part, columns
+      `Part | Target today | Where it's set | How often it moves | You're fine if`. Rows: the cairn package
+      (the current published version), Node on your machine (the `engines.node` floor), SvelteKit and
+      Svelte (the peer ranges), Wrangler and `@sveltejs/adapter-cloudflare` (the template's pins), the
+      Workers `compatibility_date` (the template's value), TypeScript (6, with the one-line reason), and
+      the GitHub App key (no cadence; rotation on demand, link `docs/extend/rotate-the-github-app-key.md`).
+      An agent reading this table gets the exact targets to install.
+- [ ] The table cannot rot: a new gate `npm run check:target-stack` (under `scripts/checks/`, wired into
+      `test.yml` beside `check:docs`) reads the root `package.json` (`version`, `engines.node`,
+      `peerDependencies`), the template source's `package.json` and `wrangler.jsonc`, and asserts each
+      version cell in the table matches. Prove it falsifiable by changing one cell and watching it fail,
+      and say so in the report. Alternatively generate the table from those sources into a marked block
+      and have the gate assert the block is current; either way the committed page shows real values.
+- [ ] Section 2, the cadence and the promise, in prose: cairn is `0.x` SemVer and a `Consumers must:`
+      line in the changelog is the one signal an engine upgrade needs a developer; floors sit on current
+      tooling at beta and move only at a cairn major; Node moves on the LTS calendar; Wrangler rolls.
+- [ ] Section 3, act-now signals, a short list mapped to concrete artifacts: a `Consumers must:` line, a
+      readiness-check `FAIL` on the dependency-floors row (`docs/admin/is-it-working.md`), a deploy
+      failure naming a Node or Wrangler version, a GitHub notice about the App key.
+- [ ] Acceptance: `npm run check:docs`, `npm run check:target-stack` (red when a cell is wrong, green
+      after), Vale error-free on the page, and the `cairn-register-editor` agent's findings folded before
+      the task reports done.
 
 ## Out of scope
 

@@ -18,10 +18,12 @@ cairn, you want [the extend track](../extend/README.md).
    sign-in email for anyone besides you.
 4. **[Is it working?](./is-it-working.md)** — run the readiness check and read what each result
    means.
-5. **[Setup recovery](./setup-recovery.md)** — a setup step failed or was interrupted; get back on
+5. **[What to run, and when](./what-to-run-and-when.md)** — what your site depends on, and the
+   signals that mean it's time to act.
+6. **[Setup recovery](./setup-recovery.md)** — a setup step failed or was interrupted; get back on
    the path.
-6. **[Invite your editors](./invite-editors.md)** — add the people who will write on your site.
-7. **[Troubleshooting](./troubleshooting.md)** — the site does something wrong; find the fix, or
+7. **[Invite your editors](./invite-editors.md)** — add the people who will write on your site.
+8. **[Troubleshooting](./troubleshooting.md)** — the site does something wrong; find the fix, or
    find out who can.
 
 Start at the top if you are setting a site up for the first time. If you already have a site and

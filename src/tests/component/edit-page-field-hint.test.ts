@@ -75,7 +75,7 @@ function dateProps() {
 
 describe('edit-page field hint', () => {
   it('renders a field description under the input and associates it for assistive tech', async () => {
-    const page = render(EditPage, props());
+    const page = await render(EditPage, props());
     // The Details fields live behind the slide-over; open it to reach the summary input.
     await page.getByRole('button', { name: 'Details' }).click();
 
@@ -91,7 +91,7 @@ describe('edit-page field hint', () => {
   });
 
   it('gives a date field with no description a built-in publish-clarity default that site copy overrides', async () => {
-    const page = render(EditPage, dateProps());
+    const page = await render(EditPage, dateProps());
     // The Details fields live behind the slide-over; open it to reach the date inputs.
     await page.getByRole('button', { name: 'Details' }).click();
 

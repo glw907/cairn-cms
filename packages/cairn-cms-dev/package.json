@@ -10,7 +10,7 @@
     "directory": "packages/cairn-cms-dev"
   },
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=24"
   },
   "files": [
     "src",

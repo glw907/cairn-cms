@@ -4,10 +4,11 @@ import { readFileSync } from 'node:fs';
 const pkg = JSON.parse(readFileSync(new URL('../../../package.json', import.meta.url), 'utf8')) as {
   dependencies?: Record<string, string>;
   peerDependencies?: Record<string, string>;
+  peerDependenciesMeta?: Record<string, { optional: boolean }>;
 };
 
 describe('package dependency contract', () => {
-  const peers = ['@sveltejs/kit', 'svelte'];
+  const peers = ['@sveltejs/kit', 'svelte', '@cloudflare/workers-types'];
   // The bare `codemirror` meta-package is not itself in this list: nothing imports it (only the
   // scoped @codemirror/* subpackages below are ever value-imported), so it is not a dependency.
   const editorDeps = ['@codemirror/lang-markdown', '@codemirror/state', '@codemirror/view'];
@@ -20,15 +21,29 @@ describe('package dependency contract', () => {
     for (const p of peers) expect(pkg.dependencies?.[p], `${p} must not be a dependency`).toBeUndefined();
   });
 
-  it('floors svelte at ^5.56.3, above the 5.56.1 guard-clause miscompile', () => {
-    // svelte 5.56.1 misprints parenthesized boolean groupings when compiling the shipped
-    // .svelte sources, so the floor is a correctness contract, not a feature minimum. The
-    // doctor's dependency-floors check reads this same range at runtime; raise it knowingly.
-    expect(pkg.peerDependencies?.svelte).toBe('^5.56.3');
+  it('floors svelte at ^5.56.10, the version cairn develops and tests against', () => {
+    // Geoff's 2026-08-21 ruling: the floor tracks the versions cairn actually develops and
+    // tests against, not a historical minimum, so the engine may use their full capabilities
+    // with no guards for older minors. ^5.56.3 was itself raised past the 5.56.1 guard-clause
+    // miscompile (svelte 5.56.1 misprints parenthesized boolean groupings when compiling the
+    // shipped .svelte sources); that correctness floor still holds, just below this newer one.
+    // The doctor's dependency-floors check reads this same range at runtime; raise it knowingly.
+    expect(pkg.peerDependencies?.svelte).toBe('^5.56.10');
   });
 
-  it('keeps the @sveltejs/kit floor at ^2.12', () => {
-    expect(pkg.peerDependencies?.['@sveltejs/kit']).toBe('^2.12');
+  it('floors @sveltejs/kit at ^2.70, the version cairn develops and tests against', () => {
+    expect(pkg.peerDependencies?.['@sveltejs/kit']).toBe('^2.70');
+  });
+
+  it('floors @cloudflare/workers-types at ^5, the installed major', () => {
+    // cairn's own shipped .d.ts files (env.d.ts, sveltekit/audit-sink.d.ts,
+    // sveltekit/platform-bindings.d.ts, sveltekit/preview.d.ts, auth/store.d.ts,
+    // auth/preview-store.d.ts, auth-channel/store.d.ts, auth-channel/factory.d.ts,
+    // media/store.d.ts) import named types directly from this package, so a consumer who
+    // generates bindings with `wrangler types` and skips this install loses every cairn-typed
+    // D1Database/R2Bucket/RateLimit signature to an unresolvable-import `any` under
+    // skipLibCheck, with no red TS2307 to notice it by.
+    expect(pkg.peerDependencies?.['@cloudflare/workers-types']).toBe('^5');
   });
 
   it('no longer declares carta-md anywhere', () => {
@@ -38,5 +53,13 @@ describe('package dependency contract', () => {
 
   it('bundles the codemirror packages as hard dependencies', () => {
     for (const d of editorDeps) expect(pkg.dependencies?.[d], `${d} must be a dependency`).toBeTruthy();
+  });
+
+  it('widens the optional @anthropic-ai/sdk peer range to admit both 0.105.0 and 0.120.0', () => {
+    // No @types/semver is installed, so this pins the exact range string rather than parsing it:
+    // '>=0.105.0 <1' admits both versions by construction, and a narrower range (back to a caret
+    // that stops at the next minor) would fail this exact-string check the moment it regresses.
+    expect(pkg.peerDependenciesMeta?.['@anthropic-ai/sdk']).toEqual({ optional: true });
+    expect(pkg.peerDependencies?.['@anthropic-ai/sdk']).toBe('>=0.105.0 <1');
   });
 });

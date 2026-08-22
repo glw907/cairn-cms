@@ -99,8 +99,8 @@ function settingsData(): AdminData {
       tidyEnabled: true,
       keyConfigured: true,
       keyStatus: 'valid',
-      model: 'claude-sonnet-4-6',
-      modelLabel: 'Claude Sonnet',
+      model: 'claude-sonnet-5',
+      modelLabel: 'Claude Sonnet 5',
       conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },
       saved: false,
     },
@@ -154,7 +154,7 @@ describe('CairnAdmin', () => {
   });
 
   it('renders the login view bare, with the email form posting ?/request', async () => {
-    const screen = render(CairnAdmin, { data: loginData() });
+    const screen = await render(CairnAdmin, { data: loginData() });
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
     const form = screen.container.querySelector('form[method="POST"]');
     expect(form?.getAttribute('action')).toBe('?/request');
@@ -163,7 +163,7 @@ describe('CairnAdmin', () => {
   });
 
   it('renders the confirm view bare, with the token form posting ?/confirm', async () => {
-    const screen = render(CairnAdmin, { data: confirmData() });
+    const screen = await render(CairnAdmin, { data: confirmData() });
     await expect.element(screen.getByRole('button', { name: /confirm/i })).toBeInTheDocument();
     expect(screen.container.querySelector('input[name="token"]')).toHaveValue('tok123');
     const form = screen.container.querySelector('form[method="POST"]');
@@ -172,14 +172,14 @@ describe('CairnAdmin', () => {
   });
 
   it('renders the welcome view with the signed-in name and a calm no-content line, no action forms', async () => {
-    const screen = render(CairnAdmin, { data: welcomeData() });
+    const screen = await render(CairnAdmin, { data: welcomeData() });
     await expect.element(screen.getByText(/inst/i)).toBeInTheDocument();
     await expect.element(screen.getByText(/no content here/i)).toBeInTheDocument();
     expect(screen.container.querySelector('form')).toBeNull();
   });
 
   it('renders the list view bare (chrome now rides the shell, not CairnAdmin)', async () => {
-    const screen = render(CairnAdmin, { data: listData() });
+    const screen = await render(CairnAdmin, { data: listData() });
     // CairnAdmin no longer wraps the chrome shell; only the view component renders.
     expect(chromeNav(screen)).toBeNull();
     await expect.element(screen.getByRole('link', { name: 'Hello' })).toHaveAttribute(
@@ -190,29 +190,29 @@ describe('CairnAdmin', () => {
 
   it('renders the edit view with the editor surface, reading siteName from the shell', async () => {
     page.data = { shell: shell() };
-    const screen = render(CairnAdmin, { data: editData() });
+    const screen = await render(CairnAdmin, { data: editData() });
     expect(chromeNav(screen)).toBeNull();
     await expect.element(screen.getByRole('toolbar')).toBeInTheDocument();
     await expect.element(screen.getByLabelText(/title/i)).toHaveValue('Hello');
   });
 
   it('renders the editors view bare', async () => {
-    const screen = render(CairnAdmin, { data: editorsData() });
+    const screen = await render(CairnAdmin, { data: editorsData() });
     await expect.element(screen.getByText('Owner One')).toBeInTheDocument();
   });
 
   it('renders the nav view bare', async () => {
-    const screen = render(CairnAdmin, { data: navData() });
+    const screen = await render(CairnAdmin, { data: navData() });
     await expect.element(screen.getByLabelText('Label')).toHaveValue('Home');
   });
 
   it('forwards the action result to the rendered view', async () => {
-    const screen = render(CairnAdmin, { data: loginData(), form: { sent: true } });
+    const screen = await render(CairnAdmin, { data: loginData(), form: { sent: true } });
     await expect.element(screen.getByText(/check your email/i)).toBeInTheDocument();
   });
 
   it('resets the list state when navigation crosses to another concept', async () => {
-    const screen = render(CairnAdmin, { data: listData() });
+    const screen = await render(CairnAdmin, { data: listData() });
     const search = screen.getByRole('searchbox', { name: 'Search Posts' });
     await search.fill('hello');
     await expect.element(search).toHaveValue('hello');
@@ -273,7 +273,7 @@ describe('form-action contract', () => {
 
   it.each(views)('the %s view posts only actions the dispatcher defines', async (view, data) => {
     if (view === 'edit') page.data = { shell: shell() };
-    const screen = render(CairnAdmin, { data });
+    const screen = await render(CairnAdmin, { data });
     const rendered = renderedActionNames(screen.container);
     // A fixture that renders no action form would prove nothing; fail loudly instead.
     expect(rendered.length).toBeGreaterThan(0);

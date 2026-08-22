@@ -3,8 +3,8 @@ import { render } from 'vitest-browser-svelte';
 import Pagination from '../../lib/admin-toolkit/Pagination.svelte';
 
 describe('Pagination', () => {
-  it('renders the range line when totalItems and pageSize are both given', () => {
-    const screen = render(Pagination, {
+  it('renders the range line when totalItems and pageSize are both given', async () => {
+    const screen = await render(Pagination, {
       page: 1,
       pageCount: 8,
       onPageChange: () => {},
@@ -18,13 +18,13 @@ describe('Pagination', () => {
     expect(text).toContain('households');
   });
 
-  it('omits the range line when totalItems is not given', () => {
-    const screen = render(Pagination, { page: 1, pageCount: 8, onPageChange: () => {} });
+  it('omits the range line when totalItems is not given', async () => {
+    const screen = await render(Pagination, { page: 1, pageCount: 8, onPageChange: () => {} });
     expect(screen.container.textContent ?? '').not.toContain('Showing');
   });
 
-  it('gives the range line a polite, atomic status role so a page/filter change is announced', () => {
-    const screen = render(Pagination, {
+  it('gives the range line a polite, atomic status role so a page/filter change is announced', async () => {
+    const screen = await render(Pagination, {
       page: 1,
       pageCount: 8,
       onPageChange: () => {},
@@ -38,38 +38,38 @@ describe('Pagination', () => {
     expect(range.getAttribute('aria-atomic')).toBe('true');
   });
 
-  it('renders no page nav at all for a single page', () => {
-    const screen = render(Pagination, { page: 1, pageCount: 1, onPageChange: () => {} });
+  it('renders no page nav at all for a single page', async () => {
+    const screen = await render(Pagination, { page: 1, pageCount: 1, onPageChange: () => {} });
     expect(screen.container.querySelector('.join')).toBeNull();
   });
 
-  it('marks the current page with aria-current and disables Previous at the first page', () => {
-    const screen = render(Pagination, { page: 1, pageCount: 5, onPageChange: () => {} });
+  it('marks the current page with aria-current and disables Previous at the first page', async () => {
+    const screen = await render(Pagination, { page: 1, pageCount: 5, onPageChange: () => {} });
     expect(screen.container.querySelector('[aria-current="page"]')).not.toBeNull();
     const prev = screen.container.querySelector('[aria-label="Previous page"]') as HTMLButtonElement;
     expect(prev.disabled).toBe(true);
   });
 
-  it('disables Next at the last page', () => {
-    const screen = render(Pagination, { page: 5, pageCount: 5, onPageChange: () => {} });
+  it('disables Next at the last page', async () => {
+    const screen = await render(Pagination, { page: 5, pageCount: 5, onPageChange: () => {} });
     const next = screen.container.querySelector('[aria-label="Next page"]') as HTMLButtonElement;
     expect(next.disabled).toBe(true);
   });
 
   it('calls onPageChange with the target page when a page button is activated', async () => {
     const onPageChange = vi.fn();
-    const screen = render(Pagination, { page: 1, pageCount: 5, onPageChange });
+    const screen = await render(Pagination, { page: 1, pageCount: 5, onPageChange });
     await screen.getByRole('button', { name: 'Page 2' }).click();
     expect(onPageChange).toHaveBeenCalledWith(2);
   });
 
-  it('omits the page-size selector by default, an additive extension no existing consumer opts into', () => {
-    const screen = render(Pagination, { page: 1, pageCount: 8, onPageChange: () => {} });
+  it('omits the page-size selector by default, an additive extension no existing consumer opts into', async () => {
+    const screen = await render(Pagination, { page: 1, pageCount: 8, onPageChange: () => {} });
     expect(screen.container.querySelector('select')).toBeNull();
   });
 
-  it('picks the singular noun when itemLabel is an { one, many } pair and the total is exactly 1', () => {
-    const screen = render(Pagination, {
+  it('picks the singular noun when itemLabel is an { one, many } pair and the total is exactly 1', async () => {
+    const screen = await render(Pagination, {
       page: 1,
       pageCount: 1,
       onPageChange: () => {},
@@ -82,8 +82,8 @@ describe('Pagination', () => {
     expect(text).not.toContain('1 households');
   });
 
-  it('picks the plural noun when itemLabel is an { one, many } pair and the total is not 1', () => {
-    const screen = render(Pagination, {
+  it('picks the plural noun when itemLabel is an { one, many } pair and the total is not 1', async () => {
+    const screen = await render(Pagination, {
       page: 1,
       pageCount: 8,
       onPageChange: () => {},
@@ -94,8 +94,8 @@ describe('Pagination', () => {
     expect(screen.container.textContent ?? '').toContain('149 households');
   });
 
-  it('gives the range line 13px text with tabular-nums', () => {
-    const screen = render(Pagination, {
+  it('gives the range line 13px text with tabular-nums', async () => {
+    const screen = await render(Pagination, {
       page: 1,
       pageCount: 8,
       onPageChange: () => {},
@@ -111,7 +111,7 @@ describe('Pagination', () => {
 
   it('offers a page-size selector when pageSizeOptions and onPageSizeChange are given', async () => {
     const onPageSizeChange = vi.fn();
-    const screen = render(Pagination, {
+    const screen = await render(Pagination, {
       page: 1,
       pageCount: 8,
       onPageChange: () => {},

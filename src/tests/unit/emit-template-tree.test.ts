@@ -128,6 +128,24 @@ describe('the emitted template tree', () => {
     const bindings = databases.map((entry) => entry.binding).sort();
     expect(bindings).toEqual(['APP_DB', 'AUTH_DB']);
   });
+
+  // A "secrets.required" declaration makes wrangler 4.125 filter .dev.vars to vars-or-required
+  // and turns on ambient process.env reading, which silently starves local dev of every secret
+  // it does not name (ROADMAP.md, "Declare required Worker secrets without breaking local dev").
+  // Neither the showcase source nor the emitted template carries the key until that redesign lands.
+  it('emits a wrangler.jsonc carrying no secrets declaration', async () => {
+    const text = await readFile(join(emittedTo, 'wrangler.jsonc'), 'utf8');
+    const config = parseJsonc(text);
+    expect(config.secrets).toBeUndefined();
+  });
+});
+
+describe('examples/showcase/wrangler.jsonc', () => {
+  it('declares no secrets key', async () => {
+    const text = await readFile(join(SHOWCASE, 'wrangler.jsonc'), 'utf8');
+    const config = parseJsonc(text) as { secrets?: unknown };
+    expect(config.secrets).toBeUndefined();
+  });
 });
 
 describe('examples/showcase/.cairn-template.json', () => {

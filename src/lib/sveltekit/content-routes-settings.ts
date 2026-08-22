@@ -63,7 +63,7 @@ export interface SettingsData {
   /** The model id (a developer-tier fact, read-only on the screen). */
   model: string;
   /**
-   * A plain-language label for the model id ("Claude Sonnet"), so the read-only fact is not a bare
+   * A plain-language label for the model id ("Claude Sonnet 5"), so the read-only fact is not a bare
    *  jargon token. Falls back to the raw id for an unknown model.
    */
   modelLabel: string;
@@ -120,7 +120,8 @@ const DEFAULT_SITE_CONFIG_PATH = 'src/lib/site.config.yaml';
  *  than a bare id. An unknown id falls back to itself.
  */
 const TIDY_MODEL_LABELS: Record<string, string> = {
-  'claude-sonnet-4-6': 'Claude Sonnet',
+  'claude-sonnet-5': 'Claude Sonnet 5',
+  'claude-sonnet-4-6': 'Claude Sonnet 4.6',
   'claude-haiku-4-5': 'Claude Haiku',
 };
 

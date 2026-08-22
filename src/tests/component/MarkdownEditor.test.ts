@@ -95,14 +95,14 @@ function pressFoldKey(container: Element, kind: 'fold' | 'unfold') {
 
 describe('MarkdownEditor', () => {
   it('mirrors the bindable value into a hidden field named for the form', async () => {
-    const screen = render(MarkdownEditor, { value: 'hello world', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: 'hello world', name: 'body' });
     await expect
       .element(screen.container.querySelector<HTMLInputElement>('input[name="body"]')!)
       .toHaveValue('hello world');
   });
 
   it('mounts a CodeMirror surface seeded with the value', async () => {
-    const screen = render(MarkdownEditor, { value: 'mountain weather', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: 'mountain weather', name: 'body' });
     // The first CodeMirror mount in the file pays the one-time cold-start of the editor's dynamic
     // imports. Under the full tri-project run the transform contention pushes that past the default
     // 1s poll, though it loads well within it once warm (the component project alone is green). A
@@ -114,7 +114,7 @@ describe('MarkdownEditor', () => {
 
   it('inserts text at the cursor through registerInsert and mirrors it', async () => {
     let insert: ((text: string) => void) | undefined;
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
       registerInsert: (fn: (text: string) => void) => {
@@ -130,7 +130,7 @@ describe('MarkdownEditor', () => {
 
   it('inserts an inline link through registerInsertLink', async () => {
     let insertLink: ((href: string, title: string) => void) | undefined;
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
       registerInsertLink: (fn: (href: string, title: string) => void) => {
@@ -146,7 +146,7 @@ describe('MarkdownEditor', () => {
 
   it('applies a markdown format through registerFormat and mirrors it', async () => {
     let format: ((kind: FormatKind) => void) | undefined;
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
       registerFormat: (fn: (kind: FormatKind) => void) => {
@@ -161,13 +161,13 @@ describe('MarkdownEditor', () => {
   });
 
   it('renders no toolbar of its own; the host strip owns the controls', async () => {
-    const screen = render(MarkdownEditor, { value: 'plain', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: 'plain', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-editor')).not.toBeNull();
     expect(screen.container.querySelector('[role="toolbar"]')).toBeNull();
   });
 
   it('reflects an external value reassignment into the mounted editor', async () => {
-    const screen = render(MarkdownEditor, { value: 'first', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: 'first', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-editor')?.textContent ?? '').toContain('first');
     await screen.rerender({ value: 'second', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-editor')?.textContent ?? '').toContain('second');
@@ -182,7 +182,7 @@ describe('MarkdownEditor', () => {
     // double-underlines beside the cairn lint source and a browser never silently rewrites a media:
     // token, a directive name, or frontmatter.
     const doc = ['## Title', '**bold** text', ':::gallery', '::hr', 'see :icon[ski]{s=1} here'].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
     expect(content.getAttribute('spellcheck')).toBe('false');
@@ -196,7 +196,7 @@ describe('MarkdownEditor', () => {
   it('decorates every fence of a nested labeled document and steps the classes by depth', async () => {
     // The field-report regression: a labeled opener (::::split[...]) must read as machinery, not
     // prose, and the depth model must step the rails and label inks as the stack pairs the fences.
-    const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
     await expect
       .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
       .toBe(6);
@@ -218,7 +218,7 @@ describe('MarkdownEditor', () => {
     // caret-block emphasis has its own test).
     const unpin = pinThemeVars({ '--color-accent': 'rgb(100, 60, 200)', '--color-base-100': 'rgb(255, 254, 250)' });
     try {
-      const screen = render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
+      const screen = await render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
       await expect
         .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
         .toBe(6);
@@ -263,7 +263,7 @@ describe('MarkdownEditor', () => {
     // every inset offset and only the color-mix strength differs.
     const unpin = pinThemeVars({ '--color-accent': 'rgb(100, 60, 200)', '--color-base-100': 'rgb(255, 254, 250)' });
     try {
-      const screen = render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
+      const screen = await render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
       await expect
         .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
         .toBe(6);
@@ -290,7 +290,7 @@ describe('MarkdownEditor', () => {
     // and a negative text-indent of the same magnitude, so the marker sits in the indent and a
     // wrapped continuation line resumes under the content. The surface is fixed-pitch, so the two
     // computed values must cancel exactly; magnitude grows with the marker.
-    const screen = render(MarkdownEditor, { value: '> a quote here\n12. an ordered item', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: '> a quote here\n12. an ordered item', name: 'body' });
     await expect.poll(() => lineWith(screen.container, 'a quote here')).toBeTruthy();
     const quote = getComputedStyle(lineWith(screen.container, 'a quote here')!);
     const ordered = getComputedStyle(lineWith(screen.container, 'an ordered item')!);
@@ -308,7 +308,7 @@ describe('MarkdownEditor', () => {
     // add together; the line still carries the equal-and-opposite text-indent so its wrap lands
     // under the content, and the padding sits beyond the gutter.
     const doc = [':::panel', '- nested item', ':::'].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body' });
     await expect.poll(() => lineWith(screen.container, 'nested item')).toBeTruthy();
     const item = lineWith(screen.container, 'nested item')!;
     const style = getComputedStyle(item);
@@ -318,7 +318,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('pads the directive gutter clear of the depth-3 bar', async () => {
-    const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-fence')).not.toBeNull();
     const fence = screen.container.querySelector<HTMLElement>('.cm-line.cm-cairn-directive-fence')!;
     // 1.75rem = 28px: the depth-3 bar ends at 18px, so the text keeps 10px of air beyond it.
@@ -334,7 +334,7 @@ describe('MarkdownEditor', () => {
     try {
       // The leading plain line parks the default caret outside the containers, keeping the
       // label inks in their quiet depth-stepped state.
-      const screen = render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
+      const screen = await render(MarkdownEditor, { value: `quiet prose\n${NESTED_DOC}`, name: 'body' });
       await expect.poll(() => spanWith(lineWith(screen.container, '::::split'), '::::')).toBeTruthy();
       const opener = lineWith(screen.container, '::::split')!;
       // The colon run is machinery and recedes to the marker-muted tone.
@@ -359,7 +359,7 @@ describe('MarkdownEditor', () => {
       '--color-muted': 'rgb(120, 110, 100)',
     });
     try {
-      const screen = render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
+      const screen = await render(MarkdownEditor, { value: NESTED_DOC, name: 'body' });
       await expect
         .poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length)
         .toBe(6);
@@ -381,7 +381,7 @@ describe('MarkdownEditor', () => {
     // Cursor-aware emphasis: the block the caret sits inside carries cm-cairn-caret-block on
     // every row, fence and content alike; the other containers sit quieter without it.
     const doc = ['plain intro', NESTED_DOC, 'plain outro'].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body' });
     await expect.poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-directive-fence').length).toBe(6);
     const caretRows = () => [...screen.container.querySelectorAll<HTMLElement>('.cm-line.cm-cairn-caret-block')];
     // The fresh editor's caret sits at the document start, outside any container.
@@ -407,7 +407,7 @@ describe('MarkdownEditor', () => {
 
   it('explains the directive machinery lines through a title tooltip', async () => {
     const doc = [':::gallery', 'inside', ':::', '::hr'].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-fence')).not.toBeNull();
     const expected = 'Layout marker. Edit the text between these lines and leave this line as it is.';
     expect(screen.container.querySelector('.cm-line.cm-cairn-directive-fence')?.getAttribute('title')).toBe(expected);
@@ -420,7 +420,7 @@ describe('MarkdownEditor', () => {
     // font-family computes from the declaration regardless, which is the seam under test.
     const unpin = pinThemeVars({ '--font-editor': "'iA Writer Mono', ui-monospace, monospace" });
     try {
-      const screen = render(MarkdownEditor, { value: 'manuscript', name: 'body' });
+      const screen = await render(MarkdownEditor, { value: 'manuscript', name: 'body' });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
       expect(getComputedStyle(content).fontFamily).toMatch(/^['"]?iA Writer Mono['"]?/);
@@ -430,7 +430,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('gives the editing surface a generous minimum height', async () => {
-    const screen = render(MarkdownEditor, { value: 'short', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: 'short', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
     const minHeight = parseFloat(getComputedStyle(content).minHeight);
@@ -442,7 +442,7 @@ describe('MarkdownEditor', () => {
     // unresolved, the declaration computes invalid and the outline silently reads "none".
     document.documentElement.style.setProperty('--color-primary', 'rgb(12, 34, 56)');
     try {
-      const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body' });
+      const screen = await render(MarkdownEditor, { value: 'plain prose', name: 'body' });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
       await userEvent.click(content);
@@ -469,7 +469,7 @@ describe('MarkdownEditor', () => {
     before.textContent = 'before the editor';
     document.body.appendChild(before);
     try {
-      const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body' });
+      const screen = await render(MarkdownEditor, { value: 'plain prose', name: 'body' });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       screen.container.classList.add('cairn-editor-zen');
       const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
@@ -499,7 +499,7 @@ describe('MarkdownEditor', () => {
   it('passes a dark theme to CodeMirror inside the dark admin theme', async () => {
     document.body.setAttribute('data-theme', 'cairn-admin-dark');
     try {
-      const screen = render(MarkdownEditor, { value: 'night text', name: 'body' });
+      const screen = await render(MarkdownEditor, { value: 'night text', name: 'body' });
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
       // CodeMirror's dark base theme sets a white caret on the content; the light base sets black.
       const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
@@ -520,7 +520,7 @@ describe('MarkdownEditor', () => {
       '--color-primary': 'rgb(200, 0, 50)',
     });
     try {
-      const screen = render(MarkdownEditor, { value: '## Alpha\n### Beta\nplain body', name: 'body', surface: 'markup' });
+      const screen = await render(MarkdownEditor, { value: '## Alpha\n### Beta\nplain body', name: 'body', surface: 'markup' });
       await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('Beta');
       await expect.poll(() => spanWith(lineWith(screen.container, 'Alpha'), 'Alpha')).toBeTruthy();
       const h2 = spanWith(lineWith(screen.container, 'Alpha'), 'Alpha')!;
@@ -544,7 +544,7 @@ describe('MarkdownEditor', () => {
   it('sizes a hand-typed #### as a heading between h3 and body', async () => {
     // Pinned in markup posture, where the body sits at the 16px base step. Sizing needs no theme
     // vars; the step itself is the discriminator from CodeMirror's default, which never sizes.
-    const screen = render(MarkdownEditor, { value: '### C\n#### D\nplain body', name: 'body', surface: 'markup' });
+    const screen = await render(MarkdownEditor, { value: '### C\n#### D\nplain body', name: 'body', surface: 'markup' });
     await expect.poll(() => spanWith(lineWith(screen.container, '#### D'), 'D')).toBeTruthy();
     const h3 = spanWith(lineWith(screen.container, '### C'), 'C')!;
     const h4 = spanWith(lineWith(screen.container, '#### D'), 'D')!;
@@ -561,7 +561,7 @@ describe('MarkdownEditor', () => {
       '--color-muted': 'rgb(120, 110, 100)',
     });
     try {
-      const screen = render(MarkdownEditor, { value: '## A **b**', name: 'body' });
+      const screen = await render(MarkdownEditor, { value: '## A **b**', name: 'body' });
       await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('A');
       const line = () => lineWith(screen.container, 'A');
       await expect.poll(() => spanWith(line(), '##')).toBeTruthy();
@@ -593,7 +593,7 @@ describe('MarkdownEditor', () => {
       '--color-muted': 'rgb(120, 110, 100)',
     });
     try {
-      const screen = render(MarkdownEditor, { value: '> wise words', name: 'body' });
+      const screen = await render(MarkdownEditor, { value: '> wise words', name: 'body' });
       await expect.poll(() => spanWith(lineWith(screen.container, 'wise'), 'wise words')).toBeTruthy();
       const line = lineWith(screen.container, 'wise')!;
       const text = spanWith(line, 'wise words')!;
@@ -611,7 +611,7 @@ describe('MarkdownEditor', () => {
       '--color-muted': 'rgb(120, 110, 100)',
     });
     try {
-      const screen = render(MarkdownEditor, { value: '[t](https://e.com)', name: 'body' });
+      const screen = await render(MarkdownEditor, { value: '[t](https://e.com)', name: 'body' });
       await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('e.com');
       const line = () => lineWith(screen.container, 'e.com');
       await expect.poll(() => spanWith(line(), 't')).toBeTruthy();
@@ -629,7 +629,7 @@ describe('MarkdownEditor', () => {
       '--color-accent': 'rgb(0, 130, 60)',
     });
     try {
-      const screen = render(MarkdownEditor, { value: 'a `code` b', name: 'body' });
+      const screen = await render(MarkdownEditor, { value: 'a `code` b', name: 'body' });
       await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('code');
       const line = () => lineWith(screen.container, 'code');
       await expect.poll(() => spanWith(line(), 'code')).toBeTruthy();
@@ -646,7 +646,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('defaults to the prose posture: a 72ch measure at the larger type step', async () => {
-    const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: 'plain prose', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
     const style = getComputedStyle(content);
@@ -659,7 +659,7 @@ describe('MarkdownEditor', () => {
   it('markup posture fills its pane with no inner measure cap', async () => {
     // The working surface fills the card the way a code editor fills its pane; the host's card
     // cap is the one width constraint.
-    const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body', surface: 'markup' });
+    const screen = await render(MarkdownEditor, { value: 'plain prose', name: 'body', surface: 'markup' });
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
     const markupStyle = getComputedStyle(content);
@@ -671,7 +671,7 @@ describe('MarkdownEditor', () => {
     // The commonmark default base has no Strikethrough node; only the GFM base does. The
     // highlight style maps tags.strikethrough to line-through, and generated class names are
     // not stable, so the computed style is the robust handle (the heading test's pattern).
-    const screen = render(MarkdownEditor, { value: 'a ~~struck~~ word', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: 'a ~~struck~~ word', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('struck');
     const struckSpan = () =>
       Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-content span')).some(
@@ -683,7 +683,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('continues a list item on Enter through the markdown keymap', async () => {
-    const screen = render(MarkdownEditor, { value: '- first', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: '- first', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('first');
     await focusEditorEnd(screen.container);
     await userEvent.keyboard('{Enter}second');
@@ -691,7 +691,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('removes an empty list marker on Backspace through the markdown keymap', async () => {
-    const screen = render(MarkdownEditor, { value: '- first\n- ', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: '- first\n- ', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('first');
     await focusEditorEnd(screen.container);
     // deleteMarkupBackward removes the whole marker in one keystroke, replacing it with blank
@@ -707,7 +707,7 @@ describe('MarkdownEditor', () => {
     });
     try {
       const doc = ['first one', 'first two', '', 'second para', '', 'third para'].join('\n');
-      const screen = render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
+      const screen = await render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
       await expect.poll(() => screen.container.querySelectorAll('.cm-line.cm-cairn-focus-dim').length).toBe(4);
       const dimmed = (text: string) => lineWith(screen.container, text)!.classList.contains('cm-cairn-focus-dim');
       // The fresh editor's caret sits at the document start, so the opening paragraph is the lit
@@ -735,7 +735,7 @@ describe('MarkdownEditor', () => {
     // Without the override a dimmed directive block keeps full-strength bars and becomes the
     // one chromatic object in the field; the dim rule re-resolves the rail percentages.
     const doc = ['lit paragraph', '', ':::panel', 'inside', ':::'].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-content')).not.toBeNull();
     const inside = lineWith(screen.container, 'inside')!;
     expect(inside.classList.contains('cm-cairn-focus-dim')).toBe(true);
@@ -748,7 +748,7 @@ describe('MarkdownEditor', () => {
     // container holding a blank line has dimmed rows that still carry the active rail; the dim
     // rule must override the active step too or those rows keep a full-chroma bar.
     const doc = [':::panel', 'lit here', '', 'dim tail', ':::'].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
     await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-focus-dim')).not.toBeNull();
     const tail = lineWith(screen.container, 'dim tail')!;
     expect(tail.classList.contains('cm-cairn-caret-block')).toBe(true);
@@ -766,7 +766,7 @@ describe('MarkdownEditor', () => {
     });
     try {
       const doc = ['lit `chip` here', '', 'dim `code` and :icon[ski]{s=1}', '', '::hr'].join('\n');
-      const screen = render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
+      const screen = await render(MarkdownEditor, { value: doc, name: 'body', focusMode: true });
       await expect.poll(() => screen.container.querySelector('.cm-line.cm-cairn-directive-leaf')).not.toBeNull();
       await expect.poll(() => spanWith(lineWith(screen.container, 'lit'), 'chip')).toBeTruthy();
       // The caret paragraph stays lit, chips intact.
@@ -791,7 +791,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('keeps both writing modes off by default', async () => {
-    const screen = render(MarkdownEditor, { value: 'alpha\n\nbeta', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: 'alpha\n\nbeta', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('beta');
     expect(screen.container.querySelector('.cm-cairn-focus-dim')).toBeNull();
     // No typewriter recentering either: an edit leaves the scroller where it was.
@@ -805,7 +805,7 @@ describe('MarkdownEditor', () => {
   it('keeps editing intact with typewriter scroll enabled', async () => {
     // The recenter dispatch is queued behind each doc change; this drives that path in a real
     // browser, where a dispatch-during-update mistake or a rejected microtask would fail the run.
-    const screen = render(MarkdownEditor, { value: 'line', name: 'body', typewriter: true });
+    const screen = await render(MarkdownEditor, { value: 'line', name: 'body', typewriter: true });
     await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('line');
     await focusEditorEnd(screen.container);
     await userEvent.keyboard(' more');
@@ -813,7 +813,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('folds and unfolds a container from the gutter fold button', async () => {
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
     const visible = lineCount(screen.container);
     // The opener row's gutter carries a real focusable button.
@@ -848,7 +848,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('marks the open container active while the caret is inside it', async () => {
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
     // Park the caret in the container body; the opener's gutter button reads active (caret-inside).
     await userEvent.click(lineWith(screen.container, 'body one')!);
@@ -859,7 +859,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('folds from the gutter button via keyboard activation', async () => {
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     foldBtn(screen.container)!.focus();
     await userEvent.keyboard('{Enter}');
@@ -868,7 +868,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('folds and unfolds the caret container with Ctrl+Shift+[ and ]', async () => {
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
     await userEvent.click(lineWith(screen.container, 'body one')!);
     await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
@@ -887,7 +887,7 @@ describe('MarkdownEditor', () => {
     // how an in-place rename actually lands (the same seam the dialog's Update and the fold-name
     // sync tests use), landing the change inside the still-folded opener's directive name.
     let replace: ((from: number, to: number, text: string) => void) | undefined;
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: FOLD_DOC,
       name: 'body',
       registerReplaceRange: (fn) => {
@@ -906,7 +906,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('unfolds when a selection extends across the folded range', async () => {
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
@@ -919,7 +919,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('keeps the fold across an undo, which moves text only', async () => {
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
     // Make an edit on the opener row so history has something to undo, then fold.
     await focusEditorEnd(screen.container);
@@ -940,7 +940,7 @@ describe('MarkdownEditor', () => {
     // navigation from the line above. ArrowDown from the end of 'intro line' lands beside the
     // folded row (its left edge, immediately before the chip) rather than skipping past it, and
     // landing there is not itself a touch: the fold holds and the hidden lines stay hidden.
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
@@ -955,7 +955,7 @@ describe('MarkdownEditor', () => {
     try {
       // A depth-2 opener: the opener paints its full rail (the chevron no longer stands in for a bar).
       const doc = ['intro', '::::split', ':::panel', 'inside', ':::', '::::'].join('\n');
-      const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+      const screen = await render(MarkdownEditor, { value: doc, name: 'body' });
       await expect.poll(() => lineWith(screen.container, ':::panel')).toBeTruthy();
       const opener = lineWith(screen.container, ':::panel')!;
       // The fold control lives in the gutter column, not on the opener line.
@@ -972,7 +972,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('places the caret without folding when the opener text is clicked', async () => {
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
     await expect.poll(() => lineWith(screen.container, ':::panel')).toBeTruthy();
     // The fold control is a separate gutter column; clicking the opener text just places the caret
     // and the block stays open.
@@ -987,7 +987,7 @@ describe('MarkdownEditor', () => {
     try {
       // A depth-2 panel inside a depth-1 split, so the rails run through the wash unbroken.
       const doc = ['intro', '::::split', ':::panel', 'inside', ':::', '::::'].join('\n');
-      const screen = render(MarkdownEditor, { value: doc, name: 'body' });
+      const screen = await render(MarkdownEditor, { value: doc, name: 'body' });
       await expect.poll(() => lineWith(screen.container, 'inside')).toBeTruthy();
       // Two openers fold here (the split and the panel); the gutter renders one button per opener in
       // line order, so the panel's button is the second. Fold the panel.
@@ -1010,7 +1010,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('gives an unbalanced opener no chevron and no foldable range', async () => {
-    const screen = render(MarkdownEditor, { value: ['intro', ':::panel', 'orphan body'].join('\n'), name: 'body' });
+    const screen = await render(MarkdownEditor, { value: ['intro', ':::panel', 'orphan body'].join('\n'), name: 'body' });
     await expect.poll(() => lineWith(screen.container, 'orphan body')).toBeTruthy();
     // The opener never closes, so it gets no gutter button and the keys cannot fold it.
     expect(foldBtn(screen.container)).toBeNull();
@@ -1025,7 +1025,7 @@ describe('MarkdownEditor', () => {
   it('folds every component block on mount when foldOnMount is set', async () => {
     // Off by default (every other fold test above renders with an open block); EditPage turns this
     // on for the real entry-editing surface (Geoff's pre-beta ruling: blocks open folded).
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body', foldOnMount: true });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body', foldOnMount: true });
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     // The body never rendered open; the pill and the gutter button already read collapsed.
     expect(lineWith(screen.container, 'body one')).toBeFalsy();
@@ -1051,7 +1051,7 @@ describe('MarkdownEditor', () => {
         } as unknown as ComponentDef,
       ],
     });
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     // The gutter's open-state name is registry-labeled too, the same resolution the pill uses.
     expect(foldBtn(screen.container)!.getAttribute('aria-label')).toBe('Info Panel section');
@@ -1071,7 +1071,7 @@ describe('MarkdownEditor', () => {
         { name: 'callout', label: 'Callout', description: 'x', build: (n: unknown) => n } as unknown as ComponentDef,
       ],
     });
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
@@ -1090,7 +1090,7 @@ describe('MarkdownEditor', () => {
       ],
     });
     const doc = ['intro', ':::panel', 'body one', ':::'].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', registry });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', registry });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
@@ -1106,7 +1106,7 @@ describe('MarkdownEditor', () => {
         { name: 'panel', label: longLabel, description: 'x', build: (n: unknown) => n } as unknown as ComponentDef,
       ],
     });
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry, foldOnMount: true });
+    const screen = await render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry, foldOnMount: true });
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     const pill = foldPill(screen.container)!;
     const labelSpan = pill.querySelector<HTMLElement>('.cm-cairn-fold-pill-label')!;
@@ -1122,7 +1122,7 @@ describe('MarkdownEditor', () => {
 
   it('renders a resolved include line as an atomic chip naming the fragment title', async () => {
     const doc = 'Intro line.\n::include{fragment="winter-hours"}\nOutro line.';
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       fragmentTitles: { 'winter-hours': 'Winter hours' },
@@ -1137,13 +1137,13 @@ describe('MarkdownEditor', () => {
   });
 
   it('falls back to the raw fragment id when no title resolves for it', async () => {
-    const screen = render(MarkdownEditor, { value: '::include{fragment="winter-hours"}', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: '::include{fragment="winter-hours"}', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
     expect(screen.container.querySelector('.cm-cairn-include-chip')?.textContent).toBe('Include: winter-hours');
   });
 
   it('leaves an include directive with no fragment attribute as plain source', async () => {
-    const screen = render(MarkdownEditor, { value: '::include', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: '::include', name: 'body' });
     await expect.poll(() => lineWith(screen.container, '::include')).toBeTruthy();
     expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
   });
@@ -1154,7 +1154,7 @@ describe('MarkdownEditor', () => {
   // silently swallow text the author can no longer see.
   it('leaves a line with trailing text after the closing brace as plain source', async () => {
     const doc = '::include{fragment="winter-hours"}Outro line.';
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', fragmentTitles: { 'winter-hours': 'Winter hours' } });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', fragmentTitles: { 'winter-hours': 'Winter hours' } });
     await expect.poll(() => lineWith(screen.container, 'fragment=')).toBeTruthy();
     expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
     expect(hiddenValue(screen.container)).toBe(doc);
@@ -1165,7 +1165,7 @@ describe('MarkdownEditor', () => {
   // read as plain source, matching every sibling decoration in this editor.
   it('leaves an include directive inside a fenced code block as plain source', async () => {
     const doc = ['before', '```', '::include{fragment="winter-hours"}', '```', 'after'].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', fragmentTitles: { 'winter-hours': 'Winter hours' } });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', fragmentTitles: { 'winter-hours': 'Winter hours' } });
     await expect.poll(() => lineWith(screen.container, 'fragment=')).toBeTruthy();
     expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
     expect(hiddenValue(screen.container)).toBe(doc);
@@ -1174,13 +1174,13 @@ describe('MarkdownEditor', () => {
   // Object.prototype guard regression: an author-typed fragment id absent from the published
   // lookup must fall back to the raw id, never resolve a JS internal off the inherited chain.
   it('falls back to the raw id for a fragment id that collides with an inherited Object.prototype key', async () => {
-    const screen = render(MarkdownEditor, { value: '::include{fragment="constructor"}', name: 'body', fragmentTitles: {} });
+    const screen = await render(MarkdownEditor, { value: '::include{fragment="constructor"}', name: 'body', fragmentTitles: {} });
     await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
     expect(screen.container.querySelector('.cm-cairn-include-chip')?.textContent).toBe('Include: constructor');
   });
 
   it('relabels the chip when fragmentTitles changes reactively', async () => {
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: '::include{fragment="winter-hours"}',
       name: 'body',
       fragmentTitles: {},
@@ -1200,7 +1200,7 @@ describe('MarkdownEditor', () => {
 
   it('deletes the whole include line atomically, with one undo step to restore it', async () => {
     const doc = 'Intro line.\n::include{fragment="winter-hours"}\nOutro line.';
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       fragmentTitles: { 'winter-hours': 'Winter hours' },
@@ -1225,7 +1225,7 @@ describe('MarkdownEditor', () => {
   // so nothing is ever hidden: the chip drops away and the joined text stays visible.
   it('de-atomicizes the instant a join makes the line no longer a resolvable directive, never swallowing text', async () => {
     const doc = 'Intro line.\n::include{fragment="winter-hours"}\nOutro line.';
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       fragmentTitles: { 'winter-hours': 'Winter hours' },
@@ -1247,7 +1247,7 @@ describe('MarkdownEditor', () => {
     // offsets of the inclusive line range.
     const doc = ['intro', '::::callout[Heads up]', 'body line', '::::', 'outro'].join('\n');
     const reports: ({ name: string | null; markdown: string; from: number; to: number } | null)[] = [];
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       onComponentAtCaret: (info) => {
@@ -1288,7 +1288,7 @@ describe('MarkdownEditor', () => {
     const doc = ['intro', '::::callout[Heads up]', 'body line', '::::', 'outro'].join('\n');
     const reports: ({ name: string | null; markdown: string; from: number; to: number } | null)[] = [];
     let replace: ((from: number, to: number, text: string) => void) | undefined;
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       onComponentAtCaret: (info) => {
@@ -1320,7 +1320,7 @@ describe('MarkdownEditor', () => {
   it('replaces a document span through registerReplaceRange', async () => {
     const doc = ['alpha', '::::callout[Old]', 'body', '::::', 'omega'].join('\n');
     let replace: ((from: number, to: number, text: string) => void) | undefined;
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       registerReplaceRange: (fn) => {
@@ -1341,7 +1341,7 @@ describe('MarkdownEditor', () => {
     const doc = 'before ![](media:cat.0123456789abcdef) after';
     let select: ((from: number, to: number) => void) | undefined;
     let getSelection: (() => string) | undefined;
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       registerSelectRange: (fn: (from: number, to: number) => void) => {
@@ -1367,7 +1367,7 @@ describe('MarkdownEditor', () => {
     const doc = 'colour and colour again';
     let select: ((from: number, to: number) => void) | undefined;
     let getSelectionRange: (() => { from: number; to: number } | null) | undefined;
-    render(MarkdownEditor, {
+    await render(MarkdownEditor, {
       value: doc,
       name: 'body',
       registerSelectRange: (fn: (from: number, to: number) => void) => {
@@ -1394,7 +1394,7 @@ describe('MarkdownEditor', () => {
     const targets: LinkTarget[] = [
       { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
     ];
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: '',
       name: 'body',
       completionSources: [cairnLinkCompletionSource(targets)],
@@ -1457,7 +1457,7 @@ describe('MarkdownEditor', () => {
 
   it('inserts an inline image at the caret through registerInsertImage', async () => {
     let insertImage: ((alt: string, ref: string) => void) | undefined;
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: 'start',
       name: 'body',
       registerInsertImage: (fn: (alt: string, ref: string) => void) => {
@@ -1473,7 +1473,7 @@ describe('MarkdownEditor', () => {
 
   it('routes a dropped image file to the ingest callback', async () => {
     const ingested: File[] = [];
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: 'drop here',
       name: 'body',
       onImageIngest: (file: File) => {
@@ -1492,7 +1492,7 @@ describe('MarkdownEditor', () => {
 
   it('lets a text-only paste fall through without routing to ingest', async () => {
     const ingested: File[] = [];
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: '',
       name: 'body',
       onImageIngest: (file: File) => {
@@ -1510,7 +1510,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('converts a rich-text paste to markdown: headings, bold/italic, links, and lists', async () => {
-    const screen = render(MarkdownEditor, { value: '', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: '', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
     const dt = new DataTransfer();
@@ -1530,7 +1530,7 @@ describe('MarkdownEditor', () => {
   });
 
   it('degrades an out-of-scope structure (a table) to plain text on a rich-text paste', async () => {
-    const screen = render(MarkdownEditor, { value: '', name: 'body' });
+    const screen = await render(MarkdownEditor, { value: '', name: 'body' });
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
     const dt = new DataTransfer();
@@ -1542,7 +1542,7 @@ describe('MarkdownEditor', () => {
 
   it('still routes a pasted image file to ingest, not the html converter', async () => {
     const ingested: File[] = [];
-    const screen = render(MarkdownEditor, {
+    const screen = await render(MarkdownEditor, {
       value: '',
       name: 'body',
       onImageIngest: (file: File) => {
@@ -1567,7 +1567,7 @@ describe('MarkdownEditor', () => {
       `Here is ![A trail map](media:trail-map.${HASH_A}) the map.`,
       `And ![](media:finish-line.${HASH_B}) at the end.`,
     ].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
     await expect.poll(() => screen.container.querySelectorAll('.cm-cairn-media-chip').length).toBe(2);
     const names = [...screen.container.querySelectorAll('.cm-cairn-media-name')].map((n) => n.textContent);
     expect(names).toContain('Trail map');
@@ -1587,7 +1587,7 @@ describe('MarkdownEditor', () => {
     // A hash the library does not carry (a reference from a branch whose manifest the read missed):
     // the chip falls back to the token slug as the name, with no thumbnail, and never throws.
     const doc = `See ![A picture](media:somewhere.aaaabbbbccccdddd) here.`;
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
     await expect.poll(() => screen.container.querySelector('.cm-cairn-media-chip')).not.toBeNull();
     expect(screen.container.querySelector('.cm-cairn-media-name')?.textContent).toBe('somewhere');
     expect(screen.container.querySelector('.cm-cairn-media-thumb')).toBeNull();
@@ -1599,7 +1599,7 @@ describe('MarkdownEditor', () => {
   // over editor-media.ts's own fenceScan inCode gate).
   it('leaves a media: token inside a fenced code block as plain source', async () => {
     const doc = ['before', '```', `![A trail map](media:trail-map.${HASH_A})`, '```', 'after'].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
     await expect.poll(() => lineWith(screen.container, 'media:trail-map')).toBeTruthy();
     expect(screen.container.querySelector('.cm-cairn-media-chip')).toBeNull();
     expect(hiddenValue(screen.container)).toBe(doc);
@@ -1609,7 +1609,7 @@ describe('MarkdownEditor', () => {
     // The optimistic-merge path (Task 6/7): a token already in the source whose hash joins the
     // library later must decorate once the prop updates, through the media compartment.
     const doc = `New ![A late one](media:late.1111222233334444) image.`;
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: {} });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: {} });
     await expect.poll(() => screen.container.querySelector('.cm-content')?.textContent ?? '').toContain('late');
     // No library entry yet, but the token still renders a fallback chip from its slug.
     await expect.poll(() => screen.container.querySelector('.cm-cairn-media-name')?.textContent).toBe('late');
@@ -1653,7 +1653,7 @@ describe('MarkdownEditor', () => {
       '',
       `Bare ![A trail map](media:trail-map.${HASH_A}) here.`,
     ].join('\n');
-    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+    const screen = await render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
     await expect.poll(() => screen.container.querySelectorAll('.cm-cairn-media-chip').length).toBe(3);
     const pills = [...screen.container.querySelectorAll('.cm-cairn-media-role')].map((p) => p.textContent);
     // The roled figure reads "wide"; the bare figure reads the measure default "figure"; the bare
@@ -1665,7 +1665,7 @@ describe('MarkdownEditor', () => {
     const unpin = pinThemeVars({ '--color-accent': 'rgb(0, 130, 60)' });
     try {
       const doc = [':::figure{.wide}', `![A trail map](media:trail-map.${HASH_A})`, ':::'].join('\n');
-      const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+      const screen = await render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
       await expect.poll(() => screen.container.querySelector('.cm-cairn-media-role')).not.toBeNull();
       const pill = screen.container.querySelector<HTMLElement>('.cm-cairn-media-role')!;
       // The pill inks in the accent (the directive accent language), not the body content ink.

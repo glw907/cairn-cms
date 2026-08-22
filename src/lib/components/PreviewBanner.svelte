@@ -27,28 +27,45 @@ Svelte's scoping class would raise a declared property's own specificity past a 
 making a site's override silently lose. Reading the property instead lets a site set
 `--cairn-preview-bg` and friends on `:root` or any ancestor and win, no `:global` or specificity fight
 required.
+
+The four custom properties, `--cairn-preview-bg`, `--cairn-preview-fg`, `--cairn-preview-border`,
+and `--cairn-preview-link`, are the intended site-override seam, not an implementation detail: the
+built-in default only flips palette by `prefers-color-scheme`, the OS-level signal, so a site that
+themes by its own toggle (a `data-theme` attribute, a class) declares all four in its own light
+root and in both its `prefers-color-scheme: dark` and its own dark selector, so the banner always
+follows the toggle instead of the OS preference. A worked `data-theme` example lives in
+docs/extend/share-a-draft-preview.md ("Override the banner's palette").
 -->
 <script lang="ts">
   import type { PreviewData } from '../sveltekit/preview.js';
 
+  /** `expiresAt`'s default rendering: a fixed, locale-independent `YYYY-MM-DD HH:MM UTC` string. */
+  function defaultFormatExpiry(iso: string): string {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
+  }
+
   interface Props {
     /** The preview metadata `previewLoad` returns alongside the page's own entry data. */
     preview: PreviewData['preview'];
+    /**
+     * Format `preview.expiresAt` for display. Defaults to a fixed `YYYY-MM-DD HH:MM UTC` string,
+     *  deliberately not the visitor's own locale: this renders identically during SSR and
+     *  hydration, so a Worker whose runtime locale or timezone differs from the browser's own
+     *  cannot produce two different strings and a hydration mismatch. Pass a formatter to render
+     *  the expiry in a site's own fixed date vocabulary instead.
+     */
+    formatExpiry?: (iso: string) => string;
   }
-  let { preview }: Props = $props();
+  let { preview, formatExpiry = defaultFormatExpiry }: Props = $props();
 
-  // The visitor's own locale, not a fixed one: unlike the admin's editor-facing surfaces, this
-  // component renders on a public page for whoever holds the link.
-  const expiryText = $derived(
-    new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
-      new Date(preview.expiresAt),
-    ),
-  );
+  const expiryText = $derived(formatExpiry(preview.expiresAt));
 </script>
 
 <aside class="cairn-preview-banner" data-state={preview.state} aria-label="Preview status">
   {#if preview.state === 'draft'}
-    <p>Draft preview &middot; expires {expiryText}</p>
+    <p>Draft preview &middot; expires <time datetime={preview.expiresAt}>{expiryText}</time></p>
   {:else}
     <p>
       This preview has ended.

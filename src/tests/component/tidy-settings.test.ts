@@ -15,8 +15,8 @@ function data(over: Partial<SettingsData> = {}): SettingsData {
     tidyEnabled: true,
     keyConfigured: true,
     keyStatus: 'valid',
-    model: 'claude-sonnet-4-6',
-    modelLabel: 'Claude Sonnet',
+    model: 'claude-sonnet-5',
+    modelLabel: 'Claude Sonnet 5',
     conventions: defaultTidyConventions(),
     saved: false,
     ...over,
@@ -29,7 +29,7 @@ function conventions(over: Partial<TidyConventions> = {}): TidyConventions {
 
 describe('CairnTidySettings: the visibility gate (tidy disabled)', () => {
   it('renders the honest gate region and no editor-tier section', async () => {
-    const screen = render(CairnTidySettings, {
+    const screen = await render(CairnTidySettings, {
       data: data({ enabled: false, tidyEnabled: false, keyConfigured: false, keyStatus: 'missing' }),
     });
     // The gate is a labelled region.
@@ -41,7 +41,7 @@ describe('CairnTidySettings: the visibility gate (tidy disabled)', () => {
   });
 
   it('puts no convention control in the tab order (absent, not disabled)', async () => {
-    const screen = render(CairnTidySettings, { data: data({ enabled: false, tidyEnabled: false, keyConfigured: false, keyStatus: 'missing' }) });
+    const screen = await render(CairnTidySettings, { data: data({ enabled: false, tidyEnabled: false, keyConfigured: false, keyStatus: 'missing' }) });
     // No check-and-tint toggle (aria-pressed) anywhere: the convention list is gone, not disabled.
     expect(screen.container.querySelectorAll('[aria-pressed]').length).toBe(0);
     // No radiogroup variant chooser either.
@@ -56,7 +56,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     // The admin-toolkit organization pass's T7 adoption sweep: the header band renders through
     // PageHeader; the Fixes and Style conventions counts render through StatusChip (a `status`
     // dot, never a bespoke rounded-full pill), each still inside its own live region.
-    const screen = render(CairnTidySettings, { data: data() });
+    const screen = await render(CairnTidySettings, { data: data() });
     expect(screen.container.querySelector('header.mb-10')).not.toBeNull();
     const fixesPill = screen.container.querySelector('[role="status"] .status-chip');
     expect(fixesPill).not.toBeNull();
@@ -64,7 +64,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
   });
 
   it('renders the read-only developer facts including the model', async () => {
-    const screen = render(CairnTidySettings, { data: data() });
+    const screen = await render(CairnTidySettings, { data: data() });
     // Two copies of the pill exist (one per breakpoint, only one visible at a time via
     // hidden/sm:hidden), so assert on raw text content rather than a role/text query that
     // would find both.
@@ -75,7 +75,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
   });
 
   it('renders the check-and-tint toggles and the style rows at rest', async () => {
-    const screen = render(CairnTidySettings, { data: data() });
+    const screen = await render(CairnTidySettings, { data: data() });
     // The Fixes group toggle is on (aria-pressed true).
     await expect.element(screen.getByRole('button', { name: 'Fixes' })).toHaveAttribute('aria-pressed', 'true');
     // A style row toggle is off at rest.
@@ -94,7 +94,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     // Same grammar TidyReview pins (the design arc's accent reservation, 2026-07-15): no red, no
     // green. A deletion is muted with line-through on the neutral del-run wash; an insertion is
     // semibold body ink on the neutral add-run wash.
-    const screen = render(CairnTidySettings, { data: data() });
+    const screen = await render(CairnTidySettings, { data: data() });
     const del = screen.container.querySelector<HTMLElement>('.line-through');
     expect(del).not.toBeNull();
     expect(del?.className).toContain('text-muted');
@@ -106,7 +106,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
   });
 
   it('reveals a radiogroup variant chooser when a multi-position row is turned on', async () => {
-    const screen = render(CairnTidySettings, { data: data() });
+    const screen = await render(CairnTidySettings, { data: data() });
     await screen.getByRole('button', { name: 'Time format' }).click();
     // The pick-one chooser is a radiogroup with radios carrying aria-checked, never aria-pressed.
     const group = screen.container.querySelector('[role="radiogroup"]')!;
@@ -122,7 +122,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
   });
 
   it('updates the summary role=status region when a convention is toggled', async () => {
-    const screen = render(CairnTidySettings, { data: data() });
+    const screen = await render(CairnTidySettings, { data: data() });
     // Oxford comma is off at rest, so the summary leaves commas alone.
     const summary = screen.container.querySelector('[role="status"][aria-live="polite"]')!;
     expect(summary.textContent).toMatch(/leaves alone.*commas/i);
@@ -134,7 +134,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
 
   it('the reset control returns the safe resting state', async () => {
     // Start with several style conventions on.
-    const screen = render(CairnTidySettings, {
+    const screen = await render(CairnTidySettings, {
       data: data({ conventions: conventions({ oxfordComma: 'always', timeFormat: '5 PM', smartQuotes: true }) }),
     });
     await expect.element(screen.getByRole('button', { name: 'Oxford comma' })).toHaveAttribute('aria-pressed', 'true');
@@ -151,7 +151,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
   });
 
   it('posts the live conventions in the hidden field', async () => {
-    const screen = render(CairnTidySettings, { data: data() });
+    const screen = await render(CairnTidySettings, { data: data() });
     await screen.getByRole('button', { name: 'Oxford comma' }).click();
     const field = screen.container.querySelector<HTMLInputElement>('input[name="conventions"]')!;
     expect(JSON.parse(field.value).oxfordComma).toBe('always');
@@ -160,7 +160,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
   it('surfaces a refused save\'s fail() error read from form, not only from data', async () => {
     // A validation or conflict refusal now answers in place through `form`, not a ?error= redirect
     // read back into `data.error`; the shell must wire `form` through for the message to reach here.
-    const screen = render(CairnTidySettings, {
+    const screen = await render(CairnTidySettings, {
       data: data(),
       form: { error: 'The site config changed since you opened it.' },
     });
@@ -171,7 +171,7 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
 
 describe('CairnTidySettings: the broken-key state (save-500-honest-errors, Task 5)', () => {
   it('renders a distinct broken-key region, not the missing-setup gate, when the probe confirms invalid', async () => {
-    const screen = render(CairnTidySettings, {
+    const screen = await render(CairnTidySettings, {
       data: data({ enabled: false, keyConfigured: true, keyStatus: 'invalid' }),
     });
     // A distinct labelled region names the broken key, not the "not set up yet" gate.
@@ -182,7 +182,7 @@ describe('CairnTidySettings: the broken-key state (save-500-honest-errors, Task 
   });
 
   it('keeps the editor tier open when the probe is unverifiable ("unknown"), never punishing it', async () => {
-    const screen = render(CairnTidySettings, {
+    const screen = await render(CairnTidySettings, {
       data: data({ enabled: true, keyConfigured: true, keyStatus: 'unknown' }),
     });
     expect(screen.container.querySelector('form[action="?/settingsSave"]')).not.toBeNull();

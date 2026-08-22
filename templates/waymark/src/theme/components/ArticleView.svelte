@@ -5,11 +5,16 @@ related-posts nav. `(site)/[...path]/+page.svelte` (the prerendered public entry
 component, so the two surfaces cannot structurally drift: the same markup, the same styling, the
 same data shape.
 
-The `preview` flag is the ONE behavior difference the two callers need: a preview link is a bearer
-credential (whoever holds the URL can read the draft with no session), so on preview this component
-emits no `<link rel="canonical">`, no `og:url`, and no raw-markdown `.md` twin link. It changes no
-other rendering: the fidelity claim (a minted preview and its eventual public page render
-identically) depends on everything else staying byte-for-byte the same. -->
+The `preview` flag is the ONE behavior difference the two callers need: on preview, this component
+emits no `<link rel="canonical">`, no `og:url`, and no raw-markdown `.md` twin link, since the
+entry's eventual public permalink is not yet live (or, on the ended page, already superseded) and
+a preview must not self-canonicalize onto it or let a crawler or unfurler consolidate there. The
+token, not the URL, is the credential; it lives only in the route path and never appears on the
+page. `previewLoad` (`/sveltekit`) already strips `canonical`, `og:url`, and `jsonLd.url` from
+`data.seo` for exactly this reason, so the strip below is redundant for that field, though not for
+the `.md` twin link, which this component derives itself. It changes no other rendering: the
+fidelity claim (a minted preview and its eventual public page render identically) depends on
+everything else staying byte-for-byte the same. -->
 <script lang="ts">
   import type { EntryData, ResolvedReference } from '@glw907/cairn-cms/delivery';
   import { CairnHead } from '@glw907/cairn-cms/delivery/head';
@@ -24,11 +29,10 @@ identically) depends on everything else staying byte-for-byte the same. -->
 
   let { data, preview = false }: Props = $props();
 
-  // On preview, strip the canonical link and the og:url meta from the head data before it reaches
-  // CairnHead: the URL is the credential, and a site's own chrome otherwise exports it to every
-  // third party the site reports to (analytics, social unfurl crawlers). Every other head field
-  // (title, description, the rest of the OG/Twitter tags) is unchanged, so the tab title and any
-  // manual share still read sensibly.
+  // Belt and suspenders: previewLoad already strips canonical/og:url/jsonLd.url from data.seo, so
+  // this filter is a no-op against that caller. It stays so this component's own contract does not
+  // depend on the specific caller's behavior, and so a site rendering preview data from any other
+  // source still gets the strip.
   const seo = $derived(
     preview
       ? {

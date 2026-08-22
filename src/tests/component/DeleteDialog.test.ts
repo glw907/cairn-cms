@@ -3,7 +3,7 @@ import { render } from 'vitest-browser-svelte';
 import DeleteDialog from '../../lib/components/DeleteDialog.svelte';
 import type { InboundLink } from '../../lib/content/manifest.js';
 
-function open(props: {
+async function open(props: {
   conceptId: string;
   id: string;
   singular: string;
@@ -11,12 +11,12 @@ function open(props: {
   pending?: boolean;
   inboundKind?: 'link' | 'include';
 }) {
-  return render(DeleteDialog, props);
+  return await render(DeleteDialog, props);
 }
 
 describe('DeleteDialog', () => {
   it('confirms a delete when nothing links here', async () => {
-    const screen = open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', inboundLinks: [] });
+    const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', inboundLinks: [] });
     await screen.getByRole('button', { name: /delete/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     expect(dialog.open).toBe(true);
@@ -31,21 +31,21 @@ describe('DeleteDialog', () => {
   });
 
   it('warns that a delete discards pending edits too', async () => {
-    const screen = open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', inboundLinks: [], pending: true });
+    const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', inboundLinks: [], pending: true });
     await screen.getByRole('button', { name: /delete/i }).click();
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).toContain('Unpublished edits to this entry are discarded too.');
   });
 
   it('omits the pending-edits warning by default', async () => {
-    const screen = open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', inboundLinks: [] });
+    const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', inboundLinks: [] });
     await screen.getByRole('button', { name: /delete/i }).click();
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).not.toContain('Unpublished edits');
   });
 
   it('renders no trigger with trigger=false but still opens through the exported open()', async () => {
-    const screen = render(DeleteDialog, {
+    const screen = await render(DeleteDialog, {
       conceptId: 'posts',
       id: '2026-05-hi',
       singular: 'Post',
@@ -61,7 +61,7 @@ describe('DeleteDialog', () => {
   });
 
   it('blocks the delete and names inbound links', async () => {
-    const screen = open({
+    const screen = await open({
       conceptId: 'pages', id: 'home', singular: 'Page',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
     });
@@ -79,7 +79,7 @@ describe('DeleteDialog', () => {
   });
 
   it('defaults inboundKind to link, keeping the linking copy byte-identical', async () => {
-    const screen = open({
+    const screen = await open({
       conceptId: 'pages', id: 'home', singular: 'Page',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
     });
@@ -90,7 +90,7 @@ describe('DeleteDialog', () => {
   });
 
   it('renders inclusion copy when blocked with inboundKind="include"', async () => {
-    const screen = open({
+    const screen = await open({
       conceptId: 'fragments', id: 'welcome', singular: 'Fragment',
       inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
       inboundKind: 'include',
@@ -108,7 +108,7 @@ describe('DeleteDialog', () => {
   it('names the deleted entry by its singular noun, in the title and both confirm prompts', async () => {
     // A concept whose singular differs from its label the way every real call site's data.singular
     // does (label "Posts", singular "Post"); the component must never lowercase the plural itself.
-    const screen = open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', inboundLinks: [] });
+    const screen = await open({ conceptId: 'posts', id: '2026-05-hi', singular: 'Post', inboundLinks: [] });
     await screen.getByRole('button', { name: /delete/i }).click();
     const dialog = screen.container.querySelector('dialog')!;
     const heading = dialog.querySelector('#cairn-delete-dialog-title')!;
@@ -122,7 +122,7 @@ describe('DeleteDialog', () => {
     // label-derived plural got wrong: it read "2 postss link here" (label "Posts" already plural,
     // then pluralized again), which was also the wrong noun regardless, since a page linking here
     // has nothing to do with the deleted post's own concept.
-    const screen = open({
+    const screen = await open({
       conceptId: 'posts', id: '2026-05-hi', singular: 'Post',
       inboundLinks: [
         { concept: 'pages', id: 'about', title: 'About', permalink: '/about' },
@@ -136,7 +136,7 @@ describe('DeleteDialog', () => {
   });
 
   it('pluralizes the inclusion copy for more than one includer', async () => {
-    const screen = open({
+    const screen = await open({
       conceptId: 'fragments', id: 'welcome', singular: 'Fragment',
       inboundLinks: [
         { concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' },

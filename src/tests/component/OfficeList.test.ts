@@ -14,7 +14,7 @@ const action = createRawSnippet(() => ({ render: () => '<button type="button">Ne
 
 describe('OfficeList', () => {
   it('renders the eyebrow, title, subtitle, action, and the card content', async () => {
-    const screen = render(OfficeList, {
+    const screen = await render(OfficeList, {
       eyebrow: 'Club',
       title: 'Events',
       subtitle: '12 upcoming',
@@ -29,7 +29,7 @@ describe('OfficeList', () => {
   });
 
   it('omits the eyebrow and subtitle entirely when neither is passed', async () => {
-    const screen = render(OfficeList, { title: 'Events', children: rows });
+    const screen = await render(OfficeList, { title: 'Events', children: rows });
     await expect.element(screen.getByRole('heading', { name: 'Events' })).toBeInTheDocument();
     expect(screen.container.querySelector('header p')).toBeNull();
     expect(screen.container.querySelector('header span')).toBeNull();
@@ -55,7 +55,7 @@ describe('OfficeList', () => {
 
     it('zeroes the leaked child prose margins so the subtitle sits ~4px under the h1 and the eyebrow sits tight above it', async () => {
       await page.viewport(1440, 900);
-      const screen = render(OfficeList, {
+      const screen = await render(OfficeList, {
         eyebrow: 'Club',
         title: 'Events',
         subtitle: '12 upcoming',
@@ -78,7 +78,7 @@ describe('OfficeList', () => {
 
     it('zeroes the leaked child prose margins at the mobile width too', async () => {
       await page.viewport(390, 700);
-      const screen = render(OfficeList, {
+      const screen = await render(OfficeList, {
         eyebrow: 'Club',
         title: 'Events',
         subtitle: '12 upcoming',
@@ -97,7 +97,7 @@ describe('OfficeList', () => {
 
     it('pins the header action to intrinsic width instead of stretching full-width below sm', async () => {
       await page.viewport(390, 700);
-      const screen = render(OfficeList, { title: 'Events', action, children: rows });
+      const screen = await render(OfficeList, { title: 'Events', action, children: rows });
       const header = screen.container.querySelector('header')!;
       const wrapper = screen.getByRole('button', { name: 'New event' }).element().parentElement as HTMLElement;
       expect(getComputedStyle(wrapper).alignSelf).toBe('flex-start');

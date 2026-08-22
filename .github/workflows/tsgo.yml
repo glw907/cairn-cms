@@ -1,0 +1,30 @@
+name: tsgo
+
+# Advisory only: TypeScript 7 has no programmatic compiler API until 7.1 (October 2026), so
+# svelte-check, svelte2tsx, and typescript-estree still pin typescript@^6 (see ROADMAP.md,
+# "TypeScript 7 is held on the toolchain"). This job installs the side-by-side layout
+# svelte-check's own README documents (typescript@^6 plus @typescript/native@npm:typescript@7,
+# `--no-save --no-package-lock` so neither package.json nor the lockfile moves) and runs the same
+# check under `--tsgo`. It runs weekly rather than on every push: a red result here signals
+# nothing about the code under review, only that the TypeScript 7 hold is still in force, so
+# gating a PR on it would block unrelated work. A green run is the signal that the 7.x edges have
+# closed and the bump in ROADMAP.md is ready to run.
+
+on:
+  schedule:
+    - cron: '0 16 * * 1' # Monday 16:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-tsgo:
+    name: "check:tsgo (weekly; green means TypeScript 7 is a bump)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save --no-package-lock "@typescript/native@npm:typescript@7"
+      - run: npx svelte-check --tsconfig ./tsconfig.json --tsgo

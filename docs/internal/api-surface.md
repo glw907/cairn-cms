@@ -115,7 +115,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up" | "squeeze"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `verifyManifest`: (built: Manifest, committedRaw: string) => void
 - `verifyReferences`: (manifest: Manifest) => void
 - `VocabularyEntry`: { value: string; label: string }
@@ -337,7 +337,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up" | "squeeze"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `VocabularyEntry`: { value: string; label: string }
 
 ## `/delivery/data`
@@ -440,7 +440,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up" | "squeeze"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `VocabularyEntry`: { value: string; label: string }
 
 ## `/delivery/head`
@@ -465,7 +465,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `parseMediaToken`: (href: string) => MediaRef | null
 - `readCommittedManifest`: (globResult: Record<string, unknown>) => MediaManifest
 - `ResolvedAssetConfig`: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up" | "squeeze"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 
 ## `/render`
 
@@ -672,7 +672,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SlotDef`: { name: string; label: string; kind: "markdown" | "inline" | "repeatable"; required?: boolean; help?: string; itemFields?: Record<string, FieldDescriptor>; itemLabel?: ((item: Record<string, string | boolean>, index: number) => string) }
 - `TextareaField`: { type: "textarea"; rows?: number; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `TextField`: { type: "text"; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `TidyClient`: { messages: { create(body: { model: string; max_tokens: number; system: string; messages: { role: "user"; content: string }[] }, options?: { signal?: AbortSignal }): Promise<{ content: { type: string; text?: string }[]; model: string; stop_reason: string | null; usage: { input_tokens: number; output_tokens: number } }> }; models?: { list(params?: { limit?: number }, options?: { signal?: AbortSignal }): Promise<unknown> } }
+- `TidyClient`: { messages: { create(body: { model: string; max_tokens: number; system: string; messages: { role: "user"; content: string }[]; output_config?: { effort?: "low" | "medium" | "high" | "xhigh" | "max" } }, options?: { signal?: AbortSignal }): Promise<{ content: { type: string; text?: string }[]; model: string; stop_reason: string | null; usage: { input_tokens: number; output_tokens: number } }> }; models?: { list(params?: { limit?: number }, options?: { signal?: AbortSignal }): Promise<unknown> } }
 - `TidyConfig`: { enabled?: boolean; model?: string; conventions?: Partial<TidyConventions> }
 - `TidyConventions`: { fixes: boolean; oxfordComma?: "always" | "complex-only" | "never"; numberStyle?: "under-ten" | "under-hundred" | "always-numerals"; measurements?: "abbreviate" | "spell-out"; percent?: "sign" | "word"; emDash?: "spaced" | "closed"; enDashRanges: boolean; ellipsis?: "single-char" | "three-dots"; timeFormat?: "5 PM" | "5pm" | "5 p.m."; smartQuotes: boolean; brandCaps: boolean }
 - `TidyKeyProbeResult`: "valid" | "invalid" | "unknown"
@@ -684,7 +684,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `validateNavLayout`: (layout: NavLayout, ctx: { conceptIds: string[]; navMenuConfigured: boolean; roleNames: string[] }) => void
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up" | "squeeze"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `VocabularyEntry`: { value: string; label: string }
 - `VocabularyLoadData`: { vocabulary: VocabularyEntry[]; usage: { [x: string]: number }; unlisted: { value: string; count: number }[] }
 - `VocabularySaveFailure`: { error: string }

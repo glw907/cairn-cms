@@ -89,15 +89,15 @@ function membersScreenFilters(): ListToolbarFilter[] {
 }
 
 describe('ListToolbar', () => {
-  it('renders the search box with its accessible name and no autofocus by default', () => {
-    const screen = render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+  it('renders the search box with its accessible name and no autofocus by default', async () => {
+    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
     const input = screen.container.querySelector('input')!;
     expect(input.getAttribute('aria-label')).toBe('Search');
     expect(input.hasAttribute('autofocus')).toBe(false);
   });
 
-  it('renders a promoted filter as a select in the band, not behind the overflow disclosure', () => {
-    const screen = render(ListToolbar, {
+  it('renders a promoted filter as a select in the band, not behind the overflow disclosure', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter()],
@@ -108,8 +108,8 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.dropdown-content')).toBeNull();
   });
 
-  it('renders a non-promoted filter behind the overflow disclosure only', () => {
-    const screen = render(ListToolbar, {
+  it('renders a non-promoted filter behind the overflow disclosure only', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ promoted: false })],
@@ -122,7 +122,7 @@ describe('ListToolbar', () => {
   });
 
   it('gives the overflow disclosure real toggle semantics that open on a click', async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ promoted: false })],
@@ -135,8 +135,8 @@ describe('ListToolbar', () => {
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('renders exactly one primary action, right-aligned in its own toolbar-primary class', () => {
-    const screen = render(ListToolbar, {
+  it('renders exactly one primary action, right-aligned in its own toolbar-primary class', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       primaryAction: { label: 'Add household', onClick: () => {} },
@@ -147,13 +147,13 @@ describe('ListToolbar', () => {
     expect(screen.container.textContent).toContain('Add household');
   });
 
-  it('renders no primary action markup when none is given', () => {
-    const screen = render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+  it('renders no primary action markup when none is given', async () => {
+    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
     expect(screen.container.querySelector('.toolkit-toolbar-primary')).toBeNull();
   });
 
-  it('never renders a separate applied-filter pills row, applied or not (the pills row retired)', () => {
-    const atRest = render(ListToolbar, {
+  it('never renders a separate applied-filter pills row, applied or not (the pills row retired)', async () => {
+    const atRest = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter()],
@@ -162,7 +162,7 @@ describe('ListToolbar', () => {
     });
     expect(atRest.container.querySelector('.toolkit-toolbar-pills')).toBeNull();
 
-    const applied = render(ListToolbar, {
+    const applied = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ value: 'overdue', display: 'menu' })],
@@ -173,8 +173,8 @@ describe('ListToolbar', () => {
     expect(applied.container.querySelector('.toolkit-toolbar-pill')).toBeNull();
   });
 
-  it("renders a 'menu' facet as a quiet bordered button showing the filter's own name at rest", () => {
-    const screen = render(ListToolbar, {
+  it("renders a 'menu' facet as a quiet bordered button showing the filter's own name at rest", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -187,8 +187,8 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.toolkit-toolbar-facet-applied')).toBeNull();
   });
 
-  it("shows a 'menu' facet's applied value in-control, with a separate inline clear element (not a nested button)", () => {
-    const screen = render(ListToolbar, {
+  it("shows a 'menu' facet's applied value in-control, with a separate inline clear element (not a nested button)", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ value: 'overdue', display: 'menu' })],
@@ -209,7 +209,7 @@ describe('ListToolbar', () => {
 
   it("calls onChange with the default value when a 'menu' facet's inline clear is activated", async () => {
     const onChange = vi.fn();
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ value: 'overdue', display: 'menu', onChange })],
@@ -221,7 +221,7 @@ describe('ListToolbar', () => {
   });
 
   it("opens a 'menu' facet's option list on a trigger click, with real toggle semantics", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -236,7 +236,7 @@ describe('ListToolbar', () => {
   });
 
   it("moves focus to a 'menu' facet's first option when it opens, the menu-button idiom", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -250,7 +250,7 @@ describe('ListToolbar', () => {
   });
 
   it("closes an open 'menu' facet when focus tabs past its last option, without moving focus again", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -273,7 +273,7 @@ describe('ListToolbar', () => {
 
   it("selects a 'menu' facet's option, calls onChange, closes the menu, and returns focus to the trigger", async () => {
     const onChange = vi.fn();
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu', onChange })],
@@ -289,7 +289,7 @@ describe('ListToolbar', () => {
   });
 
   it("closes an open 'menu' facet on Escape and returns focus to its own trigger", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -305,7 +305,7 @@ describe('ListToolbar', () => {
   });
 
   it("closes an open 'menu' facet on a pointerdown outside its own trigger and panel", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -320,7 +320,7 @@ describe('ListToolbar', () => {
   });
 
   it('only ever shows one facet menu open at a time', async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [
@@ -344,7 +344,7 @@ describe('ListToolbar', () => {
   // choice within the menu), so an AT user hears a menu of mutually exclusive options rather than
   // an unordered list of buttons.
   it("gives a 'menu' facet's option list real menu semantics (role=menu, role=menuitemradio)", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -363,7 +363,7 @@ describe('ListToolbar', () => {
   // not carried only by the sighted-only check glyph. Mirrors the segmented filter's own
   // aria-checked assertion above.
   it("exposes a 'menu' facet's applied option via aria-checked, not just the sighted check glyph", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ value: 'overdue', display: 'menu' })],
@@ -385,8 +385,8 @@ describe('ListToolbar', () => {
 
   // Locks the trigger<->menu contract: `aria-haspopup="menu"` names what kind of popup the trigger
   // owns, and `aria-controls` must resolve to that same menu's own id.
-  it("gives a 'menu' facet's trigger an aria-haspopup=menu that resolves to its own menu via aria-controls", () => {
-    const screen = render(ListToolbar, {
+  it("gives a 'menu' facet's trigger an aria-haspopup=menu that resolves to its own menu via aria-controls", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -404,7 +404,7 @@ describe('ListToolbar', () => {
   // Roving tabindex (the standard menu keyboard model): only the currently-focused option is a
   // tab stop, so Tab moves straight out of the menu instead of stopping at every option in turn.
   it("gives a 'menu' facet's option list a roving tabindex, only the focused option tabbable", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -436,7 +436,7 @@ describe('ListToolbar', () => {
       value: 'all',
       onChange,
     };
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [{ ...filter, display: 'menu' }],
@@ -462,7 +462,7 @@ describe('ListToolbar', () => {
   });
 
   it("moves a 'menu' facet's roving focus with ArrowDown/ArrowUp, wrapping at the ends", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -488,7 +488,7 @@ describe('ListToolbar', () => {
   });
 
   it("moves a 'menu' facet's roving focus to the first/last option on Home/End", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -516,7 +516,7 @@ describe('ListToolbar', () => {
     document.body.appendChild(firstTarget);
     document.body.appendChild(secondTarget);
 
-    render(ListToolbar, {
+    await render(ListToolbar, {
       target: firstTarget,
       props: {
         search: '',
@@ -526,7 +526,7 @@ describe('ListToolbar', () => {
         itemLabel: 'households',
       },
     } as never);
-    const second = render(ListToolbar, {
+    const second = await render(ListToolbar, {
       target: secondTarget,
       props: {
         search: '',
@@ -549,8 +549,8 @@ describe('ListToolbar', () => {
     secondTarget.remove();
   });
 
-  it('states the applied scope in the count line, matching computeCountLine', () => {
-    const screen = render(ListToolbar, {
+  it('states the applied scope in the count line, matching computeCountLine', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ value: 'overdue' })],
@@ -560,8 +560,8 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 households · Overdue');
   });
 
-  it('picks the singular noun in the count line when itemLabel is an { one, many } pair and count is 1', () => {
-    const screen = render(ListToolbar, {
+  it('picks the singular noun in the count line when itemLabel is an { one, many } pair and count is 1', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       count: 1,
@@ -570,8 +570,8 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('1 household');
   });
 
-  it('picks the plural noun in the count line when itemLabel is an { one, many } pair and count is not 1', () => {
-    const screen = render(ListToolbar, {
+  it('picks the plural noun in the count line when itemLabel is an { one, many } pair and count is not 1', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       count: 12,
@@ -580,16 +580,16 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 households');
   });
 
-  it('gives the count line a polite, atomic status role so a filter change is announced', () => {
-    const screen = render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+  it('gives the count line a polite, atomic status role so a filter change is announced', async () => {
+    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
     const count = screen.container.querySelector('.toolkit-toolbar-count')!;
     expect(count.getAttribute('role')).toBe('status');
     expect(count.getAttribute('aria-live')).toBe('polite');
     expect(count.getAttribute('aria-atomic')).toBe('true');
   });
 
-  it("gives the 'menu' facet's inline clear control at least a 24x24 CSS px hit area", () => {
-    const screen = render(ListToolbar, {
+  it("gives the 'menu' facet's inline clear control at least a 24x24 CSS px hit area", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ value: 'overdue', display: 'menu' })],
@@ -603,7 +603,7 @@ describe('ListToolbar', () => {
   });
 
   it('closes the overflow disclosure on Escape and returns focus to the trigger', async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ promoted: false })],
@@ -619,7 +619,7 @@ describe('ListToolbar', () => {
   });
 
   it('closes the overflow disclosure on a pointerdown outside the trigger and panel', async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ promoted: false })],
@@ -634,7 +634,7 @@ describe('ListToolbar', () => {
   });
 
   it('keeps the overflow disclosure open on a pointerdown inside the panel', async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ promoted: false })],
@@ -650,7 +650,7 @@ describe('ListToolbar', () => {
 
   it('renders a segmented filter as an ARIA radiogroup, one checked at a time', async () => {
     const onChange = vi.fn();
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [
@@ -679,7 +679,7 @@ describe('ListToolbar', () => {
 
   it("moves a segmented filter's focus with its selection on ArrowRight, Home, and End", async () => {
     const onChange = vi.fn();
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [
@@ -717,8 +717,8 @@ describe('ListToolbar', () => {
     await expect.poll(() => document.activeElement).toBe(radios()[0]);
   });
 
-  it('renders per-option counts on a segmented filter when given', () => {
-    const screen = render(ListToolbar, {
+  it('renders per-option counts on a segmented filter when given', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [
@@ -744,8 +744,8 @@ describe('ListToolbar', () => {
   // Regression: a segment's count used to read "All(6)" (the parenthesized form, with Svelte
   // collapsing the leading whitespace); the shipped device it graduated from read "All 6", the
   // count in its own visually secondary span, never in parentheses.
-  it('gives a segmented option\'s count its own span, with no parenthesized reading', () => {
-    const screen = render(ListToolbar, {
+  it('gives a segmented option\'s count its own span, with no parenthesized reading', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [
@@ -767,9 +767,9 @@ describe('ListToolbar', () => {
     expect(option.querySelector('.toolkit-toolbar-segment-count')?.textContent).toBe('6');
   });
 
-  it('renders the trailing snippet after the toolbar band', () => {
+  it('renders the trailing snippet after the toolbar band', async () => {
     const trailing = createRawSnippet(() => ({ render: () => '<button type="button">Grid view</button>' }));
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       count: 149,
@@ -803,8 +803,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
     styleEl.remove();
   });
 
-  it('lays out a three-option segmented filter\'s buttons on one row, not stacked', () => {
-    const screen = render(ListToolbar, {
+  it('lays out a three-option segmented filter\'s buttons on one row, not stacked', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [
@@ -833,8 +833,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
   // The Members-refinement-round-1 recomposition: the band is a flat flex row (not the prior
   // grid), search/select/facet controls force one shared 30px height rather than trusting
   // input-sm/btn-sm to already agree, and the search/count text land at the ruled 13px.
-  it('lays out the band as a wrapped flex row, not a grid', () => {
-    const screen = render(ListToolbar, {
+  it('lays out the band as a wrapped flex row, not a grid', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -848,8 +848,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(style.flexWrap).toBe('wrap');
   });
 
-  it('forces the search box and the menu facet control to the same 30px height', () => {
-    const screen = render(ListToolbar, {
+  it('forces the search box and the menu facet control to the same 30px height', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -862,8 +862,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(getComputedStyle(facet).height).toBe('30px');
   });
 
-  it('sets the search input and count line text to the ruled 13px (0.8125rem)', () => {
-    const screen = render(ListToolbar, {
+  it('sets the search input and count line text to the ruled 13px (0.8125rem)', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       count: 149,
@@ -875,21 +875,21 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(getComputedStyle(count).fontSize).toBe('13px');
   });
 
-  it('gives the count line tabular-nums', () => {
-    const screen = render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+  it('gives the count line tabular-nums', async () => {
+    const screen = await render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
     const count = screen.container.querySelector('.toolkit-toolbar-count')!;
     expect(getComputedStyle(count).fontVariantNumeric).toBe('tabular-nums');
   });
 
-  it("gives an applied 'menu' facet the ratified border/fill treatment, distinct from its rest state", () => {
-    const atRest = render(ListToolbar, {
+  it("gives an applied 'menu' facet the ratified border/fill treatment, distinct from its rest state", async () => {
+    const atRest = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
       count: 149,
       itemLabel: 'households',
     });
-    const applied = render(ListToolbar, {
+    const applied = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ value: 'overdue', display: 'menu' })],
@@ -910,8 +910,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
   // option list away entirely below the 30px-tall trigger, invisible in jsdom (no layout) and
   // undetected by any markup-only assertion (the list was present in the DOM, just unpainted).
   // This test only fails against real layout, hence the compiled-CSS/real-browser describe block.
-  it("does not clip an open 'menu' facet's option list under its own container", () => {
-    const screen = render(ListToolbar, {
+  it("does not clip an open 'menu' facet's option list under its own container", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -923,7 +923,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
   });
 
   it("keeps every option of an open 'menu' facet actually paintable, not clipped away by its container", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -944,8 +944,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(paintedAt === overdueOption || overdueOption.contains(paintedAt)).toBe(true);
   });
 
-  it("caps an applied 'menu' facet's in-control value at 14rem with an ellipsis", () => {
-    const screen = render(ListToolbar, {
+  it("caps an applied 'menu' facet's in-control value at 14rem with an ellipsis", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ value: 'overdue', display: 'menu' })],
@@ -958,8 +958,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(getComputedStyle(value).textOverflow).toBe('ellipsis');
   });
 
-  it("restyles the 'select' variant to the shared 30px height and 13px text", () => {
-    const screen = render(ListToolbar, {
+  it("restyles the 'select' variant to the shared 30px height and 13px text", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter()],
@@ -977,8 +977,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
   // one, so every select pins to exactly 320px regardless of its own options. A facet with only
   // two short options must render far narrower than that fixed width once it sizes to its own
   // content instead.
-  it("sizes a select facet to its own content, not daisyUI's fixed 20rem clamp", () => {
-    const screen = render(ListToolbar, {
+  it("sizes a select facet to its own content, not daisyUI's fixed 20rem clamp", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [
@@ -996,8 +996,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
     expect(select.getBoundingClientRect().width).toBeLessThan(160);
   });
 
-  it("never lets a select facet exceed its own container, however wide its content", () => {
-    const screen = render(ListToolbar, {
+  it("never lets a select facet exceed its own container, however wide its content", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [
@@ -1020,8 +1020,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
   // C2's family-harmony requirement: a select facet and a `'menu'` facet sitting side by side
   // must read as one visual family (the same 30px height and 13px text already covered above,
   // plus the same border treatment), not two different control vocabularies.
-  it("harmonizes a select facet's border with the 'menu' facet's own border treatment", () => {
-    const screen = render(ListToolbar, {
+  it("harmonizes a select facet's border with the 'menu' facet's own border treatment", async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter(), standingFilter({ id: 'archived', label: 'Archived', display: 'menu' })],
@@ -1036,8 +1036,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
   // C2 acceptance, proven against the real Members screen's own facet shape rather than a
   // synthetic stand-in: at a 972px container, four select facets plus one menu facet plus search
   // all sit on one line at rest.
-  it('fits four select facets, one menu facet, and search on one line at a 972px container (C2 acceptance)', () => {
-    const screen = render(ListToolbar, {
+  it('fits four select facets, one menu facet, and search on one line at a 972px container (C2 acceptance)', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: membersScreenFilters(),
@@ -1059,8 +1059,8 @@ describe('ListToolbar layout (compiled CSS)', () => {
   });
 
   // C2 acceptance: nothing exceeds the container at ASC's own narrow content-column width.
-  it('keeps every control within a 326px container, nothing exceeding the container width (C2 acceptance)', () => {
-    const screen = render(ListToolbar, {
+  it('keeps every control within a 326px container, nothing exceeding the container width (C2 acceptance)', async () => {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: membersScreenFilters(),
@@ -1086,7 +1086,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
   // `dropdown-open` class -- this only fails against real compiled CSS, hence living in this
   // describe block rather than the markup-only suite above.
   it("keeps a 'menu' facet's option list hidden on focus alone, so aria-expanded always matches what's visible", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ display: 'menu' })],
@@ -1102,7 +1102,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
   });
 
   it("keeps the overflow disclosure hidden on focus alone, so aria-expanded always matches what's visible", async () => {
-    const screen = render(ListToolbar, {
+    const screen = await render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter({ promoted: false })],

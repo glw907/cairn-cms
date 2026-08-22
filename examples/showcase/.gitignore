@@ -4,5 +4,7 @@ build
 .wrangler
 .dev.vars
 .dev.vars.*
+*.pem
+*.b64
 test-results
 playwright-report

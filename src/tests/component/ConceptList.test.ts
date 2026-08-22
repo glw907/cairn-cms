@@ -31,20 +31,20 @@ describe('ConceptList', () => {
   // signature the toolkit component itself owns (PageHeader's mb-10 header, ListToolbar's own
   // wrapper class, Pagination's own wrapper class), so a regression back to a local fork trips it.
   it('renders its header, toolbar, and pager through the admin toolkit', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     expect(screen.container.querySelector('header.mb-10')).not.toBeNull();
     expect(screen.container.querySelector('.toolkit-toolbar')).not.toBeNull();
     expect(screen.container.querySelector('.toolkit-pagination')).not.toBeNull();
   });
 
   it('renders entries as table rows linking to their editor', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     // Newest-first, so Post 12 leads page 1.
     await expect.element(screen.getByRole('link', { name: 'Post 12' })).toHaveAttribute('href', '/admin/posts/2026-05-12-post-12');
   });
 
   it('carries a CSRF field in every POST form', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     const postForms = screen.container.querySelectorAll('form[method="POST"]');
     const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
     expect(postForms.length).toBeGreaterThan(0);
@@ -52,7 +52,7 @@ describe('ConceptList', () => {
   });
 
   it('flags a draft row with a Hidden tag by the title', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     await expect.element(screen.getByText('Hidden', { exact: true })).toBeInTheDocument();
   });
 
@@ -62,7 +62,7 @@ describe('ConceptList', () => {
       { id: 'beta', title: 'Beta', date: '2026-05-02', draft: false, status: 'edited' as const, summary: null },
       { id: 'gamma', title: 'Gamma', date: '2026-05-01', draft: false, status: 'published' as const, summary: null },
     ];
-    const screen = render(ConceptList, { data: data({ entries }) });
+    const screen = await render(ConceptList, { data: data({ entries }) });
     const chip = (text: string) =>
       Array.from(screen.container.querySelectorAll('tbody .status-chip')).find(
         (el) => el.textContent?.trim() === text,
@@ -88,7 +88,7 @@ describe('ConceptList', () => {
     // The header is the page's one loose element (mb-10, the page-gap step, from the toolkit's
     // PageHeader); the toolbar belongs to the card below it (mb-3, the belongs-to-its-neighbor
     // step). Design arc 2026-07-15's F3 ruling; the scale itself is documented in cairn-admin.css.
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     const header = screen.container.querySelector('header')!;
     expect(header.classList.contains('mb-10')).toBe(true);
     const triageGroup = screen.container.querySelector('[role="radiogroup"][aria-label="Filter by publish state"]')!;
@@ -97,7 +97,7 @@ describe('ConceptList', () => {
   });
 
   it('announces a publish-all flash through a persistent polite region beside the alert', async () => {
-    const screen = render(ConceptList, { data: data({ publishedAll: 3 }) });
+    const screen = await render(ConceptList, { data: data({ publishedAll: 3 }) });
     // The always-mounted sr-only region carries the announcement (the EditPage pattern); a
     // fresh-inserted role element announces inconsistently, so the visible alert drops its role.
     const region = screen.container.querySelector('[aria-live="polite"]');
@@ -108,7 +108,7 @@ describe('ConceptList', () => {
   });
 
   it('re-announces a repeated identical lifecycle error in a polite live region', async () => {
-    const screen = render(ConceptList, { data: data({ formError: 'Save failed.' }) });
+    const screen = await render(ConceptList, { data: data({ formError: 'Save failed.' }) });
     const region = () => screen.container.querySelectorAll('[aria-live="polite"]')[1];
     // The polite region carries the error text (the visible alert keeps its styling without a role).
     expect(region().textContent ?? '').toContain('Save failed.');
@@ -122,12 +122,12 @@ describe('ConceptList', () => {
 
   it('hides the publish-all flash when zero entries were published', async () => {
     // A racing second admin can land first, leaving this redirect with publishedAll=0.
-    const screen = render(ConceptList, { data: data({ publishedAll: 0 }) });
+    const screen = await render(ConceptList, { data: data({ publishedAll: 0 }) });
     expect(screen.container.textContent ?? '').not.toContain('Published 0');
   });
 
   it('filters rows by a search query and shows a result count through the toolkit count line', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     const search = screen.getByRole('searchbox', { name: /search/i });
     await search.fill('Post 03');
     await expect.element(screen.getByRole('link', { name: 'Post 03' })).toBeInTheDocument();
@@ -137,18 +137,18 @@ describe('ConceptList', () => {
   });
 
   it('shows a search-aware empty state when nothing matches', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     await screen.getByRole('searchbox', { name: /search/i }).fill('no such title');
     await expect.element(screen.getByText(/no posts match/i)).toBeInTheDocument();
   });
 
   it('shows a first-run empty state when the concept has no entries', async () => {
-    const screen = render(ConceptList, { data: data({ entries: [] }) });
+    const screen = await render(ConceptList, { data: data({ entries: [] }) });
     await expect.element(screen.getByText(/no posts yet/i)).toBeInTheDocument();
   });
 
   it('paginates through the toolkit pager and exposes a page-size control', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     // Default page size 10, so 12 entries paginate to two pages: page 1 shows 10 rows.
     await expect.element(screen.getByText(/showing 1.10 of 12 posts/i)).toBeInTheDocument();
     await screen.getByRole('button', { name: /next page/i }).click();
@@ -156,7 +156,7 @@ describe('ConceptList', () => {
   });
 
   it('sorts by title when the Title header is toggled', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     const header = screen.getByRole('button', { name: /sort by title/i });
     await header.click(); // ascending
     await header.click(); // descending
@@ -165,7 +165,7 @@ describe('ConceptList', () => {
   });
 
   it('shows an inline error when listing failed', async () => {
-    const screen = render(ConceptList, { data: data({ error: 'Could not load this content type from GitHub.', entries: [] }) });
+    const screen = await render(ConceptList, { data: data({ error: 'Could not load this content type from GitHub.', entries: [] }) });
     // The visible inline alert carries the error, and the polite live region also announces it, so
     // scope the assertion to the visible alert to avoid matching both.
     const visible = screen.container.querySelector('.alert-warning');
@@ -173,7 +173,7 @@ describe('ConceptList', () => {
   });
 
   it('opens a create dialog from the header New button and auto-derives the address', async () => {
-    const screen = render(ConceptList, { data: data({ entries: [] }) });
+    const screen = await render(ConceptList, { data: data({ entries: [] }) });
     await screen.getByRole('button', { name: /new posts/i }).first().click();
     const title = screen.getByLabelText(/title/i);
     await title.fill('My New Post');
@@ -181,7 +181,7 @@ describe('ConceptList', () => {
   });
 
   it('shows a date input defaulted to today for a dated concept in the create dialog', async () => {
-    const screen = render(ConceptList, { data: data({ entries: [] }) });
+    const screen = await render(ConceptList, { data: data({ entries: [] }) });
     await screen.getByRole('button', { name: /new posts/i }).first().click();
     const date = screen.getByLabelText('Date');
     await expect.element(date).toBeVisible();
@@ -189,13 +189,13 @@ describe('ConceptList', () => {
   });
 
   it('omits the date input for a non-dated concept', async () => {
-    const screen = render(ConceptList, { data: data({ conceptId: 'pages', label: 'Pages', dated: false, entries: [] }) });
+    const screen = await render(ConceptList, { data: data({ conceptId: 'pages', label: 'Pages', dated: false, entries: [] }) });
     await screen.getByRole('button', { name: /new pages/i }).first().click();
     expect(screen.container.querySelector('input[name="date"]')).toBeNull();
   });
 
   it('uses a date-free address placeholder for a dated concept in the create dialog', async () => {
-    const screen = render(ConceptList, { data: data({ entries: [] }) });
+    const screen = await render(ConceptList, { data: data({ entries: [] }) });
     await screen.getByRole('button', { name: /new posts/i }).first().click();
     await expect.element(screen.getByLabelText('Address')).toHaveAttribute('placeholder', 'my-entry');
   });
@@ -204,7 +204,7 @@ describe('ConceptList', () => {
   // the edit screen's own Address-versus-Name treatment. Asking for an "Address" here would
   // promise the fragment a URL that the routable gate then 404s.
   it('asks for a name, not an address, when creating a non-routable entry', async () => {
-    const screen = render(
+    const screen = await render(
       ConceptList,
       { data: data({ conceptId: 'fragments', label: 'Fragments', singular: 'fragment', dated: false, routable: false, entries: [] }) },
     );
@@ -214,7 +214,7 @@ describe('ConceptList', () => {
   });
 
   it('offers a delete action per row', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     // Newest-first puts Post 12 on page 1.
     await expect.element(screen.getByRole('button', { name: /delete post 12/i })).toBeInTheDocument();
   });
@@ -232,7 +232,7 @@ describe('ConceptList', () => {
   }
 
   it('the triage shows exact counts per state', async () => {
-    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
     // 5 entries: 2 published, 1 edited, 1 new, 1 hidden draft (also published-status).
     // Hidden is orthogonal: the hidden-but-published row counts in BOTH Published and Hidden.
     await expect.element(screen.getByRole('radio', { name: /^all/i })).toHaveTextContent('5');
@@ -242,7 +242,7 @@ describe('ConceptList', () => {
   });
 
   it('Pending edits filters to new and edited rows', async () => {
-    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
     await screen.getByRole('radio', { name: /^pending edits/i }).click();
     await expect.element(screen.getByRole('link', { name: 'Edited One' })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: 'New One' })).toBeInTheDocument();
@@ -251,7 +251,7 @@ describe('ConceptList', () => {
   });
 
   it('Hidden composes with the partition (Published + Hidden = published and hidden)', async () => {
-    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
     const published = screen.getByRole('radio', { name: /^published/i });
     await published.click();
     await screen.getByRole('radio', { name: /^hidden/i }).click();
@@ -269,7 +269,7 @@ describe('ConceptList', () => {
       { id: 'pub-2', title: 'Banana Published', date: '2026-05-09', draft: false, status: 'published' as const, summary: null },
       { id: 'edit-1', title: 'Apple Edited', date: '2026-05-08', draft: false, status: 'edited' as const, summary: null },
     ];
-    const screen = render(ConceptList, { data: data({ entries }) });
+    const screen = await render(ConceptList, { data: data({ entries }) });
     await screen.getByRole('radio', { name: /^published/i }).click();
     await screen.getByRole('searchbox', { name: /search/i }).fill('Apple');
     await expect.element(screen.getByRole('link', { name: 'Apple Published' })).toBeInTheDocument();
@@ -280,7 +280,7 @@ describe('ConceptList', () => {
   });
 
   it('All is the default and shows every row', async () => {
-    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
     const all = screen.getByRole('radio', { name: /^all/i });
     await expect.element(all).toHaveAttribute('aria-checked', 'true');
     await expect.element(screen.getByRole('link', { name: 'Published One' })).toBeInTheDocument();
@@ -299,7 +299,7 @@ describe('ConceptList', () => {
     };
     // `singular` set apart from `label` ("Post" vs "Posts") makes a wrong plural-noun render
     // unambiguous: task 3's defect rendered "This posts could not be deleted."
-    const screen = render(ConceptList, { data: data({ singular: 'Post' }), form });
+    const screen = await render(ConceptList, { data: data({ singular: 'Post' }), form });
     // The visible refusal banner names the blocker count and the linking entry. It no longer carries
     // role="alert" (one polite live region announces the lifecycle errors now), so scope the assertion
     // to the .alert-error banner element rather than the alert role, which also keeps it off the
@@ -323,7 +323,7 @@ describe('ConceptList', () => {
     ];
     // `label` plural ("Fragments") against `singular` ("Fragment") makes a wrong plural-noun
     // render unambiguous, the same defect the post-concept case above pins.
-    const screen = render(ConceptList, {
+    const screen = await render(ConceptList, {
       data: data({ conceptId: 'fragments', label: 'Fragments', singular: 'Fragment', dated: false, entries }),
       form,
     });
@@ -346,7 +346,7 @@ describe('ConceptList', () => {
     // A create refusal (a bad slug or an address collision) now answers in place through `form`,
     // not a ?error= redirect read back into `data.formError`; the create dialog posts from this
     // very route, so the message must reach the list without a navigation.
-    const screen = render(ConceptList, {
+    const screen = await render(ConceptList, {
       data: data(),
       form: { error: 'An entry with that address already exists.' },
     });
@@ -360,7 +360,7 @@ describe('ConceptList', () => {
     const entries = [
       { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: 'A short blurb.' },
     ];
-    const screen = render(ConceptList, { data: data({ entries }) });
+    const screen = await render(ConceptList, { data: data({ entries }) });
     await expect.element(screen.getByText('Alpha')).toBeInTheDocument();
     expect(screen.container.querySelector('[data-summary]')).toBeNull();
     expect(screen.container.textContent).not.toContain('A short blurb.');
@@ -370,13 +370,13 @@ describe('ConceptList', () => {
     const entries = [
       { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: null },
     ];
-    const screen = render(ConceptList, { data: data({ entries }) });
+    const screen = await render(ConceptList, { data: data({ entries }) });
     const row = screen.container.querySelector('tbody tr')!;
     expect(row.querySelector('[data-summary]')).toBeNull();
   });
 
   it('marks the active filter by more than color', async () => {
-    const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+    const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
     const published = screen.getByRole('radio', { name: /^published/i });
     await published.click();
     // The non-color cue: aria-checked plus a check glyph inside the active segment.
@@ -391,7 +391,7 @@ describe('ConceptList', () => {
     const entries = [
       { id: 'hidden-1', title: 'Hidden One', date: '2026-05-06', draft: true, status: 'edited' as const, summary: null },
     ];
-    const screen = render(ConceptList, { data: data({ entries }) });
+    const screen = await render(ConceptList, { data: data({ entries }) });
     const row = screen.container.querySelector('tbody tr')!;
     // The status cell holds only the publish-state badge: Edited, no second Hidden pill.
     const badges = Array.from(row.querySelectorAll('.badge')).map((el) => el.textContent?.trim());
@@ -405,7 +405,7 @@ describe('ConceptList', () => {
     const entries = [
       { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: null },
     ];
-    const screen = render(ConceptList, { data: data({ entries }) });
+    const screen = await render(ConceptList, { data: data({ entries }) });
     // Two "New Posts" affordances exist (the header button and the trailing row); the foot row is last.
     const news = screen.getByRole('button', { name: /new posts/i });
     await news.last().click();
@@ -418,7 +418,7 @@ describe('ConceptList', () => {
     const entries = [
       { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: null },
     ];
-    const screen = render(ConceptList, { data: data({ entries, singular: 'post' }) });
+    const screen = await render(ConceptList, { data: data({ entries, singular: 'post' }) });
     // The header button and the trailing foot row both read "New post" (exact, so "New Posts"
     // never matches). getByRole name matching is case-sensitive under exact.
     const headerButton = screen.getByRole('button', { name: 'New post', exact: true }).first();
@@ -437,7 +437,7 @@ describe('ConceptList', () => {
       { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: null },
     ];
     // No `singular`: the create controls read "New Posts" from the label.
-    const screen = render(ConceptList, { data: data({ entries, singular: undefined }) });
+    const screen = await render(ConceptList, { data: data({ entries, singular: undefined }) });
     await expect.element(screen.getByRole('button', { name: 'New Posts' }).first()).toBeInTheDocument();
     await expect.element(screen.getByRole('button', { name: 'New Posts' }).last()).toBeInTheDocument();
     await screen.getByRole('button', { name: 'New Posts' }).first().click();
@@ -445,7 +445,7 @@ describe('ConceptList', () => {
   });
 
   it('clears the search from the no-match state', async () => {
-    const screen = render(ConceptList, { data: data() });
+    const screen = await render(ConceptList, { data: data() });
     const search = screen.getByRole('searchbox', { name: /search/i });
     await search.fill('no such title');
     await expect.element(screen.getByText(/no posts match/i)).toBeInTheDocument();
@@ -487,7 +487,7 @@ describe('ConceptList', () => {
 
     it('gives the title column the majority of the row width, not the 7-10 character starve', async () => {
       await page.viewport(320, 700);
-      const screen = render(ConceptList, { data: data() });
+      const screen = await render(ConceptList, { data: data() });
       pad320(screen.container);
       const row = screen.container.querySelector('tbody tr')!;
       // The Date column drops below sm (a hidden zero-width cell), so filter it out rather than
@@ -511,7 +511,7 @@ describe('ConceptList', () => {
 
     it('keeps the search input at full row width, never collapsing to an icon and a stray letter', async () => {
       await page.viewport(320, 700);
-      const screen = render(ConceptList, { data: data() });
+      const screen = await render(ConceptList, { data: data() });
       pad320(screen.container);
       const input = screen.container.querySelector('input[type="search"]') as HTMLInputElement;
       // A collapsed search shrinks to a sliver (the reported "icon plus a stray S"); the full-width
@@ -521,7 +521,7 @@ describe('ConceptList', () => {
 
     it('keeps the Pending edits filter chip on one line', async () => {
       await page.viewport(320, 700);
-      const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+      const screen = await render(ConceptList, { data: data({ entries: triageEntries() }) });
       pad320(screen.container);
       const pending = screen.getByRole('radio', { name: /^pending edits/i });
       const rect = (await pending.element()).getBoundingClientRect();
@@ -559,7 +559,7 @@ describe('ConceptList', () => {
         { id: 'june', title: 'June entry', date: '2026-06-01', draft: false, status: 'published' as const, summary: null },
         { id: 'may', title: 'May entry', date: '2026-05-18', draft: false, status: 'published' as const, summary: null },
       ];
-      const screen = render(ConceptList, { data: data({ entries }) });
+      const screen = await render(ConceptList, { data: data({ entries }) });
       const cells = screen.container.querySelectorAll('td.tabular-nums');
       expect(cells.length).toBe(2);
       for (const cell of cells) {
@@ -581,7 +581,7 @@ describe('ConceptList', () => {
     it('renders the Published status dot with a real, visible fill in dark mode', async () => {
       document.documentElement.setAttribute('data-theme', 'cairn-admin-dark');
       const entries = [{ id: 'pub', title: 'Pub entry', date: '2026-05-01', draft: false, status: 'published' as const, summary: null }];
-      const screen = render(ConceptList, { data: data({ entries }) });
+      const screen = await render(ConceptList, { data: data({ entries }) });
       const dot = screen.container.querySelector('tbody .status-chip .status')!;
       expect(getComputedStyle(dot).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
     });

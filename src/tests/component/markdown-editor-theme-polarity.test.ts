@@ -21,12 +21,12 @@ function editorIsDark(container: Element): boolean | null {
 
 describe('MarkdownEditor theme polarity', () => {
   it('mounts with the polarity of the theme root it is under', async () => {
-    const screen = render(ThemedMarkdownEditor, { props: { theme: 'cairn-admin-dark' } });
+    const screen = await render(ThemedMarkdownEditor, { props: { theme: 'cairn-admin-dark' } });
     await expect.poll(() => editorIsDark(screen.container)).toBe(true);
   });
 
   it('follows the theme root from light to dark without re-mounting', async () => {
-    const screen = render(ThemedMarkdownEditor, { props: { theme: 'cairn-admin' } });
+    const screen = await render(ThemedMarkdownEditor, { props: { theme: 'cairn-admin' } });
     await expect.poll(() => editorIsDark(screen.container)).toBe(false);
     const before = EditorView.findFromDOM(screen.container.querySelector<HTMLElement>('.cm-editor')!);
 
@@ -39,7 +39,7 @@ describe('MarkdownEditor theme polarity', () => {
   });
 
   it('follows the theme root back from dark to light', async () => {
-    const screen = render(ThemedMarkdownEditor, { props: { theme: 'cairn-admin-dark' } });
+    const screen = await render(ThemedMarkdownEditor, { props: { theme: 'cairn-admin-dark' } });
     await expect.poll(() => editorIsDark(screen.container)).toBe(true);
 
     await screen.rerender({ theme: 'cairn-admin' });

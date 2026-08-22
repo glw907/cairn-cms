@@ -13,7 +13,7 @@ describe('WelcomeView', () => {
     // The admin-toolkit organization pass's T7 adoption sweep: WelcomeView re-expresses on the
     // toolkit's own EmptyState (the recipe this screen itself originated per the adoption map),
     // rather than a bespoke copy of the centered first-run fill.
-    render(WelcomeView, { data: data() });
+    await render(WelcomeView, { data: data() });
     await expect.element(page.getByText('Welcome, Ada')).toBeInTheDocument();
     await expect
       .element(page.getByText(/check with whoever administers North Ridge Nordic/))
@@ -21,13 +21,13 @@ describe('WelcomeView', () => {
   });
 
   it('carries no create action, unlike a populated EmptyState first-run screen', async () => {
-    const screen = render(WelcomeView, { data: data() });
+    const screen = await render(WelcomeView, { data: data() });
     expect(screen.container.querySelector('button')).toBeNull();
     expect(screen.container.querySelector('a')).toBeNull();
   });
 
   it('renders the greeting as a real h1, since this screen carries no PageHeader of its own', async () => {
-    const screen = render(WelcomeView, { data: data() });
+    const screen = await render(WelcomeView, { data: data() });
     const h1 = screen.container.querySelector('h1')!;
     expect(h1.textContent).toBe('Welcome, Ada');
   });

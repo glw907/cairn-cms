@@ -33,30 +33,30 @@ describe('ManageEditors', () => {
     // The admin-toolkit organization pass's T7 adoption sweep: the header band and the editor
     // table render through the toolkit's own components (PageHeader, AdminTable), not a bespoke
     // fork. Each assertion pins a structural signature the toolkit component itself owns.
-    const screen = render(ManageEditors, { data: data(), form: null });
+    const screen = await render(ManageEditors, { data: data(), form: null });
     expect(screen.container.querySelector('header.mb-10')).not.toBeNull();
     expect(screen.container.querySelector('.toolkit-admin-table-wrap')).not.toBeNull();
   });
 
   it('lists editors with their roles', async () => {
-    const screen = render(ManageEditors, { data: data(), form: null });
+    const screen = await render(ManageEditors, { data: data(), form: null });
     await expect.element(screen.getByText('Owner One')).toBeInTheDocument();
     await expect.element(screen.getByText('Ed Two')).toBeInTheDocument();
   });
 
   it('disables the remove control for the acting owner (anti-lockout affordance)', async () => {
-    const screen = render(ManageEditors, { data: data(), form: null });
+    const screen = await render(ManageEditors, { data: data(), form: null });
     const selfRemove = screen.getByRole('button', { name: /remove owner one/i });
     await expect.element(selfRemove).toBeDisabled();
   });
 
   it('renders an add-editor form', async () => {
-    const screen = render(ManageEditors, { data: data(), form: null });
+    const screen = await render(ManageEditors, { data: data(), form: null });
     await expect.element(screen.getByRole('button', { name: /add editor/i })).toBeInTheDocument();
   });
 
   it('posts the dispatcher-named ?/editorAdd, ?/editorRemove, and ?/editorSetRole actions', async () => {
-    const screen = render(ManageEditors, { data: data(), form: null });
+    const screen = await render(ManageEditors, { data: data(), form: null });
     const actions = [...screen.container.querySelectorAll('form[method="POST"]')].map((form) =>
       form.getAttribute('action'),
     );
@@ -68,7 +68,7 @@ describe('ManageEditors', () => {
   });
 
   it('carries a CSRF field in every POST form', async () => {
-    const screen = render(ManageEditors, { data: data(), form: null });
+    const screen = await render(ManageEditors, { data: data(), form: null });
     const postForms = screen.container.querySelectorAll('form[method="POST"]');
     const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
     expect(postForms.length).toBeGreaterThan(0);
@@ -76,7 +76,7 @@ describe('ManageEditors', () => {
   });
 
   it('surfaces an action error', async () => {
-    const screen = render(ManageEditors, { data: data(), form: { error: 'That editor already exists' } });
+    const screen = await render(ManageEditors, { data: data(), form: { error: 'That editor already exists' } });
     const alert = screen.container.querySelector('.alert-error');
     expect(alert?.textContent).toContain('That editor already exists');
     // The visible alert carries the message with no role of its own; a persistent polite live
@@ -87,7 +87,7 @@ describe('ManageEditors', () => {
   });
 
   it('renders nothing for a query-derived error now that data.error is gone from the load', async () => {
-    const screen = render(ManageEditors, {
+    const screen = await render(ManageEditors, {
       data: { ...data(), error: 'Something went wrong and your changes were not saved.' } as never,
       form: null,
     });
@@ -98,13 +98,13 @@ describe('ManageEditors', () => {
 
 describe('ManageEditors vocabulary-driven role control', () => {
   it('renders the owner/editor toggle button for the default two-role vocabulary', async () => {
-    const screen = render(ManageEditors, { data: data(), form: null });
+    const screen = await render(ManageEditors, { data: data(), form: null });
     await expect.element(screen.getByRole('button', { name: /toggle role for owner one/i })).toBeInTheDocument();
     expect(screen.container.querySelector('select[aria-label*="Change role"]')).toBeNull();
   });
 
   it('renders a labeled select with capability shown beside each name for a larger vocabulary', async () => {
-    const screen = render(ManageEditors, {
+    const screen = await render(ManageEditors, {
       data: {
         editors: [
           { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' as const },
@@ -129,7 +129,7 @@ describe('ManageEditors vocabulary-driven role control', () => {
   });
 
   it('submits the selected role name from the vocabulary select', async () => {
-    const screen = render(ManageEditors, {
+    const screen = await render(ManageEditors, {
       data: {
         editors: [
           { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' as const },
@@ -169,7 +169,7 @@ describe('ManageEditors vocabulary-driven role control', () => {
   });
 
   it('marks an owner-capability row with the primary badge under a non-owner role name', async () => {
-    const screen = render(ManageEditors, {
+    const screen = await render(ManageEditors, {
       data: {
         editors: [
           { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' as const },

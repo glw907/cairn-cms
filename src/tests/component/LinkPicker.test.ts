@@ -9,9 +9,9 @@ const targets: LinkTarget[] = [
   { concept: 'posts', id: '2026-02-02-draft', permalink: '/2026/02/draft', title: 'Secret Draft', date: '2026-02-02', draft: true },
 ];
 
-function open(props: Partial<{ linkTargets: LinkTarget[]; insert: (href: string, title: string) => void }> = {}) {
+async function open(props: Partial<{ linkTargets: LinkTarget[]; insert: (href: string, title: string) => void }> = {}) {
   const calls: { href: string; title: string }[] = [];
-  const screen = render(LinkPicker, {
+  const screen = await render(LinkPicker, {
     linkTargets: props.linkTargets ?? targets,
     insert: props.insert ?? ((href, title) => calls.push({ href, title })),
   });
@@ -20,7 +20,7 @@ function open(props: Partial<{ linkTargets: LinkTarget[]; insert: (href: string,
 
 describe('LinkPicker', () => {
   it('shows a post date and a draft badge', async () => {
-    const { screen } = open();
+    const { screen } = await open();
     await screen.getByRole('button', { name: /link to page/i }).click();
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     expect(text).toContain('2026-01-04');
@@ -28,7 +28,7 @@ describe('LinkPicker', () => {
   });
 
   it('inserts the cairn token for the picked target and closes', async () => {
-    const { screen, calls } = open();
+    const { screen, calls } = await open();
     await screen.getByRole('button', { name: /link to page/i }).click();
     await screen.getByRole('button', { name: /About Us/ }).click();
     expect(calls).toEqual([{ href: 'cairn:pages/about', title: 'About Us' }]);
@@ -36,7 +36,7 @@ describe('LinkPicker', () => {
   });
 
   it('shows an empty state with no targets', async () => {
-    const { screen } = open({ linkTargets: [] });
+    const { screen } = await open({ linkTargets: [] });
     await screen.getByRole('button', { name: /link to page/i }).click();
     expect(screen.container.querySelector('dialog')!.textContent ?? '').toMatch(/no pages or posts/i);
   });
@@ -46,7 +46,7 @@ describe('LinkPicker', () => {
       { concept: 'zebra', id: 'z1', permalink: '/z1', title: 'Zebra One', draft: false },
       { concept: 'apple', id: 'a1', permalink: '/a1', title: 'Apple One', draft: false },
     ];
-    const screen = render(LinkPicker, { linkTargets: targets, insert: () => {} });
+    const screen = await render(LinkPicker, { linkTargets: targets, insert: () => {} });
     await screen.getByRole('button', { name: /link to page/i }).click();
     const text = screen.container.querySelector('dialog')!.textContent ?? '';
     // Headings are 'Apple' and 'Zebra'; Apple sorts first.

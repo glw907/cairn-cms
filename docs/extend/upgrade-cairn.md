@@ -15,7 +15,10 @@ minor can break a documented seam, so an upgrade is never a blind bump.
    npm install @glw907/cairn-cms@latest
    ```
 
-   or edit the version range by hand and run `npm install`.
+   or edit the version range by hand and run `npm install`. [What to run, and
+   when](../admin/what-to-run-and-when.md) and [Supported
+   toolchain](../reference/supported-toolchain.md) name the Node, SvelteKit, and Svelte targets
+   this install checks against.
 
 2. **Read every `Consumers must:` line your range crossed**, not just the version you landed on.
    `CHANGELOG.md` ships in the package (`node_modules/@glw907/cairn-cms/CHANGELOG.md`, or the

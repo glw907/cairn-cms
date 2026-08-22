@@ -50,6 +50,9 @@ PASS  AI posture, effective: no AI posture is stated (aiPosture is unset), and h
 8 passed, 3 failed, 8 skipped
 ```
 
+This report reflects an earlier engine release; the dependency-floor version numbers you see when
+you run this yourself are newer.
+
 Every `create-cairn-site` scaffold ships the placeholder sign-in address `cms@showcase.test`, and
 this site hadn't connected a domain yet, so no Cloudflare zone named `showcase.test` exists for the
 token to check. A workers.dev-only site fails those three zone-derived checks until you connect
@@ -280,7 +283,7 @@ loudly.
 
 **Ask a developer:** raise the affected package in your site's `package.json` to the floor cairn
 declares, then reinstall so your lockfile re-resolves; for example,
-`npm install --save-dev svelte@^5.56.3`.
+`npm install --save-dev svelte@^5.56.10`.
 
 ## Turn on HSTS
 

@@ -4,7 +4,7 @@
   "description": "Embedded, magic-link, GitHub-committing CMS for SvelteKit/Cloudflare sites.",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "workspaces": [
     "packages/*"
@@ -40,6 +40,7 @@
     "check:surface": "npm run package && node scripts/checks/check-surface.mjs",
     "check:readiness": "npm run package && node scripts/checks/check-readiness.mjs",
     "check:docs": "node scripts/checks/docs-links.mjs",
+    "check:target-stack": "node scripts/checks/check-target-stack.mjs",
     "check:symbols": "node scripts/checks/check-symbols.mjs",
     "check:vale": "vale --minAlertLevel=error docs README.md examples/showcase/README.md",
     "check:arm-indexes": "node scripts/checks/check-arm-indexes.mjs",
@@ -186,9 +187,10 @@
     "docs/extend"
   ],
   "peerDependencies": {
-    "@anthropic-ai/sdk": "^0.105.0",
-    "@sveltejs/kit": "^2.12",
-    "svelte": "^5.56.3"
+    "@anthropic-ai/sdk": ">=0.105.0 <1",
+    "@cloudflare/workers-types": "^5",
+    "@sveltejs/kit": "^2.70",
+    "svelte": "^5.56.10"
   },
   "peerDependenciesMeta": {
     "@anthropic-ai/sdk": {
@@ -235,20 +237,21 @@
     "yaml": "^2"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "^0.105.0",
+    "@anthropic-ai/sdk": "^0.120.0",
     "@arethetypeswrong/cli": "^0.18.3",
     "@cloudflare/vitest-pool-workers": "^0.22.0",
     "@cloudflare/workers-types": "^5.20260821.1",
-    "@sveltejs/kit": "^2.68.0",
+    "@sveltejs/kit": "^2.70",
     "@sveltejs/package": "^2",
     "@sveltejs/vite-plugin-svelte": "^7.1",
     "@tailwindcss/postcss": "^4.3.2",
-    "@types/node": "^22.19.19",
+    "@types/node": "^24.13.3",
     "@vitest/browser": "^4.1.7",
     "@vitest/browser-playwright": "^4.1.7",
     "culori": "^4.0.2",
     "daisyui": "^5.6.6",
     "devalue": "^5.8.1",
+    "esbuild": "^0.28.1",
     "eslint": "^10.9.0",
     "eslint-plugin-jsdoc": "^64.2.1",
     "eslint-plugin-tsdoc": "^0.5.2",
@@ -257,7 +260,7 @@
     "postcss": "^8.5.15",
     "postcss-prefix-selector": "^2.1.1",
     "publint": "^0.3.21",
-    "svelte": "^5.56.3",
+    "svelte": "^5.56.10",
     "svelte-check": "^4",
     "tailwindcss": "^4.3.2",
     "tsx": "^4.23.11",
@@ -265,7 +268,7 @@
     "typescript-eslint": "^8.62.0",
     "vite": "^8.0",
     "vitest": "^4.1",
-    "vitest-browser-svelte": "^2.1.1",
-    "wrangler": "^4"
+    "vitest-browser-svelte": "^3.0.0",
+    "wrangler": "^4.125.0"
   }
 }

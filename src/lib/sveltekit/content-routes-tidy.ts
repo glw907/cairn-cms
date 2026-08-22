@@ -25,24 +25,49 @@ export interface TidyResult {
 
 /**
  * A refused tidy: `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled, the API
- * key is missing, the optional `@anthropic-ai/sdk` peer is not installed, or Anthropic rejects the
- * key outright (401/403, a non-retryable auth failure, distinct from the retryable model errors
- * below), `fail(413)` for an over-long body, `fail(502)` for a deadline overrun, an abort, or a
- * model error (rate limit, overload, 5xx, network; all retryable), `fail(422)` for a model
- * refusal, `fail(400)` for a malformed body. Just the one-line summary; the action commits
- * nothing, so a refusal can never corrupt the entry.
+ * key is missing, the optional `@anthropic-ai/sdk` peer is not installed, Anthropic rejects the key
+ * outright (401/403, a non-retryable auth failure, distinct from the retryable model errors below),
+ * or Anthropic rejects the request itself (400 `invalid_request_error`, typically an unsupported
+ * `tidy.model` setting, also non-retryable), `fail(413)` for an over-long body, `fail(502)` for a
+ * deadline overrun, an abort, or a model error (rate limit, overload, 5xx, network; all retryable),
+ * `fail(422)` for a model refusal, `fail(400)` for a malformed body. Just the one-line summary; the
+ * action commits nothing, so a refusal can never corrupt the entry.
  */
 export interface TidyFailure {
   error: string;
 }
 
 /**
- * The input cap for a single tidy request: 24000 characters (~6k input tokens). A proofread runs at
- * roughly input length, so this stays comfortably inside the 30s deadline; a longer entry refuses with
- * fail(413) and the author tidies a selection instead. The cap is enforced BEFORE the model call, so an
- * over-long body never spends a token or risks the deadline.
+ * The input cap for a single tidy request: 24000 characters (at most about 8,000 under Sonnet 5's
+ * tokenizer). A proofread runs at roughly input length, so this stays comfortably inside the 30s
+ * deadline; a longer entry refuses with fail(413) and the author tidies a selection instead. The
+ * cap is enforced BEFORE the model call, so an over-long body never spends a token or risks the
+ * deadline.
  */
 const MAX_TIDY_CHARS = 24_000;
+
+/**
+ * Model families that reject `output_config.effort` outright (a 400 `invalid_request_error`): only
+ * a model with adaptive-thinking effort tiers accepts it. Kept as the one list `supportsEffort`
+ * consults, so a newly offered model needs one edit here rather than a scattered check.
+ */
+const EFFORT_TIER_PREFIXES = ['claude-sonnet-5', 'claude-opus-5', 'claude-sonnet-4-6'];
+
+/** Matches `claude-opus-4-<n>`, capturing the minor version so `supportsEffort` can floor it at 4.6. */
+const OPUS_4_MODEL = /^claude-opus-4-(\d+)/;
+
+/**
+ * Whether `model` supports the effort tier the tidy call sends as `output_config: { effort: 'low' }`.
+ * Sonnet 5, Opus 5, Sonnet 4.6, and Opus 4.6 or later run adaptive thinking by default and accept the
+ * parameter; `claude-haiku-4-5` and any other model (including an unrecognized or future id) do not,
+ * and the Messages API answers `output_config` on one of those with a 400. Matching by prefix keeps a
+ * dated snapshot id (for example `claude-sonnet-5-20260115`) resolving the same as its family name.
+ */
+export function supportsEffort(model: string): boolean {
+  if (EFFORT_TIER_PREFIXES.some((prefix) => model.startsWith(prefix))) return true;
+  const opus4 = OPUS_4_MODEL.exec(model);
+  return opus4 !== null && Number(opus4[1]) >= 6;
+}
 
 /** Build the tidy action, closed over the shared content-routes context. */
 export function createTidyActions(ctx: ContentRoutesContext) {
@@ -72,11 +97,13 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *  Task 4). Not retryable, and so answered without the "Try again." copy: an auth/permission
    *  failure (401/403), where the key itself is the problem, which returns the calm copy naming
    *  the site developer and marks the shared key-health cache unhealthy (Task 5) so the next edit
-   *  load hides the Tidy button rather than offering a control that will fail again; and a missing
+   *  load hides the Tidy button rather than offering a control that will fail again; a missing
    *  `@anthropic-ai/sdk`, where the optional peer was never installed, which returns the install
-   *  command and leaves the cache alone. Everything else (a deadline overrun, another abort, a
-   *  model error) stays the retryable "Try again." copy, with the log's `reason` field
-   *  (`timeout`/`abort`/`model`) naming which.
+   *  command and leaves the cache alone; and a 400 `invalid_request_error`, where Anthropic
+   *  rejected the request itself (typically an unsupported `tidy.model` setting), which names the
+   *  model in the message and also leaves the key-health cache alone. Everything else (a deadline
+   *  overrun, another abort, a model error) stays the retryable "Try again." copy, with the log's
+   *  `reason` field (`timeout`/`abort`/`model`) naming which.
    */
   async function tidyAction(event: CairnEvent): Promise<ActionFailure<TidyFailure> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
@@ -124,7 +151,9 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     const system = buildTidyPrompt(resolveTidyConventions(tidy.conventions));
     const model = tidy.model || DEFAULT_TIDY_MODEL;
     // max_tokens sized to comfortably exceed the input token count: a proofread runs at roughly input
-    // length, never lowballed. The character cap is ~6k input tokens, so this leaves generous headroom.
+    // length, never lowballed. Sonnet 5's tokenizer counts up to about 1.35x more tokens than the
+    // prior generation, and the 24,000-character cap is at most about 8,000 input tokens even at that
+    // rate, so this ceiling still leaves generous headroom.
     const maxTokens = 16_000;
 
     // Bound the model call with the Worker's own deadline (shorter than the platform limit), so a slow
@@ -148,6 +177,12 @@ export function createTidyActions(ctx: ContentRoutesContext) {
           max_tokens: maxTokens,
           system,
           messages: [{ role: 'user', content: text }],
+          // A short proofread does not need extended reasoning; a model with effort tiers runs
+          // adaptive thinking by default, so this caps it at the low tier rather than sending a
+          // thinking parameter (budget_tokens 400s on Sonnet 5). Sent only when the configured model
+          // actually has effort tiers: the API answers `output_config` on one that does not (Haiku
+          // 4.5, say) with a 400, so omitting it there is the request the model actually accepts.
+          ...(supportsEffort(model) ? { output_config: { effort: 'low' as const } } : {}),
         },
         // The signal rides the request options, so the deadline timer above actually cancels the call.
         { signal: controller.signal },
@@ -173,6 +208,17 @@ export function createTidyActions(ctx: ContentRoutesContext) {
         log.warn('tidy.failed', { editor: editor.email, model, reason: 'auth' });
         return fail(503, {
           error: "Tidy isn't available right now. Your site's AI access needs attention; let your site developer know.",
+        } satisfies TidyFailure);
+      }
+      if (status === 400) {
+        // A 400 means Anthropic rejected the request shape itself, not the key: an identical retry
+        // fails the same way, so this is not retryable either. In practice this means the site's
+        // `tidy.model` setting names something the Messages API does not accept as configured, so the
+        // message names it directly rather than the generic "Try again." The key is not the problem,
+        // so the health cache stays untouched.
+        log.warn('tidy.failed', { editor: editor.email, model, reason: 'invalid_request' });
+        return fail(503, {
+          error: `Tidy isn't available right now. The configured model ("${model}") isn't supported; check your site's tidy.model setting.`,
         } satisfies TidyFailure);
       }
       // Everything else stays retryable: a deadline overrun, an abort from elsewhere, or a model error

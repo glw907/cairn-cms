@@ -21,7 +21,7 @@ import { ReproContext, type ReproInstance, type ReproStory } from '../../lib/rep
  */
 export async function renderStory(story: ReproStory) {
   let instance: ReproInstance | undefined;
-  const screen = render(ReproContext, {
+  const screen = await render(ReproContext, {
     props: {
       story,
       oninstance: (value: ReproInstance) => {

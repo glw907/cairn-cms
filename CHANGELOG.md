@@ -1,29 +1,90 @@
 ## Unreleased
 
+### Added
+
+- A new admin page, `docs/admin/what-to-run-and-when.md`, names today's target for the parts of a
+  cairn site's stack an admin can act on directly (cairn itself, Node on your machine, your
+  Cloudflare hosting tooling, the GitHub App key) and how to tell your site is still on target; it
+  links `docs/reference/supported-toolchain.md` for the exact versions a developer needs. That
+  reference page carries the exact-version target-stack table, and a new `check:target-stack` gate
+  derives every expected cell from its real source (the root `package.json`'s own version,
+  engines, and peer ranges; the showcase's `package.json` and `wrangler.jsonc`, the source the
+  public template is emitted from) and fails when the table drifts from it. Consumers must:
+  nothing.
+
+- An advisory `check-tsgo` CI job, in its own `.github/workflows/tsgo.yml` and run weekly
+  (`schedule`, Monday 16:00 UTC) plus `workflow_dispatch` rather than on every push, installs the
+  side-by-side `typescript@^6` plus `@typescript/native@npm:typescript@7` layout `svelte-check`'s
+  own README documents and runs `svelte-check --tsgo` against it. A red result on a scheduled run
+  blocks nothing else, since it never gates a PR. A green run is the trigger the TypeScript 7 hold
+  is defined by (ROADMAP.md, "TypeScript 7 is held on the toolchain"). Consumers must: nothing.
+
+- `VariantSpec.fit` (`/media`) accepts Cloudflare Images' `aspect-crop`, `scale-up`, and
+  `squeeze` fit modes, and a new `VariantSpec.upscale` option (`interpolate` or `generate`)
+  picks the algorithm a fit mode that upscales uses, both from Cloudflare's 2026-06-16
+  optimization GA. `upscale` joins the `/cdn-cgi/image` option string only when set.
+  `VariantSpec.gravity` also accepts the `entropy` keyword, carried in
+  `@cloudflare/workers-types` 5's `BasicImageTransformations` union.
+  `normalizeAssets` validates the three new fit values, `upscale`, and `entropy` the same way it
+  already validates `fit` and `gravity`. Consumers must: nothing; additive.
+
 ### Changed
 
-- Dependencies moved to their current releases: DaisyUI 5.7.20 (from 5.6.6), Tailwind 4.3.3,
-  SvelteKit 2.70.3, Svelte 5.56.10, Vite 8.2.2, Wrangler 4.125.0, ESLint 10, and
-  `@cloudflare/vitest-pool-workers` 0.22. Two upstream shifts reach the shipped admin sheet.
-  DaisyUI 5.7 now emits a component's modifier classes alongside the base class the admin tree
-  uses, so the sheet carries 31 more DaisyUI names than before (the `tabs-*`, `modal-*`,
-  `dropdown-*`, `drawer-*`, `footer-*`, `stats-*`, `steps-*`, `divider-*` placements,
-  `avatar-group`, and `aura`); they are stock DaisyUI, additive, and scoped the same way as the rest of the sheet.
-  DaisyUI 5.7 also stopped emitting `footer-center` as a side effect of a neighbor, so the input
-  sheet now safelists it explicitly and it stays in the sheet. Light-theme `.btn-active` follows
-  upstream's new stock border (a 7% mix toward black where a plain `.btn` mixes 5%, about 0.02
-  oklch lightness); the dark-theme hairline, fill, and hover repairs are unchanged.
-  `@cloudflare/workers-types` moved to 5 (wrangler 4.125 peers on it), whose new global
+- Tidy's default model is now `claude-sonnet-5`, run at the low effort tier since a proofread
+  doesn't need extended reasoning. A site that set `tidy.model` explicitly keeps its own model
+  and now sends `effort: 'low'` too, when that model supports effort tiers.
+
+- cairn's own Node floor rose to `>=24` (from `>=22`), in the engine package, the
+  `create-cairn-site` CLI, and the `cairn-cms-dev` dev backend. Every CI `node-version: 22` moved
+  to 24, and the two stale "pin to 22 to dodge a vitest-pool-workers console bug on 24" comments
+  are gone: a full green suite on Node 24 in this pass no longer reproduces it.
+  Consumers must: run Node 24 or later; the scaffolder's preflight refuses Node 22.
+
+- The published peer ranges rose to `@sveltejs/kit ^2.70` and `svelte ^5.56.10`, the versions
+  cairn now develops and tests against. Consumers must: be on those ranges before installing;
+  npm's default peer resolution refuses the install otherwise.
+
+- Dependencies moved to their current releases: DaisyUI 5.7.20, Tailwind 4.3.3, SvelteKit
+  2.70.3, Svelte 5.56.10, Vite 8.2.2, Wrangler 4.125.0, ESLint 10, and
+  `@cloudflare/vitest-pool-workers` 0.22. The `@anthropic-ai/sdk` devDependency moved to 0.120,
+  and its optional peer range widened to `>=0.105.0 <1` so a site pinned to either the old or the
+  new SDK line satisfies it. TypeScript 7 is held; `svelte-check` cannot run on the Go compiler
+  until 7.1's compiler API. Consumers must: nothing.
+
+- DaisyUI 5.7 changed what the shipped admin sheet contains. It now emits a component's modifier
+  classes alongside the base class the admin tree uses, so the sheet carries 31 more DaisyUI
+  names than before (the `tabs-*`, `modal-*`, `dropdown-*`, `drawer-*`, `footer-*`, `stats-*`,
+  `steps-*`, `divider-*` placements, `avatar-group`, and `aura`); they are stock DaisyUI,
+  additive, and scoped the same way as the rest of the sheet. It also stopped emitting
+  `footer-center` as a side effect of a neighbor, so the input sheet now safelists it explicitly
+  and it stays in the sheet. Light-theme `.btn-active` follows upstream's new stock border (a 7%
+  mix toward black where a plain `.btn` mixes 5%, about 0.02 oklch lightness); the dark-theme
+  hairline, fill, and hover repairs are unchanged. Consumers must: nothing.
+
+- `@cloudflare/workers-types` 5 and `vitest-browser-svelte` 3 changed two internal call shapes.
+  `@cloudflare/workers-types` moved to 5 (Wrangler 4.125 peers on it), whose new global
   `Buffer: any` shadows `Buffer.toString(encoding)` wherever `@types/node` shares the program;
-  the two build-script sites that called it now use `TextDecoder`. Held back on purpose:
-  TypeScript 7 (svelte-check cannot run on the Go compiler until 7.1's compiler API) and
-  `vitest-browser-svelte` 3 (its async-only `render` touches about a thousand call sites and
-  earns its own pass). Consumers must: nothing.
+  the two build-script sites that called it now use `TextDecoder`. `vitest-browser-svelte` moved
+  to 3 as well, whose `render`/`unmount` calls are now async; every call site in the component
+  suite now awaits them. Consumers must: nothing.
+
+- The template and showcase `wrangler.jsonc` moved `compatibility_date` to `2026-08-21` and
+  dropped the `nodejs_compat` compatibility flag. Cloudflare defaults `nodejs_compat` (and
+  `nodejs_compat_v2`) on for any compatibility date from 2026-08-04 onward
+  ([compatibility flags](https://developers.cloudflare.com/workers/configuration/compatibility-flags/)),
+  so the explicit flag was already redundant on the new date; the `vitest-pool-workers` test harness
+  (`wrangler.test.jsonc`) moved the same way. This changes only the date and flags a newly
+  scaffolded site starts with. Consumers must: nothing; an existing site keeps its own date and
+  flags.
+
+- Internal CI housekeeping: `actions/checkout` and `actions/setup-node` moved from v5 to v7 across
+  every workflow (checked both majors' release notes; neither changes a behavior these workflows
+  rely on), and `cache: npm` was added to every `actions/setup-node` step that lacked it. Consumers
+  must: nothing.
 
 - `npm run link:consumer -- <site-dir>` points a consumer site at a local engine build, and
   `--restore` puts it back on a registry range. It builds, packs, installs, and then verifies every
-  file in the consumer's installed copy against the tarball it just built. Both directions matter:
-  a `file:` path cannot merge, so the un-pin has to be as cheap as the pin. It exists because the
+  file in the consumer's installed copy against the tarball it just built. It exists because the
   hand loop walks into a trap that survives a green install. `npm pack` derives the tarball name
   from the version, so re-packing changed code at one version reuses the filename, and a later plain
   `npm install` restores the older build from npm's content-addressed cache. Reproduced 2026-08-20:
@@ -32,8 +93,8 @@
   bytes, and the file-by-file comparison fails loud rather than trusting npm's exit code. Pruning
   old packs matches the digest suffix rather than the package stem, so it can only delete tarballs
   this script wrote: a hand-packed one carries no digest and is never swept, which matters because
-  cairn-pub pins `glw907-cairn-cms-0.95.0-rc.1.tgz` by absolute path and a prune that took it would
-  break that repo's install with no signal here. The stem alone would also be unsafe, since
+  a sibling repo pins an exact tarball by absolute path, and a prune that took it would break that
+  repo's install with no signal here. The stem alone would also be unsafe, since
   `glw907-cairn-cms-` is a prefix of `glw907-cairn-cms-dev-`. Internal development tooling; it ships
   in no tarball. Consumers must: nothing.
 
@@ -62,6 +123,67 @@
   silences it and is the wrong fix, because that adapter's ambient `App.Platform` augmentation
   collides with cairn's own and breaks `check:snippets`; `test.yml` carries the note. Consumers must: nothing; none of this ships in the
   engine tarball.
+
+- The exported `TidyClient` type (`/sveltekit`) gained an optional `output_config` field on its
+  `messages.create` options, matching the effort-tier option Tidy's own call already sends.
+  Consumers must: nothing, unless a hand-rolled `TidyClient` fake rejects unknown body fields.
+
+- `@glw907/cairn-cms-dev`'s `createChannelDb` no longer carries a runtime Node.js floor guard, and
+  the `checkNodeSqliteFloor` helper that ran it is gone. npm warns on an `engines` mismatch
+  (`create-cairn-site`'s own preflight is what refuses outright, elsewhere in this family), and
+  `node:sqlite` has been unflagged since Node.js 22.13, well below the `>=24` floor, so the guard
+  checked a condition that could not occur. `checkNodeSqliteFloor` was an internal change, not a
+  public-API removal: the package's exports map has only ever exposed `.`, and `index.ts` never
+  re-exported it, so no supported import path could reach it. Consumers must: nothing; this
+  package ships in no tarball a site installs for production.
+
+- `@cloudflare/workers-types` is now a `peerDependency` at `^5`, alongside its existing
+  `devDependency`. cairn's own shipped `.d.ts` files import named types (`D1Database`, `R2Bucket`,
+  `RateLimit`, and others) directly from this package, so a consumer generating its own binding
+  types with `wrangler types`, the now-recommended replacement for installing
+  `@cloudflare/workers-types` directly, still needs the package installed or every cairn-typed
+  binding signature silently degrades to an unresolvable-import `any` under `skipLibCheck: true`
+  (a common default), with no red `TS2307` to flag the gap. Consumers must: install
+  `@cloudflare/workers-types@^5` as a devDependency (a site on `wrangler types` still needs it,
+  since cairn's declarations import from it); npm's default peer resolution refuses the install
+  otherwise.
+
+### Fixed
+
+- The `/sveltekit` barrel's `previewLoad` statically imported `building` from `$app/environment`
+  at module scope, so importing any single barrel export, `createD1AuditSink` for a Cloudflare
+  Cron handler bundled outside Vite, pulled in that whole import graph. A consumer bundling that
+  file with a plain, non-Vite esbuild pass (Wrangler's own, at `wrangler dev`/`wrangler deploy`
+  time) failed to resolve `$app/environment`, a virtual module only Vite's SvelteKit plugin knows
+  how to resolve; every package-level gate (`npm run check`, `npm test`, `npm run build`) stayed
+  green throughout, since none of them invoke Wrangler's own bundler. A first fix moved the read to
+  a dynamic `await import('$app/environment')` at call time, but esbuild resolves a bare, uncaught
+  dynamic `import()` literal the same way it resolves a static import at bundle time, so the same
+  build still failed. `previewLoad` now wraps that import in `try`/`catch`, esbuild's own documented
+  escape hatch for downgrading an unresolvable specifier from a bundle-time error to a runtime
+  concern, and falls back to `building = false` when the import rejects (a `/preview/[token]` route
+  is never prerendered, so that is the correct value outside a real SvelteKit build). The unit test
+  now reproduces the real consumer failure mode directly, running esbuild's own bundler over the
+  built `/sveltekit` barrel and asserting it succeeds, rather than walking the static import syntax
+  (which a dynamic import can route around). Consumers must: nothing; a site that added a wrangler
+  alias for `$app/environment` as a workaround can remove it, because the barrel's only `$app`
+  import is now a guarded dynamic import that esbuild leaves unresolved at bundle time and the
+  Worker's own try/catch absorbs at runtime.
+
+- `previewLoad` (`/sveltekit`) returned `seo` with `canonical`, `og:url`, and `jsonLd.url` still
+  pointing at the entry's eventual public permalink, so a preview render could self-canonicalize
+  onto a URL that was not yet live, or let a crawler or unfurler that ignores `noindex`
+  consolidate a shared draft onto it. `previewLoad` now strips those three fields before
+  returning. Consumers must: nothing; a site that already stripped those fields itself can drop
+  its own strip.
+
+- `PreviewBanner` (`/components`) formatted the preview expiry with
+  `new Intl.DateTimeFormat(undefined, ...)` inside a `$derived`, so a Worker's runtime locale or
+  timezone differing from the visitor's browser could render two different strings during SSR and
+  hydration and produce a hydration mismatch. It now renders a fixed, locale-independent
+  `YYYY-MM-DD HH:MM UTC` string inside a `<time datetime>` element by default, and accepts an
+  optional `formatExpiry?: (iso: string) => string` prop so a site can supply its own stable
+  formatter. Consumers must: nothing.
 
 ## 0.95.0
 

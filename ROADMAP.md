@@ -291,9 +291,11 @@ The original decision framing, for the record:
   `svelte-check --tsgo`, and when it matches the TS 6 result drop the alias, bump, and run the
   full `test.yml` gate list plus the clean-install showcase proof. Manual check meanwhile:
   `npx -y @typescript/native-preview -p tsconfig.json --noEmit | grep -c 'error TS'`, where any
-  count past the `.svelte` errors is a new finding. **Open call: build the advisory `check:tsgo`
-  CI job now (earliest signal, one job's CI minutes) or at 7.1 (free until October, and the watch
-  can be forgotten, which the `CLAUDE.md` watch-item rule exists to prevent).**
+  count past the `.svelte` errors is a new finding. **The advisory `check-tsgo` job lives in its
+  own `.github/workflows/tsgo.yml`, run weekly (`schedule`, Monday 16:00 UTC) plus
+  `workflow_dispatch` rather than on every push: it installs the side-by-side layout with
+  `--no-save --no-package-lock` and runs `svelte-check --tsgo`, and a green run is the signal that
+  the crossing above is ready.**
 
 - **A pre-existing media-chip test is flaky and will redden `main` at random (release-debt pass,
   2026-08-19).** `src/tests/component/media-public-base.test.ts:86`, "renders the editor media chip
@@ -838,19 +840,53 @@ the named human gates only):**
   from a template whose components are still landing would test the wrong artifact); the design
   review can interleave, with the two re-expressions as its field evidence.
 
+- **FieldInput mutates EditPage's `$state` through a plain prop (`ownership_invalid_mutation` on
+  every mount).** `src/lib/components/FieldInput.svelte:274` binds `bind:this={heroFieldRefs[name]}`
+  on a non-`$bindable` prop that is `EditPage.svelte:777`'s `$state` proxy, passed straight through
+  at `EditPage.svelte:2516`. Svelte logs `ownership_invalid_mutation` on essentially every `EditPage`
+  mount in the component suite. Fix is `$bindable()` on `FieldInput`'s `heroFieldRefs` prop plus
+  `bind:heroFieldRefs` at the `EditPage.svelte:2516` call site, or a `registerHeroField` callback
+  prop instead of the raw record. Pre-existing, not newest-toolchain's.
+
 ## Next
 
 - **Platform features now available and unused (surveyed 2026-08-21).** Tailwind 4.3 ships
-  `scrollbar-*` utilities, logical-property spacing (`pbs-*`, `mbs-*`, `inset-s-*`), `@container-size`,
-  and stacked `@variant`; DaisyUI 5.7 ships `menu-paged` for keyboard travel through nested menus.
-  Email Sending's named recipients (`{email, name}` on `from`/`to`) are GA. Cloudflare D1's Sessions
-  API (`withSession`, read replicas) is NOT: D1's release notes carry only the 2025-04-10 public-beta
-  entry and no GA entry as of 2026-08-21 (re-verified after a survey claimed GA), so it stays a
-  watch, not a sanctioned form, until a GA entry appears. None closes a live defect, so none is a task; each is
-  the sanctioned form to reach for when its shape next comes up (a scrollable admin pane, an RTL
-  audit, a nested admin menu, a branded sender name). The `.btn-active` hand-repairs in
-  `cairn-admin.css` were re-verified against 5.7.20: the dark-theme rules still earn their place,
-  and the light theme follows stock.
+  logical-property spacing (`pbs-*`, `mbs-*`, `inset-s-*`), `@container-size`, and stacked
+  `@variant`; DaisyUI 5.7 ships `menu-paged` for keyboard travel through nested menus.
+  Neither closes a live defect, so neither is a task; each is the sanctioned form to reach
+  for when its shape next comes up (an RTL audit, a nested admin menu). Every Cloudflare
+  platform item this survey turns up lives in Later's "Platform watch: Cloudflare" list
+  instead, so a single heading carries the whole tracked set for the monthly routine that
+  reads it. Tailwind 4.3's `scrollbar-*` utilities compile to the identical
+  `scrollbar-width`/`scrollbar-color` mix `cairn-admin.css` already hand-writes, but the
+  newest-toolchain pass found that sheet is imported raw by `src/lib/reproductions/ReproContext.svelte`
+  and the component test project runs no Tailwind step, so an `@apply` there is dropped in the
+  browser; the source sheet stays plain CSS until the component project runs the Tailwind step.
+  The `.btn-active` hand-repairs in `cairn-admin.css` were re-verified against 5.7.20: the
+  dark-theme rules still earn their place, and the light theme follows stock.
+
+- **Declare required Worker secrets without breaking local dev.** A pass on newest-toolchain
+  tried declaring `wrangler.jsonc`'s `secrets.required` for `GITHUB_APP_PRIVATE_KEY_B64` and
+  withdrew it after the Workers reviewer found three problems. (1) wrangler 4.125 filters
+  `.dev.vars` down to only the names already listed in `vars` or `secrets.required` once a
+  `secrets` block exists at all, so `wrangler dev` silently stopped seeing `ANTHROPIC_API_KEY`
+  and the GitHub App id pair, which the showcase's `.dev.vars` also carries; the same change
+  turns on `includeProcessEnv`, so a required secret with no `.dev.vars` entry reads from the
+  ambient shell instead of refusing to start. (2) A first `wrangler deploy` of a Worker that
+  does not exist yet throws when a required secret is unset (`addRequiredSecretsInheritBindings`),
+  which is exactly the order `create-cairn-site`'s automated chapter deploys in, before the App's
+  key has anywhere to go. (3) A scaffolded site would never get the guard at all unless the
+  scaffolder itself appended the `secrets` block after `wrangler secret put`, since the baked
+  template strips anything wrapped in `cairn-template:exclude`. The next `create-cairn-site` pass
+  should design: declare every runtime secret a site actually uses (or add the optional ones,
+  like `ANTHROPIC_API_KEY`, to `vars` instead so they survive the `.dev.vars` filter), append the
+  `secrets` block in `packages/create-cairn-site/src/cloudflare/chapter.mjs` only after the key is
+  pushed rather than baking it into the template, and keep a `.dev.vars` present in every
+  generated site so the filtered read still resolves locally. That same pass should also
+  re-record every transcript fixture under `packages/create-cairn-site/test/fixtures/transcripts/`:
+  the `01-*` fixtures still print "Node 22 or later" and `03-doctor-credentialed` predates the
+  `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: the next
+  `create-cairn-site` pass.
 
 - **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
   primitives a site composes directly, and the first is the one an extender meets first. (1)
@@ -2168,6 +2204,62 @@ the named human gates only):**
   was observed going through `POST /zones`, so the branches that path reaches are unproven. Worth
   a real trigger (the first live run against an externally registered domain) rather than a
   standing note.
+
+### Platform watch: Cloudflare
+
+This is a tracked list of Cloudflare platform features cairn has evaluated and judged not to
+adopt, each carrying its status, the reason it was declined, and the trigger that would change
+the verdict. A monthly cloud routine (`cairn Cloudflare capability review (monthly)`, created
+2026-08-22) reads this list by this exact heading and emails a report; the owner folds any
+status change in here, and an item whose trigger fires moves up to Now or Next.
+
+- **R2 Local Uploads.** Status as of 2026-08-21: open beta since 2026-02-03
+  (https://developers.cloudflare.com/changelog/post/2026-02-03-r2-local-uploads/). What cairn does
+  today: `MEDIA_BUCKET` uses the default upload path, a plain `bucket.put()` call
+  (`src/lib/media/store.ts:59`). Why not adopted: it is an operator's per-bucket switch, not engine
+  code, so cairn has nothing to change. Trigger: general availability, at which point
+  `docs/admin` gets the one-line tip pointing an operator at the toggle.
+
+- **Secrets Store, for the shared GitHub App key.** Status as of 2026-08-21: beta since
+  2025-04-09 (https://developers.cloudflare.com/changelog/post/2025-04-09-secrets-store-beta/).
+  What cairn does today: both production sites (ecxc.ski, 907.life) hold the same
+  `GITHUB_APP_PRIVATE_KEY_B64` value as separate per-Worker secrets. Why not adopted: where a
+  secret lives is the operator's domain, not the engine's; `create-cairn-site`'s scaffolder, not
+  the runtime library, is where cairn would offer a Secrets Store option. Trigger: general
+  availability plus a wrangler binding shape the scaffolder can write into a generated
+  `wrangler.jsonc`.
+
+- **Email Sending event subscriptions (bounce, deferred, failed, complained), via Queues.**
+  Status as of 2026-08-21: shipped 2026-07-15
+  (https://developers.cloudflare.com/changelog/post/2026-07-15-event-subscriptions/). What cairn
+  does today: `src/lib/email.ts:75` only sees a synchronous send failure at the moment of
+  `env.EMAIL.send()`; a bounce or complaint that arrives later is invisible to the engine. Why not
+  adopted: not yet, single-use magic-link mail does not justify standing up a Queue consumer.
+  Trigger: a consumer site reports silent bounce loss, or the engine gains any other reason to run
+  a Queue consumer.
+
+- **Email Sending named recipients (`{email, name}` on `from`/`to`).** Status as of 2026-08-21:
+  GA (https://developers.cloudflare.com/email-service/examples/email-sending/recipients/),
+  resolves 200 per `curl -sI`. What cairn does today: `src/lib/email.ts:75` sends `from`/`to` as
+  bare address strings, no display name. Why not adopted: a branded sender name is a site's own
+  choice, not the engine's, so cairn has nothing to change until a site asks. Trigger: a consumer
+  site wants a display name on its login mail.
+
+- **D1 Sessions API and read replication.** Status as of 2026-08-21: public beta since
+  2025-04-10 per D1's own release notes
+  (https://developers.cloudflare.com/d1/platform/release-notes/); no GA entry as of this writing
+  (corrects the "both GA" claim the Next-tier platform-features entry made for this feature).
+  What cairn does today: the auth store (`src/lib/auth/store.ts:34`) uses the plain D1 binding, no
+  session, no read replica. Why not adopted: not yet, the auth store's traffic is low-volume and
+  correctness-critical, exactly where a beta consistency model warrants waiting for GA. Trigger: a
+  GA entry appears in D1's release notes.
+
+- **Cloudflare Images binding.** Status as of 2026-08-21: GA since 2026-06-10
+  (https://developers.cloudflare.com/changelog/post/2026-06-10-hosted-images-binding/). What
+  cairn does today: cairn builds `/cdn-cgi/image/<options>/` transform URLs directly
+  (`src/lib/media/transform-url.ts:57`). Why not adopted: the URL design is edge-cached with zero
+  Worker CPU per request, and stays; the binding would trade that for CPU time cairn does not need
+  to spend. Trigger: a transform a consumer needs that the URL API cannot express.
 
 ## Considering
 

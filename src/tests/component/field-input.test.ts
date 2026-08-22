@@ -22,7 +22,7 @@ function shared() {
 describe('FieldInput name-prefix contract', () => {
   it('uses the prefixed name on a leaf input and reads its value from the slice', async () => {
     const field: NamedField = { type: 'text', name: 'q', label: 'Q' };
-    render(FieldInput, { field, name: 'faq.0.q', frontmatter: { q: 'hi' }, ...shared() });
+    await render(FieldInput, { field, name: 'faq.0.q', frontmatter: { q: 'hi' }, ...shared() });
     const input = document.querySelector<HTMLInputElement>('input[name="faq.0.q"]');
     expect(input).not.toBeNull();
     expect(input?.value).toBe('hi');
@@ -30,7 +30,7 @@ describe('FieldInput name-prefix contract', () => {
 
   it('builds the image hidden inputs off the prefixed name (gallery.0.src)', async () => {
     const field: NamedField = { type: 'image', name: 'photo', label: 'Photo' };
-    render(FieldInput, { field, name: 'gallery.0', frontmatter: {}, ...shared() });
+    await render(FieldInput, { field, name: 'gallery.0', frontmatter: {}, ...shared() });
     const src = document.querySelector('input[name="gallery.0.src"]');
     expect(src).not.toBeNull();
   });
@@ -39,8 +39,8 @@ describe('FieldInput name-prefix contract', () => {
 describe('FieldInput hint id uniqueness across a shared local name', () => {
   it('keys the hint id off the prefixed name, not the leaf field name, so two rows never collide', async () => {
     const field: NamedField = { type: 'text', name: '_value', label: 'Value', help: 'A hint.' };
-    const rowOne = render(FieldInput, { field, name: 'gallery.0', frontmatter: { _value: 'a' }, ...shared() });
-    const rowTwo = render(FieldInput, { field, name: 'gallery.1', frontmatter: { _value: 'b' }, ...shared() });
+    const rowOne = await render(FieldInput, { field, name: 'gallery.0', frontmatter: { _value: 'a' }, ...shared() });
+    const rowTwo = await render(FieldInput, { field, name: 'gallery.1', frontmatter: { _value: 'b' }, ...shared() });
 
     const inputOne = document.querySelector<HTMLInputElement>('input[name="gallery.0"]')!;
     const inputTwo = document.querySelector<HTMLInputElement>('input[name="gallery.1"]')!;
@@ -59,35 +59,35 @@ describe('FieldInput hint id uniqueness across a shared local name', () => {
 describe('FieldInput required attribute', () => {
   it('renders required on a required textarea', async () => {
     const field: NamedField = { type: 'textarea', name: 'summary', label: 'Summary', required: true };
-    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    await render(FieldInput, { field, frontmatter: {}, ...shared() });
     const textarea = document.querySelector<HTMLTextAreaElement>('textarea[name="summary"]');
     expect(textarea?.required).toBe(true);
   });
 
   it('omits required on an optional textarea', async () => {
     const field: NamedField = { type: 'textarea', name: 'summary', label: 'Summary' };
-    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    await render(FieldInput, { field, frontmatter: {}, ...shared() });
     const textarea = document.querySelector<HTMLTextAreaElement>('textarea[name="summary"]');
     expect(textarea?.required).toBe(false);
   });
 
   it('renders required on a required date field', async () => {
     const field: NamedField = { type: 'date', name: 'date', label: 'Date', required: true };
-    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    await render(FieldInput, { field, frontmatter: {}, ...shared() });
     const input = document.querySelector<HTMLInputElement>('input[name="date"]');
     expect(input?.required).toBe(true);
   });
 
   it('omits required on an optional date field', async () => {
     const field: NamedField = { type: 'date', name: 'date', label: 'Date' };
-    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    await render(FieldInput, { field, frontmatter: {}, ...shared() });
     const input = document.querySelector<HTMLInputElement>('input[name="date"]');
     expect(input?.required).toBe(false);
   });
 
   it('renders required on a required open (free-form) multiselect', async () => {
     const field: NamedField = { type: 'multiselect', name: 'tags', label: 'Tags', required: true } as NamedField;
-    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    await render(FieldInput, { field, frontmatter: {}, ...shared() });
     const input = document.querySelector<HTMLInputElement>('input[name="tags"]');
     expect(input?.required).toBe(true);
   });
@@ -107,7 +107,7 @@ describe('FieldInput closed-multiselect required signal', () => {
   } as NamedField;
 
   it('is invalid with a custom message when the required group has no box checked', async () => {
-    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    await render(FieldInput, { field, frontmatter: {}, ...shared() });
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][name="tags"]');
     expect(boxes.length).toBe(2);
     let invalidFired = false;
@@ -120,7 +120,7 @@ describe('FieldInput closed-multiselect required signal', () => {
   });
 
   it('clears the custom validity the instant a box is checked, and re-sets it when unchecked', async () => {
-    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    await render(FieldInput, { field, frontmatter: {}, ...shared() });
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][name="tags"]');
     boxes[1].checked = true;
     boxes[1].dispatchEvent(new Event('change', { bubbles: true }));
@@ -135,7 +135,7 @@ describe('FieldInput closed-multiselect required signal', () => {
 
   it('never sets a custom validity message on an optional closed multiselect', async () => {
     const optional: NamedField = { ...field, required: false } as NamedField;
-    render(FieldInput, { field: optional, frontmatter: {}, ...shared() });
+    await render(FieldInput, { field: optional, frontmatter: {}, ...shared() });
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][name="tags"]');
     expect(boxes[0].checkValidity()).toBe(true);
   });
@@ -152,7 +152,7 @@ describe('FieldInput closed-multiselect orphan flag', () => {
   } as NamedField;
 
   it('flags an orphan option as a checked, removable, "not in your tag list" checkbox', async () => {
-    render(FieldInput, {
+    await render(FieldInput, {
       field,
       frontmatter: { topics: ['a', 'legacy'] },
       orphanTags: ['legacy'],
@@ -170,7 +170,7 @@ describe('FieldInput closed-multiselect orphan flag', () => {
   });
 
   it('renders a vocabulary option as a plain checkbox with no orphan flag', async () => {
-    render(FieldInput, {
+    await render(FieldInput, {
       field,
       frontmatter: { topics: ['a', 'legacy'] },
       orphanTags: ['legacy'],

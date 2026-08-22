@@ -46,9 +46,12 @@ tidy:
   model: claude-haiku-4-5
 ```
 
-The default is `claude-sonnet-4-6`, the judgment floor for a light copy-edit; `claude-haiku-4-5`
-is the cheaper, faster alternative for a site running many tidy passes. Both are visible and
-changeable from the settings screen, so this is a starting default rather than a one-way choice.
+The default is `claude-sonnet-5`, the judgment floor for a light copy-edit, run at the low effort
+tier since a proofread doesn't need extended reasoning. `claude-haiku-4-5` is the cheaper, faster
+alternative for a site running many tidy passes. The chosen model is a developer-tier setting: an
+editor sees it, labeled plainly, on the settings screen, but changing it means editing
+`tidy.model` here and redeploying, so this is a starting default rather than a one-way choice, not
+a control an editor flips themselves.
 
 ## Choose the conventions
 
@@ -107,8 +110,9 @@ the prompt, not by this check, since no structural comparison can verify voice.
 
 ## What a run costs and refuses
 
-A draft over roughly 24,000 characters (about 6,000 input tokens) is refused before the model is
-ever called, with a message naming the limit; select a shorter passage and tidy that instead. The
+A draft over roughly 24,000 characters (at most about 8,000 input tokens under Sonnet 5's
+tokenizer) is refused before the model is ever called, with a message naming the limit; select a
+shorter passage and tidy that instead. The
 settings screen's key-health check caches its result for ten minutes, so a key you just fixed can
 take a few minutes to show as healthy again. In local development, the SDK is never actually
 called: the dev backend injects a stubbed Anthropic client, so building and testing a site never

@@ -536,7 +536,7 @@ describe('settings view', () => {
     return {
       ...runtime(),
       navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Nav', maxDepth: 2 },
-      tidy: { enabled: true, model: 'claude-sonnet-4-6' },
+      tidy: { enabled: true, model: 'claude-sonnet-5' },
     };
   }
 
@@ -579,7 +579,7 @@ describe('settings view', () => {
     expect(data.page.enabled).toBe(true);
     expect(data.page.keyConfigured).toBe(true);
     expect(data.page.keyStatus).toBe('valid');
-    expect(data.page.modelLabel).toBe('Claude Sonnet');
+    expect(data.page.modelLabel).toBe('Claude Sonnet 5');
   });
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "@glw907/cairn-cms-dev",
-  "version": "0.95.0",
+  "version": "0.96.0",
   "description": "Local-development fake backend for cairn-cms sites. Never install in production.",
   "type": "module",
   "license": "MIT",

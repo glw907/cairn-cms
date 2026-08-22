@@ -9,7 +9,7 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
-## Unreleased
+## 0.96.0
 
 The release step sets the version number at the cut and renames this section to match it. This
 window raises three toolchain floors.
@@ -48,7 +48,7 @@ unaffected. A newly scaffolded site starts on `compatibility_date` `2026-08-21` 
 redundant `nodejs_compat` flag; an existing site keeps its own. The rest is documentation, gates,
 and internal tooling that ships in no tarball.
 
-See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
+See [`CHANGELOG.md`](../../CHANGELOG.md#0960).
 
 ## 0.95.0
 

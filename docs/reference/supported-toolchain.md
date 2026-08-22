@@ -17,7 +17,7 @@ column only; the rest of this page is accurate as of its last edit.
 
 | Part | Target today | Where it's set | How often it moves |
 |---|---|---|---|
-| The cairn package | `0.95.0` | `package.json`, the `@glw907/cairn-cms` version | On a release whose changelog carries a `Consumers must:` line |
+| The cairn package | `0.96.0` | `package.json`, the `@glw907/cairn-cms` version | On a release whose changelog carries a `Consumers must:` line |
 | Node, on your machine | `>=24` | `engines.node` in cairn's own `package.json` | Rarely, on Node's own Active LTS calendar |
 | SvelteKit | `^2.70` | cairn's `peerDependencies` | Rarely, only when a feature needs a newer SvelteKit capability |
 | Svelte | `^5.56.10` | cairn's `peerDependencies` | Rarely, on the same cadence as SvelteKit |

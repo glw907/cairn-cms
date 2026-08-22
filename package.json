@@ -188,6 +188,7 @@
   ],
   "peerDependencies": {
     "@anthropic-ai/sdk": ">=0.105.0 <1",
+    "@cloudflare/workers-types": "^5",
     "@sveltejs/kit": "^2.70",
     "svelte": "^5.56.10"
   },

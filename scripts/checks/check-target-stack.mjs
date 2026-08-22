@@ -74,6 +74,7 @@ export function expectedTargets({ root = ROOT } = {}) {
     'Node, on your machine': rootPkg.engines.node,
     'SvelteKit': rootPkg.peerDependencies['@sveltejs/kit'],
     'Svelte': rootPkg.peerDependencies.svelte,
+    '`@cloudflare/workers-types`': rootPkg.peerDependencies['@cloudflare/workers-types'],
     'Wrangler': templatePkg.devDependencies.wrangler,
     '`@sveltejs/adapter-cloudflare`': templatePkg.devDependencies['@sveltejs/adapter-cloudflare'],
     'The Workers `compatibility_date`': wrangler.compatibility_date,

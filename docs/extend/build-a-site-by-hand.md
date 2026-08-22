@@ -139,12 +139,17 @@ and no DNS touched.
 **Objective:** the cairn admin, running at `/admin` on your machine, with one content concept,
 backed by an in-memory double that needs no GitHub App and no database yet.
 
-Install the engine and its local-development companion:
+Install the engine, its local-development companion, and `@cloudflare/workers-types`:
 
 ```bash
 npm install @glw907/cairn-cms
-npm install -D @glw907/cairn-cms-dev
+npm install -D @glw907/cairn-cms-dev @cloudflare/workers-types
 ```
+
+cairn's own shipped `.d.ts` files import `D1Database`, `R2Bucket`, and other Cloudflare types
+directly from `@cloudflare/workers-types`, so it's a required `devDependency` even if you generate
+your own binding types with `wrangler types`. cairn declares it as a `peerDependency`, so a plain
+`npm install` without it refuses to resolve.
 
 `@glw907/cairn-cms-dev` stands in for the GitHub commit pipeline and the magic-link sign-in loop
 with in-memory fakes, so you can build and click through the whole admin before either one

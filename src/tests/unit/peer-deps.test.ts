@@ -8,7 +8,7 @@ const pkg = JSON.parse(readFileSync(new URL('../../../package.json', import.meta
 };
 
 describe('package dependency contract', () => {
-  const peers = ['@sveltejs/kit', 'svelte'];
+  const peers = ['@sveltejs/kit', 'svelte', '@cloudflare/workers-types'];
   // The bare `codemirror` meta-package is not itself in this list: nothing imports it (only the
   // scoped @codemirror/* subpackages below are ever value-imported), so it is not a dependency.
   const editorDeps = ['@codemirror/lang-markdown', '@codemirror/state', '@codemirror/view'];
@@ -33,6 +33,17 @@ describe('package dependency contract', () => {
 
   it('floors @sveltejs/kit at ^2.70, the version cairn develops and tests against', () => {
     expect(pkg.peerDependencies?.['@sveltejs/kit']).toBe('^2.70');
+  });
+
+  it('floors @cloudflare/workers-types at ^5, the installed major', () => {
+    // cairn's own shipped .d.ts files (env.d.ts, sveltekit/audit-sink.d.ts,
+    // sveltekit/platform-bindings.d.ts, sveltekit/preview.d.ts, auth/store.d.ts,
+    // auth/preview-store.d.ts, auth-channel/store.d.ts, auth-channel/factory.d.ts,
+    // media/store.d.ts) import named types directly from this package, so a consumer who
+    // generates bindings with `wrangler types` and skips this install loses every cairn-typed
+    // D1Database/R2Bucket/RateLimit signature to an unresolvable-import `any` under
+    // skipLibCheck, with no red TS2307 to notice it by.
+    expect(pkg.peerDependencies?.['@cloudflare/workers-types']).toBe('^5');
   });
 
   it('no longer declares carta-md anywhere', () => {

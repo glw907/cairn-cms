@@ -1228,9 +1228,17 @@ reason `branch_gone`.
 including both refusal classes: `/preview` sits outside `/admin`, so the admin guard's own header
 layer never reaches it. It reads no cookie, sets none, and never touches
 `locals.cairnEditor`/`locals.cairnAccess`; the token alone is the credential. It throws a
-descriptive build-time error when `building` (`$app/environment`) is true, so a site that lets this
-route prerender gets a red build naming the fix (`export const prerender = false;`) instead of a
-token-bearing static asset.
+descriptive build-time error when `building` (`$app/environment`, read through a dynamic import at
+call time rather than a module-scope import, so importing any other `/sveltekit` barrel export
+never pulls in this virtual module) is true, so a site that lets this route prerender gets a red
+build naming the fix (`export const prerender = false;`) instead of a token-bearing static asset.
+
+The returned `seo` never carries `canonical`, `og:url`, or `jsonLd.url`: a preview render is
+already `noindex`ed, but a self-referential `canonical`/`og:url` pointing at a URL that is not yet
+live (or, for the ended page, already superseded) would still invite a crawler to consolidate the
+preview onto it, and an unfurler that ignores `noindex` reads these fields directly regardless.
+This is about the page's own advertised identity, not the token, which lives only in the route
+path and never appears on the page.
 
 ```ts
 // src/routes/(site)/preview/[token]/+page.server.ts

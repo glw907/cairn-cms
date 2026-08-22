@@ -351,6 +351,25 @@ describe('previewLoad: the draft render', () => {
     expect(headers).toContainEqual(EXPECTED_HEADERS);
   });
 
+  it('strips canonical, og:url, and jsonLd.url from seo, since a preview must not self-canonicalize onto a not-yet-live URL', async () => {
+    const gh = freshGithub({
+      branch: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody' },
+      main: { [MANIFEST_PATH]: manifestWith([]) },
+    });
+    gh.install();
+    const token = await mintValidToken();
+    const { event } = loadEvent(token);
+    const data = (await previewLoad(runtime(), publicConfig(), event as never)) as PreviewData;
+
+    expect(data.seo.links.find((l) => l.rel === 'canonical')).toBeUndefined();
+    expect(data.seo.meta.find((m) => m.property === 'og:url')).toBeUndefined();
+    expect(data.seo.jsonLd).not.toHaveProperty('url');
+    // The rest of the head survives the strip untouched: this is a targeted removal, not a
+    // stand-in for a whole different (impoverished) preview head.
+    expect(data.seo.title).toBeTruthy();
+    expect(data.seo.meta.find((m) => m.property === 'og:title')).toBeDefined();
+  });
+
   it('resolves media from the branch media.json, not the (stale) default branch copy', async () => {
     const hash = '0123456789abcdef';
     const mediaEntry: MediaEntry = {

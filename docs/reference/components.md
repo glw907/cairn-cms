@@ -770,7 +770,7 @@ draft preview](../extend/share-a-draft-preview.md) for the full walkthrough.
 Stability tier: Extension API.
 
 ```ts
-let { preview }: { preview: PreviewData['preview'] };
+let { preview, formatExpiry }: { preview: PreviewData['preview']; formatExpiry?: (iso: string) => string };
 ```
 
 A status notice for a shared preview link, driven only by the `preview` field
@@ -782,6 +782,20 @@ the draft went live (false for the discard case). It links the live permalink wh
 is set, and renders no link when it's `null` (a discarded new entry, which never had a live page).
 A site may ignore this component entirely and render its own banner from the same metadata; this is
 only the default treatment a getting-started site mounts.
+
+The expiry renders inside a `<time datetime>` element, formatted by default as a fixed,
+locale-independent `YYYY-MM-DD HH:MM UTC` string rather than the visitor's own locale: the same
+formatter runs during SSR and hydration, so a Worker whose runtime locale or timezone differs from
+the browser's own cannot render two different strings and cause a hydration mismatch. Pass the
+optional `formatExpiry` prop to render the expiry in a site's own fixed date vocabulary instead.
+
+The four custom properties the component's default palette reads
+(`--cairn-preview-bg`/`-fg`/`-border`/`-link`) are the site-override seam: they fall back to
+literal light- and dark-mode colors switched only by `prefers-color-scheme`, the OS-level signal.
+A site that themes by its own toggle (a `data-theme` attribute, a class) declares all four in its
+own light root and in both its `prefers-color-scheme: dark` and its own dark selector, so the
+banner follows the toggle rather than the OS preference; see [Override the banner's
+palette](../extend/share-a-draft-preview.md#override-the-banners-palette) for a worked example.
 
 ```svelte
 <script lang="ts">

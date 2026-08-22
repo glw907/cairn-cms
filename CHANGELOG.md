@@ -137,6 +137,48 @@
   re-exported it, so no supported import path could reach it. Consumers must: nothing; this
   package ships in no tarball a site installs for production.
 
+- `@cloudflare/workers-types` is now a `peerDependency` at `^5`, alongside its existing
+  `devDependency`. cairn's own shipped `.d.ts` files import named types (`D1Database`, `R2Bucket`,
+  `RateLimit`, and others) directly from this package, so a consumer generating its own binding
+  types with `wrangler types`, the now-recommended replacement for installing
+  `@cloudflare/workers-types` directly, still needs the package installed or every cairn-typed
+  binding signature silently degrades to an unresolvable-import `any` under `skipLibCheck: true`
+  (a common default), with no red `TS2307` to flag the gap. Consumers must: install
+  `@cloudflare/workers-types@^5` as a devDependency (a site on `wrangler types` still needs it,
+  since cairn's declarations import from it); npm's default peer resolution refuses the install
+  otherwise.
+
+### Fixed
+
+- The `/sveltekit` barrel's `previewLoad` statically imported `building` from `$app/environment`
+  at module scope, so importing any single barrel export, `createD1AuditSink` for a Cloudflare
+  Cron handler bundled outside Vite, pulled in that whole import graph. A consumer bundling that
+  file with a plain, non-Vite esbuild pass (Wrangler's own, at `wrangler dev`/`wrangler deploy`
+  time) failed to resolve `$app/environment`, a virtual module only Vite's SvelteKit plugin knows
+  how to resolve; every package-level gate (`npm run check`, `npm test`, `npm run build`) stayed
+  green throughout, since none of them invoke Wrangler's own bundler. `previewLoad` now reads
+  `building` through a dynamic `await import('$app/environment')` at call time instead, so the
+  barrel's own static import graph never touches a SvelteKit virtual module merely by being
+  re-exported. A new unit test walks the built `/sveltekit` barrel's transitive static-import graph
+  and fails if any module in it statically imports an `$app/` or `$env/` specifier again.
+  Consumers must: nothing; a site that added a wrangler alias for `$app/environment` as a
+  workaround can remove it.
+
+- `previewLoad` (`/sveltekit`) returned `seo` with `canonical`, `og:url`, and `jsonLd.url` still
+  pointing at the entry's eventual public permalink, so a preview render could self-canonicalize
+  onto a URL that was not yet live, or let a crawler or unfurler that ignores `noindex`
+  consolidate a shared draft onto it. `previewLoad` now strips those three fields before
+  returning. Consumers must: nothing; a site that already stripped those fields itself can drop
+  its own strip.
+
+- `PreviewBanner` (`/components`) formatted the preview expiry with
+  `new Intl.DateTimeFormat(undefined, ...)` inside a `$derived`, so a Worker's runtime locale or
+  timezone differing from the visitor's browser could render two different strings during SSR and
+  hydration and produce a hydration mismatch. It now renders a fixed, locale-independent
+  `YYYY-MM-DD HH:MM UTC` string inside a `<time datetime>` element by default, and accepts an
+  optional `formatExpiry?: (iso: string) => string` prop so a site can supply its own stable
+  formatter. Consumers must: nothing.
+
 ## 0.95.0
 
 <!-- release-size: minor -->

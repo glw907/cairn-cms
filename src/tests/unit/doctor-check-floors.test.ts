@@ -165,7 +165,13 @@ describe('config.dependency-floors', () => {
 
   it('passes a fixture site whose lockfile satisfies the real engine peers', async () => {
     const result = await configDependencyFloors.run(
-      ctx({ 'package-lock.json': lockV3({ svelte: '5.56.10', '@sveltejs/kit': '2.70.0' }) })
+      ctx({
+        'package-lock.json': lockV3({
+          svelte: '5.56.10',
+          '@sveltejs/kit': '2.70.0',
+          '@cloudflare/workers-types': '5.20260821.1',
+        }),
+      })
     );
     expect(result.status).toBe('pass');
   });

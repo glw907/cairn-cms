@@ -21,6 +21,7 @@ column only; the rest of this page is accurate as of its last edit.
 | Node, on your machine | `>=24` | `engines.node` in cairn's own `package.json` | Rarely, on Node's own Active LTS calendar |
 | SvelteKit | `^2.70` | cairn's `peerDependencies` | Rarely, only when a feature needs a newer SvelteKit capability |
 | Svelte | `^5.56.10` | cairn's `peerDependencies` | Rarely, on the same cadence as SvelteKit |
+| `@cloudflare/workers-types` | `^5` | cairn's `peerDependencies` | Rarely, on Cloudflare's own major-version cadence |
 | Wrangler | `^4.125.0` | the template's `package.json`, set once when a site is scaffolded | Whenever Cloudflare ships a new Wrangler major |
 | `@sveltejs/adapter-cloudflare` | `^7.2.9` | the template's `package.json` | Follows SvelteKit's own release line |
 | The Workers `compatibility_date` | `2026-08-21` | the template's `wrangler.jsonc`, set once when a site is scaffolded | Moves forward when a new template pulls in a later date; a deployed site's own date never changes on its own |
@@ -37,6 +38,13 @@ reason. The correctness history behind the earlier `^5.56.3` floor still stands 
 svelte `5.56.1` miscompiles parenthesized boolean groupings, and a consumer compiles the
 package's shipped `.svelte` sources directly, so a lower floor would let a broken svelte compile
 a broken component.
+
+**`@cloudflare/workers-types` `^5`.** cairn's own shipped `.d.ts` files import named types
+(`D1Database`, `R2Bucket`, `RateLimit`, and others) directly from this package, so a site needs it
+installed as a `devDependency` even when it generates its own binding types with `wrangler types`,
+the now-recommended replacement for installing `@cloudflare/workers-types` directly. Without it, a
+`skipLibCheck: true` project, a common default, silently loses every cairn-typed binding signature
+to an unresolvable-import `any`, with no red `TS2307` to flag the gap.
 
 **`vite`.** The package declares no `vite` peer dependency, so this table names no target for
 it. The showcase builds on Vite 8. That is a fact about the engine's own toolchain; the gate does

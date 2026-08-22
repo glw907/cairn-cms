@@ -12,7 +12,7 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 ## Unreleased
 
 The release step sets the version number at the cut and renames this section to match it. This
-window raises two toolchain floors.
+window raises three toolchain floors.
 
 - **Run Node 24 or later on your build machine.** `create-cairn-site`'s own preflight now refuses
   a Node 22 install; the engine, the scaffolder, and the dev backend package all raised
@@ -20,10 +20,26 @@ window raises two toolchain floors.
 - **The `@sveltejs/kit` and `svelte` floors moved to the versions cairn now develops and tests
   against.** Be on `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`)
   before installing; npm's default peer resolution refuses the install otherwise.
+- **`@cloudflare/workers-types` is now a peer dependency at `^5`.** Install
+  `@cloudflare/workers-types@^5` as a devDependency, even if you generate your own binding types
+  with `wrangler types`: cairn's own shipped `.d.ts` files import named types directly from this
+  package, so skipping the install silently loses every cairn-typed binding signature to an
+  unresolvable-import `any` under `skipLibCheck: true`, and npm's default peer resolution refuses
+  the install without it.
 
 One more entry carries a conditional action. The exported `TidyClient` type gained an optional
 `output_config` field, which matters only to a hand-rolled `TidyClient` fake that rejects unknown
 body fields.
+
+Three fixes need no consumer action but are worth knowing about. `previewLoad` (`/sveltekit`) no
+longer statically imports `$app/environment` from the `/sveltekit` barrel's module scope, so a
+site that added a Wrangler alias for `$app/environment` to work around the barrel failing to
+resolve in a raw, non-Vite esbuild bundle (a Cron handler wired outside Vite, for example) can
+remove that workaround. `previewLoad` now also strips `canonical`, `og:url`, and `jsonLd.url` from
+the `seo` it returns, so a site that already stripped those fields itself before rendering a
+preview can drop its own strip. `PreviewBanner` (`/components`) now renders its expiry as a fixed
+UTC string instead of the visitor's locale, closing a possible hydration mismatch; a site wanting
+its own date vocabulary can pass the new optional `formatExpiry` prop.
 
 Nothing else in this window asks anything of a consumer. The dependency bumps stay inside their
 own ranges. Tidy's default model changed, and a site that set `tidy.model` explicitly is

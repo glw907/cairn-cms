@@ -4,10 +4,14 @@
 GitHub App, backend, and auth store exist before you write a line of adapter config.
 
 **Precondition:** a SvelteKit app already building against `@sveltejs/adapter-cloudflare` and
-deploying with `wrangler deploy`. If you're starting from nothing, [Build a site by
-hand](./build-a-site-by-hand.md) covers this same setup inline, in the order a from-scratch
-build actually needs it; this page exists so that walkthrough, and any other page reaching this
-credential milestone, links here instead of repeating it.
+deploying with `wrangler deploy`, with `@glw907/cairn-cms` and `@cloudflare/workers-types`
+installed (`npm install @glw907/cairn-cms` and `npm install -D @cloudflare/workers-types`; cairn's
+own shipped `.d.ts` files import `D1Database` and friends directly from the latter, so it's a
+required `devDependency` even if you generate your own binding types with `wrangler types`). If
+you're starting from nothing, [Build a site by hand](./build-a-site-by-hand.md) covers this same
+setup inline, in the order a from-scratch build actually needs it; this page exists so that
+walkthrough, and any other page reaching this credential milestone, links here instead of
+repeating it.
 
 Three things need creating: the GitHub App, the D1 auth database, and the bindings that connect
 your Worker to both. Do them in this order; each one produces a value the next step needs.

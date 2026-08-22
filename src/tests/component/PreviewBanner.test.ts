@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import PreviewBanner from '../../lib/components/PreviewBanner.svelte';
 import type { PreviewData } from '../../lib/sveltekit/preview.js';
@@ -83,6 +83,46 @@ describe('PreviewBanner', () => {
     } finally {
       preflight.remove();
     }
+  });
+
+  it('renders the expiry as a <time> element with a fixed UTC string, independent of the host timezone', async () => {
+    const preview: PreviewData['preview'] = {
+      state: 'draft',
+      expiresAt: '2026-08-20T12:34:00.000Z',
+      published: null,
+    };
+    // A spy, not a locale swap: jsdom/Playwright cannot cheaply re-run a test under a second
+    // timezone, but the default formatter (../../lib/components/PreviewBanner.svelte) reads only
+    // the UTC getters (getUTCFullYear and friends), never Intl.DateTimeFormat. Asserting the
+    // constructor is never called proves the rendered string cannot vary with the host's locale
+    // or timezone, which is what "TZ independence" means for a fixed-offset formatter: there is
+    // no locale-sensitive code path left to vary.
+    const ctorSpy = vi.spyOn(globalThis.Intl, 'DateTimeFormat');
+    try {
+      const screen = await render(PreviewBanner, { preview });
+      const time = screen.container.querySelector('time');
+      expect(time).not.toBeNull();
+      expect(time?.getAttribute('datetime')).toBe('2026-08-20T12:34:00.000Z');
+      expect(time?.textContent).toBe('2026-08-20 12:34 UTC');
+      expect(ctorSpy).not.toHaveBeenCalled();
+    } finally {
+      ctorSpy.mockRestore();
+    }
+  });
+
+  it('lets a site pass its own formatExpiry to render the expiry in its own date vocabulary', async () => {
+    const preview: PreviewData['preview'] = {
+      state: 'draft',
+      expiresAt: '2026-08-20T12:34:00.000Z',
+      published: null,
+    };
+    const formatExpiry = (iso: string) => `custom:${iso}`;
+    const screen = await render(PreviewBanner, { preview, formatExpiry });
+    const time = screen.container.querySelector('time');
+    // The datetime attribute stays the raw, machine-readable ISO string regardless of the
+    // display formatter, per the HTML <time> element's own contract.
+    expect(time?.getAttribute('datetime')).toBe('2026-08-20T12:34:00.000Z');
+    expect(time?.textContent).toBe('custom:2026-08-20T12:34:00.000Z');
   });
 
   it('lets a site override the default palette from :root, since the scoped element never declares the custom property itself', async () => {

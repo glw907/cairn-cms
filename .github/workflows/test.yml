@@ -34,6 +34,14 @@ jobs:
       - run: npm run check
       # The component test project runs in real Chromium via @vitest/browser-playwright.
       - run: npx playwright install --with-deps chromium
+      # dist-sveltekit-app-import-boundary.test.ts (and packaging-boundary.test.ts) need a real
+      # dist/ to run their gate against. `npm ci` above already triggers this through the
+      # `prepare` life cycle script, but that is an implicit dependency on a hook a future
+      # refactor could drop; a step named for its own purpose here is the explicit guarantee.
+      # `npm run package` is otherwise idempotent (svelte-package is a full rebuild every time),
+      # so running it again ahead of the later check:package/check:reference/etc. steps (which
+      # each call it themselves) costs a rebuild, not a correctness risk.
+      - run: npm run package
       - run: npm test
       # Two node:test suites vitest does not reach. The emitter's own tests were never wired into
       # any workflow; the create-cairn-site package is new. Both gate the scaffolded output, so a

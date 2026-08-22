@@ -66,7 +66,7 @@ const OPUS_4_MODEL = /^claude-opus-4-(\d+)/;
 export function supportsEffort(model: string): boolean {
   if (EFFORT_TIER_PREFIXES.some((prefix) => model.startsWith(prefix))) return true;
   const opus4 = OPUS_4_MODEL.exec(model);
-  return opus4 !== undefined && opus4 !== null && Number(opus4[1]) >= 6;
+  return opus4 !== null && Number(opus4[1]) >= 6;
 }
 
 /** Build the tidy action, closed over the shared content-routes context. */

@@ -306,12 +306,25 @@ function stripPreviewSeo(seo: SeoMeta): SeoMeta {
  *  in every other export's own top-level imports, so a module-scope `$app/environment` import
  *  here would break a consumer that bundles a single barrel export (for example
  *  `createD1AuditSink`, for a Cloudflare Cron handler) with a plain, non-Vite esbuild pass that
- *  has no SvelteKit plugin to resolve the virtual module.
+ *  has no SvelteKit plugin to resolve the virtual module. The dynamic import is further wrapped in
+ *  `try`/`catch`: esbuild resolves an unwrapped `import()` literal the same way it resolves a
+ *  static import at bundle time, and still fails the same build even without a barrel re-export in
+ *  the way. A `try`/`catch` around it is esbuild's own documented escape hatch, downgrading the
+ *  unresolvable specifier to a runtime concern instead of a bundle-time error. Outside a real
+ *  SvelteKit build the import always rejects (there is no `$app/environment` module to resolve),
+ *  and `building` falls back to `false`: a `/preview/[token]` route carries a token in its own
+ *  path and is never prerendered, so `false`, meaning "proceed, we are not prerendering," is the
+ *  correct value for every context this fallback can run in.
  */
 export async function previewLoad(runtime: CairnRuntime, config: PublicRoutesConfig, event: CairnEvent): Promise<PreviewData> {
   event.setHeaders(PREVIEW_HEADERS);
 
-  const { building } = await import('$app/environment');
+  let building = false;
+  try {
+    ({ building } = await import('$app/environment'));
+  } catch {
+    building = false;
+  }
   if (building) {
     throw new Error(
       'cairn: previewLoad ran during the build. A preview link is a bearer credential; prerendering ' +

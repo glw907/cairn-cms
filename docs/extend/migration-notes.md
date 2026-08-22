@@ -31,15 +31,16 @@ One more entry carries a conditional action. The exported `TidyClient` type gain
 `output_config` field, which matters only to a hand-rolled `TidyClient` fake that rejects unknown
 body fields.
 
-Three fixes need no consumer action but are worth knowing about. `previewLoad` (`/sveltekit`) no
-longer statically imports `$app/environment` from the `/sveltekit` barrel's module scope, so a
-site that added a Wrangler alias for `$app/environment` to work around the barrel failing to
-resolve in a raw, non-Vite esbuild bundle (a Cron handler wired outside Vite, for example) can
-remove that workaround. `previewLoad` now also strips `canonical`, `og:url`, and `jsonLd.url` from
-the `seo` it returns, so a site that already stripped those fields itself before rendering a
-preview can drop its own strip. `PreviewBanner` (`/components`) now renders its expiry as a fixed
-UTC string instead of the visitor's locale, closing a possible hydration mismatch; a site wanting
-its own date vocabulary can pass the new optional `formatExpiry` prop.
+Three fixes need no consumer action but are worth knowing about. `previewLoad` (`/sveltekit`) now
+reads `$app/environment` through a dynamic import guarded by `try`/`catch`, esbuild's own
+documented escape hatch for downgrading an unresolvable specifier from a bundle-time error to a
+runtime concern, so a site that added a Wrangler alias for `$app/environment` to work around the
+barrel failing to resolve in a raw, non-Vite esbuild bundle (a Cron handler wired outside Vite,
+for example) can remove that workaround. `previewLoad` now also strips `canonical`, `og:url`, and
+`jsonLd.url` from the `seo` it returns, so a site that already stripped those fields itself before
+rendering a preview can drop its own strip. `PreviewBanner` (`/components`) now renders its expiry
+as a fixed UTC string instead of the visitor's locale, closing a possible hydration mismatch; a
+site wanting its own date vocabulary can pass the new optional `formatExpiry` prop.
 
 Nothing else in this window asks anything of a consumer. The dependency bumps stay inside their
 own ranges. Tidy's default model changed, and a site that set `tidy.model` explicitly is

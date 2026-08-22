@@ -156,13 +156,19 @@
   file with a plain, non-Vite esbuild pass (Wrangler's own, at `wrangler dev`/`wrangler deploy`
   time) failed to resolve `$app/environment`, a virtual module only Vite's SvelteKit plugin knows
   how to resolve; every package-level gate (`npm run check`, `npm test`, `npm run build`) stayed
-  green throughout, since none of them invoke Wrangler's own bundler. `previewLoad` now reads
-  `building` through a dynamic `await import('$app/environment')` at call time instead, so the
-  barrel's own static import graph never touches a SvelteKit virtual module merely by being
-  re-exported. A new unit test walks the built `/sveltekit` barrel's transitive static-import graph
-  and fails if any module in it statically imports an `$app/` or `$env/` specifier again.
-  Consumers must: nothing; a site that added a wrangler alias for `$app/environment` as a
-  workaround can remove it.
+  green throughout, since none of them invoke Wrangler's own bundler. A first fix moved the read to
+  a dynamic `await import('$app/environment')` at call time, but esbuild resolves a bare, uncaught
+  dynamic `import()` literal the same way it resolves a static import at bundle time, so the same
+  build still failed. `previewLoad` now wraps that import in `try`/`catch`, esbuild's own documented
+  escape hatch for downgrading an unresolvable specifier from a bundle-time error to a runtime
+  concern, and falls back to `building = false` when the import rejects (a `/preview/[token]` route
+  is never prerendered, so that is the correct value outside a real SvelteKit build). The unit test
+  now reproduces the real consumer failure mode directly, running esbuild's own bundler over the
+  built `/sveltekit` barrel and asserting it succeeds, rather than walking the static import syntax
+  (which a dynamic import can route around). Consumers must: nothing; a site that added a wrangler
+  alias for `$app/environment` as a workaround can remove it, because the barrel's only `$app`
+  import is now a guarded dynamic import that esbuild leaves unresolved at bundle time and the
+  Worker's own try/catch absorbs at runtime.
 
 - `previewLoad` (`/sveltekit`) returned `seo` with `canonical`, `og:url`, and `jsonLd.url` still
   pointing at the entry's eventual public permalink, so a preview render could self-canonicalize

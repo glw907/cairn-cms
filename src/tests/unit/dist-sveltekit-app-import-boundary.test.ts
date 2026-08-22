@@ -4,96 +4,84 @@
 // handler outside SvelteKit's own build, per scripts/wire-scheduled-handler.mjs's own pattern)
 // with Wrangler's own plain esbuild pass, which has no SvelteKit Vite plugin to resolve a virtual
 // module. Importing one name from a barrel pulls in every other export's own top-level imports
-// too, so a module reachable from the barrel's entry that statically imports `$app/*` or `$env/*`
-// breaks that consumer's build even though `npm run check`, `npm test`, and `npm run build` never
-// invoke Wrangler's own bundler and so never see it. This test walks the built barrel's real,
-// transitive static-import graph (dynamic `import()` calls do not count, since those resolve at
-// runtime inside a real SvelteKit app, never at Wrangler's bundle time) and fails if any reachable
-// module carries one. It needs `dist/sveltekit/index.js`; skipIf when the package has not been
-// built, the same precedent as packaging-boundary.test.ts.
+// too, so a module reachable from the barrel's entry that names `$app/*` or `$env/*` anywhere in
+// its build graph breaks that consumer's build, even though `npm run check`, `npm test`, and
+// `npm run build` never invoke Wrangler's own bundler and so never see it. A syntax-level walk of
+// the static import graph is not the right test for this: esbuild resolves a bare, uncaught
+// dynamic `import()` literal the same way it resolves a static import at bundle time (its own
+// documented behavior), so a regression can reappear as a dynamic import that a static-import
+// grep would miss entirely. This test instead reproduces the real consumer failure mode directly:
+// it runs esbuild's own bundler over the built barrel, the same way Wrangler's build does, and
+// asserts the bundle succeeds. It needs `dist/sveltekit/index.js`; unlike the older
+// static-import-graph version of this test (and packaging-boundary.test.ts, which still uses the
+// skip precedent), it fails hard rather than skipping when the package has not been built, so a
+// CI run that forgets to package first cannot silently pass this gate.
 import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
-import { readFileSync as readJsonFile } from 'node:fs';
+import { resolve } from 'node:path';
+import { build } from 'esbuild';
 
 const ROOT = resolve(process.cwd());
 const ENTRY = resolve(ROOT, 'dist/sveltekit/index.js');
-const built = existsSync(ENTRY);
 
-/**
- * Match a static `import ... from '...'` or `export ... from '...'` statement's specifier,
- * including a bare side-effect `import '...'`. Deliberately does not match a dynamic `import(...)`
- * call, which never carries a `from` clause and so never matches either pattern.
- */
-const STATIC_FROM = /(?:^|\n)[ \t]*(?:import|export)\s[^;\n]*?\bfrom\s+(['"])([^'"]+)\1/g;
-const SIDE_EFFECT_IMPORT = /(?:^|\n)[ \t]*import\s+(['"])([^'"]+)\1\s*;/g;
-
-/** Every specifier a static import or re-export statement in `source` names. */
-function staticSpecifiers(source: string): string[] {
-  const out: string[] = [];
-  let m: RegExpExecArray | null;
-  STATIC_FROM.lastIndex = 0;
-  while ((m = STATIC_FROM.exec(source))) out.push(m[2]);
-  SIDE_EFFECT_IMPORT.lastIndex = 0;
-  while ((m = SIDE_EFFECT_IMPORT.exec(source))) out.push(m[2]);
-  return out;
-}
-
-/** Resolve a relative specifier from `fromFile` to a real dist file, or null if none exists. */
-function resolveRelative(fromFile: string, spec: string): string | null {
-  const p = resolve(dirname(fromFile), spec);
-  if (existsSync(p) && !existsSync(p + '/')) return p;
-  if (existsSync(p + '.js')) return p + '.js';
-  if (existsSync(join(p, 'index.js'))) return join(p, 'index.js');
-  return null;
+/** The subset of an `exports` map entry this survey reads: whichever runtime condition wins. */
+interface ExportsTarget {
+  types?: string;
+  svelte?: string;
+  default?: string;
+  worker?: string;
 }
 
 /**
- * Walk every module reachable from `entry` through a static import/export edge, returning the
- * full set of bare (non-relative) specifiers the graph names. A relative specifier that fails to
- * resolve to a real file is itself reported (prefixed), rather than silently dropped, so a broken
- * edge cannot hide a real one past it.
+ * Bundle `dist/sveltekit/index.js` with esbuild, `platform: 'neutral'` (no built-in externals of
+ * its own, so nothing is excused by a platform default), the same way Wrangler's own plain esbuild
+ * pass bundles a Worker. `$app/*` and `$env/*` are deliberately never in the external list: they
+ * are the exact specifiers a raw esbuild pass cannot resolve (no SvelteKit Vite plugin to supply
+ * the virtual module), so marking them external would hide the very regression this test exists to
+ * catch. Every other external is a real Node builtin or workers-only npm package the barrel's
+ * dependency graph reaches for reasons unrelated to `$app`/`$env` (`gray-matter`'s `fs` read,
+ * `@anthropic-ai/sdk`'s `node:*` credential-chain probes and its `standardwebhooks` dependency),
+ * each one resolvable in a real Wrangler/workerd bundle (`node:*` through `nodejs_compat`,
+ * `standardwebhooks` through `node_modules`) but irrelevant to the question this test asks.
  */
-function walkStaticImportGraph(entry: string): Set<string> {
-  const visited = new Set<string>();
-  const external = new Set<string>();
-  const stack = [entry];
-  while (stack.length > 0) {
-    const file = stack.pop() as string;
-    if (visited.has(file)) continue;
-    visited.add(file);
-    if (!existsSync(file)) continue;
-    const source = readFileSync(file, 'utf8');
-    for (const spec of staticSpecifiers(source)) {
-      if (spec.startsWith('.')) {
-        const resolved = resolveRelative(file, spec);
-        if (resolved) stack.push(resolved);
-        else external.add(`${spec} (unresolved from ${file})`);
-      } else {
-        external.add(spec);
-      }
+async function bundleBarrel() {
+  return build({
+    entryPoints: [ENTRY],
+    bundle: true,
+    platform: 'neutral',
+    write: false,
+    logLevel: 'silent',
+    external: ['node:*', 'fs', 'standardwebhooks'],
+  });
+}
+
+describe('the /sveltekit barrel bundles cleanly with a plain, non-Vite esbuild pass', () => {
+  it('reproduces the real consumer failure mode: esbuild --bundle over dist/sveltekit/index.js resolves $app/environment (or fails closed)', async () => {
+    if (!existsSync(ENTRY)) {
+      throw new Error(
+        'dist/sveltekit/index.js is missing; run `npm run package` before `npm test`. This gate ' +
+          'fails hard rather than skipping, so a CI run that forgets to package first cannot pass it silently.',
+      );
     }
-  }
-  return external;
-}
 
-describe('the /sveltekit barrel (needs dist/sveltekit/index.js; run npm run package to unskip)', () => {
-  it.skipIf(!built)('statically imports no $app/ or $env/ specifier anywhere in its transitive graph', () => {
-    const external = walkStaticImportGraph(ENTRY);
-    const offenders = [...external].filter((s) => s.startsWith('$app/') || s.startsWith('$env/'));
-    expect(offenders).toEqual([]);
+    const result = await bundleBarrel();
+    expect(result.errors).toEqual([]);
   });
 });
 
-describe('the other exported subpaths (needs their dist entries; run npm run package to unskip)', () => {
-  // A survey, not a gate: `./components` and `./reproductions` both carry a static `$app/`
-  // import today (through client-only .svelte components that Wrangler's own esbuild pass never
-  // touches, since it cannot even parse a .svelte file without the SvelteKit Vite plugin), so
-  // this is informational rather than asserted. `./sveltekit` is the one subpath a raw,
-  // server-side, non-Vite bundler is documented to reach directly.
-  it.skipIf(!built)('reports which barrels carry a static $app/ or $env/ import today', () => {
-    const pkg = JSON.parse(readJsonFile(resolve(ROOT, 'package.json'), 'utf8')) as {
-      exports: Record<string, { types?: string; svelte?: string; default?: string; worker?: string } | string>;
+describe('the other exported subpaths (informational only, not gated)', () => {
+  // `./components` and `./reproductions` both carry a static `$app/` import today, reached only
+  // through client-only `.svelte` components a raw esbuild pass cannot even parse without the
+  // SvelteKit Vite plugin (so their bundle fails for an unrelated reason, and the `$app`/`$env`
+  // filter below reports nothing for them). `./sveltekit` is the one subpath a raw, server-side,
+  // non-Vite bundler is documented to reach directly, and it is the describe block above's own
+  // gate, not this survey's. This is a log, not an assertion, so a future subpath carrying its own
+  // reachable `$app`/`$env` import is visible in a test run without failing the whole suite over a
+  // subpath this task deliberately leaves alone.
+  it('reports which barrels still fail to bundle over an unresolved $app/ or $env/ specifier', async () => {
+    if (!existsSync(ENTRY)) return;
+    const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')) as {
+      exports: Record<string, ExportsTarget | string>;
     };
     const report: Record<string, string[]> = {};
     for (const [key, value] of Object.entries(pkg.exports)) {
@@ -102,14 +90,22 @@ describe('the other exported subpaths (needs their dist entries; run npm run pac
       if (!jsEntry) continue;
       const entryPath = resolve(ROOT, jsEntry);
       if (!existsSync(entryPath)) continue;
-      const external = walkStaticImportGraph(entryPath);
-      const offenders = [...external].filter((s) => s.startsWith('$app/') || s.startsWith('$env/'));
-      if (offenders.length > 0) report[key] = offenders;
+      try {
+        await build({
+          entryPoints: [entryPath],
+          bundle: true,
+          platform: 'neutral',
+          write: false,
+          logLevel: 'silent',
+          external: ['node:*', 'fs', 'standardwebhooks'],
+        });
+      } catch (e) {
+        const errors = (e as { errors?: { text: string }[] }).errors ?? [];
+        const offenders = errors.filter((m) => /Could not resolve "(\$app|\$env)\//.test(m.text)).map((m) => m.text);
+        if (offenders.length > 0) report[key] = offenders;
+      }
     }
-    // Not an assertion on the report's contents (that would just re-encode today's known
-    // exceptions as a second gate); printing it is what makes a future regression visible in a
-    // test log without failing the whole suite over a subpath this task deliberately leaves alone.
-    console.log('static $app/$env import survey:', report);
+    console.log('esbuild $app/$env bundle survey:', report);
     expect(report['./sveltekit']).toBeUndefined();
   });
 });

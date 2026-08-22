@@ -27,12 +27,12 @@
   that the TypeScript 7 hold (ROADMAP.md, "TypeScript 7 is held on the toolchain") is ready to
   lift. Consumers must: nothing.
 
-- `VariantSpec.fit` (`/media`) accepts Cloudflare Images' `aspect-crop` and `scale-up` fit modes,
-  and a new `VariantSpec.upscale` option (`interpolate` or `generate`) picks the algorithm a
-  fit mode that upscales uses, both from Cloudflare's 2026-06-16 optimization GA. `upscale` joins
-  the `/cdn-cgi/image` option string only when set. `normalizeAssets` validates the two new fit
-  values and `upscale` the same way it already validates `fit` and `gravity`. Consumers must:
-  nothing; additive.
+- `VariantSpec.fit` (`/media`) accepts Cloudflare Images' `aspect-crop`, `scale-up`, and
+  `squeeze` fit modes, and a new `VariantSpec.upscale` option (`interpolate` or `generate`)
+  picks the algorithm a fit mode that upscales uses, both from Cloudflare's 2026-06-16
+  optimization GA. `upscale` joins the `/cdn-cgi/image` option string only when set.
+  `normalizeAssets` validates the three new fit values and `upscale` the same way it already
+  validates `fit` and `gravity`. Consumers must: nothing; additive.
 
 ### Changed
 
@@ -130,10 +130,10 @@
   Consumers must: nothing, unless a hand-rolled `TidyClient` fake rejects unknown body fields.
 
 - `@glw907/cairn-cms-dev`'s `createChannelDb` no longer carries a runtime Node.js floor guard.
-  That package's `engines.node` (`>=24`) already enforces the floor at install time, and
-  `node:sqlite` has been unflagged since Node.js 22.13, well below it, so the guard checked a
-  condition that could not occur. Consumers must: nothing; this package ships in no tarball a site
-  installs for production.
+  npm warns on an `engines` mismatch (`create-cairn-site`'s own preflight is what refuses
+  outright, elsewhere in this family), and `node:sqlite` has been unflagged since Node.js 22.13,
+  well below the `>=24` floor, so the guard checked a condition that could not occur. Consumers
+  must: nothing; this package ships in no tarball a site installs for production.
 
 ## 0.95.0
 

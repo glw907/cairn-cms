@@ -56,6 +56,7 @@ const FIT_VALUES: ReadonlySet<string> = new Set([
   'pad',
   'aspect-crop',
   'scale-up',
+  'squeeze',
 ]);
 /** The upscale algorithm values Cloudflare Images accepts. */
 const UPSCALE_VALUES: ReadonlySet<string> = new Set(['interpolate', 'generate']);

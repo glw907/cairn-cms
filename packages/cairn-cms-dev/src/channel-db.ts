@@ -33,8 +33,9 @@ export interface ChannelDb {
  * the channel store touches. `withSession` ignores its constraint argument and shares this one
  * database: single-node SQLite already satisfies D1's first-primary session guarantee.
  *
- * No runtime floor guard: `engines.node` (`>=24`) already enforces the floor at install time,
- * and `node:sqlite` has been unflagged since Node.js 22.13, well below this package's floor.
+ * No runtime floor guard: `node:sqlite` has been unflagged since Node.js 22.13, well below this
+ * package's own `engines.node` (`>=24`), so the version npm merely warns about on a mismatch is
+ * already past the point where `node:sqlite` needs one.
  */
 export async function createChannelDb(schemaSql: string): Promise<ChannelDb> {
   const { DatabaseSync } = await import('node:sqlite');

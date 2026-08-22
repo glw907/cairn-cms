@@ -19,9 +19,11 @@ export interface VariantSpec {
   quality?: number;
   /**
    * How the image fits the target box. `aspect-crop` crops to the target aspect ratio without
-   *  upscaling; `scale-up` enlarges to fit while preserving aspect ratio and never downscales.
+   *  upscaling; `scale-up` enlarges to fit while preserving aspect ratio and never downscales;
+   *  `squeeze` resizes to exactly the requested width and height, distorting the aspect ratio
+   *  when the source does not already match it.
    */
-  fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad' | 'aspect-crop' | 'scale-up';
+  fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad' | 'aspect-crop' | 'scale-up' | 'squeeze';
   /** Crop focus, `auto` or `face` or a coordinate string. */
   gravity?: 'auto' | 'face' | string;
   /** Output format, `auto` to let Cloudflare negotiate, or a forced codec. */

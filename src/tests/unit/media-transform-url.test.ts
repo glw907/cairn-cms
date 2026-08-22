@@ -51,6 +51,11 @@ describe('variantUrl', () => {
     expect(out).toContain('fit=scale-up');
   });
 
+  it('carries the squeeze fit mode', () => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, height: 600, fit: 'squeeze' });
+    expect(out).toContain('fit=squeeze');
+  });
+
   it('carries an explicit upscale option', () => {
     const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up', upscale: 'generate' });
     expect(out).toContain('upscale=generate');
@@ -61,9 +66,15 @@ describe('variantUrl', () => {
     expect(out).toContain('upscale=interpolate');
   });
 
-  it('emits nothing for upscale when unset', () => {
-    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up' });
-    expect(out).not.toContain('upscale');
+  it('emits upscale only when the spec sets it', () => {
+    const withUpscale = variantUrl(PUBLIC_PATH, {
+      width: 800,
+      fit: 'scale-up',
+      upscale: 'generate',
+    });
+    const withoutUpscale = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up' });
+    expect(withUpscale).toContain('upscale=generate');
+    expect(withoutUpscale).not.toContain('upscale');
   });
 });
 

@@ -275,7 +275,7 @@ interface VariantSpec {
   width?: number;
   height?: number;
   quality?: number;
-  fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad' | 'aspect-crop' | 'scale-up';
+  fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad' | 'aspect-crop' | 'scale-up' | 'squeeze';
   gravity?: 'auto' | 'face' | string;
   format?: 'auto' | 'webp' | 'avif' | string;
   upscale?: 'interpolate' | 'generate';

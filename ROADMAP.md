@@ -843,17 +843,25 @@ the named human gates only):**
 
 - **Platform features now available and unused (surveyed 2026-08-21).** Tailwind 4.3 ships
   logical-property spacing (`pbs-*`, `mbs-*`, `inset-s-*`), `@container-size`, and stacked
-  `@variant`; DaisyUI 5.7 ships `menu-paged` for keyboard travel through nested menus. Cloudflare
-  Email Sending's named recipients (`{email, name}` on `from`/`to`) is GA. Neither closes a live
-  defect, so neither is a task; each is the sanctioned form to reach for when its shape next comes
-  up (an RTL audit, a nested admin menu, a branded sender name). D1's Sessions API moved to
-  Later's "Platform watch: Cloudflare" list: 2026-08-21 re-verification against D1's own release
-  notes found no GA entry, correcting this entry's earlier "both GA" claim. Tailwind 4.3's
-  `scrollbar-*` utilities are no longer on this list: the
-  newest-toolchain pass replaced `cairn-admin.css`'s hand-written `scrollbar-width`/
-  `scrollbar-color` declarations with them. The `.btn-active` hand-repairs in `cairn-admin.css`
-  were re-verified against 5.7.20: the dark-theme rules still earn their place, and the light
-  theme follows stock.
+  `@variant`; DaisyUI 5.7 ships `menu-paged` for keyboard travel through nested menus.
+  Neither closes a live defect, so neither is a task; each is the sanctioned form to reach
+  for when its shape next comes up (an RTL audit, a nested admin menu). Every Cloudflare
+  platform item this survey turns up lives in Later's "Platform watch: Cloudflare" list
+  instead, so a single heading carries the whole tracked set for the monthly routine that
+  reads it. Tailwind 4.3's `scrollbar-*` utilities are no longer on this list: the
+  newest-toolchain pass replaced `cairn-admin.css`'s hand-written
+  `scrollbar-width`/`scrollbar-color` declarations with them. The `.btn-active` hand-repairs
+  in `cairn-admin.css` were re-verified against 5.7.20: the dark-theme rules still earn their
+  place, and the light theme follows stock.
+
+- **Route the scaffolder's App key through `wrangler deploy --secrets-file` so a scaffolded site
+  gets the `secrets.required` deploy guard too.** The showcase `wrangler.jsonc` declares
+  `secrets.required` (this pass) inside a `cairn-template:exclude` block, because
+  `create-cairn-site` deploys before the App's key exists and a first deploy of a Worker with a
+  required secret unset throws (wrangler 4.125, `addRequiredSecretsInheritBindings`); wrangler
+  supports `--secrets-file` on `deploy`, which would let
+  `packages/create-cairn-site/src/cloudflare/chapter.mjs` keep the declaration in the baked
+  template. Size: small-to-medium. Trigger: the next `create-cairn-site` pass.
 
 - **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
   primitives a site composes directly, and the first is the one an extender meets first. (1)
@@ -2199,17 +2207,24 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
 - **Email Sending event subscriptions (bounce, deferred, failed, complained), via Queues.**
   Status as of 2026-08-21: shipped 2026-07-15
   (https://developers.cloudflare.com/changelog/post/2026-07-15-event-subscriptions/). What cairn
-  does today: `src/lib/email.ts` only sees a synchronous send failure at the moment of
+  does today: `src/lib/email.ts:75` only sees a synchronous send failure at the moment of
   `env.EMAIL.send()`; a bounce or complaint that arrives later is invisible to the engine. Why not
   adopted: not yet, single-use magic-link mail does not justify standing up a Queue consumer.
   Trigger: a consumer site reports silent bounce loss, or the engine gains any other reason to run
   a Queue consumer.
 
+- **Email Sending named recipients (`{email, name}` on `from`/`to`).** Status as of 2026-08-21:
+  GA (https://developers.cloudflare.com/email-service/examples/email-sending/recipients/),
+  resolves 200 per `curl -sI`. What cairn does today: `src/lib/email.ts:75` sends `from`/`to` as
+  bare address strings, no display name. Why not adopted: a branded sender name is a site's own
+  choice, not the engine's, so cairn has nothing to change until a site asks. Trigger: a consumer
+  site wants a display name on its login mail.
+
 - **D1 Sessions API and read replication.** Status as of 2026-08-21: public beta since
   2025-04-10 per D1's own release notes
   (https://developers.cloudflare.com/d1/platform/release-notes/); no GA entry as of this writing
   (corrects the "both GA" claim the Next-tier platform-features entry made for this feature).
-  What cairn does today: the auth store (`src/lib/auth/store.ts`) uses the plain D1 binding, no
+  What cairn does today: the auth store (`src/lib/auth/store.ts:34`) uses the plain D1 binding, no
   session, no read replica. Why not adopted: not yet, the auth store's traffic is low-volume and
   correctness-critical, exactly where a beta consistency model warrants waiting for GA. Trigger: a
   GA entry appears in D1's release notes.

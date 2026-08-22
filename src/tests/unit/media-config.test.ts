@@ -59,14 +59,15 @@ describe('normalizeAssets', () => {
     ).toThrow(/cairn:/);
   });
 
-  it('accepts the aspect-crop and scale-up fit modes', () => {
+  it('accepts the aspect-crop, scale-up, and squeeze fit modes', () => {
     const resolved = normalizeAssets({
       bucketBinding: 'X',
-      variants: { crop: { fit: 'aspect-crop' }, up: { fit: 'scale-up' } },
+      variants: { crop: { fit: 'aspect-crop' }, up: { fit: 'scale-up' }, sq: { fit: 'squeeze' } },
     });
     if (!resolved.enabled) throw new Error('expected enabled');
     expect(resolved.variants.crop).toEqual({ fit: 'aspect-crop' });
     expect(resolved.variants.up).toEqual({ fit: 'scale-up' });
+    expect(resolved.variants.sq).toEqual({ fit: 'squeeze' });
   });
 
   it('accepts an explicit upscale value', () => {

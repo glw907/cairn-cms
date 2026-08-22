@@ -44,8 +44,8 @@ declare function normalizeAssets(assets: AssetConfig | undefined): ResolvedAsset
 Validate a site's `AssetConfig` and resolve it into the engine-internal `ResolvedAssetConfig` the
 upload, storage, delivery, and render paths read. An absent block leaves media off and returns
 `{ enabled: false }` rather than throwing. A declared block must name its R2 bucket binding and carry
-a known `urlForm` and valid variant fit and gravity values; each failure throws a `cairn:`-prefixed
-error. The named variants merge over the built-in presets.
+a known `urlForm` and valid variant fit, gravity, and upscale values; each failure throws a
+`cairn:`-prefixed error. The named variants merge over the built-in presets.
 
 ---
 
@@ -145,6 +145,6 @@ its layout is a template-level concern, since the engine has no dimensions to de
 | `ResolvedAssetConfig` | Extension API | `type ResolvedAssetConfig = { enabled: false } \| { enabled: true; bucketBinding; publicBase; urlForm; maxUploadBytes; allowedTypes; variants; transformations }` | The resolved media config the engine serves from. An absent `assets` block yields the `{ enabled: false }` variant; otherwise every field is filled from the `AssetConfig` or its default. |
 | `MediaEntry` | Extension API | `interface MediaEntry { hash; sha256; slug; displayName; originalFilename; alt; ext; contentType; bytes; width; height; createdAt }` | One stored asset's row: its content hash, its human layer, and its byte and pixel facts. `width` and `height` are `null` when no dimensions are known. |
 | `MediaManifest` | Extension API | `type MediaManifest = Record<string, MediaEntry>` | The whole stored-asset record, keyed by the 16-hex content-hash prefix. |
-| `VariantSpec` | Extension API | `interface VariantSpec { width?; height?; quality?; fit?; gravity?; format? }` | A single image variant: the resize and format directives Cloudflare Images applies to the original bytes. |
+| `VariantSpec` | Extension API | `interface VariantSpec { width?; height?; quality?; fit?; gravity?; format?; upscale? }` | A single image variant: the resize and format directives Cloudflare Images applies to the original bytes. `fit` accepts `scale-down`, `contain`, `cover`, `crop`, `pad`, `aspect-crop`, or `scale-up`; `upscale` (`interpolate` or `generate`) controls the enlargement algorithm for a fit mode that upscales. |
 | `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. |
 | `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | The per-call resolver `render` reads under `resolveMedia`. `undefined` is a preview miss; a resolver that throws is the build backstop. |

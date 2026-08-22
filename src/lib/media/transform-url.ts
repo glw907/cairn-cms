@@ -7,8 +7,8 @@
 
 /**
  * A single image variant: the resize and format directives Cloudflare Images applies to the
- *  original bytes. Every field is optional. width, height, quality, and fit are emitted only when
- *  set; format and gravity always appear, defaulting to auto.
+ *  original bytes. Every field is optional. width, height, quality, fit, and upscale are emitted
+ *  only when set; format and gravity always appear, defaulting to auto.
  */
 export interface VariantSpec {
   /** Target width in pixels. */
@@ -17,19 +17,29 @@ export interface VariantSpec {
   height?: number;
   /** Output quality, 1 to 100. */
   quality?: number;
-  /** How the image fits the target box. */
-  fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad';
+  /**
+   * How the image fits the target box. `aspect-crop` crops to the target aspect ratio without
+   *  upscaling; `scale-up` enlarges to fit while preserving aspect ratio and never downscales.
+   */
+  fit?: 'scale-down' | 'contain' | 'cover' | 'crop' | 'pad' | 'aspect-crop' | 'scale-up';
   /** Crop focus, `auto` or `face` or a coordinate string. */
   gravity?: 'auto' | 'face' | string;
   /** Output format, `auto` to let Cloudflare negotiate, or a forced codec. */
   format?: 'auto' | 'webp' | 'avif' | string;
+  /**
+   * The algorithm used when a fit mode enlarges the image: `interpolate` for bicubic
+   *  interpolation (Cloudflare's default when unset) or `generate` for AI-powered upscaling. Has
+   *  no effect under `fit=scale-down` or when the target is smaller than the source.
+   */
+  upscale?: 'interpolate' | 'generate';
 }
 
 /**
  * Build the on-demand Cloudflare Images transform URL for a delivery path. The options are
- *  comma-joined in the stable order width, height, quality, fit, format, gravity, with width through
- *  fit emitted only when the spec sets them and format and gravity always present (defaulting to
- *  auto). The publicPath is appended unaltered, so the result is `/cdn-cgi/image/<options><publicPath>`.
+ *  comma-joined in the stable order width, height, quality, fit, upscale, format, gravity, with
+ *  width through upscale emitted only when the spec sets them and format and gravity always
+ *  present (defaulting to auto). The publicPath is appended unaltered, so the result is
+ *  `/cdn-cgi/image/<options><publicPath>`.
  */
 export function variantUrl(publicPath: string, spec: VariantSpec): string {
   const options: string[] = [];
@@ -37,6 +47,7 @@ export function variantUrl(publicPath: string, spec: VariantSpec): string {
   if (spec.height !== undefined) options.push(`height=${spec.height}`);
   if (spec.quality !== undefined) options.push(`quality=${spec.quality}`);
   if (spec.fit !== undefined) options.push(`fit=${spec.fit}`);
+  if (spec.upscale !== undefined) options.push(`upscale=${spec.upscale}`);
   options.push(`format=${spec.format ?? 'auto'}`);
   options.push(`gravity=${spec.gravity ?? 'auto'}`);
   // The source must be its own path segment after the options, so it needs a leading slash;

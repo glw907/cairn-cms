@@ -27,6 +27,13 @@
   that the TypeScript 7 hold (ROADMAP.md, "TypeScript 7 is held on the toolchain") is ready to
   lift. Consumers must: nothing.
 
+- `VariantSpec.fit` (`/media`) accepts Cloudflare Images' `aspect-crop` and `scale-up` fit modes,
+  and a new `VariantSpec.upscale` option (`interpolate` or `generate`) picks the algorithm a
+  fit mode that upscales uses, both from Cloudflare's 2026-06-16 optimization GA. `upscale` joins
+  the `/cdn-cgi/image` option string only when set. `normalizeAssets` validates the two new fit
+  values and `upscale` the same way it already validates `fit` and `gravity`. Consumers must:
+  nothing; additive.
+
 ### Changed
 
 - Tidy's default model is now `claude-sonnet-5`, run at the low effort tier since a proofread

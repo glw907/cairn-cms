@@ -115,7 +115,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `verifyManifest`: (built: Manifest, committedRaw: string) => void
 - `verifyReferences`: (manifest: Manifest) => void
 - `VocabularyEntry`: { value: string; label: string }
@@ -337,7 +337,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `VocabularyEntry`: { value: string; label: string }
 
 ## `/delivery/data`
@@ -440,7 +440,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `VocabularyEntry`: { value: string; label: string }
 
 ## `/delivery/head`
@@ -465,7 +465,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `parseMediaToken`: (href: string) => MediaRef | null
 - `readCommittedManifest`: (globResult: Record<string, unknown>) => MediaManifest
 - `ResolvedAssetConfig`: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 
 ## `/render`
 
@@ -684,7 +684,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `validateNavLayout`: (layout: NavLayout, ctx: { conceptIds: string[]; navMenuConfigured: boolean; roleNames: string[] }) => void
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
-- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
+- `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }
 - `VocabularyEntry`: { value: string; label: string }
 - `VocabularyLoadData`: { vocabulary: VocabularyEntry[]; usage: { [x: string]: number }; unlisted: { value: string; count: number }[] }
 - `VocabularySaveFailure`: { error: string }

@@ -59,6 +59,31 @@ describe('normalizeAssets', () => {
     ).toThrow(/cairn:/);
   });
 
+  it('accepts the aspect-crop and scale-up fit modes', () => {
+    const resolved = normalizeAssets({
+      bucketBinding: 'X',
+      variants: { crop: { fit: 'aspect-crop' }, up: { fit: 'scale-up' } },
+    });
+    if (!resolved.enabled) throw new Error('expected enabled');
+    expect(resolved.variants.crop).toEqual({ fit: 'aspect-crop' });
+    expect(resolved.variants.up).toEqual({ fit: 'scale-up' });
+  });
+
+  it('accepts an explicit upscale value', () => {
+    const resolved = normalizeAssets({
+      bucketBinding: 'X',
+      variants: { up: { fit: 'scale-up', upscale: 'generate' } },
+    });
+    if (!resolved.enabled) throw new Error('expected enabled');
+    expect(resolved.variants.up).toEqual({ fit: 'scale-up', upscale: 'generate' });
+  });
+
+  it('throws cairn: for a variant with a bad upscale', () => {
+    expect(() =>
+      normalizeAssets({ bucketBinding: 'X', variants: { hero: { upscale: 'nope' as 'generate' } } }),
+    ).toThrow(/cairn:/);
+  });
+
   it('returns disabled media when no assets block is declared', () => {
     expect(normalizeAssets(undefined)).toEqual({ enabled: false });
   });

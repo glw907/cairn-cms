@@ -40,6 +40,31 @@ describe('variantUrl', () => {
       '/cdn-cgi/image/width=800,format=auto,gravity=auto/media/x.a1b2c3d4e5f6a7b8.webp',
     );
   });
+
+  it('carries the aspect-crop fit mode', () => {
+    const out = variantUrl(PUBLIC_PATH, { width: 500, height: 500, fit: 'aspect-crop' });
+    expect(out).toContain('fit=aspect-crop');
+  });
+
+  it('carries the scale-up fit mode', () => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, height: 600, fit: 'scale-up' });
+    expect(out).toContain('fit=scale-up');
+  });
+
+  it('carries an explicit upscale option', () => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up', upscale: 'generate' });
+    expect(out).toContain('upscale=generate');
+  });
+
+  it('carries the default-named interpolate upscale option when set explicitly', () => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up', upscale: 'interpolate' });
+    expect(out).toContain('upscale=interpolate');
+  });
+
+  it('emits nothing for upscale when unset', () => {
+    const out = variantUrl(PUBLIC_PATH, { width: 800, fit: 'scale-up' });
+    expect(out).not.toContain('upscale');
+  });
 });
 
 describe('presetUrl', () => {

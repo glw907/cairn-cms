@@ -842,14 +842,16 @@ the named human gates only):**
 ## Next
 
 - **Platform features now available and unused (surveyed 2026-08-21).** Tailwind 4.3 ships
-  `scrollbar-*` utilities, logical-property spacing (`pbs-*`, `mbs-*`, `inset-s-*`), `@container-size`,
-  and stacked `@variant`; DaisyUI 5.7 ships `menu-paged` for keyboard travel through nested menus.
-  Cloudflare D1's Sessions API (`withSession`, read replicas) and Email Sending's named recipients
+  logical-property spacing (`pbs-*`, `mbs-*`, `inset-s-*`), `@container-size`, and stacked
+  `@variant`; DaisyUI 5.7 ships `menu-paged` for keyboard travel through nested menus. Cloudflare
+  D1's Sessions API (`withSession`, read replicas) and Email Sending's named recipients
   (`{email, name}` on `from`/`to`) are both GA. None closes a live defect, so none is a task; each is
-  the sanctioned form to reach for when its shape next comes up (a scrollable admin pane, an RTL
-  audit, a nested admin menu, a branded sender name). The `.btn-active` hand-repairs in
-  `cairn-admin.css` were re-verified against 5.7.20: the dark-theme rules still earn their place,
-  and the light theme follows stock.
+  the sanctioned form to reach for when its shape next comes up (an RTL audit, a nested admin menu,
+  a branded sender name). Tailwind 4.3's `scrollbar-*` utilities are no longer on this list: the
+  newest-toolchain pass replaced `cairn-admin.css`'s hand-written `scrollbar-width`/
+  `scrollbar-color` declarations with them. The `.btn-active` hand-repairs in `cairn-admin.css`
+  were re-verified against 5.7.20: the dark-theme rules still earn their place, and the light
+  theme follows stock.
 
 - **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
   primitives a site composes directly, and the first is the one an extender meets first. (1)

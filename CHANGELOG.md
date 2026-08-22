@@ -1,10 +1,35 @@
 ## Unreleased
 
+### Added
+
+- A new admin page, `docs/admin/what-to-run-and-when.md`, names today's target for the parts of a
+  cairn site's stack an admin can act on directly (cairn itself, Node on your machine, your
+  Cloudflare hosting tooling, the GitHub App key) and how to tell your site is still on target; it
+  links `docs/reference/supported-toolchain.md` for the exact versions a developer needs. That
+  reference page carries the exact-version target-stack table, and a new `check:target-stack` gate
+  derives every expected cell from its real source (the root `package.json`'s own version,
+  engines, and peer ranges; the showcase's `package.json` and `wrangler.jsonc`, the source the
+  public template is emitted from) and fails when the table drifts from it. Consumers must:
+  nothing.
+
+- An advisory `check-tsgo` CI job, run alongside the rest of `test.yml` under
+  `continue-on-error: true`, installs the side-by-side `typescript@^6` plus
+  `@typescript/native@npm:typescript@7` layout `svelte-check`'s own README documents and runs
+  `svelte-check --tsgo` against it. A red result never blocks a merge; a green one is the signal
+  that the TypeScript 7 hold (ROADMAP.md, "TypeScript 7 is held on the toolchain") is ready to
+  lift. Consumers must: nothing.
+
 ### Changed
 
 - Tidy's default model is now `claude-sonnet-5`, run at the low effort tier since a proofread
   doesn't need extended reasoning. Same list price as `claude-sonnet-4-6`. A site that set
   `tidy.model` explicitly is unaffected.
+
+- cairn's own Node floor rose to `>=24` (from `>=22`), in the engine package, the
+  `create-cairn-site` CLI, and the `cairn-cms-dev` dev backend. Every CI `node-version: 22` moved
+  to 24, and the two stale "pin to 22 to dodge a vitest-pool-workers console bug on 24" comments
+  are gone: this pass's own green run against Node 24 is the proof the bug no longer blocks.
+  BREAKING. Consumers must: run Node 24 or later; the scaffolder's preflight refuses Node 22.
 
 - Dependencies moved to their current releases: DaisyUI 5.7.20 (from 5.6.6), Tailwind 4.3.3,
   SvelteKit 2.70.3, Svelte 5.56.10, Vite 8.2.2, Wrangler 4.125.0, ESLint 10, and
@@ -25,9 +50,22 @@
   peer range widened to `>=0.105.0 <1` so a site pinned to either the old or the new SDK line
   satisfies it. Held back on purpose: TypeScript 7 (svelte-check cannot run on the Go compiler
   until 7.1's compiler API). The published peer ranges also rose, to `@sveltejs/kit ^2.70` and
-  `svelte ^5.56.10`, the versions cairn now develops and tests against. Consumers must: raise the
-  `svelte` and `@sveltejs/kit` devDependency ranges in their site's `package.json` to at least
-  those floors and reinstall so the lockfile re-resolves.
+  `svelte ^5.56.10`, the versions cairn now develops and tests against. BREAKING. Consumers must:
+  be on `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`) before
+  installing; npm refuses the install otherwise.
+
+- The template and showcase `wrangler.jsonc` moved `compatibility_date` to `2026-08-21` and
+  dropped the `nodejs_compat` compatibility flag. Cloudflare defaults `nodejs_compat` (and
+  `nodejs_compat_v2`) on for any compatibility date from 2026-08-04 onward, so the explicit flag
+  was already redundant on the new date; the `vitest-pool-workers` test harness
+  (`wrangler.test.jsonc`) moved the same way. This changes only the date and flags a newly
+  scaffolded site starts with. Consumers must: nothing; an existing site keeps its own date and
+  flags.
+
+- Internal CI housekeeping: `actions/checkout` and `actions/setup-node` moved from v5 to v7 across
+  every workflow (checked both majors' release notes; neither changes a behavior these workflows
+  rely on), and `cache: npm` was added to every `actions/setup-node` step that lacked it. Consumers
+  must: nothing.
 
 - `npm run link:consumer -- <site-dir>` points a consumer site at a local engine build, and
   `--restore` puts it back on a registry range. It builds, packs, installs, and then verifies every

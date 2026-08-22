@@ -11,9 +11,22 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
-Nothing. The Waymark deploy template moved into this repository at `templates/waymark/`, replacing
-its cross-repo sync. That changes how cairn maintains the template and touches no engine export,
-type, or runtime behavior. None of it ships in the package tarball.
+The release step sets the version number at the cut and renames this section to match it. This
+window raises two toolchain floors.
+
+- **Run Node 24 or later on your build machine.** `create-cairn-site`'s own preflight now refuses
+  a Node 22 install; the engine, the scaffolder, and the dev backend package all raised
+  `engines.node` from `>=22` to `>=24`.
+- **The `@sveltejs/kit` and `svelte` floors moved to the versions cairn now develops and tests
+  against.** Be on `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`)
+  before installing; npm's peer-dependency resolution refuses the install otherwise.
+- Everything else in this window states no consumer action: dependency bumps that stay within
+  their own ranges, Tidy's default model, the new `docs/admin/what-to-run-and-when.md` page and
+  its `check:target-stack` gate, the advisory `check-tsgo` job, a newly scaffolded site's
+  `compatibility_date` moving to `2026-08-21` with the redundant `nodejs_compat` flag dropped (an
+  existing site keeps its own date and flags), and the Waymark deploy template's move into this
+  repository (touches no engine export, type, or runtime behavior; none of it ships in the package
+  tarball).
 
 See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
 

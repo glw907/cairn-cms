@@ -19,14 +19,17 @@ window raises two toolchain floors.
   `engines.node` from `>=22` to `>=24`.
 - **The `@sveltejs/kit` and `svelte` floors moved to the versions cairn now develops and tests
   against.** Be on `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`)
-  before installing; npm's peer-dependency resolution refuses the install otherwise.
-- Everything else in this window states no consumer action: dependency bumps that stay within
-  their own ranges, Tidy's default model, the new `docs/admin/what-to-run-and-when.md` page, the
-  `check:target-stack` gate on [Supported toolchain](../reference/supported-toolchain.md), the
-  advisory `check-tsgo` job, a newly scaffolded site's `compatibility_date` moving to
-  `2026-08-21` with the redundant `nodejs_compat` flag dropped (an existing site keeps its own
-  date and flags), and the Waymark deploy template's move into this repository (touches no engine
-  export, type, or runtime behavior; none of it ships in the package tarball).
+  before installing; npm's default peer resolution refuses the install otherwise.
+
+One more entry carries a conditional action: the exported `TidyClient` type gained an optional
+`output_config` field, which matters only to a hand-rolled `TidyClient` fake that rejects unknown
+body fields.
+
+Nothing else in this window asks anything of a consumer. The dependency bumps stay inside their
+own ranges. Tidy's default model changed, and a site that set `tidy.model` explicitly is
+unaffected. A newly scaffolded site starts on `compatibility_date` `2026-08-21` without the
+redundant `nodejs_compat` flag; an existing site keeps its own. The rest is documentation, gates,
+and internal tooling that ships in no tarball.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md#unreleased).
 

@@ -23,9 +23,9 @@
 - An advisory `check-tsgo` CI job, run alongside the rest of `test.yml` under
   `continue-on-error: true`, installs the side-by-side `typescript@^6` plus
   `@typescript/native@npm:typescript@7` layout `svelte-check`'s own README documents and runs
-  `svelte-check --tsgo` against it. A red result never blocks a merge; a green one is the signal
-  that the TypeScript 7 hold (ROADMAP.md, "TypeScript 7 is held on the toolchain") is ready to
-  lift. Consumers must: nothing.
+  `svelte-check --tsgo` against it. A red result does not block a merge. A green one is the
+  trigger the TypeScript 7 hold is defined by (ROADMAP.md, "TypeScript 7 is held on the
+  toolchain"). Consumers must: nothing.
 
 - `VariantSpec.fit` (`/media`) accepts Cloudflare Images' `aspect-crop`, `scale-up`, and
   `squeeze` fit modes, and a new `VariantSpec.upscale` option (`interpolate` or `generate`)
@@ -37,42 +37,47 @@
 ### Changed
 
 - Tidy's default model is now `claude-sonnet-5`, run at the low effort tier since a proofread
-  doesn't need extended reasoning. Same list price as `claude-sonnet-4-6`. A site that set
-  `tidy.model` explicitly is unaffected.
+  doesn't need extended reasoning. A site that set `tidy.model` explicitly is unaffected.
 
 - cairn's own Node floor rose to `>=24` (from `>=22`), in the engine package, the
   `create-cairn-site` CLI, and the `cairn-cms-dev` dev backend. Every CI `node-version: 22` moved
   to 24, and the two stale "pin to 22 to dodge a vitest-pool-workers console bug on 24" comments
-  are gone: this pass's own green run against Node 24 is the proof the bug no longer blocks.
+  are gone: a full green suite on Node 24 in this pass no longer reproduces it.
   Consumers must: run Node 24 or later; the scaffolder's preflight refuses Node 22.
 
-- Dependencies moved to their current releases: DaisyUI 5.7.20 (from 5.6.6), Tailwind 4.3.3,
-  SvelteKit 2.70.3, Svelte 5.56.10, Vite 8.2.2, Wrangler 4.125.0, ESLint 10, and
-  `@cloudflare/vitest-pool-workers` 0.22. Two upstream shifts reach the shipped admin sheet.
-  DaisyUI 5.7 now emits a component's modifier classes alongside the base class the admin tree
-  uses, so the sheet carries 31 more DaisyUI names than before (the `tabs-*`, `modal-*`,
-  `dropdown-*`, `drawer-*`, `footer-*`, `stats-*`, `steps-*`, `divider-*` placements,
-  `avatar-group`, and `aura`); they are stock DaisyUI, additive, and scoped the same way as the rest of the sheet.
-  DaisyUI 5.7 also stopped emitting `footer-center` as a side effect of a neighbor, so the input
-  sheet now safelists it explicitly and it stays in the sheet. Light-theme `.btn-active` follows
-  upstream's new stock border (a 7% mix toward black where a plain `.btn` mixes 5%, about 0.02
-  oklch lightness); the dark-theme hairline, fill, and hover repairs are unchanged.
-  `@cloudflare/workers-types` moved to 5 (wrangler 4.125 peers on it), whose new global
+- The published peer ranges rose to `@sveltejs/kit ^2.70` and `svelte ^5.56.10`, the versions
+  cairn now develops and tests against. Consumers must: be on those ranges before installing;
+  npm's default peer resolution refuses the install otherwise.
+
+- Dependencies moved to their current releases: DaisyUI 5.7.20, Tailwind 4.3.3, SvelteKit
+  2.70.3, Svelte 5.56.10, Vite 8.2.2, Wrangler 4.125.0, ESLint 10, and
+  `@cloudflare/vitest-pool-workers` 0.22. The `@anthropic-ai/sdk` devDependency moved to 0.120,
+  and its optional peer range widened to `>=0.105.0 <1` so a site pinned to either the old or the
+  new SDK line satisfies it. TypeScript 7 is held; `svelte-check` cannot run on the Go compiler
+  until 7.1's compiler API. Consumers must: nothing.
+
+- DaisyUI 5.7 changed what the shipped admin sheet contains. It now emits a component's modifier
+  classes alongside the base class the admin tree uses, so the sheet carries 31 more DaisyUI
+  names than before (the `tabs-*`, `modal-*`, `dropdown-*`, `drawer-*`, `footer-*`, `stats-*`,
+  `steps-*`, `divider-*` placements, `avatar-group`, and `aura`); they are stock DaisyUI,
+  additive, and scoped the same way as the rest of the sheet. It also stopped emitting
+  `footer-center` as a side effect of a neighbor, so the input sheet now safelists it explicitly
+  and it stays in the sheet. Light-theme `.btn-active` follows upstream's new stock border (a 7%
+  mix toward black where a plain `.btn` mixes 5%, about 0.02 oklch lightness); the dark-theme
+  hairline, fill, and hover repairs are unchanged. Consumers must: nothing.
+
+- `@cloudflare/workers-types` 5 and `vitest-browser-svelte` 3 changed two internal call shapes.
+  `@cloudflare/workers-types` moved to 5 (Wrangler 4.125 peers on it), whose new global
   `Buffer: any` shadows `Buffer.toString(encoding)` wherever `@types/node` shares the program;
   the two build-script sites that called it now use `TextDecoder`. `vitest-browser-svelte` moved
   to 3 as well, whose `render`/`unmount` calls are now async; every call site in the component
-  suite now awaits them. The `@anthropic-ai/sdk` devDependency moved to 0.120, and the optional
-  peer range widened to `>=0.105.0 <1` so a site pinned to either the old or the new SDK line
-  satisfies it. Held back on purpose: TypeScript 7 (svelte-check cannot run on the Go compiler
-  until 7.1's compiler API). The published peer ranges also rose, to `@sveltejs/kit ^2.70` and
-  `svelte ^5.56.10`, the versions cairn now develops and tests against. Consumers must: be on
-  `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`) before
-  installing; npm refuses the install otherwise.
+  suite now awaits them. Consumers must: nothing.
 
 - The template and showcase `wrangler.jsonc` moved `compatibility_date` to `2026-08-21` and
   dropped the `nodejs_compat` compatibility flag. Cloudflare defaults `nodejs_compat` (and
-  `nodejs_compat_v2`) on for any compatibility date from 2026-08-04 onward, so the explicit flag
-  was already redundant on the new date; the `vitest-pool-workers` test harness
+  `nodejs_compat_v2`) on for any compatibility date from 2026-08-04 onward
+  ([compatibility flags](https://developers.cloudflare.com/workers/configuration/compatibility-flags/)),
+  so the explicit flag was already redundant on the new date; the `vitest-pool-workers` test harness
   (`wrangler.test.jsonc`) moved the same way. This changes only the date and flags a newly
   scaffolded site starts with. Consumers must: nothing; an existing site keeps its own date and
   flags.
@@ -84,8 +89,7 @@
 
 - `npm run link:consumer -- <site-dir>` points a consumer site at a local engine build, and
   `--restore` puts it back on a registry range. It builds, packs, installs, and then verifies every
-  file in the consumer's installed copy against the tarball it just built. Both directions matter:
-  a `file:` path cannot merge, so the un-pin has to be as cheap as the pin. It exists because the
+  file in the consumer's installed copy against the tarball it just built. It exists because the
   hand loop walks into a trap that survives a green install. `npm pack` derives the tarball name
   from the version, so re-packing changed code at one version reuses the filename, and a later plain
   `npm install` restores the older build from npm's content-addressed cache. Reproduced 2026-08-20:
@@ -94,8 +98,8 @@
   bytes, and the file-by-file comparison fails loud rather than trusting npm's exit code. Pruning
   old packs matches the digest suffix rather than the package stem, so it can only delete tarballs
   this script wrote: a hand-packed one carries no digest and is never swept, which matters because
-  cairn-pub pins `glw907-cairn-cms-0.95.0-rc.1.tgz` by absolute path and a prune that took it would
-  break that repo's install with no signal here. The stem alone would also be unsafe, since
+  a sibling repo pins an exact tarball by absolute path, and a prune that took it would break that
+  repo's install with no signal here. The stem alone would also be unsafe, since
   `glw907-cairn-cms-` is a prefix of `glw907-cairn-cms-dev-`. Internal development tooling; it ships
   in no tarball. Consumers must: nothing.
 

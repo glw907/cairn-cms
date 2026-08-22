@@ -149,9 +149,10 @@ npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
 ```
 
 Paste the base64 string from the encoding step when prompted. Declare it as a required secret in
-`wrangler.jsonc` too (`"secrets": { "required": ["GITHUB_APP_PRIVATE_KEY_B64"] }`, the Waymark
-template's own `wrangler.jsonc` already does), so a later `wrangler deploy` refuses to ship a
-Worker that's missing it instead of deploying a build no editor can ever publish through.
+`wrangler.jsonc` too (`"secrets": { "required": ["GITHUB_APP_PRIVATE_KEY_B64"] }`, as
+`examples/showcase/wrangler.jsonc` in the cairn repo shows in place), so a later `wrangler deploy`
+refuses to ship a Worker that's missing it instead of deploying a build no editor can ever publish
+through.
 
 The App ID and Installation ID are **not** secrets; the engine treats them as plain identity,
 never as credentials to sign with. Pass them directly into `githubApp(...)` in

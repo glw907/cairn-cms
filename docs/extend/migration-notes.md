@@ -21,8 +21,9 @@ window raises two toolchain floors.
   against.** Be on `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`)
   before installing; npm's peer-dependency resolution refuses the install otherwise.
 - Everything else in this window states no consumer action: dependency bumps that stay within
-  their own ranges, Tidy's default model, the new `docs/admin/what-to-run-and-when.md` page and
-  its `check:target-stack` gate, the advisory `check-tsgo` job, a newly scaffolded site's
+  their own ranges, Tidy's default model, the new `docs/admin/what-to-run-and-when.md` page, the
+  `check:target-stack` gate on [Supported toolchain](../reference/supported-toolchain.md), the
+  advisory `check-tsgo` job, a newly scaffolded site's
   `compatibility_date` moving to `2026-08-21` with the redundant `nodejs_compat` flag dropped (an
   existing site keeps its own date and flags), and the Waymark deploy template's move into this
   repository (touches no engine export, type, or runtime behavior; none of it ships in the package

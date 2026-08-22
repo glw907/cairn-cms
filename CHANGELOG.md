@@ -44,7 +44,7 @@
   `create-cairn-site` CLI, and the `cairn-cms-dev` dev backend. Every CI `node-version: 22` moved
   to 24, and the two stale "pin to 22 to dodge a vitest-pool-workers console bug on 24" comments
   are gone: this pass's own green run against Node 24 is the proof the bug no longer blocks.
-  BREAKING. Consumers must: run Node 24 or later; the scaffolder's preflight refuses Node 22.
+  Consumers must: run Node 24 or later; the scaffolder's preflight refuses Node 22.
 
 - Dependencies moved to their current releases: DaisyUI 5.7.20 (from 5.6.6), Tailwind 4.3.3,
   SvelteKit 2.70.3, Svelte 5.56.10, Vite 8.2.2, Wrangler 4.125.0, ESLint 10, and
@@ -65,8 +65,8 @@
   peer range widened to `>=0.105.0 <1` so a site pinned to either the old or the new SDK line
   satisfies it. Held back on purpose: TypeScript 7 (svelte-check cannot run on the Go compiler
   until 7.1's compiler API). The published peer ranges also rose, to `@sveltejs/kit ^2.70` and
-  `svelte ^5.56.10`, the versions cairn now develops and tests against. BREAKING. Consumers must:
-  be on `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`) before
+  `svelte ^5.56.10`, the versions cairn now develops and tests against. Consumers must: be on
+  `@sveltejs/kit ^2.70` and `svelte ^5.56.10` (the exact ranges in `package.json`) before
   installing; npm refuses the install otherwise.
 
 - The template and showcase `wrangler.jsonc` moved `compatibility_date` to `2026-08-21` and
@@ -124,6 +124,16 @@
   silences it and is the wrong fix, because that adapter's ambient `App.Platform` augmentation
   collides with cairn's own and breaks `check:snippets`; `test.yml` carries the note. Consumers must: nothing; none of this ships in the
   engine tarball.
+
+- The exported `TidyClient` type (`/sveltekit`) gained an optional `output_config` field on its
+  `messages.create` options, matching the effort-tier option Tidy's own call already sends.
+  Consumers must: nothing, unless a hand-rolled `TidyClient` fake rejects unknown body fields.
+
+- `@glw907/cairn-cms-dev`'s `createChannelDb` no longer carries a runtime Node.js floor guard.
+  That package's `engines.node` (`>=24`) already enforces the floor at install time, and
+  `node:sqlite` has been unflagged since Node.js 22.13, well below it, so the guard checked a
+  condition that could not occur. Consumers must: nothing; this package ships in no tarball a site
+  installs for production.
 
 ## 0.95.0
 

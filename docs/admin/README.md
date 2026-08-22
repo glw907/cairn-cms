@@ -18,8 +18,8 @@ cairn, you want [the extend track](../extend/README.md).
    sign-in email for anyone besides you.
 4. **[Is it working?](./is-it-working.md)** — run the readiness check and read what each result
    means.
-5. **[What to run, and when](./what-to-run-and-when.md)** — the exact versions your site targets,
-   and the signals that mean it's time to act.
+5. **[What to run, and when](./what-to-run-and-when.md)** — what your site depends on, and the
+   signals that mean it's time to act.
 6. **[Setup recovery](./setup-recovery.md)** — a setup step failed or was interrupted; get back on
    the path.
 7. **[Invite your editors](./invite-editors.md)** — add the people who will write on your site.

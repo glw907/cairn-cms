@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import type { D1DatabaseSession } from '@cloudflare/workers-types';
-import { createChannelDb, checkNodeSqliteFloor } from './channel-db.js';
+import { createChannelDb } from './channel-db.js';
 import { CHANNEL_SCHEMA_SQL, mintCode } from '../../../src/lib/auth-channel/store.js';
 
 const WIDGETS_SCHEMA = `
@@ -130,11 +130,4 @@ test('the mint conditional-upsert contract behaves through the double: fresh, in
     'bucket-1',
   );
   expect(postCooldown).toBe(true);
-});
-
-test('checkNodeSqliteFloor throws naming the package engines floor and passes at or above it', () => {
-  expect(() => checkNodeSqliteFloor('23.11.0')).toThrow(/24/);
-  expect(() => checkNodeSqliteFloor('20.0.0')).toThrow(/24/);
-  expect(() => checkNodeSqliteFloor('24.0.0')).not.toThrow();
-  expect(() => checkNodeSqliteFloor('24.16.0')).not.toThrow();
 });

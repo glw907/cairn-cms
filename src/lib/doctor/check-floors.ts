@@ -21,7 +21,7 @@ function parseVersion(text: string): Version | null {
   return { major: Number(m[1]), minor: Number(m[2]), patch: Number(m[3]) };
 }
 
-// The engine's peers are simple caret ranges (^x.y.z, or ^x.y like the kit floor ^2.12), so
+// The engine's peers are simple caret ranges (^x.y.z, or ^x.y like the kit floor ^2.70), so
 // this handles the caret form only; anything else returns null and the check skips for that
 // dependency instead of approximating a full semver implementation.
 function caretFloor(range: string): Version | null {

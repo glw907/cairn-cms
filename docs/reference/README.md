@@ -55,8 +55,9 @@ anywhere in the package fails as stale prose (`scripts/checks/reference-coverage
 - [The `cairn-media-seed` CLI](./cli-cairn-media-seed.md): seeds local R2 state from a deployed site's media library, for design iteration against `vite dev` with no deploy.
 - [The `cairn-audit` CLI](./cairn-audit.md): the design-language audit, and the norms query that answers a measured norm from the shipped manifest.
 - [Log events](./log-events.md): the structured diagnostic events cairn emits, and their fields.
-- [Supported toolchain](./supported-toolchain.md): the SvelteKit, Svelte, TypeScript, Vite, and
-  Node versions the package promises against and the versions its own CI proves.
+- [Supported toolchain](./supported-toolchain.md): a gated target-stack table naming the
+  SvelteKit, Svelte, TypeScript, and Node versions the package promises against and the
+  Cloudflare tooling versions its own CI proves, plus the deliberate-floor reasoning behind each.
 
 ## Also for site admins
 

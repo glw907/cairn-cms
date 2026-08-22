@@ -12,7 +12,7 @@ through them; this page names targets, not commands.
 
 | Part | Target today | Where it's set | How often it moves | You're fine if |
 |---|---|---|---|---|
-| cairn itself | `0.95.0` | `package.json`, the `@glw907/cairn-cms` version | When a release ships, and only when its changelog names something for you to do | Your site's installed version satisfies its own version range, and no `Consumers must:` line in the changelog names an action you haven't taken |
+| cairn itself | The version your site's `package.json` range resolves to; see [Supported toolchain](../reference/supported-toolchain.md) for the exact number | `package.json`, the `@glw907/cairn-cms` version | When a release ships, and only when its changelog names something for you to do | Your site's installed version satisfies its own version range, and no `Consumers must:` line in the changelog names an action you haven't taken |
 | Node.js, on your computer | `24` or newer | Set by cairn, checked when you install | Rarely, on Node's own long-term-support calendar | `node --version` reports 24 or newer |
 | Your Cloudflare hosting tooling | Whatever version your site was scaffolded with | Your site's own setup files, written once when your site was created | Whenever Cloudflare ships a new major version of its deploy tooling | Deploys succeed and your site behaves as expected |
 | The GitHub App private key | No version; rotates on demand | Your Worker's secret store, never a file cairn tracks | Only when you choose to rotate it, or GitHub tells you to | You've never received a GitHub notice about the key, and saves and publishes still work |

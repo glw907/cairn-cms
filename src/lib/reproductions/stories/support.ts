@@ -198,7 +198,7 @@ export function editPageProps(): Record<string, unknown> {
     preview: { stylesheets: [] },
     spellcheckDictionary: 'dictionary-en-us.txt',
     siteDictionary: [],
-    tidy: { enabled: true, model: 'claude-sonnet-4-6', conventions: fixtureTidyReview.conventions },
+    tidy: { enabled: true, model: 'claude-sonnet-5', conventions: fixtureTidyReview.conventions },
     advisories: [],
     orphanTags: [],
     siteName: fixtureSiteName,

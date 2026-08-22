@@ -1,11 +1,11 @@
 # Supported toolchain
 
-The versions the package promises against and the versions its own CI proves. This page names
-both, since they are different claims: the package's `peerDependencies` are the promise a
-consumer's install resolves against, and the showcase's `package.json` and `wrangler.jsonc` are
-what the engine's own test suite and its scaffolded template actually run against. The two need
-not match, and where they differ the gap is the safety margin between what is promised and what
-is exercised.
+The versions the package promises against and the versions its own CI proves, in one gated table
+plus the prose that explains each deliberate floor. This page names both, since they are
+different claims: the package's `peerDependencies` are the promise a consumer's install resolves
+against, and the showcase's `package.json` and `wrangler.jsonc` are what the engine's own test
+suite and its scaffolded template actually run against. The two need not match, and where they
+differ the gap is the safety margin between what is promised and what is exercised.
 
 This page documents the package's own requirements rather than an export subpath, so it carries
 no stability tier and the export-coverage gate does not check it. The target-stack table below is
@@ -75,17 +75,6 @@ or `bundler` to resolve it. Only `bundler` is positively proven end to end: the 
 `tsconfig.json` sets it explicitly, with a comment explaining why. This page does not assert
 that `node10` or the classic resolution mode fails; that is sound general TypeScript behavior,
 but it is unproven in this repo and not worth a probe to publish.
-
-## Cloudflare tooling (proven against, not promised)
-
-| Dependency | Proven against |
-|---|---|
-| `wrangler` | `4.105.0` |
-| `@cloudflare/workers-types` | `4.20260630.1` |
-
-The package declares no formal dependency on either `wrangler` or `@cloudflare/workers-types`, so
-these are proven-against facts about the showcase's toolchain, never a promise a consumer's
-install resolves against.
 
 ## `check:package`'s muted `attw` rules
 

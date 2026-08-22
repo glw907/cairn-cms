@@ -274,6 +274,14 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
+  three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
+  `cairn-cairn-capture-scratch`); revoke the T4c spike API token and the three Cloudflare API
+  tokens named for `create-cairn-site`; confirm the Workers Paid opt-in from T5 run 2; fix
+  907-life's broken push-to-deploy. The full list with dates sits in `docs/HISTORY.md` (the
+  2026-08-17 teardown entry). Trigger: Geoff's next credential-hygiene sitting. Remove this entry
+  when the list is empty.
+
 - **TypeScript 7 is held on the toolchain, not the code; the hold ends when `svelte-check --tsgo`
   goes green (2026-08-21).** TypeScript 7.0 (stable 2026-07-08) shipped without a programmatic
   compiler API, and 7.1 (October 2026) is the first release that adds one. Three dependencies call

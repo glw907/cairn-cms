@@ -320,11 +320,14 @@ reference.
 
 ### Task 8b: The internals audit (added mid-pass by Geoff, 2026-08-26)
 
-**Scope addition, recorded per the pass-sizing rule.** Geoff's directive, verbatim: "We
+**Scope addition, recorded per the pass-sizing rule.** Geoff's directives, verbatim: "We
 should look at more than just the engine surface. Internals should be clean, beautiful,
-and idiomatic sveltekit to the greatest degree that's reasonable." This extends the
-audit's altitude, not its posture: the same standing goal (clean, even, beautiful), the
-same thoroughness ruling, the same trustworthiness gate.
+and idiomatic sveltekit to the greatest degree that's reasonable." And: "The engine
+itself needs to be inviting and comprehensible to for new developers and easy for AI
+agents to extend." This extends the audit's altitude, not its posture: the same standing
+goal (clean, even, beautiful), the same thoroughness ruling, the same trustworthiness
+gate. The internals bar has three limbs: idiomatic SvelteKit, inviting and comprehensible
+to a new developer, easy for an AI agent to extend.
 
 **Files:**
 - Extend: `docs/internal/record/2026-08-26-any-site-audit.md` (internals section)
@@ -336,11 +339,14 @@ same thoroughness ruling, the same trustworthiness gate.
 - [ ] **Step 2: Author and launch the internals workflow** after the surface workflow
   completes (serial, never concurrent with it). Standards handed to every agent: the
   idiom charter (`docs/internal/code-idioms.md`), Svelte 5 runes and SvelteKit 2 idiom,
-  and the clean/beautiful bar. Per-area rankers (findings ranked worst-first, no empty
-  returns), a verification pass on the worst-ranked and every rewrite-tier finding, a
-  whole-codebase coherence read (one designed codebase), and the trustworthiness auditor
-  with the same condemn signatures. Reviewer roles on `claude-opus-5`; runaway guard
-  armed.
+  and the three-limb bar (idiomatic; inviting and comprehensible to a new developer;
+  easy for an AI agent to extend). Per-area rankers (findings ranked worst-first, no
+  empty returns), two blind vantage walks (a cold new-developer comprehension walk, and
+  an AI-agent extension walk that attempts a plausible extension task and reports where
+  the path breaks), a verification pass on the worst-ranked and every rewrite-tier
+  finding, a whole-codebase coherence read (one designed codebase), and the
+  trustworthiness auditor with the same condemn signatures. Reviewer roles on
+  `claude-opus-5`; runaway guard armed.
 - [ ] **Step 3: Adjudicate and record** in the audit record; remediation items fold into
   the same ROADMAP entry and, where consumer-visible, the same `Consumers must:` window.
 

@@ -8,9 +8,16 @@
 off `main` at `0d500e4f` (rebase onto the toolkit-seams merge if that pass lands first; nothing
 here depends on it).
 
-**Status: DRAFT, held (Geoff, 2026-08-26).** The pre-pass engine consultation initiative
-(`docs/internal/record/2026-08-26-engine-consultation-inputs.md`) runs first and may revise this plan;
-re-review every task against its any-site and shape rulings before seeking approval.
+**Status: DRAFT, held; re-reviewed against the consultation standard, 2026-08-26.** The
+`engine-triage` re-review ran with the any-site audit's rulings in hand
+(`docs/internal/engine-rulings.md`, audit section;
+`docs/internal/record/2026-08-26-any-site-audit.md`). Per-task verdicts and the required
+revisions are appended at the end of this file ("Re-review verdicts"); the triage's
+recommendation is not-approved-as-drafted: re-issue as six tasks (Task 4's parity bullet
+drops on a falsified premise; Task 2 rewrites to the ledger's ruled `sheet`-as-list
+shape). Headline: Task 6 stands (two adjustments); Tasks 1, 3, 5, 7 revise with named
+changes; every new rule names its tier and carries a no-false-positive fixture. Re-derive
+the header's independence claim and the ceiling after the cut.
 
 **Goal:** absorb the detection-and-docs half of the 2026-08-26 ASC harvest triage
 (`docs/internal/record/2026-08-26-asc-harvest-triage.md`): the mechanically detectable
@@ -188,3 +195,93 @@ Coverage: triage survivors 11–15 map onto Tasks 1–7 (survivor 13's six rules
 gates-must-be-falsifiable rule. No cross-task type dependencies; Task 4 consumes Task 2's
 registered-sources surface only if it lands, and must degrade to the packaged sheet alone when
 the config key is absent.
+
+---
+
+## Re-review verdicts (`engine-triage`, 2026-08-26, against the any-site audit rulings)
+
+Recorded from the triage dispatch; fold into the task bodies before approval. Overall:
+not approved as drafted; re-issue as six tasks per the cuts below.
+
+### Task 1 (doctor rule, blanket `no-referrer`): REVISE, three changes
+
+Membership holds on Arm A (the strict `originMatches` compare at `csrf.ts:22-24` is
+engine-held knowledge; not loosening the guard is the correct half). Changes: (1) do NOT
+copy the CSRF-handoff check's heuristic-text-read shape, which the audit ruled reshape for
+its silent-skip (`audit-cli-config-csrf-disable-check`); land in the three-state result
+with "could not find a file to check" as a distinct INFO status. (2) The header source is
+usually not `src/hooks.server.ts` on Cloudflare: read `static/_headers` too, and report
+INFO (never pass) when no header source is readable. (3) The fixture set follows: add a
+`_headers` red fixture and a no-readable-source INFO fixture. The docs half stands.
+
+### Task 2 (`no-uncompiled-class` site-compiled sources): REVISE; adopt the ruled shape
+
+The need is settled (the rule's keep is emphatic), but the ledger rules the remediation
+shape TWICE: make `sheet` a list of compiled-class sources, exactly as `paletteFiles` and
+`cssFiles` already are (`config.ts:154` currently fails "sheet must be a path"). One edit.
+The plan's third key (`static.compiledClassSources`) contradicts constraint 3 (one concept,
+one key) and adds to coherence findings 4 through 6. Rewrite as the one-edit reshape, close
+both ledger entries as executed, and confirm a string `sheet` still parses (additive,
+rides the open `Consumers must:` window).
+
+### Task 3 (stripe/trim parity; `font: inherit` clobber): REVISE
+
+Rule A stands with better grounding: the engine ships the parity interaction itself
+(`ExpandableRow.svelte:153-183`), and the `container-inset-asymmetry` keep is the standing
+precedent for a DaisyUI-plus-UA-default rule. Rule B's stated mechanism is wrong: cascade
+layers, not specificity, are the cause (a Svelte scoped style is unlayered; Tailwind
+utilities sit in `@layer utilities`), so ANY unlayered scoped font declaration clobbers at
+any specificity. Widen detection to unlayered scoped `font-family`/`font-size`/
+`font-weight`/`font` on elements carrying font utilities and name layer precedence in the
+message. Both rules: name the tier (every shipped rule declares one; exit 2 is never a
+design verdict). Scope caveat: `DEFAULT_STATIC_SCOPE` includes `src/lib/components`, which
+in a consumer tree is that site's generic component directory; state what the rules do on a
+consumer's public-side component.
+
+### Task 4 (hover parity; dead class; listless `<ul>`): REVISE; drop bullet 1
+
+Bullet 1's premise is falsified by the code: `focus-parity.ts:36-50` does whole-string
+swaps over every `:hover` selector (no last-compound keying), so `.ev-title a:hover` with
+no focus sibling IS flagged today; the defect belongs to ASC's own probe. Drop it; a real
+gap (exact-string matching missing differently-grouped partners) needs its own evidence
+and red fixture first. Bullet 2 re-derives as a narrow extension of `no-uncompiled-class`
+keyed on the `collapse` homograph (Task 2's registered sources already cover the excluded
+components by construction; do not parse a site's DaisyUI `exclude:` grammar; do not
+re-flag the deliberate `class:disabled` exemption). Bullet 3 stands narrowed: fire only on
+lists whose applied classes remove the marker or change used display (the standing a11y
+ruling and the markdown wrapper both forbid the broad condition), and name the cross-pass
+dependency on the toolkit-seams scoped reset.
+
+### Task 5 (rendered panel-width rule): REVISE
+
+State the real membership case: this is a hole `viewport-overflow` declines on purpose
+(its header skips children of deliberate scroll containers). Narrow the contract to the
+cases with no legitimate reading (the expanded panel; a row overflowing while its wrapper
+does not scroll): the drafted every-row `scrollWidth === clientWidth` assertion fires on
+the engine's own sanctioned scrollable tables, the 60% false-positive failure mode the
+`chip-ground-collision` reshape priced. Add the missing no-false-positive fixture (a
+deliberately scrollable `AdminTable`) and name the tier.
+
+### Task 6 (falsify contrast rules on oklch): STANDS, two adjustments
+
+(1) State the real scope so an "already sound" report reads correctly: `border-contrast`
+is the open rule (`RATIFIED_SENTINEL = 'rgb(1, 2, 3)'` at `border-contrast.ts:159`);
+`interactive-contrast` and `chip-ground-collision` already route through the shared
+canvas normalizer. Expected yield: one rule plus three standing tests. (2) Name the
+interaction with the `chip-ground-collision` reshape hold: a standing oklch red-path test
+is compatible with the hold, but the report must not present that rule as sound and
+shipping.
+
+### Task 7 (chassis and docs items): REVISE
+
+Chassis bullet 1 would regress the existing half: `scroll-padding-top` ships today,
+token-derived, at `showcase/src/theme/site.css:43`; add only what is missing
+(`scroll-behavior: smooth` plus the reduced-motion override). Chassis bullet 2's
+"collapse to one path" is a no-op (one origin source, `chassis/content.ts:29`); restate as
+the env-sourcing decision (which collides with deterministic visual baselines) or demote
+to a docs note. Docs bullet 4 targets a page teaching two retired exports
+(`add-a-custom-admin-screen.md:93` names `TextInput`/`SelectInput`, both ruled retire);
+write the recipes in plain markup plus `FieldLabel`, and leave line 93 to the remediation
+pass so two passes do not both edit it. Sequencing: the two chassis bullets overlap the
+ROADMAP chassis improvement round; they are independent of the reshapes, so keeping them
+here is defensible, but say so.

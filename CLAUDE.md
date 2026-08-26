@@ -39,25 +39,26 @@ new surface, ask whether it is cairn's job or the developer's domain, then read
 `docs/internal/what-cairn-is-and-is-not.md` and the full stack list in the `cairn-scope-opinionated-stack`
 memory.
 
+## Engine consultation (pre-pass, from consuming sites)
+
+Consuming sites consult the engine before a pass builds against it; the `engine-consult` skill is
+the canonical protocol, and briefs arrive at `docs/internal/consultations/`, one document per
+consulting pass, brief and verdicts together. Rulings live in `docs/internal/engine-rulings.md`,
+the record of rulings the charter has produced and the evidence that would reopen each; read it
+before re-arguing a settled item, never in place of the charter's own test.
+
 ## How to run this project
 
-The work is a clean, test-first **rebuild** that began 2026-05-28. The canonical source of truth is
-the functional spec at `docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`. It
-supersedes the older plan and architecture writeups (now under `docs/internal/history/`), which
-remain only as history. Read the spec at the start of a rebuild session.
+The canonical source of truth is the functional spec at
+`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`; read it at the start of a
+rebuild session (the older writeups under `docs/internal/history/` are history only). The numbered
+rebuild plans (00 through 08, under `docs/superpowers/plans/`) have all landed; later engine work
+runs on feature worktrees off `main`, one per pass, so `main` stays releasable. The published
+version, the unpublished window, and the next action live in `docs/STATUS.md`.
 
-The rebuild ran as a numbered plan series, 00 through 08, each plan written just-in-time after
-the prior one landed, under `docs/superpowers/plans/`; all have landed and merged to `main`.
-Later engine work continues on feature worktrees off `main`, one worktree per pass, so `main` stays
-releasable. The current published version, the unpublished window on `main`, and the next action all
-live in `docs/STATUS.md`.
-
-Execute a plan task-by-task by dispatching each well-specified task to `cairn-implementer`
-(pinned Sonnet), test-first against the suite; the main loop reviews each diff and confirms the
-full gate before the next dispatch, and implements inline (or upshifts the dispatch model) only
-for novel correctness-critical logic the plan does not fully specify. The **`cairn-pass`** skill
-marks pass start and the pass-end ritual for this
-initiative. Honor this repo's own skills and conventions while working in it.
+Execute a plan task-by-task through the `cairn-implementer` chain (details under Tooling below).
+The **`cairn-pass`** skill marks pass start and the pass-end ritual. Honor this repo's own skills
+and conventions while working in it.
 
 The rolling status lives in `docs/STATUS.md` (read and written by `cairn-pass`, canonical on
 `main`). Per-plan post-mortems live with the plans in `docs/superpowers/plans/`. This file stays

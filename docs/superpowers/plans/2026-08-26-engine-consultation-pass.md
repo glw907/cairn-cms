@@ -318,6 +318,32 @@ reference.
   else queues.
 - [ ] **Step 5: Gates.** `npm run check:arm-indexes`, `npm run check:docs`. Commit.
 
+### Task 8b: The internals audit (added mid-pass by Geoff, 2026-08-26)
+
+**Scope addition, recorded per the pass-sizing rule.** Geoff's directive, verbatim: "We
+should look at more than just the engine surface. Internals should be clean, beautiful,
+and idiomatic sveltekit to the greatest degree that's reasonable." This extends the
+audit's altitude, not its posture: the same standing goal (clean, even, beautiful), the
+same thoroughness ruling, the same trustworthiness gate.
+
+**Files:**
+- Extend: `docs/internal/record/2026-08-26-any-site-audit.md` (internals section)
+- Modify: `ROADMAP.md` (remediation items fold into the same audit-remediation entry)
+
+- [ ] **Step 1: Enumerate the internals mechanically** (src/ module map with sizes; the
+  partition mirrors the surface buckets where the code does, plus the engine-only areas:
+  log internals, CLI implementations, build scripts, tests layout).
+- [ ] **Step 2: Author and launch the internals workflow** after the surface workflow
+  completes (serial, never concurrent with it). Standards handed to every agent: the
+  idiom charter (`docs/internal/code-idioms.md`), Svelte 5 runes and SvelteKit 2 idiom,
+  and the clean/beautiful bar. Per-area rankers (findings ranked worst-first, no empty
+  returns), a verification pass on the worst-ranked and every rewrite-tier finding, a
+  whole-codebase coherence read (one designed codebase), and the trustworthiness auditor
+  with the same condemn signatures. Reviewer roles on `claude-opus-5`; runaway guard
+  armed.
+- [ ] **Step 3: Adjudicate and record** in the audit record; remediation items fold into
+  the same ROADMAP entry and, where consumer-visible, the same `Consumers must:` window.
+
 ### Task 9: Re-review the two held plans
 
 **Files:**

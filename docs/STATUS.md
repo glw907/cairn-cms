@@ -25,17 +25,17 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
 
 ## Parallel tracks
 
-- **Pre-pass engine consultation: EXECUTING (checkpoint after Task 5 of 10,
+- **Pre-pass engine consultation: EXECUTING (checkpoint after Task 8's surface audit,
   2026-08-26).** Spec: `docs/superpowers/specs/2026-08-26-engine-consultation-design.md`;
-  plan: `docs/superpowers/plans/2026-08-26-engine-consultation-pass.md`. Done: ledger
-  seeded (10 entries) + consultations arm (Task 1, cairn commit `a5287c98`);
-  `engine-consult` skill, `engine-triage` agent (verbatim-checked, coverage-checked,
-  register-folded, smoke-tested headless), `site-pass` both hooks, `cairn-pass` hooks
-  (Tasks 2-5, dotfiles commit `3ba3ade`). Next: Task 6 (workstation CLAUDE.md), then 7,
-  then the Task 8 whole-surface audit (workflow mode). Note for resume: this session's
-  Agent registry predates `engine-triage`, so triage dispatches run headless via
-  `claude --agent engine-triage -p`. **Geoff sequenced this ahead of the
-  harvest-absorption passes below (Task 9 re-reviews them).**
+  plan: `docs/superpowers/plans/2026-08-26-engine-consultation-pass.md` (now carrying
+  Task 8b/8c: Geoff's three mid-pass directives, internals + chassis audit). Done: Tasks
+  1-8. Infrastructure: ledger + consultations arm (`a5287c98`), `engine-consult` skill +
+  `engine-triage` agent + both pass-skill hooks (dotfiles `3ba3ade`), both CLAUDE.md
+  edits (`1ab938c`, `3cf90802`). Surface audit adjudicated and recorded (`45baad14`):
+  535 items, 384/57/94 keep/reshape/retire, trustworthy verdict, remediation filed in
+  ROADMAP Now. Next: Task 8b internals+chassis workflow (partition banked in scratchpad),
+  then Task 9 (re-review the two held plans via `engine-triage`), then Task 10 close.
+  **Geoff sequenced this ahead of the harvest-absorption passes below.**
 - **ASC harvest absorption: two plans prepped 2026-08-26, held as drafts behind the
   consultation pass.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md` (behavior,
   7 tasks) and `2026-08-26-harvest-detection-pass.md` (detection and docs, 7 tasks), from the

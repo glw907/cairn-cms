@@ -25,11 +25,16 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
 
 ## Parallel tracks
 
-- **Pre-pass engine consultation initiative filed** (ROADMAP, Now): replaces reactive DX
-  harvesting with a before-the-pass exchange, plus a retroactive any-site audit of the current
-  surface. Its own pass; opens with an interactive brainstorm over
-  `docs/internal/record/2026-08-26-engine-consultation-inputs.md`. **Geoff sequenced it (2026-08-26)
-  ahead of the harvest-absorption passes below, since its rulings may revise them.**
+- **Pre-pass engine consultation: brainstormed, spec and plan ratified and adversarially
+  reviewed (2026-08-26), ready to execute.** Spec:
+  `docs/superpowers/specs/2026-08-26-engine-consultation-design.md` (carries Geoff's
+  standing rulings: thoroughness over token economy, pre-beta breakage welcome, beta
+  waits for the new ASC site and ecxc). Plan:
+  `docs/superpowers/plans/2026-08-26-engine-consultation-pass.md`, ten tasks, main-loop
+  conduction, Task 8 is the whole-surface audit in workflow mode. Execute in a fresh
+  session from the cairn-cms checkout. **Geoff sequenced it ahead of the
+  harvest-absorption passes below, since its rulings may revise them (Task 9 is that
+  re-review).**
 - **ASC harvest absorption: two plans prepped 2026-08-26, held as drafts behind the
   consultation pass.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md` (behavior,
   7 tasks) and `2026-08-26-harvest-detection-pass.md` (detection and docs, 7 tasks), from the

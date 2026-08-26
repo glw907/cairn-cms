@@ -49,6 +49,49 @@ New findings start below this line, one per finding, with its perspective and a 
   2026-08-22) reads the list by that exact heading, so renaming the heading requires updating the
   routine in the same change.
 
+The fourteen entries below are the survivors of the 2026-08-26 adversarial triage of the
+late-August ASC harvests. Full substance, evidence, and the ruled-out list:
+[`record/2026-08-26-asc-harvest-triage.md`](./record/2026-08-26-asc-harvest-triage.md). Each is
+queued in one of two prepped pass plans (`2026-08-26-toolkit-seams-pass.md`,
+`2026-08-26-harvest-detection-pass.md`); prune these entries when those passes ship.
+
+- **extender:** the media picker has no legal import path (`MediaPicker.svelte` unexported,
+  `mediaLibraryEntry` internal per `src/lib/media/library-entry.ts:11`); ASC rebuilt the field.
+  Queued: toolkit-seams T1.
+- **extender:** `StatusChip` still renders the tone dot the 2026-08-24 owner probe retired, and
+  lacks the ratified warning-tint and outline registers now proven across three ASC screens.
+  Queued: toolkit-seams T2.
+- **extender:** `ExpandableRow`'s trigger is a ~24px target and its row handler offers no escape
+  for an interactive summary cell, forcing `svelte-ignore`'d `stopPropagation` wrappers.
+  Queued: toolkit-seams T3.
+- **extender:** the four disclosure mechanics live only inside `ListToolbar`'s overflow; the one
+  hand-copy missed all four. Queued: toolkit-seams T4 (`ToolbarDisclosure`).
+- **extender:** `CsrfField` blanks on the `use:enhance` success reset and the next submit 403s
+  against cairn's own guard; hit twice in one repo. Queued: toolkit-seams T5.
+- **admin:** unchecked `.checkbox` edge measures 1.50:1/1.75:1 against the 3:1 WCAG 1.4.11 floor
+  in the packaged admin sheet. Queued: toolkit-seams T6.
+- **extender:** admin scope has no compiled success/warning text tint; dead `text-success`
+  utilities shipped silently. Queued: toolkit-seams T6.
+- **extender:** bare `<ul>` inside `.toolkit-*` containers keeps the UA 40px gutter; the blanket
+  reset is ruled out (`cairn-admin.css:468`), the scoped padding-only form is in.
+  Queued: toolkit-seams T6.
+- **extender:** four divergent site copies of a D1 unique-violation matcher; the cause-chain walk
+  is workerd platform knowledge. Queued: toolkit-seams T7 (`/cloudflare`).
+- **admin:** a site-wide `Referrer-Policy: no-referrer` makes every plain POST carry
+  `Origin: null` and 403 against the guard (`csrf.ts:23`); the guard stays strict, the doctor
+  detects the misconfiguration. Queued: harvest-detection T1.
+- **extender:** `no-uncompiled-class` cannot register site-compiled stylesheets, so a pass closed
+  with six known-false-positives. Queued: harvest-detection T2.
+- **contributor:** six mechanically detectable mechanics want audit rules (stripe/trim parity,
+  `font: inherit` clobber, bare-tag hover parity, DaisyUI dead class, styled `<ul>` without
+  `role="list"`, panel width at 320/390). Queued: harvest-detection T3–T5.
+- **contributor:** each rendered contrast rule needs a falsification test proving it reds on an
+  oklch surface (`interactive-contrast.ts:21` documents the parser trap).
+  Queued: harvest-detection T6.
+- **extender:** chassis smooth-scroll triple with a header-height token, `PUBLIC_ORIGIN` as the
+  only origin source, and three documented patterns (fixed clock, dialog-form failure, streamed
+  panel data). Queued: harvest-detection T7.
+
 ## Clearings
 
 The detail of a cleared finding lives in the pass post-mortem that cleared it and in

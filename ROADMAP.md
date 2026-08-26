@@ -290,6 +290,30 @@ The original decision framing, for the record:
   brief: `docs/internal/record/2026-08-26-engine-consultation-inputs.md`. The reactive harvest duty
   (workstation `CLAUDE.md`) stays as the mid-pass fallback until this pass rules otherwise.
 
+- **The any-site audit remediation (filed 2026-08-26; sequenced before beta, one `Consumers
+  must:` window).** The retroactive audit ruled on all 535 public items
+  (`docs/internal/record/2026-08-26-any-site-audit.md`; per-item entries in
+  `docs/internal/engine-rulings.md`): 384 keep, 57 reshape, 94 retire. Executing the non-keeps
+  is one initiative, run as its own engine pass series while churn is free, with every break
+  batched into a single `Consumers must:` list. The itemization lives in the audit record and
+  the ledger, not restated here; the headline structure:
+  - **The 94 retires**, dominated by the route-factories R4-closure over-application (53) and
+    the undogfooded admin-toolkit field tier (`SelectInput`, `SelectInputOption`, `TextInput`,
+    with `FieldLabel` kept as the tier's one engine-owned member).
+  - **The 57 reshapes**, led by auth-family (12, including `createSectionAction`'s
+    authorization asymmetry: its checks and audited `fail(403)` exist only on the D1-required
+    path while `adminAction`, where the docs route DB-less sites, has none) and the CLI
+    surface (14, including the `create-cairn-site` money narrative already filed above).
+  - **The seven structural coherence families** (canonical export home; one parameter-bag
+    convention; one factory-return mechanism; verb rules beyond the factory verbs; no bare-noun
+    functions; one "what happened" idiom; narrowing `ContentRoutes` and re-deriving the R4
+    closure, which also re-tests adapter's ~22 C2_READDED keeps and the three closure leaks).
+  - **Coupled pair:** `defineAccess` reshaped to accept `undefined` roles (its three siblings
+    do), which reopens and then retires `DEFAULT_ROLES`.
+  - **The chassis improvement round** (Geoff, 2026-08-26): after the engine reshapes land,
+    `examples/showcase` gets its round of improvement against the changed engine, as its own
+    pass in this initiative.
+
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
   `cairn-cairn-capture-scratch`); revoke the T4c spike API token and the three Cloudflare API

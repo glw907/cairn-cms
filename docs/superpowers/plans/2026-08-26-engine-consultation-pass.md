@@ -59,6 +59,8 @@ list runs at close as usual.
   - **Verdict:** accept | decline | defer | keep | reshape | retire — one-sentence reason.
   - **Reopens on:** the named evidence that would qualify (or "closed" for executed accepts).
   - **Record:** link to the consultation, triage, or audit document holding the full argument.
+  - **Any-site case:** (audit entries; required on every keep) the concrete anonymous-consumer scenario.
+  - **Verified:** (audit entries; required on every family-originated export and every non-keep) the verifier pass that checked it.
   ```
 
 - [ ] **Step 2: Seed it** from the 2026-08-26 triage's "Ruled out" section (eight entries:
@@ -122,12 +124,20 @@ reference.
     paste-then-delete staging mechanics unchanged.
   - First-run rule: the protocol's first live consultation appends a short post-mortem to
     the ledger.
-- [ ] **Step 3: Register gate.** Dispatch `cairn-register-editor` over the file; fold
-  error-tier findings.
-- [ ] **Step 4: Commit** in `~/.dotfiles` if the skills tree is stow-managed there;
-  otherwise note the file is user-scoped and uncommitted by design. Check with
-  `ls ~/.dotfiles/claude/.claude/skills/ 2>/dev/null` first; if the claude stow package
-  carries skills, add it there and `stow -R claude`.
+- [ ] **Step 3: Verbatim check.** Compare the skill's standard block against the spec's
+  "The standard" section with a literal diff (`diff` over the extracted blocks); only
+  heading level and list markers may differ, every sentence of the two limbs, the four
+  constraints, the fails-when line, and the clean/even/beautiful goal must match word for
+  word. Mark the block with an HTML comment naming its source section so a later editor
+  knows it is quoted, not authored.
+- [ ] **Step 4: Register gate, advisory.** Dispatch `cairn-register-editor` over the file;
+  its exemplars are cairn published prose, and this is an agent-facing instruction file,
+  so fold only findings that hold for that genre and discard ones arguing from the editor
+  or positioning registers.
+- [ ] **Step 5: Commit.** The live file at `~/.claude/skills/` is a real file (verified;
+  not a stow symlink); the dotfiles tree carries synced copies under
+  `~/.dotfiles/claude/.claude/skills/`. Edit live, mirror the copy into the dotfiles
+  tree, and commit there.
 
 ### Task 3: The `engine-triage` agent
 
@@ -136,7 +146,10 @@ reference.
 
 **Consumes:** the standard and ledger path from Tasks 1 and 2.
 
-- [ ] **Step 1: Author the agent definition.** Frontmatter: `name: engine-triage`,
+- [ ] **Step 1: Author the agent definition.** Follow the workstation charter's
+  agent-facing register (Anthropic's Claude Code best practices), with
+  `~/.claude/agents/diff-reviewer.md` as the in-tree shape exemplar (frontmatter fields,
+  scope-limiting opening, output-shape section). Frontmatter: `name: engine-triage`,
   `model: claude-opus-5`, read-only tools (`Read, Grep, Glob, Bash`), description
   triggering on consultation triage and audit verification for cairn. Body, required
   content:
@@ -151,18 +164,31 @@ reference.
     everything"; no accept-by-default and no decline-by-reflex.
   - The dual role note: in audit mode it verifies ranked verdicts per the audit brief it
     is handed.
-- [ ] **Step 2: Register gate.** `cairn-register-editor` over the file; fold error-tier
-  findings.
-- [ ] **Step 3: Verify the agent resolves.** Dispatch `engine-triage` with a two-line smoke
+- [ ] **Step 2: Verbatim checks.** Literal-diff the agent's standard block against the
+  spec's section (same rules as Task 2 Step 3), and against Task 2's skill block, since
+  the spec requires them to be the same block.
+- [ ] **Step 3: Coverage gate, both files.** One fresh-context dispatch
+  (`general-purpose`, `model: sonnet`; presence-checking, not judgment), handed the spec,
+  both authored files, and both required-content lists verbatim from this plan, returning
+  per bullet `present | absent | partial` with one quoted line as evidence. Fold any
+  `absent` or `partial` before the register gate. This is the only gate these files get:
+  they live at `~/.claude/`, out of reach of every repo check.
+- [ ] **Step 4: Register gate, advisory** (same genre rule as Task 2 Step 4).
+- [ ] **Step 5: Verify the agent resolves.** Dispatch `engine-triage` with a two-line smoke
   prompt ("read the ledger, return its entry count and format check as JSON") and confirm
   it runs read-only and returns.
-- [ ] **Step 4: Commit** alongside Task 2's location decision (same stow package rules).
+- [ ] **Step 6: Commit** per Task 2 Step 5's live-then-mirror rule.
 
 ### Task 4: `site-pass` hooks
 
 **Files:**
 - Modify: `~/.claude/skills/site-pass/SKILL.md`
 
+- [ ] **Step 0: Bank the negative control.** Copy the pre-edit
+  `~/.claude/skills/site-pass/SKILL.md` and `plan-template.md` to the pass scratchpad as
+  `site-pass-preedit.md` / `plan-template-preedit.md`; Task 10's cold-start test needs
+  them, and the dotfiles copies are script-synced, so git is not a guaranteed source of
+  what a session actually read.
 - [ ] **Step 1: Add the authoring-time hook.** In "Starting a pass" step 2, immediately
   before "write a plan at": run the engine-contact enumeration per the `engine-consult`
   skill; the plan header records either the consultation-brief link or the one-line
@@ -230,26 +256,61 @@ reference.
 
 **Consumes:** ledger format (Task 1), `engine-triage` (Task 3).
 
-- [ ] **Step 1: Enumerate the inventory mechanically.** From
-  `docs/internal/api-surface.md` plus `package.json` `exports`, build the per-subsystem
-  export lists for the spec's nine subsystems (adapter/concept model; route factories;
-  admin shell + toolkit; auth family; `/cloudflare` + audit sink; media; delivery; log
-  vocabulary; doctor). Reconcile counts against `docs/reference/README.md`; every export
-  appears exactly once.
-- [ ] **Step 2: Author and launch the workflow** implementing spec §4's seven-point shape:
-  per-subsystem ranking agents (weakest-to-strongest anonymous-consumer case, quoted
-  shaping evidence, provenance field per export, verdicts on top of the ranking);
-  verification following the ranking (weakest-ranked N per subsystem, every non-keep,
-  every keep on a family-originated export; both-directions prompt); the second-vantage
-  agent on the six 2026-08-01 suspects asking the wrong-premise question; the
-  whole-surface coherence read; the trustworthiness auditor with authority to condemn the
-  run (near-all-keep named as the failure signature). Reviewer roles run on
+- [ ] **Step 1: Enumerate the inventory mechanically, then derive the partition from it.**
+  The spec's nine subsystem names are the grouping, not an exhaustive partition; "Nothing
+  is exempt" sanctions extending them to span the real surface.
+  - **(a) Regenerate first.** Run `npm run check:surface -- --update` and confirm zero
+    diff, so the audit runs against HEAD (`api-surface.md` is a generated snapshot).
+  - **(b) Unit.** One audit item is one unique symbol line in `api-surface.md`, deduped
+    across subpaths, carrying a `surfaced at` list of every subpath exporting it. One
+    symbol gets one verdict and one ledger entry. Two entries sharing a name with
+    differing signatures stay two items, flagged to the coherence read. Derive the live
+    counts at execution and record them in the audit record, not here.
+  - **(c) Buckets, covering all 18 subpath headings exactly once:** adapter/concept
+    model (`.`, `/ambient`); route factories (`/sveltekit`; note `createSectionAction`
+    and `createD1AuditSink` live here, not under `/cloudflare`, despite the spec's
+    bucket phrasing); admin shell + toolkit (`/components`, `/admin-toolkit`); auth
+    family (`/auth-store`, `/auth-channel`, `/auth-crypto`); cloudflare + audit sink
+    (`/cloudflare`); media (`/media`); delivery (`/delivery`, `/delivery/head`,
+    `/delivery/data`); **render and build tooling** (new: `/render`, `/islands`,
+    `/vite`); **reproductions harness** (new: `/reproductions`,
+    `/reproductions/manifest`; family-originated by construction, so spec §4's
+    provenance flag applies to every item in it).
+  - **(d) The two export-less subsystems enumerate from named non-export sources, on
+    contract shape rather than symbols:** the log vocabulary from
+    `docs/reference/log-events.md` and `src/lib/log/` (one item per event name; the
+    event names are the public-observable contract per `CLAUDE.md`); the spec's
+    "doctor" slot widens to the CLI surface, all four `bin` commands (`cairn-doctor`,
+    `cairn-manifest`, `cairn-media-seed`, `cairn-audit`), one item per check, command,
+    flag-set, and output contract, from their `docs/reference/` pages plus `src/`.
+  - **(e) Falsifiable reconciliation, blocking on Step 2.** The union of bucket
+    membership equals the 18 `api-surface.md` subpath headings exactly, none omitted,
+    none in two buckets; every `docs/reference/README.md` page maps to exactly one
+    bucket (coverage direction only; do not reconcile page counts against export
+    counts). A bucket that should carry exports or contract items and enumerates zero
+    fails this step and is fixed before the workflow launches; the two export-less
+    buckets are expected and still get ranking agents.
+- [ ] **Step 2: Author and launch the workflow**, implementing all seven points of spec
+  §4's shape, enumerated here so a miscount is visible on the page: (1) per-subsystem
+  ranking agents, weakest-to-strongest anonymous-consumer case, quoted shaping evidence,
+  verdicts on top of the ranking; (2) a provenance field per item; (3) verification
+  following the ranking (weakest-ranked N per subsystem, every non-keep, every keep on a
+  family-originated item; both-directions prompt); (4) the keep burden: a keep's return
+  states the concrete anonymous-consumer scenario, and a keep whose argument is the
+  absence of an objection routes to the verifier automatically, not at the conductor's
+  discretion; (5) the second-vantage agent on the six 2026-08-01 suspects asking the
+  wrong-premise question; (6) the whole-surface coherence read; (7) the trustworthiness
+  auditor with authority to condemn the run, with two named condemn signatures:
+  near-all-keep, and a missing or empty subsystem. Reviewer roles run on
   `claude-opus-5`. Arm the background runaway-guard poll on the workflow transcript dir
   (stall past ~25 min, or any agent file past ~900KB and growing).
 - [ ] **Step 3: Adjudicate.** Read the trustworthiness verdict first; if it condemns the
   run, fix and resume via `resumeFromRunId` before reading anything else. Then adjudicate
   per-export verdicts, write the audit record (rankings, provenance, verdicts, arguments,
-  the coherence findings), and append ledger entries per Task 1's format.
+  the coherence findings), and append ledger entries per Task 1's format. Then run the
+  completeness check that is the mechanical read of spec §7's acceptance bullet: no
+  family-originated item's entry missing **Verified:**, no keep missing **Any-site
+  case:**.
 - [ ] **Step 4: File the remediation plan.** Reshape/retire items land in `ROADMAP.md`
   (Now tier, one entry for the audit remediation, itemized, sequenced before beta,
   batched into one `Consumers must:` window). Trivial retires (if any verdict is a pure
@@ -284,10 +345,28 @@ reference.
   site and ecxc deliberately (the consultation runway); the "seams have held" clock
   starts after those consultations stop producing accepts. Mark the Now-tier consultation
   entry done and remove it (the remediation entry from Task 8 replaces it).
-- [ ] **Step 2: Cold-start test, both paths.** (a) Walk `site-pass` as edited from a
-  no-plan start: the enumeration step is reached before plan-writing with no outside
-  prompting. (b) Walk it from a committed-plan-without-consultation-line start: the
-  backstop blocks the first dispatch. Fix the skill wording if either walk fails.
+- [ ] **Step 2: Cold-start test, both paths (dispatched, never walked by this session).**
+  The conductor authored Task 4's wording and cannot grade a cold read of it. Three
+  dispatches, `general-purpose`, `model: sonnet` (explicit; an unpinned dispatch inherits
+  Fable). Each prompt hands only the file path to read, the scenario, and "report your
+  first five actions in order, each quoting the skill line it came from, then stop
+  without acting." The prompt names no engine, consultation, or `engine-consult` term,
+  or it cues the answer it is testing.
+  - **(a) No-plan path.** Scenario: a site repo whose `docs/STATUS.md` names pass N with
+    a starter prompt and no plan file exists. Reads the edited `SKILL.md` plus
+    `plan-template.md`. Pass: an enumeration action appears before the "write a plan at"
+    action. Fail: plan-writing first, or no enumeration in five actions.
+  - **(b) Committed-plan path.** Scenario: STATUS names pass N, its plan is committed,
+    and the plan header carries neither a brief link nor the "no engine asks" line.
+    Pass: no `site-implementer` dispatch before an enumerate-and-append action. Fail: a
+    dispatch precedes it.
+  - **(c) Negative control.** Run (b)'s prompt verbatim against Task 4 Step 0's pre-edit
+    copy. It must fail (dispatch first); a control that passes means the probe is
+    reading the agent's prior rather than the wording, and (a) and (b) prove nothing
+    until the prompt is reshaped and all three re-run.
+  On any failure, fix the skill wording and dispatch a new agent; never re-prompt a
+  graded one. Paste all three action lists into the Step 4 post-mortem verbatim; they
+  are the acceptance evidence for spec §7's last bullet.
 - [ ] **Step 3: Memory entry** (`type: project`): the protocol exists, the ledger and
   consultations paths, the both-hooks trigger, the sequencing rule, beta-waits-for-two-
   sites. Index line in `MEMORY.md`.

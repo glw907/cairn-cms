@@ -28,7 +28,7 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
 - **Pre-pass engine consultation initiative filed** (ROADMAP, Now): replaces reactive DX
   harvesting with a before-the-pass exchange, plus a retroactive any-site audit of the current
   surface. Its own pass; opens with an interactive brainstorm over
-  `docs/internal/2026-08-26-engine-consultation-inputs.md`. **Geoff sequenced it (2026-08-26)
+  `docs/internal/record/2026-08-26-engine-consultation-inputs.md`. **Geoff sequenced it (2026-08-26)
   ahead of the harvest-absorption passes below, since its rulings may revise them.**
 - **ASC harvest absorption: two plans prepped 2026-08-26, held as drafts behind the
   consultation pass.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md` (behavior,

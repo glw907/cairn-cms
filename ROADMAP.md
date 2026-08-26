@@ -287,7 +287,7 @@ The original decision framing, for the record:
   (prime suspects: the seams landed ahead of consumers from the 2026-08-01 family briefs),
   which belongs before beta while reshaping is cheap. Likely deliverables include one or more
   skills and other Claude infrastructure. Opens with an interactive brainstorm over the inputs
-  brief: `docs/internal/2026-08-26-engine-consultation-inputs.md`. The reactive harvest duty
+  brief: `docs/internal/record/2026-08-26-engine-consultation-inputs.md`. The reactive harvest duty
   (workstation `CLAUDE.md`) stays as the mid-pass fallback until this pass rules otherwise.
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the

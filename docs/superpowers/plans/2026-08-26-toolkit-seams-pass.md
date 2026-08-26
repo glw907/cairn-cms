@@ -10,7 +10,7 @@
 `main` at `0d500e4f`.
 
 **Status: DRAFT, held (Geoff, 2026-08-26).** The pre-pass engine consultation initiative
-(`docs/internal/2026-08-26-engine-consultation-inputs.md`) runs first and may revise this plan;
+(`docs/internal/record/2026-08-26-engine-consultation-inputs.md`) runs first and may revise this plan;
 re-review every task against its any-site and shape rulings before seeking approval.
 
 **Goal:** absorb the behavior half of the 2026-08-26 ASC harvest triage

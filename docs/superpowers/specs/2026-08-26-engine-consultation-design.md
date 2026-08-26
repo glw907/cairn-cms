@@ -1,7 +1,7 @@
 # Pre-pass engine consultation: design (2026-08-26)
 
 Ratified in the 2026-08-26 brainstorm over
-`docs/internal/2026-08-26-engine-consultation-inputs.md`. This spec supersedes that inputs
+`docs/internal/record/2026-08-26-engine-consultation-inputs.md`. This spec supersedes that inputs
 brief; the brief stays as the record of the problem framing and Geoff's four rulings, which
 this design implements. The worked examples live in
 `docs/internal/record/2026-08-26-asc-harvest-triage.md`.

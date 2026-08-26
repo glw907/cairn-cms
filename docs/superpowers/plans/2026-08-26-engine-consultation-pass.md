@@ -324,10 +324,17 @@ reference.
 should look at more than just the engine surface. Internals should be clean, beautiful,
 and idiomatic sveltekit to the greatest degree that's reasonable." And: "The engine
 itself needs to be inviting and comprehensible to for new developers and easy for AI
-agents to extend." This extends the audit's altitude, not its posture: the same standing
+agents to extend." And, third: "The site chassis is also a critical part of this effort,
+and deservices an agressive review an round of improvement based on the changes in the
+egine." [sic] This extends the audit's altitude, not its posture: the same standing
 goal (clean, even, beautiful), the same thoroughness ruling, the same trustworthiness
 gate. The internals bar has three limbs: idiomatic SvelteKit, inviting and comprehensible
-to a new developer, easy for an AI agent to extend.
+to a new developer, easy for an AI agent to extend. The chassis (`examples/showcase`, the
+starting copy every next theme receives) gets the aggressive REVIEW inside this pass's
+workflow; its round of IMPROVEMENT depends on the engine changes the audits produce, so it
+files into the audit-remediation initiative as its own pass, sequenced after the engine
+reshapes and before beta (the third scope addition to this pass; the split is the
+pass-sizing rule applied, raised to Geoff in-session).
 
 **Files:**
 - Extend: `docs/internal/record/2026-08-26-any-site-audit.md` (internals section)
@@ -346,7 +353,11 @@ to a new developer, easy for an AI agent to extend.
   the path breaks), a verification pass on the worst-ranked and every rewrite-tier
   finding, a whole-codebase coherence read (one designed codebase), and the
   trustworthiness auditor with the same condemn signatures. Reviewer roles on
-  `claude-opus-5`; runaway guard armed.
+  `claude-opus-5`; runaway guard armed. An eleventh ranker area covers the site chassis
+  (`examples/showcase`, file list banked): judged on the same three limbs PLUS its two
+  chassis-specific duties, exemplifying how a site should consume the engine (the
+  anonymous consumer's first artifact) and serving as the starting copy every theme
+  receives; both vantage walks include the chassis in their path.
 - [ ] **Step 3: Adjudicate and record** in the audit record; remediation items fold into
   the same ROADMAP entry and, where consumer-visible, the same `Consumers must:` window.
 

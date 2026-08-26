@@ -274,6 +274,22 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Pre-pass engine consultation, and the any-site standard (Geoff, 2026-08-26). Its own
+  well-planned pass; runs BEFORE the two held harvest-absorption plans, which it may revise.**
+  Replace reactive DX harvesting with a deliberate before-the-pass exchange between site and
+  engine efforts: the site files what its pass will press on the engine, the engine triages
+  each item adversarially (decline-with-reason is a normal outcome), and accepted work lands
+  ahead of the site task that needs it. Three standing rulings shape it: no accept-by-default;
+  the bar is an anonymous cairn consumer, never this family (the engine stays a lean starting
+  point for any site, not a specialty tool for Geoff's collection); and accepted functionality
+  takes the shape easiest for any site even when that costs one of Geoff's sites some
+  hand-rolling. The same pass scopes a retroactive any-site audit of the current surface
+  (prime suspects: the seams landed ahead of consumers from the 2026-08-01 family briefs),
+  which belongs before beta while reshaping is cheap. Likely deliverables include one or more
+  skills and other Claude infrastructure. Opens with an interactive brainstorm over the inputs
+  brief: `docs/internal/2026-08-26-engine-consultation-inputs.md`. The reactive harvest duty
+  (workstation `CLAUDE.md`) stays as the mid-pass fallback until this pass rules otherwise.
+
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,
   `cairn-cairn-capture-scratch`); revoke the T4c spike API token and the three Cloudflare API

@@ -25,6 +25,17 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
 
 ## Parallel tracks
 
+- **Pre-pass engine consultation initiative filed** (ROADMAP, Now): replaces reactive DX
+  harvesting with a before-the-pass exchange, plus a retroactive any-site audit of the current
+  surface. Its own pass; opens with an interactive brainstorm over
+  `docs/internal/2026-08-26-engine-consultation-inputs.md`. **Geoff sequenced it (2026-08-26)
+  ahead of the harvest-absorption passes below, since its rulings may revise them.**
+- **ASC harvest absorption: two plans prepped 2026-08-26, held as drafts behind the
+  consultation pass.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md` (behavior,
+  7 tasks) and `2026-08-26-harvest-detection-pass.md` (detection and docs, 7 tasks), from the
+  adversarial triage at `docs/internal/record/2026-08-26-asc-harvest-triage.md`. Survivors are
+  tracked in the friction log until the passes ship; re-review both plans against the
+  consultation pass's rulings before approval.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window above.
@@ -50,6 +61,9 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
   job on that suite.
 - `ROADMAP.md`'s Now tier carries the `FieldInput` `ownership_invalid_mutation` fix (a plain prop
   bound with `bind:this` against `EditPage`'s `$state`).
+- Three ASC staging harvest docs (events-admin, events-redesign, assets-register) are folded
+  into cairn and slated for deletion in the ASC repo. Trigger: the ASC `email-announce` branch
+  settles (it was in flight with warm uncommitted work on 2026-08-26, so nothing was touched).
 
 Everything else, every prior pass, release, and archived checkpoint, is in
 [`docs/HISTORY.md`](HISTORY.md).

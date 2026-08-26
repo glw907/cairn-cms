@@ -20,6 +20,13 @@ reserves `0.x` for exactly that. `1.0` is not a maturity badge; it is the commit
 seam becomes a major-version (`2.0`) event, which the charter already calls "a deliberate major-version
 event, not an everyday one." Cut it when the surface stops moving, not on a date.
 
+**Beta waits for the new ASC site and ecxc, deliberately (Geoff, 2026-08-26, the consultation
+sitting).** Their remaining work runs inside the pre-beta window specifically to maximize engine
+quality: every one of their passes consults the engine through the `engine-consult` protocol while
+reshaping is a cheap `0.x` event, and the "seams have held across an initiative or two" clock below
+starts only after those consultations stop producing accepts. The consultation runway is what the
+two-site condition buys; rulings accumulate in `docs/internal/engine-rulings.md`.
+
 **Release mechanics per phase (Geoff, 2026-08-05, the harvest sitting).** The `0.94.0-rc.1`
 candidate **published 2026-08-05** to the `next` dist-tag, a one-time guard for the current window,
 which is the largest breaking window to date and is proven only against the self-authored showcase;
@@ -273,22 +280,6 @@ The original decision framing, for the record:
   decision, not a default; check name availability first.
 
 ## Now
-
-- **Pre-pass engine consultation, and the any-site standard (Geoff, 2026-08-26). Its own
-  well-planned pass; runs BEFORE the two held harvest-absorption plans, which it may revise.**
-  Replace reactive DX harvesting with a deliberate before-the-pass exchange between site and
-  engine efforts: the site files what its pass will press on the engine, the engine triages
-  each item adversarially (decline-with-reason is a normal outcome), and accepted work lands
-  ahead of the site task that needs it. Three standing rulings shape it: no accept-by-default;
-  the bar is an anonymous cairn consumer, never this family (the engine stays a lean starting
-  point for any site, not a specialty tool for Geoff's collection); and accepted functionality
-  takes the shape easiest for any site even when that costs one of Geoff's sites some
-  hand-rolling. The same pass scopes a retroactive any-site audit of the current surface
-  (prime suspects: the seams landed ahead of consumers from the 2026-08-01 family briefs),
-  which belongs before beta while reshaping is cheap. Likely deliverables include one or more
-  skills and other Claude infrastructure. Opens with an interactive brainstorm over the inputs
-  brief: `docs/internal/record/2026-08-26-engine-consultation-inputs.md`. The reactive harvest duty
-  (workstation `CLAUDE.md`) stays as the mid-pass fallback until this pass rules otherwise.
 
 - **The any-site audit remediation (filed 2026-08-26; sequenced before beta, one `Consumers
   must:` window).** The retroactive audit ruled on all 535 public items

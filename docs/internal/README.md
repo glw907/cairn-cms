@@ -53,6 +53,9 @@ subdirectories, each of which keeps its own filing rule and its own index.
 - [`engine-harvest-candidates.md`](engine-harvest-candidates.md): engine harvest candidates
   evidenced from two consumer sites, an input to the pre-beta harvest triage rather than a
   decision of its own.
+- [`engine-rulings.md`](engine-rulings.md): the rulings ledger, one entry per ruled
+  consultation or audit item with the evidence that would reopen it. Read before re-arguing
+  a settled item; the charter, not the ledger, adjudicates.
 - [`extending-developer-lens.md`](extending-developer-lens.md): the persona, diagnostic
   questions, and baseline for the lean extensibility redesign; subordinate to the charter.
 - [`pre-beta-harvest.md`](pre-beta-harvest.md): the pre-beta harvest ledger, every engine and
@@ -95,6 +98,12 @@ date (the `YYYY-MM[-DD]` filename prefix orders it against the work it came out 
 subject (the filename's own words after the date; `grep -l <subject>` across the directory beats
 browsing). This section deliberately does not enumerate every file here: an index that lists
 every record recreates the sediment problem the filing rule exists to end.
+
+## consultations/
+
+Pre-pass engine consultation briefs from consuming sites, one dated file per consulting
+pass, brief and verdicts together. Its own `consultations/README.md` carries the filing
+rule and the four-field item schema; the `engine-consult` skill is the canonical protocol.
 
 ## design/
 

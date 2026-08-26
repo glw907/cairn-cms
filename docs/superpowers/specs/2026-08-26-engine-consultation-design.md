@@ -39,15 +39,51 @@ Constraints on top of that gate:
 An item fails the gate when the hand-roll is small, domain-shaped, or a discoverability
 problem an export would not fix.
 
+The gate serves a standing goal Geoff named at the sitting: the engine stays clean,
+even, beautiful, and broadly useful. Membership and shape are per-item tests; evenness
+and coherence are properties of the whole surface, and the audit judges them at that
+altitude (section 4).
+
+## Standing rulings from the sitting (Geoff, 2026-08-26, mid-brainstorm)
+
+- **Thoroughness over token economy, for this initiative.** It is worth extra tokens to
+  make sure the engine evolves well. The audit argues every export properly rather than
+  sampling, verification depth is not where this pass economizes, and the plan's token
+  ceiling is sized accordingly.
+- **Pre-beta is the time to aim for the most perfect possible engine.** Changing the
+  engine now is sanctioned even when it means updating every site. The standing "churn
+  stays free until beta" ruling (ROADMAP, "Toward 1.0") applies at full strength: a
+  reshape or retire verdict is never discounted for the consumer migration it costs, and
+  the bar for a keep is that the shape is right, never that changing it is inconvenient.
+- **Family-wide breakage is a signal, not a defect.** Geoff expects this round to break
+  at least a few things for every cairn site and reads that as evidence the engine is
+  changing in significant ways. Remediation batches the breaks into one coherent
+  `Consumers must:` window so all four sites upgrade across one list.
+- **Beta waits for the new ASC site and ecxc, deliberately.** The remaining ASC and ecxc
+  work runs inside the pre-beta window specifically to maximize engine quality: every one
+  of their passes consults while reshaping is cheap, and the "seams have held across an
+  initiative or two" readiness clock starts only after those consultations stop producing
+  accepts. This pass updates ROADMAP's beta framing to name the condition.
+
 ## 1. The consultation protocol
 
-**Trigger.** `site-pass` pass-start gains a mandatory step between the brainstorm and
-plan-writing: the engine-contact enumeration. For each thing the pass will build, the
-conductor asks whether it presses an engine edge (admin surface, engine CSS, an exported
+**Trigger.** The engine-contact enumeration runs whenever a site pass's plan is
+authored, immediately before the plan is written, in whichever session authors it,
+including a prior pass's pass-end draft. For each thing the pass will build, the author
+asks whether it presses an engine edge (admin surface, engine CSS, an exported
 component's contract, auth, any seam). Exactly two outcomes: a consultation brief, or a
 recorded one-line "no engine asks" in the plan header. The null outcome is deliberately
-cheap; the trigger is reliable because it is a numbered step in a skill that already fires
-at every pass start, not prose in a backlog.
+cheap.
+
+**Backstop, for the resumed path.** `site-pass` pass-start gains a check after reading
+the plan and before the first implementer dispatch: if the plan header carries neither a
+consultation-brief link nor the "no engine asks" line, the enumeration runs now and the
+line is appended to the committed plan. The check is a blocking precondition on the
+first dispatch. Together the two hooks cover both paths a pass actually starts from,
+authoring a plan fresh and resuming onto a committed one.
+
+The gate binds any repo whose pass builds against the engine: the four sites, cairn-pub,
+and future consumers, wherever the plan is authored.
 
 **The brief.** One document per consulting pass, filed engine-side at
 `cairn-cms/docs/internal/consultations/YYYY-MM-DD-<site>-<pass>.md`. The site plan links
@@ -70,7 +106,10 @@ first. The conductor adjudicates its verdicts and records them in the same docum
 
 - **Accept**: with shape notes (the any-site form, re-derived) and a sequencing call
   (mini pass now, or queued engine pass with the fallback sanctioned interim and a
-  retirement trigger).
+  retirement trigger). An accept's ledger entry stays open until the consuming site task
+  lands; the consuming pass closes it with a one-line seam-fit report (fit as designed,
+  or the friction found), so a seam landed ahead of its consumer is never left unproven,
+  the gap the 2026-08-05 harvest assessment named.
 - **Decline**: with a recorded reason, into the ledger. The site's declared fallback is
   thereby sanctioned as the proper end state, not debt.
 - **Defer**: names the evidence that would reopen it (usually a second consumer) and
@@ -81,7 +120,9 @@ first. The conductor adjudicates its verdicts and records them in the same docum
 A standing file, `cairn-cms/docs/internal/engine-rulings.md`: one entry per ruled item,
 carrying the verdict, the reason, and what new evidence would qualify to reopen it. The
 triage agent reads it before arguing anything, so a settled decline is never re-litigated
-for free.
+for free. The ledger records; it does not adjudicate. The charter adjudicates scope
+questions, and a ledger entry is evidence for an argument, never a substitute for one;
+the ledger's own header states this.
 
 Seeded at birth from the 2026-08-26 triage's "Ruled out" section and the older standing
 rulings scattered through the record docs (the iCal exclusion, the D1 test-tier "out of
@@ -98,7 +139,9 @@ boundary; independence comes from fresh context plus model diversity, the same p
 the same session:
 
 - Fresh worktree off cairn `main`, after the one-executor check (`pgrep` on the path,
-  warm-changes check, cairn STATUS read).
+  warm-changes check, cairn STATUS read). The mini pass registers in cairn
+  `docs/STATUS.md`'s active-worktree list before its first commit, so a second session's
+  STATUS read sees the claim rather than only a liveness signal.
 - `cairn-implementer` and `diff-reviewer` chains as normal; both are user-scoped agents,
   available from any cwd, and subagents start with zero context regardless.
 - The `engine-consult` skill carries the cross-repo checklist compensating for the cairn
@@ -107,7 +150,9 @@ the same session:
   CI-only checks named in `cairn-pass`.
 - The site consumes via `npm run link:consumer` during development; the engine change is
   on the registry before the site pass closes (the existing "a consumer needs it now"
-  release trigger). A site branch cannot merge on a `file:` pin.
+  release trigger). A site branch cannot merge on a `file:` pin. The ordered close is
+  checklist content in `engine-consult`: engine merge to `main`, `cairn-release`,
+  `link:consumer -- --restore`, then the site merge.
 
 **Anything that breaks public surface or adds a subsystem** is initiative-scoped by the
 existing rules and queues as its own cairn-cms-launched pass; the site's fallback is
@@ -127,14 +172,49 @@ the admin shell and toolkit components, the auth family (`/auth-store`, `/auth-c
 argument because their shaping evidence was a requirement rather than a consumer;
 `docs/internal/engine-harvest-candidates.md` flagged exactly that risk.
 
-**Shape.** A workflow, named in the pass plan (which is the opt-in): one agent per
-subsystem argues the anonymous-consumer case per export (would a consumer with no
-knowledge of this family plausibly hit this edge, and is this the leanest shape for
-them), a fresh verifier adversarially checks each non-keep verdict, and the conductor
-adjudicates. The standard runaway guard applies.
+**Shape.** A workflow, named in the pass plan (which is the opt-in), built so no verdict
+is free:
+
+1. **Forced ranking, not a per-item threshold.** Each subsystem agent returns its
+   exports ranked weakest-to-strongest anonymous-consumer case, with quoted shaping
+   evidence per item; verdicts are assigned on top of the ranking. A ranking cannot come
+   back empty, which is the control a threshold sweep lacks (the
+   `agent-sweeps-rank-dont-threshold` lesson: this repo's own six-agent threshold sweep
+   returned zero and a forced-ranking re-run shipped seven changes).
+2. **A provenance field per export**, derivable from git history and the 2026-08-01
+   briefs: who first asked for it, which site requirement or filed brief shaped it, and
+   whether any consumer outside the family exists today. An export whose provenance is a
+   filed requirement with no built consumer is flagged regardless of verdict.
+3. **Verification follows the ranking, not the verdict.** A fresh verifier checks each
+   subsystem's weakest-ranked exports, every non-keep, and every *keep* on a
+   family-originated export (the six suspects plus anything provenance marks as
+   brief-shaped). An export never tested by an anonymous consumer has no prior
+   independent check of its any-site case, so its keep is the audit's highest-risk
+   verdict, not its safest. The verifier is prompted in both directions: defending
+   everything is as useless as condemning everything.
+4. **A keep carries the same burden of proof as a retire.** A keep's ledger entry must
+   state the concrete anonymous-consumer scenario justifying the export in its current
+   shape; a keep resting on the absence of an objection routes to the verifier
+   automatically.
+5. **A second vantage on the six 2026-08-01 suspects**: a separate agent that does not
+   own the subsystem, asked the wrong-premise question directly. Was this seam shaped by
+   a built consumer or by a filed requirement, and does the requirement's shape still
+   show in the surface?
+6. **A whole-surface coherence read.** One agent reads the merged, ranked surface and
+   judges the sitting's standing goal directly: does this read as one designed engine,
+   with even naming, consistent idioms across seams, and uniform granularity? Its
+   findings feed reshape verdicts no per-export argument can produce.
+7. **A trustworthiness auditor over the merged result**, with authority to condemn the
+   run (`conformance-verification-cannot-find-a-wrong-premise`). A near-all-keep return
+   is named to it as the signature of a failed run, not a clean bill of health. The
+   conductor reads its verdict before adjudicating anything else.
+
+The standard runaway guard applies.
 
 **Verdicts** are *keep*, *reshape* (right membership, wrong form), or *retire*, each with
-its argument recorded in the rulings ledger.
+its argument recorded in the rulings ledger. The standing rulings above govern the
+posture: migration cost never discounts a verdict, and the remediation plan batches
+every break into one `Consumers must:` window.
 
 **Execution of verdicts.** The audit produces verdicts and a remediation plan, not
 diffs. Trivial retires may inline into this pass; anything reshape-sized queues as engine
@@ -145,13 +225,14 @@ event. `Consumers must:` batching covers the rollout.
 
 - **New user-scoped skill `engine-consult`**: the canonical protocol. The brief template,
   the codified standard, the verdict vocabulary, the ledger conventions, and the
-  cross-repo mini-pass checklist. Both pass skills reference it rather than duplicating
-  it.
+  cross-repo mini-pass checklist including the ordered close (engine merge to `main`,
+  `cairn-release`, `link:consumer -- --restore`, site merge). Both pass skills reference
+  it rather than duplicating it.
 - **New user-scoped agent `engine-triage`**: read-only, pinned `claude-opus-5`, prompted
   with the standard, instructed to read the ledger first. The engine voice for
   consultation triage and the audit's verifier role.
-- **`site-pass` edit**: the mandatory engine-contact enumeration step at pass-start,
-  pointing at `engine-consult`.
+- **`site-pass` edit**: both hooks from section 1, the authoring-time enumeration and
+  the pass-start backstop check, pointing at `engine-consult`.
 - **`cairn-pass` edit**: a pass-start check for unanswered consultation briefs, and a
   note that consultations and the audit write the ledger.
 - **The rulings ledger**, created and seeded as described in section 2.
@@ -161,12 +242,16 @@ event. `Consumers must:` batching covers the rollout.
   instructions repoint at the four-field schema and the ledger-backed triage. Without
   this edit the workstation rule and the skill would describe two different protocols.
 - **cairn-cms `CLAUDE.md` edit**: a short durable-orientation section naming the
-  protocol, the consultations directory, the ledger (which adjudicates scope questions
-  alongside the charter), and the `engine-consult` skill.
+  protocol, the consultations directory, the ledger (the record of rulings the charter
+  has produced and the evidence that would reopen each, read before re-arguing a settled
+  item, never in place of the charter's own test), and the `engine-consult` skill.
 - **No site-repo CLAUDE.md edits**, deliberately. The trigger lives in `site-pass`,
   user-scoped, firing at every pass start regardless of repo; four copies would be four
   drift surfaces guarding one mechanism that cannot be skipped. Revisit only if a site
   grows a pass ritual outside `site-pass`.
+- **ROADMAP beta-framing update**: the "Toward 1.0" narrative names the two-site
+  condition (beta waits for the new ASC site and ecxc) and the consultation runway that
+  condition buys.
 - **A memory entry** so a cold session recalls the protocol and the ledger location.
 
 ## 6. The reactive harvest, and the two held plans
@@ -189,11 +274,14 @@ The pass is done when:
 - the `engine-consult` skill and `engine-triage` agent exist;
 - both pass skills carry their hooks, and both CLAUDE.md edits have landed;
 - the ledger exists, seeded;
-- the audit has run over the whole surface, every verdict recorded, and the remediation
-  plan filed into `ROADMAP.md`;
+- the audit has run over the whole surface, every verdict recorded, the trustworthiness
+  auditor's verdict read, and the remediation plan filed into `ROADMAP.md`;
+- every family-originated export carries both a verdict and a verifier check in the
+  ledger;
 - the two held plans carry their re-review verdicts;
-- the cold-start test passes: a fresh site-pass session, reading only its skills, hits
-  the consultation gate unprompted.
+- the cold-start test passes on both paths: a fresh site-pass session whose pass has no
+  plan hits the enumeration before writing one, and a fresh session handed a committed
+  plan with no consultation line hits the backstop before dispatching task 1.
 
 The first live consultation (likely the next ASC or 907-life pass) is the real proof;
 the protocol's first run gets a short post-mortem appended to the ledger.

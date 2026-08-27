@@ -47,6 +47,11 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
 - **ASC harvest absorption, detection half: EXECUTING.** `2026-08-26-harvest-detection-pass.md`
   (six tasks serial, ceiling 1.1M), approved 2026-08-27, running on the `harvest-detection`
   worktree off the toolkit-seams merge via `pass-execute.js`.
+- **The audit remediation is designed and twice-reviewed.** The initiative frame (six slices:
+  hardening, narrowing, retires, conventions, internals, chassis; one cut after chassis) is
+  `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`; slice plans are
+  authored just-in-time and executed in fresh sessions. Four ratification changes pend Geoff's
+  answers (ordering, seam-session cancellation, publish carve-out, login-CSRF nonce).
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window above.

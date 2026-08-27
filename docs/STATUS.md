@@ -13,7 +13,9 @@ Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. It raises the floors
 to Node `>=24`, `@sveltejs/kit ^2.70`, `svelte ^5.56.10`, and `@cloudflare/workers-types ^5`,
 moves Tidy to `claude-sonnet-5`, ships the admin upgrade map with `check:target-stack`, and fixes
-the five aksailingclub-org 0.95 adoption defects. `main` carries nothing unpublished.
+the five aksailingclub-org 0.95 adoption defects. `main` now carries the toolkit-seams pass
+unpublished under `## Unreleased` (release-size minor; the chip-grammar breaking changes ride
+the audit-remediation `Consumers must:` window).
 
 ## Immediate next action
 

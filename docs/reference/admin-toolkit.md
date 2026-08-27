@@ -340,12 +340,13 @@ way off the warning tone, for a state needing attention, such as an unpublished-
 a needs-alt notice; `'outline'` drops the fill for a hairline border, for a transient or reversible
 absence (a removable tag, a not-yet-confirmed suggestion). `legend` carries optional explanatory
 text a label alone can't fully carry, for example "full member benefits continue during the grace
-window." It surfaces as a native tooltip and as a visually hidden `sr-only` span that reads
-straight after the visible label, so the chip's accessible name reads `"<label>: <legend>"` from
-plain text instead of an `aria-label` on the outer element; some assistive technology exposes an
-outer `aria-label` inconsistently. A self-explanatory label omits `legend` entirely; the tooltip
-then falls back to the label itself (truncation self-defense, so an ellipsized chip still surfaces
-its full text on hover/focus), and the chip carries no hidden span.
+window." It surfaces as a native `title` tooltip (hover only; a bare `<span>` carries no focus of
+its own, so a keyboard user never reaches it that way) and as a visually hidden `sr-only` span that
+reads straight after the visible label, the assistive-technology-reachable half of the same
+information, so the chip's accessible name reads `"<label>: <legend>"` from plain text instead of
+an `aria-label` on the outer element; some assistive technology exposes an outer `aria-label`
+inconsistently. A self-explanatory label omits `legend` entirely: the chip then carries no `title`
+and no hidden span, never the label itself repeated as its own tooltip.
 
 All three registers carry a measured constraint rather than an unconditional guarantee. `outline`'s
 hairline is `color-mix(in oklab, currentColor 55%, transparent)`, so it inherits its color from
@@ -659,17 +660,24 @@ single-open-at-a-time id, say) derives each instance's own `open` from its own s
 
 The trigger and panel are always the caller's own markup: `trigger` and `panel` are snippets,
 given attrs to spread onto the caller's own elements (`aria-expanded`/`aria-controls`/
-`aria-haspopup`/`onclick` for the trigger, `id` for the panel's own root element), rather than
-elements this component renders itself. `ariaHaspopup` only forwards the trigger's own
+`aria-haspopup`/`onclick` for the trigger, `id`/`hidden` for the panel's own root element), rather
+than elements this component renders itself. Spread the trigger attrs last on the caller's own
+element, so this component's own `onclick` (the toggle handler) is never shadowed by a
+caller-supplied one on the same element. `ariaHaspopup` only forwards the trigger's own
 `aria-haspopup` value through; this component carries no opinion about what the panel holds (a
-`role="menu"` option list, a plain form, anything else). `extra` is an optional sibling of the
-trigger inside the same containment boundary (a facet's own inline clear button, say): activating
-it never counts as "outside" or "left" for the dismissal mechanics.
+`role="menu"` option list, a plain form, anything else). The panel's own root still wants a
+`dropdown-content` positioning class for its `position: absolute` layout, but hiding it while
+closed is this component's own job, not the caller's class string: `hidden` (`true` while closed)
+keeps every panel descendant unfocusable and unpainted even if that class is ever omitted. `extra`
+is an optional sibling of the trigger inside the same containment boundary (a facet's own inline
+clear button, say): activating it never counts as "outside" or "left" for the dismissal mechanics.
 
 This component does render one element of its own: the containing `<div>` the trigger, `extra`,
 and the panel all render inside, carrying `dropdown`/`toolkit-toolbar-disclosure` always plus
 `dropdown-open` while `open` is true. It is the outside-pointerdown/focusout boundary and the
 panel's `position: absolute` containing block (via the always-applied `dropdown` class). This
+container is deliberately non-interactive (no role, no tabindex): its Escape and focusout handling
+is event delegation over the trigger/extra/panel snippets, not an affordance of its own. This
 component emits only its own generic classes on that element; `containerClass` is the one piece of
 visual configuration it carries, for a caller's own consumer-specific chrome on that same
 containing element (`ListToolbar`'s own applied-state tint on a `'menu'` facet, say), since a
@@ -691,7 +699,7 @@ context and open-state toggle; the caller's own panel snippet root carries `drop
     <button type="button" class="btn btn-sm" {...attrs}>Sort by</button>
   {/snippet}
   {#snippet panel(attrs)}
-    <ul id={attrs.id} class="dropdown-content menu" role="menu">
+    <ul id={attrs.id} hidden={attrs.hidden} class="dropdown-content menu" role="menu">
       <li role="none"><button type="button" role="menuitemradio">Newest</button></li>
     </ul>
   {/snippet}
@@ -867,7 +875,11 @@ summary columns under a breakpoint instead).
 **Touch target, measured:** the trigger (`btn btn-ghost btn-xs`) renders at 24x24 CSS px at the
 390px viewport against the packaged `cairn-admin.css`, exactly the engine's ruled AA floor
 (`rulings.touch-targets.test.ts`, Web Content Accessibility Guidelines 2.5.8, 24x24, not 2.5.5's
-44x44) and clears it, so the trigger keeps its size unchanged.
+44x44) and clears it, so the trigger keeps its size unchanged. The same 24x24 floor applies to any
+interactive control a caller places inside a summary cell (inert-wrapped or not); it is the
+caller's own responsibility to meet, the same idiom `ReferenceField.svelte`'s own remove button
+uses (`max-sm:min-h-11 max-sm:min-w-11`, a narrow-viewport-only floor for a dense cell that reads
+smaller than that at wider widths).
 
 **Out of scope:** a `colspan` full-width summary variant is deliberately not offered.
 
@@ -938,7 +950,9 @@ replacing, and committing an asset stay inside cairn's own media screens.
 
 `entries` is the manifest-entry array `mediaLibraryLoad` returns on `MediaLibraryData.assets`, so a
 site's own `/admin/` route passes the loader's output straight through with no projection step. Row
-order follows the array as given. `onselect` receives a `MediaSelection`: the chosen entry, its
+order follows the array as given. `mediaLibraryLoad` is authed load data, gated the same way every
+other cairn admin load is; mount `MediaPicker` on an `/admin` route (inside `CairnAdminShell` or a
+site's own authenticated custom route), never on a public page. `onselect` receives a `MediaSelection`: the chosen entry, its
 `media:<slug>.<hash>` reference token to write into content, and the asset's manifest alt to prefill
 a placement. The picker never mutates the array and holds no selection of its own, so the caller
 owns what a pick does next.
@@ -1004,5 +1018,5 @@ which render only once the library holds more than one top-level content type.
 | <a id="medialibraryentry"></a>`MediaLibraryEntry` | Extension API | `interface MediaLibraryEntry { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number \| null; height: number \| null; bytes: number; createdAt: string }` | One committed asset's display facts, the row shape `MediaLibraryData.assets` carries and `MediaPicker`'s `entries` prop takes. This subpath is its canonical home, beside the component whose prop signature names it; `/sveltekit` re-exports the same type so a route-factory importer can name a member of the data it already holds. |
 | `MediaSelection` | Extension API | `interface MediaSelection { entry: MediaLibraryEntry; ref: string; alt: string }` | What `MediaPicker` hands its `onselect` prop: the chosen entry, its `media:<slug>.<hash>` reference token, and the asset's manifest alt (empty when the asset has none). |
 | `ToolbarDisclosureAriaHaspopup` | Extension API | `type ToolbarDisclosureAriaHaspopup = 'menu' \| 'listbox' \| 'dialog' \| 'grid' \| 'tree' \| 'true'` | `ToolbarDisclosure`'s `ariaHaspopup` prop vocabulary, forwarded onto the trigger's own `aria-haspopup` unchanged. |
-| `ToolbarDisclosureTriggerAttrs` | Extension API | `interface ToolbarDisclosureTriggerAttrs { 'aria-expanded': boolean; 'aria-controls': string; 'aria-haspopup': ToolbarDisclosureAriaHaspopup \| undefined; onclick: (event: MouseEvent) => void; [key: symbol]: Attachment<HTMLElement> }` | The attrs `ToolbarDisclosure`'s `trigger` snippet receives, to spread onto the caller's own trigger element. |
-| `ToolbarDisclosurePanelAttrs` | Extension API | `interface ToolbarDisclosurePanelAttrs { id: string }` | The attrs `ToolbarDisclosure`'s `panel` snippet receives; `id` is what the trigger's `aria-controls` resolves to. |
+| `ToolbarDisclosureTriggerAttrs` | Extension API | `interface ToolbarDisclosureTriggerAttrs { 'aria-expanded': boolean; 'aria-controls': string; 'aria-haspopup': ToolbarDisclosureAriaHaspopup \| undefined; onclick: (event: MouseEvent) => void; [key: symbol]: Attachment<HTMLElement> }` | The attrs `ToolbarDisclosure`'s `trigger` snippet receives, to spread onto the caller's own trigger element last, so the toggle `onclick` is never shadowed by the caller's own. |
+| `ToolbarDisclosurePanelAttrs` | Extension API | `interface ToolbarDisclosurePanelAttrs { id: string; hidden: true \| undefined }` | The attrs `ToolbarDisclosure`'s `panel` snippet receives; `id` is what the trigger's `aria-controls` resolves to, and `hidden` is this component's own primitive-owned hiding (`true` while closed), so an omitted `dropdown-content` positioning class on the caller's panel root can never leave the panel visible and tabbable while `aria-expanded` reads `false`. |

@@ -106,6 +106,13 @@ measured, readable-small-text counterparts (`docs/internal/admin-design-system.m
 accessibility text inks"). Write `cairn-text-warning`/`cairn-text-success`, never
 `text-[var(--cairn-warning-ink)]` or the bare `text-warning`/`text-success`.
 
+The sheet's shared status-chip vocabulary, `.cairn-chip-quiet`/`.cairn-chip-warning`/
+`.cairn-chip-outline` (the hand-composed counterpart to `StatusChip`; see `docs/reference/
+admin-toolkit.md`), pins `font-weight: 400` unlayered on each: since none of the three carries a
+Tailwind layer, that pin outranks any `font-semibold`/`font-medium` Tailwind weight utility placed
+on the same element, so a hand-composed chip renders at 400 regardless of a weight class riding
+alongside it.
+
 ## Where each form belongs
 
 Markup (a component's template) writes the named utility: `type-meta`, `gap-group`, and so on.

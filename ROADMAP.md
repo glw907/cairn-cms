@@ -940,14 +940,23 @@ the named human gates only):**
   `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: the next
   `create-cairn-site` pass.
 
-- **`.toolkit-toolbar-select`'s edge falls under the WCAG 1.4.11 3:1 non-text contrast floor**
-  (shipped deferral, measured 2026-08-27, toolkit-seams pass). The shared facet chrome measures
-  1.502:1 light / 1.754:1 dark against `--cairn-card-border`, deliberately excluded from that
-  pass's field-family edge-contrast rule because it harmonizes with the surrounding menu facet's
-  own chrome, which shares the same border treatment. Decision owed: retheme the shared facet
-  chrome to clear 3:1, or record a ruled exception in `admin-grammar-tokens.md`. Size: small.
-  Trigger: the next pass touching toolbar facet chrome, or a contrast audit that flags this
-  element.
+- **`.toolkit-toolbar-select`'s and `.toolkit-toolbar-facet`'s edges fall under the WCAG 1.4.11
+  3:1 non-text contrast floor** (shipped deferral, measured 2026-08-27, toolkit-seams pass;
+  corrected 2026-08-27, fix round). The original entry measured 1.502:1 light / 1.754:1 dark
+  against a bare `--cairn-card-border` string, with no Svelte scope class applied, so `--input-
+  color`'s override to `--cairn-card-border` never actually landed on the measured markup. The
+  real numbers, measured against `--color-base-100` through the real component (its own Svelte
+  scope class applied): `.toolkit-toolbar-select` (the select facet's own `--input-color`
+  override) and `.toolkit-toolbar-facet` (`ListToolbar.svelte`, the `'menu'` facet's own trigger
+  container, an identical `border: 1px solid var(--cairn-card-border)` hairline) both measure
+  1.192:1 light / 1.203:1 dark, deliberately excluded from that pass's field-family edge-contrast
+  rule because both harmonize with the surrounding facet chrome, which shares the same border
+  treatment. Decision owed: retheme the shared facet chrome to clear 3:1, or record a ruled
+  exception in `admin-grammar-tokens.md`; a candidate argument for the exception is the caret glyph
+  each control carries (the `'menu'` facet's own `&#9662;` caret, `currentColor`), a non-color
+  identifying affordance a plain `<select>` also carries natively, which may be the reasoning a
+  ruled exception would rest on. Size: small. Trigger: the next pass touching toolbar facet chrome,
+  or a contrast audit that flags this element.
 
 - **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
   primitives a site composes directly, and the first is the one an extender meets first. (1)

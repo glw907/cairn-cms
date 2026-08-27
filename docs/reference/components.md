@@ -753,8 +753,11 @@ fail-closed signal. `EditPage`, `DeleteDialog`, `RenameDialog`, and the other au
 compose it.
 
 The field's token survives a native form reset, the one `use:enhance` fires by default after a
-successful submit: it pins its own value into the input's `defaultValue` directly, and a test
-holds the guarantee. The component carries it on its own, with no action from a consuming form.
+successful submit: a hidden `<input>`'s `value` and `defaultValue` reflect the same underlying
+`value` attribute, so the component sets `defaultValue` as a DOM property alongside `value`,
+pinning that reflection explicitly rather than leaving it to Svelte's own hydration-time
+default-management machinery. Hardening, not a behavior a consuming form has to opt into or a new
+guarantee a test independently proves; the component carries it on its own.
 
 ```svelte
 <CsrfField {token} />

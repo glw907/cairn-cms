@@ -31,14 +31,53 @@ clearings.
   visibly dominates its token spend.
 
 - **The ASC CSRF 403 incidents remain undiagnosed; the reset-blanking theory does not hold**
-  (`extender`, 2026-08-27). The toolkit-seams pass's `CsrfField` change had assumed a native
-  form reset could blank the hidden token field toward the guard's next check; verified in
-  Chromium during the pass that a hidden `<input>`'s `value` setter IS its own `defaultValue`
-  setter, so nothing can desync the two, and the CHANGELOG/reference entries were reworded
-  from a fix to hardening accordingly. The real cause of the ASC July and August CSRF 403
-  incidents is still open. Candidates worth checking first: the token read through the
-  `CSRF_CONTEXT_KEY` getter into the `X-Cairn-CSRF` header in `MediaHeroField.svelte` and
-  `MediaInsertPopover.svelte`. Trigger: diagnosis is owed the next time the incident recurs.
+  (`extender`, 2026-08-27; re-triaged 2026-08-27, fix round). The toolkit-seams pass's `CsrfField`
+  change had assumed a native form reset could blank the hidden token field toward the guard's
+  next check; verified in Chromium during the pass that a hidden `<input>`'s `value` setter IS its
+  own `defaultValue` setter, so nothing can desync the two, and the CHANGELOG/reference entries
+  were reworded from a fix to hardening accordingly.
+
+  The strongest code-supported candidate: a confirm-load token re-mint invalidates every other
+  open admin tab's already-rendered form. `csrf.ts`'s `issueCsrfToken` mints the CSRF cookie
+  `SameSite=Strict`; `auth-routes.ts`'s `confirmLoad` (`GET /admin/auth/confirm`, the magic-link
+  landing page) calls it on every load. Following the emailed link is a cross-site top-level
+  navigation, exactly the case `SameSite=Strict` withholds a cookie for, so the server sees no
+  existing CSRF cookie on that request and mints a fresh one, overwriting the old value in the
+  browser's cookie jar. Any OTHER admin tab left open from before (a draft mid-edit, say) still
+  carries the OLD token baked into its hidden form field from its own earlier SSR, so its next POST
+  submits a token that no longer matches the cookie and 403s, with no user action in that tab at
+  all. Two further, weaker candidates worth checking next: `content-routes-core.ts:644`'s
+  `csrf: event.cookies ? issueCsrfToken(...) : ''` empty-token fallback (a request lacking
+  `event.cookies` renders a form that can never pass the guard); and the per-request `secure`
+  derivation `crypto.ts`'s own `cookieName` docstring warns about (a reverse-proxy or platform-edge
+  request where the scheme cairn sees flips request to request would read/write the CSRF cookie
+  under two different names, `__Host-cairn_csrf` and `cairn_csrf`, each blind to the other's
+  value). The `X-Cairn-CSRF` header path (`MediaHeroField.svelte`/`MediaInsertPopover.svelte`,
+  reading the token through the `CSRF_CONTEXT_KEY` getter) stays the weakest candidate: it reads
+  the same context value every other form field does, with no separate re-mint trigger of its own.
+
+  Proposed remedies, pending a conductor/Geoff ruling, not yet applied: (1) `SameSite=Lax` for the
+  CSRF cookie, since the session cookie is already `Lax` and a double-submit token gains no real
+  protection from `Strict` (a `Lax` cookie already withholds itself on a cross-site subresource or
+  iframe load, the actual CSRF-relevant case; it only differs from `Strict` on a top-level GET
+  navigation, exactly the confirm-load case above). (2) A non-sensitive `detail: 'no-cookie' |
+  'no-token' | 'mismatch'` discriminator on the guard's own CSRF-rejection log records, so a real
+  incident's own logs distinguish "the cookie never arrived" from "the submitted token is stale"
+  instead of one undifferentiated 403. Trigger: diagnosis is owed the next time the incident
+  recurs, or a conductor/Geoff ruling on the two remedies above, whichever comes first.
+
+- **`StatusChip`'s `outline` register border drops under the 3:1 non-text floor inside a
+  muted-ink ancestor** (`extender`, 2026-08-27, fix round). The hairline is `color-mix(in oklab,
+  currentColor 55%, transparent)`, so it inherits its color from whatever ancestor ink surrounds
+  it; measured inside a `text-muted` ancestor (`--color-muted` at 55%, composited onto the page
+  ground): 2.405:1 light, 2.971:1 dark, both under the WCAG 1.4.11 non-text floor `StatusChip`'s
+  own prop doc already tells a caller to verify. Latent in-tree today (cairn's own five call sites
+  clear the floor; none nests an `outline` chip inside a muted-text ancestor), so nothing ships
+  broken, but the gap is real and only self-defends by convention. A candidate for a `cairn-audit`
+  rendered rule (compute the actual inherited ink at each `outline` chip's own ancestor chain,
+  the same ancestor-walk `chip-ground-collision` already does for the fill registers) rather than
+  leaving it to a doc sentence a future call site can miss. Trigger: the harvest-detection pass, or
+  a consumer call site that nests an `outline` chip inside its own muted-text ancestor.
 
 - **No `cairn-text-error` utility exists, so error ink is inconsistent across the admin**
   (`extender`, 2026-08-27). The toolkit-seams pass migrated the warning bracket form

@@ -62,9 +62,11 @@
   `register` is now `'quiet' | 'warning' | 'outline'` (default `'quiet'`); the `tone` prop, the
   small `status` dot it drove, and the `STATUS_CHIP_DOT_CLASS` export are all removed, since the
   register alone now carries both shape and color. The sheet's shared hand-composed vocabulary
-  moves the same way: `.cairn-chip-bounded` is gone and `.cairn-chip-warning` is new. When the
-  chip's label ellipsizes and no `legend` prop is passed, `title` now defaults to the label itself
-  (previously the tooltip stayed empty without a legend). The shared `.cairn-chip-quiet`/
+  moves the same way: `.cairn-chip-bounded` is gone and `.cairn-chip-warning` is new. `title`
+  renders only when a `legend` prop is passed; a self-explanatory label with no `legend` carries no
+  `title` at all, since a bare `<span>` tooltip is hover-only anyway (no focus of its own to
+  surface it to a keyboard user), and the visually-hidden `legend` span already carries the
+  assistive-technology-reachable half of that same information. The shared `.cairn-chip-quiet`/
   `.cairn-chip-warning`/`.cairn-chip-outline` rules pin `font-weight: 400`, and, being unlayered,
   that pin outranks any Tailwind weight utility on the same element regardless of source order
   (cascade layers resolve before specificity); a hand-composed chip that also carries

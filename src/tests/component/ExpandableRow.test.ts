@@ -137,6 +137,27 @@ describe('ExpandableRow', () => {
     expect(toggled).toBe(0);
   });
 
+  it('does not show the row-toggle pointer cursor over a data-cairn-inert-cell wrapped cell', async () => {
+    const inertSummary = staticSnippet(
+      '<td data-cairn-inert-cell><button type="button">Edit</button></td>'
+    );
+    const screen = await render(ExpandableRow, {
+      expanded: false,
+      onToggle: () => {},
+      datum: { name: 'Alvarez' },
+      colspan: 3,
+      summary: inertSummary,
+      panel,
+      triggerLabel: 'Expand the Alvarez household',
+    });
+    const inertCell = screen.container.querySelector('[data-cairn-inert-cell]') as HTMLElement;
+    const innerButton = screen.container.querySelector(
+      '[data-cairn-inert-cell] button'
+    ) as HTMLElement;
+    expect(getComputedStyle(inertCell).cursor).toBe('auto');
+    expect(getComputedStyle(innerButton).cursor).toBe('auto');
+  });
+
   it('still activates the trigger button by click, unaffected by the inert-cell guard', async () => {
     let toggled = 0;
     const screen = await render(ExpandableRow, {

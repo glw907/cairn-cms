@@ -75,12 +75,14 @@
   `status-info`, `status-success`, `status-warning`, `status-error`, and every size variant) in
   hand-authored admin markup; it no longer compiles into the shipped sheet.
 
-### Fixed
+- `CsrfField` now pins its own hidden input's `defaultValue` attribute directly, alongside `value`,
+  so the token-survives-a-native-form-reset guarantee no longer depends on a hidden input's own
+  value-mode semantics. Setting `defaultValue` explicitly also means Svelte's compiler no longer
+  reaches for its own default-management machinery on this input: the hydration-time
+  `remove_input_defaults` call and the document-level `reset` listener it registers to reconcile a
+  dynamic `value` binding back to its default. No consumer-side change. Consumers must: nothing.
 
-- `CsrfField` mirrors its token into the hidden input's `defaultValue`, so a native form reset (the
-  one `use:enhance` fires by default after a successful submit) restores the token instead of
-  blanking the field toward the guard's next check. The fix lives entirely inside the component,
-  with no consumer-side change. Consumers must: nothing.
+### Fixed
 
 - An unchecked `.checkbox`/`.radio` in the packaged admin sheet raises its edge from daisyUI's
   stock 20% `--color-base-content` mix (measured 1.492:1 light / 1.773:1 dark against `base-100`,

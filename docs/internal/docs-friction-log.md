@@ -30,6 +30,16 @@ clearings.
   full entries on demand. Trigger: the first consultation where the triage's ledger read
   visibly dominates its token spend.
 
+- **The ASC CSRF 403 incidents remain undiagnosed; the reset-blanking theory does not hold**
+  (`extender`, 2026-08-27). The toolkit-seams pass's `CsrfField` change had assumed a native
+  form reset could blank the hidden token field toward the guard's next check; verified in
+  Chromium during the pass that a hidden `<input>`'s `value` setter IS its own `defaultValue`
+  setter, so nothing can desync the two, and the CHANGELOG/reference entries were reworded
+  from a fix to hardening accordingly. The real cause of the ASC July and August CSRF 403
+  incidents is still open. Candidates worth checking first: the token read through the
+  `CSRF_CONTEXT_KEY` getter into the `X-Cairn-CSRF` header in `MediaHeroField.svelte` and
+  `MediaInsertPopover.svelte`. Trigger: diagnosis is owed the next time the incident recurs.
+
 ## Tombstones (decided, do not resurface)
 
 - **Point-of-typing writing coach.** KILLED 2026-06-26. The help-shell adversarial review discarded it

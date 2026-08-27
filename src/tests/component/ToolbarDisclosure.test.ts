@@ -33,14 +33,34 @@ describe('ToolbarDisclosure', () => {
     await expect.poll(() => document.activeElement).toBe(screen.getByTestId('option-1').element());
   });
 
+  it('skips a tabindex="-1" element when focusing the panel\'s first focusable element on open', async () => {
+    const screen = await render(ToolbarDisclosureHarness, { firstOptionNotTabbable: true });
+    await screen.getByTestId('trigger').click();
+    await expect.poll(() => document.activeElement).toBe(screen.getByTestId('option-2').element());
+  });
+
   it('closes on Escape and returns focus to the trigger', async () => {
     const screen = await render(ToolbarDisclosureHarness, {});
     const trigger = screen.getByTestId('trigger');
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    // Dispatched on the focused panel option, inside the trigger-plus-panel boundary: Escape is a
+    // container-scoped listener, not a window-wide one, so it only closes when the event target is
+    // within that boundary (matches a real keypress, which fires wherever focus currently sits).
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect.poll(() => document.activeElement).toBe(trigger.element());
+  });
+
+  it('does not close on Escape dispatched outside the trigger-plus-panel', async () => {
+    const screen = await render(ToolbarDisclosureHarness, {});
+    const trigger = screen.getByTestId('trigger');
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    screen.getByTestId('outside').element().dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+    );
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('closes on a pointerdown outside the trigger and panel, without moving focus to the trigger', async () => {
@@ -83,6 +103,17 @@ describe('ToolbarDisclosure', () => {
     const extra = screen.getByTestId('extra').element();
     option1.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: extra }));
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('returns focus to the trigger on Escape even when open was driven programmatically, never through a trigger click', async () => {
+    const screen = await render(ToolbarDisclosureHarness, {});
+    const trigger = screen.getByTestId('trigger');
+    await screen.getByTestId('open-programmatically').click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect.poll(() => document.activeElement).toBe(screen.getByTestId('option-1').element());
+    document.activeElement?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect.poll(() => document.activeElement).toBe(trigger.element());
   });
 
   it('is controlled: a click reports through onOpenChange but never opens on its own without the caller applying it', async () => {

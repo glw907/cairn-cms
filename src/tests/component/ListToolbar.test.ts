@@ -299,7 +299,7 @@ describe('ListToolbar', () => {
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    trigger.element().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect.poll(() => document.activeElement).toBe(trigger.element());
   });

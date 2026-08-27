@@ -298,8 +298,7 @@ reflows its neighboring characters.
           open={openFacetId === filter.id}
           onOpenChange={(next) => { openFacetId = next ? filter.id : null; }}
           ariaHaspopup="menu"
-          containerClass="toolkit-toolbar-facet"
-          emphasized={applied}
+          containerClass="toolkit-toolbar-facet {applied ? 'toolkit-toolbar-facet-applied' : ''}"
         >
           {#snippet trigger(attrs)}
             <button
@@ -506,11 +505,37 @@ reflows its neighboring characters.
     opacity: 0.65;
   }
 
+  /* The 'menu' facet's own box chrome: a quiet bordered pair (trigger plus optional clear),
+     sharing the toolbar row's 30px height. `display: inline-flex; align-items: stretch` stretches
+     both children to that height, since neither sets its own; `overflow` stays default (visible),
+     since this element is also the panel's own `position: absolute` containing block (daisyUI's
+     own `.dropdown`/`.dropdown-content` pair, via `ToolbarDisclosure`'s own always-applied
+     `dropdown` class) and `hidden` would clip the panel away entirely rather than just tidy the
+     trigger/clear corners. `:global()`, not a plain scoped selector: this class names the
+     `containerClass` this component passes into `ToolbarDisclosure`, so the element it matches is
+     rendered by that component, not this one, and Svelte's per-component style scoping would
+     otherwise silently drop the rule (see `ToolbarDisclosure`'s own header comment on why
+     `containerClass` exists and stays this component's own responsibility to style). */
+  :global(.toolkit-toolbar-facet) {
+    display: inline-flex;
+    align-items: stretch;
+    flex: 0 0 auto;
+    height: 30px;
+    border-radius: var(--radius-field);
+    border: 1px solid var(--cairn-card-border);
+    background: transparent;
+  }
+
+  /* The bordered-and-tinted applied treatment: border and fill mixed from --color-primary, added
+     to the container alongside `.toolkit-toolbar-facet` (above) once a filter carries a value.
+     `:global()` for the same reason as `.toolkit-toolbar-facet` above. */
+  :global(.toolkit-toolbar-facet-applied) {
+    border-color: color-mix(in oklab, var(--color-primary) 45%, var(--cairn-card-border));
+    background: color-mix(in oklab, var(--color-primary) 7%, transparent);
+  }
+
   /* The 'menu' facet's own trigger: shares the row's 30px height inside `ToolbarDisclosure`'s own
-     bordered box (`containerClass="toolkit-toolbar-facet"`; that box's own chrome, and the applied
-     treatment's border/fill, live in `ToolbarDisclosure`'s own scoped style, since it is the
-     component that actually renders that containing element -- see its header comment on why
-     `containerClass`/`emphasized` exist). */
+     bordered box (`containerClass="toolkit-toolbar-facet ..."`, styled above). */
   .toolkit-toolbar-facet-trigger {
     display: inline-flex;
     align-items: center;
@@ -536,13 +561,9 @@ reflows its neighboring characters.
 
   /* The in-control value caps at 14rem with an ellipsis once a facet carries an applied value, so
      a long applied value (a class title, say) never pushes the row wide. Driven by the same
-     `applied` boolean `ToolbarDisclosure`'s own `emphasized` prop reads, applied directly to this
-     component's own trigger markup rather than through the container's class: this element and
-     `ToolbarDisclosure`'s own containing element are different components' own scoped styles, and
-     a Svelte-scoped rule cannot reach across that boundary without either duplicating the class
-     into both files or reaching across with `:global()`, no better than not moving the rule at
-     all (the same reasoning this component's own header comment gives for `containerClass`/
-     `emphasized` existing on `ToolbarDisclosure` in the first place). */
+     `applied` boolean that names `.toolkit-toolbar-facet-applied` on the container above, applied
+     directly to this element's own class instead, since this element is rendered directly by this
+     component and needs no `:global()` to reach it. */
   .toolkit-toolbar-facet-trigger-applied {
     max-width: 14rem;
   }

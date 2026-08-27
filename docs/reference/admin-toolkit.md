@@ -574,10 +574,9 @@ The module context exports two functions, independently unit tested the same way
   accepts a plain string or an `{ one, many }` pair, routed through `itemNoun`, so
   `computeCountLine(1, { one: 'household', many: 'households' }, [])` reads `"1 household"`.
 
-Applied-filter pills render in the toolkit's one neutral badge tone (`badge-neutral`), never an
-alarm color: an applied filter is a normal state of the list, not a warning. A pill's remove
-control keeps its glyph at the pill's own quiet visual size but grows its own hit box to WCAG
-2.5.8's 24x24 CSS px floor through `min-width`/`min-height`, never a visible size change.
+`computeAppliedFilters` feeds the count line's own scope labels only; there is no separate
+applied-pills row. An applied filter shows its own value in-control instead, on the
+`'menu'`-display facet documented earlier in this entry.
 
 The count line carries `role="status"` (`aria-live="polite"`, `aria-atomic="true"`), so a search
 or filter change announces the new scope to assistive technology even though nothing moves focus.
@@ -593,7 +592,7 @@ siblings.
 filter, promoted or overflow), `join`/`join-item`/`btn`/`btn-sm`/`btn-active` (a `'segmented'`-
 display filter, the same assembly `Pagination`'s own page nav uses), `btn`/`btn-sm`/`btn-primary`/
 `btn-outline` (the primary action and the overflow trigger), `dropdown`/`dropdown-content`/
-`dropdown-open`/`menu` (the overflow disclosure), `badge`/`badge-neutral`/`badge-sm` (the pills).
+`dropdown-open`/`menu` (the overflow disclosure and each `'menu'`-display facet's own option list).
 The CSS build's `@source` now scans `src/lib/admin-toolkit` (it didn't when this component first
 graduated there, the visual regression `check:admin-css-classes` now guards against), and `join`
 carries an explicit, deliberate safelist entry alongside `join-item`; every other class already
@@ -601,7 +600,7 @@ compiles from cairn's own admin usage.
 
 **Exact class inventory:** `input`, `input-sm`, `select`, `select-sm`, `join`, `join-item`, `btn`,
 `btn-sm`, `btn-active`, `btn-primary`, `btn-outline`, `dropdown`, `dropdown-content`,
-`dropdown-open`, `menu`, `badge`, `badge-neutral`, `badge-sm`.
+`dropdown-open`, `menu`.
 
 ```svelte
 <ListToolbar
@@ -628,7 +627,6 @@ let {
   onOpenChange,
   ariaHaspopup,
   containerClass,
-  emphasized = false,
   trigger,
   extra,
   panel,
@@ -637,7 +635,6 @@ let {
   onOpenChange: (open: boolean) => void;
   ariaHaspopup?: ToolbarDisclosureAriaHaspopup; // 'menu' | 'listbox' | 'dialog' | 'grid' | 'tree' | 'true'
   containerClass?: string;
-  emphasized?: boolean;
   trigger: Snippet<[ToolbarDisclosureTriggerAttrs]>;
   extra?: Snippet;
   panel: Snippet<[ToolbarDisclosurePanelAttrs]>;
@@ -667,16 +664,20 @@ elements this component renders itself. `ariaHaspopup` only forwards the trigger
 trigger inside the same containment boundary (a facet's own inline clear button, say): activating
 it never counts as "outside" or "left" for the dismissal mechanics.
 
-`containerClass` and `emphasized` are the one piece of visual configuration this component
-carries, since the containing element (the outside-pointerdown/focusout boundary, and the panel's
-`position: absolute` containing block via daisyUI's own always-applied `dropdown` class) is this
-component's own markup, not the caller's: a caller's own scoped `<style>` cannot reach it without
+This component does render one element of its own: the containing `<div>` the trigger, `extra`,
+and the panel all render inside, carrying `dropdown`/`toolkit-toolbar-disclosure` always plus
+`dropdown-open` while `open` is true. It is the outside-pointerdown/focusout boundary and the
+panel's `position: absolute` containing block (via the always-applied `dropdown` class). This
+component emits only its own generic classes on that element; `containerClass` is the one piece of
+visual configuration it carries, for a caller's own consumer-specific chrome on that same
+containing element (`ListToolbar`'s own applied-state tint on a `'menu'` facet, say), since a
+caller's own scoped `<style>` cannot reach an element rendered by a different component without
 either duplicating a rule back into the caller or reaching across with `:global()`.
 
-**daisyUI assembly:** `dropdown`/`dropdown-content` (the panel's own positioning context; the
-caller's own panel snippet root carries `dropdown-content`).
+**daisyUI assembly:** `dropdown`/`dropdown-open`/`dropdown-content` (the panel's own positioning
+context and open-state toggle; the caller's own panel snippet root carries `dropdown-content`).
 
-**Exact class inventory:** `dropdown`, `dropdown-content`.
+**Exact class inventory:** `dropdown`, `dropdown-open`, `dropdown-content`.
 
 ```svelte
 <ToolbarDisclosure
@@ -866,8 +867,7 @@ summary columns under a breakpoint instead).
 (`rulings.touch-targets.test.ts`, Web Content Accessibility Guidelines 2.5.8, 24x24, not 2.5.5's
 44x44) and clears it, so the trigger keeps its size unchanged.
 
-**Out of scope (standing defer, `expandablerow-colspan`):** a `colspan` full-width summary
-variant.
+**Out of scope:** a `colspan` full-width summary variant is deliberately not offered.
 
 Three treatments carry no prop of their own. They apply unconditionally. The whole summary row
 washes with `color-mix(in oklab, var(--color-base-content) 5%, transparent)` on hover, including
@@ -999,7 +999,7 @@ which render only once the library holds more than one top-level content type.
 | `ItemLabel` | Extension API | `interface ItemLabel { one: string; many: string }` | A count-line noun in both grammatical numbers, for `Pagination`'s and `ListToolbar`'s `itemLabel` prop and `computeCountLine`'s own parameter. |
 | `itemNoun` | Extension API | `declare function itemNoun(count: number, label: string \| ItemLabel): string` | Picks the grammatical number for a count surface: `label.one` at exactly 1, `label.many` otherwise. A plain string `label` is invariant across every count. |
 | `SelectInputOption` | Extension API | `interface SelectInputOption { value: string; label: string }` | One `SelectInput` option: the submitted value and its visible text. |
-| `MediaLibraryEntry` | Extension API | `interface MediaLibraryEntry { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number \| null; height: number \| null; bytes: number; createdAt: string }` | One committed asset's display facts, the row shape `MediaLibraryData.assets` carries and `MediaPicker`'s `entries` prop takes. This subpath is its canonical home, beside the component whose prop signature names it; `/sveltekit` re-exports the same type so a route-factory importer can name a member of the data it already holds. |
+| <a id="medialibraryentry"></a>`MediaLibraryEntry` | Extension API | `interface MediaLibraryEntry { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number \| null; height: number \| null; bytes: number; createdAt: string }` | One committed asset's display facts, the row shape `MediaLibraryData.assets` carries and `MediaPicker`'s `entries` prop takes. This subpath is its canonical home, beside the component whose prop signature names it; `/sveltekit` re-exports the same type so a route-factory importer can name a member of the data it already holds. |
 | `MediaSelection` | Extension API | `interface MediaSelection { entry: MediaLibraryEntry; ref: string; alt: string }` | What `MediaPicker` hands its `onselect` prop: the chosen entry, its `media:<slug>.<hash>` reference token, and the asset's manifest alt (empty when the asset has none). |
 | `ToolbarDisclosureAriaHaspopup` | Extension API | `type ToolbarDisclosureAriaHaspopup = 'menu' \| 'listbox' \| 'dialog' \| 'grid' \| 'tree' \| 'true'` | `ToolbarDisclosure`'s `ariaHaspopup` prop vocabulary, forwarded onto the trigger's own `aria-haspopup` unchanged. |
 | `ToolbarDisclosureTriggerAttrs` | Extension API | `interface ToolbarDisclosureTriggerAttrs { 'aria-expanded': boolean; 'aria-controls': string; 'aria-haspopup': ToolbarDisclosureAriaHaspopup \| undefined; onclick: (event: MouseEvent) => void }` | The attrs `ToolbarDisclosure`'s `trigger` snippet receives, to spread onto the caller's own trigger element. |

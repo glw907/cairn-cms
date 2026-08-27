@@ -137,6 +137,18 @@ verified against zebra stripes in both themes):**
     cursor: pointer;
   }
 
+  /* A `data-cairn-inert-cell` wrapper opts its own click out of the row toggle (this component's
+     own header comment); the row-level pointer cursor above would otherwise mislead a hover over
+     that escape into reading as "this also toggles the row." `:global()` on both selectors: the
+     wrapper and its contents are the caller's own snippet markup, opaque to this component's
+     compiler. `cursor: auto` resets to each element's own default (a nested button still shows its
+     own pointer, plain text falls back to the text cursor) rather than a single override guessing
+     what the caller wrapped. */
+  .toolkit-expandable-row-summary :global([data-cairn-inert-cell]),
+  .toolkit-expandable-row-summary :global([data-cairn-inert-cell] *) {
+    cursor: auto;
+  }
+
   /* Row hover feedback (fix 1 above), for the CALLER's own summary cells. `:global(td)` on the
      child side: those cells are the caller's snippet markup (opaque to this component's compiler,
      the same reason AdminTable's own single-line enforcement rule needs :global() on `td`/`th`),

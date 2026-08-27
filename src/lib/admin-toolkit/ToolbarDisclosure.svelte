@@ -36,33 +36,40 @@ roving-tabindex option, say) still gets it for free, since focusing that same fi
 its own `onfocus` handler, if it has one, the same way a real Tab keypress would.
 
 The trigger element itself is never rendered by this component, so it holds no persistent ref to
-it; the trigger's own `onclick` (part of the spread attrs) captures `event.currentTarget` at open
-time, which is enough for Escape's own focus-return, since a disclosure only ever opens through
-that click.
+it of its own accord; the trigger attrs carry a Svelte attachment (`svelte/attachments`,
+`createAttachmentKey`) that captures the DOM node whenever the caller's trigger element mounts,
+independent of any click. This is deliberate: a parent that drives `open` programmatically (never
+routing through this component's own `toggle`) still gets a correct Escape focus-return, since the
+ref is live from mount rather than sourced from a click event's own `currentTarget`.
 
 An optional `extra` snippet renders as a sibling of the trigger, inside the same containment
 boundary as the trigger and panel: a facet's own inline clear button, for instance, which must
 never count as "outside" for the pointerdown mechanic or "left" for the focusout mechanic.
 
-`containerClass` and `emphasized` are the one piece of visual configuration this component
-carries: `containerClass` names extra classes for the disclosure's own containing element (the
-outside-pointerdown and focusout boundary, and the panel's `position: absolute` containing block,
-via daisyUI's own `dropdown` class this component always applies), and `emphasized` toggles the
-bordered-and-tinted treatment a facet with an applied value carries. Both exist because the
-containing element is this component's own markup: a caller's own scoped `<style>` cannot reach an
-element rendered by a different component without either duplicating it back into that caller (the
-orphaning bug this extraction fixes) or reaching across with `:global()`, which is no better than
-not moving the rule at all.
+`containerClass` is the one piece of visual configuration this component carries: extra classes
+for the disclosure's own containing element (the outside-pointerdown and focusout boundary, and
+the panel's `position: absolute` containing block, via daisyUI's own `dropdown` class this
+component always applies). This component emits only its own generic classes
+(`dropdown`/`toolkit-toolbar-disclosure`/`dropdown-open`) on that element; any consumer-specific
+chrome a caller wants on its own containing element (a facet's applied-state tint, say) travels in
+through `containerClass` itself, and the caller's own `:global()` styling reaches it, since the
+containing element is this component's own markup and a caller's own scoped `<style>` cannot reach
+it any other way without duplicating the rule back into the caller.
 -->
 <script module lang="ts">
+  import { createAttachmentKey, type Attachment } from 'svelte/attachments';
+
   /** Attributes to spread onto the caller's own trigger element. `aria-expanded` and
    *  `aria-controls` track this disclosure's open state; `aria-haspopup` forwards the
-   *  `ariaHaspopup` prop when given; `onclick` toggles `open` through `onOpenChange`. */
+   *  `ariaHaspopup` prop when given; `onclick` toggles `open` through `onOpenChange`; the
+   *  symbol-keyed attachment captures the trigger's own DOM node on mount, for Escape's own
+   *  focus-return (see this component's own header comment). */
   export interface ToolbarDisclosureTriggerAttrs {
     'aria-expanded': boolean;
     'aria-controls': string;
     'aria-haspopup': ToolbarDisclosureAriaHaspopup | undefined;
     onclick: (event: MouseEvent) => void;
+    [key: symbol]: Attachment<HTMLElement>;
   }
 
   /** Attributes to spread onto the caller's own panel root element. `id` is what the trigger's
@@ -91,9 +98,6 @@ not moving the rule at all.
     ariaHaspopup?: ToolbarDisclosureAriaHaspopup;
     /** Extra class names for this component's own containing element. */
     containerClass?: string;
-    /** Whether the containing element carries the bordered-and-tinted emphasized treatment (an
-     *  applied filter's own facet, say). */
-    emphasized?: boolean;
     /** Renders the trigger control. Receives the attrs object to spread onto the caller's own
      *  interactive element. */
     trigger: Snippet<[ToolbarDisclosureTriggerAttrs]>;
@@ -106,20 +110,21 @@ not moving the rule at all.
     panel: Snippet<[ToolbarDisclosurePanelAttrs]>;
   }
 
-  let { open, onOpenChange, ariaHaspopup, containerClass, emphasized = false, trigger, extra, panel }: Props =
-    $props();
+  let { open, onOpenChange, ariaHaspopup, containerClass, trigger, extra, panel }: Props = $props();
 
   const uid = $props.id();
   const panelId = `${uid}-panel`;
 
   let containerEl = $state<HTMLElement | null>(null);
-  // Captured from the trigger's own click event: this component never renders the trigger element
-  // itself, so it holds no ref to it until the trigger actually opens the panel. Escape's own
-  // focus-return is the only mechanic that needs it (a disclosure only ever opens via this click).
+  // Captured by the trigger attrs' own attachment (see this component's own header comment): live
+  // from the trigger's own mount, not from a click event, so a parent-driven open (never routed
+  // through this component's own toggle) still gets a correct Escape focus-return.
   let triggerEl = $state<HTMLElement | null>(null);
+  const attachTriggerRef: Attachment<HTMLElement> = (node) => {
+    triggerEl = node;
+  };
 
-  function toggle(event: MouseEvent) {
-    triggerEl = event.currentTarget as HTMLElement;
+  function toggle() {
     onOpenChange(!open);
   }
 
@@ -134,29 +139,48 @@ not moving the rule at all.
     'aria-controls': panelId,
     'aria-haspopup': ariaHaspopup,
     onclick: toggle,
+    [createAttachmentKey()]: attachTriggerRef,
   });
   const panelAttrs = $derived<ToolbarDisclosurePanelAttrs>({ id: panelId });
 
   // Mechanic: focus moves into the panel on open. Generic fallback (the caller's own content may
   // additionally manage its own focus, e.g. a menu's roving tabindex reacting to this same focus
-  // move via its own onfocus handler); see this component's own header comment.
+  // move via its own onfocus handler); see this component's own header comment. `:not([tabindex=
+  // "-1"])` on every branch excludes a roving-tabindex option that is not (yet) the tab stop (a
+  // `'menu'` facet reopened after a prior selection moved the checked option away from index 0):
+  // without it, `button`/`[href]`/etc. match unconditionally regardless of `tabindex`, and the
+  // first DOM match can be an element that is not actually reachable by a real Tab keypress.
   $effect(() => {
     if (!open) return;
     tick().then(() => {
       const panelEl = document.getElementById(panelId);
       panelEl
-        ?.querySelector<HTMLElement>('button, [href], input, select, textarea, [tabindex]')
+        ?.querySelector<HTMLElement>(
+          'button:not([tabindex="-1"]), [href]:not([tabindex="-1"]), input:not([tabindex="-1"]), select:not([tabindex="-1"]), textarea:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])',
+        )
         ?.focus();
     });
   });
 
-  // Mechanic: Escape closes the disclosure and returns focus to the trigger.
-  function onWindowKeydown(event: KeyboardEvent) {
+  // Mechanic: Escape closes the disclosure and returns focus to the trigger. A container-scoped
+  // listener (rather than a `<svelte:window>` one) restores the prior, pre-extraction semantics:
+  // Escape only closes when the event target is within the trigger-plus-panel, the same
+  // containment boundary the pointerdown and focusout mechanics below already honor, rather than
+  // any Escape anywhere in the document. Attached programmatically via `$effect`, not a
+  // declarative `onkeydown`, since the container carries no interactive role of its own (it is
+  // event delegation, not an affordance a11y should announce).
+  function onContainerKeydown(event: KeyboardEvent) {
     if (event.key === 'Escape' && open) {
       event.preventDefault();
       close(true);
     }
   }
+  $effect(() => {
+    const el = containerEl;
+    if (!el) return;
+    el.addEventListener('keydown', onContainerKeydown);
+    return () => el.removeEventListener('keydown', onContainerKeydown);
+  });
 
   // Mechanic: a pointerdown outside the trigger-plus-panel closes without moving focus.
   function onWindowPointerdown(event: PointerEvent) {
@@ -175,12 +199,11 @@ not moving the rule at all.
   }
 </script>
 
-<svelte:window onkeydown={onWindowKeydown} onpointerdown={onWindowPointerdown} />
+<svelte:window onpointerdown={onWindowPointerdown} />
 
 <div
   class="dropdown toolkit-toolbar-disclosure {containerClass ?? ''}"
   class:dropdown-open={open}
-  class:toolkit-toolbar-facet-applied={emphasized}
   bind:this={containerEl}
   onfocusout={onContainerFocusOut}
 >
@@ -190,34 +213,6 @@ not moving the rule at all.
 </div>
 
 <style>
-  /* `ListToolbar`'s own `'menu'`-facet box chrome (`containerClass="toolkit-toolbar-facet"`):
-     a quiet bordered pair (trigger plus optional clear), sharing the toolbar row's 30px height.
-     `display: inline-flex; align-items: stretch` stretches both children to that height, since
-     neither sets its own; `overflow` stays default (visible), since this element is also the
-     panel's own `position: absolute` containing block (daisyUI's own `.dropdown`/`.dropdown-
-     content` pair, kept via the always-applied `dropdown` class above) and `hidden` would clip the
-     panel away entirely rather than just tidy the trigger/clear corners. Moved verbatim from
-     `ListToolbar`'s own style, since this containing element is this component's own markup (see
-     this component's own header comment on why `containerClass`/`emphasized` exist at all). */
-  .toolkit-toolbar-facet {
-    display: inline-flex;
-    align-items: stretch;
-    flex: 0 0 auto;
-    height: 30px;
-    border-radius: var(--radius-field);
-    border: 1px solid var(--cairn-card-border);
-    background: transparent;
-  }
-
-  /* The bordered-and-tinted emphasized treatment (a facet with an applied value): border and fill
-     mixed from --color-primary, moved verbatim from ListToolbar's own facet styling since this
-     containing element is this component's own markup (see this component's own header comment on
-     why containerClass/emphasized exist at all). */
-  .toolkit-toolbar-facet-applied {
-    border-color: color-mix(in oklab, var(--color-primary) 45%, var(--cairn-card-border));
-    background: color-mix(in oklab, var(--color-primary) 7%, transparent);
-  }
-
   /* Neutralizes daisyUI's own `:focus-within` disclosure path (the coherence-round finding this
      extraction carries forward): the compiled `.dropdown` rule shows `.dropdown-content` on
      `.dropdown-open`, `.dropdown-hover:hover`, OR `:focus-within`, so tabbing onto a trigger opened

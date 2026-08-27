@@ -753,9 +753,8 @@ fail-closed signal. `EditPage`, `DeleteDialog`, `RenameDialog`, and the other au
 compose it.
 
 The field's token survives a native form reset, the one `use:enhance` fires by default after a
-successful submit. It mirrors its value into the input's `defaultValue`, so the reset restores the
-same token instead of blanking the field and 403ing the form's next submit. The component carries
-the guarantee on its own, with no action from a consuming form.
+successful submit: it pins its own value into the input's `defaultValue` directly, and a test
+holds the guarantee. The component carries it on its own, with no action from a consuming form.
 
 ```svelte
 <CsrfField {token} />

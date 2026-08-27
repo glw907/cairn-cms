@@ -1,14 +1,17 @@
 // cairn-audit's list-role rule: a <ul>/<ol> whose marker is suppressed stops being announced as a
 // list by WebKit/VoiceOver unless it carries role="list". Marker suppression arrives two ways: the
 // list's own classes remove it (a `list-style`/`list-style-type: none` declaration, Tailwind's
-// `list-none`), or an ITEM's classes change its used display away from `list-item` (daisyUI's own
-// `.list-row` renders `display: grid`, documented at `cairn-admin.css`'s `.list` ruling comment). A
-// list already carrying SOME explicit role attribute is left alone regardless of its value: an
-// explicit role overrides the implicit host-language role entirely, so `role="listbox"` (say) is
-// already an intentional, legitimate reading the WebKit bug never touches, and asking for a second,
-// conflicting role would be the wrong remedy. The broad "any utility class" condition is rejected on
-// purpose: only a class the compiled sheet actually resolves to a marker- or display-changing
-// declaration counts, never a class present for some unrelated reason.
+// `list-none`), or an ITEM's classes change its rendered display away from `list-item` to another
+// display that still renders the item (`flex`, `grid`, `block`, `inline-flex`; daisyUI's own
+// `.list-row` renders `display: grid`, documented at `cairn-admin.css`'s `.list` ruling comment).
+// `display: none` is excluded: a hidden item never reaches the accessibility tree, so it cannot
+// strip the enclosing list's implicit role. A list already carrying SOME explicit role attribute
+// is left alone regardless of its value: an explicit role overrides the implicit host-language
+// role entirely, so `role="listbox"` (say) is already an intentional, legitimate reading the
+// WebKit bug never touches, and asking for a second, conflicting role would be the wrong remedy.
+// The broad "any utility class" condition is rejected on purpose: only a class the compiled sheet
+// actually resolves to a marker- or display-changing declaration counts, never a class present
+// for some unrelated reason.
 import type { ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule, StaticRuleContext } from '../../types.js';
 
@@ -39,7 +42,14 @@ function ownMarkerSuppressor(ctx: StaticRuleContext, classes: string[]): string 
   return undefined;
 }
 
-/** The first of an item's own classes the compiled sheet resolves to a non-list-item display. */
+/**
+ * The first of an item's own classes the compiled sheet resolves to a display that keeps the
+ * item rendered but strips its `list-item` box (`flex`, `grid`, `block`, `inline-flex`, and so
+ * on). `display: none` is excluded on purpose: a hidden item is removed from rendering and from
+ * the accessibility tree entirely, so it cannot strip the enclosing list's implicit role, which
+ * is the only mechanism this rule guards against (Tailwind's `hidden` and its responsive variants
+ * all compile to `display: none` and must stay silent here).
+ */
 function itemDisplayChange(
   ctx: StaticRuleContext,
   classes: string[]
@@ -48,7 +58,8 @@ function itemDisplayChange(
     for (const decl of ctx.sheet.declarations(name)) {
       if (decl.property !== 'display') continue;
       const value = decl.value.trim().toLowerCase();
-      if (value !== LIST_ITEM_DISPLAY) return { name, value: decl.value.trim() };
+      if (value === LIST_ITEM_DISPLAY || value === 'none') continue;
+      return { name, value: decl.value.trim() };
     }
   }
   return undefined;

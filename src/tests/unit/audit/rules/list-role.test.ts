@@ -16,6 +16,7 @@ const SHEET = parseSheet(
     '.list { display: flex; }',
     '.list-row { display: grid; }',
     '.toolkit-list { padding-inline-start: 0; }',
+    '.sm\\:hidden { display: none; }',
   ].join('\n')
 );
 
@@ -69,6 +70,16 @@ describe('list-role', () => {
 
   it('never flags a plain <ul> with no marker-removing or display-changing class', () => {
     expect(check(component('<ul class="mt-1 w-full"><li>One</li></ul>\n'))).toEqual([]);
+  });
+
+  // display: none removes the item from rendering and from the accessibility tree entirely, so
+  // it cannot strip the enclosing list's implicit role, the only mechanism this rule guards
+  // against. Tailwind's `hidden` and every responsive variant (`sm:hidden`, `max-sm:hidden`)
+  // compile to `display: none`, and an ordinary conditionally-hidden row must stay silent.
+  it('never flags a list whose only display-changing item class is display: none', () => {
+    expect(
+      check(component('<ul class="mt-1"><li class="sm:hidden">One</li></ul>\n'))
+    ).toEqual([]);
   });
 
   // An element already carrying an explicit role, of any value, has already had its implicit host

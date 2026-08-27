@@ -1776,7 +1776,6 @@ persistent "?" carries Markdown help, design-arc D2).
         </svg>
       </button>
       <ul
-        role="list"
         bind:this={actionsMenu}
         popover="auto"
         id="cairn-edit-actions-menu"

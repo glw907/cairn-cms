@@ -82,14 +82,16 @@
 
 - `cairn-audit` gains a third static rule, `list-role`. A `<ul>`/`<ol>` whose marker is
   suppressed, by its own classes (a `list-style`/`list-style-type: none` declaration, such as
-  Tailwind's `list-none`) or by an item's classes changing that item's used display away from
-  `list-item` (daisyUI's own `.list-row` renders `display: grid`, and an ordinary layout utility
-  such as `flex` or `hidden` on an `<li>` does the same), stops being announced as a list by
-  WebKit/VoiceOver once it carries no role attribute; the finding names the WebKit mechanism and
-  the one-attribute remedy, `role="list"`. A list already carrying a different explicit role is
-  exempt, since that role already overrides the implicit one on purpose. Runs at error tier and
-  applies to any component `static.scope` reaches. The engine's own admin adopts the remedy on
-  every in-tree list the rule caught, the rule's own dogfooding proof. See
+  Tailwind's `list-none`) or by an item's classes changing that item's rendered display away from
+  `list-item` to another display that still renders the item, such as `flex`, `grid`, `block`, or
+  `inline-flex` (daisyUI's own `.list-row` renders `display: grid`), stops being announced as a
+  list by WebKit/VoiceOver once it carries no role attribute; the finding names the WebKit
+  mechanism and the one-attribute remedy, `role="list"`. `display: none` (Tailwind's `hidden` and
+  its responsive variants) is excluded, since a hidden item never reaches the accessibility tree
+  and so cannot strip the enclosing list's implicit role. A list already carrying a different
+  explicit role is exempt, since that role already overrides the implicit one on purpose. Runs at
+  error tier and applies to any component `static.scope` reaches. The engine's own admin adopts
+  the remedy on every in-tree list the rule caught, the rule's own dogfooding proof. See
   [`cairn-audit`](docs/reference/cairn-audit.md#the-static-rules). Consumers must: nothing.
 
 ### Changed

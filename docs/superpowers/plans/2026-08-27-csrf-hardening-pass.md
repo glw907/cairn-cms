@@ -5,9 +5,12 @@
 > `cairn-implementer` / `diff-reviewer` chain per task with the Agent tool; the full gate
 > inside the chain. Steps use checkbox (`- [ ]`) syntax. No model upshift needed.
 
-**Token ceiling (WHOLE pass, chains plus ritual): 900K.** **Checkpoint interval:** four
-tasks. **Worktree:** `csrf-hardening` off `main` AFTER the harvest-detection merge (that
-pass holds warm edits in `docs/extend/security-model.md`; do not branch before it lands).
+**Token ceiling (WHOLE pass, chains plus ritual): 1.8M** (re-rated by the pre-approval
+review against the toolkit-seams per-task data; 900K was roughly half the optimistic
+floor). **Checkpoint interval:** four
+tasks. **Worktree:** `csrf-hardening` off `main` AFTER the harvest-detection merge (that pass holds
+warm edits in `docs/extend/security-model.md`, `docs/reference/doctor.md`, and `CHANGELOG.md`,
+all files this pass also edits; do not branch before it lands).
 **Initiative frame:** `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`
 (the hardening slice; its standing-constraints block applies to every task here).
 **Evidence base:** the 2026-08-27 `web-auth-security-reviewer` verdict, inlined below where
@@ -16,7 +19,7 @@ load-bearing; the friction-log CSRF entry (docs/internal/docs-friction-log.md, 2
 **Goal:** close the consumer CSRF-403 incident class as far as the evidence reaches, and make
 any residue diagnosable from Workers Logs. The confirm-load re-mint under `SameSite=Strict`
 is a CANDIDATE mechanism, not a confirmed diagnosis (a native mail client may send Strict
-cookies on its navigation); the pass fixes every named mechanism and instrumentats the rest.
+cookies on its navigation); the pass fixes every named mechanism and instruments the rest.
 Known post-fix behavior to state in the changelog: browsers holding an old Strict cookie
 re-mint exactly once after deploy as it ages out.
 
@@ -33,9 +36,13 @@ response for a csrf rejection stays the single generic
 
 **Files:** `src/lib/sveltekit/csrf.ts`, `src/lib/sveltekit/guard.ts` (the `isLocalHost`
 comment), `src/lib/sveltekit/auth-routes.ts` (`logoutAction`), `src/tests/unit/csrf.test.ts`,
-`src/tests/unit/doctor-check-probe.test.ts` (fixtures), `docs/reference/` (the page that
-documents the auth cookies gains the CSRF cookie's attributes; locate via `grep -rn
-cairn_csrf docs/reference/`).
+`src/tests/unit/doctor-check-probe.test.ts` (fixtures),
+`src/tests/integration/auth-load-csrf.test.ts` (its `platform: { env: {} }` event must
+keep working under the fallback rule; add a PUBLIC_ORIGIN-absent case),
+`docs/extend/security-model.md` (the CSRF cookie's full attribute set lands here; no
+reference page names `cairn_csrf` today, verified by grep), `docs/reference/auth-crypto.md`
+(:122-125 currently teaches a different secure derivation; align it), and
+`docs/reference/doctor.md` (:134-136 names the https-only `__Host-` form; align).
 
 **Why (from the security review, all verified against the code):** `SameSite=Lax` and
 `Strict` are behaviorally identical for everything the guard screens (`UNSAFE_METHODS` with a
@@ -51,24 +58,41 @@ token-bearing tab and no cookie: the same intermittent 403. `secure` currently d
 - [ ] `csrf.ts`: the cookie sets `sameSite: 'lax'` EXPLICITLY (never attribute-omission;
       Chrome's Lax-allowing-unsafe intervention applies to no-attribute cookies for 120s,
       and the confirm flow mints moments before a POST) and
-      `maxAge: Math.floor(SESSION_TTL_MS / 1000)` so the pair lives and dies together. NO
+      `maxAge: Math.floor(SESSION_TTL_MS / 1000)`.
+- [ ] The expiry RE-ANCHORS: because `issueCsrfToken` early-returns on a present cookie
+      (`csrf.ts:34-35`), a one-shot Max-Age would expire mid-session and re-mint, recreating
+      the tab invalidation on a 30-day timer. When the cookie is present, RE-SET the SAME
+      value with a fresh `maxAge`. That is not rotation (the value never changes), so it does
+      not violate the no-rotate-on-confirm constraint; say so in the code comment. Test: a
+      present cookie is re-set with a fresh `maxAge` and an UNCHANGED value. NO
       rotate-on-confirm (rotation would reintroduce the tab invalidation this pass fixes).
-- [ ] `secure` derives from the configured origin (`requireOrigin(env)` /`PUBLIC_ORIGIN`),
-      not `event.url.protocol`; the `isLocalHost` comment at `guard.ts:27-31` ("UX only ...
-      never whether to grant access") is corrected, since the localhost branch decides the
-      cookie name and Secure bit.
+- [ ] One `csrfSecure(event)` helper decides the Secure bit and cookie name for EVERY writer
+      and reader in the CSRF pair: `issueCsrfToken` (`csrf.ts:32`), `validateCsrfHeader`
+      (`csrf.ts:53`), `validateCsrfToken` (`csrf.ts:61`), and `admin-action.ts:164`. The
+      rule, never a throw from a cookie helper: if the request host is local (the guard's
+      `isLocalHost` list), derive from `event.url.protocol` (dev keeps the bare non-Secure
+      name; a production `PUBLIC_ORIGIN` must not mint `__Host-` over `http://localhost`);
+      otherwise `PUBLIC_ORIGIN` when it parses; otherwise fall back to `event.url.protocol`.
+      Note that `env.ts:59`'s local-host list is narrower than the guard's; the helper uses
+      the guard's. The doctor probe (`check-probe.ts:49`) already derives from the configured
+      origin, so today the probe and the runtime disagree; this change reconciles them.
+      The SESSION cookie's derivation (`guard.ts:150`, `auth-routes.ts:198`, `:223`) is
+      DELIBERATELY out of this slice: it belongs to the conventions pass's auth family; file
+      that as a one-line ledger note so `crypto.ts:20`'s mirror claim has a listener.
 - [ ] `logoutAction` (`auth-routes.ts:221-235`) deletes the CSRF cookie alongside the
       session cookie (a persistent token must not survive logout).
-- [ ] Docstrings corrected in the same change: `csrf.ts:29` (Strict claim) and `csrf.ts:27-29`
-      (the "a second open admin tab reuses the same value" invariant, which the incident
-      broke; restate it as what the pass now makes true).
+- [ ] Docstrings corrected in the same change: the Strict claim and the "a second open admin
+      tab reuses the same value" invariant at `csrf.ts:27-28` (which the incident broke;
+      restate as what the pass now makes true). The falsified "localhost branch decides the
+      cookie name" theory is NOT adopted anywhere: `isLocalHost`'s comment at `guard.ts:27-31`
+      is accurate and stays.
 - [ ] Tests: `csrf.test.ts:75` asserts `sameSite: 'lax'` EXPLICITLY (never delete the
       assertion) and the new `maxAge`; the logout test asserts both cookies deleted; the
       doctor-probe fixtures (`doctor-check-probe.test.ts:39,120`) stop lying about the
       attribute.
-- [ ] Acceptance: full gate green; the reference page states the CSRF cookie's full
-      attribute set; CHANGELOG entry with `Consumers must: nothing` plus the once-per-browser
-      re-mint note.
+- [ ] Acceptance: full gate green; `docs/extend/security-model.md` states the CSRF cookie's
+      full attribute set; CHANGELOG entry with `Consumers must: nothing` plus the
+      once-per-browser re-mint note.
 
 ## Task 2: The unreadable failure paths (empty-token fallback; cache posture)
 
@@ -77,15 +101,18 @@ token-bearing tab and no cookie: the same intermittent 403. `secure` currently d
 `docs/internal/admin-smoke-test.md` (cookie-scheme wording).
 
 - [ ] `content-routes-core.ts:644`'s `csrf: event.cookies ? issueCsrfToken(...) : ''`
-      ternary is removed: `cookies` is required on `CairnEvent` (`types.ts:68`), so the
+      ternary is removed: `cookies` is required on `CairnEvent` (`types.ts:69`), so the
       false branch is unreachable from typed callers and, from an untyped caller, renders
       every form permanently 403 with no readable cause. Call `issueCsrfToken`
       unconditionally (or throw with a named condition if `cookies` is absent); a test pins
       the non-empty token in the shell payload.
-- [ ] `applySecurityHeaders` gains `Cache-Control: no-store, private`: under Lax the cookie
-      is re-set far less often, removing the accidental `Set-Cookie` cache suppressor on
-      admin HTML that embeds the token and the editor's identity. Test asserts the header on
-      an admin response.
+- [ ] `applySecurityHeaders` gains `Cache-Control: private, no-store` (the engine's existing
+      spelling, `preview.ts:141`): under Lax the cookie is re-set far less often, removing
+      the accidental `Set-Cookie` cache suppressor on admin HTML that embeds the token and
+      the editor's identity. Dedupe with the header `admin-response.ts:59` already sets on
+      its own path so one value survives. Verified safe: the guard returns before
+      `applySecurityHeaders` for non-`/admin` paths, so media and preview caching are
+      untouched. Test asserts the header on an admin response.
 - [ ] `docs/internal/admin-smoke-test.md:138-156`'s cookie-scheme description updates to the
       new attributes.
 - [ ] Acceptance: full gate green; CHANGELOG line (no consumer action).
@@ -94,19 +121,34 @@ token-bearing tab and no cookie: the same intermittent 403. `secure` currently d
 
 **Files:** `src/lib/sveltekit/guard.ts` (the `reason: 'csrf'` record at `:145`),
 `src/lib/sveltekit/admin-action.ts` (`admin.action.csrf_rejected` at `:163-173`),
-`src/lib/sveltekit/csrf.ts` (the validators return enough to discriminate),
-`src/lib/auth/crypto.ts` ONLY if `tokensMatch` needs a distinguishable return (prefer
-discriminating in the callers), unit tests, `docs/reference/log-events.md` (both rows).
+`src/lib/sveltekit/csrf.ts`, the five further `validateCsrfHeader` call sites
+(`content-routes-dictionary.ts:95`, `content-routes-tidy.ts:111`,
+`content-routes-media.ts:494`, `:1065`, `:1265`), unit tests,
+`docs/reference/log-events.md` (both rows). `src/lib/auth/crypto.ts` is NOT touched:
+discriminating in the callers is a CONSTRAINT, not a preference (`tokensMatch`'s
+constant-time and length-secrecy properties stay intact; emptiness and presence are
+decidable before the compare).
 
 **Why:** three distinct incidents currently collapse into one undifferentiated record: the
 guard tries the header witness then the form field (`guard.ts:140-144`), the media path posts
 header-only with no `csrf` field (so a stale header token today reads as a missing field),
 and `csrf.ts:64-69`'s catch swallows an unparseable body.
 
+- [ ] FAIL-OPEN GUARD, the review's top finding: the discriminating variant is a NEW,
+      differently named function (`csrfHeaderVerdict` / `csrfTokenVerdict`) returning a
+      result object; `validateCsrfHeader`/`validateCsrfToken` STAY boolean wrappers, because
+      six existing call sites negate the return (`!validateCsrfHeader(...)`), and a widened
+      object return would make every one truthy and silently disable the check.
+      Falsifiability: break the header check once, prove one media test reds, restore.
 - [ ] Both records gain `detail: 'no-cookie' | 'no-witness' | 'mismatch' |
       'unparseable-body'` and `witness: 'header' | 'field'` (which path produced the
       verdict), plus presence-only `hasSession: boolean` on the guard record (it fires
       before session resolution; never a session id or email there).
+- [ ] Precedence rule, stated so `unparseable-body` cannot become the routine value: when a
+      header witness was PRESENT, its verdict wins (a stale header on a raw-body endpoint
+      reads `mismatch`/`witness: header`, never the field path's failure); the field path's
+      verdict applies only when no header was sent. Absent-vs-empty field discriminates via
+      `form.has('csrf')` (`String(form.get('csrf') ?? '')` collapses them today).
 - [ ] Log-only constraints, enforced by review: no token material, prefix, OR length is ever
       logged; the HTTP response is unchanged (no discriminated body or header; the guard
       must not become an oracle).

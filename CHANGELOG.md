@@ -15,6 +15,20 @@
   CSS at the 390px viewport (24x24 CSS px, the engine's ruled AA floor) and clears it, so no size
   change was made. Consumers must: nothing.
 
+- `ToolbarDisclosure` (`/admin-toolkit`) extracts the trigger-plus-panel disclosure `ListToolbar`
+  implemented twice, its overflow menu and each `'menu'`-display facet: five dismissal mechanics
+  (`aria-expanded`/`aria-controls`, focus-into-panel-on-open, Escape-plus-return-focus,
+  outside-pointerdown, and focus-leaving-the-boundary), fully controlled via `open`/`onOpenChange`,
+  with the trigger and panel staying the caller's own snippet-authored markup so a `'menu'` facet's
+  ARIA-menu content (role, roving tabindex, reset-to-first) stays outside the primitive. `ListToolbar`
+  folds both duplications onto it; single-open-at-a-time for the facets stays in `ListToolbar` via
+  `openFacetId`, since no self-contained primitive can enforce it across siblings. The Svelte-scoped
+  `:focus-within` neutralizer that used to live in `ListToolbar`'s own style (`ListToolbar.svelte`,
+  historically `:684-696`) moves with the container markup it serves, so it survives the fold rather
+  than orphaning silently. `ListToolbar`'s own behavior, markup classes, and public contract are
+  unchanged; this is an internal-implementation extraction plus one new export. Consumers must:
+  nothing.
+
 - `MediaPicker` publishes from `/admin-toolkit`, with `MediaSelection` and `MediaLibraryEntry`
   beside it, so a site building its own admin screen composes cairn's read-only combobox over the
   committed media library instead of rebuilding a selection UI over the manifest. Its prop is now

@@ -4,10 +4,12 @@
 // `TextInput`, `SelectInput`, most merged here from the retired `admin-fields` subpath in the C2
 // breaking-window pass, R3) render one labeled control, or a row of them, in the admin's label and
 // control rhythm, and the SCREEN-SCAFFOLD primitives (`PageHeader`, `OfficeList`, `AdminTable`,
-// `ListToolbar`, `Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus
-// the formatters compose a whole screen's chrome. Born in aksailingclub-org's theme layer and graduated here by
-// re-expression, not a file copy: each export's contract stays general-purpose, never a domain
-// assumption from its first consumer.
+// `ListToolbar`, `ToolbarDisclosure`, `Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`,
+// `MediaPicker`) plus the formatters compose a whole screen's chrome. Born in aksailingclub-org's
+// theme layer and graduated here by re-expression, not a file copy: each export's contract stays
+// general-purpose, never a domain assumption from its first consumer. `ToolbarDisclosure` itself
+// graduated a level deeper, out of `ListToolbar`'s own two duplicated disclosure mechanics
+// (`audit-admin-listtoolbar`'s reshape), rather than out of a site.
 // `TextInput`/`SelectInput` are named for the element they wrap, not `TextField`/`SelectField`,
 // because the root barrel's field *descriptor* arms already own those names; two subpaths exporting
 // different things under one name is the agent trap this pass exists to remove.
@@ -48,6 +50,12 @@ export {
   type ListToolbarFilter,
   type ListToolbarFilterOption,
 } from './ListToolbar.svelte';
+export {
+  default as ToolbarDisclosure,
+  type ToolbarDisclosureAriaHaspopup,
+  type ToolbarDisclosurePanelAttrs,
+  type ToolbarDisclosureTriggerAttrs,
+} from './ToolbarDisclosure.svelte';
 export { default as PageHeader } from './PageHeader.svelte';
 export { default as OfficeList } from './OfficeList.svelte';
 export { default as EmptyState, type EmptyStateHeadingLevel } from './EmptyState.svelte';

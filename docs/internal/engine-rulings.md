@@ -2265,8 +2265,8 @@ when the remediation pass lands.
 ## audit-admin-listtoolbar: `ListToolbar`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. It carries a real ARIA radiogroup for segmented filters, a role=status count line, and a full disclosure pattern. The one consumer that hand-copied the disclosure 'missed all four on the first pass'.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Extract the four disclosure mechanics (aria-expanded/aria-controls, focus-in, Escape-plus-return, outside-pointerdown close) as a ToolbarDisclosure primitive Li).
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 51.
+- **Reopens on:** closed. Executed as `ToolbarDisclosure` (`/admin-toolkit`), a controlled trigger-plus-panel primitive carrying five dismissal mechanics (aria-expanded/aria-controls, focus-into-panel-on-open, Escape-plus-return-focus, outside-pointerdown, and the facet's own focus-leaves-the-boundary mechanic the original shape missed). `ListToolbar` folds both duplications onto it, its overflow menu and each `'menu'`-display facet; single-open-at-a-time for the facets stays in `ListToolbar` via `openFacetId`, since no self-contained primitive can enforce it across siblings, and the ARIA-menu content layer (role, roving tabindex, reset-to-first) stays in `ListToolbar`'s own panel content, since it is facet behavior, not disclosure mechanics. The Svelte-scoped `:focus-within` neutralizer moved with the container markup it serves, verified by a rendered check against the packaged admin sheet (the same check the original bug needed to be caught at all).
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 51; executed in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 4.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-pageheader: `PageHeader`  (keep, 2026-08-26, any-site audit)

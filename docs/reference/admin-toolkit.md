@@ -6,8 +6,8 @@ primitives (`FieldLabel`, `FieldRow`, `TextInput`, `SelectInput`) render one lab
 the admin's label and control rhythm; they merged here from the retired `admin-fields` subpath
 (CHANGELOG `0.94.0`), since two subpaths stating the same charter is one subpath. The
 **screen-scaffold** primitives (`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`,
-`Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus the formatters
-compose a whole screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
+`ToolbarDisclosure`, `Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus
+the formatters compose a whole screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
 every contract here is general-purpose across sites. A component that renders one of cairn's own
 content concepts (a `ConceptList` row, an `EditPage` field) lives on `/components` instead, even
 though it also renders inside the admin theme.
@@ -311,7 +311,7 @@ spacing, truncation, and wrapper layout in its own scoped `<style>` rather than 
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
-import { StatusChip, Pagination, AdminTable, ListToolbar, PageHeader, OfficeList, EmptyState, ExpandableRow, MediaPicker } from '@glw907/cairn-cms/admin-toolkit';
+import { StatusChip, Pagination, AdminTable, ListToolbar, ToolbarDisclosure, PageHeader, OfficeList, EmptyState, ExpandableRow, MediaPicker } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 ### `StatusChip`
@@ -589,9 +589,12 @@ control keeps its glyph at the pill's own quiet visual size but grows its own hi
 The count line carries `role="status"` (`aria-live="polite"`, `aria-atomic="true"`), so a search
 or filter change announces the new scope to assistive technology even though nothing moves focus.
 
-The overflow disclosure is a full disclosure pattern, not just an `aria-expanded` toggle. Escape,
-fired from the trigger or from a control inside the panel, closes it and returns focus to the
-trigger; a pointerdown outside the trigger and panel closes it without moving focus.
+The overflow disclosure and each `'menu'`-display facet both fold onto `ToolbarDisclosure`, below.
+It is a full disclosure pattern, not just an `aria-expanded` toggle. Escape closes it and returns
+focus to the trigger. A pointerdown outside the trigger and panel, or focus leaving the
+trigger-plus-panel entirely, closes it without moving focus. Single-open-at-a-time for the facets
+stays in `ListToolbar` itself, since no self-contained disclosure primitive can enforce it across
+siblings.
 
 **daisyUI assembly:** `input`/`input-sm` (search), `select`/`select-sm` (a `'select'`-display
 filter, promoted or overflow), `join`/`join-item`/`btn`/`btn-sm`/`btn-active` (a `'segmented'`-
@@ -620,6 +623,83 @@ compiles from cairn's own admin usage.
   count={filtered.length}
   itemLabel="entries"
 />
+```
+
+### `ToolbarDisclosure`
+
+Stability tier: Extension API.
+
+```ts
+let {
+  open,
+  onOpenChange,
+  ariaHaspopup,
+  containerClass,
+  emphasized = false,
+  trigger,
+  extra,
+  panel,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  ariaHaspopup?: ToolbarDisclosureAriaHaspopup; // 'menu' | 'listbox' | 'dialog' | 'grid' | 'tree' | 'true'
+  containerClass?: string;
+  emphasized?: boolean;
+  trigger: Snippet<[ToolbarDisclosureTriggerAttrs]>;
+  extra?: Snippet;
+  panel: Snippet<[ToolbarDisclosurePanelAttrs]>;
+};
+```
+
+The trigger-plus-panel disclosure `ListToolbar`'s own overflow menu and each `'menu'`-display
+facet fold onto (`audit-admin-listtoolbar`'s reshape): both duplicated the same five dismissal
+mechanics, and the one consumer that hand-copied the pattern missed them on its first pass. Five
+mechanics, always on: the trigger's `aria-expanded`/`aria-controls` track `open`; focus moves into
+the panel on open (the first focusable descendant of whatever the `panel` snippet renders); Escape
+closes and returns focus to the trigger; a pointerdown outside the trigger-plus-panel closes
+without moving focus; and focus leaving the trigger-plus-panel (a Tab out) closes without moving
+focus either.
+
+Fully controlled, the same convention `ExpandableRow` and `Pagination` carry: `open` and
+`onOpenChange` are props, never internal state. This component never decides whether it is allowed
+to be open, only reports when it wants to change; a caller coordinating several disclosures (a
+single-open-at-a-time id, say) derives each instance's own `open` from its own shared state.
+
+The trigger and panel are always the caller's own markup: `trigger` and `panel` are snippets,
+given attrs to spread onto the caller's own elements (`aria-expanded`/`aria-controls`/
+`aria-haspopup`/`onclick` for the trigger, `id` for the panel's own root element), rather than
+elements this component renders itself. `ariaHaspopup` only forwards the trigger's own
+`aria-haspopup` value through; this component carries no opinion about what the panel holds (a
+`role="menu"` option list, a plain form, anything else). `extra` is an optional sibling of the
+trigger inside the same containment boundary (a facet's own inline clear button, say): activating
+it never counts as "outside" or "left" for the dismissal mechanics.
+
+`containerClass` and `emphasized` are the one piece of visual configuration this component
+carries, since the containing element (the outside-pointerdown/focusout boundary, and the panel's
+`position: absolute` containing block via daisyUI's own always-applied `dropdown` class) is this
+component's own markup, not the caller's: a caller's own scoped `<style>` cannot reach it without
+either duplicating a rule back into the caller or reaching across with `:global()`.
+
+**daisyUI assembly:** `dropdown`/`dropdown-content` (the panel's own positioning context; the
+caller's own panel snippet root carries `dropdown-content`).
+
+**Exact class inventory:** `dropdown`, `dropdown-content`.
+
+```svelte
+<ToolbarDisclosure
+  open={menuOpen}
+  onOpenChange={(next) => (menuOpen = next)}
+  ariaHaspopup="menu"
+>
+  {#snippet trigger(attrs)}
+    <button type="button" class="btn btn-sm" {...attrs}>Sort by</button>
+  {/snippet}
+  {#snippet panel(attrs)}
+    <ul id={attrs.id} class="dropdown-content menu" role="menu">
+      <li role="none"><button type="button" role="menuitemradio">Newest</button></li>
+    </ul>
+  {/snippet}
+</ToolbarDisclosure>
 ```
 
 ### `PageHeader`
@@ -930,3 +1010,6 @@ which render only once the library holds more than one top-level content type.
 | `SelectInputOption` | Extension API | `interface SelectInputOption { value: string; label: string }` | One `SelectInput` option: the submitted value and its visible text. |
 | `MediaLibraryEntry` | Extension API | `interface MediaLibraryEntry { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number \| null; height: number \| null; bytes: number; createdAt: string }` | One committed asset's display facts, the row shape `MediaLibraryData.assets` carries and `MediaPicker`'s `entries` prop takes. This subpath is its canonical home, beside the component whose prop signature names it; `/sveltekit` re-exports the same type so a route-factory importer can name a member of the data it already holds. |
 | `MediaSelection` | Extension API | `interface MediaSelection { entry: MediaLibraryEntry; ref: string; alt: string }` | What `MediaPicker` hands its `onselect` prop: the chosen entry, its `media:<slug>.<hash>` reference token, and the asset's manifest alt (empty when the asset has none). |
+| `ToolbarDisclosureAriaHaspopup` | Extension API | `type ToolbarDisclosureAriaHaspopup = 'menu' \| 'listbox' \| 'dialog' \| 'grid' \| 'tree' \| 'true'` | `ToolbarDisclosure`'s `ariaHaspopup` prop vocabulary, forwarded onto the trigger's own `aria-haspopup` unchanged. |
+| `ToolbarDisclosureTriggerAttrs` | Extension API | `interface ToolbarDisclosureTriggerAttrs { 'aria-expanded': boolean; 'aria-controls': string; 'aria-haspopup': ToolbarDisclosureAriaHaspopup \| undefined; onclick: (event: MouseEvent) => void }` | The attrs `ToolbarDisclosure`'s `trigger` snippet receives, to spread onto the caller's own trigger element. |
+| `ToolbarDisclosurePanelAttrs` | Extension API | `interface ToolbarDisclosurePanelAttrs { id: string }` | The attrs `ToolbarDisclosure`'s `panel` snippet receives; `id` is what the trigger's `aria-controls` resolves to. |

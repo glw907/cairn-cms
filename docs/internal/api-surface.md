@@ -165,6 +165,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `StatusChipSize`: "xs" | "sm"
 - `StatusChipTone`: "neutral" | "info" | "success" | "warning" | "danger"
 - `TextInput`: Component<Props, {}, "value">
+- `ToolbarDisclosure`: Component<Props, {}, "">
+- `ToolbarDisclosureAriaHaspopup`: "menu" | "listbox" | "dialog" | "grid" | "tree" | "true"
+- `ToolbarDisclosurePanelAttrs`: { id: string }
+- `ToolbarDisclosureTriggerAttrs`: { aria-expanded: boolean; aria-controls: string; aria-haspopup: ToolbarDisclosureAriaHaspopup | undefined; onclick: (event: MouseEvent) => void }
 
 ## `/ambient`
 

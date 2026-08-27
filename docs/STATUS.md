@@ -47,11 +47,15 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
 - **ASC harvest absorption, detection half: EXECUTING.** `2026-08-26-harvest-detection-pass.md`
   (six tasks serial, ceiling 1.1M), approved 2026-08-27, running on the `harvest-detection`
   worktree off the toolkit-seams merge via `pass-execute.js`.
-- **The audit remediation is designed and twice-reviewed.** The initiative frame (six slices:
-  hardening, narrowing, retires, conventions, internals, chassis; one cut after chassis) is
-  `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`; slice plans are
-  authored just-in-time and executed in fresh sessions. Four ratification changes pend Geoff's
-  answers (ordering, seam-session cancellation, publish carve-out, login-CSRF nonce).
+- **The audit remediation is designed, twice-reviewed, and its first three slice plans are
+  APPROVED (Geoff, 2026-08-28).** Frame:
+  `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md` (seven slices
+  after the foundations split: hardening, foundations A, foundations B, retires,
+  conventions, internals, chassis; ONE cut after chassis, no exceptions). Approved and
+  queued, each in a fresh session: `2026-08-27-csrf-hardening-pass.md` (after the
+  harvest-detection merge), `2026-08-28-foundations-a-pass.md`, then
+  `2026-08-28-foundations-b-pass.md` (task bodies finalized against A's merged surface
+  before dispatch). The retires-pass plan waits on foundations B's list (c) ruling.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window above.

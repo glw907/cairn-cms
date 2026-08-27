@@ -7,6 +7,30 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-08-26: engine-consultation pass closed
+
+Plan and post-mortem: `docs/superpowers/plans/2026-08-26-engine-consultation-pass.md`; spec
+`docs/superpowers/specs/2026-08-26-engine-consultation-design.md`. Landed on `main` directly
+(docs and Claude infrastructure only). Shipped the consultation protocol: the
+`engine-consult` skill, the `engine-triage` agent, both pass-skill hooks (cold-start tested
+with a negative control), the rulings ledger, the consultations arm, and both CLAUDE.md
+edits. Ran both audits under Geoff's thoroughness ruling: the whole-surface any-site audit
+(535 items, 384 keep / 57 reshape / 94 retire, trustworthy on run 2 after its own auditor
+condemned run 1 for a conductor script bug) and the mid-pass-directed internals+chassis
+audit (175 findings, 10 rewrite-tier, trustworthy; the FieldDescriptor exhaustiveness gap
+proven by a live mutation experiment). Re-reviewed both held absorption plans against the
+rulings; verdicts appended in each plan file.
+
+What a later pass would be wrong to rediscover: the five conductor adjudications over
+recorded verification dissent are in the audit record's "merge repair" section, argued, not
+just tallied; the R4 export closure is over-applied and its re-derivation (with the
+`ContentRoutes` narrowing) re-tests adapter's ~22 C2_READDED keeps; the admin-toolkit field
+tier retired because the shipped sheet's class inventory is a de facto public API
+(`admin-css-safelist.ts:104`), the same ground that keeps `FieldLabel`; workflow subagent
+file writes with `/`-carrying names create nested directories (four verify files landed
+under mangled paths and were normalized into the record dir); and a condemned workflow run
+resumes from cache, so fix-and-resume costs only the re-run agents, never the fleet.
+
 ## 2026-08-22: newest-toolchain pass merged
 
 Plan and post-mortem: `docs/superpowers/plans/2026-08-21-newest-toolchain-before-beta.md`.

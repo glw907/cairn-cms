@@ -418,3 +418,79 @@ pass-sizing rule applied, raised to Geoff in-session).
   pending Geoff" or their revised state); HISTORY entry; full doc-gate list
   (`check:docs`, `check:arm-indexes`); commit; prep the context clear with the exact
   resume prompt.
+
+---
+
+## Post-mortem (2026-08-26)
+
+**What was built.** All ten tasks plus the two Geoff added mid-pass (8b internals+chassis
+audit, the 8c chassis-review fold). Infrastructure: the rulings ledger and consultations arm
+(`a5287c98`); the `engine-consult` skill and `engine-triage` agent, verbatim-checked against
+the spec's standard block, coverage-checked (all required content present), register-folded
+(two adversarial reviews produced operational fixes: the `link:consumer` signature, absolute
+paths, the canonical header literal, a binding output template, the charter referent), and
+smoke-tested headless (`claude --agent engine-triage -p` returned
+`{"entryCount": 10, "formatOk": true}` read-only); both pass-skill hooks; both CLAUDE.md
+edits, each trimmed to hold the context-budget hook (dotfiles `3ba3ade`, `1ab938c`; cairn
+`3cf90802`). The surface audit: 535 items, 384/57/94, trustworthy on run 2, all entries in
+the ledger, remediation in ROADMAP (`45baad14`). The internals audit: 175 findings, 10
+rewrite-tier, trustworthy, recorded and folded (`19261e4d`). Task 9: both held plans carry
+`engine-triage` re-review verdicts (`5480daa9`, `ea4fc45a`).
+
+**Verified with evidence.**
+- Verbatim checks: `diff` over extracted standard blocks, byte-identical, spec vs skill vs
+  agent, re-run after every rewrite.
+- The audits' own trustworthiness auditors: run 1 condemned (empty cli-surface, conductor
+  script bug), resumed from cache, run 2 trustworthy; internals run interrupted by the
+  session usage limit at 7 agents, resumed from cache, trustworthy with zero errors.
+- Cold-start tests (Task 10 Step 2), three fresh Sonnet dispatches, prompts naming no
+  consultation term; all three action lists verbatim below.
+
+**Cold-start evidence (acceptance for spec §7's last bullet).**
+
+Path (a), no plan exists. PASS: enumeration (action 4) precedes plan-writing (action 5).
+1. Read `docs/STATUS.md`. Quote: "Read `docs/STATUS.md` to get the current pass number and starter prompt."
+2. Look for the Pass 12 plan doc and confirm none exists. Quote: "Read the plan doc for the current pass."
+3. Brainstorm the open questions before drafting anything. Quote: "If none exists and the starter prompt lists open questions, brainstorm first (invoke `superpowers:brainstorming`)"
+4. Run the engine-contact enumeration and record its outcome in the plan header. Quote: "then run the engine-contact enumeration per the `engine-consult` skill and record its outcome in the plan header (either the consultation-brief link or the one-line \"no engine asks\")"
+5. Write the plan file, per `plan-template.md`, with its token ceiling and checkpoint interval. Quote: "then write a plan at `docs/superpowers/plans/YYYY-MM-DD-<topic>.md` (see `plan-template.md`; its header carries a token ceiling and a checkpoint interval, default four tasks)"
+
+Path (b), committed plan, no consultation line. PASS: the backstop (actions 3 and 4)
+precedes the first `site-implementer` dispatch (action 5).
+1. Read `docs/STATUS.md`. Quote: "Read `docs/STATUS.md` to get the current pass number and starter prompt."
+2. Read the committed plan doc. Quote: "Read the plan doc for the current pass."
+3. Detect the missing consultation line and run the engine-contact enumeration now (blocking). Quote: "Consultation backstop, blocking. If the plan header carries neither a consultation-brief link nor the 'no engine asks' line, run the engine-contact enumeration per the `engine-consult` skill now and append the resulting line to the committed plan. This is a blocking precondition on the first implementer dispatch: no `site-implementer` dispatch until the plan header carries one of the two."
+4. Append the resulting consultation line to the committed plan. Quote: "...and append the resulting line to the committed plan."
+5. Dispatch Task 1's chain to `site-implementer` via the Agent tool. Quote: "Each task runs as a chain. `site-implementer` (pinned Sonnet for token economy) makes the failing check green, clears the repo gate, and returns files touched, the gate result, and anything it could not do." / "Below six tasks, dispatch the chain per task with the Agent tool."
+
+Path (c), negative control, (b)'s prompt verbatim against the pre-edit skill copy. FAILS AS
+REQUIRED: dispatch at action 3, no enumeration anywhere, so the probes read the wording,
+not the agent's prior.
+1. Read `docs/STATUS.md` to get the current pass number and starter prompt. Quote: "Read `docs/STATUS.md` to get the current pass number and starter prompt."
+2. Read the plan doc for the current pass. Quote: "Read the plan doc for the current pass."
+3. Dispatch Task 1's chain to `site-implementer` via the Agent tool. Quote: "Each task runs as a chain. `site-implementer` (pinned Sonnet for token economy) makes the failing check green, clears the repo gate, and returns files touched, the gate result, and anything it could not do." / "Below six tasks, dispatch the chain per task with the Agent tool."
+4. Wait for the `site-implementer` result and verify its commit before depending on it. Quote: "One implementer per dispatch, verified. When dispatching `site-implementer`, wait for each result and verify its commit (git log and status) before depending on it."
+5. Dispatch `diff-reviewer` to check the diff against the task's acceptance criteria. Quote: "The `diff-reviewer` agent (`claude-opus-5`) then reads the diff against the task's acceptance criteria and returns accept, fix, or escalate with `file:line` findings; the conductor does not read the diff itself."
+
+**Decisions locked in.**
+- Five conductor adjudications over recorded verification dissent (audit record, "merge
+  repair"): DEFAULT_ROLES keep, SelectInput/SelectInputOption/TextInput retire, devDelivery
+  retire.
+- The canonical plan-header literal: `**Engine consultation:** no engine asks.` or the
+  brief link (skill + plan-template both carry it).
+- `supported-toolchain.md` rides the CLI/tooling bucket; `create-cairn-site` is in the CLI
+  audit scope.
+- The chassis improvement round routes to the remediation initiative (the pass-sizing
+  split, raised to Geoff in-session); its review half is done.
+
+**Budgets.** Token ceiling 12M; actual roughly 12M in subagents (surface workflow ~5.8M
+across both runs, internals ~5.3M across both runs, triage/register/coverage/cold-start
+dispatches ~0.8M) plus the main loop: at the ceiling, spent on the sanctioned bulk (the
+thoroughness ruling). The two workflow interruptions (one conductor script bug, one session
+usage limit) both recovered via `resumeFromRunId` with full cache reuse; the retry cost was
+one trust dispatch and the re-run agents only. Human interaction points: zero questions
+asked; Geoff issued three mid-pass directives (internals, three-limb bar, chassis) and one
+mid-flight question answered from banked data.
+
+**Blockers.** None open. The remediation initiative (ROADMAP Now) is the follow-on; the two
+held plans await revision per their appended verdicts, then Geoff's approval.

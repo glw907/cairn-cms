@@ -25,17 +25,21 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
 
 ## Parallel tracks
 
-- **Pre-pass engine consultation: EXECUTING (checkpoint after Task 8's surface audit,
-  2026-08-26).** Spec: `docs/superpowers/specs/2026-08-26-engine-consultation-design.md`;
-  plan: `docs/superpowers/plans/2026-08-26-engine-consultation-pass.md` (now carrying
-  Task 8b/8c: Geoff's three mid-pass directives, internals + chassis audit). Done: Tasks
-  1-8. Infrastructure: ledger + consultations arm (`a5287c98`), `engine-consult` skill +
-  `engine-triage` agent + both pass-skill hooks (dotfiles `3ba3ade`), both CLAUDE.md
-  edits (`1ab938c`, `3cf90802`). Surface audit adjudicated and recorded (`45baad14`):
-  535 items, 384/57/94 keep/reshape/retire, trustworthy verdict, remediation filed in
-  ROADMAP Now. Next: Task 8b internals+chassis workflow (partition banked in scratchpad),
-  then Task 9 (re-review the two held plans via `engine-triage`), then Task 10 close.
-  **Geoff sequenced this ahead of the harvest-absorption passes below.**
+- **The engine-consultation protocol is live (pass closed 2026-08-26; post-mortem in the
+  plan file).** The `engine-consult` skill and `engine-triage` agent exist; both pass
+  skills carry the hooks (cold-start tested, negative control included); briefs file at
+  `docs/internal/consultations/`; rulings live in `docs/internal/engine-rulings.md` (10
+  seeds + 535 audit entries). Both audits ran trustworthy: surface 535 items 384/57/94
+  keep/reshape/retire, internals+chassis 175 findings (10 rewrite-tier). Remediation is
+  the ROADMAP Now entry ("The any-site audit remediation"), one `Consumers must:` window,
+  before beta. The protocol's first live consultation (likely the next ASC or 907-life
+  pass) appends a short post-mortem to the ledger; the skill carries the self-retiring
+  reminder.
+- **The two held absorption plans are re-reviewed, not yet approved.** Verdicts are
+  appended in each plan file: `2026-08-26-toolkit-seams-pass.md` (Tasks 5, 6 stand; 1-4
+  revise; 7 defers) and `2026-08-26-harvest-detection-pass.md` (not approved as drafted;
+  re-issue as six tasks). Revise per the appended verdicts before seeking Geoff's
+  approval.
 - **ASC harvest absorption: two plans prepped 2026-08-26, held as drafts behind the
   consultation pass.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md` (behavior,
   7 tasks) and `2026-08-26-harvest-detection-pass.md` (detection and docs, 7 tasks), from the

@@ -20,6 +20,16 @@ every open finding was verified against the code and then either shipped, filed 
 with its trigger, or found already resolved and pruned. Git history holds the full record of both
 clearings.
 
+## Live findings
+
+- **The rulings ledger will not scale as one flat read** (`contributor`, 2026-08-26). The
+  any-site audit appended 535 entries to `docs/internal/engine-rulings.md` (~3,970 lines),
+  and `engine-triage`'s first action reads it in full on every dispatch. Fine for now under
+  the thoroughness ruling; when a consultation's triage cost starts being dominated by the
+  ledger read, split the audit section into a slug-indexed summary the agent greps plus the
+  full entries on demand. Trigger: the first consultation where the triage's ledger read
+  visibly dominates its token spend.
+
 ## Tombstones (decided, do not resurface)
 
 - **Point-of-typing writing coach.** KILLED 2026-06-26. The help-shell adversarial review discarded it

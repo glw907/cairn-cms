@@ -20,7 +20,7 @@ freshness-checks the skill in a consumer repo.
 ## What ships
 
 `cairn-audit` ships whole, as consumer product: every registered rule, the static and rendered
-rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 23
+rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 26
 registered rules audit the `/admin` surface, and a consumer's admin IS cairn's own admin toolkit,
 so conformance to cairn's design system is exactly the product being audited, not apparatus that
 measures the engine from outside.
@@ -62,7 +62,7 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Eleven rules run, all error tier.
+Twelve rules run, all error tier.
 
 | ID | What it checks |
 |---|---|
@@ -77,6 +77,7 @@ Eleven rules run, all error tier.
 | `reduced-motion` | Every selector that declares motion is named again inside an `@media (prefers-reduced-motion: reduce)` guard in the same source |
 | `stripe-trim-parity` | A striped row's `:nth-child` background pattern, or a `.table-zebra`-style class, never co-occurs with an unconditioned first/last-child padding trim on the same row class in the same source: the trim clips the stripe fill on an even-count group unless it's scoped to its own parity (`:last-child:nth-child(odd)`). Applies to any row component, not only the admin's own tables |
 | `unlayered-font-clobber` | A scoped `<style>` block never declares `font-family`, `font-size`, `font-weight`, or the `font` shorthand outside an `@layer` on an element that also carries a font-affecting utility class (a `text-*` size or a `font-*` weight/family). Under the no-Preflight admin, a Svelte scoped style carries no layer of its own while Tailwind utilities sit in `@layer utilities`, so cascade layer precedence, not specificity, decides the winner; the finding names that mechanism and points at moving the typography onto the ancestor the control inherits from. Applies to any component, not only the admin's own |
+| `list-role` | A `<ul>`/`<ol>` carries no role attribute while its marker is suppressed: either its own classes remove it, a `list-style`/`list-style-type: none` declaration such as Tailwind's `list-none`, or an item's classes change that item's used display away from `list-item`, the way daisyUI's own `.list-row` renders `display: grid`, and an ordinary layout utility such as `flex` or `hidden` written directly on an `<li>` does the same. WebKit/VoiceOver stop announcing a marker-suppressed list as a list once it loses its implicit role this way; the fix is `role="list"`. A list already carrying a different explicit role stays exempt: the explicit role already overrides the implicit one on purpose, so a second, conflicting role would be the wrong remedy |
 
 ### Suppressing a finding
 

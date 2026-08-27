@@ -74,7 +74,7 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
   <fieldset class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
     <legend class="type-body font-medium">{field.label}</legend>
     {#if ids.length}
-      <ul class="flex flex-wrap gap-2">
+      <ul role="list" class="flex flex-wrap gap-2">
         {#each ids as id (id)}
           <li class="badge cairn-chip-outline max-w-[16rem] gap-1">
             <span class="min-w-0 truncate">{titleFor(id)}</span>

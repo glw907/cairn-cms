@@ -1861,7 +1861,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {#if publishedRows(asset.hash).length > 0}
             <div class="flex flex-col gap-1.5">
               <span class="type-label font-semibold text-muted">Published on the site</span>
-              <ul class="flex list-none flex-col gap-1 p-0">
+              <ul role="list" class="flex list-none flex-col gap-1 p-0">
                 {#each publishedRows(asset.hash) as entry (entry.concept + '/' + entry.id)}
                   <li>
                     <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 card-shell px-2.5 py-2 no-underline hover:border-primary/40">
@@ -1877,7 +1877,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {#if branchRows(asset.hash).length > 0}
             <div class="flex flex-col gap-1.5">
               <span class="type-label font-semibold text-muted">In an unpublished edit</span>
-              <ul class="flex list-none flex-col gap-1 p-0">
+              <ul role="list" class="flex list-none flex-col gap-1 p-0">
                 {#each branchRows(asset.hash) as entry (entry.concept + '/' + entry.id + branchNameOf(entry))}
                   <li>
                     <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 card-shell px-2.5 py-2 no-underline hover:border-primary/40">
@@ -1985,7 +1985,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <span class="mb-2 inline-flex items-center gap-1.5 type-meta font-semibold text-[var(--cairn-error-ink)]">
               <XIcon class="h-3.5 w-3.5" aria-hidden="true" /> These would break
             </span>
-            <ul class="flex max-h-44 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-2">
+            <ul role="list" class="flex max-h-44 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-2">
               {#if deleteBreakingPublished.length > 0}
                 <li class="px-1.5 pb-0.5 pt-1 type-chip font-semibold uppercase tracking-wide text-muted">Published on the site</li>
                 {#each deleteBreakingPublished as entry (entry.concept + '/' + entry.id)}
@@ -2165,7 +2165,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <span class="type-meta tabular-nums text-muted">{replaceEntries.length}</span>
             </div>
             <div class="card-shell">
-              <ul bind:this={replaceEntriesList} id="cairn-ml-replace-entries" class="flex max-h-56 list-none flex-col gap-1 overflow-y-auto p-2">
+              <ul role="list" bind:this={replaceEntriesList} id="cairn-ml-replace-entries" class="flex max-h-56 list-none flex-col gap-1 overflow-y-auto p-2">
                 {#each replaceVisibleEntries as entry, i (entry.concept + '/' + entry.id)}
                   <!-- The first row past the cap is a script-only focus target for "Show all" (tabindex
                        -1 keeps it out of the tab order). svelte-ignore: the rule allows a literal -1 but
@@ -2206,7 +2206,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 <span class="type-meta tabular-nums text-muted">{replacePlan?.branchDelta.length ?? 0}</span>
               </div>
               <p class="mb-2 type-meta leading-relaxed text-muted">These edits are on their own branches and are not touched. Each keeps the old file until it is published again.</p>
-              <ul class="flex list-none flex-col gap-1 p-0">
+              <ul role="list" class="flex list-none flex-col gap-1 p-0">
                 {#each replacePlan?.branchDelta ?? [] as delta (delta.branch)}
                   <li class="font-[family-name:var(--font-editor)] type-label cairn-text-warning">{delta.branch}</li>
                 {/each}
@@ -2355,7 +2355,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   </div>
                   <span class="flex-none type-meta font-bold tabular-nums text-primary">{altFillRows.length}</span>
                 </div>
-                <ul bind:this={altFillList} id="cairn-ml-alt-fill" class="flex max-h-44 list-none flex-col overflow-y-auto border-t border-[var(--cairn-card-border)] p-0">
+                <ul role="list" bind:this={altFillList} id="cairn-ml-alt-fill" class="flex max-h-44 list-none flex-col overflow-y-auto border-t border-[var(--cairn-card-border)] p-0">
                   {#each altFillVisible as row, i (row.key)}
                     <!-- The first row past the cap is the script-only focus target for "Show all"
                          (tabindex -1). svelte-ignore: as above, the conditional hides the literal -1. -->
@@ -2431,7 +2431,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                     </span>
                   </label>
                 </div>
-                <ul class="flex max-h-44 list-none flex-col overflow-y-auto p-0">
+                <ul role="list" class="flex max-h-44 list-none flex-col overflow-y-auto p-0">
                   {#each altCustomRows as row (row.key)}
                     <li class="flex items-start gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2.5 first:border-t-0">
                       <FileTextIcon class="mt-0.5 h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />
@@ -2471,7 +2471,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   </div>
                   <span class="flex-none type-meta font-bold tabular-nums text-muted">{altSkipRows.length}</span>
                 </div>
-                <ul class="flex list-none flex-col border-t border-[var(--cairn-card-border)] p-0">
+                <ul role="list" class="flex list-none flex-col border-t border-[var(--cairn-card-border)] p-0">
                   {#each altSkipRows as row (row.key)}
                     <li class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2 type-meta text-muted first:border-t-0">
                       <span class="truncate">{row.title}</span>
@@ -2492,7 +2492,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 <span class="type-meta tabular-nums text-muted">{altPlan?.branchDelta.length ?? 0}</span>
               </div>
               <p class="mb-2 type-meta leading-relaxed text-muted">These edits are on their own branches and are not changed. Each keeps its alt as the author has it there.</p>
-              <ul class="flex list-none flex-col gap-1 p-0">
+              <ul role="list" class="flex list-none flex-col gap-1 p-0">
                 {#each altPlan?.branchDelta ?? [] as delta (delta.branch)}
                   <li class="font-[family-name:var(--font-editor)] type-label cairn-text-warning">{delta.branch}</li>
                 {/each}
@@ -2618,7 +2618,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <span class="mb-2 inline-flex items-center gap-2 type-label font-semibold uppercase tracking-wide text-muted">
               Will be deleted <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 tabular-nums">{bulkWillDelete.length}</span>
             </span>
-            <ul class="flex max-h-44 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-card-border)] p-2">
+            <ul role="list" class="flex max-h-44 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-card-border)] p-2">
               {#each bulkWillDelete as asset (asset.hash)}
                 <li class="flex items-center gap-2.5 rounded px-1.5 py-1">
                   <div class="min-w-0 flex-1">
@@ -2644,7 +2644,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 <span class="mt-0.5 block type-meta text-muted">A bulk delete never removes an image that is still referenced. To delete one of these, open it and use Delete with the typed confirm, where you can see and confirm what breaks.</span>
               </div>
             </div>
-            <ul class="flex max-h-36 list-none flex-col overflow-y-auto">
+            <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
               {#each bulkWillSkip as asset (asset.hash)}
                 {@const where = usageCount(asset.hash)}
                 <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
@@ -2733,7 +2733,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <div class="inline-flex w-full items-center gap-2 bg-[color-mix(in_oklab,var(--cairn-warning-ink)_8%,var(--color-base-100))] p-2.5 type-meta font-semibold cairn-text-warning">
               <TriangleAlertIcon class="h-4 w-4 flex-none" aria-hidden="true" /> Skipped, a reference turned up on the recheck
             </div>
-            <ul class="flex max-h-36 list-none flex-col overflow-y-auto">
+            <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
               {#each res.skipped as skip (skip.hash)}
                 <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
                   <span class="min-w-0 flex-1 truncate type-meta font-semibold">{bulkAssetName(skip.hash)}</span>
@@ -2749,7 +2749,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <div class="inline-flex w-full items-center gap-2 bg-[var(--cairn-error-tint)] p-2.5 type-label font-semibold text-[var(--cairn-error-ink)]">
               <TriangleAlertIcon class="h-4 w-4 flex-none" aria-hidden="true" /> Failed
             </div>
-            <ul class="flex max-h-36 list-none flex-col overflow-y-auto">
+            <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
               {#each res.failed as fail (fail.hash)}
                 <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-error-border)_70%,transparent)] px-3 py-2 first:border-t-0">
                   <span class="min-w-0 flex-1 truncate type-meta font-semibold">{bulkAssetName(fail.hash)}</span>
@@ -2879,7 +2879,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       {#if res.skippedClaimed.length > 0}
         <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)]">
           <div class="bg-base-200/60 p-2.5 type-meta font-semibold text-muted">Kept, the file was claimed since the scan</div>
-          <ul class="flex max-h-36 list-none flex-col overflow-y-auto">
+          <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
             {#each res.skippedClaimed as key (key)}
               <li class="border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 font-[family-name:var(--font-editor)] type-meta first:border-t-0">{key}</li>
             {/each}
@@ -2889,7 +2889,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       {#if res.failed.length > 0}
         <div class="mt-3 overflow-hidden rounded-box border border-[var(--cairn-error-border)]">
           <div class="bg-[var(--cairn-error-tint)] p-2.5 type-label font-semibold text-[var(--cairn-error-ink)]">Failed</div>
-          <ul class="flex max-h-36 list-none flex-col overflow-y-auto">
+          <ul role="list" class="flex max-h-36 list-none flex-col overflow-y-auto">
             {#each res.failed as fail (fail.key)}
               <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-error-border)_70%,transparent)] px-3 py-2 first:border-t-0">
                 <span class="min-w-0 flex-1 truncate font-[family-name:var(--font-editor)] type-meta">{fail.key}</span>
@@ -2923,7 +2923,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </div>
       <div class="flex flex-col gap-3">
         <!-- The dry-run: the keys to remove, each with a checkerboard mat (record-not-picture). -->
-        <ul class="flex max-h-40 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-card-border)] p-2">
+        <ul role="list" class="flex max-h-40 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-card-border)] p-2">
           {#each orphanBytes.filter((b) => orphanKeys.has(b.key)) as byte (byte.key)}
             <li class="flex items-center gap-2.5 rounded px-1.5 py-1">
               <span class="h-6 w-8 flex-none rounded border border-[var(--cairn-card-border)] bg-base-200 [background-image:linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%),linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%)] [background-position:0_0,4px_4px] [background-size:8px_8px]" aria-hidden="true"></span>
@@ -3019,7 +3019,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                    tabindex or key handler, so the listbox role would have been decorative and would
                    have fought the Tab-to-checkbox model. Each checkbox is the selection signal; the
                    header select-all conveys group state. -->
-              <ul aria-label="Orphaned files" class="flex max-h-52 list-none flex-col overflow-y-auto p-0">
+              <ul role="list" aria-label="Orphaned files" class="flex max-h-52 list-none flex-col overflow-y-auto p-0">
                 {#each orphanBytes as byte (byte.key)}
                   {@const picked = orphanKeys.has(byte.key)}
                   <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
@@ -3066,7 +3066,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <span class="inline-flex items-center gap-2 type-meta font-semibold">Broken references <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 type-label tabular-nums">{orphanBroken.length}</span></span>
             </div>
             <p class="mb-2 type-meta leading-relaxed text-muted">A record points at a file that is no longer in storage. This is not something to delete here. Re-upload or remove the reference from the entries below.</p>
-            <ul class="flex list-none flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] p-0">
+            <ul role="list" class="flex list-none flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] p-0">
               {#each orphanBroken as ref (ref.hash)}
                 <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
                   <span class="flex h-7 w-9 flex-none items-center justify-center rounded border border-[var(--cairn-card-border)] bg-base-200 text-muted" aria-hidden="true">

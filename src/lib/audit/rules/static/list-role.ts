@@ -1,0 +1,125 @@
+// cairn-audit's list-role rule: a <ul>/<ol> whose marker is suppressed stops being announced as a
+// list by WebKit/VoiceOver unless it carries role="list". Marker suppression arrives two ways: the
+// list's own classes remove it (a `list-style`/`list-style-type: none` declaration, Tailwind's
+// `list-none`), or an ITEM's classes change its used display away from `list-item` (daisyUI's own
+// `.list-row` renders `display: grid`, documented at `cairn-admin.css`'s `.list` ruling comment). A
+// list already carrying SOME explicit role attribute is left alone regardless of its value: an
+// explicit role overrides the implicit host-language role entirely, so `role="listbox"` (say) is
+// already an intentional, legitimate reading the WebKit bug never touches, and asking for a second,
+// conflicting role would be the wrong remedy. The broad "any utility class" condition is rejected on
+// purpose: only a class the compiled sheet actually resolves to a marker- or display-changing
+// declaration counts, never a class present for some unrelated reason.
+import type { ParsedComponent, SourceNode } from '../../markup.js';
+import type { Finding, StaticRule, StaticRuleContext } from '../../types.js';
+
+const LIST_TAGS = new Set(['ul', 'ol']);
+const LIST_STYLE_PROPERTY = /^list-style(-type)?$/;
+const LIST_ITEM_DISPLAY = 'list-item';
+
+/** The class tokens one element in a file writes, keyed by the element's own start offset. */
+function classesOf(file: ParsedComponent, elementStart: number): string[] {
+  return file.classTokens
+    .filter((token) => token.elementStart === elementStart)
+    .map((token) => token.value);
+}
+
+/** Whether a node carries a `role` attribute at all, regardless of its value. */
+function hasRoleAttribute(node: SourceNode): boolean {
+  return (node.attributes ?? []).some((attr) => attr.name === 'role');
+}
+
+/** The first of an element's own classes the compiled sheet resolves to a marker-removing rule. */
+function ownMarkerSuppressor(ctx: StaticRuleContext, classes: string[]): string | undefined {
+  for (const name of classes) {
+    const declared = ctx.sheet
+      .declarations(name)
+      .some((decl) => LIST_STYLE_PROPERTY.test(decl.property) && decl.value.trim().toLowerCase() === 'none');
+    if (declared) return name;
+  }
+  return undefined;
+}
+
+/** The first of an item's own classes the compiled sheet resolves to a non-list-item display. */
+function itemDisplayChange(
+  ctx: StaticRuleContext,
+  classes: string[]
+): { name: string; value: string } | undefined {
+  for (const name of classes) {
+    for (const decl of ctx.sheet.declarations(name)) {
+      if (decl.property !== 'display') continue;
+      const value = decl.value.trim().toLowerCase();
+      if (value !== LIST_ITEM_DISPLAY) return { name, value: decl.value.trim() };
+    }
+  }
+  return undefined;
+}
+
+/** The smallest of `lists` whose range contains `node`, the list a template item actually belongs to. */
+function nearestList(lists: SourceNode[], node: SourceNode): SourceNode | undefined {
+  let best: SourceNode | undefined;
+  for (const list of lists) {
+    if (list.start <= node.start && node.end <= list.end && (!best || list.start > best.start)) {
+      best = list;
+    }
+  }
+  return best;
+}
+
+/** Every `<li>` in a file, grouped by the nearest enclosing `<ul>`/`<ol>` it belongs to. */
+function itemsByList(file: ParsedComponent, lists: SourceNode[]): Map<SourceNode, SourceNode[]> {
+  const grouped = new Map<SourceNode, SourceNode[]>();
+  for (const node of file.nodes) {
+    if (node.type !== 'RegularElement' || node.name !== 'li') continue;
+    const list = nearestList(lists, node);
+    if (!list) continue;
+    const bucket = grouped.get(list);
+    if (bucket) bucket.push(node);
+    else grouped.set(list, [node]);
+  }
+  return grouped;
+}
+
+export const listRole: StaticRule = {
+  id: 'list-role',
+  tier: 'error',
+  check(ctx) {
+    const findings: Finding[] = [];
+    for (const file of ctx.files) {
+      const lists = file.nodes.filter(
+        (node) => node.type === 'RegularElement' && LIST_TAGS.has(node.name ?? '')
+      );
+      if (lists.length === 0) continue;
+      const items = itemsByList(file, lists);
+
+      for (const list of lists) {
+        if (hasRoleAttribute(list)) continue;
+
+        const ownSuppressor = ownMarkerSuppressor(ctx, classesOf(file, list.start));
+        let cause: string;
+        if (ownSuppressor) {
+          cause = `its own class "${ownSuppressor}" resolves to a list-style-removing declaration`;
+        } else {
+          const hit = (items.get(list) ?? [])
+            .map((item) => itemDisplayChange(ctx, classesOf(file, item.start)))
+            .find((value) => value !== undefined);
+          if (!hit) continue;
+          cause = `an item's class "${hit.name}" resolves to "display: ${hit.value}"`;
+        }
+
+        findings.push({
+          ruleId: 'list-role',
+          tier: 'error',
+          file: file.file,
+          line: list.startLine,
+          start: list.start,
+          end: list.end,
+          message:
+            `<${list.name}> suppresses its own marker: ${cause}, and a marker-suppressed <ul>/<ol> ` +
+            'with no role attribute stops being announced as a list in WebKit/VoiceOver; add ' +
+            'role="list" to restore the list semantics (WCAG 1.3.1)',
+        });
+      }
+    }
+    return findings;
+  },
+};

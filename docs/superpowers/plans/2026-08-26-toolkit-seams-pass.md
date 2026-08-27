@@ -521,3 +521,57 @@ nesting, or the cheaper decisive check: an engine-side D1 path that can raise a 
 violation and mishandles it today (candidates: the `AUTH_DB` editor/invite inserts,
 `createD1AuditSink`); if one qualifies, the engine becomes its own first consumer and the
 item clears both the gate and C13 in one move.
+
+
+---
+
+## Post-mortem (2026-08-27)
+
+**What was built.** All six tasks landed: the media picker seam (`MediaPicker`, `MediaSelection`,
+`MediaLibraryEntry` from `/admin-toolkit`, entries prop reshaped to the loader's array, no helper
+export, `MediaHeroField` declined), the ExpandableRow inert-cell escape (`data-cairn-inert-cell`,
+trigger measured and cleared at the 24x24 floor, contract comment amended), `ToolbarDisclosure`
+(controlled, five dismissal mechanics plus primitive-owned `hidden` panel hiding, both ListToolbar
+duplications folded, ARIA-menu layer kept in the caller), the CsrfField `defaultValue` hardening
+(the "reset blanks the token" premise proven spec-impossible by two independent reviews; docs
+state the invariant honestly), the StatusChip second-generation grammar (three registers, tone and
+dot retired per the 2026-08-24 owner probe, engine-tuned bands, parity test carried, twelve
+combinations measured by canvas readback), and the admin sheet fixes (checkbox/radio and field
+family edges to >= 3:1 with disabled/error exclusions, status-text utilities with fallbacks,
+`.toolkit-list` kept on the corrected flex/font-size evidence, focus-ring decline recorded).
+
+**How it ran.** Six tasks through `pass-execute.js` (workflow `wf_fd4dd9fa-c0c`): two accepted
+first-pass, four escalated to the conductor; six fix rounds followed (A, B, A2, A3, A4, A5), each
+prescribed from review findings, plus the code-simplifier. Every fix round cleared the full gate;
+final state 5,768 tests, all six CI-only gates green by name, from-scratch showcase consumer
+build green, 137-test e2e green, live admin smoke green against wrangler dev (anon guard, minted
+session, owner affordances, graceful `github.unreachable` degradation), and the conductor's own
+visual read of the chip probe in both themes (registers distinct, quiet correctly recedes beside
+saturated badges, brand pill legible at 400).
+
+**What review caught that the gates could not.** The re-review chain earned its cost repeatedly:
+the tone-survives lock would have invented a 15-cell grammar and broken the parity test; the
+`/sveltekit` drop would have recreated the R4 closure leak; the CsrfField defect was
+spec-impossible (hidden inputs' value setter IS the default-value setter); the `.list`
+marker-suppression measurement was false (the true baggage is flex-column plus forced 14px type);
+`custom-surface-budget.json` carried a stale selector that would have shipped main red; daisyUI's
+`.menu` display rule beats the UA `[hidden]` rule, falsifying the first hiding claim; the safelist
+comment's literal tokens kept two "removed" classes compiling; and the facet-chrome deferral had
+recorded measurements taken without the Svelte scope class (real numbers 1.192/1.203, both
+selectors now recorded and pinned).
+
+**Found for later, recorded.** The strongest CSRF-403 diagnosis to date (the confirm-load
+`SameSite=Strict` token re-mint, plus the empty-token fallback and cookie-name flip paths) sits in
+the friction log with two proposed remedies pending a ruling: `SameSite=Lax` on the CSRF cookie
+and a `detail` discriminator on csrf rejection log records. The e2e visual suite proved
+structurally blind to the chip regrammar (no chip-bearing surface within its 120px budget); filed.
+`.toolkit-toolbar-select`/`.toolkit-toolbar-facet` sub-3:1 chrome moved to ROADMAP Next with
+corrected numbers. `cairn-text-error` gap filed. The `isUniqueViolation` defer and its reopen
+triggers are in the ledger.
+
+**Budgets, honestly.** The plan's 2.4M ceiling covered the task chains; the chains spent 2.14M.
+The whole pass, with six fix rounds, three domain reviews, four diff reviews, and the simplifier,
+landed near 4.3M. The overrun bought real defects (the list above), but future plans should
+budget the ritual, not only the chains. Attended interaction points: two batched questions (plan
+approval with the adversarial-review gate; tone retirement plus launch), zero mid-execution
+questions.

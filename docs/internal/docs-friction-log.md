@@ -22,6 +22,14 @@ clearings.
 
 ## Live findings
 
+- **The showcase e2e visual suite is blind to chip-bearing surfaces** (`extender`, 2026-08-27).
+  The admin visual specs passed unchanged through the StatusChip regrammar (dot removed, register
+  renamed, grounds retuned) because no captured screen renders a chip within the 120px diff
+  budget (`playwright.config` `maxDiffPixels: 120`). The pass's visual verification had to be a
+  hand-built probe read by the conductor. Candidate fix: a chip-bearing admin screen (a list with
+  status rows, or a dedicated probe route) joins `admin-visual.spec.ts` in both themes.
+
+
 - **The rulings ledger will not scale as one flat read** (`contributor`, 2026-08-26). The
   any-site audit appended 535 entries to `docs/internal/engine-rulings.md` (~3,970 lines),
   and `engine-triage`'s first action reads it in full on every dispatch. Fine for now under

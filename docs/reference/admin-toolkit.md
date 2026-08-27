@@ -6,8 +6,8 @@ primitives (`FieldLabel`, `FieldRow`, `TextInput`, `SelectInput`) render one lab
 the admin's label and control rhythm; they merged here from the retired `admin-fields` subpath
 (CHANGELOG `0.94.0`), since two subpaths stating the same charter is one subpath. The
 **screen-scaffold** primitives (`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`,
-`Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`) plus the formatters compose a whole
-screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
+`Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus the formatters
+compose a whole screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
 every contract here is general-purpose across sites. A component that renders one of cairn's own
 content concepts (a `ConceptList` row, an `EditPage` field) lives on `/components` instead, even
 though it also renders inside the admin theme.
@@ -311,7 +311,7 @@ spacing, truncation, and wrapper layout in its own scoped `<style>` rather than 
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
-import { StatusChip, Pagination, AdminTable, ListToolbar, PageHeader, OfficeList, EmptyState, ExpandableRow } from '@glw907/cairn-cms/admin-toolkit';
+import { StatusChip, Pagination, AdminTable, ListToolbar, PageHeader, OfficeList, EmptyState, ExpandableRow, MediaPicker } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 ### `StatusChip`
@@ -829,6 +829,63 @@ compiled from cairn's own admin usage.
 
 ---
 
+### `MediaPicker`
+
+Stability tier: Extension API.
+
+```ts
+let { entries, onselect }: {
+  entries: MediaLibraryEntry[];
+  onselect: (selection: MediaSelection) => void;
+};
+```
+
+The read-only combobox over a site's committed media library: a search input, an optional media-type
+facet, and one option row per asset. It sits in this subpath rather than `/components` because it
+selects an asset and hands it back, which is a screen primitive a site composes into its own admin
+screen, not a rendering of one of cairn's content concepts. Nothing about it writes: uploading,
+replacing, and committing an asset stay inside cairn's own media screens.
+
+`entries` is the manifest-entry array `mediaLibraryLoad` returns on `MediaLibraryData.assets`, so a
+site's own `/admin/` route passes the loader's output straight through with no projection step. Row
+order follows the array as given. `onselect` receives a `MediaSelection`: the chosen entry, its
+`media:<slug>.<hash>` reference token to write into content, and the asset's manifest alt to prefill
+a placement. The picker never mutates the array and holds no selection of its own, so the caller
+owns what a pick does next.
+
+**Contract term, the delivery base.** Option thumbnails compose their `src` under the delivery base
+the mounting context supplies through cairn's internal `MEDIA_BASE_CONTEXT_KEY` Svelte context.
+`CairnAdminShell` sets it from the site's resolved `assets.publicBase`, so a picker mounted anywhere
+inside the shell renders thumbnails under the site's own base. Mounted outside the shell, with no
+provider, thumbnails fall back to `/media`. The key itself is internal, so a site that serves media
+from another base configures `assets.publicBase` and mounts inside the shell rather than setting the
+context by hand.
+
+Accessibility is the WAI-ARIA combobox pattern: focus stays in the search input, arrow keys move
+`aria-activedescendant` across the owned listbox, and Enter selects the active row. Two separate
+`aria-live` regions carry the result count and the active-row narration, so neither announcement
+clobbers the other. An asset with an empty alt carries a "Needs alt" flag as a glyph plus a label,
+never hue alone. Escape is left to bubble, so a host dialog or popover keeps its own dismiss.
+
+**daisyUI assembly:** `btn`, `btn-xs`, `btn-primary`, `btn-ghost` for the media-type facet chips,
+which render only once the library holds more than one top-level content type.
+
+**Exact class inventory:** `btn`, `btn-xs`, `btn-primary`, `btn-ghost`.
+
+```svelte
+<script lang="ts">
+  import { MediaPicker } from '@glw907/cairn-cms/admin-toolkit';
+  import type { MediaLibraryData } from '@glw907/cairn-cms/sveltekit';
+
+  let { data }: { data: MediaLibraryData } = $props();
+  let chosen = $state('');
+</script>
+
+<MediaPicker entries={data.assets} onselect={(selection) => (chosen = selection.ref)} />
+```
+
+---
+
 ## Types
 
 | Name | Stability | Signature | Meaning |
@@ -856,3 +913,5 @@ compiled from cairn's own admin usage.
 | `ItemLabel` | Extension API | `interface ItemLabel { one: string; many: string }` | A count-line noun in both grammatical numbers, for `Pagination`'s and `ListToolbar`'s `itemLabel` prop and `computeCountLine`'s own parameter. |
 | `itemNoun` | Extension API | `declare function itemNoun(count: number, label: string \| ItemLabel): string` | Picks the grammatical number for a count surface: `label.one` at exactly 1, `label.many` otherwise. A plain string `label` is invariant across every count. |
 | `SelectInputOption` | Extension API | `interface SelectInputOption { value: string; label: string }` | One `SelectInput` option: the submitted value and its visible text. |
+| `MediaLibraryEntry` | Extension API | `interface MediaLibraryEntry { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number \| null; height: number \| null; bytes: number; createdAt: string }` | One committed asset's display facts, the row shape `MediaLibraryData.assets` carries and `MediaPicker`'s `entries` prop takes. This subpath is its canonical home, beside the component whose prop signature names it; `/sveltekit` re-exports the same type so a route-factory importer can name a member of the data it already holds. |
+| `MediaSelection` | Extension API | `interface MediaSelection { entry: MediaLibraryEntry; ref: string; alt: string }` | What `MediaPicker` hands its `onselect` prop: the chosen entry, its `media:<slug>.<hash>` reference token, and the asset's manifest alt (empty when the asset has none). |

@@ -20,5 +20,5 @@ injected value, never that the real shell INJECTS one).
 </script>
 
 <CairnAdminShell {data}>
-  <MediaPicker {library} onselect={() => {}} />
+  <MediaPicker entries={Object.values(library)} onselect={() => {}} />
 </CairnAdminShell>

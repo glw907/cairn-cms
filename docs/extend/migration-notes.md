@@ -9,6 +9,12 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
+## Unreleased
+
+The release step sets the version number at the cut and renames this section to match it. This
+window states no consumer action so far: every entry in `CHANGELOG.md`'s own `## Unreleased`
+window reads `Consumers must: nothing`.
+
 ## 0.96.0
 
 The release step sets the version number at the cut and renames this section to match it. This

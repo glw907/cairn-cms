@@ -32,6 +32,16 @@ Entry format: a heading plus labeled lines.
   chassis copy does.
 - **Record:** [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Ruled out (events-redesign 5).
 
+## mediaherofield-export: `MediaHeroField` as a public export  (decline, 2026-08-26, toolkit-seams pass)
+
+- **Verdict:** decline. It is `EditPage` save-path wiring, not a selection surface: four hidden
+  inputs the decode arm reads, `$app/forms` `deserialize` over cairn's own upload endpoint, and the
+  CSRF context key. That is the same objection sustained against `MediaInsertPopover`, which also
+  stays internal, deferred until the `MarkdownEditor` seam collapse. The evidenced ASC need was
+  selection and display, which the newly exported `MediaPicker` serves.
+- **Reopens on:** a second consumer needing the whole save-path field rather than selection alone.
+- **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; the need is evidenced in [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivors 1.
+
 ## dead-body-declaration: per-entry dead-body declaration  (decline, 2026-08-26, ASC harvest triage)
 
 - **Verdict:** decline. One entry on one site; the proper site fix is deleting the husk
@@ -1193,11 +1203,12 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 34.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
-## audit-sveltekit-medialibraryentry: `MediaLibraryEntry`  (retire, 2026-08-26, any-site audit)
+## audit-sveltekit-medialibraryentry: `MediaLibraryEntry`  (keep, 2026-08-26, any-site audit; supersedes the audit's retire)
 
-- **Verdict:** retire. Weak. A site building its own asset browser rebuilds a screen the engine ships; a row is inferred from data.assets[i].
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 35.
+- **Verdict:** keep, superseding the audit's retire on prop-signature necessity. The toolkit-seams pass publishes `MediaPicker` from `/admin-toolkit`, and this type sits in its `entries` prop signature, so the `audit-admin-itemlabel` test applies verbatim: a consumer writing the prop needs the name. Canonical home is `/admin-toolkit`, beside the component, exactly as `ItemLabel` publishes beside `Pagination` and `ListToolbar`. `/sveltekit` keeps its own re-export as R4 closure over `MediaLibraryData.assets`, which stays public; dropping it would recreate the closure leak R4 exists to remove. A re-export from the stated canonical home is not a second home, so C1 holds.
+- **Reopens on:** closed. Executed by the toolkit-seams pass, Task 1.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 35; superseded in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1.
+- **Any-site case:** Any site composing `MediaPicker` into an admin screen it builds itself annotates the entries it passes, which is the loader's own `MediaLibraryData.assets` array.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-usageentry: `UsageEntry`  (retire, 2026-08-26, any-site audit)

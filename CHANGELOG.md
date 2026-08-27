@@ -1,3 +1,19 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+### Added
+
+- `MediaPicker` publishes from `/admin-toolkit`, with `MediaSelection` and `MediaLibraryEntry`
+  beside it, so a site building its own admin screen composes cairn's read-only combobox over the
+  committed media library instead of rebuilding a selection UI over the manifest. Its prop is now
+  `entries: MediaLibraryEntry[]`, the array `mediaLibraryLoad` already returns on
+  `MediaLibraryData.assets`, so the loader's output passes straight through with no projection
+  step; the picker was unexported before this release, so no consumer held the old
+  `Record<string, MediaLibraryEntry>` shape. `MediaLibraryEntry`'s canonical home is
+  `/admin-toolkit`, beside the component whose prop signature names it, and `/sveltekit` keeps its
+  existing re-export. Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

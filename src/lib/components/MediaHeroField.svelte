@@ -584,7 +584,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
           />
         </div>
         <p class="text-center type-label uppercase tracking-[0.08em] text-muted">or pick from the library</p>
-        <MediaPicker library={mediaLibrary} onselect={onPick} />
+        <MediaPicker entries={Object.values(mediaLibrary)} onselect={onPick} />
       </div>
     {/if}
   </div>

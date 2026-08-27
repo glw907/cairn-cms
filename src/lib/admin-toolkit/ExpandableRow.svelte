@@ -17,9 +17,16 @@ Keyboard operability rides the native `<button>` element's own Enter/Space activ
 `onkeydown` handler reinvents what the browser already does correctly for a real button. The whole
 summary `<tr>` also carries a mouse-only `onclick` convenience (the design spec's "clicking a row
 expands it in place"); the explicit trailing button is the one control carrying `aria-expanded` and
-the accessible name, which is why summary cells should stay non-interactive (plain text, a
-`StatusChip`, and similar) -- an interactive control nested inside the row would double-handle the
-click. Per-row actions belong in the panel, never inline in a summary cell, for the same reason.
+the accessible name, so a summary cell renders plain content (text, a `StatusChip`, and similar) by
+default -- an interactive control nested directly in the row would double-handle the click. A summary
+cell that genuinely needs an inline interactive control (an inline-editable value, a per-row action)
+wraps it in an element carrying **`data-cairn-inert-cell`**: the row's `onclick` walks the click
+target's ancestry with `closest('[data-cairn-inert-cell]')` and ignores any click that resolves inside
+one, so the wrapped control's own click handler runs without also toggling the row. This is a
+documented escape, not `stopPropagation()` a consumer has to hand-roll and re-discover per cell. The
+trigger button carries no `data-cairn-inert-cell` of its own and needs none -- its own `onclick`
+already calls `event.stopPropagation()` -- so it stays the one control carrying `aria-expanded`,
+unaffected by the escape either way.
 
 **The trigger cell is `position: sticky; right: 0`** (the Members pass coherence round).
 `AdminTable`'s own horizontal-scroll fallback means a summary row wider than its viewport scrolls
@@ -89,9 +96,18 @@ verified against zebra stripes in both themes):**
   }
 
   let { expanded, onToggle, datum, colspan, summary, panel, triggerLabel }: Props = $props();
+
+  /** Toggles on a row click, unless the click resolves inside an element carrying
+   *  `data-cairn-inert-cell`; see this component's own header comment for the escape's contract. */
+  function handleRowClick(event: MouseEvent) {
+    if (event.target instanceof Element && event.target.closest('[data-cairn-inert-cell]')) {
+      return;
+    }
+    onToggle();
+  }
 </script>
 
-<tr class="toolkit-expandable-row-summary" onclick={onToggle}>
+<tr class="toolkit-expandable-row-summary" onclick={handleRowClick}>
   {@render summary()}
   <td class="toolkit-expandable-row-trigger-cell">
     <button

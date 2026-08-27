@@ -770,16 +770,31 @@ single spanning cell must cover the whole row.
 
 Keyboard operability rides the native `<button>` element's own Enter/Space activation; the summary
 `<tr>` also carries a mouse-only click convenience, but the trailing button is the one control
-carrying `aria-expanded` and `triggerLabel` as its accessible name, so a summary cell should stay
-non-interactive (plain text, a `StatusChip`, and similar). The trigger cell is `position: sticky;
-right: 0`, so `AdminTable`'s own horizontal-scroll fallback never strands it off-screen: a summary
-row wider than its viewport scrolls rather than wraps, and the trigger stays reachable at every
-scroll position, unconditionally, with no caller opt-in. The panel cell stays a genuine `<td
-colspan>`, not `display: block`, because a spanning cell removed from table layout still resolves
-its width against the table's own real column widths through the browser's anonymous fixup row; a
-caller that wants the panel's own internal grid to collapse at a narrow width needs the table
-itself to never need horizontal scroll in the first place (hide lower-priority summary columns
-under a breakpoint instead).
+carrying `aria-expanded` and `triggerLabel` as its accessible name, so a summary cell renders plain
+content (text, a `StatusChip`, and similar) by default. A summary cell that needs a genuinely
+interactive control inline, an inline-editable value or a per-row action, wraps it in an element
+carrying **`data-cairn-inert-cell`**: the row's own click handler walks the click target's ancestry
+with `closest('[data-cairn-inert-cell]')` and ignores any click that resolves inside one, so the
+wrapped control's own handler runs without also toggling the row, no `stopPropagation()` wrapper of
+the caller's own. The escape leaves the trigger button's own `aria-expanded` control and keyboard
+behavior unchanged; its own `onclick` already calls `event.stopPropagation()`, and it carries no
+`onkeydown` handler by design, since native `<button>` Enter/Space activation already covers it. The
+trigger cell is `position: sticky; right: 0`, so `AdminTable`'s own horizontal-scroll fallback never
+strands it off-screen: a summary row wider than its viewport scrolls rather than wraps, and the
+trigger stays reachable at every scroll position, unconditionally, with no caller opt-in. The panel
+cell stays a genuine `<td colspan>`, not `display: block`, because a spanning cell removed from table
+layout still resolves its width against the table's own real column widths through the browser's
+anonymous fixup row; a caller that wants the panel's own internal grid to collapse at a narrow width
+needs the table itself to never need horizontal scroll in the first place (hide lower-priority
+summary columns under a breakpoint instead).
+
+**Touch target, measured:** the trigger (`btn btn-ghost btn-xs`) renders at 24x24 CSS px at the
+390px viewport against the packaged `cairn-admin.css`, exactly the engine's ruled AA floor
+(`rulings.touch-targets.test.ts`, Web Content Accessibility Guidelines 2.5.8, 24x24, not 2.5.5's
+44x44) and clears it, so the trigger keeps its size unchanged.
+
+**Out of scope (standing defer, `expandablerow-colspan`):** a `colspan` full-width summary
+variant.
 
 Three treatments carry no prop of their own. They apply unconditionally. The whole summary row
 washes with `color-mix(in oklab, var(--color-base-content) 5%, transparent)` on hover, including

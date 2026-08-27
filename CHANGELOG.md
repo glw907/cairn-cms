@@ -4,6 +4,17 @@
 
 ### Added
 
+- `ExpandableRow` (`/admin-toolkit`) accepts a `data-cairn-inert-cell` attribute on any element
+  inside a summary cell: the row's own click handler now ignores a click whose target resolves
+  inside one (`closest('[data-cairn-inert-cell]')`), so a consumer wraps a genuinely interactive
+  summary cell (an inline-editable value, a per-row action) instead of hand-rolling a
+  `stopPropagation()` wrapper. The trigger button's own `aria-expanded` control and keyboard
+  behavior are unchanged. The component's own `@component` doc comment is amended to match: an
+  inline interactive summary cell is now a supported shape when wrapped in the attribute, not a
+  contract violation. The trigger's rendered touch target was measured against the packaged admin
+  CSS at the 390px viewport (24x24 CSS px, the engine's ruled AA floor) and clears it, so no size
+  change was made. Consumers must: nothing.
+
 - `MediaPicker` publishes from `/admin-toolkit`, with `MediaSelection` and `MediaLibraryEntry`
   beside it, so a site building its own admin screen composes cairn's read-only combobox over the
   committed media library instead of rebuilding a selection UI over the manifest. Its prop is now

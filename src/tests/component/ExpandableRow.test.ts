@@ -92,6 +92,83 @@ describe('ExpandableRow', () => {
     expect(button.type).toBe('button');
     expect(button.getAttribute('aria-expanded')).toBe('false');
   });
+
+  it('toggles when an ordinary summary cell is clicked', async () => {
+    let toggled = 0;
+    const screen = await render(ExpandableRow, {
+      expanded: false,
+      onToggle: () => toggled++,
+      datum: { name: 'Alvarez' },
+      colspan: 3,
+      summary,
+      panel,
+      triggerLabel: 'Expand the Alvarez household',
+    });
+    const summaryCell = screen.container.querySelector(
+      '.toolkit-expandable-row-summary td'
+    ) as HTMLElement;
+    await userEvent.click(summaryCell);
+    expect(toggled).toBe(1);
+  });
+
+  it('does not toggle when a click lands inside a data-cairn-inert-cell wrapped cell', async () => {
+    let toggled = 0;
+    const inertSummary = staticSnippet(
+      '<td data-cairn-inert-cell><button type="button">Edit</button></td>'
+    );
+    const screen = await render(ExpandableRow, {
+      expanded: false,
+      onToggle: () => toggled++,
+      datum: { name: 'Alvarez' },
+      colspan: 3,
+      summary: inertSummary,
+      panel,
+      triggerLabel: 'Expand the Alvarez household',
+    });
+    const innerButton = screen.container.querySelector(
+      '[data-cairn-inert-cell] button'
+    ) as HTMLElement;
+    await userEvent.click(innerButton);
+    expect(toggled).toBe(0);
+
+    // Clicking the inert cell itself, not just its interactive child, is also ignored.
+    const inertCell = screen.container.querySelector('[data-cairn-inert-cell]') as HTMLElement;
+    await userEvent.click(inertCell);
+    expect(toggled).toBe(0);
+  });
+
+  it('still activates the trigger button by click, unaffected by the inert-cell guard', async () => {
+    let toggled = 0;
+    const screen = await render(ExpandableRow, {
+      expanded: false,
+      onToggle: () => toggled++,
+      datum: { name: 'Alvarez' },
+      colspan: 3,
+      summary,
+      panel,
+      triggerLabel: 'Expand the Alvarez household',
+    });
+    const button = screen.container.querySelector('button')!;
+    await userEvent.click(button);
+    expect(toggled).toBe(1);
+  });
+
+  it('still activates the trigger button by keyboard (native Enter/Space), unaffected by the inert-cell guard', async () => {
+    let toggled = 0;
+    const screen = await render(ExpandableRow, {
+      expanded: false,
+      onToggle: () => toggled++,
+      datum: { name: 'Alvarez' },
+      colspan: 3,
+      summary,
+      panel,
+      triggerLabel: 'Expand the Alvarez household',
+    });
+    const button = screen.container.querySelector('button')!;
+    button.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(toggled).toBe(1);
+  });
 });
 
 // The three visual fixes assert against real computed style, which needs the compiled daisyUI

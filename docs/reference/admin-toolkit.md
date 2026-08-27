@@ -319,8 +319,7 @@ import { StatusChip, Pagination, AdminTable, ListToolbar, ToolbarDisclosure, Pag
 Stability tier: Extension API.
 
 ```ts
-let { tone, label, size = 'sm', register = 'bounded', legend }: {
-  tone: StatusChipTone;
+let { label, size = 'sm', register = 'quiet', legend }: {
   label: string;
   size?: StatusChipSize;
   register?: StatusChipRegister;
@@ -328,62 +327,56 @@ let { tone, label, size = 'sm', register = 'bounded', legend }: {
 };
 ```
 
-The toolkit's one surface allowed a semantic status color. `tone` carries the full daisyUI
-semantic vocabulary (`neutral`/`info`/`success`/`warning`/`danger`); the tone-to-standing mapping
-(which standing reads `warning`, which reads `neutral`) lives with the consumer, so the same chip
-serves a publish-state pill on one screen and a household-standing pill on another with no shared
-domain knowledge baked in. `size` defaults `'sm'`, matching AdminTable's own density tier names.
-`sm` keeps a `5rem` minimum width, comfortable next to a longer generic label; `xs` carries no
-minimum of its own, so a dense table column (a publish-state cell, an alt/usage cell) budgets the
-chip's width against its own short vocabulary rather than a floor sized for a longer label.
-`register` picks which of the two ratified chip recipes the badge renders in: `'bounded'` (the
-default) demotes the outline to a hairline border that still reads as a discrete object, and
-`'quiet'` drops the border for a token-tinted ground that recedes rather than competes, for a
-settled state such as Published. `legend` carries optional explanatory text for a tone a label alone can't fully carry, for example
-"full member benefits continue during the grace window." It surfaces as a native tooltip and as a
-visually hidden `sr-only` span that reads straight after the visible label, so the chip's
-accessible name reads `"<label>: <legend>"` from plain text instead of an `aria-label` on the
-outer element; some assistive technology exposes an outer `aria-label` inconsistently. A
-self-explanatory label omits `legend` entirely, and the chip then carries neither the tooltip nor
-the hidden span.
+The toolkit's one surface allowed a semantic status color, second generation (the 2026-08-24 owner
+probe, Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`). `register`
+alone now carries both shape and color; there is no separate `tone` prop, and there is no
+chip-level danger tier. `size` defaults `'sm'`, matching AdminTable's own density tier names. `sm`
+keeps a `5rem` minimum width, comfortable next to a longer generic label; `xs` carries no minimum
+of its own, so a dense table column (a publish-state cell, an alt/usage cell) budgets the chip's
+width against its own short vocabulary rather than a floor sized for a longer label. `register`
+picks which of the three ratified chip recipes the badge renders in: `'quiet'` (the default) tints
+the ground for a settled state that should recede, such as Published; `'warning'` tints the same
+way off the warning tone, for a state needing attention, such as an unpublished-changes marker or
+a needs-alt notice; `'outline'` drops the fill for a hairline border, for a transient or reversible
+absence (a removable tag, a not-yet-confirmed suggestion). `legend` carries optional explanatory
+text a label alone can't fully carry, for example "full member benefits continue during the grace
+window." It surfaces as a native tooltip and as a visually hidden `sr-only` span that reads
+straight after the visible label, so the chip's accessible name reads `"<label>: <legend>"` from
+plain text instead of an `aria-label` on the outer element; some assistive technology exposes an
+outer `aria-label` inconsistently. A self-explanatory label omits `legend` entirely; the tooltip
+then falls back to the label itself (truncation self-defense, so an ellipsized chip still surfaces
+its full text on hover/focus), and the chip carries no hidden span.
 
-Both registers carry a measured constraint rather than an unconditional guarantee. `bounded`'s
+All three registers carry a measured constraint rather than an unconditional guarantee. `outline`'s
 hairline is `color-mix(in oklab, currentColor 55%, transparent)`, so it inherits its color from
 the chip's own ancestor. Inside a `text-muted` ancestor the mix reads roughly 2.4:1 against a
 card ground and 2.97:1 against a page ground, under the audit's own 3:1 border-contrast floor.
 Cairn's five call sites, ConceptList, EditPage, CairnAdminShell, ReferenceField,
-MediaCaptureCard, and ManageEditors, all clear this floor; a consumer that places a `bounded`
-chip inside its own muted-text ancestor should re-measure. `quiet`'s tinted ground clears the
-audit's 1.5 ground-collision floor against every admin surface except one. Mixed over
-`--color-base-300` itself, the ground daisyUI's `.table-zebra` row-hover uses, it measures
-roughly 1.34 to 1.41, under the floor. `chip-ground-collision` stays advisory rather than gating
-today, so this fifth ground stays documented rather than retuned; a `quiet` chip shouldn't sit
+MediaCaptureCard, and ManageEditors, all clear this floor; a consumer that places an `outline`
+chip inside its own muted-text ancestor should re-measure. `quiet` and `warning` are tuned to a
+1.16-1.47:1 contrast band against both admin row grounds (plain and zebra) in both admin themes,
+and clear the audit's 1.5 ground-collision floor against every admin surface except one. Mixed
+over `--color-base-300` itself, the ground daisyUI's `.table-zebra` row-hover uses, both registers
+sit under that floor. `chip-ground-collision` stays advisory rather than gating today, so this
+fifth ground stays documented rather than retuned; a `quiet` or `warning` chip shouldn't sit
 directly on a `base-300`-derived ground until the rule re-promotes.
 
-**daisyUI assembly:** `badge badge-outline` (shape only, no tone reads through the badge fill)
-plus a `status status-<tone>` dot for the color signal, and `badge-xs`/`badge-sm` +
-`status-xs`/`status-sm` for the two sizes. `badge-error`/`badge-success` do not compile into the
-packaged `cairn-admin.css`, while every `status-<tone>` modifier does, which is why the dot, not
-the badge fill, carries color: one consistent mechanism across all five tones. `badge-outline`
-(not the retired stock ghost badge) sets no `--badge-color`, so its border resolves through the
-preceding `register` recipe rather than the full-strength inherited text color badge-outline
-would resolve to on its own.
+**daisyUI assembly:** `badge badge-outline` (shape only; `badge-outline` sets no `--badge-color`,
+so its fill and border resolve through the `register` recipe rather than the full-strength
+inherited text color `badge-outline` would resolve to on its own), plus `badge-xs`/`badge-sm` for
+the two sizes.
 
-**Exact class inventory:** `badge`, `badge-outline`, `badge-xs`, `badge-sm`, `status`,
-`status-neutral`, `status-info`, `status-success`, `status-warning`, `status-error`, `status-xs`,
-`status-sm`. Every other admin surface that composes a status chip by hand instead of through this
-component (EditPage, CairnAdminShell, ReferenceField, MediaCaptureCard, ManageEditors) reaches the
-same two registers through `cairn-admin.css`'s shared `cairn-chip-bounded`/`cairn-chip-quiet`
-classes; neither paints anything on its own; both compose with `badge` (and typically
-`badge-outline` for `cairn-chip-bounded`, which supplies the border's width and style), the same
+**Exact class inventory:** `badge`, `badge-outline`, `badge-xs`, `badge-sm`. Every other admin
+surface that composes a status chip by hand instead of through this component (EditPage,
+CairnAdminShell, ReferenceField, MediaCaptureCard, ManageEditors) reaches the same three registers
+through `cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/`cairn-chip-outline`
+classes; none paints anything on its own; all three compose with `badge` (and typically
+`badge-outline` for `cairn-chip-outline`, which supplies the border's width and style), the same
 shape `StatusChip` itself assembles from.
 
 ```svelte
-<StatusChip tone="warning" label="Overdue" legend="Full benefits continue for 30 days." />
+<StatusChip label="Overdue" register="warning" legend="Full benefits continue for 30 days." />
 ```
-
-`STATUS_CHIP_DOT_CLASS` (below) is exported from the component's module context so a future
-legend or key component reuses the identical dot color without duplicating the mapping.
 
 ### `Pagination`
 
@@ -488,7 +481,7 @@ into the packaged `cairn-admin.css`.
   {/snippet}
   {#snippet children()}
     {#each rows as row (row.id)}
-      <tr><td>{row.household}</td><td><StatusChip tone={row.tone} label={row.standing} /></td></tr>
+      <tr><td>{row.household}</td><td><StatusChip register={row.register} label={row.standing} /></td></tr>
     {/each}
   {/snippet}
   {#snippet empty()}
@@ -911,7 +904,7 @@ compiled from cairn's own admin usage.
       >
         {#snippet summary()}
           <td>{household.name}</td>
-          <td><StatusChip tone={household.tone} label={household.standing} /></td>
+          <td><StatusChip register={household.register} label={household.standing} /></td>
         {/snippet}
         {#snippet panel(household)}
           <p>{household.contact}</p>
@@ -989,10 +982,8 @@ which render only once the library holds more than one top-level content type.
 | `FormatCivilDateOptions` | Extension API | `interface FormatCivilDateOptions { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }` | `formatCivilDate`'s options: the nullish-or-empty-input fallback string (defaults `''`), locale, and the `Intl.DateTimeFormat` options passthrough. |
 | `FormatTimestampOptions` | Extension API | `interface FormatTimestampOptions { timeZone?: string; locale?: string; fallback?: string }` | `formatTimestamp`'s options: the IANA time zone, BCP 47 locale tag, and the nullish-input fallback string (defaults `''`). |
 | `FormatPhoneOptions` | Extension API | `interface FormatPhoneOptions { fallback?: string }` | `formatPhone`'s options: the nullish-input fallback string (defaults `''`). |
-| `StatusChipTone` | Extension API | `type StatusChipTone = 'neutral' \| 'info' \| 'success' \| 'warning' \| 'danger'` | `StatusChip`'s full semantic tone vocabulary. `danger` reads as daisyUI's `error` semantic under the hood. |
 | `StatusChipSize` | Extension API | `type StatusChipSize = 'xs' \| 'sm'` | `StatusChip`'s two named sizes, matching AdminTable's own density tier names. |
-| `StatusChipRegister` | Extension API | `type StatusChipRegister = 'bounded' \| 'quiet'` | `StatusChip`'s two ratified visual registers: `'bounded'`, a demoted-hairline border for a chip that must read as a discrete object, and `'quiet'`, a token-tinted ground with no border for a settled state that should recede. |
-| `STATUS_CHIP_DOT_CLASS` | Extension API | `const STATUS_CHIP_DOT_CLASS: Record<StatusChipTone, string>` | The daisyUI `status-<tone>` suffix for each public tone, exported from `StatusChip`'s module context. |
+| `StatusChipRegister` | Extension API | `type StatusChipRegister = 'quiet' \| 'warning' \| 'outline'` | `StatusChip`'s three ratified visual registers (second generation): `'quiet'`, a token-tinted ground with no border for a settled state that should recede; `'warning'`, the same tinted-ground shape for a state needing attention; and `'outline'`, a demoted-hairline border for a transient or reversible absence. |
 | `PageWindowItem` | Extension API | `type PageWindowItem = number \| 'ellipsis'` | One entry in `Pagination`'s windowed page list: a real page number, or a gap marker between two runs. |
 | `ItemRange` | Extension API | `interface ItemRange { first: number; last: number; total: number }` | The inclusive item range a page covers (`computeItemRange`'s return shape), plus the total it is drawn from. |
 | `computePageWindow` | Extension API | `declare function computePageWindow(page: number, pageCount: number): PageWindowItem[]` | Reduces `1..pageCount` to a bounded set of page buttons, windowing to first, last, and a run around `page` once `pageCount` exceeds 7. Returns `[]` for `pageCount <= 0`. |

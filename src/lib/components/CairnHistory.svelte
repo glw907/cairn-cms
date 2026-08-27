@@ -118,7 +118,7 @@ what moved, and an unexpected failure falls back to its own bare message.
                  stacks under the editor name instead, keeping the row's own date legible rather
                  than dropping it. -->
             <tr>
-              <td class="py-2 pl-6"><StatusChip tone="info" label="Draft" size="xs" /></td>
+              <td class="py-2 pl-6"><StatusChip label="Draft" size="xs" /></td>
               <td class="py-2 type-subtitle">
                 {data.draft.editor}
                 <span class="block type-meta text-muted sm:hidden">
@@ -138,7 +138,7 @@ what moved, and an unexpected failure falls back to its own bare message.
                   <!-- entries is newest-first, so the top row is the version live on the default
                        branch right now, whether or not an open draft also exists (a draft has
                        not gone live). -->
-                  <StatusChip tone="neutral" label="Current" size="xs" register="quiet" />
+                  <StatusChip label="Current" size="xs" />
                 {/if}
               </td>
               <td class="py-2 type-subtitle">

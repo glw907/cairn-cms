@@ -11,9 +11,19 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 ## Unreleased
 
-The release step sets the version number at the cut and renames this section to match it. This
-window states no consumer action so far: every entry in `CHANGELOG.md`'s own `## Unreleased`
-window reads `Consumers must: nothing`.
+The release step sets the version number at the cut and renames this section to match it.
+
+- **`StatusChip`'s register grammar moved to its second generation.** `register` is now
+  `'quiet' | 'warning' | 'outline'` (default `'quiet'`); the `tone` prop, the status dot, and the
+  STATUS_CHIP_DOT_CLASS export are all removed. Replace `register="bounded"` with
+  `register="outline"` and `.cairn-chip-bounded` with `.cairn-chip-outline`; drop `tone`, mapping
+  `neutral`/`info`/`success` to `register="quiet"` (or omit `register`, now the default) and
+  `warning`/`danger` to `register="warning"`.
+- **The `status-<tone>` classes no longer compile into the shipped admin sheet.** Stop relying on
+  `status-neutral`/`status-info`/`status-success`/`status-warning`/`status-error` (and their size
+  variants) in hand-authored admin markup.
+
+See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 
 ## 0.96.0
 

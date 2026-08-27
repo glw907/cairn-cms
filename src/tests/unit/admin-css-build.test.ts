@@ -137,14 +137,14 @@ describe('admin css build', () => {
       '.toast-bottom',
       '.indicator-start',
       '.indicator-end',
-      '.status-primary',
-      '.status-xs',
       '.join-item',
       '.join-horizontal',
       '.join-vertical',
       '.badge-soft',
       '.badge-outline',
       '.badge-dash',
+      '.badge-error',
+      '.badge-success',
     ]) {
       expect(css, `missing blessed class ${cls}`).toContain(cls);
     }

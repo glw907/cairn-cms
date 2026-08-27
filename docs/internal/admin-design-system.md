@@ -368,24 +368,34 @@ alongside the component recipes above and below it.
   ritual](./daisy-absorption-ritual.md) covers keeping that inventory honest across a daisy
   release. This doc keeps only what the toolkit does not decide for a screen: which recipe a
   screen shows, and any screen-specific tone mapping, copy, or layout rhythm.
-- **Chip registers, `bounded` and `quiet` (design infrastructure Pass 3, corpus C).** `StatusChip`
-  and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-bounded`/`cairn-chip-quiet`
-  classes, composed with `badge`) render in one of two ratified registers, replacing the stock
-  daisyUI ghost badge outright: its hardcoded background and border can match a row or card color
-  and melt into it, and neither it nor an un-tuned `badge-outline` clears the audit's own 3:1
-  border-contrast floor. `bounded` (the default) demotes `badge-outline`'s full-strength
-  inherited-color border to `color-mix(in oklab, currentColor 55%, transparent)`, a hairline that
-  clears 3:1 against both zebra stripes and both page grounds in both themes; it inherits its
-  color from the chip's own ancestor, so it can drop under the floor inside a `text-muted`
-  ancestor (verify a new call site; cairn's own five are verified safe). `quiet`
-  (`register="quiet"`) drops the border and tints the ground with
-  `color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300))` instead, for a
-  settled, put-away state (Published) that should recede rather than compete; it resolves only
-  inside the admin theme root and is unguarded against a ground at or near `base-300` itself (a
-  `.table-zebra` row-hover, say), where it can drop under the 1.5 ground-collision floor
-  (`chip-ground-collision` stays advisory, so this is documented rather than retuned). Values are
-  measured, not invented (`docs/internal/probes/2026-07-28-chip-registers`); the full contract
-  lives on [the admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).
+- **Chip registers, second generation: `quiet`, `warning`, `outline` (the 2026-08-24 owner probe,
+  Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`).** `StatusChip`
+  and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/
+  `cairn-chip-outline` classes, composed with `badge`) render in one of three ratified registers,
+  replacing the stock daisyUI ghost badge outright: its hardcoded background and border can match
+  a row or card color and melt into it, and neither it nor an un-tuned `badge-outline` clears the
+  audit's own 3:1 border-contrast floor. The first generation (design infrastructure Pass 3) split
+  a `tone` prop (the color signal, carried by a small `status` dot) from a `bounded`/`quiet`
+  register (the shape); the owner probe measured the dot illegible toolkit-wide across three
+  consumer screens and ratified fusing tone INTO the register instead, so `tone` and the dot both
+  retire. `quiet` (the default) tints the ground with a low-contrast wash off
+  `--color-base-content`, for a settled, put-away state (Published) that should recede rather than
+  compete. `warning` tints the same way off `--color-warning`, carrying its own on-surface ink
+  (`--cairn-warning-ink`), for a state that needs attention (an unpublished-changes marker, a
+  needs-alt notice). `outline` (`register="outline"`) drops the fill and demotes `badge-outline`'s
+  full-strength inherited-color border to `color-mix(in oklab, currentColor 55%, transparent)`, a
+  hairline that clears 3:1 against both zebra stripes and both page grounds in both themes (the
+  successor of the first generation's `bounded`, unchanged recipe); it inherits its color from the
+  chip's own ancestor, so it can drop under the floor inside a `text-muted` ancestor (verify a new
+  call site). Every tinted fill (`quiet`, `warning`) is tuned to a 1.16-1.47:1 contrast band
+  against its own row ground (plain and zebra, both admin themes), and `warning`'s ink additionally
+  clears >= 4.5:1 against its own fill; both resolve only inside the admin theme root and are
+  unguarded against a ground at or near `base-300` itself (a `.table-zebra` row-hover, say), where
+  they can drop under the 1.5 ground-collision floor (`chip-ground-collision` stays advisory, so
+  this is documented rather than retuned). There is no chip-level danger tier; a state that must
+  stand out beyond quiet is a `warning` chip. Values are measured, not invented
+  (`docs/internal/probes/2026-08-26-chip-registers-v2`); the full contract lives on [the
+  admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
   and it will show up here") and the create CTA, built with the toolkit's `EmptyState` (`heading`,
   `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty
@@ -417,9 +427,10 @@ alongside the component recipes above and below it.
     the page's one loose element (`PageHeader`'s own `mb-10`), the toolbar belongs to the card below
     it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`).
   - `EntrySummary.summary` stays off the list (the density ruling; it still serves the edit page).
-  - Tone mapping (ruling 9 of the 2026-07-20 admin-toolkit adoption map): Published and New both
-    read `StatusChip`'s neutral tone; Edited alone carries the act-on info tone, rhyming with the
-    topbar's "Publish site (N)" pill.
+  - Chip register (ruling 9 of the 2026-07-20 admin-toolkit adoption map, re-expressed for the
+    second-generation register grammar): New, Edited, and Published all take `StatusChip`'s
+    default `quiet` register; the label text alone carries the distinction a tone dot used to
+    carry.
   - Hidden is a row treatment, not a fourth pill: the row de-emphasizes (~0.62 opacity on the title)
     and carries an eye-off "Hidden" tag inline beside the title, leaving the status cell to one
     publish-state chip.

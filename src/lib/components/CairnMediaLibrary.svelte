@@ -1599,9 +1599,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                    so the reserve must exceed the content, not merely match it. -->
               <span class="w-24 shrink-0 text-right">
                 {#if missing}
-                  <StatusChip tone="warning" label="Needs alt" size="xs" />
+                  <StatusChip register="warning" label="Needs alt" size="xs" />
                 {:else}
-                  <StatusChip tone="neutral" label="Described" size="xs" />
+                  <StatusChip label="Described" size="xs" />
                 {/if}
               </span>
             </div>
@@ -1670,16 +1670,16 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               </td>
               <td class="w-32">
                 {#if missing}
-                  <StatusChip tone="warning" label="Needs alt" size="xs" />
+                  <StatusChip register="warning" label="Needs alt" size="xs" />
                 {:else}
-                  <StatusChip tone="neutral" label="Described" size="xs" />
+                  <StatusChip label="Described" size="xs" />
                 {/if}
               </td>
               <td class="w-40 type-meta">
                 {#if used > 0}
-                  <StatusChip tone="neutral" label={`found in ${used}`} size="xs" />
+                  <StatusChip label={`found in ${used}`} size="xs" />
                 {:else}
-                  <StatusChip tone="warning" label="no references found" size="xs" />
+                  <StatusChip register="warning" label="no references found" size="xs" />
                 {/if}
               </td>
               <td class="w-24 text-right type-body tabular-nums text-muted">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</td>

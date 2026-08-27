@@ -159,11 +159,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `Pagination`: Component<Props, {}, "">
 - `SelectInput`: Component<Props, {}, "value">
 - `SelectInputOption`: { value: string; label: string }
-- `STATUS_CHIP_DOT_CLASS`: { neutral: string; info: string; success: string; warning: string; danger: string }
 - `StatusChip`: Component<Props, {}, "">
-- `StatusChipRegister`: "bounded" | "quiet"
+- `StatusChipRegister`: "quiet" | "warning" | "outline"
 - `StatusChipSize`: "xs" | "sm"
-- `StatusChipTone`: "neutral" | "info" | "success" | "warning" | "danger"
 - `TextInput`: Component<Props, {}, "value">
 - `ToolbarDisclosure`: Component<Props, {}, "">
 - `ToolbarDisclosureAriaHaspopup`: "menu" | "listbox" | "dialog" | "grid" | "tree" | "true"

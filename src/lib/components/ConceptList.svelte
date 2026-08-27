@@ -414,12 +414,15 @@ Filtering, sorting, and paging run over the loaded entries in component state.
             </td>
             {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell py-2 type-subtitle">{formatCivilDate(entry.date, { fallback: 'Not yet' })}</td>{/if}
             <td class="w-16 px-2 py-2 sm:w-28 sm:px-4">
-              <!-- One chip family (design arc 2026-07-15, re-expressed on the toolkit's StatusChip):
-                   New and Published share the toolkit's neutral tone; Edited alone carries the
-                   act-on info tone, rhyming with the topbar's "Publish site (N)" pill. -->
-              {#if entry.status === 'new'}<StatusChip tone="neutral" label="New" size="xs" />
-              {:else if entry.status === 'edited'}<StatusChip tone="info" label="Edited" size="xs" />
-              {:else}<StatusChip tone="neutral" label="Published" size="xs" register="quiet" />{/if}
+              <!-- One chip family (design arc 2026-07-15, re-expressed on the toolkit's second-
+                   generation StatusChip register grammar, docs/internal/probes/
+                   2026-08-26-chip-registers-v2): New, Edited, and Published all take the quiet
+                   register (the migration map's neutral/info -> quiet), leaving the label text
+                   itself as the distinguishing signal; the register carries no chip-level
+                   danger/act-on tier the probe did not ratify. -->
+              {#if entry.status === 'new'}<StatusChip label="New" size="xs" />
+              {:else if entry.status === 'edited'}<StatusChip label="Edited" size="xs" />
+              {:else}<StatusChip label="Published" size="xs" />{/if}
             </td>
             <td class="w-12 px-2 py-2 text-right sm:px-4">
               {#if deleteRefused?.id === entry.id}

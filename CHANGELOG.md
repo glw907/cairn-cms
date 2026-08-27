@@ -39,6 +39,33 @@
   `/admin-toolkit`, beside the component whose prop signature names it, and `/sveltekit` keeps its
   existing re-export. Consumers must: nothing.
 
+### Changed
+
+- `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the
+  2026-08-24 owner probe, Geoff's own ratification: illegible-dot evidence and the ratified
+  three-register recipe are on record in `docs/internal/probes/2026-08-26-chip-registers-v2`).
+  `register` is now `'quiet' | 'warning' | 'outline'` (default `'quiet'`); the `tone` prop, the
+  small `status` dot it drove, and the `STATUS_CHIP_DOT_CLASS` export are all removed, since the
+  register alone now carries both shape and color. The sheet's shared hand-composed vocabulary
+  moves the same way: `.cairn-chip-bounded` is gone and `.cairn-chip-warning` is new. When the
+  chip's label ellipsizes and no `legend` prop is passed, `title` now defaults to the label itself
+  (previously the tooltip stayed empty without a legend). Consumers must: replace
+  `register="bounded"` with `register="outline"` and `.cairn-chip-bounded` with
+  `.cairn-chip-outline`; remove the `tone` prop and any dependency on the status dot, mapping
+  `neutral`/`info`/`success` to `register="quiet"` (or leave `register` unset, since `quiet` is
+  now the default) and `warning`/`danger` to `register="warning"`; remove any reference to the
+  removed `STATUS_CHIP_DOT_CLASS` export.
+
+- The status-dot safelist family in `admin-css-safelist.ts` (thirteen entries, `status-primary`
+  through `status-xl`) is removed from the shipped `cairn-admin.css`, since the dot itself is
+  retired with `tone` above; the base `status` class stays blessed for one documented,
+  audit-complete list even though nothing renders it today. `badge-error`/`badge-success`, which
+  previously compiled only as a side effect of `StatusChip`'s own retired doc-comment prose naming
+  them (never from real usage), are now blessed deliberately in the same safelist instead of being
+  silently dropped. Consumers must: stop relying on any `status-<tone>` class (`status-neutral`,
+  `status-info`, `status-success`, `status-warning`, `status-error`, and every size variant) in
+  hand-authored admin markup; it no longer compiles into the shipped sheet.
+
 ### Fixed
 
 - `CsrfField` mirrors its token into the hidden input's `defaultValue`, so a native form reset (the

@@ -104,13 +104,13 @@ describe('CairnMediaLibrary grid', () => {
     expect(screen.container.textContent ?? '').toContain('valley-ridge');
 
     // The Needs-alt tile names its status as a label, never hue alone (now the toolkit's
-    // StatusChip: a tone dot plus its own visible text label, never a dot alone).
+    // StatusChip, second generation: the register itself carries the tint, no separate dot).
     const needsAltTile = options.find((o) => /valley-ridge/.test(o.textContent ?? ''))!;
     expect(needsAltTile.textContent ?? '').toMatch(/needs alt/i);
-    expect(needsAltTile.querySelector('.status-warning')).not.toBeNull();
-    // The described tile carries a visible text label beside the toolkit's neutral status dot.
+    expect(needsAltTile.querySelector('.status-chip-warning')).not.toBeNull();
+    // The described tile carries a visible text label beside the toolkit's quiet-register chip.
     const describedTile = options.find((o) => /first-light/.test(o.textContent ?? ''))!;
-    expect(describedTile.querySelector('.status-neutral')).not.toBeNull();
+    expect(describedTile.querySelector('.status-chip-quiet')).not.toBeNull();
     expect(describedTile.textContent ?? '').toMatch(/described/i);
 
     // The no-references tile carries the "Not referenced" marker; the used tile names its count.

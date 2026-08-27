@@ -1034,9 +1034,10 @@ persistent "?" carries Markdown help, design-arc D2).
     if (data.pending) return data.published ? 'Edited' : 'New';
     return data.published ? 'Published' : 'New';
   });
-  // Edited and New are attention states and stay on the bounded-shaped daisyUI tone fills;
-  // Published is a settled, put-away state and takes the quiet chip register instead of the
-  // retired stock ghost badge (design infrastructure Pass 3, corpus C).
+  // Edited and New are attention states and stay on the stock daisyUI badge-warning/badge-info
+  // fills; Published is a settled, put-away state and takes the quiet chip register instead of
+  // the retired stock ghost badge (design infrastructure Pass 3, corpus C; the register itself is
+  // the second generation's, docs/internal/probes/2026-08-26-chip-registers-v2).
   const statusBadge = $derived.by(() => {
     if (status === 'Edited') return 'badge-warning';
     if (status === 'New') return 'badge-info';

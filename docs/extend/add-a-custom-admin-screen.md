@@ -112,7 +112,7 @@ usual build and can use anything your stack supports.
       {#each data.events as event (event.id)}
         <tr>
           <td>{event.name}</td>
-          <td><StatusChip tone="info" label={event.status} /></td>
+          <td><StatusChip label={event.status} /></td>
         </tr>
       {/each}
     {/snippet}

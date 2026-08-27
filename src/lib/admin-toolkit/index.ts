@@ -28,10 +28,8 @@ export {
 } from './format.js';
 export {
   default as StatusChip,
-  STATUS_CHIP_DOT_CLASS,
   type StatusChipRegister,
   type StatusChipSize,
-  type StatusChipTone,
 } from './StatusChip.svelte';
 export {
   default as Pagination,

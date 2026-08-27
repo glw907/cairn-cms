@@ -56,7 +56,7 @@ describe('ConceptList', () => {
     await expect.element(screen.getByText('Hidden', { exact: true })).toBeInTheDocument();
   });
 
-  it('renders the status chips through the toolkit: New/Published neutral, Edited the act-on info tone', async () => {
+  it('renders the status chips through the toolkit, all three in the quiet register (second-generation grammar)', async () => {
     const entries = [
       { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'new' as const, summary: null },
       { id: 'beta', title: 'Beta', date: '2026-05-02', draft: false, status: 'edited' as const, summary: null },
@@ -68,20 +68,14 @@ describe('ConceptList', () => {
         (el) => el.textContent?.trim() === text,
       );
     await expect.element(screen.getByText('New', { exact: true })).toBeInTheDocument();
-    // One chip family (the emphasis ladder, re-expressed on the admin toolkit's StatusChip):
-    // New and Published share the toolkit's neutral tone; Edited alone carries the act-on info
-    // tone, rhyming with the topbar's "Publish site (N)" pill (ruling 9 of the admin-toolkit
-    // organization pass's adoption map). No semantic weight distinction remains; the toolkit's
-    // one mechanism is the tone dot, not a badge fill or a font-weight step.
-    expect(chip('New')?.querySelector('.status-neutral')).not.toBeNull();
-    expect(chip('Published')?.querySelector('.status-neutral')).not.toBeNull();
-    expect(chip('Edited')?.querySelector('.status-info')).not.toBeNull();
-    // Published is the settled, put-away state (design infrastructure Pass 3's register doctrine,
-    // already applied on EditPage's own header chip): it takes the quiet register, receding rather
-    // than competing with the row's own content.
+    // The second-generation register grammar (docs/internal/probes/2026-08-26-chip-registers-v2)
+    // fuses tone into the register and retires the status dot: the migration map sends
+    // neutral/info/success to the quiet register, so New, Edited, and Published (none of them a
+    // warning state) all take the toolkit's default quiet register, and the label TEXT alone
+    // carries the distinction that a tone dot used to carry.
+    expect(chip('New')?.classList.contains('status-chip-quiet')).toBe(true);
+    expect(chip('Edited')?.classList.contains('status-chip-quiet')).toBe(true);
     expect(chip('Published')?.classList.contains('status-chip-quiet')).toBe(true);
-    expect(chip('New')?.classList.contains('status-chip-bounded')).toBe(true);
-    expect(chip('Edited')?.classList.contains('status-chip-bounded')).toBe(true);
   });
 
   it('composes the header and the toolbar on the F3 proximity scale', async () => {
@@ -498,9 +492,9 @@ describe('ConceptList', () => {
       const statusWidth = cells[1].getBoundingClientRect().width;
       const deleteWidth = cells[2].getBoundingClientRect().width;
       // The toolkit's StatusChip costs the Status column a few px more than the old bespoke pill
-      // (its dot is the tone-carrying mechanism, not removable), so the title's own share settles
-      // just under half rather than just over it; it still dwarfs both narrow neighbor columns,
-      // which is the real 7-10-character-starve signal this test guards.
+      // (its 5rem min-width floor at sm), so the title's own share settles just under half rather
+      // than just over it; it still dwarfs both narrow neighbor columns, which is the real
+      // 7-10-character-starve signal this test guards.
       expect(titleWidth / rowWidth).toBeGreaterThan(0.45);
       expect(statusWidth).toBeLessThan(titleWidth);
       expect(deleteWidth).toBeLessThan(titleWidth);
@@ -574,16 +568,17 @@ describe('ConceptList', () => {
     });
 
     // The audit's finding 10 fix (a filled badge distinct from its own card) is superseded by the
-    // toolkit's StatusChip: an outline badge carries no fill of its own by design (the dot alone
-    // carries tone color, see StatusChip's own header comment), so the contrast device moves to
-    // the dot. StatusChip's own component suite covers its tone/contrast contract; this asserts
-    // only that ConceptList renders a real, painted dot rather than a transparent one in dark mode.
-    it('renders the Published status dot with a real, visible fill in dark mode', async () => {
+    // toolkit's StatusChip: the second-generation quiet register tints the chip's own ground
+    // directly (docs/internal/probes/2026-08-26-chip-registers-v2), rather than carrying a
+    // separate dot glyph. StatusChip's own component and tuning suites cover the register/contrast
+    // contract; this asserts only that ConceptList renders a real, painted fill rather than a
+    // transparent one in dark mode.
+    it('renders the Published status chip with a real, visible fill in dark mode', async () => {
       document.documentElement.setAttribute('data-theme', 'cairn-admin-dark');
       const entries = [{ id: 'pub', title: 'Pub entry', date: '2026-05-01', draft: false, status: 'published' as const, summary: null }];
       const screen = await render(ConceptList, { data: data({ entries }) });
-      const dot = screen.container.querySelector('tbody .status-chip .status')!;
-      expect(getComputedStyle(dot).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+      const chip = screen.container.querySelector('tbody .status-chip')!;
+      expect(getComputedStyle(chip).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
     });
   });
 });

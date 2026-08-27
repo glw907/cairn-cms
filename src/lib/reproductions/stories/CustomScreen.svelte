@@ -24,7 +24,7 @@ snippet rather than improving on it; a drift here is a drift a reader of that pa
       {#each data.events as event (event.id)}
         <tr>
           <td>{event.name}</td>
-          <td><StatusChip tone="info" label={event.status} /></td>
+          <td><StatusChip label={event.status} /></td>
         </tr>
       {/each}
     {/snippet}

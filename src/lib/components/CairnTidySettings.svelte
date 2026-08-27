@@ -427,7 +427,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Fixes
               <span role="status" aria-live="polite">
-                <StatusChip tone="neutral" label={conv.fixes ? 'On' : 'Off'} size="sm" />
+                <StatusChip label={conv.fixes ? 'On' : 'Off'} size="sm" />
                 <span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span>
               </span>
             </h2>
@@ -474,7 +474,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Style conventions
               <span role="status" aria-live="polite">
-                <StatusChip tone="neutral" label={`${styleOnCount} on`} size="sm" />
+                <StatusChip label={`${styleOnCount} on`} size="sm" />
                 <span class="sr-only">, {styleOnCount} style {styleOnCount === 1 ? 'convention' : 'conventions'} on</span>
               </span>
             </h2>

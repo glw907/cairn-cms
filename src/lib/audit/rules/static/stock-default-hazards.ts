@@ -12,11 +12,12 @@ const BADGE_GHOST_MESSAGE =
   'class "badge-ghost" is the stock daisyUI ghost badge, retired from cairn\'s own tree: it ' +
   'hardcodes a background/border that can match a row or card color and melt into it, and neither ' +
   'it nor the un-tuned badge-outline clears the audit\'s own 3:1 border-contrast floor. cairn\'s ' +
-  'own recipe is the two ratified chip registers instead -- bounded (StatusChip\'s default, or the ' +
-  'shared cairn-chip-bounded class, composed with badge) for a chip that must read as an object, ' +
-  'and quiet (StatusChip\'s `register="quiet"`, or the shared cairn-chip-quiet class, composed with ' +
-  'badge) as the sanctioned put-away recipe for a settled state such as Published ' +
-  '(docs/reference/admin-toolkit.md, StatusChip\'s tone rationale)';
+  'own recipe is the three ratified chip registers instead -- quiet (StatusChip\'s default, or the ' +
+  'shared cairn-chip-quiet class, composed with badge) for a settled state such as Published, ' +
+  'warning (StatusChip\'s `register="warning"`, or the shared cairn-chip-warning class) for a ' +
+  'state needing attention, and outline (StatusChip\'s `register="outline"`, or the shared ' +
+  'cairn-chip-outline class) for a transient or reversible absence ' +
+  '(docs/reference/admin-toolkit.md, StatusChip\'s register rationale)';
 
 const DROPDOWN_MESSAGE =
   'class "dropdown" here is the focus-driven daisyUI wrapper, which opens on focus-in-transit and ' +

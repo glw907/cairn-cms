@@ -8,8 +8,10 @@ import { motionBand } from './motion-band.js';
 import { noUncompiledClass } from './no-uncompiled-class.js';
 import { reducedMotion } from './reduced-motion.js';
 import { stockDefaultHazards } from './stock-default-hazards.js';
+import { stripeTrimParity } from './stripe-trim-parity.js';
 import { tokenColors } from './token-colors.js';
 import { typeScale } from './type-scale.js';
+import { unlayeredFontClobber } from './unlayered-font-clobber.js';
 import type { StaticRule } from '../../types.js';
 
 /** The static rules a run executes, in report order. */
@@ -24,5 +26,7 @@ export function staticRules(): StaticRule[] {
     focusParity,
     motionBand,
     reducedMotion,
+    stripeTrimParity,
+    unlayeredFontClobber,
   ];
 }

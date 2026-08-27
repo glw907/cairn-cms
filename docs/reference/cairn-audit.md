@@ -62,7 +62,7 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Nine rules run, all error tier.
+Eleven rules run, all error tier.
 
 | ID | What it checks |
 |---|---|
@@ -75,6 +75,8 @@ Nine rules run, all error tier.
 | `focus-parity` | Every hand-authored `:hover` selector has a sibling selector in the same source that swaps `:hover` for `:focus-visible`, or for `:focus-within` when a container's wash acknowledges a descendant gaining focus. Tailwind's `hover:` variant classes are deliberately out of scope: their keyboard affordance is the admin's blanket focus ring, a real guarantee of a different shape |
 | `motion-band` | Every transition or animation duration lands in the admin's `150ms` to `250ms` band, and `transition: all` never ships. A declaration inside a `prefers-reduced-motion: reduce` guard is exempt, since collapsing a duration toward zero is what that guard is for |
 | `reduced-motion` | Every selector that declares motion is named again inside an `@media (prefers-reduced-motion: reduce)` guard in the same source |
+| `stripe-trim-parity` | A striped row's `:nth-child` background pattern, or a `.table-zebra`-style class, never co-occurs with an unconditioned first/last-child padding trim on the same row class in the same source: the trim clips the stripe fill on an even-count group unless it's scoped to its own parity (`:last-child:nth-child(odd)`). Applies to any row component, not only the admin's own tables |
+| `unlayered-font-clobber` | A scoped `<style>` block never declares `font-family`, `font-size`, `font-weight`, or the `font` shorthand outside an `@layer` on an element that also carries a font-affecting utility class (a `text-*` size or a `font-*` weight/family). Under the no-Preflight admin, a Svelte scoped style carries no layer of its own while Tailwind utilities sit in `@layer utilities`, so cascade layer precedence, not specificity, decides the winner; the finding names that mechanism and points at moving the typography onto the ancestor the control inherits from. Applies to any component, not only the admin's own |
 
 ### Suppressing a finding
 

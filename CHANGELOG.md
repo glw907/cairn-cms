@@ -68,6 +68,18 @@
   and [Is it working?](docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy).
   Consumers must: nothing.
 
+- `cairn-audit` gains two static rules. `stripe-trim-parity` flags a striped row's `:nth-child`
+  background pattern, or a `.table-zebra`-style class, co-occurring with an unconditioned
+  first/last-child padding trim on the same row class: the trim clips the stripe fill on an
+  even-count group unless it's scoped to its own parity (`:last-child:nth-child(odd)`).
+  `unlayered-font-clobber` flags a scoped `<style>` block declaring `font-family`/`font-size`/
+  `font-weight`/`font` outside an `@layer` on an element that also carries a font-affecting
+  utility class (`text-*` size, `font-*` weight/family): under the no-Preflight admin, an
+  unlayered scoped declaration beats a `@layer utilities` class at any specificity, since cascade
+  layer precedence, not specificity, decides the winner. Both rules run at error tier and apply
+  to any component `static.scope` reaches, not only the admin's own. See
+  [`cairn-audit`](docs/reference/cairn-audit.md#the-static-rules). Consumers must: nothing.
+
 ### Changed
 
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the

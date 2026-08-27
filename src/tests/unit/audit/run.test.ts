@@ -54,10 +54,10 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 }
 
 describe('the static rule registry', () => {
-  // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules and
-  // Task 9b's five CSS-family rules are the modules that have registered since, without touching
-  // run.ts.
-  it('carries the nine static rules Tasks 9a and 9b registered', () => {
+  // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules,
+  // Task 9b's five CSS-family rules, and the harvest-detection pass's Task 3 pair are the
+  // modules that have registered since, without touching run.ts.
+  it('carries the eleven static rules registered since Task 7', () => {
     // Membership, not order: runStatic re-sorts its findings by file and line, so registration
     // order carries no behavioral meaning. Sorting both sides also catches a duplicate id, which
     // a Set-based comparison would silently collapse.
@@ -72,6 +72,8 @@ describe('the static rule registry', () => {
         'focus-parity',
         'motion-band',
         'reduced-motion',
+        'stripe-trim-parity',
+        'unlayered-font-clobber',
       ].sort(),
     );
   });
@@ -112,8 +114,8 @@ describe('runStatic', () => {
     // proven by each rule's own fixtures, not by this generic wiring test.
     const report = runStatic(loadConfig(root));
     // Membership is pinned once, in "the static rule registry" above; here just confirm the
-    // default (no rules override) run wires up the full nine-rule registry.
-    expect(report.ruleIds).toHaveLength(9);
+    // default (no rules override) run wires up the full eleven-rule registry.
+    expect(report.ruleIds).toHaveLength(11);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);
   });

@@ -952,10 +952,10 @@ replacing, and committing an asset stay inside cairn's own media screens.
 site's own `/admin/` route passes the loader's output straight through with no projection step. Row
 order follows the array as given. `mediaLibraryLoad` is authed load data, gated the same way every
 other cairn admin load is; mount `MediaPicker` on an `/admin` route (inside `CairnAdminShell` or a
-site's own authenticated custom route), never on a public page. `onselect` receives a `MediaSelection`: the chosen entry, its
-`media:<slug>.<hash>` reference token to write into content, and the asset's manifest alt to prefill
-a placement. The picker never mutates the array and holds no selection of its own, so the caller
-owns what a pick does next.
+site's own authenticated custom route), never on a public page. `onselect` receives a
+`MediaSelection`: the chosen entry, its `media:<slug>.<hash>` reference token to write into content,
+and the asset's manifest alt to prefill a placement. The picker never mutates the array and holds no
+selection of its own, so the caller owns what a pick does next.
 
 **Contract term, the delivery base.** Option thumbnails compose their `src` under the delivery base
 the mounting context supplies through cairn's internal `MEDIA_BASE_CONTEXT_KEY` Svelte context.

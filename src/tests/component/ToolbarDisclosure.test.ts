@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 import ToolbarDisclosureHarness from './_ToolbarDisclosureHarness.svelte';
 
 describe('ToolbarDisclosure', () => {
@@ -126,6 +127,22 @@ describe('ToolbarDisclosure', () => {
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('does not close on a window-blur focusout (document.hasFocus() false), even with no relatedTarget', async () => {
+    const screen = await render(ToolbarDisclosureHarness, {});
+    const trigger = screen.getByTestId('trigger');
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    const hasFocusSpy = vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    const option1 = screen.getByTestId('option-1').element();
+    // A real window blur (tabbing to browser chrome, switching windows) fires `focusout` on the
+    // still-focused descendant with no `relatedTarget`, the same shape a real Tab-out produces
+    // once `document.activeElement` has moved -- `document.hasFocus()` is the only signal that
+    // tells the two apart.
+    option1.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    hasFocusSpy.mockRestore();
+  });
+
   it('returns focus to the trigger on Escape even when open was driven programmatically, never through a trigger click', async () => {
     const screen = await render(ToolbarDisclosureHarness, {});
     const trigger = screen.getByTestId('trigger');
@@ -144,5 +161,36 @@ describe('ToolbarDisclosure', () => {
     await trigger.click();
     expect(onOpenChange).toHaveBeenCalledWith(true);
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+});
+
+// A panel root whose own class is display-setting (daisyUI's `.menu`, `display: flex`) rather
+// than `dropdown-content`, needs the compiled admin sheet actually loaded: only the packaged
+// `.menu` author rule (not Svelte's own component-scoped `<style>`, which mounts regardless)
+// reproduces the cascade fight the `[hidden]` neutralizing rule exists to win (an author rule of
+// equal specificity to the UA `[hidden]` rule otherwise wins by virtue of not being a UA rule).
+describe('ToolbarDisclosure with a display-setting panel class (compiled CSS)', () => {
+  let styleEl: HTMLStyleElement;
+
+  beforeAll(() => {
+    styleEl = document.createElement('style');
+    styleEl.textContent = compiledAdminCss;
+    document.head.appendChild(styleEl);
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+  });
+
+  afterAll(() => {
+    document.documentElement.removeAttribute('data-theme');
+    styleEl.remove();
+  });
+
+  it('hides a `.menu`-classed panel (no `dropdown-content`) from paint and focus while closed', async () => {
+    const screen = await render(ToolbarDisclosureHarness, { menuPanel: true });
+    const panel = screen.getByTestId('panel').element() as HTMLElement;
+    expect(panel.hidden).toBe(true);
+    expect(getComputedStyle(panel).display).toBe('none');
+    const option1 = screen.getByTestId('option-1').element() as HTMLElement;
+    option1.focus();
+    expect(document.activeElement).not.toBe(option1);
   });
 });

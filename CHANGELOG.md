@@ -20,7 +20,11 @@
   (`aria-expanded`/`aria-controls`, focus-into-panel-on-open, Escape-plus-return-focus,
   outside-pointerdown, and focus-leaving-the-boundary), fully controlled via `open`/`onOpenChange`,
   with the trigger and panel staying the caller's own snippet-authored markup so a `'menu'` facet's
-  ARIA-menu content (role, roving tabindex, reset-to-first) stays outside the primitive. `ListToolbar`
+  ARIA-menu content (role, roving tabindex, reset-to-first) stays outside the primitive. Hiding is
+  primitive-owned: the panel attrs' `hidden` member (`ToolbarDisclosurePanelAttrs`) tracks `open`
+  directly, and a scoped `[hidden]` rule neutralizes any display-setting class the caller's own
+  panel root carries (daisyUI's `.menu`, say), so an omitted `dropdown-content` positioning class
+  can never leave the panel visible and tabbable while `aria-expanded` reads `false`. `ListToolbar`
   folds both duplications onto it; single-open-at-a-time for the facets stays in `ListToolbar` via
   `openFacetId`, since no self-contained primitive can enforce it across siblings. The Svelte-scoped
   `:focus-within` neutralizer that used to live in `ListToolbar`'s own style (`ListToolbar.svelte`,

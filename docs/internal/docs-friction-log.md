@@ -43,7 +43,11 @@ clearings.
   landing page) calls it on every load. Following the emailed link is a cross-site top-level
   navigation, exactly the case `SameSite=Strict` withholds a cookie for, so the server sees no
   existing CSRF cookie on that request and mints a fresh one, overwriting the old value in the
-  browser's cookie jar. Any OTHER admin tab left open from before (a draft mid-edit, say) still
+  browser's cookie jar. (This holds for a webmail client, where the link opens the browser's own
+  navigation; a native mail client that hands the link to the OS or its own embedded webview may
+  send the `Strict` cookie along regardless, so the theory's cross-site framing needs confirming
+  against the actual client mix before it is treated as settled.) Any OTHER admin tab left open
+  from before (a draft mid-edit, say) still
   carries the OLD token baked into its hidden form field from its own earlier SSR, so its next POST
   submits a token that no longer matches the cookie and 403s, with no user action in that tab at
   all. Two further, weaker candidates worth checking next: `content-routes-core.ts:644`'s

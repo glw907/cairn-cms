@@ -18,12 +18,17 @@ an outside control to prove the outside-pointerdown/focusout mechanics against.
     /** When true, `option-1` renders `tabindex="-1"` (a roving-tabindex option that is not the
      *  current tab stop), proving the focus-into-panel query skips it for `option-2`. */
     firstOptionNotTabbable?: boolean;
+    /** When true, the panel's own root carries `class="menu"` instead of `dropdown-content`:
+     *  proves the `[hidden]` neutralizing rule, not the `.dropdown-content`-scoped one, is what
+     *  hides a display-setting daisyUI facet class while closed. */
+    menuPanel?: boolean;
     onOpenChange?: (open: boolean) => void;
   }
   let {
     ariaHaspopup,
     uncontrolled = false,
     firstOptionNotTabbable = false,
+    menuPanel = false,
     onOpenChange,
   }: Props = $props();
 
@@ -49,7 +54,7 @@ an outside control to prove the outside-pointerdown/focusout mechanics against.
     <button type="button" data-testid="extra">Extra</button>
   {/snippet}
   {#snippet panel(attrs)}
-    <div class="dropdown-content" data-testid="panel" {...attrs}>
+    <div class={menuPanel ? 'menu' : 'dropdown-content'} data-testid="panel" {...attrs}>
       <button type="button" data-testid="option-1" tabindex={firstOptionNotTabbable ? -1 : 0}>
         Option 1
       </button>

@@ -244,6 +244,9 @@ not an affordance of their own an AT user should be told about, so they attach i
     }
   }
   $effect(() => {
+    // Reads plain-`let` `containerEl` (not `$state`) deliberately: `bind:this` resolves before
+    // this effect's first flush, and the container `<div>` below renders unconditionally, so the
+    // ref is already set by the time this effect first runs.
     const el = containerEl;
     if (!el) return;
     el.addEventListener('keydown', onContainerKeydown);
@@ -300,6 +303,16 @@ not an affordance of their own an AT user should be told about, so they attach i
      `dropdown-content`/`menu` classes, or whatever else its panel snippet renders), not a
      `display` value this component would have to guess and re-assert. */
   .toolkit-toolbar-disclosure:not(.dropdown-open) :global(.dropdown-content) {
+    display: none !important;
+  }
+
+  /* Makes the `hidden` attribute (set via `ToolbarDisclosurePanelAttrs`, above) actually hide a
+     panel root whose own class carries a daisyUI display-setting author rule (e.g. `.menu`'s
+     `display: flex`), which otherwise outranks the UA `[hidden]` rule under the cascade's
+     equal-specificity author-wins-over-UA tiebreak. Without this, a panel snippet whose root is
+     `class="menu"` (no `dropdown-content`) stays visually `display: flex` while `hidden` is set
+     and `aria-expanded` reads `false`. */
+  .toolkit-toolbar-disclosure :global([hidden]) {
     display: none !important;
   }
 </style>

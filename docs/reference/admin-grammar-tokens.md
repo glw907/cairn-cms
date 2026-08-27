@@ -85,6 +85,27 @@ A component writes `card-shell` and, where the surface floats free, `card-shadow
 bracketed `var()` form the roles replace (`border-[var(--cairn-card-border)]`,
 `shadow-[var(--cairn-shadow)]`), for the same reason a type role replaces a bracketed font-size.
 
+## Status-text idioms
+
+Two further utilities read the admin's accessible status inks: `cairn-text-warning` and
+`cairn-text-success`. They are not grammar tokens (color is a palette choice, not a structural
+role), but they exist for the same reason `text-muted`/`text-subtle` do: a name markup can write
+instead of a bracketed `var()` wrapper.
+
+| Utility | Property | Token |
+|---|---|---|
+| `cairn-text-warning` | `color` | `--cairn-warning-ink` |
+| `cairn-text-success` | `color` | `--color-positive-ink` |
+
+Both read the on-surface TEXT ink for their tone, never the FILL tone (`--color-warning`,
+`--color-success`) a bare `text-warning`/`text-success` would otherwise resolve to if Tailwind's
+own core color utilities compiled them. The fills are tuned for a badge or alert background, not
+small text: `--color-warning` measures about 2.2:1 as text on `base-100`, well under the 4.5:1
+WCAG 1.4.3 floor. `--cairn-warning-ink` and `--color-positive-ink` are the already-locked,
+measured, readable-small-text counterparts (`docs/internal/admin-design-system.md`, "The
+accessibility text inks"). Write `cairn-text-warning`/`cairn-text-success`, never
+`text-[var(--cairn-warning-ink)]` or the bare `text-warning`/`text-success`.
+
 ## Where each form belongs
 
 Markup (a component's template) writes the named utility: `type-meta`, `gap-group`, and so on.

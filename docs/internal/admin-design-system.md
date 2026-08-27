@@ -209,12 +209,23 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   word or glyph drawn on `base-100` uses this token instead. Light is `oklch(50% 0.13 70)` (5.98:1 on
   base-100, 5.59:1 on the 8% accent chip tint); dark is `oklch(80% 0.14 70)` (8.61:1 and 6.20:1). The
   needs-alt markers use it: the picker's needs-alt label and the `.cm-cairn-media-needs-alt` rule in
-  the editor's media chip. Reference it as `text-[var(--cairn-warning-ink)]`.
+  the editor's media chip. Reference it through the `cairn-text-warning` utility
+  (`docs/reference/admin-grammar-tokens.md`, "Status-text idioms"), never the bracketed
+  `text-[var(--cairn-warning-ink)]` form or the bare `text-warning`, which resolves to the
+  inaccessible fill tone if it ever compiles at all.
 - `--color-positive-ink` is the green counterpart, the on-surface confirming TEXT ink for a positive
   status word on `base-100`. Light is `oklch(48% 0.12 150)` (~4.9:1 on base-100); dark is
-  `oklch(78% 0.12 150)` (~7:1). The hero field's "Described" alt-status chip uses it. Reference it as
-  `text-[var(--color-positive-ink)]`. It is a defined token, not a mockup-only color; a chip that
-  references an undefined custom property falls back to body ink with no gate to catch it.
+  `oklch(78% 0.12 150)` (~7:1). The hero field's "Described" alt-status chip uses it. Reference it
+  through the `cairn-text-success` utility, for the same reason. It is a defined token, not a
+  mockup-only color; a chip that references an undefined custom property falls back to body ink
+  with no gate to catch it.
+- **Unchecked checkbox/radio edge (2026-08-27).** DaisyUI's own `.checkbox`/`.radio` border a
+  20%-mix fallback (`color-mix(..., var(--color-base-content) 20%, transparent)`) when no color
+  variant supplies `--input-color`, which no admin call site does: measured 1.492:1 light / 1.773:1
+  dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor. A pinned unlayered rule in
+  `cairn-admin.css` (rule 12 of 12) raises the unchecked edge to a 55% mix, the same one already
+  locked for the scrollbar thumb and the outline chip border: 3.586:1 light / 4.959:1 dark. `.toggle`
+  needed no change; its own construction already mixes 50% and clears the floor unaided.
 
 ## Type
 
@@ -541,6 +552,40 @@ alongside the component recipes above and below it.
   `Pagination` is the one caller that renders no glyph at all: its selected page conveys state
   through `aria-current="page"` and fill alone, a known exception, out of conformance on light
   (ROADMAP.md, "Next", filed 2026-07-31).
+- **Plain bulleted list (`.toolkit-list`, 2026-08-27):** a bare `<ul>`/`<ol>` that wants an ordinary
+  bulleted or numbered list, not daisyUI's own `.list` component, adds `class="toolkit-list"` to
+  drop the UA's 40px marker gutter (`padding-inline-start: 0`, same reset as the `.list` opt-in, on
+  its own class). `.list` is not a substitute: it is daisyUI's structured-ROWS component
+  (`display: flex; flex-direction: column`), and applying it to a plain list silently blockifies the
+  `<li>` children, which suppresses their marker box the same way `.list-row`'s own `display: grid`
+  does for a structured row, so a `<ul class="list">` renders with no visible bullet at all
+  (measured: the `<li>`'s content sits flush with the `<ul>`'s own edge, zero px of marker space).
+  `.toolkit-list` carries no `display` or `font-size` of its own, so the `<li>` keeps its native
+  marker box and the bullet still paints, just without the reserved gutter. Never `list-style: none`
+  on either class (WCAG 1.3.1 removes list semantics from the accessibility tree in
+  WebKit/VoiceOver), and never a bare `ul`/`ol` ancestry selector (the admin wrapper also hosts the
+  editor's rendered markdown preview, which needs its own bullets untouched). No admin screen
+  carries a plain bulleted list today (a grep of every bare `<ul>`/`<ol>` in `src/lib/components` and
+  `src/lib/admin-toolkit` found only structured lists: menus, listboxes, flex rows with their own
+  gap, daisyUI's `.steps`), so `.toolkit-list` ships as documented infrastructure for the next screen
+  that needs one, rather than an in-tree call site today.
+- **Field/button focus-ring color, decline-with-reason (2026-08-27):** a field's `:focus` outline and
+  a neutral button's `:focus-visible` outline both resolve to the same color, `base-content`
+  (daisyUI's own defaults: `.input:focus`/`.select:focus`/`.textarea:focus` set
+  `--input-color: var(--color-base-content)`, and `.btn`'s own base rule sets
+  `outline-color: var(--btn-color, var(--color-base-content))`), measured directly against the
+  compiled sheet. A `.btn-primary` button reads a primary-toned ring only because it supplies
+  `--btn-color: var(--color-primary)` through its own variant class, and no admin field ever carries
+  an analogous `.input-primary`/`.select-primary`/`.textarea-primary` variant, so a primary action
+  button (Save, Publish) and a plain text field read as differently colored on focus in practice, even
+  though the underlying mechanism (variant supplies the ring color, neutral falls back to
+  `base-content`) is identical for both control families and already the pattern this file's own
+  Truthfulness note (above, "One brand-violet keyboard-focus ring") accepts for `.btn`. Forcing a
+  primary ring onto every field regardless of variant would need its own unlayered override (the
+  same later-layer-wins mechanic the Truthfulness note already documents as otherwise unfixable) for
+  a purely cosmetic unification with no accessibility gain, since `base-content` already clears a
+  higher-margin ring than a primary tint would on either theme. Report-and-change-nothing, the same
+  posture `ExpandableRow`'s trigger-target bullet models.
 - **Container fold affordance:** a directive container folds from the rail band. One chevron replaces
   the container's innermost rail bar on the opener row (down while the caret is inside, right while
   folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target.

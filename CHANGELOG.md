@@ -39,6 +39,15 @@
   `/admin-toolkit`, beside the component whose prop signature names it, and `/sveltekit` keeps its
   existing re-export. Consumers must: nothing.
 
+- The packaged admin sheet (`cairn-admin.css`) gains two new classes: `cairn-text-warning` and
+  `cairn-text-success`, the on-surface warning and success text idioms (`--cairn-warning-ink` and
+  `--color-positive-ink`), replacing the bracketed `text-[var(--cairn-warning-ink)]` form with a
+  named, documented utility (`docs/reference/admin-grammar-tokens.md`, "Status-text idioms"), and
+  `toolkit-list`, an opt-in `<ul>`/`<ol>` class that drops the UA's 40px marker-gutter reservation
+  for a plain bulleted or numbered list without pulling in daisyUI's own `.list` component
+  semantics (which blockify `<li>` children and silently suppress their marker box). Consumers
+  must: nothing; both are additive.
+
 ### Changed
 
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the
@@ -72,6 +81,12 @@
   one `use:enhance` fires by default after a successful submit) restores the token instead of
   blanking the field toward the guard's next check. The fix lives entirely inside the component,
   with no consumer-side change. Consumers must: nothing.
+
+- An unchecked `.checkbox`/`.radio` in the packaged admin sheet raises its edge from daisyUI's
+  stock 20% `--color-base-content` mix (measured 1.492:1 light / 1.773:1 dark against `base-100`,
+  under the WCAG 1.4.11 3:1 non-text floor) to the same 55% mix already locked for the scrollbar
+  thumb and the outline chip border (3.586:1 light / 4.959:1 dark). `.toggle` needed no change; its
+  own construction already clears the floor unaided. Consumers must: nothing.
 
 ## 0.96.0
 

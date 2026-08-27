@@ -139,7 +139,7 @@ describe('ExpandableRow', () => {
 
   it('does not show the row-toggle pointer cursor over a data-cairn-inert-cell wrapped cell', async () => {
     const inertSummary = staticSnippet(
-      '<td data-cairn-inert-cell><button type="button">Edit</button></td>'
+      '<td data-cairn-inert-cell><span>Household</span><button type="button">Edit</button></td>'
     );
     const screen = await render(ExpandableRow, {
       expanded: false,
@@ -151,11 +151,21 @@ describe('ExpandableRow', () => {
       triggerLabel: 'Expand the Alvarez household',
     });
     const inertCell = screen.container.querySelector('[data-cairn-inert-cell]') as HTMLElement;
+    const plainSpan = screen.container.querySelector('[data-cairn-inert-cell] span') as HTMLElement;
     const innerButton = screen.container.querySelector(
       '[data-cairn-inert-cell] button'
     ) as HTMLElement;
-    expect(getComputedStyle(inertCell).cursor).toBe('auto');
-    expect(getComputedStyle(innerButton).cursor).toBe('auto');
+    // The wrapper and its plain inline content (the span) inherit `cursor` from their ancestry, so
+    // the wrapper's own `cursor: auto` reset (see the component's own style block) reaches both:
+    // neither may read as the row-toggle pointer.
+    expect(getComputedStyle(inertCell).cursor).not.toBe('pointer');
+    expect(getComputedStyle(plainSpan).cursor).not.toBe('pointer');
+    // A plain `<button>` never inherits `cursor` at all -- the browser's UA sheet gives form
+    // controls an explicit `cursor: default` of their own -- so it reads the UA default here, not
+    // the wrapper's `auto` and not the row's `pointer`. This is the case the wildcard rule used to
+    // handle by brute force (and, in doing so, also stomped a `.btn`'s own pointer); asserting the
+    // UA default directly is what proves the wildcard is unnecessary for a plain control.
+    expect(getComputedStyle(innerButton).cursor).toBe('default');
   });
 
   it('still activates the trigger button by click, unaffected by the inert-cell guard', async () => {

@@ -139,13 +139,23 @@ verified against zebra stripes in both themes):**
 
   /* A `data-cairn-inert-cell` wrapper opts its own click out of the row toggle (this component's
      own header comment); the row-level pointer cursor above would otherwise mislead a hover over
-     that escape into reading as "this also toggles the row." `:global()` on both selectors: the
-     wrapper and its contents are the caller's own snippet markup, opaque to this component's
-     compiler. `cursor: auto` resets to each element's own default (a nested button still shows its
-     own pointer, plain text falls back to the text cursor) rather than a single override guessing
-     what the caller wrapped. */
-  .toolkit-expandable-row-summary :global([data-cairn-inert-cell]),
-  .toolkit-expandable-row-summary :global([data-cairn-inert-cell] *) {
+     that escape into reading as "this also toggles the row." The invariant: the inert cell and
+     its plain content must not show the row-toggle pointer, but a self-cursored control keeps its
+     own cursor. `cursor: auto` on the wrapper resets the inherited row pointer for the wrapper
+     itself and any plain content inside it -- `cursor` is an inherited property, so ordinary text
+     and inline elements (a `<span>`, for instance) pick this reset back up without a rule of their
+     own.
+
+     Deliberately no `[data-cairn-inert-cell] *` wildcard reaching into the wrapper's descendants.
+     A form control (`<button>`, `<select>`, ...) never inherits `cursor` in the first place -- the
+     browser's UA sheet gives it an explicit `cursor: default` of its own -- so a wildcard override
+     would be fighting a value that was never inherited to begin with. Worse, it would also stomp a
+     `.btn`'s own `cursor: pointer`, which daisyUI sets explicitly, on exactly the nested per-row
+     action (an edit or delete button) this escape hatch exists to host: that pointer means "this
+     control is clickable," and wrapping the control in an inert cell must not flatten that
+     reading to `auto`. `:global()`: the wrapper is the caller's own snippet markup, opaque to this
+     component's compiler. */
+  .toolkit-expandable-row-summary :global([data-cairn-inert-cell]) {
     cursor: auto;
   }
 

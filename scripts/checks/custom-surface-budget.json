@@ -21,7 +21,8 @@
           "[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-active:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])",
           "[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):hover",
-          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .checkbox:not(:checked, :indeterminate, [aria-checked='true']), :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .radio:not(:checked, [aria-checked='true'])"
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .checkbox:not(:checked, :indeterminate, [aria-checked='true']), :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .radio:not(:checked, [aria-checked='true'])",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .input:not(:focus, :focus-within), :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .select:not(:focus, :focus-within, .toolkit-toolbar-select), :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .textarea:not(:focus, :focus-within)"
         ],
         "componentsLayerCap": 19,
         "retiredTokenBudget": 0

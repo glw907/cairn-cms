@@ -372,7 +372,9 @@ CairnAdminShell, ReferenceField, MediaCaptureCard, ManageEditors) reaches the sa
 through `cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/`cairn-chip-outline`
 classes; none paints anything on its own; all three compose with `badge` (and typically
 `badge-outline` for `cairn-chip-outline`, which supplies the border's width and style), the same
-shape `StatusChip` itself assembles from.
+shape `StatusChip` itself assembles from. All three pin `font-weight: 400`; since none carries a
+Tailwind layer, that pin outranks any `font-semibold`/`font-medium` Tailwind utility placed on the
+same element, so a hand-composed chip should carry no weight utility of its own.
 
 ```svelte
 <StatusChip label="Overdue" register="warning" legend="Full benefits continue for 30 days." />

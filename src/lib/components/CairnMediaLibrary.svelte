@@ -1567,7 +1567,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               {#if used > 0}
                 <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold text-muted">used {used}</span>
               {:else}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold text-[var(--cairn-warning-ink)]">Not referenced</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 type-chip font-semibold tracking-small-semibold cairn-text-warning">Not referenced</span>
               {/if}
               {#if brokenHashes.has(asset.hash)}
                 <span data-cairn-broken class="flex flex-col items-center gap-1 text-subtle">
@@ -1884,7 +1884,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                       <FileTextIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />
                       <span class="flex min-w-0 flex-1 flex-col">
                         <span class="truncate type-meta font-medium">{entry.title}</span>
-                        <span class="truncate font-[family-name:var(--font-editor)] type-chip text-[var(--cairn-warning-ink)]">{branchNameOf(entry)}</span>
+                        <span class="truncate font-[family-name:var(--font-editor)] type-chip cairn-text-warning">{branchNameOf(entry)}</span>
                       </span>
                       <ChevronRightIcon class="h-3.5 w-3.5 flex-none text-muted opacity-60" aria-hidden="true" />
                     </a>
@@ -1998,7 +1998,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   <li>
                     <a href="/admin/{entry.concept}/{entry.id}" class="flex flex-col rounded px-1.5 py-1 no-underline hover:bg-[var(--cairn-error-ink)]/10">
                       <span class="type-meta font-medium">{entry.title}</span>
-                      <span class="font-[family-name:var(--font-editor)] type-chip text-[var(--cairn-warning-ink)]">{branchNameOf(entry)}</span>
+                      <span class="font-[family-name:var(--font-editor)] type-chip cairn-text-warning">{branchNameOf(entry)}</span>
                     </a>
                   </li>
                 {/each}
@@ -2208,7 +2208,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <p class="mb-2 type-meta leading-relaxed text-muted">These edits are on their own branches and are not touched. Each keeps the old file until it is published again.</p>
               <ul class="flex list-none flex-col gap-1 p-0">
                 {#each replacePlan?.branchDelta ?? [] as delta (delta.branch)}
-                  <li class="font-[family-name:var(--font-editor)] type-label text-[var(--cairn-warning-ink)]">{delta.branch}</li>
+                  <li class="font-[family-name:var(--font-editor)] type-label cairn-text-warning">{delta.branch}</li>
                 {/each}
               </ul>
             </div>
@@ -2393,7 +2393,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
               <!-- The body-vs-hero caveat, anchored beside will-fill where the surprised author looks. -->
               <div class="flex items-start gap-2 px-0.5 type-meta leading-relaxed">
-                <TriangleAlertIcon class="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />
+                <TriangleAlertIcon class="mt-0.5 h-3.5 w-3.5 flex-none cairn-text-warning" aria-hidden="true" />
                 <span>A body image has no place to record decorative, so an empty body image always reads as a gap to fill. Only a hero can be skipped as decorative.</span>
               </div>
             {/if}
@@ -2403,7 +2403,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             {#if altCustomRows.length > 0}
               <div data-cairn-alt-custom class="overflow-hidden card-shell">
                 <div class="flex items-center gap-2.5 p-3">
-                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-[var(--cairn-warning-ink)]/10 text-[var(--cairn-warning-ink)]" aria-hidden="true">
+                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-[var(--cairn-warning-ink)]/10 cairn-text-warning" aria-hidden="true">
                     <MegaphoneIcon class="h-3.5 w-3.5" />
                   </span>
                   <div class="min-w-0 flex-1">
@@ -2412,7 +2412,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                       {altOverwrite ? 'You chose to overwrite these.' : 'Left alone by default. You can overwrite these too.'}
                     </div>
                   </div>
-                  <span class="flex-none type-meta font-bold tabular-nums text-[var(--cairn-warning-ink)]">{altCustomRows.length}</span>
+                  <span class="flex-none type-meta font-bold tabular-nums cairn-text-warning">{altCustomRows.length}</span>
                 </div>
                 <!-- The opt-in band, styled in the danger family: overwriting an editor's words is the
                      destructive choice. The checkbox is a REAL native input in the a11y tree. -->
@@ -2494,7 +2494,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <p class="mb-2 type-meta leading-relaxed text-muted">These edits are on their own branches and are not changed. Each keeps its alt as the author has it there.</p>
               <ul class="flex list-none flex-col gap-1 p-0">
                 {#each altPlan?.branchDelta ?? [] as delta (delta.branch)}
-                  <li class="font-[family-name:var(--font-editor)] type-label text-[var(--cairn-warning-ink)]">{delta.branch}</li>
+                  <li class="font-[family-name:var(--font-editor)] type-label cairn-text-warning">{delta.branch}</li>
                 {/each}
               </ul>
             </div>
@@ -2638,9 +2638,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                warning register on plain base-100 (a skip is not a failure), text-only. -->
           <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)]">
             <div class="flex items-start gap-2.5 bg-[color-mix(in_oklab,var(--cairn-warning-ink)_8%,var(--color-base-100))] p-3">
-              <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />
+              <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none cairn-text-warning" aria-hidden="true" />
               <div class="type-meta leading-relaxed">
-                <b class="font-semibold text-[var(--cairn-warning-ink)]">{bulkWillSkip.length} will be skipped, still in use</b>
+                <b class="font-semibold cairn-text-warning">{bulkWillSkip.length} will be skipped, still in use</b>
                 <span class="mt-0.5 block type-meta text-muted">A bulk delete never removes an image that is still referenced. To delete one of these, open it and use Delete with the typed confirm, where you can see and confirm what breaks.</span>
               </div>
             </div>
@@ -2649,7 +2649,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 {@const where = usageCount(asset.hash)}
                 <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
                   <span class="min-w-0 flex-1 truncate type-meta font-semibold">{asset.slug}</span>
-                  <span class="flex-none type-label font-semibold text-[var(--cairn-warning-ink)]">found in {where} {where === 1 ? 'entry' : 'entries'}</span>
+                  <span class="flex-none type-label font-semibold cairn-text-warning">found in {where} {where === 1 ? 'entry' : 'entries'}</span>
                 </li>
               {/each}
             </ul>
@@ -2719,7 +2719,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <div class="type-label uppercase tracking-wide text-muted">Deleted</div>
           </div>
           <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
-            <div class="type-heading font-bold tabular-nums text-[var(--cairn-warning-ink)]">{res.skipped.length}</div>
+            <div class="type-heading font-bold tabular-nums cairn-text-warning">{res.skipped.length}</div>
             <div class="type-label uppercase tracking-wide text-muted">Skipped</div>
           </div>
           <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
@@ -2730,7 +2730,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
         {#if res.skipped.length > 0}
           <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)]">
-            <div class="inline-flex w-full items-center gap-2 bg-[color-mix(in_oklab,var(--cairn-warning-ink)_8%,var(--color-base-100))] p-2.5 type-meta font-semibold text-[var(--cairn-warning-ink)]">
+            <div class="inline-flex w-full items-center gap-2 bg-[color-mix(in_oklab,var(--cairn-warning-ink)_8%,var(--color-base-100))] p-2.5 type-meta font-semibold cairn-text-warning">
               <TriangleAlertIcon class="h-4 w-4 flex-none" aria-hidden="true" /> Skipped, a reference turned up on the recheck
             </div>
             <ul class="flex max-h-36 list-none flex-col overflow-y-auto">
@@ -2845,7 +2845,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </div>
       <div role="status" class="flex flex-col gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3.5 type-meta leading-relaxed">
         <span class="inline-flex items-center gap-2 font-semibold">
-          <TriangleAlertIcon class="h-4 w-4 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" /> Could not read every branch
+          <TriangleAlertIcon class="h-4 w-4 flex-none cairn-text-warning" aria-hidden="true" /> Could not read every branch
         </span>
         <p class="text-base-content">
           A file looks orphaned only if no record on any branch points to it. One open edit would not load, so cairn cannot be sure. It will not show a list of files to purge that it might be wrong about.

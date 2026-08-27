@@ -252,7 +252,7 @@ while a site stores images only.
             {#if entry.alt.trim() === ''}
               <!-- The needs-alt flag: a glyph plus a label, never hue alone (the spec a11y rule),
                    matching the Task 3 source-chip treatment. -->
-              <span class="inline-flex items-center gap-1 type-label font-medium text-[var(--cairn-warning-ink)]">
+              <span class="inline-flex items-center gap-1 type-label font-medium cairn-text-warning">
                 <span aria-hidden="true">&#9888;</span>
                 <span>Needs alt</span>
               </span>

@@ -496,20 +496,25 @@
     padding-inline-start: 0;
   }
 
-  /* 7. `.toolkit-list` (2026-08-27 admin sheet fixes, verify-first ruling): a SEPARATE opt-in
-     from `.list` above, deliberately not folded into it. `.list` is daisyUI's OWN structured-
-     rows component (`.list { display: flex; flex-direction: column; font-size: .875rem }`), not
-     a general plain-bullet-list reset, and reusing it for an ordinary bulleted content list
-     carries exactly the baggage the verify-first ruling asked about: a flex/column container
-     blockifies its `<li>` children, which suppresses their marker box the same way `.list-row`'s
-     own `display: grid` already does for daisyUI's structured rows (rule 6's own comment), so a
-     plain `<ul class="list">` silently renders with NO bullets at all (measured: zero px between
-     the `<ul>`'s and the `<li>`'s left edges, i.e. no marker occupies any space), on top of
-     forcing daisyUI's 14px font-size onto prose that may want its own. `.toolkit-list` carries
-     only the same padding reset rule 6 does, on a class that adds no display or font-size of its
-     own, so a plain list keeps its native `list-item` box and its marker (measured: the bullet
-     still paints, just without the 40px UA gutter). Same discipline as rule 6: no `list-style:
-     none` (WCAG 1.3.1), and scoped to the class, never a bare `ul`/`ol`, for the same
+  /* 7. `.toolkit-list` (2026-08-27 admin sheet fixes; rewritten 2026-08-27 review, since the
+     original ruling's marker claim was false): a SEPARATE opt-in from `.list` above, deliberately
+     not folded into it. `.list` is daisyUI's OWN structured-rows component (`.list { display:
+     flex; flex-direction: column; font-size: .875rem }`), not a general plain-bullet-list reset,
+     and reusing it for an ordinary bulleted content list carries `.list`'s real baggage: the
+     forced flex/column layout (wrong for prose, which wants normal block flow between items) and
+     the forced .875rem font-size (wrong for prose that wants to inherit its own). Rendered against
+     the compiled sheet, `ul.list > li` still paints a marker: a flex item with a `list-item`
+     computed display keeps its `::marker` box in Chromium, so the earlier "suppressed marker,
+     zero px offset" claim was false. The zero px IS real, but it comes from `padding-inline-start:
+     0` on both `.list` and `.toolkit-list` alike, not from marker suppression (measured against
+     the built `dist/components/cairn-admin.css`, both classes rendering an identical `li` left
+     edge flush with the `ul` left edge; a bare unstyled `<ul>` in the same render measures a 40px
+     UA gutter instead, and both `.list` and `.toolkit-list` paint a visible bullet at that flush
+     position). `.toolkit-list` carries only the same padding reset rule 6 does, with none of
+     `.list`'s forced flex/column display or font-size, so a plain list keeps normal block flow
+     between items and inherits its ambient font-size (measured: 16px inherited under
+     `.toolkit-list` versus `.list`'s forced 14px, same render). Same discipline as rule 6: no
+     `list-style: none` (WCAG 1.3.1), and scoped to the class, never a bare `ul`/`ol`, for the same
      markdown-preview reason. */
   ul.toolkit-list,
   ol.toolkit-list {
@@ -718,7 +723,7 @@
    lets the theme blocks win), because no layered rule can outrank a later layer; it restores a
    visible focus indicator on the popover and nav menu items. The negative offset draws the ring
    inside the item, clear of the menu panel's clipped corners.
-   PINNED unlayered rule 1 of 12 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
+   PINNED unlayered rule 1 of 13 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
    on menu items. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
   outline: 2px solid var(--color-primary);
@@ -740,7 +745,7 @@
    restatement for the non-ghost case (same computed color), so no selector was added to the pinned set
    below. EditPage.svelte matches by dropping the extra opacity-50 utility it used to layer on top, which
    halved this control's visibility again on top of daisyUI's own dimming.
-   PINNED unlayered rule 2 of 12 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
+   PINNED unlayered rule 2 of 13 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
    toolbar button losing its why-it-is-off tooltip to pointer-events:none, and a guarded ghost button
    fading to a rendering gap. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
@@ -759,7 +764,7 @@
    `CairnAdminShell.svelte` gives `.drawer-content` a matching `lg:ml-56` margin instead. Deliberately
    UNLAYERED, the same mechanism as the two rules above: no layered rule can outrank daisyUI's
    utilities-layer rule.
-   PINNED unlayered rule 3 of 12 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 3 of 13 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the persistent desktop sidebar drifting with the page scroll. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -771,7 +776,7 @@
    generates the `xl:drawer-open` utility from this component's own class usage (no config change
    needed; the JIT scanner picks it up from CairnAdminShell.svelte the same way it already does for
    `lg:drawer-open`). Deliberately UNLAYERED, the same mechanism as the three rules above.
-   PINNED unlayered rule 4 of 12 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 4 of 13 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the desk route's persistent sidebar drifting with the page scroll at xl. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -810,7 +815,7 @@
    rule`, engine-rulings.md) pending a chroma-aware repair that can tell a hue-distinct low-contrast
    tint from a truly invisible one; this pass does not reopen that repair, only records the position
    so a measured "violation" here reads as expected rather than as a regression.
-   PINNED unlayered rule 5 of 12 (gate match: `.cairn-chip-outline`); bug it prevents: a hand-built
+   PINNED unlayered rule 5 of 13 (gate match: `.cairn-chip-outline`); bug it prevents: a hand-built
    chip reading as a clickable button (full-strength border) or sitting under the audit's 3:1 floor. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-outline {
   font-weight: 400;
@@ -818,7 +823,7 @@
   border-color: color-mix(in oklab, currentColor 55%, transparent);
 }
 
-/* PINNED unlayered rule 6 of 12 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
+/* PINNED unlayered rule 6 of 13 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
    either melting into its ground (badge-ghost's old failure) or keeping a border that competes
    with an attention state rendered next to it. Retuned from the first generation's flat 14% mix
    into base-300 (which measured 1.68-2.03:1 against the four theme/ground cells, above this
@@ -838,7 +843,7 @@
   background-color: color-mix(in oklab, var(--color-base-content) var(--cairn-chip-quiet-mix), var(--color-base-200));
 }
 
-/* PINNED unlayered rule 7 of 12 (gate match: `.cairn-chip-warning`); bug it prevents: a state that
+/* PINNED unlayered rule 7 of 13 (gate match: `.cairn-chip-warning`); bug it prevents: a state that
    needs attention (an unpublished-changes marker, a needs-alt notice) reading as visually identical
    to a settled quiet chip. The fill tints `--color-warning` into the same base-200 anchor the quiet
    recipe mixes into (so both registers share one anchor and differ only by hue and per-theme
@@ -871,7 +876,7 @@
    a compact row (a flex wrapper holding two or more narrower controls side by side) inside a stacked
    label and keep that row's own width choice; a descendant selector reached through the wrapper and
    forced every nested control to 100% regardless.
-   PINNED unlayered rule 8 of 12 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
+   PINNED unlayered rule 8 of 13 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
    field's control pinning at daisyUI's fixed 20rem width inside a wider grid cell, so two stacked
    fields' controls in the same column stop sharing a left AND right edge once the cell exceeds
    20rem. */
@@ -931,7 +936,7 @@
    control's own text utility too (`btn btn-active text-error` painted `--btn-fg` instead of
    `text-error`'s ink on dark). The outline/dash rule below carries that declaration, scoped to
    the forms that need it.
-   PINNED unlayered rule 9 of 12 (gate match:
+   PINNED unlayered rule 9 of 13 (gate match:
    `[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])`);
    bug it prevents: a segmented control's selected state reading as visually identical to its unselected
    siblings on the dark theme, or a variant selected control losing its accent. */
@@ -964,7 +969,7 @@
    utilities-layer declarations (`@layer daisyui.l1.l2` / `daisyui.l1.l2.l3`), which a
    components-layer rule cannot outrank regardless of specificity; UNLAYERED for the same reason
    as the rule above.
-   PINNED unlayered rule 10 of 12 (gate match:
+   PINNED unlayered rule 10 of 13 (gate match:
    `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-active:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])`);
    bug it prevents: an outline or dashed selected control painting its own ink on its own fill,
    on either theme. */
@@ -989,7 +994,7 @@
    is stock, so nothing there needs repairing. Gated on `@media (hover: hover)`, the same guard
    daisyUI puts on its own button hover recipes, so a touch device does not strand the lighter
    fill on the last-tapped segment.
-   PINNED unlayered rule 11 of 12 (gate match: the rule 9 selector plus `:hover`, inside
+   PINNED unlayered rule 11 of 13 (gate match: the rule 9 selector plus `:hover`, inside
    `@media (hover: hover)`);
    bug it prevents: a selected control giving no visible feedback on hover. */
 @media (hover: hover) {
@@ -1030,13 +1035,57 @@
    ratios red (1.492:1 light / 1.773:1 dark, under the 3:1 floor); restoring 55% turns them green
    again (status-chip-register-tuning.test.ts's sibling proof,
    interactive-control-edge-contrast.test.ts, carries this exact break-and-restore).
-   PINNED unlayered rule 12 of 12 (gate match: `.checkbox:not(:checked, :indeterminate,
+   PINNED unlayered rule 12 of 13 (gate match: `.checkbox:not(:checked, :indeterminate,
    [aria-checked='true']), .radio:not(:checked, [aria-checked='true'])`); bug it prevents: an
    unchecked checkbox or radio's edge sitting under the WCAG 1.4.11 non-text contrast floor. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
   .checkbox:not(:checked, :indeterminate, [aria-checked='true']),
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
   .radio:not(:checked, [aria-checked='true']) {
+  border-color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+}
+
+/* The unfocused `.input`/`.select`/`.textarea` edge (2026-08-27 admin sheet fixes, extends the
+   checkbox/radio fix above to the rest of the field family): all three resolve their border
+   through the identical `--input-color` construction the checkbox/radio rule above fixes
+   (`border: var(--border) solid var(--input-color, transparent)`, with `--input-color` itself
+   `color-mix(in oklab, var(--color-base-content) 20%, transparent)` when no color variant
+   supplies it, which no admin call site does). Measured against base-100: 1.492:1 light / 1.773:1
+   dark, both under the WCAG 1.4.11 non-text 3:1 floor, the same numbers as the checkbox/radio case
+   above since the underlying token pair is identical.
+   The border is a utilities-layer declaration, which a components-layer rule cannot outrank
+   regardless of specificity (the same reason every rule above is unlayered); UNLAYERED for the
+   same reason. 55% reuses the exact mix already locked above (and for the scrollbar thumb and the
+   outline chip border); here it measures 3.586:1 light / 4.959:1 dark, both comfortably clearing
+   3:1 (unchanged from the checkbox/radio numbers, since both share the same base-content/base-100
+   pair).
+   Scoped to `:not(:focus, :focus-within)`: a focused field already sets `--input-color` to full
+   `var(--color-base-content)` (daisyUI's own focus rule), a far stronger edge, and this override
+   would otherwise outrank that state too, since an unlayered rule always wins over a layered one
+   regardless of pseudo-class specificity.
+   `.select` additionally excludes `.toolkit-toolbar-select` (`ListToolbar.svelte`'s own select
+   facet): that call site deliberately overrides `--input-color` in its own scoped `<style>` to
+   `var(--cairn-card-border)`, so the select reads as the same quiet-chrome family as its sibling
+   `'menu'` facet (both share one hairline border vocabulary) rather than as a standard text field.
+   This rule's `border-color` is a longhand, unlayered like that scoped rule, and would otherwise
+   outrank it regardless of the scoped rule's own `--input-color` value, repainting a deliberately
+   harmonized control back to the generic field edge. `--cairn-card-border` is not this rule's
+   concern: it is a structural card/chrome hairline measured and owned elsewhere, not the
+   `--input-color` fallback this rule exists to raise.
+   Falsifiable the same way as the rule above: dropping the mix back to 20% turns both measured
+   ratios red (1.492:1 light / 1.773:1 dark, under the 3:1 floor); restoring 55% turns them green
+   again (interactive-control-edge-contrast.test.ts carries this exact break-and-restore for the
+   field family).
+   PINNED unlayered rule 13 of 13 (gate match: `.input:not(:focus, :focus-within),
+   .select:not(:focus, :focus-within, .toolkit-toolbar-select),
+   .textarea:not(:focus, :focus-within)`); bug it prevents: an unfocused text field, select, or
+   textarea's edge sitting under the WCAG 1.4.11 non-text contrast floor. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+  .input:not(:focus, :focus-within),
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+  .select:not(:focus, :focus-within, .toolkit-toolbar-select),
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+  .textarea:not(:focus, :focus-within) {
   border-color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
 }
 

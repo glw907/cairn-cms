@@ -678,8 +678,6 @@ stats
 stats-horizontal
 stats-vertical
 status
-status-primary
-status-xl
 step
 step-accent
 step-error
@@ -733,7 +731,6 @@ text-[1.125rem]
 text-[1.375rem]
 text-[1.875rem]/[2.25rem]
 text-[var(--cairn-error-ink)]
-text-[var(--cairn-warning-ink)]
 text-[var(--color-accent)]
 text-[var(--color-error-content)]
 text-[var(--color-positive-ink)]

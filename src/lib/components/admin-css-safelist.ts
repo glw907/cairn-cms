@@ -66,8 +66,11 @@ export const ADMIN_CSS_SAFELIST = [
   // dot itself is gone. The 2026-08-26 chip register second generation (docs/internal/probes/
   // 2026-08-26-chip-registers-v2) retired StatusChip's own `status`-dot rendering: the owner
   // probe ruled the 6px dot illegible toolkit-wide and fused its tone signal into the chip
-  // register instead, so every color and size variant this family used to bless (`status-primary`
-  // through `status-xl`, thirteen entries) is removed here. CHANGELOG carries the removal.
+  // register instead, so every color and size variant this family used to bless, thirteen
+  // entries, is removed here. CHANGELOG carries the removal. Naming a member class literally in
+  // this comment would defeat the removal: the admin CSS build's `@source` scan is a naive text
+  // matcher over this whole file, comments included, so any literal token here compiles into the
+  // shipped sheet regardless of whether it appears in the array below.
   'status',
 
   // join: the Pagination and ListToolbar toolkit components (the segmented filter's own wrapping

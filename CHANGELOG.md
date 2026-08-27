@@ -44,9 +44,13 @@
   `--color-positive-ink`), replacing the bracketed `text-[var(--cairn-warning-ink)]` form with a
   named, documented utility (`docs/reference/admin-grammar-tokens.md`, "Status-text idioms"), and
   `toolkit-list`, an opt-in `<ul>`/`<ol>` class that drops the UA's 40px marker-gutter reservation
-  for a plain bulleted or numbered list without pulling in daisyUI's own `.list` component
-  semantics (which blockify `<li>` children and silently suppress their marker box). Consumers
-  must: nothing; both are additive.
+  for a plain bulleted or numbered list without pulling in daisyUI's own `.list` component's real
+  baggage for prose: a forced flex/column layout in place of normal block flow between items, and a
+  forced `.875rem` font-size in place of the ambient one. Every in-tree `text-[var(--cairn-warning-ink)]`
+  call site now writes `cairn-text-warning` instead, so the bracketed arbitrary-value class no
+  longer has any surviving reference in the scanned admin tree and no longer compiles into the
+  shipped sheet. Consumers must: replace any hand-authored `text-[var(--cairn-warning-ink)]` with
+  `cairn-text-warning`, since the arbitrary-value class no longer ships.
 
 ### Changed
 
@@ -63,7 +67,12 @@
   `.cairn-chip-outline`; remove the `tone` prop and any dependency on the status dot, mapping
   `neutral`/`info`/`success` to `register="quiet"` (or leave `register` unset, since `quiet` is
   now the default) and `warning`/`danger` to `register="warning"`; remove any reference to the
-  removed `STATUS_CHIP_DOT_CLASS` export.
+  removed `STATUS_CHIP_DOT_CLASS` export. The shared `.cairn-chip-quiet`/`.cairn-chip-warning`/
+  `.cairn-chip-outline` rules pin `font-weight: 400`, and, being unlayered, that pin outranks any
+  Tailwind weight utility on the same element regardless of source order (cascade layers resolve
+  before specificity); a hand-composed chip that also carries `font-semibold` or `font-medium`
+  computes 400 anyway. Consumers must: remove any weight utility from a hand-composed
+  `.cairn-chip-*` element, or expect it to render at 400 regardless.
 
 - The status-dot safelist family in `admin-css-safelist.ts` (thirteen entries, `status-primary`
   through `status-xl`) is removed from the shipped `cairn-admin.css`, since the dot itself is

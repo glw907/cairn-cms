@@ -223,9 +223,19 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   20%-mix fallback (`color-mix(..., var(--color-base-content) 20%, transparent)`) when no color
   variant supplies `--input-color`, which no admin call site does: measured 1.492:1 light / 1.773:1
   dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor. A pinned unlayered rule in
-  `cairn-admin.css` (rule 12 of 12) raises the unchecked edge to a 55% mix, the same one already
+  `cairn-admin.css` (rule 12 of 13) raises the unchecked edge to a 55% mix, the same one already
   locked for the scrollbar thumb and the outline chip border: 3.586:1 light / 4.959:1 dark. `.toggle`
   needed no change; its own construction already mixes 50% and clears the floor unaided.
+- **Unfocused `.input`/`.select`/`.textarea` edge (2026-08-27, extends the checkbox/radio fix
+  above).** All three share the identical faint-edge construction: daisyUI resolves their border
+  through the same `--input-color` 20%-mix fallback (`border: var(--border) solid var(--input-color,
+  transparent)`), and no admin call site supplies a color variant. Measured against the compiled
+  sheet: 1.492:1 light / 1.773:1 dark against `base-100`, both under the same 3:1 floor. A pinned
+  unlayered rule in `cairn-admin.css` (rule 13 of 13) raises the edge to the same 55% mix already
+  locked above: 3.586:1 light / 4.959:1 dark, unchanged from the checkbox/radio numbers since the
+  underlying `base-content`/`base-100` pair is the same. Scoped to `:not(:focus, :focus-within)`,
+  since a focused field already sets `--input-color` to full `base-content` (a much stronger edge)
+  and the unlayered override would otherwise outrank that state too.
 
 ## Type
 
@@ -405,9 +415,11 @@ alongside the component recipes above and below it.
   `quiet`/`warning` chip sits under that floor by design, on every row ground, not only a
   `base-300`-derived one (`chip-ground-collision` stays advisory, so this is documented rather
   than retuned). There is no chip-level danger tier; a state that must
-  stand out beyond quiet is a `warning` chip. Values are measured, not invented
-  (`docs/internal/probes/2026-08-26-chip-registers-v2`); the full contract lives on [the
-  admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).
+  stand out beyond quiet is a `warning` chip. Every register pins `font-weight: 400`; since none of
+  the three carries a Tailwind layer, that pin outranks a `font-semibold`/`font-medium` utility on
+  the same element, so a hand-composed chip carries no weight utility of its own. Values are
+  measured, not invented (`docs/internal/probes/2026-08-26-chip-registers-v2`); the full contract
+  lives on [the admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
   and it will show up here") and the create CTA, built with the toolkit's `EmptyState` (`heading`,
   `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty
@@ -552,16 +564,20 @@ alongside the component recipes above and below it.
   `Pagination` is the one caller that renders no glyph at all: its selected page conveys state
   through `aria-current="page"` and fill alone, a known exception, out of conformance on light
   (ROADMAP.md, "Next", filed 2026-07-31).
-- **Plain bulleted list (`.toolkit-list`, 2026-08-27):** a bare `<ul>`/`<ol>` that wants an ordinary
-  bulleted or numbered list, not daisyUI's own `.list` component, adds `class="toolkit-list"` to
-  drop the UA's 40px marker gutter (`padding-inline-start: 0`, same reset as the `.list` opt-in, on
-  its own class). `.list` is not a substitute: it is daisyUI's structured-ROWS component
-  (`display: flex; flex-direction: column`), and applying it to a plain list silently blockifies the
-  `<li>` children, which suppresses their marker box the same way `.list-row`'s own `display: grid`
-  does for a structured row, so a `<ul class="list">` renders with no visible bullet at all
-  (measured: the `<li>`'s content sits flush with the `<ul>`'s own edge, zero px of marker space).
-  `.toolkit-list` carries no `display` or `font-size` of its own, so the `<li>` keeps its native
-  marker box and the bullet still paints, just without the reserved gutter. Never `list-style: none`
+- **Plain bulleted list (`.toolkit-list`, 2026-08-27; ruling rewritten 2026-08-27 review):** a bare
+  `<ul>`/`<ol>` that wants an ordinary bulleted or numbered list, not daisyUI's own `.list`
+  component, adds `class="toolkit-list"` to drop the UA's 40px marker gutter
+  (`padding-inline-start: 0`, same reset as the `.list` opt-in, on its own class). `.list` is not a
+  substitute: it is daisyUI's structured-ROWS component (`display: flex; flex-direction: column;
+  font-size: .875rem`), and applying it to a plain list carries that real baggage: forced flex/column
+  layout instead of normal block flow between items, and a forced .875rem font-size instead of
+  inheriting the ambient one. Rendered against the compiled sheet, a `<ul class="list">` still paints
+  a bullet (a flex item with a `list-item` computed display keeps its `::marker` box in Chromium);
+  the zero px gap between the `<li>`'s content and the `<ul>`'s own edge, identical under
+  `.toolkit-list`, comes from `padding-inline-start: 0` on both classes alike, not from marker
+  suppression. `.toolkit-list` carries no `display` or `font-size` of its own, so a plain list keeps
+  normal block flow and inherits its ambient font-size (measured against the built sheet: 16px
+  inherited under `.toolkit-list` versus `.list`'s forced 14px, same render). Never `list-style: none`
   on either class (WCAG 1.3.1 removes list semantics from the accessibility tree in
   WebKit/VoiceOver), and never a bare `ul`/`ol` ancestry selector (the admin wrapper also hosts the
   editor's rendered markdown preview, which needs its own bullets untouched). No admin screen

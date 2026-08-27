@@ -1686,7 +1686,7 @@ persistent "?" carries Markdown help, design-arc D2).
              state), unlike StatusChip's own sr-only-legend pattern, which fits a self-explanatory
              visible label plus optional clarifying text rather than a name that must fully replace
              three icon-only signals at once. -->
-        <span class="badge badge-sm font-medium gap-1 shrink-0 {statusBadge}" role="status" aria-label={pillAriaLabel}>
+        <span class="badge badge-sm gap-1 shrink-0 {statusBadge}" role="status" aria-label={pillAriaLabel}>
           {#if data.frontmatter.draft === true}<EyeOffIcon class="h-3 w-3" aria-hidden="true" />{/if}
           {status}
         </span>
@@ -1696,7 +1696,7 @@ persistent "?" carries Markdown help, design-arc D2).
       <!-- The document status, fenced off by a hairline on its left. sm and up only (see the
            `{#if narrow}` branch above for the below-sm compact pill this replaces). -->
       <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3">
-        <span class="badge badge-sm font-medium shrink-0 {statusBadge}">{status}</span>
+        <span class="badge badge-sm shrink-0 {statusBadge}">{status}</span>
         {#if data.frontmatter.draft === true}
           <span class="badge badge-neutral badge-sm font-medium shrink-0">Hidden</span>
         {/if}

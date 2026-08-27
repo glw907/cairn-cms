@@ -95,12 +95,16 @@
    before this, every call site wrote the bracketed text-[var(--cairn-warning-ink)] form (still
    readable, but not a named, tree-shake-visible idiom, and easy to mistype against the
    uncompiled text-warning). Color only, the same minimal shape as text-muted/text-subtle above;
-   weight, case, and an icon are a call-site recipe, not part of the idiom. */
+   weight, case, and an icon are a call-site recipe, not part of the idiom. Each carries the
+   token's own light-theme literal as a `var()` fallback, the same defense-in-depth the
+   `.cairn-chip-*` rules already carry (cairn-admin.css): both tokens are undefined outside the
+   admin theme root, and the fallback keeps misplaced text a readable ink rather than the ambient
+   color it would otherwise inherit. */
 @utility cairn-text-warning {
-  color: var(--cairn-warning-ink);
+  color: var(--cairn-warning-ink, oklch(50% 0.13 70));
 }
 @utility cairn-text-success {
-  color: var(--color-positive-ink);
+  color: var(--color-positive-ink, oklch(48% 0.12 150));
 }
 
 /* The E3 tracking scale (design arc 2026-07-15): letter spacing keyed to a piece of text's

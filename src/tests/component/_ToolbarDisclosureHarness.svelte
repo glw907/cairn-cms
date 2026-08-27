@@ -49,7 +49,7 @@ an outside control to prove the outside-pointerdown/focusout mechanics against.
     <button type="button" data-testid="extra">Extra</button>
   {/snippet}
   {#snippet panel(attrs)}
-    <div data-testid="panel" {...attrs}>
+    <div class="dropdown-content" data-testid="panel" {...attrs}>
       <button type="button" data-testid="option-1" tabindex={firstOptionNotTabbable ? -1 : 0}>
         Option 1
       </button>

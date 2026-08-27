@@ -75,11 +75,12 @@ the office's own three-word vocabulary never needs).
      *  call site). */
     register?: StatusChipRegister;
     /** Optional explanatory text for a tone a label alone does not fully carry (e.g. "full
-     *  member benefits continue during the grace window"). Surfaces as a native tooltip and as a
-     *  visually-hidden span read straight after the visible label, rather than an `aria-label` on
-     *  the outer element (which some assistive technology exposes inconsistently); omit for a
-     *  self-explanatory label. When omitted, the tooltip falls back to the label itself, so a
-     *  chip whose label ellipsizes still surfaces its full text on hover/focus. */
+     *  member benefits continue during the grace window"). Surfaces as a native `title` tooltip
+     *  (hover only; a bare `<span>` carries no focus of its own) and as a visually-hidden span
+     *  read straight after the visible label, the assistive-technology-reachable half of the same
+     *  information, rather than an `aria-label` on the outer element (which some assistive
+     *  technology exposes inconsistently). Omit for a self-explanatory label: the chip then
+     *  carries no `title` at all, never the label itself repeated as its own tooltip. */
     legend?: string;
   }
 
@@ -97,7 +98,7 @@ the office's own three-word vocabulary never needs).
   const sizeClass = $derived(size === 'xs' ? 'badge-xs status-chip-xs' : 'badge-sm');
 </script>
 
-<span class="badge badge-outline status-chip {registerClass} {sizeClass}" title={legend ?? label}>
+<span class="badge badge-outline status-chip {registerClass} {sizeClass}" title={legend}>
   <span class="status-chip-label">{label}</span>{#if legend}<span class="sr-only">: {legend}</span>{/if}
 </span>
 

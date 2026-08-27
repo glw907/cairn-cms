@@ -180,10 +180,11 @@ reflows its neighboring characters.
   // A `'menu'` facet's option list is a real ARIA menu (role="menu"/"menuitemradio"), so it
   // carries the standard roving-tabindex keyboard model, not one tab stop per option: only the
   // currently-focused option is a Tab stop, keyed by filter id the same way `openFacetId` is (any
-  // number of `'menu'` facets can render in one toolbar). `ToolbarDisclosure`'s own generic
-  // focus-into-panel mechanic already lands on the first option on open, and that option's own
-  // `onfocus` below resets this index the same way a real Tab keypress would, so no separate
-  // reset-on-open step is needed here.
+  // number of `'menu'` facets can render in one toolbar). Reopening a facet after a prior arrow-key
+  // move resets this index to 0 (see the facet's own `onOpenChange` below): without that reset, a
+  // stale non-zero index is itself the only tabbable option, so `ToolbarDisclosure`'s own
+  // focus-into-panel mechanic would land back on the previously-arrowed option instead of the
+  // first one, the APG menu-button behavior a real Tab keypress on a freshly-opened menu gives.
   let facetFocusIndex = $state<Record<string, number>>({});
 
   // Each facet's own trigger element, for `selectFacetOption`'s own focus-return: `ToolbarDisclosure`
@@ -234,7 +235,11 @@ reflows its neighboring characters.
     openFacetId = null;
     facetTriggerEls[filter.id]?.focus();
   }
+  // Focus moves to the trigger BEFORE the state change: `applied` flipping false unmounts the
+  // clear button this handler runs on, so focusing the trigger after `onChange` would already be
+  // too late (the clear button, and any focus it held, is gone by then, dropping focus to body).
   function clearFacet(filter: ListToolbarFilter) {
+    facetTriggerEls[filter.id]?.focus();
     filter.onChange(filter.defaultValue ?? 'all');
   }
 
@@ -296,7 +301,10 @@ reflows its neighboring characters.
         {@const applied = filter.value !== (filter.defaultValue ?? 'all')}
         <ToolbarDisclosure
           open={openFacetId === filter.id}
-          onOpenChange={(next) => { openFacetId = next ? filter.id : null; }}
+          onOpenChange={(next) => {
+            openFacetId = next ? filter.id : null;
+            if (next) facetFocusIndex = { ...facetFocusIndex, [filter.id]: 0 };
+          }}
           ariaHaspopup="menu"
           containerClass="toolkit-toolbar-facet {applied ? 'toolkit-toolbar-facet-applied' : ''}"
         >
@@ -325,6 +333,7 @@ reflows its neighboring characters.
           {#snippet panel(attrs)}
             <ul
               id={attrs.id}
+              hidden={attrs.hidden}
               class="dropdown-content menu toolkit-toolbar-facet-menu"
               role="menu"
               aria-label={filter.label}
@@ -374,7 +383,7 @@ reflows its neighboring characters.
           >{overflowLabel}</button>
         {/snippet}
         {#snippet panel(attrs)}
-          <div id={attrs.id} class="dropdown-content menu toolkit-toolbar-overflow">
+          <div id={attrs.id} hidden={attrs.hidden} class="dropdown-content menu toolkit-toolbar-overflow">
             {#each overflowFilters as filter (filter.id)}
               <label class="toolkit-toolbar-overflow-field">
                 <span>{filter.label}</span>
@@ -553,14 +562,9 @@ reflows its neighboring characters.
     cursor: pointer;
     color: inherit;
     min-width: 0;
-    /* Rounds the shared border's own left corner; the trigger is always the first child. It is
-       also always the last child (and so rounds both corners) when no clear button renders. */
+    /* Rounds the shared border's own left corner; the trigger is always the first child. */
     border-top-left-radius: var(--radius-field);
     border-bottom-left-radius: var(--radius-field);
-  }
-  .toolkit-toolbar-facet-trigger:last-child {
-    border-top-right-radius: var(--radius-field);
-    border-bottom-right-radius: var(--radius-field);
   }
 
   /* The in-control value caps at 14rem with an ellipsis once a facet carries an applied value, so

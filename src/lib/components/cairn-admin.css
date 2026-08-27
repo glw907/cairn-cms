@@ -1072,20 +1072,38 @@
    harmonized control back to the generic field edge. `--cairn-card-border` is not this rule's
    concern: it is a structural card/chrome hairline measured and owned elsewhere, not the
    `--input-color` fallback this rule exists to raise.
+   Every field additionally excludes `:disabled`/`[disabled]` and daisyUI's own error family
+   (`.validator:user-invalid`, its `[aria-invalid]:not([aria-invalid="false"])` sibling selector
+   (the accessible, no-real-interaction-needed way to mark a field invalid daisyUI's own rule
+   already matches on), and `.input-error`/`.select-error`/`.textarea-error`): unlike rule 12
+   above, this rule carried no disabled exclusion of its own before this fix round, so it silently
+   repainted a disabled field's edge to the same 55% mix as an enabled one, overriding daisyUI's
+   own `:disabled` base-200 border (a distinct, lower-salience state this rule has no business
+   touching, the same WCAG 1.4.11 disabled exemption rule 12's own comment already carries) and,
+   separately, an invalid field's own red error border (`--input-color: var(--color-error)`, which
+   this rule's own longhand `border-color` always outranks regardless of that variable's value,
+   since a longhand set after a shorthand wins at equal specificity/layer): a semantic signal this
+   rule would otherwise flatten to the generic gray edge, actively working against the state the
+   color exists to convey.
    Falsifiable the same way as the rule above: dropping the mix back to 20% turns both measured
    ratios red (1.492:1 light / 1.773:1 dark, under the 3:1 floor); restoring 55% turns them green
    again (interactive-control-edge-contrast.test.ts carries this exact break-and-restore for the
-   field family).
-   PINNED unlayered rule 13 of 13 (gate match: `.input:not(:focus, :focus-within),
-   .select:not(:focus, :focus-within, .toolkit-toolbar-select),
-   .textarea:not(:focus, :focus-within)`); bug it prevents: an unfocused text field, select, or
-   textarea's edge sitting under the WCAG 1.4.11 non-text contrast floor. */
+   field family, plus the disabled/error non-repaint cases the same file adds alongside it).
+   PINNED unlayered rule 13 of 13 (gate match: `.input:not(:focus, :focus-within, :disabled,
+   [disabled], .input-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid=
+   "false"])), .select:not(:focus, :focus-within, .toolkit-toolbar-select, :disabled, [disabled],
+   .select-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid="false"])),
+   .textarea:not(:focus, :focus-within, :disabled, [disabled], .textarea-error,
+   .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid="false"]))`); bug it
+   prevents: an unfocused text field, select, or textarea's edge sitting under the WCAG 1.4.11
+   non-text contrast floor, without repainting a disabled or already-error-colored field's own
+   edge. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-  .input:not(:focus, :focus-within),
+  .input:not(:focus, :focus-within, :disabled, [disabled], .input-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])),
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-  .select:not(:focus, :focus-within, .toolkit-toolbar-select),
+  .select:not(:focus, :focus-within, .toolkit-toolbar-select, :disabled, [disabled], .select-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])),
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
-  .textarea:not(:focus, :focus-within) {
+  .textarea:not(:focus, :focus-within, :disabled, [disabled], .textarea-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])) {
   border-color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
 }
 

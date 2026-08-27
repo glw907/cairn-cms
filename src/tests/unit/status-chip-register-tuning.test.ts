@@ -92,6 +92,39 @@ function onGround(layer: Rgba, ground: Rgba): Rgba {
   return composite(layer, { ...ground, a: 1 });
 }
 
+/** The `quiet` register's own text ink and fill, optionally wrapped in an ancestor that sets its
+ *  own `color` (`text-muted`/`text-subtle`): `.status-chip-quiet` declares no `color` of its own
+ *  (see `StatusChip`'s own header comment), so the label's actual ink is whatever the nearest
+ *  ancestor's `color` resolves to, `--color-base-content` by default. */
+async function readQuietInk(
+  browser: Browser,
+  css: string,
+  theme: 'cairn-admin' | 'cairn-admin-dark',
+  ancestorClass: 'text-muted' | 'text-subtle' | null,
+): Promise<{ ink: Rgba; fill: Rgba }> {
+  const page = await browser.newPage();
+  try {
+    const chip = '<span class="badge badge-outline cairn-chip-quiet">Chip</span>';
+    const wrapped = ancestorClass ? `<span class="${ancestorClass}">${chip}</span>` : chip;
+    await page.setContent(
+      `<!doctype html><html><head><style>${css}</style></head><body>` +
+        `<div data-theme="${theme}"><div style="background: var(--color-base-100); padding: 20px;">${wrapped}</div></div>` +
+        `</body></html>`,
+      { waitUntil: 'load' },
+    );
+    const raw = await page.evaluate(() => {
+      const badge = document.querySelector('.badge')!;
+      const cs = getComputedStyle(badge);
+      return { fill: cs.backgroundColor, ink: cs.color };
+    });
+    const [fill, ink] = await resolveColors(page as unknown as RenderedPage, [raw.fill, raw.ink]);
+    if (!fill || !ink) throw new Error(`could not resolve a quiet-ink color for ${theme}/${ancestorClass}`);
+    return { ink, fill };
+  } finally {
+    await page.close();
+  }
+}
+
 describe('chip register tuning (second generation)', () => {
   describe.each(CASES)('$theme / $ground', (groundCase) => {
     it('quiet fill holds the 1.16-1.47:1 band against its row ground', async () => {
@@ -119,6 +152,31 @@ describe('chip register tuning (second generation)', () => {
       const compositedBorder = onGround(border, ground);
       expect(contrastRatio(compositedBorder, ground)).toBeGreaterThanOrEqual(OUTLINE_BORDER_FLOOR);
     });
+  });
+
+  // The `quiet` register's own label text carries no explicit `color` (only `warning` locks an
+  // ink); it inherits whatever ancestor ink surrounds it, so a chip nested in a muted or subtle
+  // context (a table cell's own secondary-text wrapper, say) reads at that ink's own contrast
+  // against the quiet fill, not the default base-content one. Measured against `cairn-chip-quiet`'s
+  // own fill (not the row ground, which the band assertions above already cover): light
+  // default 10.859, text-muted 4.559, text-subtle 5.938; dark default 11.270, text-muted 5.602,
+  // text-subtle 7.434. The light text-muted case is the tightest of the six, just above the WCAG
+  // 1.4.3 >= 4.5:1 text floor; it is pinned here as a real measured floor, not a comfortable
+  // margin, so a future retune of either `--color-muted` or `--cairn-chip-quiet-mix` that narrows
+  // it further fails loudly.
+  describe.each(['cairn-admin', 'cairn-admin-dark'] as const)('%s', (theme) => {
+    it.each([
+      { ancestorClass: null, description: 'default (no ancestor ink)' },
+      { ancestorClass: 'text-muted', description: 'text-muted ancestor' },
+      { ancestorClass: 'text-subtle', description: 'text-subtle ancestor' },
+    ] as const)(
+      'quiet register ink clears the >= 4.5:1 text floor against its own fill ($description)',
+      async ({ ancestorClass }) => {
+        const { ink, fill } = await readQuietInk(browser, css, theme, ancestorClass);
+        const compositedFill = onGround(fill, fill);
+        expect(contrastRatio(ink, compositedFill)).toBeGreaterThanOrEqual(WARNING_INK_FLOOR);
+      },
+    );
   });
 
   // FALSIFIABILITY (part of this task's own acceptance, not an incidental extra): the assertion

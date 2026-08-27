@@ -26,7 +26,11 @@ one, so the wrapped control's own click handler runs without also toggling the r
 documented escape, not `stopPropagation()` a consumer has to hand-roll and re-discover per cell. The
 trigger button carries no `data-cairn-inert-cell` of its own and needs none -- its own `onclick`
 already calls `event.stopPropagation()` -- so it stays the one control carrying `aria-expanded`,
-unaffected by the escape either way.
+unaffected by the escape either way. An interactive control placed inside a summary cell (inert-
+wrapped or not) still has to meet the 24x24 CSS px target-size floor (WCAG 2.5.8) on its own,
+independent of the row's own click-to-expand affordance; `ReferenceField.svelte`'s own remove
+button (`max-sm:min-h-11 max-sm:min-w-11`, the narrow-viewport-only floor a dense summary cell also
+needs) is the idiom to reach for.
 
 **The trigger cell is `position: sticky; right: 0`** (the Members pass coherence round).
 `AdminTable`'s own horizontal-scroll fallback means a summary row wider than its viewport scrolls

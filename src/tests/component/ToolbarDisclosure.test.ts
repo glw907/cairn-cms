@@ -3,6 +3,21 @@ import { render } from 'vitest-browser-svelte';
 import ToolbarDisclosureHarness from './_ToolbarDisclosureHarness.svelte';
 
 describe('ToolbarDisclosure', () => {
+  // Primitive-owned hiding: the panel's own `hidden` attribute (see `ToolbarDisclosurePanelAttrs`)
+  // keeps every descendant unfocusable and unpainted while closed, independent of the caller's own
+  // `dropdown-content` class landing correctly (a CSS-only hiding rule matches nothing if that
+  // class is ever omitted, leaving the panel visible and tabbable while `aria-expanded` reads
+  // `false`).
+  it('hides every panel descendant from focus and paint while closed', async () => {
+    const screen = await render(ToolbarDisclosureHarness, {});
+    const panel = screen.getByTestId('panel').element() as HTMLElement;
+    expect(panel.hidden).toBe(true);
+    expect(getComputedStyle(panel).display).toBe('none');
+    const option1 = screen.getByTestId('option-1').element() as HTMLElement;
+    option1.focus();
+    expect(document.activeElement).not.toBe(option1);
+  });
+
   it('gives the trigger aria-expanded/aria-controls that resolve to the panel\'s own id, with no aria-haspopup by default', async () => {
     const screen = await render(ToolbarDisclosureHarness, {});
     const trigger = screen.getByTestId('trigger');
@@ -88,10 +103,16 @@ describe('ToolbarDisclosure', () => {
     const trigger = screen.getByTestId('trigger');
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
-    const lastOption = screen.getByTestId('option-2').element();
-    const outside = screen.getByTestId('outside').element();
-    lastOption.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: outside }));
+    const lastOption = screen.getByTestId('option-2').element() as HTMLElement;
+    // A real focus move (not a synthetic `dispatchEvent`): by the time the container's own
+    // `focusout` listener runs, the browser has already updated `document.activeElement` to the
+    // new target, matching a real Tab keypress out of the panel's last option.
+    lastOption.focus();
+    await expect.poll(() => document.activeElement).toBe(lastOption);
+    const outside = screen.getByTestId('outside').element() as HTMLElement;
+    outside.focus();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(document.activeElement).toBe(outside);
     expect(document.activeElement).not.toBe(trigger.element());
   });
 

@@ -166,4 +166,124 @@ describe('unfocused field-family edge contrast', () => {
       expect(ratio).toBeLessThan(NON_TEXT_FLOOR);
     });
   });
+
+  // Regression (2026-08-27 fix round): rule 13's own `border-color` longhand used to apply
+  // unconditionally, repainting a disabled field's edge (daisyUI's own `:disabled` base-200
+  // border) and an invalid `.validator` field's own error-red edge to the same 55% mix as a plain
+  // enabled field, silencing both semantic signals. The rule now excludes both states, so each
+  // keeps whatever border-color daisyUI itself computes.
+  describe.each(THEMES)('does not repaint a disabled or error-colored field (%s)', (theme) => {
+    it('a disabled .input keeps daisyUI\'s own disabled border, not the pinned 55% mix', async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html><head><style>${css}</style></head><body>` +
+            `<div data-theme="${theme}"><div style="background: var(--color-base-100); padding: 20px;">` +
+            `<input class="input" disabled />` +
+            `</div></div></body></html>`,
+          { waitUntil: 'load' },
+        );
+        const raw = await page.evaluate(
+          () => getComputedStyle(document.querySelector('input')!).borderColor,
+        );
+        const enabledRaw = await readEdge(theme, 'input', 'input');
+        const [disabledBorder] = await resolveColors(page as unknown as RenderedPage, [raw]);
+        if (!disabledBorder) throw new Error('could not resolve the disabled input border');
+        // Not a contrast-floor assertion (WCAG 1.4.11 exempts disabled controls): the pinned rule
+        // must simply leave the color alone, so it differs from the enabled field's own 55% mix.
+        expect(disabledBorder).not.toEqual(enabledRaw.border);
+      } finally {
+        await page.close();
+      }
+    });
+
+    it('a .validator field marked aria-invalid keeps daisyUI\'s own error-red border, not the pinned 55% mix', async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html><head><style>${css}</style></head><body>` +
+            `<div data-theme="${theme}"><div style="background: var(--color-base-100); padding: 20px;">` +
+            `<input class="input validator" aria-invalid="true" />` +
+            `</div></div></body></html>`,
+          { waitUntil: 'load' },
+        );
+        const raw = await page.evaluate(
+          () => getComputedStyle(document.querySelector('input')!).borderColor,
+        );
+        const enabledRaw = await readEdge(theme, 'input', 'input');
+        const [errorBorder] = await resolveColors(page as unknown as RenderedPage, [raw]);
+        if (!errorBorder) throw new Error('could not resolve the error-marked input border');
+        expect(errorBorder).not.toEqual(enabledRaw.border);
+      } finally {
+        await page.close();
+      }
+    });
+  });
+}, 60_000);
+
+// ROADMAP's pinned, corrected deferral (`.toolkit-toolbar-select`'s and `.toolkit-toolbar-facet`'s
+// edge contrast, 2026-08-27 fix round): both are `ListToolbar.svelte`'s own Svelte-scoped rules, so
+// a bare `buildAdminCss()` page (this file's usual substrate) never applies them; the rules are
+// reproduced verbatim below, appended after the compiled sheet the same way the falsifiability
+// cases above append an override. This pins the deferral's own FACTUAL claim (the exact measured
+// numbers, corrected from the ROADMAP entry's original unscoped measurement), not a >= 3:1 floor:
+// both edges are BELOW that floor today, by design (the harmonization argument the ROADMAP entry
+// records), so a floor assertion here would be the wrong shape of test.
+describe('ROADMAP-pinned deferral: .toolkit-toolbar-select / .toolkit-toolbar-facet edge contrast', () => {
+  const TOOLKIT_TOOLBAR_SCOPED_CSS = `
+    .toolkit-toolbar-select { --input-color: var(--cairn-card-border); }
+    .toolkit-toolbar-facet { border: 1px solid var(--cairn-card-border); }
+  `;
+  const RECORDED: Record<(typeof THEMES)[number], number> = {
+    'cairn-admin': 1.192,
+    'cairn-admin-dark': 1.203,
+  };
+
+  describe.each(THEMES)('%s', (theme) => {
+    it('.toolkit-toolbar-select edge measures the recorded ratio against base-100', async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html><head><style>${css}\n${TOOLKIT_TOOLBAR_SCOPED_CSS}</style></head><body>` +
+            `<div data-theme="${theme}"><div style="background: var(--color-base-100); padding: 20px;">` +
+            `<select class="select toolkit-toolbar-select"><option>x</option></select>` +
+            `</div></div></body></html>`,
+          { waitUntil: 'load' },
+        );
+        const raw = await page.evaluate(() => ({
+          border: getComputedStyle(document.querySelector('.toolkit-toolbar-select')!).borderColor,
+          ground: getComputedStyle(document.querySelector('.toolkit-toolbar-select')!.parentElement!).backgroundColor,
+        }));
+        const [border, ground] = await resolveColors(page as unknown as RenderedPage, [raw.border, raw.ground]);
+        if (!border || !ground) throw new Error('could not resolve the toolkit-toolbar-select edge');
+        const ratio = contrastRatio(composite(border, { ...ground, a: 1 }), ground);
+        expect(ratio).toBeCloseTo(RECORDED[theme], 2);
+      } finally {
+        await page.close();
+      }
+    });
+
+    it('.toolkit-toolbar-facet edge measures the recorded ratio against base-100, identically to the select', async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html><head><style>${css}\n${TOOLKIT_TOOLBAR_SCOPED_CSS}</style></head><body>` +
+            `<div data-theme="${theme}"><div style="background: var(--color-base-100); padding: 20px;">` +
+            `<div class="dropdown toolkit-toolbar-disclosure toolkit-toolbar-facet"></div>` +
+            `</div></div></body></html>`,
+          { waitUntil: 'load' },
+        );
+        const raw = await page.evaluate(() => ({
+          border: getComputedStyle(document.querySelector('.toolkit-toolbar-facet')!).borderColor,
+          ground: getComputedStyle(document.querySelector('.toolkit-toolbar-facet')!.parentElement!).backgroundColor,
+        }));
+        const [border, ground] = await resolveColors(page as unknown as RenderedPage, [raw.border, raw.ground]);
+        if (!border || !ground) throw new Error('could not resolve the toolkit-toolbar-facet edge');
+        const ratio = contrastRatio(composite(border, { ...ground, a: 1 }), ground);
+        expect(ratio).toBeCloseTo(RECORDED[theme], 2);
+      } finally {
+        await page.close();
+      }
+    });
+  });
 }, 60_000);

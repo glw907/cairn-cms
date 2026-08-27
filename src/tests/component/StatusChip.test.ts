@@ -93,10 +93,10 @@ describe('StatusChip', () => {
     expect((withLegendChip.textContent ?? '').trim()).toBe('Overdue: Full benefits continue for 30 days.');
   });
 
-  it('truncation self-defense: without a legend, the title falls back to the label itself', async () => {
+  it('carries no title at all without a legend, never the label repeated as its own tooltip', async () => {
     const withoutLegend = await render(StatusChip, { label: 'Overdue', register: 'warning' });
     const withoutLegendChip = withoutLegend.container.querySelector('.status-chip')!;
-    expect(withoutLegendChip.getAttribute('title')).toBe('Overdue');
+    expect(withoutLegendChip.hasAttribute('title')).toBe(false);
     expect(withoutLegendChip.getAttribute('aria-label')).toBeNull();
     expect(withoutLegendChip.querySelector('.sr-only')).toBeNull();
   });

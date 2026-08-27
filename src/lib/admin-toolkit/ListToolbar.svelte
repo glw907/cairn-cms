@@ -515,8 +515,11 @@ reflows its neighboring characters.
      `containerClass` this component passes into `ToolbarDisclosure`, so the element it matches is
      rendered by that component, not this one, and Svelte's per-component style scoping would
      otherwise silently drop the rule (see `ToolbarDisclosure`'s own header comment on why
-     `containerClass` exists and stays this component's own responsibility to style). */
-  :global(.toolkit-toolbar-facet) {
+     `containerClass` exists and stays this component's own responsibility to style). Nested under
+     `.toolkit-toolbar` (this component's own scoped root, always an ancestor of every facet it
+     renders): the reach is unchanged, but the selector no longer matches a same-named class
+     anywhere else in the document. */
+  .toolkit-toolbar :global(.toolkit-toolbar-facet) {
     display: inline-flex;
     align-items: stretch;
     flex: 0 0 auto;
@@ -528,8 +531,9 @@ reflows its neighboring characters.
 
   /* The bordered-and-tinted applied treatment: border and fill mixed from --color-primary, added
      to the container alongside `.toolkit-toolbar-facet` (above) once a filter carries a value.
-     `:global()` for the same reason as `.toolkit-toolbar-facet` above. */
-  :global(.toolkit-toolbar-facet-applied) {
+     `:global()` and the `.toolkit-toolbar` nesting for the same reason as `.toolkit-toolbar-facet`
+     above. */
+  .toolkit-toolbar :global(.toolkit-toolbar-facet-applied) {
     border-color: color-mix(in oklab, var(--color-primary) 45%, var(--cairn-card-border));
     background: color-mix(in oklab, var(--color-primary) 7%, transparent);
   }

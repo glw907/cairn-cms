@@ -123,6 +123,10 @@ it any other way without duplicating the rule back into the caller.
   const attachTriggerRef: Attachment<HTMLElement> = (node) => {
     triggerEl = node;
   };
+  // Minted once per instance: a fresh key on every `open` change would recreate the attachment
+  // (and re-run its mount/cleanup) for no reason, since the ref it captures is the same trigger
+  // node throughout the disclosure's lifetime.
+  const triggerRefKey = createAttachmentKey();
 
   function toggle() {
     onOpenChange(!open);
@@ -139,7 +143,7 @@ it any other way without duplicating the rule back into the caller.
     'aria-controls': panelId,
     'aria-haspopup': ariaHaspopup,
     onclick: toggle,
-    [createAttachmentKey()]: attachTriggerRef,
+    [triggerRefKey]: attachTriggerRef,
   });
   const panelAttrs = $derived<ToolbarDisclosurePanelAttrs>({ id: panelId });
 

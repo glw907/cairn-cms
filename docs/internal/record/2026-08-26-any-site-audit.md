@@ -133,3 +133,70 @@ Verdicts and the remediation plan only; no diffs in this pass. The remediation e
 coherence families, sequenced before beta, batched into one `Consumers must:` window. No
 retire executed inline: every retire has at least a docs consumer, so none met the
 trivial-retire bar.
+
+## The internals and chassis audit (Task 8b; Geoff's mid-pass directives)
+
+The same method turned inward, per the three directives recorded in the pass plan: internals
+idiomatic SvelteKit, inviting and comprehensible to a new developer, easy for an AI agent to
+extend; the chassis (`examples/showcase`) aggressively reviewed on the same limbs plus its
+two chassis duties. Thirteen agents (11 area rankers, a cold new-developer walk, an AI-agent
+extension walk), per-area verification on the worst-ranked 30% plus every rewrite-tier
+finding, a whole-codebase coherence read, and the trustworthiness auditor. The first run
+lost seven agents to the session usage limit mid-verification and resumed from cache; the
+completed run's verdict: **trustworthy** (all 13 rankings forced and non-empty, tallies
+independently reproduced from the artifacts, ~25 spot-checks with no inflated claim, error
+direction conservative throughout).
+
+**175 findings: 10 rewrite, 108 refactor, 57 note** (67% non-note; more than twice the
+surface audit's non-keep rate, so the run audited rather than admired). Two verification
+overturns, both honest: the delivery `authoring.ts` finding dropped on a false premise (the
+file carries a deliberate seven-line curation header), and the agent walk's "no manifest
+parser" finding downgraded to note (`parseManifest` is public and documented; the residue is
+a docs gap plus an ambiguous "draft" vocabulary).
+
+**The headline, proven by experiment rather than asserted:** the agent walk added a
+`RatingField` arm to the `FieldDescriptor` union cold. `svelte-check` came back with a
+single error naming none of the four production dispatch sites, all 3976 tests passed, and a
+runtime probe accepted `"4000 potatoes"` as a rating. Every field-type dispatcher ends in a
+permissive catch-all and no exhaustiveness idiom exists anywhere in `src/lib`; the engine's
+central extension point is its least defended surface.
+
+**The five monoliths.** Five files hold the product's center at 950 to 3159 lines while
+sibling areas ship 100-line modules, and only one is tracked: `CairnMediaLibrary.svelte`
+(3159, seven screens, six copy-pasted dialog controllers), `EditPage.svelte` (2920, a dozen
+domains), `content-routes-core.ts` (a 1690-line closure; the earlier decomposition split the
+file, not the shape), `audit/rendered.ts` (1015), `CairnAdminShell.svelte` (949),
+`auth-channel/factory.ts` (965). The `MarkdownEditor` seam carries 33 props including 13
+imperative `register*` callbacks; the remediation collapses them into one
+`registerEditor(api)` modeled on `TidyApi`.
+
+**The coherence read's thirteen findings** (full text:
+[int-coherence.md](2026-08-26-any-site-audit/int-coherence.md)) converge on one sentence:
+the design vocabulary is unusually good (a 40-rule idiom charter, barrel-membership
+charters, a zero-drift log grammar, 27 bespoke gates) and unenforced one line below the
+public edge. The charter has no gate; convergence stops half-finished with comments that
+license the next copy; roughly a dozen module headers assert contracts the code contradicts;
+the comment register is pass-scoped (179 unresolvable process references, 18 named
+private consumer sites, 19 pointers into the unshipped `docs/superpowers/`); the test
+estate erases checked contracts with 827 `as never` casts across four filename conventions;
+engine-emitted names use four prefix conventions including a consumer site's initials
+(`ec-*`, 18 sites, also the chassis's `ec-` classes in public rendered output, a
+constraint-3 violation in the engine's own markup); and no formatter arbitrates the tree.
+
+**The walks.** The newcomer walk's top break is orientation: 23 directories and ~60k lines
+under `src/lib` with no internals map, only per-file headers. The agent walk's second
+rewrite finding: no public read seam onto cairn's own content for a custom admin screen,
+and the reachable alternative silently returns the deployed corpus rather than the draft
+state; the boundary needs deciding explicitly either way.
+
+**The chassis.** Fourteen findings, none rewrite-tier. Rank 1: the paginated archive
+subsystem never executes on the showcase's own corpus and buys a permanent build-gate
+exception (`svelte.config.js:48`) to stay green, teaching every theme that inherits it to
+carry the same dead subsystem and exception.
+
+**Remediation routing.** The internals findings fold into the same ROADMAP remediation
+initiative as the surface verdicts (mostly consumer-invisible, so they ride outside the
+`Consumers must:` window except where a rename or emitted-markup fix crosses it). The full
+per-area rankings, verification notes, walk logs, and coherence read live in this record's
+artifact directory (`int-rank-*.md`, `int-verify-*.md`, `int-walk-*.md`,
+`int-coherence.md`).

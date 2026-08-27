@@ -301,9 +301,22 @@ The original decision framing, for the record:
     closure, which also re-tests adapter's ~22 C2_READDED keeps and the three closure leaks).
   - **Coupled pair:** `defineAccess` reshaped to accept `undefined` roles (its three siblings
     do), which reopens and then retires `DEFAULT_ROLES`.
+  - **The internals half** (Task 8b, trustworthy verdict; the audit record's internals
+    section itemizes): the ten rewrite-tier findings, led by the five untracked monolith
+    files (`EditPage` 2920 lines, `CairnMediaLibrary` 3159, `content-routes-core` 1690,
+    `audit/rendered.ts` 1015, plus the `MarkdownEditor` 33-prop seam collapsing onto one
+    `registerEditor(api)`); the exhaustiveness idiom (`FieldDescriptor`'s ten
+    permissive-default dispatch sites, proven exploitable by the walk's mutation
+    experiment); the coherence thirteen (enforce the idiom charter with a gate; purge the
+    pass-scoped comment register, 179 process references and 18 consumer-site names; the
+    `ec-*` prefix out of engine-emitted markup; the 827 `as never` test casts; a formatter
+    decision); the newcomer walk's `src/lib` internals map; and the custom-screen content
+    read-seam boundary decision. Mostly consumer-invisible, riding outside the `Consumers
+    must:` window except emitted-markup and rename items.
   - **The chassis improvement round** (Geoff, 2026-08-26): after the engine reshapes land,
     `examples/showcase` gets its round of improvement against the changed engine, as its own
-    pass in this initiative.
+    pass in this initiative. Its review half is done (14 findings, none rewrite-tier; rank
+    1 is the never-executing paginated archive and its permanent build-gate exception).
 
 - **Geoff's open hand steps from the scaffolder spikes (none urgent, all his to do).** Delete the
   three scratch GitHub Apps (`cairn-t4b-live-03cd31`, `cairn-t5-scratch` id `4585219`,

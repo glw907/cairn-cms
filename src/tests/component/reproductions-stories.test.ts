@@ -920,7 +920,7 @@ describe('toolkit/custom-screen', () => {
     expect(screen.container.textContent).toContain('Spring Cleanup');
     expect(screen.container.textContent).toContain('Trail Work Day');
     expect(screen.container.textContent).toContain('Annual Meeting');
-    // Every row's status chip, transcribed straight from the doc snippet's own `tone="info"`.
+    // Every row's status chip, transcribed straight from the doc snippet.
     expect(screen.container.querySelectorAll('.status-chip')).toHaveLength(3);
     expect(screen.container.textContent).toContain('Confirmed');
     expect(screen.container.textContent).toContain('Pending');

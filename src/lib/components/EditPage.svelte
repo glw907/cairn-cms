@@ -1034,9 +1034,10 @@ persistent "?" carries Markdown help, design-arc D2).
     if (data.pending) return data.published ? 'Edited' : 'New';
     return data.published ? 'Published' : 'New';
   });
-  // Edited and New are attention states and stay on the bounded-shaped daisyUI tone fills;
-  // Published is a settled, put-away state and takes the quiet chip register instead of the
-  // retired stock ghost badge (design infrastructure Pass 3, corpus C).
+  // Edited and New are attention states and stay on the stock daisyUI badge-warning/badge-info
+  // fills; Published is a settled, put-away state and takes the quiet chip register instead of
+  // the retired stock ghost badge (design infrastructure Pass 3, corpus C; the register itself is
+  // the second generation's, docs/internal/probes/2026-08-26-chip-registers-v2).
   const statusBadge = $derived.by(() => {
     if (status === 'Edited') return 'badge-warning';
     if (status === 'New') return 'badge-info';
@@ -1685,7 +1686,7 @@ persistent "?" carries Markdown help, design-arc D2).
              state), unlike StatusChip's own sr-only-legend pattern, which fits a self-explanatory
              visible label plus optional clarifying text rather than a name that must fully replace
              three icon-only signals at once. -->
-        <span class="badge badge-sm font-medium gap-1 shrink-0 {statusBadge}" role="status" aria-label={pillAriaLabel}>
+        <span class="badge badge-sm gap-1 shrink-0 {statusBadge}" role="status" aria-label={pillAriaLabel}>
           {#if data.frontmatter.draft === true}<EyeOffIcon class="h-3 w-3" aria-hidden="true" />{/if}
           {status}
         </span>
@@ -1695,7 +1696,7 @@ persistent "?" carries Markdown help, design-arc D2).
       <!-- The document status, fenced off by a hairline on its left. sm and up only (see the
            `{#if narrow}` branch above for the below-sm compact pill this replaces). -->
       <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3">
-        <span class="badge badge-sm font-medium shrink-0 {statusBadge}">{status}</span>
+        <span class="badge badge-sm shrink-0 {statusBadge}">{status}</span>
         {#if data.frontmatter.draft === true}
           <span class="badge badge-neutral badge-sm font-medium shrink-0">Hidden</span>
         {/if}
@@ -1714,7 +1715,7 @@ persistent "?" carries Markdown help, design-arc D2).
                edit. Ordinary editor Undo covers it mechanically (the apply is one history entry); this
                chip names it so the author knows the whole tidy is one move back. -->
           <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 type-meta text-muted" data-testid="tidy-undo-chip">
-            <span class="inline-flex items-center gap-1 font-semibold text-[var(--color-positive-ink)]">Tidy applied</span>
+            <span class="inline-flex items-center gap-1 font-semibold cairn-text-success">Tidy applied</span>
             <button type="button" class="underline decoration-[color-mix(in_oklab,currentColor_40%,transparent)] underline-offset-2 hover:text-primary" onclick={undoTidy}>Undo tidy</button>
           </span>
         {/if}

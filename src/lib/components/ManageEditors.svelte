@@ -111,7 +111,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
           <td class="pl-6 py-2 type-subtitle font-medium">{editor.displayName}</td>
           <td>{editor.email}</td>
           <td>
-            <span class="badge {capabilityFor(editor.role) === 'owner' ? 'badge-primary' : 'cairn-chip-bounded'}">{editor.role}</span>
+            <span class="badge {capabilityFor(editor.role) === 'owner' ? 'badge-primary' : 'cairn-chip-outline'}">{editor.role}</span>
           </td>
           <td class="flex justify-end gap-2">
             {#if isDefaultVocabulary}

@@ -14,12 +14,15 @@
           "[data-theme='cairn-admin'] *, [data-theme='cairn-admin-dark'] *",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\\:drawer-open > .drawer-toggle ~ .drawer-side",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\\:drawer-open > .drawer-toggle ~ .drawer-side",
-          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-bounded",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-outline",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-warning",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-field-stacked > :where(.input, .select, .textarea)",
           "[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-active:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])",
-          "[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):hover"
+          "[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']):hover",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .checkbox:not(:checked, :indeterminate, [aria-checked='true']), :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .radio:not(:checked, [aria-checked='true'])",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .input:not(:focus, :focus-within, :disabled, [disabled], .input-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])), :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .select:not(:focus, :focus-within, .toolkit-toolbar-select, :disabled, [disabled], .select-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false'])), :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .textarea:not(:focus, :focus-within, :disabled, [disabled], .textarea-error, .validator:user-invalid, .validator[aria-invalid]:not([aria-invalid='false']))"
         ],
         "componentsLayerCap": 19,
         "retiredTokenBudget": 0

@@ -207,7 +207,7 @@ describe('ListToolbar', () => {
     expect(clear.tagName).toBe('BUTTON');
   });
 
-  it("calls onChange with the default value when a 'menu' facet's inline clear is activated", async () => {
+  it("calls onChange with the default value when a 'menu' facet's inline clear is activated, returning focus to the trigger once the clear button unmounts", async () => {
     const onChange = vi.fn();
     const screen = await render(ListToolbar, {
       search: '',
@@ -218,6 +218,19 @@ describe('ListToolbar', () => {
     });
     await screen.getByRole('button', { name: 'Clear Standing filter' }).click();
     expect(onChange).toHaveBeenCalledWith('all');
+    // Mirrors what a real controlled caller does after `onChange`: re-render with the cleared
+    // value, which unmounts the clear button this click landed on. Focus must already have moved
+    // to the trigger before that unmount (clearFacet moves it first, ahead of the state change),
+    // or it drops to `body` once the button holding it is gone.
+    await screen.rerender({
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ value: 'all', display: 'menu', onChange })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await expect.poll(() => document.activeElement).toBe(trigger.element());
   });
 
   it("opens a 'menu' facet's option list on a trigger click, with real toggle semantics", async () => {
@@ -260,13 +273,17 @@ describe('ListToolbar', () => {
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
-    const lastOption = screen.getByRole('menuitemradio', { name: 'Former' }).element();
+    const lastOption = screen.getByRole('menuitemradio', { name: 'Former' }).element() as HTMLElement;
     const nextControl = document.createElement('button');
     document.body.appendChild(nextControl);
-    // A Tab out of the last option moves focus to whatever's next in the document and fires a
-    // native focusout on the facet container with that element as `relatedTarget`.
-    lastOption.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: nextControl }));
+    // A real focus move (not a synthetic `dispatchEvent`): by the time the container's own
+    // `focusout` listener runs, the browser has already updated `document.activeElement` to the
+    // new target, matching a real Tab keypress out of the panel's last option.
+    lastOption.focus();
+    await expect.poll(() => document.activeElement).toBe(lastOption);
+    nextControl.focus();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(document.activeElement).toBe(nextControl);
     expect(document.activeElement).not.toBe(trigger.element());
     nextControl.remove();
   });
@@ -299,7 +316,7 @@ describe('ListToolbar', () => {
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
-    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    trigger.element().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect.poll(() => document.activeElement).toBe(trigger.element());
   });
@@ -485,6 +502,34 @@ describe('ListToolbar', () => {
     await expect.poll(() => document.activeElement).toBe(options()[0]);
     options()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
     await expect.poll(() => document.activeElement).toBe(options()[2]);
+  });
+
+  // APG menu-button behavior: reopening a menu always starts back at the first option, never a
+  // prior arrow-key position (the reset-on-open comment on `facetFocusIndex` documents why this
+  // matters: without it, a stale non-zero index is itself the only tabbable option, and
+  // `ToolbarDisclosure`'s own focus-into-panel mechanic lands there instead of option 1).
+  it("resets a 'menu' facet's roving focus to its first option on reopen, even after a prior arrow-key move", async () => {
+    const screen = await render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
+    await expect.poll(() => document.activeElement).toBe(options()[0]);
+    options()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    await expect.poll(() => document.activeElement).toBe(options()[2]);
+
+    // Close, then reopen: focus (and the roving tabindex) must land back on option 1.
+    trigger.element().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect.poll(() => document.activeElement).toBe(options()[0]);
+    expect(options()[0].getAttribute('tabindex')).toBe('0');
   });
 
   it("moves a 'menu' facet's roving focus to the first/last option on Home/End", async () => {

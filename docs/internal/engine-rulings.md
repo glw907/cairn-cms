@@ -32,6 +32,16 @@ Entry format: a heading plus labeled lines.
   chassis copy does.
 - **Record:** [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Ruled out (events-redesign 5).
 
+## mediaherofield-export: `MediaHeroField` as a public export  (decline, 2026-08-26, toolkit-seams pass)
+
+- **Verdict:** decline. It is `EditPage` save-path wiring, not a selection surface: four hidden
+  inputs the decode arm reads, `$app/forms` `deserialize` over cairn's own upload endpoint, and the
+  CSRF context key. That is the same objection sustained against `MediaInsertPopover`, which also
+  stays internal, deferred until the `MarkdownEditor` seam collapse. The evidenced ASC need was
+  selection and display, which the newly exported `MediaPicker` serves.
+- **Reopens on:** a second consumer needing the whole save-path field rather than selection alone.
+- **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; the need is evidenced in [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivors 1.
+
 ## dead-body-declaration: per-entry dead-body declaration  (decline, 2026-08-26, ASC harvest triage)
 
 - **Verdict:** decline. One entry on one site; the proper site fix is deleting the husk
@@ -1193,11 +1203,12 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 34.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
-## audit-sveltekit-medialibraryentry: `MediaLibraryEntry`  (retire, 2026-08-26, any-site audit)
+## audit-sveltekit-medialibraryentry: `MediaLibraryEntry`  (keep, 2026-08-26, any-site audit; supersedes the audit's retire)
 
-- **Verdict:** retire. Weak. A site building its own asset browser rebuilds a screen the engine ships; a row is inferred from data.assets[i].
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 35.
+- **Verdict:** keep, superseding the audit's retire on prop-signature necessity. The toolkit-seams pass publishes `MediaPicker` from `/admin-toolkit`, and this type sits in its `entries` prop signature, so the `audit-admin-itemlabel` test applies verbatim: a consumer writing the prop needs the name. Canonical home is `/admin-toolkit`, beside the component, exactly as `ItemLabel` publishes beside `Pagination` and `ListToolbar`. `/sveltekit` keeps its own re-export as R4 closure over `MediaLibraryData.assets`, which stays public; dropping it would recreate the closure leak R4 exists to remove. A re-export from the stated canonical home is not a second home, so C1 holds.
+- **Reopens on:** closed. Executed by the toolkit-seams pass, Task 1.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 35; superseded in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1.
+- **Any-site case:** Any site composing `MediaPicker` into an admin screen it builds itself annotates the entries it passes, which is the loader's own `MediaLibraryData.assets` array.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-usageentry: `UsageEntry`  (retire, 2026-08-26, any-site audit)
@@ -1924,8 +1935,8 @@ when the remediation pass lands.
 ## audit-admin-status-chip-dot-class: `STATUS_CHIP_DOT_CLASS`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None stated. The reference page argues it in the future conditional: 'so a future legend or key component reuses the identical dot color'. Zero consumers.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 6.
+- **Reopens on:** closed. Executed by the toolkit-seams pass, Task 2, alongside the whole tone/dot retirement the 2026-08-24 owner probe ratified (docs/internal/probes/2026-08-26-chip-registers-v2): `STATUS_CHIP_DOT_CLASS`, `StatusChipTone`, and the status dot itself are all gone from `StatusChip`.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 6; executed in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 2.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-fieldrow: `FieldRow`  (retire, 2026-08-26, any-site audit)
@@ -2139,16 +2150,17 @@ when the remediation pass lands.
 
 - **Verdict:** keep. The two registers carry canvas-measured contrast across four grounds (bounded 3.586/3.513/4.959/5.263; quiet 1.804/1.684/1.703/2.026) a consumer cannot re-derive without its own probe rig.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
+- **Stale-case note (toolkit-seams pass, Task 2, 2026-08-26):** the recorded any-site case describes the FIRST-generation dotted grammar's two registers (`bounded`/`quiet`) and their measured numbers. The type stays kept, still unavailable to a consumer without its own probe rig, but its shape and values are both stale: the second generation (the 2026-08-24 owner probe, docs/internal/probes/2026-08-26-chip-registers-v2) is three registers (`'quiet' | 'warning' | 'outline'`), and the current measured band is 1.16-1.47:1 for the two tinted fills against their own row ground (plain/zebra, both themes) plus the unchanged >= 3:1 outline-border floor. Read the current header comment in `cairn-admin.css` for the live numbers rather than this entry.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 36.
 - **Any-site case:** The two registers carry canvas-measured contrast across four grounds (bounded 3.586/3.513/4.959/5.263; quiet 1.804/1.684/1.703/2.026) a consumer cannot re-derive without its own probe rig.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
-## audit-admin-statuschiptone: `StatusChipTone`  (keep, 2026-08-26, any-site audit)
+## audit-admin-statuschiptone: `StatusChipTone`  (retire, 2026-08-26, any-site audit; superseded by the 2026-08-24 owner probe)
 
-- **Verdict:** keep. The engine ships the vocabulary and the site assigns meaning: the same chip serves a publish-state pill and a household-standing pill with no shared domain knowledge baked in.
-- **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 37.
-- **Any-site case:** The engine ships the vocabulary and the site assigns meaning: the same chip serves a publish-state pill and a household-standing pill with no shared domain knowledge baked in.
+- **Verdict:** superseded. The audit's original keep read: "The engine ships the vocabulary and the site assigns meaning: the same chip serves a publish-state pill and a household-standing pill with no shared domain knowledge baked in." That described the dotted grammar, where `tone` was the ONLY color-carrying axis and had to stay a prop for the site to assign. The 2026-08-24 owner probe (Geoff's own ratification for the CHIP family) fused tone into the register and retired the dot that rendered it, leaving `tone` driving nothing: retiring the prop follows the ratified evidence rather than inventing a tone-times-register color grammar no probe measured. Distinguish `warning-button-tier` (held, deferred 2026-08-26) explicitly: that hold is the BUTTON family's own register question, still Geoff's to rule, and this retirement does not speak to it; the chip warning register was ratified by the owner probe and invents nothing new.
+- **Reopens on:** closed. Executed by the toolkit-seams pass, Task 2: `tone`, `StatusChipTone`, and `STATUS_CHIP_DOT_CLASS` are all removed from `StatusChip`.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 37; superseded in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 2.
+- **Any-site case:** No longer applicable; the register itself now carries what tone used to carry, so a site assigns its own meaning to `register`, not to a separate `tone`.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-listtoolbaraction: `ListToolbarAction`  (keep, 2026-08-26, any-site audit)
@@ -2248,14 +2260,15 @@ when the remediation pass lands.
 
 - **Verdict:** reshape. badge-error/badge-success do not compile into the packaged cairn-admin.css while every status-<tone> does, so a consumer writing badge badge-success inside the admin theme gets nothing and cannot fix it.
 - **Reopens on:** open until executed; the remediation pass closes it (shape: Replace the 6px tone dot at StatusChip.svelte:106 as the color carrier (Geoff's 2026-08-24 owner probe ruled it illegible toolkit-wide) and complete the registe).
+- **Progress note (toolkit-seams pass, Task 2, 2026-08-26):** the dot/register half of this reshape is executed: the 6px tone dot is gone, `tone` retires, and `register` alone now carries color (`'quiet' | 'warning' | 'outline'`, second generation, docs/internal/probes/2026-08-26-chip-registers-v2). The badge-tier half named in the verdict (`badge badge-success` compiling to nothing) is NOT executed here; `badge-error`/`badge-success` do now compile again in the shipped sheet, but only as an incidental side effect of Task 2 blessing them in `admin-css-safelist.ts` to preserve the shipped sheet's de facto public API after the dot-era doc comment that had accidentally compiled them was removed, not because this reshape's badge-tier recipe was built. This entry stays open; a later pass closes it if it takes up the badge-tier half.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 50.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-listtoolbar: `ListToolbar`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. It carries a real ARIA radiogroup for segmented filters, a role=status count line, and a full disclosure pattern. The one consumer that hand-copied the disclosure 'missed all four on the first pass'.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Extract the four disclosure mechanics (aria-expanded/aria-controls, focus-in, Escape-plus-return, outside-pointerdown close) as a ToolbarDisclosure primitive Li).
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 51.
+- **Reopens on:** closed. Executed as `ToolbarDisclosure` (`/admin-toolkit`), a controlled trigger-plus-panel primitive carrying five dismissal mechanics (aria-expanded/aria-controls, focus-into-panel-on-open, Escape-plus-return-focus, outside-pointerdown, and the facet's own focus-leaves-the-boundary mechanic the original shape missed). `ListToolbar` folds both duplications onto it, its overflow menu and each `'menu'`-display facet; single-open-at-a-time for the facets stays in `ListToolbar` via `openFacetId`, since no self-contained primitive can enforce it across siblings, and the ARIA-menu content layer (role, roving tabindex, reset-to-first) stays in `ListToolbar`'s own panel content, since it is facet behavior, not disclosure mechanics. The Svelte-scoped `:focus-within` neutralizer moved with the container markup it serves, verified by a rendered check against the packaged admin sheet (the same check the original bug needed to be caught at all).
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 51; executed in [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 4.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-pageheader: `PageHeader`  (keep, 2026-08-26, any-site audit)

@@ -111,7 +111,7 @@ own name.
     <span class="font-medium" aria-hidden="true">Alt text</span>
     {#if decorative}
       <span
-        class="inline-flex items-center gap-1 font-medium text-[var(--cairn-warning-ink)]"
+        class="inline-flex items-center gap-1 font-medium cairn-text-warning"
         data-cairn-alt-status="needs"
         aria-label="Alt text: needs a description"
       >
@@ -211,7 +211,7 @@ own name.
   <div role="status" aria-live="polite">
     {#if decorativeWithCaption}
     <div
-      class="flex items-start gap-2 rounded-[0.55rem] p-2.5 text-[var(--cairn-warning-ink)]"
+      class="flex items-start gap-2 rounded-[0.55rem] p-2.5 cairn-text-warning"
       style="background: color-mix(in oklab, var(--cairn-warning-ink) 8%, transparent);"
     >
       <svg

@@ -22,6 +22,14 @@ clearings.
 
 ## Live findings
 
+- **The showcase e2e visual suite is blind to chip-bearing surfaces** (`extender`, 2026-08-27).
+  The admin visual specs passed unchanged through the StatusChip regrammar (dot removed, register
+  renamed, grounds retuned) because no captured screen renders a chip within the 120px diff
+  budget (`playwright.config` `maxDiffPixels: 120`). The pass's visual verification had to be a
+  hand-built probe read by the conductor. Candidate fix: a chip-bearing admin screen (a list with
+  status rows, or a dedicated probe route) joins `admin-visual.spec.ts` in both themes.
+
+
 - **The rulings ledger will not scale as one flat read** (`contributor`, 2026-08-26). The
   any-site audit appended 535 entries to `docs/internal/engine-rulings.md` (~3,970 lines),
   and `engine-triage`'s first action reads it in full on every dispatch. Fine for now under
@@ -29,6 +37,69 @@ clearings.
   ledger read, split the audit section into a slug-indexed summary the agent greps plus the
   full entries on demand. Trigger: the first consultation where the triage's ledger read
   visibly dominates its token spend.
+
+- **The ASC CSRF 403 incidents remain undiagnosed; the reset-blanking theory does not hold**
+  (`extender`, 2026-08-27; re-triaged 2026-08-27, fix round). The toolkit-seams pass's `CsrfField`
+  change had assumed a native form reset could blank the hidden token field toward the guard's
+  next check; verified in Chromium during the pass that a hidden `<input>`'s `value` setter IS its
+  own `defaultValue` setter, so nothing can desync the two, and the CHANGELOG/reference entries
+  were reworded from a fix to hardening accordingly.
+
+  The strongest code-supported candidate: a confirm-load token re-mint invalidates every other
+  open admin tab's already-rendered form. `csrf.ts`'s `issueCsrfToken` mints the CSRF cookie
+  `SameSite=Strict`; `auth-routes.ts`'s `confirmLoad` (`GET /admin/auth/confirm`, the magic-link
+  landing page) calls it on every load. Following the emailed link is a cross-site top-level
+  navigation, exactly the case `SameSite=Strict` withholds a cookie for, so the server sees no
+  existing CSRF cookie on that request and mints a fresh one, overwriting the old value in the
+  browser's cookie jar. (This holds for a webmail client, where the link opens the browser's own
+  navigation; a native mail client that hands the link to the OS or its own embedded webview may
+  send the `Strict` cookie along regardless, so the theory's cross-site framing needs confirming
+  against the actual client mix before it is treated as settled.) Any OTHER admin tab left open
+  from before (a draft mid-edit, say) still
+  carries the OLD token baked into its hidden form field from its own earlier SSR, so its next POST
+  submits a token that no longer matches the cookie and 403s, with no user action in that tab at
+  all. Two further, weaker candidates worth checking next: `content-routes-core.ts:644`'s
+  `csrf: event.cookies ? issueCsrfToken(...) : ''` empty-token fallback (a request lacking
+  `event.cookies` renders a form that can never pass the guard); and the per-request `secure`
+  derivation `crypto.ts`'s own `cookieName` docstring warns about (a reverse-proxy or platform-edge
+  request where the scheme cairn sees flips request to request would read/write the CSRF cookie
+  under two different names, `__Host-cairn_csrf` and `cairn_csrf`, each blind to the other's
+  value). The `X-Cairn-CSRF` header path (`MediaHeroField.svelte`/`MediaInsertPopover.svelte`,
+  reading the token through the `CSRF_CONTEXT_KEY` getter) stays the weakest candidate: it reads
+  the same context value every other form field does, with no separate re-mint trigger of its own.
+
+  Proposed remedies, pending a conductor/Geoff ruling, not yet applied: (1) `SameSite=Lax` for the
+  CSRF cookie, since the session cookie is already `Lax` and a double-submit token gains no real
+  protection from `Strict` (a `Lax` cookie already withholds itself on a cross-site subresource or
+  iframe load, the actual CSRF-relevant case; it only differs from `Strict` on a top-level GET
+  navigation, exactly the confirm-load case above). (2) A non-sensitive `detail: 'no-cookie' |
+  'no-token' | 'mismatch'` discriminator on the guard's own CSRF-rejection log records, so a real
+  incident's own logs distinguish "the cookie never arrived" from "the submitted token is stale"
+  instead of one undifferentiated 403. Trigger: diagnosis is owed the next time the incident
+  recurs, or a conductor/Geoff ruling on the two remedies above, whichever comes first.
+
+- **`StatusChip`'s `outline` register border drops under the 3:1 non-text floor inside a
+  muted-ink ancestor** (`extender`, 2026-08-27, fix round). The hairline is `color-mix(in oklab,
+  currentColor 55%, transparent)`, so it inherits its color from whatever ancestor ink surrounds
+  it; measured inside a `text-muted` ancestor (`--color-muted` at 55%, composited onto the page
+  ground): 2.405:1 light, 2.971:1 dark, both under the WCAG 1.4.11 non-text floor `StatusChip`'s
+  own prop doc already tells a caller to verify. Latent in-tree today (cairn's own five call sites
+  clear the floor; none nests an `outline` chip inside a muted-text ancestor), so nothing ships
+  broken, but the gap is real and only self-defends by convention. A candidate for a `cairn-audit`
+  rendered rule (compute the actual inherited ink at each `outline` chip's own ancestor chain,
+  the same ancestor-walk `chip-ground-collision` already does for the fill registers) rather than
+  leaving it to a doc sentence a future call site can miss. Trigger: the harvest-detection pass, or
+  a consumer call site that nests an `outline` chip inside its own muted-text ancestor.
+
+- **No `cairn-text-error` utility exists, so error ink is inconsistent across the admin**
+  (`extender`, 2026-08-27). The toolkit-seams pass migrated the warning bracket form
+  (`text-[var(--cairn-warning-ink)]`, 27 sites) to the new `cairn-text-warning` utility and the
+  two positive-ink bracket sites (`text-[var(--color-positive-ink)]`) to `cairn-text-success`, but
+  left the error ink on the bracket form: 33 in-tree sites still write
+  `text-[var(--cairn-error-ink)]` directly (`CairnMediaLibrary.svelte`, `VocabularyAdmin.svelte`,
+  and others). Decision owed: add a matching `cairn-text-error` utility, or explicitly bless the
+  bracket form for error ink in `admin-grammar-tokens.md`. Trigger: the next admin-grammar-tokens
+  pass, or the next component that needs error-ink styling and has to choose which form to copy.
 
 ## Tombstones (decided, do not resurface)
 

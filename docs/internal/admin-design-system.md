@@ -209,12 +209,33 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   word or glyph drawn on `base-100` uses this token instead. Light is `oklch(50% 0.13 70)` (5.98:1 on
   base-100, 5.59:1 on the 8% accent chip tint); dark is `oklch(80% 0.14 70)` (8.61:1 and 6.20:1). The
   needs-alt markers use it: the picker's needs-alt label and the `.cm-cairn-media-needs-alt` rule in
-  the editor's media chip. Reference it as `text-[var(--cairn-warning-ink)]`.
+  the editor's media chip. Reference it through the `cairn-text-warning` utility
+  (`docs/reference/admin-grammar-tokens.md`, "Status-text idioms"), never the bracketed
+  `text-[var(--cairn-warning-ink)]` form or the bare `text-warning`, which resolves to the
+  inaccessible fill tone if it ever compiles at all.
 - `--color-positive-ink` is the green counterpart, the on-surface confirming TEXT ink for a positive
   status word on `base-100`. Light is `oklch(48% 0.12 150)` (~4.9:1 on base-100); dark is
-  `oklch(78% 0.12 150)` (~7:1). The hero field's "Described" alt-status chip uses it. Reference it as
-  `text-[var(--color-positive-ink)]`. It is a defined token, not a mockup-only color; a chip that
-  references an undefined custom property falls back to body ink with no gate to catch it.
+  `oklch(78% 0.12 150)` (~7:1). The hero field's "Described" alt-status chip uses it. Reference it
+  through the `cairn-text-success` utility, for the same reason. It is a defined token, not a
+  mockup-only color; a chip that references an undefined custom property falls back to body ink
+  with no gate to catch it.
+- **Unchecked checkbox/radio edge (2026-08-27).** DaisyUI's own `.checkbox`/`.radio` border a
+  20%-mix fallback (`color-mix(..., var(--color-base-content) 20%, transparent)`) when no color
+  variant supplies `--input-color`, which no admin call site does: measured 1.492:1 light / 1.773:1
+  dark against `base-100`, under the WCAG 1.4.11 3:1 non-text floor. A pinned unlayered rule in
+  `cairn-admin.css` (rule 12 of 13) raises the unchecked edge to a 55% mix, the same one already
+  locked for the scrollbar thumb and the outline chip border: 3.586:1 light / 4.959:1 dark. `.toggle`
+  needed no change; its own construction already mixes 50% and clears the floor unaided.
+- **Unfocused `.input`/`.select`/`.textarea` edge (2026-08-27, extends the checkbox/radio fix
+  above).** All three share the identical faint-edge construction: daisyUI resolves their border
+  through the same `--input-color` 20%-mix fallback (`border: var(--border) solid var(--input-color,
+  transparent)`), and no admin call site supplies a color variant. Measured against the compiled
+  sheet: 1.492:1 light / 1.773:1 dark against `base-100`, both under the same 3:1 floor. A pinned
+  unlayered rule in `cairn-admin.css` (rule 13 of 13) raises the edge to the same 55% mix already
+  locked above: 3.586:1 light / 4.959:1 dark, unchanged from the checkbox/radio numbers since the
+  underlying `base-content`/`base-100` pair is the same. Scoped to `:not(:focus, :focus-within)`,
+  since a focused field already sets `--input-color` to full `base-content` (a much stronger edge)
+  and the unlayered override would otherwise outrank that state too.
 
 ## Type
 
@@ -368,23 +389,36 @@ alongside the component recipes above and below it.
   ritual](./daisy-absorption-ritual.md) covers keeping that inventory honest across a daisy
   release. This doc keeps only what the toolkit does not decide for a screen: which recipe a
   screen shows, and any screen-specific tone mapping, copy, or layout rhythm.
-- **Chip registers, `bounded` and `quiet` (design infrastructure Pass 3, corpus C).** `StatusChip`
-  and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-bounded`/`cairn-chip-quiet`
-  classes, composed with `badge`) render in one of two ratified registers, replacing the stock
-  daisyUI ghost badge outright: its hardcoded background and border can match a row or card color
-  and melt into it, and neither it nor an un-tuned `badge-outline` clears the audit's own 3:1
-  border-contrast floor. `bounded` (the default) demotes `badge-outline`'s full-strength
-  inherited-color border to `color-mix(in oklab, currentColor 55%, transparent)`, a hairline that
-  clears 3:1 against both zebra stripes and both page grounds in both themes; it inherits its
-  color from the chip's own ancestor, so it can drop under the floor inside a `text-muted`
-  ancestor (verify a new call site; cairn's own five are verified safe). `quiet`
-  (`register="quiet"`) drops the border and tints the ground with
-  `color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300))` instead, for a
-  settled, put-away state (Published) that should recede rather than compete; it resolves only
-  inside the admin theme root and is unguarded against a ground at or near `base-300` itself (a
-  `.table-zebra` row-hover, say), where it can drop under the 1.5 ground-collision floor
-  (`chip-ground-collision` stays advisory, so this is documented rather than retuned). Values are
-  measured, not invented (`docs/internal/probes/2026-07-28-chip-registers`); the full contract
+- **Chip registers, second generation: `quiet`, `warning`, `outline` (the 2026-08-24 owner probe,
+  Geoff's own ratification: `docs/internal/probes/2026-08-26-chip-registers-v2`).** `StatusChip`
+  and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-quiet`/`cairn-chip-warning`/
+  `cairn-chip-outline` classes, composed with `badge`) render in one of three ratified registers,
+  replacing the stock daisyUI ghost badge outright: its hardcoded background and border can match
+  a row or card color and melt into it, and neither it nor an un-tuned `badge-outline` clears the
+  audit's own 3:1 border-contrast floor. The first generation (design infrastructure Pass 3) split
+  a `tone` prop (the color signal, carried by a small `status` dot) from a `bounded`/`quiet`
+  register (the shape); the owner probe measured the dot illegible toolkit-wide across three
+  consumer screens and ratified fusing tone INTO the register instead, so `tone` and the dot both
+  retire. `quiet` (the default) tints the ground with a low-contrast wash off
+  `--color-base-content`, for a settled, put-away state (Published) that should recede rather than
+  compete. `warning` tints the same way off `--color-warning`, carrying its own on-surface ink
+  (`--cairn-warning-ink`), for a state that needs attention (an unpublished-changes marker, a
+  needs-alt notice). `outline` (`register="outline"`) drops the fill and demotes `badge-outline`'s
+  full-strength inherited-color border to `color-mix(in oklab, currentColor 55%, transparent)`, a
+  hairline that clears 3:1 against both zebra stripes and both page grounds in both themes (the
+  successor of the first generation's `bounded`, unchanged recipe); it inherits its color from the
+  chip's own ancestor, so it can drop under the floor inside a `text-muted` ancestor (verify a new
+  call site). Every tinted fill (`quiet`, `warning`) is tuned to a 1.16-1.47:1 contrast band
+  against its own row ground (plain and zebra, both admin themes), and `warning`'s ink additionally
+  clears >= 4.5:1 against its own fill; both resolve only inside the admin theme root. The tinted
+  band's upper bound (1.47:1) sits under the audit's own 1.5:1 ground-collision floor, so every
+  `quiet`/`warning` chip sits under that floor by design, on every row ground, not only a
+  `base-300`-derived one (`chip-ground-collision` stays advisory, so this is documented rather
+  than retuned). There is no chip-level danger tier; a state that must
+  stand out beyond quiet is a `warning` chip. Every register pins `font-weight: 400`; since none of
+  the three carries a Tailwind layer, that pin outranks a `font-semibold`/`font-medium` utility on
+  the same element, so a hand-composed chip carries no weight utility of its own. Values are
+  measured, not invented (`docs/internal/probes/2026-08-26-chip-registers-v2`); the full contract
   lives on [the admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
   and it will show up here") and the create CTA, built with the toolkit's `EmptyState` (`heading`,
@@ -417,9 +451,10 @@ alongside the component recipes above and below it.
     the page's one loose element (`PageHeader`'s own `mb-10`), the toolbar belongs to the card below
     it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`).
   - `EntrySummary.summary` stays off the list (the density ruling; it still serves the edit page).
-  - Tone mapping (ruling 9 of the 2026-07-20 admin-toolkit adoption map): Published and New both
-    read `StatusChip`'s neutral tone; Edited alone carries the act-on info tone, rhyming with the
-    topbar's "Publish site (N)" pill.
+  - Chip register (ruling 9 of the 2026-07-20 admin-toolkit adoption map, re-expressed for the
+    second-generation register grammar): New, Edited, and Published all take `StatusChip`'s
+    default `quiet` register; the label text alone carries the distinction a tone dot used to
+    carry.
   - Hidden is a row treatment, not a fourth pill: the row de-emphasizes (~0.62 opacity on the title)
     and carries an eye-off "Hidden" tag inline beside the title, leaving the status cell to one
     publish-state chip.
@@ -529,6 +564,44 @@ alongside the component recipes above and below it.
   `Pagination` is the one caller that renders no glyph at all: its selected page conveys state
   through `aria-current="page"` and fill alone, a known exception, out of conformance on light
   (ROADMAP.md, "Next", filed 2026-07-31).
+- **Plain bulleted list (`.toolkit-list`, 2026-08-27; ruling rewritten 2026-08-27 review):** a bare
+  `<ul>`/`<ol>` that wants an ordinary bulleted or numbered list, not daisyUI's own `.list`
+  component, adds `class="toolkit-list"` to drop the UA's 40px marker gutter
+  (`padding-inline-start: 0`, same reset as the `.list` opt-in, on its own class). `.list` is not a
+  substitute: it is daisyUI's structured-ROWS component (`display: flex; flex-direction: column;
+  font-size: .875rem`), and applying it to a plain list carries that real baggage: forced flex/column
+  layout instead of normal block flow between items, and a forced .875rem font-size instead of
+  inheriting the ambient one. Rendered against the compiled sheet, a `<ul class="list">` still paints
+  a bullet (a flex item with a `list-item` computed display keeps its `::marker` box in Chromium);
+  the zero px gap between the `<li>`'s content and the `<ul>`'s own edge, identical under
+  `.toolkit-list`, comes from `padding-inline-start: 0` on both classes alike, not from marker
+  suppression. `.toolkit-list` carries no `display` or `font-size` of its own, so a plain list keeps
+  normal block flow and inherits its ambient font-size (measured against the built sheet: 16px
+  inherited under `.toolkit-list` versus `.list`'s forced 14px, same render). Never `list-style: none`
+  on either class (WCAG 1.3.1 removes list semantics from the accessibility tree in
+  WebKit/VoiceOver), and never a bare `ul`/`ol` ancestry selector (the admin wrapper also hosts the
+  editor's rendered markdown preview, which needs its own bullets untouched). No admin screen
+  carries a plain bulleted list today (a grep of every bare `<ul>`/`<ol>` in `src/lib/components` and
+  `src/lib/admin-toolkit` found only structured lists: menus, listboxes, flex rows with their own
+  gap, daisyUI's `.steps`), so `.toolkit-list` ships as documented infrastructure for the next screen
+  that needs one, rather than an in-tree call site today.
+- **Field/button focus-ring color, decline-with-reason (2026-08-27):** a field's `:focus` outline and
+  a neutral button's `:focus-visible` outline both resolve to the same color, `base-content`
+  (daisyUI's own defaults: `.input:focus`/`.select:focus`/`.textarea:focus` set
+  `--input-color: var(--color-base-content)`, and `.btn`'s own base rule sets
+  `outline-color: var(--btn-color, var(--color-base-content))`), measured directly against the
+  compiled sheet. A `.btn-primary` button reads a primary-toned ring only because it supplies
+  `--btn-color: var(--color-primary)` through its own variant class, and no admin field ever carries
+  an analogous `.input-primary`/`.select-primary`/`.textarea-primary` variant, so a primary action
+  button (Save, Publish) and a plain text field read as differently colored on focus in practice, even
+  though the underlying mechanism (variant supplies the ring color, neutral falls back to
+  `base-content`) is identical for both control families and already the pattern this file's own
+  Truthfulness note (above, "One brand-violet keyboard-focus ring") accepts for `.btn`. Forcing a
+  primary ring onto every field regardless of variant would need its own unlayered override (the
+  same later-layer-wins mechanic the Truthfulness note already documents as otherwise unfixable) for
+  a purely cosmetic unification with no accessibility gain, since `base-content` already clears a
+  higher-margin ring than a primary tint would on either theme. Report-and-change-nothing, the same
+  posture `ExpandableRow`'s trigger-target bullet models.
 - **Container fold affordance:** a directive container folds from the rail band. One chevron replaces
   the container's innermost rail bar on the opener row (down while the caret is inside, right while
   folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target.
@@ -684,7 +757,7 @@ alongside the component recipes above and below it.
   AT. Two separate live regions carry the result count and the selection announcement, since one
   region cannot voice both without clobbering itself. A type-facet seam filters by media type but
   stays hidden while a site has only one type, so it does not show an empty control. The needs-alt
-  label on a result uses `text-[var(--cairn-warning-ink)]`.
+  label on a result uses `cairn-text-warning`.
 - **Media: the capture card (`MediaCaptureCard`).** The card where an editor names and describes a
   newly added image. Its submit is never disabled: alt text is treated as debt, not a gate, so an
   editor can insert now and add the description later (the needs-alt notice tracks the gap). The alt

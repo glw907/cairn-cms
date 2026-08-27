@@ -17,9 +17,20 @@ Keyboard operability rides the native `<button>` element's own Enter/Space activ
 `onkeydown` handler reinvents what the browser already does correctly for a real button. The whole
 summary `<tr>` also carries a mouse-only `onclick` convenience (the design spec's "clicking a row
 expands it in place"); the explicit trailing button is the one control carrying `aria-expanded` and
-the accessible name, which is why summary cells should stay non-interactive (plain text, a
-`StatusChip`, and similar) -- an interactive control nested inside the row would double-handle the
-click. Per-row actions belong in the panel, never inline in a summary cell, for the same reason.
+the accessible name, so a summary cell renders plain content (text, a `StatusChip`, and similar) by
+default -- an interactive control nested directly in the row would double-handle the click. A summary
+cell that genuinely needs an inline interactive control (an inline-editable value, a per-row action)
+wraps it in an element carrying **`data-cairn-inert-cell`**: the row's `onclick` walks the click
+target's ancestry with `closest('[data-cairn-inert-cell]')` and ignores any click that resolves inside
+one, so the wrapped control's own click handler runs without also toggling the row. This is a
+documented escape, not `stopPropagation()` a consumer has to hand-roll and re-discover per cell. The
+trigger button carries no `data-cairn-inert-cell` of its own and needs none -- its own `onclick`
+already calls `event.stopPropagation()` -- so it stays the one control carrying `aria-expanded`,
+unaffected by the escape either way. An interactive control placed inside a summary cell (inert-
+wrapped or not) still has to meet the 24x24 CSS px target-size floor (WCAG 2.5.8) on its own,
+independent of the row's own click-to-expand affordance; `ReferenceField.svelte`'s own remove
+button (`max-sm:min-h-11 max-sm:min-w-11`, the narrow-viewport-only floor a dense summary cell also
+needs) is the idiom to reach for.
 
 **The trigger cell is `position: sticky; right: 0`** (the Members pass coherence round).
 `AdminTable`'s own horizontal-scroll fallback means a summary row wider than its viewport scrolls
@@ -89,9 +100,18 @@ verified against zebra stripes in both themes):**
   }
 
   let { expanded, onToggle, datum, colspan, summary, panel, triggerLabel }: Props = $props();
+
+  /** Toggles on a row click, unless the click resolves inside an element carrying
+   *  `data-cairn-inert-cell`; see this component's own header comment for the escape's contract. */
+  function handleRowClick(event: MouseEvent) {
+    if (event.target instanceof Element && event.target.closest('[data-cairn-inert-cell]')) {
+      return;
+    }
+    onToggle();
+  }
 </script>
 
-<tr class="toolkit-expandable-row-summary" onclick={onToggle}>
+<tr class="toolkit-expandable-row-summary" onclick={handleRowClick}>
   {@render summary()}
   <td class="toolkit-expandable-row-trigger-cell">
     <button
@@ -119,6 +139,28 @@ verified against zebra stripes in both themes):**
 <style>
   .toolkit-expandable-row-summary {
     cursor: pointer;
+  }
+
+  /* A `data-cairn-inert-cell` wrapper opts its own click out of the row toggle (this component's
+     own header comment); the row-level pointer cursor above would otherwise mislead a hover over
+     that escape into reading as "this also toggles the row." The invariant: the inert cell and
+     its plain content must not show the row-toggle pointer, but a self-cursored control keeps its
+     own cursor. `cursor: auto` on the wrapper resets the inherited row pointer for the wrapper
+     itself and any plain content inside it -- `cursor` is an inherited property, so ordinary text
+     and inline elements (a `<span>`, for instance) pick this reset back up without a rule of their
+     own.
+
+     Deliberately no `[data-cairn-inert-cell] *` wildcard reaching into the wrapper's descendants.
+     A form control (`<button>`, `<select>`, ...) never inherits `cursor` in the first place -- the
+     browser's UA sheet gives it an explicit `cursor: default` of its own -- so a wildcard override
+     would be fighting a value that was never inherited to begin with. Worse, it would also stomp a
+     `.btn`'s own `cursor: pointer`, which daisyUI sets explicitly, on exactly the nested per-row
+     action (an edit or delete button) this escape hatch exists to host: that pointer means "this
+     control is clickable," and wrapping the control in an inert cell must not flatten that
+     reading to `auto`. `:global()`: the wrapper is the caller's own snippet markup, opaque to this
+     component's compiler. */
+  .toolkit-expandable-row-summary :global([data-cairn-inert-cell]) {
+    cursor: auto;
   }
 
   /* Row hover feedback (fix 1 above), for the CALLER's own summary cells. `:global(td)` on the

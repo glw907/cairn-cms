@@ -63,7 +63,7 @@ describe('the media public base is injectable through context', () => {
   it('renders MediaPicker option thumbnails under the injected base', async () => {
     const screen = await render(
       MediaPicker,
-      withBase({ library: LIBRARY, onselect: () => {} }) as never,
+      withBase({ entries: Object.values(LIBRARY), onselect: () => {} }) as never,
     );
     const paths = thumbPaths(screen.container);
     expect(paths.length).toBeGreaterThan(0);
@@ -130,7 +130,10 @@ describe('the real admin shell composes the media-base context from its resolved
 
 describe('the media public base defaults to /media with no provider (a bare mount outside CairnAdminShell)', () => {
   it('keeps MediaPicker option thumbnails under /media', async () => {
-    const screen = await render(MediaPicker, { library: LIBRARY, onselect: () => {} } as never);
+    const screen = await render(MediaPicker, {
+      entries: Object.values(LIBRARY),
+      onselect: () => {},
+    } as never);
     expect(thumbPaths(screen.container)[0]).toBe(`/media/first-light.${HASH}.webp`);
   });
 

@@ -28,17 +28,21 @@ const panel = createRawSnippet<[unknown]>((getDatum) => ({
   render: () => `<p>Panel for ${(getDatum() as { name: string }).name}</p>`,
 }));
 
+/** One collapsed Alvarez row, the starting point every spec below spreads and then overrides only
+ *  where its own case differs (the expanded flag, a counting `onToggle`, an inert summary cell). */
+const BASE_PROPS = {
+  expanded: false,
+  onToggle: () => {},
+  datum: { name: 'Alvarez' },
+  colspan: 3,
+  summary,
+  panel,
+  triggerLabel: 'Expand the Alvarez household',
+};
+
 describe('ExpandableRow', () => {
   it('renders the collapsed state with aria-expanded=false and no panel row', async () => {
-    const screen = await render(ExpandableRow, {
-      expanded: false,
-      onToggle: () => {},
-      datum: { name: 'Alvarez' },
-      colspan: 3,
-      summary,
-      panel,
-      triggerLabel: 'Expand the Alvarez household',
-    });
+    const screen = await render(ExpandableRow, { ...BASE_PROPS });
     const button = screen.container.querySelector('button')!;
     expect(button.getAttribute('aria-expanded')).toBe('false');
     expect(button.getAttribute('aria-label')).toBe('Expand the Alvarez household');
@@ -48,12 +52,8 @@ describe('ExpandableRow', () => {
 
   it('renders the expanded state with aria-expanded=true and the panel row carrying the datum and colspan', async () => {
     const screen = await render(ExpandableRow, {
+      ...BASE_PROPS,
       expanded: true,
-      onToggle: () => {},
-      datum: { name: 'Alvarez' },
-      colspan: 3,
-      summary,
-      panel,
       triggerLabel: 'Collapse the Alvarez household',
     });
     const button = screen.container.querySelector('button')!;
@@ -65,32 +65,88 @@ describe('ExpandableRow', () => {
   });
 
   it('renders the summary cells inside the summary row regardless of expanded state', async () => {
-    const screen = await render(ExpandableRow, {
-      expanded: false,
-      onToggle: () => {},
-      datum: { name: 'Alvarez' },
-      colspan: 3,
-      summary,
-      panel,
-      triggerLabel: 'Expand the Alvarez household',
-    });
+    const screen = await render(ExpandableRow, { ...BASE_PROPS });
     const summaryRow = screen.container.querySelector('.toolkit-expandable-row-summary')!;
     expect(summaryRow.querySelector('td')?.textContent).toBe('Alvarez');
   });
 
   it('uses a real button as the trigger control, so Enter/Space activation is native rather than reimplemented', async () => {
-    const screen = await render(ExpandableRow, {
-      expanded: false,
-      onToggle: () => {},
-      datum: { name: 'Alvarez' },
-      colspan: 3,
-      summary,
-      panel,
-      triggerLabel: 'Expand the Alvarez household',
-    });
+    const screen = await render(ExpandableRow, { ...BASE_PROPS });
     const button = screen.container.querySelector('button')!;
     expect(button.type).toBe('button');
     expect(button.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('toggles when an ordinary summary cell is clicked', async () => {
+    let toggled = 0;
+    const screen = await render(ExpandableRow, { ...BASE_PROPS, onToggle: () => toggled++ });
+    const summaryCell = screen.container.querySelector(
+      '.toolkit-expandable-row-summary td'
+    ) as HTMLElement;
+    await userEvent.click(summaryCell);
+    expect(toggled).toBe(1);
+  });
+
+  it('does not toggle when a click lands inside a data-cairn-inert-cell wrapped cell', async () => {
+    let toggled = 0;
+    const inertSummary = staticSnippet(
+      '<td data-cairn-inert-cell><button type="button">Edit</button></td>'
+    );
+    const screen = await render(ExpandableRow, {
+      ...BASE_PROPS,
+      onToggle: () => toggled++,
+      summary: inertSummary,
+    });
+    const innerButton = screen.container.querySelector(
+      '[data-cairn-inert-cell] button'
+    ) as HTMLElement;
+    await userEvent.click(innerButton);
+    expect(toggled).toBe(0);
+
+    // Clicking the inert cell itself, not just its interactive child, is also ignored.
+    const inertCell = screen.container.querySelector('[data-cairn-inert-cell]') as HTMLElement;
+    await userEvent.click(inertCell);
+    expect(toggled).toBe(0);
+  });
+
+  it('does not show the row-toggle pointer cursor over a data-cairn-inert-cell wrapped cell', async () => {
+    const inertSummary = staticSnippet(
+      '<td data-cairn-inert-cell><span>Household</span><button type="button">Edit</button></td>'
+    );
+    const screen = await render(ExpandableRow, { ...BASE_PROPS, summary: inertSummary });
+    const inertCell = screen.container.querySelector('[data-cairn-inert-cell]') as HTMLElement;
+    const plainSpan = screen.container.querySelector('[data-cairn-inert-cell] span') as HTMLElement;
+    const innerButton = screen.container.querySelector(
+      '[data-cairn-inert-cell] button'
+    ) as HTMLElement;
+    // The wrapper and its plain inline content (the span) inherit `cursor` from their ancestry, so
+    // the wrapper's own `cursor: auto` reset (see the component's own style block) reaches both:
+    // neither may read as the row-toggle pointer.
+    expect(getComputedStyle(inertCell).cursor).not.toBe('pointer');
+    expect(getComputedStyle(plainSpan).cursor).not.toBe('pointer');
+    // A plain `<button>` never inherits `cursor` at all -- the browser's UA sheet gives form
+    // controls an explicit `cursor: default` of their own -- so it reads the UA default here, not
+    // the wrapper's `auto` and not the row's `pointer`. This is the case the wildcard rule used to
+    // handle by brute force (and, in doing so, also stomped a `.btn`'s own pointer); asserting the
+    // UA default directly is what proves the wildcard is unnecessary for a plain control.
+    expect(getComputedStyle(innerButton).cursor).toBe('default');
+  });
+
+  it('still activates the trigger button by click, unaffected by the inert-cell guard', async () => {
+    let toggled = 0;
+    const screen = await render(ExpandableRow, { ...BASE_PROPS, onToggle: () => toggled++ });
+    const button = screen.container.querySelector('button')!;
+    await userEvent.click(button);
+    expect(toggled).toBe(1);
+  });
+
+  it('still activates the trigger button by keyboard (native Enter/Space), unaffected by the inert-cell guard', async () => {
+    let toggled = 0;
+    const screen = await render(ExpandableRow, { ...BASE_PROPS, onToggle: () => toggled++ });
+    const button = screen.container.querySelector('button')!;
+    button.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(toggled).toBe(1);
   });
 });
 
@@ -134,15 +190,7 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
       const screen = await render(
         ExpandableRow,
         {
-          props: {
-            expanded: false,
-            onToggle: () => {},
-            datum: { name: `Row ${i}` },
-            colspan: 3,
-            summary,
-            panel,
-            triggerLabel: `Expand row ${i}`,
-          },
+          props: { ...BASE_PROPS, datum: { name: `Row ${i}` }, triggerLabel: `Expand row ${i}` },
           target: tbody,
         } as never,
       );
@@ -233,12 +281,8 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
     for (const theme of ['cairn-admin', 'cairn-admin-dark']) {
       document.documentElement.setAttribute('data-theme', theme);
       const screen = await render(ExpandableRow, {
+        ...BASE_PROPS,
         expanded: true,
-        onToggle: () => {},
-        datum: { name: 'Alvarez' },
-        colspan: 3,
-        summary,
-        panel,
         triggerLabel: 'Collapse the Alvarez household',
       });
       const panelCell = screen.container.querySelector('.toolkit-expandable-row-panel td')!;

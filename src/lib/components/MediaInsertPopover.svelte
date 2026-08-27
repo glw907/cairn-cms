@@ -404,7 +404,7 @@ rule). The CSRF token is read from the admin context.
           />
         </div>
         <p class="text-center type-meta text-muted">or reuse an image</p>
-        <MediaPicker {library} onselect={onPick} />
+        <MediaPicker entries={Object.values(library)} onselect={onPick} />
       </div>
     {/if}
   </div>

@@ -70,13 +70,16 @@ judgment about what the screen is for:
 
 - **One filled action, chosen deliberately.** `one-filled-action` catches a second accent fill;
   it cannot tell you which control on a new screen deserves the one it allows.
-- **Chip passivity.** `StatusChip` carries two registers: `bounded` (`register="bounded"`, the
-  default) for a chip that must read as an object with a real boundary, and `quiet`
-  (`register="quiet"`) for a settled or put-away state that should recede rather than announce
-  itself. Use quiet for the state a list mostly sits in (Published, Closed); reserve bounded for
-  a state that needs attention (Draft, Overdue, Pending). Quiet is unguarded against its own
-  ground near or at `base-300` (e.g. a `.table-zebra` row-hover): don't use it for a chip that
-  can sit on that ground.
+- **Chip passivity.** `StatusChip` carries three registers: `quiet` (`register="quiet"`, the
+  default) for a settled or put-away state that should recede rather than announce itself,
+  `warning` (`register="warning"`) for a state that needs attention, and `outline`
+  (`register="outline"`) for a transient or reversible absence (a removable tag, a
+  not-yet-confirmed suggestion). Use quiet for the state a list mostly sits in (Published,
+  Closed); reserve warning for a state that needs attention (Draft, Overdue, Pending). Both
+  tinted registers, quiet and warning, are tuned to a contrast band that sits under the audit's
+  own 1.5 ground-collision floor by design on every row ground, not only near `base-300`: a
+  `quiet` or `warning` chip measures as an advisory camouflaged finding on some row/theme pairs,
+  expected rather than a regression.
 - **Facet quietness.** A filter control is a "facet" in `ListToolbar`'s own vocabulary (its
   `'menu'` display): quiet bordered-button chrome at rest, showing only its own name. It picks up
   its applied treatment, a primary-tinted border and background, only once a value departs the

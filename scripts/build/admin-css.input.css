@@ -59,6 +59,14 @@
    would leave the shipped sheet as a side effect of a dependency bump. Held so consumer markup that
    rode it keeps resolving; it leaves only as a deliberate, changelog-carried act. */
 @source inline("footer-center");
+/* STATUS-TEXT SAFELIST (2026-08-27 admin sheet fixes). The two idioms below
+   (docs/reference/admin-grammar-tokens.md) are a documented public interface the same way the
+   grammar and container roles are, so they have to ship whether or not cairn's own tree happens
+   to reference them yet: a `@utility` is tree-shaken to used candidates, and cairn's own screens
+   still read --cairn-warning-ink and --color-positive-ink through the pre-existing bracketed
+   text-[var(...)] form at their few call sites (a wider in-tree migration is a separate,
+   deliberate change, not part of adding the idiom). */
+@source inline("cairn-text-warning cairn-text-success");
 @import "../../src/lib/components/cairn-admin.css";
 
 /* The named secondary-text roles. Rule 2: a component writes `text-muted`/`text-subtle`, never an
@@ -73,6 +81,30 @@
 }
 @utility text-subtle {
   color: var(--color-subtle);
+}
+
+/* The two status-text idioms (2026-08-27 admin sheet fixes): the on-surface counterparts to
+   --cairn-warning-ink and --color-positive-ink, named `cairn-text-*` rather than the bare
+   `text-warning`/`text-success` Tailwind's own core utilities would otherwise generate from
+   DaisyUI's --color-warning/--color-success FILL tones. Those fills are tuned for a badge or
+   alert background, not small text: --color-warning measures about 2.2:1 as text on base-100,
+   well under the 4.5:1 WCAG 1.4.3 floor, and reaching for the bare name would silently ship an
+   inaccessible warning label. --cairn-warning-ink and --color-positive-ink are the already-
+   locked, measured, readable-small-text counterparts (see the theme-root comments beside their
+   declarations), so these two utilities are the one supported way to reach them from markup:
+   before this, every call site wrote the bracketed text-[var(--cairn-warning-ink)] form (still
+   readable, but not a named, tree-shake-visible idiom, and easy to mistype against the
+   uncompiled text-warning). Color only, the same minimal shape as text-muted/text-subtle above;
+   weight, case, and an icon are a call-site recipe, not part of the idiom. Each carries the
+   token's own light-theme literal as a `var()` fallback, the same defense-in-depth the
+   `.cairn-chip-*` rules already carry (cairn-admin.css): both tokens are undefined outside the
+   admin theme root, and the fallback keeps misplaced text a readable ink rather than the ambient
+   color it would otherwise inherit. */
+@utility cairn-text-warning {
+  color: var(--cairn-warning-ink, oklch(50% 0.13 70));
+}
+@utility cairn-text-success {
+  color: var(--color-positive-ink, oklch(48% 0.12 150));
 }
 
 /* The E3 tracking scale (design arc 2026-07-15): letter spacing keyed to a piece of text's

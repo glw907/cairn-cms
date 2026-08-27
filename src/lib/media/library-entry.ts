@@ -5,11 +5,17 @@
 //
 // It lives in its own node-safe module (no @codemirror, no DOM, no @sveltejs/kit) so the consumers
 // share one declaration: editLoad and mediaLibraryLoad both project it through `mediaLibraryEntry`,
-// MediaPicker and the insert popover type their library prop with it, and the editor-media
-// decoration resolves a token against it. The editor-boundary test bars a static import from
+// MediaPicker types its entries prop with it, the insert popover its library prop, and the
+// editor-media decoration resolves a token against it. The editor-boundary test bars a static import from
 // editor-media.ts (it pulls @codemirror), so the shared type cannot be sourced from there; this
-// module is its neutral home. It is internal, exported from no package subpath, so it carries no
-// reference page.
+// module is its neutral home.
+//
+// The two halves have different visibility. The `MediaLibraryEntry` TYPE is public: its canonical
+// home is `/admin-toolkit`, beside MediaPicker, whose prop signature names it, and `/sveltekit`
+// re-exports it as R4 closure over `MediaLibraryData.assets`. Both entries are documented on those
+// subpaths' reference pages. The `mediaLibraryEntry` FUNCTION and the `MediaLibrary` alias stay
+// internal, exported from no package subpath: a site holds the loader's array and projects it
+// inline where it needs a hash lookup.
 import type { MediaEntry } from './manifest.js';
 
 /** One stored asset in the picker's projected library, keyed elsewhere by the 16-hex content hash. */

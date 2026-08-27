@@ -752,6 +752,13 @@ there, which is also how a custom `/admin/` screen's forms get the token. A form
 fail-closed signal. `EditPage`, `DeleteDialog`, `RenameDialog`, and the other authed admin forms
 compose it.
 
+The field's token survives a native form reset, the one `use:enhance` fires by default after a
+successful submit: a hidden `<input>`'s `value` and `defaultValue` reflect the same underlying
+`value` attribute, so the component sets `defaultValue` as a DOM property alongside `value`,
+pinning that reflection explicitly rather than leaving it to Svelte's own hydration-time
+default-management machinery. Hardening, not a behavior a consuming form has to opt into or a new
+guarantee a test independently proves; the component carries it on its own.
+
 ```svelte
 <CsrfField {token} />
 ```

@@ -1,3 +1,122 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+### Added
+
+- `ExpandableRow` (`/admin-toolkit`) accepts a `data-cairn-inert-cell` attribute on any element
+  inside a summary cell: the row's own click handler now ignores a click whose target resolves
+  inside one (`closest('[data-cairn-inert-cell]')`), so a consumer wraps a genuinely interactive
+  summary cell (an inline-editable value, a per-row action) instead of hand-rolling a
+  `stopPropagation()` wrapper. The trigger button's own `aria-expanded` control and keyboard
+  behavior are unchanged. The component's own `@component` doc comment is amended to match: an
+  inline interactive summary cell is now a supported shape when wrapped in the attribute, not a
+  contract violation. The trigger's rendered touch target was measured against the packaged admin
+  CSS at the 390px viewport (24x24 CSS px, the engine's ruled AA floor) and clears it, so no size
+  change was made. Consumers must: nothing.
+
+- `ToolbarDisclosure` (`/admin-toolkit`) extracts the trigger-plus-panel disclosure `ListToolbar`
+  implemented twice, its overflow menu and each `'menu'`-display facet: five dismissal mechanics
+  (`aria-expanded`/`aria-controls`, focus-into-panel-on-open, Escape-plus-return-focus,
+  outside-pointerdown, and focus-leaving-the-boundary), fully controlled via `open`/`onOpenChange`,
+  with the trigger and panel staying the caller's own snippet-authored markup so a `'menu'` facet's
+  ARIA-menu content (role, roving tabindex, reset-to-first) stays outside the primitive. Hiding is
+  primitive-owned: the panel attrs' `hidden` member (`ToolbarDisclosurePanelAttrs`) tracks `open`
+  directly, and a scoped `[hidden]` rule neutralizes any display-setting class the caller's own
+  panel root carries (daisyUI's `.menu`, say), so an omitted `dropdown-content` positioning class
+  can never leave the panel visible and tabbable while `aria-expanded` reads `false`. `ListToolbar`
+  folds both duplications onto it; single-open-at-a-time for the facets stays in `ListToolbar` via
+  `openFacetId`, since no self-contained primitive can enforce it across siblings. The Svelte-scoped
+  `:focus-within` neutralizer that used to live in `ListToolbar`'s own style (`ListToolbar.svelte`,
+  historically `:684-696`) moves with the container markup it serves, so it survives the fold rather
+  than orphaning silently. `ListToolbar`'s own behavior, markup classes, and public contract are
+  unchanged; this is an internal-implementation extraction plus one new export. Consumers must:
+  nothing.
+
+- `MediaPicker` publishes from `/admin-toolkit`, with `MediaSelection` and `MediaLibraryEntry`
+  beside it, so a site building its own admin screen composes cairn's read-only combobox over the
+  committed media library instead of rebuilding a selection UI over the manifest. Its prop is now
+  `entries: MediaLibraryEntry[]`, the array `mediaLibraryLoad` already returns on
+  `MediaLibraryData.assets`, so the loader's output passes straight through with no projection
+  step; the picker was unexported before this release, so no consumer held the old
+  `Record<string, MediaLibraryEntry>` shape. `MediaLibraryEntry`'s canonical home is
+  `/admin-toolkit`, beside the component whose prop signature names it, and `/sveltekit` keeps its
+  existing re-export. Consumers must: nothing.
+
+- The packaged admin sheet (`cairn-admin.css`) gains two new classes: `cairn-text-warning` and
+  `cairn-text-success`, the on-surface warning and success text idioms (`--cairn-warning-ink` and
+  `--color-positive-ink`), replacing the bracketed `text-[var(--cairn-warning-ink)]` form with a
+  named, documented utility (`docs/reference/admin-grammar-tokens.md`, "Status-text idioms"), and
+  `toolkit-list`, an opt-in `<ul>`/`<ol>` class that drops the UA's 40px marker-gutter reservation
+  for a plain bulleted or numbered list without pulling in daisyUI's own `.list` component's real
+  baggage for prose: a forced flex/column layout in place of normal block flow between items, and a
+  forced `.875rem` font-size in place of the ambient one. Every in-tree `text-[var(--cairn-warning-ink)]`
+  and `text-[var(--color-positive-ink)]` call site now writes `cairn-text-warning`/`cairn-text-success`
+  instead, so neither bracketed arbitrary-value class has any surviving reference in the scanned
+  admin tree, and neither compiles into the shipped sheet. Consumers must: replace any
+  hand-authored `text-[var(--cairn-warning-ink)]` with `cairn-text-warning` and any
+  `text-[var(--color-positive-ink)]` with `cairn-text-success`, since the arbitrary-value classes
+  no longer ship.
+
+### Changed
+
+- `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the
+  2026-08-24 owner probe, Geoff's own ratification: illegible-dot evidence and the ratified
+  three-register recipe are on record in `docs/internal/probes/2026-08-26-chip-registers-v2`).
+  `register` is now `'quiet' | 'warning' | 'outline'` (default `'quiet'`); the `tone` prop, the
+  small `status` dot it drove, and the `STATUS_CHIP_DOT_CLASS` export are all removed, since the
+  register alone now carries both shape and color. The sheet's shared hand-composed vocabulary
+  moves the same way: `.cairn-chip-bounded` is gone and `.cairn-chip-warning` is new. `title`
+  renders only when a `legend` prop is passed; a self-explanatory label with no `legend` carries no
+  `title` at all, since a bare `<span>` tooltip is hover-only anyway (no focus of its own to
+  surface it to a keyboard user), and the visually-hidden `legend` span already carries the
+  assistive-technology-reachable half of that same information. The shared `.cairn-chip-quiet`/
+  `.cairn-chip-warning`/`.cairn-chip-outline` rules pin `font-weight: 400`, and, being unlayered,
+  that pin outranks any Tailwind weight utility on the same element regardless of source order
+  (cascade layers resolve before specificity); a hand-composed chip that also carries
+  `font-semibold` or `font-medium` computes 400 anyway. `EditPage`'s three header status badges
+  (Published, on `.cairn-chip-quiet`; Edited and New, on the stock `badge-warning`/`badge-info`
+  fills) now render at that same uniform weight 400: the `font-medium` those two previously
+  carried was load-bearing for the Edited and New states, and dropping it to match Published is
+  deliberate. Consumers must: replace `register="bounded"` with `register="outline"` and
+  `.cairn-chip-bounded` with `.cairn-chip-outline`; remove the `tone` prop and any dependency on
+  the status dot, mapping `neutral`/`info`/`success` to `register="quiet"` (or leave `register`
+  unset, since `quiet` is now the default) and `warning`/`danger` to `register="warning"`; remove
+  any reference to the removed `STATUS_CHIP_DOT_CLASS` export; and remove any weight utility from
+  a hand-composed `.cairn-chip-*` element, since it renders at 400 regardless.
+
+- The status-dot safelist family in `admin-css-safelist.ts` (thirteen entries, `status-primary`
+  through `status-xl`) is removed from the shipped `cairn-admin.css`, since the dot itself is
+  retired with `tone` above; the base `status` class stays blessed for one documented,
+  audit-complete list even though nothing renders it today. `badge-error`/`badge-success`, which
+  previously compiled only as a side effect of `StatusChip`'s own retired doc-comment prose naming
+  them (never from real usage), are now blessed deliberately in the same safelist instead of being
+  silently dropped. Consumers must: stop relying on any `status-<tone>` class (`status-neutral`,
+  `status-info`, `status-success`, `status-warning`, `status-error`, and every size variant) in
+  hand-authored admin markup; it no longer compiles into the shipped sheet.
+
+- `CsrfField` now pins its own hidden input's `defaultValue` attribute directly, alongside `value`,
+  so the token-survives-a-native-form-reset guarantee no longer depends on a hidden input's own
+  value-mode semantics. Setting `defaultValue` explicitly also means Svelte's compiler no longer
+  reaches for its own default-management machinery on this input: the hydration-time
+  `remove_input_defaults` call and the document-level `reset` listener it registers to reconcile a
+  dynamic `value` binding back to its default. No consumer-side change. Consumers must: nothing.
+
+### Fixed
+
+- An unchecked `.checkbox`/`.radio` in the packaged admin sheet raises its edge from daisyUI's
+  stock 20% `--color-base-content` mix (measured 1.492:1 light / 1.773:1 dark against `base-100`,
+  under the WCAG 1.4.11 3:1 non-text floor) to the same 55% mix already locked for the scrollbar
+  thumb and the outline chip border (3.586:1 light / 4.959:1 dark). `.toggle` needed no change; its
+  own construction already clears the floor unaided. Consumers must: nothing.
+
+- An unfocused `.input`/`.select`/`.textarea` in the packaged admin sheet gets the same edge raise,
+  from the identical 20% fallback (measured 1.492:1 light / 1.773:1 dark) to the same 55% mix
+  (3.586:1 light / 4.959:1 dark), since the field family resolves its unfocused border through the
+  same `--input-color` construction as `.checkbox`/`.radio`. `.toolkit-toolbar-select` is
+  deliberately excluded from this rule, since its edge harmonizes with the surrounding menu facet's
+  own chrome and stays a tracked exception (`ROADMAP.md`, "Next"). Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

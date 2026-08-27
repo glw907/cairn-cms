@@ -150,18 +150,23 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ListToolbarAction`: { label: string; onClick: () => void }
 - `ListToolbarFilter`: { id: string; label: string; options: ListToolbarFilterOption[]; value: string; onChange: (value: string) => void; defaultValue?: string; promoted?: boolean; display?: "select" | "segmented" | "menu" }
 - `ListToolbarFilterOption`: { value: string; label: string; count?: number }
+- `MediaLibraryEntry`: { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number | null; height: number | null; bytes: number; createdAt: string }
+- `MediaPicker`: Component<Props, {}, "">
+- `MediaSelection`: { entry: MediaLibraryEntry; ref: string; alt: string }
 - `OfficeList`: Component<Props, {}, "">
 - `PageHeader`: Component<Props, {}, "">
 - `PageWindowItem`: number | "ellipsis"
 - `Pagination`: Component<Props, {}, "">
 - `SelectInput`: Component<Props, {}, "value">
 - `SelectInputOption`: { value: string; label: string }
-- `STATUS_CHIP_DOT_CLASS`: { neutral: string; info: string; success: string; warning: string; danger: string }
 - `StatusChip`: Component<Props, {}, "">
-- `StatusChipRegister`: "bounded" | "quiet"
+- `StatusChipRegister`: "quiet" | "warning" | "outline"
 - `StatusChipSize`: "xs" | "sm"
-- `StatusChipTone`: "neutral" | "info" | "success" | "warning" | "danger"
 - `TextInput`: Component<Props, {}, "value">
+- `ToolbarDisclosure`: Component<Props, {}, "">
+- `ToolbarDisclosureAriaHaspopup`: "menu" | "listbox" | "dialog" | "grid" | "tree" | "true"
+- `ToolbarDisclosurePanelAttrs`: { id: string; hidden: true | undefined }
+- `ToolbarDisclosureTriggerAttrs`: { aria-expanded: boolean; aria-controls: string; aria-haspopup: ToolbarDisclosureAriaHaspopup | undefined; onclick: (event: MouseEvent) => void }
 
 ## `/ambient`
 

@@ -60,35 +60,39 @@ graduation.
 Assembles from daisyUI 5 primitives already compiled into cairn's packaged `cairn-admin.css`:
 `input`/`input-sm`, `select`/`select-sm`, `btn`/`btn-sm`/`btn-primary`/`btn-outline`/`btn-active`,
 `join`/`join-item` (the segmented display, the same assembly `Pagination`'s own page nav uses),
-and `dropdown`/`dropdown-content`/`dropdown-open`/`menu` (the overflow disclosure and, since the
-recomposition, each `'menu'` facet's own option list too, every one driven by a real `$state`
-toggle rather than the bare `:focus-within` daisyUI gives every `.dropdown` for free). That
-`:focus-within` path is also neutralized in CSS (`display: none !important` unless
-`dropdown-open` is present), not just tracked in state: daisy's own compiled rule still shows
-`.dropdown-content` on keyboard focus alone, which used to open a facet's panel while
-`aria-expanded` (driven purely by the class) stayed `false` -- the two now always agree. Each
-`'menu'` facet's option list is a real ARIA menu of `role="menuitemradio"` options (a single-select
-choice within the menu, not bare `"menuitem"` buttons in a plain list), each carrying
-`aria-checked` so the applied value is exposed to assistive tech the same way the segmented
-filter's own `role="radio"` options already are, not just through the sighted-only check glyph
-(WCAG 1.3.1/4.1.2). The roving tabindex still applies: only the focused option is a Tab stop, and
-ArrowUp/ArrowDown/Home/End move that focus, wrapping at the ends. The controls row, the facet
-control's own quiet-button chrome and applied treatment, the segmented group, and the count
-line's muted color live in this component's own scoped `<style>`, per the compiled-CSS constraint
-documented on `StatusChip`/`Pagination`: an unverified Tailwind utility string never reaches an
-`/admin/**` route.
+and `dropdown`/`dropdown-content`/`dropdown-open`/`menu` (the overflow disclosure and each
+`'menu'` facet's own option list). Each `'menu'` facet's option list is a real ARIA menu of
+`role="menuitemradio"` options (a single-select choice within the menu, not bare `"menuitem"`
+buttons in a plain list), each carrying `aria-checked` so the applied value is exposed to
+assistive tech the same way the segmented filter's own `role="radio"` options already are, not
+just through the sighted-only check glyph (WCAG 1.3.1/4.1.2). The roving tabindex still applies:
+only the focused option is a Tab stop, and ArrowUp/ArrowDown/Home/End move that focus, wrapping at
+the ends. The controls row, the segmented group, and the count line's muted color live in this
+component's own scoped `<style>`, per the compiled-CSS constraint documented on
+`StatusChip`/`Pagination`: an unverified Tailwind utility string never reaches an `/admin/**`
+route.
+
+The overflow disclosure and each `'menu'` facet both fold onto `ToolbarDisclosure`
+(`audit-admin-listtoolbar`'s reshape): the trigger `aria-expanded`/`aria-controls`, focus-into-
+panel-on-open, Escape-plus-return-focus, outside-pointerdown, and focus-leaves-the-boundary
+mechanics all live there now, driven from this component only by `open`/`onOpenChange` (the same
+fully-controlled convention every other prop here carries). Single-open-at-a-time for the facets
+stays here, in `openFacetId`, which no self-contained disclosure primitive could enforce on its
+own: each facet's own `open` derives from `openFacetId === filter.id`, and setting a new id on
+open closes whichever facet held it before, purely as a side effect of that derivation. The
+ARIA-menu content layer above (`role="menu"`, `role="menuitemradio"`, arrow roving, reset-to-
+first-on-open) stays entirely in this component's own panel snippet, never in the primitive: it is
+facet behavior, not disclosure mechanics, and `ToolbarDisclosure` accepts only the trigger's own
+`aria-haspopup` value as a prop, carrying no opinion about what the panel holds.
 
 The band is a single wrapped flex row, not a CSS grid: search, every promoted filter, the
 overflow trigger (when present), and the primary action all share one `flex-wrap: wrap` line, so
 they wrap together as one unit on a narrow viewport rather than the primary action landing on its
 own line below an independently-wrapping controls cluster.
 
-The overflow disclosure and each `'menu'` facet are full disclosure patterns, not just an
-`aria-expanded` toggle: Escape (fired from the trigger or from a control inside the panel) closes
-the open one and returns focus to its own trigger, and a pointerdown outside the open
-disclosure's trigger+panel closes it without moving focus. Only one facet menu is open at a time
-(a second facet's trigger closes the first, mirroring how a native `<select>` or the overflow
-disclosure itself never shows two panels at once).
+Only one facet menu is open at a time (a second facet's trigger closes the first, mirroring how a
+native `<select>` or the overflow disclosure itself never shows two panels at once); see
+`ToolbarDisclosure`'s own header comment for the five dismissal mechanics themselves.
 
 The count line and (on `Pagination`) the item-range line are `role="status"` live regions
 (`aria-live="polite"`, `aria-atomic="true"`): a search or filter change updates the line's text with
@@ -113,8 +117,9 @@ reflows its neighboring characters.
 </script>
 
 <script lang="ts">
-  import { tick, type Snippet } from 'svelte';
+  import type { Snippet } from 'svelte';
   import { CheckIcon, SearchIcon } from '../components/admin-icons.js';
+  import ToolbarDisclosure from './ToolbarDisclosure.svelte';
 
   interface Props {
     /** The search box's current text. */
@@ -163,76 +168,32 @@ reflows its neighboring characters.
     computeCountLine(count, itemLabel, appliedPills.map((pill) => pill.label)),
   );
 
-  // The overflow disclosure's own open state: a real toggle rather than the bare `:focus-within`
-  // daisyUI already gives `.dropdown` for free, so the trigger carries `aria-expanded`/
-  // `aria-controls` that actually reflects whether the content is showing, and a click (not just
-  // a focus move) opens and closes it.
+  // The overflow disclosure's own open state, and single-open-at-a-time for the `'menu'` facets
+  // (keyed by filter id, since any number can render in one toolbar): both are the ONE piece of
+  // coordination `ToolbarDisclosure` itself cannot own, since it is a single self-contained
+  // instance with no notion of its siblings. Every other disclosure mechanic (aria-expanded/
+  // aria-controls, focus-into-panel, Escape, outside-pointerdown, focus-leaves-the-boundary) lives
+  // in `ToolbarDisclosure`; see this component's own header comment.
   let overflowOpen = $state(false);
-  const uid = $props.id();
-  const overflowId = `${uid}-overflow`;
-
-  // The disclosure's own trigger and container refs: the trigger is the Escape focus-return
-  // target, and the container is the outside-click boundary (a pointerdown landing outside it
-  // closes the disclosure without moving focus, the standard disclosure-pattern shape).
-  let overflowTriggerEl = $state<HTMLButtonElement | null>(null);
-  let overflowContainerEl = $state<HTMLElement | null>(null);
-
-  function toggleOverflow() {
-    overflowOpen = !overflowOpen;
-  }
-  function closeOverflow(returnFocus: boolean) {
-    if (!overflowOpen) return;
-    overflowOpen = false;
-    if (returnFocus) overflowTriggerEl?.focus();
-  }
-  // Escape closes the disclosure and returns focus to the trigger, whether it fires from the
-  // trigger button or from a control inside the panel (the keydown bubbles to this container).
-  // Attached programmatically below rather than a declarative `onkeydown` on the container, since
-  // the container carries no interactive role of its own (it is delegation, not an affordance);
-  // the same pattern the toolbar/shortcut keydown delegation elsewhere in this codebase uses.
-  function onOverflowKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape' && overflowOpen) {
-      event.preventDefault();
-      closeOverflow(true);
-    }
-  }
-  $effect(() => {
-    const el = overflowContainerEl;
-    if (!el) return;
-    el.addEventListener('keydown', onOverflowKeydown);
-    return () => el.removeEventListener('keydown', onOverflowKeydown);
-  });
-  // A pointerdown anywhere outside the trigger+panel closes the disclosure without moving focus
-  // (the standard light-dismiss shape); a window listener rather than a document-level one keeps
-  // this component's own event wiring self-contained, matching Svelte's `<svelte:window>` idiom.
-  // Shared with the facet menus below, since both are light-dismiss disclosures.
-  function onWindowPointerdown(event: PointerEvent) {
-    if (overflowOpen && overflowContainerEl && !overflowContainerEl.contains(event.target as Node)) {
-      closeOverflow(false);
-    }
-    if (openFacetId !== null) {
-      const container = document.querySelector(`[data-facet-id="${uid}-${openFacetId}"]`);
-      if (container && !container.contains(event.target as Node)) closeFacet(false);
-    }
-  }
-
-  // A `'menu'`-display facet's own disclosure state: only one facet menu is open at a time
-  // (keyed by filter id, since any number of `'menu'` facets can render in one toolbar), the
-  // same single-panel behavior a native `<select>` or the overflow disclosure itself already
-  // gives for free. `data-facet-id` on each facet's own container is the outside-click and
-  // focus-return lookup, rather than a per-filter ref array (the same reasoning
-  // `onSegmentedKeydown` already uses for reading its siblings from the DOM). The attribute value
-  // is prefixed with `uid`, not the bare filter id: two `ListToolbar` instances on one page can
-  // share a filter id (two lists each with their own "standing" facet), and a bare id would let
-  // `document.querySelector` resolve the first match in document order -- the wrong toolbar.
   let openFacetId = $state<string | null>(null);
 
   // A `'menu'` facet's option list is a real ARIA menu (role="menu"/"menuitemradio"), so it
   // carries the standard roving-tabindex keyboard model, not one tab stop per option: only the
   // currently-focused option is a Tab stop, keyed by filter id the same way `openFacetId` is (any
-  // number of `'menu'` facets can render in one toolbar). Reset to the first option on every open
-  // (below), matching the menu-button idiom's own "focus moves to the first option" contract.
+  // number of `'menu'` facets can render in one toolbar). Reopening a facet after a prior arrow-key
+  // move resets this index to 0 (see the facet's own `onOpenChange` below): without that reset, a
+  // stale non-zero index is itself the only tabbable option, so `ToolbarDisclosure`'s own
+  // focus-into-panel mechanic would land back on the previously-arrowed option instead of the
+  // first one, the APG menu-button behavior a real Tab keypress on a freshly-opened menu gives.
   let facetFocusIndex = $state<Record<string, number>>({});
+
+  // Each facet's own trigger element, for `selectFacetOption`'s own focus-return: `ToolbarDisclosure`
+  // never renders the trigger itself (it stays this component's own markup, per its controlled,
+  // snippet-based contract), so it only knows to return focus to the trigger on ITS OWN Escape/
+  // outside-pointerdown/focusout mechanics. Selecting an option closes the facet from here, a
+  // parent-driven close the primitive cannot see as "its own" dismissal, so the focus-return is
+  // this component's own responsibility too.
+  let facetTriggerEls = $state<Record<string, HTMLButtonElement | null>>({});
 
   // Clamped, not read raw: if a menu's own options array shrinks while it is open (a live facet
   // vocabulary), a stale stored index could point past the end and leave every remaining option at
@@ -265,54 +226,21 @@ reflows its neighboring characters.
     options[next]?.focus();
   }
 
-  async function toggleFacet(id: string) {
-    const opening = openFacetId !== id;
-    openFacetId = opening ? id : null;
-    if (opening) {
-      facetFocusIndex = { ...facetFocusIndex, [id]: 0 };
-      // Menu-button idiom: opening via the trigger moves focus straight to the first option,
-      // rather than leaving a keyboard user to Tab into the list themselves.
-      await tick();
-      document
-        .querySelector<HTMLButtonElement>(`[data-facet-id="${uid}-${id}"] .toolkit-toolbar-facet-menu button`)
-        ?.focus();
-    }
-  }
-  function closeFacet(returnFocus: boolean) {
-    if (openFacetId === null) return;
-    const id = openFacetId;
-    openFacetId = null;
-    if (returnFocus) {
-      document
-        .querySelector<HTMLButtonElement>(`[data-facet-id="${uid}-${id}"] .toolkit-toolbar-facet-trigger`)
-        ?.focus();
-    }
-  }
-  // Tabbing out of an open facet's trigger+menu closes it without moving focus (focus has already
-  // moved on); a pointerdown-only or Escape-only dismissal leaves the menu visually open while a
-  // keyboard user's focus has already left it for the next toolbar control.
-  function onFacetFocusOut(event: FocusEvent, id: string) {
-    if (openFacetId !== id) return;
-    const container = event.currentTarget as HTMLElement;
-    const next = event.relatedTarget as Node | null;
-    if (!next || !container.contains(next)) closeFacet(false);
-  }
+  // Selecting an option is a parent-driven close (`ToolbarDisclosure` only owns the mechanics that
+  // dismiss ITS OWN panel; a caller reacting to its own content's own onclick is a third kind of
+  // close this component drives directly), so the focus-return to the trigger is this component's
+  // own responsibility too, per `facetTriggerEls`'s own comment above.
   function selectFacetOption(filter: ListToolbarFilter, value: string) {
     filter.onChange(value);
-    closeFacet(true);
+    openFacetId = null;
+    facetTriggerEls[filter.id]?.focus();
   }
+  // Focus moves to the trigger BEFORE the state change: `applied` flipping false unmounts the
+  // clear button this handler runs on, so focusing the trigger after `onChange` would already be
+  // too late (the clear button, and any focus it held, is gone by then, dropping focus to body).
   function clearFacet(filter: ListToolbarFilter) {
+    facetTriggerEls[filter.id]?.focus();
     filter.onChange(filter.defaultValue ?? 'all');
-  }
-  // Escape closes whichever facet menu is open and returns focus to its own trigger. A window
-  // listener (rather than a per-facet container listener, the pattern `onOverflowKeydown` uses)
-  // since a facet's container is created and destroyed by the `{#each}` block itself, so there is
-  // no stable single ref to attach to the way `overflowContainerEl` gives the overflow disclosure.
-  function onFacetWindowKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape' && openFacetId !== null) {
-      event.preventDefault();
-      closeFacet(true);
-    }
   }
 
   // A segmented filter's roving-tabindex ARIA radio pattern (graduated from MediaLibrary's own
@@ -336,8 +264,6 @@ reflows its neighboring characters.
     radios[next]?.focus();
   }
 </script>
-
-<svelte:window onpointerdown={onWindowPointerdown} onkeydown={onFacetWindowKeydown} />
 
 <div class="toolkit-toolbar">
   <div class="toolkit-toolbar-band">
@@ -373,57 +299,64 @@ reflows its neighboring characters.
         </div>
       {:else if filter.display === 'menu'}
         {@const applied = filter.value !== (filter.defaultValue ?? 'all')}
-        {@const menuId = `${uid}-facet-${filter.id}`}
-        <div
-          class="dropdown toolkit-toolbar-facet"
-          class:toolkit-toolbar-facet-applied={applied}
-          class:dropdown-open={openFacetId === filter.id}
-          data-facet-id={`${uid}-${filter.id}`}
-          onfocusout={(event) => onFacetFocusOut(event, filter.id)}
+        <ToolbarDisclosure
+          open={openFacetId === filter.id}
+          onOpenChange={(next) => {
+            openFacetId = next ? filter.id : null;
+            if (next) facetFocusIndex = { ...facetFocusIndex, [filter.id]: 0 };
+          }}
+          ariaHaspopup="menu"
+          containerClass="toolkit-toolbar-facet {applied ? 'toolkit-toolbar-facet-applied' : ''}"
         >
-          <button
-            type="button"
-            class="toolkit-toolbar-facet-trigger"
-            aria-haspopup="menu"
-            aria-expanded={openFacetId === filter.id}
-            aria-controls={menuId}
-            onclick={() => toggleFacet(filter.id)}
-          >
-            <span class="toolkit-toolbar-facet-value">{computeFacetLabel(filter)}</span>
-            <span class="toolkit-toolbar-facet-caret" aria-hidden="true">&#9662;</span>
-          </button>
-          {#if applied}
+          {#snippet trigger(attrs)}
             <button
               type="button"
-              class="toolkit-toolbar-facet-clear"
-              aria-label={`Clear ${filter.label} filter`}
-              onclick={() => clearFacet(filter)}
-            >&times;</button>
-          {/if}
-          <ul
-            id={menuId}
-            class="dropdown-content menu toolkit-toolbar-facet-menu"
-            role="menu"
-            aria-label={filter.label}
-          >
-            {#each filter.options as option, index (option.value)}
-              <li role="none">
-                <button
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={option.value === filter.value}
-                  tabindex={facetOptionTabIndex(filter, index)}
-                  onclick={() => selectFacetOption(filter, option.value)}
-                  onfocus={() => onFacetOptionFocus(filter, index)}
-                  onkeydown={onFacetMenuKeydown}
-                >
-                  {#if option.value === filter.value}<CheckIcon class="h-3 w-3" aria-hidden="true" />{/if}
-                  {option.label}
-                </button>
-              </li>
-            {/each}
-          </ul>
-        </div>
+              class="toolkit-toolbar-facet-trigger"
+              class:toolkit-toolbar-facet-trigger-applied={applied}
+              bind:this={facetTriggerEls[filter.id]}
+              {...attrs}
+            >
+              <span class="toolkit-toolbar-facet-value">{computeFacetLabel(filter)}</span>
+              <span class="toolkit-toolbar-facet-caret" aria-hidden="true">&#9662;</span>
+            </button>
+          {/snippet}
+          {#snippet extra()}
+            {#if applied}
+              <button
+                type="button"
+                class="toolkit-toolbar-facet-clear"
+                aria-label={`Clear ${filter.label} filter`}
+                onclick={() => clearFacet(filter)}
+              >&times;</button>
+            {/if}
+          {/snippet}
+          {#snippet panel(attrs)}
+            <ul
+              id={attrs.id}
+              hidden={attrs.hidden}
+              class="dropdown-content menu toolkit-toolbar-facet-menu"
+              role="menu"
+              aria-label={filter.label}
+            >
+              {#each filter.options as option, index (option.value)}
+                <li role="none">
+                  <button
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={option.value === filter.value}
+                    tabindex={facetOptionTabIndex(filter, index)}
+                    onclick={() => selectFacetOption(filter, option.value)}
+                    onfocus={() => onFacetOptionFocus(filter, index)}
+                    onkeydown={onFacetMenuKeydown}
+                  >
+                    {#if option.value === filter.value}<CheckIcon class="h-3 w-3" aria-hidden="true" />{/if}
+                    {option.label}
+                  </button>
+                </li>
+              {/each}
+            </ul>
+          {/snippet}
+        </ToolbarDisclosure>
       {:else}
         <select
           class="select select-sm toolkit-toolbar-select"
@@ -438,37 +371,37 @@ reflows its neighboring characters.
       {/if}
     {/each}
     {#if overflowFilters.length > 0}
-      <div
-        class="dropdown toolkit-toolbar-overflow-dropdown"
-        class:dropdown-open={overflowOpen}
-        bind:this={overflowContainerEl}
+      <ToolbarDisclosure
+        open={overflowOpen}
+        onOpenChange={(next) => { overflowOpen = next; }}
       >
-        <button
-          type="button"
-          class="btn btn-sm btn-outline toolkit-toolbar-overflow-trigger"
-          aria-expanded={overflowOpen}
-          aria-controls={overflowId}
-          bind:this={overflowTriggerEl}
-          onclick={toggleOverflow}
-        >{overflowLabel}</button>
-        <div id={overflowId} class="dropdown-content menu toolkit-toolbar-overflow">
-          {#each overflowFilters as filter (filter.id)}
-            <label class="toolkit-toolbar-overflow-field">
-              <span>{filter.label}</span>
-              <select
-                class="select select-sm"
-                aria-label={filter.label}
-                value={filter.value}
-                onchange={(event) => filter.onChange((event.currentTarget as HTMLSelectElement).value)}
-              >
-                {#each filter.options as option (option.value)}
-                  <option value={option.value}>{option.label}</option>
-                {/each}
-              </select>
-            </label>
-          {/each}
-        </div>
-      </div>
+        {#snippet trigger(attrs)}
+          <button
+            type="button"
+            class="btn btn-sm btn-outline toolkit-toolbar-overflow-trigger"
+            {...attrs}
+          >{overflowLabel}</button>
+        {/snippet}
+        {#snippet panel(attrs)}
+          <div id={attrs.id} hidden={attrs.hidden} class="dropdown-content menu toolkit-toolbar-overflow">
+            {#each overflowFilters as filter (filter.id)}
+              <label class="toolkit-toolbar-overflow-field">
+                <span>{filter.label}</span>
+                <select
+                  class="select select-sm"
+                  aria-label={filter.label}
+                  value={filter.value}
+                  onchange={(event) => filter.onChange((event.currentTarget as HTMLSelectElement).value)}
+                >
+                  {#each filter.options as option (option.value)}
+                    <option value={option.value}>{option.label}</option>
+                  {/each}
+                </select>
+              </label>
+            {/each}
+          </div>
+        {/snippet}
+      </ToolbarDisclosure>
     {/if}
     {#if primaryAction}
       <button
@@ -581,15 +514,21 @@ reflows its neighboring characters.
     opacity: 0.65;
   }
 
-  /* The 'menu' facet's own control: a quiet bordered button pair (trigger + optional clear),
-     sharing the row's 30px height. This is daisyUI's own `.dropdown` (`position: relative`), and
-     its `.dropdown-content` option list is `position: absolute` -- so this element is that list's
-     containing block. `overflow: hidden` here would clip the list away entirely rather than just
-     tidy the trigger/clear corners (a review pass caught this: the list rendered below the 30px
-     box and was silently invisible, since this is a class-toggled disclosure, not the popover API,
-     so nothing lets it escape ancestor clipping). The trigger and clear round their own corners
-     instead, below. */
-  .toolkit-toolbar-facet {
+  /* The 'menu' facet's own box chrome: a quiet bordered pair (trigger plus optional clear),
+     sharing the toolbar row's 30px height. `display: inline-flex; align-items: stretch` stretches
+     both children to that height, since neither sets its own; `overflow` stays default (visible),
+     since this element is also the panel's own `position: absolute` containing block (daisyUI's
+     own `.dropdown`/`.dropdown-content` pair, via `ToolbarDisclosure`'s own always-applied
+     `dropdown` class) and `hidden` would clip the panel away entirely rather than just tidy the
+     trigger/clear corners. `:global()`, not a plain scoped selector: this class names the
+     `containerClass` this component passes into `ToolbarDisclosure`, so the element it matches is
+     rendered by that component, not this one, and Svelte's per-component style scoping would
+     otherwise silently drop the rule (see `ToolbarDisclosure`'s own header comment on why
+     `containerClass` exists and stays this component's own responsibility to style). Nested under
+     `.toolkit-toolbar` (this component's own scoped root, always an ancestor of every facet it
+     renders): the reach is unchanged, but the selector no longer matches a same-named class
+     anywhere else in the document. */
+  .toolkit-toolbar :global(.toolkit-toolbar-facet) {
     display: inline-flex;
     align-items: stretch;
     flex: 0 0 auto;
@@ -599,6 +538,17 @@ reflows its neighboring characters.
     background: transparent;
   }
 
+  /* The bordered-and-tinted applied treatment: border and fill mixed from --color-primary, added
+     to the container alongside `.toolkit-toolbar-facet` (above) once a filter carries a value.
+     `:global()` and the `.toolkit-toolbar` nesting for the same reason as `.toolkit-toolbar-facet`
+     above. */
+  .toolkit-toolbar :global(.toolkit-toolbar-facet-applied) {
+    border-color: color-mix(in oklab, var(--color-primary) 45%, var(--cairn-card-border));
+    background: color-mix(in oklab, var(--color-primary) 7%, transparent);
+  }
+
+  /* The 'menu' facet's own trigger: shares the row's 30px height inside `ToolbarDisclosure`'s own
+     bordered box (`containerClass="toolkit-toolbar-facet ..."`, styled above). */
   .toolkit-toolbar-facet-trigger {
     display: inline-flex;
     align-items: center;
@@ -612,28 +562,20 @@ reflows its neighboring characters.
     cursor: pointer;
     color: inherit;
     min-width: 0;
-    /* Rounds the shared border's own left corner; the trigger is always the first child. It is
-       also always the last child (and so rounds both corners) when no clear button renders. */
+    /* Rounds the shared border's own left corner; the trigger is always the first child. */
     border-top-left-radius: var(--radius-field);
     border-bottom-left-radius: var(--radius-field);
   }
-  .toolkit-toolbar-facet-trigger:last-child {
-    border-top-right-radius: var(--radius-field);
-    border-bottom-right-radius: var(--radius-field);
-  }
 
-  /* The applied treatment: a primary-tinted border and fill, refuter-verified against the
-     alternative of leaving an applied facet visually identical to an unapplied one. The in-control
-     value caps at 14rem with an ellipsis, so a long applied value (a class title, say) never
-     pushes the row wide. */
-  .toolkit-toolbar-facet-applied {
-    border-color: color-mix(in oklab, var(--color-primary) 45%, var(--cairn-card-border));
-    background: color-mix(in oklab, var(--color-primary) 7%, transparent);
-  }
-  .toolkit-toolbar-facet-applied .toolkit-toolbar-facet-trigger {
+  /* The in-control value caps at 14rem with an ellipsis once a facet carries an applied value, so
+     a long applied value (a class title, say) never pushes the row wide. Driven by the same
+     `applied` boolean that names `.toolkit-toolbar-facet-applied` on the container above, applied
+     directly to this element's own class instead, since this element is rendered directly by this
+     component and needs no `:global()` to reach it. */
+  .toolkit-toolbar-facet-trigger-applied {
     max-width: 14rem;
   }
-  .toolkit-toolbar-facet-applied .toolkit-toolbar-facet-value {
+  .toolkit-toolbar-facet-trigger-applied .toolkit-toolbar-facet-value {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -679,20 +621,6 @@ reflows its neighboring characters.
 
   .toolkit-toolbar-facet-menu {
     min-width: 10rem;
-  }
-
-  /* Neutralizes daisyUI's own `:focus-within` disclosure path (the coherence-round finding): the
-     compiled `.dropdown` rule shows `.dropdown-content` on `.dropdown-open`, `.dropdown-hover:hover`,
-     OR `:focus-within`, so tabbing onto a facet trigger (or the overflow trigger) opened the panel
-     on focus alone while this component's own `aria-expanded` -- driven purely by the
-     `dropdown-open` class -- stayed `false`. `!important` is deliberate: the compiled rule already
-     carries a heavier selector (`:not(details, .dropdown-open, .dropdown-hover:hover,
-     :focus-within)`), so this states "closed means closed" outright rather than out-specificitying
-     it. Only the hidden state needs a rule here; `.dropdown-open` already shows the content via the
-     compiled sheet's own rule once the class is present. */
-  .toolkit-toolbar-facet:not(.dropdown-open) .dropdown-content,
-  .toolkit-toolbar-overflow-dropdown:not(.dropdown-open) .dropdown-content {
-    display: none !important;
   }
 
   .toolkit-toolbar-overflow-trigger {

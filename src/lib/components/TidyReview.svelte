@@ -314,7 +314,7 @@ must never make, so no such count exists.
           <CheckIcon class="size-3" aria-hidden="true" /><span class="tabular-nums">{keptCount}</span> kept
         </span>
         <span class="opacity-40" aria-hidden="true">&middot;</span>
-        <span class="inline-flex items-center gap-1 font-semibold text-[var(--cairn-warning-ink)]">
+        <span class="inline-flex items-center gap-1 font-semibold cairn-text-warning">
           <TriangleAlertIcon class="size-3" aria-hidden="true" /><span class="tabular-nums">{reviewCount}</span> to review
         </span>
         <span class="opacity-40" aria-hidden="true">&middot;</span>
@@ -356,13 +356,13 @@ must never make, so no such count exists.
           >
             <span
               class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 type-label font-semibold {isJudgment
-                ? 'bg-[color-mix(in_oklab,var(--cairn-warning-ink)_11%,transparent)] text-[var(--cairn-warning-ink)]'
+                ? 'bg-[color-mix(in_oklab,var(--cairn-warning-ink)_11%,transparent)] cairn-text-warning'
                 : 'bg-[color-mix(in_oklab,var(--color-base-content)_6%,transparent)] text-muted'}"
             >
               {h.label}
             </span>
             {#if isJudgment}
-              <span class="inline-flex items-center gap-1 type-chip font-semibold uppercase tracking-wide text-[var(--cairn-warning-ink)]">
+              <span class="inline-flex items-center gap-1 type-chip font-semibold uppercase tracking-wide cairn-text-warning">
                 <EyeIcon class="size-3" aria-hidden="true" />Review this
               </span>
             {/if}
@@ -438,7 +438,7 @@ must never make, so no such count exists.
               class="flex items-start gap-2 border-t border-dashed border-[var(--cairn-card-border)] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_5%,transparent)] px-3 py-2 type-meta leading-snug text-subtle"
               data-testid="tidy-because"
             >
-              <LightbulbIcon class="mt-px size-3 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />
+              <LightbulbIcon class="mt-px size-3 flex-none cairn-text-warning" aria-hidden="true" />
               <span>Your <b class="text-base-content">{h.because.label} setting</b> is <b class="text-base-content">{h.because.variant}</b>, so {h.because.effect}.</span>
             </div>
           {/if}

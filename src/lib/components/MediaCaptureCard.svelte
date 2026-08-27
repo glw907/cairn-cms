@@ -91,7 +91,7 @@ left-blank cases, and a separate decorative flag distinguishes them for the host
       <span class="flex items-center gap-2 type-body font-medium">
         Name
         {#if proposed !== null}
-          <span class="badge cairn-chip-bounded badge-sm">Suggested</span>
+          <span class="badge cairn-chip-outline badge-sm">Suggested</span>
         {/if}
       </span>
       <input

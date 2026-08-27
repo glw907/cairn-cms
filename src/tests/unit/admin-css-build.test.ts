@@ -17,7 +17,7 @@ describe('admin css build', () => {
   // invariant assertion may be removed or relaxed. Dropping a `not.toMatch` re-opens a real shipped bug
   // (the drawer display:block, the auth-page centering). check:custom-surface guards the same rules
   // structurally; this test guards the compiled output.
-  it('keeps the two load-bearing unlayered rules by exact selector', () => {
+  it('keeps two of the pinned unlayered rules (menu-focus, guarded-button) by exact selector, out of the unlayered allowlist scripts/checks/custom-surface-budget.json enumerates', () => {
     expect(css).toContain('.menu li > :is(button, a):focus-visible'); // the unlayered focus ring (full selector: a Preflight-substitute rule also starts `.menu li`)
     expect(css).toContain('.cairn-btn-guarded'); // the unlayered pointer-events restore
   });
@@ -86,7 +86,8 @@ describe('admin css build', () => {
   });
 
   it('fixes the desktop sidebar to the viewport, overriding daisyUI\'s own sticky position', () => {
-    // The unlayered override (PINNED unlayered rule 3 of 4) that stops the desktop sidebar drifting
+    // The unlayered override (PINNED unlayered rule 3 of the unlayered allowlist scripts/checks/
+    // custom-surface-budget.json enumerates) that stops the desktop sidebar drifting
     // with a document scroll on a host whose body margin is unreset (the embed-anywhere default).
     // The minifier merges this rule with its xl companion below into one comma-joined selector list
     // (identical declarations), so the match allows an optional second selector before the brace.
@@ -96,7 +97,8 @@ describe('admin css build', () => {
   });
 
   it('fixes the desk-route sidebar to the viewport at xl, its own persist breakpoint', () => {
-    // The unlayered `xl:drawer-open` companion (PINNED unlayered rule 4 of 4, spec §5's desk rider):
+    // The unlayered `xl:drawer-open` companion (PINNED unlayered rule 4 of the unlayered
+    // allowlist scripts/checks/custom-surface-budget.json enumerates, spec §5's desk rider):
     // a desk route persists its sidebar at xl instead of lg, and needs the identical fixed-position
     // fix so it does not scroll-bleed either. Confirms Tailwind 4 actually generates the xl:drawer-open
     // utility this rule overrides (the locked build assumption verified at first touch).
@@ -137,14 +139,14 @@ describe('admin css build', () => {
       '.toast-bottom',
       '.indicator-start',
       '.indicator-end',
-      '.status-primary',
-      '.status-xs',
       '.join-item',
       '.join-horizontal',
       '.join-vertical',
       '.badge-soft',
       '.badge-outline',
       '.badge-dash',
+      '.badge-error',
+      '.badge-success',
     ]) {
       expect(css, `missing blessed class ${cls}`).toContain(cls);
     }

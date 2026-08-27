@@ -175,7 +175,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
     class="mt-3 flex min-h-5 items-center gap-1.5 type-meta text-muted"
   >
     {#if mutation.trim()}
-      <CheckIcon class="h-3.5 w-3.5 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+      <CheckIcon class="h-3.5 w-3.5 flex-none cairn-text-success" aria-hidden="true" />
       <span>{mutation}</span>
     {/if}
   </div>

@@ -427,7 +427,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Fixes
               <span role="status" aria-live="polite">
-                <StatusChip tone="neutral" label={conv.fixes ? 'On' : 'Off'} size="sm" />
+                <StatusChip label={conv.fixes ? 'On' : 'Off'} size="sm" />
                 <span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span>
               </span>
             </h2>
@@ -474,7 +474,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Style conventions
               <span role="status" aria-live="polite">
-                <StatusChip tone="neutral" label={`${styleOnCount} on`} size="sm" />
+                <StatusChip label={`${styleOnCount} on`} size="sm" />
                 <span class="sr-only">, {styleOnCount} style {styleOnCount === 1 ? 'convention' : 'conventions'} on</span>
               </span>
             </h2>
@@ -542,14 +542,14 @@ bespoke (ruling 7): a single-use control, not a repeated device.
           <summary class="flex cursor-pointer list-none items-center gap-3 p-3.5">
             <span class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-base-content/[0.06] text-muted"><SettingsIcon class="h-4 w-4" aria-hidden="true" /></span>
             <span class="min-w-0 flex-1">
-              <span class="flex items-center gap-2 type-subtitle font-semibold">Advanced <span class="rounded-full bg-warning/[0.14] px-2 py-0.5 type-chip font-semibold uppercase tracking-wide text-[var(--cairn-warning-ink)]">Needs care</span></span>
+              <span class="flex items-center gap-2 type-subtitle font-semibold">Advanced <span class="rounded-full bg-warning/[0.14] px-2 py-0.5 type-chip font-semibold uppercase tracking-wide cairn-text-warning">Needs care</span></span>
               <span class="mt-0.5 block type-meta leading-snug text-muted">Two more changes that need a careful eye. Off by default. Open this only if you want them.</span>
             </span>
             <ArrowRightIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
           </summary>
           <div class="border-t border-[var(--cairn-card-border)]">
             <div class="flex items-start gap-2.5 border-b border-[var(--cairn-card-border)] bg-warning/[0.08] p-3.5 type-meta leading-relaxed">
-              <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />
+              <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none cairn-text-warning" aria-hidden="true" />
               <span>These two reach a little further than the rest, so check the diff with care. <b class="font-semibold">Curly quotes can trip on apostrophes</b>, and brand names only fix from a list cairn keeps. Review every change before accepting it, the same as always.</span>
             </div>
             {#each advancedRows as row, ai (row.key)}
@@ -602,7 +602,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       <!-- A broken key needs the developer's attention; it is not a destructive confirmation, so
            it reads amber (needs-attention), never the reserved destructive red (the design arc's
            accent reservation, 2026-07-15). -->
-      <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--cairn-warning-ink)_12%,transparent)] text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="h-6 w-6" aria-hidden="true" /></span>
+      <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--cairn-warning-ink)_12%,transparent)] cairn-text-warning"><TriangleAlertIcon class="h-6 w-6" aria-hidden="true" /></span>
       <div class="type-heading font-bold font-[family-name:var(--font-display)]">Tidy’s key isn’t working</div>
       <div class="max-w-[50ch] type-body leading-relaxed text-muted">
         Tidy is turned on and a key is set, but Anthropic isn’t accepting it. It may have been
@@ -614,7 +614,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
           <span class="type-meta leading-snug">Your developer turned tidy on for the site.</span>
         </div>
         <div class="flex items-start gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--cairn-warning-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_6%,var(--color-base-100))] p-3">
-          <span class="flex-none text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
+          <span class="flex-none cairn-text-warning"><TriangleAlertIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
           <span class="type-meta leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn’t been revoked or rotated elsewhere.</span></span>
         </div>
       </div>

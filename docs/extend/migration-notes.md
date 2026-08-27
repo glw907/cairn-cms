@@ -9,6 +9,28 @@ This record starts at `0.84.4`, the oldest version among the sites that depend o
 `CHANGELOG.md`'s own `0.94.0` entry). A site upgrading from further back crosses more history than
 this page carries; read `CHANGELOG.md` directly for anything older.
 
+## Unreleased
+
+The release step sets the version number at the cut and renames this section to match it.
+
+- **`StatusChip`'s register grammar moved to its second generation.** `register` is now
+  `'quiet' | 'warning' | 'outline'` (default `'quiet'`); the `tone` prop, the status dot, and the
+  STATUS_CHIP_DOT_CLASS export are all removed. Replace `register="bounded"` with
+  `register="outline"` and `.cairn-chip-bounded` with `.cairn-chip-outline`; drop `tone`, mapping
+  `neutral`/`info`/`success` to `register="quiet"` (or omit `register`, now the default) and
+  `warning`/`danger` to `register="warning"`. A former `tone="danger"` chip now renders identically
+  to a `tone="warning"` one (there is no chip-level danger tier in the second generation); the
+  chip's own label text is the differentiator between the two states, not its color.
+- **The `status-<tone>` classes no longer compile into the shipped admin sheet.** Stop relying on
+  `status-neutral`/`status-info`/`status-success`/`status-warning`/`status-error` (and their size
+  variants) in hand-authored admin markup.
+- **The bracketed `text-[var(--cairn-warning-ink)]`/`text-[var(--color-positive-ink)]` arbitrary
+  values no longer compile.** Replace `text-[var(--cairn-warning-ink)]` with `cairn-text-warning`
+  and `text-[var(--color-positive-ink)]` with `cairn-text-success`, the new named utilities
+  (`docs/reference/admin-grammar-tokens.md`, "Status-text idioms").
+
+See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
+
 ## 0.96.0
 
 The release step sets the version number at the cut and renames this section to match it. This

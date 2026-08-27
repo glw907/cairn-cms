@@ -1,9 +1,10 @@
 <!--
 @component
-The combobox picker over the site's committed media library, read-only. The host (Task 6's insert
-popover) passes the projected library in as a prop and receives the chosen asset through onselect,
-which hands back the asset entry, its media: reference token, and the manifest alt to prefill the
-placement.
+The combobox picker over the site's committed media library, read-only. The host passes the
+projected library in as an entries array and receives the chosen asset through onselect, which
+hands back the asset entry, its media: reference token, and the manifest alt to prefill the
+placement. The array is the shape mediaLibraryLoad already returns on MediaLibraryData.assets, so a
+site wiring the picker into its own screen hands the loader's output straight through.
 
 This is a real WAI-ARIA combobox over a listbox: focus stays in the search input at all times, and
 aria-activedescendant moves the active option through arrow keys. The input never loses DOM focus
@@ -22,7 +23,9 @@ while a site stores images only.
 <script module lang="ts">
   // The picker's library entry is the shared node-safe projection (../media/library-entry), not a
   // type from editor-media.ts: importing that module would pull CodeMirror into a bundle, which the
-  // editor-boundary test bars. Re-exported so the insert popover keeps importing it from here.
+  // editor-boundary test bars. Re-exported here because this is the component whose prop signature
+  // names it, so the `/admin-toolkit` barrel publishes both from one place and the insert popover
+  // keeps importing it from here.
   import type { MediaLibraryEntry } from '../media/library-entry.js';
   export type { MediaLibraryEntry };
 
@@ -48,13 +51,13 @@ while a site stores images only.
   import { MEDIA_BASE_CONTEXT_KEY, DEFAULT_MEDIA_BASE } from './media-base-context.js';
 
   interface Props {
-    /** The committed media library projection, keyed by the 16-hex content hash. */
-    library: Record<string, MediaLibraryEntry>;
+    /** The committed media library projection, in the order the rows should list. */
+    entries: MediaLibraryEntry[];
     /** Emit the chosen asset to the host: the entry, its media: reference, and the manifest alt. */
     onselect: (selection: MediaSelection) => void;
   }
 
-  let { library, onselect }: Props = $props();
+  let { entries, onselect }: Props = $props();
 
   // The delivery base the option thumbnails compose under. `CairnAdminShell` provides the site's
   // resolved base to every authed descendant through this key; a bare mount outside it (the
@@ -74,8 +77,6 @@ while a site stores images only.
   let typeFilter = $state<string>('all');
   // The index of the active option within the filtered list, or -1 for none active yet.
   let activeIndex = $state(-1);
-
-  const entries = $derived(Object.values(library));
 
   // The distinct top-level content types in the library, in first-seen order. The facet is a seam:
   // it renders only when more than one distinct type exists, so a site storing images only sees no
@@ -98,7 +99,7 @@ while a site stores images only.
   }
 
   // The filtered, displayed options: the type facet first, then a case-insensitive substring match
-  // across the display name and the alt. Order follows the library's insertion order.
+  // across the display name and the alt. Order follows the entries array as given.
   const filtered = $derived.by(() => {
     const q = query.trim().toLowerCase();
     return entries.filter((e) => {
@@ -251,7 +252,7 @@ while a site stores images only.
             {#if entry.alt.trim() === ''}
               <!-- The needs-alt flag: a glyph plus a label, never hue alone (the spec a11y rule),
                    matching the Task 3 source-chip treatment. -->
-              <span class="inline-flex items-center gap-1 type-label font-medium text-[var(--cairn-warning-ink)]">
+              <span class="inline-flex items-center gap-1 type-label font-medium cairn-text-warning">
                 <span aria-hidden="true">&#9888;</span>
                 <span>Needs alt</span>
               </span>

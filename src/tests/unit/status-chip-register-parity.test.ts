@@ -6,14 +6,16 @@ import { buildAdminCss } from '../../../scripts/build/build-admin-css.mjs';
 import { parseSheet } from '../../lib/audit/sheet.js';
 import type { SheetDeclaration } from '../../lib/audit/sheet.js';
 
-// CONTRACT: the two ratified chip registers exist twice, once as cairn-admin.css's shared
-// `.cairn-chip-bounded`/`.cairn-chip-quiet` classes (every OTHER admin surface that composes a
+// CONTRACT: the three ratified chip registers (second generation, docs/internal/probes/
+// 2026-08-26-chip-registers-v2) exist twice, once as cairn-admin.css's shared `.cairn-chip-quiet`/
+// `.cairn-chip-warning`/`.cairn-chip-outline` classes (every OTHER admin surface that composes a
 // chip by hand: EditPage, CairnAdminShell, ReferenceField, MediaCaptureCard, ManageEditors) and
-// once as StatusChip's own scoped `.status-chip-bounded`/`.status-chip-quiet` (a Svelte scoped
-// rule is unlayered by construction, so StatusChip never needed the shared classes). The bounded
-// pair already drifted once (the global rule stated `background-color: transparent` explicitly;
-// the scoped rule relied on badge-outline's own default), so this is a standing proof, not a
-// one-time grep: any future edit to either recipe that is not mirrored to its twin fails here.
+// once as StatusChip's own scoped `.status-chip-quiet`/`.status-chip-warning`/`.status-chip-outline`
+// (a Svelte scoped rule is unlayered by construction, so StatusChip never needed the shared
+// classes). The bounded/outline pair already drifted once in the first generation (the global rule
+// stated `background-color: transparent` explicitly; the scoped rule relied on badge-outline's own
+// default), so this is a standing proof, not a one-time grep: any future edit to either recipe
+// that is not mirrored to its twin fails here.
 describe('chip register no-drift', () => {
   let adminCss: string;
   let statusChipStyle: string;
@@ -46,9 +48,9 @@ describe('chip register no-drift', () => {
     return map;
   }
 
-  it('declares the same properties, in the same values, for the bounded register in both places', () => {
-    const globalDeclarations = declarationMap(parseSheet(adminCss).declarations('cairn-chip-bounded'));
-    const scopedDeclarations = declarationMap(parseSheet(statusChipStyle).declarations('status-chip-bounded'));
+  it('declares the same properties, in the same values, for the outline register in both places', () => {
+    const globalDeclarations = declarationMap(parseSheet(adminCss).declarations('cairn-chip-outline'));
+    const scopedDeclarations = declarationMap(parseSheet(statusChipStyle).declarations('status-chip-outline'));
     expect(globalDeclarations.size).toBeGreaterThan(0);
     expect(scopedDeclarations).toEqual(globalDeclarations);
   });
@@ -56,6 +58,13 @@ describe('chip register no-drift', () => {
   it('declares the same properties, in the same values, for the quiet register in both places', () => {
     const globalDeclarations = declarationMap(parseSheet(adminCss).declarations('cairn-chip-quiet'));
     const scopedDeclarations = declarationMap(parseSheet(statusChipStyle).declarations('status-chip-quiet'));
+    expect(globalDeclarations.size).toBeGreaterThan(0);
+    expect(scopedDeclarations).toEqual(globalDeclarations);
+  });
+
+  it('declares the same properties, in the same values, for the warning register in both places', () => {
+    const globalDeclarations = declarationMap(parseSheet(adminCss).declarations('cairn-chip-warning'));
+    const scopedDeclarations = declarationMap(parseSheet(statusChipStyle).declarations('status-chip-warning'));
     expect(globalDeclarations.size).toBeGreaterThan(0);
     expect(scopedDeclarations).toEqual(globalDeclarations);
   });

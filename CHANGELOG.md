@@ -94,6 +94,18 @@
   the remedy on every in-tree list the rule caught, the rule's own dogfooding proof. See
   [`cairn-audit`](docs/reference/cairn-audit.md#the-static-rules). Consumers must: nothing.
 
+- `cairn-audit` gains a sixth error-tier rendered rule, `panel-width`. `viewport-overflow` declines
+  this case on purpose: its document-scroll gate reads clean when a table wrapper absorbs a wide row
+  by scrolling, and its scroll-container skip exempts everything under any non-`visible` ancestor
+  whether or not that ancestor actually offers a scrollbar, so a row clipped inside a wrapper that
+  never genuinely scrolls reached neither test. `panel-width` checks an ExpandableRow summary row
+  or its expanded panel: flagged only when some element inside it overflows its own box while no
+  ancestor between it and the table wrapper is genuinely reachable (`overflow-x: auto`/`scroll` and
+  currently overflowing); an `overflow-x: hidden` ancestor never counts, and neither does an `auto`
+  one that never actually grows past its own width. The same test exempts a deliberately scrollable
+  AdminTable and a deliberately scrollable descendant living inside the panel. See
+  [`cairn-audit`](docs/reference/cairn-audit.md#the-rules). Consumers must: nothing.
+
 ### Changed
 
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the

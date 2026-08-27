@@ -6,6 +6,7 @@ import { loadConfig } from '../../../lib/audit/config.js';
 import { runStatic } from '../../../lib/audit/run.js';
 import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import { staticRules } from '../../../lib/audit/rules/static/index.js';
+import { noUncompiledClass } from '../../../lib/audit/rules/static/no-uncompiled-class.js';
 import type { AuditReport, Finding, StaticRule, StaticRuleContext } from '../../../lib/audit/types.js';
 
 let root: string;
@@ -144,6 +145,59 @@ describe('runStatic', () => {
     } finally {
       rmSync(bare, { recursive: true, force: true });
     }
+  });
+
+  // The ledger's ruled shape: `sheet` is a list of compiled-class sources, so a class a site's own
+  // stylesheet compiles reads the same as a class the packaged sheet compiles, instead of needing
+  // case-by-case exemption from no-uncompiled-class.
+  describe('a list-valued sheet', () => {
+    let siteRoot: string;
+
+    beforeAll(() => {
+      siteRoot = mkdtempSync(join(tmpdir(), 'cairn-audit-site-sheet-'));
+      mkdirSync(join(siteRoot, 'dist/components'), { recursive: true });
+      mkdirSync(join(siteRoot, 'src/lib/components'), { recursive: true });
+      mkdirSync(join(siteRoot, 'src/theme'), { recursive: true });
+      writeFileSync(join(siteRoot, 'dist/components/cairn-admin.css'), '.card { border: 1px solid black }');
+      writeFileSync(join(siteRoot, 'src/theme/site.css'), '.site-badge { color: red }');
+      writeFileSync(
+        join(siteRoot, 'src/lib/components/Fixture.svelte'),
+        '<div class="card site-badge ghost"></div>\n'
+      );
+    });
+
+    afterAll(() => {
+      rmSync(siteRoot, { recursive: true, force: true });
+    });
+
+    it('passes a class a registered site sheet compiles, and still flags an unregistered one', () => {
+      const configPath = join(siteRoot, 'with-site-sheet.json');
+      writeFileSync(
+        configPath,
+        JSON.stringify({ sheet: ['dist/components/cairn-admin.css', 'src/theme/site.css'] })
+      );
+      const report = runStatic(loadConfig(siteRoot, configPath), [noUncompiledClass]);
+      expect(report.findings.map((f) => f.message)).toEqual([expect.stringContaining('"ghost" never compiles')]);
+    });
+
+    it('flags the same class when its site sheet is not named', () => {
+      const configPath = join(siteRoot, 'without-site-sheet.json');
+      writeFileSync(configPath, JSON.stringify({ sheet: ['dist/components/cairn-admin.css'] }));
+      const report = runStatic(loadConfig(siteRoot, configPath), [noUncompiledClass]);
+      expect(report.findings.map((f) => f.message).sort()).toEqual([
+        expect.stringContaining('"ghost" never compiles'),
+        expect.stringContaining('"site-badge" never compiles'),
+      ]);
+    });
+
+    it('fails naming a listed sheet source that does not exist, rather than skipping it silently', () => {
+      const configPath = join(siteRoot, 'missing-sheet-source.json');
+      writeFileSync(
+        configPath,
+        JSON.stringify({ sheet: ['dist/components/cairn-admin.css', 'src/theme/absent.css'] })
+      );
+      expect(() => runStatic(loadConfig(siteRoot, configPath))).toThrow(/absent\.css/);
+    });
   });
 });
 

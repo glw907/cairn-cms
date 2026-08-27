@@ -62,20 +62,32 @@ function byPosition(a: Finding, b: Finding): number {
 }
 
 /**
+ * Every compiled-class source `config.sheetPaths` names, concatenated into one CSS text. Each
+ * source is read independently so a missing one names itself in the error rather than the whole
+ * list failing anonymously; a config that believes a class is covered by a site source it
+ * misspelled would otherwise silently fall back to the packaged sheet alone.
+ */
+function loadSheetSources(config: AuditConfig): string {
+  return config.sheetPaths
+    .map((path) => {
+      const sheetPath = resolve(config.root, path);
+      try {
+        return readFileSync(sheetPath, 'utf8');
+      } catch {
+        throw new Error(
+          `${sheetPath}: the built admin stylesheet is missing. Build the package, or name the sheet in ${CONFIG_FILE}.`
+        );
+      }
+    })
+    .join('\n');
+}
+
+/**
  * Run the static audit. `rules` defaults to the shipped registry and is injectable so a test can
  * drive the pipeline with a rule of its own.
  */
 export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules()): AuditReport {
-  const sheetPath = resolve(config.root, config.sheetPath);
-  let css: string;
-  try {
-    css = readFileSync(sheetPath, 'utf8');
-  } catch {
-    throw new Error(
-      `${sheetPath}: the built admin stylesheet is missing. Build the package, or name the sheet in ${CONFIG_FILE}.`
-    );
-  }
-  const sheet = parseSheet(css);
+  const sheet = parseSheet(loadSheetSources(config));
   const files = parseAll(config);
   const cssFiles = loadCssFiles(config);
   if (files.length === 0 && cssFiles.length === 0) {

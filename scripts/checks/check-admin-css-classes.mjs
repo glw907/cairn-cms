@@ -14,6 +14,12 @@
 // and this one already find zero uncompiled classes with no allowlist at all. See the graduation
 // commit for the no-drift proof.
 //
+// This gate runs against the engine's own tree with no cairn-audit.config.json, so the shared
+// loadConfig/runStatic pipeline resolves `sheet` to its packaged-sheet-only default: the ENGINE's
+// own markup has no site-authored compiled-class source to name, the case the list-valued `sheet`
+// config exists for. A consumer wiring this same rule into their own build gets the list for free
+// through the shared config contract.
+//
 // Wired as `npm run check:admin-css-classes`.
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

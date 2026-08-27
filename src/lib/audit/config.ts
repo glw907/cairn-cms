@@ -92,8 +92,14 @@ export interface AuditConfig {
    * stylesheet; a site names its own theme file here too.
    */
   paletteCssFiles: string[];
-  /** The built admin stylesheet the class tokens resolve against. */
-  sheetPath: string;
+  /**
+   * The built admin stylesheet(s) the class tokens resolve against. Usually the packaged
+   * `cairn-admin.css` alone; a site names its own compiled-class sources here too, the same
+   * additive shape `paletteCssFiles` and `staticCssFiles` already carry. A path that does not
+   * exist is a config error, never a silent skip, since a class the config believes it covers
+   * would otherwise miss.
+   */
+  sheetPaths: string[];
   /** The pages rendered mode visits. */
   renderedPages: string[];
   renderedAllowlist: RenderedAllowlistEntry[];
@@ -115,6 +121,20 @@ function asPathList(value: unknown, field: string, fallback: string[]): string[]
     fail(`${field} must be a list of paths`);
   }
   return value as string[];
+}
+
+/**
+ * A path field that also accepts a single string, additive so an existing one-path config keeps
+ * working unchanged. `fallback` runs only when the field is absent; it is a thunk rather than a
+ * value because the sheet default depends on which candidate the tree actually has.
+ */
+function asPathOrPathList(value: unknown, field: string, fallback: () => string[]): string[] {
+  if (value === undefined) return fallback();
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value) && value.every((entry) => typeof entry === 'string')) {
+    return value as string[];
+  }
+  fail(`${field} must be a path or a list of paths`);
 }
 
 function asAllowlist(value: unknown, field: string): RenderedAllowlistEntry[] {
@@ -151,17 +171,15 @@ export function resolveConfig(
   const file = asRecord(raw, 'the config');
   const staticSection = asRecord(file.static, 'static');
   const renderedSection = asRecord(file.rendered, 'rendered');
-  if (file.sheet !== undefined && typeof file.sheet !== 'string') fail('sheet must be a path');
   return {
     root,
     staticScope: asPathList(staticSection.scope, 'static.scope', DEFAULT_STATIC_SCOPE),
     staticScopeFromConfig: staticSection.scope !== undefined,
     staticCssFiles: asPathList(staticSection.cssFiles, 'static.cssFiles', []),
     paletteCssFiles: asPathList(staticSection.paletteFiles, 'static.paletteFiles', DEFAULT_PALETTE_CSS_FILES),
-    sheetPath:
-      (file.sheet as string | undefined) ??
-      DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ??
-      DEFAULT_SHEET_CANDIDATES[0],
+    sheetPaths: asPathOrPathList(file.sheet, 'sheet', () => [
+      DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ?? DEFAULT_SHEET_CANDIDATES[0],
+    ]),
     renderedPages: asPathList(renderedSection.pages, 'rendered.pages', DEFAULT_RENDERED_PAGES),
     renderedAllowlist: asAllowlist(renderedSection.allowlist, 'rendered.allowlist'),
   };

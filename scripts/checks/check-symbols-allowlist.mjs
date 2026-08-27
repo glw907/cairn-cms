@@ -96,6 +96,8 @@ export const ALLOWLIST = new Set([
   'file-path:old-site/content/posts/my-post.md', // docs/extend/migrate-existing-content.md's illustrative pre-migration source path
   'file-path:src/content/posts/2024-01-15-my-post.md', // docs/extend/migrate-existing-content.md's illustrative migrated output path
   'file-path:src/content/fragments/trail-safety.md', // docs/extend/reuse-content-across-entries.md's illustrative fragment entry
+  'file-path:dist/site.css', // docs/reference/cairn-audit.md's illustrative site-compiled stylesheet in a list-valued `sheet`
+  'file-path:node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css', // docs/reference/cairn-audit.md's real installed-package sheet path, cited literally rather than resolved against this repo's own tree
   // Real paths in this repo's own examples/showcase/ tree, cited without that prefix because the
   // prose describes the equivalent path in a reader's own scaffolded site (the same convention
   // `src/theme/cairn.config.ts` above already carries).

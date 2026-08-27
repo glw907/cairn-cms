@@ -127,6 +127,13 @@
   deliberately excluded from this rule, since its edge harmonizes with the surrounding menu facet's
   own chrome and stays a tracked exception (`ROADMAP.md`, "Next"). Consumers must: nothing.
 
+- `cairn-audit`'s `sheet` config key now accepts a list of compiled-class sources, the same
+  additive shape `static.paletteFiles` and `static.cssFiles` already carry, so `no-uncompiled-class`
+  resolves a markup class against a site's own compiled stylesheet as well as the packaged one
+  instead of reporting a false positive for it. A string `sheet` still works unchanged as a
+  one-element list; a listed source that does not exist is a config error, never a silent skip.
+  Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

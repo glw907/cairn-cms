@@ -124,7 +124,7 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 | `static.scope` | `src/routes/admin`, `src/lib/admin-toolkit`, `src/lib/components` | Directories the static scan reads components from, recursively |
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
-| `sheet` | the built admin stylesheet, in your tree or your installed package | The stylesheet class tokens resolve against |
+| `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css"]` |
 | `rendered.pages` | the core admin routes | The pages rendered mode visits. **Replaces the defaults, never extends them**: a config naming one page of your own audits that page alone, and the six core routes go unmeasured while the run still reports a clean pass. Restate the defaults beside your own page |
 | `rendered.allowlist` | none | Rendered-mode exemptions. See [The allowlist](#the-allowlist) |
 

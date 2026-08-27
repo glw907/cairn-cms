@@ -48,8 +48,8 @@ sibling path:
   `checkOrigin: false` pairs with the guard's own origin rule.
 - Filed with a trigger, not fixed here: the magic-link confirm has no same-browser binding
   (login CSRF); the newer `createAuthChannel` seam already carries the `pendingCookie` nonce
-  pattern. Ledger entry with `Reopens on:` rather than silent residue (Geoff's call pending
-  on adopt-vs-file).
+  pattern. Ruled (Geoff, 2026-08-27): FILE, not fix; the ledger entry's reopen trigger is the
+  conventions pass's auth family, where the nonce adoption belongs.
 
 **2. The narrowing pass (new lead slice; the structural review's top finding).** The audit's
 own sequencing section prescribes it: narrow `ContentRoutes` first ("declare the narrow return
@@ -111,9 +111,10 @@ security-relevant fix that cannot wait ships as a patch off the last published t
 from the tag; both packages (`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`) take the patch
 number; `gh release create` targets the patch branch, not `main`; the patch's CHANGELOG entry
 lives on the branch and is reconciled into `main`'s window note so the eventual cut's rolled
-notes do not double-count it. Whether a security-relevant fix (the `createSectionAction`
-asymmetry is the live candidate) is entitled to that hatch rather than waiting for the cut is
-Geoff's pending carve-out ruling.
+notes do not double-count it. Ruled (Geoff, 2026-08-27): NO standing exceptions, security
+included; everything waits for the cut (the `createSectionAction` asymmetry ships with the
+window). The hatch stays documented as last-resort mechanics only, exercised only on an
+explicit per-incident ruling from Geoff.
 
 ## Standing constraints (every slice; lifted here so fresh sessions inherit them)
 

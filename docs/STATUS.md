@@ -40,10 +40,8 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
 - **ASC harvest absorption, behavior half: SHIPPED.** The toolkit-seams pass merged to
   `main` 2026-08-27 (`e8cc85c8`), holds unpublished under `## Unreleased` (breaking chip
   changes ride the audit-remediation `Consumers must:` window). Post-mortem in the plan
-  file. Open decision for Geoff, from the pass's security review: the CSRF-403 diagnosis
-  (confirm-load `SameSite=Strict` token re-mint) proposes two guard remedies, `SameSite=Lax`
-  on the CSRF cookie and a `detail` discriminator on csrf rejection logs; both pend a ruling
-  (friction log carries the full case).
+  file. The pass's CSRF-403 diagnosis is now RULED and encoded in the approved
+  csrf-hardening plan (the remediation bullet below); nothing pends here.
 - **ASC harvest absorption, detection half: EXECUTING.** `2026-08-26-harvest-detection-pass.md`
   (six tasks serial, ceiling 1.1M), approved 2026-08-27, running on the `harvest-detection`
   worktree off the toolkit-seams merge via `pass-execute.js`.

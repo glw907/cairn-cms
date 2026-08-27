@@ -62,8 +62,18 @@ shape). It emits the definitive retire list as a record document with a ratifica
 proposed keep-to-retire flips go to Geoff before the retires plan is authored. The audit's
 fall-out claims are unreconciled (13 itemized, ~30 asserted, bucket counts drift 48/52/53);
 this pass settles the number rather than assuming it. It also files the missing
-`MediaInsertPopover` deferral as its own ledger entry. Plan:
-`docs/superpowers/plans/2026-08-27-foundations-pass.md`.
+`MediaInsertPopover` deferral as its own ledger entry. SPLIT after its second adversarial
+review (the move set measured ~117 names against the audit's ~44 estimate) into two passes
+with the cut after the canonical-home work: **Foundations A** (ledger repair scoped to the
+next two slices' entries plus a format gate; R-0 and the R-1 family entry ratified,
+executed for keeps only, and ENFORCED by a new check:surface two-barrels rule; drift for
+moved names; plan `2026-08-28-foundations-a-pass.md`) and **Foundations B** (the narrowing
+done as C3 actually prescribes, the public factory DECLARING the narrow return over an
+unexported wide internal factory the composer uses; the single closure re-derivation with
+the ratification gate; drift for internalized names; plan `2026-08-28-foundations-b-pass.md`,
+finalized against A's merged surface before dispatch). Ledger-repair assignment: A repairs
+the 14 entries slices 2-3 consume; the remaining 41 truncated shapes are repaired by the
+slice that executes them, tracked by the format gate's shrinking allowlist.
 
 **3. The retires pass.** Executes list (b) of the foundations pass's record document
 (`2026-08-27-r4-rederivation.md`), never the audit's original 94-item list. Excluded and

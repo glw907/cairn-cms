@@ -51,30 +51,34 @@ sibling path:
   pattern. Ruled (Geoff, 2026-08-27): FILE, not fix; the ledger entry's reopen trigger is the
   conventions pass's auth family, where the nonce adoption belongs.
 
-**2. The narrowing pass (new lead slice; the structural review's top finding).** The audit's
-own sequencing section prescribes it: narrow `ContentRoutes` first ("declare the narrow return
-deliberately"), then re-derive the R4 nameability closure, which re-tests adapter's ~22
-C2_READDED keeps and the three closure leaks. About 30 of the 53 route-factory retires FALL
-OUT of the narrowing, and the retire list's membership is not settled until it lands, so
-hand-deleting first would double-touch the same files against an unstable list. This slice
-also repairs the ledger as infrastructure: ~30 reshape entries carry shapes truncated
-mid-sentence (`engine-rulings.md:3851` et al.); regenerate them untruncated from the
-`rank-*.md` sources, and until then every slice plan routes to the rank files by name. It
-also files the missing `MediaInsertPopover` deferral as its own ledger entry
-(`Reopens on: the MarkdownEditor seam collapse`).
+**2. The foundations pass (restructured 2026-08-28 after its plan's adversarial review;
+supersedes the narrowing-first framing).** The audit's full prescription is canonical-home
+FIRST among code changes (it changes which subpath every surviving item publishes from), the
+`ContentRoutes` narrowing as C3's sanctioned exception, then ONE R4 closure re-derivation
+over the settled surface. This slice does all of it in that order, prefixed by ledger repair
+as infrastructure (55 entries carry assigned shapes truncated at exactly 162 characters;
+their repair is re-authoring from the rank sources and precedes everything that executes a
+shape). It emits the definitive retire list as a record document with a ratification gate:
+proposed keep-to-retire flips go to Geoff before the retires plan is authored. The audit's
+fall-out claims are unreconciled (13 itemized, ~30 asserted, bucket counts drift 48/52/53);
+this pass settles the number rather than assuming it. It also files the missing
+`MediaInsertPopover` deferral as its own ledger entry. Plan:
+`docs/superpowers/plans/2026-08-27-foundations-pass.md`.
 
-**3. The retires pass.** Executes the retire list the narrowing produced. The list this slice
-owns is NOT "the 94": excluded and named in its plan header are `DEFAULT_ROLES` (a keep that
-becomes a retire only inside the conventions pass's coupled `defineAccess` pair), the ~30
-closure leaves the narrowing already dropped, and any second wave the re-derivation's re-tests
-produce (those land where the re-test lands). Each retire closes its ledger entry. The
+**3. The retires pass.** Executes list (b) of the foundations pass's record document
+(`2026-08-27-r4-rederivation.md`), never the audit's original 94-item list. Excluded and
+named there: `DEFAULT_ROLES` (a keep that becomes a retire only inside the conventions
+pass's coupled `defineAccess` pair), the entries Tasks 2-3 of the foundations pass already
+consumed (closed as consequences, proven by `check:surface` diff), and any proposed verdict
+change Geoff has not ratified. Each retire closes its ledger entry. The
 drift-hunt per removed name covers `docs/`, `src/` (comments), `examples/`, and `templates/`,
 not `docs/` alone (`devDelivery` alone is cited in six showcase files).
 
-**4. The conventions pass (reshapes).** The seven structural coherence families define the
-target conventions, and the 57 reshapes execute against them in the same slice so no signature
-is touched twice; includes the coupled pair and `createSectionAction`'s authorization
-asymmetry. Its planning round decides the expected split, and the spec names the candidate cut
+**4. The conventions pass (reshapes).** The six remaining coherence families (canonical
+home landed in the foundations pass) define the target conventions, and the 57 reshapes
+execute against them in the same slice so no signature is touched twice; includes the
+coupled pair, `createSectionAction`'s authorization asymmetry, and the session-cookie
+secure-derivation note the hardening pass files. Its planning round decides the expected split, and the spec names the candidate cut
 so the sizing is not deferred blind: first the convention rulings plus the auth and CLI
 family reshapes; second the cross-surface conformance sweep. The three-edit config-contract
 entry's remaining edits ((a) `rendered.extraPages`, (c) the redirect trap; edit (b) landed in

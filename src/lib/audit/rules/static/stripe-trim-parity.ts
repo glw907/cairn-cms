@@ -23,13 +23,61 @@ const FIRST_OR_LAST_CHILD = /:(first|last)-child\b/i;
 const ZEBRA_CLASS = /zebra/i;
 const BACKGROUND_PROPERTY = /^background(-color)?$/;
 const PADDING_PROPERTY = /^padding/i;
+const COMBINATOR_CHARS = new Set(['>', '+', '~']);
 
-/** One first/last-child trim selector, its own classes, and which edge it trims. */
+/** One first/last-child trim selector, its own subject classes, and which edge it trims. */
 interface TrimSite {
   scope: CssScopeRule;
   selector: string;
   classes: string[];
   edge: string;
+}
+
+/**
+ * A selector's own subject compound: the segment after the final descendant, child, or sibling
+ * combinator (a bare space, `>`, `+`, or `~`, outside any bracket or paren group). A descendant
+ * selector's ancestor names a different element than the one the rule actually styles, so pairing
+ * a stripe against a trim has to key on the subject each rule paints, never on every class either
+ * selector happens to mention.
+ */
+function lastCompound(selector: string): string {
+  let depth = 0;
+  let start = 0;
+  let subject = selector;
+  let i = 0;
+  while (i < selector.length) {
+    const ch = selector[i];
+    if (ch === '"' || ch === "'") {
+      i++;
+      while (i < selector.length && selector[i] !== ch) {
+        if (selector[i] === '\\') i++;
+        i++;
+      }
+      i++;
+      continue;
+    }
+    if (ch === '(' || ch === '[') {
+      depth++;
+      i++;
+      continue;
+    }
+    if (ch === ')' || ch === ']') {
+      depth = Math.max(0, depth - 1);
+      i++;
+      continue;
+    }
+    if (depth === 0 && (ch === ' ' || COMBINATOR_CHARS.has(ch))) {
+      const compound = selector.slice(start, i).trim();
+      if (compound) subject = compound;
+      while (i < selector.length && (selector[i] === ' ' || COMBINATOR_CHARS.has(selector[i]))) i++;
+      start = i;
+      continue;
+    }
+    i++;
+  }
+  const tail = selector.slice(start).trim();
+  if (tail) subject = tail;
+  return subject;
 }
 
 export const stripeTrimParity: StaticRule = {
@@ -42,15 +90,15 @@ export const stripeTrimParity: StaticRule = {
     for (const scope of cssScopeRules(ctx)) {
       for (const raw of splitSelectorList(scope.rule.selector)) {
         const selector = normalizeSelector(raw);
-        const classes = selectorClassNames(selector);
+        const subjectClasses = selectorClassNames(lastCompound(selector));
 
         const isStripe =
           (NTH_CHILD.test(selector) &&
             scope.rule.declarations.some((decl) => BACKGROUND_PROPERTY.test(decl.property))) ||
-          classes.some((name) => ZEBRA_CLASS.test(name));
+          subjectClasses.some((name) => ZEBRA_CLASS.test(name));
         if (isStripe) {
           const striped = selectorsFor(stripedByFile, scope.file);
-          for (const name of classes) striped.add(name);
+          for (const name of subjectClasses) striped.add(name);
           continue;
         }
 
@@ -59,7 +107,7 @@ export const stripeTrimParity: StaticRule = {
         const edge = FIRST_OR_LAST_CHILD.exec(selector)?.[1]?.toLowerCase();
         if (!edge || NTH_CHILD.test(selector)) continue;
         if (!scope.rule.declarations.some((decl) => PADDING_PROPERTY.test(decl.property))) continue;
-        trimSites.push({ scope, selector, classes, edge });
+        trimSites.push({ scope, selector, classes: subjectClasses, edge });
       }
     }
 

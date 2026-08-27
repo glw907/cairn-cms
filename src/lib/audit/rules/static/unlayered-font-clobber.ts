@@ -48,6 +48,32 @@ function classesByElement(file: ParsedComponent): Map<number, Set<string>> {
   return map;
 }
 
+/** One rule's own class name and the font-affecting utility it clobbers on the same element. */
+interface FontClobberHit {
+  className: string;
+  utilityHit: string;
+}
+
+/**
+ * The FIRST element/class-name pair a rule's own selector clobbers, or none. A row or list
+ * component repeats its own row class across many elements, and the same rule can name more than
+ * one class in its own selector list; either shape names the same hazard once per rule, not once
+ * per element or class name it happens to match, so the search stops at the first hit.
+ */
+function findFontClobberHit(
+  classNames: readonly string[],
+  byElement: Map<number, Set<string>>
+): FontClobberHit | undefined {
+  for (const className of classNames) {
+    for (const classes of byElement.values()) {
+      if (!classes.has(className)) continue;
+      const utilityHit = [...classes].find((name) => name !== className && isFontUtility(name));
+      if (utilityHit) return { className, utilityHit };
+    }
+  }
+  return undefined;
+}
+
 export const unlayeredFontClobber: StaticRule = {
   id: 'unlayered-font-clobber',
   tier: 'error',
@@ -63,29 +89,24 @@ export const unlayeredFontClobber: StaticRule = {
         const fontDecl = rule.declarations.find((decl) => FONT_PROPERTY.has(decl.property.toLowerCase()));
         if (!fontDecl) continue;
 
-        for (const className of rule.classNames) {
-          for (const classes of byElement.values()) {
-            if (!classes.has(className)) continue;
-            const utilityHit = [...classes].find((name) => name !== className && isFontUtility(name));
-            if (!utilityHit) continue;
-            const start = base + rule.start;
-            findings.push({
-              ruleId: 'unlayered-font-clobber',
-              tier: 'error',
-              file: file.file,
-              line: lineAt(file.source, start),
-              start,
-              end: base + rule.end,
-              message:
-                `selector ".${className}" declares "${fontDecl.property}" in an unlayered scoped ` +
-                `<style> block, which beats the "${utilityHit}" utility on the same element at ANY ` +
-                `specificity: a Svelte scoped style carries no @layer while Tailwind utilities sit ` +
-                `in @layer utilities, so cascade layer precedence, not specificity, decides the ` +
-                `winner. Put the typography on the ancestor the control inherits from instead of ` +
-                `overriding it per instance`,
-            });
-          }
-        }
+        const hit = findFontClobberHit(rule.classNames, byElement);
+        if (!hit) continue;
+        const start = base + rule.start;
+        findings.push({
+          ruleId: 'unlayered-font-clobber',
+          tier: 'error',
+          file: file.file,
+          line: lineAt(file.source, start),
+          start,
+          end: base + rule.end,
+          message:
+            `selector ".${hit.className}" declares "${fontDecl.property}" in an unlayered scoped ` +
+            `<style> block, which beats the "${hit.utilityHit}" utility on the same element at ANY ` +
+            `specificity: a Svelte scoped style carries no @layer while Tailwind utilities sit ` +
+            `in @layer utilities, so cascade layer precedence, not specificity, decides the ` +
+            `winner. Put the typography on the ancestor the control inherits from instead of ` +
+            `overriding it per instance`,
+        });
       }
     }
     return findings;

@@ -101,6 +101,24 @@ describe('unlayered-font-clobber', () => {
     expect(check(file)).toEqual([]);
   });
 
+  // A row or list component repeats its own row class across many elements; the rule names the
+  // hazard once per CSS rule, not once per element the class happens to match.
+  it('flags a shared class matching several elements only once', () => {
+    const file = parseComponent(
+      'Fixture.svelte',
+      [
+        '<h2 class="cairn-heading text-2xl font-bold">First</h2>',
+        '<h2 class="cairn-heading text-2xl font-bold">Second</h2>',
+        '',
+        '<style>',
+        '  .cairn-heading { font-size: 1.5rem; font-weight: 700; }',
+        '</style>',
+        '',
+      ].join('\n')
+    );
+    expect(check(file)).toHaveLength(1);
+  });
+
   it('never flags a text-color utility, which names a color rather than a font-affecting size', () => {
     const file = parseComponent(
       'Fixture.svelte',

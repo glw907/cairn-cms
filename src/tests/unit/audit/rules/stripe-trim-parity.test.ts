@@ -69,6 +69,20 @@ describe('stripe-trim-parity', () => {
     expect(check(component('.row:nth-child(odd) { background: var(--color-base-200); }'))).toEqual([]);
   });
 
+  // The stripe is on the descendant (`.cell`), the trim is on the ANCESTOR (`.grid`): different
+  // subjects, so pairing them as the same row class would be a false positive.
+  it('never flags a descendant stripe against an ancestor trim on a different class', () => {
+    const findings = check(
+      component(
+        [
+          '.grid .cell:nth-child(odd) { background: var(--color-base-200); }',
+          '.grid:last-child { padding-bottom: 0; }',
+        ].join('\n')
+      )
+    );
+    expect(findings).toEqual([]);
+  });
+
   it('is suppressed by a directive naming the rule, and counted', () => {
     const file = parseComponent(
       'Fixture.svelte',

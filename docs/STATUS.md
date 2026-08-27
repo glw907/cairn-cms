@@ -35,17 +35,14 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
   before beta. The protocol's first live consultation (likely the next ASC or 907-life
   pass) appends a short post-mortem to the ledger; the skill carries the self-retiring
   reminder.
-- **The two held absorption plans are re-reviewed, not yet approved.** Verdicts are
-  appended in each plan file: `2026-08-26-toolkit-seams-pass.md` (Tasks 5, 6 stand; 1-4
-  revise; 7 defers) and `2026-08-26-harvest-detection-pass.md` (not approved as drafted;
-  re-issue as six tasks). Revise per the appended verdicts before seeking Geoff's
-  approval.
-- **ASC harvest absorption: two plans prepped 2026-08-26, held as drafts behind the
-  consultation pass.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md` (behavior,
-  7 tasks) and `2026-08-26-harvest-detection-pass.md` (detection and docs, 7 tasks), from the
-  adversarial triage at `docs/internal/record/2026-08-26-asc-harvest-triage.md`. Survivors are
-  tracked in the friction log until the passes ship; re-review both plans against the
-  consultation pass's rulings before approval.
+- **ASC harvest absorption: both plans are revised per the 2026-08-26 re-review and await
+  Geoff's approval.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md` (behavior,
+  six tasks; the `isUniqueViolation` task is deferred with reopen triggers; Task 2 runs
+  before Task 6) and `2026-08-26-harvest-detection-pass.md` (detection and docs, re-issued
+  as six tasks; the hover-parity bullet dropped on a falsified premise). Each file keeps
+  the verdicts as its revision record. Source triage:
+  `docs/internal/record/2026-08-26-asc-harvest-triage.md`; survivors stay tracked in the
+  friction log until the passes ship.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window above.

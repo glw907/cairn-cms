@@ -35,12 +35,13 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
   before beta. The protocol's first live consultation (likely the next ASC or 907-life
   pass) appends a short post-mortem to the ledger; the skill carries the self-retiring
   reminder.
-- **ASC harvest absorption: both plans are revised per the 2026-08-26 re-review and await
-  Geoff's approval.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md` (behavior,
-  six tasks; the `isUniqueViolation` task is deferred with reopen triggers; Task 2 runs
-  before Task 6) and `2026-08-26-harvest-detection-pass.md` (detection and docs, re-issued
-  as six tasks; the hover-parity bullet dropped on a falsified premise). Each file keeps
-  the verdicts as its revision record. Source triage:
+- **ASC harvest absorption: both plans are twice-reviewed (adversarial second round
+  2026-08-26) and await Geoff's approval.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md`
+  (behavior, six tasks SERIAL 1-3-4-5-2-6, ceiling 2.4M; `isUniqueViolation` deferred;
+  StatusChip `tone` retires with the dot, pending Geoff's nod) and
+  `2026-08-26-harvest-detection-pass.md` (detection and docs, six tasks serial, ceiling
+  1.1M; the oklch task cut as a proven no-op, the dead-class extension cut as unbuildable).
+  Each file keeps both review records. Source triage:
   `docs/internal/record/2026-08-26-asc-harvest-triage.md`; survivors stay tracked in the
   friction log until the passes ship.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at

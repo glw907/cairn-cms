@@ -1,6 +1,7 @@
 // The doctor's local-config checks: the wrangler bindings, the observability sink, the
-// svelte.config CSRF handoff, the site-config validation, and the public origin. Every read
-// goes through the injected ctx.readFile, so the tests pass fixtures and the bin passes node:fs.
+// svelte.config CSRF handoff, the site-config validation, the public origin, and the blanket
+// no-referrer trap. Every read goes through the injected ctx.readFile, so the tests pass
+// fixtures and the bin passes node:fs.
 import { fail, pass, skip } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { readWranglerConfig } from './wrangler-config.js';
@@ -382,5 +383,96 @@ export const roleWiring: DoctorCheck = {
       );
     }
     return pass('createAuthGuard is passed the declared role vocabulary (heuristic text read)');
+  },
+};
+
+// The blanket no-referrer trap. originMatches (../sveltekit/csrf.ts) stays a strict Origin
+// compare on purpose (some consumer routes have no second CSRF layer), so it does not change
+// here; this check instead catches the site-side misconfiguration that breaks it. Under a
+// site-wide Referrer-Policy: no-referrer, the Fetch spec strips the Origin header from a plain
+// same-origin top-level POST, so it arrives as Origin: null and originMatches rejects it,
+// 403ing an otherwise legitimate non-admin form. cairn's own /admin responses already scope
+// no-referrer to the token-bearing routes it protects; the trap is a site shipping the same
+// policy as its own site-wide default.
+
+/** One block of a Cloudflare `_headers` file: an un-indented path line and its indented headers. */
+interface HeadersBlock {
+  path: string;
+  headers: string[];
+}
+
+// Cloudflare's _headers grammar: a path line starts at column 0, and every indented line below
+// it is one of that path's headers, until a blank line (or a new path line) ends the block.
+function parseHeadersFile(text: string): HeadersBlock[] {
+  const blocks: HeadersBlock[] = [];
+  let current: HeadersBlock | null = null;
+  for (const raw of text.split('\n')) {
+    const line = raw.replace(/\r$/, '');
+    if (line.trim() === '') {
+      current = null;
+      continue;
+    }
+    if (/^\s/.test(line)) {
+      current?.headers.push(line.trim());
+      continue;
+    }
+    current = { path: line.trim(), headers: [] };
+    blocks.push(current);
+  }
+  return blocks;
+}
+
+// A blanket match needs both the catch-all path (Cloudflare's `/*` glob, matching every route)
+// and a no-referrer value on that block; a path scoped to a specific route (`/admin/*`) never
+// matches here even when it sets the same header.
+function headersFileBlanketNoReferrer(text: string): boolean {
+  return parseHeadersFile(text).some(
+    (block) =>
+      block.path === '/*' &&
+      block.headers.some((h) => /^referrer-policy\s*:\s*no-referrer\s*$/i.test(h))
+  );
+}
+
+// The heuristic text read for src/hooks.server.ts: a line setting Referrer-Policy to no-referrer
+// with no pathname reference in the few lines above it reads as an unconditional, site-wide
+// write; a nearby pathname check is the site scoping the header to specific routes itself.
+function hooksSetsBlanketNoReferrer(text: string): boolean {
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    if (!/referrer-policy/i.test(lines[i]) || !/no-referrer/i.test(lines[i])) continue;
+    const windowStart = Math.max(0, i - 6);
+    const nearby = lines.slice(windowStart, i + 1).join('\n');
+    if (!/pathname/i.test(nearby)) return true;
+  }
+  return false;
+}
+
+const NO_REFERRER_REMEDY =
+  'serve strict-origin-when-cross-origin (or same-origin) as the site default and scope no-referrer to the token-bearing routes it exists for';
+
+export const configNoReferrerBlanket: DoctorCheck = {
+  id: 'config.no-referrer-blanket',
+  conditionId: 'config.no-referrer-blanket',
+  title: 'Blanket no-referrer',
+  async run(ctx: DoctorContext): Promise<CheckResult> {
+    const hooks =
+      (await ctx.readFile('src/hooks.server.ts')) ?? (await ctx.readFile('src/hooks.server.js'));
+    const headersFile = await ctx.readFile('static/_headers');
+    if (hooks === null && headersFile === null) {
+      return skip(
+        'neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked'
+      );
+    }
+    if (hooks !== null && hooksSetsBlanketNoReferrer(hooks)) {
+      return fail(
+        `src/hooks.server.ts sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; ${NO_REFERRER_REMEDY} (heuristic text read)`
+      );
+    }
+    if (headersFile !== null && headersFileBlanketNoReferrer(headersFile)) {
+      return fail(
+        `static/_headers sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; ${NO_REFERRER_REMEDY} (heuristic text read)`
+      );
+    }
+    return pass('no site-wide Referrer-Policy: no-referrer found (heuristic text read)');
   },
 };

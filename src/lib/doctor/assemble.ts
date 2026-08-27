@@ -15,6 +15,7 @@ import {
   configTidyKey,
   adminMountShape,
   roleWiring,
+  configNoReferrerBlanket,
 } from './checks-local.js';
 import { configDependencyFloors } from './check-floors.js';
 import {
@@ -203,6 +204,7 @@ export function defaultChecks(): DoctorCheck[] {
     configSiteConfig,
     configPublicOrigin,
     configTidyKey,
+    configNoReferrerBlanket,
     adminMountShape,
     skillFreshness,
     configDependencyFloors,

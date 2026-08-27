@@ -58,6 +58,16 @@
   `text-[var(--color-positive-ink)]` with `cairn-text-success`, since the arbitrary-value classes
   no longer ship.
 
+- `cairn-doctor` gains `config.no-referrer-blanket`, a check that catches a site-wide
+  `Referrer-Policy: no-referrer` in `src/hooks.server.ts` (or `.js`) or `static/_headers`. Under
+  the Fetch spec that policy strips the `Origin` header from a plain same-origin form POST, so it
+  arrives as `Origin: null` and cairn's strict `originMatches` guard rejects it, breaking a
+  non-admin form the site never left. The guard itself stays strict on purpose; the check flags
+  the site-side misconfiguration instead, with a source-naming SKIP (never a silent PASS) when
+  neither file is readable. See [Security model](docs/extend/security-model.md#response-hardening)
+  and [Is it working?](docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy).
+  Consumers must: nothing.
+
 ### Changed
 
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the

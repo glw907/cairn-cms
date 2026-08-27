@@ -10,6 +10,7 @@ import {
   configPublicOrigin,
   configTidyKey,
   roleWiring,
+  configNoReferrerBlanket,
 } from '../../lib/doctor/checks-local.js';
 import type { DoctorContext } from '../../lib/doctor/types.js';
 import type { RolesDeclaration } from '../../lib/auth/roles.js';
@@ -690,5 +691,92 @@ export const handle = createAuthGuard(guardOpts);
 
   it('ties to the auth.role-wiring-missing condition', () => {
     expect(roleWiring.conditionId).toBe('auth.role-wiring-missing');
+  });
+});
+
+describe('config.no-referrer-blanket (the blanket no-referrer trap)', () => {
+  // A site-wide, unconditional write: no pathname guard anywhere near the header set, so the
+  // heuristic reads it as blanket.
+  const HOOKS_BLANKET = `import type { Handle } from '@sveltejs/kit';
+export const handle: Handle = async ({ event, resolve }) => {
+  const response = await resolve(event);
+  response.headers.set('Referrer-Policy', 'no-referrer');
+  return response;
+};
+`;
+
+  // The same header, but only for a token-bearing route the site itself scopes.
+  const HOOKS_SCOPED = `import type { Handle } from '@sveltejs/kit';
+export const handle: Handle = async ({ event, resolve }) => {
+  const response = await resolve(event);
+  if (event.url.pathname.startsWith('/admin')) {
+    response.headers.set('Referrer-Policy', 'no-referrer');
+  }
+  return response;
+};
+`;
+
+  const HOOKS_NO_MENTION = `export const handle = ({ event, resolve }) => resolve(event);\n`;
+
+  const HEADERS_BLANKET = `/*
+  Referrer-Policy: no-referrer
+  X-Frame-Options: DENY
+`;
+
+  const HEADERS_SCOPED = `/admin/*
+  Referrer-Policy: no-referrer
+
+/*
+  X-Frame-Options: DENY
+`;
+
+  it('fails on a site-wide Referrer-Policy: no-referrer in src/hooks.server.ts, naming Origin: null and the remedy', async () => {
+    const result = await configNoReferrerBlanket.run(ctx({ 'src/hooks.server.ts': HOOKS_BLANKET }));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('src/hooks.server.ts');
+    expect(result.detail).toContain('Origin: null');
+    expect(result.detail).toContain('strict-origin-when-cross-origin');
+    expect(result.detail).toContain('heuristic');
+  });
+
+  it('fails on a site-wide Referrer-Policy: no-referrer in static/_headers, naming Origin: null and the remedy', async () => {
+    const result = await configNoReferrerBlanket.run(ctx({ 'static/_headers': HEADERS_BLANKET }));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('static/_headers');
+    expect(result.detail).toContain('Origin: null');
+    expect(result.detail).toContain('strict-origin-when-cross-origin');
+  });
+
+  it('passes when no-referrer is scoped to a token-bearing route in static/_headers', async () => {
+    const result = await configNoReferrerBlanket.run(ctx({ 'static/_headers': HEADERS_SCOPED }));
+    expect(result.status).toBe('pass');
+  });
+
+  it('passes when no-referrer is scoped to a token-bearing route in src/hooks.server.ts', async () => {
+    const result = await configNoReferrerBlanket.run(ctx({ 'src/hooks.server.ts': HOOKS_SCOPED }));
+    expect(result.status).toBe('pass');
+  });
+
+  it('passes when neither source mentions no-referrer at all', async () => {
+    const result = await configNoReferrerBlanket.run(
+      ctx({ 'src/hooks.server.ts': HOOKS_NO_MENTION, 'static/_headers': '/*\n  X-Frame-Options: DENY\n' })
+    );
+    expect(result.status).toBe('pass');
+  });
+
+  it('skips, naming both sources, when neither src/hooks.server.ts nor static/_headers is readable', async () => {
+    const result = await configNoReferrerBlanket.run(ctx({}));
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('src/hooks.server.ts');
+    expect(result.detail).toContain('static/_headers');
+  });
+
+  it('reads src/hooks.server.js when the .ts spelling is absent', async () => {
+    const result = await configNoReferrerBlanket.run(ctx({ 'src/hooks.server.js': HOOKS_BLANKET }));
+    expect(result.status).toBe('fail');
+  });
+
+  it('ties to the config.no-referrer-blanket condition', () => {
+    expect(configNoReferrerBlanket.conditionId).toBe('config.no-referrer-blanket');
   });
 });

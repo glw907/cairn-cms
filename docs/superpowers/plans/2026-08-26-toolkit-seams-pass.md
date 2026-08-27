@@ -17,7 +17,7 @@ the current `main` tip.
 `docs/internal/admin-design-system.md` (Tasks 2 and 6). Task 2 runs late because it carries the
 widest ripple; Task 6 last because it depends on Task 2's sheet state.
 
-**Status: REVISED 2026-08-26 (second round), awaiting approval.** Two adversarial reviews ran:
+**Status: EXECUTED 2026-08-27; merged to `main`; post-mortem at the end of this file.** Two adversarial reviews ran:
 the `engine-triage` re-review against the any-site audit rulings (verdicts appended verbatim,
 "Re-review verdicts") and a second `engine-triage` pre-approval review of the revised draft
 (summary appended, "Second-round review record"). Both are folded in. The former Task 7

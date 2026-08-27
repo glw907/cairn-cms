@@ -7,6 +7,21 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-08-27: toolkit-seams pass merged
+
+Plan and post-mortem: `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md`. Six ASC-harvest
+behavior absorptions (media picker seam, ExpandableRow inert-cell escape, ToolbarDisclosure,
+CsrfField hardening, StatusChip three-register grammar with tone/dot retired, admin sheet
+contrast fixes), holding unpublished. What a later pass would be wrong to rediscover: the
+CsrfField "reset blanks the token" defect is spec-impossible for hidden inputs (value setter IS
+the default-value setter); daisyUI `.list` does NOT suppress list markers (its baggage is
+flex-column plus forced .875rem type); daisyUI `.menu`'s display rule beats the UA `[hidden]`
+rule, so hiding needs an explicit scoped rule; the e2e visual suite renders no chip-bearing
+surface (blind to chip changes, friction-logged); the facet-chrome contrast deferral's real
+numbers are 1.192/1.203 (earlier 1.50/1.75 figures were measured without the Svelte scope
+class); and the strongest CSRF-403 candidate is the confirm-load `SameSite=Strict` re-mint,
+not the header path. `isUniqueViolation` deferred with reopen triggers in the ledger.
+
 ## 2026-08-26: engine-consultation pass closed
 
 Plan and post-mortem: `docs/superpowers/plans/2026-08-26-engine-consultation-pass.md`; spec

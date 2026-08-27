@@ -35,15 +35,16 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
   before beta. The protocol's first live consultation (likely the next ASC or 907-life
   pass) appends a short post-mortem to the ledger; the skill carries the self-retiring
   reminder.
-- **ASC harvest absorption: both plans are twice-reviewed (adversarial second round
-  2026-08-26) and await Geoff's approval.** `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md`
-  (behavior, six tasks SERIAL 1-3-4-5-2-6, ceiling 2.4M; `isUniqueViolation` deferred;
-  StatusChip `tone` retires with the dot, pending Geoff's nod) and
-  `2026-08-26-harvest-detection-pass.md` (detection and docs, six tasks serial, ceiling
-  1.1M; the oklch task cut as a proven no-op, the dead-class extension cut as unbuildable).
-  Each file keeps both review records. Source triage:
-  `docs/internal/record/2026-08-26-asc-harvest-triage.md`; survivors stay tracked in the
-  friction log until the passes ship.
+- **ASC harvest absorption, behavior half: SHIPPED.** The toolkit-seams pass merged to
+  `main` 2026-08-27 (`e8cc85c8`), holds unpublished under `## Unreleased` (breaking chip
+  changes ride the audit-remediation `Consumers must:` window). Post-mortem in the plan
+  file. Open decision for Geoff, from the pass's security review: the CSRF-403 diagnosis
+  (confirm-load `SameSite=Strict` token re-mint) proposes two guard remedies, `SameSite=Lax`
+  on the CSRF cookie and a `detail` discriminator on csrf rejection logs; both pend a ruling
+  (friction log carries the full case).
+- **ASC harvest absorption, detection half: EXECUTING.** `2026-08-26-harvest-detection-pass.md`
+  (six tasks serial, ceiling 1.1M), approved 2026-08-27, running on the `harvest-detection`
+  worktree off the toolkit-seams merge via `pass-execute.js`.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window above.

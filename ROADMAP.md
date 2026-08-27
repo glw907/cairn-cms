@@ -940,6 +940,15 @@ the named human gates only):**
   `@sveltejs/kit` 2.70 and `svelte` 5.56.10 floors. Size: small-to-medium. Trigger: the next
   `create-cairn-site` pass.
 
+- **`.toolkit-toolbar-select`'s edge falls under the WCAG 1.4.11 3:1 non-text contrast floor**
+  (shipped deferral, measured 2026-08-27, toolkit-seams pass). The shared facet chrome measures
+  1.502:1 light / 1.754:1 dark against `--cairn-card-border`, deliberately excluded from that
+  pass's field-family edge-contrast rule because it harmonizes with the surrounding menu facet's
+  own chrome, which shares the same border treatment. Decision owed: retheme the shared facet
+  chrome to clear 3:1, or record a ruled exception in `admin-grammar-tokens.md`. Size: small.
+  Trigger: the next pass touching toolbar facet chrome, or a contrast audit that flags this
+  element.
+
 - **Three admin-toolkit accessibility gaps the reproduction seam surfaced.** All three sit in
   primitives a site composes directly, and the first is the one an extender meets first. (1)
   `OfficeList` hardcodes `<h1>` for what is a section heading (`OfficeList.svelte:46`), so it cannot

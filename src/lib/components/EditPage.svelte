@@ -1715,7 +1715,7 @@ persistent "?" carries Markdown help, design-arc D2).
                edit. Ordinary editor Undo covers it mechanically (the apply is one history entry); this
                chip names it so the author knows the whole tidy is one move back. -->
           <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 type-meta text-muted" data-testid="tidy-undo-chip">
-            <span class="inline-flex items-center gap-1 font-semibold text-[var(--color-positive-ink)]">Tidy applied</span>
+            <span class="inline-flex items-center gap-1 font-semibold cairn-text-success">Tidy applied</span>
             <button type="button" class="underline decoration-[color-mix(in_oklab,currentColor_40%,transparent)] underline-offset-2 hover:text-primary" onclick={undoTidy}>Undo tidy</button>
           </span>
         {/if}

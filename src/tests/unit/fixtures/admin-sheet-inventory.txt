@@ -733,7 +733,6 @@ text-[1.875rem]/[2.25rem]
 text-[var(--cairn-error-ink)]
 text-[var(--color-accent)]
 text-[var(--color-error-content)]
-text-[var(--color-positive-ink)]
 text-[var(--color-primary)]
 text-[var(--color-success)]
 text-2xl

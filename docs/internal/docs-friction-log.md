@@ -41,22 +41,14 @@ clearings.
   `MediaInsertPopover.svelte`. Trigger: diagnosis is owed the next time the incident recurs.
 
 - **No `cairn-text-error` utility exists, so error ink is inconsistent across the admin**
-  (`extender`, 2026-08-27). The toolkit-seams pass migrated the warning and success bracket
-  forms (`text-[var(--cairn-warning-ink)]`, `text-[var(--cairn-success-ink)]`) to
-  `cairn-text-warning`/`cairn-text-success` utilities, but left the error ink on the bracket
-  form: 33 in-tree sites still write `text-[var(--cairn-error-ink)]` directly
-  (`CairnMediaLibrary.svelte`, `VocabularyAdmin.svelte`, and others). Decision owed: add a
-  matching `cairn-text-error` utility, or explicitly bless the bracket form for error ink in
-  `admin-grammar-tokens.md`. Trigger: the next admin-grammar-tokens pass, or the next component
-  that needs error-ink styling and has to choose which form to copy.
-
-- **`.toolkit-toolbar-select`'s edge falls under the 3:1 non-text contrast floor** (`extender`,
-  2026-08-27). Measured during the toolkit-seams pass: 1.502:1 light / 1.754:1 dark against
-  `--cairn-card-border`. It was deliberately excluded from this pass's field-family edge-contrast
-  rule because it harmonizes with the menu facet's own chrome, which shares the same border
-  treatment. Decision owed: retheme the shared facet chrome to clear 3:1, or record a ruled
-  exception in `admin-grammar-tokens.md`. Trigger: the next pass touching toolbar facet chrome, or
-  a contrast audit that flags this element.
+  (`extender`, 2026-08-27). The toolkit-seams pass migrated the warning bracket form
+  (`text-[var(--cairn-warning-ink)]`, 27 sites) to the new `cairn-text-warning` utility and the
+  two positive-ink bracket sites (`text-[var(--color-positive-ink)]`) to `cairn-text-success`, but
+  left the error ink on the bracket form: 33 in-tree sites still write
+  `text-[var(--cairn-error-ink)]` directly (`CairnMediaLibrary.svelte`, `VocabularyAdmin.svelte`,
+  and others). Decision owed: add a matching `cairn-text-error` utility, or explicitly bless the
+  bracket form for error ink in `admin-grammar-tokens.md`. Trigger: the next admin-grammar-tokens
+  pass, or the next component that needs error-ink styling and has to choose which form to copy.
 
 ## Tombstones (decided, do not resurface)
 

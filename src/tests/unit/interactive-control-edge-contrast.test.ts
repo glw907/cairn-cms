@@ -33,11 +33,12 @@ afterAll(async () => {
 const THEMES = ['cairn-admin', 'cairn-admin-dark'] as const;
 
 type ControlTag = 'input' | 'select' | 'textarea';
+type ControlClass = 'checkbox' | 'radio' | 'input' | 'select' | 'textarea';
 
 /** One control's element markup for a tag/class pair: an `<input>` needs its own `type` attribute
  *  to match a checkbox/radio class (a `<select>` and a `<textarea>` need no `type`); a `<select>`
  *  needs a child `<option>` to have anything to render; a `<textarea>` needs no content. */
-function controlMarkup(tag: ControlTag, cls: string): string {
+function controlMarkup(tag: ControlTag, cls: ControlClass): string {
   if (tag === 'input') {
     const type = cls === 'checkbox' ? 'checkbox' : cls === 'radio' ? 'radio' : 'text';
     return `<input class="${cls}" type="${type}" />`;
@@ -50,12 +51,14 @@ function controlMarkup(tag: ControlTag, cls: string): string {
  *  (base-100), read from the real compiled sheet through a real page, the same substrate every
  *  other rendered contrast proof in this repo uses. `tag` selects the element (an `<input>` for
  *  the checkbox/radio family, or the matching tag for the `.input`/`.select`/`.textarea` field
- *  family); `cls` is both the class and, for an `<input>`, the `type` attribute. An optional
- *  `overrideCss` string appends after the compiled sheet, for the falsifiability proofs below. */
+ *  family); `cls` is always the class name, and additionally selects the `type` attribute for a
+ *  checkbox/radio `<input>` (see `controlMarkup`), since `<select>` and `<textarea>` carry no
+ *  `type`. An optional `overrideCss` string appends after the compiled sheet, for the
+ *  falsifiability proofs below. */
 async function readEdge(
   theme: (typeof THEMES)[number],
   tag: ControlTag,
-  cls: string,
+  cls: ControlClass,
   overrideCss = '',
 ): Promise<{ border: Rgba; ground: Rgba }> {
   const page = await browser.newPage();
@@ -133,7 +136,7 @@ describe('unchecked checkbox/radio edge contrast', () => {
 }, 60_000);
 
 describe('unfocused field-family edge contrast', () => {
-  const FIELDS: { tag: ControlTag; cls: string }[] = [
+  const FIELDS: { tag: ControlTag; cls: ControlClass }[] = [
     { tag: 'input', cls: 'input' },
     { tag: 'select', cls: 'select' },
     { tag: 'textarea', cls: 'textarea' },
@@ -150,14 +153,17 @@ describe('unfocused field-family edge contrast', () => {
   // Same falsifiability discipline as the checkbox/radio suite above, for the sibling rule
   // (pinned unlayered rule 13 of 13) this task adds: reverting the field family's mix back to the
   // daisyUI 20% fallback reproduces the pre-fix measurement (1.492:1 light / 1.773:1 dark, both
-  // under the 3:1 floor), proving the field-family assertions above are load-bearing too.
-  it('is falsifiable: reverting the pinned field-family mix to the daisyUI 20% fallback fails the same check', async () => {
-    const revert =
-      ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) " +
-      ':is(.input, .select, .textarea):not(:focus, :focus-within) ' +
-      '{ border-color: color-mix(in oklab, var(--color-base-content) 20%, transparent) !important; }';
-    const { border, ground } = await readEdge('cairn-admin', 'input', 'input', revert);
-    const ratio = contrastRatio(composite(border, { ...ground, a: 1 }), ground);
-    expect(ratio).toBeLessThan(NON_TEXT_FLOOR);
+  // under the 3:1 floor), proving the field-family assertions above are load-bearing too. Covers
+  // both themes, not only light, mirroring the checkbox/radio suite's own light/dark coverage.
+  describe.each(THEMES)('is falsifiable on %s', (theme) => {
+    it('reverting the pinned field-family mix to the daisyUI 20% fallback fails the same check', async () => {
+      const revert =
+        ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) " +
+        ':is(.input, .select, .textarea):not(:focus, :focus-within) ' +
+        '{ border-color: color-mix(in oklab, var(--color-base-content) 20%, transparent) !important; }';
+      const { border, ground } = await readEdge(theme, 'input', 'input', revert);
+      const ratio = contrastRatio(composite(border, { ...ground, a: 1 }), ground);
+      expect(ratio).toBeLessThan(NON_TEXT_FLOOR);
+    });
   });
 }, 60_000);

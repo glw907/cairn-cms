@@ -47,10 +47,12 @@
   for a plain bulleted or numbered list without pulling in daisyUI's own `.list` component's real
   baggage for prose: a forced flex/column layout in place of normal block flow between items, and a
   forced `.875rem` font-size in place of the ambient one. Every in-tree `text-[var(--cairn-warning-ink)]`
-  call site now writes `cairn-text-warning` instead, so the bracketed arbitrary-value class no
-  longer has any surviving reference in the scanned admin tree and no longer compiles into the
-  shipped sheet. Consumers must: replace any hand-authored `text-[var(--cairn-warning-ink)]` with
-  `cairn-text-warning`, since the arbitrary-value class no longer ships.
+  and `text-[var(--color-positive-ink)]` call site now writes `cairn-text-warning`/`cairn-text-success`
+  instead, so neither bracketed arbitrary-value class has any surviving reference in the scanned
+  admin tree, and neither compiles into the shipped sheet. Consumers must: replace any
+  hand-authored `text-[var(--cairn-warning-ink)]` with `cairn-text-warning` and any
+  `text-[var(--color-positive-ink)]` with `cairn-text-success`, since the arbitrary-value classes
+  no longer ship.
 
 ### Changed
 
@@ -62,17 +64,20 @@
   register alone now carries both shape and color. The sheet's shared hand-composed vocabulary
   moves the same way: `.cairn-chip-bounded` is gone and `.cairn-chip-warning` is new. When the
   chip's label ellipsizes and no `legend` prop is passed, `title` now defaults to the label itself
-  (previously the tooltip stayed empty without a legend). Consumers must: replace
-  `register="bounded"` with `register="outline"` and `.cairn-chip-bounded` with
-  `.cairn-chip-outline`; remove the `tone` prop and any dependency on the status dot, mapping
-  `neutral`/`info`/`success` to `register="quiet"` (or leave `register` unset, since `quiet` is
-  now the default) and `warning`/`danger` to `register="warning"`; remove any reference to the
-  removed `STATUS_CHIP_DOT_CLASS` export. The shared `.cairn-chip-quiet`/`.cairn-chip-warning`/
-  `.cairn-chip-outline` rules pin `font-weight: 400`, and, being unlayered, that pin outranks any
-  Tailwind weight utility on the same element regardless of source order (cascade layers resolve
-  before specificity); a hand-composed chip that also carries `font-semibold` or `font-medium`
-  computes 400 anyway. Consumers must: remove any weight utility from a hand-composed
-  `.cairn-chip-*` element, or expect it to render at 400 regardless.
+  (previously the tooltip stayed empty without a legend). The shared `.cairn-chip-quiet`/
+  `.cairn-chip-warning`/`.cairn-chip-outline` rules pin `font-weight: 400`, and, being unlayered,
+  that pin outranks any Tailwind weight utility on the same element regardless of source order
+  (cascade layers resolve before specificity); a hand-composed chip that also carries
+  `font-semibold` or `font-medium` computes 400 anyway. `EditPage`'s three header status badges
+  (Published, on `.cairn-chip-quiet`; Edited and New, on the stock `badge-warning`/`badge-info`
+  fills) now render at that same uniform weight 400: the `font-medium` those two previously
+  carried was load-bearing for the Edited and New states, and dropping it to match Published is
+  deliberate. Consumers must: replace `register="bounded"` with `register="outline"` and
+  `.cairn-chip-bounded` with `.cairn-chip-outline`; remove the `tone` prop and any dependency on
+  the status dot, mapping `neutral`/`info`/`success` to `register="quiet"` (or leave `register`
+  unset, since `quiet` is now the default) and `warning`/`danger` to `register="warning"`; remove
+  any reference to the removed `STATUS_CHIP_DOT_CLASS` export; and remove any weight utility from
+  a hand-composed `.cairn-chip-*` element, since it renders at 400 regardless.
 
 - The status-dot safelist family in `admin-css-safelist.ts` (thirteen entries, `status-primary`
   through `status-xl`) is removed from the shipped `cairn-admin.css`, since the dot itself is
@@ -98,6 +103,13 @@
   under the WCAG 1.4.11 3:1 non-text floor) to the same 55% mix already locked for the scrollbar
   thumb and the outline chip border (3.586:1 light / 4.959:1 dark). `.toggle` needed no change; its
   own construction already clears the floor unaided. Consumers must: nothing.
+
+- An unfocused `.input`/`.select`/`.textarea` in the packaged admin sheet gets the same edge raise,
+  from the identical 20% fallback (measured 1.492:1 light / 1.773:1 dark) to the same 55% mix
+  (3.586:1 light / 4.959:1 dark), since the field family resolves its unfocused border through the
+  same `--input-color` construction as `.checkbox`/`.radio`. `.toolkit-toolbar-select` is
+  deliberately excluded from this rule, since its edge harmonizes with the surrounding menu facet's
+  own chrome and stays a tracked exception (`ROADMAP.md`, "Next"). Consumers must: nothing.
 
 ## 0.96.0
 

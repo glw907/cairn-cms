@@ -757,7 +757,7 @@ alongside the component recipes above and below it.
   AT. Two separate live regions carry the result count and the selection announcement, since one
   region cannot voice both without clobbering itself. A type-facet seam filters by media type but
   stays hidden while a site has only one type, so it does not show an empty control. The needs-alt
-  label on a result uses `text-[var(--cairn-warning-ink)]`.
+  label on a result uses `cairn-text-warning`.
 - **Media: the capture card (`MediaCaptureCard`).** The card where an editor names and describes a
   newly added image. Its submit is never disabled: alt text is treated as debt, not a gate, so an
   editor can insert now and add the description later (the needs-alt notice tracks the gap). The alt

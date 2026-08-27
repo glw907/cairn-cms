@@ -126,8 +126,8 @@ describe('chip register tuning (second generation)', () => {
   // `contrastRatio` are the two functions carrying the whole proof, so a canned pair known to sit
   // outside every floor this suite checks pins that they still say so. This was also proven by
   // hand against the real CSS during tuning: setting `--cairn-chip-quiet-mix` in the dark theme
-  // root to 30% (well outside the ratified band) turned the two `quiet` fill assertions above red
-  // (measured 1.85/2.21 against the 1.16-1.47 band), and restoring 18% turned them green again.
+  // root to 40% (well outside the ratified band) turned the two `quiet` fill assertions above red
+  // (measured 2.358/2.805 against the 1.16-1.47 band), and restoring 18% turned them green again.
   it('is falsifiable: a color pair outside every floor here fails the same checks these pass', () => {
     const camouflaged: Rgba = { r: 200, g: 200, b: 200, a: 1 };
     const ground: Rgba = { r: 202, g: 202, b: 202, a: 1 };

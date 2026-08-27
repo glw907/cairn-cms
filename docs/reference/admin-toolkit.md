@@ -355,11 +355,11 @@ Cairn's five call sites, ConceptList, EditPage, CairnAdminShell, ReferenceField,
 MediaCaptureCard, and ManageEditors, all clear this floor; a consumer that places an `outline`
 chip inside its own muted-text ancestor should re-measure. `quiet` and `warning` are tuned to a
 1.16-1.47:1 contrast band against both admin row grounds (plain and zebra) in both admin themes,
-and clear the audit's 1.5 ground-collision floor against every admin surface except one. Mixed
-over `--color-base-300` itself, the ground daisyUI's `.table-zebra` row-hover uses, both registers
-sit under that floor. `chip-ground-collision` stays advisory rather than gating today, so this
-fifth ground stays documented rather than retuned; a `quiet` or `warning` chip shouldn't sit
-directly on a `base-300`-derived ground until the rule re-promotes.
+and the whole ratified band sits under the audit's own 1.5 ground-collision floor, by design: a
+`quiet` or `warning` chip measures as an advisory camouflaged finding on some row/theme pairs.
+`chip-ground-collision` stays advisory rather than gating today, pending its own chroma-aware
+reshape that can tell a hue-distinct low-contrast tint from a truly invisible one; a measured
+"violation" from that rule is expected here, not a regression.
 
 **daisyUI assembly:** `badge badge-outline` (shape only; `badge-outline` sets no `--badge-color`,
 so its fill and border resolve through the `register` recipe rather than the full-strength

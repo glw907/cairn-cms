@@ -389,10 +389,11 @@ alongside the component recipes above and below it.
   chip's own ancestor, so it can drop under the floor inside a `text-muted` ancestor (verify a new
   call site). Every tinted fill (`quiet`, `warning`) is tuned to a 1.16-1.47:1 contrast band
   against its own row ground (plain and zebra, both admin themes), and `warning`'s ink additionally
-  clears >= 4.5:1 against its own fill; both resolve only inside the admin theme root and are
-  unguarded against a ground at or near `base-300` itself (a `.table-zebra` row-hover, say), where
-  they can drop under the 1.5 ground-collision floor (`chip-ground-collision` stays advisory, so
-  this is documented rather than retuned). There is no chip-level danger tier; a state that must
+  clears >= 4.5:1 against its own fill; both resolve only inside the admin theme root. The tinted
+  band's upper bound (1.47:1) sits under the audit's own 1.5:1 ground-collision floor, so every
+  `quiet`/`warning` chip sits under that floor by design, on every row ground, not only a
+  `base-300`-derived one (`chip-ground-collision` stays advisory, so this is documented rather
+  than retuned). There is no chip-level danger tier; a state that must
   stand out beyond quiet is a `warning` chip. Values are measured, not invented
   (`docs/internal/probes/2026-08-26-chip-registers-v2`); the full contract lives on [the
   admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).

@@ -68,7 +68,7 @@ chip's warning text is exactly that case, so no new ink was derived.
 ## Falsifiability
 
 Proven by hand during tuning, not merely asserted: setting `--cairn-chip-quiet-mix` in the dark
-theme root to 30% (well outside the ratified band) turned the standing test's two dark `quiet`
+theme root to 40% (well outside the ratified band) turned the standing test's two dark `quiet`
 fill assertions red, measuring 2.358:1 (plain) and 2.805:1 (zebra) against the 1.16-1.47:1 band,
 while every other assertion in the file stayed green. Restoring `18%` turned the suite green
 again. `status-chip-register-tuning.test.ts` also carries a small synthetic-fixture test proving

@@ -42,9 +42,16 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
   changes ride the audit-remediation `Consumers must:` window). Post-mortem in the plan
   file. The pass's CSRF-403 diagnosis is now RULED and encoded in the approved
   csrf-hardening plan (the remediation bullet below); nothing pends here.
-- **ASC harvest absorption, detection half: EXECUTING.** `2026-08-26-harvest-detection-pass.md`
-  (six tasks serial, ceiling 1.1M), approved 2026-08-27, running on the `harvest-detection`
-  worktree off the toolkit-seams merge via `pass-execute.js`.
+- **ASC harvest absorption, detection half: PAUSED CLEANLY mid-execution (weekly token
+  pool, 2026-08-28).** `2026-08-26-harvest-detection-pass.md`, six tasks serial. Tasks 1-4
+  are COMMITTED and diff-reviewed on the `harvest-detection` worktree
+  (`.claude/worktrees/harvest-detection`, branch pushed to origin, tip `7f455c45`; each
+  task's chain ran green, two fix rounds included). Tasks 5 (rendered panel-width rule) and
+  6 (chassis and docs) are NOT started; the worktree is clean at Task 4's commit (half-done
+  Task 5 edits were reverted). RESUME: in a fresh session inside cairn-cms, dispatch Tasks
+  5 and 6 from the plan through the `cairn-implementer` / `diff-reviewer` chain (below-six
+  rule, Agent tool per task; the old workflow run is not resumable cross-session), then run
+  the full `cairn-pass` pass-end ritual per the plan's own pass-end notes, merge, push.
 - **The audit remediation is designed, twice-reviewed, and its first three slice plans are
   APPROVED (Geoff, 2026-08-28).** Frame:
   `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md` (seven slices

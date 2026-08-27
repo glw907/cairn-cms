@@ -145,7 +145,8 @@ it any other way without duplicating the rule back into the caller.
     onclick: toggle,
     [triggerRefKey]: attachTriggerRef,
   });
-  const panelAttrs = $derived<ToolbarDisclosurePanelAttrs>({ id: panelId });
+  // Not `$derived`: `panelId` is minted once per instance, so the panel attrs never change.
+  const panelAttrs: ToolbarDisclosurePanelAttrs = { id: panelId };
 
   // Mechanic: focus moves into the panel on open. Generic fallback (the caller's own content may
   // additionally manage its own focus, e.g. a menu's roving tabindex reacting to this same focus

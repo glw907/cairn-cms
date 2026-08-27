@@ -85,15 +85,19 @@ the office's own three-word vocabulary never needs).
 
   let { label, size = 'sm', register = 'quiet', legend }: Props = $props();
 
-  const registerClass = $derived(
-    register === 'warning' ? 'status-chip-warning' : register === 'outline' ? 'status-chip-outline' : 'status-chip-quiet',
-  );
+  function classFor(value: StatusChipRegister): string {
+    if (value === 'warning') return 'status-chip-warning';
+    if (value === 'outline') return 'status-chip-outline';
+    return 'status-chip-quiet';
+  }
+
+  const registerClass = $derived(classFor(register));
+  // The size picks a daisyUI badge tier and, at xs, the floor-free width rule, so both travel
+  // together rather than as two separate tests of the same prop in the class attribute.
+  const sizeClass = $derived(size === 'xs' ? 'badge-xs status-chip-xs' : 'badge-sm');
 </script>
 
-<span
-  class="badge badge-outline {size === 'xs' ? 'badge-xs' : 'badge-sm'} status-chip {registerClass} {size === 'xs' ? 'status-chip-xs' : ''}"
-  title={legend ?? label}
->
+<span class="badge badge-outline status-chip {registerClass} {sizeClass}" title={legend ?? label}>
   <span class="status-chip-label">{label}</span>{#if legend}<span class="sr-only">: {legend}</span>{/if}
 </span>
 

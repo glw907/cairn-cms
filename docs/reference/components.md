@@ -752,6 +752,11 @@ there, which is also how a custom `/admin/` screen's forms get the token. A form
 fail-closed signal. `EditPage`, `DeleteDialog`, `RenameDialog`, and the other authed admin forms
 compose it.
 
+The field's token survives a native form reset, the one `use:enhance` fires by default after a
+successful submit. It mirrors its value into the input's `defaultValue`, so the reset restores the
+same token instead of blanking the field and 403ing the form's next submit. The component carries
+the guarantee on its own, with no action from a consuming form.
+
 ```svelte
 <CsrfField {token} />
 ```

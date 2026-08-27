@@ -16,4 +16,18 @@ describe('CsrfField', () => {
     const input = screen.container.querySelector('input[name="csrf"]') as HTMLInputElement;
     expect(input).toHaveValue('');
   });
+
+  it('survives a native form reset', async () => {
+    const form = document.createElement('form');
+    document.body.appendChild(form);
+    const screen = await render(CsrfField, { target: form, props: { token: 'ABC' } });
+    const input = form.querySelector('input[name="csrf"]') as HTMLInputElement;
+    expect(input).toHaveValue('ABC');
+
+    form.reset();
+
+    expect(input).toHaveValue('ABC');
+    await screen.unmount();
+    form.remove();
+  });
 });

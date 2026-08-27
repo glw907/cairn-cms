@@ -39,6 +39,13 @@
   `/admin-toolkit`, beside the component whose prop signature names it, and `/sveltekit` keeps its
   existing re-export. Consumers must: nothing.
 
+### Fixed
+
+- `CsrfField` mirrors its token into the hidden input's `defaultValue`, so a native form reset (the
+  one `use:enhance` fires by default after a successful submit) restores the token instead of
+  blanking the field toward the guard's next check. The fix lives entirely inside the component,
+  with no consumer-side change. Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

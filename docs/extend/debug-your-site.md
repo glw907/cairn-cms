@@ -51,6 +51,20 @@ export function today(env: { CAIRN_FIXED_TODAY?: string }): Date {
 }
 ```
 
+<!-- snippet-check-skip: reads App.Platform (event.platform.env), which only the site's own app.d.ts declares -->
+```ts
+// src/routes/+page.server.ts
+import { today } from '$lib/today.js';
+
+export const load = (event) => {
+  return { today: today(event.platform?.env ?? {}) };
+};
+```
+
+The call site is what makes the seam real: `today` never reads `platform.env` for itself, so
+every route that needs the date passes `event.platform?.env` in explicitly, the same value a test
+can override with `CAIRN_FIXED_TODAY` and production never sets.
+
 Wire the binding in your CI job or your `wrangler.jsonc`'s local `vars`, never in production; a
 deploy with no `CAIRN_FIXED_TODAY` set falls back to the real clock exactly as before. Every place
 that renders a date reads through this one function, so a baseline captured on one day and a

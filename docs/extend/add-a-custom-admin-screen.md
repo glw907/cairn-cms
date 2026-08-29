@@ -178,6 +178,7 @@ out from under a submit that's still resolving.
 ```svelte
 <!-- src/routes/admin/club/events/ApproveDialog.svelte -->
 <script lang="ts">
+  import { tick } from 'svelte';
   import { enhance } from '$app/forms';
   import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
   import type { ActionResult } from '@sveltejs/kit';
@@ -199,6 +200,7 @@ out from under a submit that's still resolving.
     if (result.type === 'failure') {
       errorMessage = (result.data?.error as string | undefined) ?? 'Something went wrong.';
       await update({ reset: false });
+      await tick();
       alertBox?.focus();
       return;
     }
@@ -232,9 +234,13 @@ out from under a submit that's still resolving.
 `role="alert"` announces the message the instant it renders; the explicit `tabindex="-1"` plus the
 `focus()` call after `update()` moves the user's own keyboard focus there too, not only a screen
 reader's attention, since a sighted keyboard user gets no visual cue that anything happened unless
-focus itself moves. `dialog?.close()` runs only on `'success'`, never on `'error'` (an unhandled
-exception, which is a different failure than a validation `fail()`) or `'redirect'`, so the dialog
-stays open and legible for whatever the caller does with either of those next.
+focus itself moves. The `await tick()` between `update()` and `focus()` matters: `errorMessage` is
+what makes the alert element exist at all, and nothing guarantees Svelte has flushed that reactive
+update to the DOM by the time `update()` resolves, so a `focus()` call without `tick()` can run
+before Svelte binds `alertBox` and silently do nothing. `dialog?.close()` runs only on `'success'`,
+never on `'error'` (an unhandled exception, which is a different failure than a validation
+`fail()`) or `'redirect'`, so the dialog stays open and legible for whatever the caller does with
+either of those next.
 
 ## Recipe: load when the panel opens
 
@@ -261,20 +267,29 @@ free.
   let { data }: { data: { members: Member[] } } = $props();
 
   let expandedId = $state<string | null>(null);
-  let details = $state<Record<string, MemberDetail | undefined>>({});
+  let details = $state<Record<string, MemberDetail>>({});
+  let failed = $state<Record<string, boolean>>({});
 
-  async function toggle(id: string) {
-    expandedId = expandedId === id ? null : id;
-    if (expandedId && !(id in details)) {
-      const response = await fetch(`/admin/club/roster/${id}/detail`);
-      details[id] = response.ok ? ((await response.json()) as MemberDetail) : undefined;
+  async function loadDetail(id: string) {
+    const response = await fetch(`/admin/club/roster/${id}/detail`);
+    if (response.ok) {
+      details[id] = (await response.json()) as MemberDetail;
+      delete failed[id];
+    } else {
+      failed[id] = true;
     }
+  }
+
+  function toggle(id: string) {
+    expandedId = expandedId === id ? null : id;
+    if (expandedId && !(id in details) && !failed[id]) void loadDetail(id);
   }
 </script>
 
 <AdminTable rowCount={data.members.length}>
   {#snippet header()}
     <th scope="col">Name</th>
+    <th scope="col"><span class="sr-only">Expand</span></th>
   {/snippet}
   {#snippet children()}
     {#each data.members as member (member.id)}
@@ -291,6 +306,11 @@ free.
         {#snippet panel(row)}
           {#if details[row.id]}
             <p>{details[row.id]?.email}</p>
+          {:else if failed[row.id]}
+            <p>
+              Couldn't load member details.
+              <button type="button" class="link" onclick={() => loadDetail(row.id)}>Retry</button>
+            </p>
           {:else}
             <p>Loading...</p>
           {/if}
@@ -301,9 +321,18 @@ free.
 </AdminTable>
 ```
 
-The cache (`details`, keyed by row id) is what makes a repeat toggle free. A `load` that streamed
-the same data with SvelteKit's own promise streaming (`return { members, details: loadDetails() }`
-with `details` an unawaited promise) still runs the fetch for every row on first paint; streaming
+The `header` snippet declares a second `<th scope="col">` to match `ExpandableRow`'s two body
+cells per row, the summary cell and the component's own trailing trigger cell (which is why
+`colspan={2}` is correct on the panel row); its name is screen-reader-only since the trigger
+column carries no visible header text of its own.
+
+The cache (`details`, keyed by row id) is what makes a repeat toggle free, and a failed fetch is
+never cached as if it succeeded: `loadDetail` only writes to `details` on a `response.ok`, so a
+failure leaves the row's key absent from `details` and instead sets `failed[id]`, which the panel
+renders as its own state, distinct from `Loading…`, with a retry action that calls `loadDetail`
+again. A `load` that streamed the same data with SvelteKit's own promise streaming (`return {
+members, details: loadDetails() }` with `details` an unawaited promise) still runs the fetch for
+every row on first paint; streaming
 only defers when a promise *resolves* into the page, not whether it *runs*, so it doesn't skip a
 row nobody ever opens the way an open-triggered fetch does.
 

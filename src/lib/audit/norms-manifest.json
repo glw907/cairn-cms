@@ -693,6 +693,20 @@
     },
     {
       "role": "input-text",
+      "property": "border-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "color-mix(in oklab, var(--color-base-content) 55%, transparent)",
+          "var(--color-base-content)"
+        ]
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
       "property": "border-radius",
       "band": {
         "kind": "length",
@@ -991,6 +1005,20 @@
     },
     {
       "role": "select",
+      "property": "border-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "color-mix(in oklab, var(--color-base-content) 55%, transparent)",
+          "var(--color-base-content)"
+        ]
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
       "property": "border-radius",
       "band": {
         "kind": "length",
@@ -1151,15 +1179,14 @@
       "band": {
         "kind": "relationship",
         "expressions": [
-          "color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300))",
+          "color-mix(in oklab, var(--color-base-content) var(--cairn-chip-quiet-mix), var(--color-base-200))",
+          "color-mix(in oklab, var(--color-warning) var(--cairn-chip-warning-mix), var(--color-base-200))",
           "var(--badge-bg)"
         ]
       },
       "observations": 16,
       "provenance": "observed",
-      "flags": [
-        "literal-dropped"
-      ]
+      "flags": []
     },
     {
       "role": "status-chip",
@@ -1167,7 +1194,6 @@
       "band": {
         "kind": "relationship",
         "expressions": [
-          "color-mix(currentcolor 55%, transparent)",
           "currentcolor"
         ]
       },
@@ -1211,11 +1237,10 @@
         "kind": "length",
         "unit": "px",
         "values": [
-          0,
-          1
+          0
         ],
         "min": 0,
-        "max": 1
+        "max": 0
       },
       "observations": 16,
       "provenance": "observed",
@@ -1228,7 +1253,8 @@
         "kind": "relationship",
         "expressions": [
           "var(--badge-color)",
-          "var(--badge-fg)"
+          "var(--badge-fg)",
+          "var(--cairn-warning-ink)"
         ]
       },
       "observations": 16,

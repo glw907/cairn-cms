@@ -1,5 +1,14 @@
 # Foundations A: Ledger and Canonical Home (remediation initiative, slice 2a)
 
+**Session handoff (2026-08-29):** foundations A and B run as ONE paired fresh session
+(Geoff's call, 2026-08-29); execute A first through the cairn-pass ritual; at A's merge,
+finalize B's task bodies against A's merged surface (B's own header requires this) and
+re-verify both plans' csrf-window items (listed in each plan's pre-flight section) against
+the merged tree before dispatching; then execute B in the same session. Resume prompt for
+the fresh session, verbatim on its own line:
+
+In ~/Projects/cairn-cms, execute the foundations A pass (docs/superpowers/plans/2026-08-28-foundations-a-pass.md) and then foundations B in the same session, per the Session handoff note in the A plan.
+
 > **For agentic workers:** three tasks, SERIAL. Dispatch the `cairn-implementer` /
 > `diff-reviewer` chain per task with the Agent tool; the full gate inside the chain. Task 2
 > is the pass's `model: opus` candidate (it ratifies and executes a surface-wide rule).
@@ -118,3 +127,72 @@ from four, 5 from five); by ledger verdict 114 keep, 3 reshape, 5 retire.
 the move-set record, and the enforcement rule against the ledger. No component work, no
 visual read, no admin smoke. Foundations B is authored against THIS pass's committed
 `api-surface.md`; it must not be planned in detail before this pass merges.
+
+---
+
+## Pre-flight verification (2026-08-29)
+
+Verified against `main` at `49914d9d`, before the csrf-hardening merge.
+
+**Corrections**
+
+- Task 2, "The measured move set" note claims "of 410 exported names, 122 publish from two
+  or more subpaths: 63 from two, 10 from three, 44 from four, 5 from five."
+  `docs/internal/api-surface.md` is not on csrf-hardening's edit list, so this is a plain
+  drift, not a csrf-window item. As of `49914d9d`: total exported names is 411, not 410. The
+  multi-subpath breakdown is exact (122 total: 63 from two, 10 from three, 44 from four, 5
+  from five); only the 410 total is off by one.
+
+**Re-verify after the csrf-hardening merge**
+
+- Task 1, first bullet + defect note ("67 entries... 55 of them exactly 160 chars"):
+  `docs/internal/engine-rulings.md`. As of `49914d9d`: 66 entries carry a `(shape: …)`
+  parenthetical (not 67), and 54 of them (not 55) measure exactly 160 characters between
+  `(shape: ` and the closing `).`.
+- Task 1, defect note ("distribution of the 55 truncated shapes: 43 reshape, 12 retire, zero
+  keep"): `docs/internal/engine-rulings.md`. As of `49914d9d`, among the 54 entries measuring
+  exactly 160 chars: 42 reshape, 12 retire, 0 keep (reshape count is 42, not 43; total is 54,
+  not 55).
+- Task 1, first bullet ("the 10 `audit-sveltekit-*` and 4 `audit-admin-*` truncated shapes
+  are the ones the next two slices consume and get repaired now"):
+  `docs/internal/engine-rulings.md`. As of `49914d9d` this count verifies exactly: 10
+  `audit-sveltekit-*` and 4 `audit-admin-*` entries have the exact-160-char truncated shape.
+- Task 1, first bullet (`audit-sveltekit-contentroutes` at `:1487`, cut off exactly where it
+  names the internal-shape consumer): `docs/internal/engine-rulings.md`. As of `49914d9d` the
+  entry heading "`## audit-sveltekit-contentroutes: ContentRoutes`" is at line 1510 (not
+  1487), and its truncated `Reopens on:` line is at 1513: "...keeping the media-janitorial
+  actions on an engine-internal shape the adm)." The content and truncation-point claim
+  holds; only the line number is stale.
+- Task 1, first bullet ("the remaining 41 unrepaired truncated shapes break down as cli 16,
+  log 10, auth 7, tail 8"): `docs/internal/engine-rulings.md`. As of `49914d9d` the actual
+  breakdown of the 40 non-sveltekit/non-admin truncated-shape entries is cli 15 (not 16), log
+  10, auth 7, tail (adapter 2 + cloudflare 2 + media 1 + delivery 2 + render 1) 8; total 40,
+  not 41.
+- Task 1, third bullet (the `MediaInsertPopover` deferral exists today only as a sub-clause
+  at `:39-40`): `docs/internal/engine-rulings.md`. As of `49914d9d` this verifies exactly:
+  lines 39-40 of the `mediaherofield-export` entry read "...sustained against
+  `MediaInsertPopover`, which also / stays internal, deferred until the `MarkdownEditor` seam
+  collapse."
+- Task 2, second bullet (the ledger has no family entry for R-1; the sole canonical-home
+  reasoning lives inside one item's verdict at `:1208`, the `MediaLibraryEntry` re-export
+  mold): `docs/internal/engine-rulings.md`. As of `49914d9d` the relevant entry is
+  `audit-sveltekit-medialibraryentry` with heading at line 1232 and the canonical-home
+  reasoning ("Canonical home is `/admin-toolkit`... A re-export from the stated canonical
+  home is not a second home, so C1 holds.") at line 1234, not 1208. No standalone R-1 family
+  entry exists (confirmed: no heading matching an R-1/canonical-home slug).
+- Task 1, third bullet (`audit-admin-markdowneditor` entry at `:2295`, cross-referenced by
+  the `MediaInsertPopover` filing): `docs/internal/engine-rulings.md`. As of `49914d9d` the
+  heading "`## audit-admin-markdowneditor: MarkdownEditor`" is at line 2321, not 2295.
+- Task 2, "The measured move set" note ("by ledger verdict, the 122 multi-subpath names split
+  114 keep, 3 reshape, 5 retire"): `docs/internal/engine-rulings.md` (cross-referenced
+  verdicts). As of `49914d9d` this verifies exactly against `docs/internal/api-surface.md`'s
+  122 multi-subpath names: 114 keep, 3 reshape, 5 retire, with every name found in the
+  ledger.
+- Header, Shared files line (`CHANGELOG.md` is a shared file touched by every task in this
+  pass): `CHANGELOG.md` is on csrf-hardening's edit list; its "Unreleased" section state
+  should be re-read after that merge before Task 1 adds to it.
+- Header, Shared files line (`docs/internal/engine-rulings.md` is a shared file touched by
+  Tasks 1 and 2): `docs/internal/engine-rulings.md` is on csrf-hardening's edit list (that
+  pass files a login-CSRF ledger entry per the initiative design doc's slice-1 description);
+  re-read the file fresh after that merge before Task 1's repair work and Task 2's R-1 family
+  entry work.

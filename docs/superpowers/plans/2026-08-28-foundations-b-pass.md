@@ -122,3 +122,61 @@ foundations A's Task 2, which this task VERIFIES against the `check:surface` dif
 against the ledger and the repaired shapes (an error multiplies into the retires pass). The
 retires pass plan is authored AFTER Geoff rules on list (c), never from the audit's original
 94-item list.
+
+---
+
+## Pre-flight verification (2026-08-29)
+
+Verified against `main` at `49914d9d`, before the csrf-hardening merge.
+
+**Corrections**
+
+- Task 1, "Count honesty" sentence claims "the audit's own documents state the ContentRoutes
+  return count as 30, 35, and 36 in different places." Only "30-key" is documented
+  (`rank-route-factories.md:640` and `verify-route-factories.md:119`, both "the full 30-key
+  action vocabulary" / "The 30-key return verified"); a repo-wide grep found no place stating
+  "35" or "36" as a `ContentRoutes` member count (only unrelated rank numbers 35/36 for
+  `MediaLibraryEntry`/`UsageEntry`, and unrelated file-count histograms). The measured 35
+  itself is correct; the "36" provenance could not be located.
+
+**Re-verify after the csrf-hardening merge**
+
+- Task 1 Files list parenthetical (`docs/internal/engine-rulings.md` carries an
+  `audit-sveltekit-contentroutes` entry describing a shape "repaired by foundations A"):
+  `docs/internal/engine-rulings.md` is in the csrf-hardening pass's edited-file list; the
+  entry currently exists at line 1510 ("`## audit-sveltekit-contentroutes: ContentRoutes
+  (reshape, 2026-08-26, any-site audit)`") but must be re-read post-merge.
+- Task 1, membership-rule bullet (the janitorial trio and the four media-mutation actions,
+  `mediaReplaceAction`/`mediaAltPropagateAction`/`mediaDeleteAction`/`mediaUpdateAction`, have
+  failure/result types in ranks 14-30: `MediaBulkFailure` rank 18; `MediaReplaceFailure` rank
+  20; `MediaAltPropagateFailure` rank 17; `MediaDeleteRefusal` rank 21; `MediaUpdateFailure`
+  rank 19): these action names and their failure-type associations are declared in
+  `src/lib/sveltekit/content-routes-media.ts`, a csrf-hardening-pass-touched file; the rank
+  citations verify against `rank-route-factories.md` today (ranks 14-30 headings confirmed)
+  but the underlying action/type shapes must be re-checked after the csrf merge.
+- Task 1, membership-rule bullet (`ContentFormFailure`, a keep, stays in the public unions it
+  already inhabits, composed from `SaveFailure`/`DeleteRefusal`/`RenameFailure`/
+  `CreateFailure`/`PreviewMintFailure` (core), `MediaDeleteRefusal`/`MediaUpdateFailure`/
+  `MediaReplaceFailure`/`MediaAltPropagateFailure`/`MediaBulkFailure` (media), `TidyFailure`
+  (tidy)): verified today at `content-routes.ts:93-95`, but its constituent types are
+  declared in `content-routes-core.ts`, `content-routes-media.ts`, and
+  `content-routes-tidy.ts`, all three csrf-hardening-pass-touched files.
+- Task 2, reconciliation bullet (the ledger's bucket totals reproduce the record's
+  535/384/57/94 exact, nine of eleven buckets exact, with the entire discrepancy being one
+  item each in route-factories (72/52 ledger vs 71/53 record) and admin-shell-toolkit (35/19
+  ledger vs 36/18 record)): `docs/internal/engine-rulings.md` (the "ledger") is a
+  csrf-hardening-pass-touched file, so its current bucket totals must be re-verified
+  post-merge. The record-side numbers verify today: `2026-08-26-any-site-audit.md:19,39`
+  states "535 items in 11 subsystems" and "384 keep, 57 reshape, 94 retire... after 33
+  verification overturns"; its table (line 45-46) shows route-factories 71 keep/53 retire and
+  admin-shell-toolkit 36 keep/18 retire, matching the record-side halves of the plan's claim.
+- Task 2 acceptance bullet (the three lists in Task 2 plus the named exclusion,
+  `DEFAULT_ROLES`, partition the 94 retires exactly): `docs/internal/engine-rulings.md` is a
+  csrf-hardening-pass-touched file; `DEFAULT_ROLES` currently carries a "keep" verdict there
+  (line 151, "`audit-adapter-default-roles: DEFAULT_ROLES (keep, 2026-08-26, any-site
+  audit)`") consistent with the initiative-design doc's description of it as excluded, but
+  the ledger entry must be re-read post-merge.
+- Header, Shared files line (`docs/internal/engine-rulings.md` and `CHANGELOG.md` are files
+  this pass's tasks touch): both files are in the csrf-hardening pass's edited-file list;
+  their current content, which this pass's tasks build on top of, must be re-read after that
+  merge before editing.

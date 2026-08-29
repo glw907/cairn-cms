@@ -522,6 +522,30 @@ const NO_REFERRER_REMEDY =
 
 const NO_REFERRER_DOCS_ANCHOR = 'docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy';
 
+/** A hooks module the check managed to read, and which of the two spellings it came from. */
+interface HooksSource {
+  path: string;
+  text: string;
+}
+
+// The site's hooks module under either spelling, .ts preferred. The path travels with the text
+// because a failure names the file it read, which the ?? chain the other hooks checks use cannot
+// report.
+async function readHooksSource(ctx: DoctorContext): Promise<HooksSource | null> {
+  for (const path of ['src/hooks.server.ts', 'src/hooks.server.js']) {
+    const text = await ctx.readFile(path);
+    if (text !== null) return { path, text };
+  }
+  return null;
+}
+
+// The one failure both header sources report, differing only in which file set the policy.
+function blanketNoReferrerFailure(source: string): CheckResult {
+  return fail(
+    `${source} sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; ${NO_REFERRER_REMEDY} (heuristic text read)`
+  );
+}
+
 // Names which of the two header sources the check actually read, and which it could not find, so
 // a PASS never reads as "nothing here" when it really means "the readable sources looked clean".
 function describeNoReferrerSources(hooksPath: string | null, headersFileRead: boolean): string {
@@ -541,32 +565,21 @@ export const configNoReferrerBlanket: DoctorCheck = {
   conditionId: 'config.no-referrer-blanket',
   title: 'Blanket no-referrer',
   async run(ctx: DoctorContext): Promise<CheckResult> {
-    let hooksPath: string | null = null;
-    let hooks = await ctx.readFile('src/hooks.server.ts');
-    if (hooks !== null) {
-      hooksPath = 'src/hooks.server.ts';
-    } else {
-      hooks = await ctx.readFile('src/hooks.server.js');
-      if (hooks !== null) hooksPath = 'src/hooks.server.js';
-    }
+    const hooks = await readHooksSource(ctx);
     const headersFile = await ctx.readFile('static/_headers');
     if (hooks === null && headersFile === null) {
       return skip(
         `neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked automatically; verify by hand that no site-wide Referrer-Policy: no-referrer is served (${NO_REFERRER_REMEDY}); see ${NO_REFERRER_DOCS_ANCHOR}`
       );
     }
-    if (hooks !== null && hooksSetsBlanketNoReferrer(hooks)) {
-      return fail(
-        `${hooksPath} sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; ${NO_REFERRER_REMEDY} (heuristic text read)`
-      );
+    if (hooks !== null && hooksSetsBlanketNoReferrer(hooks.text)) {
+      return blanketNoReferrerFailure(hooks.path);
     }
     if (headersFile !== null && headersFileBlanketNoReferrer(headersFile)) {
-      return fail(
-        `static/_headers sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; ${NO_REFERRER_REMEDY} (heuristic text read)`
-      );
+      return blanketNoReferrerFailure('static/_headers');
     }
     return pass(
-      `no site-wide Referrer-Policy: no-referrer found (${describeNoReferrerSources(hooksPath, headersFile !== null)}, heuristic text read)`
+      `no site-wide Referrer-Policy: no-referrer found (${describeNoReferrerSources(hooks?.path ?? null, headersFile !== null)}, heuristic text read)`
     );
   },
 };

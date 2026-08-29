@@ -640,15 +640,15 @@ export async function applyState(state: InteractionState, page: RenderedPage): P
     // trailing `aria-expanded` button inside it doing the same toggle; clicking the row itself is
     // the simpler, single selector to drive.
     return page.evaluate(() => {
-      const rows = Array.from(document.querySelectorAll<HTMLElement>('.toolkit-expandable-row-summary')).filter(
+      const row = Array.from(document.querySelectorAll<HTMLElement>('.toolkit-expandable-row-summary')).find(
         (el) => {
           const style = getComputedStyle(el);
           const rect = el.getBoundingClientRect();
           return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
         }
       );
-      if (rows.length === 0) return false;
-      rows[0].click();
+      if (!row) return false;
+      row.click();
       return true;
     });
   }

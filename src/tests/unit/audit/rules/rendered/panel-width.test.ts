@@ -13,6 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser } from 'playwright';
 import { resolveConfig } from '../../../../../lib/audit/config.js';
 import { panelWidth } from '../../../../../lib/audit/rules/rendered/panel-width.js';
+import { applyState } from '../../../../../lib/audit/rendered.js';
 import type { RenderedFinding, RenderedPage } from '../../../../../lib/audit/rendered.js';
 
 let browser: Browser;
@@ -60,6 +61,15 @@ function tableFixture(summaryCell: string, panel?: string): string {
 }
 
 describe('panel-width against a real browser', () => {
+  // The declared-metadata regression this whole file exists to guard: `rest` alone never sees a
+  // panel (ExpandableRow's own `{#if expanded}`), so without `row-expanded` in this list the
+  // panel half of the contract runs against nothing in a real runRendered pass, even though every
+  // fixture in this file that calls `panelWidth.check` directly would still pass (it bypasses the
+  // harness's own state gating).
+  it('declares both rest and row-expanded, so runRendered actually opens a panel before measuring it', () => {
+    expect(panelWidth.states).toEqual(['rest', 'row-expanded']);
+  });
+
   // The real defect: the panel td is given its own explicit width and `overflow: hidden` (a
   // truncate-style utility, or a fixed-width inner layout), so a wide inline control clips mid-word
   // rather than widening the table. Neither the wrap nor the table itself ever grows to reach it, so
@@ -193,6 +203,26 @@ describe('panel-width against a real browser', () => {
     expect(findings).toEqual([]);
   });
 
+  // The select gap: a select carries no caret and does not scroll its own displayed value, so it
+  // must not be blanket-exempt the way input/textarea are. `select[multiple]`'s listbox rendering
+  // lays out its options as real child boxes, which DOES grow scrollWidth past the box when an
+  // option's text is wider than it, and this rule must catch it now that select is out of isExempt.
+  it('fires when a select[multiple] listbox clips an option wider than its own box', async () => {
+    const findings = await findingsFor(
+      tableFixture(
+        'Alvarez',
+        `<div class="panel-content" style="padding:1rem">
+           <select multiple style="width:120px;height:60px">
+             <option selected>A very long option label that keeps going and going</option>
+             <option>Short</option>
+           </select>
+         </div>`
+      )
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings[0].message).toContain('select');
+  });
+
   // The deliberate-truncation false positive: the house `truncate` idiom (`text-overflow: ellipsis`
   // paired with a clipping `overflow-x`) is a sanctioned reading, not a defect, symmetric with the
   // deliberately-scrollable-descendant exemption above.
@@ -208,5 +238,77 @@ describe('panel-width against a real browser', () => {
       )
     );
     expect(findings).toEqual([]);
+  });
+});
+
+// The row-expanded state: ExpandableRow only renders its panel row `{#if expanded}`, so at `rest`
+// the panel half of this rule's contract has nothing to measure. `row-expanded` is rendered.ts's
+// own `applyState` clicking the first `.toolkit-expandable-row-summary` it finds, the same
+// mechanism `menu-open` uses; these fixtures wire the click to real DOM mutation (appending the
+// panel row), the way ExpandableRow.svelte's own onclick does, so the harness is proven against
+// genuine click-driven DOM change rather than a panel row the fixture starts already expanded.
+describe('panel-width under the row-expanded interaction state', () => {
+  /** An ExpandableRow-shaped fixture whose summary row's onclick reveals the panel row, mirroring
+   *  ExpandableRow.svelte's own `{#if expanded}` contract without needing a real Svelte mount. */
+  const EXPANDABLE_ROW_HTML = `<body style="margin:0"><div style="width:356px">
+    <div class="toolkit-admin-table-wrap" style="overflow-x:auto">
+      <table class="table"><tbody>
+        <tr class="toolkit-expandable-row-summary" id="row-alvarez" onclick="
+          var panel = document.createElement('tr');
+          panel.className = 'toolkit-expandable-row-panel';
+          var td = document.createElement('td');
+          td.innerHTML = '<div class=\\'panel-content\\' style=\\'padding:1rem;width:340px;max-width:340px;overflow:hidden;box-sizing:border-box\\'>' +
+            '<span style=\\'white-space:nowrap\\'>A long unbreakable value that keeps going and going and going</span></div>';
+          panel.appendChild(td);
+          this.parentNode.insertBefore(panel, this.nextSibling);
+        ">
+          <td style="white-space:nowrap">Alvarez</td>
+        </tr>
+      </tbody></table>
+    </div>
+  </div></body>`;
+
+  it('clicks the first summary trigger, revealing the panel defect the rest state never sees', async () => {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    try {
+      await page.setContent(EXPANDABLE_ROW_HTML, { waitUntil: 'load' });
+
+      const atRest = await panelWidth.check({
+        page: page as unknown as RenderedPage,
+        pagePath: '/fixture',
+        theme: 'light',
+        state: 'rest',
+        config,
+      });
+      expect(atRest).toEqual([]);
+
+      const reached = await applyState('row-expanded', page as unknown as RenderedPage);
+      expect(reached).toBe(true);
+
+      const afterClick = await panelWidth.check({
+        page: page as unknown as RenderedPage,
+        pagePath: '/fixture',
+        theme: 'light',
+        state: 'row-expanded',
+        config,
+      });
+      expect(afterClick.length).toBeGreaterThan(0);
+      expect(afterClick[0]).toMatchObject({ ruleId: 'panel-width', selector: 'tr.toolkit-expandable-row-panel' });
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('reports the state unreachable, rather than clicking anything, on a page with no ExpandableRow', async () => {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    try {
+      await page.setContent('<body style="margin:0"><p>An ordinary page with no expandable rows.</p></body>', {
+        waitUntil: 'load',
+      });
+      const reached = await applyState('row-expanded', page as unknown as RenderedPage);
+      expect(reached).toBe(false);
+    } finally {
+      await page.close();
+    }
   });
 });

@@ -74,18 +74,29 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
     return reachable && el.scrollWidth > el.clientWidth + 1;
   }
 
-  // Two elements whose measured self-overflow is not a defect. A native `input`/`textarea`/`select`
-  // scrolls its own value internally, reachable by the caret. Chrome computes `overflow-x: clip` on
-  // a styled-narrow `input`/`select` and `overflow-x: auto` on a `textarea`, and neither computed
-  // value is one `scrolls()` above accepts as a reachable scroll container in this shape (`clip` is
-  // not `auto`/`scroll`, and an element already off `visible` never reaches `isAbsorbed()` either),
-  // so the raw `scrollWidth > clientWidth` measurement would otherwise fire. An element carrying
-  // `text-overflow: ellipsis` together with a clipping `overflow-x` (`hidden` or `clip`) is the
-  // house truncation idiom, a deliberate reading rather than a clip to flag; it is the same
-  // self-absorption reasoning as `scrolls()`, applied to a box that clips instead of scrolling.
+  // Two elements whose measured self-overflow is not a defect. A native `input`/`textarea` scrolls
+  // its own value internally, reachable by the caret. Chrome computes `overflow-x: clip` on a
+  // styled-narrow `input` and `overflow-x: auto` on a `textarea`, and neither computed value is one
+  // `scrolls()` above accepts as a reachable scroll container in this shape (`clip` is not
+  // `auto`/`scroll`, and an element already off `visible` never reaches `isAbsorbed()` either), so
+  // the raw `scrollWidth > clientWidth` measurement would otherwise fire. `select` is deliberately
+  // NOT exempt here: it carries no caret and does not scroll its own displayed value, so a `select`
+  // clipped at the family's composition floor loses its option text with no recovery, the same
+  // defect this rule exists to catch on any other element. Measured directly (Chromium 151): this
+  // still catches only a `select[multiple]` listbox, whose options lay out as real child boxes and
+  // grow `scrollWidth`; a closed single-value `select`'s rendered label never grows its own
+  // `scrollWidth` past its box no matter how long the option text is, so that shape's clipped value
+  // stays outside what `scrollWidth > clientWidth` can see here. Dropping the tag from the
+  // exemption is still correct (a select should never be blanket-declared safe), it just does not
+  // by itself close the closed-select gap; that needs a different measurement (rendered text width
+  // against the box, the way `resolveColors` paints rather than parses) and is filed for a later
+  // pass, not built here. An element carrying `text-overflow: ellipsis` together with a clipping
+  // `overflow-x` (`hidden` or `clip`) is the house truncation idiom, a deliberate reading rather
+  // than a clip to flag; it is the same self-absorption reasoning as `scrolls()`, applied to a box
+  // that clips instead of scrolling.
   function isExempt(el: Element): boolean {
     const tag = el.tagName.toLowerCase();
-    if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+    if (tag === 'input' || tag === 'textarea') return true;
     const style = getComputedStyle(el);
     const clips = style.overflowX === 'hidden' || style.overflowX === 'clip';
     return clips && style.textOverflow === 'ellipsis';
@@ -137,6 +148,12 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
 export const panelWidth: RenderedRule = {
   id: 'panel-width',
   tier: 'error',
+  // `rest` alone never sees a panel: ExpandableRow renders its `.toolkit-expandable-row-panel` row
+  // only while `expanded` is true (ExpandableRow.svelte's own `{#if expanded}`), so the panel half
+  // of this rule's contract measured nothing until the harness could open one. `row-expanded` clicks
+  // the first ExpandableRow summary trigger it finds (rendered.ts's own `applyState`); the summary
+  // half of the contract still runs at `rest` too, since a summary row exists either way.
+  states: ['rest', 'row-expanded'],
   async check(ctx: RenderedRuleContext): Promise<RenderedFinding[]> {
     // Every rule registered for one interaction state shares one page in sequence (runRendered's
     // rule loop), so the original viewport is restored before returning.

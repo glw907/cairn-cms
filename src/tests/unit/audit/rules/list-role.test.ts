@@ -125,11 +125,15 @@ describe('list-role', () => {
   });
 
   // The dogfooding proof: the rule runs against the engine's own real markup and its real
-  // compiled admin stylesheet, and reports nothing, because every in-tree marker-suppressed list
-  // was given role="list" in the same task this rule shipped in. The full registry runs (not
-  // just this rule alone), so a suppression directive naming some OTHER rule still resolves
-  // against that rule's own findings instead of reading as dead only because this narrower run
-  // never raised it; the assertion below still isolates this rule's own findings.
+  // compiled admin stylesheet, and reports nothing. That is a narrower claim than "every
+  // marker-suppressed list carries role=list": the rule only sees marker suppression an
+  // element's OWN classes cause, never a descendant-selector rule keyed on some ancestor's class
+  // (daisyUI's `.menu :where(li)`, breadcrumbs' `> li`), so a list suppressed that way is outside
+  // what this run can catch and outside what this assertion proves; that gap is known and filed
+  // for a later remediation pass. The full registry runs (not just this rule alone), so a
+  // suppression directive naming some OTHER rule still resolves against that rule's own findings
+  // instead of reading as dead only because this narrower run never raised it; the assertion
+  // below still isolates this rule's own findings.
   it('runs clean on the engine\'s own tree', () => {
     const root = resolve(process.cwd());
     const config = resolveConfig(root, null, (path) => existsSync(resolve(root, path)));

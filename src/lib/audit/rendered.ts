@@ -25,9 +25,12 @@ export type Theme = 'light' | 'dark';
 /**
  * A DOM state a rendered rule reads from, beyond a page's own rest render. The runner captures only
  * the states the REGISTERED rules actually declare (see {@link RenderedRule.states}), so a rule that
- * only needs `'rest'` never pays for a menu-open pass nobody asked for.
+ * only needs `'rest'` never pays for a menu-open pass nobody asked for. `row-expanded` clicks the
+ * first `ExpandableRow` summary trigger it finds, the precedent `menu-open` set for a real
+ * interaction state; a page that carries no `ExpandableRow` cannot reach it, same as a page with no
+ * menu trigger cannot reach `menu-open`.
  */
-export type InteractionState = 'rest' | 'menu-open' | 'focus-visible';
+export type InteractionState = 'rest' | 'menu-open' | 'focus-visible' | 'row-expanded';
 
 /** The cookie cairn's own admin reads to pick its SSR theme (`content-routes-core.ts`). */
 const THEME_COOKIE_VALUE: Record<Theme, 'cairn-admin' | 'cairn-admin-dark'> = {
@@ -179,6 +182,36 @@ const STALE_ALLOWLIST_RULE_ID = 'rendered-allowlist-stale';
 const UNPROBEABLE_ALLOWLIST_RULE_ID = 'rendered-allowlist-unprobeable';
 const DEAD_ALLOWLIST_RULE_ID = 'rendered-allowlist-dead';
 const PAGE_IDENTITY_RULE_ID = 'rendered-page-identity-mismatch';
+const STATE_UNREACHABLE_RULE_ID = 'rendered-state-unreachable';
+
+/**
+ * States whose unreachability gets its own report line, on top of {@link RenderedPageVisit.statesUnreached}
+ * already recording it for the allowlist path. `menu-open` is deliberately absent: most admin pages
+ * carry no menu trigger, and giving every one of those its own advisory line would drown the report
+ * in noise nobody asked for; that stays the pre-existing, silent skip. `row-expanded` is different
+ * because the whole reason it exists is `panel-width`'s motivating half, and a reader of a clean
+ * report needs to know the panel half never got a chance to run on a page with no `ExpandableRow`,
+ * rather than reading silence as "no panel defects here."
+ */
+const SURFACED_UNREACHED_STATES = new Set<InteractionState>(['row-expanded']);
+
+/**
+ * The finding raised once per page when a state in {@link SURFACED_UNREACHED_STATES} was declared by
+ * a registered rule but never reached there. Advisory: an ordinary page that carries no matching
+ * component (no `ExpandableRow`, here) is not a defect, only a rule that ran on a subset of what a
+ * fuller page set would cover.
+ */
+function stateUnreachableFinding(pagePath: string, state: InteractionState): Finding {
+  return positionless({
+    ruleId: STATE_UNREACHABLE_RULE_ID,
+    tier: 'advisory',
+    file: pagePath,
+    message:
+      `the ${state} interaction state was never reached on this page, so a rule that reads only that ` +
+      `state raised nothing here. That is expected on a page carrying no matching trigger, not a clean ` +
+      `verdict from the rule itself.`,
+  });
+}
 
 /**
  * A rendered finding in the report's own `Finding` shape. A live page carries no source text, so
@@ -591,14 +624,33 @@ function neededStates(rules: RenderedRule[]): InteractionState[] {
 
 /**
  * Put `page` into `state`. Returns whether the state was reached: `rest` always is, `focus-visible`
- * always is (a real Tab keypress), and `menu-open` is not on a page that carries no conventional
- * menu trigger, which is not an error, just a state that page's rules skip.
+ * always is (a real Tab keypress), `menu-open` is not on a page that carries no conventional menu
+ * trigger, and `row-expanded` is not on a page that carries no `ExpandableRow`. Neither is an error,
+ * just a state that page's rules skip.
  */
-async function applyState(state: InteractionState, page: RenderedPage): Promise<boolean> {
+export async function applyState(state: InteractionState, page: RenderedPage): Promise<boolean> {
   if (state === 'rest') return true;
   if (state === 'focus-visible') {
     await page.keyboard.press('Tab');
     return true;
+  }
+  if (state === 'row-expanded') {
+    // The precedent menu-open sets: click the first live trigger and report whether one existed.
+    // ExpandableRow's own summary `<tr>` carries the click handler (its own header comment), a
+    // trailing `aria-expanded` button inside it doing the same toggle; clicking the row itself is
+    // the simpler, single selector to drive.
+    return page.evaluate(() => {
+      const rows = Array.from(document.querySelectorAll<HTMLElement>('.toolkit-expandable-row-summary')).filter(
+        (el) => {
+          const style = getComputedStyle(el);
+          const rect = el.getBoundingClientRect();
+          return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+        }
+      );
+      if (rows.length === 0) return false;
+      rows[0].click();
+      return true;
+    });
   }
   // Refined at Task 15 against the admin's real markup, resolving Task 14's WATCH. Every dialog
   // trigger in the admin (the entry, link, fragment, media, and reference pickers, the rename and
@@ -990,6 +1042,12 @@ export async function runRendered(
           // accusing a live entry of staleness on a run that never really looked.
           if (visit) visit.identityRefused = true;
         }
+      }
+      // Surfaced once per page, after both themes ran, rather than once per theme: the state is
+      // either reachable on this page's markup or it isn't, and a reader wants one line, not a
+      // duplicate per theme.
+      for (const state of visit?.statesUnreached ?? []) {
+        if (SURFACED_UNREACHED_STATES.has(state)) identityFindings.push(stateUnreachableFinding(pagePath, state));
       }
     }
   } finally {

@@ -129,6 +129,8 @@ Match what your doctor printed to the section that explains it:
   `config.observability-off`
 - `Framework CSRF handoff` — [Wire cairn's CSRF guard](#wire-cairns-csrf-guard),
   `config.csrf-disable-missing`
+- `Blanket no-referrer` — [Scope a site-wide no-referrer policy](#scope-a-site-wide-no-referrer-policy),
+  `config.no-referrer-blanket`
 - `Public origin` — [Set the public origin](#set-the-public-origin),
   `config.public-origin-invalid`
 - `Site config` — [Validate the site config](#validate-the-site-config),
@@ -255,6 +257,38 @@ about; send them
 them
 [Build a site by hand](../extend/build-a-site-by-hand.md#wire-the-dev-backend-and-the-csrf-handoff),
 which names both edit points.
+
+## Scope a site-wide no-referrer policy
+
+**`config.no-referrer-blanket`, a warning.** This check reads `src/hooks.server.ts` (or `.js`)
+and `static/_headers`, looking for a `Referrer-Policy: no-referrer` header your site serves for
+every route. A browser sending that policy strips the `Origin` header from a plain, same-origin
+form submission, so it arrives at your site as `Origin: null`. cairn's own guard restores the
+framework's strict origin check outside `/admin`, and that check rejects a request carrying no
+`Origin` at all. A site-wide `no-referrer` policy triggers that rejection on a non-admin form
+that never left your site. cairn's own `/admin` responses already send `no-referrer`, but only
+on the admin routes that need it; the trap is shipping the same policy as the whole site's
+default.
+
+**A PASS here checks only the two files this check can read.** Its detail line names which of
+`src/hooks.server.ts` (or `.js`) and `static/_headers` it actually read, and which it could not
+find; it says nothing about a policy set in a module those files only import, in a
+`+layout.server.ts`'s own `setHeaders`, or in a Cloudflare response-header rule configured outside
+your repository.
+
+**A skip here means the check found neither file to read**, not that your site is safe; it names
+both `src/hooks.server.ts` and `static/_headers` in its detail line, along with the same remedy
+below.
+
+**Ask a developer:** serve `strict-origin-when-cross-origin` (or `same-origin`) as the site's
+default `Referrer-Policy`. `no-referrer` is safe only on a route whose CSRF protection is a
+double-submit token, the way cairn's own `/admin` responses are; scope it to those routes only,
+either a per-path block in `static/_headers` or a route-guarded header write in
+`src/hooks.server.ts`. Any route guarded instead by the origin compare, every `createAuthChannel`
+action and any other non-admin form, needs `same-origin` in its place: `same-origin` still strips
+`Referer` on a cross-origin request while keeping the real `Origin` on a same-origin one. See
+[Security model](../extend/security-model.md#response-hardening) for why cairn's own admin
+responses scope it that way.
 
 ## Set the public origin
 

@@ -347,7 +347,7 @@ const DEFAULT_IDENTITY: PageIdentity = { title: 'Same title', landmark: null };
  */
 function fakeBrowser(page: {
   status?: number;
-  hasMenuTrigger?: boolean;
+  interactionTargetPresent?: boolean;
   matchedSelectors?: Set<string>;
   unprobeableSelectors?: Set<string>;
   ssrIdentity?: PageIdentity;
@@ -358,7 +358,7 @@ function fakeBrowser(page: {
   chromium: { launch: () => Promise<RenderedBrowser> };
 } {
   const status = page.status ?? 200;
-  const hasMenuTrigger = page.hasMenuTrigger ?? false;
+  const interactionTargetPresent = page.interactionTargetPresent ?? false;
   const matchedSelectors = page.matchedSelectors ?? new Set<string>();
   const unprobeableSelectors = page.unprobeableSelectors ?? new Set<string>();
   const ssrIdentity = page.ssrIdentity ?? DEFAULT_IDENTITY;
@@ -381,7 +381,7 @@ function fakeBrowser(page: {
         }
         if (typeof fn === 'function' && fn.name === 'capturePageIdentity') return identity;
         if (typeof fn === 'function' && fn.name === 'waitForHydrationSettle') return undefined;
-        return hasMenuTrigger;
+        return interactionTargetPresent;
       },
       keyboard: { press: async () => {} },
       async close() {},
@@ -467,7 +467,7 @@ describe('runRendered against a fake browser', () => {
 
     const reached = await runRendered(config, [restRule, menuRule], {
       isReachable: async () => true,
-      loadPlaywright: async () => fakeBrowser({ hasMenuTrigger: true }),
+      loadPlaywright: async () => fakeBrowser({ interactionTargetPresent: true }),
     });
     expect(restRule.check).toHaveBeenCalledTimes(2);
     expect((restRule.check as ReturnType<typeof vi.fn>).mock.calls.every((call) => call[0].state === 'rest')).toBe(true);
@@ -478,12 +478,52 @@ describe('runRendered against a fake browser', () => {
     vi.mocked(menuRule.check).mockClear();
     const unreached = await runRendered(config, [restRule, menuRule], {
       isReachable: async () => true,
-      loadPlaywright: async () => fakeBrowser({ hasMenuTrigger: false }),
+      loadPlaywright: async () => fakeBrowser({ interactionTargetPresent: false }),
     });
     // Not every admin page carries a menu trigger; a rule declaring 'menu-open' simply does not run
     // on this page rather than the harness treating an unreachable state as an error.
     expect(menuRule.check).not.toHaveBeenCalled();
     expect(unreached.findings.some((f) => f.ruleId === 'menu-rule')).toBe(false);
+    // menu-open's own unreachability stays a silent skip (the pre-existing behavior): most admin
+    // pages carry no menu trigger, and surfacing a line for every one of them would be noise nobody
+    // asked for. That is a deliberate, narrower scope than row-expanded gets below.
+    expect(unreached.findings.some((f) => f.ruleId === 'rendered-state-unreachable')).toBe(false);
+  });
+
+  it('surfaces an advisory report line, not just a silent skip, when row-expanded is unreachable', async () => {
+    const config = configWith({ pages: ['/admin/x'] });
+    const rowRule: RenderedRule = {
+      id: 'row-rule',
+      tier: 'error',
+      states: ['row-expanded'],
+      check: vi.fn(
+        async (): Promise<RenderedFinding[]> => [
+          { ruleId: 'row-rule', tier: 'error', selector: '.panel', message: 'clips' },
+        ]
+      ),
+    };
+
+    const unreached = await runRendered(config, [rowRule], {
+      isReachable: async () => true,
+      loadPlaywright: async () => fakeBrowser({ interactionTargetPresent: false }),
+    });
+    // The panel rule itself never ran, so it raised nothing; that silence is not what a reader sees
+    // in the report, since the run also raises its own advisory line naming the state and the page.
+    expect(rowRule.check).not.toHaveBeenCalled();
+    expect(unreached.findings.some((f) => f.ruleId === 'row-rule')).toBe(false);
+    const coverage = unreached.findings.find((f) => f.ruleId === 'rendered-state-unreachable');
+    expect(coverage).toBeDefined();
+    expect(coverage?.tier).toBe('advisory');
+    expect(coverage?.file).toBe('/admin/x');
+    expect(coverage?.message).toContain('row-expanded');
+
+    vi.mocked(rowRule.check).mockClear();
+    const reached = await runRendered(config, [rowRule], {
+      isReachable: async () => true,
+      loadPlaywright: async () => fakeBrowser({ interactionTargetPresent: true }),
+    });
+    expect(rowRule.check).toHaveBeenCalled();
+    expect(reached.findings.some((f) => f.ruleId === 'rendered-state-unreachable')).toBe(false);
   });
 
   it('fails loudly when a visited page renders outside 2xx', async () => {

@@ -1941,7 +1941,7 @@ persistent "?" carries Markdown help, design-arc D2).
 {#if visibleBrokenLinks.length}
   <div class="alert alert-error mb-4 flex-col items-start type-body">
     <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
-    <ul class="mt-1 w-full">
+    <ul role="list" class="mt-1 w-full">
       {#each visibleBrokenLinks as href (href)}
         <li class="flex items-center justify-between gap-2">
           <code class="type-meta">{href}</code>
@@ -1975,7 +1975,7 @@ persistent "?" carries Markdown help, design-arc D2).
         <p>{notice.detail}</p>
       {/if}
       {#if notice.rows.length}
-        <ul class="mt-1 w-full">
+        <ul role="list" class="mt-1 w-full">
           {#each notice.rows as row, i (i)}
             <li class="flex items-center justify-between gap-2">
               {#if row.rowLabel}

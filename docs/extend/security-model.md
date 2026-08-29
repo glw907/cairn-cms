@@ -122,6 +122,26 @@ sibling subdomains too). A rejection response, one that fires before the guard k
 opted into subdomain pinning, sends no HSTS header at all rather than a weaker one, since a browser
 that receives any HSTS header from a host replaces its cached policy with what it just received.
 
+`Referrer-Policy: no-referrer` here is deliberately scoped to `/admin`, never a site-wide default.
+A consuming site must not serve `no-referrer` for every route (a blanket `Referrer-Policy:
+no-referrer` in `src/hooks.server.ts` or `static/_headers`). Under the Fetch spec, that policy
+strips the `Origin` header from a plain same-origin top-level form POST, so the request arrives as
+`Origin: null`. `originMatches` (`src/lib/sveltekit/csrf.ts`) stays a strict equality compare on
+purpose, since some routes outside `/admin` have no second CSRF layer to fall back on, so it
+rejects that request rather than loosening for a policy it does not control. The result is a
+403 for a non-admin form even though the visitor never left the site. `cairn-doctor`'s
+`config.no-referrer-blanket` check flags this heuristically.
+
+`no-referrer` is safe on `/admin` specifically because `/admin`'s CSRF protection is the
+double-submit token above, not the origin compare: stripping the `Referer` costs that route
+nothing. `no-referrer` is not a safe default to copy onto a route whose only CSRF layer is
+`originMatches`, every `createAuthChannel` action and any other non-admin form, since stripping
+`Origin` there is exactly what breaks it. The remedy is to serve
+`strict-origin-when-cross-origin` (or `same-origin`) as the site's own default, and scope
+`no-referrer` only to routes that, like `/admin`, carry their own double-submit token; leave
+`same-origin` on any route that instead relies on the origin compare, since `same-origin` still
+strips `Referer` cross-origin while keeping the real `Origin` on a same-origin POST.
+
 ## What's deliberately out of scope here
 
 `/admin` carries no full Content-Security-Policy. The nonce machinery a correct CSP would need

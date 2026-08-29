@@ -3,14 +3,16 @@
 // refuses to run against an empty registry rather than reporting a silently clean audit, so this
 // list is what turns the rendered harness on.
 //
-// Fourteen rules are registered: five error-tier rules (`one-filled-action`, `focus-renders`,
-// `interactive-contrast`, `touch-targets`, `viewport-overflow`; `chip-ground-collision` demoted
-// out of this tier in design infrastructure Pass 3, pending its chroma repair, see ROADMAP), then
-// nine advisory ones (`chip-ground-collision`, `border-contrast`, `weight-budget`, `norms-bands`,
+// Fifteen rules are registered: six error-tier rules (`one-filled-action`, `focus-renders`,
+// `interactive-contrast`, `touch-targets`, `viewport-overflow`, `panel-width`; `chip-ground-collision`
+// demoted out of this tier in design infrastructure Pass 3, pending its chroma repair, see ROADMAP),
+// then nine advisory ones (`chip-ground-collision`, `border-contrast`, `weight-budget`, `norms-bands`,
 // `screen-anatomy`, `relational-spacing`, `form-font-parity`, `field-edge-alignment`,
 // `container-inset-asymmetry`), which report and never reach the exit code. `form-font-parity` is
 // registered PROVISIONALLY at advisory (design ratchet Task 5): its own header names the intended
-// promotion to error, gated on Task 6's CI re-check.
+// promotion to error, gated on Task 6's CI re-check. `panel-width` closes the hole
+// `viewport-overflow` declines on purpose (see its own header): a row clipped inside a table
+// wrapper that never genuinely scrolls to reach it.
 import { borderContrast } from './border-contrast.js';
 import { chipGroundCollision } from './chip-ground-collision.js';
 import { containerInsetAsymmetry } from './container-inset-asymmetry.js';
@@ -20,6 +22,7 @@ import { formFontParity } from './form-font-parity.js';
 import { interactiveContrast } from './interactive-contrast.js';
 import { normsBands } from './norms-bands.js';
 import { oneFilledAction } from './one-filled-action.js';
+import { panelWidth } from './panel-width.js';
 import { relationalSpacing } from './relational-spacing.js';
 import { screenAnatomy } from './screen-anatomy.js';
 import { touchTargets } from './touch-targets.js';
@@ -38,6 +41,7 @@ export function renderedRules(): RenderedRule[] {
     interactiveContrast,
     touchTargets,
     viewportOverflow,
+    panelWidth,
     chipGroundCollision,
     borderContrast,
     weightBudget,

@@ -20,7 +20,7 @@ freshness-checks the skill in a consumer repo.
 ## What ships
 
 `cairn-audit` ships whole, as consumer product: every registered rule, the static and rendered
-rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 23
+rule sets alike, the norms manifest the `norms` subcommand reads, and the CLI itself. All 27
 registered rules audit the `/admin` surface, and a consumer's admin IS cairn's own admin toolkit,
 so conformance to cairn's design system is exactly the product being audited, not apparatus that
 measures the engine from outside.
@@ -62,7 +62,7 @@ The CSS-family rules read each component's own scoped `<style>` block, plus any 
 
 ### The static rules
 
-Nine rules run, all error tier.
+Twelve rules run, all error tier.
 
 | ID | What it checks |
 |---|---|
@@ -75,6 +75,9 @@ Nine rules run, all error tier.
 | `focus-parity` | Every hand-authored `:hover` selector has a sibling selector in the same source that swaps `:hover` for `:focus-visible`, or for `:focus-within` when a container's wash acknowledges a descendant gaining focus. Tailwind's `hover:` variant classes are deliberately out of scope: their keyboard affordance is the admin's blanket focus ring, a real guarantee of a different shape |
 | `motion-band` | Every transition or animation duration lands in the admin's `150ms` to `250ms` band, and `transition: all` never ships. A declaration inside a `prefers-reduced-motion: reduce` guard is exempt, since collapsing a duration toward zero is what that guard is for |
 | `reduced-motion` | Every selector that declares motion is named again inside an `@media (prefers-reduced-motion: reduce)` guard in the same source |
+| `stripe-trim-parity` | A striped row's `:nth-child` background pattern, or a `.table-zebra`-style class, never co-occurs with an unconditioned first/last-child padding trim on the same row class in the same source: the trim clips the stripe fill on an even-count group unless it's scoped to its own parity (`:last-child:nth-child(odd)`). Applies to any row component, not only the admin's own tables |
+| `unlayered-font-clobber` | A scoped `<style>` block never declares `font-family`, `font-size`, `font-weight`, or the `font` shorthand outside an `@layer` on an element that also carries a font-affecting utility class (a `text-*` size or a `font-*` weight/family). Under the no-Preflight admin, a Svelte scoped style carries no layer of its own while Tailwind utilities sit in `@layer utilities`, so cascade layer precedence, not specificity, decides the winner; the finding names that mechanism and points at moving the typography onto the ancestor the control inherits from. Applies to any component, not only the admin's own |
+| `list-role` | A `<ul>`/`<ol>` carries no role attribute while its marker is suppressed: either its own classes remove it, a `list-style`/`list-style-type: none` declaration such as Tailwind's `list-none`, or an item's classes change that item's rendered display away from `list-item` to another display that still renders the item, such as `flex`, `grid`, `block`, or `inline-flex`, the way daisyUI's own `.list-row` renders `display: grid`. `display: none` (Tailwind's `hidden` and its responsive variants) is excluded: a hidden item never reaches the accessibility tree, so it cannot strip the enclosing list's implicit role. WebKit/VoiceOver stop announcing a marker-suppressed list as a list once it loses its implicit role this way; the fix is `role="list"`. A list already carrying a different explicit role stays exempt: the explicit role already overrides the implicit one on purpose, so a second, conflicting role would be the wrong remedy. Coverage is own-class only: the rule resolves an element's display from classes that element itself carries, so a descendant-selector rule that reshapes an item from the *list's* own class, daisyUI's `.menu :where(li)` or breadcrumbs' `> li`, sits outside what it can see. That gap is known and filed for a later remediation pass, not silently accepted |
 
 ### Suppressing a finding
 
@@ -124,7 +127,7 @@ Everything defaults, so a project with no config file gets a meaningful run. Wri
 | `static.scope` | `src/routes/admin`, `src/lib/admin-toolkit`, `src/lib/components` | Directories the static scan reads components from, recursively |
 | `static.cssFiles` | none | Standalone CSS files the CSS-family rules also scan |
 | `static.paletteFiles` | the engine's own admin stylesheet | Palette declaration sites `token-colors` skips. Name your own theme file here |
-| `sheet` | the built admin stylesheet, in your tree or your installed package | The stylesheet class tokens resolve against |
+| `sheet` | the built admin stylesheet, in your tree or your installed package | One or more compiled-class sources the `no-uncompiled-class` rule resolves class tokens against, same shape as `static.paletteFiles`. A string still works as a single source. A site with its own compiled stylesheet lists it alongside the packaged one: `"sheet": ["dist/site.css", "node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css"]` |
 | `rendered.pages` | the core admin routes | The pages rendered mode visits. **Replaces the defaults, never extends them**: a config naming one page of your own audits that page alone, and the six core routes go unmeasured while the run still reports a clean pass. Restate the defaults beside your own page |
 | `rendered.allowlist` | none | Rendered-mode exemptions. See [The allowlist](#the-allowlist) |
 
@@ -198,7 +201,7 @@ measurement.
 
 ### The rules
 
-Fourteen rules run. The first five are error tier and exit the command nonzero.
+Fifteen rules run. The first six are error tier and exit the command nonzero.
 
 | ID | What it checks |
 |---|---|
@@ -207,6 +210,7 @@ Fourteen rules run. The first five are error tier and exit the command nonzero.
 | `interactive-contrast` | Interactive text reads against its own composited background at a ratio of at least 1.5. This isn't a legibility floor. The bar is that a control isn't camouflaged against its own ground. Both the ink and the ground carry every `opacity` in the chain, so a dimmed wrapper lowers the measurement rather than raising it. Disabled controls are exempt |
 | `touch-targets` | Every tap target renders at least 24x24 CSS px at a 390px viewport. This is a house floor derived from WCAG 2.2 level AA's success criterion 2.5.8, Target Size (Minimum), and not an implementation of it: the rule enforces a strict superset, so a finding is a house-bar failure and not on its own an AA failure. See [What `touch-targets` doesn't cover](#what-touch-targets-doesnt-cover). The measurement is the activation region rather than the painted box: the control's own box, unioned with a qualifying `::before` inset expansion, plus every label the platform reports as activating the control. A control passes when any one of its regions clears the floor |
 | `viewport-overflow` | Nothing renders wider than the viewport at 390 and at 320. Both an element whose own box clears the viewport and an element whose content, an unbreakable string or a bleeding pseudo-element, is wider than its box |
+| `panel-width` | An ExpandableRow summary row or expanded panel doesn't clip its own content at 390 or 320, the hole `viewport-overflow` declines on purpose: that rule's own document-scroll gate reads clean when a table wrapper absorbs a wide row by scrolling, and its scroll-container skip exempts everything under any non-`visible` ancestor, whether or not that ancestor actually offers a scrollbar. Runs under two interaction states, `rest` and `row-expanded`: ExpandableRow only renders its panel row while expanded, so the harness clicks the first summary trigger it finds before measuring the panel half, the same way `viewport-overflow` opens a menu before it measures one; a page with no ExpandableRow can't reach `row-expanded`, which the harness records rather than silently measuring as `rest`. A row or panel is flagged only when some element inside it overflows its own box while no ancestor between it and the table wrapper is genuinely reachable, styled `overflow-x: auto`/`scroll` and currently overflowing; an `overflow-x: hidden` ancestor never counts, and neither does an `auto` one that never actually grows past its own width. The same test exempts a deliberately scrollable AdminTable (the wrap itself scrolls) and a deliberately scrollable descendant living inside the panel. Also exempt: a native `input`/`textarea` (the UA scrolls its own value internally, invisible to the computed-style test). A `select` isn't in that exemption, since it carries no caret and doesn't scroll its own displayed value, but the `scrollWidth`/`clientWidth` measurement this rule runs on only sees the overflow a `select[multiple]` listbox lays out as real child boxes; a closed single-value `select`'s truncated label never grows its own `scrollWidth` in Chromium, so that shape's clipped value stays outside what this rule can currently observe (a measured gap, not a design decision, filed for a later pass). An element carrying `text-overflow: ellipsis` with a clipping `overflow-x` is exempt too (the house truncation idiom). That exemption is a design-language call, not an accessibility clearance: it reads as safe only when the full value is reachable elsewhere (a `title` attribute, an expanded detail view), since at the 320 reflow floor a silently truncated value with no such fallback is still a defect |
 
 The other nine are advisory. They report and never change the exit code, because each one measures a
 compositional question that a legitimately novel component can answer differently on purpose.
@@ -236,7 +240,7 @@ not silence: a check that skips itself is the failure mode the audit exists to r
 
 `cairn-audit` is a design-language audit, not an accessibility conformance tool. Two rules borrow a
 number from WCAG, and neither implements the criterion it borrows from. A green run means these
-fourteen questions came back clean. It isn't an accessibility result.
+fifteen questions came back clean. It isn't an accessibility result.
 
 Nothing here checks:
 
@@ -322,7 +326,12 @@ the next time the selector churns.
 The dead verdict waits on a complete run. A rule can declare an interaction state a given page can't
 reach, a page with no popup trigger can't open a menu, and on such a page the run reports an advisory
 saying which state it missed instead of calling the entry dead. Removing an entry on that evidence
-would leave the next complete run gating on the finding the entry covers.
+would leave the next complete run gating on the finding the entry covers. That advisory is its own
+harness id:
+
+| Rule id | What it means |
+|---|---|
+| `rendered-state-unreachable` | A registered rule declared an interaction state (`row-expanded`, currently the only one surfaced this way) that a page never reached, so the rule ran on a subset of that page. Always advisory: a page with no `ExpandableRow` never reaching `row-expanded` is ordinary, not a defect |
 
 ### Rule-declared exemptions
 

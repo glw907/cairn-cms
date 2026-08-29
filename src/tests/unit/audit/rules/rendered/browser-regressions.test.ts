@@ -1120,8 +1120,10 @@ describe('relational-spacing against a real browser', () => {
 // reason, so the next rule to make the same mistake fails here rather than in a consumer's run.
 describe('the registry', () => {
   // Task 3 (ruling 3, corpus C, 2026-07-28): chip-ground-collision demotes to advisory pending its
-  // chroma-aware repair (ROADMAP), so the registry now carries five error-tier rules, not six.
-  it('registers the five error-tier rules, plus chip-ground-collision and border-contrast advisory', () => {
+  // chroma-aware repair (ROADMAP), so the registry carried five error-tier rules until harvest-
+  // detection Task 5 added `panel-width`, the sixth: the hole `viewport-overflow` declines on
+  // purpose (a row clipped inside a table wrapper that never genuinely scrolls to reach it).
+  it('registers the six error-tier rules, plus chip-ground-collision and border-contrast advisory', () => {
     const rules = renderedRules();
     expect(rules.filter((rule) => rule.tier === 'error').map((rule) => rule.id)).toEqual([
       'one-filled-action',
@@ -1129,6 +1131,7 @@ describe('the registry', () => {
       'interactive-contrast',
       'touch-targets',
       'viewport-overflow',
+      'panel-width',
     ]);
     expect(rules.filter((rule) => rule.tier === 'advisory').map((rule) => rule.id)).toContain(
       'chip-ground-collision'

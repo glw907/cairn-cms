@@ -45,7 +45,7 @@ describe('resolveConfig', () => {
     const config = resolveConfig('/site', null, sheetHere);
     expect(config.root).toBe('/site');
     expect(config.staticScope).toEqual(DEFAULT_STATIC_SCOPE);
-    expect(config.sheetPath).toBe(DEFAULT_SHEET_CANDIDATES[0]);
+    expect(config.sheetPaths).toEqual([DEFAULT_SHEET_CANDIDATES[0]]);
     expect(config.staticCssFiles).toEqual([]);
     expect(config.paletteCssFiles).toEqual(DEFAULT_PALETTE_CSS_FILES);
     expect(config.renderedPages).toEqual(DEFAULT_RENDERED_PAGES);
@@ -63,12 +63,12 @@ describe('resolveConfig', () => {
 
   it('falls back to the installed package sheet when the local build is absent', () => {
     const config = resolveConfig('/site', null, (path) => path === DEFAULT_SHEET_CANDIDATES[1]);
-    expect(config.sheetPath).toBe(DEFAULT_SHEET_CANDIDATES[1]);
+    expect(config.sheetPaths).toEqual([DEFAULT_SHEET_CANDIDATES[1]]);
   });
 
   it('keeps the first candidate when no candidate exists, so the run fails naming a path', () => {
     const config = resolveConfig('/site', null, () => false);
-    expect(config.sheetPath).toBe(DEFAULT_SHEET_CANDIDATES[0]);
+    expect(config.sheetPaths).toEqual([DEFAULT_SHEET_CANDIDATES[0]]);
   });
 
   it('takes the scan scope, the sheet, and the rendered inputs from the config file', () => {
@@ -85,11 +85,27 @@ describe('resolveConfig', () => {
       sheetHere
     );
     expect(config.staticScope).toEqual(['src/routes/office']);
-    expect(config.sheetPath).toBe('build/admin.css');
+    expect(config.sheetPaths).toEqual(['build/admin.css']);
     expect(config.renderedPages).toEqual(['/admin', '/admin/posts']);
     expect(config.renderedAllowlist).toEqual([
       { page: '/admin', selector: '.legacy', reason: 'ships in the next pass' },
     ]);
+  });
+
+  // The ledger's ruled shape: `sheet` is a list of compiled-class sources, exactly as
+  // `paletteFiles` and `cssFiles` already are, so a site's own compiled stylesheet joins the
+  // packaged one instead of needing case-by-case exemption from no-uncompiled-class.
+  it('takes a list of compiled-class sources from a list-valued sheet', () => {
+    const config = resolveConfig(
+      '/site',
+      { sheet: ['dist/components/cairn-admin.css', 'src/theme/site.css'] },
+      sheetHere
+    );
+    expect(config.sheetPaths).toEqual(['dist/components/cairn-admin.css', 'src/theme/site.css']);
+  });
+
+  it('rejects a sheet that is neither a path nor a list of paths', () => {
+    expect(() => resolveConfig('/site', { sheet: 42 }, sheetHere)).toThrow(/sheet/);
   });
 
   it('records whether the scan scope came from the config or from the defaults', () => {

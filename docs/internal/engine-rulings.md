@@ -87,6 +87,32 @@ Entry format: a heading plus labeled lines.
   standalone items.
 - **Record:** [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Ruled out (email-announce 32 and 33).
 
+## public-origin-only-origin-source: `PUBLIC_ORIGIN` as the only origin source  (decline, 2026-08-26, ASC harvest triage)
+
+- **Verdict:** decline. Canonical/og/feed URL generation already reads one origin source
+  (`examples/showcase/src/chassis/content.ts:29`, a committed literal); sourcing it from an
+  environment variable instead would make it vary per environment, and a visual-regression suite
+  that renders a page and diffs it against a committed baseline needs the identical origin on
+  every run, in CI and locally alike. Env-sourcing that value collides with deterministic visual
+  baselines. [Wire the delivery surface](../extend/wire-the-delivery-surface.md) carries the note.
+- **Reopens on:** a consumer shipping wrong-origin production metadata despite the note, or a
+  fixed-env seam landing that reconciles env-sourcing with pinned baselines.
+- **Record:** [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivor 15
+  (`asc-harvest-triage.md:115-117`); executed by the harvest-detection pass, Task 6.
+
+## originmatches-strict-guard: `originMatches` stays a strict Origin compare  (keep, 2026-08-26, ASC harvest triage)
+
+- **Verdict:** keep. `originMatches` (`src/lib/sveltekit/csrf.ts`) rejects a request carrying
+  `Origin: null`, which is correct per the OWASP-recommended origin-check pattern: some consumer
+  routes have no second CSRF layer besides this compare, so loosening it removes their only
+  protection. A site-wide `Referrer-Policy: no-referrer` is what strips `Origin` from a plain
+  same-origin POST in the first place; the fix is scoping or replacing that referrer policy on
+  the site side (`config.no-referrer-blanket`, a doctor check), never loosening the guard.
+- **Reopens on:** an evidenced same-origin flow where a compliant browser sends `Origin: null`
+  that the doctor's `config.no-referrer-blanket` check cannot catch.
+- **Record:** [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivor
+  11 (`asc-harvest-triage.md:93-100`); executed by the harvest-detection pass, Task 1.
+
 ## ical-builder: iCal feed builder  (decline, 2026-08-05, ASC consumer-brief scope check)
 
 - **Verdict:** decline. Events are site domain, and the engine has no events concept.
@@ -3848,7 +3874,7 @@ when the remediation pass lands.
 ## audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles: `cairn-audit.config.json contract (scope, cssFiles, paletteFiles, sheet, rendered.pages, allowlist)`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. The scope-typo asymmetry is excellent ('a typo that quietly narrows the audit to nothing is the silent green this engine exists to rule out', implemented as staticScopeFromConfig rather than a filename special case) and paletteFiles is a working adopted seam. But rendered.pages 'Replaces the defaults, never extends them ... the six core routes go unmeasured while the run still reports a clean pass' is a documented trap producing a clean report, and BOTH adopters paid the tax by restating the six defaults by hand.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Three edits: (a) add rendered.extraPages as additive so a consumer's own screen does not silently drop the core six; (b) make sheet a list (config.ts:154 fails ).
+- **Reopens on:** open until executed; the remediation pass closes it (shape: Three edits: (a) add rendered.extraPages as additive so a consumer's own screen does not silently drop the core six; (b) make sheet a list (config.ts:154 fails ). Progress: (b) done in the harvest-detection pass, Task 2 (`sheet` is now `string | string[]`, additive; a string still resolves to a one-element list). Edit (a) and the ledger's un-enumerated third edit remain open.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 32.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
@@ -3941,7 +3967,7 @@ when the remediation pass lands.
 ## audit-cli-no-uncompiled-class-static-rule: `no-uncompiled-class static rule`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Arm A is absolute: the check resolves against dist/components/cairn-admin.css, a stylesheet only the engine builds and ships, and it catches a failure class with no other detector anywhere in the stack - a class that compiled to nothing renders as unstyled markup that a type check, a build and a test suite all pass. Two family sites filed for it independently, which is evidence about the mechanism rather than about the family: 'No build or type step flags a DaisyUI class that produced zero rules.' Any consumer extending the admin through the CairnAdminShell seam writes classes compiled by their own build.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Make sheet a list of compiled-class sources, exactly as paletteFiles and cssFiles already are (config.ts:154 currently fails 'sheet must be a path'). One edit; ).
+- **Reopens on:** closed. Executed by the harvest-detection pass, Task 2: `sheet` is now `string | string[]` (`config.ts`'s `asPathOrPathList`), so a site's own compiled stylesheet joins the packaged one, and a class either registered sheet compiles is no longer a false positive.
 - **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 45.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 

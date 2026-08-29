@@ -396,3 +396,58 @@ write the recipes in plain markup plus `FieldLabel`, and leave line 93 to the re
 pass so two passes do not both edit it. Sequencing: the two chassis bullets overlap the
 ROADMAP chassis improvement round; they are independent of the reshapes, so keeping them
 here is defensible, but say so.
+
+---
+
+## Post-mortem (pass closed 2026-08-29)
+
+**What was built.** All six tasks landed on the `harvest-detection` worktree. Tasks 1-4
+were committed and diff-reviewed in the prior session (through `7f455c45`). Task 5
+(`panel-width`, `3fbadc74`) was found already committed at resume, contradicting STATUS's
+pause note; it was verified rather than redone. Its diff review escalated two measured
+false-positive classes, ruled closed as exemptions (UA-internal scrolling on
+`input`/`textarea`; deliberate `text-overflow: ellipsis` truncation), tier kept at error
+(`4fd69634`, `05443eed`). Task 6 (`db825f5e`, `eb121406`, `3e29c242`) shipped the
+smooth-scroll halves, the survivor-15 decline ledger entry, the fixed-clock recipe, the
+two admin recipes, and the Waymark template re-bake.
+
+**The review gate did heavy lifting.** Three Opus domain reviews (auth-security, svelte,
+a11y) produced four fix rounds (`917eab83`, `904042cf`, `573f7bf2`, `bbd2299d`) plus a
+simplifier commit (`cc5a8552`). Headline catches a later pass should not rediscover:
+
+- The pass's own remediation advice would have broken consumers: scoping `no-referrer`
+  onto an `originMatches`-guarded route 403s its POSTs (`Origin: null`). The correct
+  advice, now on all five surfaces including `auth-crypto.md`, is `same-origin` for
+  origin-guarded routes; `no-referrer` is safe only under the admin's double-submit token.
+  Ledger entry `originmatches-strict-guard` records the guard-stays-strict ruling.
+- `panel-width`'s panel half could never fire at rest (no expanded row exists in the DOM).
+  The rendered harness gained the `row-expanded` interaction state (clicks the first
+  summary trigger, `menu-open` pattern), with `rendered-state-unreachable` surfaced as an
+  advisory for that state only.
+- `html { scroll-behavior: smooth }` animates SvelteKit's own post-navigation and
+  back/forward scrolls (verified against Kit 2.70 `client.js`). The chassis toggles a
+  `.cairn-router-scrolling` class via `beforeNavigate`/`afterNavigate`, with
+  `navigation.complete.catch` covering cancelled navigations (`onNavigate` cleanup never
+  fires on an aborted nav; verified at `client.js:1809`).
+- A closed `<select>`'s clipped value is invisible to `scrollWidth` measurement in
+  Chromium; only `select[multiple]` is observable. Filed for a painted-width follow-up.
+- The `list-role` rule covers own-class triggers only; DaisyUI's descendant-selector
+  styling (`.menu :where(li)`) leaves nine engine lists outside it. Deliberately NOT
+  rebuilt here (contract-level redesign, VoiceOver verification needed); filed to the
+  friction log with the inventory, routed to the audit-remediation initiative.
+
+**Verification.** Full local CI-derived gate list green at `cc5a8552` + post-mortem tip:
+`check` 0/0 (1776 files), `npm test` 436 files / 5831 tests exit 0, `test:emit`,
+`check:snippets` (160 blocks), scaffolder suite (after its local `prepack` bake, an
+environmental step CI does itself), and all 22 remaining `check:*` gates including the six
+CI-only ones. Consumer-side gates (`check:consumers`, showcase e2e, norms) ran on CI for
+the pushed branch per the worktree-symlink gotcha. Falsifiability was proven where added
+(the `_headers` comment fixture reds with the parser line disabled; both Task 5 exemption
+fixtures red pre-fix in a real-Chromium probe).
+
+**Process notes.** One workflow run (8 agents, ~746K tokens) executed the Task 5 fix
+chain, Task 6 chain, and would have run the fan-out; the fan-out ran as three parallel
+Agent dispatches after the second fix verdict instead. Two background gate batches were
+killed by laptop suspend/resume mid-run; foreground chunks completed. The a11y reviewer's
+`viewport-overflow.ts:63` line-cite nit was wrong (the cite was already correct); the
+implementer verified before editing, the right behavior.

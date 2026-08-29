@@ -101,6 +101,45 @@ clearings.
   bracket form for error ink in `admin-grammar-tokens.md`. Trigger: the next admin-grammar-tokens
   pass, or the next component that needs error-ink styling and has to choose which form to copy.
 
+- **`list-role`'s class-only re-grounding misses daisyUI's own descendant-selector lists**
+  (`extender`, 2026-08-29, fix round). The rule resolves an item's rendered display from the
+  item's own classes only, but daisyUI styles list items through descendant selectors scoped to
+  the LIST's own class (`.menu :where(li) { display: flex }`, `.breadcrumbs > li`), so a `<ul
+  class="menu">` whose `<li>` carries no class of its own never registers as re-grounded even
+  though its rendered display is not `list-item`. Nine engine lists sit in this exact gap:
+  `CairnAdminShell.svelte:646`, `:740`, `:832`; `EditPage.svelte:1778`; `EditorToolbar.svelte:372`,
+  `:449`; `ComponentInsertDialog.svelte:447`; `EntryPicker.svelte:141`; `DeleteDialog.svelte:88`.
+  A robust fix needs a rendered-mode check of the item's actual computed `display`, not a second
+  class-source lookup; `role="listitem"` on each item may also be needed once the list itself
+  carries `role="list"` (ARIA's owned-elements rule), and the remedy wants VoiceOver verification,
+  not only a computed-style read. Two adjacent defects in the same rule's own diagnostics:
+  `sheet.ts:544`'s class-to-declaration lookup for a finding's cause string is scoped to the
+  selector's mention, not the subject the rule actually flagged, so a shared selector with several
+  declarations can mis-attribute which one caused the finding, and an at-rule's own condition (a
+  media query, a `@supports` block) is dropped from the message entirely, so two declarations that
+  differ only by their surrounding at-rule read identical in the finding text. Routed to the
+  any-site audit remediation initiative (`ROADMAP.md`, "The any-site audit remediation").
+
+- **`panel-width` cannot see a closed `<select>`'s clipped label** (`extender`, 2026-08-29, fix
+  round). Measured in Chromium: a closed native `<select>` never grows `scrollWidth` past its own
+  `clientWidth`, so any overflow check built on that comparison reads clean on a select whose
+  visible option text is truncated. Catching a genuinely clipped select label needs a painted
+  text-width measurement, the same approach `resolveColors` already takes for a computation the
+  DOM's own layout boxes can't answer directly, not a `scrollWidth` comparison. Follow-up for the
+  audit remediation initiative.
+
+- **`AdminTable`'s horizontal scroll wrapper isn't keyboard-reachable** (`extender`, 2026-08-29,
+  fix round). `toolkit-admin-table-wrap` (`overflow-x: auto`) carries no `tabindex`, `role`, or
+  accessible name, so a keyboard user can't scroll a table wider than its wrapper in Chrome or
+  Safari (the axe `scrollable-region-focusable` rule); Chrome 127+ and Firefox make an overflowing
+  container natively focusable, so the gap is partially mitigated on those engines already, but
+  not on Safari or older Chromium. Toolkit-wide, out of this pass's diff.
+
+- **`MediaPicker`'s empty-state `<li>` violates the owned-elements rule** (`extender`, 2026-08-29,
+  fix round). `MediaPicker.svelte:220` renders an empty-state `<li>` inside a `role="listbox"`,
+  with neither `role="option"` nor `role="presentation"` on it, so the listbox owns a child ARIA
+  doesn't recognize as a valid listbox child. Out of this pass's diff.
+
 ## Tombstones (decided, do not resurface)
 
 - **Point-of-typing writing coach.** KILLED 2026-06-26. The help-shell adversarial review discarded it

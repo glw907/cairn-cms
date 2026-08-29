@@ -171,6 +171,13 @@ test('exit render: no refresh meta, cleared text, served through a grace window 
 });
 
 test('exit render: with no fetch during the grace window, the server still shuts down on its own', async (t) => {
+  // Ordering, not a wall-clock delta: a real `setTimeout(fn, 40)` can fire a fraction of a
+  // millisecond early under Node's own timer precision (measured directly against this server:
+  // some runs land at ~39.7-39.9ms elapsed for a 40ms grace window, both locally and on CI), so
+  // asserting `elapsed >= 40` against a real clock, wall or monotonic, is flaky by construction.
+  // Mocking the grace timer instead proves the actual guarantee deterministically: the socket is
+  // still open one tick before the deadline, and closes only once the deadline is reached.
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const server = createConsoleServer({
     chapter: CHAPTER,
     hop: HOP,
@@ -182,9 +189,14 @@ test('exit render: with no fetch during the grace window, the server still shuts
   const parsed = new URL(url);
 
   server.update(makeObservation(BUILD_HOLD_CLASS, { attempt: 2, cleared: true }));
-  const startedAt = Date.now();
-  await server.stop();
-  assert.ok(Date.now() - startedAt >= 40, 'expected the stop to wait out the grace window');
+  const stopPromise = server.stop();
+
+  t.mock.timers.tick(39);
+  const stillOpen = await rawRequest(Number(parsed.port), parsed.pathname);
+  assert.equal(stillOpen.status, 200, 'expected the grace window still open one tick before its deadline');
+
+  t.mock.timers.tick(1);
+  await stopPromise;
 
   await assert.rejects(() => rawRequest(Number(parsed.port), parsed.pathname));
 });
@@ -307,6 +319,10 @@ test('park page: a real hold ending on a park serves it here, so deleting the lo
 });
 
 test('park page: with no fetch during the grace window, the server still shuts down on its own', async (t) => {
+  // Same ordering approach as the exit-render sibling above, and the same reason: a real timer
+  // this short is not guaranteed to fire at or after its deadline down to the millisecond, so the
+  // pair alternated failures under a wall-clock delta assertion on CI.
+  t.mock.timers.enable({ apis: ['setTimeout'] });
   const server = createConsoleServer({
     chapter: CHAPTER,
     hop: HOP,
@@ -318,9 +334,14 @@ test('park page: with no fetch during the grace window, the server still shuts d
   const parsed = new URL(url);
 
   server.update(makeObservation(BUILD_HOLD_CLASS, { attempt: 2, cleared: false }));
-  const startedAt = Date.now();
-  await server.stop({ code: 'build-not-started', params: { dir: '/tmp/park-server-test' } });
-  assert.ok(Date.now() - startedAt >= 40, 'expected the stop to wait out the grace window');
+  const stopPromise = server.stop({ code: 'build-not-started', params: { dir: '/tmp/park-server-test' } });
+
+  t.mock.timers.tick(39);
+  const stillOpen = await rawRequest(Number(parsed.port), parsed.pathname);
+  assert.equal(stillOpen.status, 200, 'expected the grace window still open one tick before its deadline');
+
+  t.mock.timers.tick(1);
+  await stopPromise;
 
   await assert.rejects(() => rawRequest(Number(parsed.port), parsed.pathname));
 });

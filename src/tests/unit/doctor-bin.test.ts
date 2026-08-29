@@ -126,7 +126,7 @@ describe('contextFromEnv', () => {
 });
 
 describe('defaultChecks', () => {
-  it('returns the nineteen checks in registry order', () => {
+  it('returns the twenty checks in registry order', () => {
     expect(defaultChecks().map((c) => c.id)).toEqual([
       'config.bindings',
       'config.media-bucket',
@@ -135,6 +135,7 @@ describe('defaultChecks', () => {
       'config.site-config',
       'config.public-origin',
       'config.tidy-key',
+      'config.no-referrer-blanket',
       'admin.mount-shape',
       'skill.admin-screens',
       'config.dependency-floors',
@@ -161,7 +162,7 @@ describe('defaultChecks', () => {
   it('returns a fresh array, so the bin appending live-send mutates nothing shared', () => {
     const first = defaultChecks();
     first.push({ id: 'x', conditionId: 'x', title: 'x', run: async () => ({ status: 'pass', detail: '' }) });
-    expect(defaultChecks()).toHaveLength(19);
+    expect(defaultChecks()).toHaveLength(20);
   });
 });
 

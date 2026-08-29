@@ -17,18 +17,18 @@ component usually measure" as data instead of inference from a screenshot.
 ## Tier map
 
 `cairn-audit` (static: `npx cairn-audit`; rendered: `npx cairn-audit --rendered`, against a
-running dev server, both themes) runs twenty-three rules across two modes: nine static, all
-error tier, and fourteen rendered, five error and nine advisory. Full descriptions live in
+running dev server, both themes) runs twenty-seven rules across two modes: twelve static, all
+error tier, and fifteen rendered, six error and nine advisory. Full descriptions live in
 [`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md)
 (the installed package's copy, reached from where this skill lives once `cairn-doctor --fix`
 installs it at `.claude/skills/cairn-admin-screens/`).
 
 **Static, error tier:** `no-uncompiled-class`, `type-scale`, `gap-scale`,
 `stock-default-hazards`, `token-colors`, `grammar-boundary`, `focus-parity`, `motion-band`,
-`reduced-motion`.
+`reduced-motion`, `stripe-trim-parity`, `unlayered-font-clobber`, `list-role`.
 
 **Rendered, error tier:** `one-filled-action`, `focus-renders`, `interactive-contrast`,
-`touch-targets`, `viewport-overflow`.
+`touch-targets`, `viewport-overflow`, `panel-width`.
 
 **Rendered, advisory tier** (a compositional question a legitimately novel component can answer
 differently on purpose; reported, never gating): `chip-ground-collision`, `border-contrast`,

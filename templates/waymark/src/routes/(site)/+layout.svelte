@@ -16,9 +16,24 @@
      (~180ms, theme.css's `::view-transition-old/new(root)` rule) on every internal navigation,
      no-op where the browser has no `document.startViewTransition` and skipped outright under
      `prefers-reduced-motion` (the CSS rule's own media query is the second, independent guard). This
-     lives only in the (site) group's layout, so the admin never cross-fades. -->
+     lives only in the (site) group's layout, so the admin never cross-fades.
+
+     `beforeNavigate`/`afterNavigate` below bracket SvelteKit's own post-navigation scroll reset with
+     `cairn-router-scrolling` (site.css's own comment on the class has the full CSSOM View reasoning):
+     the router's scroll happens strictly before `afterNavigate`'s callbacks run, so the class is
+     still present when it fires and is removed only once it has already resolved, leaving a
+     reader's own in-page anchor jump or focused-heading scroll, neither of which is a navigation,
+     still smooth.
+
+     A navigation that is cancelled or superseded before it commits never reaches `afterNavigate`
+     (confirmed against the vendored @sveltejs/kit client: `on_navigate_callbacks`, which
+     `onNavigate` registers against, only run once a navigation has already survived the abort
+     check right before commit, so `onNavigate`'s own cleanup return value never runs for one that
+     does not get that far either), which would otherwise leave the class stuck on <html> until
+     the next completed navigation. `navigation.complete` is documented to reject in exactly that
+     case, so the `.catch` below is the settled-promise fallback that covers it. -->
 <script lang="ts">
-  import { onNavigate } from '$app/navigation';
+  import { afterNavigate, beforeNavigate, onNavigate } from '$app/navigation';
   import themeCss from '$theme/theme.css?url';
   import siteCss from '$theme/site.css?url';
   import SiteHeader from '$theme/components/SiteHeader.svelte';
@@ -34,6 +49,16 @@
         await navigation.complete;
       });
     });
+  });
+
+  beforeNavigate((navigation) => {
+    document.documentElement.classList.add('cairn-router-scrolling');
+    navigation.complete.catch(() => {
+      document.documentElement.classList.remove('cairn-router-scrolling');
+    });
+  });
+  afterNavigate(() => {
+    document.documentElement.classList.remove('cairn-router-scrolling');
   });
 </script>
 

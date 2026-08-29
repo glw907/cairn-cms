@@ -58,6 +58,69 @@
   `text-[var(--color-positive-ink)]` with `cairn-text-success`, since the arbitrary-value classes
   no longer ship.
 
+- `cairn-doctor` gains `config.no-referrer-blanket`, a check that catches a site-wide
+  `Referrer-Policy: no-referrer` in `src/hooks.server.ts` (or `.js`) or `static/_headers`. Under
+  the Fetch spec that policy strips the `Origin` header from a plain same-origin form POST, so it
+  arrives as `Origin: null` and cairn's strict `originMatches` guard rejects it, breaking a
+  non-admin form the site never left. The guard itself stays strict on purpose; the check flags
+  the site-side misconfiguration instead, with a source-naming SKIP (never a silent PASS) when
+  neither file is readable. See [Security model](docs/extend/security-model.md#response-hardening)
+  and [Is it working?](docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy).
+  Consumers must: nothing.
+
+- `cairn-audit` gains two static rules. `stripe-trim-parity` flags a striped row's `:nth-child`
+  background pattern, or a `.table-zebra`-style class, co-occurring with an unconditioned
+  first/last-child padding trim on the same row class: the trim clips the stripe fill on an
+  even-count group unless it's scoped to its own parity (`:last-child:nth-child(odd)`).
+  `unlayered-font-clobber` flags a scoped `<style>` block declaring `font-family`/`font-size`/
+  `font-weight`/`font` outside an `@layer` on an element that also carries a font-affecting
+  utility class (`text-*` size, `font-*` weight/family): under the no-Preflight admin, an
+  unlayered scoped declaration beats a `@layer utilities` class at any specificity, since cascade
+  layer precedence, not specificity, decides the winner. Both rules run at error tier and apply
+  to any component `static.scope` reaches, not only the admin's own. See
+  [`cairn-audit`](docs/reference/cairn-audit.md#the-static-rules). Consumers must: nothing.
+
+- `cairn-audit` gains a third static rule, `list-role`. A `<ul>`/`<ol>` whose marker is
+  suppressed, by its own classes (a `list-style`/`list-style-type: none` declaration, such as
+  Tailwind's `list-none`) or by an item's classes changing that item's rendered display away from
+  `list-item` to another display that still renders the item, such as `flex`, `grid`, `block`, or
+  `inline-flex` (daisyUI's own `.list-row` renders `display: grid`), stops being announced as a
+  list by WebKit/VoiceOver once it carries no role attribute; the finding names the WebKit
+  mechanism and the one-attribute remedy, `role="list"`. `display: none` (Tailwind's `hidden` and
+  its responsive variants) is excluded, since a hidden item never reaches the accessibility tree
+  and so cannot strip the enclosing list's implicit role. A list already carrying a different
+  explicit role is exempt, since that role already overrides the implicit one on purpose. Runs at
+  error tier and applies to any component `static.scope` reaches. The engine's own admin adopts
+  the remedy on every in-tree list the rule caught, the rule's own dogfooding proof. See
+  [`cairn-audit`](docs/reference/cairn-audit.md#the-static-rules). Consumers must: nothing.
+
+- `cairn-audit` gains a sixth error-tier rendered rule, `panel-width`. `viewport-overflow` declines
+  this case on purpose: its document-scroll gate reads clean when a table wrapper absorbs a wide row
+  by scrolling, and its scroll-container skip exempts everything under any non-`visible` ancestor
+  whether or not that ancestor actually offers a scrollbar, so a row clipped inside a wrapper that
+  never genuinely scrolls reached neither test. `panel-width` checks an ExpandableRow summary row
+  or its expanded panel: flagged only when some element inside it overflows its own box while no
+  ancestor between it and the table wrapper is genuinely reachable (`overflow-x: auto`/`scroll` and
+  currently overflowing); an `overflow-x: hidden` ancestor never counts, and neither does an `auto`
+  one that never actually grows past its own width. The same test exempts a deliberately scrollable
+  AdminTable and a deliberately scrollable descendant living inside the panel. Also exempt: a native
+  `input`/`textarea`/`select` (the UA's own internal scrolling is invisible to the computed-style
+  test) and the house truncation idiom, `text-overflow: ellipsis` with a clipping `overflow-x`. See
+  [`cairn-audit`](docs/reference/cairn-audit.md#the-rules). Consumers must: nothing.
+
+- The showcase's public theme (`examples/showcase/src/theme/site.css`, baked into every scaffolded
+  site) gains `scroll-behavior: smooth` on `html`, so an in-page anchor jump or a focused heading
+  glides to the existing `scroll-padding-top` offset instead of snapping; a `prefers-reduced-motion:
+  reduce` query restores an instant jump for anyone who asked the OS for less motion. Left alone,
+  `scroll-behavior: smooth` also animates SvelteKit's own post-navigation scroll reset (a bare
+  `window.scrollTo(x, y)`, which the CSSOM View spec animates the same as any other scroll on a
+  smooth-scrolling element), turning every route change into a glide with a mid-animation focus
+  reset; the (site) group's own layout now brackets the router's own scroll with a
+  `beforeNavigate`/`afterNavigate` pair that toggles a `cairn-router-scrolling` class, forcing
+  `scroll-behavior: auto` for that one scroll only, so a reader's own anchor jump or focused
+  heading still glides. Consumers must: nothing; a site that already copied `site.css` and the
+  (site) layout during scaffolding can pull the same rules and the toggle.
+
 ### Changed
 
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the
@@ -116,6 +179,13 @@
   same `--input-color` construction as `.checkbox`/`.radio`. `.toolkit-toolbar-select` is
   deliberately excluded from this rule, since its edge harmonizes with the surrounding menu facet's
   own chrome and stays a tracked exception (`ROADMAP.md`, "Next"). Consumers must: nothing.
+
+- `cairn-audit`'s `sheet` config key now accepts a list of compiled-class sources, the same
+  additive shape `static.paletteFiles` and `static.cssFiles` already carry, so `no-uncompiled-class`
+  resolves a markup class against a site's own compiled stylesheet as well as the packaged one
+  instead of reporting a false positive for it. A string `sheet` still works unchanged as a
+  one-element list; a listed source that does not exist is a config error, never a silent skip.
+  Consumers must: nothing.
 
 ## 0.96.0
 

@@ -156,7 +156,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
               </div>
             </div>
 
-            <ol class="steps">
+            <ol role="list" class="steps">
               {#each steps as step (step.title)}
                 <li class="step" class:is-done={step.done}>
                   <span class="step-box" aria-hidden="true">

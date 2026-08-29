@@ -158,9 +158,13 @@ login flow needs the surrounding discipline the engine's own magic-link guard fo
 
 - Send a token in a POST body, never in a URL: a URL lands in server access logs, browser
   history, and the `Referer` header of any outbound link the landing page renders.
-- Set `Referrer-Policy: no-referrer` on the landing page that consumes the token. The engine's
-  own admin guard applies a fuller security-header set, but only under `/admin`; a second
-  audience's own routes are the site's responsibility to head the same way.
+- Set `Referrer-Policy: same-origin` on the landing page that consumes the token, not
+  `no-referrer`. The engine's own `/admin` responses can afford `no-referrer` because
+  `/admin`'s CSRF protection is a double-submit token; a second audience's own routes, guarded
+  by an origin compare instead (see `originMatches` in the engine's own guard), need `Origin` to
+  survive a same-origin POST, and `same-origin` still keeps it out of a cross-origin `Referer`.
+  The engine's own admin guard applies a fuller security-header set, but only under `/admin`; a
+  second audience's own routes are the site's responsibility to head the same way.
 - Pair `generateCsrfToken` with `tokensMatch` for double-submit CSRF protection on the second
   audience's own form routes, the same double-submit pattern the engine's own admin actions use.
 - Rate limit both by email and by IP, so a token-request endpoint cannot be used to flood one

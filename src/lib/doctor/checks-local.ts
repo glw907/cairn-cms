@@ -403,9 +403,12 @@ interface HeadersBlock {
 
 // Cloudflare's _headers grammar: a path line starts at column 0, and every indented line below
 // it is one of that path's headers, until a blank line (or a new path line) ends the block. A
-// line whose trimmed text starts with `#` is a comment: it neither starts nor ends a block (the
-// SvelteKit Cloudflare adapter emits an un-indented `#` comment above its own path lines, which
-// would otherwise read as a bogus zero-header block).
+// line whose trimmed text starts with `#` is a comment: it neither starts nor ends a block. A
+// comment line ABOVE a path line is harmless either way, since it merely forms its own
+// zero-header block whose path text never matches the catch-all glob; the real gap this skip
+// closes is a comment line INTERLEAVED inside a block, between the path line and its headers,
+// which would otherwise be read as a new path line and split the real block in two, hiding the
+// blanket match on the header line that follows it.
 function parseHeadersFile(text: string): HeadersBlock[] {
   const blocks: HeadersBlock[] = [];
   let current: HeadersBlock | null = null;
@@ -438,9 +441,11 @@ function isCatchAllHeadersPath(path: string): boolean {
   }
 }
 
-// A Referrer-Policy value can be a comma-separated fallback list; the browser resolves it to its
-// last valid token, so `no-referrer` only earlier in the list is overridden and does not count,
-// while `no-referrer` last in the list still is the effective policy.
+// A Referrer-Policy value can be a comma-separated fallback list; this heuristic takes the last
+// token unconditionally as the effective policy, so `no-referrer` earlier in the list does not
+// count while `no-referrer` last in the list does. A trailing token the browser itself would
+// reject as invalid (falling back to an earlier valid one) is a known heuristic miss: the check
+// still reads the invalid trailing `no-referrer` as blanket.
 function isBlanketNoReferrerHeaderLine(header: string): boolean {
   const match = /^referrer-policy\s*:\s*(.+)$/i.exec(header.trim());
   if (match === null) return false;

@@ -326,7 +326,12 @@ the next time the selector churns.
 The dead verdict waits on a complete run. A rule can declare an interaction state a given page can't
 reach, a page with no popup trigger can't open a menu, and on such a page the run reports an advisory
 saying which state it missed instead of calling the entry dead. Removing an entry on that evidence
-would leave the next complete run gating on the finding the entry covers.
+would leave the next complete run gating on the finding the entry covers. That advisory is its own
+harness id:
+
+| Rule id | What it means |
+|---|---|
+| `rendered-state-unreachable` | A registered rule declared an interaction state (`row-expanded`, currently the only one surfaced this way) that a page never reached, so the rule ran on a subset of that page. Always advisory: a page with no `ExpandableRow` never reaching `row-expanded` is ordinary, not a defect |
 
 ### Rule-declared exemptions
 

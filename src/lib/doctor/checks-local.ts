@@ -402,7 +402,10 @@ interface HeadersBlock {
 }
 
 // Cloudflare's _headers grammar: a path line starts at column 0, and every indented line below
-// it is one of that path's headers, until a blank line (or a new path line) ends the block.
+// it is one of that path's headers, until a blank line (or a new path line) ends the block. A
+// line whose trimmed text starts with `#` is a comment: it neither starts nor ends a block (the
+// SvelteKit Cloudflare adapter emits an un-indented `#` comment above its own path lines, which
+// would otherwise read as a bogus zero-header block).
 function parseHeadersFile(text: string): HeadersBlock[] {
   const blocks: HeadersBlock[] = [];
   let current: HeadersBlock | null = null;
@@ -412,6 +415,7 @@ function parseHeadersFile(text: string): HeadersBlock[] {
       current = null;
       continue;
     }
+    if (line.trim().startsWith('#')) continue;
     if (/^\s/.test(line)) {
       current?.headers.push(line.trim());
       continue;
@@ -422,50 +426,133 @@ function parseHeadersFile(text: string): HeadersBlock[] {
   return blocks;
 }
 
+// A `_headers` path line is Cloudflare's catch-all glob either written bare (`/*`) or as the
+// pathname of an absolute URL (`https://example.com/*`, which Cloudflare also accepts as a path).
+function isCatchAllHeadersPath(path: string): boolean {
+  if (path === '/*') return true;
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(path)) return false;
+  try {
+    return new URL(path).pathname === '/*';
+  } catch {
+    return false;
+  }
+}
+
+// A Referrer-Policy value can be a comma-separated fallback list; the browser resolves it to its
+// last valid token, so `no-referrer` only earlier in the list is overridden and does not count,
+// while `no-referrer` last in the list still is the effective policy.
+function isBlanketNoReferrerHeaderLine(header: string): boolean {
+  const match = /^referrer-policy\s*:\s*(.+)$/i.exec(header.trim());
+  if (match === null) return false;
+  const tokens = match[1].split(',').map((token) => token.trim().toLowerCase());
+  return tokens[tokens.length - 1] === 'no-referrer';
+}
+
 // A blanket match needs both the catch-all path (Cloudflare's `/*` glob, matching every route)
 // and a no-referrer value on that block; a path scoped to a specific route (`/admin/*`) never
 // matches here even when it sets the same header.
 function headersFileBlanketNoReferrer(text: string): boolean {
   return parseHeadersFile(text).some(
-    (block) =>
-      block.path === '/*' &&
-      block.headers.some((h) => /^referrer-policy\s*:\s*no-referrer\s*$/i.test(h))
+    (block) => isCatchAllHeadersPath(block.path) && block.headers.some(isBlanketNoReferrerHeaderLine)
   );
 }
 
+// Strips `//` line comments and `/* */` block comments (including ones spanning multiple lines)
+// from a heuristic text read, line count preserved, so a comment merely warning about the policy
+// (or showing an old value in a code sample) does not itself trip the blanket-write match below.
+function stripComments(text: string): string {
+  const stripped: string[] = [];
+  let inBlockComment = false;
+  for (const raw of text.split('\n')) {
+    let line = raw;
+    if (inBlockComment) {
+      const end = line.indexOf('*/');
+      if (end === -1) {
+        stripped.push('');
+        continue;
+      }
+      line = line.slice(end + 2);
+      inBlockComment = false;
+    }
+    let blockStart = line.indexOf('/*');
+    while (blockStart !== -1) {
+      const blockEnd = line.indexOf('*/', blockStart + 2);
+      if (blockEnd === -1) {
+        line = line.slice(0, blockStart);
+        inBlockComment = true;
+        break;
+      }
+      line = line.slice(0, blockStart) + line.slice(blockEnd + 2);
+      blockStart = line.indexOf('/*');
+    }
+    const lineCommentIndex = line.indexOf('//');
+    stripped.push(lineCommentIndex === -1 ? line : line.slice(0, lineCommentIndex));
+  }
+  return stripped.join('\n');
+}
+
 // The heuristic text read for src/hooks.server.ts: a line setting Referrer-Policy to no-referrer
-// with no pathname reference in the few lines above it reads as an unconditional, site-wide
-// write; a nearby pathname check is the site scoping the header to specific routes itself.
+// with no route-scoping reference in the few lines above it reads as an unconditional, site-wide
+// write; a nearby pathname, route.id, or url.href check is the site scoping the header to
+// specific routes itself. Single-line only: a Prettier-wrapped multi-line headers.set call, or an
+// unrelated pathname mention nearby that happens to suppress a real blanket write, are known
+// remaining gaps this heuristic does not close (see docs/reference/doctor.md).
 function hooksSetsBlanketNoReferrer(text: string): boolean {
-  const lines = text.split('\n');
+  const lines = stripComments(text).split('\n');
   for (let i = 0; i < lines.length; i++) {
     if (!/referrer-policy/i.test(lines[i]) || !/no-referrer/i.test(lines[i])) continue;
     const windowStart = Math.max(0, i - 6);
     const nearby = lines.slice(windowStart, i + 1).join('\n');
-    if (!/pathname/i.test(nearby)) return true;
+    if (!/pathname|route\.id|url\.href/i.test(nearby)) return true;
   }
   return false;
 }
 
+// no-referrer strips the Referer header everywhere, including on the token-bearing routes cairn's
+// own /admin protects with a double-submit CSRF token, so it is safe there; a route whose only
+// CSRF layer is the origin compare (every createAuthChannel action, and any other non-admin form)
+// has no second layer to fall back on, so it needs same-origin instead.
 const NO_REFERRER_REMEDY =
-  'serve strict-origin-when-cross-origin (or same-origin) as the site default and scope no-referrer to the token-bearing routes it exists for';
+  'serve strict-origin-when-cross-origin (or same-origin) as the site default; no-referrer is safe only on a route protected by a double-submit CSRF token (the way /admin is), and a route guarded instead by the origin compare needs same-origin in its place';
+
+const NO_REFERRER_DOCS_ANCHOR = 'docs/admin/is-it-working.md#scope-a-site-wide-no-referrer-policy';
+
+// Names which of the two header sources the check actually read, and which it could not find, so
+// a PASS never reads as "nothing here" when it really means "the readable sources looked clean".
+function describeNoReferrerSources(hooksPath: string | null, headersFileRead: boolean): string {
+  const read: string[] = [];
+  const missing: string[] = [];
+  if (hooksPath !== null) read.push(hooksPath);
+  else missing.push('src/hooks.server.ts (or .js)');
+  if (headersFileRead) read.push('static/_headers');
+  else missing.push('static/_headers');
+  const readPart = read.length > 0 ? `read ${read.join(' and ')}` : 'read nothing';
+  const missingPart = missing.length > 0 ? `; ${missing.join(' and ')} not found` : '';
+  return `${readPart}${missingPart}`;
+}
 
 export const configNoReferrerBlanket: DoctorCheck = {
   id: 'config.no-referrer-blanket',
   conditionId: 'config.no-referrer-blanket',
   title: 'Blanket no-referrer',
   async run(ctx: DoctorContext): Promise<CheckResult> {
-    const hooks =
-      (await ctx.readFile('src/hooks.server.ts')) ?? (await ctx.readFile('src/hooks.server.js'));
+    let hooksPath: string | null = null;
+    let hooks = await ctx.readFile('src/hooks.server.ts');
+    if (hooks !== null) {
+      hooksPath = 'src/hooks.server.ts';
+    } else {
+      hooks = await ctx.readFile('src/hooks.server.js');
+      if (hooks !== null) hooksPath = 'src/hooks.server.js';
+    }
     const headersFile = await ctx.readFile('static/_headers');
     if (hooks === null && headersFile === null) {
       return skip(
-        'neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked'
+        `neither src/hooks.server.ts (or .js) nor static/_headers was found, so the response headers cannot be checked automatically; verify by hand that no site-wide Referrer-Policy: no-referrer is served (${NO_REFERRER_REMEDY}); see ${NO_REFERRER_DOCS_ANCHOR}`
       );
     }
     if (hooks !== null && hooksSetsBlanketNoReferrer(hooks)) {
       return fail(
-        `src/hooks.server.ts sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; ${NO_REFERRER_REMEDY} (heuristic text read)`
+        `${hooksPath} sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; ${NO_REFERRER_REMEDY} (heuristic text read)`
       );
     }
     if (headersFile !== null && headersFileBlanketNoReferrer(headersFile)) {
@@ -473,6 +560,8 @@ export const configNoReferrerBlanket: DoctorCheck = {
         `static/_headers sets a site-wide Referrer-Policy: no-referrer, which strips the Origin header from a plain same-origin form POST (it arrives as Origin: null) and cairn's strict origin guard rejects it; ${NO_REFERRER_REMEDY} (heuristic text read)`
       );
     }
-    return pass('no site-wide Referrer-Policy: no-referrer found (heuristic text read)');
+    return pass(
+      `no site-wide Referrer-Policy: no-referrer found (${describeNoReferrerSources(hooksPath, headersFile !== null)}, heuristic text read)`
+    );
   },
 };

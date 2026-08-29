@@ -172,7 +172,7 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		severity: 'warning',
 		title: 'Site-wide Referrer-Policy: no-referrer',
 		why: "A site-wide Referrer-Policy: no-referrer header strips the Origin from every same-origin top-level form POST under the Fetch spec, so it arrives as Origin: null. cairn's guard restores SvelteKit's strict Origin check outside /admin (originMatches, a deliberately strict compare with no loosening), so a non-admin form on the site 403s even though the visitor never left the site. cairn's own /admin responses already scope no-referrer to the token-bearing routes it protects; the trap is a site shipping that same policy as its own site-wide default.",
-		remediation: "Serve strict-origin-when-cross-origin (or same-origin) as the site's default Referrer-Policy, and scope no-referrer to the specific token-bearing routes that need it (a per-path static/_headers block, or a pathname-guarded header write in src/hooks.server.ts).",
+		remediation: "Serve strict-origin-when-cross-origin (or same-origin) as the site's default Referrer-Policy. no-referrer is safe only on a route whose CSRF protection is a double-submit token, the way cairn's own /admin responses are; any route guarded instead by the origin compare (every createAuthChannel action, and any other non-admin form) needs same-origin in its place, since same-origin still carries a real Origin on a same-origin POST while stripping it cross-origin.",
 		docsAnchor: 'is-it-working.md#scope-a-site-wide-no-referrer-policy',
 	},
 	'auth.email-not-normalized': {

@@ -130,10 +130,17 @@ strips the `Origin` header from a plain same-origin top-level form POST, so the 
 purpose, since some routes outside `/admin` have no second CSRF layer to fall back on, so it
 rejects that request rather than loosening for a policy it does not control. The result is a
 403 for a non-admin form even though the visitor never left the site. `cairn-doctor`'s
-`config.no-referrer-blanket` check flags this heuristically; the remedy is to serve
-`strict-origin-when-cross-origin` (or `same-origin`) as the site's own default and scope
-`no-referrer` to the specific token-bearing routes that need it, the same way cairn scopes it to
-`/admin`.
+`config.no-referrer-blanket` check flags this heuristically.
+
+`no-referrer` is safe on `/admin` specifically because `/admin`'s CSRF protection is the
+double-submit token above, not the origin compare: stripping the `Referer` costs that route
+nothing. `no-referrer` is not a safe default to copy onto a route whose only CSRF layer is
+`originMatches`, every `createAuthChannel` action and any other non-admin form, since stripping
+`Origin` there is exactly what breaks it. The remedy is to serve
+`strict-origin-when-cross-origin` (or `same-origin`) as the site's own default, and scope
+`no-referrer` only to routes that, like `/admin`, carry their own double-submit token; leave
+`same-origin` on any route that instead relies on the origin compare, since `same-origin` still
+strips `Referer` cross-origin while keeping the real `Origin` on a same-origin POST.
 
 ## What's deliberately out of scope here
 

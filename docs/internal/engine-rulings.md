@@ -100,6 +100,19 @@ Entry format: a heading plus labeled lines.
 - **Record:** [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivor 15
   (`asc-harvest-triage.md:115-117`); executed by the harvest-detection pass, Task 6.
 
+## originmatches-strict-guard: `originMatches` stays a strict Origin compare  (keep, 2026-08-26, ASC harvest triage)
+
+- **Verdict:** keep. `originMatches` (`src/lib/sveltekit/csrf.ts`) rejects a request carrying
+  `Origin: null`, which is correct per the OWASP-recommended origin-check pattern: some consumer
+  routes have no second CSRF layer besides this compare, so loosening it removes their only
+  protection. A site-wide `Referrer-Policy: no-referrer` is what strips `Origin` from a plain
+  same-origin POST in the first place; the fix is scoping or replacing that referrer policy on
+  the site side (`config.no-referrer-blanket`, a doctor check), never loosening the guard.
+- **Reopens on:** an evidenced same-origin flow where a compliant browser sends `Origin: null`
+  that the doctor's `config.no-referrer-blanket` check cannot catch.
+- **Record:** [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivor
+  11 (`asc-harvest-triage.md:93-100`); executed by the harvest-detection pass, Task 1.
+
 ## ical-builder: iCal feed builder  (decline, 2026-08-05, ASC consumer-brief scope check)
 
 - **Verdict:** decline. Events are site domain, and the engine has no events concept.

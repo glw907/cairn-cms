@@ -103,7 +103,9 @@
   ancestor between it and the table wrapper is genuinely reachable (`overflow-x: auto`/`scroll` and
   currently overflowing); an `overflow-x: hidden` ancestor never counts, and neither does an `auto`
   one that never actually grows past its own width. The same test exempts a deliberately scrollable
-  AdminTable and a deliberately scrollable descendant living inside the panel. See
+  AdminTable and a deliberately scrollable descendant living inside the panel. Also exempt: a native
+  `input`/`textarea`/`select` (the UA's own internal scrolling is invisible to the computed-style
+  test) and the house truncation idiom, `text-overflow: ellipsis` with a clipping `overflow-x`. See
   [`cairn-audit`](docs/reference/cairn-audit.md#the-rules). Consumers must: nothing.
 
 ### Changed

@@ -74,6 +74,21 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
     return reachable && el.scrollWidth > el.clientWidth + 1;
   }
 
+  // Two elements whose measured self-overflow is not a defect. A native `input`/`textarea`/`select`
+  // scrolls its own value internally, reachable by the caret, but Chrome computes `overflow-x:
+  // visible` on those elements regardless of styled width, so `scrolls()` above never sees it and
+  // the raw `scrollWidth > clientWidth` measurement would otherwise fire. An element carrying
+  // `text-overflow: ellipsis` together with a clipping `overflow-x` (`hidden` or `clip`) is the
+  // house truncation idiom, a deliberate reading rather than a clip to flag; it is the same
+  // self-absorption reasoning as `scrolls()`, applied to a box that clips instead of scrolling.
+  function isExempt(el: Element): boolean {
+    const tag = el.tagName.toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+    const style = getComputedStyle(el);
+    const clips = style.overflowX === 'hidden' || style.overflowX === 'clip';
+    return clips && style.textOverflow === 'ellipsis';
+  }
+
   // Whether some ancestor strictly between `el` and the document root absorbs `el`'s own overflow.
   // If `el` ITSELF is styled off `visible`, its own boundary already decided the question (the
   // `scrolls(el)` check above this call covers a reachable one; an `overflow-x: hidden` `el` is
@@ -102,7 +117,7 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
       // descendant inside the panel) absorbs its own content and is exempt by the same test; so is
       // one sitting under such an ancestor, whether that ancestor is inside the row (a nested
       // scroll region) or outside it (the table wrapper's own sanctioned scroll).
-      if (scrolls(el) || isAbsorbed(el)) continue;
+      if (scrolls(el) || isAbsorbed(el) || isExempt(el)) continue;
       const overflowPx = el.scrollWidth - el.clientWidth;
       if (overflowPx > 1 && (!worst || overflowPx > worst.overflowPx)) worst = { el, overflowPx };
     }

@@ -174,4 +174,39 @@ describe('panel-width against a real browser', () => {
     const clamped = findings.filter((f) => f.selector.includes('row-clamped'));
     expect(clamped.length).toBeGreaterThan(0);
   });
+
+  // The native-input false positive: a text input styled narrower than its own value scrolls its
+  // content internally (the UA supplies that scrolling, reachable by the caret), but Chrome computes
+  // `overflow-x: visible` on an input, so the rule's own computed-style `scrolls()` test never sees
+  // it and the raw `scrollWidth > clientWidth` measurement still fires. The value is fully reachable,
+  // so this must not be flagged.
+  it('does not flag a native text input whose value is longer than its own box', async () => {
+    const findings = await findingsFor(
+      tableFixture(
+        'Alvarez',
+        `<div class="panel-content" style="padding:1rem">
+           <input type="text" value="A long value that keeps going well past the input's own width"
+                  style="width:180px" />
+         </div>`
+      )
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // The deliberate-truncation false positive: the house `truncate` idiom (`text-overflow: ellipsis`
+  // paired with a clipping `overflow-x`) is a sanctioned reading, not a defect, symmetric with the
+  // deliberately-scrollable-descendant exemption above.
+  it('does not flag an element deliberately truncated with text-overflow: ellipsis', async () => {
+    const findings = await findingsFor(
+      tableFixture(
+        'Alvarez',
+        `<div class="panel-content" style="padding:1rem;width:200px">
+           <div style="white-space:nowrap;overflow-x:hidden;text-overflow:ellipsis">
+             A long unbreakable label truncated by the house idiom rather than clipped as a defect
+           </div>
+         </div>`
+      )
+    );
+    expect(findings).toEqual([]);
+  });
 });

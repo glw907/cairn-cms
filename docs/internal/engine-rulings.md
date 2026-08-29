@@ -20,10 +20,11 @@ Entry format: a heading plus labeled lines.
 
 - **Verdict:** defer. `confirmLoad`/`confirmAction` (`auth-routes.ts:170,185`) accept any
   correctly-shaped token, minted for whichever browser requested it, with nothing binding the
-  confirming browser to the requesting one. An attacker who requests a magic link for a
-  victim's email and then hands the victim their own copy of the resulting link logs the
-  victim into the ATTACKER's session (a login-CSRF, distinct from the double-submit CSRF this
-  pass hardens). The newer `createAuthChannel` seam (`auth-channel/factory.ts:644-650,859`)
+  confirming browser to the requesting one. An attacker who requests a magic link for THEIR OWN
+  email and then delivers that link to the victim (embedded, forwarded, or otherwise put in
+  front of the victim's browser) gets the victim's browser to confirm it, landing the victim in
+  the ATTACKER's session (a login-CSRF, distinct from the double-submit CSRF this pass
+  hardens). The newer `createAuthChannel` seam (`auth-channel/factory.ts:644-650,859`)
   already carries the fix pattern: a `_pending` cookie holding a nonce, minted on request and
   read back on confirm, so a confirm without the matching cookie fails. Ruled (Geoff,
   2026-08-27): file, not fix, in this slice.

@@ -39,8 +39,8 @@ clearings.
   visibly dominates its token spend.
 
 - **The ASC CSRF 403 incidents: the named mechanisms are closed, residue is now diagnosable**
-  (`extender`, 2026-08-27; re-triaged 2026-08-27, fix round; closed 2026-08-29, csrf-hardening
-  pass). The toolkit-seams pass's `CsrfField` reset-blanking theory did not hold (verified in
+  (`extender`, 2026-08-27; re-triaged 2026-08-27, fix round; mechanisms closed, watch open,
+  2026-08-29, csrf-hardening pass). The toolkit-seams pass's `CsrfField` reset-blanking theory did not hold (verified in
   Chromium: a hidden `<input>`'s `value` setter IS its own `defaultValue` setter, so nothing
   desyncs the two). The csrf-hardening pass closed every named mechanism the strongest
   candidate and its siblings pointed at: the CSRF cookie now sets `SameSite=Lax` explicitly
@@ -48,7 +48,8 @@ clearings.
   the cookie and re-mints it, invalidating every other open admin tab's already-rendered form;
   the cookie's `Max-Age` now matches the session's lifetime and re-anchors on every issue
   instead of expiring on its own shorter timer; `secure` and the cookie name now derive from
-  the configured `PUBLIC_ORIGIN` through one `csrfSecure(event)` helper instead of the
+  one `PUBLIC_ORIGIN`-aware `csrfSecure(event)` helper (falling back to the request protocol
+  for a local-host request or an absent/unparseable `PUBLIC_ORIGIN`) instead of the bare
   per-request `event.url.protocol`, closing the two-names-blind-to-each-other class;
   `content-routes-core.ts`'s empty-token fallback (`csrf: event.cookies ? issueCsrfToken(...) :
   ''`) is deleted, so a form can no longer render permanently unable to pass the guard with no

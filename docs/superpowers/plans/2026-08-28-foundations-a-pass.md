@@ -4,7 +4,11 @@
 (Geoff's call, 2026-08-29); execute A first through the cairn-pass ritual; at A's merge,
 finalize B's task bodies against A's merged surface (B's own header requires this) and
 re-verify both plans' csrf-window items (listed in each plan's pre-flight section) against
-the merged tree before dispatching; then execute B in the same session. Resume prompt for
+the merged tree before dispatching; then, before any B dispatch, run one `engine-triage`
+adversarial review over the FINALIZED B plan against the rulings ledger and fold its
+verdicts (Geoff's call, 2026-08-29; the harvest-detection precedent, where two such
+pre-approval reviews cut a no-op task and an unbuildable extension); then execute B in the
+same session. Resume prompt for
 the fresh session, verbatim on its own line:
 
 In ~/Projects/cairn-cms, execute the foundations A pass (docs/superpowers/plans/2026-08-28-foundations-a-pass.md) and then foundations B in the same session, per the Session handoff note in the A plan.

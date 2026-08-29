@@ -16,6 +16,21 @@ Entry format: a heading plus labeled lines.
 - **Verified:** (audit entries; required on every family-originated export and every non-keep) the verifier pass that checked it.
 ```
 
+## session-cookie-derivation-out-of-csrf-slice: session cookie's secure/name derivation stays on `event.url.protocol`  (defer, 2026-08-29, csrf-hardening pass)
+
+- **Verdict:** defer. The CSRF cookie pair now derives its Secure bit and name from
+  `csrfSecure(event)` (`PUBLIC_ORIGIN`-aware), but the session cookie's own three call sites
+  (`guard.ts:150`, `auth-routes.ts:199-200`'s `confirmAction`, `auth-routes.ts:225`'s
+  `logoutAction`) still derive `secure` from the bare `event.url.protocol`, unchanged by this
+  pass. `crypto.ts:20`'s `csrfCookieName` docstring ("mirroring `sessionCookieName`") is true
+  only for the shape of the derivation, not for the `PUBLIC_ORIGIN` source now feeding the CSRF
+  half; this entry is that docstring's listener. Deliberately out of scope here: the session
+  cookie belongs to the conventions pass's auth family, not this CSRF-hardening slice.
+- **Reopens on:** the conventions pass that threads `PUBLIC_ORIGIN` (or an equivalent
+  `csrfSecure`-shaped helper) through the session cookie's own three call sites, or evidence
+  that the divergence causes a real cross-protocol session-cookie mismatch before then.
+- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 1.
+
 ## copy-to-clipboard-control: public-side copy-to-clipboard widget  (decline, 2026-08-26, ASC harvest triage)
 
 - **Verdict:** decline. A generic web widget on the design-agnostic public side; a chassis

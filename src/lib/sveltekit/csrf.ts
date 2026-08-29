@@ -28,9 +28,11 @@ function isLocalHost(hostname: string): boolean {
 
 /**
  * Decide the CSRF cookie pair's Secure bit for one request, the single source every writer and
- * reader uses: {@link issueCsrfToken}, {@link validateCsrfHeader}, {@link validateCsrfToken}, and
- * `admin-action.ts`'s inline defense-in-depth check. Feed the result to `csrfCookieName` for the
- * matching cookie name.
+ * reader is meant to route through: {@link issueCsrfToken}, {@link validateCsrfHeader},
+ * {@link validateCsrfToken}, and `admin-action.ts`'s inline defense-in-depth check. Feed the
+ * result to `csrfCookieName` for the matching cookie name. A caller must pass `platform` for
+ * this to see `PUBLIC_ORIGIN`; omitting it silently falls back to the request's own protocol,
+ * which can disagree with a sibling call site that did pass it.
  *
  * A local-host request (guard.ts's own `isLocalHost` list) always derives from the request's own
  * protocol: a production `PUBLIC_ORIGIN` must never mint a `__Host-` cookie over

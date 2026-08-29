@@ -3,6 +3,7 @@ import {
   isUnsafeFormRequest,
   originMatches,
   issueCsrfToken,
+  validateCsrfHeader,
   validateCsrfToken,
   csrfSecure,
 } from '../../lib/sveltekit/csrf.js';
@@ -126,6 +127,35 @@ describe('csrfSecure', () => {
       platform: { env: { PUBLIC_ORIGIN: 'not a url' } },
     };
     expect(csrfSecure(event)).toBe(true);
+  });
+});
+
+describe('CSRF cookie round trip under PUBLIC_ORIGIN', () => {
+  // The permanent-403 class this pass closes: a writer and a reader must resolve the same
+  // cookie name for the same request, which only holds when both are handed `platform`.
+  const platform = { env: { PUBLIC_ORIGIN: 'https://site.example' } };
+  const url = new URL('http://site.example/admin/media/upload');
+
+  it('a header check finds the cookie a load minted when both are handed platform', () => {
+    const cookies = jar();
+    const token = issueCsrfToken({ url, cookies, platform });
+    const request = req('http://site.example/admin/media/upload', {
+      method: 'POST',
+      headers: { 'x-cairn-csrf': token },
+    });
+    expect(validateCsrfHeader({ url, request, cookies, platform })).toBe(true);
+  });
+
+  it('a reader that omits platform misses the cookie the writer minted under PUBLIC_ORIGIN', () => {
+    const cookies = jar();
+    const token = issueCsrfToken({ url, cookies, platform });
+    const request = req('http://site.example/admin/media/upload', {
+      method: 'POST',
+      headers: { 'x-cairn-csrf': token },
+    });
+    // No platform: this reader resolves the cookie name from event.url.protocol (http, so the
+    // non-prefixed name) and never sees the __Host-prefixed cookie the writer set.
+    expect(validateCsrfHeader({ url, request, cookies })).toBe(false);
   });
 });
 

@@ -641,7 +641,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         pathname: event.url.pathname,
         theme,
         collapsedNav,
-        csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',
+        csrf: event.cookies
+          ? issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform })
+          : '',
         pendingEntries,
         attention,
         mediaBase: runtime.resolvedAssets.enabled ? runtime.resolvedAssets.publicBase : DEFAULT_MEDIA_BASE,

@@ -34,6 +34,14 @@ export const ORIGIN = 'https://your-domain.example';
 Vite needs the literal glob pattern at the call site, so this can't be looped over your concept
 list programmatically; one glob per concept, by name.
 
+Every route below, the entry catch-all, the markdown twin, the feed, and the sitemap, reads `ORIGIN`
+from this one place rather than each resolving its own. Keep it a literal, not an environment
+variable read at build or request time: a visual-regression suite that renders a page and compares
+it against a committed baseline needs the same origin on every run, in CI and on your own machine
+alike, and a value that can change per environment breaks that determinism. If you deploy the same
+site to more than one environment (a preview and a production domain, say), give each its own
+committed config rather than branching `ORIGIN` on an environment variable.
+
 ## The entry catch-all
 
 ```ts

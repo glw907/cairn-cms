@@ -108,6 +108,12 @@
   test) and the house truncation idiom, `text-overflow: ellipsis` with a clipping `overflow-x`. See
   [`cairn-audit`](docs/reference/cairn-audit.md#the-rules). Consumers must: nothing.
 
+- The showcase's public theme (`examples/showcase/src/theme/site.css`, baked into every scaffolded
+  site) gains `scroll-behavior: smooth` on `html`, so an in-page anchor jump or a focused heading
+  glides to the existing `scroll-padding-top` offset instead of snapping; a `prefers-reduced-motion:
+  reduce` query restores an instant jump for anyone who asked the OS for less motion. Consumers must:
+  nothing; a site that already copied `site.css` during scaffolding can pull the same two rules.
+
 ### Changed
 
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the

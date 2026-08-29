@@ -36,6 +36,7 @@ export const ALLOWLIST = new Set([
   'env-var:CAIRN_GITHUB_APP_PRIVATE_KEY_B64', // same CI workflow, the private key secret
   'env-var:SOME_UNSET_VAR', // docs/reference/cloudflare.md's illustrative name for an omitted config key
   'env-var:CLUB_DB', // docs/extend/add-a-custom-admin-screen.md's illustrative section D1 binding
+  'env-var:CAIRN_FIXED_TODAY', // docs/extend/debug-your-site.md's illustrative fixed-today env seam name
 
   // Dotted-lowercase tokens sharing an area with the log-event/condition-id/check-id union
   // (auth, admin, config, editor, entry, preview, tidy) without being a member of any of the
@@ -89,6 +90,8 @@ export const ALLOWLIST = new Set([
   'file-path:src/content/.cairn/media.json', // a site's own generated media manifest, by convention
   'file-path:src/content/.cairn/dictionary.txt', // a site's own spellcheck dictionary, by convention
   'file-path:src/lib/club/section.ts', // docs/extend/add-a-custom-admin-screen.md's illustrative section module
+  'file-path:src/routes/admin/club/events/ApproveDialog.svelte', // docs/extend/add-a-custom-admin-screen.md's illustrative dialog-form recipe component
+  'file-path:src/lib/today.ts', // docs/extend/debug-your-site.md's illustrative fixed-today helper module
   'file-path:src/lib/members/channel.ts', // docs/extend/add-a-second-audience.md's illustrative auth-channel module
   'file-path:src/lib/content.ts', // docs/extend/build-a-site-by-hand.md and wire-the-delivery-surface.md's illustrative content-index module, by convention
   'file-path:src/theme/islands/Converter.svelte', // docs/extend/add-an-island.md's illustrative island component location

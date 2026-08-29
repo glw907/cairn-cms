@@ -32,3 +32,27 @@ A symptom that isn't here and doesn't trace to any event in [the reference
 table](../reference/log-events.md) is not a code-fixable case this page can name in advance; check
 [the admin's troubleshooting page](../admin/troubleshooting.md) for the operational half, or file
 it once you've confirmed no engine event correlates.
+
+## A visual-regression baseline fails on a calendar day, with no code change
+
+If your own rendering reads the live system clock, a "posted 3 days ago" label, a copyright year,
+a relative timestamp, the string it produces drifts every day the clock does, even though nothing
+in your source changed. A CI run that captures a screenshot baseline today and compares it against
+a rebuild next week sees a different string and fails, and the failure looks like flakiness rather
+than what it is: your test and your render disagreeing about what day it is.
+
+The fix is a fixed-today seam your own code reads only from `platform.env`, never from `Date.now()`
+directly inside a component or a route a test also renders:
+
+```ts
+// src/lib/today.ts
+export function today(env: { CAIRN_FIXED_TODAY?: string }): Date {
+  return env.CAIRN_FIXED_TODAY ? new Date(env.CAIRN_FIXED_TODAY) : new Date();
+}
+```
+
+Wire the binding in your CI job or your `wrangler.jsonc`'s local `vars`, never in production; a
+deploy with no `CAIRN_FIXED_TODAY` set falls back to the real clock exactly as before. Every place
+that renders a date reads through this one function, so a baseline captured on one day and a
+rebuild compared against it on another day both see the same pinned date, and the baseline holds
+until you deliberately change it.

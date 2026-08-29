@@ -90,7 +90,7 @@ Reach for [`@glw907/cairn-cms/admin-toolkit`](../reference/admin-toolkit.md) bef
 list, a table, or a form field. It's general-purpose scaffolding, not a bespoke page: `PageHeader`
 for the title band, `OfficeList` or `AdminTable` for the triage table, `ListToolbar` for search and
 filters, `Pagination`, `StatusChip` for a status pill, `EmptyState` for the zero-rows case, and
-`TextInput`/`SelectInput`/`FieldLabel`/`FieldRow` for form controls. Every one of these primitives
+`FieldLabel`/`FieldRow` for form controls. Every one of these primitives
 ships pre-compiled inside cairn's own admin stylesheet, so it renders correctly with no Tailwind
 setup of your own; your route's own markup outside these components compiles through your site's
 usual build and can use anything your stack supports.
@@ -162,6 +162,150 @@ the action it's auditing, and a rejected write logs rather than disappearing. `c
 audits every refusal too, not only a successful action, so pair a bound audit database with the
 `rateLimit` option once your section takes real traffic; an unrated, freely refusable action fills
 an audit table cheaply.
+
+## Recipe: the dialog-form failure contract
+
+These are recipes, not toolkit primitives: plain markup plus `FieldLabel`, worth writing out
+because getting the failure path right takes a few tries. A primitive is worth adding only once a
+second consumer needs the identical shape.
+
+A form inside a native `<dialog>`, submitted with `use:enhance` so a validation failure doesn't
+navigate the whole page away from the dialog the user was just looking at. Two behaviors carry the
+contract: a failure keeps the dialog open and moves focus to a dialog-local `role="alert"`, and a
+success calls `update({ reset: false })` before closing, so nothing resets the form's own state
+out from under a submit that's still resolving.
+
+```svelte
+<!-- src/routes/admin/club/events/ApproveDialog.svelte -->
+<script lang="ts">
+  import { enhance } from '$app/forms';
+  import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
+  import type { ActionResult } from '@sveltejs/kit';
+
+  let { id }: { id: string } = $props();
+
+  let dialog = $state<HTMLDialogElement | null>(null);
+  let alertBox = $state<HTMLElement | null>(null);
+  let errorMessage = $state<string | undefined>(undefined);
+
+  export function open() {
+    errorMessage = undefined;
+    dialog?.showModal();
+  }
+
+  type EnhanceUpdate = (options?: { reset?: boolean }) => Promise<void>;
+
+  async function onResult(result: ActionResult, update: EnhanceUpdate) {
+    if (result.type === 'failure') {
+      errorMessage = (result.data?.error as string | undefined) ?? 'Something went wrong.';
+      await update({ reset: false });
+      alertBox?.focus();
+      return;
+    }
+    await update({ reset: false });
+    if (result.type === 'success') dialog?.close();
+  }
+</script>
+
+<dialog bind:this={dialog} class="modal">
+  <div class="modal-box">
+    {#if errorMessage}
+      <div role="alert" tabindex="-1" bind:this={alertBox} class="alert alert-error mb-3">
+        {errorMessage}
+      </div>
+    {/if}
+    <form
+      method="POST"
+      action="?/approve"
+      use:enhance={() => ({ result, update }) => onResult(result, update)}
+    >
+      <input type="hidden" name="id" value={id} />
+      <FieldLabel label="Note">
+        <input class="input" name="note" />
+      </FieldLabel>
+      <button type="submit" class="btn btn-primary mt-4">Approve</button>
+    </form>
+  </div>
+</dialog>
+```
+
+`role="alert"` announces the message the instant it renders; the explicit `tabindex="-1"` plus the
+`focus()` call after `update()` moves the user's own keyboard focus there too, not only a screen
+reader's attention, since a sighted keyboard user gets no visual cue that anything happened unless
+focus itself moves. `dialog?.close()` runs only on `'success'`, never on `'error'` (an unhandled
+exception, which is a different failure than a validation `fail()`) or `'redirect'`, so the dialog
+stays open and legible for whatever the caller does with either of those next.
+
+## Recipe: load when the panel opens
+
+A row that expands to show detail, an `ExpandableRow` panel, a drawer, any progressive-disclosure
+shape, is a poor place to eagerly fetch that detail from the page's own `load`: the list load pays
+for every row's detail on every visit, when a reader typically opens one or two. Fetch it only when
+the panel actually opens instead, and cache the result per row so a second open of the same row is
+free.
+
+```svelte
+<!-- src/routes/admin/club/roster/+page.svelte -->
+<script lang="ts">
+  import { ExpandableRow, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
+
+  interface Member {
+    id: string;
+    name: string;
+  }
+  interface MemberDetail {
+    email: string;
+    joined: string;
+  }
+
+  let { data }: { data: { members: Member[] } } = $props();
+
+  let expandedId = $state<string | null>(null);
+  let details = $state<Record<string, MemberDetail | undefined>>({});
+
+  async function toggle(id: string) {
+    expandedId = expandedId === id ? null : id;
+    if (expandedId && !(id in details)) {
+      const response = await fetch(`/admin/club/roster/${id}/detail`);
+      details[id] = response.ok ? ((await response.json()) as MemberDetail) : undefined;
+    }
+  }
+</script>
+
+<AdminTable rowCount={data.members.length}>
+  {#snippet header()}
+    <th scope="col">Name</th>
+  {/snippet}
+  {#snippet children()}
+    {#each data.members as member (member.id)}
+      <ExpandableRow
+        expanded={expandedId === member.id}
+        onToggle={() => toggle(member.id)}
+        datum={member}
+        colspan={2}
+        triggerLabel={`Expand ${member.name}`}
+      >
+        {#snippet summary()}
+          <td>{member.name}</td>
+        {/snippet}
+        {#snippet panel(row)}
+          {#if details[row.id]}
+            <p>{details[row.id]?.email}</p>
+          {:else}
+            <p>Loading...</p>
+          {/if}
+        {/snippet}
+      </ExpandableRow>
+    {/each}
+  {/snippet}
+</AdminTable>
+```
+
+The cache (`details`, keyed by row id) is what makes a repeat toggle free. A `load` that streamed
+the same data with SvelteKit's own promise streaming (`return { members, details: loadDetails() }`
+with `details` an unawaited promise) still runs the fetch for every row on first paint; streaming
+only defers when a promise *resolves* into the page, not whether it *runs*, so it doesn't skip a
+row nobody ever opens the way an open-triggered fetch does.
 
 ## You know it worked when
 

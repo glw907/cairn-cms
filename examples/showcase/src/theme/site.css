@@ -41,6 +41,17 @@ html {
      1280px desktop viewport the rendered header is about 72px (~4.5rem) and this resolves to about
      87px (~5.4rem), so a jumped-to or focused heading clears the band with a comfortable margin. */
   scroll-padding-top: calc(2.75rem + 2 * var(--spacing-xs) + 1rem);
+
+  /* An in-page anchor jump or a focused heading (the scroll-padding-top offset above) glides
+     rather than snaps. The reduced-motion override below restores an instant jump for anyone who
+     asked the OS for less motion. */
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 /* The centered reading column at the measure. The chrome components (SiteHeader, SiteFooter) cap

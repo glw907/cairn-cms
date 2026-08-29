@@ -177,9 +177,9 @@ describe('panel-width against a real browser', () => {
 
   // The native-input false positive: a text input styled narrower than its own value scrolls its
   // content internally (the UA supplies that scrolling, reachable by the caret), but Chrome computes
-  // `overflow-x: visible` on an input, so the rule's own computed-style `scrolls()` test never sees
-  // it and the raw `scrollWidth > clientWidth` measurement still fires. The value is fully reachable,
-  // so this must not be flagged.
+  // `overflow-x: clip` on a styled-narrow input, which the rule's own computed-style `scrolls()` test
+  // does not accept as a reachable scroll container, so the raw `scrollWidth > clientWidth`
+  // measurement still fires. The value is fully reachable, so this must not be flagged.
   it('does not flag a native text input whose value is longer than its own box', async () => {
     const findings = await findingsFor(
       tableFixture(

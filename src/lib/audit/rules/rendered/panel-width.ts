@@ -75,9 +75,11 @@ function findPanelWidthViolations(args: { rowSelector: string }): PanelWidthViol
   }
 
   // Two elements whose measured self-overflow is not a defect. A native `input`/`textarea`/`select`
-  // scrolls its own value internally, reachable by the caret, but Chrome computes `overflow-x:
-  // visible` on those elements regardless of styled width, so `scrolls()` above never sees it and
-  // the raw `scrollWidth > clientWidth` measurement would otherwise fire. An element carrying
+  // scrolls its own value internally, reachable by the caret. Chrome computes `overflow-x: clip` on
+  // a styled-narrow `input`/`select` and `overflow-x: auto` on a `textarea`, and neither computed
+  // value is one `scrolls()` above accepts as a reachable scroll container in this shape (`clip` is
+  // not `auto`/`scroll`, and an element already off `visible` never reaches `isAbsorbed()` either),
+  // so the raw `scrollWidth > clientWidth` measurement would otherwise fire. An element carrying
   // `text-overflow: ellipsis` together with a clipping `overflow-x` (`hidden` or `clip`) is the
   // house truncation idiom, a deliberate reading rather than a clip to flag; it is the same
   // self-absorption reasoning as `scrolls()`, applied to a box that clips instead of scrolling.

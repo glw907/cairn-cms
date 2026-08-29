@@ -16,6 +16,22 @@ Entry format: a heading plus labeled lines.
 - **Verified:** (audit entries; required on every family-originated export and every non-keep) the verifier pass that checked it.
 ```
 
+## login-csrf-no-same-browser-binding: magic-link confirm has no same-browser binding  (defer, 2026-08-27, csrf-hardening pass)
+
+- **Verdict:** defer. `confirmLoad`/`confirmAction` (`auth-routes.ts:170,185`) accept any
+  correctly-shaped token, minted for whichever browser requested it, with nothing binding the
+  confirming browser to the requesting one. An attacker who requests a magic link for a
+  victim's email and then hands the victim their own copy of the resulting link logs the
+  victim into the ATTACKER's session (a login-CSRF, distinct from the double-submit CSRF this
+  pass hardens). The newer `createAuthChannel` seam (`auth-channel/factory.ts:644-650,859`)
+  already carries the fix pattern: a `_pending` cookie holding a nonce, minted on request and
+  read back on confirm, so a confirm without the matching cookie fails. Ruled (Geoff,
+  2026-08-27): file, not fix, in this slice.
+- **Reopens on:** the conventions pass's auth-family reshapes, where `auth-routes.ts`'s
+  `requestAction`/`confirmAction` pair adopts the same `pendingCookie` nonce binding
+  `createAuthChannel` already proves.
+- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 4.
+
 ## session-cookie-derivation-out-of-csrf-slice: session cookie's secure/name derivation stays on `event.url.protocol`  (defer, 2026-08-29, csrf-hardening pass)
 
 - **Verdict:** defer. The CSRF cookie pair now derives its Secure bit and name from

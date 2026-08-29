@@ -61,6 +61,10 @@ export const load = (event) => {
 };
 ```
 
+`new Date(env.CAIRN_FIXED_TODAY)` yields an `Invalid Date` silently on a malformed value rather
+than throwing, so guard or validate the string before trusting it, or a typo in `CAIRN_FIXED_TODAY`
+surfaces as a mysteriously wrong baseline instead of a loud failure.
+
 The call site is what makes the seam real: `today` never reads `platform.env` for itself, so
 every route that needs the date passes `event.platform?.env` in explicitly, the same value a test
 can override with `CAIRN_FIXED_TODAY` and production never sets.

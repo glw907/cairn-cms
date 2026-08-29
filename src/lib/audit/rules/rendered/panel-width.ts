@@ -17,8 +17,8 @@
 // EVIDENCE: the column-drop recipe (hiding lower-priority summary columns under a breakpoint so a
 // row never needs to scroll) failed at its third consumer. The summary row column-dropped cleanly,
 // but the row's expanded PANEL is caller-authored content outside that column-drop, and a panel cell
-// given its own explicit width plus `overflow: hidden` (a `truncate`-style utility, or a fixed-width
-// inner layout) clipped a wide inline control mid-word at 390, with the document never scrolling and
+// given a fixed-width inner layout, or an `overflow: hidden` clamp carrying no `text-overflow:
+// ellipsis`, clipped a wide inline control mid-word at 390, with the document never scrolling and
 // `viewport-overflow` reporting clean.
 //
 // CONTRACT, both halves sharing the same qualifier: a summary row or an expanded panel is flagged

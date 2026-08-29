@@ -10,65 +10,43 @@ only the present.
 ## Current state
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
-`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. It raises the floors
-to Node `>=24`, `@sveltejs/kit ^2.70`, `svelte ^5.56.10`, and `@cloudflare/workers-types ^5`,
-moves Tidy to `claude-sonnet-5`, ships the admin upgrade map with `check:target-stack`, and fixes
-the five aksailingclub-org 0.95 adoption defects. `main` now carries the toolkit-seams pass
-unpublished under `## Unreleased` (release-size minor; the chip-grammar breaking changes ride
-the audit-remediation `Consumers must:` window).
+`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries the
+toolkit-seams pass AND the harvest-detection pass (merged 2026-08-29, `445e350f`) unpublished
+under `## Unreleased`; the breaking chip-grammar changes ride the audit-remediation
+`Consumers must:` window. CI on `main` is fully green (the stale visual baselines and norms
+manifest inherited from the toolkit-seams merge were regenerated at close).
 
 ## Immediate next action
 
-**Geoff updates the four consumer sites onto `0.96.0`.** Each site repo has its sheet committed
-locally (unpushed) at `docs/2026-08-22-cairn-0.96-update-instructions.md`: ecxc-ski, aksailingclub-org,
-and xcathletes-org are a bump plus the peer floors; 907-life is eleven releases behind and its
-sheet says to run it as a numbered site pass over the migration-notes entries. After the sites,
-the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable against the registry).
+**Execute the CSRF hardening pass** (`docs/superpowers/plans/2026-08-27-csrf-hardening-pass.md`,
+approved 2026-08-28): remediation slice 1, four serial tasks through the
+`cairn-implementer`/`diff-reviewer` chain, on a `csrf-hardening` worktree off the current `main`
+tip (the harvest-detection merge has landed, so branching is unblocked). Token ceiling 1.8M for
+the whole pass; every dispatch states the plan's security invariants; pass-end review must
+include `web-auth-security-reviewer` plus the live admin smoke with the stale-cookie
+`mismatch`-record check.
+
+**Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site repo has
+its sheet committed locally (unpushed) at `docs/2026-08-22-cairn-0.96-update-instructions.md`;
+907-life is eleven releases behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **The engine-consultation protocol is live (pass closed 2026-08-26; post-mortem in the
-  plan file).** The `engine-consult` skill and `engine-triage` agent exist; both pass
-  skills carry the hooks (cold-start tested, negative control included); briefs file at
-  `docs/internal/consultations/`; rulings live in `docs/internal/engine-rulings.md` (10
-  seeds + 535 audit entries). Both audits ran trustworthy: surface 535 items 384/57/94
-  keep/reshape/retire, internals+chassis 175 findings (10 rewrite-tier). Remediation is
-  the ROADMAP Now entry ("The any-site audit remediation"), one `Consumers must:` window,
-  before beta. The protocol's first live consultation (likely the next ASC or 907-life
-  pass) appends a short post-mortem to the ledger; the skill carries the self-retiring
-  reminder.
-- **ASC harvest absorption, behavior half: SHIPPED.** The toolkit-seams pass merged to
-  `main` 2026-08-27 (`e8cc85c8`), holds unpublished under `## Unreleased` (breaking chip
-  changes ride the audit-remediation `Consumers must:` window). Post-mortem in the plan
-  file. The pass's CSRF-403 diagnosis is now RULED and encoded in the approved
-  csrf-hardening plan (the remediation bullet below); nothing pends here.
-- **ASC harvest absorption, detection half: PAUSED CLEANLY mid-execution (weekly token
-  pool, 2026-08-28).** `2026-08-26-harvest-detection-pass.md`, six tasks serial. Tasks 1-4
-  are COMMITTED and diff-reviewed on the `harvest-detection` worktree
-  (`.claude/worktrees/harvest-detection`, branch pushed to origin, tip `7f455c45`; each
-  task's chain ran green, two fix rounds included). Tasks 5 (rendered panel-width rule) and
-  6 (chassis and docs) are NOT started; the worktree is clean at Task 4's commit (half-done
-  Task 5 edits were reverted). RESUME: in a fresh session inside cairn-cms, dispatch Tasks
-  5 and 6 from the plan through the `cairn-implementer` / `diff-reviewer` chain (below-six
-  rule, Agent tool per task; the old workflow run is not resumable cross-session), then run
-  the full `cairn-pass` pass-end ritual per the plan's own pass-end notes, merge, push.
-- **The audit remediation is designed, twice-reviewed, and its first three slice plans are
-  APPROVED (Geoff, 2026-08-28).** Frame:
-  `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md` (seven slices
-  after the foundations split: hardening, foundations A, foundations B, retires,
-  conventions, internals, chassis; ONE cut after chassis, no exceptions). Approved and
-  queued, each in a fresh session: `2026-08-27-csrf-hardening-pass.md` (after the
-  harvest-detection merge), `2026-08-28-foundations-a-pass.md`, then
-  `2026-08-28-foundations-b-pass.md` (task bodies finalized against A's merged surface
-  before dispatch). The retires-pass plan waits on foundations B's list (c) ruling.
+- **Audit remediation (ROADMAP Now).** Slice order: csrf-hardening (next, above), then
+  `2026-08-28-foundations-a-pass.md`, then `2026-08-28-foundations-b-pass.md` (task bodies
+  finalized against A's merged surface before dispatch; run A and B as one paired fresh
+  session). The retires-pass plan waits on foundations B's list (c) ruling. ONE release cut
+  after the chassis slice, no exceptions. The `list-role` descendant-selector re-grounding
+  (nine-list inventory in the friction log, 2026-08-29) and the `panel-width` closed-select
+  painted-width follow-up route to this initiative's internals slice.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
-  window above.
-- **`cairn-pub`, branch `pass-d-docs-tracks`.** Was pinned to a local tarball because it needed
-  the `reproductions` subpath; `0.95.0` now carries that subpath on the registry, so the branch
-  is un-pinnable and ready to repoint at a released version.
-- **The editors rewrite.** Queued behind the site updates above; runs in `~/Projects/cairn-pub`
-  on the same branch.
+  window.
+- **`cairn-pub`, branch `pass-d-docs-tracks`.** Un-pinnable against the registry since
+  `0.95.0`; the editors rewrite queues behind Geoff's site updates.
+- **Engine-consultation protocol live** (details in HISTORY, 2026-08-26). The first live
+  consultation appends a short post-mortem to the ledger; the skill carries the self-retiring
+  reminder.
 
 ## Open decisions
 
@@ -81,14 +59,15 @@ the editors rewrite in `cairn-pub` (`pass-d-docs-tracks`, now un-pinnable agains
 
 - A monthly Cloudflare capability-review routine (`trig_01GnFPkfx7EjrWKAuTBrXVdx`) reads
   `ROADMAP.md`'s "Platform watch: Cloudflare" section and emails a ranked report.
-- `packages/create-cairn-site/src/console/server.test.mjs:173` (the grace-window shutdown test)
-  failed once on CI at `0a6df513` and passed on rerun. Trigger: the next unexplained red test
-  job on that suite.
-- `ROADMAP.md`'s Now tier carries the `FieldInput` `ownership_invalid_mutation` fix (a plain prop
-  bound with `bind:this` against `EditPage`'s `$state`).
+- `packages/create-cairn-site/src/github/install.test.mjs` ("the concurrent installation poll
+  logs a periodic waiting line"): flaked once in a 30x local loop (2026-08-29) during the
+  grace-window deflake. Trigger: its next CI failure gets the same mock-timer deflake the
+  server grace-window tests received (that pair is FIXED and off watch).
+- `ROADMAP.md`'s Now tier carries the `FieldInput` `ownership_invalid_mutation` fix (a plain
+  prop bound with `bind:this` against `EditPage`'s `$state`).
 - Three ASC staging harvest docs (events-admin, events-redesign, assets-register) are folded
   into cairn and slated for deletion in the ASC repo. Trigger: the ASC `email-announce` branch
-  settles (it was in flight with warm uncommitted work on 2026-08-26, so nothing was touched).
+  settles.
 
 Everything else, every prior pass, release, and archived checkpoint, is in
 [`docs/HISTORY.md`](HISTORY.md).

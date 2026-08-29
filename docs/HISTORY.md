@@ -7,6 +7,36 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-08-29: harvest-detection pass merged; main's CI red healed
+
+Plan and post-mortem: `docs/superpowers/plans/2026-08-26-harvest-detection-pass.md`. Merged as
+`445e350f` (PR #39), holding unpublished. Six tasks: the `config.no-referrer-blanket` doctor
+check, `sheet` as a source list, four audit rules (stripe/trim parity, unlayered font clobber,
+`list-role` with in-tree `role="list"` adoption, `panel-width` with the new `row-expanded`
+rendered state), showcase smooth-scroll with router-scroll exclusion, and the two admin
+recipes. The pass-end domain reviews drove four fix rounds; the deflake of the scaffolder
+grace-window tests and the healing of main's inherited CI red (stale visual baselines and
+norms manifest from the toolkit-seams merge, regenerated at `3a5e2f3b`/`268c315e`) rode the
+same close.
+
+What a later pass would be wrong to rediscover: `no-referrer` scoped onto an
+`originMatches`-guarded route 403s its own POSTs (`Origin: null`), so the remedy for
+origin-guarded routes is `same-origin`; only the admin's double-submit routes tolerate
+`no-referrer` (ledger: `originmatches-strict-guard`). `panel-width` measures nothing at rest
+for panels (the `row-expanded` state exists for exactly this) and cannot see a closed
+`<select>`'s clipped value (`scrollWidth` never grows; painted-width follow-up filed).
+`list-role` covers own-class triggers only; DaisyUI's descendant-selector styling
+(`.menu :where(li)`) leaves nine engine lists outside it (inventory in the friction log,
+routed to the remediation initiative). `html { scroll-behavior: smooth }` animates Kit's own
+`scrollTo` after every navigation; the chassis excludes router scrolls via a
+`beforeNavigate`/`afterNavigate` class toggle, with `navigation.complete.catch` covering
+cancelled navigations (`onNavigate` cleanup never fires on an aborted nav). Node `setTimeout`
+can fire sub-millisecond early at small scales, so wall-clock grace-window assertions flake on
+CI; the deflaked tests use `node:test` mock timers. A stale local showcase install (the npm
+`file:`-dep cache trap) masks norms drift: regenerate the manifest only from a clean
+`npm ci --prefix examples/showcase`. Baselines regenerate via
+`gh workflow run e2e.yml --ref main -f update_snapshots=true`, which commits the result.
+
 ## 2026-08-27: toolkit-seams pass merged
 
 Plan and post-mortem: `docs/superpowers/plans/2026-08-26-toolkit-seams-pass.md`. Six ASC-harvest

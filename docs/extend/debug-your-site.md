@@ -63,7 +63,12 @@ export const load = (event) => {
 
 `new Date(env.CAIRN_FIXED_TODAY)` yields an `Invalid Date` silently on a malformed value rather
 than throwing, so guard or validate the string before trusting it, or a typo in `CAIRN_FIXED_TODAY`
-surfaces as a mysteriously wrong baseline instead of a loud failure.
+surfaces as a mysteriously wrong baseline instead of a loud failure. Write the string as an
+explicit instant (`2026-08-29T00:00:00Z`, not the bare `2026-08-29` date-only form): the date-only
+form parses as UTC midnight, so a render on a machine west of UTC formats it as the *previous*
+local day, and a baseline pinned on one side of that boundary disagrees with a rebuild formatted on
+the other. Format any date your own code derives from `today()` in a timezone-stable way (UTC, or
+an explicit fixed zone), not the runner's local timezone, for the same reason.
 
 The call site is what makes the seam real: `today` never reads `platform.env` for itself, so
 every route that needs the date passes `event.platform?.env` in explicitly, the same value a test
@@ -74,3 +79,20 @@ deploy with no `CAIRN_FIXED_TODAY` set falls back to the real clock exactly as b
 that renders a date reads through this one function, so a baseline captured on one day and a
 rebuild compared against it on another day both see the same pinned date, and the baseline holds
 until you deliberately change it.
+
+This seam only pins the value `today()` returns; it needs a real `platform.env` to read from,
+which `event.platform` is under `wrangler dev`/`wrangler pages dev` and is not under plain `vite
+dev` or `vite preview`. Outside the Workers runtime `event.platform` is `undefined`, so
+`event.platform?.env ?? {}` silently falls back to `{}`, `CAIRN_FIXED_TODAY` is never read, and
+`today()` returns the live clock with no error to say so. Run the CI job that captures a
+visual-regression baseline under the Workers runtime (`wrangler pages dev`, or your adapter's
+equivalent), or, for a non-Workers dev server, read the same variable from `process.env` as a
+fallback so the pin still takes effect locally:
+
+```ts
+// src/lib/today.ts
+export function today(env: { CAIRN_FIXED_TODAY?: string }): Date {
+  const fixed = env.CAIRN_FIXED_TODAY ?? process.env.CAIRN_FIXED_TODAY;
+  return fixed ? new Date(fixed) : new Date();
+}
+```

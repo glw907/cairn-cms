@@ -170,77 +170,127 @@ because getting the failure path right takes a few tries. A primitive is worth a
 second consumer needs the identical shape.
 
 A form inside a native `<dialog>`, submitted with `use:enhance` so a validation failure doesn't
-navigate the whole page away from the dialog the user was just looking at. Two behaviors carry the
-contract: a failure keeps the dialog open and moves focus to a dialog-local `role="alert"`, and a
-success calls `update({ reset: false })` before closing, so nothing resets the form's own state
-out from under a submit that's still resolving.
+navigate the whole page away from the dialog the user was just looking at. The contract turns on
+which of `enhance`'s four `ActionResult` types the server returned, since SvelteKit's own default
+handling, what `update()` runs, does something different to the dialog for each one:
+
+- `'failure'` (`fail()`, a validation rejection) and `'error'` (an unhandled server exception)
+  both report their message inside the dialog and keep it open, though only `'failure'` calls
+  `update()`. `update()` runs `applyAction(result)`, which for an `'error'` result renders the
+  nearest `+error` page, destroying the dialog along with the rest of the page; reporting the
+  failure locally and skipping `update()` on that branch is what keeps the dialog alive through a
+  server-side exception instead.
+- `'success'` closes the dialog immediately, then calls `update()`, so the `invalidateAll()` that
+  follows a successful submission never holds an already-closed dialog open while it resolves.
+- `'redirect'` is a deliberate navigation the action chose (handing off to another page); it calls
+  `update()` and lets SvelteKit's default handling proceed, the one result type this recipe
+  doesn't otherwise intercept.
+
+`reset`, the option `update()` takes, is consulted only on a `'success'` result: SvelteKit never
+resets a `<form>`'s own values after `'failure'`, so passing `{ reset: false }` on that branch is a
+no-op. This recipe never sets it at all, since the dialog is closing on success anyway and which
+way the form would have reset serves nothing.
+
+The `<dialog>` carries `aria-labelledby`, pointing at its own heading, so it has an accessible name
+independent of whatever text happens to be inside it; Escape already closes it, native `<dialog>`
+behavior under `showModal()`. The Cancel button in `modal-action` is what a pointer or touch user
+without a keyboard shortcut gets: a plain click handler rather than daisyUI's own
+`<form method="dialog">` idiom, since that idiom needs its own `<form>` and this recipe's
+`modal-box` already holds one for the POST, and a second, nested `<form>` isn't valid HTML.
+
+The error paragraph is mounted once, at load, never created only when a failure occurs:
+`role="alert"` on an element that doesn't exist yet when the failure fires has nothing to
+announce, so an on-demand `{#if errorMessage}` misses the very first failure a screen reader would
+otherwise hear. `sr-only` while empty keeps it out of the visual layout without removing it from
+the accessibility tree, and it swaps to the visible `alert alert-error` classes once `errorMessage`
+holds text. The note input's `aria-describedby` ties it to that same paragraph's id at all times,
+and `aria-invalid` flips true while a message is showing. Focus moves to the input, not the alert
+text: the input's own new description is what a screen reader announces on focus, so moving focus
+there is the one signal a user gets, instead of two competing announcements from a live region
+firing and a separate focus move landing somewhere else. The Approve button disables for the
+duration of a submission (`submitting`), so a second click can't fire the action twice before the
+first response lands.
 
 ```svelte
 <!-- src/routes/admin/club/events/ApproveDialog.svelte -->
 <script lang="ts">
-  import { tick } from 'svelte';
   import { enhance } from '$app/forms';
   import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
-  import type { ActionResult } from '@sveltejs/kit';
+  import type { SubmitFunction } from '@sveltejs/kit';
 
   let { id }: { id: string } = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
-  let alertBox = $state<HTMLElement | null>(null);
-  let errorMessage = $state<string | undefined>(undefined);
+  let noteInput = $state<HTMLInputElement | null>(null);
+  let errorMessage = $state('');
+  let submitting = $state(false);
+
+  const titleId = `approve-title-${id}`;
+  const errorId = `approve-error-${id}`;
 
   export function open() {
-    errorMessage = undefined;
+    errorMessage = '';
     dialog?.showModal();
   }
 
-  type EnhanceUpdate = (options?: { reset?: boolean }) => Promise<void>;
-
-  async function onResult(result: ActionResult, update: EnhanceUpdate) {
-    if (result.type === 'failure') {
-      errorMessage = (result.data?.error as string | undefined) ?? 'Something went wrong.';
-      await update({ reset: false });
-      await tick();
-      alertBox?.focus();
-      return;
-    }
-    await update({ reset: false });
-    if (result.type === 'success') dialog?.close();
-  }
+  const onSubmit: SubmitFunction = () => {
+    submitting = true;
+    errorMessage = '';
+    return async ({ result, update }) => {
+      submitting = false;
+      switch (result.type) {
+        case 'failure':
+          errorMessage = (result.data?.error as string | undefined) ?? 'Something went wrong.';
+          await update();
+          noteInput?.focus();
+          return;
+        case 'error':
+          // update() would run applyAction(result), which renders the nearest +error page for an
+          // 'error' result and destroys this dialog with it; report the failure locally instead
+          // and never call it.
+          errorMessage = 'Something went wrong.';
+          noteInput?.focus();
+          return;
+        case 'success':
+          // Close before update() resolves, so the dialog never sits open through the
+          // invalidateAll() that follows a successful submission.
+          dialog?.close();
+          await update();
+          return;
+        case 'redirect':
+          // A deliberate navigation the action chose; let the default handling proceed.
+          await update();
+          return;
+      }
+    };
+  };
 </script>
 
-<dialog bind:this={dialog} class="modal">
+<dialog bind:this={dialog} class="modal" aria-labelledby={titleId}>
   <div class="modal-box">
-    {#if errorMessage}
-      <div role="alert" tabindex="-1" bind:this={alertBox} class="alert alert-error mb-3">
-        {errorMessage}
-      </div>
-    {/if}
-    <form
-      method="POST"
-      action="?/approve"
-      use:enhance={() => ({ result, update }) => onResult(result, update)}
-    >
+    <h2 id={titleId} class="text-lg font-semibold">Approve</h2>
+    <p id={errorId} role="alert" class={errorMessage ? 'alert alert-error mt-3' : 'sr-only'}>
+      {errorMessage}
+    </p>
+    <form method="POST" action="?/approve" use:enhance={onSubmit}>
       <input type="hidden" name="id" value={id} />
       <FieldLabel label="Note">
-        <input class="input" name="note" />
+        <input
+          class="input"
+          name="note"
+          bind:this={noteInput}
+          aria-describedby={errorId}
+          aria-invalid={errorMessage ? 'true' : undefined}
+        />
       </FieldLabel>
-      <button type="submit" class="btn btn-primary mt-4">Approve</button>
+      <div class="modal-action">
+        <button type="button" class="btn" onclick={() => dialog?.close()}>Cancel</button>
+        <button type="submit" class="btn btn-primary" disabled={submitting}>Approve</button>
+      </div>
     </form>
   </div>
 </dialog>
 ```
-
-`role="alert"` announces the message the instant it renders; the explicit `tabindex="-1"` plus the
-`focus()` call after `update()` moves the user's own keyboard focus there too, not only a screen
-reader's attention, since a sighted keyboard user gets no visual cue that anything happened unless
-focus itself moves. The `await tick()` between `update()` and `focus()` matters: `errorMessage` is
-what makes the alert element exist at all, and nothing guarantees Svelte has flushed that reactive
-update to the DOM by the time `update()` resolves, so a `focus()` call without `tick()` can run
-before Svelte binds `alertBox` and silently do nothing. `dialog?.close()` runs only on `'success'`,
-never on `'error'` (an unhandled exception, which is a different failure than a validation
-`fail()`) or `'redirect'`, so the dialog stays open and legible for whatever the caller does with
-either of those next.
 
 ## Recipe: load when the panel opens
 
@@ -269,14 +319,19 @@ free.
   let expandedId = $state<string | null>(null);
   let details = $state<Record<string, MemberDetail>>({});
   let failed = $state<Record<string, boolean>>({});
+  let loading = $state<Record<string, boolean>>({});
 
   async function loadDetail(id: string) {
-    const response = await fetch(`/admin/club/roster/${id}/detail`);
-    if (response.ok) {
+    loading[id] = true;
+    try {
+      const response = await fetch(`/admin/club/roster/${id}/detail`);
+      if (!response.ok) throw new Error(`status ${response.status}`);
       details[id] = (await response.json()) as MemberDetail;
       delete failed[id];
-    } else {
+    } catch {
       failed[id] = true;
+    } finally {
+      delete loading[id];
     }
   }
 
@@ -304,16 +359,25 @@ free.
           <td>{member.name}</td>
         {/snippet}
         {#snippet panel(row)}
-          {#if details[row.id]}
-            <p>{details[row.id]?.email}</p>
-          {:else if failed[row.id]}
-            <p>
-              Couldn't load member details.
-              <button type="button" class="link" onclick={() => loadDetail(row.id)}>Retry</button>
-            </p>
-          {:else}
-            <p>Loading...</p>
-          {/if}
+          <div role="status">
+            {#if details[row.id]}
+              <p>{details[row.id]?.email}</p>
+            {:else if failed[row.id]}
+              <p>
+                Couldn't load member details.
+                <button
+                  type="button"
+                  class="link"
+                  disabled={loading[row.id]}
+                  onclick={() => loadDetail(row.id)}
+                >
+                  Retry
+                </button>
+              </p>
+            {:else}
+              <p>Loading…</p>
+            {/if}
+          </div>
         {/snippet}
       </ExpandableRow>
     {/each}
@@ -324,17 +388,42 @@ free.
 The `header` snippet declares a second `<th scope="col">` to match `ExpandableRow`'s two body
 cells per row, the summary cell and the component's own trailing trigger cell (which is why
 `colspan={2}` is correct on the panel row); its name is screen-reader-only since the trigger
-column carries no visible header text of its own.
+column carries no visible header text of its own. `role="status"` on each panel's body wrapper
+makes the Loading → detail → error transition itself the thing a screen reader announces, not
+only the retry button's own label; `status` is an implicitly polite live region, so it never
+interrupts whatever the user is doing elsewhere on the page.
 
 The cache (`details`, keyed by row id) is what makes a repeat toggle free, and a failed fetch is
-never cached as if it succeeded: `loadDetail` only writes to `details` on a `response.ok`, so a
-failure leaves the row's key absent from `details` and instead sets `failed[id]`, which the panel
-renders as its own state, distinct from `Loading…`, with a retry action that calls `loadDetail`
-again. A `load` that streamed the same data with SvelteKit's own promise streaming (`return {
-members, details: loadDetails() }` with `details` an unawaited promise) still runs the fetch for
-every row on first paint; streaming
-only defers when a promise *resolves* into the page, not whether it *runs*, so it doesn't skip a
-row nobody ever opens the way an open-triggered fetch does.
+never cached as if it succeeded: `loadDetail` only writes to `details` after a response that's both
+`ok` and parses as JSON, so a network failure, a non-OK status, and an endpoint that returns HTML
+(SvelteKit's own catch-all for a route that doesn't exist) all land in the same `catch`, leaving
+the row's key absent from `details` and setting `failed[id]` instead, which the panel renders as
+its own state, distinct from `Loading…`, with a retry action that calls `loadDetail` again. The
+`loading` flag is what keeps that retry honest while a request (first or retry) is in flight: the
+button disables rather than staying clickable through a request it already started. A `load` that
+streamed the same data with SvelteKit's own promise streaming (`return { members, details:
+loadDetails() }` with `details` an unawaited promise) still runs the fetch for every row on first
+paint; streaming only defers when a promise *resolves* into the page, not whether it *runs*, so it
+doesn't skip a row nobody ever opens the way an open-triggered fetch does.
+
+The endpoint this fetch calls needs its own route, and its own access-map rule: a route nested
+under an already-gated page inherits the auth guard, which covers the whole `/admin` subtree, but
+never a page's own `requireAccess` rule, which is scoped to that page's route id and no other. Add
+`requireAccess` to the detail endpoint itself, and declare its path (or the whole roster prefix) in
+the access map the same way [Restrict admin access by role](./restrict-admin-access.md) describes
+for any other route, or every session that can reach the roster list can also read a member's
+detail with no rule ever admitting them.
+
+```ts
+// src/routes/admin/club/roster/[id]/detail/+server.ts
+import { json } from '@sveltejs/kit';
+import { requireAccess } from '@glw907/cairn-cms/sveltekit';
+
+export const GET = (event) => {
+  requireAccess(event);
+  return json({ email: 'member@example.com', joined: '2026-01-01' });
+};
+```
 
 ## You know it worked when
 

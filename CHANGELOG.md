@@ -111,8 +111,15 @@
 - The showcase's public theme (`examples/showcase/src/theme/site.css`, baked into every scaffolded
   site) gains `scroll-behavior: smooth` on `html`, so an in-page anchor jump or a focused heading
   glides to the existing `scroll-padding-top` offset instead of snapping; a `prefers-reduced-motion:
-  reduce` query restores an instant jump for anyone who asked the OS for less motion. Consumers must:
-  nothing; a site that already copied `site.css` during scaffolding can pull the same two rules.
+  reduce` query restores an instant jump for anyone who asked the OS for less motion. Left alone,
+  `scroll-behavior: smooth` also animates SvelteKit's own post-navigation scroll reset (a bare
+  `window.scrollTo(x, y)`, which the CSSOM View spec animates the same as any other scroll on a
+  smooth-scrolling element), turning every route change into a glide with a mid-animation focus
+  reset; the (site) group's own layout now brackets the router's own scroll with a
+  `beforeNavigate`/`afterNavigate` pair that toggles a `cairn-router-scrolling` class, forcing
+  `scroll-behavior: auto` for that one scroll only, so a reader's own anchor jump or focused
+  heading still glides. Consumers must: nothing; a site that already copied `site.css` and the
+  (site) layout during scaffolding can pull the same rules and the toggle.
 
 ### Changed
 

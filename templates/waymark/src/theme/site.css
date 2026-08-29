@@ -54,6 +54,22 @@ html {
   }
 }
 
+/* SvelteKit's own post-navigation scroll reset (client.js) is a bare `window.scrollTo(x, y)`; the
+   CSSOM View spec animates ANY scroll on an element whose computed scroll-behavior is smooth, that
+   call included, not only a reader's own anchor jump. Left alone, `scroll-behavior: smooth` above
+   turns every route change into a multi-hundred-millisecond glide back to the top, with SvelteKit's
+   own post-scroll focus reset landing mid-glide. The (site) group's own layout
+   (`routes/(site)/+layout.svelte`) brackets exactly the window the router's scroll happens in with
+   a beforeNavigate/afterNavigate pair that toggles this class, so only the router's own scroll
+   goes instant; an in-page anchor jump or a focused heading, which never fires a navigation, still
+   glides (the admin never carries this class or this stylesheet at all). Verified
+   against @sveltejs/kit client.js: the scroll call runs strictly before afterNavigate's callbacks
+   fire, so the class is still present when the router's own scroll happens and only removed once
+   it has already resolved. */
+.cairn-router-scrolling {
+  scroll-behavior: auto;
+}
+
 /* The centered reading column at the measure. The chrome components (SiteHeader, SiteFooter) cap
    their inner content at this same measure, so their left edge lines up with the body copy instead
    of centering independently at a wider band; this is the container the editor preview frame

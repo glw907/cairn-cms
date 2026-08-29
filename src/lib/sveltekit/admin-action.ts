@@ -12,7 +12,7 @@
 import { error, isActionFailure, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { DEV } from 'esm-env';
 import { csrfCookieName, tokensMatch } from '../auth/crypto.js';
-import { validateCsrfHeader } from './csrf.js';
+import { validateCsrfHeader, csrfSecure } from './csrf.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
@@ -161,7 +161,7 @@ export function adminAction<T>(
     // FormData with no csrf field still passes this inner check the same way it already passes
     // the guard's outer one.
     if (!validateCsrfHeader(event)) {
-      const cookie = event.cookies.get(csrfCookieName(event.url.protocol === 'https:'));
+      const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
       const submitted = String(form.get('csrf') ?? '');
       if (!cookie || !tokensMatch(submitted, cookie)) {
         // The admin guard already validates this double-submit pair on every unsafe /admin/** POST

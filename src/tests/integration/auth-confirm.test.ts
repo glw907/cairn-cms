@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { seedEditor, makeEvent, makeCookies, makeRecordingCookies, countRows, expectRedirect } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
-import { generateToken, hashToken, sessionCookieName } from '../../lib/auth/crypto.js';
+import { generateToken, hashToken, sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
 import { issueToken } from '../../lib/auth/store.js';
 
 const db = env.AUTH_DB;
@@ -115,6 +115,17 @@ describe('confirm and logout logging', () => {
     const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
     expect(events).toContain('auth.session.destroyed');
     vi.restoreAllMocks();
+  });
+
+  it('deletes the CSRF cookie alongside the session cookie, so a persistent token cannot survive sign-out', async () => {
+    const token = await liveToken('ed@x.dev');
+    const cookies = makeCookies({ [csrfCookieName(true)]: 'a-live-csrf-token' });
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    expect(cookies.get(csrfCookieName(true))).toBe('a-live-csrf-token');
+    const logoutEvent = makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies });
+    await expectRedirect(() => routes.logoutAction(logoutEvent));
+    expect(cookies.get(sessionCookieName(true))).toBeUndefined();
+    expect(cookies.get(csrfCookieName(true))).toBeUndefined();
   });
 
   it('clears the browser cookie even when the session-row delete fails, so a D1 fault never leaves both valid (HIGH2)', async () => {

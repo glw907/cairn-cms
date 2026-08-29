@@ -11,6 +11,7 @@ import {
   SESSION_TTL_MS,
   SEND_COOLDOWN_MS,
   sessionCookieName,
+  csrfCookieName,
 } from '../auth/crypto.js';
 import {
   findEditor,
@@ -22,7 +23,7 @@ import {
   insertOwnerIfEmpty,
 } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
-import { issueCsrfToken } from './csrf.js';
+import { issueCsrfToken, csrfSecure } from './csrf.js';
 import { log } from '../log/index.js';
 import type { CairnEvent } from './types.js';
 
@@ -208,21 +209,23 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
   }
 
   /**
-   * POST /admin/auth/logout. Clears the cookie first, so a fault below still kills the
-   *  browser-side credential rather than leaving the session both server- and client-side valid
+   * POST /admin/auth/logout. Clears both cookies first, so a fault below still kills the
+   *  browser-side credentials rather than leaving the session both server- and client-side valid
    *  (the cookie is the only thing a subsequent request can present); then best-effort deletes
-   *  the session row. A `deleteSession` fault is caught and logged here, never rethrown to
-   *  `viewAction`'s generic `fail(500)`: this action posts to the bare `/admin`, whose own load
-   *  (`indexLoad`) always redirects away before ever rendering a component that reads `form`, so a
-   *  `fail()` here would be silently discarded. The editor is already signed out either way, so
-   *  the redirect to `/admin/login` stays unconditional; a lingering D1 row with no valid cookie
-   *  presenting it is not reachable.
+   *  the session row. The CSRF cookie is deleted alongside the session cookie: a persistent
+   *  double-submit token must not survive a sign-out. A `deleteSession` fault is caught and
+   *  logged here, never rethrown to `viewAction`'s generic `fail(500)`: this action posts to the
+   *  bare `/admin`, whose own load (`indexLoad`) always redirects away before ever rendering a
+   *  component that reads `form`, so a `fail()` here would be silently discarded. The editor is
+   *  already signed out either way, so the redirect to `/admin/login` stays unconditional; a
+   *  lingering D1 row with no valid cookie presenting it is not reachable.
    */
   async function logoutAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
     const name = sessionCookieName(event.url.protocol === 'https:');
     const id = event.cookies.get(name);
     event.cookies.delete(name, { path: '/' });
+    event.cookies.delete(csrfCookieName(csrfSecure(event)), { path: '/' });
     if (id) {
       try {
         await deleteSession(db, id);

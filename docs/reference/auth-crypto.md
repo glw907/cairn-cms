@@ -123,7 +123,11 @@ attributes, this function owns only the name.
 `secure` must reflect the scheme the browser itself sees. Behind upstream TLS termination, a
 reverse proxy or a platform edge, `url.protocol` is not that scheme; derive `secure` from the
 externally visible one instead, such as a trusted `CF-Visitor` or `X-Forwarded-Proto` header the
-platform sets.
+platform sets. The engine's own session and CSRF cookies derive `secure` from the site's
+configured `PUBLIC_ORIGIN` rather than a header: a site already declares that value, and a
+configured origin can't be spoofed by an intermediate hop the way a forwarded-proto header can. A
+site building its own second-audience cookie without an equivalent configured origin reaches for
+the preceding header-based derivation instead.
 
 `base` must not already carry a `__Host-` or `__Secure-` prefix (double-prefixing produces a
 cookie the browser silently rejects, so this throws instead of shipping a cookie that never

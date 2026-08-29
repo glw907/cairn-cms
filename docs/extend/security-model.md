@@ -62,6 +62,18 @@ it, rather than to a `Domain` attribute a sibling host could also set. Local `ht
 drops the prefix, since `__Host-` requires `Secure` unconditionally and a dev cookie has no TLS to
 set it with. The CSRF double-submit cookie follows the identical naming rule.
 
+The CSRF cookie's full attribute set: `HttpOnly`, `Path=/`, `SameSite=Lax` set explicitly (never
+by attribute omission, since an omitted `SameSite` gets a browser's own default treatment for a
+short window right when a fresh cookie is most likely to be used), and a `Max-Age` matching the
+session cookie's own thirty-day lifetime, so the pair lives and dies together. `Secure` derives
+from the site's configured `PUBLIC_ORIGIN`, not from the request's own protocol, so a deployment
+behind infrastructure the engine does not control still mints the cookie the browser expects; a
+request to a local host (`localhost`, `127.0.0.1`, and their siblings) is the one exception,
+always deriving from its own protocol so local `http` development never tries to mint a `__Host-`
+cookie it cannot set. The token itself never rotates on a normal confirm-load re-issue; only its
+`Max-Age` re-anchors, so a second open admin tab's already-rendered form field keeps matching the
+cookie.
+
 ## CSRF: cairn owns it, not the framework
 
 SvelteKit's default CSRF check compares the request's `Origin` header against the site's own

@@ -4,7 +4,9 @@ import {
   originMatches,
   issueCsrfToken,
   validateCsrfToken,
+  csrfSecure,
 } from '../../lib/sveltekit/csrf.js';
+import { SESSION_TTL_MS } from '../../lib/auth/crypto.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 
 function jar(initial: Record<string, string> = {}) {
@@ -66,21 +68,26 @@ describe('originMatches', () => {
   });
 });
 
+const SESSION_MAX_AGE = Math.floor(SESSION_TTL_MS / 1000);
+
 describe('issueCsrfToken', () => {
-  it('mints and sets a __Host- cookie when absent', () => {
+  it('mints and sets a __Host- cookie when absent, SameSite=Lax explicit with the session maxAge', () => {
     const cookies = jar();
     const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies });
     expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(cookies.sets[0].name).toBe('__Host-cairn_csrf');
-    expect(cookies.sets[0].opts).toMatchObject({ path: '/', httpOnly: true, secure: true, sameSite: 'strict' });
-    expect(cookies.sets[0].opts.maxAge).toBeUndefined();
+    expect(cookies.sets[0].opts).toMatchObject({ path: '/', httpOnly: true, secure: true, sameSite: 'lax' });
+    expect(cookies.sets[0].opts.maxAge).toBe(SESSION_MAX_AGE);
   });
 
-  it('reuses a present cookie and sets nothing', () => {
+  it('re-anchors a present cookie with a fresh maxAge and the unchanged value (no rotate-on-confirm)', () => {
     const cookies = jar({ '__Host-cairn_csrf': 'EXISTING' });
     const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies });
     expect(token).toBe('EXISTING');
-    expect(cookies.sets).toHaveLength(0);
+    expect(cookies.sets).toHaveLength(1);
+    expect(cookies.sets[0].value).toBe('EXISTING');
+    expect(cookies.sets[0].opts).toMatchObject({ path: '/', httpOnly: true, secure: true, sameSite: 'lax' });
+    expect(cookies.sets[0].opts.maxAge).toBe(SESSION_MAX_AGE);
   });
 
   it('drops the prefix and Secure on http', () => {
@@ -88,6 +95,37 @@ describe('issueCsrfToken', () => {
     issueCsrfToken({ url: new URL('http://localhost/admin/login'), cookies });
     expect(cookies.sets[0].name).toBe('cairn_csrf');
     expect(cookies.sets[0].opts.secure).toBe(false);
+  });
+});
+
+describe('csrfSecure', () => {
+  it('derives from the request protocol on a local host, ignoring PUBLIC_ORIGIN', () => {
+    const event = {
+      url: new URL('http://localhost:8788/admin/login'),
+      platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
+    };
+    expect(csrfSecure(event)).toBe(false);
+  });
+
+  it('derives from PUBLIC_ORIGIN on a non-local host when it parses', () => {
+    const event = {
+      url: new URL('http://site.example/admin/login'),
+      platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
+    };
+    expect(csrfSecure(event)).toBe(true);
+  });
+
+  it('falls back to the request protocol when PUBLIC_ORIGIN is absent', () => {
+    const event = { url: new URL('https://site.example/admin/login'), platform: { env: {} } };
+    expect(csrfSecure(event)).toBe(true);
+  });
+
+  it('falls back to the request protocol when PUBLIC_ORIGIN does not parse', () => {
+    const event = {
+      url: new URL('https://site.example/admin/login'),
+      platform: { env: { PUBLIC_ORIGIN: 'not a url' } },
+    };
+    expect(csrfSecure(event)).toBe(true);
   });
 });
 

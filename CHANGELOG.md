@@ -167,6 +167,18 @@
 
 ### Fixed
 
+- The CSRF cookie now sets `SameSite=Lax` explicitly (never by attribute omission) with a
+  `Max-Age` matching the session cookie's own thirty-day lifetime, re-anchoring that `Max-Age` on
+  every issue while the cookie is present rather than rotating its value, so the pair lives and
+  dies together without invalidating a second open admin tab's already-rendered form. `Secure`
+  now derives from the site's configured `PUBLIC_ORIGIN` rather than the request's own protocol
+  (falling back to the request's protocol when `PUBLIC_ORIGIN` is unset or a local host is making
+  the request), closing a `SameSite=Strict` cross-tab denial through the public login page and an
+  unstable cookie-name-flip class. `logoutAction` now deletes the CSRF cookie alongside the
+  session cookie, so a persistent double-submit token can't survive a sign-out. Consumers must:
+  nothing. A browser holding an old `SameSite=Strict` cookie re-mints exactly once after deploy,
+  as that cookie ages out.
+
 - An unchecked `.checkbox`/`.radio` in the packaged admin sheet raises its edge from daisyUI's
   stock 20% `--color-base-content` mix (measured 1.492:1 light / 1.773:1 dark against `base-100`,
   under the WCAG 1.4.11 3:1 non-text floor) to the same 55% mix already locked for the scrollbar

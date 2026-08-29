@@ -133,9 +133,9 @@ the flag, since it is a network POST against a production site.
 
 The probe asserts the envelope a working sign-in presents, in two steps:
 
-1. `GET <url>/admin/login` answers 200, sets the CSRF cookie (`__Host-cairn_csrf` on https, bare
-   `cairn_csrf` on local http), and serves a page carrying the `name="csrf"` hidden field with a
-   value and a form posting the `?/request` action.
+1. `GET <url>/admin/login` answers 200, sets the CSRF cookie (`__Host-cairn_csrf` when the probed
+   origin is https, bare `cairn_csrf` on a local http origin), and serves a page carrying the
+   `name="csrf"` hidden field with a value and a form posting the `?/request` action.
 2. `POST <url>/admin/login?/request` with the cookie and field echoed answers the serialized
    action result for a sent request. A `throttled` answer also passes, since a re-run inside a
    real editor's cooldown window still proves the path; the detail line says so.

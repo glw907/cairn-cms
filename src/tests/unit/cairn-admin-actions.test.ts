@@ -193,7 +193,9 @@ describe('auth actions', () => {
     });
     await expectRedirect(admin.actions.logout(event as never), '/admin/login');
     expect(calls.some((c) => c.sql.includes('DELETE FROM session') && c.args[0] === 'sid')).toBe(true);
-    expect(event._cookieDeletes).toEqual(['__Host-cairn_session']);
+    // The CSRF cookie is deleted alongside the session cookie, so a persistent double-submit
+    // token cannot survive sign-out.
+    expect(event._cookieDeletes).toEqual(['__Host-cairn_session', '__Host-cairn_csrf']);
   });
 });
 

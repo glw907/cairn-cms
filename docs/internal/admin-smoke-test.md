@@ -136,9 +136,12 @@ delete. Never point the purge at a real asset.
    cookie/field) pair, the cairn-owned double-submit the guard enforces
    (`src/lib/sveltekit/guard.ts`, Rule 1). The cookie is minted lazily the first time an authed
    admin page loads (`issueCsrfToken` in `src/lib/sveltekit/csrf.ts`), named `cairn_csrf` on
-   local http and `__Host-cairn_csrf` on the deployed https Worker, the same scheme rule as the
-   session cookie. A GET to `/admin/media` with the session cookie from the procedure above sets
-   it if it is not already set from an earlier check in this run:
+   local http and `__Host-cairn_csrf` on a deployed Worker with an https `PUBLIC_ORIGIN`
+   configured. It carries `SameSite=Lax` set explicitly and a `Max-Age` matching the session
+   cookie's own lifetime, re-anchored (never rotated) on every subsequent authed page load, so a
+   token minted once keeps working across tabs for as long as the session does. A GET to
+   `/admin/media` with the session cookie from the procedure above sets it if it is not already
+   set from an earlier check in this run:
    ```bash
    curl -s -D - -H "$CK" http://localhost:8787/admin/media -o /dev/null | grep -i 'set-cookie: cairn_csrf'
    ```

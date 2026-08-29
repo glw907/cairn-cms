@@ -230,7 +230,7 @@ describe('https requirement on a deployed host', () => {
   it('still hardens the help page with the baseline security headers', async () => {
     const res = await handle({ event: httpEvent('/admin/login'), resolve: async () => OK });
     expect(res.headers.get('X-Frame-Options')).toBe('DENY');
-    expect(res.headers.get('Cache-Control')).toBe('no-store');
+    expect(res.headers.get('Cache-Control')).toBe('private, no-store');
   });
 
   it('exempts local http development (wrangler dev)', async () => {
@@ -254,6 +254,7 @@ describe('admin security headers (Unit 2)', () => {
     expect(res.headers.get('Referrer-Policy')).toBe('no-referrer');
     expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000');
     expect(res.headers.get('Permissions-Policy')).toBe('camera=(), microphone=(), geolocation=()');
+    expect(res.headers.get('Cache-Control')).toBe('private, no-store');
   });
 
   it('attaches the headers to a public admin page too', async () => {

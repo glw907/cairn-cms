@@ -161,8 +161,28 @@ describe('shellLoad', () => {
     const routes = createContentRoutes(runtime());
     const { shell } = await routes.shellLoad(event('/admin/posts', 'owner', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
+    expect(shell.csrf.length).toBeGreaterThan(0);
     expect(shell.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
     await shell.pendingEntries;
+  });
+
+  it('throws rather than silently minting an empty token when an untyped caller omits cookies (the removed empty-token fallback that used to render every admin form permanently 403)', async () => {
+    const routes = createContentRoutes(runtime());
+    // CairnEvent.cookies is required, so no compliant caller can hit this; an untyped caller
+    // that skips it must fail loudly instead of the old ternary's silent `csrf: ''`.
+    const noCookiesEvent = {
+      url: new URL('https://test.example/admin/posts'),
+      params: {},
+      route: { id: '/admin/[...path]' },
+      request: new Request('https://test.example/admin/posts'),
+      locals: {
+        cairnEditor: { email: 'e@test', displayName: 'Ed', role: 'owner', capability: 'owner' },
+        cairnBackend: quickFailBackend(),
+      },
+      platform: { env: {} },
+      setHeaders: () => {},
+    };
+    await expect(routes.shellLoad(noCookiesEvent as never)).rejects.toThrow();
   });
 
   it('denies the manage-editors capability to an editor', async () => {

@@ -24,6 +24,15 @@ describe('admin-response helpers', () => {
     expect(headers.get('Strict-Transport-Security')).toBe('max-age=63072000');
   });
 
+  // Under Lax the cookie is re-set far less often (issueCsrfToken re-anchors Max-Age on a present
+  // cookie rather than a fresh Set-Cookie), which removed an accidental Set-Cookie cache
+  // suppressor on admin HTML that embeds the CSRF token and the editor's identity.
+  it('marks the admin response private and never cached', () => {
+    const headers = new Headers();
+    applySecurityHeaders(headers);
+    expect(headers.get('Cache-Control')).toBe('private, no-store');
+  });
+
   it('omits Strict-Transport-Security entirely when asked, keeping the other headers', () => {
     const headers = new Headers();
     applySecurityHeaders(headers, { omitHsts: true });
@@ -32,11 +41,11 @@ describe('admin-response helpers', () => {
     expect(headers.get('Referrer-Policy')).toBe('no-referrer');
   });
 
-  it('builds a branded html response, no-store and hardened', () => {
+  it('builds a branded html response, private/no-store and hardened', () => {
     const res = brandedAdminPage(400, '<!doctype html><p>hi</p>');
     expect(res.status).toBe(400);
     expect(res.headers.get('content-type')).toMatch(/text\/html/);
-    expect(res.headers.get('Cache-Control')).toBe('no-store');
+    expect(res.headers.get('Cache-Control')).toBe('private, no-store');
     expect(res.headers.get('X-Frame-Options')).toBe('DENY');
   });
 

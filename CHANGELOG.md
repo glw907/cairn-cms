@@ -179,6 +179,16 @@
   nothing. A browser holding an old `SameSite=Strict` cookie re-mints exactly once after deploy,
   as that cookie ages out.
 
+- The admin shell's CSRF-token issue drops its `event.cookies ? issueCsrfToken(...) : ''`
+  fallback: `cookies` is required on every `CairnEvent`, so the empty branch was unreachable from
+  a typed caller and, from an untyped one, silently shipped a form that could never pass CSRF with
+  no readable cause. The mint now runs unconditionally. Every hardened admin response
+  (`applySecurityHeaders`) now also sends `Cache-Control: private, no-store`: under `Lax` the CSRF
+  cookie is re-set far less often, which had been removing an accidental `Set-Cookie`
+  cache-suppression side effect from admin HTML that embeds the token and the signed-in editor's
+  identity. Media and preview responses are untouched; the guard returns before this header is
+  applied for any non-`/admin` path. Consumers must: nothing.
+
 - An unchecked `.checkbox`/`.radio` in the packaged admin sheet raises its edge from daisyUI's
   stock 20% `--color-base-content` mix (measured 1.492:1 light / 1.773:1 dark against `base-100`,
   under the WCAG 1.4.11 3:1 non-text floor) to the same 55% mix already locked for the scrollbar

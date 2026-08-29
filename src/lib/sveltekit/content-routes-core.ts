@@ -641,9 +641,10 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         pathname: event.url.pathname,
         theme,
         collapsedNav,
-        csrf: event.cookies
-          ? issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform })
-          : '',
+        // No fallback: cookies is required on CairnEvent, so the only caller that can reach a
+        // missing jar here is an untyped one, and that caller should fail loudly rather than get
+        // back a silent empty token that leaves every form permanently 403 with no readable cause.
+        csrf: issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform }),
         pendingEntries,
         attention,
         mediaBase: runtime.resolvedAssets.enabled ? runtime.resolvedAssets.publicBase : DEFAULT_MEDIA_BASE,

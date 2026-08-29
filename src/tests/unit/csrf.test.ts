@@ -6,6 +6,9 @@ import {
   validateCsrfHeader,
   validateCsrfToken,
   csrfSecure,
+  csrfHeaderVerdict,
+  csrfTokenVerdict,
+  csrfFieldVerdict,
 } from '../../lib/sveltekit/csrf.js';
 import { SESSION_TTL_MS } from '../../lib/auth/crypto.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
@@ -189,5 +192,105 @@ describe('validateCsrfToken', () => {
     await validateCsrfToken(event);
     const form = await (event as { request: Request }).request.formData();
     expect(form.get('email')).toBe('a@b.c');
+  });
+});
+
+// The discriminating verdicts guard.ts and admin-action.ts route through for their rejection
+// records (the CSRF hardening pass, Task 3): one test per CsrfRejectionDetail value where each
+// verdict function can reach it.
+describe('csrfHeaderVerdict', () => {
+  const ev = (cookie: string | undefined, header: string | undefined) =>
+    ({
+      url: new URL('https://x.dev/admin/upload'),
+      cookies: jar(cookie !== undefined ? { '__Host-cairn_csrf': cookie } : {}),
+      request: req('https://x.dev/admin/upload', {
+        method: 'POST',
+        headers: header !== undefined ? { 'x-cairn-csrf': header } : {},
+      }),
+    }) as never;
+
+  it('passes when the header matches the cookie', () => {
+    expect(csrfHeaderVerdict(ev('TOK', 'TOK'))).toEqual({ ok: true });
+  });
+
+  it('reads no-cookie when the double-submit cookie is absent', () => {
+    expect(csrfHeaderVerdict(ev(undefined, 'TOK'))).toEqual({ ok: false, detail: 'no-cookie' });
+  });
+
+  it('reads no-witness when the header was never sent', () => {
+    expect(csrfHeaderVerdict(ev('TOK', undefined))).toEqual({ ok: false, detail: 'no-witness' });
+  });
+
+  it('reads mismatch when the header was sent but does not match the cookie', () => {
+    expect(csrfHeaderVerdict(ev('TOK', 'WRONG'))).toEqual({ ok: false, detail: 'mismatch' });
+  });
+});
+
+describe('csrfTokenVerdict', () => {
+  const ev = (cookie: string | undefined, body: string | undefined) =>
+    ({
+      url: new URL('https://x.dev/admin/login'),
+      cookies: jar(cookie !== undefined ? { '__Host-cairn_csrf': cookie } : {}),
+      request:
+        body !== undefined
+          ? req('https://x.dev/admin/login', {
+              method: 'POST',
+              headers: { 'content-type': 'application/x-www-form-urlencoded' },
+              body,
+            })
+          : req('https://x.dev/admin/login', { method: 'POST' }),
+    }) as never;
+
+  it('passes when the field matches the cookie', async () => {
+    expect(await csrfTokenVerdict(ev('TOK', 'csrf=TOK'))).toEqual({ ok: true });
+  });
+
+  it('reads no-cookie when the double-submit cookie is absent', async () => {
+    expect(await csrfTokenVerdict(ev(undefined, 'csrf=TOK'))).toEqual({ ok: false, detail: 'no-cookie' });
+  });
+
+  it('reads no-witness when the csrf field was never submitted', async () => {
+    expect(await csrfTokenVerdict(ev('TOK', 'email=a@b.c'))).toEqual({ ok: false, detail: 'no-witness' });
+  });
+
+  it('reads mismatch when the field was submitted but does not match the cookie', async () => {
+    expect(await csrfTokenVerdict(ev('TOK', 'csrf=OTHER'))).toEqual({ ok: false, detail: 'mismatch' });
+  });
+
+  it('reads unparseable-body when the body cannot be read as form data', async () => {
+    const event = {
+      url: new URL('https://x.dev/admin/login'),
+      cookies: jar({ '__Host-cairn_csrf': 'TOK' }),
+      request: req('https://x.dev/admin/login', {
+        method: 'POST',
+        headers: { 'content-type': 'multipart/form-data; boundary=z' },
+        body: 'not actually multipart',
+      }),
+    } as never;
+    expect(await csrfTokenVerdict(event)).toEqual({ ok: false, detail: 'unparseable-body' });
+  });
+});
+
+describe('csrfFieldVerdict (an already-parsed form, the shape admin-action.ts uses)', () => {
+  const form = (entries: Record<string, string>) => {
+    const f = new FormData();
+    for (const [k, v] of Object.entries(entries)) f.set(k, v);
+    return f;
+  };
+
+  it('passes when the field matches the cookie', () => {
+    expect(csrfFieldVerdict('TOK', form({ csrf: 'TOK' }))).toEqual({ ok: true });
+  });
+
+  it('reads no-cookie when the cookie is absent', () => {
+    expect(csrfFieldVerdict(undefined, form({ csrf: 'TOK' }))).toEqual({ ok: false, detail: 'no-cookie' });
+  });
+
+  it('reads no-witness when the form carries no csrf field', () => {
+    expect(csrfFieldVerdict('TOK', form({ email: 'a@b.c' }))).toEqual({ ok: false, detail: 'no-witness' });
+  });
+
+  it('reads mismatch when the field does not match the cookie', () => {
+    expect(csrfFieldVerdict('TOK', form({ csrf: 'OTHER' }))).toEqual({ ok: false, detail: 'mismatch' });
   });
 });

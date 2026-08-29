@@ -159,11 +159,73 @@ describe('adminAction: CSRF guard (defense-in-depth)', () => {
     expect(handler).toHaveBeenCalledOnce();
   });
 
-  it('falls back to the form field when the header is absent or mismatched', async () => {
+  it('falls back to the form field only when the header was never sent, not merely mismatched', async () => {
+    // Precedence: a header that was SENT but wrong decides outright; it must not fall through
+    // to a correct form field (the guard's own precedence rule, mirrored here).
     const handler = vi.fn();
     const action = adminAction(handler);
-    expect(await httpErrorStatusOf(action(makeEvent({ cookie: 'MATCH', csrfHeader: 'WRONG' })))).toBe(403);
+    expect(
+      await httpErrorStatusOf(action(makeEvent({ cookie: 'MATCH', csrfHeader: 'WRONG', csrfField: 'MATCH' }))),
+    ).toBe(403);
     expect(handler).not.toHaveBeenCalled();
+  });
+});
+
+describe('adminAction: CSRF rejection discriminator (Task 3)', () => {
+  type CsrfRecord = { path?: string; editor?: string; detail?: string; witness?: string };
+
+  it('reads detail=no-cookie/witness=field with no cookie and no header', async () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const action = adminAction(vi.fn());
+    await httpErrorStatusOf(action(makeEvent({ csrfField: 'TOK' })));
+    expect(warnSpy).toHaveBeenCalledWith(
+      'admin.action.csrf_rejected',
+      expect.objectContaining<CsrfRecord>({ detail: 'no-cookie', witness: 'field' }),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('reads detail=no-witness/witness=field when the cookie is present but no csrf field was posted', async () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const action = adminAction(vi.fn());
+    await httpErrorStatusOf(action(makeEvent({ cookie: 'TOK' })));
+    expect(warnSpy).toHaveBeenCalledWith(
+      'admin.action.csrf_rejected',
+      expect.objectContaining<CsrfRecord>({ detail: 'no-witness', witness: 'field' }),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('reads detail=mismatch/witness=field on a same-length field mismatch', async () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const action = adminAction(vi.fn());
+    await httpErrorStatusOf(action(makeEvent({ cookie: 'AAAA', csrfField: 'AAAB' })));
+    expect(warnSpy).toHaveBeenCalledWith(
+      'admin.action.csrf_rejected',
+      expect.objectContaining<CsrfRecord>({ detail: 'mismatch', witness: 'field' }),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('reads detail=mismatch/witness=header for a stale header, never falling through to a valid field', async () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const action = adminAction(vi.fn());
+    await httpErrorStatusOf(action(makeEvent({ cookie: 'MATCH', csrfHeader: 'WRONG', csrfField: 'MATCH' })));
+    expect(warnSpy).toHaveBeenCalledWith(
+      'admin.action.csrf_rejected',
+      expect.objectContaining<CsrfRecord>({ detail: 'mismatch', witness: 'header' }),
+    );
+    warnSpy.mockRestore();
+  });
+
+  it('never logs token material or length on any csrf rejection', async () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const action = adminAction(vi.fn());
+    await httpErrorStatusOf(action(makeEvent({ cookie: 'a-very-recognizable-secret-token', csrfField: 'WRONG' })));
+    const serialized = JSON.stringify(warnSpy.mock.calls);
+    expect(serialized).not.toContain('a-very-recognizable-secret-token');
+    expect(serialized).not.toContain('WRONG');
+    warnSpy.mockRestore();
   });
 });
 

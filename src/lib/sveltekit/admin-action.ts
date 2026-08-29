@@ -11,8 +11,8 @@
 // mutating action, which the engine has no other hook for.
 import { error, isActionFailure, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { DEV } from 'esm-env';
-import { csrfCookieName, tokensMatch } from '../auth/crypto.js';
-import { validateCsrfHeader, csrfSecure } from './csrf.js';
+import { csrfCookieName } from '../auth/crypto.js';
+import { csrfHeaderVerdict, csrfFieldVerdict, csrfSecure } from './csrf.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
@@ -97,11 +97,11 @@ function serializeThrownError(error: unknown): string {
  *    (`./guard.js`) exactly: an editor whose session lapsed needs the login page, not an error
  *    page.
  * 2. The double-submit CSRF token must verify, constant-time, checked the same way the guard
- *    checks it (`./guard.js`): a valid `X-Cairn-CSRF` header first, falling back to the cookie
- *    against the `csrf` form field only when no valid header is present. Defense-in-depth: the
- *    guard already checked this on every unsafe `/admin/**` POST. A mismatch here is a genuine
- *    refusal, not a session expiry, and throws SvelteKit's own `error(403, ...)`, rendered
- *    through the nearest `+error.svelte`.
+ *    checks it (`./guard.js`): a header witness that was sent at all decides outright, matching or
+ *    not, and the cookie-against-`csrf`-form-field check runs only when no `X-Cairn-CSRF` header
+ *    was sent. Defense-in-depth: the guard already checked this on every unsafe `/admin/**` POST.
+ *    A mismatch here is a genuine refusal, not a session expiry, and throws SvelteKit's own
+ *    `error(403, ...)`, rendered through the nearest `+error.svelte`.
  * 3. The handler runs once with a typed `ctx.audit` emitter closed over the verified editor. A
  *    handler that returns normally (its request succeeded) and emitted zero records throws a 500
  *    in dev (a loud signal an author fixes before shipping) and logs `admin.action.unaudited` in
@@ -155,22 +155,30 @@ export function adminAction<T>(
     // Read the form once: this is both the CSRF field's source and the handler's own body, so no
     // second read (a clone or a re-parse) ever runs against the same request.
     const form = await event.request.formData();
-    // The header witness is tried first, mirroring the guard's own order (./guard.js): a valid
-    // X-Cairn-CSRF header clears the request outright. Only with no valid header does the
-    // form-field compare run, so a fetch-based custom action that sets the header and posts
-    // FormData with no csrf field still passes this inner check the same way it already passes
-    // the guard's outer one.
-    if (!validateCsrfHeader(event)) {
-      const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
-      const submitted = String(form.get('csrf') ?? '');
-      if (!cookie || !tokensMatch(submitted, cookie)) {
-        // The admin guard already validates this double-submit pair on every unsafe /admin/** POST
-        // before resolve() runs, so a mismatch reaching here is defense-in-depth catching what
-        // should already be impossible in production. Log the specific reason; the response never
-        // gets it, since it renders to a real browser through the nearest +error.svelte.
-        log.warn('admin.action.csrf_rejected', { path: event.url.pathname, editor: editor.email });
-        throw error(403, 'This request could not be verified. Please refresh the page and try again.');
-      }
+    // The header witness decides outright when it was sent at all, mirroring the guard's own
+    // precedence (./guard.js): a valid X-Cairn-CSRF header clears the request outright, and a
+    // header that was sent but wrong rejects on its own verdict rather than falling through to the
+    // field path. Only with NO header sent at all does the form-field compare run, so a fetch-based
+    // custom action that sets the header and posts FormData with no csrf field still passes this
+    // inner check the same way it already passes the guard's outer one.
+    const headerSent = event.request.headers.get('x-cairn-csrf') !== null;
+    const verdict = headerSent
+      ? csrfHeaderVerdict(event)
+      : csrfFieldVerdict(event.cookies.get(csrfCookieName(csrfSecure(event))), form);
+    if (!verdict.ok) {
+      // The admin guard already validates this double-submit pair on every unsafe /admin/** POST
+      // before resolve() runs, so a mismatch reaching here is defense-in-depth catching what
+      // should already be impossible in production. Log the specific reason and which witness
+      // produced it; the response never gets either, since it renders to a real browser through
+      // the nearest +error.svelte. No hasSession field here (unlike the guard's own record): this
+      // wrapper only ever runs with a resolved editor, so a session is always known to be present.
+      log.warn('admin.action.csrf_rejected', {
+        path: event.url.pathname,
+        editor: editor.email,
+        detail: verdict.detail,
+        witness: headerSent ? 'header' : 'field',
+      });
+      throw error(403, 'This request could not be verified. Please refresh the page and try again.');
     }
 
     let emitted = 0;

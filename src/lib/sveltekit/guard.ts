@@ -4,7 +4,7 @@
 import { redirect, error } from '@sveltejs/kit';
 import { resolveSession } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
-import { isUnsafeFormRequest, originMatches, validateCsrfToken, validateCsrfHeader } from './csrf.js';
+import { isUnsafeFormRequest, originMatches, csrfHeaderVerdict, csrfTokenVerdict } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
@@ -131,19 +131,32 @@ export function createAuthGuard(opts: AuthGuardOptions = {}) {
     }
 
     // Rule 1 - admin: every unsafe form POST carries a valid double-submit token, else the branded
-    // 403 before resolve() runs. This covers the public login/auth posts too. The header witness is
-    // tried first: a valid X-Cairn-CSRF header clears the request without cloning the body, which is
-    // how the raw-body media upload (a text/plain POST) passes CSRF. A custom header cannot be set
-    // cross-origin without a CORS preflight, so it is as strong a token witness as the form field.
-    // Only with no valid header does the form-field path run and clone the body to read the token,
-    // the unchanged path for every ordinary admin form post.
-    if (
-      isUnsafeFormRequest(event.request) &&
-      !validateCsrfHeader(event) &&
-      !(await validateCsrfToken(event))
-    ) {
-      log.warn('guard.rejected', { reason: 'csrf', path: pathname });
-      return renderConditionResponse('auth.csrf-token-invalid');
+    // 403 before resolve() runs. This covers the public login/auth posts too. The header witness
+    // decides outright when it was SENT at all, matching or not: a valid X-Cairn-CSRF header clears
+    // the request without cloning the body, which is how the raw-body media upload (a text/plain
+    // POST) passes CSRF, and a header that was sent but wrong (a stale value on a raw-body endpoint)
+    // rejects on its own verdict rather than falling through to the field path, whose "no csrf field"
+    // failure would misreport the real cause. A custom header cannot be set cross-origin without a
+    // CORS preflight, so it is as strong a token witness as the form field. Only with NO header sent
+    // at all does the form-field path run and clone the body to read the token, the unchanged path
+    // for every ordinary admin form post.
+    if (isUnsafeFormRequest(event.request)) {
+      const headerSent = event.request.headers.get('x-cairn-csrf') !== null;
+      const verdict = headerSent ? csrfHeaderVerdict(event) : await csrfTokenVerdict(event);
+      if (!verdict.ok) {
+        // Presence-only: whether the session cookie was sent, never its value or a resolved
+        // identity. This check runs before session resolution (below), so no editor is known yet.
+        const hasSession =
+          event.cookies.get(sessionCookieName(event.url.protocol === 'https:')) !== undefined;
+        log.warn('guard.rejected', {
+          reason: 'csrf',
+          path: pathname,
+          detail: verdict.detail,
+          witness: headerSent ? 'header' : 'field',
+          hasSession,
+        });
+        return renderConditionResponse('auth.csrf-token-invalid');
+      }
     }
 
     if (!isPublicAdminPath(pathname)) {

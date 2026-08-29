@@ -99,11 +99,77 @@ export function issueCsrfToken(event: {
 }
 
 /**
+ * Why a discriminating CSRF check did not pass, log-only and never carried in the HTTP response
+ * (the guard must not become an oracle): `no-cookie` (the double-submit cookie itself is absent),
+ * `no-witness` (the cookie is present but this witness, the header or the field, was not sent at
+ * all), `mismatch` (the witness was sent but does not match the cookie), or `unparseable-body`
+ * (the field witness's body could not be read as form data at all).
+ */
+export type CsrfRejectionDetail = 'no-cookie' | 'no-witness' | 'mismatch' | 'unparseable-body';
+
+/** A discriminated CSRF check outcome: whether it passed, and when it did not, {@link CsrfRejectionDetail}. */
+export interface CsrfVerdict {
+  ok: boolean;
+  detail?: CsrfRejectionDetail;
+}
+
+/** Shared verdict shape for a witness (header value or form field) read against the cookie. */
+function verdictFromWitness(cookie: string | undefined, submitted: string | undefined): CsrfVerdict {
+  if (!cookie) return { ok: false, detail: 'no-cookie' };
+  if (submitted === undefined) return { ok: false, detail: 'no-witness' };
+  return tokensMatch(submitted, cookie) ? { ok: true } : { ok: false, detail: 'mismatch' };
+}
+
+/**
+ * The header-witness verdict {@link validateCsrfHeader} boolean-wraps: the same constant-time
+ * double-submit compare, plus {@link CsrfRejectionDetail} naming why a failure failed. See
+ * `validateCsrfHeader`'s own docstring for the header's security rationale.
+ */
+export function csrfHeaderVerdict(event: {
+  url: URL;
+  request: Request;
+  cookies: CookieJar;
+  platform?: { env?: { PUBLIC_ORIGIN?: string } };
+}): CsrfVerdict {
+  const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
+  const header = event.request.headers.get('x-cairn-csrf');
+  return verdictFromWitness(cookie, header ?? undefined);
+}
+
+/**
+ * The field-witness verdict against an already-parsed form, for a caller that already read the
+ * request body for its own purposes (`adminAction`) and so has no need for
+ * {@link csrfTokenVerdict}'s own body clone. `form.has('csrf')` discriminates an absent field from
+ * a submitted-empty one; a plain `form.get('csrf') ?? ''` collapses that distinction.
+ */
+export function csrfFieldVerdict(cookie: string | undefined, form: FormData): CsrfVerdict {
+  return verdictFromWitness(cookie, form.has('csrf') ? String(form.get('csrf') ?? '') : undefined);
+}
+
+/**
+ * The field-witness verdict {@link validateCsrfToken} boolean-wraps, reading the token from a body
+ * clone. See `validateCsrfToken`'s own docstring for why a clone, not a direct read.
+ */
+export async function csrfTokenVerdict(event: CairnEvent): Promise<CsrfVerdict> {
+  const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
+  if (!cookie) return { ok: false, detail: 'no-cookie' };
+  let form: FormData;
+  try {
+    form = await event.request.clone().formData();
+  } catch {
+    return { ok: false, detail: 'unparseable-body' };
+  }
+  return csrfFieldVerdict(cookie, form);
+}
+
+/**
  * Validate the double-submit token on a raw-body upload POST, reading the submitted token from the
  * `X-Cairn-CSRF` request header rather than a form field. The upload's file bytes are the request
  * body and are read once, so the form-field path (which clones the body to read `formData`) does not
  * apply; the action carries the CSRF authority for uploads instead. Compares the header against the
- * csrf cookie the loads issue, constant-time.
+ * csrf cookie the loads issue, constant-time. A boolean wrapper over {@link csrfHeaderVerdict}: kept
+ * boolean deliberately, since six existing call sites negate the return, and a widened object return
+ * would make every one of them truthy.
  *
  * Security rests on a custom request header being unsettable cross-origin without a CORS preflight:
  * never add a permissive `Access-Control-Allow-Headers: x-cairn-csrf` (or an allow-origin) for
@@ -115,22 +181,14 @@ export function validateCsrfHeader(event: {
   cookies: CookieJar;
   platform?: { env?: { PUBLIC_ORIGIN?: string } };
 }): boolean {
-  const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
-  if (!cookie) return false;
-  const submitted = event.request.headers.get('x-cairn-csrf') ?? '';
-  return tokensMatch(submitted, cookie);
+  return csrfHeaderVerdict(event).ok;
 }
 
-/** Validate the double-submit token on an admin form POST, reading the field from a body clone. */
+/**
+ * Validate the double-submit token on an admin form POST, reading the field from a body clone. A
+ * boolean wrapper over {@link csrfTokenVerdict}, kept boolean for the same reason
+ * {@link validateCsrfHeader} is.
+ */
 export async function validateCsrfToken(event: CairnEvent): Promise<boolean> {
-  const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
-  if (!cookie) return false;
-  let submitted = '';
-  try {
-    const form = await event.request.clone().formData();
-    submitted = String(form.get('csrf') ?? '');
-  } catch {
-    return false;
-  }
-  return tokensMatch(submitted, cookie);
+  return (await csrfTokenVerdict(event)).ok;
 }

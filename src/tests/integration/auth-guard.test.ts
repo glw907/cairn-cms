@@ -524,3 +524,134 @@ describe('guard rejection logging', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('guard.rejected CSRF discriminator (Task 3): detail, witness, hasSession', () => {
+  type CsrfRecord = { reason?: string; detail?: string; witness?: string; hasSession?: boolean };
+
+  it('reads no-cookie/witness=field/hasSession=false with no cookie, no header, and no session', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await handle({ event: formEvent('/admin/login'), resolve: async () => OK });
+    const records = warnSpy.mock.calls.map((c) => c[0] as CsrfRecord);
+    expect(records).toContainEqual(
+      expect.objectContaining({ reason: 'csrf', detail: 'no-cookie', witness: 'field', hasSession: false }),
+    );
+    vi.restoreAllMocks();
+  });
+
+  it('reads no-witness/witness=field when the cookie is present but no csrf field was submitted', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await handle({ event: formEvent('/admin/login', { csrfCookie: 'TOK' }), resolve: async () => OK });
+    const records = warnSpy.mock.calls.map((c) => c[0] as CsrfRecord);
+    expect(records).toContainEqual(
+      expect.objectContaining({ reason: 'csrf', detail: 'no-witness', witness: 'field' }),
+    );
+    vi.restoreAllMocks();
+  });
+
+  it('reads mismatch/witness=field when a submitted field does not match the cookie', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await handle({
+      event: formEvent('/admin/login', { csrfCookie: 'TOK', csrfField: 'WRONG' }),
+      resolve: async () => OK,
+    });
+    const records = warnSpy.mock.calls.map((c) => c[0] as CsrfRecord);
+    expect(records).toContainEqual(
+      expect.objectContaining({ reason: 'csrf', detail: 'mismatch', witness: 'field' }),
+    );
+    vi.restoreAllMocks();
+  });
+
+  it('reads mismatch/witness=header for a media-shaped POST with a stale header (the precedence falsifiability proof)', async () => {
+    // The upload transport: text/plain content type, no csrf form field at all, only a header. A
+    // stale (wrong) header must read mismatch/witness=header, never fall through to the field path
+    // (which would misreport it as no-witness, the incident this pass closes).
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const url = 'https://test.dev/admin/media/upload';
+    const ev: CairnEvent = {
+      url: new URL(url),
+      request: new Request(url, {
+        method: 'POST',
+        headers: { 'content-type': 'text/plain', 'x-cairn-csrf': 'WRONG' },
+        body: new Uint8Array([0xff, 0xd8, 0xff]),
+      }),
+      params: {},
+      route: { id: '/admin/[...path]' },
+      cookies: makeCookies({ [csrfCookieName(true)]: 'TOK' }),
+      locals: {},
+      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
+      setHeaders: () => {},
+    };
+    const res = await handle({ event: ev, resolve: async () => OK });
+    expect(res.status).toBe(403);
+    const records = warnSpy.mock.calls.map((c) => c[0] as CsrfRecord);
+    expect(records).toContainEqual(
+      expect.objectContaining({ reason: 'csrf', detail: 'mismatch', witness: 'header' }),
+    );
+    expect(records.some((r) => r.detail === 'no-witness')).toBe(false);
+    vi.restoreAllMocks();
+  });
+
+  it('reads unparseable-body/witness=field when no header was sent and the body cannot be read as form data', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const url = 'https://test.dev/admin/login';
+    const ev: CairnEvent = {
+      url: new URL(url),
+      request: new Request(url, {
+        method: 'POST',
+        headers: { 'content-type': 'multipart/form-data; boundary=z' },
+        body: 'not actually multipart',
+      }),
+      params: {},
+      route: { id: '/admin/[...path]' },
+      cookies: makeCookies({ [csrfCookieName(true)]: 'TOK' }),
+      locals: {},
+      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
+      setHeaders: () => {},
+    };
+    await handle({ event: ev, resolve: async () => OK });
+    const records = warnSpy.mock.calls.map((c) => c[0] as CsrfRecord);
+    expect(records).toContainEqual(
+      expect.objectContaining({ reason: 'csrf', detail: 'unparseable-body', witness: 'field' }),
+    );
+    vi.restoreAllMocks();
+  });
+
+  it('reads hasSession=true when a session cookie is present alongside a failed CSRF check', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const sessionCookies = await seedSession('own@x.dev');
+    sessionCookies.jar.set(csrfCookieName(true), 'TOK');
+    const url = 'https://test.dev/admin/posts/p1';
+    const ev: CairnEvent = {
+      url: new URL(url),
+      request: new Request(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ csrf: 'WRONG' }),
+      }),
+      params: { concept: 'posts', id: 'p1' },
+      route: { id: '/admin/[concept]/[id]' },
+      cookies: sessionCookies,
+      locals: {},
+      platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
+      setHeaders: () => {},
+    };
+    await handle({ event: ev, resolve: async () => OK });
+    const records = warnSpy.mock.calls.map((c) => c[0] as CsrfRecord);
+    expect(records).toContainEqual(
+      expect.objectContaining({ reason: 'csrf', detail: 'mismatch', witness: 'field', hasSession: true }),
+    );
+    vi.restoreAllMocks();
+  });
+
+  it('never logs token material, prefix, or length on any csrf rejection', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await handle({
+      event: formEvent('/admin/login', { csrfCookie: 'a-very-recognizable-secret-token', csrfField: 'WRONG' }),
+      resolve: async () => OK,
+    });
+    const serialized = JSON.stringify(warnSpy.mock.calls);
+    expect(serialized).not.toContain('a-very-recognizable-secret-token');
+    expect(serialized).not.toContain('WRONG');
+    vi.restoreAllMocks();
+  });
+});

@@ -189,6 +189,21 @@
   identity. Media and preview responses are untouched; the guard returns before this header is
   applied for any non-`/admin` path. Consumers must: nothing.
 
+- The admin guard's and `adminAction`'s CSRF rejection records (`guard.rejected` with
+  `reason: 'csrf'`, and `admin.action.csrf_rejected`) now carry `detail` (`no-cookie`,
+  `no-witness`, `mismatch`, or `unparseable-body`) and `witness` (`header` or `field`), so a
+  residual 403 in Workers Logs names which of three previously indistinguishable causes fired,
+  instead of collapsing all of them into one bare `reason: 'csrf'`. The guard's own record also
+  gains a presence-only `hasSession` boolean (whether a session cookie arrived, never a resolved
+  identity, since this check runs before session resolution). The precedence rule that makes
+  `detail`/`witness` trustworthy: a header witness that arrives at all, matching or not, decides
+  outright, so a stale `X-Cairn-CSRF` header on a raw-body upload/media/dictionary/tidy POST now
+  reads `mismatch`/`witness: header` rather than misreporting as the field path's `no-witness`.
+  None of the new fields, nor any existing one, ever carries token material, a prefix, or a
+  length, and the HTTP response stays the single generic `auth.csrf-token-invalid` condition.
+  Consumers must: nothing; see `docs/reference/log-events.md` for the field vocabulary if you
+  query these events.
+
 - An unchecked `.checkbox`/`.radio` in the packaged admin sheet raises its edge from daisyUI's
   stock 20% `--color-base-content` mix (measured 1.492:1 light / 1.773:1 dark against `base-100`,
   under the WCAG 1.4.11 3:1 non-text floor) to the same 55% mix already locked for the scrollbar

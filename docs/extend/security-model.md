@@ -129,10 +129,12 @@ call to a gate that found nothing to gate on is a configuration bug.
 
 Every admin response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, a
 `frame-ancestors 'none'` policy, `Referrer-Policy: no-referrer`, a `Permissions-Policy` that denies
-camera, microphone, and geolocation, and `Strict-Transport-Security` (a site opts into pinning
-sibling subdomains too). A rejection response, one that fires before the guard knows whether a site
-opted into subdomain pinning, sends no HSTS header at all rather than a weaker one, since a browser
-that receives any HSTS header from a host replaces its cached policy with what it just received.
+camera, microphone, and geolocation, `Strict-Transport-Security` (a site opts into pinning
+sibling subdomains too), and `Cache-Control: private, no-store` (the admin HTML embeds the CSRF
+token and the signed-in editor's identity, so no cache may hold it). A rejection response, one
+that fires before the guard knows whether a site opted into subdomain pinning, sends no HSTS
+header at all rather than a weaker one, since a browser that receives any HSTS header from a host
+replaces its cached policy with what it just received.
 
 `Referrer-Policy: no-referrer` here is deliberately scoped to `/admin`, never a site-wide default.
 A consuming site must not serve `no-referrer` for every route (a blanket `Referrer-Policy:

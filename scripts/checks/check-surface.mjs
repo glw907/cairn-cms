@@ -7,8 +7,9 @@
 // from the same path the signatures gate uses, non-callable shape from `checker.typeToString`), and
 // compares the rendered surface against the committed golden file `docs/internal/api-surface.md`.
 // Any drift fails the gate; regenerating the golden file (`--update`) is the deliberate disclosure
-// moment, and the diff a reviewer reads. The core (`buildSurface`, `diffSurface`) is pure of process
-// state so the unit test calls it directly; the CLI reads `dist`, the golden file, and the argv flag.
+// moment, and the diff a reviewer reads. The core (`diffSurface`, `findHomeViolations`) is pure of
+// process state so the unit test drives it directly; the CLI reads `dist`, the golden file, the
+// re-export record, and the argv flag.
 import ts from 'typescript';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -209,12 +210,6 @@ export function serializeSurface(model) {
   return lines.join('\n');
 }
 
-// Build the live surface snapshot string from `dist`. Convenience wrapper over the model build and
-// the serialize step, the form the CLI writes and compares.
-export function buildSurface() {
-  return serializeSurface(buildSurfaceModel());
-}
-
 // Parse a serialized snapshot back into a name-to-shape record per subpath. The banner and blank
 // lines are ignored; a `## \`subpath\`` line opens a section and a `` - \`name\`: shape `` line adds
 // an export. Lets the diff core compare two snapshot strings (the committed file and the live build,
@@ -305,7 +300,7 @@ export function formatDrift(drift) {
 /**
  * @param {Record<string, Record<string, string>>} model
  * @param {ReexportRecord} record
- * @returns {{ unrecorded: { name: string, subpaths: string[] }[], stale: { name: string, subpath: string }[], misfiled: { name: string, home: string, open: string[] }[] }}
+ * @returns {HomeViolations}
  */
 export function findHomeViolations(model, record) {
   /** @type {Record<string, string[]>} */
@@ -319,13 +314,18 @@ export function findHomeViolations(model, record) {
   const isRecorded = (name, subpath) =>
     recorded.has(`${name}\0${subpath}`) ||
     layered.some((p) => p.wider === subpath && name in (model[p.narrower] ?? {}));
+  // A name's OPEN subpaths: the publications the record does not cover. Exactly one is the home the
+  // rule expects; more than one is a duplicate nobody has argued; zero leaves no subpath declaring
+  // the name. The duplicate and misfiled findings below both read this, so it is reckoned once.
+  /** @type {Record<string, string[]>} */
+  const openOf = {};
+  for (const [name, subpaths] of Object.entries(subpathsOf)) {
+    openOf[name] = subpaths.filter((s) => !isRecorded(name, s)).sort();
+  }
   /** @type {{ name: string, subpaths: string[] }[]} */
   const unrecorded = [];
-  for (const name of Object.keys(subpathsOf).sort()) {
-    const subpaths = subpathsOf[name];
-    if (subpaths.length < 2) continue;
-    const open = subpaths.filter((s) => !isRecorded(name, s)).sort();
-    if (open.length > 1) unrecorded.push({ name, subpaths: open });
+  for (const name of Object.keys(openOf).sort()) {
+    if (openOf[name].length > 1) unrecorded.push({ name, subpaths: openOf[name] });
   }
   const stale = (record.reexports ?? [])
     .filter((r) => !(r.name in (model[r.subpath] ?? {})))
@@ -337,10 +337,9 @@ export function findHomeViolations(model, record) {
   /** @type {{ name: string, home: string, open: string[] }[]} */
   const misfiled = [];
   for (const name of Object.keys(claimedHomes).sort()) {
-    const subpaths = subpathsOf[name];
+    const open = openOf[name];
     // A name the surface dropped entirely is already stale; do not charge it twice.
-    if (!subpaths) continue;
-    const open = subpaths.filter((s) => !isRecorded(name, s)).sort();
+    if (!open) continue;
     // More than one open subpath is the unrecorded-duplicate finding, which names the same defect.
     if (open.length > 1) continue;
     for (const home of [...claimedHomes[name]].sort()) {
@@ -352,7 +351,7 @@ export function findHomeViolations(model, record) {
 }
 
 // Format a home-rule failure as the actionable message: what to argue, and where to record it.
-/** @param {{ unrecorded: { name: string, subpaths: string[] }[], stale: { name: string, subpath: string }[], misfiled: { name: string, home: string, open: string[] }[] }} result */
+/** @param {HomeViolations} result */
 export function formatHomeViolations(result) {
   const lines = [];
   for (const v of result.unrecorded) {
@@ -370,6 +369,14 @@ export function formatHomeViolations(result) {
   }
   return lines.join('\n');
 }
+
+/**
+ * The three shapes of canonical-home failure, each list empty when the surface and the record agree.
+ * @typedef {object} HomeViolations
+ * @property {{ name: string, subpaths: string[] }[]} unrecorded names published from more than one unrecorded subpath, listing those subpaths
+ * @property {{ name: string, subpath: string }[]} stale record entries whose subpath no longer publishes the name
+ * @property {{ name: string, home: string, open: string[] }[]} misfiled record entries whose stated home is not the subpath left declaring the name
+ */
 
 /**
  * The recorded R4 re-export set: the canonical-home rule's exception list.

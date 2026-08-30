@@ -138,6 +138,7 @@ describe('findHomeViolations', () => {
     expect(findHomeViolations(model, { reexports: [], layeredBarrels: [] })).toEqual({
       unrecorded: [],
       stale: [],
+      misfiled: [],
     });
   });
 
@@ -185,5 +186,31 @@ describe('findHomeViolations', () => {
   it('reports a record entry the surface no longer carries', () => {
     const model = { '/sveltekit': { NavLayout: 'N[]' } };
     expect(findHomeViolations(model, record).stale).toEqual([{ name: 'NavLayout', subpath: '.' }]);
+  });
+
+  // The record's `home` field is a claim about the surface, not a comment. Without this check a
+  // wrong home string reads as settled while pointing at a subpath that declares nothing.
+  it('reports a record entry whose stated home the surface does not declare', () => {
+    const model = { '.': { NavLayout: 'N[]' }, '/media': { NavLayout: 'N[]' } };
+    expect(findHomeViolations(model, record).misfiled).toEqual([
+      { name: 'NavLayout', home: '/sveltekit', open: ['/media'] },
+    ]);
+  });
+
+  // Every publication recorded means no publication declares the name: the duplicate check counts
+  // open subpaths, so this shape slips past it with nothing left to be the home.
+  it('reports a name whose every publication is recorded', () => {
+    const model = { '.': { NavLayout: 'N[]' } };
+    expect(findHomeViolations(model, record).misfiled).toEqual([
+      { name: 'NavLayout', home: '/sveltekit', open: [] },
+    ]);
+  });
+
+  // A name the surface dropped entirely is stale, once, and not also a missing home.
+  it('does not report a home for a name the surface no longer exports at all', () => {
+    const model = { '/media': { glyph: '(n) => E' } };
+    const result = findHomeViolations(model, record);
+    expect(result.stale).toEqual([{ name: 'NavLayout', subpath: '.' }]);
+    expect(result.misfiled).toEqual([]);
   });
 });

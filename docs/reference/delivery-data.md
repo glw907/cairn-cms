@@ -648,11 +648,11 @@ now import from the barrel that declares them, because nothing this subpath publ
 
 - From [the root barrel](./core.md): `AssetConfig`, `SenderConfig`, `NavMenuConfig`,
   `PreviewConfig`, `SiteRender`, `ComponentRegistry`, `ComponentDef`, `ComponentContext`,
-  `SlotDef`, `IconSet`.
+  `SlotDef`, `IconSet`, `MediaResolve`.
 - From [`/sveltekit`](./sveltekit.md): `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`,
   `NavLayoutSection`.
 - From [`/islands`](./islands.md): `IslandRegistry`.
-- From [`/media`](./media.md): `MediaRef`, `MediaResolve`, `VariantSpec`.
+- From [`/media`](./media.md): `MediaRef`, `VariantSpec`.
 
 `MediaRef`, `MediaResolve`, and `SiteRender` are also importable from
 [`/delivery`](./delivery.md), whose `PublicRoutesConfig` names all three.

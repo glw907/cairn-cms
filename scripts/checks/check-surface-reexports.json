@@ -1,5 +1,5 @@
 {
-  "rule": "Every exported name has exactly one canonical home, the subpath whose barrel declares it. A name published from a second subpath is a recorded R4 re-export, not a second home: it is listed here with its home and the signature on that subpath that requires it. check:surface fails any duplicate this file does not record. Foundations B re-derives the /sveltekit closure and re-evaluates every entry below.",
+  "rule": "Every exported name has exactly one canonical home, the subpath whose barrel declares it. A name published from a second subpath is a recorded R4 re-export, not a second home: it is listed here with its home and the signature on that subpath that requires it. check:surface fails any duplicate this file does not record, any entry the surface has outlived, and any entry whose `home` is not the subpath the surface leaves declaring the name. Foundations B re-derives the /sveltekit closure and re-evaluates every entry below.",
   "layeredBarrels": [
     {
       "wider": "/delivery",

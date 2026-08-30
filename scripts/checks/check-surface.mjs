@@ -292,18 +292,20 @@ export function formatDrift(drift) {
 // The canonical-home rule, enforced (ratified foundations A, `canonical-home-rule` in the rulings
 // ledger). Every exported name has exactly one declaring subpath; a name published from a second
 // subpath is a recorded R4 re-export naming its home and the signature that requires it, never a
-// second home. Two shapes of failure are reported. An UNRECORDED duplicate is a name published from
-// more than one subpath with more than one of those publications missing from the record: the one
-// unrecorded publication is the home, so a second unrecorded one is a new, unargued duplicate. A
+// second home. Three shapes of failure are reported. An UNRECORDED duplicate is a name published
+// from more than one subpath with more than one of those publications missing from the record: the
+// one unrecorded publication is the home, so a second unrecorded one is a new, unargued duplicate. A
 // STALE record is an entry whose subpath no longer publishes the name, which is how the record
 // shrinks as foundations B narrows `/sveltekit` rather than silently outliving the surface. A
-// layered pair (`/delivery` over `/delivery/data`) is one home, so the wider barrel's copy of a
-// name the narrower one exports needs no per-name entry; a copy of a name the narrower one does
-// NOT export still fails. Pure over the model and the record so the unit test drives both.
+// MISFILED record is an entry whose `home` is not the one subpath left declaring the name, which
+// covers both a wrong home string and a name whose every publication is recorded, leaving nothing to
+// be the home. A layered pair (`/delivery` over `/delivery/data`) is one home, so the wider barrel's
+// copy of a name the narrower one exports needs no per-name entry; a copy of a name the narrower one
+// does NOT export still fails. Pure over the model and the record so the unit test drives all three.
 /**
  * @param {Record<string, Record<string, string>>} model
  * @param {ReexportRecord} record
- * @returns {{ unrecorded: { name: string, subpaths: string[] }[], stale: { name: string, subpath: string }[] }}
+ * @returns {{ unrecorded: { name: string, subpaths: string[] }[], stale: { name: string, subpath: string }[], misfiled: { name: string, home: string, open: string[] }[] }}
  */
 export function findHomeViolations(model, record) {
   /** @type {Record<string, string[]>} */
@@ -329,11 +331,28 @@ export function findHomeViolations(model, record) {
     .filter((r) => !(r.name in (model[r.subpath] ?? {})))
     .map((r) => ({ name: r.name, subpath: r.subpath }))
     .sort((a, b) => a.name.localeCompare(b.name) || a.subpath.localeCompare(b.subpath));
-  return { unrecorded, stale };
+  /** @type {Record<string, Set<string>>} */
+  const claimedHomes = {};
+  for (const r of record.reexports ?? []) (claimedHomes[r.name] ??= new Set()).add(r.home);
+  /** @type {{ name: string, home: string, open: string[] }[]} */
+  const misfiled = [];
+  for (const name of Object.keys(claimedHomes).sort()) {
+    const subpaths = subpathsOf[name];
+    // A name the surface dropped entirely is already stale; do not charge it twice.
+    if (!subpaths) continue;
+    const open = subpaths.filter((s) => !isRecorded(name, s)).sort();
+    // More than one open subpath is the unrecorded-duplicate finding, which names the same defect.
+    if (open.length > 1) continue;
+    for (const home of [...claimedHomes[name]].sort()) {
+      if (open.length === 1 && open[0] === home) continue;
+      misfiled.push({ name, home, open });
+    }
+  }
+  return { unrecorded, stale, misfiled };
 }
 
 // Format a home-rule failure as the actionable message: what to argue, and where to record it.
-/** @param {{ unrecorded: { name: string, subpaths: string[] }[], stale: { name: string, subpath: string }[] }} result */
+/** @param {{ unrecorded: { name: string, subpaths: string[] }[], stale: { name: string, subpath: string }[], misfiled: { name: string, home: string, open: string[] }[] }} result */
 export function formatHomeViolations(result) {
   const lines = [];
   for (const v of result.unrecorded) {
@@ -341,6 +360,13 @@ export function formatHomeViolations(result) {
   }
   for (const s of result.stale) {
     lines.push(`  - stale     ${s.name} is recorded at ${s.subpath} but is no longer exported there`);
+  }
+  for (const m of result.misfiled) {
+    lines.push(
+      m.open.length
+        ? `  ~ misfiled  ${m.name} is recorded with home ${m.home} but ${m.open[0]} is the subpath that declares it`
+        : `  ~ misfiled  ${m.name} is recorded with home ${m.home}, yet every publication of it is recorded, so no subpath declares it`,
+    );
   }
   return lines.join('\n');
 }
@@ -366,23 +392,25 @@ function main() {
   const snapshotPath = resolve(ROOT, SNAPSHOT);
   const model = buildSurfaceModel();
   const emitted = serializeSurface(model);
+  // The home rule runs before the snapshot diff AND before the `--update` write. A new duplicate is
+  // a design failure to argue, and regenerating the snapshot would otherwise record it as settled
+  // surface with only the next plain run left to notice.
+  const record = JSON.parse(readFileSync(resolve(ROOT, REEXPORTS), 'utf8'));
+  const homes = findHomeViolations(model, record);
+  if (homes.unrecorded.length || homes.stale.length || homes.misfiled.length) {
+    console.error('check-surface: the canonical-home rule failed.');
+    console.error(formatHomeViolations(homes));
+    console.error(
+      `\nEvery name has one declaring subpath. Publish it from its home, record the second` +
+        ` publication in ${REEXPORTS} with the signature that requires it, or correct the entry` +
+        ` whose subpath or home the surface no longer matches.`,
+    );
+    process.exit(1);
+  }
   if (update) {
     writeFileSync(snapshotPath, `${emitted}\n`);
     console.log(`check-surface: wrote ${SNAPSHOT}`);
     return;
-  }
-  // The home rule runs before the snapshot diff: a new duplicate is a design failure to argue, and
-  // regenerating the snapshot would otherwise record it as settled surface.
-  const record = JSON.parse(readFileSync(resolve(ROOT, REEXPORTS), 'utf8'));
-  const homes = findHomeViolations(model, record);
-  if (homes.unrecorded.length || homes.stale.length) {
-    console.error('check-surface: the canonical-home rule failed.');
-    console.error(formatHomeViolations(homes));
-    console.error(
-      `\nEvery name has one declaring subpath. Publish it from its home, or record the second` +
-        ` publication in ${REEXPORTS} with the signature that requires it.`,
-    );
-    process.exit(1);
   }
   if (!existsSync(snapshotPath)) {
     console.error(`check-surface: missing ${SNAPSHOT}; run "npm run check:surface -- --update" to generate it`);

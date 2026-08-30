@@ -139,16 +139,19 @@
   `SiteRender`, which `PublicRoutesConfig` names and which it now exports directly. The 120
   surviving non-home publications are recorded in
   `scripts/checks/check-surface-reexports.json` with their home and the signature that requires
-  each, and `check:surface` now fails an unrecorded duplicate and a record entry the surface has
-  outlived, so the set shrinks as later slices narrow rather than drifting. `/delivery` over
+  each, and `check:surface` now fails an unrecorded duplicate, a record entry the surface has
+  outlived, and a record entry whose stated home the surface does not declare, so the set shrinks as
+  later slices narrow rather than drifting; the rule runs ahead of both the snapshot diff and the
+  `--update` regeneration, so a new duplicate cannot be written into the golden. `/delivery` over
   `/delivery/data` is recorded as one home, not two: the dependency-axis pair over one source tree
   keeps its documented `export *`. Consumers must: import these names from their canonical home
   rather than from `/delivery` or `/delivery/data`. From `@glw907/cairn-cms`: `AssetConfig`,
   `SenderConfig`, `NavMenuConfig`, `PreviewConfig`, `SiteRender`, `ComponentRegistry`,
-  `ComponentDef`, `ComponentContext`, `SlotDef`, `IconSet`. From `@glw907/cairn-cms/sveltekit`:
-  `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`, `NavLayoutSection`. From
-  `@glw907/cairn-cms/islands`: `IslandRegistry`. From `@glw907/cairn-cms/media`: `MediaRef`,
-  `MediaResolve`, `VariantSpec`. All are type-only imports, so no runtime behavior changes;
+  `ComponentDef`, `ComponentContext`, `SlotDef`, `IconSet`, `MediaResolve`. From
+  `@glw907/cairn-cms/sveltekit`: `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`,
+  `NavLayoutSection`. From `@glw907/cairn-cms/islands`: `IslandRegistry`. From
+  `@glw907/cairn-cms/media`: `MediaRef`, `VariantSpec`. All are type-only imports, so no runtime
+  behavior changes;
   `@glw907/cairn-cms/delivery` still carries `MediaRef`, `MediaResolve`, and `SiteRender`.
 
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the

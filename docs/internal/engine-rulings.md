@@ -73,7 +73,9 @@ finds on that allowlist.
   publication the closure never justified (`/delivery/data` dropped all 18, `/delivery` 15 of
   them), 120 surviving non-home publications are recorded with their home and the signature that
   requires each, `/delivery` over `/delivery/data` is recorded as one home rather than two, and
-  `check:surface` fails both an unrecorded duplicate and a record entry the surface has outlived.
+  `check:surface` fails an unrecorded duplicate, a record entry the surface has outlived, and a
+  record entry whose stated home the surface does not declare, on the plain run and on the
+  `--update` regeneration alike.
   No consumer import in the four arms, `examples/showcase`, or `templates/waymark` moved. A future
   narrowing that makes a recorded re-export unjustified is that re-export's own removal, not a
   reopening of this rule.

@@ -107,9 +107,10 @@ layered-pair record covers them and no per-name entry was written.
 ## The recorded R4 re-export set (120)
 
 The machine-readable copy is `scripts/checks/check-surface-reexports.json`, which the gate reads;
-this table is the same data for a reader. `check:surface` fails an unrecorded duplicate AND an
-entry whose subpath no longer publishes the name, so the set shrinks as later slices narrow rather
-than outliving them.
+this table is the same data for a reader. `check:surface` fails an unrecorded duplicate, an entry
+whose subpath no longer publishes the name, and an entry whose stated `home` is not the subpath the
+surface leaves declaring it, so the set shrinks as later slices narrow rather than outliving them
+and the `home` column stays a checked claim rather than a comment.
 
 Two of the 120 carry no R4 justification: `PublishActionsConfig` and `PublishActionEntry` on
 `/delivery/data`, which survive on the move rule that holds a reshape in place rather than on the
@@ -254,10 +255,27 @@ check-surface: the canonical-home rule failed.
 ```
 
 Removing the line returns the gate to `check-surface: OK (surface matches the committed snapshot)`,
-exit 0. The injected line was reverted; nothing from the demonstration is committed. The unit tests
+exit 0.
+
+The `--update` regeneration is gated by the same rule, so a duplicate cannot be written into the
+golden and left for the next plain run to find. With the same injected line, `npm run check:surface
+-- --update` exits 1 with the same message, and `git status docs/internal/api-surface.md` reports
+the golden unchanged.
+
+The record's own `home` field is checked against the surface, not taken on trust. Editing the
+`MediaResolve` entry at `/media` to claim `"home": "/media"` and running the gate exits 1 with:
+
+```
+check-surface: the canonical-home rule failed.
+  ~ misfiled  MediaResolve is recorded with home /media but . is the subpath that declares it
+```
+
+Every injection was reverted; nothing from the demonstrations is committed. The unit tests
 in `src/tests/unit/check-surface.test.ts` cover the rest of the rule's shape against a crafted
 model: the pass case, a third publication of an already-recorded name, the layered pair and the
-wider-only duplicate it does not excuse, and a record entry the surface has outlived.
+wider-only duplicate it does not excuse, a record entry the surface has outlived, a wrong `home`
+string, a name whose every publication is recorded so nothing is left to be the home, and the
+dropped name that is charged as stale once rather than twice.
 
 ## Known adjacent drift, not fixed here
 

@@ -122,14 +122,23 @@ directly-named result type's own declared shape (`MediaOrphanScanResult` names
 `BulkDeleteSkip`), because the composer keeps driving the wide internal shape Task 1 left
 untouched. See "List (c)" immediately below for the full per-item accounting; all 20 route there.
 
-Extending the identical mechanical test (a literal-name search of `api-surface.md:519`, then a
-fixed-point search over each hit's own declared shape, repeated until no further retire-verdicted
-names appear) to the full 94 finds 11 more names with the same property, bringing the
-composer/reshape-blocked total to 31, not the plan's "roughly 21." Closing the fixed point took
-about three rounds, since the deepest chain nests two levels (`MediaAltPreviewPlan` ->
-`MediaAltPreviewEntry` -> `AltPlacement`; "List (c)" Tier 1 below spells out the full chain).
-"List (c)" below carries the full list and section 4 carries the reasoning for treating this as an
-honest extension of bullet 5's own test rather than a new proposal.
+Extending the identical mechanical test — scoped, precisely as Tier 1 below states its own scope,
+to `createCairnAdmin`'s `actions` record rather than the whole of `:519` (a literal-name search of
+the `actions` record's text, then a fixed-point search over each hit's own declared shape, repeated
+until no further retire-verdicted names appear) — to the full 94 finds 11 more names with the same
+property, bringing the `actions`-scoped composer-blocked total to 31, not the plan's "roughly 21."
+Closing that fixed point took about three rounds, since the deepest chain nests two levels
+(`MediaAltPreviewPlan` -> `MediaAltPreviewEntry` -> `AltPlacement`; "List (c)" Tier 1 below spells
+out the full chain).
+
+**This 31-item figure is deliberately narrower than the whole of `:519`.** Running the identical
+fixed point over `:519`'s FULL text, `load: Promise<AdminData>` and `shellLoad` included rather
+than `actions` alone, closes in four rounds at **48** retire-verdicted names, not 31: the 17 extras
+all arrive through the `load` half, via `AdminData` (`api-surface.md:478`), not through `actions`.
+Section 5 below (F-1) names all 17, plus 2 more the `:519` fixed point cannot reach by any scope
+(they are named inside a different keep entirely), and the open question they raise. "List (c)"
+below carries the full 31-item accounting used by this record, and section 4 carries the reasoning
+for treating the 31 as an honest extension of bullet 5's own test rather than a new proposal.
 
 **List (b) is therefore 94 − 0 (list a) − 31 (list c, IN-94 half) = 63 items.** Mechanically
 generated (ledger `retire` entries minus the 31 in section 3's list (c)), by family:
@@ -346,19 +355,92 @@ parenthetical, so a reader does not wonder why it is absent from lists (a)/(b)/(
 
 The plan's bullet 5 names ranks 1-13/17-22/38 (20 items) and estimates "roughly 21" composer-
 blocked. Testing exactly that scope confirms all 20 blocked (Tier 1 above, minus
-`DictionaryAddResult`/`TidyResult`). Running the same mechanical test (search
-`api-surface.md:519` for a literal name match, then follow the nesting through each hit's own
-declared shape to a fixed point, about three rounds since the deepest chain runs two levels deep)
-against the full 94 finds 25 Tier-1 items and 6 further Tier-2 items coupled to the
-separately-tracked `ContentFormFailure` reshape — 31 total, not "roughly 21." This record
-uses the full 31 for list (c)'s IN-94 half rather than the plan's literal 20, because: (a) the
-partition arithmetic still closes exactly (0 + 63 + 31 = 94); (b) the plan's own reasoning for the
-test ("the retires pass needs the per-item blocker or it will attempt deletions that break the R4
-closure") argues for completeness over literalism, since under-reporting here has a real cost
-(broken builds); and (c) every addition is independently mechanically verified, not a judgment
-call. Reported as a deviation, per this task's instructions, rather than silently substituted.
+`DictionaryAddResult`/`TidyResult`). Running the same mechanical test — scoped to
+`createCairnAdmin`'s `actions` record, matching Tier 1's own stated scope, NOT the whole of
+`:519` (search the `actions` record's text for a literal name match, then follow the nesting
+through each hit's own declared shape to a fixed point, about three rounds since the deepest chain
+runs two levels deep) — against the full 94 finds 25 Tier-1 items and 6 further Tier-2 items
+coupled to the separately-tracked `ContentFormFailure` reshape — 31 total, not "roughly 21." This
+record uses the full 31 for list (c)'s IN-94 half rather than the plan's literal 20, because: (a)
+the partition arithmetic still closes exactly (0 + 63 + 31 = 94); (b) the plan's own reasoning for
+the test ("the retires pass needs the per-item blocker or it will attempt deletions that break the
+R4 closure") argues for completeness over literalism; and (c) every addition is independently
+mechanically verified, not a judgment call. Reported as a deviation, per this task's instructions,
+rather than silently substituted.
 
-## 5. Partition acceptance
+**Correction to the severity claim above.** "Break the R4 closure" does not mean "break the
+build," and this record's own reasoning at the previous paragraph's clause (b) overstated it: it
+originally read that under-reporting here "has a real cost (broken builds)." Checked directly:
+`createCairnAdmin`'s own rendering already names `DictionaryAddFailure` and `TidyFailure` (arms of
+the `dictionaryAdd`/`tidy` actions' `ActionFailure<...>` at `:519`), and NEITHER is exported from
+any subpath — `grep -c "DictionaryAddFailure\|TidyFailure" docs/internal/api-surface.md` finds
+only the three uses inside other types' rendered bodies, no `- \`DictionaryAddFailure\`:` or
+`- \`TidyFailure\`:` declaration of its own — yet `npm run check:surface` is green today. A
+retire-verdicted name living unexported inside a rendered keep shape is the `NavIcon`/
+`EngineScreenId`/`SlotKind` class of defect from section 1: a closure leak `check:surface`'s
+duplicate-publication rule cannot see, not a compile failure. The corrected claim: under-reporting
+here manufactures more closure leaks of a kind the record already flags as unowned, which is a
+real cost, just not the one originally stated. F-1 below (section 5) is the concrete instance.
+
+## 5. F-1: nineteen of list (b)'s rows are named inside keep-verdicted rendered shapes
+
+Confirmed by the pass-end engine-triage review of this record. Section 4's own method, run
+faithfully over the WHOLE of `createCairnAdmin`'s rendered return at `:519` rather than the
+`actions` record alone, finds 17 more retire-verdicted names reachable through the `load` half
+(`load: (event) => Promise<AdminData>`, `api-surface.md:478`) — none of them Tier 1 or Tier 2
+above, all 17 currently sitting in list (b) as "ready for direct execution." Broadening the test
+once more, from "reachable from `createCairnAdmin`'s own rendering" to "named inside ANY
+keep-verdicted export's rendered public shape" (the same test C2_READDED and the section 1 closure
+leaks apply, just run against list (b) instead of the root barrel), finds 2 more: `AdminActionOptions`
+and `ReproInstance`, neither reachable from `:519` by any fixed point, since one is a parameter type
+of an unrelated keep (`adminAction`) and the other is named by a keep in the render/reproductions
+family (`ReproStory`) with no relationship to the admin composer at all. 17 + 2 = **19**.
+
+| Name | Ledger anchor | Named inside (keep-verdicted export) |
+|---|---|---|
+| `AdminActionOptions` | `:1887` | `adminAction` (`api-surface.md:472`, **parameter position** — the hardest case: a consumer calling `adminAction` cannot name its own deps type once this retires) |
+| `AdvisoryNotice` | `:1439` | `EditData` (`:531`) |
+| `AdvisoryAction` | `:1432` | `AdvisoryNotice` (`:481`), transitively |
+| `LinkTarget` | `:1454` | `EditData` (`:531`) |
+| `FragmentTarget` | `:1353` | `EditData` (`:531`) |
+| `PublishActionLink` | `:1552` | `EditData` (`:531`) |
+| `ResolvedPreview` | `:1461` | `EditData` (`:531`) |
+| `LoginData` | `:1475` | `AdminData` (`:478`), `AuthRoutes` (`:488`), `createAuthRoutes` (`:518`) |
+| `ConfirmData` | `:1468` | `AdminData` (`:478`), `AuthRoutes` (`:488`), `createAuthRoutes` (`:518`) |
+| `EditorsData` | `:1482` | `AdminData` (`:478`), `EditorRoutes` (`:533`), `createEditorRoutes` (`:522`) |
+| `EntrySummary` | `:1425` | `ListData` (`:561`) |
+| `GettingStarted` | `:1404` | `HelpData` (`:552`) |
+| `MarkdownReferenceRow` | `:1411` | `HelpData` (`:552`) |
+| `HistoryEntry` | `:1418` | `HistoryData` (`:553`) |
+| `MediaUsageInfo` | `:1375` | `MediaLibraryData` (`:572`) |
+| `NavConcept` | `:1397` | `AdminShellData` (`:479`), `ReproStory` (`:456`) |
+| `NavPageOption` | `:1390` | `NavLoadData` (`:593`) |
+| `TidyKeyProbeResult` | `:1217` | `SettingsData` (`:642`) |
+| `ReproInstance` | `:3181` | `ReproStory` (`:456`) |
+
+Verified directly against `docs/internal/api-surface.md` line-for-line: every "named inside"
+citation above is a literal member of the cited keep's own rendered declaration (spot-checked all
+19; e.g. `EditData` at `:531` literally carries `linkTargets: LinkTarget[]`,
+`fragmentTargets: FragmentTarget[] | null`, `publishActions: PublishActionLink[]`,
+`preview: ResolvedPreview | null`, and `advisories: AdvisoryNotice[]`, five of the nineteen in one
+export alone).
+
+**The coupling to this pass's own overturns.** `LoginData`, `ConfirmData`, and `EditorsData`'s
+keep-parents include `AuthRoutes` and `EditorRoutes` — and those two are keep ONLY because
+`verify-route-factories.md`'s ranks 66/69 overturns (reshape-to-keep, applied faithfully in
+section 2's reconciliation and Tier 1's own accounting above) restored them from the ranking's
+original reshape verdict. Had those two overturns not stood, `AuthRoutes`/`EditorRoutes` would be
+open reshapes rather than settled keeps, and three of these nineteen blockers would not exist in
+their current form. This is not a reason to re-litigate ranks 66/69 (settled, per this record's
+own instruction not to re-propose settled overturns) — it is the mechanism, named plainly, by
+which a settled overturn in one family manufactures a fresh closure question in another.
+
+**Nothing above changes list (b)/list (c) membership, the tier structure, or the partition
+arithmetic.** The 63/31 split stands; these 19 names remain in list (b) as this record's tables
+already show them. Section 7 (the ratification gate) carries the open question this finding
+raises, for Geoff to rule on.
+
+## 6. Partition acceptance
 
 | Component | Count |
 |---|---|
@@ -370,7 +452,7 @@ call. Reported as a deviation, per this task's instructions, rather than silentl
 Exact. `DEFAULT_ROLES` (list (c), OUT-OF-94 half) sits outside this sum, as the plan specifies.
 List (a) matches the `check:surface` diff (green, so an empty list matches trivially).
 
-## 6. The ratification gate
+## 7. The ratification gate
 
 List (c) (31 IN-94 items, all a same-verdict execution-order finding rather than a keep/retire
 flip this pass proposes, plus the 1 OUT-OF-94 `DEFAULT_ROLES` naming) goes to Geoff at the
@@ -378,3 +460,39 @@ pass-end checkpoint, before the retires pass plan is authored. The charter adjud
 records. Unlike the reconciliation items in section 2 (already executed and ledgered), nothing in
 list (c) has been executed; it is the retires pass's dependency map, not a set of already-decided
 verdicts.
+
+**The open question F-1 raises (section 5), presented neutrally; this record does not choose.**
+The 19 rows carry a genuine retire verdict, undisturbed, and each already sits somewhere a name
+inside a keep's rendered shape stops it from being independently nameable once retired — the same
+defect class section 1 flags as unowned for `NavIcon`/`EngineScreenId`/`SlotKind`, corrected in
+scope by section 4 to a closure leak, not a build break. Two paths, argued for Geoff, not chosen
+here:
+
+- **(A) Move the 19 into list (c) as a Tier 3, each with its per-row blocker.** List (b) becomes 44
+  items, list (c) becomes 50 (31 + 19), and the retires pass treats these exactly like Tiers 1-2:
+  blocked pending further work. Their blockers, though, are not an internal composer shape the
+  retires pass could plausibly narrow itself — `EditData`, `AdminData`, `ListData`, `HistoryData`,
+  `HelpData`, `MediaLibraryData`, `NavLoadData`, `SettingsData`, `AdminShellData`, `AuthRoutes`,
+  `EditorRoutes`, `ReproStory`, and `adminAction` are all hand-declared public contracts a site can
+  hold directly (`AdminData` alone is the whole stock admin's page-data union), not an unexported
+  internal type a narrowing split like Task 1's `createContentRoutesInternal` can peel away from.
+  `coherence-v2.md:507-511`'s "narrow the declared surface, then let the closure follow" prescription,
+  which licensed Task 1's `ContentRoutes` narrowing and this record's Tier 1/Tier 2 accounting, does
+  not reach these: there is no narrower public type to declare in `EditData`'s place that a
+  hand-mounting site could still use.
+- **(B) Keep the 19 in list (b), with an explicit written sanction accepting nineteen new
+  closure leaks of the `NavIcon` class.** The audit's own retire rationales for several of the
+  nineteen arguably already intend this reading: `rank-route-factories.md:395` (rank 44) says
+  `EntrySummary`'s helper-function scenario "is satisfied by `ListData['entries'][number]`";
+  `verify-route-factories.md:103-104` (rank 62, the verifier's own keep-to-retire overturn) says
+  `PublishActionLink` is only the resolved form, "read off `EditData.publishActions`";
+  `rank-route-factories.md:385` (rank 43) says `HistoryEntry`'s anonymous consumer is "none by
+  name; reached as `data.entries[i]`" — each already accepts that the retired name survives only
+  as an unnamed structural member of a wider keep, which is precisely what a closure leak is.
+  Retiring under this reading is consistent with the audit's own stated intent for these three
+  (though not argued here for all nineteen); it leaves the leak-count where section 1 already
+  carries an unresolved one (R-0's second direction, inheritance note 4), rather than opening a
+  fourth.
+
+This record takes no position between them. The charter adjudicates; Geoff rules at this
+checkpoint, before the retires pass plan is authored.

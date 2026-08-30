@@ -9,14 +9,16 @@ task. **Worktree:** `foundations-b` off `main` at `15f98335`, the foundations-a 
 has landed; that commit's `docs/internal/api-surface.md` is this pass's derivation input.
 **The task bodies below were FINALIZED against that merged tree on 2026-08-29; the
 finalization section at the end of this file carries every correction, its evidence, and the
-mismatches the conductor rules on. One adversarial `engine-triage` review over this finalized
-plan runs BEFORE any dispatch.**
+mismatches the conductor ruled on. The adversarial `engine-triage` review over this finalized
+plan has RUN; its seven verdicts are folded into the task bodies and the finalization section
+below (this commit). No further pre-flight is owed before dispatch.**
 **Shared files:** `docs/internal/engine-rulings.md` (Tasks 1, 2), `CHANGELOG.md` (every
 task), `docs/reference/sveltekit.md` (Tasks 1, 3).
 **Inherited from foundations A, folded into the tasks that own them:**
 `docs/internal/record/2026-08-29-foundations-a-move-set.md`, its "Inheritance notes for
-foundations B" subsection (four items; note 1 in Task 1, notes 2 and 3 in Task 2, note 4 out
-of scope under Pass-end notes).
+foundations B" subsection (four items; note 1 routed to the internals pass rather than
+executed in Task 1 per the engine-triage review, notes 2 and 3 in Task 2, note 4 out of scope
+under Pass-end notes).
 **Initiative frame:** `docs/superpowers/specs/2026-08-27-audit-remediation-initiative-design.md`
 (slice 2b; its standing-constraints block applies).
 **Evidence base, read from source, never memory:** `coherence-v2.md` (C3 at `:189-231`, the
@@ -49,8 +51,7 @@ files the repoint touches, a new compile-only hand-mount fixture,
 `docs/reference/sveltekit.md` (the `createContentRoutes` return block at `:884-919`
 regenerates), `docs/internal/api-surface.md`, `docs/internal/engine-rulings.md`
 (`audit-sveltekit-contentroutes` at `:1639`, whose `- **Shape:**` line foundations A
-repaired), `scripts/checks/reference-coverage.mjs` (the inherited `staleNames` scoping, first
-bullet below), `CHANGELOG.md`.
+repaired), `CHANGELOG.md`.
 
 **The structural decision, ruled after two reviews (the cosmetic alternative fails
 silently):** `check:surface` renders the full declared return of every public callable, so a
@@ -67,34 +68,44 @@ members (`content-routes.ts:111-145`) and the composer drives every one of them 
 count only as "30-key" (`rank-route-factories.md:640`, `verify-route-factories.md:119`); 35 is
 what the code has, and no source anywhere states 36.
 
-- [ ] FIRST, before the return changes (inherited from foundations A, move-set record,
-      inheritance note 1): scope `reference-coverage.mjs`'s `staleNames` per subpath.
-      Today it is union-over-all-subpaths (`staleNames` at `:197-201`, fed `globalKnownNames`
-      at `:328`, called at `:360`), so a reference page listing a name its own subpath does
-      not export passes as long as any subpath exports it. That is exactly how 14 dead rows
-      survived in `delivery-data.md` until foundations A's Task 3 removed them by hand. It
-      lands here rather than after, because narrowing shrinks `docs/reference/sveltekit.md`
-      (2005 lines today) and the per-subpath check is far cheaper against the smaller page.
-      **See FINALIZATION NOTE 1: the union scoping is a deliberate, documented choice with a
-      live counterexample in `reference-coverage.mjs:188-191`, so this bullet needs the
-      conductor's ruling before dispatch.**
+**The narrowing is a NECESSARY step toward the media-janitorial retires, not the sufficient
+one.** The ledger's `- **Shape:**` line for `audit-sveltekit-contentroutes`
+(`engine-rulings.md:1639`, "that reshape is the single change that lets the media-janitorial
+types retire") is falsified as a sufficiency claim on the merged tree: `createCairnAdmin`'s
+rendered return (`api-surface.md:498`, `:519`) still names every ranks 1-13/17-22/38
+janitorial type after this task's public/internal split, since the composer keeps driving the
+wide internal shape (see the acceptance bullet below). Task 2's list (c) is where that
+consequence gets recorded, not this task.
+
 - [ ] Membership rule, positive and enumerable (the "driven set" cannot discriminate; the
       composer drives all 35): a member is OUT iff it is reachable only from the engine's
       own Media Library screen AND its result/failure types sit in the ranks 1-30 retire
-      closure (this covers the janitorial trio AND the four media-mutation actions,
-      `mediaReplaceAction`/`mediaAltPropagateAction`/`mediaDeleteAction`/`mediaUpdateAction`,
-      whose failure types are ranks 14-30 retires: `MediaAltPropagateFailure` 17,
-      `MediaBulkFailure` 18, `MediaUpdateFailure` 19, `MediaReplaceFailure` 20,
-      `MediaDeleteRefusal` 21, every one of them a retire the verifier let stand); everything
-      the hand-mount path legitimately wires is IN, and `ContentFormFailure` stays in the
-      public unions it already inhabits. `ContentFormFailure` is an OPEN RESHAPE, not a keep
-      (`audit-sveltekit-contentformfailure` at ledger `:1329`, rank 31, "reshape stands" at
-      `verify-route-factories.md:48-51`); its reshape belongs to the conventions pass, and
-      this task neither executes nor closes it. Note the alignment, which is a reason to keep
-      the name public here and not a licence to reshape it: that ledger entry's repaired
-      `Shape:` already prescribes keeping the eleven arms module-internal, which is what this
-      task's internalization begins. The task report enumerates every excluded member with
-      its rank citation; the diff review checks the enumeration against the rule.
+      closure. The OUT set, enumerated by name so the diff review can check it against the
+      rule: the janitorial trio (`mediaBulkDeleteAction`/`mediaOrphanScanAction`/
+      `mediaOrphanPurgeAction`, whose results are `MediaBulkDeleteResult`/
+      `MediaOrphanScanResult`/`MediaOrphanPurgeResult`, ranks 13/7/8) and the four
+      media-mutation actions (`mediaReplaceAction`/`mediaAltPropagateAction`/
+      `mediaDeleteAction`/`mediaUpdateAction`, whose failure types are ranks 14-30 retires:
+      `MediaAltPropagateFailure` 17, `MediaBulkFailure` 18, `MediaUpdateFailure` 19,
+      `MediaReplaceFailure` 20, `MediaDeleteRefusal` 21, every one of them a retire the
+      verifier let stand), PLUS `mediaAltPreviewAction` (`MediaAltPreviewPlan`, rank 10),
+      `mediaReplacePreviewAction` (`MediaReplacePreviewPlan`, rank 12), and
+      `mediaLibraryUploadAction` (`MediaUploadFailure` rank 22 / `UploadResult` rank 38,
+      reshape-to-retire per `verify-route-factories.md:126`), which satisfy the rule's literal
+      reading. That is ten OUT members total. Everything the hand-mount path legitimately
+      wires is IN, and `ContentFormFailure` stays in the public unions it already inhabits.
+      `ContentFormFailure` is an OPEN RESHAPE, not a keep (`audit-sveltekit-contentformfailure`
+      at ledger `:1329`, rank 31, "reshape stands" at `verify-route-factories.md:48-51`); its
+      reshape belongs to the conventions pass, and this task neither executes nor closes it.
+      Note the alignment, which is a reason to keep the name public here and not a licence to
+      reshape it: that ledger entry's repaired `Shape:` already prescribes keeping the eleven
+      arms module-internal, which is what this task's internalization begins. State the
+      capability removal plainly: after the narrowing, a site hand-mounting the public
+      `CairnMediaLibrary` component (`docs/reference/components.md:199`, actions documented at
+      `docs/reference/admin-routes.md:145-163`, per-route mounting at `:272-280`) has no
+      public seam to wire its media actions and now requires `createCairnAdmin`. The task
+      report enumerates every excluded member with its rank citation; the diff review checks
+      the enumeration against the rule.
 - [ ] The executable proof, both directions: a compile-only hand-mount fixture (in the
       pattern of `src/tests/unit/env-genericity.test.ts`, including the no-suite Vitest
       workaround block its own header comment explains at `:26-30`) wires every narrow-set
@@ -106,24 +117,28 @@ what the code has, and no source anywhere states 36.
       in `docs/internal/api-surface.md`).
 - [ ] `check:reference:signatures` in the acceptance by name (the reference return block
       must regenerate or CI reds).
-- [ ] CHANGELOG `Consumers must:` for anyone naming the wide type or an internalized member,
-      appended under the existing `## Unreleased` section (`release-size: minor` today).
+- [ ] CHANGELOG `Consumers must:` line stating the capability removal plainly, not a
+      type-rename note: a site hand-mounting the public `CairnMediaLibrary` component
+      (`docs/reference/components.md:199`, actions documented at
+      `docs/reference/admin-routes.md:145-163`, per-route mounting at `:272-280`) loses its
+      public seam for wiring media actions and now needs `createCairnAdmin`; appended under
+      the existing `## Unreleased` section (`release-size: minor` today).
 - [ ] Acceptance: full gate green including the fixture; the api-surface diff shows the
-      narrow public return; `audit-sveltekit-contentroutes` (`:1639`) closed against the
-      `- **Shape:**` line foundations A repaired; entries whose retirement this task already
-      consumed close here as consequences (the standing constraint puts the close in the
-      executing task; Task 2 verifies). Every consumed entry is one of the 30 retire verdicts
-      in `rank-route-factories.md` ranks 1-30, each with its own `audit-sveltekit-*` ledger
-      entry.
+      narrow public return; this task closes `audit-sveltekit-contentroutes`
+      (`engine-rulings.md:1639`) ONLY, and consumes NO retire, because
+      `docs/internal/api-surface.md:498` (`CairnAdminRoutes`) and `:519` (`createCairnAdmin`)
+      still render every ranks 1-13/17-22/38 janitorial type after the narrowing (verified by
+      enumeration: for each such name the only api-surface lines naming it besides 513/520 are
+      498 and 519).
 
 ## Task 2: The single R4 closure re-derivation; the retires pass's input
 
 **Files:** a new record document `docs/internal/record/<date>-r4-rederivation.md` (the
 initiative design, §3, refers to it by the placeholder name `2026-08-27-r4-rederivation.md`;
 the file this task writes carries the pass's own date and is what the retires pass reads),
-`docs/internal/engine-rulings.md` (progress annotations; closes belong to Tasks 1 and
-foundations A's Task 2, which this task VERIFIES against the `check:surface` diff — but see
-FINALIZATION NOTE 2, since A's Task 2 closed no retire entry).
+`docs/internal/engine-rulings.md` (progress annotations; the only close either Task 1 or
+foundations A's Task 2 contributes is Task 1's single `audit-sveltekit-contentroutes` close —
+see FINALIZATION NOTE 2 — which this task VERIFIES against the `check:surface` diff).
 
 - [ ] Derivation input is `docs/internal/api-surface.md` as of Task 1; as merged it carries
       411 exported names across 18 subpaths, `/sveltekit` publishing 193 of them. The
@@ -145,24 +160,35 @@ FINALIZATION NOTE 2, since A's Task 2 closed no retire entry).
       against the record's 36/5/18). A two-item hunt, not a 94-slug enumeration; the 48 in
       `coherence-v2.md:496` is the pre-verification tally, superseded by the 33 verification
       overturns.
-- [ ] The three lists: (a) retires already consumed by foundations A Task 2 and this pass's
-      Task 1, VERIFIED against the `check:surface` diff (their closes happened in the
-      executing tasks; this task audits them) — **see FINALIZATION NOTE 2: foundations A's
-      Task 2 consumed no retires at all, so list (a) as written has one contributor, not
-      two**; (b) retires still requiring manual execution
+- [ ] The three lists: (a) retires already consumed, VERIFIED against the `check:surface`
+      diff — this list is EMPTY on both halves: foundations A's Task 2 closed no retire (its
+      move rule relocated keeps only), and this pass's Task 1 consumes no retire either (its
+      narrowing closes `audit-sveltekit-contentroutes` alone; `createCairnAdmin`'s rendered
+      return still names every ranks 1-13/17-22/38 janitorial type after the split), so
+      nothing has executed yet on either half; (b) retires still requiring manual execution
       (the retires pass's work list), including the re-evaluation of foundations A's recorded
-      R4 re-exports against the narrowed closure; (c) PROPOSED verdict changes, each argued in
-      one sentence with evidence, diffed against foundations A's recorded move set so churn on
-      moved names is visible.
+      R4 re-exports against the narrowed closure; (c) verdict changes, split into an IN-94
+      half (verdict flips that participate in the partition arithmetic below) and an
+      OUT-OF-94 half (proposals recorded and ratified separately, not part of the partition),
+      each argued in one sentence with evidence, diffed against foundations A's recorded move
+      set so churn on moved names is visible.
 - [ ] What lists (b) and (c) are measured against, named explicitly (both halves of one
       artifact, and they must agree): the reader's copy is
       `docs/internal/record/2026-08-29-foundations-a-move-set.md`, whose "Moved names (18)"
       table, "Unmoved by verdict" section, and 120-row "The recorded R4 re-export set" table
       list (c) diffs against; the machine twin the gate actually reads is
       `scripts/checks/check-surface-reexports.json`, and list (b) re-derives its entries.
-      Measured on the merged tree: 64 of the 120 re-exports sit on `/sveltekit`, and the
-      narrowing is expected to strike many of them. **The record's own prose says "Sixty-two";
-      the record's table and the JSON both say 64. Use 64** (see the finalization section).
+      Measured on the merged tree: 64 of the 120 re-exports sit on `/sveltekit`; of those 64,
+      exactly 1 names `createContentRoutes` (`CairnRuntime`, which survives on its other two
+      signatures regardless) and 0 name `createCairnAdmin` or `CairnAdminRoutes`, so the
+      narrowing strikes at most zero re-export records. **The record's own prose says
+      "Sixty-two"; the record's table and the JSON both say 64. Use 64** (see the finalization
+      section).
+- [ ] Each ranks 1-13/17-22/38 retire must be tested against `createCairnAdmin`'s rendered
+      return (`api-surface.md:498`, `:519`), with the blocked ones routed to list (c) and the
+      blocking signature named per item (roughly 21 of the 94 retires are expected to be
+      composer-blocked; the retires pass needs the per-item blocker or it will attempt
+      deletions that break the R4 closure).
 - [ ] Two inherited cautions on list (b) (move-set record, inheritance notes 2 and 3). First,
       a green `check:surface` proves record MEMBERSHIP, never justification: the gate checks
       that a duplicate has a recorded entry with a valid `home`, so appending an entry
@@ -176,16 +202,28 @@ FINALIZATION NOTE 2, since A's Task 2 closed no retire entry).
       that ask and must not be read as satisfying it.
 - [ ] THE RATIFICATION GATE: list (c) goes to Geoff at the pass-end checkpoint BEFORE the
       retires pass plan is authored; the charter adjudicates, the ledger records.
-- [ ] Acceptance: `check:docs` green; the three lists plus the named exclusion
-      (`DEFAULT_ROLES`, `audit-adapter-default-roles` at ledger `:276`, a keep that becomes a
-      retire only inside the conventions pass's coupled `defineAccess` pair) partition the 94
-      exactly; list (a) matches the surface diff.
+- [ ] Acceptance: `check:docs` green; list (a) (empty), list (b), the IN-94 half of list (c),
+      and the named exclusion (`DEFAULT_ROLES`, `audit-adapter-default-roles` at ledger
+      `:276`, a keep that becomes a retire only inside the conventions pass's coupled
+      `defineAccess` pair) partition the 94 exactly; the OUT-OF-94 half of list (c) sits
+      outside that arithmetic; list (a) matches the surface diff (an empty list matches
+      trivially, since nothing has executed).
 
 ## Task 3: Drift for the internalized names
 
 **Files:** every `docs/` page and `src/` comment naming an internalized member (scope:
 `docs/`, `src/`, `examples/`, `templates/`), `docs/extend/migration-notes.md`.
 
+- [ ] Primary sweep targets, ahead of the generic per-member grep: three prose surfaces that,
+      after Task 1's narrowing, document members the public factory no longer returns, and no
+      gate sees it. `docs/reference/sveltekit.md:920-1000` (the `createContentRoutes` member
+      prose: `mediaDeleteAction`/`MediaDeleteRefusal` at `:946-951`,
+      `mediaUpdateAction`/`MediaUpdateFailure` at `:951-954`, the
+      replace/altPropagate/janitorial members through `:975`).
+      `docs/reference/admin-routes.md:145-163` and `:272-280` (the "mount a single admin view
+      inside its own shell" clause stops being true of the media view).
+      `docs/reference/components.md:199-235` (`CairnMediaLibrary`'s worked example implies a
+      mountable route).
 - [ ] `grep -rn` per internalized name across the four trees; repoint or rewrite every hit;
       the gate-coverage residual stated honestly as in foundations A (whose Task 3 named it
       precisely: `check:snippets` covers fenced ts/svelte in the four published arms and
@@ -194,8 +232,10 @@ FINALIZATION NOTE 2, since A's Task 2 closed no retire entry).
       Foundations A's sweep found zero residual hits for its 18 moved names and one class of
       pre-existing drift the reference gate structurally cannot see (14 stale
       `delivery-data.md` rows); expect the same asymmetry here and report it the same way.
-      Note the sweep surface is wider than A's: `createContentRoutes` alone is named in 103
-      files across `src/`, `docs/`, `examples/`, `templates/`, and `scripts/`.
+      Note the sweep surface is wider than A's: `createContentRoutes` alone is named in at
+      least 104 files across `src/`, `docs/`, `examples/`, `templates/`, and `scripts/` (a
+      floor, not an acceptance number: it measures 104 today, and that count includes this
+      plan document itself).
 - [ ] `migration-notes.md` gains the narrowing entry, in the per-version record's form, under
       the same `## Unreleased` section that already carries foundations A's canonical-home
       entry (`docs/extend/migration-notes.md:16-25`).
@@ -219,6 +259,15 @@ owning slice. Its four instances (`checkRateLimit`, `formatTimestamp`, `normaliz
 them up. The owning slice is **the internals pass (initiative design §5)**, which already
 carries the coherence-thirteen; the `check:dogfood` tripwire C13 proposes belongs with it.
 Naming it here discharges B's obligation to route the note, not the note itself.
+
+**Also routed to the internals pass, not executed here (move-set record, inheritance note
+1):** the `staleNames` per-subpath rescope in `reference-coverage.mjs`, ruled out of Task 1 at
+the engine-triage pre-dispatch review. FINALIZATION NOTE 1 below carries the re-based grounds:
+the union scoping is deliberate and documented in the file itself, a naive per-subpath rescope
+reds pages this pass never touches, and foundations B removes no export from any barrel, so
+the check cannot fire on this pass's own changes either way. The internals pass is where the
+exemption mechanism (or the ruling to overturn the documented rationale) belongs, alongside
+the coherence-thirteen it already carries.
 
 ---
 
@@ -340,8 +389,9 @@ none removed, no acceptance criterion widened.
   the referent unstated). Added foundations A's own statement of that residual and its
   measured outcome (zero residual hits across 18 moved names, plus 14 stale `delivery-data.md`
   rows the reference gate structurally cannot see), and the merged-tree measurement that this
-  sweep is wider: `createContentRoutes` alone is named in 103 files across the four trees plus
-  `scripts/`.
+  sweep is wider: `createContentRoutes` alone is named in at least 104 files across the four
+  trees plus `scripts/` (a floor, not an acceptance number: it includes this plan document
+  itself).
 - Task 3, `migration-notes.md` (was: "gains the narrowing entry"). Anchored to the same
   `## Unreleased` section that already carries foundations A's canonical-home entry,
   `docs/extend/migration-notes.md:16-25`.
@@ -379,33 +429,40 @@ none removed, no acceptance criterion widened.
 
 **FINALIZATION NOTES (the conductor rules; the `engine-triage` review sees these first)**
 
-1. **The `staleNames` per-subpath rescope has no task that owns it, and the code argues
-   against it.** Inheritance note 1 assigns the fix to "before narrowing `/sveltekit`", which
-   in this plan means inside Task 1, so it is folded there as that task's first bullet. Two
-   problems the conductor should rule on. First, sizing: it adds a fourth deliverable to the
-   pass's largest task, the one already marked the `model: opus` candidate, and it is a
-   gate-behavior change rather than part of the narrowing. Second, and heavier, the union
-   scoping is DELIBERATE and documented twice in the file itself
-   (`scripts/checks/reference-coverage.mjs:188-191` and `:319-326`): "the check is
-   package-wide, not page-scoped, because a page legitimately names a real export that lives
-   on a different subpath", with a live counterexample in `docs/reference/core.md:698-710`,
-   where the `/render` helpers `cardShell`, `headRow`, and `iconSpan` are shown beside the
-   root export `glyph`. A per-subpath rescope must therefore either overturn that documented
-   rationale or ship an exemption mechanism, and neither is specified anywhere in this plan.
-   The three options: keep it in Task 1 with the exemption designed inside the task; route it
-   to the retires pass, which is when the narrowed pages actually shrink; or rule the note
-   discharged by foundations A's manual removal of the 14 rows.
-2. **List (a)'s premise is half stale: foundations A's Task 2 consumed no retires.** The
-   bullet describes list (a) as "retires already consumed by foundations A Task 2 and this
-   pass's Task 1". A's Task 2 executed the canonical-home rule for KEEPS only; its own move
-   rule holds that "RETIRES die in place (the retires pass deletes them where they stand)",
-   the move-set record's "Unmoved by verdict" section names the five retires among the 122
-   multi-subpath names as explicitly not moved, and the merged ledger carries no retire entry
-   closed by foundations A. The wording dates from before the foundations pass was split,
-   when one Task 2 was expected to consume retires; the initiative design (§3) still carries
-   the pre-split phrasing too. So list (a) as executed has one contributor, this pass's Task
-   1, and the `check:surface` diff it audits is Task 1's diff alone. The conductor rules
-   whether to strike the foundations A clause outright or keep list (a) two-sourced with an
-   empty A half recorded as such. Nothing else in the plan depends on the answer: the
-   partition acceptance still holds either way, since an empty contributor contributes
-   nothing to the 94.
+1. **RULED (engine-triage pre-dispatch review): the `staleNames` per-subpath rescope is
+   removed from Task 1; the gate redesign is routed to the internals pass (Pass-end notes
+   above).** Inheritance note 1 assigned the fix to "before narrowing `/sveltekit`", and an
+   earlier draft of this plan folded it into Task 1 as that task's first bullet. The grounds
+   are re-based here on evidence the review measured on the merged tree, which changes the
+   verdict from "the conductor should rule" to "ruled". The union scoping IS deliberate,
+   documented twice in the file itself (`scripts/checks/reference-coverage.mjs:188-191` and
+   `:319-326`: "the check is package-wide, not page-scoped, because a page legitimately names
+   a real export that lives on a different subpath"), but the counterexample the earlier draft
+   worried about, `docs/reference/core.md:698-710`'s `cardShell`/`headRow`/`iconSpan` beside
+   the root export `glyph`, never enters the candidate pool under a naive per-subpath rescope
+   (verified by simulation). What a naive rescope actually reds is four pages this pass never
+   touches, each one shared by two subpaths in `CONFIG` (`reference-coverage.mjs:293-296`):
+   `/reproductions` and `/reproductions/manifest` both map to `reproductions.md`; `/delivery`
+   and `/delivery/head` both map to `delivery.md`. Twenty names sit across those four entries,
+   of which `check-surface-reexports.json` records only three. Decisively, foundations B
+   removes no export from any barrel, so `staleNames` could never fire on this pass's own
+   changes either way; the stale-row exposure a rescope would actually catch belongs to the
+   retires pass, which is when names get removed. Sizing was also wrong to carry regardless: a
+   gate-behavior change does not belong inside the pass's largest task, already the `model:
+   opus` candidate.
+2. **RULED: list (a) is empty on both halves.** The bullet originally described list (a) as
+   "retires already consumed by foundations A Task 2 and this pass's Task 1". A's Task 2
+   executed the canonical-home rule for KEEPS only; its own move rule holds that "RETIRES die
+   in place (the retires pass deletes them where they stand)", the move-set record's "Unmoved
+   by verdict" section names the five retires among the 122 multi-subpath names as explicitly
+   not moved, and the merged ledger carries no retire entry closed by foundations A. This
+   pass's Task 1 also consumes no retire, per the engine-triage review's grounding for its
+   acceptance bullet: `createCairnAdmin`'s rendered return (`api-surface.md:498`, `:519`)
+   still names every ranks 1-13/17-22/38 janitorial type after the narrowing, so Task 1 closes
+   only `audit-sveltekit-contentroutes` itself. So list (a) as executed has zero contributors,
+   not one: the wording dates from before the foundations pass was split, when one Task 2 was
+   expected to consume retires, and the initiative design (§3) still carries the pre-split
+   phrasing too (unchanged by this pass, out of scope). The review ruled: keep list (a) in the
+   task body as an explicit empty list rather than strike it, since a later pass's
+   `check:surface` diff may populate it. Nothing else in the plan depends on the answer: the
+   partition acceptance still holds, since an empty contributor contributes nothing to the 94.

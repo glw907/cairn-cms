@@ -10,41 +10,41 @@ only the present.
 ## Current state
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
-`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries THREE
+`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries FOUR
 passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection (merged 2026-08-29),
-and csrf-hardening (remediation slice 1, merged 2026-08-30). Foundations A (audit-remediation
-slice 2a) is complete on its worktree, awaiting merge, and will join this window, which holds
-until the chassis slice per the initiative design. CI on `main` is fully green.
+csrf-hardening (remediation slice 1, merged 2026-08-30), and foundations A (audit-remediation
+slice 2a, merged 2026-08-29 at `15f98335`), which holds this window until the chassis slice per
+the initiative design. CI on `main` is fully green on all five workflows.
 
 ## Immediate next action
 
-**Merge `foundations-a` to `main`.** The pass is DONE on worktree
-`.claude/worktrees/foundations-a`: close-out gates green, per-task diffs accepted, pass-end
-`engine-triage` verdict "holds" on all three artifacts (ledger repair, canonical-home rule,
-drift sweep). Post-mortem appended to `docs/superpowers/plans/2026-08-28-foundations-a-pass.md`.
+**Execute foundations B.** The plan
+(`docs/superpowers/plans/2026-08-28-foundations-b-pass.md`) is finalized against the merged
+foundations A surface AND has passed its engine-triage pre-dispatch review, with all seven
+verdicts folded into the task bodies (2026-08-29). No further pre-flight is owed. The
+`foundations-a` worktree and branch are deleted (merged). Resume prompt if this session dies,
+for a FRESH session on a NEW workstation:
 
-After the merge: finalize foundations B's task bodies
-(`docs/superpowers/plans/2026-08-28-foundations-b-pass.md`) against A's merged surface, run one
-`engine-triage` adversarial review over the finalized B plan, then execute B in the same
-session (Geoff's standing calls, 2026-08-29). Resume prompt if this session dies:
-
-In ~/Projects/cairn-cms, execute the foundations A pass (docs/superpowers/plans/2026-08-28-foundations-a-pass.md) and then foundations B in the same session, per the Session handoff note in the A plan. (Check `git -C .claude/worktrees/foundations-a log --oneline` first; completed tasks are committed there.)
+In ~/Projects/cairn-cms, execute the foundations B pass (docs/superpowers/plans/2026-08-28-foundations-b-pass.md): create a fresh worktree foundations-b off main, then run the three serial task chains per the plan header.
 
 **Carried into foundations B:** the move-set record's "Inheritance notes for foundations B"
 subsection (`docs/internal/record/2026-08-29-foundations-a-move-set.md`) covers four items:
-`staleNames`'s union-over-all-subpaths scoping, record-membership-is-not-justification, the
-122-multi-subpath-count invariance, and R-0's undischarged second direction. The
-reference-coverage per-subpath fix is routed to land BEFORE B narrows `/sveltekit`.
+`staleNames`'s union-over-all-subpaths scoping (routed to the internals pass, not executed in
+B, per the engine-triage review), record-membership-is-not-justification, the
+122-multi-subpath-count invariance, and R-0's undischarged second direction (also routed to the
+internals pass).
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
-committed locally (unpushed) at `docs/2026-08-22-cairn-0.96-update-instructions.md`; 907-life is
-eleven releases behind and its sheet says to run it as a numbered site pass.
+committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
+no consumer repo is ahead of origin, so the sheets are pushed. 907-life is eleven releases
+behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
 - **Audit remediation (ROADMAP Now).** Slice 1 (csrf-hardening) SHIPPED. Slice 2a (foundations
-  A) complete, awaiting merge (above). Next: B, then retires (its plan waits on B's list (c)
-  ruling), conventions, internals, chassis; ONE release cut after chassis. Routed to the
+  A) MERGED (above). Next: B (immediate next action, above), then retires (its plan waits on
+  B's list (c) ruling), conventions, internals, chassis; ONE release cut after chassis. Routed
+  to the
   conventions pass's auth family: the session-cookie derivation ledger entry,
   `check-probe.ts:49`'s independent derivation, the cookie-jar posture split, the login-CSRF
   `_pending`-nonce binding, and making the CSRF helpers' patterns uniform. Routed to internals:

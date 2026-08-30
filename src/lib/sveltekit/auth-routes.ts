@@ -212,10 +212,14 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     //
     // This is a deliberate exception to issueCsrfToken's never-rotate rule, which exists so a
     // second open admin tab's already-rendered form field keeps matching the cookie. At this
-    // instant no authenticated form exists to invalidate: any other open tab holds at most an
-    // /admin/login form, which is meaningless once this session is signed in. Rotating at any
-    // later point would break a real authenticated form, which is why this is the only place it
-    // happens.
+    // instant another open tab holds at most a sign-in form, which is meaningless once this
+    // session is signed in, except when an already-signed-in browser re-authenticates through
+    // /admin/auth/confirm (a public admin path): another tab there can hold a real authenticated
+    // form whose field then mismatches the rotated cookie, taking one generic 403 (detail
+    // mismatch, witness field) that a reload recovers from. Rotating at any later point would
+    // break a real authenticated form outside that narrow case, and binding the token to
+    // authentication epochs outweighs the self-healing edge, which is why this is the only place
+    // it happens.
     const csrfIsSecure = csrfSecure({ url: event.url, platform: event.platform });
     event.cookies.delete(csrfCookieName(csrfIsSecure), { path: '/', secure: csrfIsSecure });
     issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform });

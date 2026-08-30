@@ -111,6 +111,7 @@ describe('CSRF token rotation at successful login', () => {
       routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token: 'bogus' }, cookies })),
     );
     expect(cookies.sets).toHaveLength(0);
+    expect(cookies.deletes).toHaveLength(0);
     expect(cookies.get(csrfCookieName(true))).toBe('PRE-LOGIN-VALUE');
   });
 });

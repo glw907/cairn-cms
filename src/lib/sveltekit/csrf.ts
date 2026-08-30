@@ -18,9 +18,11 @@ const FORM_CONTENT_TYPES = new Set([
 //
 // What this copy decides, which is not what guard.ts's copy decides: under csrfSecure's monotonic
 // rule the hostname is consulted only for a NON-https request, where it chooses between the bare
-// dev cookie and the PUBLIC_ORIGIN branch. It can never downgrade an https request, so the
-// hostname (a client-supplied Host header) cannot weaken a cookie the browser is already
-// receiving over TLS.
+// dev cookie and the PUBLIC_ORIGIN branch. On an https request the hostname is never consulted at
+// all, so it cannot weaken a cookie the browser is already receiving over TLS. On a non-https
+// request the client-supplied Host header does still select the bare name over the PUBLIC_ORIGIN
+// answer, but that is not attacker-reachable through a victim's own browser, which derives Host
+// from the URL it is actually visiting.
 function isLocalHost(hostname: string): boolean {
   return (
     hostname === 'localhost' ||

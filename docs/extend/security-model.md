@@ -69,8 +69,11 @@ value left in a deployed site's `PUBLIC_ORIGIN` can't downgrade a live TLS reque
 cookie that a sibling subdomain is then free to overwrite. Only a non-`https` request consults
 anything further. A request to a local host (`localhost`, `127.0.0.1`, and their siblings) keeps
 the bare name, so local development never tries to mint a `__Host-` cookie it can't set.
-Otherwise the site's configured `PUBLIC_ORIGIN` decides, which is what lets a deployment behind
-TLS termination the engine doesn't control mint the cookie the browser expects.
+Otherwise the site's configured `PUBLIC_ORIGIN` decides. Under the monotonic rule this branch is a
+conservative fallback that a guarded `/admin` path never reaches: an `https` request already
+resolved `Secure` above, and the guard refuses an `http` non-local request on every admin path
+before any token issues. It exists so a non-admin surface that mints the cookie resolves the same
+name the admin will expect.
 
 The CSRF cookie's full attribute set: `HttpOnly`, `Path=/`, `SameSite=Lax` set explicitly (never
 by attribute omission, since an omitted `SameSite` gets a browser's own default treatment for a
@@ -82,8 +85,11 @@ issue, keeping the same value, while the session cookie's thirty days run from s
 value rotates at exactly two moments: a successful login mints a fresh one, so a value fixed on
 the browser before sign-in can't carry into the session, and a logout deletes it. Nothing else
 changes the value, so a second open admin tab's already-rendered form field keeps matching the
-cookie. At the login moment no authenticated form exists yet to invalidate; another open tab
-holds at most a sign-in form, which the new session makes moot.
+cookie. At the login moment another open tab holds at most a sign-in form, which the new session
+makes moot, except when an already-signed-in browser re-authenticates through `/admin/auth/confirm`
+(a public admin path): another tab there can hold a real authenticated form whose field then
+mismatches the rotated cookie, taking one generic 403 that a reload recovers from. Binding the
+token to authentication epochs outweighs that narrow self-healing edge.
 
 ## CSRF: cairn owns it, not the framework
 

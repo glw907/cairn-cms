@@ -20,14 +20,16 @@ flake, rerun green).
 ## Immediate next action
 
 **Execute the retires pass** (remediation slice 3). The plan is
-`docs/superpowers/plans/2026-08-30-retires-pass.md`, authored against the RATIFIED R4 record:
-Geoff ruled F-1 HYBRID at the foundations B pass-end gate (2026-08-30, recorded in
-`docs/internal/record/2026-08-30-r4-rederivation.md` section 7): the 18 return-position
-F-1 rows stay in list (b) sanctioned as named closure leaks; `AdminActionOptions` alone moves
-to list (c) Tier 3 (argument-position). As executed: list (b) 62 (44 unsanctioned + 18
-sanctioned), list (c) 32, `DEFAULT_ROLES` excluded. Resume prompt for a fresh session:
+`docs/superpowers/plans/2026-08-30-retires-pass.md`, adversarially reviewed pre-dispatch by
+two engine-triage lenses (2026-08-30) with all 23 findings and Geoff's rulings folded in: the
+F-1 hybrid (18 sanctioned return-position leaks; `AdminActionOptions` Tier 3) plus the
+addendum (list (a) is 2, already executed by toolkit-seams; `ReproFenceValidation` Tier 2,
+reshape-blocked; the render trio Tier 4, chassis-coupled; `ReproInstance` stays sanctioned).
+Both ruled subsections live in `docs/internal/record/2026-08-30-r4-rederivation.md` section
+7. As executed: 2 + 56 (38 unsanctioned + 18 sanctioned) + 36 blocked = 94; ceiling 4.5M,
+five chain dispatches. Resume prompt for a fresh session:
 
-In ~/Projects/cairn-cms, execute the retires pass (docs/superpowers/plans/2026-08-30-retires-pass.md): create a fresh worktree retires off main, verify the R4 record's section 7 carries the RULED subsection, then run the three serial task chains per the plan header.
+In ~/Projects/cairn-cms, execute the retires pass (docs/superpowers/plans/2026-08-30-retires-pass.md): create a fresh worktree retires off main, verify the R4 record's section 7 carries BOTH the RULED and ADDENDUM RULINGS subsections, run the worktree prep the plan header mandates, then run the five serial chain dispatches.
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed

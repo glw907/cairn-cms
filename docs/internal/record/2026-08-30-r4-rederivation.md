@@ -527,3 +527,44 @@ consumer cost actually differs:
 Section 6's table is superseded by the figures above; it is left as written because it
 records what this document stated at ratification time, and the retires pass plans against
 this ruled section.
+
+### ADDENDUM RULINGS (Geoff, 2026-08-30, after the adversarial pre-dispatch review of the retires plan)
+
+Two engine-triage lenses (claims and mechanics) reviewed the retires pass plan against this
+record, the ledger, and the tree. Four of their findings changed ratified counts or needed a
+ruling; Geoff ruled each, and this addendum supersedes the RULED subsection's arithmetic
+(0 + 62 + 32) the same way that subsection superseded section 6.
+
+- **List (a) is 2, not 0.** `STATUS_CHIP_DOT_CLASS` (ledger `:2097`) and `StatusChipTone`
+  (`:2322`) were retired and ledger-closed by the toolkit-seams pass; both are absent from
+  `api-surface.md` and from `src/` (verified mechanically). Section 3's "EMPTY, both halves"
+  derivation trusted a green `check:surface` diff, which is structurally blind to a retire
+  executed before the snapshot existed; that method caveat is worth carrying to any later
+  closure derivation.
+- **`ReproFenceValidation` moves to list (c) Tier 2 (reshape-blocked).** It is named in the
+  return of `validateReproFence` (`api-surface.md:467`), an open reshape (ledger `:3203`), so
+  deleting it now manufactures an unrecorded leak this record's own F-1 test missed by
+  construction (the test scanned keep-verdicted shapes only). It retires with or after that
+  reshape in the conventions pass. Tier 2 is therefore 7.
+- **The render trio (`cardShell` `:3106`, `headRow` `:3120`, `iconSpan` `:3113`) defers to
+  the chassis pass as list (c) Tier 4 (chassis-coupled).** All three are value-imported by
+  the showcase theme/chassis and the baked `templates/waymark` twins and taught as
+  `docs/extend/configure-rendering.md`'s worked example; deleting them requires the chassis
+  re-homing, `emit:template` re-bake, and guide rewrite in one change, which is slice 6's
+  designed scope. (`isElement`, the fourth `audit-render` row, has no consumer-tree imports
+  and live internal consumers; it executes in the retires pass under the keep-module-export
+  disposition.)
+- **`ReproInstance` stays sanctioned.** It appears only as a callback parameter
+  (`ReproStory`'s `pose` hook, `api-surface.md:456`), which the return-position rationale
+  does not literally cover, but a consumer only ever RECEIVES one (inference covers the
+  inline callback; `Parameters<NonNullable<ReproStory['pose']>>[1]` covers the extracted
+  helper), so the `AdminActionOptions` construction-ergonomics rationale does not transfer.
+
+**Arithmetic as executed: 2 (list a) + 56 (list b: 38 unsanctioned + 18 sanctioned) + 36
+(list c: Tier 1 25, Tier 2 7, Tier 3 1, Tier 4 3) = 94.** The standing-leak expectation
+under the scoped predicate (retire-verdicted, absent from every export list, named in a
+surviving rendered shape) is 20 after the pass: the 18 sanctioned plus `DictionaryAddFailure`
+and `TidyFailure`; `NavIcon`/`EngineScreenId`/`SlotKind` are the expansion class, outside
+that predicate and owned by the internals pass. The retires pass plan
+(`docs/superpowers/plans/2026-08-30-retires-pass.md`) carries the full fold-in of both
+reviews' findings.

@@ -60,9 +60,9 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
  * The https-required page is served over http, where RFC 6797 forbids the header anyway.
  */
 export function brandedAdminPage(status: number, body: string): Response {
-  // applySecurityHeaders below now sets its own unconditional Cache-Control, so this constructor
-  // sets no Cache-Control of its own: two writers of the same header would leave whichever runs
-  // last as the value that actually ships, silently.
+  // Cache-Control is left to applySecurityHeaders below, which sets it unconditionally. Setting it
+  // here as well would make the value that actually ships depend on which of the two writers ran
+  // last, silently.
   const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
   applySecurityHeaders(headers, { omitHsts: true });
   return new Response(body, { status, headers });

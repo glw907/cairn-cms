@@ -39,6 +39,15 @@ The release step sets the version number at the cut and renames this section to 
   values no longer compile.** Replace `text-[var(--cairn-warning-ink)]` with `cairn-text-warning`
   and `text-[var(--color-positive-ink)]` with `cairn-text-success`, the new named utilities
   (`docs/reference/admin-grammar-tokens.md`, "Status-text idioms").
+- **`createContentRoutes` no longer returns the ten media-janitorial actions**
+  (`mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`,
+  `mediaReplaceAction`, `mediaAltPropagateAction`, `mediaDeleteAction`, `mediaUpdateAction`,
+  `mediaAltPreviewAction`, `mediaReplacePreviewAction`, `mediaLibraryUploadAction`). A site that
+  hand-mounts the public `CairnMediaLibrary` component has lost its public seam for wiring those
+  actions; there is no replacement factory for them. Mount the Media Library through
+  `createCairnAdmin`, which still serves the component the full action vocabulary it posts to. A
+  site that hand-mounts any other admin view is unaffected, `uploadAction` and `mediaLibraryLoad`
+  included, and every result and failure type stays exported from `/sveltekit`.
 
 See [`CHANGELOG.md`](../../CHANGELOG.md) for the full entry.
 

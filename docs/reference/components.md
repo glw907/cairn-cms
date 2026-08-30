@@ -210,7 +210,14 @@ a degraded-load `error`. The resting surface is a visual contact-sheet grid (a r
 listbox of tiles); a density toggle flips to an enriched sortable table. A toolbar row carries
 search, a pick-one triage radiogroup (All, Needs alt, Unused), and the density toggle, with
 client-side pagination over the full set. The single mount renders it for the `media` view inside
-`CairnAdmin`; a per-route mount lives at `src/routes/admin/(app)/media/+page.svelte`.
+`CairnAdmin`. Unlike the other view components on this page, it has no advanced per-route mounting
+path: its actions (`?/mediaUpdate`, `?/mediaDelete`, and the rest of the janitorial vocabulary
+below) are not members of `createContentRoutes`'s public return, so wiring
+`src/routes/admin/(app)/media/+page.server.ts` by hand against that factory alone leaves those
+posts with no matching action. Mounting this component outside the single mount means composing
+your own `actions` record around [`createCairnAdmin`](./sveltekit.md#createcairnadmin)'s, which is
+the only public seam that supplies them (see [Per-route mounting
+(advanced)](./admin-routes.md#per-route-mounting-advanced)).
 
 Activating a tile or row opens a non-modal detail slide-over: a labelled region (not a dialog), so
 the library stays live behind it. It holds the large preview, the `media:` reference with a copy

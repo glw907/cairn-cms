@@ -113,10 +113,11 @@ either half; an empty list matches the diff trivially.
 `MediaBulkDeleteResult`, `MediaAltPropagateFailure`, `MediaBulkFailure`, `MediaUpdateFailure`,
 `MediaReplaceFailure`, `MediaDeleteRefusal`, `MediaUploadFailure`, `UploadResult`) was tested
 against `createCairnAdmin`'s rendered return (`api-surface.md:519`; the parallel, currently
-identical `CairnAdminRoutes` type alias sits at `:498`). All 20 are still named there, directly or
-one level down through a directly-named result type's own declared shape (`MediaOrphanScanResult`
-names `OrphanByteRow`/`BrokenRefRow`; `MediaAltPreviewPlan` names `MediaAltPreviewEntry` and
-`BranchRef`, which itself names `AltPlacement`; `MediaReplacePreviewPlan` names
+identical `CairnAdminRoutes` type alias sits at `:498`). All 20 are still named there, directly,
+one level down, or (for `AltPlacement` and `RepointPlacement`) two levels down through a
+directly-named result type's own declared shape (`MediaOrphanScanResult` names
+`OrphanByteRow`/`BrokenRefRow`; `MediaAltPreviewPlan` names `MediaAltPreviewEntry` and
+`BranchRef`; `MediaAltPreviewEntry` itself names `AltPlacement`; `MediaReplacePreviewPlan` names
 `MediaReplacePreviewEntry`, which names `RepointPlacement`; `MediaBulkDeleteResult` names
 `BulkDeleteSkip`), because the composer keeps driving the wide internal shape Task 1 left
 untouched. See "List (c)" immediately below for the full per-item accounting; all 20 route there.

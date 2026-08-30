@@ -192,6 +192,66 @@ params the wrapped action reads, and delegates:
 | `publishAll` | index, list, edit, history, editors, nav, media, settings, vocabulary, help (every authed view) | the site-wide publish |
 | `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
+The table above summarizes each view's actions in one line; the Media Library's own vocabulary
+carries more detail worth stating once. `mediaDeleteAction` safe-deletes a committed asset: it
+rechecks usage against a fresh server-side index at delete time, refuses an in-use asset
+(`MediaDeleteRefusal`) unless the form carries the typed-slug override, then commits the
+`media.json` row removal before deleting the R2 object so a mid-failure leaves a benign orphan
+rather than a broken delivery. `mediaUpdateAction` edits an asset's display name, slug, and default
+alt in one row commit with no reference rewrite (the resolver keys on the hash), refusing a bad
+slug with `MediaUpdateFailure`. `mediaLibraryUploadAction` is `uploadAction`'s Library-direct
+sibling: it shares that store-and-derive body, then commits the derived `media.json` row to the
+default branch in the same step, so an author can add an asset from the Media Library without an
+entry to ride. Both derive every committed field server-side and trust no client-posted record; a
+re-upload of identical bytes is an idempotent no-op.
+
+The replace-in-place pair swaps one asset for another across the published corpus.
+`mediaReplacePreviewAction` is a display-only fetch endpoint (the upload's `X-Cairn-CSRF` header
+transport): it plans the rewrite of every entry that references the old asset and returns a
+`MediaReplacePreviewPlan` (the affected entries with their per-reference diff, the affected count,
+and a report-only cross-branch delta), committing nothing. `mediaReplaceAction` re-derives that
+plan from a fresh read, gates every replace behind a typed-slug confirm (`MediaReplaceFailure` on a
+wrong or missing confirm), and rewrites every referencing entry plus the new `media.json` row in
+one commit; it performs no R2 write, since the new bytes are already stored and the old asset's row
+is kept. Both fail closed on an unverifiable usage read.
+
+The alt-propagation pair pushes an asset's default alt across the same corpus.
+`mediaAltPreviewAction` plans the fill over that header transport and returns a
+`MediaAltPreviewPlan` that sorts each placement into a will-fill bucket (an empty alt), a
+customized bucket (a hand-written alt kept unless the editor opts in), or a decorative-hero bucket
+(left alone). `mediaAltPropagateAction` re-derives the plan from a fresh read, fills the empty alts
+(and the customized ones when the `overwrite` opt-in is set), and commits only the entries it
+changes in one commit. It never writes `media.json`, never gates on a typed slug, and never touches
+a decorative hero.
+
+The destructive trio (`mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`)
+clears assets and stored bytes in bulk, registered above as `mediaBulkDelete`, `mediaOrphanScan`,
+and `mediaOrphanPurge`. `mediaBulkDeleteAction` is the single safe-delete gate applied per item over
+a selection: it builds one strict cross-branch usage index for the whole batch, deletes the assets
+nothing references, and skips any still in use, reporting them in the returned
+`MediaBulkDeleteResult` (its `deleted`, `skipped`, and `failed` arrays) rather than force-deleting.
+The row removals land as one commit before the R2 objects are deleted, so a bulk delete is
+reversible from git history, the same delete-order the single safe-delete uses.
+`mediaOrphanScanAction` runs a storage reconcile plus a strict usage read and returns the
+`MediaOrphanScanResult` projection: `orphanedBytes` (stored keys with no manifest row and no
+reference anywhere across `main` and every open branch) and the broken-reference rows (manifest
+hashes whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since
+the branch that uploaded them references them. `mediaOrphanPurgeAction` is the one irreversible
+media action: it deletes the raw R2 bytes, which carry no git history, so it gates on a
+typed-count confirm (the number of files). At action time it re-derives the orphan set fresh and
+re-checks the strict usage index, so a key that gained a manifest row or a new branch reference
+since the scan is skipped, never purged; the `MediaOrphanPurgeResult` reports `purged`,
+`skippedClaimed`, and `failed`. All three fail closed: an unverifiable cross-branch usage read
+refuses the whole batch (503) and commits nothing.
+
+All ten of these media actions (`mediaDeleteAction`, `mediaUpdateAction`,
+`mediaLibraryUploadAction`, `mediaReplacePreviewAction`, `mediaReplaceAction`,
+`mediaAltPreviewAction`, `mediaAltPropagateAction`, `mediaBulkDeleteAction`,
+`mediaOrphanScanAction`, `mediaOrphanPurgeAction`) are internal `createContentRoutes` members,
+reachable through no package subpath; `createCairnAdmin` is the only public seam that mounts them.
+The showcase runs in dev without a real GitHub App key because its fake backend rides
+`event.locals.cairnBackend` from a fenced dev handle, so no token mint runs.
+
 ```ts
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
@@ -926,55 +986,14 @@ actions back a concept's list view, and `editLoad` with the `save`, `publish`, `
 `delete`, and `rename` actions back the entry editor. `uploadAction` ingests an image for a
 media-enabled site: a raw-body JSON endpoint that stores the bytes in R2, returns a `UploadResult`
 (the `media:` reference and the server-owned record), and commits nothing until the entry is saved.
-`mediaLibraryUploadAction` is its Library-direct sibling: it shares that store-and-derive body, then commits
-the derived `media.json` row to the default branch in the same step, so an author can add an asset from
-the Media Library without an entry to ride. Both derive every committed field server-side and trust no
-client-posted record; a re-upload of identical bytes is an idempotent no-op.
 `mediaLibraryLoad` backs the admin Media Library view: it unions `media.json` from the default
 branch with every open `cairn/*` branch (so a not-yet-published asset shows, with the default
 branch winning a same-hash tie), projects each row through the shared `mediaLibraryEntry` helper,
-and attaches a per-hash where-used overlay (`MediaLibraryData`). `mediaDeleteAction` safe-deletes a
-committed asset: it rechecks usage against a fresh server-side index at delete time, refuses an
-in-use asset (`MediaDeleteRefusal`) unless the form carries the typed-slug override, then commits
-the `media.json` row removal before deleting the R2 object so a mid-failure leaves a benign orphan
-rather than a broken delivery. `mediaUpdateAction` edits an asset's display name, slug, and default
-alt in one row commit with no reference rewrite (the resolver keys on the hash), refusing a bad slug
-with `MediaUpdateFailure`. The replace-in-place pair swaps one asset for another across the published
-corpus. `mediaReplacePreviewAction` is a display-only fetch endpoint (the upload's `X-Cairn-CSRF` header
-transport): it plans the rewrite of every entry that references the old asset and returns a
-`MediaReplacePreviewPlan` (the affected entries with their per-reference diff, the affected count, and
-a report-only cross-branch delta), committing nothing. `mediaReplaceAction` re-derives that plan from a
-fresh read, gates every replace behind a typed-slug confirm (`MediaReplaceFailure` on a wrong or
-missing confirm), and rewrites every referencing entry plus the new `media.json` row in one commit;
-it performs no R2 write, since the new bytes are already stored and the old asset's row is kept. Both
-fail closed on an unverifiable usage read. The alt-propagation pair pushes an asset's default alt
-across the same corpus. `mediaAltPreviewAction` plans the fill over that header transport and returns a
-`MediaAltPreviewPlan` that sorts each placement into a will-fill bucket (an empty alt), a customized
-bucket (a hand-written alt kept unless the editor opts in), or a decorative-hero bucket (left alone).
-`mediaAltPropagateAction` re-derives the plan from a fresh read, fills the empty alts (and the customized ones
-when the `overwrite` opt-in is set), and commits only the entries it changes in one commit. It never
-writes `media.json`, never gates on a typed slug, and never touches a decorative hero. The destructive
-trio (`mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`) clears assets and stored bytes in
-bulk. `mediaBulkDeleteAction` is the single safe-delete gate applied per item over a selection: it builds
-one strict cross-branch usage index for the whole batch, deletes the assets nothing references, and
-skips any still in use, reporting them in the returned `MediaBulkDeleteResult` (its `deleted`,
-`skipped`, and `failed` arrays) rather than force-deleting. The row removals land as one commit before
-the R2 objects are deleted, so a bulk delete is reversible from git history, the same delete-order the
-single safe-delete uses. `mediaOrphanScanAction` runs a storage reconcile plus a strict usage read and
-returns the `MediaOrphanScanResult` projection: `orphanedBytes` (stored keys with no manifest row and no
-reference anywhere across `main` and every open branch) and the broken-reference rows (manifest hashes
-whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since the branch
-that uploaded them references them. `mediaOrphanPurgeAction` is the one irreversible media action: it
-deletes the raw R2 bytes, which carry no git history, so it gates on a typed-count confirm (the number
-of files). At action time it re-derives the orphan set fresh and re-checks the strict usage index, so
-a key that gained a manifest row or a new branch reference since the scan is skipped, never purged; the
-`MediaOrphanPurgeResult` reports `purged`, `skippedClaimed`, and `failed`. All three fail closed: an
-unverifiable cross-branch usage read refuses the whole batch (503) and commits nothing. The
-single-mount composer registers the trio under `mediaBulkDelete`, `mediaOrphanScan`, and `mediaOrphanPurge`,
-each gated to the media view, so the Media Library posts
-`?/mediaBulkDelete`, `?/mediaOrphanScan`, and `?/mediaOrphanPurge`. The showcase runs in dev without a real
-key because its fake GitHub backend rides `event.locals.cairnBackend` from a fenced dev handle, so no GitHub
-App token mint runs.
+and attaches a per-hash where-used overlay (`MediaLibraryData`). The Media Library's own janitorial
+and edit actions (the Library-direct upload, per-asset delete and update, replace-in-place, alt
+propagation, and bulk delete/orphan scan/purge) are not members of this public return; they reach
+the browser only through [`createCairnAdmin`](#createcairnadmin), documented there with the rest of
+the admin action vocabulary.
 
 A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
 the default branch, so the live site stays as it was. `publishAction` publishes what the author

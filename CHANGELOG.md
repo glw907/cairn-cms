@@ -246,6 +246,19 @@
   one-element list; a listed source that does not exist is a config error, never a silent skip.
   Consumers must: nothing.
 
+### Documentation
+
+- `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass
+  truncated 54 of the ledger's `(shape: ...)` parentheticals to exactly 160 characters mid-thought,
+  and the sanctioned fix moves a repaired entry's shape to its own `- **Shape:** ` line instead of a
+  parenthetical folded into `Reopens on:`. This pass repairs the 14 `/sveltekit` and
+  `/admin-toolkit` entries the next two remediation slices need and migrates the dozen already-complete
+  parentheticals to the new line format; the remaining 40 stay truncated, tracked on
+  `scripts/checks/check-rulings-format-allowlist.json`, one slug per item still owed a repair by the
+  slice that executes it. Also files the `MediaInsertPopover` deferral as its own ledger entry
+  (`mediainsertpopover-export`), previously only a sub-clause of `mediaherofield-export`. Internal
+  only; no consumer action.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

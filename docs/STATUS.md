@@ -21,16 +21,19 @@ the initiative design. CI on `main` is fully green on all five workflows.
 **Foundations B is EXECUTING** on worktree `.claude/worktrees/foundations-b` (branch
 `foundations-b` off `main` at `7a1ec7d0`), plan
 `docs/superpowers/plans/2026-08-28-foundations-b-pass.md`. Task ledger: Task 1 (public
-`ContentRoutes` narrowing) DONE and diff-reviewer ACCEPTED at `e743f624`, all gates green, no
-retire consumed, `audit-sveltekit-contentroutes` closed. Task 2 (R4 closure re-derivation) is
-next; Task 3 (drift sweep) after it, now load-bearing for docs correctness (Task 1 left the
-stale member prose in `sveltekit.md:920-1000`, `admin-routes.md`, `components.md` for it).
-Spend ~0.3M of the 1.8M ceiling. Carried reviewer notes: Task 2 references the ledger's
-amended `Shape:` line at `engine-rulings.md:1643` rather than restating it; Task 3's sweep
-must not contradict the rewritten `ContentRoutes` types-table row (`sveltekit.md:1874`).
-Resume prompt if this session dies:
+`ContentRoutes` narrowing) ACCEPTED at `e743f624`. Task 2 (R4 re-derivation record,
+`docs/internal/record/2026-08-30-r4-rederivation.md`) ACCEPTED at `00d1f1cb` after one fix
+cycle; partition 0 + 63 + 31 = 94 exact, independently re-derived by the reviewer; list (c)
+is 31 IN-94 (Tier 1: 25 composer-blocked, Tier 2: 6 blocked on the `ContentFormFailure`
+declaration) + `DEFAULT_ROLES` OUT-OF-94. Task 3 (drift sweep for the ten internalized
+names) is next and is load-bearing for docs correctness (`sveltekit.md:920-1000`,
+`admin-routes.md:145-163`/`272-280`, `components.md:199-235` still describe the old public
+shape); it also folds in the record's leftover `BranchRef`/`MediaAltPreviewEntry` narrative
+fix at `:117-119`. Then the pass-end ritual: engine-triage verification of Task 2's lists,
+reviewer fan-out, docs gates, and THE RATIFICATION GATE (list (c) to Geoff before the retires
+plan is authored). Spend ~0.95M of the 1.8M ceiling. Resume prompt if this session dies:
 
-In ~/Projects/cairn-cms/.claude/worktrees/foundations-b, resume the foundations B pass (docs/superpowers/plans/2026-08-28-foundations-b-pass.md) at Task 2; Task 1 is accepted at e743f624.
+In ~/Projects/cairn-cms/.claude/worktrees/foundations-b, resume the foundations B pass (docs/superpowers/plans/2026-08-28-foundations-b-pass.md) at Task 3; Tasks 1-2 are accepted at e743f624 and 00d1f1cb.
 
 **Carried into foundations B:** the move-set record's "Inheritance notes for foundations B"
 subsection (`docs/internal/record/2026-08-29-foundations-a-move-set.md`) covers four items:

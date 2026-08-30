@@ -10,39 +10,24 @@ only the present.
 ## Current state
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
-`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries FOUR
-passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection (merged 2026-08-29),
-csrf-hardening (remediation slice 1, merged 2026-08-30), and foundations A (audit-remediation
-slice 2a, merged 2026-08-29 at `15f98335`), which holds this window until the chassis slice per
-the initiative design. CI on `main` is fully green on all five workflows.
+`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries FIVE
+passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection, csrf-hardening
+(remediation slice 1), foundations A (slice 2a), and foundations B (slice 2b, merged
+2026-08-30 at `34ba7de6`, PR #41, all CI green); the window holds until the chassis slice per
+the initiative design. CI on `main` is fully green (a 2026-08-30 e2e failure was runner apt
+flake, rerun green).
 
 ## Immediate next action
 
-**Foundations B is CLOSED on its worktree and waits on Geoff's ratification ruling.** All
-three tasks accepted, all eleven gates green, post-mortem appended to the plan
-(`docs/superpowers/plans/2026-08-28-foundations-b-pass.md`), branch `foundations-b` pushed
-(ten commits `e743f624..014872b2`, worktree `.claude/worktrees/foundations-b`), CI
-consumer-build run pending. Detail in HISTORY (2026-08-30). Two decisions are Geoff's, asked
-at pass close: **(1) THE RATIFICATION GATE** on the R4 record
-(`docs/internal/record/2026-08-30-r4-rederivation.md`): list (c)'s 31 composer-blocked
-retires, plus the F-1 choice — (A) move the 19 keep-parent-blocked rows into list (c) as
-Tier 3 (list (b) 44 / list (c) 50) or (B) keep them in list (b) with an explicit sanction of
-19 named `NavIcon`-class closure leaks; the retires pass plan is NOT authored until this is
-ruled. **(2) Merge** `foundations-b` into `main` (independent of (1); the record carries the
-open question either way). Carried follow-ups: a showcase hand-mounted `+page.server.ts`
-against generated `./$types` (nothing compiles that path today); the six stale
-`content-routes-*` header wordings (internals pass, `content-routes-context.ts:272` foremost).
-Budget: ~2.3M subagent spend against the 1.8M ceiling, overrun recorded in the post-mortem.
-Resume prompt for a fresh session:
+**Execute the retires pass** (remediation slice 3). The plan is
+`docs/superpowers/plans/2026-08-30-retires-pass.md`, authored against the RATIFIED R4 record:
+Geoff ruled F-1 HYBRID at the foundations B pass-end gate (2026-08-30, recorded in
+`docs/internal/record/2026-08-30-r4-rederivation.md` section 7): the 18 return-position
+F-1 rows stay in list (b) sanctioned as named closure leaks; `AdminActionOptions` alone moves
+to list (c) Tier 3 (argument-position). As executed: list (b) 62 (44 unsanctioned + 18
+sanctioned), list (c) 32, `DEFAULT_ROLES` excluded. Resume prompt for a fresh session:
 
-In ~/Projects/cairn-cms, foundations B is closed on branch foundations-b awaiting Geoff's F-1/list-(c) ratification ruling and the merge decision; read docs/STATUS.md and the R4 record's ratification section, then act on Geoff's answer.
-
-**Carried into foundations B:** the move-set record's "Inheritance notes for foundations B"
-subsection (`docs/internal/record/2026-08-29-foundations-a-move-set.md`) covers four items:
-`staleNames`'s union-over-all-subpaths scoping (routed to the internals pass, not executed in
-B, per the engine-triage review), record-membership-is-not-justification, the
-122-multi-subpath-count invariance, and R-0's undischarged second direction (also routed to the
-internals pass).
+In ~/Projects/cairn-cms, execute the retires pass (docs/superpowers/plans/2026-08-30-retires-pass.md): create a fresh worktree retires off main, verify the R4 record's section 7 carries the RULED subsection, then run the three serial task chains per the plan header.
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
@@ -51,15 +36,18 @@ behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slice 1 (csrf-hardening) SHIPPED. Slice 2a (foundations
-  A) MERGED (above). Next: B (immediate next action, above), then retires (its plan waits on
-  B's list (c) ruling), conventions, internals, chassis; ONE release cut after chassis. Routed
-  to the
-  conventions pass's auth family: the session-cookie derivation ledger entry,
+- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b MERGED. Next: retires (immediate next
+  action, above), then conventions, internals, chassis; ONE release cut after chassis. Routed
+  to the conventions pass: the auth family (the session-cookie derivation ledger entry,
   `check-probe.ts:49`'s independent derivation, the cookie-jar posture split, the login-CSRF
-  `_pending`-nonce binding, and making the CSRF helpers' patterns uniform. Routed to internals:
-  the `list-role` descendant-selector re-grounding and the `panel-width` closed-select
-  painted-width follow-up.
+  `_pending`-nonce binding, CSRF-helper uniformity), the `ContentFormFailure` reshape (unblocks
+  list (c) Tier 2), and the `DEFAULT_ROLES`/`defineAccess` coupled pair. Routed to internals:
+  the F-1 leak-class `check:surface` rider (per the hybrid ruling), the `staleNames` per-subpath
+  rescope, R-0's second direction, the six stale `content-routes-*` header wordings
+  (`content-routes-context.ts:272` foremost), the `list-role` descendant-selector re-grounding,
+  and the `panel-width` closed-select painted-width follow-up. Carried: a showcase hand-mounted
+  `+page.server.ts` against generated `./$types` (nothing compiles that path today; chassis
+  pass candidate). Foundations B budget overrun (~2.4M vs 1.8M) recorded in its post-mortem.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.

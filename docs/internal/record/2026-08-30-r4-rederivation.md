@@ -496,3 +496,34 @@ here:
 
 This record takes no position between them. The charter adjudicates; Geoff rules at this
 checkpoint, before the retires pass plan is authored.
+
+### RULED (Geoff, 2026-08-30, at the foundations B pass-end checkpoint): hybrid
+
+Neither (A) nor (B) whole. The split follows the position of the leak, which is where the
+consumer cost actually differs:
+
+- **The 18 return-position rows stay in list (b), sanctioned.** Each survives retirement as an
+  unnamed structural member of its keep parent, read via indexed access
+  (`ListData['entries'][number]`, `EditData['publishActions'][number]`, and so on), which is
+  the reading the audit's own rationales state for ranks 43, 44, and 62 (quoted under (B)
+  above). The sanction is explicit and per-name: the 18 are every F-1 row in section 5's table
+  EXCEPT `AdminActionOptions`. The retires pass deletes them with the rest of list (b) and
+  records each as an accepted `NavIcon`-class closure leak in its own move record.
+- **`AdminActionOptions` moves to list (c) as Tier 3, one row.** It is the sole
+  argument-position leak: a consumer passes a value of this type INTO `adminAction`
+  (`api-surface.md:472`), and constructing a value of an un-nameable type is materially worse
+  ergonomics than reading one (`Parameters<typeof adminAction>` gymnastics against a declared
+  contract). Blocker: `adminAction`'s own declared signature names it; it retires only if a
+  later ruling reshapes that signature or overturns the verdict. List (b) is therefore **62**,
+  list (c) IN-94 is **32** (Tier 1: 25, Tier 2: 6, Tier 3: 1), and the partition in section 6
+  reads 0 + 62 + 32 = 94, still exact.
+- **The sanction arrives with an owner.** Accepting 18 new leaks quadruples the class
+  (5 today, 23 after), so the ruling couples it to a gate rider, routed to the internals pass
+  alongside the three leaks section 1 already flags as unowned: a `check:surface` rider that
+  derives the leak set (a retire-or-absent name inside a rendered public shape) and fails on
+  any UNRECORDED leak, the same fail-unless-recorded form the canonical-home rule uses. Until
+  that rider lands, the retires pass's move record is the manual ledger of the 18.
+
+Section 6's table is superseded by the figures above; it is left as written because it
+records what this document stated at ratification time, and the retires pass plans against
+this ruled section.

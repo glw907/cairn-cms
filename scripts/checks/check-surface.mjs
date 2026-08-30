@@ -19,6 +19,7 @@ import { normalizeSignature } from './check-reference-signatures.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SNAPSHOT = 'docs/internal/api-surface.md';
 const BANNER = 'GENERATED — run `npm run check:surface -- --update` to regenerate';
+const REEXPORTS = 'scripts/checks/check-surface-reexports.json';
 
 // The exported subpaths the gate snapshots, drawn directly from package.json `exports`: every entry
 // whose value carries a `types` field. The raw asset entries (`.txt`, `package.json`) have no
@@ -288,6 +289,69 @@ export function formatDrift(drift) {
   return blocks.join('\n');
 }
 
+// The canonical-home rule, enforced (ratified foundations A, `canonical-home-rule` in the rulings
+// ledger). Every exported name has exactly one declaring subpath; a name published from a second
+// subpath is a recorded R4 re-export naming its home and the signature that requires it, never a
+// second home. Two shapes of failure are reported. An UNRECORDED duplicate is a name published from
+// more than one subpath with more than one of those publications missing from the record: the one
+// unrecorded publication is the home, so a second unrecorded one is a new, unargued duplicate. A
+// STALE record is an entry whose subpath no longer publishes the name, which is how the record
+// shrinks as foundations B narrows `/sveltekit` rather than silently outliving the surface. A
+// layered pair (`/delivery` over `/delivery/data`) is one home, so the wider barrel's copy of a
+// name the narrower one exports needs no per-name entry; a copy of a name the narrower one does
+// NOT export still fails. Pure over the model and the record so the unit test drives both.
+/**
+ * @param {Record<string, Record<string, string>>} model
+ * @param {ReexportRecord} record
+ * @returns {{ unrecorded: { name: string, subpaths: string[] }[], stale: { name: string, subpath: string }[] }}
+ */
+export function findHomeViolations(model, record) {
+  /** @type {Record<string, string[]>} */
+  const subpathsOf = {};
+  for (const [subpath, exports] of Object.entries(model)) {
+    for (const name of Object.keys(exports)) (subpathsOf[name] ??= []).push(subpath);
+  }
+  const recorded = new Set((record.reexports ?? []).map((r) => `${r.name} ${r.subpath}`));
+  const layered = record.layeredBarrels ?? [];
+  /** @param {string} name @param {string} subpath */
+  const isRecorded = (name, subpath) =>
+    recorded.has(`${name} ${subpath}`) ||
+    layered.some((p) => p.wider === subpath && name in (model[p.narrower] ?? {}));
+  /** @type {{ name: string, subpaths: string[] }[]} */
+  const unrecorded = [];
+  for (const name of Object.keys(subpathsOf).sort()) {
+    const subpaths = subpathsOf[name];
+    if (subpaths.length < 2) continue;
+    const open = subpaths.filter((s) => !isRecorded(name, s)).sort();
+    if (open.length > 1) unrecorded.push({ name, subpaths: open });
+  }
+  const stale = (record.reexports ?? [])
+    .filter((r) => !(r.name in (model[r.subpath] ?? {})))
+    .map((r) => ({ name: r.name, subpath: r.subpath }))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.subpath.localeCompare(b.subpath));
+  return { unrecorded, stale };
+}
+
+// Format a home-rule failure as the actionable message: what to argue, and where to record it.
+/** @param {{ unrecorded: { name: string, subpaths: string[] }[], stale: { name: string, subpath: string }[] }} result */
+export function formatHomeViolations(result) {
+  const lines = [];
+  for (const v of result.unrecorded) {
+    lines.push(`  + duplicate ${v.name} publishes from ${v.subpaths.join(', ')} with no recorded home`);
+  }
+  for (const s of result.stale) {
+    lines.push(`  - stale     ${s.name} is recorded at ${s.subpath} but is no longer exported there`);
+  }
+  return lines.join('\n');
+}
+
+/**
+ * The recorded R4 re-export set: the canonical-home rule's exception list.
+ * @typedef {object} ReexportRecord
+ * @property {{ name: string, subpath: string, home: string, reason: string }[]} [reexports] one entry per non-home publication
+ * @property {{ wider: string, narrower: string, reason: string }[]} [layeredBarrels] dependency-axis pairs that share one home
+ */
+
 /**
  * A single subpath's surface drift between the committed and emitted snapshots.
  * @typedef {object} SubpathDrift
@@ -300,11 +364,25 @@ export function formatDrift(drift) {
 function main() {
   const update = process.argv.includes('--update');
   const snapshotPath = resolve(ROOT, SNAPSHOT);
-  const emitted = buildSurface();
+  const model = buildSurfaceModel();
+  const emitted = serializeSurface(model);
   if (update) {
     writeFileSync(snapshotPath, `${emitted}\n`);
     console.log(`check-surface: wrote ${SNAPSHOT}`);
     return;
+  }
+  // The home rule runs before the snapshot diff: a new duplicate is a design failure to argue, and
+  // regenerating the snapshot would otherwise record it as settled surface.
+  const record = JSON.parse(readFileSync(resolve(ROOT, REEXPORTS), 'utf8'));
+  const homes = findHomeViolations(model, record);
+  if (homes.unrecorded.length || homes.stale.length) {
+    console.error('check-surface: the canonical-home rule failed.');
+    console.error(formatHomeViolations(homes));
+    console.error(
+      `\nEvery name has one declaring subpath. Publish it from its home, or record the second` +
+        ` publication in ${REEXPORTS} with the signature that requires it.`,
+    );
+    process.exit(1);
   }
   if (!existsSync(snapshotPath)) {
     console.error(`check-surface: missing ${SNAPSHOT}; run "npm run check:surface -- --update" to generate it`);

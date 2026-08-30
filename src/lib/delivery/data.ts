@@ -5,26 +5,25 @@
 // projections, and a rendering component on /delivery/head, so this barrel stays importable from
 // plain Node with no kit or Svelte dependency resolved.
 export type { ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
-// `buildSiteManifest`, `createSiteIndexes`, and `SiteIndexes`/`SiteGlobs` all name the
-// content-model types their generic bounds derive from; the export-rule sweep makes each
-// importable from this subpath directly, not only from root (C2 breaking-window pass, R4 ruling).
+// Canonical home for everything below this line is the root barrel `.`; each name is a recorded R4
+// re-export here, not a second home (canonical-home rule, foundations A). `buildSiteManifest`,
+// `createSiteIndexes`, and `SiteIndexes`/`SiteGlobs` all name the content-model types their generic
+// bounds derive from, so a site importing only this subpath can still name what it holds.
 // `CairnAdapter` itself is the one deliberate exception: its own structural body reaches
 // `roles`/`access`/`backend`, which in turn name auth/github-shaped types this backend-free
 // barrel may not import (this file's own charter above, enforced by
 // `delivery-entry-boundary.test.ts`), and a call site names `A` by inference from its own
-// adapter argument in practice, never by writing `CairnAdapter` out.
+// adapter argument in practice, never by writing `CairnAdapter` out. That cut is why the
+// adapter-only members (`AssetConfig`, `SenderConfig`, `NavMenuConfig`, `PreviewConfig`,
+// `SiteRender`, the component and nav-layout types) are NOT re-exported here: nothing this subpath
+// publishes names them, so they resolve from their own canonical homes instead.
 export type {
   ConceptConfig,
   ConceptDescriptor,
   NamedField,
   RoutingRule,
-  AssetConfig,
-  SenderConfig,
-  NavMenuConfig,
-  PreviewConfig,
   ValidationResult,
   ValidationIssue,
-  SiteRender,
   AiPosture,
 } from '../content/types.js';
 export type { FieldDescriptor } from '../content/fields.js';
@@ -51,13 +50,9 @@ export type { CairnRef, LinkResolve } from '../content/links.js';
 export type { FragmentResolve } from '../render/resolve-include.js';
 export type { ReferenceEdge } from '../content/references.js';
 export type { SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from '../nav/site-config.js';
-export type { ComponentRegistry, ComponentDef, ComponentContext, SlotDef } from '../render/registry.js';
-export type { IconSet } from '../render/glyph.js';
-export type { IslandRegistry } from '../islands/types.js';
-export type { VariantSpec } from '../media/transform-url.js';
-export type { MediaResolve } from '../render/resolve-media.js';
-export type { MediaRef } from '../media/reference.js';
-export type { NavLayout, NavLayoutEntry, NavLayoutEngineRef, NavLayoutSection } from '../sveltekit/admin-nav.js';
+// `PublishActionsConfig` carries an open reshape verdict (`audit-adapter-publishactionsconfig`), so
+// its home stays unsettled and it is left where it is until that reshape lands; `PublishActionEntry`
+// rides its declaration. Canonical home for both is `/sveltekit`.
 export type { PublishActionsConfig, PublishActionEntry } from '../sveltekit/publish-actions.js';
 export { buildLinkResolver, buildFragmentResolver, resolveReferences } from './site-resolver.js';
 export type { SiteResolver, ResolvedReference } from './site-resolver.js';

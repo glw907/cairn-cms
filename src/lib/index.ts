@@ -7,6 +7,12 @@
 // SvelteKit route factory belongs on `/sveltekit`, and an admin Svelte component on `/components`,
 // even though a site's adapter config also feeds both: this barrel carries no server route, no
 // Svelte component, and no per-request framework binding.
+//
+// The canonical-home rule (ratified foundations A, `canonical-home-rule` in the rulings ledger)
+// governs every barrel: each name has exactly one declaring subpath, and any other barrel that
+// publishes it does so as a recorded R4 re-export naming that home and the signature that requires
+// it. A name below whose home is another subpath carries that note on its own export line; every
+// other name here is at home. `check:surface` fails an unrecorded duplicate.
 export type { Editor, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { CairnEnv } from './env.js';
 // Site-declared role vocabulary (extensible-roles): sites map their own role names onto the three
@@ -113,6 +119,8 @@ export type { FragmentResolve } from './render/resolve-include.js';
 // `SiteRender` and `CairnRuntime.render` name `MediaResolve` in their own `resolveMedia` option;
 // `MediaResolve`'s own parameter names `MediaRef`.
 export type { MediaResolve } from './render/resolve-media.js';
+// Canonical home `/media`; a recorded R4 re-export here because `MediaResolve`'s own parameter
+// names it and `MediaResolve` reaches this barrel through `SiteRender`.
 export type { MediaRef } from './media/reference.js';
 // `Manifest.entries[].references` names `ReferenceEdge`.
 export type { ReferenceEdge } from './content/references.js';
@@ -129,14 +137,17 @@ export type { FileChange } from './github/repo.js';
 export { parseSiteConfig, extractMenu, extractVocabulary, SiteConfigError } from './nav/site-config.js';
 // `CairnRuntime.tidy` names `TidyConfig`, whose own `conventions` field names `TidyConventions`.
 export type { NavNode, SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from './nav/site-config.js';
-// `CairnAdapter.editor.navLayout` names `NavLayout`, whose own union names its three member
-// shapes in turn; type-only imports, so no `/sveltekit` module ever executes here (export-rule
-// sweep, C2 breaking-window pass, R4 ruling).
+// Canonical home `/sveltekit`; a recorded R4 re-export here because `CairnAdapter.editor.navLayout`
+// names `NavLayout`, whose own union names its three member shapes in turn. Type-only imports, so
+// no `/sveltekit` module ever executes here (export-rule sweep, C2 breaking-window pass, R4 ruling).
 export type { NavLayout, NavLayoutEntry, NavLayoutEngineRef, NavLayoutSection } from './sveltekit/admin-nav.js';
+// Canonical home `/sveltekit`; a recorded R4 re-export here because
 // `CairnAdapter.editor.publishActions` and `CairnRuntime.publishActions` name `PublishActionsConfig`,
 // whose own array element names `PublishActionEntry`.
 export type { PublishActionsConfig, PublishActionEntry } from './sveltekit/publish-actions.js';
-// `CairnAdapter.rendering.islands` names this.
+// Canonical home `/islands`; a recorded R4 re-export here because `CairnAdapter.rendering.islands`
+// names it.
 export type { IslandRegistry } from './islands/types.js';
-// `AssetConfig.variants` and `CairnRuntime.resolvedAssets` name this.
+// Canonical home `/media`; a recorded R4 re-export here because `AssetConfig.variants` and
+// `CairnRuntime.resolvedAssets` name it.
 export type { VariantSpec } from './media/transform-url.js';

@@ -29,6 +29,58 @@ executes it (cli and log entries by their owning slices, auth by the conventions
 whichever slice touches each). No later slice may assume the repair is already done for a slug it
 finds on that allowlist.
 
+## read-from-the-source-rule: a fact with one source is read from that source  (accept, 2026-08-29, foundations A)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in the audit's own words: *a fact with
+  one source is read from that source, never copied; an export the engine could use and does not is
+  a shape defect until argued otherwise.* The CLI arm already proves it five times with no
+  exceptions (`requireOrigin`, `parseSiteConfig`, the installed engine's peer ranges, the plugin's
+  own virtual module, `readR2Buckets` shared between two bins), which is what makes it a rule the
+  engine discovered rather than one imposed on it. It reads in two directions, and both bind: a
+  second copy of a fact is drift waiting to happen, and an engine module hand-rolling what an
+  export already computes is a defect in that export's shape, not a matter of taste. The burden
+  falls on the copy, never on the read: an argued exception is fine, an unargued one is not.
+- **Reopens on:** closed. Ratified and filed by foundations A, Task 2, as the premise the later
+  slices read. A concrete instance of a copied fact is that instance's own entry, never a reason to
+  reopen the rule.
+- **Record:** [coherence-v2](record/2026-08-26-any-site-audit/coherence-v2.md), R-0, and the C13
+  even-surface finding it generalizes.
+
+## canonical-home-rule: every exported name has exactly one declaring subpath  (accept, 2026-08-29, foundations A)
+
+- **Verdict:** accept. Ratified as an R1-tier clause: **every exported name has exactly one
+  canonical home, the subpath whose barrel declares it; another barrel that needs the name
+  documents where it comes from rather than opening a second home.** The grounds are the audit's
+  C1: multi-publication is invisible at per-item altitude, so five auditors each found one instance
+  and each correctly declined to charge it, while at whole-surface altitude it is one problem with
+  122 instances. A developer holding `NavLayoutEntry` had four import statements and no way to
+  learn which was intended, and because each barrel rendered the type through its own expansion,
+  two files in one repo could import the same type from two subpaths and produce a diff that looked
+  like version skew. The cause is not the R4 export-rule closure, which is right, but its scoping
+  unit: R4 was executed independently per barrel, so a type named in four barrels' signatures
+  published four times. The engine already had the fix and quoted it in one place only, inside
+  `audit-sveltekit-medialibraryentry`'s verdict, which is a rule wearing a single item's clothes;
+  this entry is that rule with its own clothes. **The dissent, cited and overruled:**
+  `verify-route-factories.md:143-149` (rank 99, `SlotDef`) flipped reshape to keep, arguing a strict
+  one-home rule "would leave a site importing only from `/sveltekit` unable to name a member of a
+  type it holds", and endorsed a deliberate closure re-export with the reason written down each
+  time. The dissent is overruled as an objection to ratification and absorbed as the rule's
+  mechanism, on the `MediaLibraryEntry` mold: *a re-export from the stated canonical home is not a
+  second home.* `SlotDef` keeps its `/sveltekit` availability, now as a recorded re-export naming
+  its home and the signature that requires it, which is exactly what the dissent asked for and what
+  four undifferentiated publications never gave a reader.
+- **Reopens on:** closed. Executed and enforced by foundations A, Task 2. Seam fit: 18 names lost a
+  publication the closure never justified (`/delivery/data` dropped all 18, `/delivery` 15 of
+  them), 120 surviving non-home publications are recorded with their home and the signature that
+  requires each, `/delivery` over `/delivery/data` is recorded as one home rather than two, and
+  `check:surface` fails both an unrecorded duplicate and a record entry the surface has outlived.
+  No consumer import in the four arms, `examples/showcase`, or `templates/waymark` moved. A future
+  narrowing that makes a recorded re-export unjustified is that re-export's own removal, not a
+  reopening of this rule.
+- **Record:** [coherence-v2](record/2026-08-26-any-site-audit/coherence-v2.md), C1 and R-1;
+  [the move-set record](record/2026-08-29-foundations-a-move-set.md), which foundations B diffs
+  against.
+
 ## login-csrf-no-same-browser-binding: magic-link confirm has no same-browser binding  (defer, 2026-08-27, csrf-hardening pass)
 
 - **Verdict:** defer. `confirmLoad`/`confirmAction` (`auth-routes.ts:170,185`) accept any

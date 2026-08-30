@@ -8,10 +8,13 @@
 // stay in their modules unexported here. The R2-touching pieces (`store.ts`,
 // `delivery-bucket.ts`) and the delivery-route factory and `requireBucket` stay on `/sveltekit`, off
 // this surface, so the public `.d.ts` for `/media` names no kit or workers-types type.
-// `normalizeAssets`'s own parameter names `AssetConfig`, the raw adapter-declared shape it resolves.
+// Canonical home `.`; a recorded R4 re-export here because `normalizeAssets`'s own parameter names
+// `AssetConfig`, the raw adapter-declared shape it resolves.
 export { normalizeAssets, type ResolvedAssetConfig } from './config.js';
 export type { AssetConfig } from '../content/types.js';
 export { readCommittedManifest, type MediaEntry, type MediaManifest } from './manifest.js';
 export type { VariantSpec } from './transform-url.js';
 export { parseMediaToken, mediaToken, type MediaRef } from './reference.js';
+// `MediaResolve`'s canonical home is `.`; a recorded R4 re-export here because
+// `buildMediaResolver`'s return type names it.
 export { buildMediaResolver, type MediaResolve } from '../render/resolve-media.js';

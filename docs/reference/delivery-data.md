@@ -643,6 +643,20 @@ The remaining rows are the export-rule closure `buildSiteManifest` and `createSi
 importing only from this subpath can still name the value it holds. Each links to its canonical
 home, [Core](./core.md), where the full prose lives.
 
+**Import an adapter-only member from its own home.** Eighteen names this subpath once re-exported
+now import from the barrel that declares them, because nothing this subpath publishes names them.
+
+- From [the root barrel](./core.md): `AssetConfig`, `SenderConfig`, `NavMenuConfig`,
+  `PreviewConfig`, `SiteRender`, `ComponentRegistry`, `ComponentDef`, `ComponentContext`,
+  `SlotDef`, `IconSet`.
+- From [`/sveltekit`](./sveltekit.md): `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`,
+  `NavLayoutSection`.
+- From [`/islands`](./islands.md): `IslandRegistry`.
+- From [`/media`](./media.md): `MediaRef`, `MediaResolve`, `VariantSpec`.
+
+`MediaRef`, `MediaResolve`, and `SiteRender` are also importable from
+[`/delivery`](./delivery.md), whose `PublicRoutesConfig` names all three.
+
 **`CairnAdapter` itself is the one deliberate exception.** This subpath's own charter forbids
 importing from `github`, `auth`, or `email` (enforced by a source-boundary test, so the delivery
 layer never pulls the backend or the magic-link auth surface into a public bundle), and
@@ -657,13 +671,8 @@ scope to declare its adapter; `createSiteIndexes(adapter, config, globs)` infers
 | `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization. See [`ConceptDescriptor`](./core.md#stable-api). |
 | `NamedField` | Extension API | `type NamedField = FieldDescriptor & { name: string }` | A field descriptor with its frontmatter key re-attached as `name`. See [`NamedField`](./core.md#stable-api). |
 | `RoutingRule` | Extension API | `interface RoutingRule { routable: boolean; dated: boolean; inFeeds: boolean }` | Concept-fixed routing for a normalized concept. See [`RoutingRule`](./core.md#types). |
-| `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration. See [`AssetConfig`](./media.md#types). |
-| `SenderConfig` | Extension API | `interface SenderConfig { from: string; replyTo?: string }` | Magic-link sender identity for Cloudflare Email Sending. |
-| `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
-| `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame. |
 | `ValidationResult` | Extension API | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed `errors` plus the additive located `issues`. |
 | `ValidationIssue` | Extension API | `interface ValidationIssue` | One validation failure located by a `path` and its message. |
-| `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: `render({ body, concept?, frontmatter?, resolve?, resolveMedia?, resolveFragment? }): Promise<string>`. |
 | `FieldDescriptor` | Extension API | `type FieldDescriptor` | The plain-data descriptor union the form, validator, and inference all read. See [Field types](./core.md#field-types). |
 | `TextField` | Extension API | `interface TextField` | A single-line text input. One of `FieldDescriptor`'s fifteen arms; see [Field types](./core.md#field-types). |
 | `TextareaField` | Extension API | `interface TextareaField` | A multi-line text input. |
@@ -702,21 +711,8 @@ scope to declare its adapter; `createSiteIndexes(adapter, config, globs)` infers
 | `RepoFile` | Extension API | `interface RepoFile { id: string; name: string; path: string }` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | Extension API | `interface CommitAuthor { name: string; email: string }` | A commit author: the signed-in editor's name and email. |
 | `FileChange` | Extension API | `interface FileChange { path: string; content: string \| null }` | One path change in a commit: write `content`, or delete the path when `content` is null. |
-| `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
-| `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). |
-| `ComponentContext` | Extension API | `interface ComponentContext` | The structured input a component's `build` receives. |
-| `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. |
-| `IconSet` | Extension API | `type IconSet = Record<string, string>` | A glyph name to SVG path-data map the site owns. |
-| `IslandRegistry` | Extension API | `type IslandRegistry = Record<string, Component>` | A site's hydratable client components, keyed by the name a component `use`s. |
-| `NavLayout` | Extension API | `type NavLayout = (NavLayoutEntry \| NavLayoutEngineRef \| NavLayoutSection)[]` | A site's whole declared sidebar. See [the navLayout seam](./sveltekit.md#the-navlayout-seam). |
-| `NavLayoutEntry` | Extension API | `interface NavLayoutEntry` | A site's own nav entry inside a `navLayout` tree. See [`NavLayoutEntry`](./sveltekit.md#navlayoutentry). |
-| `NavLayoutEngineRef` | Extension API | `interface NavLayoutEngineRef` | A `navLayout` node that places one of the engine's own screens. See [`NavLayoutEngineRef`](./sveltekit.md#navlayoutengineref). |
-| `NavLayoutSection` | Extension API | `interface NavLayoutSection` | One named group inside a `navLayout` tree. See [`NavLayoutSection`](./sveltekit.md#navlayoutsection). |
 | `PublishActionsConfig` | Extension API | `type PublishActionsConfig = PublishActionEntry[]` | A site's raw `publishActions` config. |
 | `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link. |
-| `VariantSpec` | Extension API | `interface VariantSpec` | A single image variant: the resize and format directives Cloudflare Images applies. See [`VariantSpec`](./media.md#types). |
-| `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | Resolve a `media:` reference to its live delivery URL. |
-| `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. |
 | `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries. |
 | `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
 | `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API. |

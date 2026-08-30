@@ -13,6 +13,17 @@ this page carries; read `CHANGELOG.md` directly for anything older.
 
 The release step sets the version number at the cut and renames this section to match it.
 
+- **Eighteen type-only names moved to their canonical home.** The engine now publishes each
+  exported name from exactly one subpath. Re-point these imports away from
+  `@glw907/cairn-cms/delivery` and `@glw907/cairn-cms/delivery/data`, which no longer carry them:
+  to `@glw907/cairn-cms` for `AssetConfig`, `SenderConfig`, `NavMenuConfig`, `PreviewConfig`,
+  `SiteRender`, `ComponentRegistry`, `ComponentDef`, `ComponentContext`, `SlotDef`, and `IconSet`;
+  to `@glw907/cairn-cms/sveltekit` for `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`, and
+  `NavLayoutSection`; to `@glw907/cairn-cms/islands` for `IslandRegistry`; and to
+  `@glw907/cairn-cms/media` for `MediaRef`, `MediaResolve`, and `VariantSpec`. All are type-only,
+  so a missed one is a type error at build, never a runtime failure. `MediaRef`, `MediaResolve`,
+  and `SiteRender` are still importable from `@glw907/cairn-cms/delivery`, whose
+  `PublicRoutesConfig` names all three.
 - **`StatusChip`'s register grammar moved to its second generation.** `register` is now
   `'quiet' | 'warning' | 'outline'` (default `'quiet'`); the `tone` prop, the status dot, and the
   STATUS_CHIP_DOT_CLASS export are all removed. Replace `register="bounded"` with

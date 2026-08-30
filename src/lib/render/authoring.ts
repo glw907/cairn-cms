@@ -6,4 +6,6 @@
 // hast; the render pipeline entry itself (createRenderer) lives on the root barrel, not here, since
 // a site calls it once to build its renderer, never from inside a component.
 export { iconSpan, cardShell, headRow, isElement, strAttr } from './rehype-dispatch.js';
+// Canonical home `.`; a recorded R4 re-export here because `strAttr`'s own parameter names it, and
+// a component's `build(ctx)` holds one while calling every helper above.
 export type { ComponentContext } from './registry.js';

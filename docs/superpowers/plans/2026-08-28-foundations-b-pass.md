@@ -466,3 +466,71 @@ none removed, no acceptance criterion widened.
    task body as an explicit empty list rather than strike it, since a later pass's
    `check:surface` diff may populate it. Nothing else in the plan depends on the answer: the
    partition acceptance still holds, since an empty contributor contributes nothing to the 94.
+
+---
+
+## Post-mortem (2026-08-30, pass executed and closed)
+
+**What was built.** All three tasks landed on worktree `foundations-b`, nine commits
+`e743f624..962daace`. Task 1 (`e743f624`, upshifted to Opus per the header): the public
+`createContentRoutes` now declares a 25-member `Pick`-derived `ContentRoutes` return while the
+unexported-from-any-barrel `createContentRoutesInternal` keeps the wide 35-member shape the
+composer drives in full; a compile-only hand-mount fixture proves the IN set both directions;
+`audit-sveltekit-contentroutes` closed, and only it, since `createCairnAdmin`'s rendered
+return still names every janitorial type (no retire consumed). Task 2 (`a93161de`,
+`db0ce77b`, one fix cycle at `00d1f1cb`): the R4 re-derivation record at
+`docs/internal/record/2026-08-30-r4-rederivation.md`, partition 0 + 63 + 31 = 94 exact, with
+`DEFAULT_ROLES` the named OUT-OF-94 exclusion. Task 3 (`372fc9d8`, one fix cycle at
+`c9636b39`): the drift sweep for the ten internalized names across the three primary reference
+surfaces plus the generic four-tree grep, zero unresolved hits, `migration-notes.md` entry
+added.
+
+**What was verified, with evidence.** Every task ran the implementer/diff-reviewer chain; the
+Task 1 and Task 3 reviewers re-ran gates and re-grepped independently, and the Task 2 reviewer
+re-derived the 31 composer-blocked names to set-identity before accepting. The pass-end
+battery ran all eleven gates by name (check, test 438/5898 exit 0, comments, transcripts,
+symbols, reference, reference:signatures, package, docs, surface, snippets), all green. The
+pass-end `engine-triage` dispatch verified the record exhaustively (all 554 ledger headings
+parsed; every list-(b) anchor matched) and the `svelte-reviewer` returned
+accept-with-follow-ups; its fixable findings landed at `962daace` (the fixture's false
+`listDelete` key, the overstated header, the type-only-boundary doc comment, the
+`CairnMediaLibrary` component note, three stale wordings). The branch is pushed for the CI
+e2e run, the real from-scratch consumer-build proof. The live admin smoke was skipped with
+cause: the narrowing is type-level only, the wrapper returns the same runtime object, and the
+composer is behaviorally unchanged.
+
+**The material finding (F-1), carried into the record at `6bba4bdb`.** The engine-triage
+verifier found that 19 of list (b)'s 63 rows are named inside keep-verdicted exports'
+rendered shapes (mostly `EditData`/`AdminData`-family contracts on the `load` half), so
+executing list (b) as written manufactures 19 closure leaks of the `NavIcon` class the record
+itself flags as unowned; the record's stated whole-line method also yields 48, not Tier 1's
+scoped 31. The record now reconciles the method statements, carries the 19-row keep-parent
+table, corrects the severity claim (closure leak, not build break, per the two existing
+in-surface instances), and presents the A/B resolution neutrally at the ratification gate.
+No verdict reopened; the partition arithmetic is undisturbed.
+
+**Decisions locked in.** The `check:surface` rendering fact (a declared named return collapses
+to its alias name; the expansion proof lives on the alias's own snapshot entry). The
+`Pick`-derived narrow type as the C3-conformant form. "Unexported" operatively means off every
+barrel and package subpath (the module-level export is required by the composer and must
+stay). The simplifier's ruling that the per-file `SiteEnv` fixture triple is the repo idiom
+(the svelte-reviewer's S4 extraction was declined on those grounds).
+
+**Budget, recorded honestly.** The plan's ceiling was 1.8M for chains plus ritual; the pass
+spent roughly 2.3M in subagent tokens alone (~2.4M with the main loop). The overrun came from
+two fix cycles (Tasks 2 and 3), the F-1 amendment (~0.34M, the single largest dispatch), and
+a reviewer fan-out that re-verified more exhaustively than the ceiling had priced. The
+conductor failed to flag the trajectory at the Task 3 checkpoint, when spend was already
+~1.5M; that is the process defect to carry, not the re-verification depth, which caught a
+real finding (F-1) and a real fixture defect (W1). Human interaction points this pass: zero
+so far; the pass-end combined question is the first.
+
+**Carried follow-ups (routed, not floating).** (1) No compile in the repo exercises the
+hand-mount path against generated `./$types`; a hand-mounted `+page.server.ts` in the
+showcase is the close (routed to STATUS carry-forwards). (2) Six sibling `content-routes-*`
+module headers still say the context is "built once by `createContentRoutes`"; imprecise
+since the rename, `content-routes-context.ts:272` the one that matters (routed to the
+internals pass alongside its other comment work). (3) A legacy `moduleResolution: "node"`
+consumer can deep-import `createContentRoutesInternal` from dist (informational; the exports
+map guards module-resolution-aware consumers). (4) The retires pass plan waits on Geoff's
+list-(c) and F-1 rulings, per the ratification gate.

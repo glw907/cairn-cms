@@ -210,9 +210,9 @@ a degraded-load `error`. The resting surface is a visual contact-sheet grid (a r
 listbox of tiles); a density toggle flips to an enriched sortable table. A toolbar row carries
 search, a pick-one triage radiogroup (All, Needs alt, Unused), and the density toggle, with
 client-side pagination over the full set. The single mount renders it for the `media` view inside
-`CairnAdmin`. Unlike the other view components on this page, it has no advanced per-route mounting
-path: its actions (`?/mediaUpdate`, `?/mediaDelete`, and the rest of the janitorial vocabulary
-below) are not members of `createContentRoutes`'s public return, so wiring
+`CairnAdmin`. It has no per-route path `createContentRoutes` alone can wire: the load is public
+(`mediaLibraryLoad`), but its actions (`?/mediaUpdate`, `?/mediaDelete`, and the rest of the
+janitorial vocabulary below) are not members of `createContentRoutes`'s public return, so wiring
 `src/routes/admin/(app)/media/+page.server.ts` by hand against that factory alone leaves those
 posts with no matching action. Mounting this component outside the single mount means composing
 your own `actions` record around [`createCairnAdmin`](./sveltekit.md#createcairnadmin)'s, which is

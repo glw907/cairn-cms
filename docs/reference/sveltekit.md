@@ -200,10 +200,11 @@ rechecks usage against a fresh server-side index at delete time, refuses an in-u
 rather than a broken delivery. `mediaUpdateAction` edits an asset's display name, slug, and default
 alt in one row commit with no reference rewrite (the resolver keys on the hash), refusing a bad
 slug with `MediaUpdateFailure`. `mediaLibraryUploadAction` is `uploadAction`'s Library-direct
-sibling: it shares that store-and-derive body, then commits the derived `media.json` row to the
-default branch in the same step, so an author can add an asset from the Media Library without an
-entry to ride. Both derive every committed field server-side and trust no client-posted record; a
-re-upload of identical bytes is an idempotent no-op.
+sibling: like `uploadAction`, it is a raw-body JSON endpoint that stores the uploaded bytes in R2
+and derives the `UploadResult`'s fields server-side, but it also commits the derived `media.json`
+row to the default branch in the same step, so an author can add an asset from the Media Library
+without an entry to ride. Both derive every committed field server-side and trust no client-posted
+record; a re-upload of identical bytes is an idempotent no-op.
 
 The replace-in-place pair swaps one asset for another across the published corpus.
 `mediaReplacePreviewAction` is a display-only fetch endpoint (the upload's `X-Cairn-CSRF` header
@@ -249,8 +250,6 @@ All ten of these media actions (`mediaDeleteAction`, `mediaUpdateAction`,
 `mediaAltPreviewAction`, `mediaAltPropagateAction`, `mediaBulkDeleteAction`,
 `mediaOrphanScanAction`, `mediaOrphanPurgeAction`) are internal `createContentRoutes` members,
 reachable through no package subpath; `createCairnAdmin` is the only public seam that mounts them.
-The showcase runs in dev without a real GitHub App key because its fake backend rides
-`event.locals.cairnBackend` from a fenced dev handle, so no token mint runs.
 
 ```ts
 // src/lib/cairn.server.ts

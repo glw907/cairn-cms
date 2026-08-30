@@ -7,6 +7,30 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-08-30: csrf-hardening pass merged (remediation slice 1)
+
+Plan and post-mortem: `docs/superpowers/plans/2026-08-27-csrf-hardening-pass.md`. Merged via
+PR #40, all checks green, holding unpublished. Four tasks (Lax cookie with re-anchored
+Max-Age and one `csrfSecure` derivation; the unreadable failure paths; the
+detail/witness/hasSession rejection discriminator; ledger hygiene) plus a pass-end security
+review that caught a blocking defect no per-task review could see. Budget: ~2.1M against a
+1.8M ceiling, the overrun accepted to land that fix.
+
+What a later pass would be wrong to rediscover: `csrfSecure` must stay MONOTONIC (an https
+request always mints Secure/`__Host-`; `PUBLIC_ORIGIN` can only raise, never lower) because a
+leftover dev `http://localhost:8788` in `PUBLIC_ORIGIN` passes `requireOrigin` and would
+otherwise strip the prefix that is the sole sibling-subdomain defense under Lax. The CSRF
+token rotates once at successful login, a ruled deviation from the plan's no-rotate line: the
+no-rotation posture made the token permanent per browser, and the one honest cost (an
+already-signed-in browser re-authenticating 403s another tab's form once, self-healing) is
+stated in the code comment and security-model.md. SvelteKit's `cookies.delete` defaults
+Secure over non-localhost http, so a delete must pass its setter's `secure` flag or the
+browser discards it. `platform` is required-but-nullable on the CSRF helpers so omission is a
+compile error; `CookieJar.delete` widened publicly to carry `secure` (bivariant, non-breaking,
+changelog carries it). The live smoke's stale-cookie check works and is the template for
+diagnosing consumer 403s: `guard.rejected` with `detail`/`witness`/`hasSession` and never
+token material.
+
 ## 2026-08-29: harvest-detection pass merged; main's CI red healed
 
 Plan and post-mortem: `docs/superpowers/plans/2026-08-26-harvest-detection-pass.md`. Merged as

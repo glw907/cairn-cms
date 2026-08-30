@@ -638,10 +638,15 @@ for (const entry of newlyPublishedEntries(priorManifest, deployedManifest)) {
 | `Manifest` | Extension API | `interface Manifest { version: 1; entries: ManifestEntry[] }` | The whole corpus as one committed file, with a version guard. `parseManifest` and `newlyPublishedEntries`'s `before`/`after` parameters carry this type. |
 
 The remaining rows are the export-rule closure `buildSiteManifest` and `createSiteIndexes`'s
-`CairnAdapter` generic bound names (CHANGELOG `0.94.0`): every member type
+`CairnAdapter` generic bound names (CHANGELOG `0.94.0`): the content-model member types
 `CairnAdapter`'s own structure names, down to its own nested shapes, re-exported here so a site
 importing only from this subpath can still name the value it holds. Each links to its canonical
-home, [Core](./core.md), where the full prose lives.
+home, [Core](./core.md), where the full prose lives. `CairnAdapter`'s `roles`, `access`, and
+`backend` members name auth- and github-shaped types this subpath's charter forbids importing (see
+the deliberate exception below), so their nested types (`AccessMap`, `RolesDeclaration`,
+`RoleDeclaration`, `Capability`, `Backend`, `BackendProvider`, `RepoFile`, `CommitAuthor`,
+`FileChange`, `CairnEnv`, `EmailSender`, `MagicLinkMessage`, `EmailAttachment`,
+`EmailRecipient`) aren't part of this closure and don't import from `/delivery/data`.
 
 **Import an adapter-only member from its own home.** Eighteen names this subpath once re-exported
 now import from the barrel that declares them, because nothing this subpath publishes names them.
@@ -700,19 +705,5 @@ scope to declare its adapter; `createSiteIndexes(adapter, config, globs)` infers
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry { value: string; label: string }` | One editor-owned tag: a frozen slug `value` and an editable display `label`. |
 | `TidyConfig` | Extension API | `interface TidyConfig { enabled?; model?; conventions? }` | The tidy block on the site config. See [`TidyConfig`](./core.md#types). |
 | `TidyConventions` | Extension API | `interface TidyConventions` | The corrected convention set the tidy prompt builder consumes. |
-| `AccessMap` | Extension API | `type AccessMap = Record<string, string[]>` | A site's whole access declaration. See [`AccessMap`](./core.md#access-map). |
-| `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
-| `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request. |
-| `CairnEnv` | Extension API | `interface CairnEnv` | The Worker bindings and vars the whole engine reads, all optional. See [`CairnEnv`](./sveltekit.md#cairnenv). |
-| `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` references. |
-| `RolesDeclaration` | Extension API | `type RolesDeclaration = Record<string, RoleDeclaration>` | A site's whole role vocabulary. See [`RolesDeclaration`](./core.md#roles). |
-| `RoleDeclaration` | Extension API | `type RoleDeclaration = Capability \| { capability: Capability; home?: string }` | One role's mapping in a `defineRoles` vocabulary. |
-| `Capability` | Extension API | `type Capability = 'owner' \| 'editor' \| 'none'` | The three levels the engine understands. See [`Capability`](./core.md#capability). |
-| `RepoFile` | Extension API | `interface RepoFile { id: string; name: string; path: string }` | A markdown file in a concept directory: id, name, path. |
-| `CommitAuthor` | Extension API | `interface CommitAuthor { name: string; email: string }` | A commit author: the signed-in editor's name and email. |
-| `FileChange` | Extension API | `interface FileChange { path: string; content: string \| null }` | One path change in a commit: write `content`, or delete the path when `content` is null. |
 | `PublishActionsConfig` | Extension API | `type PublishActionsConfig = PublishActionEntry[]` | A site's raw `publishActions` config. |
 | `PublishActionEntry` | Extension API | `interface PublishActionEntry { label: string; href: string; concepts?: string[] }` | One developer-declared publish-success next-step link. |
-| `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries. |
-| `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
-| `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API. |

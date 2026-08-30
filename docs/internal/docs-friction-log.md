@@ -38,45 +38,39 @@ clearings.
   full entries on demand. Trigger: the first consultation where the triage's ledger read
   visibly dominates its token spend.
 
-- **The ASC CSRF 403 incidents remain undiagnosed; the reset-blanking theory does not hold**
-  (`extender`, 2026-08-27; re-triaged 2026-08-27, fix round). The toolkit-seams pass's `CsrfField`
-  change had assumed a native form reset could blank the hidden token field toward the guard's
-  next check; verified in Chromium during the pass that a hidden `<input>`'s `value` setter IS its
-  own `defaultValue` setter, so nothing can desync the two, and the CHANGELOG/reference entries
-  were reworded from a fix to hardening accordingly.
+- **The ASC CSRF 403 incidents: the named mechanisms are closed, residue is now diagnosable**
+  (`extender`, 2026-08-27; re-triaged 2026-08-27, fix round; mechanisms closed, watch open,
+  2026-08-29, csrf-hardening pass). The toolkit-seams pass's `CsrfField` reset-blanking theory did not hold (verified in
+  Chromium: a hidden `<input>`'s `value` setter IS its own `defaultValue` setter, so nothing
+  desyncs the two). The csrf-hardening pass closed every named mechanism the strongest
+  candidate and its siblings pointed at: the CSRF cookie now sets `SameSite=Lax` explicitly
+  instead of `Strict`, so a magic-link confirm-load top-level navigation no longer withholds
+  the cookie and re-mints it, invalidating every other open admin tab's already-rendered form;
+  the cookie's `Max-Age` now matches the session's lifetime and re-anchors on every issue
+  instead of expiring on its own shorter timer; `secure` and the cookie name now derive from
+  one `PUBLIC_ORIGIN`-aware `csrfSecure(event)` helper (falling back to the request protocol
+  for a local-host request or an absent/unparseable `PUBLIC_ORIGIN`) instead of the bare
+  per-request `event.url.protocol`, closing the two-names-blind-to-each-other class;
+  `content-routes-core.ts`'s empty-token fallback (`csrf: event.cookies ? issueCsrfToken(...) :
+  ''`) is deleted, so a form can no longer render permanently unable to pass the guard with no
+  readable cause.
 
-  The strongest code-supported candidate: a confirm-load token re-mint invalidates every other
-  open admin tab's already-rendered form. `csrf.ts`'s `issueCsrfToken` mints the CSRF cookie
-  `SameSite=Strict`; `auth-routes.ts`'s `confirmLoad` (`GET /admin/auth/confirm`, the magic-link
-  landing page) calls it on every load. Following the emailed link is a cross-site top-level
-  navigation, exactly the case `SameSite=Strict` withholds a cookie for, so the server sees no
-  existing CSRF cookie on that request and mints a fresh one, overwriting the old value in the
-  browser's cookie jar. (This holds for a webmail client, where the link opens the browser's own
-  navigation; a native mail client that hands the link to the OS or its own embedded webview may
-  send the `Strict` cookie along regardless, so the theory's cross-site framing needs confirming
-  against the actual client mix before it is treated as settled.) Any OTHER admin tab left open
-  from before (a draft mid-edit, say) still
-  carries the OLD token baked into its hidden form field from its own earlier SSR, so its next POST
-  submits a token that no longer matches the cookie and 403s, with no user action in that tab at
-  all. Two further, weaker candidates worth checking next: `content-routes-core.ts:644`'s
-  `csrf: event.cookies ? issueCsrfToken(...) : ''` empty-token fallback (a request lacking
-  `event.cookies` renders a form that can never pass the guard); and the per-request `secure`
-  derivation `crypto.ts`'s own `cookieName` docstring warns about (a reverse-proxy or platform-edge
-  request where the scheme cairn sees flips request to request would read/write the CSRF cookie
-  under two different names, `__Host-cairn_csrf` and `cairn_csrf`, each blind to the other's
-  value). The `X-Cairn-CSRF` header path (`MediaHeroField.svelte`/`MediaInsertPopover.svelte`,
-  reading the token through the `CSRF_CONTEXT_KEY` getter) stays the weakest candidate: it reads
-  the same context value every other form field does, with no separate re-mint trigger of its own.
+  Any residue is now diagnosable: the guard's `reason: 'csrf'` record and
+  `admin.action.csrf_rejected` both carry `detail: 'no-cookie' | 'no-witness' | 'mismatch' |
+  'unparseable-body'` and `witness: 'header' | 'field'`, so a real incident's own logs
+  distinguish "the cookie never arrived" from "the submitted token is stale" from "the field
+  was silently swapped for the header witness" instead of one undifferentiated 403, with no
+  token material, prefix, or length ever logged.
 
-  Proposed remedies, pending a conductor/Geoff ruling, not yet applied: (1) `SameSite=Lax` for the
-  CSRF cookie, since the session cookie is already `Lax` and a double-submit token gains no real
-  protection from `Strict` (a `Lax` cookie already withholds itself on a cross-site subresource or
-  iframe load, the actual CSRF-relevant case; it only differs from `Strict` on a top-level GET
-  navigation, exactly the confirm-load case above). (2) A non-sensitive `detail: 'no-cookie' |
-  'no-token' | 'mismatch'` discriminator on the guard's own CSRF-rejection log records, so a real
-  incident's own logs distinguish "the cookie never arrived" from "the submitted token is stale"
-  instead of one undifferentiated 403. Trigger: diagnosis is owed the next time the incident
-  recurs, or a conductor/Geoff ruling on the two remedies above, whichever comes first.
+  Known post-fix behavior, not a defect: a browser holding an old `Strict` cookie from before
+  the deploy re-mints exactly once as it ages out, then behaves as any freshly-issued cookie
+  does. The other known residual is concurrent first loads: two cookie-less admin loads racing
+  in one browser each mint their own token, the later `Set-Cookie` wins, and the tab holding the
+  losing value 403s once as `detail: 'mismatch'`, `witness: 'field'`. A post-deploy record of
+  exactly that shape is this residual, not a new mechanism; only a record that does not fit it
+  reopens the entry. WATCH posture: this entry leaves the log when a post-deploy consumer incident either
+  stops recurring, or produces a discriminated record that names a mechanism this pass did not
+  already close.
 
 - **`StatusChip`'s `outline` register border drops under the 3:1 non-text floor inside a
   muted-ink ancestor** (`extender`, 2026-08-27, fix round). The hairline is `color-mix(in oklab,
@@ -240,3 +234,12 @@ is plain JS by design and its own suite is the real gate, and no pass has report
 through), the `paid-plan-missing` mapping keyed on entitlement wording (the call site's docstring and
 its test name both already state the risk and the reason), and the root `CLAUDE.md` context-headroom
 note (housekeeping, outside this log's charter). STATUS shed all three at the B0 close.
+
+- **(developer, 2026-08-29, csrf-hardening close)** The engine argues both postures on an
+  untyped caller's missing cookie jar: `content-routes-core.ts` now fails loudly (the
+  empty-token fallback is removed), while five sibling call sites
+  (`content-routes-dictionary.ts:95`, `content-routes-media.ts:494`/`:1065`/`:1265`,
+  `content-routes-tidy.ts:111`) still guard with `if (!event.cookies || ...)` and return a
+  soft `fail(403)`. Not a defect (typed callers cannot hit either branch); one posture
+  should win. Candidate for the conventions pass's auth family alongside the
+  platform-required carry-forward.

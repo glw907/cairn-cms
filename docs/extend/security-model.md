@@ -60,7 +60,36 @@ The session cookie carries the `__Host-` prefix on every https deploy, which req
 and `Path=/` and forbids `Domain`. The browser then ties the cookie to the exact origin that set
 it, rather than to a `Domain` attribute a sibling host could also set. Local `http` development
 drops the prefix, since `__Host-` requires `Secure` unconditionally and a dev cookie has no TLS to
-set it with. The CSRF double-submit cookie follows the identical naming rule.
+set it with. The session cookie derives `Secure` from the request's own protocol.
+
+The CSRF double-submit cookie uses the same `__Host-` discipline, but derives `Secure` by a
+stricter rule of its own, so the two names can diverge on one request. The CSRF rule is monotonic:
+an `https` request always resolves `Secure`, whatever the configuration says, so a stale `http`
+value left in a deployed site's `PUBLIC_ORIGIN` can't downgrade a live TLS request to a bare
+cookie that a sibling subdomain is then free to overwrite. Only a non-`https` request consults
+anything further. A request to a local host (`localhost`, `127.0.0.1`, and their siblings) keeps
+the bare name, so local development never tries to mint a `__Host-` cookie it can't set.
+Otherwise the site's configured `PUBLIC_ORIGIN` decides. Under the monotonic rule this branch is a
+conservative fallback that a guarded `/admin` path never reaches: an `https` request already
+resolved `Secure` above, and the guard refuses an `http` non-local request on every admin path
+before any token issues. It exists so a non-admin surface that mints the cookie resolves the same
+name the admin will expect.
+
+The CSRF cookie's full attribute set: `HttpOnly`, `Path=/`, `SameSite=Lax` set explicitly (never
+by attribute omission, since an omitted `SameSite` gets a browser's own default treatment for a
+short window right when a fresh cookie is most likely to be used), and a `Max-Age` matching the
+session cookie's own thirty-day lifetime.
+
+The two cookies don't share one lifetime. The CSRF cookie re-anchors its `Max-Age` on every
+issue, keeping the same value, while the session cookie's thirty days run from sign-in. The CSRF
+value rotates at exactly two moments: a successful login mints a fresh one, so a value fixed on
+the browser before sign-in can't carry into the session, and a logout deletes it. Nothing else
+changes the value, so a second open admin tab's already-rendered form field keeps matching the
+cookie. At the login moment another open tab holds at most a sign-in form, which the new session
+makes moot, except when an already-signed-in browser re-authenticates through `/admin/auth/confirm`
+(a public admin path): another tab there can hold a real authenticated form whose field then
+mismatches the rotated cookie, taking one generic 403 that a reload recovers from. Binding the
+token to authentication epochs outweighs that narrow self-healing edge.
 
 ## CSRF: cairn owns it, not the framework
 
@@ -117,10 +146,17 @@ call to a gate that found nothing to gate on is a configuration bug.
 
 Every admin response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, a
 `frame-ancestors 'none'` policy, `Referrer-Policy: no-referrer`, a `Permissions-Policy` that denies
-camera, microphone, and geolocation, and `Strict-Transport-Security` (a site opts into pinning
-sibling subdomains too). A rejection response, one that fires before the guard knows whether a site
-opted into subdomain pinning, sends no HSTS header at all rather than a weaker one, since a browser
-that receives any HSTS header from a host replaces its cached policy with what it just received.
+camera, microphone, and geolocation, `Strict-Transport-Security` (a site opts into pinning
+sibling subdomains too), and `Cache-Control: private, no-store` (the admin HTML embeds the CSRF
+token and the signed-in editor's identity, so no cache may hold it). A rejection response, one
+that fires before the guard knows whether a site opted into subdomain pinning, sends no HSTS
+header at all rather than a weaker one, since a browser that receives any HSTS header from a host
+replaces its cached policy with what it just received.
+
+Mount every load that issues a CSRF token under `/admin/**`, including `loginLoad`, `confirmLoad`,
+and the admin shell load. The guard applies these headers only to an `/admin` path, so a token
+rendered from a route mounted elsewhere travels without the cache posture that keeps it out of a
+shared cache.
 
 `Referrer-Policy: no-referrer` here is deliberately scoped to `/admin`, never a site-wide default.
 A consuming site must not serve `no-referrer` for every route (a blanket `Referrer-Policy:

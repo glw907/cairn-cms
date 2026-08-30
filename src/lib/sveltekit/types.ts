@@ -18,7 +18,10 @@ export interface CookieSetOptions {
 export interface CookieJar {
   get(name: string): string | undefined;
   set(name: string, value: string, opts: CookieSetOptions): void;
-  delete(name: string, opts: { path: string }): void;
+  // `secure` is accepted on a delete, not just a set: SvelteKit's own delete defaults it on for
+  // every host but `localhost` itself, and a browser discards a Secure Set-Cookie sent over http,
+  // so a deletion over http dev only lands when the caller states the flag its setter used.
+  delete(name: string, opts: { path: string; secure?: boolean }): void;
 }
 
 /**

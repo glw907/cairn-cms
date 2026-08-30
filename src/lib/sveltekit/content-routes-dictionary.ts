@@ -92,7 +92,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
   async function dictionaryAddAction(event: CairnEvent): Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
     // media actions. A failed check refuses before the session read or any GitHub call.
-    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
+    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies, platform: event.platform })) {
       return fail(403, { error: 'csrf' } satisfies DictionaryAddFailure);
     }
     const editor = requireEditor(event);

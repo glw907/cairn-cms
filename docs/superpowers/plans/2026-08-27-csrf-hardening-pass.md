@@ -189,3 +189,59 @@ auth code end to end). No admin visual work, so no visual read; the live admin s
 (the guard changed) with one addition: verify a minted session plus a stale CSRF cookie
 produces a `mismatch` record in the dev log. Docs: reference rows and the smoke doc are
 in-task; STATUS/HISTORY at close per the ritual. No version bump; the window holds.
+
+---
+
+## Post-mortem (pass closed 2026-08-30)
+
+**What was built.** All four tasks landed via the workflow chain (14 agents, ~1.5M tokens),
+each accepted by its Opus diff review with independent gate runs and falsifiability probes:
+T1 cookie attributes (`90c6f770`, `e93406c1`), T2 failure paths (`ffbd7b72`, `2a9ca08b`),
+T3 discriminator (`ef39929b`), T4 ledger (`b2a92ca8`, `ff7bced0`). The pass-end ritual added
+the simplifier comment fix (`9790d6d4`), docs refresh (`242fdcac`), and two security fix
+rounds (`9146217e`, `1bec6e23`).
+
+**The pass-end security review caught a blocking defect the four per-task reviews could
+not see:** `csrfSecure` as first shipped let a non-https `PUBLIC_ORIGIN` (including a
+leftover dev `http://localhost:8788`, which `requireOrigin` tolerates) strip `__Host-` and
+`Secure` from the cookie on a production https deploy, converting the double-submit check
+into a sibling-subdomain CSRF bypass under Lax. Fixed monotonic in `9146217e`: an https
+request always mints Secure; `PUBLIC_ORIGIN` can only raise, never lower. Pinned red-first.
+
+**Deliberate deviation from the plan, ruled by the conductor:** the CSRF token now ROTATES
+once inside `confirmAction` after `createSession` succeeds, though the plan said "NO
+rotate-on-confirm". The plan's constraint targeted rotation that invalidates authenticated
+tabs; the security review showed the no-rotation posture made the token permanent per
+browser (re-anchor plus login survival), a worse property. The re-review verified every
+failure path returns before the rotation (garbage tokens cannot churn a victim's cookie)
+and identified the one honest cost: an already-signed-in browser confirming a fresh magic
+link invalidates another tab's rendered form for one self-healing 403 (`mismatch`/
+`witness: field`). The claim is stated honestly in the code comment and security-model.md.
+
+**Also shipped beyond the plan, from review findings:** logout deletes pass their setter's
+`secure` flag (the delete was silently discarded over http on 127.0.0.1); `platform` is
+required-but-nullable on the CSRF helpers (omission is now a compile error; five call
+sites literalized); `CookieJar.delete` widened to accept `secure` (public surface, snapshot
+regenerated, changelog line, verified non-breaking under bivariance); four false doc claims
+corrected including the inverted Lax/Cache-Control changelog sentence.
+
+**Verification.** Full CI-derived local gate list green (5874 tests at close). Live admin
+smoke against the worktree-resolved showcase on a real Worker: anon 200/303, authed 200,
+minted cookie shows `SameSite=Lax; Max-Age=2592000` bare-named over local http per the
+monotonic rule, `Cache-Control: private, no-store` on admin HTML, and the plan's smoke
+addition proven live: a stale-cookie POST 403s and logs `guard.rejected` with
+`detail: 'mismatch'`, `witness: 'field'`, `hasSession: true`, no token material.
+
+**Carried forward (conventions pass, auth family):** session-cookie derivation off
+`url.protocol` (ledger, reopen trigger restated as the weaker-half class);
+`check-probe.ts:49`'s independent derivation, the one remaining sibling of the closed
+class; the cookie-jar posture split (friction log); the login-CSRF same-browser binding
+(ledger, `_pending` nonce pattern; the rotating CSRF cookie is a candidate carrier).
+Known residual, filed in the WATCH entry: concurrent cookie-less first loads double-mint
+and one tab 403s as `mismatch`/`witness: field`.
+
+**Budget.** Chain spend ~1.5M of the 1.8M ceiling; the ritual (simplifier, mandated
+security review, two fix rounds, re-review, smoke) ran the pass to roughly 2.1M, a ~17%
+overrun accepted by the conductor to land a blocking security fix rather than hold the
+pass open. Human interaction points this pass: zero questions; one standing authorization
+("continue through the CSRF hardening pass") consumed.

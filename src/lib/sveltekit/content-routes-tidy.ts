@@ -108,7 +108,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
   async function tidyAction(event: CairnEvent): Promise<ActionFailure<TidyFailure> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
     // before the session read and before any model call.
-    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
+    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies, platform: event.platform })) {
       return fail(403, { error: 'csrf' } satisfies TidyFailure);
     }
     const editor = requireEditor(event);

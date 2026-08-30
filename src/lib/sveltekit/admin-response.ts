@@ -26,7 +26,10 @@ export interface SecurityHeaderOptions {
  * Attach the baseline security headers to an admin response. No full CSP; see the auth-hardening
  * design. frame-ancestors is the modern clickjacking control and the one CSP directive included.
  * Strict-Transport-Security carries `max-age` and, when `opts.includeSubDomains` is set, the
- * subdomain directive; `opts.omitHsts` drops the header entirely.
+ * subdomain directive; `opts.omitHsts` drops the header entirely. The `Cache-Control` header
+ * (the same `private, no-store` spelling `preview.ts` already uses) is unconditional: every
+ * admin response this runs against embeds the CSRF token and the signed-in editor's identity,
+ * and a shared cache must never hold either.
  */
 export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptions = {}): void {
   headers.set('X-Content-Type-Options', 'nosniff');
@@ -40,6 +43,7 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
     );
   }
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  headers.set('Cache-Control', 'private, no-store');
 }
 
 /**
@@ -56,7 +60,10 @@ export function applySecurityHeaders(headers: Headers, opts: SecurityHeaderOptio
  * The https-required page is served over http, where RFC 6797 forbids the header anyway.
  */
 export function brandedAdminPage(status: number, body: string): Response {
-  const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+  // Cache-Control is left to applySecurityHeaders below, which sets it unconditionally. Setting it
+  // here as well would make the value that actually ships depend on which of the two writers ran
+  // last, silently.
+  const headers = new Headers({ 'Content-Type': 'text/html; charset=utf-8' });
   applySecurityHeaders(headers, { omitHsts: true });
   return new Response(body, { status, headers });
 }

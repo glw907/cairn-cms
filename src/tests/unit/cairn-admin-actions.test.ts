@@ -181,7 +181,11 @@ describe('auth actions', () => {
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/auth/confirm', { editor: null, form: { token: 'tok' }, env: { AUTH_DB: db } });
     await expectRedirect(admin.actions.confirm(event as never), '/admin');
-    expect(event._cookieSets).toEqual([expect.objectContaining({ name: '__Host-cairn_session' })]);
+    // The second set is the CSRF rotation a successful login performs; see auth-confirm.test.ts.
+    expect(event._cookieSets).toEqual([
+      expect.objectContaining({ name: '__Host-cairn_session' }),
+      expect.objectContaining({ name: '__Host-cairn_csrf' }),
+    ]);
   });
 
   it('logout works from any parsed view: clears the session cookie and redirects to login', async () => {
@@ -193,7 +197,9 @@ describe('auth actions', () => {
     });
     await expectRedirect(admin.actions.logout(event as never), '/admin/login');
     expect(calls.some((c) => c.sql.includes('DELETE FROM session') && c.args[0] === 'sid')).toBe(true);
-    expect(event._cookieDeletes).toEqual(['__Host-cairn_session']);
+    // The CSRF cookie is deleted alongside the session cookie, so a persistent double-submit
+    // token cannot survive sign-out.
+    expect(event._cookieDeletes).toEqual(['__Host-cairn_session', '__Host-cairn_csrf']);
   });
 });
 

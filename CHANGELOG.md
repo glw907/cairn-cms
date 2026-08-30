@@ -167,6 +167,65 @@
 
 ### Fixed
 
+- The CSRF cookie's `Secure` derivation is now monotonic: an `https` request always resolves
+  Secure, whatever `PUBLIC_ORIGIN` says, and only a non-`https` request consults the local-host
+  list and then `PUBLIC_ORIGIN`. A leftover `http://localhost:8788` in a deployed site's
+  `PUBLIC_ORIGIN` (which `requireOrigin` tolerates) previously minted a bare, non-Secure,
+  thirty-day `cairn_csrf` on a production `https` deploy, which under `SameSite=Lax` a sibling
+  subdomain could then overwrite and defeat the double-submit compare. `logoutAction` also now
+  passes each cookie's own `secure` flag to its `delete`, since SvelteKit's delete default emits
+  `Secure` for every host but `localhost` itself and a browser discards a Secure `Set-Cookie` sent
+  over `http`, which left both cookies alive on an `http` dev host such as `127.0.0.1`.
+  `CookieJar.delete` accordingly accepts `secure` alongside `path`, a widening that every existing
+  implementation still satisfies. The
+  `platform` argument on `csrfSecure`, `issueCsrfToken`, `csrfHeaderVerdict`, and
+  `validateCsrfHeader` is now required but nullable, so omitting it is a compile error rather than
+  a silent fall back to a different cookie name than the writer used. Consumers must: nothing.
+
+- A successful login now rotates the CSRF token: `confirmAction` deletes the cookie and mints a
+  fresh value once the session exists, so a value fixed on the browser before sign-in cannot carry
+  into the authenticated session. This is the only rotation point besides logout, and it is safe
+  where a general rotation would not be: at that instant no authenticated form exists to
+  invalidate, since another open tab holds at most a sign-in form the new session makes moot.
+  Consumers must: nothing; expect one extra `Set-Cookie` on the confirm redirect, once per login.
+
+- The CSRF cookie now sets `SameSite=Lax` explicitly (never by attribute omission) with a
+  `Max-Age` matching the session cookie's own thirty-day lifetime, re-anchoring that `Max-Age` on
+  every issue while the cookie is present rather than rotating its value, so the cookie tracks the
+  session's lifetime without invalidating a second open admin tab's already-rendered form. `Secure`
+  now derives from the site's configured `PUBLIC_ORIGIN` rather than the request's own protocol
+  (see the monotonic rule above for the exact precedence), closing a `SameSite=Strict` cross-tab
+  denial through the public login page and an unstable cookie-name-flip class. `logoutAction` now
+  deletes the CSRF cookie alongside the session cookie, so a persistent double-submit token can't
+  survive a sign-out. Consumers must:
+  nothing. A browser holding an old `SameSite=Strict` cookie re-mints exactly once after deploy,
+  as that cookie ages out.
+
+- The admin shell's CSRF-token issue drops its `event.cookies ? issueCsrfToken(...) : ''`
+  fallback: `cookies` is required on every `CairnEvent`, so the empty branch was unreachable from
+  a typed caller and, from an untyped one, silently shipped a form that could never pass CSRF with
+  no readable cause. The mint now runs unconditionally. Every hardened admin response
+  (`applySecurityHeaders`) now also sends `Cache-Control: private, no-store`. That header is
+  load-bearing, not belt-and-braces: the CSRF cookie re-anchors its `Max-Age` on every issue, so
+  every admin response carries a `Set-Cookie`, and a response's cacheability must never rest on
+  that incidental side effect for HTML that embeds the token and the signed-in editor's identity. Media and preview responses are untouched; the guard returns before this header is
+  applied for any non-`/admin` path. Consumers must: nothing.
+
+- The admin guard's and `adminAction`'s CSRF rejection records (`guard.rejected` with
+  `reason: 'csrf'`, and `admin.action.csrf_rejected`) now carry `detail` (`no-cookie`,
+  `no-witness`, `mismatch`, or `unparseable-body`) and `witness` (`header` or `field`), so a
+  residual 403 in Workers Logs names which of three previously indistinguishable causes fired,
+  instead of collapsing all of them into one bare `reason: 'csrf'`. The guard's own record also
+  gains a presence-only `hasSession` boolean (whether a session cookie arrived, never a resolved
+  identity, since this check runs before session resolution). The precedence rule that makes
+  `detail`/`witness` trustworthy: a header witness that arrives at all, matching or not, decides
+  outright, so a stale `X-Cairn-CSRF` header on a raw-body upload/media/dictionary/tidy POST now
+  reads `mismatch`/`witness: header` rather than misreporting as the field path's `no-witness`.
+  None of the new fields, nor any existing one, ever carries token material, a prefix, or a
+  length, and the HTTP response stays the single generic `auth.csrf-token-invalid` condition.
+  Consumers must: nothing; see `docs/reference/log-events.md` for the field vocabulary if you
+  query these events.
+
 - An unchecked `.checkbox`/`.radio` in the packaged admin sheet raises its edge from daisyUI's
   stock 20% `--color-base-content` mix (measured 1.492:1 light / 1.773:1 dark against `base-100`,
   under the WCAG 1.4.11 3:1 non-text floor) to the same 55% mix already locked for the scrollbar

@@ -11,6 +11,7 @@ import {
   SESSION_TTL_MS,
   SEND_COOLDOWN_MS,
   sessionCookieName,
+  csrfCookieName,
 } from '../auth/crypto.js';
 import {
   findEditor,
@@ -22,7 +23,7 @@ import {
   insertOwnerIfEmpty,
 } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
-import { issueCsrfToken } from './csrf.js';
+import { issueCsrfToken, csrfSecure } from './csrf.js';
 import { log } from '../log/index.js';
 import type { CairnEvent } from './types.js';
 
@@ -157,7 +158,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     return {
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
-      csrf: issueCsrfToken(event),
+      csrf: issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform }),
     };
   }
 
@@ -172,7 +173,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
       token: event.url.searchParams.get('token') ?? '',
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
-      csrf: issueCsrfToken(event),
+      csrf: issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform }),
     };
   }
 
@@ -204,25 +205,52 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
       sameSite: 'lax',
       maxAge: Math.floor(SESSION_TTL_MS / 1000),
     });
+
+    // Rotate the CSRF token now that the session exists, so a value fixed on this browser before
+    // sign-in cannot carry into the authenticated session. Deleting first is what forces the mint:
+    // issueCsrfToken reuses a present cookie by design.
+    //
+    // This is a deliberate exception to issueCsrfToken's never-rotate rule, which exists so a
+    // second open admin tab's already-rendered form field keeps matching the cookie. At this
+    // instant another open tab holds at most a sign-in form, which is meaningless once this
+    // session is signed in, except when an already-signed-in browser re-authenticates through
+    // /admin/auth/confirm (a public admin path): another tab there can hold a real authenticated
+    // form whose field then mismatches the rotated cookie, taking one generic 403 (detail
+    // mismatch, witness field) that a reload recovers from. Rotating at any later point would
+    // break a real authenticated form outside that narrow case, and binding the token to
+    // authentication epochs outweighs the self-healing edge, which is why this is the only place
+    // it happens.
+    const csrfIsSecure = csrfSecure({ url: event.url, platform: event.platform });
+    event.cookies.delete(csrfCookieName(csrfIsSecure), { path: '/', secure: csrfIsSecure });
+    issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform });
     throw redirect(303, '/admin');
   }
 
   /**
-   * POST /admin/auth/logout. Clears the cookie first, so a fault below still kills the
-   *  browser-side credential rather than leaving the session both server- and client-side valid
+   * POST /admin/auth/logout. Clears both cookies first, so a fault below still kills the
+   *  browser-side credentials rather than leaving the session both server- and client-side valid
    *  (the cookie is the only thing a subsequent request can present); then best-effort deletes
-   *  the session row. A `deleteSession` fault is caught and logged here, never rethrown to
-   *  `viewAction`'s generic `fail(500)`: this action posts to the bare `/admin`, whose own load
-   *  (`indexLoad`) always redirects away before ever rendering a component that reads `form`, so a
-   *  `fail()` here would be silently discarded. The editor is already signed out either way, so
-   *  the redirect to `/admin/login` stays unconditional; a lingering D1 row with no valid cookie
-   *  presenting it is not reachable.
+   *  the session row. The CSRF cookie is deleted alongside the session cookie: a persistent
+   *  double-submit token must not survive a sign-out.
+   *
+   *  Each delete carries the same `secure` flag its own setter used, since SvelteKit's delete
+   *  defaults `secure` on for every host but `localhost` itself, and a browser discards a Secure
+   *  `Set-Cookie` sent over http, which would leave both cookies alive on an http dev host such as
+   *  `127.0.0.1`. A `deleteSession` fault is caught and
+   *  logged here, never rethrown to `viewAction`'s generic `fail(500)`: this action posts to the
+   *  bare `/admin`, whose own load (`indexLoad`) always redirects away before ever rendering a
+   *  component that reads `form`, so a `fail()` here would be silently discarded. The editor is
+   *  already signed out either way, so the redirect to `/admin/login` stays unconditional; a
+   *  lingering D1 row with no valid cookie presenting it is not reachable.
    */
   async function logoutAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
-    const name = sessionCookieName(event.url.protocol === 'https:');
+    const sessionIsSecure = event.url.protocol === 'https:';
+    const name = sessionCookieName(sessionIsSecure);
     const id = event.cookies.get(name);
-    event.cookies.delete(name, { path: '/' });
+    event.cookies.delete(name, { path: '/', secure: sessionIsSecure });
+    const csrfIsSecure = csrfSecure({ url: event.url, platform: event.platform });
+    event.cookies.delete(csrfCookieName(csrfIsSecure), { path: '/', secure: csrfIsSecure });
     if (id) {
       try {
         await deleteSession(db, id);

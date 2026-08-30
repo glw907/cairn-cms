@@ -36,7 +36,7 @@ function loginResponse(over: { body?: string; status?: number; cookie?: string |
   const cookie =
     over.cookie === null
       ? null
-      : (over.cookie ?? '__Host-cairn_csrf=cookie-token; Path=/; HttpOnly; Secure; SameSite=Strict');
+      : (over.cookie ?? '__Host-cairn_csrf=cookie-token; Path=/; HttpOnly; Secure; SameSite=Lax');
   if (cookie !== null) headers.append('set-cookie', cookie);
   return new Response(over.body ?? loginPage(), { status: over.status ?? 200, headers });
 }
@@ -117,7 +117,7 @@ describe('admin.login-probe', () => {
 
   it('expects the bare cookie name on a local http origin', async () => {
     const { fetch, calls } = probeFetch(
-      loginResponse({ cookie: 'cairn_csrf=cookie-token; Path=/; HttpOnly; SameSite=Strict' }),
+      loginResponse({ cookie: 'cairn_csrf=cookie-token; Path=/; HttpOnly; SameSite=Lax' }),
       actionJson('sent')
     );
     const result = await liveProbeCheck('http://localhost:8788').run(ctx({ fetch }));

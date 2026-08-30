@@ -16,6 +16,45 @@ Entry format: a heading plus labeled lines.
 - **Verified:** (audit entries; required on every family-originated export and every non-keep) the verifier pass that checked it.
 ```
 
+## login-csrf-no-same-browser-binding: magic-link confirm has no same-browser binding  (defer, 2026-08-27, csrf-hardening pass)
+
+- **Verdict:** defer. `confirmLoad`/`confirmAction` (`auth-routes.ts:170,185`) accept any
+  correctly-shaped token, minted for whichever browser requested it, with nothing binding the
+  confirming browser to the requesting one. An attacker who requests a magic link for THEIR OWN
+  email and then delivers that link to the victim (embedded, forwarded, or otherwise put in
+  front of the victim's browser) gets the victim's browser to confirm it, landing the victim in
+  the ATTACKER's session (a login-CSRF, distinct from the double-submit CSRF this pass
+  hardens). The newer `createAuthChannel` seam (`auth-channel/factory.ts:644-650,859`)
+  already carries the fix pattern: a `_pending` cookie holding a nonce, minted on request and
+  read back on confirm, so a confirm without the matching cookie fails. Ruled (Geoff,
+  2026-08-27): file, not fix, in this slice.
+- **Reopens on:** the conventions pass's auth-family reshapes, where `auth-routes.ts`'s
+  `requestAction`/`confirmAction` pair adopts the same `pendingCookie` nonce binding
+  `createAuthChannel` already proves.
+- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 4.
+
+## session-cookie-derivation-out-of-csrf-slice: session cookie's secure/name derivation stays on `event.url.protocol`  (defer, 2026-08-29, csrf-hardening pass)
+
+- **Verdict:** defer. The CSRF cookie pair now derives its Secure bit and name from
+  `csrfSecure(event)` (`PUBLIC_ORIGIN`-aware), but the session cookie's own three call sites
+  (`guard.ts:150`, `auth-routes.ts:199-200`'s `confirmAction`, `auth-routes.ts:225`'s
+  `logoutAction`) still derive `secure` from the bare `event.url.protocol`, unchanged by this
+  pass. `crypto.ts:20`'s `csrfCookieName` docstring ("mirroring `sessionCookieName`") is true
+  only for the shape of the derivation, not for the `PUBLIC_ORIGIN` source now feeding the CSRF
+  half; this entry is that docstring's listener. Deliberately out of scope here: the session
+  cookie belongs to the conventions pass's auth family, not this CSRF-hardening slice.
+- **Reopens on:** the conventions pass that threads `PUBLIC_ORIGIN` (or an equivalent
+  `csrfSecure`-shaped helper) through the session cookie's own three call sites, or, sooner, the
+  CSRF half resolving WEAKER than the session half on one response. That second trigger, not a
+  cross-protocol mismatch alone, is what the divergence actually risks, and the fix round's
+  finding 1 is its shape: a `PUBLIC_ORIGIN` carrying a leftover `http` dev value minted a bare,
+  non-Secure, thirty-day `cairn_csrf` on a live https deploy while the session cookie, deriving
+  from `url.protocol`, stayed `__Host-` Secure. The monotonic rule (an https request always
+  resolves Secure) closes that instance; any new configuration input to the CSRF derivation can
+  reopen the class, and the reverse asymmetry, where TLS termination leaves the session half the
+  weaker one, stays covered by the cross-protocol trigger above.
+- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 1.
+
 ## copy-to-clipboard-control: public-side copy-to-clipboard widget  (decline, 2026-08-26, ASC harvest triage)
 
 - **Verdict:** decline. A generic web widget on the design-agnostic public side; a chassis

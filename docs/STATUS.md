@@ -19,17 +19,27 @@ slice per the initiative design. CI on `main` is fully green.
 ## Immediate next action
 
 **Foundations A pass IN FLIGHT** on worktree `.claude/worktrees/foundations-a` (branch
-`foundations-a` off `main` at `a1451861`). Checkpoint after Task 1 (2026-08-29):
+`foundations-a` off `main` at `a1451861`). Checkpoint after Task 2 (2026-08-29):
 
 - Task 1 (ledger repair, format gate, MediaInsertPopover filing): DONE, committed `632cca35`,
   diff-reviewer accept, no blocking findings. Allowlist at 40. Carried non-blocking notes:
   tighten `check:rulings-format` to require a `Shape:` line when a slug leaves the allowlist;
   the `audit-cli-cairn-audit-config-json-contract...` entry carries trailing progress prose
   its eventual repair must not mistake for the shape.
-- Task 2 (R-0 + R-1 canonical-home rule, `model: opus`): NEXT. Task 3 (drift sweep) after.
+- Task 2 (R-0 + R-1 canonical-home rule): DONE, committed `a7f9510a`; diff-reviewer verdict
+  still owed. Full gate green including `check:consumers` and the scaffold emit's typecheck.
+  The move set, the 120 recorded re-exports, and two determinations open to challenge are in
+  `docs/internal/record/2026-08-29-foundations-a-move-set.md`, which foundations B diffs
+  against.
+- Task 3 (drift sweep): NEXT. Its scope shifted: `docs/extend/migration-notes.md` already
+  carries the canonical-home entry, and Task 2 hands it ~15 stale rows in
+  `docs/reference/delivery-data.md` by name (the record's "Known adjacent drift" section).
 - Pre-flight csrf-window items re-verified against the merged tree; corrected counts: 40
   unrepaired shapes (cli 15, log 10, auth 7, tail 8); ledger line anchors shifted +39.
-- Spend: ~0.4M of the 2M pass ceiling (Task 1 chain ~0.34M).
+- This worktree's `examples/showcase` now has its own `npm ci` install, so `check:consumers`
+  proves THIS engine rather than failing on the shared-symlink collision.
+- Spend: Task 1 chain ~0.34M of the 2M pass ceiling; the Task 2 chain spans a crashed session
+  and its finish, so its figure comes from the conductor's own ledger, not from here.
 - Then: cairn-pass end ritual, merge, finalize foundations B bodies against A's merged
   surface, one `engine-triage` adversarial review over the finalized B plan, execute B in
   the same session (Geoff's calls, 2026-08-29). Resume prompt if this session dies:

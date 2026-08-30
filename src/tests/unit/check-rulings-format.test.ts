@@ -1,9 +1,17 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   parseEntries,
   slugsWithShapeParenthetical,
   findFormatProblems,
+  slugsWithShapeLine,
+  findExitRatchetProblems,
+  ORIGINAL_TRUNCATED_SLUGS,
 } from '../../../scripts/checks/check-rulings-format.mjs';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 
 // A minimal two-entry ledger slice: `migrated` carries the sanctioned `- **Shape:**` line, `raw`
 // carries the label a repair round names for its `reopens` line.
@@ -79,5 +87,86 @@ describe('findFormatProblems', () => {
   it('passes a sanctioned "- **Shape:**" line with no (shape: parenthetical anywhere', () => {
     const entries = parseEntries(ledger('open until executed; the remediation pass closes it.'));
     expect(findFormatProblems(entries, [])).toEqual([]);
+  });
+});
+
+describe('slugsWithShapeLine', () => {
+  it('finds a slug carrying a "- **Shape:**" line', () => {
+    const text = [
+      '## audit-x: `X`  (reshape, 2026-08-26, any-site audit)',
+      '',
+      '- **Reopens on:** open until executed; the remediation pass closes it.',
+      '- **Shape:** One complete sentence.',
+    ].join('\n');
+    expect(slugsWithShapeLine(text)).toEqual(new Set(['audit-x']));
+  });
+
+  it('finds a slug carrying the shape-needs-rederivation marker instead', () => {
+    const text = [
+      '## audit-x: `X`  (reshape, 2026-08-26, any-site audit)',
+      '',
+      '- **Reopens on:** open until executed; shape-needs-rederivation.',
+    ].join('\n');
+    expect(slugsWithShapeLine(text)).toEqual(new Set(['audit-x']));
+  });
+
+  it('omits a slug carrying neither', () => {
+    const text = [
+      '## audit-x: `X`  (reshape, 2026-08-26, any-site audit)',
+      '',
+      '- **Reopens on:** open until executed; the remediation pass closes it.',
+    ].join('\n');
+    expect(slugsWithShapeLine(text)).toEqual(new Set());
+  });
+});
+
+describe('findExitRatchetProblems', () => {
+  // Uses a real slug from the fixed 54-slug population so the falsifiable case is the one this
+  // gate actually guards, not a stand-in name that could drift from the population it checks.
+  // `restOfPopulation` allowlists every other member so the assertion isolates this one slug: the
+  // other 53 are exempt from the ratchet (still tracked by findFormatProblems) regardless of
+  // whether the synthetic `text` happens to mention them.
+  const [leftAllowlist] = ORIGINAL_TRUNCATED_SLUGS;
+  const restOfPopulation = ORIGINAL_TRUNCATED_SLUGS.filter((slug) => slug !== leftAllowlist);
+
+  it('passes when a slug that left the allowlist carries a "- **Shape:**" line', () => {
+    const text = [
+      `## ${leftAllowlist}: \`X\`  (reshape, 2026-08-26, any-site audit)`,
+      '',
+      '- **Reopens on:** open until executed; the remediation pass closes it.',
+      '- **Shape:** One complete sentence.',
+    ].join('\n');
+    expect(findExitRatchetProblems(text, restOfPopulation)).toEqual([]);
+  });
+
+  it('passes when a slug still on the allowlist carries no shape line', () => {
+    const text = [`## ${leftAllowlist}: \`X\`  (reshape, 2026-08-26, any-site audit)`, ''].join(
+      '\n',
+    );
+    expect(findExitRatchetProblems(text, ORIGINAL_TRUNCATED_SLUGS)).toEqual([]);
+  });
+
+  // Falsifiability: a slug that left the allowlist by having its shape text deleted outright,
+  // rather than migrated, must fail even though findFormatProblems alone would call it clean (no
+  // raw "(shape:" parenthetical remains for it to flag).
+  it('fails a slug that left the allowlist with its shape deleted rather than migrated', () => {
+    const text = [
+      `## ${leftAllowlist}: \`X\`  (reshape, 2026-08-26, any-site audit)`,
+      '',
+      '- **Reopens on:** open until executed; the remediation pass closes it.',
+    ].join('\n');
+    const entries = parseEntries(text);
+    expect(findFormatProblems(entries, [])).toEqual([]);
+    expect(findExitRatchetProblems(text, restOfPopulation)).toEqual([
+      { kind: 'missing-shape', slug: leftAllowlist },
+    ]);
+  });
+
+  it('the real ledger satisfies the ratchet for every slug in the fixed population', () => {
+    const text = readFileSync(join(ROOT, 'docs/internal/engine-rulings.md'), 'utf8');
+    const allowlist = JSON.parse(
+      readFileSync(join(ROOT, 'scripts/checks/check-rulings-format-allowlist.json'), 'utf8'),
+    ) as string[];
+    expect(findExitRatchetProblems(text, allowlist)).toEqual([]);
   });
 });

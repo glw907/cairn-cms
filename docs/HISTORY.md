@@ -7,6 +7,40 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-08-29: foundations A pass closed on its worktree (audit-remediation slice 2a), awaiting merge
+
+Plan and post-mortem: `docs/superpowers/plans/2026-08-28-foundations-a-pass.md`. Three tasks on
+worktree `.claude/worktrees/foundations-a`, gates green, per-task diffs accepted, pass-end
+`engine-triage` verdict "holds" on all three artifacts. T1 repaired 14 truncated ledger shapes
+and landed `check:rulings-format` (`632cca35`). T2 ratified R-0 (an unused-but-usable export is
+a shape defect until argued otherwise) and executed R-1 (canonical home follows the publishing
+barrel), moving 18 duplicate publications and recording 120 R4-justified re-exports under a new
+`check:surface` canonical-home rule, including a gated `--update` path and a checked `home`
+field (`a7f9510a`). T3 swept for residual moved-name drift (zero hits) and removed 14 stale
+rows from `docs/reference/delivery-data.md` (`b065ea51`). Budget: ~1.6M of a 2M ceiling.
+
+What the gates caught: the diff review on T2 found `MediaResolve`'s canonical home mislabeled
+as `/media` instead of `.` across three docs (ledger, move-set record, reference page), fixed
+in one cycle (`35dea8b0`). `check:consumers` failed in the recovered worktree on the known
+worktree showcase symlink collision (`examples/showcase/node_modules` resolving to `main`'s
+build), an environmental failure repaired with a from-scratch `npm ci`, not a code defect.
+
+What a later pass would be wrong to rediscover: a green `check:surface` proves a duplicate
+publication is RECORDED, never that its `Why it survives` justification still holds; appending
+a record entry launders any duplicate green, so a later slice re-deriving the R4 closure must
+not read the gate as evidence. The audit's literal R-1 ask (fail on any name published from two
+or more subpaths) shipped as fail-unless-recorded, not fail: the surface still carries 122
+multi-subpath names after this pass, the same count as before it, with only
+publications-per-name falling; this is a deliberate, documented divergence; foundations B's
+list (b) is measured against it, not against a false "audit ask satisfied" reading. The
+reference-coverage gate's `staleNames` check is union-over-all-subpaths, not per-subpath, so a
+reference page can list a name its own subpath does not export as long as some other subpath
+exports it anywhere; this is exactly how the 14 dead `delivery-data.md` rows survived
+undetected, and B should scope it per-subpath before `/sveltekit` narrows to ~30 leaves.
+Crash-recovery pattern: when a session dies mid-pass, triage-assess the warm uncommitted tree
+against the gate before re-dispatching from scratch; Task 2 here was substantively complete and
+needed only one fix cycle, not a redo.
+
 ## 2026-08-30: csrf-hardening pass merged (remediation slice 1)
 
 Plan and post-mortem: `docs/superpowers/plans/2026-08-27-csrf-hardening-pass.md`. Merged via

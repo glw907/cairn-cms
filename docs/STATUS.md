@@ -12,53 +12,44 @@ only the present.
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
 `@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries THREE
 passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection (merged 2026-08-29),
-and csrf-hardening (remediation slice 1, merged 2026-08-30); the breaking chip-grammar changes
-ride the audit-remediation `Consumers must:` window, and the window holds until the chassis
-slice per the initiative design. CI on `main` is fully green.
+and csrf-hardening (remediation slice 1, merged 2026-08-30). Foundations A (audit-remediation
+slice 2a) is complete on its worktree, awaiting merge, and will join this window, which holds
+until the chassis slice per the initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**Foundations A pass IN FLIGHT** on worktree `.claude/worktrees/foundations-a` (branch
-`foundations-a` off `main` at `a1451861`). Checkpoint after Task 2 (2026-08-29):
+**Merge `foundations-a` to `main`.** The pass is DONE on worktree
+`.claude/worktrees/foundations-a`: close-out gates green, per-task diffs accepted, pass-end
+`engine-triage` verdict "holds" on all three artifacts (ledger repair, canonical-home rule,
+drift sweep). Post-mortem appended to `docs/superpowers/plans/2026-08-28-foundations-a-pass.md`.
 
-- Task 1 (ledger repair, format gate, MediaInsertPopover filing): DONE, committed `632cca35`,
-  diff-reviewer accept, no blocking findings. Allowlist at 40. Carried non-blocking notes:
-  tighten `check:rulings-format` to require a `Shape:` line when a slug leaves the allowlist;
-  the `audit-cli-cairn-audit-config-json-contract...` entry carries trailing progress prose
-  its eventual repair must not mistake for the shape.
-- Task 2 (R-0 + R-1 canonical-home rule): DONE, committed `a7f9510a`; diff-reviewer verdict
-  still owed. Full gate green including `check:consumers` and the scaffold emit's typecheck.
-  The move set, the 120 recorded re-exports, and two determinations open to challenge are in
-  `docs/internal/record/2026-08-29-foundations-a-move-set.md`, which foundations B diffs
-  against.
-- Task 3 (drift sweep): NEXT. Its scope shifted: `docs/extend/migration-notes.md` already
-  carries the canonical-home entry, and Task 2 hands it ~15 stale rows in
-  `docs/reference/delivery-data.md` by name (the record's "Known adjacent drift" section).
-- Pre-flight csrf-window items re-verified against the merged tree; corrected counts: 40
-  unrepaired shapes (cli 15, log 10, auth 7, tail 8); ledger line anchors shifted +39.
-- This worktree's `examples/showcase` now has its own `npm ci` install, so `check:consumers`
-  proves THIS engine rather than failing on the shared-symlink collision.
-- Spend: Task 1 chain ~0.34M of the 2M pass ceiling; the Task 2 chain spans a crashed session
-  and its finish, so its figure comes from the conductor's own ledger, not from here.
-- Then: cairn-pass end ritual, merge, finalize foundations B bodies against A's merged
-  surface, one `engine-triage` adversarial review over the finalized B plan, execute B in
-  the same session (Geoff's calls, 2026-08-29). Resume prompt if this session dies:
+After the merge: finalize foundations B's task bodies
+(`docs/superpowers/plans/2026-08-28-foundations-b-pass.md`) against A's merged surface, run one
+`engine-triage` adversarial review over the finalized B plan, then execute B in the same
+session (Geoff's standing calls, 2026-08-29). Resume prompt if this session dies:
 
 In ~/Projects/cairn-cms, execute the foundations A pass (docs/superpowers/plans/2026-08-28-foundations-a-pass.md) and then foundations B in the same session, per the Session handoff note in the A plan. (Check `git -C .claude/worktrees/foundations-a log --oneline` first; completed tasks are committed there.)
 
-**Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site repo has
-its sheet committed locally (unpushed) at `docs/2026-08-22-cairn-0.96-update-instructions.md`;
-907-life is eleven releases behind and its sheet says to run it as a numbered site pass.
+**Carried into foundations B:** the move-set record's "Inheritance notes for foundations B"
+subsection (`docs/internal/record/2026-08-29-foundations-a-move-set.md`) covers four items:
+`staleNames`'s union-over-all-subpaths scoping, record-membership-is-not-justification, the
+122-multi-subpath-count invariance, and R-0's undischarged second direction. The
+reference-coverage per-subpath fix is routed to land BEFORE B narrows `/sveltekit`.
+
+**Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
+committed locally (unpushed) at `docs/2026-08-22-cairn-0.96-update-instructions.md`; 907-life is
+eleven releases behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slice 1 (csrf-hardening) SHIPPED. Next: foundations A
-  then B (above), then retires (its plan waits on B's list (c) ruling), conventions, internals,
-  chassis; ONE release cut after chassis. Routed to the conventions pass's auth family: the
-  session-cookie derivation ledger entry, `check-probe.ts:49`'s independent derivation, the
-  cookie-jar posture split, the login-CSRF `_pending`-nonce binding, and making the CSRF
-  helpers' patterns uniform. Routed to internals: the `list-role` descendant-selector
-  re-grounding and the `panel-width` closed-select painted-width follow-up.
+- **Audit remediation (ROADMAP Now).** Slice 1 (csrf-hardening) SHIPPED. Slice 2a (foundations
+  A) complete, awaiting merge (above). Next: B, then retires (its plan waits on B's list (c)
+  ruling), conventions, internals, chassis; ONE release cut after chassis. Routed to the
+  conventions pass's auth family: the session-cookie derivation ledger entry,
+  `check-probe.ts:49`'s independent derivation, the cookie-jar posture split, the login-CSRF
+  `_pending`-nonce binding, and making the CSRF helpers' patterns uniform. Routed to internals:
+  the `list-role` descendant-selector re-grounding and the `panel-width` closed-select
+  painted-width follow-up.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.

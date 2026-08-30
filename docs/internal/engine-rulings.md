@@ -29,6 +29,12 @@ executes it (cli and log entries by their owning slices, auth by the conventions
 whichever slice touches each). No later slice may assume the repair is already done for a slug it
 finds on that allowlist.
 
+One entry needs care when it is repaired: `audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles`
+(`Reopens on:` line, ~line 4021) closes its truncated parenthetical mid-clause and then continues
+straight into `Progress: ...` prose with no boundary between the two. Its repairer must not swallow
+the `Progress:` prose into the migrated `- **Shape:**` line; that prose is a status update on the
+open edits, not part of the shape itself.
+
 ## read-from-the-source-rule: a fact with one source is read from that source  (accept, 2026-08-29, foundations A)
 
 - **Verdict:** accept. Ratified as a standing engine rule, in the audit's own words: *a fact with

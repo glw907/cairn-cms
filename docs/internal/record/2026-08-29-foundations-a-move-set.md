@@ -13,6 +13,35 @@ changelog churn rather than rework. **This pass claims no finality on the re-exp
 of the 120 recorded re-exports sit on `/sveltekit` and exist only because `CairnRuntime` reaches
 them; the narrowing is expected to strike many of them.
 
+### Inheritance notes for foundations B
+
+1. **`staleNames` is union-over-all-subpaths, not per-subpath.** `scripts/checks/reference-coverage.mjs`'s
+   `staleNames` check (lines ~197-201, fed `globalKnownNames` at ~328) flags a reference-page name
+   only if no subpath anywhere exports it, so a reference page listing a name its own subpath does
+   not export still passes as long as some other subpath exports that name. This is exactly how the
+   14 dead rows in `delivery-data.md` survived undetected. Scope `staleNames` per subpath BEFORE
+   narrowing `/sveltekit`, not after: narrowing turns a ~2000-line reference page into roughly 30
+   leaves, and a per-subpath check is far cheaper to land against the smaller pages than against the
+   union-checked monolith.
+2. **A green `check:surface` proves record membership, not justification.** The gate checks that a
+   duplicate publication has a recorded entry with a valid `home`; it does not check that the entry's
+   `Why it survives` prose is true. Appending a record entry launders any duplicate green, and the
+   reason column is unenforced prose. When B re-derives the R4 closure, the temptation is to record a
+   surviving duplicate rather than remove it; a green gate is not evidence the duplicate is still
+   justified.
+3. **The 122-name multi-subpath count did not move.** The surface still carries 122 names published
+   from two or more subpaths, the same count as before this pass; only publications-per-name fell
+   (5-way 5 to 0, 4-way 44 to 34, 2-way 63 to 76). The audit's literal R-1 ask (`coherence-v2.md:134-135`,
+   fail on any two-barrel name) shipped as fail-unless-recorded with 120 recordings, and all four of
+   C1's flagged collisions still publish from two subpaths, documented rather than eliminated. B's
+   list (b) is measured against this divergence and must not read the green gate as satisfying the
+   audit's literal ask.
+4. **R-0's second direction is ratified but not discharged.** "An export the engine could use and
+   does not is a shape defect until argued otherwise" is ratified in the rulings ledger, but no
+   instance work, no gate, and no owning slice exist for it. C13's four instances are individually
+   ledgered rather than resolved. Naming it here so B, or whichever slice owns it, picks it up
+   deliberately rather than by omission.
+
 ## How the population was derived
 
 `docs/internal/api-surface.md` at `e9d7e29f` carried 411 exported names, of which 122 published
@@ -157,7 +186,7 @@ that the closure never asked for them.
 | `NamedField` | `.` | `/delivery/data` | R4 closure: `ConceptDescriptor` names it on this subpath. |
 | `NumberField` | `.` | `/delivery/data` | R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath. |
 | `ObjectField` | `.` | `/delivery/data` | R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath. |
-| `PublishActionEntry` | `/sveltekit` | `/delivery/data` | Not closure-justified either: it rides the held `PublishActionsConfig` below. Both leave this subpath when that reshape lands. |
+| `PublishActionEntry` | `/sveltekit` | `/delivery/data` | Derivatively closure-justified: it rides the surviving `PublishActionsConfig` publication below, whose signature names it. Both leave this subpath when that reshape lands; foundations B's list (b) should re-derive both rows together. |
 | `PublishActionsConfig` | `/sveltekit` | `/delivery/data` | **Not closure-justified.** Nothing this subpath publishes names it; it survives on the move rule that holds a reshape in place (`audit-adapter-publishactionsconfig` is open). Its removal belongs to that reshape. |
 | `ReferenceEdge` | `.` | `/delivery/data` | R4 closure: `ManifestEntry` names it on this subpath. |
 | `ReferenceField` | `.` | `/delivery/data` | R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath. |
@@ -279,13 +308,14 @@ dropped name that is charged as stale once rather than twice.
 
 ## Known adjacent drift, not fixed here
 
-`docs/reference/delivery-data.md`'s types table carries about fifteen rows for names
-`/delivery/data` does not export and did not export before this pass (`AccessMap`, `Backend`,
-`BackendProvider`, `CairnEnv`, `EmailSender`, `RolesDeclaration`, `RoleDeclaration`, `Capability`,
-`RepoFile`, `CommitAuthor`, `FileChange`, `MagicLinkMessage`, `EmailAttachment`, `EmailRecipient`,
-`PublishActionsConfig`'s neighbours). The reference-coverage gate is one-directional, so it does not
-see them. Left for Task 3's drift sweep rather than folded in here, so the move set's diff stays
-readable.
+`docs/reference/delivery-data.md`'s types table carries fourteen rows for names `/delivery/data`
+does not export and did not export before this pass (`AccessMap`, `Backend`, `BackendProvider`,
+`CairnEnv`, `EmailSender`, `RolesDeclaration`, `RoleDeclaration`, `Capability`, `RepoFile`,
+`CommitAuthor`, `FileChange`, `MagicLinkMessage`, `EmailAttachment`, `EmailRecipient`).
+`PublishActionsConfig` and `PublishActionEntry` are not among them; both ARE exported from
+`/delivery/data` (the R4 re-export table above lists them as surviving re-exports), so they are not
+adjacent drift. The reference-coverage gate is one-directional, so it does not see the fourteen.
+Left for Task 3's drift sweep rather than folded in here, so the move set's diff stays readable.
 
 Closed: Task 3 removed these fourteen stale rows in commit `b065ea51`. Nothing here is still
 outstanding.

@@ -224,6 +224,15 @@
   (`mediainsertpopover-export`), previously only a sub-clause of `mediaherofield-export`. Internal
   only; no consumer action.
 
+- `docs/internal/record/2026-08-30-r4-rederivation.md` re-derives the R4 closure over the merged,
+  canonical-home-narrowed surface: it reconciles the ledger's bucket totals against the audit's
+  rank-plus-verify tallies (535/384/57/94 exact, the two per-bucket deltas explained by pre-existing
+  ledger supersessions), re-tests the 22 `C2_READDED` keeps and the three still-live closure leaks
+  (`NavIcon`, `EngineScreenId`, `SlotKind`), and emits the retires pass's input: an empty
+  already-consumed list, 63 retires ready for direct execution, and 31 retires blocked on
+  `createCairnAdmin`'s own un-narrowed return (with the per-item blocking signature, so the retires
+  pass does not attempt a deletion that breaks the R4 closure). Internal only; no consumer action.
+
 ### Fixed
 
 - The CSRF cookie's `Secure` derivation is now monotonic: an `https` request always resolves

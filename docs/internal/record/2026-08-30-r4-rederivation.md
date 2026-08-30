@@ -119,13 +119,14 @@ names `OrphanByteRow`/`BrokenRefRow`; `MediaAltPreviewPlan` names `MediaAltPrevi
 `BranchRef`, which itself names `AltPlacement`; `MediaReplacePreviewPlan` names
 `MediaReplacePreviewEntry`, which names `RepointPlacement`; `MediaBulkDeleteResult` names
 `BulkDeleteSkip`), because the composer keeps driving the wide internal shape Task 1 left
-untouched. See section 5 below for the full per-item accounting; all 20 route to list (c).
+untouched. See "List (c)" immediately below for the full per-item accounting; all 20 route there.
 
 Extending the identical mechanical test (a literal-name search of `api-surface.md:519`, then one
 fixed-point pass over each hit's own declared shape for further retire-verdicted names) to the
 full 94 finds 11 more names with the same property, bringing the composer/reshape-blocked total to
-31, not the plan's "roughly 21." Section 5 carries the full list and the reasoning for treating
-this as an honest extension of bullet 5's own test rather than a new proposal.
+31, not the plan's "roughly 21." "List (c)" below carries the full list and section 4 carries the
+reasoning for treating this as an honest extension of bullet 5's own test rather than a new
+proposal.
 
 **List (b) is therefore 94 − 0 (list a) − 31 (list c, IN-94 half) = 63 items.** Mechanically
 generated (ledger `retire` entries minus the 31 in section 5), by family:
@@ -208,7 +209,7 @@ generated (ledger `retire` entries minus the 31 in section 5), by family:
 | `TidyKeyProbeResult` | `audit-sveltekit-tidykeyproberesult` | `:1217` |
 | `validateNavLayout` | `audit-sveltekit-validatenavlayout` | `:1714` |
 
-Three of these (`audit-cli-*`, lines 27-29) are process/tooling proposals the CLI-surface audit
+Three of these (the `audit-cli-*` rows above) are process/tooling proposals the CLI-surface audit
 ledgered as `retire` (decline the proposal), not exported names; "closing" them is a ledger-closing
 act, not a deletion. Flagging so the retires pass does not go looking for a symbol.
 

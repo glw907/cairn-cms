@@ -10,10 +10,10 @@
 // owns it and is re-exported here, so every existing importer (the public `/sveltekit` barrel and
 // the admin components that import this file directly) sees the same names at the same path.
 //
-// The factory comes in two: the internal one above, whose wide shape the single-mount composer
-// drives, and the public `createContentRoutes`, whose declared return is the narrow `ContentRoutes`
-// a hand-mounting site can wire. The narrowing is deliberate and enumerated on `ContentRoutes`
-// itself; `check:surface` pins the narrow shape as the public contract.
+// The factory comes in two: `createContentRoutesInternal`, whose wide shape the single-mount
+// composer drives, and the public `createContentRoutes`, whose declared return is the narrow
+// `ContentRoutes` a hand-mounting site can wire. The narrowing is deliberate and enumerated on
+// `ContentRoutes` itself; `check:surface` pins the narrow shape as the public contract.
 import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
 import type { ContentRoutesOptions } from './content-routes-context.js';
@@ -153,7 +153,8 @@ export function createContentRoutesInternal(runtime: CairnRuntime, deps: Content
 
 /**
  * The wide shape `createContentRoutesInternal` returns. Named so the public view below is DERIVED
- *  from it rather than hand-mirrored, which is what keeps the two from drifting apart (C3).
+ *  from it rather than hand-mirrored, which is what keeps the two from drifting apart
+ *  (coherence-v2 C3).
  */
 type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
 

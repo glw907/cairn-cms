@@ -230,3 +230,12 @@ is plain JS by design and its own suite is the real gate, and no pass has report
 through), the `paid-plan-missing` mapping keyed on entitlement wording (the call site's docstring and
 its test name both already state the risk and the reason), and the root `CLAUDE.md` context-headroom
 note (housekeeping, outside this log's charter). STATUS shed all three at the B0 close.
+
+- **(developer, 2026-08-29, csrf-hardening close)** The engine argues both postures on an
+  untyped caller's missing cookie jar: `content-routes-core.ts` now fails loudly (the
+  empty-token fallback is removed), while five sibling call sites
+  (`content-routes-dictionary.ts:95`, `content-routes-media.ts:494`/`:1065`/`:1265`,
+  `content-routes-tidy.ts:111`) still guard with `if (!event.cookies || ...)` and return a
+  soft `fail(403)`. Not a defect (typed callers cannot hit either branch); one posture
+  should win. Candidate for the conventions pass's auth family alongside the
+  platform-required carry-forward.

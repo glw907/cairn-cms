@@ -313,11 +313,11 @@ export function findHomeViolations(model, record) {
   for (const [subpath, exports] of Object.entries(model)) {
     for (const name of Object.keys(exports)) (subpathsOf[name] ??= []).push(subpath);
   }
-  const recorded = new Set((record.reexports ?? []).map((r) => `${r.name} ${r.subpath}`));
+  const recorded = new Set((record.reexports ?? []).map((r) => `${r.name}\0${r.subpath}`));
   const layered = record.layeredBarrels ?? [];
   /** @param {string} name @param {string} subpath */
   const isRecorded = (name, subpath) =>
-    recorded.has(`${name} ${subpath}`) ||
+    recorded.has(`${name}\0${subpath}`) ||
     layered.some((p) => p.wider === subpath && name in (model[p.narrower] ?? {}));
   /** @type {{ name: string, subpaths: string[] }[]} */
   const unrecorded = [];
@@ -387,6 +387,28 @@ export function formatHomeViolations(result) {
  * @property {{ name: string, before: string, after: string }[]} changed exports whose shape changed
  */
 
+// Load the R4 re-export record, failing with the gate's own message (naming the file and the
+// failure kind) rather than a raw ENOENT or SyntaxError, so a missing or malformed record reads
+// the same as any other check-surface failure.
+/** @returns {ReexportRecord} */
+function loadReexportRecord() {
+  const reexportsPath = resolve(ROOT, REEXPORTS);
+  /** @type {string} */
+  let raw;
+  try {
+    raw = readFileSync(reexportsPath, 'utf8');
+  } catch (err) {
+    console.error(`check-surface: could not read ${REEXPORTS}: ${err instanceof Error ? err.message : err}`);
+    process.exit(1);
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error(`check-surface: ${REEXPORTS} is not valid JSON: ${err instanceof Error ? err.message : err}`);
+    process.exit(1);
+  }
+}
+
 function main() {
   const update = process.argv.includes('--update');
   const snapshotPath = resolve(ROOT, SNAPSHOT);
@@ -395,7 +417,7 @@ function main() {
   // The home rule runs before the snapshot diff AND before the `--update` write. A new duplicate is
   // a design failure to argue, and regenerating the snapshot would otherwise record it as settled
   // surface with only the next plain run left to notice.
-  const record = JSON.parse(readFileSync(resolve(ROOT, REEXPORTS), 'utf8'));
+  const record = loadReexportRecord();
   const homes = findHomeViolations(model, record);
   if (homes.unrecorded.length || homes.stale.length || homes.misfiled.length) {
     console.error('check-surface: the canonical-home rule failed.');

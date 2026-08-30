@@ -646,7 +646,7 @@ home, [Core](./core.md), where the full prose lives. `CairnAdapter`'s `roles`, `
 the deliberate exception below), so their nested types (`AccessMap`, `RolesDeclaration`,
 `RoleDeclaration`, `Capability`, `Backend`, `BackendProvider`, `RepoFile`, `CommitAuthor`,
 `FileChange`, `CairnEnv`, `EmailSender`, `MagicLinkMessage`, `EmailAttachment`,
-`EmailRecipient`) aren't part of this closure and don't import from `/delivery/data`.
+`EmailRecipient`) aren't part of this closure and aren't importable from `/delivery/data`.
 
 **Import an adapter-only member from its own home.** Eighteen names this subpath once re-exported
 now import from the barrel that declares them, because nothing this subpath publishes names them.

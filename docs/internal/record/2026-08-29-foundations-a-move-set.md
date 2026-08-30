@@ -286,3 +286,6 @@ dropped name that is charged as stale once rather than twice.
 `PublishActionsConfig`'s neighbours). The reference-coverage gate is one-directional, so it does not
 see them. Left for Task 3's drift sweep rather than folded in here, so the move set's diff stays
 readable.
+
+Closed: Task 3 removed these fourteen stale rows in commit `b065ea51`. Nothing here is still
+outstanding.

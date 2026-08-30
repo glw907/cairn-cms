@@ -121,15 +121,17 @@ names `OrphanByteRow`/`BrokenRefRow`; `MediaAltPreviewPlan` names `MediaAltPrevi
 `BulkDeleteSkip`), because the composer keeps driving the wide internal shape Task 1 left
 untouched. See "List (c)" immediately below for the full per-item accounting; all 20 route there.
 
-Extending the identical mechanical test (a literal-name search of `api-surface.md:519`, then one
-fixed-point pass over each hit's own declared shape for further retire-verdicted names) to the
-full 94 finds 11 more names with the same property, bringing the composer/reshape-blocked total to
-31, not the plan's "roughly 21." "List (c)" below carries the full list and section 4 carries the
-reasoning for treating this as an honest extension of bullet 5's own test rather than a new
-proposal.
+Extending the identical mechanical test (a literal-name search of `api-surface.md:519`, then a
+fixed-point search over each hit's own declared shape, repeated until no further retire-verdicted
+names appear) to the full 94 finds 11 more names with the same property, bringing the
+composer/reshape-blocked total to 31, not the plan's "roughly 21." Closing the fixed point took
+about three rounds, since the deepest chain nests two levels (`MediaAltPreviewPlan` ->
+`MediaAltPreviewEntry` -> `AltPlacement`; "List (c)" Tier 1 below spells out the full chain).
+"List (c)" below carries the full list and section 4 carries the reasoning for treating this as an
+honest extension of bullet 5's own test rather than a new proposal.
 
 **List (b) is therefore 94 − 0 (list a) − 31 (list c, IN-94 half) = 63 items.** Mechanically
-generated (ledger `retire` entries minus the 31 in section 5), by family:
+generated (ledger `retire` entries minus the 31 in section 3's list (c)), by family:
 
 | Family | Count |
 |---|---|
@@ -240,9 +242,10 @@ this task does not otherwise write to that file, and is noted here per the plan'
 
 **IN-94 half (31 items, participates in the partition arithmetic).**
 
-*Tier 1 — directly composer-blocked by `createCairnAdmin`'s own `actions` record (22 items,
-close to the plan's "roughly 21" estimate).* Each name appears as a literal token in
-`api-surface.md:519`, inside the type of one specific action:
+*Tier 1 — directly composer-blocked by `createCairnAdmin`'s own `actions` record (25 items).*
+The table below is the literal-token half: each row's blocking action names its listed type
+directly in `api-surface.md:519`. The other Tier 1 members arrive one level down, through one of
+these directly-named types' own declared shape (counted after the table):
 
 | Blocking action (in `createCairnAdmin`'s return, `:519`) | Names it blocks |
 |---|---|
@@ -258,43 +261,72 @@ close to the plan's "roughly 21" estimate).* Each name appears as a literal toke
 | `upload` / `mediaUpload` / `mediaLibraryUpload: Promise<ActionFailure<MediaUploadFailure> \| UploadResult \| ...>` | `MediaUploadFailure`, `UploadResult` |
 | `dictionaryAdd: Promise<ActionFailure<DictionaryAddFailure> \| DictionaryAddResult \| ...>` | `DictionaryAddResult` |
 | `tidy: Promise<ActionFailure<TidyFailure> \| TidyResult \| ...>` | `TidyResult` |
+| `save: Promise<ActionFailure<NavSaveFailure> \| ...>` | `NavSaveFailure` |
+| `settingsSave: Promise<ActionFailure<SettingsSaveFailure> \| ...>` | `SettingsSaveFailure` |
+| `vocabularySave: Promise<ActionFailure<VocabularySaveFailure> \| ...>` | `VocabularySaveFailure` |
 
-That is 13 distinct action entries covering these 13 directly-named types: `MediaOrphanScanResult`,
+The last three rows are not media-janitorial and are not arms of `ContentFormFailure` (see Tier 2
+below): `save`, `settingsSave`, and `vocabularySave` each wrap their own, unrelated failure type
+directly in `createCairnAdmin`'s return, so `NavSaveFailure`, `SettingsSaveFailure`, and
+`VocabularySaveFailure` carry the same direct-token signature as the janitorial items, not the
+`ContentFormFailure`-reshape signature an earlier draft of this record mistakenly attributed to
+them.
+
+That is 15 action entries covering 17 directly-named types: `MediaOrphanScanResult`,
 `MediaOrphanPurgeResult`, `MediaBulkDeleteResult`, `MediaAltPreviewPlan`,
 `MediaAltPropagateFailure`, `MediaReplacePreviewPlan`, `MediaReplaceFailure`,
 `MediaUpdateFailure`, `MediaDeleteRefusal`, `MediaUploadFailure`, `UploadResult`,
-`DictionaryAddResult`, `TidyResult`, `MediaBulkFailure` — 14 names. Plus one level of transitive
-membership through the four directly-named plan/result types that are themselves composite
-(`MediaOrphanScanResult.orphanedBytes: OrphanByteRow[]`, `.brokenRefs: BrokenRefRow[]`;
-`MediaAltPreviewPlan.entries: MediaAltPreviewEntry[]`, `.branchDelta: BranchRef[]`;
-`MediaReplacePreviewPlan.entries: MediaReplacePreviewEntry[]`, `.branchDelta: BranchRef[]`;
-`MediaBulkDeleteResult.skipped: BulkDeleteSkip[]`), and one further level through
-`MediaAltPreviewEntry.placements: AltPlacement[]` and `MediaReplacePreviewEntry.placements:
-RepointPlacement[]`: `OrphanByteRow`, `BrokenRefRow`, `MediaAltPreviewEntry`, `BranchRef`,
-`AltPlacement`, `MediaReplacePreviewEntry`, `RepointPlacement`, `BulkDeleteSkip` — 8 more names.
-14 + 8 = 22. (`DictionaryAddResult` and `TidyResult`, ranks 14 and 16, sit outside the plan's
-literal "ranks 1-13/17-22/38" scope but carry the identical direct-name property; ranks 1-13,
-17-22, and 38 total 20 of these 22, matching the plan's bullet exactly.)
+`DictionaryAddResult`, `TidyResult`, `MediaBulkFailure`, `NavSaveFailure`, `SettingsSaveFailure`,
+`VocabularySaveFailure`. Five of these seventeen — `MediaDeleteRefusal`, `MediaUpdateFailure`,
+`MediaReplaceFailure`, `MediaAltPropagateFailure`, `MediaBulkFailure` — are also literal arms of
+`ContentFormFailure`'s own declaration (`content-routes.ts:97-99`: `Partial<SaveFailure &
+DeleteRefusal & RenameFailure & CreateFailure & PreviewMintFailure & MediaDeleteRefusal &
+MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure &
+TidyFailure>`), so a `ContentFormFailure` reshape that narrows those five has to rework that
+declaration too, not only `createCairnAdmin`'s action union; both blockers apply to these five at
+once.
 
-*Tier 2 — coupled to the already-open `ContentFormFailure` reshape (9 items, a different, already-
-known dependency, not a new createCairnAdmin-narrowing question).* `ContentFormFailure`
-(`audit-sveltekit-contentformfailure`, ranked 31, an OPEN reshape the conventions pass owns per
-this pass's Task 1 finalization note) is `Partial<SaveFailure & DeleteRefusal & RenameFailure &
-CreateFailure & PreviewMintFailure & NavSaveFailure & SettingsSaveFailure &
-VocabularySaveFailure & ...>` (`content-routes.ts`), and `createCairnAdmin`'s own action union
-also names each arm directly (`create`, `save`, `settingsSave`, `vocabularySave`, `previewMint`,
-`rename`, `delete` all wrap one of these in `ActionFailure<...>` at `:519`). Retiring any of the
-eight arms while `ContentFormFailure` still spreads it by name breaks the SAME closure the
-media-janitorial items do, but the fix is not "narrow `createCairnAdmin`" — it is "land the
-`ContentFormFailure` reshape first," a dependency the ledger already records independently.
-`DeleteRefusal.inboundLinks: InboundLink[]` also pulls in `UsageEntry` transitively via
-`MediaDeleteRefusal`/`MediaReplaceFailure` in Tier 1 (already counted there); `DeleteRefusal`
-itself and `MediaReplaceFailure`/`MediaDeleteRefusal` both name `UsageEntry`
-(`{ error; hash; usage: UsageEntry[]; foundIn }`), so `UsageEntry` is the ninth Tier 2 name:
-`CreateFailure`, `DeleteRefusal`, `NavSaveFailure`, `PreviewMintFailure`, `RenameFailure`,
-`SaveFailure`, `SettingsSaveFailure`, `VocabularySaveFailure`, `UsageEntry`.
+Plus one level of transitive membership through the four directly-named plan/result types that are
+themselves composite (`MediaOrphanScanResult.orphanedBytes: OrphanByteRow[]`,
+`.brokenRefs: BrokenRefRow[]`; `MediaAltPreviewPlan.entries: MediaAltPreviewEntry[]`,
+`.branchDelta: BranchRef[]`; `MediaReplacePreviewPlan.entries: MediaReplacePreviewEntry[]`,
+`.branchDelta: BranchRef[]`; `MediaBulkDeleteResult.skipped: BulkDeleteSkip[]`), and one further
+level through `MediaAltPreviewEntry.placements: AltPlacement[]` and
+`MediaReplacePreviewEntry.placements: RepointPlacement[]`: `OrphanByteRow`, `BrokenRefRow`,
+`MediaAltPreviewEntry`, `BranchRef`, `AltPlacement`, `MediaReplacePreviewEntry`,
+`RepointPlacement`, `BulkDeleteSkip` — 8 more names. 17 + 8 = 25. (`DictionaryAddResult` and
+`TidyResult`, ranks 14 and 16, sit outside the plan's literal "ranks 1-13/17-22/38" scope but
+carry the identical direct-name property; ranks 1-13, 17-22, and 38 total 20 of these, matching
+the plan's bullet exactly. `NavSaveFailure`, `SettingsSaveFailure`, and `VocabularySaveFailure`
+also sit outside the plan's literal ranks but carry the same direct-name property, which is why
+this revision folds them into Tier 1 rather than Tier 2.)
 
-22 (Tier 1) + 9 (Tier 2) = **31**, the IN-94 half of list (c).
+*Tier 2 — the five core content-action failures actually spread into `ContentFormFailure`'s
+declaration, plus `UsageEntry` (6 items, a different, already-known dependency, not a new
+createCairnAdmin-narrowing question).* `ContentFormFailure` (`audit-sveltekit-contentformfailure`,
+ranked 31, an OPEN reshape the conventions pass owns per this pass's Task 1 finalization note) is
+the eleven-way `Partial<SaveFailure & DeleteRefusal & RenameFailure & CreateFailure &
+PreviewMintFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure &
+MediaAltPropagateFailure & MediaBulkFailure & TidyFailure>` (`content-routes.ts:97-99`: five core
+arms, five media arms already counted in Tier 1 above, one tidy arm). The five core arms —
+`SaveFailure`, `DeleteRefusal`, `RenameFailure`, `CreateFailure`, `PreviewMintFailure` — are each
+also directly named in `createCairnAdmin`'s own action union (`publish`, `delete`, `rename`,
+`create`, `previewMint` each wrap one in `ActionFailure<...>` at `:519`), but the fix for any of
+them is not "narrow `createCairnAdmin`": these five stay on the composer as core, non-janitorial
+actions, so the only way to retire one is to land the `ContentFormFailure` reshape first, a
+dependency the ledger already records independently. `ContentFormFailure`'s own rendered shape
+also carries `usage?: UsageEntry[]` directly (`api-surface.md:512`), which makes `UsageEntry` the
+sixth Tier 2 name — not, as an earlier draft of this record claimed, a name pulled in through
+`DeleteRefusal.inboundLinks`. `DeleteRefusal`'s rendered shape is `{ error: string; inboundLinks:
+InboundLink[]; inboundKind?: "link" | "include"; id: string }` (`api-surface.md:529`) and carries
+no `usage` field at all (`InboundLink` is itself a ledgered keep, not a retire-verdicted name, so
+that path leads nowhere further for this accounting). The `{ error; hash; usage: UsageEntry[];
+foundIn }` shape belongs to `MediaDeleteRefusal` (`:570`) and `MediaReplaceFailure` (`:577`), both
+already Tier 1, and to `BrokenRefRow` (`:495`) and `BulkDeleteSkip` (`:496`), also already Tier 1
+via the transitive membership above. Tier 2, in full: `CreateFailure`, `DeleteRefusal`,
+`PreviewMintFailure`, `RenameFailure`, `SaveFailure`, `UsageEntry`.
+
+25 (Tier 1) + 6 (Tier 2) = **31**, the IN-94 half of list (c).
 
 **One sentence each, diffed against foundations A's move set:** none of the 31 appears in the
 move-set record's "Moved names (18)" table or "Unmoved by verdict" section (all 31 are
@@ -314,9 +346,10 @@ parenthetical, so a reader does not wonder why it is absent from lists (a)/(b)/(
 The plan's bullet 5 names ranks 1-13/17-22/38 (20 items) and estimates "roughly 21" composer-
 blocked. Testing exactly that scope confirms all 20 blocked (Tier 1 above, minus
 `DictionaryAddResult`/`TidyResult`). Running the same mechanical test (search
-`api-surface.md:519` for a literal name match, then follow one level of nesting through each hit's
-own declared shape) against the full 94 finds 22 Tier-1 items and 9 further Tier-2 items coupled
-to the separately-tracked `ContentFormFailure` reshape — 31 total, not "roughly 21." This record
+`api-surface.md:519` for a literal name match, then follow the nesting through each hit's own
+declared shape to a fixed point, about three rounds since the deepest chain runs two levels deep)
+against the full 94 finds 25 Tier-1 items and 6 further Tier-2 items coupled to the
+separately-tracked `ContentFormFailure` reshape — 31 total, not "roughly 21." This record
 uses the full 31 for list (c)'s IN-94 half rather than the plan's literal 20, because: (a) the
 partition arithmetic still closes exactly (0 + 63 + 31 = 94); (b) the plan's own reasoning for the
 test ("the retires pass needs the per-item blocker or it will attempt deletions that break the R4

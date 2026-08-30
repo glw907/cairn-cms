@@ -163,8 +163,16 @@ export function adminAction<T>(
     // inner check the same way it already passes the guard's outer one.
     const headerSent = event.request.headers.get('x-cairn-csrf') !== null;
     const verdict = headerSent
-      ? csrfHeaderVerdict(event)
-      : csrfFieldVerdict(event.cookies.get(csrfCookieName(csrfSecure(event))), form);
+      ? csrfHeaderVerdict({
+          url: event.url,
+          request: event.request,
+          cookies: event.cookies,
+          platform: event.platform,
+        })
+      : csrfFieldVerdict(
+          event.cookies.get(csrfCookieName(csrfSecure({ url: event.url, platform: event.platform }))),
+          form,
+        );
     if (!verdict.ok) {
       // The admin guard already validates this double-submit pair on every unsafe /admin/** POST
       // before resolve() runs, so a mismatch reaching here is defense-in-depth catching what

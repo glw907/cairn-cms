@@ -15,6 +15,12 @@ const FORM_CONTENT_TYPES = new Set([
 // module, so importing back would be circular, and auth-channel/factory.ts's own copy already
 // documents the same tradeoff). The audit's coherence-thirteen tracks collapsing every copy onto
 // one export in a later pass; keep this list in sync with guard.ts by hand until then.
+//
+// What this copy decides, which is not what guard.ts's copy decides: under csrfSecure's monotonic
+// rule the hostname is consulted only for a NON-https request, where it chooses between the bare
+// dev cookie and the PUBLIC_ORIGIN branch. It can never downgrade an https request, so the
+// hostname (a client-supplied Host header) cannot weaken a cookie the browser is already
+// receiving over TLS.
 function isLocalHost(hostname: string): boolean {
   return (
     hostname === 'localhost' ||
@@ -27,34 +33,44 @@ function isLocalHost(hostname: string): boolean {
 }
 
 /**
+ * The platform slice every CSRF cookie decision reads, declared once so the four helpers below
+ * cannot drift apart on it. Required but nullable at each call site: a caller must write the
+ * property even when the value is `undefined`, since an omitted property compiled fine and let a
+ * writer and a reader resolve two different cookie names for the same request.
+ */
+type CsrfPlatform = { env?: { PUBLIC_ORIGIN?: string } } | undefined;
+
+/**
  * Decide the CSRF cookie pair's Secure bit for one request, the single source every writer and
  * reader is meant to route through: {@link issueCsrfToken}, {@link validateCsrfHeader},
  * {@link validateCsrfToken}, and `admin-action.ts`'s inline defense-in-depth check. Feed the
- * result to `csrfCookieName` for the matching cookie name. A caller must pass `platform` for
- * this to see `PUBLIC_ORIGIN`; omitting it silently falls back to the request's own protocol,
- * which can disagree with a sibling call site that did pass it.
+ * result to `csrfCookieName` for the matching cookie name.
  *
- * A local-host request (guard.ts's own `isLocalHost` list) always derives from the request's own
- * protocol: a production `PUBLIC_ORIGIN` must never mint a `__Host-` cookie over
- * `http://localhost`, which local dev cannot honor. Otherwise `PUBLIC_ORIGIN` decides, when it is
- * configured and parses as a URL; the request's own protocol is the fallback for every other case
- * (no `PUBLIC_ORIGIN` configured, such as a bare unit-test event, or one that fails to parse),
- * matching the cookie a real deploy will actually set.
+ * The rule is monotonic: no configuration can downgrade a request the browser already made over
+ * https. An https request resolves Secure outright, so a leftover `http://localhost:8788` in a
+ * deployed site's `PUBLIC_ORIGIN` (which `env.ts`'s `requireOrigin` tolerates) cannot mint a bare
+ * non-Secure thirty-day cookie a sibling subdomain is then free to overwrite, defeating the
+ * double-submit compare.
+ *
+ * Only a non-https request consults anything further. A local host (guard.ts's own `isLocalHost`
+ * list) keeps the bare name, since `__Host-` requires Secure unconditionally and local dev has no
+ * TLS to set it with. Otherwise `PUBLIC_ORIGIN` decides, when configured and parseable as a URL,
+ * which is what lets a deployment behind upstream TLS termination mint the cookie the browser
+ * actually expects. With no usable `PUBLIC_ORIGIN` (absent, as in a bare unit-test event, or
+ * unparseable) the request is http and non-local, so the answer is false.
  */
-export function csrfSecure(event: {
-  url: URL;
-  platform?: { env?: { PUBLIC_ORIGIN?: string } };
-}): boolean {
-  if (isLocalHost(event.url.hostname)) return event.url.protocol === 'https:';
+export function csrfSecure(event: { url: URL; platform: CsrfPlatform }): boolean {
+  if (event.url.protocol === 'https:') return true;
+  if (isLocalHost(event.url.hostname)) return false;
   const origin = event.platform?.env?.PUBLIC_ORIGIN;
   if (origin) {
     try {
       return new URL(origin).protocol === 'https:';
     } catch {
-      // Malformed PUBLIC_ORIGIN falls through to the request's own protocol below.
+      // Malformed PUBLIC_ORIGIN decides nothing; fall through to the non-Secure answer below.
     }
   }
-  return event.url.protocol === 'https:';
+  return false;
 }
 
 /** True for a request SvelteKit's CSRF guard screens: an unsafe method with a form content type. */
@@ -75,9 +91,13 @@ export function originMatches(event: Pick<CairnEvent, 'url' | 'request'>): boole
  * field still matches the cookie, since re-anchoring only re-sends the existing value with a fresh
  * expiry and never rotates it. HttpOnly, `SameSite=Lax` (explicit, never attribute-omission: an
  * omitted `SameSite` gets Chrome's Lax-allowing-unsafe treatment for two minutes, and this token
- * mints moments before the form's own POST), `Max-Age` matching the session's own lifetime so the
- * pair lives and dies together, and `__Host-` when {@link csrfSecure} resolves this request as
- * Secure.
+ * mints moments before the form's own POST), `Max-Age` matching the session's own lifetime, and
+ * `__Host-` when {@link csrfSecure} resolves this request as Secure.
+ *
+ * The two cookies are not one lifetime. This one's expiry re-anchors on every issue while the
+ * session cookie's own thirty days run from sign-in, and its value rotates at exactly two moments:
+ * a successful login (`auth-routes.ts`'s `confirmAction`, which mints a fresh value once the
+ * session exists) and a logout (which deletes it). Nothing else ever changes the value.
  *
  * Re-anchoring, not rotation, matters here: a one-shot `Max-Age` would expire the cookie mid
  * session and force a re-mint (a NEW value), which would silently invalidate every other open
@@ -87,7 +107,7 @@ export function originMatches(event: Pick<CairnEvent, 'url' | 'request'>): boole
 export function issueCsrfToken(event: {
   url: URL;
   cookies: CookieJar;
-  platform?: { env?: { PUBLIC_ORIGIN?: string } };
+  platform: CsrfPlatform;
 }): string {
   const secure = csrfSecure(event);
   const name = csrfCookieName(secure);
@@ -129,7 +149,7 @@ export function csrfHeaderVerdict(event: {
   url: URL;
   request: Request;
   cookies: CookieJar;
-  platform?: { env?: { PUBLIC_ORIGIN?: string } };
+  platform: CsrfPlatform;
 }): CsrfVerdict {
   const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
   const header = event.request.headers.get('x-cairn-csrf');
@@ -151,7 +171,9 @@ export function csrfFieldVerdict(cookie: string | undefined, form: FormData): Cs
  * clone. See `validateCsrfToken`'s own docstring for why a clone, not a direct read.
  */
 export async function csrfTokenVerdict(event: CairnEvent): Promise<CsrfVerdict> {
-  const cookie = event.cookies.get(csrfCookieName(csrfSecure(event)));
+  const cookie = event.cookies.get(
+    csrfCookieName(csrfSecure({ url: event.url, platform: event.platform })),
+  );
   if (!cookie) return { ok: false, detail: 'no-cookie' };
   let form: FormData;
   try {
@@ -179,7 +201,7 @@ export function validateCsrfHeader(event: {
   url: URL;
   request: Request;
   cookies: CookieJar;
-  platform?: { env?: { PUBLIC_ORIGIN?: string } };
+  platform: CsrfPlatform;
 }): boolean {
   return csrfHeaderVerdict(event).ok;
 }

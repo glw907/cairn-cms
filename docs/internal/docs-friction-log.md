@@ -64,7 +64,11 @@ clearings.
 
   Known post-fix behavior, not a defect: a browser holding an old `Strict` cookie from before
   the deploy re-mints exactly once as it ages out, then behaves as any freshly-issued cookie
-  does. WATCH posture: this entry leaves the log when a post-deploy consumer incident either
+  does. The other known residual is concurrent first loads: two cookie-less admin loads racing
+  in one browser each mint their own token, the later `Set-Cookie` wins, and the tab holding the
+  losing value 403s once as `detail: 'mismatch'`, `witness: 'field'`. A post-deploy record of
+  exactly that shape is this residual, not a new mechanism; only a record that does not fit it
+  reopens the entry. WATCH posture: this entry leaves the log when a post-deploy consumer incident either
   stops recurring, or produces a discriminated record that names a mechanism this pass did not
   already close.
 

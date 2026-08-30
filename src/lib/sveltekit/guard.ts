@@ -142,7 +142,14 @@ export function createAuthGuard(opts: AuthGuardOptions = {}) {
     // for every ordinary admin form post.
     if (isUnsafeFormRequest(event.request)) {
       const headerSent = event.request.headers.get('x-cairn-csrf') !== null;
-      const verdict = headerSent ? csrfHeaderVerdict(event) : await csrfTokenVerdict(event);
+      const verdict = headerSent
+        ? csrfHeaderVerdict({
+            url: event.url,
+            request: event.request,
+            cookies: event.cookies,
+            platform: event.platform,
+          })
+        : await csrfTokenVerdict(event);
       if (!verdict.ok) {
         // Presence-only: whether the session cookie was sent, never its value or a resolved
         // identity. This check runs before session resolution (below), so no editor is known yet.

@@ -167,15 +167,37 @@
 
 ### Fixed
 
+- The CSRF cookie's `Secure` derivation is now monotonic: an `https` request always resolves
+  Secure, whatever `PUBLIC_ORIGIN` says, and only a non-`https` request consults the local-host
+  list and then `PUBLIC_ORIGIN`. A leftover `http://localhost:8788` in a deployed site's
+  `PUBLIC_ORIGIN` (which `requireOrigin` tolerates) previously minted a bare, non-Secure,
+  thirty-day `cairn_csrf` on a production `https` deploy, which under `SameSite=Lax` a sibling
+  subdomain could then overwrite and defeat the double-submit compare. `logoutAction` also now
+  passes each cookie's own `secure` flag to its `delete`, since SvelteKit's delete default emits
+  `Secure` for every host but `localhost` itself and a browser discards a Secure `Set-Cookie` sent
+  over `http`, which left both cookies alive on an `http` dev host such as `127.0.0.1`.
+  `CookieJar.delete` accordingly accepts `secure` alongside `path`, a widening that every existing
+  implementation still satisfies. The
+  `platform` argument on `csrfSecure`, `issueCsrfToken`, `csrfHeaderVerdict`, and
+  `validateCsrfHeader` is now required but nullable, so omitting it is a compile error rather than
+  a silent fall back to a different cookie name than the writer used. Consumers must: nothing.
+
+- A successful login now rotates the CSRF token: `confirmAction` deletes the cookie and mints a
+  fresh value once the session exists, so a value fixed on the browser before sign-in cannot carry
+  into the authenticated session. This is the only rotation point besides logout, and it is safe
+  where a general rotation would not be: at that instant no authenticated form exists to
+  invalidate, since another open tab holds at most a sign-in form the new session makes moot.
+  Consumers must: nothing; expect one extra `Set-Cookie` on the confirm redirect, once per login.
+
 - The CSRF cookie now sets `SameSite=Lax` explicitly (never by attribute omission) with a
   `Max-Age` matching the session cookie's own thirty-day lifetime, re-anchoring that `Max-Age` on
-  every issue while the cookie is present rather than rotating its value, so the pair lives and
-  dies together without invalidating a second open admin tab's already-rendered form. `Secure`
+  every issue while the cookie is present rather than rotating its value, so the cookie tracks the
+  session's lifetime without invalidating a second open admin tab's already-rendered form. `Secure`
   now derives from the site's configured `PUBLIC_ORIGIN` rather than the request's own protocol
-  (falling back to the request's protocol when `PUBLIC_ORIGIN` is unset or a local host is making
-  the request), closing a `SameSite=Strict` cross-tab denial through the public login page and an
-  unstable cookie-name-flip class. `logoutAction` now deletes the CSRF cookie alongside the
-  session cookie, so a persistent double-submit token can't survive a sign-out. Consumers must:
+  (see the monotonic rule above for the exact precedence), closing a `SameSite=Strict` cross-tab
+  denial through the public login page and an unstable cookie-name-flip class. `logoutAction` now
+  deletes the CSRF cookie alongside the session cookie, so a persistent double-submit token can't
+  survive a sign-out. Consumers must:
   nothing. A browser holding an old `SameSite=Strict` cookie re-mints exactly once after deploy,
   as that cookie ages out.
 
@@ -183,10 +205,10 @@
   fallback: `cookies` is required on every `CairnEvent`, so the empty branch was unreachable from
   a typed caller and, from an untyped one, silently shipped a form that could never pass CSRF with
   no readable cause. The mint now runs unconditionally. Every hardened admin response
-  (`applySecurityHeaders`) now also sends `Cache-Control: private, no-store`: under `Lax` the CSRF
-  cookie is re-set far less often, which had been removing an accidental `Set-Cookie`
-  cache-suppression side effect from admin HTML that embeds the token and the signed-in editor's
-  identity. Media and preview responses are untouched; the guard returns before this header is
+  (`applySecurityHeaders`) now also sends `Cache-Control: private, no-store`. That header is
+  load-bearing, not belt-and-braces: the CSRF cookie re-anchors its `Max-Age` on every issue, so
+  every admin response carries a `Set-Cookie`, and a response's cacheability must never rest on
+  that incidental side effect for HTML that embeds the token and the signed-in editor's identity. Media and preview responses are untouched; the guard returns before this header is
   applied for any non-`/admin` path. Consumers must: nothing.
 
 - The admin guard's and `adminAction`'s CSRF rejection records (`guard.rejected` with

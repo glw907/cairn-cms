@@ -44,8 +44,15 @@ Entry format: a heading plus labeled lines.
   half; this entry is that docstring's listener. Deliberately out of scope here: the session
   cookie belongs to the conventions pass's auth family, not this CSRF-hardening slice.
 - **Reopens on:** the conventions pass that threads `PUBLIC_ORIGIN` (or an equivalent
-  `csrfSecure`-shaped helper) through the session cookie's own three call sites, or evidence
-  that the divergence causes a real cross-protocol session-cookie mismatch before then.
+  `csrfSecure`-shaped helper) through the session cookie's own three call sites, or, sooner, the
+  CSRF half resolving WEAKER than the session half on one response. That second trigger, not a
+  cross-protocol mismatch alone, is what the divergence actually risks, and the fix round's
+  finding 1 is its shape: a `PUBLIC_ORIGIN` carrying a leftover `http` dev value minted a bare,
+  non-Secure, thirty-day `cairn_csrf` on a live https deploy while the session cookie, deriving
+  from `url.protocol`, stayed `__Host-` Secure. The monotonic rule (an https request always
+  resolves Secure) closes that instance; any new configuration input to the CSRF derivation can
+  reopen the class, and the reverse asymmetry, where TLS termination leaves the session half the
+  weaker one, stays covered by the cross-protocol trigger above.
 - **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 1.
 
 ## copy-to-clipboard-control: public-side copy-to-clipboard widget  (decline, 2026-08-26, ASC harvest triage)

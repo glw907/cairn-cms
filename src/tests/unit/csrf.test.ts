@@ -77,7 +77,7 @@ const SESSION_MAX_AGE = Math.floor(SESSION_TTL_MS / 1000);
 describe('issueCsrfToken', () => {
   it('mints and sets a __Host- cookie when absent, SameSite=Lax explicit with the session maxAge', () => {
     const cookies = jar();
-    const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies });
+    const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies, platform: undefined });
     expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(cookies.sets[0].name).toBe('__Host-cairn_csrf');
     expect(cookies.sets[0].opts).toMatchObject({ path: '/', httpOnly: true, secure: true, sameSite: 'lax' });
@@ -86,7 +86,7 @@ describe('issueCsrfToken', () => {
 
   it('re-anchors a present cookie with a fresh maxAge and the unchanged value (no rotate-on-confirm)', () => {
     const cookies = jar({ '__Host-cairn_csrf': 'EXISTING' });
-    const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies });
+    const token = issueCsrfToken({ url: new URL('https://x.dev/admin/login'), cookies, platform: undefined });
     expect(token).toBe('EXISTING');
     expect(cookies.sets).toHaveLength(1);
     expect(cookies.sets[0].value).toBe('EXISTING');
@@ -96,7 +96,7 @@ describe('issueCsrfToken', () => {
 
   it('drops the prefix and Secure on http', () => {
     const cookies = jar();
-    issueCsrfToken({ url: new URL('http://localhost/admin/login'), cookies });
+    issueCsrfToken({ url: new URL('http://localhost/admin/login'), cookies, platform: undefined });
     expect(cookies.sets[0].name).toBe('cairn_csrf');
     expect(cookies.sets[0].opts.secure).toBe(false);
   });
@@ -119,17 +119,58 @@ describe('csrfSecure', () => {
     expect(csrfSecure(event)).toBe(true);
   });
 
-  it('falls back to the request protocol when PUBLIC_ORIGIN is absent', () => {
+  it('resolves Secure on an https request with no PUBLIC_ORIGIN configured', () => {
     const event = { url: new URL('https://site.example/admin/login'), platform: { env: {} } };
     expect(csrfSecure(event)).toBe(true);
   });
 
-  it('falls back to the request protocol when PUBLIC_ORIGIN does not parse', () => {
+  it('resolves Secure on an https request whose PUBLIC_ORIGIN does not parse', () => {
     const event = {
       url: new URL('https://site.example/admin/login'),
       platform: { env: { PUBLIC_ORIGIN: 'not a url' } },
     };
     expect(csrfSecure(event)).toBe(true);
+  });
+
+  it('falls back to non-Secure for an http non-local request with no usable PUBLIC_ORIGIN', () => {
+    const absent = { url: new URL('http://site.example/admin/login'), platform: { env: {} } };
+    const unparseable = {
+      url: new URL('http://site.example/admin/login'),
+      platform: { env: { PUBLIC_ORIGIN: 'not a url' } },
+    };
+    expect(csrfSecure(absent)).toBe(false);
+    expect(csrfSecure(unparseable)).toBe(false);
+  });
+
+  // The monotonic rule: a real https request is Secure whatever PUBLIC_ORIGIN says. A leftover
+  // dev value in a deployed site's PUBLIC_ORIGIN (env.ts's requireOrigin tolerates it) used to
+  // mint a bare, non-Secure, thirty-day cairn_csrf on production https, which a sibling
+  // subdomain can then overwrite and defeat the double-submit compare.
+  it('never downgrades an https request when PUBLIC_ORIGIN carries a leftover http dev value', () => {
+    const event = {
+      url: new URL('https://site.example/admin/login'),
+      platform: { env: { PUBLIC_ORIGIN: 'http://localhost:8788' } },
+    };
+    expect(csrfSecure(event)).toBe(true);
+  });
+
+  it('mints the __Host- Secure cookie on an https request under an http PUBLIC_ORIGIN', () => {
+    const cookies = jar();
+    issueCsrfToken({
+      url: new URL('https://site.example/admin/login'),
+      cookies,
+      platform: { env: { PUBLIC_ORIGIN: 'http://localhost:8788' } },
+    });
+    expect(cookies.sets[0].name).toBe('__Host-cairn_csrf');
+    expect(cookies.sets[0].opts.secure).toBe(true);
+  });
+
+  it('keeps the bare dev cookie for a local http request, PUBLIC_ORIGIN notwithstanding', () => {
+    const event = {
+      url: new URL('http://127.0.0.1:8788/admin/login'),
+      platform: { env: { PUBLIC_ORIGIN: 'https://site.example' } },
+    };
+    expect(csrfSecure(event)).toBe(false);
   });
 });
 
@@ -149,16 +190,18 @@ describe('CSRF cookie round trip under PUBLIC_ORIGIN', () => {
     expect(validateCsrfHeader({ url, request, cookies, platform })).toBe(true);
   });
 
-  it('a reader that omits platform misses the cookie the writer minted under PUBLIC_ORIGIN', () => {
+  it('a reader passing platform: undefined resolves the fallback name, not the writer\'s', () => {
     const cookies = jar();
     const token = issueCsrfToken({ url, cookies, platform });
     const request = req('http://site.example/admin/media/upload', {
       method: 'POST',
       headers: { 'x-cairn-csrf': token },
     });
-    // No platform: this reader resolves the cookie name from event.url.protocol (http, so the
-    // non-prefixed name) and never sees the __Host-prefixed cookie the writer set.
-    expect(validateCsrfHeader({ url, request, cookies })).toBe(false);
+    // `platform` is required but nullable, so a call site can no longer OMIT it (that is a compile
+    // error now, which is what closes the silent divergence). Explicit `undefined` stays legal and
+    // pins the fallback rule: with no PUBLIC_ORIGIN to read, this http request resolves the bare
+    // cookie name and never sees the __Host-prefixed cookie the writer set.
+    expect(validateCsrfHeader({ url, request, cookies, platform: undefined })).toBe(false);
   });
 });
 

@@ -74,8 +74,8 @@ describe('session cookie prefix and attributes (Unit 1)', () => {
     await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies })),
     );
-    expect(cookies.sets).toHaveLength(1);
-    expect(cookies.sets[0].name).toBe('__Host-cairn_session');
+    // Two sets: the session cookie, then the rotated CSRF cookie (asserted below in its own case).
+    expect(cookies.sets.map((s) => s.name)).toEqual(['__Host-cairn_session', '__Host-cairn_csrf']);
     expect(cookies.sets[0].opts).toMatchObject({ path: '/', httpOnly: true, secure: true, sameSite: 'lax' });
   });
 
@@ -87,6 +87,31 @@ describe('session cookie prefix and attributes (Unit 1)', () => {
     );
     expect(cookies.sets[0].name).toBe('cairn_session');
     expect(cookies.sets[0].opts.secure).toBe(false);
+  });
+});
+
+describe('CSRF token rotation at successful login', () => {
+  it('mints a new CSRF value, so a pre-login token cannot carry into the session', async () => {
+    const token = await liveToken('ed@x.dev');
+    const cookies = makeRecordingCookies({ [csrfCookieName(true)]: 'PRE-LOGIN-VALUE' });
+    await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies })),
+    );
+    const csrfSets = cookies.sets.filter((s) => s.name === csrfCookieName(true));
+    expect(csrfSets).toHaveLength(1);
+    expect(csrfSets[0].value).not.toBe('PRE-LOGIN-VALUE');
+    expect(csrfSets[0].value).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(csrfSets[0].opts).toMatchObject({ path: '/', httpOnly: true, secure: true, sameSite: 'lax' });
+    expect(cookies.get(csrfCookieName(true))).toBe(csrfSets[0].value);
+  });
+
+  it('leaves no CSRF cookie behind when the token is invalid, since no session was created', async () => {
+    const cookies = makeRecordingCookies({ [csrfCookieName(true)]: 'PRE-LOGIN-VALUE' });
+    await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token: 'bogus' }, cookies })),
+    );
+    expect(cookies.sets).toHaveLength(0);
+    expect(cookies.get(csrfCookieName(true))).toBe('PRE-LOGIN-VALUE');
   });
 });
 
@@ -121,11 +146,30 @@ describe('confirm and logout logging', () => {
     const token = await liveToken('ed@x.dev');
     const cookies = makeCookies({ [csrfCookieName(true)]: 'a-live-csrf-token' });
     await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
-    expect(cookies.get(csrfCookieName(true))).toBe('a-live-csrf-token');
+    // Confirm rotated the seeded value; what matters here is that a live CSRF cookie exists to
+    // survive sign-out, not which value it holds.
+    expect(cookies.get(csrfCookieName(true))).toBeTruthy();
     const logoutEvent = makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies });
     await expectRedirect(() => routes.logoutAction(logoutEvent));
     expect(cookies.get(sessionCookieName(true))).toBeUndefined();
     expect(cookies.get(csrfCookieName(true))).toBeUndefined();
+  });
+
+  it('deletes both cookies with the secure flag their own setters used', async () => {
+    // http://127.0.0.1 is the case that bites: SvelteKit's own delete defaults `secure` on for
+    // every host but `localhost` itself, and a browser drops a Secure Set-Cookie sent over http,
+    // so the deletion never reaches the browser and the editor stays signed in.
+    const cookies = makeRecordingCookies({
+      [sessionCookieName(false)]: 'a-session-id',
+      [csrfCookieName(false)]: 'a-live-csrf-token',
+    });
+    await expectRedirect(() =>
+      routes.logoutAction(makeEvent({ url: 'http://127.0.0.1:8788/admin/auth/logout', form: {}, cookies })),
+    );
+    expect(cookies.deletes).toEqual([
+      { name: 'cairn_session', opts: { path: '/', secure: false } },
+      { name: 'cairn_csrf', opts: { path: '/', secure: false } },
+    ]);
   });
 
   it('clears the browser cookie even when the session-row delete fails, so a D1 fault never leaves both valid (HIGH2)', async () => {

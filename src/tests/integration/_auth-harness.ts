@@ -34,20 +34,33 @@ export function makeCookies(initial: Record<string, string> = {}): CookieJar & {
   };
 }
 
-/** Like makeCookies, but records every set call's name and options, for cookie-attribute asserts. */
+/**
+ * Like makeCookies, but records every set and delete call, for cookie-attribute asserts. The
+ * delete options matter as much as the set ones: SvelteKit's own delete defaults `secure` on,
+ * and a browser discards a Secure `Set-Cookie` sent over http, so a delete that disagrees with
+ * its setter leaves the cookie alive on a non-localhost http dev host.
+ */
 export function makeRecordingCookies(
   initial: Record<string, string> = {},
-): CookieJar & { sets: { name: string; value: string; opts: CookieSetOptions }[] } {
+): CookieJar & {
+  sets: { name: string; value: string; opts: CookieSetOptions }[];
+  deletes: { name: string; opts: { path: string; secure?: boolean } }[];
+} {
   const jar = new Map(Object.entries(initial));
   const sets: { name: string; value: string; opts: CookieSetOptions }[] = [];
+  const deletes: { name: string; opts: { path: string; secure?: boolean } }[] = [];
   return {
     sets,
+    deletes,
     get: (name) => jar.get(name),
     set: (name, value, opts) => {
       jar.set(name, value);
       sets.push({ name, value, opts });
     },
-    delete: (name) => void jar.delete(name),
+    delete: (name, opts) => {
+      jar.delete(name);
+      deletes.push({ name, opts });
+    },
   };
 }
 

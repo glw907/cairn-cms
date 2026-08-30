@@ -123,9 +123,14 @@ attributes, this function owns only the name.
 `secure` must reflect the scheme the browser itself sees. Behind upstream TLS termination, a
 reverse proxy or a platform edge, `url.protocol` is not that scheme; derive `secure` from the
 externally visible one instead, such as a trusted `CF-Visitor` or `X-Forwarded-Proto` header the
-platform sets. The engine's own session and CSRF cookies derive `secure` from the site's
+platform sets.
+
+The engine's own two cookies derive `secure` differently. The CSRF cookie reads the site's
 configured `PUBLIC_ORIGIN` rather than a header: a site already declares that value, and a
-configured origin can't be spoofed by an intermediate hop the way a forwarded-proto header can. A
+configured origin can't be spoofed by an intermediate hop the way a forwarded-proto header can. It
+never downgrades an `https` request, whatever that value says. The session cookie still derives
+`secure` from `url.protocol` alone, a deliberately deferred divergence rather than a second
+supported pattern; see [The session cookie](../extend/security-model.md#the-session-cookie). A
 site building its own second-audience cookie without an equivalent configured origin reaches for
 the preceding header-based derivation instead.
 

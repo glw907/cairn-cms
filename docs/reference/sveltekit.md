@@ -192,6 +192,66 @@ params the wrapped action reads, and delegates:
 | `publishAll` | index, list, edit, history, editors, nav, media, settings, vocabulary, help (every authed view) | the site-wide publish |
 | `editorAdd`, `editorRemove`, `editorSetRole` | editors | the owner-gated editor management |
 
+The table above summarizes each view's actions in one line; the Media Library's own vocabulary
+carries more detail worth stating once. `mediaDeleteAction` safe-deletes a committed asset: it
+rechecks usage against a fresh server-side index at delete time, refuses an in-use asset
+(`MediaDeleteRefusal`) unless the form carries the typed-slug override, then commits the
+`media.json` row removal before deleting the R2 object so a mid-failure leaves a benign orphan
+rather than a broken delivery. `mediaUpdateAction` edits an asset's display name, slug, and default
+alt in one row commit with no reference rewrite (the resolver keys on the hash), refusing a bad
+slug with `MediaUpdateFailure`. `mediaLibraryUploadAction` is `uploadAction`'s Library-direct
+sibling: like `uploadAction`, it is a raw-body JSON endpoint that stores the uploaded bytes in R2
+and derives the `UploadResult`'s fields server-side, but it also commits the derived `media.json`
+row to the default branch in the same step, so an author can add an asset from the Media Library
+without an entry to ride. Both derive every committed field server-side and trust no client-posted
+record; a re-upload of identical bytes is an idempotent no-op.
+
+The replace-in-place pair swaps one asset for another across the published corpus.
+`mediaReplacePreviewAction` is a display-only fetch endpoint (the upload's `X-Cairn-CSRF` header
+transport): it plans the rewrite of every entry that references the old asset and returns a
+`MediaReplacePreviewPlan` (the affected entries with their per-reference diff, the affected count,
+and a report-only cross-branch delta), committing nothing. `mediaReplaceAction` re-derives that
+plan from a fresh read, gates every replace behind a typed-slug confirm (`MediaReplaceFailure` on a
+wrong or missing confirm), and rewrites every referencing entry plus the new `media.json` row in
+one commit; it performs no R2 write, since the new bytes are already stored and the old asset's row
+is kept. Both fail closed on an unverifiable usage read.
+
+The alt-propagation pair pushes an asset's default alt across the same corpus.
+`mediaAltPreviewAction` plans the fill over that header transport and returns a
+`MediaAltPreviewPlan` that sorts each placement into a will-fill bucket (an empty alt), a
+customized bucket (a hand-written alt kept unless the editor opts in), or a decorative-hero bucket
+(left alone). `mediaAltPropagateAction` re-derives the plan from a fresh read, fills the empty alts
+(and the customized ones when the `overwrite` opt-in is set), and commits only the entries it
+changes in one commit. It never writes `media.json`, never gates on a typed slug, and never touches
+a decorative hero.
+
+The destructive trio (`mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`)
+clears assets and stored bytes in bulk, registered above as `mediaBulkDelete`, `mediaOrphanScan`,
+and `mediaOrphanPurge`. `mediaBulkDeleteAction` is the single safe-delete gate applied per item over
+a selection: it builds one strict cross-branch usage index for the whole batch, deletes the assets
+nothing references, and skips any still in use, reporting them in the returned
+`MediaBulkDeleteResult` (its `deleted`, `skipped`, and `failed` arrays) rather than force-deleting.
+The row removals land as one commit before the R2 objects are deleted, so a bulk delete is
+reversible from git history, the same delete-order the single safe-delete uses.
+`mediaOrphanScanAction` runs a storage reconcile plus a strict usage read and returns the
+`MediaOrphanScanResult` projection: `orphanedBytes` (stored keys with no manifest row and no
+reference anywhere across `main` and every open branch) and the broken-reference rows (manifest
+hashes whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since
+the branch that uploaded them references them. `mediaOrphanPurgeAction` is the one irreversible
+media action: it deletes the raw R2 bytes, which carry no git history, so it gates on a
+typed-count confirm (the number of files). At action time it re-derives the orphan set fresh and
+re-checks the strict usage index, so a key that gained a manifest row or a new branch reference
+since the scan is skipped, never purged; the `MediaOrphanPurgeResult` reports `purged`,
+`skippedClaimed`, and `failed`. All three fail closed: an unverifiable cross-branch usage read
+refuses the whole batch (503) and commits nothing.
+
+All ten of these media actions (`mediaDeleteAction`, `mediaUpdateAction`,
+`mediaLibraryUploadAction`, `mediaReplacePreviewAction`, `mediaReplaceAction`,
+`mediaAltPreviewAction`, `mediaAltPropagateAction`, `mediaBulkDeleteAction`,
+`mediaOrphanScanAction`, `mediaOrphanPurgeAction`) are internal `createContentRoutesInternal`
+members, reachable through no package subpath. `createContentRoutes` doesn't return them, and
+`createCairnAdmin` is the only public seam that mounts them.
+
 ```ts
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
@@ -881,7 +941,9 @@ export const actions = {
 Stability tier: Unstable API.
 
 ```ts
-declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesOptions): {
+declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesOptions): ContentRoutes;
+
+type ContentRoutes = {
   shellLoad: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }>;
   helpLoad: (event: CairnEvent<CairnEnv>) => Promise<HelpData>;
   indexLoad: (event: CairnEvent<CairnEnv>) => { view: "welcome"; page: WelcomeData };
@@ -905,16 +967,6 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   previewRevokeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { count: number }>;
   revertAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure>>;
   uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
-  mediaLibraryUploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
-  mediaDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaDeleteRefusal>>;
-  mediaBulkDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaBulkFailure> | MediaBulkDeleteResult>;
-  mediaOrphanScanAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaBulkFailure> | MediaOrphanScanResult>;
-  mediaOrphanPurgeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaBulkFailure> | MediaOrphanPurgeResult>;
-  mediaUpdateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUpdateFailure>>;
-  mediaReplacePreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaReplaceFailure> | MediaReplacePreviewPlan>;
-  mediaReplaceAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaReplaceFailure>>;
-  mediaAltPreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaAltPropagateFailure> | MediaAltPreviewPlan>;
-  mediaAltPropagateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaAltPropagateFailure>>;
   dictionaryAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult>;
   tidyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<TidyFailure> | TidyResult>;
 };
@@ -934,55 +986,14 @@ actions back a concept's list view, and `editLoad` with the `save`, `publish`, `
 `delete`, and `rename` actions back the entry editor. `uploadAction` ingests an image for a
 media-enabled site: a raw-body JSON endpoint that stores the bytes in R2, returns a `UploadResult`
 (the `media:` reference and the server-owned record), and commits nothing until the entry is saved.
-`mediaLibraryUploadAction` is its Library-direct sibling: it shares that store-and-derive body, then commits
-the derived `media.json` row to the default branch in the same step, so an author can add an asset from
-the Media Library without an entry to ride. Both derive every committed field server-side and trust no
-client-posted record; a re-upload of identical bytes is an idempotent no-op.
 `mediaLibraryLoad` backs the admin Media Library view: it unions `media.json` from the default
 branch with every open `cairn/*` branch (so a not-yet-published asset shows, with the default
 branch winning a same-hash tie), projects each row through the shared `mediaLibraryEntry` helper,
-and attaches a per-hash where-used overlay (`MediaLibraryData`). `mediaDeleteAction` safe-deletes a
-committed asset: it rechecks usage against a fresh server-side index at delete time, refuses an
-in-use asset (`MediaDeleteRefusal`) unless the form carries the typed-slug override, then commits
-the `media.json` row removal before deleting the R2 object so a mid-failure leaves a benign orphan
-rather than a broken delivery. `mediaUpdateAction` edits an asset's display name, slug, and default
-alt in one row commit with no reference rewrite (the resolver keys on the hash), refusing a bad slug
-with `MediaUpdateFailure`. The replace-in-place pair swaps one asset for another across the published
-corpus. `mediaReplacePreviewAction` is a display-only fetch endpoint (the upload's `X-Cairn-CSRF` header
-transport): it plans the rewrite of every entry that references the old asset and returns a
-`MediaReplacePreviewPlan` (the affected entries with their per-reference diff, the affected count, and
-a report-only cross-branch delta), committing nothing. `mediaReplaceAction` re-derives that plan from a
-fresh read, gates every replace behind a typed-slug confirm (`MediaReplaceFailure` on a wrong or
-missing confirm), and rewrites every referencing entry plus the new `media.json` row in one commit;
-it performs no R2 write, since the new bytes are already stored and the old asset's row is kept. Both
-fail closed on an unverifiable usage read. The alt-propagation pair pushes an asset's default alt
-across the same corpus. `mediaAltPreviewAction` plans the fill over that header transport and returns a
-`MediaAltPreviewPlan` that sorts each placement into a will-fill bucket (an empty alt), a customized
-bucket (a hand-written alt kept unless the editor opts in), or a decorative-hero bucket (left alone).
-`mediaAltPropagateAction` re-derives the plan from a fresh read, fills the empty alts (and the customized ones
-when the `overwrite` opt-in is set), and commits only the entries it changes in one commit. It never
-writes `media.json`, never gates on a typed slug, and never touches a decorative hero. The destructive
-trio (`mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`) clears assets and stored bytes in
-bulk. `mediaBulkDeleteAction` is the single safe-delete gate applied per item over a selection: it builds
-one strict cross-branch usage index for the whole batch, deletes the assets nothing references, and
-skips any still in use, reporting them in the returned `MediaBulkDeleteResult` (its `deleted`,
-`skipped`, and `failed` arrays) rather than force-deleting. The row removals land as one commit before
-the R2 objects are deleted, so a bulk delete is reversible from git history, the same delete-order the
-single safe-delete uses. `mediaOrphanScanAction` runs a storage reconcile plus a strict usage read and
-returns the `MediaOrphanScanResult` projection: `orphanedBytes` (stored keys with no manifest row and no
-reference anywhere across `main` and every open branch) and the broken-reference rows (manifest hashes
-whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since the branch
-that uploaded them references them. `mediaOrphanPurgeAction` is the one irreversible media action: it
-deletes the raw R2 bytes, which carry no git history, so it gates on a typed-count confirm (the number
-of files). At action time it re-derives the orphan set fresh and re-checks the strict usage index, so
-a key that gained a manifest row or a new branch reference since the scan is skipped, never purged; the
-`MediaOrphanPurgeResult` reports `purged`, `skippedClaimed`, and `failed`. All three fail closed: an
-unverifiable cross-branch usage read refuses the whole batch (503) and commits nothing. The
-single-mount composer registers the trio under `mediaBulkDelete`, `mediaOrphanScan`, and `mediaOrphanPurge`,
-each gated to the media view, so the Media Library posts
-`?/mediaBulkDelete`, `?/mediaOrphanScan`, and `?/mediaOrphanPurge`. The showcase runs in dev without a real
-key because its fake GitHub backend rides `event.locals.cairnBackend` from a fenced dev handle, so no GitHub
-App token mint runs.
+and attaches a per-hash where-used overlay (`MediaLibraryData`). The Media Library's own janitorial
+and edit actions (the Library-direct upload, per-asset delete and update, replace-in-place, alt
+propagation, and bulk delete/orphan scan/purge) are not members of this public return; they reach
+the browser only through [`createCairnAdmin`](#createcairnadmin), documented there with the rest of
+the admin action vocabulary.
 
 A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
 the default branch, so the live site stays as it was. `publishAction` publishes what the author
@@ -1879,7 +1890,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `SettingsSaveFailure` | Unstable API | `interface SettingsSaveFailure { error: string }` | A refused tidy settings save (an invalid conventions payload, a malformed committed config, or the config's head moved since the editor opened the page): just the one-line summary. |
 | `VocabularySaveFailure` | Unstable API | `interface VocabularySaveFailure { error: string }` | A refused tag-vocabulary save (an invalid vocabulary payload, a malformed committed config, a removed value still in use, or the config's head moved since the editor opened the page): just the one-line summary. |
 | <a id="contentroutesoptions"></a>`ContentRoutesOptions` | Unstable API | `interface ContentRoutesOptions { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]>; preview?: PreviewTokenConfig }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellLoad` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. `preview` is the TTL [`previewMintAction`](#createcontentroutes) mints against, absent resolving to [`PreviewTokenConfig`](#types)'s own seven-day default. |
-| `ContentRoutes` | Unstable API | `type ContentRoutes` | What `createContentRoutes` returns: the admin content routes' full load and action vocabulary, shown expanded in [`createContentRoutes`](#createcontentroutes). |
+| `ContentRoutes` | Unstable API | `type ContentRoutes` | What `createContentRoutes` returns: the load and action vocabulary a site can mount by hand, shown expanded in [`createContentRoutes`](#createcontentroutes). The engine's Media Library janitorial actions (bulk delete, orphan scan and purge, replace, alt propagation, per-asset delete and update, and the Library-direct upload) are not members: they reach the browser only through [`createCairnAdmin`](#createcairnadmin). |
 | <a id="previewtokenconfig"></a>`PreviewTokenConfig` | Unstable API | `interface PreviewTokenConfig { ttlMs?: number }` | A site's preview-token configuration for [`mintPreviewToken`](#mintpreviewtoken): how long a minted share link stays valid. `ttlMs` defaults to seven days (long enough to survive a weekend review) and must be finite, positive, and between one minute and thirty days inclusive; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error at mint time. |
 | <a id="previewdata"></a>`PreviewData` | Extension API | `interface PreviewData extends EntryData { preview: { state: 'draft' \| 'published'; expiresAt: string; published: { permalink: string } \| null } }` | [`previewLoad`](#previewload)'s data: a public entry page's own [`EntryData`](./delivery.md#entrydata), the exact shape `entryLoad` returns, plus `preview`, the metadata [`PreviewBanner`](./components.md#previewbanner) (or a site's own banner) reads. `preview.state` is `'draft'` while the shared branch is still open and `'published'` once it's gone; `preview.published` names the live permalink only in the `'published'` state, when the entry's file exists on the default branch, and is `null` otherwise (a discarded, never-published entry's branch-gone case never reaches this shape at all, since it answers a 404 instead). A compile-time assertion in the engine's own test suite proves this type adds no key beyond `preview`, so a future `EntryData` field breaks the engine's own build rather than a consuming site's. |
 | `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |

@@ -1639,8 +1639,8 @@ when the remediation pass lands.
 ## audit-sveltekit-contentroutes: `ContentRoutes`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Thin by name, but consequential: this type is why two dozen janitorial types are public at all.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Shape:** Split the public return into the loads and actions a hand-mounting site actually wires, keeping the media-janitorial actions on an engine-internal shape the engine's own components import directly, already how they reach them today. That reshape is the single change that lets the media-janitorial types retire.
+- **Reopens on:** closed. Executed by foundations B, Task 1: `createContentRoutesInternal` (unexported from every barrel) returns the wide 35-member shape the single-mount composer drives, and the public `createContentRoutes` declares the narrow 25-member `ContentRoutes`, derived from the internal shape by `Pick` rather than hand-mirrored, per the C3 prescription. The ten excluded members are the media-janitorial actions: `mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaOrphanPurgeAction`, `mediaReplaceAction`, `mediaAltPropagateAction`, `mediaDeleteAction`, `mediaUpdateAction`, `mediaAltPreviewAction`, `mediaReplacePreviewAction`, `mediaLibraryUploadAction`.
+- **Shape:** Split the public return into the loads and actions a hand-mounting site actually wires, keeping the media-janitorial actions on an engine-internal shape the engine's own components import directly, already how they reach them today. The split is a NECESSARY step toward the media-janitorial retires, not a sufficient one: `createCairnAdmin`'s rendered return still names every ranks 1-13/17-22/38 janitorial type after it (`api-surface.md:498`, `:519`), because the composer keeps driving the wide internal shape. Closing this entry therefore consumes no retire; the retires pass reads the closure re-derivation for that.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 74.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 

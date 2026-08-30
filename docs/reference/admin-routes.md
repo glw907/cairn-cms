@@ -278,3 +278,12 @@ them. That path trades the single mount's stability for control: the site then o
 tree and must track the action vocabulary across releases itself. The factory signatures, the
 view components' named-action contracts, and worked per-route examples live in
 [the SvelteKit reference](./sveltekit.md).
+
+**The media view is the one exception.** `createContentRoutes`'s public return carries
+`mediaLibraryLoad` and the entry-scoped `uploadAction`, but not the ten media-janitorial and
+edit actions the Media Library posts to (per-asset delete and update, the Library-direct upload,
+replace-in-place, alt propagation, and bulk delete/orphan scan/purge). A site that hand-mounts
+[`CairnMediaLibrary`](./components.md#cairnmedialibrary) per-route has no public factory that
+supplies those actions; only `createCairnAdmin` mounts them. Mounting the media view outside the
+single mount means composing your own actions record around `createCairnAdmin`'s, not wiring
+`createContentRoutes` alone.

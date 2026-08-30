@@ -28,6 +28,13 @@ The in-use face names the breaking entries and gates Delete behind a typed-slug 
 orphan face is a calm confirm. Both post to `?/mediaDelete`. A `form` carrying a fresh
 `MediaDeleteRefusal` re-opens the in-use face on its fresh breaking list.
 
+Its actions are wired only by `createCairnAdmin`. No public route factory carries them:
+`createContentRoutes` returns the loads and actions a site hand-mounts, and the ten media-janitorial
+actions this screen posts to (`?/mediaUpdate`, `?/mediaDelete`, `?/mediaBulkDelete`,
+`?/mediaOrphanScan`, `?/mediaOrphanPurge`, `?/mediaReplacePreview`, `?/mediaReplace`,
+`?/mediaAltPreview`, `?/mediaAltPropagate`, `?/mediaLibraryUpload`) are not among them. Mounting
+this component on a hand-wired route leaves every one of those posts unhandled.
+
 It is node-safe by construction: it types assets with MediaLibraryEntry from the shared node-safe
 projection and pulls in no editor module (the editor-boundary test bars a @codemirror leak).
 -->

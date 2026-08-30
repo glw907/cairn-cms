@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
-import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.js';
 import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { hashBytes, shortHash } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -118,7 +118,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
   it('commits a new media.json row to main on upload', async () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
 
@@ -152,7 +152,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     gh.install();
     // Pre-put the bytes too, so ingestAndStore's dedup reuses rather than puts (irrelevant to the
     // commit assertion, but keeps the scenario realistic).
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const before = gh.read('main', MEDIA_PATH);
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG_2, filename: 'dupe.png' }))) as ActionResult;
@@ -167,7 +167,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
   it('refuses without a session, and commits nothing', async () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
 
@@ -179,7 +179,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
   it('refuses with a bad CSRF, and commits nothing', async () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, csrf: 'wrong-token' }))) as ActionResult;
 
@@ -196,7 +196,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     gh.install();
     const spiedBackend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
     const commitSpy = vi.spyOn(spiedBackend, 'commit');
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const head = gh.headSha('main');
 
     await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png', backend: spiedBackend }));
@@ -250,7 +250,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
         return doubleFetch(input, init);
       }),
     );
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
 
     const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
 

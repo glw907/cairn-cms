@@ -11,7 +11,7 @@
 // commits nothing and still redirects.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
-import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { createContentRoutesInternal } from '../../lib/sveltekit/content-routes.js';
 import type {
   MediaAltPreviewPlan,
   MediaAltPropagateFailure,
@@ -180,7 +180,7 @@ describe('mediaAltPreview', () => {
   it('returns the three buckets, their counts, and the per-entry placements and titles', async () => {
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const result = (await routes.mediaAltPreviewAction(
       previewEvent({ hash: HASH }) as never,
     )) as MediaAltPreviewPlan;
@@ -228,7 +228,7 @@ describe('mediaAltPreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaAltPreviewAction(
       previewEvent({ hash: HASH }, { csrf: 'wrong' }) as never,
     );
@@ -246,7 +246,7 @@ describe('mediaAltPreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaAltPreviewAction(
       previewEvent({ hash: 'not-a-hash' }) as never,
     );
@@ -268,7 +268,7 @@ describe('mediaAltPreview', () => {
       env: {},
       cookies: cookieJar(CSRF),
     });
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaAltPreviewAction(event as never);
     expect(result).toMatchObject({ status: 400 });
   });
@@ -281,7 +281,7 @@ describe('mediaAltPreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaAltPreviewAction(
       // OTHER_HASH is not in media.json: the asset is not committed.
       previewEvent({ hash: OTHER_HASH }) as never,
@@ -310,7 +310,7 @@ describe('mediaAltPreview', () => {
       if (url.includes('2026-05-flaky')) return Promise.reject(new Error('transient'));
       return inner(input, init);
     }));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaAltPreviewAction(
       previewEvent({ hash: HASH }) as never,
     );
@@ -325,7 +325,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     await expect(
       routes.mediaAltPropagateAction(applyEvent({ hash: HASH }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
@@ -352,7 +352,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     await expect(
       routes.mediaAltPropagateAction(applyEvent({ hash: HASH, overwrite: 'on' }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
@@ -375,7 +375,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     await expect(
       routes.mediaAltPropagateAction(applyEvent({ hash: HASH, overwrite: 'true' }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
@@ -389,7 +389,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     // No confirmSlug at all: the apply still fills the empty alt and commits.
     await expect(
       routes.mediaAltPropagateAction(applyEvent({ hash: HASH }) as never),
@@ -414,7 +414,7 @@ describe('mediaAltApply', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     await expect(
       routes.mediaAltPropagateAction(applyEvent({ hash: HASH }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
@@ -444,7 +444,7 @@ describe('mediaAltApply', () => {
       if (url.includes('2026-05-flaky')) return Promise.reject(new Error('transient'));
       return inner(input, init);
     }));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaAltPropagateAction(
       applyEvent({ hash: HASH }) as never,
     );
@@ -468,7 +468,7 @@ describe('mediaAltApply', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaAltPropagateAction(
       applyEvent({ hash: OTHER_HASH }) as never,
     );
@@ -498,7 +498,7 @@ describe('mediaAltApply', () => {
       }
       return double(input, init);
     }));
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     const result = await routes.mediaAltPropagateAction(applyEvent({ hash: HASH }) as never);
     expect(result).toMatchObject({ status: 409, data: { hash: HASH } });
     const data = (result as { data: MediaAltPropagateFailure }).data;
@@ -508,7 +508,7 @@ describe('mediaAltApply', () => {
   it('throws error(400) on a malformed hash', async () => {
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
     await expect(
       routes.mediaAltPropagateAction(applyEvent({ hash: 'bad' }) as never),
     ).rejects.toMatchObject({ status: 400 });
@@ -518,7 +518,7 @@ describe('mediaAltApply', () => {
   it('returns fail(503) when media is disabled, committing nothing', async () => {
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime({ resolvedAssets: { ...MEDIA_ON, enabled: false } }));
+    const routes = createContentRoutesInternal(runtime({ resolvedAssets: { ...MEDIA_ON, enabled: false } }));
     const result = await routes.mediaAltPropagateAction(
       applyEvent({ hash: HASH }) as never,
     );
@@ -532,7 +532,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime());
+    const routes = createContentRoutesInternal(runtime());
 
     // Compute a preview to mirror the real flow (the client previews, then applies).
     await routes.mediaAltPreviewAction(previewEvent({ hash: HASH }) as never);

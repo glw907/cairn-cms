@@ -139,7 +139,10 @@ export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindi
 // Each is a recorded R4 re-export, not a second home (canonical-home rule, foundations A); the
 // full set with its per-name reason is `scripts/checks/check-surface-reexports.json`, and
 // `docs/internal/record/2026-08-29-foundations-a-move-set.md` records why each one survives.
-// Foundations B narrows `ContentRoutes` and re-derives this closure, so expect it to shrink.
+// Foundations B narrowed `ContentRoutes` and re-derived this closure without shrinking the list:
+// the narrowing is necessary for the media-janitorial retires, not sufficient, since
+// `createCairnAdmin` still names every one of those types. The retires pass is what shrinks this,
+// off the re-derivation at `docs/internal/record/2026-08-30-r4-rederivation.md`.
 export type { AccessMap } from '../auth/access.js';
 export type { Backend, BackendProvider } from '../github/backend.js';
 export type {

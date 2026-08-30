@@ -139,6 +139,10 @@ void typeOnlyAuthGuardAssignability;
 // `RequestEvent<AppLayoutParams<'/'>>`'s default falls back to that shape here), so a
 // params-narrowing override would be a no-op. A generated app narrows `params` per route instead,
 // always to a subtype of `Record<string, string>`, so this stays a faithful stand-in there too.
+// Since foundations B narrowed the public return, this pin covers 25 members, not the old 35. The
+// ten media-janitorial actions are covered transitively by the `admin.actions` pin above, which is
+// where the composer registers them; do not re-add them here, since the public factory's declared
+// `ContentRoutes` no longer carries them and naming one would simply fail to compile.
 function typeOnlyContentRoutesAssignability(): void {
   const routes = createContentRoutes({} as CairnRuntime);
   routes satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;

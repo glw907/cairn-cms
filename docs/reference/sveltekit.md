@@ -248,8 +248,9 @@ refuses the whole batch (503) and commits nothing.
 All ten of these media actions (`mediaDeleteAction`, `mediaUpdateAction`,
 `mediaLibraryUploadAction`, `mediaReplacePreviewAction`, `mediaReplaceAction`,
 `mediaAltPreviewAction`, `mediaAltPropagateAction`, `mediaBulkDeleteAction`,
-`mediaOrphanScanAction`, `mediaOrphanPurgeAction`) are internal `createContentRoutes` members,
-reachable through no package subpath; `createCairnAdmin` is the only public seam that mounts them.
+`mediaOrphanScanAction`, `mediaOrphanPurgeAction`) are internal `createContentRoutesInternal`
+members, reachable through no package subpath. `createContentRoutes` doesn't return them, and
+`createCairnAdmin` is the only public seam that mounts them.
 
 ```ts
 // src/lib/cairn.server.ts

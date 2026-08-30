@@ -168,6 +168,13 @@ type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
  * Ten media-janitorial actions are absent on purpose. They are reachable only from the engine's own
  *  Media Library screen, so a site that wants them mounts `createCairnAdmin` instead of wiring them
  *  one by one.
+ *
+ * The narrowing is TYPE-LEVEL, not a runtime boundary. `createContentRoutes` returns the internal
+ *  object itself, so all thirty-five members are still present at runtime: a spread
+ *  (`export const actions = { ...routes }`) or a cast recovers the ten. Each of them still runs the
+ *  session, CSRF, and view gates it always ran, so nothing is exposed that was not exposed before.
+ *  What the narrowing withdraws is the SUPPORTED seam, not the reachability, which is why the
+ *  removal is a documented capability change rather than a security fix.
  */
 export type ContentRoutes = Pick<
   InternalContentRoutes,

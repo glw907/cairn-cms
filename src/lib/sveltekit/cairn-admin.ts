@@ -9,7 +9,7 @@ import { parseAdminPath, type AdminView } from './admin-dispatch.js';
 import { log } from '../log/index.js';
 import { createAuthRoutes, type LoginData, type ConfirmData } from './auth-routes.js';
 import {
-  createContentRoutes,
+  createContentRoutesInternal,
   type ContentRoutesOptions,
   type ListData,
   type EditData,
@@ -98,7 +98,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions 
     replyTo: runtime.sender.replyTo,
   };
   const auth = createAuthRoutes({ branding, send: deps.auth?.send, bootstrapOwner: deps.auth?.bootstrapOwner });
-  const content = createContentRoutes(runtime, {
+  const content = createContentRoutesInternal(runtime, {
     tidy: deps.tidy,
     navFilter: deps.navFilter,
     attention: deps.attention,

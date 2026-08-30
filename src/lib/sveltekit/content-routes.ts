@@ -3,13 +3,17 @@
 // are unit-testable against a fetch double with an injected token, mirroring the email `send`
 // injection in auth-routes. A shim stays one line: `export const load = routes.editLoad`.
 //
-// This module is the composition root: `createContentRoutes` builds the shared
+// This module is the composition root: `createContentRoutesInternal` builds the shared
 // ContentRoutesContext (content-routes-context.ts) once, then merges the per-domain sibling
 // factories (content-routes-core.ts, -media.ts, -tidy.ts, -settings.ts, -dictionary.ts) into the
-// one returned object, so its public shape stays exactly what it has always been. Every type this
-// file used to declare inline now lives with the domain that owns it and is re-exported here, so
-// every existing importer (the public `/sveltekit` barrel and the admin components that import this
-// file directly) sees the same names at the same path.
+// one returned object. Every type this file used to declare inline now lives with the domain that
+// owns it and is re-exported here, so every existing importer (the public `/sveltekit` barrel and
+// the admin components that import this file directly) sees the same names at the same path.
+//
+// The factory comes in two: the internal one above, whose wide shape the single-mount composer
+// drives, and the public `createContentRoutes`, whose declared return is the narrow `ContentRoutes`
+// a hand-mounting site can wire. The narrowing is deliberate and enumerated on `ContentRoutes`
+// itself; `check:surface` pins the narrow shape as the public contract.
 import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
 import type { ContentRoutesOptions } from './content-routes-context.js';
@@ -95,12 +99,13 @@ export type ContentFormFailure = Partial<
 >;
 
 /**
- * Build the admin content routes' load and action functions, closed over the composed runtime.
- *  The returned object's key order mirrors the historical single-factory shape (routes interleave
- *  by admin surface, not by the internal domain split below), which `check:surface` pins as the
- *  public contract.
+ * Build every admin content route the engine's own screens need, closed over the composed runtime.
+ *  This is the WIDE shape, and `cairn-admin.ts` is its only caller: the single-mount composer drives
+ *  all of it, including the ten media-janitorial actions that reach no further than the engine's own
+ *  Media Library screen. The public `createContentRoutes` below presents the narrow view of the same
+ *  object. Reachable from no package subpath, so its shape is free to grow with the admin.
  */
-export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOptions = {}) {
+export function createContentRoutesInternal(runtime: CairnRuntime, deps: ContentRoutesOptions = {}) {
   const ctx = createContentRoutesContext(runtime, deps);
   const core = createCoreActions(ctx);
   const media = createMediaActions(ctx);
@@ -146,5 +151,56 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOp
   };
 }
 
-/** What `createContentRoutes` returns: the admin content routes' full load and action vocabulary. */
-export type ContentRoutes = ReturnType<typeof createContentRoutes>;
+/**
+ * The wide shape `createContentRoutesInternal` returns. Named so the public view below is DERIVED
+ *  from it rather than hand-mirrored, which is what keeps the two from drifting apart (C3).
+ */
+type InternalContentRoutes = ReturnType<typeof createContentRoutesInternal>;
+
+/**
+ * What `createContentRoutes` returns: the load and action vocabulary a site can mount by hand. The
+ *  member list is the deliberate public narrowing and each member's type is read from the internal
+ *  shape, never copied. The key order mirrors the historical single-factory shape (routes interleave
+ *  by admin surface, not by the internal domain split above), which `check:surface` pins as the
+ *  public contract.
+ *
+ * Ten media-janitorial actions are absent on purpose. They are reachable only from the engine's own
+ *  Media Library screen, so a site that wants them mounts `createCairnAdmin` instead of wiring them
+ *  one by one.
+ */
+export type ContentRoutes = Pick<
+  InternalContentRoutes,
+  | 'shellLoad'
+  | 'helpLoad'
+  | 'indexLoad'
+  | 'listLoad'
+  | 'mediaLibraryLoad'
+  | 'settingsLoad'
+  | 'settingsSaveAction'
+  | 'vocabularyLoad'
+  | 'vocabularySaveAction'
+  | 'createAction'
+  | 'editLoad'
+  | 'historyLoad'
+  | 'saveAction'
+  | 'publishAction'
+  | 'publishAllAction'
+  | 'discardAction'
+  | 'deleteAction'
+  | 'listDeleteAction'
+  | 'renameAction'
+  | 'previewMintAction'
+  | 'previewRevokeAction'
+  | 'revertAction'
+  | 'uploadAction'
+  | 'dictionaryAddAction'
+  | 'tidyAction'
+>;
+
+/**
+ * Build the admin content routes a site mounts by hand, closed over the composed runtime. The
+ *  returned object is the internal one, presented through the narrow `ContentRoutes` view.
+ */
+export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOptions = {}): ContentRoutes {
+  return createContentRoutesInternal(runtime, deps);
+}

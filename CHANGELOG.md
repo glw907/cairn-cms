@@ -196,6 +196,21 @@
   `remove_input_defaults` call and the document-level `reset` listener it registers to reconcile a
   dynamic `value` binding back to its default. No consumer-side change. Consumers must: nothing.
 
+- `createContentRoutes` now returns a narrowed `ContentRoutes`: the 25 loads and actions a site
+  mounts by hand. The ten media-janitorial actions it used to return (`mediaBulkDeleteAction`,
+  `mediaOrphanScanAction`, `mediaOrphanPurgeAction`, `mediaReplaceAction`,
+  `mediaAltPropagateAction`, `mediaDeleteAction`, `mediaUpdateAction`, `mediaAltPreviewAction`,
+  `mediaReplacePreviewAction`, `mediaLibraryUploadAction`) are reachable only from the engine's own
+  Media Library screen, so they move to an unexported internal factory that the single-mount
+  composer keeps driving in full. `createCairnAdmin` is unchanged: every one of those actions is
+  still registered under its `actions` record, and every result and failure type stays exported
+  from `/sveltekit`. The narrow type is derived from the internal shape rather than hand-mirrored,
+  so the two cannot drift. **Consumers must:** a site that hand-mounts the public
+  `CairnMediaLibrary` component has lost its public seam for wiring the media actions. There is no
+  replacement factory for them; mount the Media Library through `createCairnAdmin`, which serves
+  the component the full action vocabulary it posts to. A site that hand-mounts any other admin
+  view is unaffected, `uploadAction` and `mediaLibraryLoad` included.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

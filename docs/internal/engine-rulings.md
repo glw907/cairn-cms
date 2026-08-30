@@ -11,10 +11,83 @@ Entry format: a heading plus labeled lines.
 ## <slug>: <one-line item>  (verdict, YYYY-MM-DD, source)
 - **Verdict:** accept | decline | defer | keep | reshape | retire. One-sentence reason.
 - **Reopens on:** the named evidence that would qualify (or "closed" for executed accepts).
+- **Shape:** (reshape and retire entries naming a concrete target shape) one or more complete
+  sentences naming the shape a remediation pass executes. Its own labeled line, never a
+  parenthetical folded into `Reopens on:`; `check:rulings-format` gates the format.
 - **Record:** link to the consultation, triage, or audit document holding the full argument.
 - **Any-site case:** (audit entries; required on every keep) the concrete anonymous-consumer scenario.
 - **Verified:** (audit entries; required on every family-originated export and every non-keep) the verifier pass that checked it.
 ```
+
+**Truncated-shape repair assignment (foundations A, 2026-08-29):** an earlier authoring pass
+truncated 54 of this ledger's `(shape: ...)` parentheticals to exactly 160 characters mid-thought.
+Foundations A repaired 14 (the `/sveltekit` and `/admin-toolkit` audit entries feeding the next two
+remediation slices) by re-authoring the shape from its rank-source discussion and migrating it to
+the `- **Shape:**` line above. The remaining 40 stay truncated and allowlisted in
+`scripts/checks/check-rulings-format-allowlist.json`; each is repaired by the initiative slice that
+executes it (cli and log entries by their owning slices, auth by the conventions pass, the tail by
+whichever slice touches each). No later slice may assume the repair is already done for a slug it
+finds on that allowlist.
+
+One entry needs care when it is repaired: `audit-cli-cairn-audit-config-json-contract-scope-cssfiles-palettefiles`
+(`Reopens on:` line, ~line 4021) closes its truncated parenthetical mid-clause and then continues
+straight into `Progress: ...` prose with no boundary between the two. Its repairer must not swallow
+the `Progress:` prose into the migrated `- **Shape:**` line; that prose is a status update on the
+open edits, not part of the shape itself.
+
+## read-from-the-source-rule: a fact with one source is read from that source  (accept, 2026-08-29, foundations A)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in the audit's own words: *a fact with
+  one source is read from that source, never copied; an export the engine could use and does not is
+  a shape defect until argued otherwise.* The CLI arm already proves it five times with no
+  exceptions (`requireOrigin`, `parseSiteConfig`, the installed engine's peer ranges, the plugin's
+  own virtual module, `readR2Buckets` shared between two bins), which is what makes it a rule the
+  engine discovered rather than one imposed on it. It reads in two directions, and both bind: a
+  second copy of a fact is drift waiting to happen, and an engine module hand-rolling what an
+  export already computes is a defect in that export's shape, not a matter of taste. The burden
+  falls on the copy, never on the read: an argued exception is fine, an unargued one is not.
+- **Reopens on:** closed. Ratified and filed by foundations A, Task 2, as the premise the later
+  slices read. A concrete instance of a copied fact is that instance's own entry, never a reason to
+  reopen the rule.
+- **Record:** [coherence-v2](record/2026-08-26-any-site-audit/coherence-v2.md), R-0, and the C13
+  even-surface finding it generalizes.
+
+## canonical-home-rule: every exported name has exactly one declaring subpath  (accept, 2026-08-29, foundations A)
+
+- **Verdict:** accept. Ratified as an R1-tier clause: **every exported name has exactly one
+  canonical home, the subpath whose barrel declares it; another barrel that needs the name
+  documents where it comes from rather than opening a second home.** The grounds are the audit's
+  C1: multi-publication is invisible at per-item altitude, so five auditors each found one instance
+  and each correctly declined to charge it, while at whole-surface altitude it is one problem with
+  122 instances. A developer holding `NavLayoutEntry` had four import statements and no way to
+  learn which was intended, and because each barrel rendered the type through its own expansion,
+  two files in one repo could import the same type from two subpaths and produce a diff that looked
+  like version skew. The cause is not the R4 export-rule closure, which is right, but its scoping
+  unit: R4 was executed independently per barrel, so a type named in four barrels' signatures
+  published four times. The engine already had the fix and quoted it in one place only, inside
+  `audit-sveltekit-medialibraryentry`'s verdict, which is a rule wearing a single item's clothes;
+  this entry is that rule with its own clothes. **The dissent, cited and overruled:**
+  `verify-route-factories.md:143-149` (rank 99, `SlotDef`) flipped reshape to keep, arguing a strict
+  one-home rule "would leave a site importing only from `/sveltekit` unable to name a member of a
+  type it holds", and endorsed a deliberate closure re-export with the reason written down each
+  time. The dissent is overruled as an objection to ratification and absorbed as the rule's
+  mechanism, on the `MediaLibraryEntry` mold: *a re-export from the stated canonical home is not a
+  second home.* `SlotDef` keeps its `/sveltekit` availability, now as a recorded re-export naming
+  its home and the signature that requires it, which is exactly what the dissent asked for and what
+  four undifferentiated publications never gave a reader.
+- **Reopens on:** closed. Executed and enforced by foundations A, Task 2. Seam fit: 18 names lost a
+  publication the closure never justified (`/delivery/data` dropped all 18, `/delivery` 15 of
+  them), 120 surviving non-home publications are recorded with their home and the signature that
+  requires each, `/delivery` over `/delivery/data` is recorded as one home rather than two, and
+  `check:surface` fails an unrecorded duplicate, a record entry the surface has outlived, and a
+  record entry whose stated home the surface does not declare, on the plain run and on the
+  `--update` regeneration alike.
+  No consumer import in the four arms, `examples/showcase`, or `templates/waymark` moved. A future
+  narrowing that makes a recorded re-export unjustified is that re-export's own removal, not a
+  reopening of this rule.
+- **Record:** [coherence-v2](record/2026-08-26-any-site-audit/coherence-v2.md), C1 and R-1;
+  [the move-set record](record/2026-08-29-foundations-a-move-set.md), which foundations B diffs
+  against.
 
 ## login-csrf-no-same-browser-binding: magic-link confirm has no same-browser binding  (defer, 2026-08-27, csrf-hardening pass)
 
@@ -75,11 +148,23 @@ Entry format: a heading plus labeled lines.
 
 - **Verdict:** decline. It is `EditPage` save-path wiring, not a selection surface: four hidden
   inputs the decode arm reads, `$app/forms` `deserialize` over cairn's own upload endpoint, and the
-  CSRF context key. That is the same objection sustained against `MediaInsertPopover`, which also
-  stays internal, deferred until the `MarkdownEditor` seam collapse. The evidenced ASC need was
-  selection and display, which the newly exported `MediaPicker` serves.
+  CSRF context key. That is the same objection sustained against `MediaInsertPopover` (see
+  `mediainsertpopover-export`), which also stays internal, deferred until the `MarkdownEditor` seam
+  collapse. The evidenced ASC need was selection and display, which the newly exported
+  `MediaPicker` serves.
 - **Reopens on:** a second consumer needing the whole save-path field rather than selection alone.
 - **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; the need is evidenced in [2026-08-26 ASC harvest triage](record/2026-08-26-asc-harvest-triage.md), Survivors 1.
+
+## mediainsertpopover-export: `MediaInsertPopover` as a public export  (decline, 2026-08-26, toolkit-seams pass)
+
+- **Verdict:** decline, internal, deferred. Filed as its own entry (foundations A, 2026-08-29); the
+  ruling previously lived only as a sub-clause of `mediaherofield-export`. Same objection sustained
+  against `MediaHeroField`: it is `MarkdownEditor`/`EditPage` save-path wiring, not a selection
+  surface, so publishing it advertises internal composition rather than a seam a consumer needs.
+- **Reopens on:** the `MarkdownEditor` seam collapse, the same reshape tracked at
+  `audit-admin-markdowneditor`, which is where this component's own wiring props are due to be
+  re-examined.
+- **Record:** [2026-08-26 toolkit-seams pass](../superpowers/plans/2026-08-26-toolkit-seams-pass.md), Task 1; originally recorded as a sub-clause of `mediaherofield-export` above.
 
 ## dead-body-declaration: per-entry dead-body declaration  (decline, 2026-08-26, ASC harvest triage)
 
@@ -183,7 +268,8 @@ when the remediation pass lands.
 ## audit-adapter-standardschemav1: `StandardSchemaV1`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Conformance is structural, so a Fieldset already satisfies Standard-Schema-aware libraries; a consumer needing the interface takes it from @standard-schema/spec, not from cairn's vendored copy.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Unexport from '.'; keep internal. Its own StandardResult member is already unexported, so the rule never closed over it anyway.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Unexport from '.'; keep internal. Its own StandardResult member is already unexported, so the rule never closed over it anyway.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 1.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
 
@@ -1243,21 +1329,24 @@ when the remediation pass lands.
 ## audit-sveltekit-contentformfailure: `ContentFormFailure`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site mounting CairnMediaLibrary or the entry editor on its own /admin route must annotate the form prop; components.md line 204 writes this name.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Declare it as one flat interface with every field optional, each documented against the action that sets it, and keep the eleven arms module-internal. As writte).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Declare it as one flat interface with every field optional, each documented against the action that sets it, and keep the eleven arms module-internal. Today it is a `Partial<>` over an eleven-way intersection of the retiring arm types, which cannot survive their retirement as written and whose meaning, whichever action last failed, is not readable from the intersection.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 31.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-revertfailure: `RevertFailure`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site rendering its own history screen branches on the reason discriminant to distinguish a blocking draft from a stale head.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Rename draftStartedAt and HistoryData's startedAt to lastSavedAt. The doc-comment admits both are wrong and keeps them 'for API stability'; churn is free until ).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Rename draftStartedAt and HistoryData's startedAt to lastSavedAt, dropping the compensating doc-comment prose. The comment admits both are wrong and keeps them 'for API stability', but churn is free until beta, so the stability plea does not license the wrong name.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 32.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-tidyclient: `TidyClient`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site pointing tidy at its own gateway or proxy supplies a client. Rare, but real, and no other seam serves it.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Replace the transcribed Anthropic wire shape (max_tokens, output_config.effort, stop_reason, usage.*) with a narrow engine-owned interface taking a prompt and s).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Replace the transcribed Anthropic wire shape (max_tokens, output_config.effort, stop_reason, usage.*) with a narrow engine-owned interface taking a prompt and a system string and returning corrected text plus a coarse usage record, with the SDK adapter kept internal.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 33.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1293,7 +1382,8 @@ when the remediation pass lands.
 ## audit-sveltekit-uploadresult: `UploadResult`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. The proposed home is wrong: media/index.ts's header restricts /media to node-safe projection and excludes admin/ingest internals, and createMediaRoute sets the opposite precedent. Membership alone cannot carry it: Unstable, no worked example, consumed by components/media-upload-outcome.ts like the retired result bags.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Move it to /media beside MediaEntry, whose type its own body names. A developer should find cairn's media vocabulary in one subpath, not split between /media an).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Move it to /media beside MediaEntry, whose type its own body names, so a developer finds cairn's media vocabulary in one subpath instead of split between /media and /sveltekit.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 38.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
@@ -1549,7 +1639,8 @@ when the remediation pass lands.
 ## audit-sveltekit-contentroutes: `ContentRoutes`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Thin by name, but consequential: this type is why two dozen janitorial types are public at all.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Split the public return into the loads and actions a hand-mounting site actually wires, keeping the media-janitorial actions on an engine-internal shape the adm).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Split the public return into the loads and actions a hand-mounting site actually wires, keeping the media-janitorial actions on an engine-internal shape the engine's own components import directly, already how they reach them today. That reshape is the single change that lets the media-janitorial types retire.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 74.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1607,21 +1698,24 @@ when the remediation pass lands.
 ## audit-sveltekit-resolvenavlayoutoptions: `ResolveNavLayoutOptions`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Falls with resolveNavLayout. Its independent charge is weak too: a structural stand-in for one's own richer type is the engine's documented convention (CairnEvent, CookieJar), and here it spares a caller from materializing ConceptDescriptor's fields, schema and validate.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Its concepts member is a structural stand-in for ConceptDescriptor, which is already public, so the surface carries two shapes for one idea. Take the real descr).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Its concepts member is a structural stand-in for ConceptDescriptor, which is already public, so the surface carries two shapes for one idea. Take the real descriptor type, or keep the resolver internal.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 82.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
 ## audit-sveltekit-resolvenavlayout: `resolveNavLayout`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Every caller is the engine (content-routes-core.ts:606 in shellLoad); no doc calls it. The proposed replacement, a validate-and-preview function, does not exist and half-duplicates validateNavLayout. Inventing surface to justify surface fails the leanness rule.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Export a narrow, purpose-named function that validates and previews a navLayout against this site's concepts, rather than publishing the engine's internal resol).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Export a narrow, purpose-named function that validates and previews a navLayout against this site's concepts, rather than publishing the engine's internal resolver with its internal options bag.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 83.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
 ## audit-sveltekit-validatenavlayout: `validateNavLayout`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. The any-site case is false: content-routes-context.ts:280-287 already calls it on runtime.navLayout at composition, dynamic or literal, and the thrown error already names the bad node. Calling it by hand buys nothing and re-derives three facts the runtime holds.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Take the composed runtime (or adapter) plus the layout, instead of a ctx the caller assembles by hand from conceptIds, navMenuConfigured and roleNames. Three fa).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Take the composed runtime (or adapter) plus the layout, instead of a ctx the caller assembles by hand from conceptIds, navMenuConfigured and roleNames, three facts the composed runtime already holds, so the call site cannot assemble the context wrongly.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 84.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
@@ -1712,7 +1806,8 @@ when the remediation pass lands.
 ## audit-sveltekit-mintpreviewtoken: `mintPreviewToken`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site minting a share link from its own workflow — an editorial queue emailing a reviewer on submit — rather than from the editor's Share button.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Its header admits it 'performs no authorization or draft-existence check of its own, so a caller that reaches it directly owns both'. Either perform the entry-s).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Its header admits it 'performs no authorization or draft-existence check of its own, so a caller that reaches it directly owns both'. Either perform the entry-scoped check the admin action performs, or make the caller's obligation part of the name and the signature rather than a header comment.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 97.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1734,7 +1829,8 @@ when the remediation pass lands.
 ## audit-sveltekit-mediaentry: `MediaEntry`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Real at /media, where the manifest record is the media vocabulary's core noun; none at /sveltekit once UploadResult moves.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Keep it in the engine at /media and drop the /sveltekit re-export. Its substantive audit belongs to the media bucket.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Keep it in the engine at /media and drop the /sveltekit re-export. Its substantive audit belongs to the media bucket.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 100.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1791,7 +1887,8 @@ when the remediation pass lands.
 ## audit-sveltekit-adminactionoptions: `AdminActionOptions`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Its own doc says every real caller takes the default, and the ranking's any-site case is 'Essentially none'. Reshape presupposes membership; an item with none fails before form is reached. The note's own first branch, folding the flag away, is retirement.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: A bag named Options whose only member is an injected build flag advertises configuration that does not exist. Fold the flag into the function's testing surface,).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** A bag named Options whose only member is an injected build flag advertises configuration that does not exist. Fold the flag into the function's own testing surface, or name it for what it is rather than as the wrapper's options.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 108.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
@@ -2077,14 +2174,16 @@ when the remediation pass lands.
 ## audit-admin-officelist: `OfficeList`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. The card frame carries two measured fixes (UA h1/p margins leaking ~32px inside a flex column; the action stretching full-width below sm). The header half duplicates PageHeader.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Collapse to a card-frame wrapper that composes PageHeader for its header band, retiring the second eyebrow/title/subtitle/action implementation and closing the ).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Collapse to a card-frame wrapper that composes PageHeader for its header band, retiring the second eyebrow/title/subtitle/action implementation and closing the WATCH comment's parked ROADMAP spacing-convergence entry between OfficeList and PageHeader.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 17.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formattimestamp: `formatTimestamp`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Pinning a zone so a Worker's SSR and a browser's hydration cannot render two different strings is an any-site trap. The shipped signature misses it by taking a SQLite-shaped string.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Take any Date-parseable timestamp (ISO with offset included), not a SQLite 'YYYY-MM-DD HH:MM:SS' string; then delete CairnHistory's formatVersionDate and route ).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Take any Date-parseable timestamp (ISO with offset included), not a SQLite 'YYYY-MM-DD HH:MM:SS' string; then delete CairnHistory's formatVersionDate and route it through this formatter instead, proving the shape on cairn's own screen.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 18.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
@@ -2324,7 +2423,8 @@ when the remediation pass lands.
 ## audit-admin-statuschip: `StatusChip`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. badge-error/badge-success do not compile into the packaged cairn-admin.css while every status-<tone> does, so a consumer writing badge badge-success inside the admin theme gets nothing and cannot fix it.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Replace the 6px tone dot at StatusChip.svelte:106 as the color carrier (Geoff's 2026-08-24 owner probe ruled it illegible toolkit-wide) and complete the registe).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Replace the 6px tone dot at StatusChip.svelte:106 as the color carrier (Geoff's 2026-08-24 owner probe ruled it illegible toolkit-wide) and complete the register set (warning-tint, outline) against cairn's own themes, re-measuring rather than copying ASC's tuning.
 - **Progress note (toolkit-seams pass, Task 2, 2026-08-26):** the dot/register half of this reshape is executed: the 6px tone dot is gone, `tone` retires, and `register` alone now carries color (`'quiet' | 'warning' | 'outline'`, second generation, docs/internal/probes/2026-08-26-chip-registers-v2). The badge-tier half named in the verdict (`badge badge-success` compiling to nothing) is NOT executed here; `badge-error`/`badge-success` do now compile again in the shipped sheet, but only as an incidental side effect of Task 2 blessing them in `admin-css-safelist.ts` to preserve the shipped sheet's de facto public API after the dot-era doc comment that had accidentally compiled them was removed, not because this reshape's badge-tier recipe was built. This entry stays open; a later pass closes it if it takes up the badge-tier half.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 50.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
@@ -2360,7 +2460,8 @@ when the remediation pass lands.
 ## audit-admin-markdowneditor: `MarkdownEditor`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site mounting the bare CodeMirror surface with its own chrome, supplying controls through registerFormat, gets markdown-aware lint, GFM parsing, the directive rails, and the editor face — reachable no other way.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Collapse the roughly twenty Unstable EditPage wiring props into one non-exported internal composition object, publishing only the eleven stable bare-surface pro).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Collapse the roughly twenty Unstable EditPage wiring props into one non-exported internal composition object, publishing only the eleven stable bare-surface props.
 - **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 55.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
@@ -2395,21 +2496,24 @@ when the remediation pass lands.
 ## audit-auth-generatecsrftoken: `generateCsrfToken`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. A site building double-submit CSRF on its own member routes needs a random token. generateToken, on the same import line, already is it; the alias adds a third semver'd name and zero capability.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Body is byte-identical to generateToken (auth/crypto.ts:86); a site wanting the reading name writes a one-line local alias.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Body is byte-identical to generateToken (auth/crypto.ts:86); a site wanting the reading name writes a one-line local alias.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 1.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-generatesessionid: `generateSessionId`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. A site minting a member session id calls an identical function under a second name. The real edge (how many bytes, URL-safe?) is answered once by generateToken.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: A future divergence, such as a longer session id, is a parameter on one generator, never a second public name.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** A future divergence, such as a longer session id, is a parameter on one generator, never a second public name.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 2.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-channel-schema-version: `CHANNEL_SCHEMA_VERSION`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. The docs name no consumer action. The comparison it exists for runs inside the factory, and the value is already embedded in CHANNEL_SCHEMA_SQL's own seeding INSERT that the site runs.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Publishing an internal version marker as semver surface is surface without capability; a bespoke drift check reads the cairn_channel_meta row instead.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Publishing an internal version marker as semver surface is surface without capability; a bespoke drift check reads the cairn_channel_meta row instead.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 3.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
@@ -2438,21 +2542,24 @@ when the remediation pass lands.
 ## audit-auth-delivercontext: `DeliverContext`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site typing its own deliver implementation. Two fields, wholly entailed by createAuthChannel; no independent case.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Shape is fine on its own. Membership is exactly as strong as createAuthChannel's, so it shrinks or disappears with the factory reshape (item 15).).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Shape is fine on its own. Membership is exactly as strong as createAuthChannel's, so it shrinks or disappears with the factory reshape (item 15).
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 7.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-channelrequestresult: `ChannelRequestResult`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site's form action switching on the request result to pick a message. Entailed by createAuthChannel.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: One of the better-shaped items here: it encodes the no-roster-leak ruling ('sent even for an unknown contact') in the type. Follows the factory's verdict.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** One of the better-shaped items here: it encodes the no-roster-leak ruling ('sent even for an unknown contact') in the type. Follows the factory's verdict.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 8.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-channelconfirmresult: `ChannelConfirmResult`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site rendering seven distinct confirm outcomes on its login form, each needing site copy. Entailed by createAuthChannel.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Follows the factory. The 'challenge-required is a retry invitation, never a hard failure' ruling should survive in whatever seam replaces it.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Follows the factory. The 'challenge-required is a retry invitation, never a hard failure' ruling should survive in whatever seam replaces it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 9.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
@@ -2668,7 +2775,8 @@ when the remediation pass lands.
 ## audit-delivery-ai-crawlers: `AI_CRAWLERS`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Weak. buildRobots already applies it (robots.ts:42); importing it means reimplementing robots.txt. Sibling CONTENT_SIGNAL, same module and same doctor consumer, is deliberately internal.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Demote the public export; keep the module internal beside CONTENT_SIGNAL, which the doctor already reaches by relative import.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Demote the public export; keep the module internal beside CONTENT_SIGNAL, which the doctor already reaches by relative import.
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 3.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md).
 
@@ -3057,14 +3165,16 @@ when the remediation pass lands.
 ## audit-repro-stories: `stories`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Unimported by the only consumer; enumerating the registry is build-time work that belongs on the node-safe manifest, so this export points a consumer at the Svelte half.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Un-export; keep module-internal for getStory and the in-repo test.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Un-export; keep module-internal for getStory and the in-repo test.
 - **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 1.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 
 ## audit-repro-fixturemediabase: `fixtureMediaBase`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A docs site under a SvelteKit paths.base cannot comply: ReproContext hardcodes the root-absolute /repro-assets with no override, so every fixture image 404s.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Make the media base a ReproContext prop defaulting to /repro-assets; the site owns its URL space and the constant export can go.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Make the media base a ReproContext prop defaulting to /repro-assets; the site owns its URL space and the constant export can go.
 - **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 2.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 
@@ -3093,7 +3203,8 @@ when the remediation pass lands.
 ## audit-repro-validatereprofence: `validateReproFence`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Half is engine-only (story resolves, width declared). Half is cairn-pub's register: a hardcoded English "Reproduction" alt prefix and a 150-char cap refuse a localized site's valid page.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Keep and export only the manifest-dependent half; move the alt prefix, 150-char ceiling, and closed key set behind caller options or back to the site.).
+- **Reopens on:** open until executed; the remediation pass closes it.
+- **Shape:** Keep and export only the manifest-dependent half; move the alt prefix, 150-char ceiling, and closed key set behind caller options or back to the site.
 - **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 6.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 

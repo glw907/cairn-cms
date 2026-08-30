@@ -200,3 +200,74 @@ Verified against `main` at `49914d9d`, before the csrf-hardening merge.
   pass files a login-CSRF ledger entry per the initiative design doc's slice-1 description);
   re-read the file fresh after that merge before Task 1's repair work and Task 2's R-1 family
   entry work.
+
+---
+
+## Post-mortem (pass closed 2026-08-29)
+
+**What was built.** All three tasks landed: T1 repaired 14 truncated ledger shapes and stood
+up `check:rulings-format` (`632cca35`), T2 ratified and executed the canonical-home rule (R-0
+accept, R-1 executed against the pre-narrowing R4 closure), moving 18 names and recording 120
+re-exports with a `check:surface` enforcement rule (`a7f9510a`), T3 swept the surface for
+residual moved-name drift, found zero, and removed 14 pre-existing stale rows from
+`docs/reference/delivery-data.md` (`b065ea51`). The move-set record
+(`docs/internal/record/2026-08-29-foundations-a-move-set.md`) carries the executed detail and
+is foundations B's diff base.
+
+**A laptop crash interrupted the session between Task 1's checkpoint and Task 2's close,**
+leaving Task 2 warm and uncommitted on disk. Recovery ran a triage assessment rather than a
+blind re-dispatch: the warm tree was substantively complete and gate-green except one
+environmental failure, `check:consumers`, which was the known worktree showcase symlink
+collision (a worktree's `examples/showcase/node_modules` resolves to `main`'s build until a
+from-scratch install repoints it), repaired with that install rather than any code change.
+Task 2 then closed through one fix cycle: the diff review caught `MediaResolve`'s canonical
+home mislabeled as `/media` instead of `.` across three docs (the ledger, the move-set record,
+and the reference page), fixed in `35dea8b0`.
+
+**Task 3's sweep found the drift Task 2's own record predicted and nothing else:** zero
+residual hits for any of the 18 moved names anywhere the reference gate does not already
+cover, and the 14 stale `delivery-data.md` rows the move-set record had flagged as known,
+unfixed drift. The fold commit `2700d4bf` (dropping the literal NUL byte the JSON-parse error
+framing had been emitting, and fixing the parse-error message's own framing) and the
+simplifier pass `e9105d12` closed the task.
+
+**The pass-end engine-triage verification returned "holds" on all three artifacts** (the
+ledger repair, the canonical-home record, the drift sweep), with four follow-ups routed to
+foundations B as inheritance notes rather than reopened here: `staleNames`'s union-over-all-
+subpaths scoping (exactly how the 14 dead rows survived undetected, and the reason to scope it
+per-subpath before `/sveltekit` narrows), the record-membership-is-not-justification warning
+(a green `check:surface` proves a duplicate is recorded, never that it is still required), the
+122-multi-subpath-count invariance (publications-per-name fell; the count of names publishing
+from two-plus subpaths did not, so the audit's literal "fail on any two-barrel name" ask
+shipped as fail-unless-recorded, not fail), and R-0's second direction (ratified, not yet
+discharged; no owning slice). All four are now written into the move-set record's own
+"Inheritance notes for foundations B" subsection rather than only in this post-mortem, so B
+reads them from the artifact it already owes a diff against.
+
+**Decisions locked this pass:** the canonical-home rule ships as fail-unless-recorded (a
+deliberate, documented divergence from the audit's literal "no duplicate publication, ever"
+reading, since 96 of the 114 keeps carry a closure-justified second publication the rule would
+otherwise have to break); the `--update` regeneration path is gated by the same rule, so a
+duplicate cannot be written into the golden and left for a later plain run to find; the third
+failure shape the gate can produce, a record entry whose `home` field the surface no longer
+supports, is misfiled rather than silently accepted.
+
+**Known cosmetic defect, not worth a fourth commit:** `2700d4bf`'s subject line reads
+inverted against its own body (the body correctly describes dropping the NUL separator and
+framing the JSON-parse error; the subject transposes the two clauses). Left as-is; the body is
+the record of truth and a history rewrite was not worth the churn for a one-line subject typo.
+
+**Close-out repairs (this session):** the move-set record's "about fifteen" self-contradiction
+against its own fourteen-row count, softened `PublishActionEntry`'s "not closure-justified"
+framing to "derivatively closure-justified," the inheritance-notes subsection itself, a header
+warning on the ledger's one entry whose `Progress:` prose sits inside a still-truncated
+parenthetical, and the `check:rulings-format` exit ratchet: the 40 allowlisted slugs plus the
+14 foundations A already repaired are now a fixed, embedded population, and any of them found
+off the allowlist must carry a real `- **Shape:**` line or the `shape-needs-rederivation`
+marker, not merely lack the raw `(shape:` text. Falsified by deleting a repaired entry's
+`Shape:` line, confirming the gate goes red with the new `missing-shape` message, and
+restoring it.
+
+**Budget.** Roughly 1.6M of the 2M ceiling: the prior session's ~0.4M through Task 1's
+checkpoint, the crash-recovery workflow (triage plus Task 2's fix cycle plus Task 3) ~0.83M,
+and this close-out dispatch ~0.36M.

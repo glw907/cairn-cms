@@ -7,8 +7,9 @@
 // from the same path the signatures gate uses, non-callable shape from `checker.typeToString`), and
 // compares the rendered surface against the committed golden file `docs/internal/api-surface.md`.
 // Any drift fails the gate; regenerating the golden file (`--update`) is the deliberate disclosure
-// moment, and the diff a reviewer reads. The core (`buildSurface`, `diffSurface`) is pure of process
-// state so the unit test calls it directly; the CLI reads `dist`, the golden file, and the argv flag.
+// moment, and the diff a reviewer reads. The core (`diffSurface`, `findHomeViolations`) is pure of
+// process state so the unit test drives it directly; the CLI reads `dist`, the golden file, the
+// re-export record, and the argv flag.
 import ts from 'typescript';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -19,6 +20,7 @@ import { normalizeSignature } from './check-reference-signatures.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SNAPSHOT = 'docs/internal/api-surface.md';
 const BANNER = 'GENERATED — run `npm run check:surface -- --update` to regenerate';
+const REEXPORTS = 'scripts/checks/check-surface-reexports.json';
 
 // The exported subpaths the gate snapshots, drawn directly from package.json `exports`: every entry
 // whose value carries a `types` field. The raw asset entries (`.txt`, `package.json`) have no
@@ -208,12 +210,6 @@ export function serializeSurface(model) {
   return lines.join('\n');
 }
 
-// Build the live surface snapshot string from `dist`. Convenience wrapper over the model build and
-// the serialize step, the form the CLI writes and compares.
-export function buildSurface() {
-  return serializeSurface(buildSurfaceModel());
-}
-
 // Parse a serialized snapshot back into a name-to-shape record per subpath. The banner and blank
 // lines are ignored; a `## \`subpath\`` line opens a section and a `` - \`name\`: shape `` line adds
 // an export. Lets the diff core compare two snapshot strings (the committed file and the live build,
@@ -288,6 +284,107 @@ export function formatDrift(drift) {
   return blocks.join('\n');
 }
 
+// The canonical-home rule, enforced (ratified foundations A, `canonical-home-rule` in the rulings
+// ledger). Every exported name has exactly one declaring subpath; a name published from a second
+// subpath is a recorded R4 re-export naming its home and the signature that requires it, never a
+// second home. Three shapes of failure are reported. An UNRECORDED duplicate is a name published
+// from more than one subpath with more than one of those publications missing from the record: the
+// one unrecorded publication is the home, so a second unrecorded one is a new, unargued duplicate. A
+// STALE record is an entry whose subpath no longer publishes the name, which is how the record
+// shrinks as foundations B narrows `/sveltekit` rather than silently outliving the surface. A
+// MISFILED record is an entry whose `home` is not the one subpath left declaring the name, which
+// covers both a wrong home string and a name whose every publication is recorded, leaving nothing to
+// be the home. A layered pair (`/delivery` over `/delivery/data`) is one home, so the wider barrel's
+// copy of a name the narrower one exports needs no per-name entry; a copy of a name the narrower one
+// does NOT export still fails. Pure over the model and the record so the unit test drives all three.
+/**
+ * @param {Record<string, Record<string, string>>} model
+ * @param {ReexportRecord} record
+ * @returns {HomeViolations}
+ */
+export function findHomeViolations(model, record) {
+  /** @type {Record<string, string[]>} */
+  const subpathsOf = {};
+  for (const [subpath, exports] of Object.entries(model)) {
+    for (const name of Object.keys(exports)) (subpathsOf[name] ??= []).push(subpath);
+  }
+  const recorded = new Set((record.reexports ?? []).map((r) => `${r.name}\0${r.subpath}`));
+  const layered = record.layeredBarrels ?? [];
+  /** @param {string} name @param {string} subpath */
+  const isRecorded = (name, subpath) =>
+    recorded.has(`${name}\0${subpath}`) ||
+    layered.some((p) => p.wider === subpath && name in (model[p.narrower] ?? {}));
+  // A name's OPEN subpaths: the publications the record does not cover. Exactly one is the home the
+  // rule expects; more than one is a duplicate nobody has argued; zero leaves no subpath declaring
+  // the name. The duplicate and misfiled findings below both read this, so it is reckoned once.
+  /** @type {Record<string, string[]>} */
+  const openOf = {};
+  for (const [name, subpaths] of Object.entries(subpathsOf)) {
+    openOf[name] = subpaths.filter((s) => !isRecorded(name, s)).sort();
+  }
+  /** @type {{ name: string, subpaths: string[] }[]} */
+  const unrecorded = [];
+  for (const name of Object.keys(openOf).sort()) {
+    if (openOf[name].length > 1) unrecorded.push({ name, subpaths: openOf[name] });
+  }
+  const stale = (record.reexports ?? [])
+    .filter((r) => !(r.name in (model[r.subpath] ?? {})))
+    .map((r) => ({ name: r.name, subpath: r.subpath }))
+    .sort((a, b) => a.name.localeCompare(b.name) || a.subpath.localeCompare(b.subpath));
+  /** @type {Record<string, Set<string>>} */
+  const claimedHomes = {};
+  for (const r of record.reexports ?? []) (claimedHomes[r.name] ??= new Set()).add(r.home);
+  /** @type {{ name: string, home: string, open: string[] }[]} */
+  const misfiled = [];
+  for (const name of Object.keys(claimedHomes).sort()) {
+    const open = openOf[name];
+    // A name the surface dropped entirely is already stale; do not charge it twice.
+    if (!open) continue;
+    // More than one open subpath is the unrecorded-duplicate finding, which names the same defect.
+    if (open.length > 1) continue;
+    for (const home of [...claimedHomes[name]].sort()) {
+      if (open.length === 1 && open[0] === home) continue;
+      misfiled.push({ name, home, open });
+    }
+  }
+  return { unrecorded, stale, misfiled };
+}
+
+// Format a home-rule failure as the actionable message: what to argue, and where to record it.
+/** @param {HomeViolations} result */
+export function formatHomeViolations(result) {
+  const lines = [];
+  for (const v of result.unrecorded) {
+    lines.push(`  + duplicate ${v.name} publishes from ${v.subpaths.join(', ')} with no recorded home`);
+  }
+  for (const s of result.stale) {
+    lines.push(`  - stale     ${s.name} is recorded at ${s.subpath} but is no longer exported there`);
+  }
+  for (const m of result.misfiled) {
+    lines.push(
+      m.open.length
+        ? `  ~ misfiled  ${m.name} is recorded with home ${m.home} but ${m.open[0]} is the subpath that declares it`
+        : `  ~ misfiled  ${m.name} is recorded with home ${m.home}, yet every publication of it is recorded, so no subpath declares it`,
+    );
+  }
+  return lines.join('\n');
+}
+
+/**
+ * The three shapes of canonical-home failure, each list empty when the surface and the record agree.
+ * @typedef {object} HomeViolations
+ * @property {{ name: string, subpaths: string[] }[]} unrecorded names published from more than one unrecorded subpath, listing those subpaths
+ * @property {{ name: string, subpath: string }[]} stale record entries whose subpath no longer publishes the name
+ * @property {{ name: string, home: string, open: string[] }[]} misfiled record entries whose stated home is not the subpath left declaring the name
+ */
+
+/**
+ * The recorded R4 re-export set: the canonical-home rule's exception list.
+ * @typedef {object} ReexportRecord
+ * @property {{ name: string, subpath: string, home: string, reason: string }[]} [reexports] one entry per non-home publication
+ * @property {{ wider: string, narrower: string, reason: string }[]} [layeredBarrels] dependency-axis pairs that share one home
+ */
+
 /**
  * A single subpath's surface drift between the committed and emitted snapshots.
  * @typedef {object} SubpathDrift
@@ -297,10 +394,48 @@ export function formatDrift(drift) {
  * @property {{ name: string, before: string, after: string }[]} changed exports whose shape changed
  */
 
+// Load the R4 re-export record, failing with the gate's own message (naming the file and the
+// failure kind) rather than a raw ENOENT or SyntaxError, so a missing or malformed record reads
+// the same as any other check-surface failure.
+/** @returns {ReexportRecord} */
+function loadReexportRecord() {
+  const reexportsPath = resolve(ROOT, REEXPORTS);
+  /** @type {string} */
+  let raw;
+  try {
+    raw = readFileSync(reexportsPath, 'utf8');
+  } catch (err) {
+    console.error(`check-surface: could not read ${REEXPORTS}: ${err instanceof Error ? err.message : err}`);
+    process.exit(1);
+  }
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error(`check-surface: ${REEXPORTS} is not valid JSON: ${err instanceof Error ? err.message : err}`);
+    process.exit(1);
+  }
+}
+
 function main() {
   const update = process.argv.includes('--update');
   const snapshotPath = resolve(ROOT, SNAPSHOT);
-  const emitted = buildSurface();
+  const model = buildSurfaceModel();
+  const emitted = serializeSurface(model);
+  // The home rule runs before the snapshot diff AND before the `--update` write. A new duplicate is
+  // a design failure to argue, and regenerating the snapshot would otherwise record it as settled
+  // surface with only the next plain run left to notice.
+  const record = loadReexportRecord();
+  const homes = findHomeViolations(model, record);
+  if (homes.unrecorded.length || homes.stale.length || homes.misfiled.length) {
+    console.error('check-surface: the canonical-home rule failed.');
+    console.error(formatHomeViolations(homes));
+    console.error(
+      `\nEvery name has one declaring subpath. Publish it from its home, record the second` +
+        ` publication in ${REEXPORTS} with the signature that requires it, or correct the entry` +
+        ` whose subpath or home the surface no longer matches.`,
+    );
+    process.exit(1);
+  }
   if (update) {
     writeFileSync(snapshotPath, `${emitted}\n`);
     console.log(`check-surface: wrote ${SNAPSHOT}`);

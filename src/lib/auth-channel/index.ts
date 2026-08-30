@@ -16,4 +16,6 @@ export type {
   ChannelRequestResult,
   ChannelConfirmResult,
 } from './factory.js';
+// Canonical home `/cloudflare`; a recorded R4 re-export here because `AuthChannelConfig`'s own
+// challenge budget field names it.
 export type { RateLimitLike } from '../cloudflare/rate-limit.js';

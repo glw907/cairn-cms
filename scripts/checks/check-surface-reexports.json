@@ -1,0 +1,732 @@
+{
+  "rule": "Every exported name has exactly one canonical home, the subpath whose barrel declares it. A name published from a second subpath is a recorded R4 re-export, not a second home: it is listed here with its home and the signature on that subpath that requires it. check:surface fails any duplicate this file does not record, any entry the surface has outlived, and any entry whose `home` is not the subpath the surface leaves declaring the name. Foundations B re-derives the /sveltekit closure and re-evaluates every entry below.",
+  "layeredBarrels": [
+    {
+      "wider": "/delivery",
+      "narrower": "/delivery/data",
+      "reason": "A dependency-axis pair over one source tree, not two barrels: /delivery is /delivery/data plus the SvelteKit route loaders, and its `export *` is the documented superset. The pair is ONE canonical home, the narrower barrel declaring; the reference gate already dedups it the same way (reference-coverage.mjs `excludeDts`). A /delivery duplicate of a name /delivery/data does not export still fails."
+    }
+  ],
+  "reexports": [
+    {
+      "name": "IslandRegistry",
+      "subpath": ".",
+      "home": "/islands",
+      "reason": "R4 closure: `CairnAdapter` names it on this subpath."
+    },
+    {
+      "name": "MediaRef",
+      "subpath": ".",
+      "home": "/media",
+      "reason": "R4 closure: `MediaResolve` names it on this subpath."
+    },
+    {
+      "name": "NavLayout",
+      "subpath": ".",
+      "home": "/sveltekit",
+      "reason": "R4 closure: `CairnAdapter`, `CairnRuntime` name it on this subpath."
+    },
+    {
+      "name": "NavLayoutEngineRef",
+      "subpath": ".",
+      "home": "/sveltekit",
+      "reason": "R4 closure: `NavLayout`, `NavLayoutSection` name it on this subpath."
+    },
+    {
+      "name": "NavLayoutEntry",
+      "subpath": ".",
+      "home": "/sveltekit",
+      "reason": "R4 closure: `NavLayout`, `NavLayoutSection` name it on this subpath."
+    },
+    {
+      "name": "NavLayoutSection",
+      "subpath": ".",
+      "home": "/sveltekit",
+      "reason": "R4 closure: `NavLayout` names it on this subpath."
+    },
+    {
+      "name": "PublishActionEntry",
+      "subpath": ".",
+      "home": "/sveltekit",
+      "reason": "R4 closure: `PublishActionsConfig` names it on this subpath."
+    },
+    {
+      "name": "PublishActionsConfig",
+      "subpath": ".",
+      "home": "/sveltekit",
+      "reason": "R4 closure: `CairnAdapter`, `CairnRuntime` name it on this subpath. Reshape audit-adapter-publishactionsconfig is open, so its home is provisional."
+    },
+    {
+      "name": "VariantSpec",
+      "subpath": ".",
+      "home": "/media",
+      "reason": "R4 closure: `AssetConfig`, `CairnRuntime` name it on this subpath."
+    },
+    {
+      "name": "RateLimitLike",
+      "subpath": "/auth-channel",
+      "home": "/cloudflare",
+      "reason": "R4 closure: `AuthChannelConfig` names it on this subpath."
+    },
+    {
+      "name": "MediaRef",
+      "subpath": "/delivery",
+      "home": "/media",
+      "reason": "R4 closure: `MediaResolve` names it on this subpath."
+    },
+    {
+      "name": "MediaResolve",
+      "subpath": "/delivery",
+      "home": ".",
+      "reason": "R4 closure: `PublicRoutesConfig`, `EntryDataOverrides`, `SiteRender` name it on this subpath."
+    },
+    {
+      "name": "SiteRender",
+      "subpath": "/delivery",
+      "home": ".",
+      "reason": "R4 closure: `PublicRoutesConfig` names it on this subpath."
+    },
+    {
+      "name": "AiPosture",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `buildRobots`, `robotsResponse` name it on this subpath."
+    },
+    {
+      "name": "ArrayField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor` names it on this subpath."
+    },
+    {
+      "name": "BehaviorTable",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `Fieldset` names it on this subpath."
+    },
+    {
+      "name": "BooleanField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "CairnRef",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `LinkResolve`, `ManifestEntry` name it on this subpath."
+    },
+    {
+      "name": "ConceptConfig",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `ConceptDescriptor`, `SiteIndexes` name it on this subpath."
+    },
+    {
+      "name": "ConceptDescriptor",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `resolveReferences`, `siteDescriptors`, `feedView` name it on this subpath."
+    },
+    {
+      "name": "DateField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "DatePrefix",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `ConceptConfig`, `ConceptDescriptor` name it on this subpath."
+    },
+    {
+      "name": "DatetimeField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "EmailField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "FieldBehavior",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `Fieldset`, `BehaviorTable` name it on this subpath."
+    },
+    {
+      "name": "FieldDescriptor",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `ConceptDescriptor`, `NamedField`, `ObjectField` name it on this subpath."
+    },
+    {
+      "name": "Fieldset",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `ConceptConfig`, `ConceptDescriptor`, `InferFieldset` name it on this subpath."
+    },
+    {
+      "name": "FragmentResolve",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `buildFragmentResolver` names it on this subpath."
+    },
+    {
+      "name": "IconField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "ImageField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "InferFieldset",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `SiteIndexes` names it on this subpath."
+    },
+    {
+      "name": "LinkResolve",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `buildLinkResolver` names it on this subpath."
+    },
+    {
+      "name": "Manifest",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `buildSiteManifest`, `newlyPublishedEntries`, `parseManifest` name it on this subpath."
+    },
+    {
+      "name": "ManifestEntry",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `newlyPublishedEntries`, `Manifest` name it on this subpath."
+    },
+    {
+      "name": "MultiselectField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "NamedField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `ConceptDescriptor` names it on this subpath."
+    },
+    {
+      "name": "NumberField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "ObjectField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "PublishActionEntry",
+      "subpath": "/delivery/data",
+      "home": "/sveltekit",
+      "reason": "No R4 closure justifies it here either: it rides the held `PublishActionsConfig` below, which is itself held rather than closure-justified. Both leave this subpath when that reshape lands."
+    },
+    {
+      "name": "PublishActionsConfig",
+      "subpath": "/delivery/data",
+      "home": "/sveltekit",
+      "reason": "NOT closure-justified: nothing this subpath publishes names it, so R4 does not require it here. The one entry in this record that survives on the move rule instead, which holds a reshape in place: audit-adapter-publishactionsconfig is open, and moving it now would touch it twice. Its removal belongs to that reshape."
+    },
+    {
+      "name": "ReferenceEdge",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `ManifestEntry` names it on this subpath."
+    },
+    {
+      "name": "ReferenceField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "RoutingRule",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `ConceptDescriptor` names it on this subpath."
+    },
+    {
+      "name": "SelectField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "SiteConfig",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `createSiteIndexes`, `siteDescriptors`, `buildSiteManifest` name it on this subpath."
+    },
+    {
+      "name": "TextareaField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "TextField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "TidyConfig",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `SiteConfig` names it on this subpath."
+    },
+    {
+      "name": "TidyConventions",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `TidyConfig` names it on this subpath."
+    },
+    {
+      "name": "UrlField",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "ValidationIssue",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `ValidationResult` names it on this subpath."
+    },
+    {
+      "name": "ValidationResult",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `ConceptDescriptor`, `Fieldset` name it on this subpath."
+    },
+    {
+      "name": "VocabularyEntry",
+      "subpath": "/delivery/data",
+      "home": ".",
+      "reason": "R4 closure: `SiteConfig` names it on this subpath."
+    },
+    {
+      "name": "AssetConfig",
+      "subpath": "/media",
+      "home": ".",
+      "reason": "R4 closure: `normalizeAssets` names it on this subpath."
+    },
+    {
+      "name": "MediaResolve",
+      "subpath": "/media",
+      "home": ".",
+      "reason": "R4 closure: `buildMediaResolver` names it on this subpath."
+    },
+    {
+      "name": "ComponentContext",
+      "subpath": "/render",
+      "home": ".",
+      "reason": "R4 closure: `strAttr` names it on this subpath."
+    },
+    {
+      "name": "AccessMap",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `AuthGuardOptions`, `ResolveNavLayoutOptions`, `CairnEvent` name it on this subpath."
+    },
+    {
+      "name": "ArrayField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor` names it on this subpath."
+    },
+    {
+      "name": "AssetConfig",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "AuthBranding",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `AuthRoutesConfig` names it on this subpath. Reshape audit-adapter-authbranding is open, so its home is provisional."
+    },
+    {
+      "name": "Backend",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnEvent`, `BackendProvider` name it on this subpath."
+    },
+    {
+      "name": "BackendProvider",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "BehaviorTable",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `Fieldset`, `ComponentDef` name it on this subpath."
+    },
+    {
+      "name": "BooleanField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "CairnEnv",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `requireSession`, `requireOwner`, `requireEditor` name it on this subpath."
+    },
+    {
+      "name": "CairnRef",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `LinkResolve` names it on this subpath."
+    },
+    {
+      "name": "CairnRuntime",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `createContentRoutes`, `previewLoad`, `createMediaRoute` name it on this subpath."
+    },
+    {
+      "name": "Capability",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `EditorsData`, `AdminShellData`, `RoleDeclaration` name it on this subpath."
+    },
+    {
+      "name": "CommitAuthor",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `Backend` names it on this subpath."
+    },
+    {
+      "name": "ComponentContext",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `ComponentDef` names it on this subpath."
+    },
+    {
+      "name": "ComponentDef",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `ComponentRegistry` names it on this subpath."
+    },
+    {
+      "name": "ComponentRegistry",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "ConceptDescriptor",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "DateField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "DatetimeField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "Editor",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `requireSession`, `requireOwner`, `requireEditor` name it on this subpath."
+    },
+    {
+      "name": "EmailAttachment",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `MagicLinkMessage` names it on this subpath."
+    },
+    {
+      "name": "EmailField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "EmailRecipient",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `MagicLinkMessage` names it on this subpath."
+    },
+    {
+      "name": "EmailSender",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnEnv`, `CairnPlatformBindings` name it on this subpath."
+    },
+    {
+      "name": "FieldBehavior",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `Fieldset`, `BehaviorTable` name it on this subpath."
+    },
+    {
+      "name": "FieldDescriptor",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `NamedField`, `ConceptDescriptor`, `ObjectField` name it on this subpath."
+    },
+    {
+      "name": "Fieldset",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `ConceptDescriptor`, `ComponentDef` name it on this subpath."
+    },
+    {
+      "name": "FileChange",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `Backend` names it on this subpath."
+    },
+    {
+      "name": "FragmentResolve",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "IconField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "IconSet",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime`, `ComponentDef` name it on this subpath."
+    },
+    {
+      "name": "ImageField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "LinkResolve",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "MagicLinkMessage",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `SendMagicLink`, `EmailSender` name it on this subpath."
+    },
+    {
+      "name": "MediaEntry",
+      "subpath": "/sveltekit",
+      "home": "/media",
+      "reason": "R4 closure: `UploadResult` names it on this subpath. Reshape audit-sveltekit-mediaentry is open, so its home is provisional."
+    },
+    {
+      "name": "MediaLibraryEntry",
+      "subpath": "/sveltekit",
+      "home": "/admin-toolkit",
+      "reason": "R4 closure: `EditData`, `MediaLibraryData` name it on this subpath."
+    },
+    {
+      "name": "MediaRef",
+      "subpath": "/sveltekit",
+      "home": "/media",
+      "reason": "R4 closure: `MediaResolve` names it on this subpath."
+    },
+    {
+      "name": "MediaResolve",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "MultiselectField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "NamedField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `EditData`, `ConceptDescriptor` name it on this subpath."
+    },
+    {
+      "name": "NavMenuConfig",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "NavNode",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `NavLoadData` names it on this subpath."
+    },
+    {
+      "name": "NumberField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "ObjectField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "PreviewConfig",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime`, `ResolvedPreview` name it on this subpath."
+    },
+    {
+      "name": "RateLimitLike",
+      "subpath": "/sveltekit",
+      "home": "/cloudflare",
+      "reason": "R4 closure: `SectionActionConfig` names it on this subpath."
+    },
+    {
+      "name": "ReferenceField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "RepoFile",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `Backend` names it on this subpath."
+    },
+    {
+      "name": "RoleDeclaration",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `RolesDeclaration` names it on this subpath."
+    },
+    {
+      "name": "RolesDeclaration",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `AuthGuardOptions`, `EditorRoutesOptions`, `CairnRuntime` name it on this subpath."
+    },
+    {
+      "name": "RoutingRule",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `ConceptDescriptor` names it on this subpath."
+    },
+    {
+      "name": "SelectField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "SenderConfig",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "SendMagicLink",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `AuthRoutesConfig` names it on this subpath."
+    },
+    {
+      "name": "SlotDef",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `ComponentDef` names it on this subpath."
+    },
+    {
+      "name": "TextareaField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "TextField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "TidyConfig",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
+    },
+    {
+      "name": "TidyConventions",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `EditData`, `SettingsData`, `TidyConfig` name it on this subpath."
+    },
+    {
+      "name": "UrlField",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `FieldDescriptor`, `ArrayField` name it on this subpath."
+    },
+    {
+      "name": "ValidationIssue",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `ValidationResult` names it on this subpath."
+    },
+    {
+      "name": "ValidationResult",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `ConceptDescriptor`, `Fieldset` name it on this subpath."
+    },
+    {
+      "name": "VariantSpec",
+      "subpath": "/sveltekit",
+      "home": "/media",
+      "reason": "R4 closure: `CairnRuntime`, `AssetConfig` name it on this subpath."
+    },
+    {
+      "name": "VocabularyEntry",
+      "subpath": "/sveltekit",
+      "home": ".",
+      "reason": "R4 closure: `VocabularyLoadData`, `CairnRuntime` name it on this subpath."
+    }
+  ]
+}

@@ -98,6 +98,8 @@ export {
   type AdminActionOptions,
 } from './admin-action.js';
 export { createD1AuditSink } from './audit-sink.js';
+// `RateLimitLike`'s canonical home is `/cloudflare`; a recorded R4 re-export here because
+// `SectionActionConfig`'s own budget field names it.
 export {
   createSectionAction,
   type RateLimitLike,
@@ -120,6 +122,8 @@ export type {
 } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { CairnEnv } from '../env.js';
+// Canonical home `.` for all four. `AuthBranding` carries an open reshape verdict
+// (`audit-adapter-authbranding`), so it stays put until that reshape settles its home.
 export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from '../email.js';
 // The binding-shaped types a site's app.d.ts intersects into its own Platform.env; /sveltekit is
 // their canonical home (decision: surface-pruning Task 6).
@@ -129,6 +133,13 @@ export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindi
 // wrapper's own signature names, re-exported here so a site importing only from this subpath can
 // still name the value it holds. `CairnRuntime`'s own structural body in turn names most of the
 // rest below it, the same recursive closure `/delivery` and root carry.
+//
+// Canonical home for everything below this line is the root barrel `.`, except `MediaRef`,
+// `VariantSpec`, and `MediaEntry` (`/media`) and `MediaLibraryEntry` (`/admin-toolkit`, above).
+// Each is a recorded R4 re-export, not a second home (canonical-home rule, foundations A); the
+// full set with its per-name reason is `scripts/checks/check-surface-reexports.json`, and
+// `docs/internal/record/2026-08-29-foundations-a-move-set.md` records why each one survives.
+// Foundations B narrows `ContentRoutes` and re-derives this closure, so expect it to shrink.
 export type { AccessMap } from '../auth/access.js';
 export type { Backend, BackendProvider } from '../github/backend.js';
 export type {
@@ -168,6 +179,8 @@ export type { CairnRef } from '../content/links.js';
 export type { MediaRef } from '../media/reference.js';
 export type { Capability, RolesDeclaration, RoleDeclaration } from '../auth/roles.js';
 export type { Editor } from '../auth/types.js';
+// Canonical home `/media`; the reshape verdict on `audit-sveltekit-mediaentry` is still open, so
+// this re-export stays where the audit found it until that reshape settles the shape.
 export type { MediaEntry } from '../media/manifest.js';
 export type { GettingStarted } from '../content/getting-started.js';
 export type { MarkdownReferenceRow } from '../components/markdown-reference.js';

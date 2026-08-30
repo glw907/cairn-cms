@@ -104,6 +104,15 @@ export const load: PageServerLoad = async ({ url }) => {
 The shapes the public loaders return and consume. A template reads the loaded data; a server passes
 the deps.
 
+Three of them belong to another barrel and re-export here because `PublicRoutesConfig` names all
+three. Their prose lives at the canonical home. This page carries only the import.
+
+| Name | Stability | Canonical home |
+|---|---|---|
+| `SiteRender` | Extension API | [the root barrel](./core.md) |
+| `MediaResolve` | Extension API | [the root barrel](./core.md) |
+| `MediaRef` | Extension API | [`/media`](./media.md#types) |
+
 ### `PublicRoutesConfig`
 
 Stability tier: Extension API.

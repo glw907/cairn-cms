@@ -295,10 +295,12 @@ The original decision framing, for the record:
     authorization asymmetry: its checks and audited `fail(403)` exist only on the D1-required
     path while `adminAction`, where the docs route DB-less sites, has none) and the CLI
     surface (14, including the `create-cairn-site` money narrative already filed above).
-  - **The seven structural coherence families** (canonical export home; one parameter-bag
+  - **The seven structural coherence families** (canonical export home, ratified and executed
+    for the surviving keeps as slice 2a, foundations A, done, awaiting merge; one parameter-bag
     convention; one factory-return mechanism; verb rules beyond the factory verbs; no bare-noun
     functions; one "what happened" idiom; narrowing `ContentRoutes` and re-deriving the R4
-    closure, which also re-tests adapter's ~22 C2_READDED keeps and the three closure leaks).
+    closure, foundations B next, which also re-tests adapter's ~22 C2_READDED keeps and the
+    three closure leaks).
   - **Coupled pair:** `defineAccess` reshaped to accept `undefined` roles (its three siblings
     do), which reopens and then retires `DEFAULT_ROLES`.
   - **The internals half** (Task 8b, trustworthy verdict; the audit record's internals

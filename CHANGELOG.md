@@ -123,6 +123,37 @@
 
 ### Changed
 
+- The engine ratifies a **canonical-home rule**: every exported name has exactly one declaring
+  subpath, and any other barrel that publishes it does so as a recorded re-export naming that home
+  and the signature requiring it. The rule answers a whole-surface finding no per-export review
+  could see: of 411 exported names, 122 published from two or more subpaths, so a developer holding
+  `NavLayoutEntry` had four import statements and no way to learn which was intended, and because
+  each barrel rendered the type through its own expansion, two files in one repo importing it from
+  two subpaths could produce a diff that looked like version skew. Executing it removed 18
+  publications the export-rule closure never justified: `/delivery/data` published ten
+  adapter-only members (`AssetConfig`, `SenderConfig`, `NavMenuConfig`, `PreviewConfig`,
+  `SiteRender`, `ComponentRegistry`, `ComponentDef`, `ComponentContext`, `SlotDef`, `IconSet`), the
+  four nav-layout types, `IslandRegistry`, `VariantSpec`, `MediaRef`, and `MediaResolve`, none of
+  which any signature on that subpath names, since the barrel deliberately stops short of
+  `CairnAdapter` itself. `/delivery` drops the same set apart from `MediaRef`, `MediaResolve`, and
+  `SiteRender`, which `PublicRoutesConfig` names and which it now exports directly. The 120
+  surviving non-home publications are recorded in
+  `scripts/checks/check-surface-reexports.json` with their home and the signature that requires
+  each, and `check:surface` now fails an unrecorded duplicate, a record entry the surface has
+  outlived, and a record entry whose stated home the surface does not declare, so the set shrinks as
+  later slices narrow rather than drifting; the rule runs ahead of both the snapshot diff and the
+  `--update` regeneration, so a new duplicate cannot be written into the golden. `/delivery` over
+  `/delivery/data` is recorded as one home, not two: the dependency-axis pair over one source tree
+  keeps its documented `export *`. Consumers must: import these names from their canonical home
+  rather than from `/delivery` or `/delivery/data`. From `@glw907/cairn-cms`: `AssetConfig`,
+  `SenderConfig`, `NavMenuConfig`, `PreviewConfig`, `SiteRender`, `ComponentRegistry`,
+  `ComponentDef`, `ComponentContext`, `SlotDef`, `IconSet`, `MediaResolve`. From
+  `@glw907/cairn-cms/sveltekit`: `NavLayout`, `NavLayoutEntry`, `NavLayoutEngineRef`,
+  `NavLayoutSection`. From `@glw907/cairn-cms/islands`: `IslandRegistry`. From
+  `@glw907/cairn-cms/media`: `MediaRef`, `VariantSpec`. All are type-only imports, so no runtime
+  behavior changes;
+  `@glw907/cairn-cms/delivery` still carries `MediaRef`, `MediaResolve`, and `SiteRender`.
+
 - `StatusChip`'s (`/admin-toolkit`) register grammar moves to its second generation (the
   2026-08-24 owner probe, Geoff's own ratification: illegible-dot evidence and the ratified
   three-register recipe are on record in `docs/internal/probes/2026-08-26-chip-registers-v2`).
@@ -164,6 +195,19 @@
   reaches for its own default-management machinery on this input: the hydration-time
   `remove_input_defaults` call and the document-level `reset` listener it registers to reconcile a
   dynamic `value` binding back to its default. No consumer-side change. Consumers must: nothing.
+
+### Documentation
+
+- `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass
+  truncated 54 of the ledger's `(shape: ...)` parentheticals to exactly 160 characters mid-thought,
+  and the sanctioned fix moves a repaired entry's shape to its own `- **Shape:** ` line instead of a
+  parenthetical folded into `Reopens on:`. This pass repairs the 14 `/sveltekit` and
+  `/admin-toolkit` entries the next two remediation slices need and migrates the dozen already-complete
+  parentheticals to the new line format; the remaining 40 stay truncated, tracked on
+  `scripts/checks/check-rulings-format-allowlist.json`, one slug per item still owed a repair by the
+  slice that executes it. Also files the `MediaInsertPopover` deferral as its own ledger entry
+  (`mediainsertpopover-export`), previously only a sub-clause of `mediaherofield-export`. Internal
+  only; no consumer action.
 
 ### Fixed
 

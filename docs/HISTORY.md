@@ -7,6 +7,41 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-08-30: foundations B pass closed on its worktree (audit-remediation slice 2b), awaiting Geoff's ratification and merge
+
+Plan and post-mortem: `docs/superpowers/plans/2026-08-28-foundations-b-pass.md` (worktree
+`.claude/worktrees/foundations-b`, pushed, ten commits `e743f624..014872b2`). T1 narrowed the
+public `createContentRoutes` declared return to a 25-member `Pick`-derived `ContentRoutes`
+(ten media-janitorial members internal-only; unexported-from-barrels
+`createContentRoutesInternal` keeps the wide shape for the composer; compile-only hand-mount
+fixture; `audit-sveltekit-contentroutes` closed, no retire consumed). T2 wrote the R4
+re-derivation record (`docs/internal/record/2026-08-30-r4-rederivation.md`): partition
+0 + 63 + 31 = 94 exact, `DEFAULT_ROLES` the OUT-OF-94 exclusion; one fix cycle on fabricated
+type-composition citations. T3 swept the ten names' drift across the reference arms (real
+drift found and fixed in three files; the gates structurally cannot see prose drift). All
+eleven gates green; branch pushed for the CI consumer-build proof. Budget overrun recorded
+honestly: ~2.3M subagent spend against a 1.8M ceiling, the conductor missing the trajectory
+at the Task 3 checkpoint.
+
+What the reviews caught: the Task 2 record quoted a fabricated eight-arm `ContentFormFailure`
+composition (the real one is eleven arms at `content-routes.ts:97-99`), caught only because
+the diff reviewer re-derived instead of reading; the new fixture wired a `listDelete` action
+name no engine component posts (the svelte-reviewer's W1). The pass-end `engine-triage`
+dispatch produced F-1: 19 of list (b)'s 63 retires are named inside keep-verdicted exports'
+rendered shapes (`EditData`/`AdminData` family), so executing list (b) as written
+manufactures 19 closure leaks of the `NavIcon` class; the record now carries the 19-row
+keep-parent table and a neutral A/B resolution awaiting Geoff at the ratification gate.
+
+What a later pass would be wrong to rediscover: `check-surface.mjs` renders a callable's
+declared NAMED return collapsed to the alias name (`CALLABLE_FLAGS` omits `InTypeAlias`), so
+narrowing proofs live on the alias's own snapshot entry, not the factory line. The narrowing
+is type-level only: the wrapper returns the wide runtime object, so a spread still mounts all
+35 actions and the withdrawn thing is the supported seam, not reachability. Only the
+keep-parent formulation (a retire-verdicted name inside a keep-verdicted export's rendered
+shape) finds all 19 F-1 rows; fixed points from `createCairnAdmin`'s line miss two
+(`ReproInstance`, `AdminActionOptions`, the latter an argument-position leak). No compile in
+the repo exercises the hand-mount path against generated `./$types` (carried follow-up).
+
 ## 2026-08-29: foundations A pass closed on its worktree (audit-remediation slice 2a), awaiting merge
 
 Plan and post-mortem: `docs/superpowers/plans/2026-08-28-foundations-a-pass.md`. Three tasks on

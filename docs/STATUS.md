@@ -18,22 +18,24 @@ the initiative design. CI on `main` is fully green on all five workflows.
 
 ## Immediate next action
 
-**Foundations B is EXECUTING** on worktree `.claude/worktrees/foundations-b` (branch
-`foundations-b` off `main` at `7a1ec7d0`), plan
-`docs/superpowers/plans/2026-08-28-foundations-b-pass.md`. Task ledger: Task 1 (public
-`ContentRoutes` narrowing) ACCEPTED at `e743f624`. Task 2 (R4 re-derivation record,
-`docs/internal/record/2026-08-30-r4-rederivation.md`) ACCEPTED at `00d1f1cb` after one fix
-cycle; partition 0 + 63 + 31 = 94 exact, independently re-derived by the reviewer; list (c)
-is 31 IN-94 (Tier 1: 25 composer-blocked, Tier 2: 6 blocked on the `ContentFormFailure`
-declaration) + `DEFAULT_ROLES` OUT-OF-94. Task 3 (drift sweep for the ten internalized
-names) is next and is load-bearing for docs correctness (`sveltekit.md:920-1000`,
-`admin-routes.md:145-163`/`272-280`, `components.md:199-235` still describe the old public
-shape); it also folds in the record's leftover `BranchRef`/`MediaAltPreviewEntry` narrative
-fix at `:117-119`. Then the pass-end ritual: engine-triage verification of Task 2's lists,
-reviewer fan-out, docs gates, and THE RATIFICATION GATE (list (c) to Geoff before the retires
-plan is authored). Spend ~0.95M of the 1.8M ceiling. Resume prompt if this session dies:
+**Foundations B is CLOSED on its worktree and waits on Geoff's ratification ruling.** All
+three tasks accepted, all eleven gates green, post-mortem appended to the plan
+(`docs/superpowers/plans/2026-08-28-foundations-b-pass.md`), branch `foundations-b` pushed
+(ten commits `e743f624..014872b2`, worktree `.claude/worktrees/foundations-b`), CI
+consumer-build run pending. Detail in HISTORY (2026-08-30). Two decisions are Geoff's, asked
+at pass close: **(1) THE RATIFICATION GATE** on the R4 record
+(`docs/internal/record/2026-08-30-r4-rederivation.md`): list (c)'s 31 composer-blocked
+retires, plus the F-1 choice — (A) move the 19 keep-parent-blocked rows into list (c) as
+Tier 3 (list (b) 44 / list (c) 50) or (B) keep them in list (b) with an explicit sanction of
+19 named `NavIcon`-class closure leaks; the retires pass plan is NOT authored until this is
+ruled. **(2) Merge** `foundations-b` into `main` (independent of (1); the record carries the
+open question either way). Carried follow-ups: a showcase hand-mounted `+page.server.ts`
+against generated `./$types` (nothing compiles that path today); the six stale
+`content-routes-*` header wordings (internals pass, `content-routes-context.ts:272` foremost).
+Budget: ~2.3M subagent spend against the 1.8M ceiling, overrun recorded in the post-mortem.
+Resume prompt for a fresh session:
 
-In ~/Projects/cairn-cms/.claude/worktrees/foundations-b, resume the foundations B pass (docs/superpowers/plans/2026-08-28-foundations-b-pass.md) at Task 3; Tasks 1-2 are accepted at e743f624 and 00d1f1cb.
+In ~/Projects/cairn-cms, foundations B is closed on branch foundations-b awaiting Geoff's F-1/list-(c) ratification ruling and the merge decision; read docs/STATUS.md and the R4 record's ratification section, then act on Geoff's answer.
 
 **Carried into foundations B:** the move-set record's "Inheritance notes for foundations B"
 subsection (`docs/internal/record/2026-08-29-foundations-a-move-set.md`) covers four items:

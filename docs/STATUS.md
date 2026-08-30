@@ -18,14 +18,19 @@ the initiative design. CI on `main` is fully green on all five workflows.
 
 ## Immediate next action
 
-**Execute foundations B.** The plan
-(`docs/superpowers/plans/2026-08-28-foundations-b-pass.md`) is finalized against the merged
-foundations A surface AND has passed its engine-triage pre-dispatch review, with all seven
-verdicts folded into the task bodies (2026-08-29). No further pre-flight is owed. The
-`foundations-a` worktree and branch are deleted (merged). Resume prompt if this session dies,
-for a FRESH session on a NEW workstation:
+**Foundations B is EXECUTING** on worktree `.claude/worktrees/foundations-b` (branch
+`foundations-b` off `main` at `7a1ec7d0`), plan
+`docs/superpowers/plans/2026-08-28-foundations-b-pass.md`. Task ledger: Task 1 (public
+`ContentRoutes` narrowing) DONE and diff-reviewer ACCEPTED at `e743f624`, all gates green, no
+retire consumed, `audit-sveltekit-contentroutes` closed. Task 2 (R4 closure re-derivation) is
+next; Task 3 (drift sweep) after it, now load-bearing for docs correctness (Task 1 left the
+stale member prose in `sveltekit.md:920-1000`, `admin-routes.md`, `components.md` for it).
+Spend ~0.3M of the 1.8M ceiling. Carried reviewer notes: Task 2 references the ledger's
+amended `Shape:` line at `engine-rulings.md:1643` rather than restating it; Task 3's sweep
+must not contradict the rewritten `ContentRoutes` types-table row (`sveltekit.md:1874`).
+Resume prompt if this session dies:
 
-In ~/Projects/cairn-cms, execute the foundations B pass (docs/superpowers/plans/2026-08-28-foundations-b-pass.md): create a fresh worktree foundations-b off main, then run the three serial task chains per the plan header.
+In ~/Projects/cairn-cms/.claude/worktrees/foundations-b, resume the foundations B pass (docs/superpowers/plans/2026-08-28-foundations-b-pass.md) at Task 2; Task 1 is accepted at e743f624.
 
 **Carried into foundations B:** the move-set record's "Inheritance notes for foundations B"
 subsection (`docs/internal/record/2026-08-29-foundations-a-move-set.md`) covers four items:

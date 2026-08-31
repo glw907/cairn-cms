@@ -85,7 +85,8 @@ Five filters feed `filters`, four `'select'`-display and one `'menu'`-display:
   the identical shape for the identical reason; a list screen states both in the plural-aware
   form by default rather than adding it after someone notices the grammar defect.
 - The count line always renders, even at zero applied filters, and always states the list's
-  own scope (`computeCountLine`). This is why `OfficeList` above carries no `subtitle`: a
+  own scope (`computeCountLine`, an internal mechanism `ListToolbar` computes and renders
+  itself, not an importable export). This is why `OfficeList` above carries no `subtitle`: a
   second line stating a count would either duplicate or race the toolbar's own count line
   for whichever total is true.
 - `searchLabel` is the search box's accessible name, not visible chrome; it names what the

@@ -34,9 +34,8 @@ habit or by copying the nearest existing field.
    above it, for a control the group legend already-scoped enough that a full stacked label
    would be excess: `flex items-center gap-1.5 type-body`, muted ink on the label span, plain
    weight. `FieldLabel` renders both this register and level 2's stacked register through its
-   `register: 'inline' | 'stacked'` prop; `SelectInput` and `TextInput` both wrap `FieldLabel`
-   internally and pass the same prop through. Compose a bare custom control the same way when
-   no bundled primitive matches.
+   `register: 'inline' | 'stacked'` prop; compose it directly around a bare custom control
+   (an `<input>`, a `<select>`, anything a field needs) and pass the prop straight through.
 
 A checkbox's own trailing text (`<input type="checkbox" ... /> Visible on the public
 calendar`) is a fourth informal case of the inline register, not a fourth level: the same
@@ -105,8 +104,8 @@ against `cairn-audit`.
 Apply one of these, and verify the choice against the form's own rendered width, not the
 mobile breakpoint alone:
 
-- **Use `register="stacked"`** (label above control; `FieldLabel`'s default, so `SelectInput`
-  and `TextInput` need no prop at all) for any field inside a multi-column form grid. A
+- **Use `register="stacked"`** (label above control; `FieldLabel`'s default, so a field
+  composing it directly needs no prop at all) for any field inside a multi-column form grid. A
   stacked label never competes with its own control for the row's width, because it isn't
   sharing a row. Its sheet hook also fills the control to its grid cell, so it never clamps to
   daisyUI's fixed 20rem default the way an un-widened inline control can. The hook reaches only
@@ -143,8 +142,9 @@ independent of whatever fills or doesn't fill the page underneath it).
 ## Cross-references
 
 - `exemplar-list.md`, `exemplar-detail.md`: the group-legend register in table-header and
-  section-heading form, and the stacked register at its two bundled call sites (`TextInput`,
-  `SelectInput`) rendering with no explicit `register` prop.
+  section-heading form, and the stacked register at `exemplar-detail.md`'s dialog form rows
+  (each a bare control composing `FieldLabel` directly) rendering with no explicit `register`
+  prop.
 - `docs/reference/cairn-audit.md`'s `relational-spacing` rule mechanically checks that a
   rendered gap matches the relationship the markup claims (nested rhythm never wider than its
   container, a label the `gap-label` distance from its control); this file states which

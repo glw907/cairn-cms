@@ -159,7 +159,7 @@ const UNRENDERED_STATES = [
   ],
   [
     'validation / error',
-    'no form is submitted, so no error line renders below a control; this is exactly the shape the FieldRow caveat names, and it is unmeasured here',
+    'no form is submitted, so no error line renders below a control; this is exactly the shape the bottom-aligned field row recipe\'s caveat names (FieldLabel.svelte\'s own header comment), and it is unmeasured here',
   ],
   ['loading / pending', 'no in-flight action is held open, so spinner and skeleton rows are unmeasured'],
 ];
@@ -664,7 +664,7 @@ function disposition(row) {
   }
   switch (row.worst.shape) {
     case 'stacked-field row':
-      return `${task}: compose with FieldRow / items-end; the control drops by the label band.`;
+      return `${task}: compose the bottom-aligned row recipe (\`display: flex; align-items: flex-end; gap: var(--cairn-gap-control, 0.5rem)\`); the control drops by the label band.`;
     case 'optical-suspect':
       return `${task}: text-box trim-both on the label-like recipe carrying this glyph.`;
     case 'icon beside text':

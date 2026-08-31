@@ -48,11 +48,13 @@ The release step sets the version number at the cut and renames this section to 
   `createCairnAdmin`, which still serves the component the full action vocabulary it posts to. A
   site that hand-mounts any other admin view is unaffected, `uploadAction` and `mediaLibraryLoad`
   included, and every result and failure type stays exported from `/sveltekit`.
-- **The retires pass removed 56 ratified any-site-audit exports with zero remaining public
-  consumers**, across `@glw907/cairn-cms` (the root package), `/admin-toolkit`, `/auth-crypto`,
-  `/auth-channel`, `/auth-store`, `/delivery`, `/delivery/data`, `/render`, `/reproductions`, and
-  `/sveltekit`. None has a replacement export. A site importing one hand-rolls the composition or
-  reads the value structurally off its surviving keep type instead. See `CHANGELOG.md`'s
+- **The retires pass closed 56 ratified any-site-audit rulings, removing 53 exported names with
+  zero remaining public consumers**; the other 3 closed rulings were process/tooling proposals
+  with no exported name to remove. The removals span `@glw907/cairn-cms` (the root package),
+  `/admin-toolkit`, `/auth-crypto`, `/auth-channel`, `/auth-store`, `/delivery`, `/delivery/data`,
+  `/render`, `/reproductions`, and `/sveltekit`. None has a replacement export. A site importing
+  one hand-rolls the composition or reads the value structurally off its surviving keep type
+  instead. See `CHANGELOG.md`'s
   consolidated entry for the full name list, grouped by subpath, and the row-for-row replacement
   expression for the 18 names that survive only as an unnamed structural member of another
   export's shape, such as `EditData['linkTargets'][number]` in place of `LinkTarget`.

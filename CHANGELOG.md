@@ -240,8 +240,10 @@
   seeding `INSERT` still read; `devDelivery` deletes outright from `/auth-channel`
   (`auth-channel/dev.ts` removed, zero remaining consumers anywhere in `src/lib`), its stated
   purpose, guarding a dev transport reaching production, is a discoverability problem an export
-  does not fix, and the `CAIRN_DEV_BACKEND` refusal belongs in the factory's own construction
-  check; `insertOwnerIfEmpty` unexports from `/auth-store` but stays reachable at `auth/store.ts`
+  does not fix; a factory-side refusal is a design question for a later pass (`createAuthChannel`
+  reads no env at construction time, so it cannot observe a per-request `CAIRN_DEV_BACKEND`
+  value), and until then the refusal lives in the site's own transport body (see the migration
+  line below); `insertOwnerIfEmpty` unexports from `/auth-store` but stays reachable at `auth/store.ts`
   for the engine's own internal use (`sveltekit/auth-routes.ts`'s `bootstrapOwner` wiring), the
   declarative `bootstrapOwner` config on `createCairnAdmin` already seeds the first owner
   atomically on the bootstrap login path, where the race this function guards actually matters;
@@ -293,9 +295,14 @@
   from `@glw907/cairn-cms/auth-crypto` (`audit-auth`; call `generateToken` instead, for a
   magic-link token, a session identifier, or a double-submit CSRF token alike); stop importing
   `CHANNEL_SCHEMA_VERSION` or `devDelivery` from `@glw907/cairn-cms/auth-channel` (a site needing
-  the dev-only console print hand-rolls `deliver: async (contact, code) => console.log(contact,
-  code)`, gated the same way cairn's own dev backend is); stop importing `insertOwnerIfEmpty` from
-  `@glw907/cairn-cms/auth-store` (pass `bootstrapOwner` to `createCairnAdmin` instead). Stop
+  the dev-only console print hand-rolls it as the showcase's own capture transport does,
+  `examples/showcase/src/members/capture-transport.ts`: `deliver: async (contact, code, ctx) => {
+  if (ctx.env?.CAIRN_DEV_BACKEND !== '1') throw new Error('refusing to deliver without
+  CAIRN_DEV_BACKEND=1'); console.log(contact, code); }`; the refusal must live inside the
+  `deliver` function body, never in a caller's wrapper around it, since a wrapper is exactly what
+  the deleted `devDelivery`'s own design was built to make unnecessary); stop importing
+  `insertOwnerIfEmpty` from `@glw907/cairn-cms/auth-store` (pass `bootstrapOwner` to
+  `createCairnAdmin` instead). Stop
   importing `AI_CRAWLERS`, `AI_CRAWLERS_REVIEWED`, `AiCrawler`, `feedView`, `PublicRoutes`, or
   `unlistedRoutes` from `@glw907/cairn-cms/delivery` or `@glw907/cairn-cms/delivery/data`
   (`audit-delivery`); none has a replacement export. A site wanting the AI-crawler posture keeps

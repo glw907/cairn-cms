@@ -864,7 +864,12 @@ declare function createAuthRoutes(config: AuthRoutesConfig): {
 };
 ```
 
-`createAuthRoutes` exports its return type by name as [`AuthRoutes`](#types).
+`createAuthRoutes` exports its return type by name as [`AuthRoutes`](#types). `LoginData` and
+`ConfirmData`, shown in the preceding signature for their shape, are module-internal since the
+retires pass unexported them, a sanctioned `NavIcon`-class leak: a consumer reads the type as
+`Extract<AdminData, { view: 'login' }>['page']` and `Extract<AdminData, { view: 'confirm' }>['page']`
+respectively, or equivalently `Awaited<ReturnType<AuthRoutes['loginLoad']>>` and
+`Awaited<ReturnType<AuthRoutes['confirmLoad']>>` off an actual `createAuthRoutes` return value.
 
 Build the magic-link login flow. `loginLoad` and `requestAction` back the sign-in view at
 `/admin/login`, `confirmLoad` and `confirmAction` back the magic-link landing at
@@ -910,7 +915,11 @@ declare function createEditorRoutes(opts?: EditorRoutesOptions): {
 };
 ```
 
-`createEditorRoutes` exports its return type by name as [`EditorRoutes`](#types).
+`createEditorRoutes` exports its return type by name as [`EditorRoutes`](#types). `EditorsData`,
+shown in the preceding signature for its shape, is module-internal since the retires pass
+unexported it, a sanctioned `NavIcon`-class leak: a consumer reads the type as
+`Extract<AdminData, { view: 'editors' }>['page']`, or equivalently
+`Awaited<ReturnType<EditorRoutes['editorsLoad']>>` off an actual `createEditorRoutes` return value.
 
 Build the loads and actions for the editor-management view at `/admin/editors`. `editorsLoad` lists
 the editors, names the current user, and returns `vocabulary`, the declared roles with their

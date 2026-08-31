@@ -92,6 +92,14 @@ absent at pass end.
 **Predicate:** a retire-verdicted name, absent from every subpath's export list in
 `docs/internal/api-surface.md`, named inside a surviving rendered public shape.
 
+**This predicate's first clause narrows the F-1 ruling's own predicate.** The r4-rederivation
+addendum (`docs/internal/record/2026-08-30-r4-rederivation.md`, section 7, "The sanction arrives
+with an owner") states the permanent rider should derive the leak set against "a retire-**or-
+absent** name inside a rendered public shape," not a retire-verdicted name alone. Dropping the
+"-or-absent" half is what puts `NavIcon`/`EngineScreenId`/`SlotKind` and the never-verdicted
+helper types below outside this document's own count. The internals pass re-widens the predicate
+to match F-1's own wording deliberately, rather than rediscovering the narrowing as a gap.
+
 **The retires pass plan's "Expected count after this task: 20" is superseded here**: it was
 inconsistent with its own predicate (a retire-verdicted name never carries a verdict it was never
 given), and Task 3's own re-derivation against `check-surface.mjs`'s `buildSurfaceModel()` found a
@@ -129,21 +137,39 @@ not a missing leak. The internals pass's permanent rider should derive the leak 
 TypeScript checker's own type graph (as this task's fixture does), not against the rendered
 markdown, to avoid re-discovering this gap as a false 17-vs-18 discrepancy.
 
-**Two written exclusions, out of the predicate's reach:**
+**Two written exclusions, out of this document's narrower predicate's reach (not out of F-1's own,
+wider one; see the narrowing note above):**
 
-- `RemoveIndex`, `ValueOf`, and `StandardResult` are never-exported internal type helpers that sit
-  outside the `check-surface.mjs` export model entirely (they support the `Fieldset` standard
-  schema machinery but are never themselves subpath exports and never retire-verdicted), so the
-  predicate's first clause ("a retire-verdicted name") never reaches them.
-- `NavIcon`, `EngineScreenId`, and `SlotKind` (R4 re-derivation, section 1) are the EXPANSION
-  class, not the leak class this predicate scopes to: each is rendered EXPANDED (the full literal
-  union inlined at every reference site), never referenced BY NAME, in the shapes that would
-  otherwise carry it (`NavLayoutEntry`, `NavLayoutEngineRef`, `SlotDef`). The predicate's third
-  clause ("named inside a surviving rendered public shape") does not match an expansion, so these
-  three sit outside it. Distinct from the leak class this task's 18 join, where the renderer DOES
-  print the retired name verbatim (confirmed directly: `NavConcept` still renders by name inside
-  both `AdminShellData` and `ReproStory`, `ReproInstance` still renders by name inside `ReproStory`,
-  after this task's own `check:surface -- --update`).
+- `RemoveIndex`, `ValueOf`, and `StandardResult` are never-exported internal type helpers that
+  support the `Fieldset` standard schema machinery. They are not outside `check-surface.mjs`'s
+  export model, though: all three render, by name, inside `InferFieldset`'s own rendered shape
+  (`api-surface.md:66`, repeated at `:254` and `:338` for the two other subpaths that re-render
+  `InferFieldset`), the same "named inside a surviving rendered public shape" condition the
+  predicate's third clause tests. What excludes them from this document's count is only the first
+  clause: neither `RemoveIndex`, `ValueOf`, nor `StandardResult` is retire-verdicted (no ledger row
+  exists for any of the three), which is exactly the same standing as `DictionaryAddFailure` and
+  `TidyFailure` in section (c) above. The two groups are structurally identical under the
+  predicate: unexported, un-verdicted, rendered inside a surviving shape. This record's differing
+  treatment, naming one group here and carrying the other as an open standing-leak count in
+  section (c), is inherited from how each surfaced during Task 3, not derived from any stated rule
+  that distinguishes them; the internals pass should re-decide the split (fold both into one
+  un-verdicted-leak count, or find and state the rule that actually separates them) rather than
+  carry this record's inherited split forward unexamined.
+- `NavIcon` and `EngineScreenId` are NOT the expansion class this bullet used to claim. Both carry
+  their own top-level export row on `/sveltekit` (`api-surface.md:537` and `:498` respectively),
+  named there exactly the way any of the 18 sanctioned leaks are named inside a keep parent's
+  shape. Their real defect, per R4 re-derivation section 1 (`docs/internal/record/2026-08-30-r4-
+  rederivation.md:32-38`), is per-subpath, not absence-of-name: root (`.`) renders each EXPANDED
+  (the literal union inlined) inside `NavLayoutEntry`/`NavLayoutEngineRef`, never by name, while
+  `/sveltekit` exports and renders the name directly. This document's predicate is subpath-blind
+  (it asks only whether a name is named ANYWHERE in the rendered surface, not whether every subpath
+  that could name it does), so it has no clause for "named on one subpath, expanded on another,"
+  and cannot fire on either name as written. `SlotKind` is the one genuinely absent-everywhere
+  member of the original three-name group (R4 section 1): no subpath exports it under any name, and
+  every rendering of it (root's and `/sveltekit`'s own `SlotDef`) is expanded. The internals pass's
+  rider needs a per-subpath clause to catch the `NavIcon`/`EngineScreenId` shape; a whole-surface
+  "named somewhere" test, as both this predicate and R4's own closure-leak test use, is blind to it
+  by construction.
 
 **Owner.** The permanent `check:surface` rider that derives this leak set and fails on any
 UNRECORDED leak (the fail-unless-recorded form the canonical-home rule already uses) is the

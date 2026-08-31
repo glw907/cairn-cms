@@ -128,29 +128,6 @@ owner. Returns `false` and writes nothing when this is the last owner-capability
 owner-capability row matched the email; on success the editor's session and pending token go too,
 the same as `deleteEditor`.
 
-### `insertOwnerIfEmpty`
-
-Stability tier: Extension API.
-
-```ts
-declare function insertOwnerIfEmpty(
-  db: D1Database,
-  email: string,
-  displayName: string,
-  now: number,
-): Promise<boolean>;
-```
-
-Insert the bootstrap owner row when the allowlist is empty, in one atomic statement, so two
-concurrent bootstrap requests race safely to exactly one inserted row. Returns whether this call
-performed the insert; a non-empty table writes nothing and returns `false`.
-
-The inserted row's role is the literal `'owner'`, hardcoded, and the function does not check it
-against the site's vocabulary. A site whose vocabulary renames or drops `'owner'` should insert its
-own bootstrap row with `insertEditor` instead. The function also grants owner capability to whatever
-address the caller passes, so the caller owns the decision that this address is the site's first
-owner.
-
 ---
 
 ## Changing roles

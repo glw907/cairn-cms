@@ -2496,39 +2496,41 @@ when the remediation pass lands.
 ## audit-auth-generatecsrftoken: `generateCsrfToken`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. A site building double-submit CSRF on its own member routes needs a random token. generateToken, on the same import line, already is it; the alias adds a third semver'd name and zero capability.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, batch 1b: unexported from the `/auth-crypto` barrel; stays exported from `auth/crypto.ts`, since `sveltekit/csrf.ts` still calls it internally for the double-submit CSRF token.
 - **Shape:** Body is byte-identical to generateToken (auth/crypto.ts:86); a site wanting the reading name writes a one-line local alias.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 1.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-generatesessionid: `generateSessionId`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. A site minting a member session id calls an identical function under a second name. The real edge (how many bytes, URL-safe?) is answered once by generateToken.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, batch 1b: unexported from the `/auth-crypto` barrel; stays exported from `auth/crypto.ts`, since `sveltekit/auth-routes.ts` still calls it internally to mint a session id.
 - **Shape:** A future divergence, such as a longer session id, is a parameter on one generator, never a second public name.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 2.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 2; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-channel-schema-version: `CHANNEL_SCHEMA_VERSION`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. The docs name no consumer action. The comparison it exists for runs inside the factory, and the value is already embedded in CHANNEL_SCHEMA_SQL's own seeding INSERT that the site runs.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, batch 1b: `export` keyword dropped in `auth-channel/store.ts`; barrel line removed from `auth-channel/index.ts`. Stays a module-internal const, since `store.ts` still reads it in `verifySchema` and the seeding `INSERT`.
 - **Shape:** Publishing an internal version marker as semver surface is surface without capability; a bespoke drift check reads the cairn_channel_meta row instead.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 3.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-devdelivery: `devDelivery`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. pass-2 dissent upheld: a hand-rolled transport gets no guard at all (the discoverability class the gate names), and the one built consumer redundantly guards before delegating
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Its stated purpose, guarding a dev transport reaching production, is a discoverability problem an export cannot fix; the CAIRN_DEV_BACKEND refusal belongs in th).
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 4; conductor adjudication over recorded dissent, see the audit record.
+- **Reopens on:** closed. Executed by the retires pass, batch 1b: `auth-channel/dev.ts` deleted outright (zero remaining consumers anywhere in `src/lib`); its barrel line and subject test (`auth-channel-config.test.ts`'s `devDelivery, direct and wrapped` block) deleted with it.
+- **Shape:** Its stated purpose, guarding a dev transport reaching production, is a discoverability problem an export does not fix; the CAIRN_DEV_BACKEND refusal belongs in the factory's own construction check, not as a public transport. A site wanting the dev-only console print hand-rolls the one-liner `deliver: async (contact, code) => console.log(contact, code)`.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 4; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-insertownerifempty: `insertOwnerIfEmpty`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. A site seeding its first owner from a setup script. That resolves to listEditors then insertEditor, and the engine already ships the declarative bootstrapOwner config for exactly this outcome.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Two public paths to one outcome. The atomic INSERT...WHERE NOT EXISTS race matters on the concurrent bootstrap login path, which bootstrapOwner already owns (au).
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 5.
+- **Reopens on:** closed. Executed by the retires pass, batch 1b: unexported from the `/auth-store` barrel; stays exported from `auth/store.ts`, since `sveltekit/auth-routes.ts` still calls it internally for `bootstrapOwner`.
+- **Shape:** Two public paths to one outcome. The atomic `INSERT ... SELECT ... WHERE NOT EXISTS` race matters on the concurrent bootstrap login path, which `bootstrapOwner` already owns; a site seeding a first owner from a setup script instead resolves to `listEditors` (empty?) then `insertEditor`, both kept.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 5; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
 ## audit-auth-hashtoken: `hashToken`  (keep, 2026-08-26, any-site audit)
@@ -3803,22 +3805,22 @@ when the remediation pass lands.
 ## audit-cli-check-dogfood-tripwire-proposed-into-cairn-audit-coherence-c: `check:dogfood tripwire proposed into cairn-audit (coherence C13 / R-8)`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None inside cairn-audit. cairn-audit is a design-language audit that 'ships whole, as consumer product' and whose 23 rules all audit /admin; a rule counting engine call sites can never fire in a consumer tree, and check-package-files.mjs:172-178 forces any registered rule to ship. The rule itself is right; the home is wrong.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Decline the home, keep the tripwire: implement as scripts/checks/check-dogfood.mjs beside check:reference, check:surface, check:symbols, check:consumers. Runs o).
-- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 1.
+- **Reopens on:** closed. Executed by the retires pass, batch 1b: a process/tooling proposal, not an exported symbol; closing declines the proposed home. No code shape to record. shape-needs-rederivation.
+- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
 ## audit-cli-unlistedroutes-proposed-as-a-cairn-audit-rendered-rule: `unlistedRoutes proposed as a cairn-audit rendered rule`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Fails both arms. The verify pass established the function encodes 'SvelteKit's published grammar, not cairn's (sitemap.ts:31-41 is two regexes)'; relocating two regexes does not change whose grammar they are. Subject is wrong twice: sitemap completeness is not design, and the routes are public pages outside the /admin surface every rule audits. The harness cannot do it either, since rendered rules receive a page's DOM, never the route manifest.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Declined outright. The export was already retired; relocation is removal wearing a new hat. A site's bespoke-route inventory is domain-shaped and the hand-roll ).
-- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 2.
+- **Reopens on:** closed. Executed by the retires pass, batch 1b: a process/tooling proposal, not an exported symbol; closing declines the proposed relocation. The `unlistedRoutes` export itself is a separate ledger entry (`audit-delivery-unlistedroutes`, batch 1c). No code shape to record. shape-needs-rederivation.
+- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 2; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
 ## audit-cli-skill-admin-screens-check-and-cairn-doctor-fix: `skill.admin-screens check and cairn-doctor --fix`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Weak and hazardous. The doctor 'probes the configuration a deployed cairn site depends on'; a Claude Code skill is not that, and the check 'never fails ... a development aid, not a deploy blocker'. It assumes one specific agent harness (.claude/skills/), and the docs concede the install leaks utility class names into the consumer's shipped CSS unless they add an '@source not' directive by hand.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Retire from the doctor, not the skill. Give it its own verb (npx cairn-skill install) or document a copy path; off the deploy preflight either way, and free the).
-- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 3.
+- **Reopens on:** closed. Executed by the retires pass, batch 1b: a process/tooling proposal, not an exported symbol; closing declines the proposed doctor check. No code shape to record. shape-needs-rederivation.
+- **Record:** [rank-cli-surface.md](record/2026-08-26-any-site-audit/rank-cli-surface.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1b.
 - **Verified:** [verify-cli-surface.md](record/2026-08-26-any-site-audit/verify-cli-surface.md).
 
 ## audit-cli-edge-https-forced-and-edge-hsts: `edge.https-forced and edge.hsts`  (reshape, 2026-08-26, any-site audit)

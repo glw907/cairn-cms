@@ -235,6 +235,35 @@
   `TextInput`/`SelectInput`/`FieldRow` composition or the pagination/toolbar arithmetic hand-rolls
   it directly against `FieldLabel` and the two components' own documented behavior.
 
+- The retires pass (batch 1b) closes eight ratified any-site-audit items across the `audit-auth`
+  and `audit-cli` families (`docs/internal/engine-rulings.md`). Five are exported names.
+  `generateCsrfToken` and `generateSessionId` unexport from `/auth-crypto` but stay reachable at
+  `auth/crypto.ts` for the engine's own internal use (`sveltekit/csrf.ts`,
+  `sveltekit/auth-routes.ts`); both bodies were byte-identical to `generateToken` under a second
+  name. `CHANNEL_SCHEMA_VERSION` drops its `export` keyword in `auth-channel/store.ts` and its
+  barrel line in `auth-channel/index.ts`, staying a module-internal const `verifySchema` and the
+  seeding `INSERT` still read; the value was already embedded in `CHANNEL_SCHEMA_SQL`'s own
+  seeding statement, so publishing it separately named no consumer action. `devDelivery` deletes
+  outright from `/auth-channel` (`auth-channel/dev.ts` removed, zero remaining consumers anywhere
+  in `src/lib`): its stated purpose, guarding a dev transport reaching production, is a
+  discoverability problem an export does not fix, and the `CAIRN_DEV_BACKEND` refusal belongs in
+  the factory's own construction check. `insertOwnerIfEmpty` unexports from `/auth-store` but
+  stays reachable at `auth/store.ts` for the engine's own internal use
+  (`sveltekit/auth-routes.ts`'s `bootstrapOwner` wiring); the declarative `bootstrapOwner` config
+  on `createCairnAdmin` already seeds the first owner atomically on the bootstrap login path,
+  where the race this function guards actually matters. The remaining three are process/tooling
+  proposals the CLI-surface audit ledgered as `retire` (decline the proposal), not exported names:
+  a `check:dogfood` tripwire proposed into `cairn-audit`, `unlistedRoutes` proposed as a
+  `cairn-audit` rendered rule, and a `skill.admin-screens` check plus `cairn-doctor --fix`; closing
+  each is a ledger-only act, with nothing to delete in `src/`. **Consumers must:** stop importing
+  `generateCsrfToken` or `generateSessionId` from `@glw907/cairn-cms/auth-crypto` (call
+  `generateToken` instead, for a magic-link token, a session identifier, or a double-submit CSRF
+  token alike); stop importing `CHANNEL_SCHEMA_VERSION` or `devDelivery` from
+  `@glw907/cairn-cms/auth-channel` (a site needing the dev-only console print hand-rolls
+  `deliver: async (contact, code) => console.log(contact, code)`, gated the same way cairn's own
+  dev backend is); stop importing `insertOwnerIfEmpty` from `@glw907/cairn-cms/auth-store` (pass
+  `bootstrapOwner` to `createCairnAdmin` instead).
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

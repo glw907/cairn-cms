@@ -1930,7 +1930,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `ValidationResult` | Extension API | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed `errors` plus the additive located `issues`. |
 | `ValidationIssue` | Extension API | `interface ValidationIssue` | One validation failure located by a `path` and its message. |
 | `FieldDescriptor` | Extension API | `type FieldDescriptor` | The plain-data descriptor union the form, validator, and inference all read. See [Field types](./core.md#field-types). |
-| `Fieldset` | Extension API | `interface Fieldset<R>` | The schema a `fieldset` call returns, carrying the descriptors, the behavior table, the validator, and the Standard Schema property. |
+| `Fieldset` | Extension API | `interface Fieldset<R>` | The schema a `defineFieldset` call returns, carrying the descriptors, the behavior table, the validator, and the Standard Schema property. |
 | `TextField` | Extension API | `interface TextField` | A single-line text input. One of `FieldDescriptor`'s fifteen arms; see [Field types](./core.md#field-types). |
 | `TextareaField` | Extension API | `interface TextareaField` | A multi-line text input. |
 | `NumberField` | Extension API | `interface NumberField` | A numeric input. |

@@ -2378,7 +2378,7 @@ status change in here, and an item whose trigger fires moves up to Now or Next.
   includes it. No production case has asked for it, and inventing the semantics without one is how a
   lean concept grows a second meaning. The trigger is a site that declares the field and expects it to
   bite; the answer is then either filtering drafts out of `fragmentTargets` and refusing them in
-  `buildFragmentResolver`, or rejecting the field on the concept at declaration. Surfaced by two
+  `createFragmentResolver`, or rejecting the field on the concept at declaration. Surfaced by two
   reviewers on the fragments pass, 2026-07-16.
 - **Fragment bodies on the manifest row.** `editLoad` reads every published fragment's body on every
   edit-page open, one `readFile` per fragment, so the picker can list them and the preview can resolve

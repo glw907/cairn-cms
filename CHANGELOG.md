@@ -402,7 +402,7 @@
   derivation, and `create*` for a function factory; `read*` reads a committed artifact or
   declaration into typed shape, retiring `extract*`; every exported function's name now begins with
   a verb. Renamed, names only, no deprecated alias: the resolver trio `createMediaResolver`
-  (`/render`, `/media`), `createLinkResolver`, `createFragmentResolver` (`/delivery`,
+  (`/media`), `createLinkResolver`, `createFragmentResolver` (`/delivery`,
   `/delivery/data`) — function factories, so `build*` moves to `create*`; `readMenu`, `readVocabulary`
   (`.`) — `extract*` retires; `buildSiteDescriptors`, `diffNewlyPublished`, `buildSitemapView`,
   `renderJsonLdScript` (`/delivery`, `/delivery/data`); `formatMediaToken` (`/media`), paired with

@@ -53,10 +53,13 @@ A site that declares a `media` block on its adapter gets an R2 bucket for upload
 by name and resolved at request time from that declared binding, never a hard-coded one. Each
 manifest row carries what the bytes themselves can't: a display name, alt text, the original
 filename, and known pixel dimensions. Delivery serves the stored MIME type verbatim rather than
-guessing from a URL extension. When the zone has transformations on, delivery reaches Cloudflare's
+guessing from a URL extension. The render resolver always returns the bare full-size delivery path;
+when the zone has transformations on and an asset's width is known, it also attaches a responsive
+`srcset` built from a small fixed width ladder, reaching Cloudflare's
 [Image Transformations](https://developers.cloudflare.com/images/transform-images/transform-via-url/)
-for the variant presets declared in the `variants` field of that same `media` block. Without that,
-the resolver serves the bare full-size original regardless of what preset was asked for.
+for each candidate. The `variants` field's named presets declared on that same `media` block are
+available separately, through `presetUrl`, for a site's own on-demand transform calls; the automatic
+`srcset` does not use them.
 
 ```mermaid
 flowchart LR

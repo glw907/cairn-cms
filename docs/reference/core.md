@@ -292,9 +292,12 @@ upload. `variants` are named Cloudflare Images presets, merged over the built-in
 
 `transformations` (default `false`) declares whether Cloudflare Image Transformations are enabled
 for the zone. This is a per-zone setting that the dashboard or API turns on, not something a Worker
-can flip. While it is off, the media resolver serves the bare full-size delivery path and ignores
-any preset, so a fresh zone gets correct full-size thumbnails rather than dead `/cdn-cgi/image`
-URLs. Flip it to `true` only after enabling Transformations on the zone.
+can flip. The media resolver always returns the bare full-size delivery path; `transformations`
+governs only the responsive `srcset` a rendered image gets alongside it. While it is off, a rendered
+image carries no `srcset`, only its full-size src, so a fresh zone serves correct images rather than
+dead `/cdn-cgi/image` URLs. Once it is on and an asset's width is known, the resolver also attaches a
+`srcset` built from a small fixed width ladder. Flip it to `true` only after enabling Transformations
+on the zone.
 
 Content references a stored asset by a logical handle, `media:<slug>.<hash>` (or the bare
 `media:<hash>`), the same shape as the `cairn:` link scheme. The hash is the content identity and the

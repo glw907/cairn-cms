@@ -241,7 +241,7 @@ export interface CairnAdapter {
    * The site's declared access map, from `defineAccess({ ... })`. Absent, every engine screen and
    *  `requireAccess` call keeps today's any-editor-capability behavior. Re-validated at composition
    *  (`createContentRoutesContext`) against the site's real concepts and engine-route table, the same
-   *  split `validateNavLayout` uses.
+   *  split the engine's own internal nav-layout validation uses.
    */
   access?: AccessMap;
   /** The commit backend provider, from `githubApp({ ... })` (the GitHub App today). */

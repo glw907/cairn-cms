@@ -11,8 +11,25 @@ import type { Component } from 'svelte';
 import { fixtureMediaBase, manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
 import { getStory, ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
 import { waitFor } from '../../lib/reproductions/stories/support.js';
+import { authStories } from '../../lib/reproductions/stories/auth.js';
+import { editorStories } from '../../lib/reproductions/stories/editor.js';
+import { publishStories } from '../../lib/reproductions/stories/publish.js';
+import { mediaStories } from '../../lib/reproductions/stories/media.js';
+import { siteStories } from '../../lib/reproductions/stories/site.js';
 import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
 import { renderStory } from './_repro-mount.js';
+
+// Every registered story, assembled straight from the five group modules (the same inputs
+// `reproductions/index.ts`'s own module-internal `stories` array concatenates) rather than through
+// `getStory`, so the reverse-containment check below cannot be satisfied merely by every manifest
+// id resolving: a story registered under an id absent from the manifest must still be caught.
+const ALL_REGISTERED_STORIES: ReproStory[] = [
+  ...authStories,
+  ...editorStories,
+  ...publishStories,
+  ...mediaStories,
+  ...siteStories,
+];
 
 // The manifest ids not yet backed by a registered story, named explicitly (not derived from
 // `stories`) so a task that registers a group without updating this set is caught by the "keeps
@@ -180,6 +197,16 @@ describe('the manifest-to-story inventory', () => {
 
   it('throws on an unknown id', () => {
     expect(() => getStory('nonexistent/story')).toThrow();
+  });
+
+  // The reverse direction: every registered story names a real manifest id. The old
+  // module-internal `stories` array's own subject test ("has a matching manifest entry") caught
+  // this per-story; the retires pass (batch 1c) un-exported that array, so this aggregate
+  // assertion, built straight from the five group modules, restores the same guarantee.
+  it('registers no story under an id absent from the manifest', () => {
+    const manifestIds = new Set(manifest.map((entry) => entry.id));
+    const orphaned = ALL_REGISTERED_STORIES.map((story) => story.id).filter((id) => !manifestIds.has(id));
+    expect(orphaned).toEqual([]);
   });
 });
 

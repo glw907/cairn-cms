@@ -214,9 +214,12 @@ client-side pagination over the full set. The single mount renders it for the `m
 (`mediaLibraryLoad`), but its actions (`?/mediaUpdate`, `?/mediaDelete`, and the rest of the
 janitorial vocabulary below) are not members of `createContentRoutes`'s public return, so wiring
 `src/routes/admin/(app)/media/+page.server.ts` by hand against that factory alone leaves those
-posts with no matching action. Mounting this component outside the single mount means composing
-your own `actions` record around [`createCairnAdmin`](./sveltekit.md#createcairnadmin)'s, which is
-the only public seam that supplies them (see [Per-route mounting
+posts with no matching action. [`createCairnAdmin`](./sveltekit.md#createcairnadmin) is the only
+public seam that mounts them at runtime; its declared `CairnAdminRoutes` contract withdraws the
+same ten actions at the type level (recovered with a spread or a cast; see the note after the
+actions table in [the SvelteKit reference](./sveltekit.md#createcairnadmin)). Mounting this
+component outside the single mount means composing your own `actions` record around
+`createCairnAdmin`'s runtime object (see [Per-route mounting
 (advanced)](./admin-routes.md#per-route-mounting-advanced)).
 
 Activating a tile or row opens a non-modal detail slide-over: a labelled region (not a dialog), so

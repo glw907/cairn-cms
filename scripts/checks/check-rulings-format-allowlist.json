@@ -9,8 +9,6 @@
   "audit-cloudflare-checkratelimitkeys",
   "audit-cloudflare-checkratelimit",
   "audit-media-normalizeassets",
-  "audit-delivery-feedview",
-  "audit-delivery-unlistedroutes",
   "audit-render-strattr",
   "audit-log-auth-session-destroyed",
   "audit-log-dictionary-added",

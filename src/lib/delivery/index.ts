@@ -12,7 +12,7 @@
 // through one import.
 export * from './data.js';
 export { createPublicRoutes, composeEntryData } from './public-routes.js';
-export type { PublicRoutesConfig, PublicRoutes, EntryData, EntryDataOverrides } from './public-routes.js';
+export type { PublicRoutesConfig, EntryData, EntryDataOverrides } from './public-routes.js';
 // R4 closure over this barrel's own signatures, and the one place the pair diverges:
 // `PublicRoutesConfig.render` names `SiteRender` (canonical home `.`), and its `resolveMedia`
 // names `MediaResolve` (canonical home `.`) and that type's own `MediaRef` parameter (canonical

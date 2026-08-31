@@ -977,9 +977,9 @@ the authed admin shell, the concept list, and the entry editor, exported by name
 [`ContentRoutes`](#types). `shellLoad` backs the shared admin
 shell (the `/admin/+layout` load wires it through `createCairnAdmin`'s `shellLoad`): it returns the
 lean `{ shell: AdminShellData }` chrome payload, bare for a public path and the streamed authed nav
-otherwise. Its caller awaits it: `shellLoad` calls [`resolveNavLayout`](#resolvenavlayout) up
-front to arrange and gate the whole sidebar, a declared `navLayout` or, absent one, today's
-default arrangement synthesized through the same resolver, then applies the site's
+otherwise. Its caller awaits it: `shellLoad` arranges and gates the whole sidebar up front, a
+declared `navLayout` or, absent one, today's default arrangement synthesized through the same
+resolver, then applies the site's
 `deps.navFilter`, if configured, to the arranged `items` alone (see [the navLayout
 seam](#the-navlayout-seam) and `ContentRoutesOptions` below). `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
 actions back a concept's list view, and `editLoad` with the `save`, `publish`, `discard`,
@@ -1374,8 +1374,7 @@ screens); a site entry is a labeled, iconed link to one of the site's own `/admi
 added `roles` gate; a section groups a mix of both under one label, one level deep. A bad icon, a
 colliding href, an unknown screen, or an unresolvable role fails the build rather than rendering a
 broken or silently wrong sidebar. Absent `navLayout`, the sidebar renders today's default
-arrangement, resolved through the same [`resolveNavLayout`](#resolvenavlayout) function, so the two
-paths can never drift.
+arrangement, resolved through the same internal resolver, so the two paths can never drift.
 Stability tier: Extension API.
 
 An engine screen the tree never references still renders, in a trailing group after a divider (the
@@ -1489,7 +1488,8 @@ type EngineScreenId =
 
 One of the engine's own fixed admin screens, or a site's own declared concept id. The six literals
 autocomplete in an editor while a dynamic concept id, not knowable at the type level, stays
-assignable; `validateNavLayout` is the real gate against a site's declared concepts and screens.
+assignable; the engine validates a declared layout against a site's declared concepts and screens
+at construction.
 
 ### `NavLayoutEngineRef`
 
@@ -1548,26 +1548,6 @@ type NavLayout = (NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection)[];
 
 A site's whole declared sidebar: engine references, its own entries, and sections, in declaration
 order. The adapter's `editor.navLayout` field takes this shape.
-
-### `validateNavLayout`
-
-Stability tier: Extension API.
-
-```ts
-declare function validateNavLayout(layout: NavLayout, ctx: {
-  conceptIds: string[];
-  navMenuConfigured: boolean;
-  roleNames: string[];
-}): void;
-```
-
-Validate a raw `navLayout` tree once at construction, throwing an actionable, `navLayout`-prefixed
-error naming the bad node: an unknown screen id, a screen referenced more than once (`hidden`
-counts), `'nav'` referenced with no nav menu configured, a nested section, an empty section, an
-empty relabel, or a `roles` name outside the declared vocabulary. A site entry embedded in the tree
-is validated the same way a top-level entry is (the bundled icon allowlist, the built-in href
-collision). The engine calls this automatically when the runtime composes; a site does not normally
-call it directly.
 
 ### `ResolvedEngineNavEntry`
 
@@ -1645,45 +1625,6 @@ The whole resolved sidebar for one request: the arranged, filtered scroll-area t
 order (`items`), plus the trailing group of engine screens the tree never referenced (`fallback`,
 rendered in the shell's foot slot, engine order, empty once every screen was referenced).
 `AdminShellData`'s authed arm carries this as `nav`.
-
-### `ResolveNavLayoutOptions`
-
-Stability tier: Extension API.
-
-```ts
-interface ResolveNavLayoutOptions {
-  layout: NavLayout | undefined;
-  concepts: { id: string; label: string; routing?: { dated: boolean } }[];
-  navMenuLabel: string | null;
-  access?: AccessMap;
-  editor: Editor;
-}
-```
-
-The context [`resolveNavLayout`](#resolvenavlayout) needs to arrange and filter one request's
-sidebar: the site's raw `navLayout` (or `undefined` for the default arrangement), its concepts
-(`routing.dated` feeds the concept's kind icon), its nav-menu label (`null` when unconfigured, which
-gates the `nav` screen), the site's declared [access map](./core.md#access-map) (or `undefined` for
-zero-config), and the signed-in `editor`, whose capability gates every engine screen and whose role
-is matched against a node's declarative `roles` and against the access map.
-
-### `resolveNavLayout`
-
-Stability tier: Extension API.
-
-```ts
-declare function resolveNavLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout;
-```
-
-Resolve one request's whole sidebar: a declared `navLayout` arranges and filters as written; an
-undeclared one synthesizes today's default arrangement through the same primitives, so the two
-paths can never drift. Every engine screen defers to [`canReach`](./core.md#canreach-hasaccessrule),
-which folds in the capability floor (`none` reaches nothing, `editors` additionally requires owner
-capability), a configured nav menu for `nav`, and the site's own access-map narrowing; a site
-entry additionally gates on `ownerOnly`, its declarative `roles`, and, when its href carries a
-matching map rule, `canReach` too; a section gates all its children at once by its own `roles` and
-disappears once its children resolve empty. `shellLoad` calls this on every request; a site does
-not normally call it directly unless it renders its own nav outside `CairnAdminShell`.
 
 ---
 

@@ -90,7 +90,7 @@ interface ReproStory {
 }
 ```
 
-One registered story's full mount description, the element type of [`stories`](#stories). `id`
+One registered story's full mount description, the type [`getStory`](#getstory) returns. `id`
 matches exactly one [`ReproManifestEntry.id`](#repromanifestentry). `component`
 is the smallest package component that contains what the story shows. `host` is `'shell'` for a
 story mounted inside `CairnAdminShell` with the fixture nav layout, or `'bare'` for one mounted on
@@ -111,18 +111,6 @@ rather than by clicking, such as the insert panel the editor mounts headless and
 toolbar. The parameter is required, so a host that cannot supply an instance fails to compile
 rather than posing half a story. `markers` are the numbered callout anchors a story
 exposes, mirroring its manifest entry's `markerKeys`.
-
-### `stories`
-
-Stability tier: Unstable API.
-
-```ts
-declare const stories: ReproStory[];
-```
-
-The full registry, in the manifest's own id order. `src/tests/component/reproductions-stories.test.ts`
-binds this array against [`manifest`](#manifest), so the two can never drift out of registration
-with each other.
 
 ### `getStory`
 

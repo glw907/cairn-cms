@@ -264,6 +264,40 @@
   dev backend is); stop importing `insertOwnerIfEmpty` from `@glw907/cairn-cms/auth-store` (pass
   `bootstrapOwner` to `createCairnAdmin` instead).
 
+- The retires pass (batch 1c) closes eleven ratified any-site-audit retire verdicts across the
+  `audit-delivery`, `audit-render`, `audit-repro`, and `audit-sveltekit` families
+  (`docs/internal/engine-rulings.md`). `AI_CRAWLERS_REVIEWED`, `feedView`, `PublicRoutes`, and
+  `unlistedRoutes` delete outright from `/delivery` and `/delivery/data` (or `/delivery` alone
+  for `PublicRoutes`): each had zero remaining consumers anywhere in `src/lib`, and
+  `unlistedRoutes` takes its two now-orphaned private helpers with it. `AI_CRAWLERS` unexports
+  from both delivery barrels but stays reachable at `delivery/ai-crawlers.ts` for the engine's
+  own internal use (`robots.ts`, `doctor/check-posture.ts`); its element type `AiCrawler`
+  unexports too, consumed only inside its declaring module. `isElement` unexports from `/render`
+  but stays reachable at `render/rehype-dispatch.ts`, where the pipeline's own transform
+  functions call it internally; a site needing the narrowing reaches for `hast-util-is-element`,
+  named as the leaner alternative in the audit's own rationale. `stories` (`/reproductions`)
+  drops its `export` keyword, module-internal now beside `getStory`, the seam a consumer already
+  reaches a registered story through; the engine's own `reproductions-stories.test.ts` repoints
+  its "universal story contract" loop onto `manifest` filtered through `getStory` rather than the
+  array directly. `resolveNavLayout` and `validateNavLayout` unexport from `/sveltekit` but stay
+  reachable at `sveltekit/admin-nav.ts` for the engine's own internal use
+  (`content-routes-core.ts`'s `shellLoad`, `content-routes-context.ts`'s runtime composition);
+  `ResolveNavLayoutOptions` unexports too, consumed only inside its declaring module.
+  **Consumers must:** stop importing `AI_CRAWLERS`, `AI_CRAWLERS_REVIEWED`, `AiCrawler`,
+  `feedView`, `PublicRoutes`, or `unlistedRoutes` from `@glw907/cairn-cms/delivery` or
+  `@glw907/cairn-cms/delivery/data`; none has a replacement export. A site wanting the AI-crawler
+  posture keeps using `buildRobots`'s `posture` option, which applies the table internally. A
+  site wanting a full-content feed hand-writes its own mapping off `siteDescriptors`, filtering
+  `routing.inFeeds` itself, the same one-line derivation all six family sites already wrote by
+  hand. A site annotating `createPublicRoutes`'s return writes
+  `ReturnType<typeof createPublicRoutes>` itself. Stop importing `isElement` from
+  `@glw907/cairn-cms/render` (reach for `hast-util-is-element`, or the inline
+  `!!node && node.type === 'element'` check, over hast types the site already imports). Stop
+  importing `stories` from `@glw907/cairn-cms/reproductions` (call `getStory(id)` for each
+  manifest entry instead). Stop importing `resolveNavLayout`, `ResolveNavLayoutOptions`, or
+  `validateNavLayout` from `@glw907/cairn-cms/sveltekit`; none has a replacement export, and a
+  site rendering its own nav outside `CairnAdminShell` no longer has a public seam for it.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

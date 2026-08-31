@@ -214,9 +214,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/delivery`
 
-- `AI_CRAWLERS`: readonly AiCrawler[]
-- `AI_CRAWLERS_REVIEWED`: "2026-08-05"
-- `AiCrawler`: { token: string; operator: string; category: "training"; citation: string; note?: string }
 - `AiPosture`: "invite" | "decline"
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
@@ -248,7 +245,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EntryDataOverrides`: { resolveLink?: LinkResolve; resolveFragment?: FragmentResolve; resolveMedia?: MediaResolve }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
-- `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
 - `FieldBehavior`: { validate?: ((value: unknown, siblings: Record<string, unknown>) => string | null); itemLabel?: ((item: Record<string, unknown>, index: number) => string | undefined) }
 - `FieldDescriptor`: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField
 - `Fieldset`: { fields: R; behavior: { [x: string]: FieldBehavior }; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult; ~standard: { readonly version: 1; readonly vendor: string; readonly validate: (value: unknown) => StandardResult<Record<string, unknown>>; readonly types?: { readonly input: StandardInput; readonly output: Record<string, unknown> } } }
@@ -270,7 +266,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
 - `parseManifest`: (raw: string) => Manifest
-- `PublicRoutes`: { entryLoad: (event: { url: URL }) => Promise<EntryData>; entries: () => { path: string }[]; markdownEntries: () => { path: string }[]; markdownLoad: (event: { url: URL }) => Promise<{ body: string }> }
 - `PublicRoutesConfig`: { site: SiteResolver; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia?: MediaResolve; assetsEnabled?: boolean }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `PublishActionsConfig`: PublishActionEntry[]
@@ -300,7 +295,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `TextField`: { type: "text"; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `TidyConfig`: { enabled?: boolean; model?: string; conventions?: Partial<TidyConventions> }
 - `TidyConventions`: { fixes: boolean; oxfordComma?: "always" | "complex-only" | "never"; numberStyle?: "under-ten" | "under-hundred" | "always-numerals"; measurements?: "abbreviate" | "spell-out"; percent?: "sign" | "word"; emDash?: "spaced" | "closed"; enDashRanges: boolean; ellipsis?: "single-char" | "three-dots"; timeFormat?: "5 PM" | "5pm" | "5 p.m."; smartQuotes: boolean; brandCaps: boolean }
-- `unlistedRoutes`: (routeIds: string[], listedPaths: string[]) => string[]
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
@@ -308,9 +302,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/delivery/data`
 
-- `AI_CRAWLERS`: readonly AiCrawler[]
-- `AI_CRAWLERS_REVIEWED`: "2026-08-05"
-- `AiCrawler`: { token: string; operator: string; category: "training"; citation: string; note?: string }
 - `AiPosture`: "invite" | "decline"
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
@@ -338,7 +329,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EmailField`: { type: "email"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
-- `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
 - `FieldBehavior`: { validate?: ((value: unknown, siblings: Record<string, unknown>) => string | null); itemLabel?: ((item: Record<string, unknown>, index: number) => string | undefined) }
 - `FieldDescriptor`: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField
 - `Fieldset`: { fields: R; behavior: { [x: string]: FieldBehavior }; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult; ~standard: { readonly version: 1; readonly vendor: string; readonly validate: (value: unknown) => StandardResult<Record<string, unknown>>; readonly types?: { readonly input: StandardInput; readonly output: Record<string, unknown> } } }
@@ -385,7 +375,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `TextField`: { type: "text"; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `TidyConfig`: { enabled?: boolean; model?: string; conventions?: Partial<TidyConventions> }
 - `TidyConventions`: { fixes: boolean; oxfordComma?: "always" | "complex-only" | "never"; numberStyle?: "under-ten" | "under-hundred" | "always-numerals"; measurements?: "abbreviate" | "spell-out"; percent?: "sign" | "word"; emDash?: "spaced" | "closed"; enDashRanges: boolean; ellipsis?: "single-char" | "three-dots"; timeFormat?: "5 PM" | "5pm" | "5 p.m."; smartQuotes: boolean; brandCaps: boolean }
-- `unlistedRoutes`: (routeIds: string[], listedPaths: string[]) => string[]
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
@@ -421,7 +410,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ComponentContext`: { attributes: { [x: string]: string | boolean }; slot: (name: string) => ElementContent[]; items: (name: string) => ElementContent[][]; node: Element }
 - `headRow`: (title: ElementContent[], icon?: Element, level?: number) => Element
 - `iconSpan`: (glyphEl: Element, role?: string) => Element
-- `isElement`: (node: ElementContent | undefined) => node is Element
 - `strAttr`: (ctx: ComponentContext, key: string) => string | undefined
 
 ## `/reproductions`
@@ -430,7 +418,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ReproContext`: Component<Props, {}, "">
 - `ReproInstance`: { [x: string]: unknown }
 - `ReproStory`: { id: string; component: Component<Record<string, unknown>, {}, string>; host: "shell" | "bare"; shellData?: Partial<{ public: false; siteName: string; user: { displayName: string; email: string; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null>; attention: Record<string, { count: number; label: string }>; mediaBase: string }>; props: { [x: string]: unknown }; context?: Record<string | symbol, unknown>; settle?: ((root: HTMLElement) => Promise<void>); pose?: ((root: HTMLElement, instance: ReproInstance) => Promise<void>); markers?: { n: number; anchor: string; key: string }[] }
-- `stories`: ReproStory[]
 
 ## `/reproductions/manifest`
 
@@ -601,8 +588,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ResolvedNavEntry`: { label: string; iconName: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly: boolean }
 - `ResolvedNavLayout`: { items: ResolvedLayoutNode[]; fallback: ResolvedLayoutChild[] }
 - `ResolvedPreview`: { stylesheets: string[]; bodyClass?: string; containerClass?: string }
-- `resolveNavLayout`: (opts: ResolveNavLayoutOptions) => ResolvedNavLayout
-- `ResolveNavLayoutOptions`: { layout: NavLayout | undefined; concepts: { id: string; label: string; routing?: { dated: boolean } }[]; navMenuLabel: string | null; access?: AccessMap; editor: Editor }
 - `RevertFailure`: { reason: "draft_exists"; draftEditor: string; draftStartedAt: string } | { reason: "ref_unknown" } | { reason: "history_stale" }
 - `RoleDeclaration`: Capability | { capability: Capability; home?: string }
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
@@ -629,7 +614,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UploadResult`: { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `UsageEntry`: { concept: string; id: string; title: string; permalink?: string; origin: { kind: "published" } | { kind: "branch"; branch: string } }
-- `validateNavLayout`: (layout: NavLayout, ctx: { conceptIds: string[]; navMenuConfigured: boolean; roleNames: string[] }) => void
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
 - `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad" | "aspect-crop" | "scale-up" | "squeeze"; gravity?: string; format?: string; upscale?: "interpolate" | "generate" }

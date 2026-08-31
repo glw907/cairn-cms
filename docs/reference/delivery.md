@@ -44,8 +44,6 @@ function createPublicRoutes(deps: PublicRoutesConfig): {
 };
 ```
 
-`createPublicRoutes` exports its return type by name as [`PublicRoutes`](#publicroutes).
-
 Build the public route loader for a site's unified index. Pass the
 [`PublicRoutesConfig`](#publicroutesconfig): the built site resolver, the render function, the origin, and
 the SEO defaults. The returned object carries `entryLoad`, the one loader the catch-all route calls,
@@ -135,13 +133,6 @@ The injected dependencies for the public loaders. `render` turns an entry's mark
 site-wide fallbacks for an entry that declares none. `resolveMedia` resolves a frontmatter `media:`
 hero reference to its delivery path; the site builds it from its committed `media.json` exactly as it
 builds the body resolver, and when it is absent no `heroImage` projection is derived.
-
-### `PublicRoutes`
-
-Stability tier: Scaffold API.
-
-What `createPublicRoutes` returns: the entry loader, the prerender path enumerator, and the markdown
-twin's loader and enumerator, shown expanded in [`createPublicRoutes`](#createpublicroutes).
 
 ### `EntryData`
 

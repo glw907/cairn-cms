@@ -367,7 +367,7 @@ export interface ResolvedNavLayout {
 }
 
 /** The context resolveNavLayout needs to arrange and filter one request's sidebar. */
-export interface ResolveNavLayoutOptions {
+interface ResolveNavLayoutOptions {
   /** The site's raw navLayout, or undefined for the default synthesized arrangement. */
   layout: NavLayout | undefined;
   /**

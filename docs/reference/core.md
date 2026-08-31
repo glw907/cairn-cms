@@ -696,8 +696,8 @@ declare function glyph(name: string, icons: IconSet): Element;
 ```
 
 The rest of the hast-building toolkit a component's `build` function reaches for, `iconSpan`,
-`cardShell`, `headRow`, `strAttr`, and `isElement`, lives on the [`/render`](./render.md) subpath,
-not here. The showcase `alert` component composes `glyph` with those helpers:
+`cardShell`, `headRow`, and `strAttr`, lives on the [`/render`](./render.md) subpath, not here. The
+showcase `alert` component composes `glyph` with those helpers:
 
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts

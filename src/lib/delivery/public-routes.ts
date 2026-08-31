@@ -245,9 +245,3 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
 
   return { entryLoad, entries, markdownEntries, markdownLoad };
 }
-
-/**
- * What `createPublicRoutes` returns: the entry loader and its prerender enumerator, plus the
- *  markdown twin's loader and enumerator.
- */
-export type PublicRoutes = ReturnType<typeof createPublicRoutes>;

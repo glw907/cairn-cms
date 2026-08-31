@@ -9,7 +9,7 @@ import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import type { Component } from 'svelte';
 import { fixtureMediaBase, manifest, type ReproManifestEntry } from '../../lib/reproductions/manifest.js';
-import { stories, getStory, ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
+import { getStory, ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
 import { waitFor } from '../../lib/reproductions/stories/support.js';
 import ProbeComponent, { PROBE_CONTEXT_KEY } from './_ReproContextProbe.svelte';
 import { renderStory } from './_repro-mount.js';
@@ -928,8 +928,14 @@ describe('toolkit/custom-screen', () => {
 });
 
 // The universal contract every registered story must satisfy, exercised across the full inventory
-// now that A4 through A6b have registered all 25.
-for (const story of stories) {
+// now that A4 through A6b have registered all 25. Looked up through `getStory` (the seam the real
+// admin reaches a story through) rather than the module-internal `stories` array, which the
+// retires pass, batch 1c, un-exported.
+const registeredStories = manifest
+  .filter((candidate) => isRegistered(candidate.id))
+  .map((candidate) => getStory(candidate.id));
+
+for (const story of registeredStories) {
   const entry = manifest.find((candidate) => candidate.id === story.id);
 
   describe(`${story.id}: the universal story contract`, () => {

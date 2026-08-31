@@ -29,7 +29,7 @@ describe('engine entry render surface', () => {
   });
 
   it('exposes the authoring toolkit from /render', () => {
-    for (const fn of [authoring.iconSpan, authoring.cardShell, authoring.headRow, authoring.isElement, authoring.strAttr]) {
+    for (const fn of [authoring.iconSpan, authoring.cardShell, authoring.headRow, authoring.strAttr]) {
       expect(typeof fn).toBe('function');
     }
   });
@@ -38,6 +38,12 @@ describe('engine entry render surface', () => {
     expect('rehypeDispatch' in authoring).toBe(false);
     const dispatch = await import('../../lib/render/rehype-dispatch.js');
     expect(typeof dispatch.rehypeDispatch).toBe('function');
+  });
+
+  it('omits isElement from /render but keeps it reachable from its module', async () => {
+    expect('isElement' in authoring).toBe(false);
+    const dispatch = await import('../../lib/render/rehype-dispatch.js');
+    expect(typeof dispatch.isElement).toBe('function');
   });
 
   it('the root createRenderer composes a working pipeline', async () => {

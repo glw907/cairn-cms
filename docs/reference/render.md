@@ -25,7 +25,6 @@ Stability tier: Extension API.
 
 - `strAttr(ctx, key)` reads a declared string attribute off the component context, returning
   `undefined` for a boolean or absent value.
-- `isElement(node)` narrows a hast node to an `Element`.
 
 ## Types
 

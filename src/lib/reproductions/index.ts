@@ -96,10 +96,11 @@ export interface ReproStory {
 }
 
 /**
- * The registered stories, in manifest order: the full 25.
- * `src/tests/component/reproductions-stories.test.ts` binds this array against `manifest.ts`.
+ * The registered stories, in manifest order: the full 25. Module-internal (the retires pass,
+ *  batch 1c retired its export); `getStory` is the seam a consumer, including
+ *  `src/tests/component/reproductions-stories.test.ts`, reaches one through.
  */
-export const stories: ReproStory[] = [
+const stories: ReproStory[] = [
   ...authStories,
   ...editorStories,
   ...publishStories,

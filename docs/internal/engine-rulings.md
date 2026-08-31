@@ -1698,25 +1698,25 @@ when the remediation pass lands.
 ## audit-sveltekit-resolvenavlayoutoptions: `ResolveNavLayoutOptions`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Falls with resolveNavLayout. Its independent charge is weak too: a structural stand-in for one's own richer type is the engine's documented convention (CairnEvent, CookieJar), and here it spares a caller from materializing ConceptDescriptor's fields, schema and validate.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: dropped the `export` keyword in `admin-nav.ts` (consumed only inside its declaring module, by `resolveNavLayout` and its own internal helpers) and its barrel line in `sveltekit/index.ts`.
 - **Shape:** Its concepts member is a structural stand-in for ConceptDescriptor, which is already public, so the surface carries two shapes for one idea. Take the real descriptor type, or keep the resolver internal.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 82.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 82; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
 ## audit-sveltekit-resolvenavlayout: `resolveNavLayout`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Every caller is the engine (content-routes-core.ts:606 in shellLoad); no doc calls it. The proposed replacement, a validate-and-preview function, does not exist and half-duplicates validateNavLayout. Inventing surface to justify surface fails the leanness rule.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: the module-level export stays in `admin-nav.ts`, since `content-routes-core.ts`'s `shellLoad` still calls it internally by relative import; only its barrel line in `sveltekit/index.ts` is dropped.
 - **Shape:** Export a narrow, purpose-named function that validates and previews a navLayout against this site's concepts, rather than publishing the engine's internal resolver with its internal options bag.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 83.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 83; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
 ## audit-sveltekit-validatenavlayout: `validateNavLayout`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. The any-site case is false: content-routes-context.ts:280-287 already calls it on runtime.navLayout at composition, dynamic or literal, and the thrown error already names the bad node. Calling it by hand buys nothing and re-derives three facts the runtime holds.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: the module-level export stays in `admin-nav.ts`, since `content-routes-context.ts` still calls it internally by relative import; only its barrel line in `sveltekit/index.ts` is dropped.
 - **Shape:** Take the composed runtime (or adapter) plus the layout, instead of a ctx the caller assembles by hand from conceptIds, navMenuConfigured and roleNames, three facts the composed runtime already holds, so the call site cannot assemble the context wrongly.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 84.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 84; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
 ## audit-sveltekit-resolvedlayoutsection: `ResolvedLayoutSection`  (keep, 2026-08-26, any-site audit)
@@ -2763,44 +2763,46 @@ when the remediation pass lands.
 ## audit-delivery-ai-crawlers-reviewed: `AI_CRAWLERS_REVIEWED`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A bare date string whose only meaning is that the engine's own table may be stale; a consumer cannot refresh, override, or substitute the table buildRobots applies unconditionally.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 1.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: deleted outright from `ai-crawlers.ts` (zero remaining consumers anywhere in `src/lib`); its barrel line and subject test (`delivery-ai-crawlers.test.ts`'s `AI_CRAWLERS_REVIEWED` block) deleted with it.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md).
 
 ## audit-delivery-aicrawler: `AiCrawler`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent. Parasitic on AI_CRAWLERS: nothing in the engine accepts an AiCrawler, so a consumer can only name it while holding the table that itself fails.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 2.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: dropped the `export` keyword in `ai-crawlers.ts` (consumed only inside its declaring module, by `AI_CRAWLERS`'s own array-literal type) and its barrel line in `data.ts`.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 2; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md).
 
 ## audit-delivery-ai-crawlers: `AI_CRAWLERS`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Weak. buildRobots already applies it (robots.ts:42); importing it means reimplementing robots.txt. Sibling CONTENT_SIGNAL, same module and same doctor consumer, is deliberately internal.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: the module-level export stays in `ai-crawlers.ts`, since `robots.ts` and `doctor/check-posture.ts` still import it internally; only its barrel line in `data.ts` is dropped.
 - **Shape:** Demote the public export; keep the module internal beside CONTENT_SIGNAL, which the doctor already reaches by relative import.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 3.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md).
 
 ## audit-delivery-feedview: `feedView`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Both arms fail. The hasTaxonomy guard (views.ts:26,35) is dead: content-index.ts:129 already sets tags:[] absent a taxonomy field, so nothing in feedView is consumer-unreachable. And routing:'feed' bundles inFeeds (concepts.ts:17); ASC takes it on bulletins for dated permalinks (cairn.config.ts:272) while excluding them from its feed, so inFeeds is not trustworthy membership.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Take an optional async per-item enricher so a full-content feed is one call, or return the inFeeds-filtered ContentSummary[] and let the site map. Do not transp).
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 4.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: `feedView` deleted outright from `views.ts` (zero remaining consumers anywhere in `src/lib`); its barrel line and subject test (`delivery-views.test.ts`'s `feedView` block) deleted with it.
+- **Shape:** The reshape candidacy considered and rejected by the verification pass (an optional per-item render hook, or the `inFeeds`-filtered `ContentSummary[]` a site maps itself) does not rescue it: `ContentSummary` already carries `permalink`, `excerpt`, and normalized `tags`, so a site hand-writing its own `feed.ts` (as all six family sites already do, near-verbatim) reproduces the routing filter in one line off the already-public `inFeeds` flag. `FeedItem` stays and is what makes the retirement costless.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 4; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md) (verdict overturned there).
 
 ## audit-delivery-unlistedroutes: `unlistedRoutes`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Reshape presupposes membership. The proposed glob-taking form still parses SvelteKit's own published route-id grammar (sitemap.ts:31-41, two regexes), touches no descriptor or content-model type, and emits no delivery document, so both arms fail in the reshaped form too. 907-life copies the doc's boilerplate verbatim (sitemap.test.ts:40-52).
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Move the check into cairn-audit or cairn-doctor per the workstation rule that the mechanically detectable half never lives in a consuming site's probe script; o).
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 5.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: `unlistedRoutes` deleted outright from `sitemap.ts`, taking its two now-orphaned private helpers (`isDynamicRouteId`, `routeIdToPath`) with it (zero remaining consumers anywhere in `src/lib`); its barrel line and subject test (`delivery-sitemap.test.ts`'s `unlistedRoutes` block) deleted with it.
+- **Shape:** Move the check into `cairn-audit` or `cairn-doctor`, per the workstation rule that the mechanically detectable half never lives in a consuming site's own probe script: both arms of the export gate fail regardless of form, since the grammar it parses is SvelteKit's own, not cairn's, and it emits no delivery document.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 5; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md) (verdict overturned there).
 
 ## audit-delivery-publicroutes: `PublicRoutes`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. The export rule does not reach it: createPublicRoutes returns an inferred object literal (public-routes.ts:246) and the alias is appended at 253, named in no signature. The stated scenario is falsified by the site living it: ASC's chassis/public-routes.ts annotates PublicRoutesConfig but leaves the routes const un-annotated. One-line exact re-derivation available.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 6.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: `PublicRoutes` deleted outright from `public-routes.ts` (zero remaining consumers anywhere in `src/lib`); its barrel line in `delivery/index.ts` deleted with it.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 6; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md) (verdict overturned there).
 
 ## audit-delivery-entrydataoverrides: `EntryDataOverrides`  (keep, 2026-08-26, any-site audit)
@@ -3129,8 +3131,8 @@ when the remediation pass lands.
 ## audit-render-iselement: `isElement`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Generally applicable but unnecessary: the body is `!!node && node.type === 'element'` over hast types the site already imports, and hast-util-is-element exists.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 4.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: the module-level export stays in `rehype-dispatch.ts` (its own other transform functions call it internally); only its barrel line in `render/authoring.ts` (the `/render` subpath) is dropped.
+- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 4; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
 
 ## audit-render-strattr: `strAttr`  (reshape, 2026-08-26, any-site audit)
@@ -3167,9 +3169,9 @@ when the remediation pass lands.
 ## audit-repro-stories: `stories`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Unimported by the only consumer; enumerating the registry is build-time work that belongs on the node-safe manifest, so this export points a consumer at the Svelte half.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, batch 1c: dropped the `export` keyword in `reproductions/index.ts` (consumed only inside its declaring module, by `getStory`); `reproductions-stories.test.ts`'s "universal story contract" loop repointed onto `manifest` filtered through `getStory`, the seam the real admin reaches a story through, rather than the array directly.
 - **Shape:** Un-export; keep module-internal for getStory and the in-repo test.
-- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 1.
+- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md).
 
 ## audit-repro-fixturemediabase: `fixtureMediaBase`  (reshape, 2026-08-26, any-site audit)

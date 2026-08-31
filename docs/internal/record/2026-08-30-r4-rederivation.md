@@ -94,6 +94,16 @@ two per-bucket deltas the plan's finalization anticipated.
 
 ## 3. The three lists
 
+**Executed (Task 3, retires pass, 2026-08-30).** The section below stands as written at
+derivation time (list (a) EMPTY, list (b) 63, list (c) IN-94 half 31); section 7's RULED
+subsection and its ADDENDUM RULINGS supersede its arithmetic, as section 7 itself already
+states. As executed: list (a) is 2 (`STATUS_CHIP_DOT_CLASS`, `StatusChipTone`, both
+previously closed and re-verified absent), list (b) is 56 (38 unsanctioned plus the 18
+sanctioned `NavIcon`-class leaks), and list (c) is 36 (Tier 1: 25, Tier 2: 7, Tier 3: 1,
+Tier 4: 3), summing to 94. The full row-for-row execution record, including the sanctioned
+18's replacement expressions and the two written leak-predicate exclusions, is
+`docs/internal/record/2026-08-30-retires-move-record.md`.
+
 ### List (a): retires already consumed — EMPTY, both halves
 
 `npm run check:surface` on the merged tree exits 0 with "surface matches the committed snapshot,"

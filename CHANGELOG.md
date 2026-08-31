@@ -211,117 +211,112 @@
   the component the full action vocabulary it posts to. A site that hand-mounts any other admin
   view is unaffected, `uploadAction` and `mediaLibraryLoad` included.
 
-- The retires pass (batch 1a) closes nineteen ratified any-site-audit retire verdicts across the
-  `audit-adapter` and `audit-admin` families (`docs/internal/engine-rulings.md`), each an export
-  the audit found zero consumers for anywhere in the engine, showcase, or docs. `TextInput`,
-  `SelectInput`, and `FieldRow` are deleted outright from `/admin-toolkit`: all three composed
-  `FieldLabel` plus a bare control, and that composition is now the documented hand-roll (the
-  bottom-aligned field row recipe `FieldRow` shipped, `display: flex; align-items: flex-end;
-  gap: var(--cairn-gap-control, 0.5rem)`, is unchanged, just no longer a component).
+- The retires pass closes 56 ratified any-site-audit retire verdicts
+  (`docs/internal/engine-rulings.md`): 38 unsanctioned exports the audit found zero consumers for
+  anywhere in the engine, showcase, or docs, plus 18 accepted `NavIcon`-class closure leaks Geoff's
+  F-1 hybrid ruling sanctions (`docs/internal/record/2026-08-30-r4-rederivation.md`, section 7; the
+  full row-for-row leak record, with every replacement expression, is
+  `docs/internal/record/2026-08-30-retires-move-record.md`). By family: `TextInput`, `SelectInput`,
+  `SelectInputOption`, and `FieldRow` (`audit-admin`) are deleted outright from `/admin-toolkit`:
+  `TextInput`, `SelectInput`, and `FieldRow` all composed `FieldLabel` plus a bare control, and
+  that composition is now the documented hand-roll (the bottom-aligned field row recipe `FieldRow`
+  shipped, `display: flex; align-items: flex-end; gap: var(--cairn-gap-control, 0.5rem)`, is
+  unchanged, just no longer a component); `SelectInputOption` retires alongside `SelectInput`,
+  the only module that declared it, since it named only that component's own `options` prop;
   `ageFromBirthdate`, `formatMoney`/`FormatMoneyOptions`, and `formatPhone`/`FormatPhoneOptions`
-  are deleted outright from `admin-toolkit/format.ts`: none had a call site anywhere. `roleHome`
-  and `StandardSchemaV1` unexport from the root barrel but stay reachable at their own module
-  (`auth/roles.ts`, `content/standard-schema.ts`) for the engine's own internal use.
-  `AppliedFilterPill`, `computeAppliedFilters`, `computeCountLine`, `ItemRange`, `computeItemRange`,
-  `PageWindowItem`, `computePageWindow`, and `itemNoun` all unexport from the `/admin-toolkit`
-  barrel and their owning component's own module context, but stay exported from their source
-  module (`list-toolbar.ts`, `pagination-window.ts`, `format.ts`), since `ListToolbar` and
-  `Pagination` still compute and render this arithmetic internally. **Consumers must:** stop
-  importing `roleHome`, `StandardSchemaV1`, `TextInput`, `SelectInput`, `FieldRow`,
-  `ageFromBirthdate`, `formatMoney`, `FormatMoneyOptions`, `formatPhone`, `FormatPhoneOptions`,
-  `itemNoun`, `AppliedFilterPill`, `computeAppliedFilters`, `computeCountLine`, `ItemRange`,
-  `computeItemRange`, `PageWindowItem`, or `computePageWindow` from `@glw907/cairn-cms` or
-  `@glw907/cairn-cms/admin-toolkit`; none has a replacement export, and a site that needs the
-  `TextInput`/`SelectInput`/`FieldRow` composition or the pagination/toolbar arithmetic hand-rolls
-  it directly against `FieldLabel` and the two components' own documented behavior.
-
-- The retires pass (batch 1b) closes eight ratified any-site-audit items across the `audit-auth`
-  and `audit-cli` families (`docs/internal/engine-rulings.md`). Five are exported names.
-  `generateCsrfToken` and `generateSessionId` unexport from `/auth-crypto` but stay reachable at
-  `auth/crypto.ts` for the engine's own internal use (`sveltekit/csrf.ts`,
-  `sveltekit/auth-routes.ts`); both bodies were byte-identical to `generateToken` under a second
-  name. `CHANNEL_SCHEMA_VERSION` drops its `export` keyword in `auth-channel/store.ts` and its
+  are deleted outright from `admin-toolkit/format.ts`, none had a call site anywhere; `roleHome`
+  and `StandardSchemaV1` (`audit-adapter`) unexport from the root barrel but stay reachable at
+  their own module (`auth/roles.ts`, `content/standard-schema.ts`) for the engine's own internal
+  use; `AppliedFilterPill`, `computeAppliedFilters`, `computeCountLine`, `ItemRange`,
+  `computeItemRange`, `PageWindowItem`, `computePageWindow`, and `itemNoun` (`audit-admin`) all
+  unexport from the `/admin-toolkit` barrel and their owning component's own module context, but
+  stay exported from their source module (`list-toolbar.ts`, `pagination-window.ts`, `format.ts`),
+  since `ListToolbar` and `Pagination` still compute and render this arithmetic internally.
+  `generateCsrfToken` and `generateSessionId` (`audit-auth`) unexport from `/auth-crypto` but stay
+  reachable at `auth/crypto.ts` for the engine's own internal use (`sveltekit/csrf.ts`,
+  `sveltekit/auth-routes.ts`), both bodies were byte-identical to `generateToken` under a second
+  name; `CHANNEL_SCHEMA_VERSION` drops its `export` keyword in `auth-channel/store.ts` and its
   barrel line in `auth-channel/index.ts`, staying a module-internal const `verifySchema` and the
-  seeding `INSERT` still read; the value was already embedded in `CHANNEL_SCHEMA_SQL`'s own
-  seeding statement, so publishing it separately named no consumer action. `devDelivery` deletes
-  outright from `/auth-channel` (`auth-channel/dev.ts` removed, zero remaining consumers anywhere
-  in `src/lib`): its stated purpose, guarding a dev transport reaching production, is a
-  discoverability problem an export does not fix, and the `CAIRN_DEV_BACKEND` refusal belongs in
-  the factory's own construction check. `insertOwnerIfEmpty` unexports from `/auth-store` but
-  stays reachable at `auth/store.ts` for the engine's own internal use
-  (`sveltekit/auth-routes.ts`'s `bootstrapOwner` wiring); the declarative `bootstrapOwner` config
-  on `createCairnAdmin` already seeds the first owner atomically on the bootstrap login path,
-  where the race this function guards actually matters. The remaining three are process/tooling
-  proposals the CLI-surface audit ledgered as `retire` (decline the proposal), not exported names:
-  a `check:dogfood` tripwire proposed into `cairn-audit`, `unlistedRoutes` proposed as a
-  `cairn-audit` rendered rule, and a `skill.admin-screens` check plus `cairn-doctor --fix`; closing
-  each is a ledger-only act, with nothing to delete in `src/`. **Consumers must:** stop importing
-  `generateCsrfToken` or `generateSessionId` from `@glw907/cairn-cms/auth-crypto` (call
-  `generateToken` instead, for a magic-link token, a session identifier, or a double-submit CSRF
-  token alike); stop importing `CHANNEL_SCHEMA_VERSION` or `devDelivery` from
-  `@glw907/cairn-cms/auth-channel` (a site needing the dev-only console print hand-rolls
-  `deliver: async (contact, code) => console.log(contact, code)`, gated the same way cairn's own
-  dev backend is); stop importing `insertOwnerIfEmpty` from `@glw907/cairn-cms/auth-store` (pass
-  `bootstrapOwner` to `createCairnAdmin` instead).
-
-- The retires pass (batch 1c) closes eleven ratified any-site-audit retire verdicts across the
-  `audit-delivery`, `audit-render`, `audit-repro`, and `audit-sveltekit` families
-  (`docs/internal/engine-rulings.md`). `AI_CRAWLERS_REVIEWED`, `feedView`, `PublicRoutes`, and
-  `unlistedRoutes` delete outright from `/delivery` and `/delivery/data` (or `/delivery` alone
-  for `PublicRoutes`): each had zero remaining consumers anywhere in `src/lib`, and
-  `unlistedRoutes` takes its two now-orphaned private helpers with it. `AI_CRAWLERS` unexports
-  from both delivery barrels but stays reachable at `delivery/ai-crawlers.ts` for the engine's
-  own internal use (`robots.ts`, `doctor/check-posture.ts`); its element type `AiCrawler`
-  unexports too, consumed only inside its declaring module. `isElement` unexports from `/render`
-  but stays reachable at `render/rehype-dispatch.ts`, where the pipeline's own transform
+  seeding `INSERT` still read; `devDelivery` deletes outright from `/auth-channel`
+  (`auth-channel/dev.ts` removed, zero remaining consumers anywhere in `src/lib`), its stated
+  purpose, guarding a dev transport reaching production, is a discoverability problem an export
+  does not fix, and the `CAIRN_DEV_BACKEND` refusal belongs in the factory's own construction
+  check; `insertOwnerIfEmpty` unexports from `/auth-store` but stays reachable at `auth/store.ts`
+  for the engine's own internal use (`sveltekit/auth-routes.ts`'s `bootstrapOwner` wiring), the
+  declarative `bootstrapOwner` config on `createCairnAdmin` already seeds the first owner
+  atomically on the bootstrap login path, where the race this function guards actually matters;
+  three `audit-cli` rows are process/tooling proposals the CLI-surface audit ledgered as `retire`
+  (decline the proposal), not exported names, a `check:dogfood` tripwire proposed into
+  `cairn-audit`, `unlistedRoutes` proposed as a `cairn-audit` rendered rule, and a
+  `skill.admin-screens` check plus `cairn-doctor --fix`, closing each is a ledger-only act, with
+  nothing to delete in `src/`. `AI_CRAWLERS_REVIEWED`, `feedView`, `PublicRoutes`, and
+  `unlistedRoutes` (`audit-delivery`) delete outright from `/delivery` and `/delivery/data` (or
+  `/delivery` alone for `PublicRoutes`), each had zero remaining consumers anywhere in `src/lib`,
+  and `unlistedRoutes` takes its two now-orphaned private helpers with it; `AI_CRAWLERS` unexports
+  from both delivery barrels but stays reachable at `delivery/ai-crawlers.ts` for the engine's own
+  internal use (`robots.ts`, `doctor/check-posture.ts`), its element type `AiCrawler` unexports
+  too, consumed only inside its declaring module. `isElement` (`audit-render`) unexports from
+  `/render` but stays reachable at `render/rehype-dispatch.ts`, where the pipeline's own transform
   functions call it internally; a site needing the narrowing reaches for `hast-util-is-element`,
-  named as the leaner alternative in the audit's own rationale. `stories` (`/reproductions`)
-  drops its `export` keyword, module-internal now beside `getStory`, the seam a consumer already
-  reaches a registered story through; the engine's own `reproductions-stories.test.ts` repoints
-  its "universal story contract" loop onto `manifest` filtered through `getStory` rather than the
-  array directly. `resolveNavLayout` and `validateNavLayout` unexport from `/sveltekit` but stay
-  reachable at `sveltekit/admin-nav.ts` for the engine's own internal use
-  (`content-routes-core.ts`'s `shellLoad`, `content-routes-context.ts`'s runtime composition);
-  `ResolveNavLayoutOptions` unexports too, consumed only inside its declaring module.
-  **Consumers must:** stop importing `AI_CRAWLERS`, `AI_CRAWLERS_REVIEWED`, `AiCrawler`,
-  `feedView`, `PublicRoutes`, or `unlistedRoutes` from `@glw907/cairn-cms/delivery` or
-  `@glw907/cairn-cms/delivery/data`; none has a replacement export. A site wanting the AI-crawler
-  posture keeps using `buildRobots`'s `posture` option, which applies the table internally. A
-  site wanting a full-content feed hand-writes its own mapping off `siteDescriptors`, filtering
-  `routing.inFeeds` itself, the same one-line derivation all six family sites already wrote by
-  hand. A site annotating `createPublicRoutes`'s return writes
-  `ReturnType<typeof createPublicRoutes>` itself. Stop importing `isElement` from
-  `@glw907/cairn-cms/render` (reach for `hast-util-is-element`, or the inline
-  `!!node && node.type === 'element'` check, over hast types the site already imports). Stop
-  importing `stories` from `@glw907/cairn-cms/reproductions` (call `getStory(id)` for each
-  manifest entry instead). Stop importing `resolveNavLayout`, `ResolveNavLayoutOptions`, or
-  `validateNavLayout` from `@glw907/cairn-cms/sveltekit`; none has a replacement export, and a
-  site rendering its own nav outside `CairnAdminShell` no longer has a public seam for it.
-
-- The retires pass (Task 2) closes eighteen ratified any-site-audit retire verdicts across the
-  `audit-sveltekit` and `audit-repro` families (`docs/internal/engine-rulings.md`), each accepted
-  by Geoff's F-1 hybrid ruling as a sanctioned `NavIcon`-class closure leak
-  (`docs/internal/record/2026-08-30-r4-rederivation.md`, section 7): the audit found no consumer
+  named as the leaner alternative in the audit's own rationale. `stories` (`audit-repro`,
+  `/reproductions`) drops its `export` keyword, module-internal now beside `getStory`, the seam a
+  consumer already reaches a registered story through; the engine's own
+  `reproductions-stories.test.ts` repoints its "universal story contract" loop onto `manifest`
+  filtered through `getStory` rather than the array directly. `resolveNavLayout` and
+  `validateNavLayout` (`audit-sveltekit`) unexport from `/sveltekit` but stay reachable at
+  `sveltekit/admin-nav.ts` for the engine's own internal use (`content-routes-core.ts`'s
+  `shellLoad`, `content-routes-context.ts`'s runtime composition); `ResolveNavLayoutOptions`
+  unexports too, consumed only inside its declaring module. The 18 sanctioned `NavIcon`-class
+  leaks, all `audit-sveltekit` except `ReproInstance` (`audit-repro`): the audit found no consumer
   naming these types directly, but each is still named, unexported, inside a surviving keep
   export's rendered public shape, and stays reachable through a structural indexed-access
   expression rather than by import. `AdvisoryNotice`, `LinkTarget`, `FragmentTarget`,
   `PublishActionLink`, `ResolvedPreview`, `LoginData`, `ConfirmData`, `EditorsData`,
   `EntrySummary`, `GettingStarted`, `MarkdownReferenceRow`, `HistoryEntry`, `MediaUsageInfo`, and
-  `TidyKeyProbeResult` all unexport from `/sveltekit`'s barrel but stay exported at (or
-  re-exported through, for `EntrySummary` and `TidyKeyProbeResult`) their own declaring module for
-  the engine's own internal use. `AdvisoryAction` and `NavConcept` drop their `export` keyword
-  entirely, consumed only inside their declaring module. `ReproInstance` (`/reproductions`) drops
-  its `export` keyword too; the two in-tree consumers that used to import it
+  `TidyKeyProbeResult` all unexport from `/sveltekit`'s barrel but stay exported at (or re-exported
+  through, for `EntrySummary` and `TidyKeyProbeResult`) their own declaring module for the engine's
+  own internal use; `AdvisoryAction`, `NavConcept`, and `NavPageOption` drop their `export`
+  keyword entirely, each consumed only inside its declaring module; `ReproInstance`
+  (`/reproductions`) drops its
+  `export` keyword too, and the two in-tree consumers that used to import it
   (`ReproContext.svelte`, the test suite's shared reproduction mount helper) now derive the type
-  structurally instead of importing the name. The full row-for-row record, with every replacement
-  expression, is `docs/internal/record/2026-08-30-retires-move-record.md`.
-  **Consumers must:** stop importing `AdvisoryNotice`, `AdvisoryAction`, `LinkTarget`,
-  `FragmentTarget`, `PublishActionLink`, `ResolvedPreview`, `LoginData`, `ConfirmData`,
-  `EditorsData`, `EntrySummary`, `GettingStarted`, `MarkdownReferenceRow`, `HistoryEntry`,
-  `MediaUsageInfo`, `NavConcept`, `NavPageOption`, `TidyKeyProbeResult`, or `ReproInstance` from
-  `@glw907/cairn-cms/sveltekit` or `@glw907/cairn-cms/reproductions`; none has a replacement
-  export, and each reads structurally off its surviving keep parent instead:
-  `EditData['advisories'][number]` for `AdvisoryNotice`,
+  structurally instead of importing the name. **Consumers must**, grouped by family: stop
+  importing `roleHome`, `StandardSchemaV1`, `TextInput`, `SelectInput`, `SelectInputOption`,
+  `FieldRow`, `ageFromBirthdate`, `formatMoney`, `FormatMoneyOptions`, `formatPhone`,
+  `FormatPhoneOptions`, `itemNoun`, `AppliedFilterPill`, `computeAppliedFilters`,
+  `computeCountLine`, `ItemRange`, `computeItemRange`, `PageWindowItem`, or `computePageWindow`
+  from `@glw907/cairn-cms` or `@glw907/cairn-cms/admin-toolkit` (`audit-adapter`/`audit-admin`);
+  none has a replacement export, and a site that needs the
+  `TextInput`/`SelectInput`/`SelectInputOption`/`FieldRow` composition or the pagination/toolbar
+  arithmetic hand-rolls it directly against `FieldLabel` and the two components' own documented
+  behavior. Stop importing `generateCsrfToken` or `generateSessionId`
+  from `@glw907/cairn-cms/auth-crypto` (`audit-auth`; call `generateToken` instead, for a
+  magic-link token, a session identifier, or a double-submit CSRF token alike); stop importing
+  `CHANNEL_SCHEMA_VERSION` or `devDelivery` from `@glw907/cairn-cms/auth-channel` (a site needing
+  the dev-only console print hand-rolls `deliver: async (contact, code) => console.log(contact,
+  code)`, gated the same way cairn's own dev backend is); stop importing `insertOwnerIfEmpty` from
+  `@glw907/cairn-cms/auth-store` (pass `bootstrapOwner` to `createCairnAdmin` instead). Stop
+  importing `AI_CRAWLERS`, `AI_CRAWLERS_REVIEWED`, `AiCrawler`, `feedView`, `PublicRoutes`, or
+  `unlistedRoutes` from `@glw907/cairn-cms/delivery` or `@glw907/cairn-cms/delivery/data`
+  (`audit-delivery`); none has a replacement export. A site wanting the AI-crawler posture keeps
+  using `buildRobots`'s `posture` option, which applies the table internally. A site wanting a
+  full-content feed hand-writes its own mapping off `siteDescriptors`, filtering `routing.inFeeds`
+  itself, the same one-line derivation all six family sites already wrote by hand. A site
+  annotating `createPublicRoutes`'s return writes `ReturnType<typeof createPublicRoutes>` itself.
+  Stop importing `isElement` from `@glw907/cairn-cms/render` (`audit-render`; reach for
+  `hast-util-is-element`, or the inline `!!node && node.type === 'element'` check, over hast types
+  the site already imports). Stop importing `stories` from `@glw907/cairn-cms/reproductions`
+  (`audit-repro`; call `getStory(id)` for each manifest entry instead). Stop importing
+  `resolveNavLayout`, `ResolveNavLayoutOptions`, or `validateNavLayout` from
+  `@glw907/cairn-cms/sveltekit` (`audit-sveltekit`); none has a replacement export, and a site
+  rendering its own nav outside `CairnAdminShell` no longer has a public seam for it. Stop
+  importing `AdvisoryNotice`, `AdvisoryAction`, `LinkTarget`, `FragmentTarget`,
+  `PublishActionLink`, `ResolvedPreview`, `LoginData`, `ConfirmData`, `EditorsData`,
+  `EntrySummary`, `GettingStarted`, `MarkdownReferenceRow`, `HistoryEntry`, `MediaUsageInfo`,
+  `NavConcept`, `NavPageOption`, `TidyKeyProbeResult`, or `ReproInstance` from
+  `@glw907/cairn-cms/sveltekit` or `@glw907/cairn-cms/reproductions` (the sanctioned 18,
+  `audit-sveltekit`/`audit-repro`); none has a replacement export, and each reads structurally off
+  its surviving keep parent instead: `EditData['advisories'][number]` for `AdvisoryNotice`,
   `NonNullable<EditData['advisories'][number]['actions']>[number]` for `AdvisoryAction`,
   `EditData['linkTargets'][number]` for `LinkTarget`,
   `NonNullable<EditData['fragmentTargets']>[number]` for `FragmentTarget`,

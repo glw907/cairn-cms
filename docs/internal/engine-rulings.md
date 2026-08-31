@@ -89,6 +89,42 @@ open edits, not part of the shape itself.
   [the move-set record](record/2026-08-29-foundations-a-move-set.md), which foundations B diffs
   against.
 
+## f1-return-position-leak-sanction: a return-position closure leak is an accepted trade, argument position is not  (accept, 2026-08-30, foundations B pass-end checkpoint / retires plan review)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own hybrid ruling at the
+  foundations B pass-end checkpoint: *"Neither (A) nor (B) whole. The split follows the position of the
+  leak, which is where the consumer cost actually differs... The 18 return-position rows stay in list
+  (b), sanctioned. Each survives retirement as an unnamed structural member of its keep parent, read
+  via indexed access (`ListData['entries'][number]`, `EditData['publishActions'][number]`, and so
+  on)... `AdminActionOptions` moves to list (c) as Tier 3, one row. It is the sole argument-position
+  leak: a consumer passes a value of this type INTO `adminAction`..., and constructing a value of an
+  un-nameable type is materially worse ergonomics than reading one... The sanction arrives with an
+  owner. Accepting 18 new leaks quadruples the class (5 today, 23 after), so the ruling couples it to a
+  gate rider, routed to the internals pass..., a `check:surface` rider that derives the leak set (a
+  retire-or-absent name inside a rendered public shape) and fails on any UNRECORDED leak, the same
+  fail-unless-recorded form the canonical-home rule uses. Until that rider lands, the retires pass's
+  move record is the manual ledger of the 18."* Three addendum rulings, after the adversarial
+  pre-dispatch review of the retires plan, refine the sanction's edges: *"`ReproFenceValidation` moves
+  to list (c) Tier 2 (reshape-blocked). It is named in the return of `validateReproFence`..., an open
+  reshape..., so deleting it now manufactures an unrecorded leak this record's own F-1 test missed by
+  construction... It retires with or after that reshape in the conventions pass."*; *"The render trio
+  (`cardShell` `headRow` `iconSpan`) defers to the chassis pass as list (c) Tier 4 (chassis-coupled).
+  All three are value-imported by the showcase theme/chassis and the baked `templates/waymark` twins and
+  taught as `docs/extend/configure-rendering.md`'s worked example; deleting them requires the chassis
+  re-homing, `emit:template` re-bake, and guide rewrite in one change..."*; *"`ReproInstance` stays
+  sanctioned. It appears only as a callback parameter..., which the return-position rationale does not
+  literally cover, but a consumer only ever RECEIVES one (inference covers the inline callback;
+  `Parameters<NonNullable<ReproStory['pose']>>[1]` covers the extracted helper), so the
+  `AdminActionOptions` construction-ergonomics rationale does not transfer."*
+- **Shape:** The permanent `check:surface` rider derives the leak set (a retire-verdicted or otherwise
+  absent name that still appears inside a surviving rendered public shape) and fails on any leak that
+  is not recorded, the same fail-unless-recorded form the canonical-home rule already enforces; it
+  supersedes the retires pass's manual move record as the leak ledger once it lands.
+- **Reopens on:** open until the leak-class `check:surface` rider lands in the internals pass; until
+  then, the retires pass's move record is the manual ledger of the 18 accepted leaks.
+- **Record:** [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (the RULED subsection
+  and its ADDENDUM RULINGS); [retires-move-record](record/2026-08-30-retires-move-record.md).
+
 ## login-csrf-no-same-browser-binding: magic-link confirm has no same-browser binding  (defer, 2026-08-27, csrf-hardening pass)
 
 - **Verdict:** defer. `confirmLoad`/`confirmAction` (`auth-routes.ts:170,185`) accept any
@@ -1887,9 +1923,14 @@ when the remediation pass lands.
 ## audit-sveltekit-adminactionoptions: `AdminActionOptions`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Its own doc says every real caller takes the default, and the ranking's any-site case is 'Essentially none'. Reshape presupposes membership; an item with none fails before form is reached. The note's own first branch, folding the flag away, is retirement.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** open; not executed by the retires pass. The F-1 hybrid ruling
+  (`f1-return-position-leak-sanction`) moved this name to list (c) Tier 3 as the sole
+  argument-position closure leak (a consumer passes a value of this type INTO `adminAction`, so an
+  un-nameable type is a construction-ergonomics regression the return-position sanction does not
+  cover). Blocked on `adminAction`'s own declared signature naming it (`api-surface.md:472`);
+  reopens when a later ruling reshapes that signature or overturns the verdict.
 - **Shape:** A bag named Options whose only member is an injected build flag advertises configuration that does not exist. Fold the flag into the function's own testing surface, or name it for what it is rather than as the wrapper's options.
-- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 108.
+- **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 108; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
 ## audit-sveltekit-unauditedactionerror: `UnauditedActionError`  (keep, 2026-08-26, any-site audit)
@@ -3110,22 +3151,40 @@ when the remediation pass lands.
 ## audit-render-cardshell: `cardShell`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. It hands a stranger a baked <div class="card-body"> they did not choose, saving one h() call in a file that already imports hastscript.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 1.
+- **Reopens on:** open; not executed by the retires pass. The r4-rederivation addendum ruling defers
+  this name to list (c) Tier 4 (chassis-coupled): it is value-imported by
+  `examples/showcase/src/theme/cairn.config.ts` / `src/chassis/render.ts` and the baked
+  `templates/waymark` twins, and taught as `docs/extend/configure-rendering.md`'s worked example, so
+  its deletion requires the chassis re-homing, `emit:template` re-bake, and guide rewrite in the
+  same change. The chassis pass (slice 6) owns the re-homing, the re-emit, the guide rewrite, and
+  then the deletion.
+- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 1; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
 
 ## audit-render-iconspan: `iconSpan`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. The whole body is one family site's class vocabulary ('ec-icon'), and every family site already wraps it in its own makeIconRenderer factory anyway.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 2.
+- **Reopens on:** open; not executed by the retires pass. The r4-rederivation addendum ruling defers
+  this name to list (c) Tier 4 (chassis-coupled): it is value-imported by
+  `examples/showcase/src/theme/cairn.config.ts` / `src/chassis/render.ts` and the baked
+  `templates/waymark` twins, and taught as `docs/extend/configure-rendering.md`'s worked example, so
+  its deletion requires the chassis re-homing, `emit:template` re-bake, and guide rewrite in the
+  same change. The chassis pass (slice 6) owns the re-homing, the re-emit, the guide rewrite, and
+  then the deletion.
+- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 2; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
 
 ## audit-render-headrow: `headRow`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Weak. Real logic (optional icon, level), but bakes 'ec-head' and 'card-title'; a stranger whose design lacks those classes must override or abandon it.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 3.
+- **Reopens on:** open; not executed by the retires pass. The r4-rederivation addendum ruling defers
+  this name to list (c) Tier 4 (chassis-coupled): it is value-imported by
+  `examples/showcase/src/theme/cairn.config.ts` / `src/chassis/render.ts` and the baked
+  `templates/waymark` twins, and taught as `docs/extend/configure-rendering.md`'s worked example, so
+  its deletion requires the chassis re-homing, `emit:template` re-bake, and guide rewrite in the
+  same change. The chassis pass (slice 6) owns the re-homing, the re-emit, the guide rewrite, and
+  then the deletion.
+- **Record:** [rank-render-build-tooling.md](record/2026-08-26-any-site-audit/rank-render-build-tooling.md), rank 3; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
 - **Verified:** [verify-render-build-tooling.md](record/2026-08-26-any-site-audit/verify-render-build-tooling.md).
 
 ## audit-render-iselement: `isElement`  (retire, 2026-08-26, any-site audit)
@@ -3192,8 +3251,13 @@ when the remediation pass lands.
 ## audit-repro-reprofencevalidation: `ReproFenceValidation`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Named at zero call sites worldwide: only its declaration, its own return annotation, the manifest.ts:331 re-export, and the reference page. Eleven in-repo sites and check-visuals.mjs:194-200 destructure inline. Retiring is one clause off line 331.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 4.
+- **Reopens on:** open; not executed by the retires pass. The r4-rederivation addendum ruling moved
+  this name to list (c) Tier 2 (reshape-blocked): it is named in the return of `validateReproFence`
+  (`api-surface.md:467`), an open reshape (`audit-repro-validatereprofence`), so retiring it now
+  would manufacture an unrecorded closure leak the F-1 test missed by construction (that test
+  scanned keep-verdicted shapes only, and `validateReproFence` is not yet a keep). It retires with,
+  or after, that reshape, in the conventions pass, which owns both.
+- **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 4; [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (ADDENDUM RULINGS).
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md) (verdict overturned there).
 
 ## audit-repro-reproheights: `ReproHeights`  (keep, 2026-08-26, any-site audit)

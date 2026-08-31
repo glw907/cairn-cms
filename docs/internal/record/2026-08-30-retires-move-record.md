@@ -92,11 +92,26 @@ absent at pass end.
 **Predicate:** a retire-verdicted name, absent from every subpath's export list in
 `docs/internal/api-surface.md`, named inside a surviving rendered public shape.
 
-**Expected count after this task: 20.** The 18 sanctioned leaks above, plus two names this task
-does not touch and never held a `NavIcon`-class sanction: `DictionaryAddFailure` and
-`TidyFailure`, both arms of `createCairnAdmin`'s `dictionaryAdd`/`tidy` actions
-(`api-surface.md`, `createCairnAdmin`'s own entry), neither exported from any subpath. Re-verified
-directly against the regenerated snapshot: `grep -c "DictionaryAddFailure\|TidyFailure"
+**The retires pass plan's "Expected count after this task: 20" is superseded here**: it was
+inconsistent with its own predicate (a retire-verdicted name never carries a verdict it was never
+given), and Task 3's own re-derivation against `check-surface.mjs`'s `buildSurfaceModel()` found a
+different, better-reasoned number. The standing count, as executed:
+
+(a) **Strict predicate count as executed: 17.** The 18 sanctioned leaks minus `AdvisoryAction`,
+which this renderer's one-hop expansion cannot reach (see the caveat below); verified by a
+throwaway derivation over `check-surface.mjs`'s `buildSurfaceModel()` at Task 3.
+
+(b) **18 against the TypeScript type graph.** All 18 are real leaks; only the rendering misses
+one, so the internals pass's rider, deriving against the checker, should expect 18.
+
+(c) **`DictionaryAddFailure` and `TidyFailure` sit BESIDE this predicate, not inside it.** Both
+are named in `createCairnAdmin`'s, `CairnAdminRoutes`'s, and `ContentRoutes`'s rendered shapes and
+are exported from no subpath, but neither carries any verdict in `engine-rulings.md`, so the
+predicate's first clause structurally excludes them. They are un-verdicted standing leaks; the
+internals pass decides whether to record them or to widen the predicate. Full standing set
+including them: 19 rendered, 20 in the type graph.
+
+Re-verified directly against the regenerated snapshot: `grep -c "DictionaryAddFailure\|TidyFailure"
 docs/internal/api-surface.md` finds 3 in-shape mentions and zero `- \`DictionaryAddFailure\`:` or
 `- \`TidyFailure\`:` declaration rows.
 

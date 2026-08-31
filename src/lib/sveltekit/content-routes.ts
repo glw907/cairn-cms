@@ -33,13 +33,10 @@ import { createSettingsActions } from './content-routes-settings.js';
 import { createDictionaryActions } from './content-routes-dictionary.js';
 
 // The advisory notice types are defined alongside the cross-branch address index in the content
-// layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
-export type { AdvisoryNotice, AdvisoryAction } from '../content/advisories.js';
-
+// layer; EditData's advisories names AdvisoryNotice, imported directly by content-routes-core.js.
 export type { ContentRoutesOptions, TidyClient, AttentionItem } from './content-routes-context.js';
 
 export type {
-  NavConcept,
   AdminShellData,
   EntrySummary,
   ListData,
@@ -51,11 +48,9 @@ export type {
   RenameFailure,
   CreateFailure,
   PreviewMintFailure,
-  FragmentTarget,
 } from './content-routes-core.js';
 
 export type {
-  MediaUsageInfo,
   MediaLibraryData,
   MediaDeleteRefusal,
   MediaUpdateFailure,

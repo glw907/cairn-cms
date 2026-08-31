@@ -1217,7 +1217,7 @@ when the remediation pass lands.
 ## audit-sveltekit-tidykeyproberesult: `TidyKeyProbeResult`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A literal union describing an Anthropic key probe the engine runs for its own settings screen; inferred from data.keyStatus.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `tidy-key-health.ts`, and its re-export through `tidy-key-probe.ts` stays too (`content-routes-settings.ts` imports it from there); only its barrel line in `sveltekit/index.ts` is dropped. Survives structurally inside `SettingsData` (`Exclude<SettingsData['keyStatus'], 'missing'>`); accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 15.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1353,7 +1353,7 @@ when the remediation pass lands.
 ## audit-sveltekit-fragmenttarget: `FragmentTarget`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. { id; title; body } feeds the editor's fragment picker; a site mounting CairnEntryEditor passes data whole.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content-routes-core.ts` (`FragmentPicker.svelte` imports it directly); its re-export dropped from `content-routes.ts` and its barrel line from `sveltekit/index.ts`. Survives structurally inside `EditData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 34.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1375,7 +1375,7 @@ when the remediation pass lands.
 ## audit-sveltekit-mediausageinfo: `MediaUsageInfo`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A per-hash overlay the engine's own library renders; no seam takes or returns it, so its Extension tier is unearned.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content-routes-media.ts` (`reproductions/fixtures.ts` imports it directly); its re-export dropped from `content-routes.ts` and its barrel line from `sveltekit/index.ts`. Survives structurally inside `MediaLibraryData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 37.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1390,56 +1390,56 @@ when the remediation pass lands.
 ## audit-sveltekit-navpageoption: `NavPageOption`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. nav-routes.ts calls it 'one page option for the URL picker datalist' — a widget detail, not a contract.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: dropped the `export` keyword in `nav-routes.ts` (consumed only inside its declaring module, by `NavLoadData.pages`); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `NavLoadData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 39.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-navconcept: `NavConcept`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. { id; label } reached through AdminShellData.concepts; a site with nav ambitions uses the navLayout seam instead.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: dropped the `export` keyword in `content-routes-core.ts` (consumed only inside its declaring module, by `AdminShellData.concepts`); its re-export dropped from `content-routes.ts` and its barrel line from `sveltekit/index.ts`. Survives structurally inside `AdminShellData` (`Extract<AdminShellData, { public: false }>['concepts'][number]`) and, transitively, `ReproStory`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 40.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-gettingstarted: `GettingStarted`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A hard-coded total: 3 in the type is the tell that this is cairn's own onboarding copy, not a contract.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content/getting-started.ts` (`content-routes-core.ts` imports it directly); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `HelpData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 41.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-markdownreferencerow: `MarkdownReferenceRow`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A markdown cheat-sheet row the engine authors and renders; reached as data.reference[i].
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `components/markdown-reference.ts` (`HelpHome.svelte` and `content-routes-core.ts` import it directly); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `HelpData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 42.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-historyentry: `HistoryEntry`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None by name; reached as data.entries[i] when a site mounts the history component.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `types.ts` (`content-routes-core.ts` imports it directly); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `HistoryData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 43.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-entrysummary: `EntrySummary`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Plausible but not demanding: a helper like badge(e: EntrySummary). Satisfied by ListData['entries'][number].
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content-routes-core.ts`, and its re-export through `content-routes.ts` stays too (`ConceptList.svelte` and `reproductions/fixtures.ts` both import it from there); only its barrel line in `sveltekit/index.ts` is dropped. Survives structurally inside `ListData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 44.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-advisoryaction: `AdvisoryAction`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. { label; href? } inside an advisory the engine both produces and renders.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: dropped the `export` keyword in `content/advisories.ts` (consumed only inside its declaring module, by `AdvisoryNotice.actions`); every barrel line dropped. Survives structurally inside `EditData` (via `AdvisoryNotice`); accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 45.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-advisorynotice: `AdvisoryNotice`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. There is no seam for a site to contribute an advisory, so exporting the shape advertises an extension point that does not exist.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content/advisories.ts` (`content-routes-core.ts` imports it directly for `EditData.advisories`); every barrel/re-export line dropped (`content-routes-core.ts`, `content-routes.ts`, `sveltekit/index.ts`). Survives structurally inside `EditData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 46.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1454,35 +1454,35 @@ when the remediation pass lands.
 ## audit-sveltekit-linktarget: `LinkTarget`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None at this subpath; same closure re-export as InboundLink.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content/manifest.ts` (six admin components and `content-routes-core.ts` import it directly); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `EditData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 48.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-resolvedpreview: `ResolvedPreview`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A site names its own preview config; this is what the engine resolved from it, reached as data.preview.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `content/types.ts` (`ComponentInsertDialog.svelte`, `preview-doc.ts`, and `content-routes-core.ts` all import it directly); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `EditData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 49.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-confirmdata: `ConfirmData`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. The confirm page is engine-rendered and no /components example takes this type.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `auth-routes.ts` (`cairn-admin.ts` imports it directly); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `AdminData` (`Extract<AdminData, { view: 'confirm' }>['page']`), `AuthRoutes`, and `createAuthRoutes`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 50.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-logindata: `LoginData`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Weak. A site rebranding login is plausible, but cairn's answer for that is AuthRoutesConfig.branding, not a hand-built route.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `auth-routes.ts` (`cairn-admin.ts` imports it directly); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `AdminData` (`Extract<AdminData, { view: 'login' }>['page']`), `AuthRoutes`, and `createAuthRoutes`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 51.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-editorsdata: `EditorsData`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Owner-only engine roster surface, and components.md never names this type.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `editors-routes.ts` (`cairn-admin.ts` and `reproductions/stories/site.ts` import it directly); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `AdminData` (`Extract<AdminData, { view: 'editors' }>['page']`), `EditorRoutes`, and `createEditorRoutes`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 52.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
@@ -1552,7 +1552,7 @@ when the remediation pass lands.
 ## audit-sveltekit-publishactionlink: `PublishActionLink`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. The site-written half is PublishActionEntry/PublishActionsConfig. This is only the resolved form, produced by the unexported resolvePublishActions and read off EditData.publishActions; sveltekit.md:1837 says the edit page renders them. Identical position to FragmentTarget and UsageEntry, both retired.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: the module-level export stays in `publish-actions.ts` (`content-routes-core.ts` imports it directly); its barrel line dropped from `sveltekit/index.ts`. Survives structurally inside `EditData`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 62.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
 
@@ -3185,7 +3185,7 @@ when the remediation pass lands.
 ## audit-repro-reproinstance: `ReproInstance`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Stated ground is false: tsc --declaration emits a non-exported same-file alias verbatim. The alias is Record<string, unknown> ("Untyped by design", index.ts:26), carries no engine fact, and cairn-pub's installed 0.95.0-rc.1 has no such parameter.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, Task 2: dropped the `export` keyword in `reproductions/index.ts` (consumed only inside its declaring module, by `ReproStory.pose`); `ReproContext.svelte` and the test suite's shared mount helper now derive the type structurally as `Parameters<NonNullable<ReproStory['pose']>>[1]` rather than importing the name. Survives structurally inside `ReproStory`; accepted `NavIcon`-class leak per the F-1 hybrid ruling, r4-rederivation section 7.
 - **Record:** [rank-reproductions.md](record/2026-08-26-any-site-audit/rank-reproductions.md), rank 3.
 - **Verified:** [verify-reproductions.md](record/2026-08-26-any-site-audit/verify-reproductions.md) (verdict overturned there).
 

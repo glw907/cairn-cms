@@ -298,6 +298,46 @@
   `validateNavLayout` from `@glw907/cairn-cms/sveltekit`; none has a replacement export, and a
   site rendering its own nav outside `CairnAdminShell` no longer has a public seam for it.
 
+- The retires pass (Task 2) closes eighteen ratified any-site-audit retire verdicts across the
+  `audit-sveltekit` and `audit-repro` families (`docs/internal/engine-rulings.md`), each accepted
+  by Geoff's F-1 hybrid ruling as a sanctioned `NavIcon`-class closure leak
+  (`docs/internal/record/2026-08-30-r4-rederivation.md`, section 7): the audit found no consumer
+  naming these types directly, but each is still named, unexported, inside a surviving keep
+  export's rendered public shape, and stays reachable through a structural indexed-access
+  expression rather than by import. `AdvisoryNotice`, `LinkTarget`, `FragmentTarget`,
+  `PublishActionLink`, `ResolvedPreview`, `LoginData`, `ConfirmData`, `EditorsData`,
+  `EntrySummary`, `GettingStarted`, `MarkdownReferenceRow`, `HistoryEntry`, `MediaUsageInfo`, and
+  `TidyKeyProbeResult` all unexport from `/sveltekit`'s barrel but stay exported at (or
+  re-exported through, for `EntrySummary` and `TidyKeyProbeResult`) their own declaring module for
+  the engine's own internal use. `AdvisoryAction` and `NavConcept` drop their `export` keyword
+  entirely, consumed only inside their declaring module. `ReproInstance` (`/reproductions`) drops
+  its `export` keyword too; the two in-tree consumers that used to import it
+  (`ReproContext.svelte`, the test suite's shared reproduction mount helper) now derive the type
+  structurally instead of importing the name. The full row-for-row record, with every replacement
+  expression, is `docs/internal/record/2026-08-30-retires-move-record.md`.
+  **Consumers must:** stop importing `AdvisoryNotice`, `AdvisoryAction`, `LinkTarget`,
+  `FragmentTarget`, `PublishActionLink`, `ResolvedPreview`, `LoginData`, `ConfirmData`,
+  `EditorsData`, `EntrySummary`, `GettingStarted`, `MarkdownReferenceRow`, `HistoryEntry`,
+  `MediaUsageInfo`, `NavConcept`, `NavPageOption`, `TidyKeyProbeResult`, or `ReproInstance` from
+  `@glw907/cairn-cms/sveltekit` or `@glw907/cairn-cms/reproductions`; none has a replacement
+  export, and each reads structurally off its surviving keep parent instead:
+  `EditData['advisories'][number]` for `AdvisoryNotice`,
+  `NonNullable<EditData['advisories'][number]['actions']>[number]` for `AdvisoryAction`,
+  `EditData['linkTargets'][number]` for `LinkTarget`,
+  `NonNullable<EditData['fragmentTargets']>[number]` for `FragmentTarget`,
+  `EditData['publishActions'][number]` for `PublishActionLink`,
+  `NonNullable<EditData['preview']>` for `ResolvedPreview`,
+  `Extract<AdminData, { view: 'login' }>['page']` for `LoginData`,
+  `Extract<AdminData, { view: 'confirm' }>['page']` for `ConfirmData`,
+  `Extract<AdminData, { view: 'editors' }>['page']` for `EditorsData`,
+  `ListData['entries'][number]` for `EntrySummary`, `HelpData['gettingStarted']` for
+  `GettingStarted`, `HelpData['reference'][number]` for `MarkdownReferenceRow`,
+  `HistoryData['entries'][number]` for `HistoryEntry`, `MediaLibraryData['usage'][string]` for
+  `MediaUsageInfo`, `Extract<AdminShellData, { public: false }>['concepts'][number]` for
+  `NavConcept`, `NavLoadData['pages'][number]` for `NavPageOption`,
+  `Exclude<SettingsData['keyStatus'], 'missing'>` for `TidyKeyProbeResult`, and
+  `Parameters<NonNullable<ReproStory['pose']>>[1]` for `ReproInstance`.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

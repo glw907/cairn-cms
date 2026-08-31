@@ -57,8 +57,13 @@ than the keyboard one. `docs/internal/record/repro-story-audit.md` records which
   import type { AdminShellData } from '../sveltekit/content-routes-core.js';
   import { fixtureConcept, fixtureCsrf, fixtureEditor, fixtureNavLayout, fixtureSiteName } from './fixtures.js';
   import { fixtureMediaBase, manifest } from './manifest.js';
-  import type { ReproInstance, ReproStory } from './index.js';
+  import type { ReproStory } from './index.js';
   import '../components/cairn-admin.css';
+
+  // `ReproInstance` unexported (the retires pass, Task 2, a sanctioned NavIcon-class leak); the
+  // mounted component's own exports, read structurally off `ReproStory.pose`'s own signature
+  // rather than by the retired name.
+  type ReproInstance = Parameters<NonNullable<ReproStory['pose']>>[1];
 
   interface Props {
     /** The story to mount. */

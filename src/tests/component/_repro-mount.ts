@@ -7,7 +7,11 @@
 //
 // Each suite still owns its own viewport policy, which is the part that differs between them.
 import { render } from 'vitest-browser-svelte';
-import { ReproContext, type ReproInstance, type ReproStory } from '../../lib/reproductions/index.js';
+import { ReproContext, type ReproStory } from '../../lib/reproductions/index.js';
+
+// `ReproInstance` retired from the public barrel (the retires pass, Task 2, a sanctioned
+// NavIcon-class leak); read structurally off `ReproStory.pose`'s own signature instead.
+type ReproInstance = Parameters<NonNullable<ReproStory['pose']>>[1];
 
 /**
  * Mount `story` through `ReproContext` and bring it to the state its page contract names: `settle`

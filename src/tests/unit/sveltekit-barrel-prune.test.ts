@@ -8,9 +8,15 @@ import { enumerateExports, moduleExports } from '../../../scripts/checks/referen
 // from `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`.
 const DEMOTED = ['isPublicAdminPath', 'parseAdminPath', 'AdminView', 'NavRoutesDeps'];
 
+// Six names this list once kept, retired from the /sveltekit barrel by the retires pass, Task 2:
+// sanctioned NavIcon-class closure leaks (the F-1 hybrid ruling, r4-rederivation section 7). Each
+// survives structurally inside a keep parent's rendered shape; the replacement expression per name
+// is `docs/internal/record/2026-08-30-retires-move-record.md`.
+const RETIRED_LEAKS = ['NavConcept', 'EntrySummary', 'AdvisoryNotice', 'AdvisoryAction', 'MediaUsageInfo', 'NavPageOption'];
+
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
 // section (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the
-// four demotions above.
+// four demotions above and the six retired leaks above.
 const KEPT = [
   'createAuthGuard',
   'requireSession',
@@ -21,15 +27,10 @@ const KEPT = [
   'createEditorRoutes',
   'createContentRoutes',
   'createMediaRoute',
-  'NavConcept',
   'AdminShellData',
-  'EntrySummary',
   'ListData',
   'EditData',
-  'AdvisoryNotice',
-  'AdvisoryAction',
   'HelpData',
-  'MediaUsageInfo',
   'MediaLibraryData',
   'ContentRoutesOptions',
   'SaveFailure',
@@ -44,7 +45,6 @@ const KEPT = [
   'UploadResult',
   'createNavRoutes',
   'NavLoadData',
-  'NavPageOption',
   'NavIcon',
   'ResolvedNavEntry',
   'createCairnAdmin',
@@ -72,6 +72,12 @@ describe('sveltekit barrel prune', () => {
   it('no longer resolves the demoted names from the /sveltekit subpath', () => {
     const names = new Set(enumerateExports(DTS));
     const stillPresent = DEMOTED.filter((name) => names.has(name));
+    expect(stillPresent).toEqual([]);
+  });
+
+  it('no longer resolves the retired leak names from the /sveltekit subpath', () => {
+    const names = new Set(enumerateExports(DTS));
+    const stillPresent = RETIRED_LEAKS.filter((name) => names.has(name));
     expect(stillPresent).toEqual([]);
   });
 

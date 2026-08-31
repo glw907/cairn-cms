@@ -440,7 +440,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AdminActionAuditRecord`: AdminActionAudit & { actor: string }
 - `AdminActionAuditSink`: (record: AdminActionAuditRecord) => void
 - `AdminActionContext`: { editor: Editor; audit: (record: AdminActionAudit) => void }
-- `AdminActionOptions`: { isDev?: boolean }
+- `AdminActionOptions`: { isDev?: boolean; access?: { target: string; ownerOnly?: boolean } }
 - `AdminData`: { view: "login"; page: LoginData } | { view: "confirm"; page: ConfirmData } | { view: "list"; page: ListData } | { view: "edit"; page: EditData } | { view: "history"; page: HistoryData } | { view: "editors"; page: EditorsData } | { view: "nav"; page: NavLoadData } | { view: "media"; page: MediaLibraryData } | { view: "settings"; page: SettingsData } | { view: "vocabulary"; page: VocabularyLoadData } | { view: "help"; page: HelpData } | { view: "welcome"; page: WelcomeData }
 - `AdminShellData`: { public: true; siteName: string; theme: "cairn-admin" | "cairn-admin-dark" } | { public: false; siteName: string; user: { displayName: string; email: string; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null>; attention: Record<string, { count: number; label: string }>; mediaBase: string }
 - `AltPlacement`: { kind: "body" | "figure" | "hero"; bucket: "will-fill" | "customized" | "decorative-skipped"; before: string; after: string }

@@ -498,10 +498,28 @@ check is defense-in-depth, not the sole gate; its real job is resolving the sign
 typed `ctx.editor` and requiring an audit emit for a mutating action, a hook the engine has no other
 seam for.
 
-`adminAction` authenticates and verifies CSRF; it performs no authorization of its own. A
-`none`-capability editor's session still passes both checks and reaches the wrapped handler
-unchanged. Add [`requireAccess`](#requireaccess) inside the handler, or build the action on
-[`createSectionAction`](#createsectionaction), for a capability check.
+`adminAction` authenticates and verifies CSRF, and authorizes only when you ask it to. Omit the
+`access` option, the default, and it performs no authorization at all: a `none`-capability
+editor's session passes both checks and reaches the wrapped handler unchanged, exactly as before
+the option existed. Set `access: { target, ownerOnly? }` and the wrapper runs the same access-map
+sequence [`createSectionAction`](#createsectionaction) runs, audits a refusal through `ctx.audit`,
+logs `auth.access.denied`, and throws `error(403, ...)`; the return type stays your handler's own,
+since refusals throw rather than returning a `fail()`. The option is opt-in rather than on by
+default because a zero-config site's guard attaches an empty access map, which admits no target,
+so enforcing by default would refuse every action on the documented database-less default instead
+of hardening it. Opting in has one consequence worth planning for: your `cairnAuditSink` starts
+receiving denial records, one per refused request. [`requireAccess`](#requireaccess) inside the
+handler is still available for a check the map can't express.
+
+```ts
+import { adminAction } from '@glw907/cairn-cms/sveltekit';
+
+export const actions = {
+  approve: adminAction(async ({ ctx }) => ({ approvedBy: ctx.editor.email }), {
+    access: { target: '/admin/club/events', ownerOnly: true },
+  }),
+};
+```
 
 In order, fail-closed at every step: (1) `event.locals.cairnEditor` must be populated, else a redirect
 to `/admin/login`, matching [`requireSession`](#requiresession) exactly (a lapsed session needs the
@@ -509,9 +527,11 @@ login page, not an error page); (2) a valid `X-Cairn-CSRF` header clears this st
 same witness [`createAuthGuard`](#createauthguard) checks first; only with no valid header must the
 posted `csrf` field match the CSRF cookie, constant-time, else SvelteKit's own `error(403, ...)`,
 rendered through the nearest `+error.svelte` (a fetch-based custom action that sets the header and
-posts `FormData` with no `csrf` field still passes this step); (3) the handler runs once, reading
-`event.request.formData()` exactly once so the handler never
-re-reads an already-consumed body; (4) a handler that returns normally (its request succeeded) must
+posts `FormData` with no `csrf` field still passes this step); (3) with `access` set, and only
+then, the site's access map must admit the session for the declared target, `hasAccessRule` before
+`canReach` with `ownerOnly` stacking on top, else an audited `error(403, ...)`; (4) the handler
+runs once, reading `event.request.formData()` exactly once so the handler never
+re-reads an already-consumed body; (5) a handler that returns normally (its request succeeded) must
 call `ctx.audit` at least once. A successful mutating action that emits zero audit records throws
 `UnauditedActionError(500, ...)` in dev (`esm-env`'s `DEV`, overridable through `deps.isDev` for a
 test) and logs `admin.action.unaudited` in production, since an unaudited state change is a defect
@@ -524,9 +544,10 @@ since nothing rolls its writes back and the wrapper can't see them. Every emit l
 [log events](./log-events.md)) and, when the site sets one, forwards the record to
 `event.locals.cairnAuditSink`.
 
-Both preceding authentication branches throw one of SvelteKit's own recognized shapes (see [Refusal
-channels](#refusal-channels)): the missing-editor redirect and the CSRF `error(403, ...)` carry
-their status to the browser directly, and neither needs a site `handleError` mapping. Only the
+Every preceding refusal throws one of SvelteKit's own recognized shapes (see [Refusal
+channels](#refusal-channels)): the missing-editor redirect, the CSRF `error(403, ...)`, and the
+opted-in authorization's `error(403, ...)` carry their status to the browser directly, and none
+needs a site `handleError` mapping. Only the
 dev-only required-audit check throws [`UnauditedActionError`](#types), which SvelteKit doesn't
 recognize as one of its own thrown shapes; it fires only under `esm-env`'s `DEV`, so it's a
 build-time author signal, never a production response, and it too needs no `handleError` mapping.
@@ -1827,7 +1848,7 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="sectionactioncontext"></a>`SectionActionContext` | Extension API | `type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & { audit: (record: SectionActionAudit) => void; db: NonNullable<Db> }` | What a [`createSectionAction`](#createsectionaction)-wrapped handler receives: `adminAction`'s own context, with `audit` replaced by the defaulting [`SectionActionAudit`](#types) form, plus the resolved, non-nullable database binding, so no handler re-resolves it. |
 | <a id="sectionaction"></a>`SectionAction` | Extension API | `type SectionAction<Env, Db> = <T>(handler: (args: { event: CairnEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>, opts: SectionActionOptions) => (event: CairnEvent<Env>) => Promise<T \| ActionFailure<{ error: string }>>` | What [`createSectionAction`](#createsectionaction) returns: the per-call-site wrapper, curried over the handler's own success type `T`, hand-declared (never `ReturnType<typeof createSectionAction>`). |
 | `AdminActionContext` | Extension API | `interface AdminActionContext { editor: Editor; audit: (record: AdminActionAudit) => void }` | What a wrapped handler receives: the verified editor and the bound `audit` emitter. |
-| `AdminActionOptions` | Extension API | `interface AdminActionOptions { isDev?: boolean }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. |
+| `AdminActionOptions` | Extension API | `interface AdminActionOptions { isDev?: boolean; access?: { target: string; ownerOnly?: boolean } }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. `access` opts the action into the access-map authorization [`createSectionAction`](#createsectionaction) performs, against `target` (an access-map key, never a request pathname) with `ownerOnly` stacking on the map check; omitted, `adminAction` authorizes nothing, its behavior for every caller written before the option existed. |
 | `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `adminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `adminAction`'s own authentication refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
 | `UploadResult` | Unstable API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
 | `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }>; mediaBase: string }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. `mediaBase` is the resolved delivery base (the site's own `assets.publicBase`, or `/media`) that `CairnAdminShell` hands every descendant media surface through context, so a non-default base reaches admin thumbnails too. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. |

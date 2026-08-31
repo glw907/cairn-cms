@@ -21,8 +21,8 @@
 // local `deny` and `misconfigured` helpers below are what make that uniformity structural, rather
 // than a convention five separate branches each have to keep.
 import { fail, isHttpError, isRedirect } from '@sveltejs/kit';
-import { adminAction } from './admin-action.js';
-import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
+import { adminAction, authorizeAdminTarget, ADMIN_DENIAL_DETAIL, DENIED_MESSAGE } from './admin-action.js';
+import { targetFromRouteId } from '../auth/access.js';
 import { log } from '../log/index.js';
 import { resolveRateLimit } from '../cloudflare/rate-limit.js';
 import type { AdminActionContext } from './admin-action.js';
@@ -92,7 +92,6 @@ export type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & {
   db: NonNullable<Db>;
 };
 
-const DENIED_MESSAGE = 'You do not have access to this action.';
 const UNAVAILABLE_MESSAGE = 'This section is not available.';
 
 /**
@@ -133,7 +132,8 @@ export type SectionAction<Env, Db> = <T>(
  *    leaks nothing per-editor, since it is identical for every session.
  * 4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
  *    `requireAccess` exactly, owner included: a POST must never be admitted where the load fails
- *    closed.
+ *    closed. Steps 4 and 5 run through `authorizeAdminTarget` (`./admin-action.js`), the one
+ *    sequence `adminAction`'s opt-in `access` option also runs; only the refusal channel differs.
  * 5. `canReach` false, or `opts.ownerOnly` set against a non-owner session, audits
  *    `'rejected: role not admitted'` / `'rejected: not owner'` and returns `fail(403)`.
  * 6. `resolveDb` returning null or undefined audits `'rejected: database not bound'`, logs
@@ -278,12 +278,12 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
         return misconfigured('rejected: access map not attached', 'access_map_not_attached');
       }
 
-      // All three, in this order. hasAccessRule never collapses into canReach: canReach reads an
-      // unmapped target permissively, which is nav semantics, not an authorization floor. ownerOnly
-      // stacks on the map check rather than standing in for it.
-      if (!hasAccessRule(access, target)) return deny('rejected: no access rule');
-      if (!canReach(access, ctx.editor, target)) return deny('rejected: role not admitted');
-      if (opts.ownerOnly && ctx.editor.capability !== 'owner') return deny('rejected: not owner');
+      // All three checks, in order, through the shared sequence adminAction's opt-in access
+      // option also runs (authorizeAdminTarget, ./admin-action.js). This wrapper keeps its own
+      // refusal channel: each refusing outcome audits and returns fail(403), where adminAction
+      // audits and throws.
+      const authorization = authorizeAdminTarget(access, ctx.editor, { target, ownerOnly: opts.ownerOnly });
+      if (authorization.outcome !== 'allowed') return deny(ADMIN_DENIAL_DETAIL[authorization.outcome]);
 
       // resolveDb runs last, after every authorization check, so a session the access map
       // refuses learns nothing about whether the section's binding is deployed: its refusal

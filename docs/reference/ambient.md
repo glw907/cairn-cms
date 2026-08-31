@@ -56,8 +56,11 @@ namespace to peel back first.
 
 - **`cairnAccess`** is the site's declared access map, attached by `createAuthGuard` alongside
   `cairnEditor`. It's internal, never serialized to a page payload, and exists so
-  `requireAccess` and [`createSectionAction`](./sveltekit.md#createsectionaction) need no extra
-  argument to reach it at the call site.
+  `requireAccess`, [`createSectionAction`](./sveltekit.md#createsectionaction), and an
+  [`adminAction`](./sveltekit.md#adminaction) that opts into the `access` option need no extra
+  argument to reach it at the call site. A zero-config site's guard attaches an empty map, which
+  admits nothing, so an opted-in action refuses until the site declares a rule for its target;
+  `adminAction` with no `access` option never reads the field.
 
 The subpath exports nothing at runtime (its JS module is empty), so the import is safe in a
 declaration file and free everywhere else.

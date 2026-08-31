@@ -123,6 +123,23 @@
 
 ### Changed
 
+- `adminAction` gains an OPT-IN `access?: { target: string; ownerOnly?: boolean }` member on its
+  options bag, the authorization sequence `createSectionAction` already ran. Absent, which is
+  every existing caller, behavior is exactly what it was: the wrapper authenticates and verifies
+  the CSRF pair and authorizes nothing. Present, the site's access map must carry a rule for
+  `target` and admit the session's role, with `ownerOnly` stacking on the map check, and a refusal
+  audits through `ctx.audit` and then throws `error(403, ...)`, `adminAction`'s own refusal
+  channel, so its return type stays the handler's `T` and never widens to `T | ActionFailure`.
+  Opt-in rather than default-on because the guard attaches an EMPTY access map on a zero-config
+  site and an empty map admits no target, so enforcing by default would 403 every consumer of the
+  documented database-less default rather than harden anything. Both wrappers now run one shared
+  internal implementation returning `{ outcome: 'allowed' | 'no-rule' | 'not-admitted' |
+  'not-owner' }`, with each wrapper mapping the outcomes onto its own refusal channel and its own
+  audited emission; `createSectionAction`'s check order, audit `detail` strings, 403 copy, and log
+  events are byte-identical to before. Consumers must: nothing to keep today's behavior. A site
+  that opts an action in starts receiving denial records through its `cairnAuditSink`, one per
+  refused request, alongside the existing `auth.access.denied` log record.
+
 - The conventions pass (Task 2) applies two of the 2026-08-30 sitting's ratified rulings across the
   factory population: **parameter bags** (`*Config` is the primary bag, `config` its primary
   parameter identifier) and **contract-first factory returns** (every public factory's signature

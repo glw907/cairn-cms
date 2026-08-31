@@ -239,7 +239,15 @@ open edits, not part of the shape itself.
   The ruling above resolves it in favor of the loud posture.
 - **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
   Task 6 executes (the `requireCookieJar` internal helper converting the five soft guards) and
-  Task 7 extends (`adminAction`'s opt-in authorization sequence).
+  Task 7 extends. Task 7's execution note: the "gains the authorization sequence" clause landed as
+  an OPT-IN `access` member on `AdminActionOptions`, not as default-on enforcement, which is the
+  only reading that preserves the ruling's own zero-config proviso. The guard attaches an EMPTY
+  access map on a zero-config site, and `hasAccessRule({}, target)` is false for every target, so
+  default-on would have refused every action on the documented database-less default. One shared
+  internal `authorizeAdminTarget` now runs the three checks for both wrappers, returning an
+  `outcome`-grammar result (`convention-outcome-idiom`), and each wrapper keeps its own refusal
+  channel: `createSectionAction` audits and returns `fail(403)` byte-identically to before,
+  `adminAction` audits and throws `error(403)` so its return type never widens.
 - **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
   "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 6, and Task 1/Task 6/Task 7.
 

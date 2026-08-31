@@ -187,6 +187,16 @@ share that one declaration, so a route a session cannot reach does not appear in
 built-in screens': with no map at all it refuses every session, owner included, since an explicit
 call to a gate that found nothing to gate on is a configuration bug.
 
+A site's own form actions authorize the same way, through one shared sequence: the map must carry
+a rule for the target, the session's role must be admitted, and `ownerOnly` stacks on top of both
+rather than standing in for either. [`createSectionAction`](../reference/sveltekit.md#createsectionaction)
+runs it on every call and refuses with `fail(403)`.
+[`adminAction`](../reference/sveltekit.md#adminaction) runs it only when the call sets the `access`
+option, and refuses by throwing `error(403, ...)`; with the option omitted it authorizes nothing,
+which is what every action written before the option existed relies on. Either way the refusal is
+audited through `cairnAuditSink` and logged as `auth.access.denied`, and the response names no
+gate.
+
 ## Response hardening
 
 Every admin response carries `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, a

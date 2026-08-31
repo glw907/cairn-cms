@@ -81,6 +81,16 @@ describe('dictionaryAdd transport gates', () => {
     expect(result).toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
   });
+
+  it('throws (loud jar) rather than fail(403) when an untyped caller passes no cookie jar at all (Task 6)', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    const event = addEvent({ word: 'cairn' }) as unknown as { cookies: unknown };
+    event.cookies = undefined;
+    await expect(routes.dictionaryAddAction(event as never)).rejects.toThrow(/cookie jar/i);
+    expect(commitCount(gh)).toBe(0);
+  });
 });
 
 describe('dictionaryAdd read-modify-write', () => {

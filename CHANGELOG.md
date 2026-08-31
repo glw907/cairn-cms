@@ -608,6 +608,22 @@
   copy, provably the same answer on every branch since feeding no `platform` means the CSRF
   side's own `PUBLIC_ORIGIN` consultation never fires. Consumers must: nothing.
 
+- Five content-route actions that read the CSRF cookie jar directly (`dictionaryAddAction`,
+  `uploadAction`'s underlying upload handler, `mediaReplacePreviewAction`,
+  `mediaAltPreviewAction`, `tidyAction`) now throw when an untyped caller passes no cookie jar at
+  all, instead of returning a soft `fail(403)` (`convention-auth-loud-postures`).
+  `CairnEvent.cookies` is already typed non-nullable, so this only changes behavior for a caller
+  outside the type system. Two observable paths: through the composer, `viewAction`'s catch turns
+  the throw into `fail(500)` plus an `admin.action.failed` record; on a directly-mounted
+  `ContentRoutes` member reached without the composer (`dictionaryAddAction`, `tidyAction`, and
+  `uploadAction` are all public and unwrapped), the throw surfaces as a plain SvelteKit 500 with
+  no record. The thrown message names only the missing jar, never a cookie value. A sweep of the
+  CSRF/auth helper family for a remaining optional `platform` parameter found none outside
+  `CairnEvent`'s own `platform?` field, which mirrors SvelteKit's own optional shape and is not a
+  helper parameter; every exported CSRF helper already took `platform` required-but-nullable.
+  Consumers must: nothing for a typed TypeScript caller; a hand-rolled JavaScript caller omitting
+  `event.cookies` on one of the five actions above now sees a 500 instead of a 403 response body.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

@@ -212,6 +212,13 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     expect(res.data?.error).toBe('csrf');
   });
 
+  it('throws (loud jar) rather than fail(403) when an untyped caller passes no cookie jar at all (Task 6)', async () => {
+    const routes = createContentRoutes(runtime());
+    const event = uploadEvent({ bytes: PNG }) as unknown as { cookies: unknown };
+    event.cookies = undefined;
+    await expect(routes.uploadAction(event as never)).rejects.toThrow(/cookie jar/i);
+  });
+
   it('returns fail(401) JSON, not a 303, when locals.cairnEditor is absent', async () => {
     const routes = createContentRoutes(runtime());
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;

@@ -28,7 +28,7 @@ import type { FileChange } from '../github/repo.js';
 import { PENDING_PREFIX } from '../content/pending.js';
 import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { validateCsrfHeader } from './csrf.js';
-import { requireEditor, requireEngineAccess } from './guard.js';
+import { requireEditor, requireEngineAccess, requireCookieJar } from './guard.js';
 import { canReach } from '../auth/access.js';
 import type { ContentRoutesContext } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
@@ -490,8 +490,10 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     if (length > resolved.maxUploadBytes) return refuse(413, 'too_large');
 
     // 3. CSRF from the X-Cairn-CSRF header (no body clone): the action is the CSRF authority for the
-    //    raw-body upload, since the guard runs its form-CSRF only on form content types.
-    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies, platform: event.platform })) {
+    //    raw-body upload, since the guard runs its form-CSRF only on form content types. An untyped
+    //    caller with no cookie jar at all throws loudly instead (convention-auth-loud-postures).
+    const cookies = requireCookieJar(event);
+    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
       return refuse(403, 'csrf');
     }
 
@@ -1061,8 +1063,10 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    */
   async function mediaReplacePreviewAction(event: CairnEvent): Promise<ActionFailure<MediaReplaceFailure> | MediaReplacePreviewPlan> {
     // CSRF first: this is a raw-body (JSON) POST, so the header witness is the authority, like the
-    // upload action. A failed check refuses before the session read or any GitHub call.
-    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies, platform: event.platform })) {
+    // upload action. A failed check refuses before the session read or any GitHub call. An untyped
+    // caller with no cookie jar at all throws loudly instead (convention-auth-loud-postures).
+    const cookies = requireCookieJar(event);
+    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
       return fail(403, { error: 'csrf', hash: '', usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
     }
     const editor = requireEditor(event);
@@ -1261,8 +1265,10 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    */
   async function mediaAltPreviewAction(event: CairnEvent): Promise<ActionFailure<MediaAltPropagateFailure> | MediaAltPreviewPlan> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
-    // replace-preview actions. A failed check refuses before the session read or any GitHub call.
-    if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies, platform: event.platform })) {
+    // replace-preview actions. A failed check refuses before the session read or any GitHub call. An
+    // untyped caller with no cookie jar at all throws loudly instead (convention-auth-loud-postures).
+    const cookies = requireCookieJar(event);
+    if (!validateCsrfHeader({ url: event.url, request: event.request, cookies, platform: event.platform })) {
       return fail(403, { error: 'csrf' } satisfies MediaAltPropagateFailure);
     }
     const editor = requireEditor(event);

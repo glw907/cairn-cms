@@ -13,7 +13,7 @@ import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
 import type { Editor } from '../auth/types.js';
-import type { CairnEvent, HandleInput } from './types.js';
+import type { CairnEvent, CookieJar, HandleInput } from './types.js';
 
 /** The login page and the auth endpoints are public; everything else under /admin is gated. */
 export function isPublicAdminPath(pathname: string): boolean {
@@ -200,6 +200,21 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     applySecurityHeaders(response.headers, { includeSubDomains });
     return response;
   };
+}
+
+/**
+ * Fail loudly (throw) rather than fall back to a soft `fail(403)` when an untyped caller passes
+ * no cookie jar at all. `CairnEvent.cookies` is already typed `CookieJar` (non-nullable), so this
+ * only fires for a caller outside the type system; narrows the return to a definite `CookieJar`
+ * so the caller's own CSRF check needs no further guard (`convention-auth-loud-postures`). The
+ * exported CSRF helpers keep their strict, non-nullable `cookies: CookieJar` parameter type
+ * deliberately: widening it to accept `undefined` would trade this compile-time contract for a
+ * runtime throw, the inverse of the platform convention. The thrown message names only the jar,
+ * never a cookie value.
+ */
+export function requireCookieJar(event: { cookies: CookieJar }): CookieJar {
+  if (!event.cookies) throw new Error('cairn: no cookie jar on this event');
+  return event.cookies;
 }
 
 /**

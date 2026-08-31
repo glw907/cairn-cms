@@ -2,7 +2,9 @@
 
 > **For agentic workers:** execute through the `cairn-implementer` chain per task
 > (implementer, `diff-reviewer`, full gate), workflow mode via
-> `~/.claude/workflows/pass-execute.js`. Steps use checkbox (`- [ ]`) syntax for tracking.
+> `~/.claude/workflows/pass-execute.js` with **`parallel: false` — the tasks share files and
+> carry stated data dependencies; execution is strictly sequential.** Steps use checkbox
+> (`- [ ]`) syntax for tracking.
 
 **Goal:** Codify the five ratified coherence conventions as standing rules, then execute them
 across the factory population, the auth family, the coupled reshape/retire items, and the four
@@ -14,7 +16,9 @@ pass"). The rulings were ratified by Geoff in the 2026-08-30 plan-authoring sitt
 restated in full below; the pass writes them into the ledger first, then applies them, so no
 signature is touched twice. Slice 4b (the cross-surface conformance sweep) executes the
 remaining open reshapes against 4a's merged surface and additionally inherits list (c) Tier 1
-(see the "What this pass unblocks" note at the end).
+(see "What this pass unblocks" at the end). This plan absorbed a two-reviewer adversarial
+round before dispatch; the round-1 findings and their dispositions are in the post-mortem
+section placeholder at the end.
 
 **Tech Stack:** TypeScript 6 / SvelteKit 2 / Svelte 5 runes; Vitest; the repo gate
 (`npm run check` 0/0, `npm test` exit 0, plus the CI-derived gate list).
@@ -27,8 +31,9 @@ with per-item shapes in `docs/internal/engine-rulings.md` and the coherence evid
 from-scratch `npm ci` in `examples/showcase` before trusting any e2e (the worktree showcase
 symlink gotcha, `CLAUDE.md`).
 
-**Token ceiling:** 4.5M for the WHOLE pass (chains plus ritual). **Checkpoint interval:** every
-four tasks (STATUS written at each checkpoint, at any split, and before any question).
+**Token ceiling:** 5.5M for the WHOLE pass (chains plus ritual; sized against the retires
+pass's 4.6M actual for a lighter, more mechanical pass). **Checkpoint interval:** every four
+tasks (STATUS written at each checkpoint, at any split, and before any question).
 
 ## The ratified rulings (Geoff, 2026-08-30 sitting; Task 1 writes these into the ledger)
 
@@ -52,11 +57,14 @@ four tasks (STATUS written at each checkpoint, at any split, and before any ques
    not; bin names and host-ecosystem plugin factories are out of scope.
 5. **Outcome idiom.** An operation with more than two distinguishable outcomes returns a
    discriminated result, never a boolean; `verifyTurnstile`'s fail-closed boolean is the stated
-   exception. **`Failure` is the family suffix; `Refusal` and `Skip` retire as suffixes.**
+   exception. **One grammar:** the discriminant key is `outcome`, a string literal union; every
+   discriminated result this pass introduces uses it. **`Failure` is the family suffix;
+   `Refusal` and `Skip` retire as TYPE-NAME suffixes** (a discriminant VALUE like
+   `'last-owner'` or a field name is not a suffix and is unaffected).
 6. **Auth postures.** A missing cookie jar from an untyped caller fails LOUDLY (throw), never a
-   soft `fail(403)`. `adminAction` gains the same authorization checks and audited `fail(403)`
-   `createSectionAction` carries. The `platform` required-but-nullable convention applies
-   uniformly across the CSRF/auth helpers.
+   soft `fail(403)`. `adminAction` gains the authorization sequence `createSectionAction`
+   carries, with the zero-config default preserved (see Task 7's Interfaces block). The
+   `platform` required-but-nullable convention applies uniformly across the CSRF/auth helpers.
 7. **Two preventive clauses (R-10).** An internal sibling of a public export gets one barrel
    sentence naming why it stays internal (gated where reachability-shaped). A public-observable
    identifier is dot-namespaced by area; a prefix is never a substitute for a namespace.
@@ -67,11 +75,12 @@ four tasks (STATUS written at each checkpoint, at any split, and before any ques
    against it" premise no longer holds. Ground for keeping: adoption evidence plus the
    high-consequence-hand-roll argument (enumeration oracle, unbounded guessing, identity-keyed
    throttle), NOT any-site breadth; the leanness boundary is held by the opt-in subpath. The
-   factory folds onto the engine's one auth grammar (Task 7).
+   factory folds onto the engine's one auth grammar (Task 8).
 
 ## Global Constraints
 
-Copied from the initiative design's standing-constraints section; every task inherits them.
+Copied from the initiative design's standing-constraints section, plus the review-derived
+rules; every task inherits them.
 
 - Test-first. The full gate is `npm run check` 0/0 plus `npm test` exit 0 plus the CI-derived
   gate list re-derived from `.github/workflows/` before the first commit, never from memory.
@@ -80,19 +89,30 @@ Copied from the initiative design's standing-constraints section; every task inh
   below are from the 2026-08-30 fact sheets; re-verify with grep before editing).
 - Every task adds its `CHANGELOG.md` line under `## Unreleased`, with a `Consumers must:` line
   where consumer action is needed. Renames batch into the window; no version bump, no publish.
+  **The window must stay self-consistent: a task that re-introduces or re-shapes a name an
+  earlier unpublished entry retired or instructed against AMENDS that earlier entry in the same
+  task** (the cut ships one coherent rolled note, never a self-contradicting sequence).
 - A task executing a ruling closes (or progress-notes) its ledger entry in the same task, and
   re-authors any truncated shape it consumes from the rank sources (the `check:rulings-format`
-  allowlist shrinks accordingly; never grows).
+  allowlist shrinks accordingly; never grows). A partially executed entry gets a progress note
+  in the same task, always.
 - Drift-hunt scope for every removed or renamed name: `docs/`, `src/` (comments),
-  `examples/`, `templates/`, and `skills/` (the retires pass added `skills/`; it ships in the
+  `examples/`, `templates/` (verification only, see next bullet), and `skills/` (ships in the
   tarball).
-- `templates/waymark` compiles at every task's gate (`check:consumers` and the scaffold job).
+- **`templates/waymark` is a GENERATED artifact and is never hand-edited** (the showcase is
+  the single source; `scripts/build/emit-template.mjs`). A task whose renames reach the
+  template edits `examples/showcase`, runs `npm run emit:template` (verify the exact script
+  name in `package.json` first), and commits the regenerated tree. `check:template` and
+  `check:consumers` are both part of every task's gate.
+- **Line anchors in this plan are pre-pass anchors against `main` at `a1f2d45b`.** Tasks
+  editing a file an earlier task already touched treat anchors as symbolic (the named
+  construct, not the line); only a file this pass touches once may be navigated by line.
 - The renames are type-level and name-level only where stated; behavior changes are called out
   explicitly per task and nowhere else.
 
 ---
 
-### Task 1: Standing-rule ledger entries and the auth-channel reopen
+### Task 1: Standing-rule ledger entries and the two reopens
 
 **Files:**
 - Modify: `docs/internal/engine-rulings.md`
@@ -100,32 +120,40 @@ Copied from the initiative design's standing-constraints section; every task inh
   posture entry moves into the ledger ruling and leaves the log)
 
 **Interfaces:**
-- Produces: eight standing-rule ledger entries (kebab-case slugs:
+- Produces: the standing-rule ledger entries (kebab-case slugs:
   `convention-parameter-bags`, `convention-interop-carve-out`, `convention-contract-first-returns`,
-  `convention-verb-rules`, `convention-bare-noun-functions`, `convention-outcome-idiom`,
-  `convention-failure-suffix`, `convention-auth-loud-postures`, plus the two R-10 clauses as
-  `convention-internal-sibling-comment` and `convention-identifier-grammar`), each carrying the
+  `convention-verb-rules`, `convention-bare-noun-functions`, `convention-outcome-idiom` (which
+  carries the one-grammar `outcome`-discriminant clause and the suffix-scope clarification),
+  `convention-failure-suffix`, `convention-auth-loud-postures`,
+  `convention-internal-sibling-comment`, `convention-identifier-grammar`), each carrying the
   ruling text from "The ratified rulings" above, the sitting date, and a reopen line. Later
   tasks cite these slugs in their ledger closes.
+- Produces: TWO reopen rewrites, both using the full mechanism (entry rewritten, overturned
+  premise recorded with its evidence, satellites annotated):
+  1. `audit-auth-createauthchannel` per ruling 8: verdict stays `reshape`, the shape becomes
+     Task 8's fold list, the entry records the xcathletes citation and the honest ground.
+     Annotate the seven open satellite entries (`audit-auth-authchannel`,
+     `audit-auth-authchannelevent`, `audit-auth-authchannelconfig`,
+     `audit-auth-delivercontext`, `audit-auth-channelrequestresult`,
+     `audit-auth-channelconfirmresult`, `audit-auth-channel-schema-sql`) to follow the
+     rewritten factory shape — eight open family entries total including the factory.
+  2. `audit-delivery-publicroutes` (CLOSED by the retires pass, batch 1c): reopened and
+     rewritten on the ratified contract-first ruling — the retire targeted the mechanically
+     derived `ReturnType` alias; ruling 2 introduces a deliberately AUTHORED contract under
+     the same name, and Task 2 executes it. The rewrite records that the overturning evidence
+     is the sitting's ruling, not new consumer data.
 
 - [ ] **Step 1:** Author the standing-rule entries in `docs/internal/engine-rulings.md`, one per
       clause above, in the existing standing-rule register (the
       `f1-return-position-leak-sanction` entry is the shape model). Each entry: verdict line,
       the ruling verbatim, **Reopens on**, **Record** pointing at this plan.
-- [ ] **Step 2:** Rewrite `audit-auth-createauthchannel` per ruling 8: verdict stays `reshape`
-      but the shape becomes the Task 7 fold list; the entry records the overturned premise with
-      the xcathletes citation and the honest ground (adoption + security hand-roll, not
-      breadth). Annotate the seven satellite entries (`audit-auth-authchannel`,
-      `audit-auth-authchannelevent`, `audit-auth-authchannelconfig`, `audit-auth-delivercontext`,
-      `audit-auth-channelrequestresult`, `audit-auth-channelconfirmresult`,
-      `audit-auth-channel-schema-version` is already retired-closed — instead
-      `audit-auth-channel-schema-sql`) to follow the rewritten factory shape.
+- [ ] **Step 2:** Execute both reopen rewrites per the Interfaces block.
 - [ ] **Step 3:** Move the friction-log cookie-jar entry (2026-08-29, csrf-hardening close)
       into `convention-auth-loud-postures` and delete it from the log (the log's
       complete-or-move rule).
 - [ ] **Step 4:** Run `npm run check:rulings-format`; expected 0 findings and an allowlist no
       larger than before.
-- [ ] **Step 5:** Commit: `docs(ledger): codify the conventions-pass rulings; reopen auth-channel on adoption evidence`
+- [ ] **Step 5:** Commit: `docs(ledger): codify the conventions-pass rulings; reopen auth-channel and PublicRoutes`
 
 ### Task 2: Parameter bags and contract-first factory returns
 
@@ -136,21 +164,27 @@ Copied from the initiative design's standing-constraints section; every task inh
 - Modify: `src/lib/sveltekit/editors-routes.ts:47,162` (`EditorRoutesOptions`, `EditorRoutes`)
 - Modify: `src/lib/delivery/public-routes.ts:22,184` (`PublicRoutesConfig`'s `deps` param; the
   missing return declaration)
-- Modify: `src/lib/sveltekit/guard.ts:44,78` (`opts` param; unnamed handle return)
+- Modify: `src/lib/sveltekit/guard.ts:78` (unnamed handle return; the bag stays, see below)
 - Modify: `src/lib/sveltekit/section-action.ts:151-159` (unnamed curried return)
 - Modify: `src/lib/sveltekit/auth-routes.ts:269`, `src/lib/sveltekit/nav-routes.ts:164`
   (ReturnType-derived aliases convert)
 - Modify: `src/lib/vite/index.ts` (interop barrel comment)
-- Test: extend `src/tests/unit/` type-level fixtures where they exist for these factories; the
-  compile itself is the enforcement (see steps)
+- Modify: `CHANGELOG.md` `## Unreleased` — the retires-pass lines at `:306` ("stop importing
+  … `PublicRoutes`") and `:312` (the `ReturnType<typeof createPublicRoutes>` instruction, the
+  exact idiom ruling 2 bans) are AMENDED to the new instruction (annotate the declared
+  `PublicRoutes` contract), per the window-consistency constraint
+- Test: Create `src/tests/unit/factory-contracts.test.ts` (compile-only)
 
 **Interfaces:**
-- Produces: renamed bags `CairnAdminConfig`, `ContentRoutesConfig`, `EditorRoutesConfig`; all
-  primary bag parameters named `config`; declared return types `CairnAdminRoutes`,
-  `AuthRoutes`, `EditorRoutes`, `NavRoutes`, `PublicRoutes` (resurrected, see below),
-  `SectionAction<Env, Db>`; `createAuthGuard` annotated `: Handle` (kit's type, interop
-  clause); `createMediaRoute`'s kit `RequestHandler` return recorded as interop-conforming.
-- Consumes: Task 1's standing-rule slugs for ledger annotations.
+- Produces: renamed bags `CairnAdminConfig`, `ContentRoutesConfig`, `EditorRoutesConfig`; the
+  `deps` parameters renamed `config` (and `opts` → `config` only where the bag renames,
+  editors-routes); declared return types `CairnAdminRoutes`, `AuthRoutes`, `EditorRoutes`,
+  `NavRoutes`, `PublicRoutes` (reopened in Task 1), `SectionAction<Env, Db>`;
+  `createAuthGuard` annotated `: Handle` (kit's type, interop clause); `createMediaRoute`'s
+  kit `RequestHandler` return recorded as interop-conforming. `createAuthGuard` keeps
+  `AuthGuardOptions`/`opts` unchanged — the audit ruled it correct as a secondary bag (C2's
+  table), and this plan honors that annotation.
+- Consumes: Task 1's standing-rule slugs and the `PublicRoutes` reopen.
 
 - [ ] **Step 1:** Write the failing type-level test first: a compile-only fixture
       (`src/tests/unit/factory-contracts.test.ts`) that imports each factory and its declared
@@ -159,11 +193,8 @@ Copied from the initiative design's standing-constraints section; every task inh
       model). It must fail before the declarations exist.
 - [ ] **Step 2:** Execute the renames: `CairnAdminOptions` → `CairnAdminConfig`,
       `ContentRoutesOptions` → `ContentRoutesConfig`, `EditorRoutesOptions` →
-      `EditorRoutesConfig`; every `deps` parameter → `config`, and `opts` → `config` only
-      where the bag renames (editors-routes). `createAuthGuard` keeps `AuthGuardOptions`/`opts`
-      unchanged — the audit ruled it correct as a secondary bag (C2's table), and this plan
-      honors that annotation. Old names do NOT remain as deprecated aliases (churn is free;
-      the window batches).
+      `EditorRoutesConfig`; `deps` → `config` everywhere, `opts` → `config` in editors-routes
+      only. Old names do NOT remain as deprecated aliases (churn is free; the window batches).
 - [ ] **Step 3:** Convert the returns to declared contracts: author `CairnAdminRoutes` as a
       declared type (compose via `Pick` over the internal wide return, the `ContentRoutes`
       precedent at `content-routes.ts:172-199`) and make `createCairnAdmin`'s signature return
@@ -174,9 +205,7 @@ Copied from the initiative design's standing-constraints section; every task inh
       on** (r4-rederivation, "List (c)" Tier 1); the 25 Tier 1 retires route to 4b, unblocked.
       Convert `AuthRoutes`, `EditorRoutes`, `NavRoutes` from `ReturnType` aliases to declared
       interfaces the factory signatures return. Declare `PublicRoutes` and annotate
-      `createPublicRoutes(config: PublicRoutesConfig): PublicRoutes` — this deliberately
-      resurrects a retired name; the ledger annotation records that the retire targeted the
-      mechanically derived alias and the ruled convention introduces an authored contract.
+      `createPublicRoutes(config: PublicRoutesConfig): PublicRoutes` (the Task 1 reopen).
       Declare `SectionAction<Env, Db>` for `createSectionAction`'s curried return. Annotate
       `createAuthGuard(...): Handle`.
 - [ ] **Step 4:** Add the interop comment to `src/lib/vite/index.ts` (why `cairnManifest` /
@@ -184,24 +213,25 @@ Copied from the initiative design's standing-constraints section; every task inh
 - [ ] **Step 5:** Run the fixture, then `npm run check:surface -- --update` and commit the
       regenerated snapshot; drift-hunt the old names across the full scope (expect heavy hits
       in `docs/reference/sveltekit.md`, `admin-routes.md`, `delivery-data.md`, `components.md`,
-      `examples/showcase`, `templates/waymark`, `skills/`).
+      `examples/showcase`; regenerate `templates/waymark` via the emit script, never by hand).
 - [ ] **Step 6:** Update reference pages (fact-sheet map: cairn-admin/content-routes/editors →
       `admin-routes.md`, `sveltekit.md`, `components.md`; public-routes → `delivery.md`,
       `delivery-data.md`; guard → `ambient.md`, `cloudflare.md`, `core.md`). CHANGELOG entry
-      with one consolidated `Consumers must:` rename table for this task.
+      with one consolidated `Consumers must:` rename table for this task, PLUS the two amended
+      retires-pass lines per the Files block.
 - [ ] **Step 7:** Full gate; commit: `refactor(surface)!: apply the parameter-bag and contract-first return conventions`
 
 ### Task 3: Verb and bare-noun renames
 
 **Files:**
-- Modify: `src/lib/render/resolve-media.ts:89`, `src/lib/delivery/site-resolver.ts:191,205`
+- Modify: `src/lib/render/resolve-media.ts:89-105`, `src/lib/delivery/site-resolver.ts:191,205`
   (resolver trio)
 - Modify: `src/lib/nav/site-config.ts:345,415` (`extractMenu`, `extractVocabulary`)
 - Modify: delivery barrel members (`siteDescriptors`, `newlyPublishedEntries`, `sitemapView`,
   `jsonLdScript`), `src/lib/media/reference.ts:44` (`mediaToken`), root-barrel `glyph` and
   `fieldset`, `src/lib/auth/roles.ts:108` (`ownerLevelRoles`)
-- Test: the existing unit suites for each renamed symbol (rename the imports; no behavior
-  change), plus the Task 2 fixture where signatures are named
+- Test: the existing unit suites for each renamed symbol (rename the imports), plus the Task 2
+  fixture where signatures are named
 
 **Interfaces:**
 - Produces the renamed exports:
@@ -210,218 +240,400 @@ Copied from the initiative design's standing-constraints section; every task inh
   `buildSiteDescriptors`, `diffNewlyPublished`, `buildSitemapView`, `renderJsonLdScript`,
   `renderGlyph`, `formatMediaToken` (paired with `parseMediaToken` as the codec),
   `defineFieldset`, `resolveOwnerLevelRoles`.
-- No signature or behavior changes in this task; names only. `verifyManifest`,
-  `verifyReferences` (throw) and `validateReproFence` (returns issues) already conform and are
-  untouched here. `checkRateLimit`/`checkRateLimitKeys` are NOT renamed here; Task 4 reshapes
-  them (name and shape move together).
+- **One deliberate signature change rides the rename** (so the signature moves once):
+  `createMediaResolver` drops its dead `opts?: { preset?: string }` parameter per the ruled
+  shape of `audit-media-buildmediaresolver` ("opts.preset has zero non-test callers anywhere
+  … Drop opts; keep (manifest, resolved)"); that entry closes here. Everything else in this
+  task is names only; `verifyManifest`, `verifyReferences` (throw) and `validateReproFence`
+  (returns issues) already conform and are untouched. `checkRateLimit`/`checkRateLimitKeys`
+  are NOT renamed here; Task 4 reshapes them (name and shape move together).
 
 - [ ] **Step 1:** Rename in source with module-level `export` lines and barrel lines moving
-      together; run the type check to enumerate all import sites mechanically.
+      together; drop `createMediaResolver`'s `opts` in the same edit; run the type check to
+      enumerate all import sites mechanically.
 - [ ] **Step 2:** Drift-hunt every old name across `docs/`, `src/` comments, `examples/`,
-      `templates/`, `skills/` (the fact sheet's reference map names the primary pages:
+      `skills/`; regenerate `templates/waymark` (primary reference pages:
       `delivery-data.md`, `media.md`, `core.md`, `reproductions.md`,
       `supported-toolchain.md` for `fieldset`).
 - [ ] **Step 3:** `check:surface -- --update`; full gate.
 - [ ] **Step 4:** CHANGELOG entry with the consolidated rename table (`Consumers must:` one
-      list). Ledger annotations on any audit entry naming a renamed symbol, citing
-      `convention-verb-rules` / `convention-bare-noun-functions`.
+      list). Ledger closes/annotations: `audit-media-buildmediaresolver` closes; any audit
+      entry naming a renamed symbol gets an annotation citing `convention-verb-rules` /
+      `convention-bare-noun-functions` — disambiguate the DUPLICATE slug pair
+      `audit-adapter-fieldset` (the `Fieldset` type at `:1120` vs the `fieldset` function at
+      `:1134`); only the function's entry is annotated for `defineFieldset`.
 - [ ] **Step 5:** Commit: `refactor(surface)!: apply the verb-rule and bare-noun naming conventions`
 
 ### Task 4: The outcome idiom applied (rate limit, owner guards, turnstile exception)
 
 **Files:**
-- Modify: `src/lib/cloudflare/rate-limit.ts:32-57`, `src/lib/cloudflare/index.ts:7`
-- Modify: `src/lib/sveltekit/section-action.ts:210-251` (the reimplementation collapses onto
-  the reshaped helper; the `admin.action.rate_limit_absent` third branch is exactly what the
-  discriminated result restores)
-- Modify: `src/lib/auth/store.ts:169,188,233,243-259`, `src/lib/auth-store/index.ts`
-- Modify: `src/lib/cloudflare/turnstile.ts:81` (doc comment states the exception)
+- Modify: `src/lib/cloudflare/rate-limit.ts`, `src/lib/cloudflare/index.ts`
+- Modify: `src/lib/sveltekit/section-action.ts` (the rate-limit block inside the wrapper — a
+  SYMBOLIC anchor; Task 2 already edited this file)
+- Modify: `src/lib/auth/store.ts` (`deleteEditor`, `removeOwnerIfNotLast`, `setEditorRole`,
+  `demoteOwnerIfNotLast`), `src/lib/auth-store/index.ts`
+- Modify: `src/lib/cloudflare/turnstile.ts` (`verifyTurnstile` doc comment)
 - Test: `src/tests/unit/` suites for rate-limit, auth-store, section-action
 
 **Interfaces:**
-- Produces: one rate-limit function replacing the boolean pair, returning a discriminated
-  result `{ outcome: 'allowed' } | { outcome: 'limited'; key: string } | { outcome: 'no-binding' }`
-  (name it under the verb rules — it consults live state and returns a decision, so
-  `resolveRateLimit(binding, keys: string | string[])` with the single-key case folded in;
-  ledger entries `audit-cloudflare-checkratelimit` / `-checkratelimitkeys` close on it, their
-  truncated shapes re-authored from `rank-cloudflare-audit-sink.md` first).
-- Produces: owner-guard discriminated results per the ledger shapes:
+- Produces: one rate-limit function replacing the boolean pair —
+  `resolveRateLimit(binding, keys: string | string[])` returning
+  `{ outcome: 'allowed' } | { outcome: 'limited'; key: string } | { outcome: 'no-binding' } | { outcome: 'failed'; error: unknown }`.
+  **Four arms, not three**: the call site distinguishes a thrown `limit()` today
+  (`admin.action.rate_limit_failed`, its own documented triage story). Contract division:
+  the helper captures a throwing `limit()` into the `failed` arm (degrade-to-open stays each
+  caller's decision, exactly as `rate-limit.ts`'s current contract states); the call site
+  KEEPS its own try/catch around the site-supplied `key()` callback and its
+  redirect/HttpError rethrow guard (a `redirect()` thrown from `key()` must never be
+  swallowed into a degrade-to-open pass). The collapse is deliberately partial and the
+  existing log events (`admin.action.rate_limited`, `rate_limit_absent`,
+  `rate_limit_failed`) are asserted unchanged.
+- Produces: owner-guard discriminated results, SAME `outcome` grammar:
   `removeOwnerIfNotLast` and `demoteOwnerIfNotLast` return
-  `{ ok: true } | { refused: 'last-owner' } | { refused: 'not-found' }` (the rank-24 "right
-  form: discriminated result", and the two false outcomes `listEditors` prose currently
-  disambiguates); `setEditorRole` takes the `ownerRoles` vocabulary and refuses last-owner
-  demotion (rank-19 shape); `deleteEditor`'s two-export dispatch resolves per rank-22 (one
-  operation; the cascade knowledge stays engine-side). Names follow the verb rules and the
-  `Failure`-suffix ruling.
-- Consumes: Task 3's naming rulings.
+  `{ outcome: 'ok' } | { outcome: 'last-owner' } | { outcome: 'not-eligible' }` — the third
+  arm is `not-eligible`, not `not-found`, because the follow-up read can only establish "no
+  row matched email AND owner-capability", which conflates absent-from-roster with
+  present-but-not-owner (security round N4: name only what the predicate knows).
+  `setEditorRole` takes the `ownerRoles` vocabulary and refuses last-owner demotion
+  (rank-19 shape); `deleteEditor`'s two-export dispatch resolves per rank-22 (one operation;
+  the cascade knowledge stays engine-side). Names follow the verb rules; the
+  `Failure`-suffix ruling governs type names.
+- **Atomicity invariant, mandated (security round F3):** the refusal predicate stays INSIDE
+  the single conditional write — run the atomic statement FIRST, and only on
+  `changes === 0` run a follow-up READ purely to classify the refusal (a read that cannot
+  change the outcome). A select-then-write shape is forbidden: it is exactly the concurrent
+  double-demote that strands a roster at zero owners, which the current docstrings exist to
+  prevent. `setEditorRole`'s new refusal is likewise ONE conditional `UPDATE` whose `WHERE`
+  encodes "not a demotion out of owner-capability OR another owner-capability row remains".
+  The acceptance criterion is a concurrency test: two simultaneous demotes of a two-owner
+  roster, exactly one succeeds.
+- Consumes: Task 3's naming rulings; the ledger entries' re-authored shapes.
 
 - [ ] **Step 1:** Re-author the truncated ledger shapes for the four auth-store entries and
       two rate-limit entries from their rank sources (`rank-auth-family.md` ranks 19-24,
       `rank-cloudflare-audit-sink.md`) before writing code; the shapes above must match what
       the re-authored entries prescribe.
 - [ ] **Step 2:** Test-first per function: failing tests asserting the discriminated outcomes
-      (including the `no-binding` third branch and the last-owner refusal on a one-owner
+      (all four rate-limit arms including `failed`; the last-owner refusal on a one-owner
       roster), then implement.
-- [ ] **Step 3:** Collapse `createSectionAction`'s inline reimplementation onto the reshaped
-      helper (delete the "Mirrors checkRateLimit" block; the third branch drives
-      `admin.action.rate_limit_absent` exactly as today — assert the log events unchanged in
-      the existing section-action tests).
+- [ ] **Step 3:** Collapse `createSectionAction`'s inline reimplementation onto
+      `resolveRateLimit` per the contract division above (the "Mirrors checkRateLimit"
+      comment block goes; the caller-side `key()` try and rethrow guard stay; the three log
+      events asserted unchanged in the existing section-action tests).
 - [ ] **Step 4:** State `verifyTurnstile`'s fail-closed boolean exception in its doc comment,
       citing `convention-outcome-idiom`.
-- [ ] **Step 5:** `check:surface -- --update`; reference pages (`cloudflare.md:130,168`,
+- [ ] **Step 5:** `check:surface -- --update`; reference pages (`cloudflare.md`,
       `auth-store.md`); drift-hunt; CHANGELOG `Consumers must:`; close the six ledger entries.
 - [ ] **Step 6:** Full gate; commit: `refactor(auth-store,cloudflare)!: discriminated outcomes replace conflating booleans`
 
-### Task 5: ContentFormFailure flattened; the Tier 2 retires
+### Task 5: ContentFormFailure flattened; the Tier 2 retires, leak-free
 
 **Files:**
-- Modify: `src/lib/sveltekit/content-routes.ts:67,77,90-92` (the declaration and the arm
-  re-exports)
+- Modify: `src/lib/sveltekit/content-routes.ts` (the `ContentFormFailure` declaration, the arm
+  re-exports, and the `ContentRoutes` contract's action signatures — symbolic anchors; Task 2
+  edited this file)
+- Modify: `src/lib/sveltekit/cairn-admin.ts` (the composer's action union re-types — symbolic)
 - Modify: the arm declaration sites (`content-routes-core.ts`, `content-routes-media.ts`,
-  `content-routes-tidy.ts:36`) — module-level exports stay where a cross-module consumer
-  needs them (the retires pass's three-case rule)
+  `content-routes-tidy.ts`) — module-level exports stay where a cross-module consumer needs
+  them (the retires pass's three-case rule)
 - Test: `src/tests/unit/` content-routes suites; the seven components annotating
-  `form: ContentFormFailure` (fact sheet list: `CairnAdmin.svelte:25`,
-  `CairnTidySettings.svelte:51`, `VocabularyAdmin.svelte:38`, `EditPage.svelte:72`,
-  `NavTree.svelte:20`, `ConceptList.svelte:13`, `CairnMediaLibrary.svelte:48`)
+  `form: ContentFormFailure` (`CairnAdmin.svelte`, `CairnTidySettings.svelte`,
+  `VocabularyAdmin.svelte`, `EditPage.svelte`, `NavTree.svelte`, `ConceptList.svelte`,
+  `CairnMediaLibrary.svelte`)
 
 **Interfaces:**
 - Produces: `ContentFormFailure` as ONE FLAT INTERFACE, every field optional, each field
   documented against the action that sets it (the ledger's prescribed shape,
-  `audit-sveltekit-contentformfailure`). The eleven arms leave the public surface: the five
-  core arms (`SaveFailure`, `DeleteRefusal`, `RenameFailure`, `CreateFailure`,
-  `PreviewMintFailure`) retire per list (c) Tier 2; the five media arms stay module-internal
-  (their Tier 1 retires ride 4b); `TidyFailure` is already un-nameable.
-- `UsageEntry` (Tier 2's sixth name): retire its `/sveltekit` publication ONLY if the
-  post-flatten surface audit shows no surviving rendered shape naming it; `MediaDeleteRefusal`
-  (`api-surface.md:521`) and `MediaReplaceFailure` (`:528`) still render `usage: UsageEntry[]`
-  and survive until 4b, so the expected outcome is a PROGRESS-NOTE routing `UsageEntry`'s
-  retire to 4b with Tier 1, not a leak-manufacturing delete. Verify, don't assume.
+  `audit-sveltekit-contentformfailure`).
+- **The five core arms retire WITHOUT manufacturing leaks (review finding B1): the action
+  signatures that carry them are re-typed in the same task.** Today `ContentRoutes`,
+  `CairnAdminRoutes`, and `createCairnAdmin`'s rendered shapes name the five arms in their
+  action members (`saveAction: … ActionFailure<SaveFailure>` and siblings). This task
+  re-types those five actions' failure payloads to `ActionFailure<ContentFormFailure>` in
+  `content-routes.ts` and the composer, which completes the ratified flatten (the union IS
+  the documented form type) and removes every surviving carrier — the F-1 leak predicate then
+  has nothing to fire on. Only after that re-type do `SaveFailure`, `DeleteRefusal`,
+  `RenameFailure`, `CreateFailure`, `PreviewMintFailure` retire (barrel and subpath
+  publications drop; module-level exports stay only where a cross-module consumer needs
+  them). The five media arms stay module-internal (their Tier 1 retires ride 4b);
+  `TidyFailure` is already un-nameable.
+- **`UsageEntry` does NOT retire in this pass** (review findings N3/B1-adjacent): the
+  flattened `ContentFormFailure` itself carries `usage?: UsageEntry[]`, so the flat keep is
+  its own surviving carrier. `UsageEntry` stays exported; its Tier 2 entry gets a progress
+  note routing the retire decision to 4b beside Tier 1 (where its other carriers,
+  `MediaDeleteRefusal`/`MediaReplaceFailure`, retire), naming the inline-vs-keep choice 4b
+  must make.
 - The `Failure`-suffix ruling governs any surviving refusal-shaped name this task touches.
 
-- [ ] **Step 1:** Write the failing test: a type-level fixture asserting `ContentFormFailure`
-      is assignable from each action's actual failure payload and that the flat fields carry
-      the per-action docs (compile-only; plus the existing component mounts stay green).
+- [ ] **Step 1:** Write the failing test: a type-level fixture asserting the flat
+      `ContentFormFailure` is assignable from each action's actual failure payload and that
+      the five re-typed actions declare `ActionFailure<ContentFormFailure>` (compile-only;
+      the existing component mounts stay green). PLUS one runtime test per re-typed action
+      asserting its returned failure's KEY SET is unchanged (security round N8: the flat
+      all-optional type no longer prevents an action from carrying another action's fields,
+      so the tests hold that line instead).
 - [ ] **Step 2:** Author the flat interface (derive the field union from the eleven arms'
       current members; `usage?: UsageEntry[]` stays a field), drop the `Partial<>`
-      intersection, keep the arms module-internal per the three-case rule.
-- [ ] **Step 3:** Execute the five core-arm retires (barrel and subpath publications drop;
-      module-level exports stay only where a cross-module consumer needs them — derive, don't
-      assume, per file). Run the `UsageEntry` carrier audit and progress-note or retire per the
-      Interfaces block.
-- [ ] **Step 4:** `check:surface -- --update`; reference pages (`components.md:204,254`,
-      `sveltekit.md`); drift-hunt the five names; CHANGELOG `Consumers must:`; close the five
-      arm entries plus `audit-sveltekit-contentformfailure`; progress-note
-      the `UsageEntry` entry as routed.
-- [ ] **Step 5:** Full gate; commit: `refactor(sveltekit)!: flatten ContentFormFailure; retire the Tier 2 arms`
+      intersection, re-type the five action signatures, keep the arms module-internal per the
+      three-case rule.
+- [ ] **Step 3:** Execute the five core-arm retires; verify with the F-1 predicate (no
+      retire-verdicted name remains inside any surviving rendered shape — grep the
+      regenerated `api-surface.md` for all five names, expect zero hits).
+- [ ] **Step 4:** `check:surface -- --update`; reference pages (`components.md`,
+      `sveltekit.md`); drift-hunt the five names; CHANGELOG `Consumers must:` (sites
+      annotating a specific arm move to `ContentFormFailure`); close the five arm entries
+      plus `audit-sveltekit-contentformfailure`; progress-note the `UsageEntry` entry as
+      routed to 4b.
+- [ ] **Step 5:** Full gate; commit: `refactor(sveltekit)!: flatten ContentFormFailure; retire the Tier 2 arms leak-free`
 
-### Task 6: The auth family (session cookie, probe, loud jars, nonce binding, adminAction)
+### Task 6: Auth cookie posture (derivation, probe cross-check, loud jars, platform sweep)
 
 **Files:**
-- Modify: `src/lib/sveltekit/guard.ts:157,170`, `src/lib/sveltekit/auth-routes.ts:199,248`
-  (session-cookie derivation)
-- Modify: `src/lib/doctor/check-probe.ts:49`
-- Modify: `src/lib/sveltekit/content-routes-dictionary.ts:95`,
-  `content-routes-media.ts:494,1065,1265`, `content-routes-tidy.ts:111` (loud jars)
-- Modify: `src/lib/sveltekit/auth-routes.ts:100-266` (the `_pending` nonce binding)
-- Modify: `src/lib/sveltekit/admin-action.ts:143-247` (symmetric authorization)
+- Modify: `src/lib/sveltekit/csrf.ts` (the derivation helper generalizes),
+  `src/lib/sveltekit/guard.ts` (the two session-cookie reads — symbolic anchors),
+  `src/lib/sveltekit/auth-routes.ts` (`confirmAction`/`logoutAction` secure derivation —
+  symbolic)
+- Modify: `src/lib/doctor/check-probe.ts` (the derivation comment and cross-check, see below)
+- Modify: `src/lib/sveltekit/content-routes-dictionary.ts` (`dictionaryAddAction`),
+  `content-routes-media.ts` (`ingestAndStore`, `mediaReplacePreviewAction`,
+  `mediaAltPreviewAction`), `content-routes-tidy.ts` (`tidyAction`) — the five soft jar
+  guards
 - Test: `src/tests/unit/csrf.test.ts`, `src/tests/integration/auth-load-csrf.test.ts`,
-  `src/tests/unit/doctor-check-probe.test.ts`, admin-action and content-routes suites
+  `src/tests/unit/doctor-check-probe.test.ts`, content-routes suites
 
 **Interfaces:**
-- Session cookie: the three call sites derive through the same `PUBLIC_ORIGIN`-aware,
-  MONOTONIC derivation the CSRF pair uses (`csrfSecure`, `csrf.ts:64-76`; an https request
-  always resolves Secure; the helper generalizes or gets a session-named sibling delegating to
-  the same body — one derivation, per the read-from-the-source rule). Closes ledger
+- **Session cookie:** the three call sites (`guard`'s two reads, `confirmAction`,
+  `logoutAction`) derive through the same `PUBLIC_ORIGIN`-aware, MONOTONIC derivation the
+  CSRF pair uses. Mechanically: the helper body is ORIGIN-PARAMETERIZED (one body taking
+  `{ url, platform }`-shaped input), with the existing event-taking `csrfSecure` becoming a
+  thin wrapper; the session call sites call the same body. An https request always resolves
+  Secure; `PUBLIC_ORIGIN` can only raise, never lower. The `secure` passed to any
+  `cookies.delete` and the boolean fed to `sessionCookieName` come from ONE variable, never
+  two calls (SvelteKit's `cookies.delete` Secure default over non-localhost http; the
+  csrf-hardening HISTORY rule). Belt-and-braces (security round, N1): `logoutAction` deletes
+  BOTH cookie-name forms (bare and `__Host-`, session and CSRF), each with its matching
+  `secure` — a `PUBLIC_ORIGIN` change between login and logout must not strand a browser
+  cookie. The ledger close states plainly that on guarded admin paths this is a COHERENCE
+  change, not a security fix (`guard.ts` refuses http+non-local before any route runs, so
+  the one differing derivation row is unreachable there), and names the one residual: auth
+  routes a site mounts OUTSIDE `/admin` over http on a non-local host would mint a
+  discarded `__Host-` cookie — `security-model.md`'s mount-under-`/admin` instruction is the
+  guard. Docs updated IN THIS BULLET: `docs/extend/security-model.md` (the "derives from the
+  request's own protocol" and "can diverge on one request" paragraphs are the divergence
+  this removes) and `crypto.ts`'s `csrfCookieName` "mirroring `sessionCookieName`" docstring
+  (the ledger entry's named listener). Closes ledger
   `session-cookie-derivation-out-of-csrf-slice`.
-- Probe: `check-probe.ts:49` stops deriving independently (`csrfCookieName(origin.protocol ===
-  'https:')`) and calls the same helper, so probe and runtime cannot disagree.
-- Loud jars: the five soft `if (!event.cookies || ...)` guards convert to the
-  `content-routes-core.ts` posture (missing jar throws inside the helper; the CSRF-verdict
-  half of each guard keeps its `fail(403)`). Behavior change is unreachable for typed callers;
-  say so in the CHANGELOG line. Cites `convention-auth-loud-postures`.
-- Nonce binding: `requestAction` mints a `cairn_login_pending` nonce cookie (the
-  `factory.ts:621-650` pattern: reuse-unexpired-or-mint, `httpOnly`, `lax`, maxAge = the
-  token TTL, secure from the session derivation above); `confirmAction` requires and consumes
-  it before `consumeToken`, failing with the existing generic invalid-token refusal when
-  absent or mismatched, and `logoutAction` deletes it. The emailed token alone no longer
-  confirms in a browser that never requested. `docs/reference/log-events.md` and
-  `docs/extend/security-model.md` updated. Closes ledger
-  `login-csrf-no-same-browser-binding`. NOTE the residual: the WATCH double-mint entry's
-  discriminator semantics must keep holding; assert `guard.rejected` fields unchanged.
-- adminAction: gains the access-map/`hasAccessRule`/`canReach`/`ownerOnly` sequence
-  `createSectionAction` carries (`section-action.ts:255-265`), each an AUDITED `fail(403)`
-  (or `fail(500)` for misconfiguration), with the same log events. `createSectionAction`'s own
-  copies collapse onto the shared implementation (one source). Reference pages `sveltekit.md`,
-  `cloudflare.md`, `ambient.md`; CHANGELOG `Consumers must:` names the new 403 surface for
-  DB-less custom screens.
-- The `platform` required-but-nullable convention: audit the CSRF/auth helper family for any
-  remaining optional-`platform` signature and align (the csrf-hardening precedent:
-  required-but-nullable makes omission a compile error).
+- **Probe (deliberately NOT a total fold; review findings F8 + N3):** the doctor probe's
+  derivation from the PROBED URL is a detection mechanism, not drift: it is what catches a
+  deployed site whose leftover-`http` `PUBLIC_ORIGIN` minted a weak cookie. The probe KEEPS
+  deriving its expected cookie name from the probed origin, via the shared
+  origin-parameterized body fed the PROBED base itself (provably equal to today's answer,
+  and immune to the `--url`-overrides-wrangler-origin trap), with a comment stating why an
+  external observer derives from the observed scheme as a CROSS-CHECK on the runtime. The
+  ledger close for the carried `check-probe.ts:49` item records this resolution: one body,
+  two deliberate inputs, not a silenced disagreement.
+- **Loud jars (review finding F7 shapes the mechanism):** the five soft
+  `if (!event.cookies || …)` guards convert via a small internal `requireCookieJar(event)`
+  that THROWS and NARROWS; the exported CSRF helpers' parameter types stay strict
+  (`cookies: CookieJar`, non-nullable) — widening them to `| undefined` would trade a
+  compile error for a runtime throw, the inverse of the platform convention. The
+  CSRF-verdict half of each guard KEEPS its `fail(403)`. Observable behavior for an untyped
+  caller: `viewAction`'s catch turns the throw into `fail(500)` plus an
+  `admin.action.failed` record — the CHANGELOG line says that, not "crashes", and the thrown
+  message names only the jar, never a cookie value. Cites `convention-auth-loud-postures`.
+- **Platform sweep:** audit the CSRF/auth helper family for any remaining optional-`platform`
+  signature and align to required-but-nullable (the csrf-hardening precedent).
 
-- [ ] **Step 1:** Test-first, one sub-step per bullet above (the failing test precedes each
-      change; the nonce test must prove a confirm in a cookie-less browser fails and a
-      same-browser confirm succeeds, including the reuse-unexpired branch).
-- [ ] **Step 2:** Implement in the order listed (derivation, probe, jars, nonce, adminAction,
-      platform sweep); each bullet is its own commit.
-- [ ] **Step 3:** `check:surface -- --update` where signatures moved; reference pages per
-      bullet; CHANGELOG lines per bullet; ledger closes per bullet.
-- [ ] **Step 4:** Full gate; final commit:
-      `fix(auth)!: one cookie derivation, loud jars, login-CSRF nonce binding, symmetric adminAction authorization`
+- [ ] **Step 1:** Test-first per bullet (the failing test precedes each change; the probe test
+      asserts the cross-check still reddens on a mismatched derivation pair).
+- [ ] **Step 2:** Implement in the order listed; each bullet is its own commit.
+- [ ] **Step 3:** `check:surface -- --update` where signatures moved; reference pages
+      (`auth-crypto.md`, `doctor.md` probe section, `security-model.md`); CHANGELOG; ledger
+      closes per bullet.
+- [ ] **Step 4:** Full gate; commit (final):
+      `fix(auth)!: one cookie derivation body, probe cross-check, loud jars`
 
-### Task 7: The auth-channel fold
+### Task 7: Login-CSRF nonce binding and adminAction authorization (security-round-hardened)
 
 **Files:**
-- Modify: `src/lib/auth-channel/factory.ts` (`AuthChannelEvent:141-156`, config `:187-272`,
-  `revokeSessions:952-954`), `src/lib/auth-channel/store.ts:33` (`CHANNEL_SCHEMA_SQL`),
-  `src/lib/auth-channel/index.ts`
-- Create: `migrations/channel/0000_channel.sql` (the packaged migration; `package.json`
-  `files` already ships `migrations`)
-- Test: auth-channel unit suites; a migration-file test in the shape of the existing AUTH_DB
-  migration checks
+- Modify: `src/lib/sveltekit/auth-routes.ts` (`requestAction`, `confirmAction`,
+  `logoutAction` — symbolic anchors; Tasks 2 and 6 edited this file)
+- Modify: `src/lib/auth/store.ts` (`issueToken`, `consumeToken` — the nonce is VALUE-BOUND
+  server-side, see below)
+- Create: `migrations/0004_login_nonce.sql`
+- Modify: `src/lib/components/LoginPage.svelte` / `ConfirmPage.svelte` (the distinct
+  absent-nonce error copy)
+- Modify: `src/lib/doctor/checks-d1.ts` (or wherever the `auth.store` D1 probe lives —
+  locate by check id; it learns to assert the `nonce_hash` column)
+- Modify: `src/lib/sveltekit/admin-action.ts` and `src/lib/sveltekit/section-action.ts` (the
+  authorization sequence extracts to one shared implementation — symbolic)
+- Test: auth-routes integration suites (`auth-request.test.ts`, the confirm suite),
+  admin-action and section-action unit suites
+
+**Interfaces — nonce binding (security round B2, B3, F1, F2, N6 all fold here):**
+- **Value-bound, not presence-only.** `migrations/0004_login_nonce.sql` adds a NULLABLE
+  `nonce_hash TEXT` column to `magic_token`; `issueToken` stores the hash of the browser's
+  pending nonce with the token row; `consumeToken`'s single atomic DELETE gains the
+  predicate `AND (nonce_hash IS NULL OR nonce_hash = ?)` so pre-migration rows stay
+  confirmable and new rows require the match. Hashes compare inside that one SQL predicate
+  (constant-time concerns end there; no `===` on secrets anywhere). Presence-only is NOT
+  acceptable: it re-admits the victim-has-their-own-pending-cookie variant and the
+  visited-scanner variant (round-1 N6: the nonce is what defeats a link-following mail
+  scanner, and only value-binding does it fully).
+- **The mint is UNCONDITIONAL and identical on all four `requestAction` exits** (send-ok,
+  non-editor neutral, throttled, send-failed): the `Set-Cookie` for `cairn_login_pending`
+  is emitted with byte-identical attributes BEFORE any branch on `editor`, using
+  reuse-unexpired-or-mint; only the server-side binding write rides token issue. Anything
+  else is a one-request allowlist oracle in the response headers (round B3). A test asserts
+  the neutral and send-ok responses' headers are identical INCLUDING `Set-Cookie`.
+- **Rotation never unconditional; consumption only on success.** Reuse-unexpired is
+  mandatory (a throttled resend must NOT rotate the cookie away from the still-live emailed
+  token — test: request → throttled resend → the first link still confirms). The nonce
+  cookie is deleted on successful confirm and on logout ONLY; a failed confirm attempt
+  leaves it (deleting on failure is a lockout amplifier). The logout delete passes its
+  setter's `secure` (Task 6's one-variable rule).
+- **Ordering:** the nonce check runs BEFORE `consumeToken`, so a cross-browser click does
+  not burn the token; the same emailed link still works from the requesting browser.
+- **The absent-nonce refusal gets its OWN error code and copy** (round F1; the transplant
+  source's own reasoning: "absent is a statement about the requester's own browser"):
+  `?error=` distinct from `expired`, page copy naming the same-browser requirement
+  ("request the link from the browser you'll open it in"), a `log-events.md` row, and a
+  `security-model.md` flow section. Collapsing it into "invalid or expired" tells a
+  cross-device user to do the thing that reproduces the failure, and on a single-owner site
+  that is an admin lockout.
+- **Known cost, stated:** the cross-device flow (request on desktop, click on phone, or an
+  in-app mail WebView with a separate cookie jar) now refuses with the instruction above.
+  This is a deliberate availability-for-integrity trade the ledger close records, with
+  re-requesting from the clicking browser as the escape hatch. The alternative that
+  preserves cross-device (a request-time verifier code shown on the login page) is filed as
+  a ROADMAP note, not built here.
+- **Rollout:** the un-migrated failure mode (SQL naming `nonce_hash` against an un-migrated
+  `AUTH_DB`) is a TOTAL login outage with no second channel, so this is a hard, guided
+  requirement, not a silent degrade: the CHANGELOG `Consumers must:` line says "apply
+  migration 0004 before deploying", the `auth.store` doctor probe asserts the column (so a
+  pre-deploy doctor run catches it), and the batched window's per-site update sheets carry
+  the step. The WATCH double-mint discriminator semantics must keep holding; assert
+  `guard.rejected` fields unchanged, and add the pending-cookie double-mint analogue test
+  (two concurrent cookie-less request POSTs: the surviving cookie must confirm the
+  surviving token).
+
+**Interfaces — adminAction authorization (security round B1 reshapes the ratified item):**
+- The round-1 security review proved the literal "same sequence, default-on" form 403s
+  EVERY existing zero-config consumer: the guard attaches `cairnAccess = access ?? {}`
+  (empty object, never undefined), and `hasAccessRule({}, target)` is false for every
+  target, so default-on enforcement is a breaking lockout of the documented DB-less
+  default, not a hardening. The executed form closes the asymmetry by making the CAPABILITY
+  symmetric, opt-in:
+  - ONE shared internal `authorizeAdminTarget(access, editor, { target, ownerOnly })`
+    implementation; `createSectionAction` calls it (behavior byte-identical on its existing
+    suites, including check order and log events).
+  - `adminAction` gains an OPT-IN `access?: { target: string; ownerOnly?: boolean }` member
+    on its options bag. Absent = today's behavior exactly. Present = the shared sequence
+    runs, refusals are AUDITED and then THROW `error(403)` — adminAction's existing refusal
+    channel (its contract: authorization refusals throw; its return type must NOT widen to
+    `T | ActionFailure`).
+  - The audit-sink consequence is named in the CHANGELOG: a site opting in starts receiving
+    denial records through its `cairnAuditSink`.
+  - `check:surface -- --update` covers the new options member; reference pages state the
+    opt-in and the absent-means-today default in one sentence each.
+
+- [ ] **Step 1:** Test-first per the Interfaces bullets (each named test exists and fails
+      before its implementation lands).
+- [ ] **Step 2:** Implement; nonce and adminAction are separate commits.
+- [ ] **Step 3:** Reference pages (`sveltekit.md`, `ambient.md`, `admin-routes.md`,
+      `security-model.md`, `log-events.md`, `doctor.md` for the probe column assert);
+      CHANGELOG lines per bullet; close `login-csrf-no-same-browser-binding` with the
+      trade-off recorded; file the per-IP rate-limit note (security round N5) and the
+      request-time-verifier alternative as ROADMAP lines in the ritual.
+- [ ] **Step 4:** Full gate; commit (final):
+      `feat(auth)!: value-bound login nonce; opt-in audited authorization for adminAction`
+
+### Task 8: The auth-channel fold
+
+**Files:**
+- Modify: `src/lib/auth-channel/factory.ts` (`AuthChannelEvent`, the config interface,
+  `revokeSessions` — symbolic anchors), `src/lib/auth-channel/store.ts`
+  (`CHANNEL_SCHEMA_SQL`), `src/lib/auth-channel/index.ts`
+- Create: `migrations-channel/0000_channel.sql` — a SIBLING directory, **never under
+  `migrations/`** (security round F4: `migrations/` is `AUTH_DB`'s `migrations_dir`; the
+  showcase's own wrangler.jsonc states twice that sharing it cross-applies schemas, and the
+  vitest harness walks `migrations/` into `AUTH_DB`). Add `migrations-channel` to
+  `package.json` `files` with a `check:package` assertion.
+- Test: auth-channel unit suites; the EXISTING byte-pin drift test
+  (`src/tests/unit/auth-channel-migration-drift.test.ts`, currently pinning the showcase's
+  `migrations-members/0000_channel.sql` to `CHANNEL_SCHEMA_SQL`) is REPOINTED so the
+  packaged file becomes canonical and both the showcase fixture and the internal version
+  constant assert byte-equality against it (round N7: a one-character drift between file and
+  `CHANNEL_SCHEMA_VERSION` is a fail-closed outage for every channel action, so the tripwire
+  is the acceptance criterion, not prose); a compile-only consumer fixture mirroring
+  xcathletes' usage
 
 **Interfaces:**
-- `CHANNEL_SCHEMA_SQL` retires as an export: the DDL becomes the packaged migration file, and
-  `verifySchema` reads its version from the same source the file is generated from (one
-  source, never a copy — state how in the diff, e.g. the migration file is emitted from the
-  store's constant at build, or the constant moves internal and the file is canonical; the
-  implementer picks the direction that keeps `check:package` green and says so).
-- `AuthChannelEvent` retires: callbacks take `CairnEvent` (kit's `RequestEvent` satisfies it
-  structurally — the type's own header concedes it; xcathletes' usage compiles unchanged,
-  verify against the fixture in the compile-only test).
-- `revokeSessions(event, subject)`: takes the same event its siblings take and resolves
-  through `config.resolveDb`.
+- `CHANNEL_SCHEMA_SQL` retires as an export: the DDL becomes the packaged migration file at
+  `migrations-channel/0000_channel.sql`, canonical, with the store's constant asserted
+  against it per the repointed drift test. The DDL ships in idempotent form
+  (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, `INSERT OR IGNORE` for the
+  `schema_version` row — byte-compatible with a fresh install), because an
+  already-provisioned consumer (xcathletes ran the SQL directly; its channel D1 has no
+  `d1_migrations` rows) pointing `migrations_dir` at the file must not abort on
+  `table already exists`; the `Consumers must:` line carries the explicit
+  "already provisioned: insert the `d1_migrations` marker, do not re-apply" step.
+  `verifySchema` semantics unchanged; the schema itself does not change in this pass.
+- **Cookie-delete `secure` fix rides this task** (security round F6, a live latent bug): the
+  channel's three cookie deletes (confirm's pending + session deletes, logout's) pass their
+  setter's `secure` flag, per the engine's own recorded rule — today logout over http on a
+  non-localhost host leaves the browser cookie standing.
+- `AuthChannelEvent` retires: callbacks take `CairnEvent`. **This IS a breaking change for
+  xcathletes** (review finding F9: it imports the NAME and uses it in a public signature;
+  structural compatibility does not save a named import). The claim is stated honestly: the
+  compile-only fixture asserts the NEW shape compiles against a xcathletes-shaped consumer,
+  and the CHANGELOG `Consumers must:` carries the rename line (`AuthChannelEvent` →
+  `CairnEvent`).
+- `revokeSessions(db, subject)` **KEEPS its event-free signature as the recorded exception**
+  (review finding F9): it is the one member callable outside a request (xcathletes calls it
+  from a roster-archive path with a `db` and no event; cron/queue callers are the same
+  class). The asymmetry gets a stated reason in the doc comment and in the re-authored
+  ledger shape (`audit-auth-authchannel`), per `convention-internal-sibling-comment`'s
+  stated-split culture — uniformity was weighed and the out-of-request capability won.
 - `AuthChannelConfig`: the nine-knob `ttl` bag re-derives per its re-authored ledger shape
-  (rank 13: the grouping was transplanted from the design spec's Defaults table; regroup by
-  what a site actually tunes together), and `lookup`/`verify` gain the event context
-  (`lookup: (contact: string, event: CairnEvent) => ...`, same for `verify`) so a D1-backed
-  roster needs no module-level `WeakMap` closure — the xcathletes-evidenced gap.
+  (rank 13: regroup by what a site actually tunes together), and `lookup`/`verify` gain a
+  NARROW context, not the event (security round F5): `lookup: (contact: string,
+  ctx: { env: Env }) => …`, same for `verify`, mirroring the existing `DeliverContext`
+  precedent. The evidenced need is a BINDING (`ctx.env` closes the xcathletes `WeakMap` gap
+  exactly); handing the full event would put `request`/`cookies`/`url` into the two most
+  safety-critical callbacks — `lookup` decides subject-vs-decoy (the no-roster-leak
+  property; a request-keyed lookup makes membership request-controlled and the factory
+  swallows its throw as a miss), and a `false` from `verify` DESTROYS the session row on
+  every authenticated request. The TSDoc states that neither callback may read
+  request-shaped data.
 - `DeliverContext`, `ChannelRequestResult`, `ChannelConfirmResult` keep with the factory,
   shapes per their entries (the no-roster-leak and challenge-required-is-retry rulings
   survive verbatim).
 - Reference page `auth-channel.md` rewritten for all of the above;
   `docs/extend/add-a-second-audience.md` Path B updated; CHANGELOG `Consumers must:` carries
-  the xcathletes migration lines (event type, revokeSessions, ttl bag, lookup/verify
-  signature, schema file).
+  the full xcathletes migration list (event type, ttl bag, lookup/verify signature, schema
+  file; revokeSessions unchanged).
 
-- [ ] **Step 1:** Re-author the truncated shapes for `audit-auth-authchannelconfig` and
-      `audit-auth-createauthchannel` from `rank-auth-family.md` (ranks 13, 15) as amended by
-      Task 1's reopen entry, before code.
+- [ ] **Step 1:** Re-author the truncated shapes for `audit-auth-authchannelconfig`,
+      `audit-auth-authchannel`, and `audit-auth-createauthchannel` from `rank-auth-family.md`
+      (ranks 11, 13, 15) as amended by Task 1's reopen entry, before code. Close all EIGHT
+      open family entries in this task against the rewritten shapes.
 - [ ] **Step 2:** Test-first per bullet; the compile-only consumer fixture mirrors
-      xcathletes' actual usage shape (module-scope channel per binding, D1-backed lookup
-      using the new event parameter).
-- [ ] **Step 3:** Implement; `check:surface -- --update`; drift-hunt (`skills/` included);
-      docs; CHANGELOG; close the seven family entries against the rewritten shapes.
+      xcathletes' actual post-migration usage (module-scope channel per binding, D1-backed
+      lookup using the new event parameter, `sessionPerson(event: CairnEvent)`).
+- [ ] **Step 3:** Implement; `check:surface -- --update`; drift-hunt (`skills/` included;
+      waymark regenerated); docs; CHANGELOG.
 - [ ] **Step 4:** Full gate; commit: `refactor(auth-channel)!: fold the channel onto the engine's auth grammar`
 
-### Task 8: The coupled pairs (validateReproFence, defineAccess)
+### Task 9: The coupled pairs (validateReproFence, defineAccess)
 
 **Files:**
-- Modify: `src/lib/reproductions/validate.ts:13-16,29-31,45-48,80-85`,
-  `src/lib/reproductions/manifest.ts:331`
-- Modify: `src/lib/auth/access.ts:67`, `src/lib/auth/roles.ts:24`
-- Modify: `scripts/checks/check-visuals.mjs:194-195` (the in-repo caller supplies the
-  register options explicitly)
+- Modify: `src/lib/reproductions/validate.ts`, `src/lib/reproductions/manifest.ts` (the
+  `:331` re-export)
+- Modify: `src/lib/auth/access.ts` (`defineAccess`), `src/lib/auth/roles.ts` (`DEFAULT_ROLES`
+  and `resolveOwnerLevelRoles` — post-Task-3 name)
+- Modify: `scripts/checks/check-visuals.mjs` (the caller supplies the register options
+  explicitly)
 - Test: `src/tests/unit/reproductions-validate.test.ts`, `src/tests/unit/check-visuals.test.ts`,
   the access/roles unit suites
 
@@ -429,117 +641,203 @@ Copied from the initiative design's standing-constraints section; every task inh
 - `validateReproFence(body, manifest, options?)`: the manifest-dependent half (story resolves,
   width declared, required keys `story`/`alt`/`caption`) stays engine-owned; the register half
   moves behind options — `options: { altPrefix?: RegExp; maxAltLength?: number; extraKeys?: string[] }`
-  with NO register defaults baked in (omitting an option skips that check; the ledger shape:
-  "move the alt prefix, 150-char ceiling, and closed key set behind caller options or back to
-  the site" — `check-visuals.mjs` passes cairn-pub's register explicitly). Return type becomes
-  the inline `{ issues: string[] }`; **`ReproFenceValidation` retires with the reshape** (the
-  Tier 2 reshape-blocked retire, `audit-repro-reprofencevalidation`), closing the F-1 leak
-  hazard the addendum ruling flagged.
-- `defineAccess(roles: RolesDeclaration | undefined, map)`: accepts `undefined` like its three
-  siblings (`resolveCapability`, `roleHome`, `ownerLevelRoles` — `roles.ts:83-108`), defaulting
-  the vocabulary to the same source `resolveCapability` uses. Then **`DEFAULT_ROLES` retires**
-  (the coupled pair: `docs/extend/restrict-admin-access.md:14`'s instructed import becomes
-  unnecessary; the ledger flip on `audit-adapter-default-roles` records the executed
-  condition its keep verdict named). The default vocabulary keeps ONE definition
-  (read-from-the-source; `DEFAULT_ROLES` may survive as an internal constant).
-- [ ] **Step 1:** Test-first both halves (a localized alt prefix passing under caller options;
-      `defineAccess(undefined, map)` validating against the default vocabulary; the last-owner
-      empty-list rule unchanged).
+  with NO register defaults baked in (omitting an option skips that check; `check-visuals.mjs`
+  passes cairn-pub's register explicitly). Return type becomes the inline
+  `{ issues: string[] }`; **`ReproFenceValidation` retires with the reshape** (leak-free: the
+  inlined return removes its only carrier, exactly as the addendum ruling intended — review
+  note N4). Closes `audit-repro-validatereprofence` and `audit-repro-reprofencevalidation`.
+- `defineAccess(roles: RolesDeclaration | undefined, map)`: accepts `undefined` like its
+  siblings (`resolveCapability`, `roleHome`, `resolveOwnerLevelRoles`), defaulting the
+  vocabulary to the same source `resolveCapability` uses. Then **`DEFAULT_ROLES` retires**
+  (leak-free: rendered as a literal value, named inside no surviving shape — review note N4;
+  the flip on `audit-adapter-default-roles` executes exactly the condition its keep verdict
+  named, pre-authorized). The default vocabulary keeps ONE definition (`DEFAULT_ROLES` may
+  survive as an internal constant); `docs/extend/restrict-admin-access.md`'s instructed
+  import updates.
+
+- [ ] **Step 1:** Test-first both halves (a localized alt prefix passing under caller
+      options; `defineAccess(undefined, map)` validating against the default vocabulary; the
+      owner-only-must-be-written-`['owner']` empty-list rule unchanged).
 - [ ] **Step 2:** Implement; `check:surface -- --update`; drift-hunt (`reproductions.md`,
-      `core.md:896,940,962`, `restrict-admin-access.md`, showcase/waymark).
-- [ ] **Step 3:** CHANGELOG `Consumers must:`; close `audit-repro-validatereprofence`,
-      `audit-repro-reprofencevalidation`, `audit-adapter-default-roles` (flip executed),
-      annotate `audit-adapter-defineaccess`.
+      `core.md`, `restrict-admin-access.md`, showcase; waymark regenerated).
+- [ ] **Step 3:** CHANGELOG `Consumers must:`; ledger closes per the Interfaces block, plus
+      an annotation on `audit-adapter-defineaccess`.
 - [ ] **Step 4:** Full gate; commit: `refactor!: validateReproFence caller-register options; defineAccess default vocabulary; DEFAULT_ROLES retires`
 
-### Task 9: The engine bins (anti-silent-green, evenness, config contract)
+### Task 10: The doctor's anti-silent-green posture
 
 **Files:**
-- Modify: `src/lib/doctor/report.ts:8-12`, `src/lib/doctor/run.ts:11-28`,
-  `src/lib/doctor/bin.ts:24-31,85`
-- Modify: `src/lib/doctor/checks-local.ts:91-92,139-156,216-226,271-311,362-378`,
-  `src/lib/doctor/check-floors.ts:57-58`
-- Modify: `src/lib/vite/bin.ts` (whole file, 10 lines), plus a new `parseArgs`/`USAGE` beside
-  `writeManifest` (`src/lib/vite/internal.ts` or a new `assemble.ts` mirroring the doctor
-  split)
-- Modify: `src/lib/doctor/assemble.ts:33-34`, `src/lib/audit/config.ts:221-224`,
-  `src/lib/media-seed/assemble.ts:7-8` (`--help` at exit 0)
-- Modify: `src/lib/audit/config.ts:44-51,103,118-124,183`, `src/lib/audit/rendered.ts` (edits
-  (a) and (c))
-- Test: doctor/audit/media-seed/vite bin suites; `doctor.md`, `cairn-audit.md`,
-  `cli-cairn-manifest.md`, `cli-cairn-media-seed.md`
+- Modify: `src/lib/doctor/types.ts` (the `CheckStatus`/`CheckResult` vocabulary and
+  constructors — review finding F13), `src/lib/doctor/report.ts`, `src/lib/doctor/run.ts`,
+  `src/lib/doctor/bin.ts`
+- Modify: `src/lib/doctor/checks-local.ts` (`config.csrf-disable`, `config.site-config`,
+  `config.tidy-key`, `admin.mount-shape`), `src/lib/doctor/check-floors.ts`,
+  `src/lib/doctor/check-edge.ts` (or wherever `edge.https-forced`/`edge.hsts` live — locate
+  by check id)
+- Test: the doctor unit suites; `docs/reference/doctor.md`
+
+**Interfaces (review-hardened; findings B2, B3, F12, F13):**
+- The status vocabulary becomes FOUR values with distinct semantics and a three-way exit
+  contract:
+  - `pass` / `fail` — unchanged; `fail` drives exit 1.
+  - `skip` — NOT APPLICABLE only; never gates.
+  - `info` — a heuristic could not see, or a finding is advisory; reported with guidance,
+    never gates. **`admin.mount-shape` converts to `info`** (its ledger shape prescribes
+    exactly this INFO tier; its never-fails design survives; entry closes).
+    **`edge.https-forced` and `edge.hsts` demote to `info`** per their ledger shape
+    ("demote both to advisory (report, never gate)") — the new tier is the advisory tier
+    that entry says the doctor lacks; entry closes (review finding F12).
+  - `unchecked` — a deterministic check's required input was absent or unreadable ("could
+    not look"). Distinct tag, distinct summary count, and drives **exit 3** (a NEW code:
+    2 stays "bad flags / run couldn't start", so CI can distinguish all three; the exit
+    table in `doctor.md` and its "A skip never fails the run" sentence rewrite
+    accordingly, and the CI-gate section states the new semantics).
+- Recategorizations, each honoring its own ledger shape:
+  - `config.csrf-disable` reads BOTH `svelte.config.js` and `vite.config.ts` (the sv-create
+    scaffold wires the adapter in vite config); `unchecked` only when NEITHER yields an
+    answer — and found-in-neither is NEVER reported as found-and-correct (security round
+    N9). Closes `audit-cli-config-csrf-disable-check`.
+  - `config.site-config`: `src/theme/site.config.yaml` joins `SITE_CONFIG_PATHS` (closing
+    the scaffold gap); `unchecked` when no candidate path matches. The one-source derivation
+    from the bake constant is the internals pass's dogfood rider; a `// WATCH:` comment
+    points there. Closes `audit-cli-config-site-config-check`.
+  - `config.dependency-floors` **executes its ruled shape instead of going loud-red on
+    pnpm/yarn (review finding B2): the check READS `pnpm-lock.yaml` and `yarn.lock`**
+    alongside `package-lock.json`, so those consumers get a real verdict; `unchecked` only
+    when NO recognized lockfile exists. Closes `audit-cli-config-dependency-floors-check`.
+  - `auth.role-wiring` is a KEEP (its heuristic skip branches are ruled fine); its
+    could-not-see branches convert to `info`, its no-custom-roles branch stays `skip`;
+    annotate, don't close.
+  - `config.tidy-key` gets its own condition id, and the readiness count gets its own field
+    so a check carries the right remediation without borrowing `config.bindings-missing`
+    (C16's two-jobs finding). Closes or progress-notes
+    `audit-cli-config-tidy-key-check-and-its-active-anthropic-probe` per its re-authored
+    shape.
+- [ ] **Step 1:** Re-author the truncated shapes for every CLI entry this task closes, from
+      `rank-cli-surface.md`.
+- [ ] **Step 2:** Test-first: the four-status vocabulary, the 0/1/2/3 exit matrix, the
+      both-files csrf-disable read, the pnpm and yarn lockfile parses against fixtures, the
+      site-config theme path.
+- [ ] **Step 3:** Implement; `doctor.md` rewritten (status table, exit table, CI section);
+      CHANGELOG (`Consumers must:` states the exit-3 semantics for CI users and that
+      pnpm/yarn consumers now get real floor verdicts).
+- [ ] **Step 4:** Full gate; commit: `feat(doctor)!: four-status vocabulary, exit 3 for unchecked, real pnpm/yarn floor reads`
+
+### Task 11: Bin evenness and the audit config contract
+
+**Files:**
+- Modify: `src/lib/vite/bin.ts` (whole file, 10 lines), plus a new `parseArgs`/`USAGE`
+  beside `writeManifest` (`src/lib/vite/internal.ts` or a new `assemble.ts` mirroring the
+  doctor split)
+- Modify: `src/lib/doctor/assemble.ts` (`USAGE`), `src/lib/audit/config.ts` (`USAGE`,
+  `rendered.extraPages`), `src/lib/media-seed/assemble.ts` (`USAGE`) — `--help` at exit 0
+- Modify: `src/lib/audit/rendered.ts` (the redirect-trap refusal)
+- Test: bin suites; `cairn-audit.md`, `cli-cairn-manifest.md`, `cli-cairn-media-seed.md`
 
 **Interfaces:**
-- **Anti-silent-green (R-9):** the doctor's result vocabulary splits `skip` into
-  `skip` (not applicable; exit unchanged) and `unchecked` (could not look; distinct tag,
-  distinct summary count, and a non-zero exit — use exit 2, the "run couldn't finish" tier
-  `cairn-audit` already ratified, via a `--strict`-free default; `doctor.md:110-118` and the
-  "A skip never fails the run" sentence rewrite accordingly, and the CI-gate section states
-  the new semantics). Recategorized as `unchecked`: `config.csrf-disable` when neither
-  `svelte.config.js` NOR `vite.config.ts` yields the answer (the check now reads BOTH files —
-  the sv-create scaffold wires the adapter in `vite.config.ts`; ledger
-  `audit-cli-config-csrf-disable-check`), `config.site-config` when no candidate path matches
-  (AND `src/theme/site.config.yaml` joins `SITE_CONFIG_PATHS`, closing the scaffold gap;
-  ledger `audit-cli-config-site-config-check`; the one-source derivation from the bake
-  constant is the internals pass's dogfood rider — a `// WATCH:` comment points there),
-  `config.dependency-floors` on a non-npm lockfile, and `auth.role-wiring`'s
-  hooks-file-absent/unreadable branches (its no-custom-roles branch stays a true `skip`).
-  `admin.mount-shape` keeps its never-fails design but reports `unchecked`, not `skip`, when
-  it could not see a mount. The `config.tidy-key` check gets its own condition id, and the
-  readiness count gets its own field so a check carries the right remediation without
-  borrowing `config.bindings-missing` (C16's two-jobs finding; ledger
-  `audit-cli-config-tidy-key-check-and-its-active-anthropic-probe` closes or progress-notes
-  per its re-authored shape).
-- **Evenness (R-11):** `vite/bin.ts` moves to `process.exitCode` (stdout flush rule its three
-  siblings state verbatim), gains argv parsing that accepts `--help` and rejects everything
-  else with a usage line at exit 2; all four bins answer `--help` by printing their existing
-  `USAGE` constant at exit 0. Ledger `audit-cli-no-help-on-any-of-the-five-commands` closes
-  for the four engine bins with a progress note routing `create-cairn-site`'s `--help` to the
-  tool's pre-publish pass. Ledger
+- **Evenness (R-11):** `vite/bin.ts` moves to `process.exitCode` (the stdout-flush rule its
+  three siblings state verbatim), gains argv parsing that accepts `--help` and rejects
+  everything else with a usage line at exit 2; all four engine bins answer `--help` by
+  printing their existing `USAGE` constant at exit 0. Ledger
+  `audit-cli-no-help-on-any-of-the-five-commands` closes for the four engine bins with a
+  progress note routing `create-cairn-site`'s `--help` to the tool's pre-publish pass.
   `audit-cli-cairn-manifest-command-vite-config-discovery-exit-behavior` closes per its
   re-authored shape.
 - **Config contract:** (a) `rendered.extraPages` lands as ADDITIVE beside `rendered.pages`
-  (extraPages appends to `DEFAULT_RENDERED_PAGES` (`config.ts:44-51`) or to an explicit
-  `pages`; the "replaces, never extends" trap and its doc warning dissolve); (c) the
-  rendered harness gains the redirect-trap refusal: when EVERY configured page settles on the
-  login card (the page-identity signals resolve to the login route's title/landmark for all
-  pages), the run exits 2 with a message naming `CAIRN_AUDIT_COOKIES`, per rank-32(c) ("a
-  silent green the run should exit 2 on"). Edit (b) is already landed (verified: `sheet`
-  resolves through `asPathOrPathList`, `config.ts:180-182`). Ledger
-  `audit-cli-cairn-audit-config-json-contract-...` closes with all three edits accounted.
-- [ ] **Step 1:** Re-author the truncated shapes for the CLI entries this task closes, from
-      `rank-cli-surface.md`.
-- [ ] **Step 2:** Test-first per bullet (the `unchecked`-exit test, the both-files csrf-disable
-      read, the extraPages merge, the all-pages-login refusal against a fixture harness run,
-      the vite-bin argv matrix).
-- [ ] **Step 3:** Implement; docs pages per the fact sheet's list; CHANGELOG (`Consumers
-      must:` names the doctor exit-semantics change for CI users); ledger closes.
-- [ ] **Step 4:** Full gate; commit: `feat(cli)!: one anti-silent-green posture, bin evenness, additive rendered pages, redirect-trap refusal`
+  (appends to `DEFAULT_RENDERED_PAGES` or to an explicit `pages`; the "replaces, never
+  extends" doc warning dissolves); (c) the rendered harness gains the redirect-trap refusal:
+  when EVERY configured page settles on the login card (the page-identity signals resolve to
+  the login route's title/landmark for all pages), the run exits 2 with a message naming
+  `CAIRN_AUDIT_COOKIES` (rank-32(c): "a silent green the run should exit 2 on"). Edit (b) is
+  already landed (verified: `sheet` resolves through `asPathOrPathList`). Ledger
+  `audit-cli-cairn-audit-config-json-contract-…` closes with all three edits accounted.
+- Routed to 4b explicitly (review finding F12): the two audit REGISTRY-rule reshapes
+  (`audit-cli-chip-ground-collision-rendered-rule`,
+  `audit-cli-form-font-parity-rendered-rule`) — they are cairn-audit rules, not doctor
+  checks, and no 4a task touches them.
+- [ ] **Step 1:** Re-author truncated shapes for the entries this task closes.
+- [ ] **Step 2:** Test-first: the vite-bin argv matrix, the `--help` exit-0 matrix across
+      four bins, the extraPages merge, the all-pages-login refusal against a fixture harness
+      run.
+- [ ] **Step 3:** Implement; docs pages; CHANGELOG; ledger closes and the two explicit 4b
+      routings.
+- [ ] **Step 4:** Full gate; commit: `feat(cli)!: bin evenness, --help, additive rendered pages, redirect-trap refusal`
 
 ---
 
 ## Pass-end ritual (cairn-pass; not a numbered task)
 
 Code-simplifier over the changed code; domain reviewer fan-out (`svelte-reviewer`,
-`web-auth-security-reviewer` MANDATORY for Tasks 6-7, `cloudflare-workers-reviewer`,
+`web-auth-security-reviewer` MANDATORY for Tasks 6-8, `cloudflare-workers-reviewer`,
 `daisyui-a11y-reviewer` if any component markup moved); fix rounds; the mid-pass mechanic
 check (`engine-triage` on anything filed); STATUS/HISTORY/ROADMAP updates; post-mortem
-appended here; both budgets scored.
+appended here; both budgets scored. ROADMAP filings owed by this pass (from the security
+round): per-IP rate limiting on `requestAction`/`confirmAction` (N5 — the `RateLimitLike`
+seam Task 4 reshapes is the natural mechanism), and the request-time verifier code as the
+cross-device-preserving alternative to the login nonce (F1), each one line in the tier
+where it bites.
 
 ## What this pass unblocks and hands to 4b
 
 - **List (c) Tier 1 (25 media-janitorial retires)** unblocks when Task 2 declares
   `CairnAdminRoutes` narrow. 4b executes them with the same ratification-gate discipline the
   retires pass used (no keep-to-retire flip without Geoff).
-- **`UsageEntry`** likely rides with Tier 1 (Task 5's carrier audit decides).
-- The remaining ~20 open reshapes (AuthBranding, PublishActionsConfig, RevertFailure's
-  `lastSavedAt`, TidyClient, MediaEntry, mintPreviewToken, formatTimestamp, OfficeList,
-  StatusChip, normalizeAssets, fixtureMediaBase, strAttr's `ctx.str()` where not
-  chassis-coupled, the eleven log-event evenness reshapes, and the doctor-check reshape
-  entries not consumed by Task 9) execute in 4b against the ruled conventions, finalized
-  against 4a's merged surface. The four `rendered-*` audit harness failure ids also conform to
-  the identifier-grammar clause in 4b (dot-namespaced, prefix retired).
+- **`UsageEntry`** rides with Tier 1 (Task 5's progress note names the inline-vs-keep choice).
+- The remaining open reshapes execute in 4b against the ruled conventions, finalized against
+  4a's merged surface: `AuthBranding`, `PublishActionsConfig`, `RevertFailure`'s
+  `lastSavedAt` rename, `TidyClient`, `MediaEntry`, `mintPreviewToken`, `formatTimestamp`,
+  `OfficeList`, `StatusChip`, `normalizeAssets`, `fixtureMediaBase`, `strAttr`'s `ctx.str()`
+  where not chassis-coupled, the eleven log-event evenness reshapes, the two audit
+  registry-rule reshapes (`chip-ground-collision`, `form-font-parity`), and the four
+  `rendered-*` harness failure ids conforming to the identifier-grammar clause
+  (dot-namespaced, prefix retired).
 - Routed OUT of slice 4 entirely: everything `create-cairn-site`-scoped (cost narrative, flag
-  set, resume store, console — the tool's pre-publish pass); `MarkdownEditor`'s seam collapse,
-  the dogfood tripwire, the leak-class `check:surface` rider (internals); the render trio
-  re-homing (chassis).
+  set, resume store, console, `--help` — the tool's pre-publish pass); `MarkdownEditor`'s
+  seam collapse, the dogfood tripwire, the leak-class `check:surface` rider, the
+  `SITE_CONFIG_PATHS`-from-bake-constant derivation (internals); the render trio re-homing
+  (chassis).
+
+## Review folds (round 1, 2026-08-30)
+
+The two-reviewer adversarial round 1 (`engine-triage`, `web-auth-security-reviewer`) ran
+against the plan as committed at `a1f2d45b`. The engine-triage findings (B1-B4, F5-F14,
+N1-N6) are folded throughout this revision: B1 → Task 5's carrier re-type; B2/B3 → Task 10's
+four-status design executing the ruled shapes; B4 → Task 1's `PublicRoutes` reopen and
+Task 2's CHANGELOG amendments; F5 → the generated-waymark global constraint; F6/F7 → Task 4's
+four-arm result and the one-grammar `outcome` clause; F8 → Task 6's probe cross-check; F9 →
+Task 8's honest breaking-change statement and the `revokeSessions` exception; F10 →
+Task 9's post-rename sibling name; F11 → the symbolic-anchor constraint and `parallel:
+false`; F12 → `buildMediaResolver`'s opts-drop in Task 3, the edge/hsts demotion in Task 10,
+the two registry rules routed to 4b; F13 → `types.ts` in Task 10's files; F14 → the 6/9
+splits (now Tasks 6/7 and 10/11) and the 5.5M ceiling.
+
+The security round (`web-auth-security-reviewer`) returned three BLOCKING findings, all
+folded: B1 (default-on adminAction enforcement 403s every zero-config consumer via the
+guard's empty-map default) → Task 7's opt-in `access` option with the throw-`error(403)`
+channel; B2 (the nonce needs value-binding, a schema migration, and a rollout story — the
+un-migrated failure is a total login outage) → Task 7's `migrations/0004_login_nonce.sql`,
+nullable-column predicate, doctor column assert, and hard guided `Consumers must:`; B3
+(minting only where a token issues is an allowlist oracle) → the unconditional
+identical-headers mint. Its FIX findings landed as: F1 → the distinct absent-nonce error
+copy and the recorded cross-device trade; F2 → reuse-unexpired mandatory, consume on
+success/logout only, the throttle-resend and double-mint tests; F3 → Task 4's
+atomic-write-first mandate and concurrency acceptance test; F4 → `migrations-channel/` as a
+sibling dir with idempotent DDL and the already-provisioned marker step; F5 → the narrow
+`{ env }` context on `lookup`/`verify`; F6 → the channel cookie-delete `secure` fix; F7 →
+`requireCookieJar` narrowing with strict exported helpers. Notes N1-N9 landed as the
+one-variable secure/name rule, the both-names logout delete, the coherence-not-security
+ledger wording, the security-model.md/crypto-docstring listeners, the probe
+probed-base-input rule, the `not-eligible` discriminant, the per-action key-set tests, the
+never-found-means-correct clause, and the two ROADMAP filings.
+
+Two folds moved beyond the ratified sitting options' letter and are flagged for Geoff at
+plan review: adminAction's authorization is OPT-IN (the ratified "symmetric checks" option
+said "gains the same checks"; the review proved default-on is a lockout of the documented
+zero-config default, so the executed form makes the capability symmetric instead), and the
+login nonce's cross-device cost (request on one device, click on another, now refused with
+instructive copy) is accepted as a deliberate trade per the ledger entry's own prescription,
+with the verifier-code alternative filed to ROADMAP.
+
+Round 2 (`engine-triage`, focused verification of this folded revision) ran before the
+plan was handed to execution; its residual findings and dispositions are recorded below
+when it completes.

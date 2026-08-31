@@ -18,19 +18,22 @@ chassis slice per the initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**Execute the conventions pass (slice 4a)** from its committed, twice-reviewed plan:
-`docs/superpowers/plans/2026-08-30-conventions-pass.md` (authored in the 2026-08-30/31
-sitting; both round-1 adversarial reviews folded at `a24cd4b9`, round-2 residuals folded
-after). Eleven tasks, sequential (`parallel: false`), worktree `conventions`, ceiling 5.5M,
-checkpoint every four tasks. The plan's header carries the sitting's ratified rulings —
-including the **`/auth-channel` keep-and-fold reopen on xcathletes adoption evidence**
-(overturning the audit's shrink-to-recipe shape) and the **`PublicRoutes` reopen** under the
-contract-first returns ruling; Task 1 writes both into the ledger before any code. Slice 4b
-(the conformance sweep, plan authored fresh after 4a merges) inherits list (c) Tier 1's 25
-retires, unblocked by Task 2's `CairnAdminRoutes` narrowing. Resume prompt for a fresh
-session:
+**The conventions pass (slice 4a) is EXECUTING** on worktree `.claude/worktrees/conventions`
+(branch `conventions`, workflow mode, sequential), from the committed plan
+`docs/superpowers/plans/2026-08-30-conventions-pass.md`. Checkpoint after Task 4
+(2026-08-31): Tasks 1 (`5728b882`), 2 (`52fd9cba`+`e36089f9`, one fix round), and 4
+(`0bb03e51`+`523fa8ef`, one fix round) ACCEPTED; Task 3 (`51f02f3f`+`c8c6f5ac`) landed but
+escalated on two residual doc defects (CHANGELOG's `createMediaResolver` subpath claim;
+stale preset prose in `core.md`/`data-tiers.md`), which the conductor routed to a cleanup
+task at the head of chunk 2 (Tasks 5-8). Spend: ~2.6M of the 5.5M ceiling after four of
+eleven tasks; projection crosses the 80% checkpoint during chunk 2 and lands near 7M for
+the full pass — the combined ceiling question is with Geoff. Decisions taken: the overnight
+suspend stall was recovered by verify-not-redo (Task 1's pre-stall commit accepted as-is);
+Task 4's `Outcome`-suffixed result-union type names accepted (they are results, not
+failure shapes, so the `Failure`-suffix ruling is not implicated). Resume prompt for a
+fresh session:
 
-In ~/Projects/cairn-cms, execute the conventions pass (audit remediation slice 4a): invoke cairn-pass, read docs/STATUS.md and docs/superpowers/plans/2026-08-30-conventions-pass.md, create the worktree, and run the plan task-by-task through the implementer chain in workflow mode (parallel: false).
+In ~/Projects/cairn-cms, resume the conventions pass (slice 4a) mid-execution: invoke cairn-pass, read docs/STATUS.md and the plan, verify worktree `conventions` state against the checkpoint above, then continue with chunk 2 (Task 3's two doc fixes, then Tasks 5-8) through the implementer chain in workflow mode.
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed

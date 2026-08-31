@@ -276,6 +276,41 @@ describe('magic tokens (single-use by construction)', () => {
   });
 });
 
+describe('magic tokens bound to the requesting browser (migration 0004)', () => {
+  it('consumes a bound token only when the submitted nonce hash matches', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const future = Date.now() + 10_000;
+    await issueToken(db, 'ed@x.dev', 'bound-hash', future, Date.now(), 'nonce-a');
+    expect(await consumeToken(db, 'bound-hash', Date.now(), 'nonce-a')).toBe('ed@x.dev');
+  });
+
+  it('refuses a bound token for a different browser and leaves it unburned', async () => {
+    // The refusal must not consume the row: the editor who requested the link still has to be
+    // able to click it from their own browser afterwards.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const future = Date.now() + 10_000;
+    await issueToken(db, 'ed@x.dev', 'bound-hash', future, Date.now(), 'nonce-a');
+    expect(await consumeToken(db, 'bound-hash', Date.now(), 'nonce-b')).toBeNull();
+    expect(await countRows('magic_token')).toBe(1);
+    expect(await consumeToken(db, 'bound-hash', Date.now(), 'nonce-a')).toBe('ed@x.dev');
+  });
+
+  it('refuses a bound token when no nonce is submitted at all', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const future = Date.now() + 10_000;
+    await issueToken(db, 'ed@x.dev', 'bound-hash', future, Date.now(), 'nonce-a');
+    expect(await consumeToken(db, 'bound-hash', Date.now())).toBeNull();
+    expect(await countRows('magic_token')).toBe(1);
+  });
+
+  it('still consumes an unbound row, so a token minted before the migration stays confirmable', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const future = Date.now() + 10_000;
+    await issueToken(db, 'ed@x.dev', 'legacy-hash', future, Date.now());
+    expect(await consumeToken(db, 'legacy-hash', Date.now(), 'nonce-a')).toBe('ed@x.dev');
+  });
+});
+
 describe('sessions (server-side, role read live)', () => {
   it('resolves a valid session to the editor with the current role', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');

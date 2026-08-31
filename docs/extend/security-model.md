@@ -54,6 +54,38 @@ cooldown above: a *repeat* request inside the one-minute window returns a distin
 status, which does reveal that the address is on the roster. That's an accepted trade, made so a
 real editor hammering the sign-in button doesn't flood their own inbox.
 
+## Sign-in binds to the browser that asked
+
+A magic link only works in the browser that requested it. The request action leaves a random nonce
+in a `cairn_login_pending` cookie (`HttpOnly`, `SameSite=Lax`, `__Host-` prefixed on https, and
+ten minutes long, like the token), and stores that nonce's SHA-256 hash on the token row. The
+confirm action requires the cookie back and compares the two hashes inside the same atomic
+`DELETE` that consumes the token, so a link confirmed anywhere else is refused.
+
+The binding closes a login-CSRF: without it, an attacker can request a link for *their own*
+address and put it in front of an editor's browser, and the editor lands in the attacker's session,
+where their next edit publishes under the attacker's account. It also stops a link-following mail
+scanner from spending an editor's link before the editor clicks it.
+
+Two properties of the refusal matter to an operator:
+
+* The cookie check runs **before** the consume, so a click from the wrong browser doesn't burn the
+  link. The editor's own browser can still use it.
+* A missing cookie has its own error code, `?error=no-pending-request`, distinct from `expired`,
+  and its own page copy naming the same-browser requirement. "Request a new one" is exactly the
+  advice that reproduces the failure on a second device.
+
+The cost is deliberate: an editor who requests a link on a desktop and opens it on a phone, or
+whose mail app opens links in a WebView with its own cookie jar, is refused and has to request the
+link again from the browser they'll read it in. Integrity wins over that convenience here, because
+re-requesting is a cheap escape hatch and a hijacked editor session isn't.
+
+The engine writes the nonce hash to `magic_token.nonce_hash`, added by
+`migrations/0004_login_nonce.sql`. Apply that migration before deploying an engine that carries
+this behavior; `npx cairn doctor` fails the `auth.store` check when the column is absent. The
+column is nullable, and a row without a binding still confirms, so a link already in an inbox
+survives the migration itself.
+
 ## The session cookie
 
 The session cookie carries the `__Host-` prefix on every https deploy, which requires `Secure`

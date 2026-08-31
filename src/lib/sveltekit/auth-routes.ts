@@ -12,6 +12,7 @@ import {
   SEND_COOLDOWN_MS,
   sessionCookieName,
   csrfCookieName,
+  cookieName,
 } from '../auth/crypto.js';
 import {
   findEditor,
@@ -71,6 +72,22 @@ export interface ConfirmData {
 }
 
 /**
+ * The pending-login cookie's base name, `__Host-` prefixed like every other cairn cookie when the
+ * request resolves Secure. It holds the nonce that binds an emailed magic link to the browser
+ * that asked for it; `requestAction` mints it, `confirmAction` requires it back, and both confirm
+ * and logout clear it.
+ */
+const LOGIN_PENDING_COOKIE_BASE = 'cairn_login_pending';
+
+/**
+ * The `?error=` code a confirm from a browser carrying no pending-login cookie redirects with,
+ * deliberately distinct from `expired`. Absence is a statement about the requester's own browser,
+ * not about the link, and the two need different instructions: "request a new one" is the exact
+ * advice that reproduces the failure for someone clicking on a second device.
+ */
+const NO_PENDING_REQUEST_ERROR = 'no-pending-request';
+
+/**
  * The loggable form of a send failure. The engine's own senders throw clean errors, but `send` is
  * an injection seam, and a custom sender's thrown error may embed the failed message and with it
  * the magic link. Scrub any token query value and cap the length, so the documented "records never
@@ -109,6 +126,29 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     log.info('auth.link.requested', { email: email.slice(0, 320) });
 
     const now = Date.now();
+    // The pending-login nonce, minted BEFORE anything branches on whether this email is an
+    // editor, so all four exits below (send-ok, the non-editor neutral answer, throttled, and
+    // send-failed) carry one byte-identical Set-Cookie. A cookie emitted only on the editor path
+    // would be a one-request allowlist oracle sitting in the response headers, which is exactly
+    // the leak the neutral answer exists to close. Only the server-side binding rides token issue.
+    //
+    // Reuse-unexpired-or-mint, never unconditional rotation: a browser never sends back an
+    // expired cookie, so a value that arrives is live, and rotating it on a throttled resend
+    // would point the browser at a nonce no live token is bound to, locking the editor out of
+    // the link already in their inbox. The read and the write sit in one synchronous step with
+    // no await between them, so two concurrent cookie-less requests cannot mint two nonces and
+    // strand the surviving token against the losing cookie.
+    const secure = csrfSecure({ url: event.url, platform: event.platform });
+    const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
+    const nonce = event.cookies.get(pendingCookie) ?? generateToken();
+    event.cookies.set(pendingCookie, nonce, {
+      path: '/',
+      httpOnly: true,
+      secure,
+      sameSite: 'lax',
+      maxAge: Math.floor(TOKEN_TTL_MS / 1000),
+    });
+
     // Bootstrap: an empty allowlist plus a matching configured owner inserts the owner row
     // atomically, before the lookup below, so the normal flow finds it and proceeds exactly as
     // it would for any other allow-listed editor. A non-matching email or a non-empty table
@@ -131,7 +171,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     }
 
     const token = generateToken();
-    await issueToken(db, email, await hashToken(token), now + TOKEN_TTL_MS, now);
+    await issueToken(db, email, await hashToken(token), now + TOKEN_TTL_MS, now, await hashToken(nonce));
     log.info('auth.token.minted', { email, expiresAt: now + TOKEN_TTL_MS });
     const link = `${origin}/admin/auth/confirm?token=${encodeURIComponent(token)}`;
     // The token row is the security-critical write the email depends on, so it is awaited first.
@@ -178,9 +218,16 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
   }
 
   /**
-   * POST /admin/auth/confirm. Hashes the submitted token and consumes it atomically. A valid
-   * token yields the email; the handler creates a session, sets the cookie, and redirects to
-   * /admin. An invalid, replayed, or expired token redirects to the login page.
+   * POST /admin/auth/confirm. Requires the pending-login cookie the request action left in this
+   * browser, then hashes the submitted token and consumes it atomically against that nonce. A
+   * valid token yields the email; the handler creates a session, sets the cookie, and redirects
+   * to /admin. An invalid, replayed, or expired token redirects to the login page.
+   *
+   * The same-browser check runs BEFORE the consume, so a link opened in another browser (a
+   * forwarded message, a mail scanner following the link, an attacker putting their own link in
+   * front of a victim) refuses without burning the token the requesting browser can still use.
+   * A missing cookie takes its own error code; a present-but-wrong nonce is indistinguishable
+   * from a stale link and reads as expired.
    */
   async function confirmAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
@@ -188,21 +235,36 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     const token = String(form.get('token') ?? '');
     if (!token) throw redirect(303, '/admin/login?error=expired');
 
+    // One variable for the whole handler, per Task 6's rule: this same `secure` names the
+    // pending cookie read and deleted here, the session cookie set below, and the CSRF cookie
+    // rotated after it.
+    const secure = csrfSecure({ url: event.url, platform: event.platform });
+    const pendingCookie = cookieName(LOGIN_PENDING_COOKIE_BASE, secure);
+    const nonce = event.cookies.get(pendingCookie);
+    if (!nonce) {
+      log.warn('auth.link.refused', { reason: 'no_pending_cookie' });
+      throw redirect(303, `/admin/login?error=${NO_PENDING_REQUEST_ERROR}`);
+    }
+
     const now = Date.now();
-    const email = await consumeToken(db, await hashToken(token), now);
+    const email = await consumeToken(db, await hashToken(token), now, await hashToken(nonce));
+    // A failed confirm leaves the pending cookie alone. Deleting it here would turn one mistyped
+    // or stale attempt into a lockout: the next click would refuse for the absent cookie instead,
+    // and the editor would have to notice they must request the link again from this browser.
     if (!email) throw redirect(303, '/admin/login?error=expired');
     log.info('auth.token.confirmed', { email });
 
     const id = generateSessionId();
     await createSession(db, id, email, now + SESSION_TTL_MS, now);
     log.info('auth.session.created', { email });
-    // One variable, one csrfSecure call, feeding both the session cookie's name/set below and the
-    // CSRF cookie's delete-then-remint further down (Task 6, N-4): the session cookie used to
-    // derive `secure` from the bare `event.url.protocol`, independently of the CSRF pair's own
-    // PUBLIC_ORIGIN-aware derivation, which could resolve the two cookies to different `secure`
-    // values on one request. An https request always resolves Secure either way; PUBLIC_ORIGIN
-    // can only raise a non-https request's answer, never lower it.
-    const secure = csrfSecure({ url: event.url, platform: event.platform });
+    // The nonce has done its job; a spent pending cookie left in the browser would outlive the
+    // token it was bound to. `secure` here is the same variable the pending cookie was read
+    // under above, one csrfSecure call for the whole handler (Task 6, N-4): the session cookie
+    // used to derive `secure` from the bare `event.url.protocol`, independently of the CSRF
+    // pair's own PUBLIC_ORIGIN-aware derivation, which could resolve the cookies to different
+    // `secure` values on one request. An https request always resolves Secure either way;
+    // PUBLIC_ORIGIN can only raise a non-https request's answer, never lower it.
+    event.cookies.delete(pendingCookie, { path: '/', secure });
     event.cookies.set(sessionCookieName(secure), id, {
       path: '/',
       httpOnly: true,
@@ -270,6 +332,10 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     event.cookies.delete(sessionCookieName(!secure), { path: '/', secure: !secure });
     event.cookies.delete(csrfCookieName(secure), { path: '/', secure });
     event.cookies.delete(csrfCookieName(!secure), { path: '/', secure: !secure });
+    // The pending-login nonce is a cairn-owned credential too, so a sign-out clears it. One
+    // name form only, this request's own: a stranded nonce under the other form names a token
+    // row that its ten-minute TTL has already swept, so nothing can confirm against it.
+    event.cookies.delete(cookieName(LOGIN_PENDING_COOKIE_BASE, secure), { path: '/', secure });
     if (id) {
       try {
         await deleteSession(db, id);

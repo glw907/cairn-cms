@@ -51,6 +51,18 @@ describe('LoginPage', () => {
     expect(screen.container.textContent).not.toMatch(/that link expired/i);
   });
 
+  it('names the same-browser requirement when the link was opened in another browser', async () => {
+    // Distinct from the expired copy on purpose: "request a new one" is exactly the instruction
+    // that reproduces the failure for someone who asks on a desktop and clicks on a phone.
+    const screen = await render(LoginPage, {
+      data: { siteName: 'Test Site', error: 'no-pending-request', csrf: 'csrf-tok' },
+      form: null,
+    });
+    await expect.element(screen.getByText(/browser you.ll open it in/i)).toBeInTheDocument();
+    expect(screen.container.textContent).not.toMatch(/that link expired/i);
+    await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
+  });
+
   it('shows a send-error warning and keeps the form available', async () => {
     const screen = await render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: { status: 'send_error', sent: false } });
     await expect.element(screen.getByRole('alert')).toBeInTheDocument();

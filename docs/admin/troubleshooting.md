@@ -41,7 +41,14 @@ sign-in links right now" both only ever show for an address that's already on yo
 your person quotes either one back to you, the problem isn't the invite; move on to the sending
 domain and the auth store checks above.
 
-**The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`.
+A third message points somewhere else entirely: "That link was opened in a different browser than
+the one that asked for it." A sign-in link only works in the browser that requested it, so asking
+on a laptop and opening the mail on a phone refuses by design. Tell the person to request the link
+from the browser they'll open it in, then use that new link there. The mail apps that open links in
+their own built-in viewer are the usual cause.
+
+**The log events:** `auth.link.requested`, `auth.token.minted`, `auth.link.send_failed`,
+`auth.link.refused`.
 
 ## A form gets refused right when someone tries to use it
 

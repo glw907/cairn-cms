@@ -37,21 +37,31 @@ export async function findEditor(db: D1Database, email: string): Promise<EditorR
   return row ? toEditor(row) : null;
 }
 
-/** Replace any prior token for this email with a fresh one, atomically. */
+/**
+ * Replace any prior token for this email with a fresh one, atomically.
+ *
+ * `nonceHash` binds the token to the browser that requested it: the hash of the nonce that
+ * browser carries in its pending-login cookie, which {@link consumeToken} then requires back.
+ * Omitted, the row is written unbound, and any browser holding the token can confirm it; the
+ * engine's own request action always passes one (migrations/0004_login_nonce.sql).
+ */
 export async function issueToken(
   db: D1Database,
   email: string,
   tokenHash: string,
   expiresAt: number,
   now: number,
+  nonceHash: string | null = null,
 ): Promise<void> {
   const key = normalizeEmail(email);
   await db.batch([
     // Replace this email's prior token, and sweep any expired token while here (no cron needed).
     db.prepare('DELETE FROM magic_token WHERE email = ? OR expires_at <= ?').bind(key, now),
     db
-      .prepare('INSERT INTO magic_token (token_hash, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-      .bind(tokenHash, key, expiresAt, now),
+      .prepare(
+        'INSERT INTO magic_token (token_hash, email, expires_at, created_at, nonce_hash) VALUES (?, ?, ?, ?, ?)',
+      )
+      .bind(tokenHash, key, expiresAt, now, nonceHash),
   ]);
 }
 
@@ -67,11 +77,30 @@ export async function recentlyIssued(db: D1Database, email: string, since: numbe
 /**
  * Consume a token in one atomic statement. A returned email means the token was present and
  * unexpired and is now gone, so the link is single-use by construction on strongly-consistent D1.
+ *
+ * `nonceHash` is the confirming browser's own pending-login nonce, hashed. The same-browser
+ * binding lives inside this one predicate: a row bound at issue time is deleted only when the
+ * two hashes are equal, and a null returned for a mismatch means the row is still there, so a
+ * click from the wrong browser refuses without burning the requester's own link. A row carrying
+ * no binding (written before migrations/0004_login_nonce.sql) is consumed whatever the caller
+ * passes, which is what keeps an in-flight link confirmable across the migration.
+ *
+ * The comparison happens in SQL rather than in TypeScript on purpose: no `===` ever runs against
+ * a secret here.
  */
-export async function consumeToken(db: D1Database, tokenHash: string, now: number): Promise<string | null> {
+export async function consumeToken(
+  db: D1Database,
+  tokenHash: string,
+  now: number,
+  nonceHash: string | null = null,
+): Promise<string | null> {
   const row = await db
-    .prepare('DELETE FROM magic_token WHERE token_hash = ? AND expires_at > ? RETURNING email')
-    .bind(tokenHash, now)
+    .prepare(
+      `DELETE FROM magic_token
+       WHERE token_hash = ? AND expires_at > ? AND (nonce_hash IS NULL OR nonce_hash = ?)
+       RETURNING email`,
+    )
+    .bind(tokenHash, now, nonceHash)
     .first<{ email: string }>();
   return row?.email ?? null;
 }

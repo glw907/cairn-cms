@@ -107,7 +107,17 @@ the allowlist, so the page never leaks membership (spec §7.1).
            send failure, or an unexpected failure never shows the stale expired-link alert
            alongside the new state. -->
       {#if data.error && !form?.status && !form?.error}
-        <div role="alert" class="alert alert-error mb-3 type-body">That link expired. Request a new one below.</div>
+        {#if data.error === 'no-pending-request'}
+          <!-- A link opened in a browser that never asked for it. "Request a new one" is the wrong
+               advice here: on a second device it reproduces the same refusal, so the copy names
+               the same-browser requirement instead. -->
+          <div role="alert" class="alert alert-error mb-3 type-body">
+            That link was opened in a different browser than the one that asked for it. Request the link from the
+            browser you’ll open it in, then use the new link there.
+          </div>
+        {:else}
+          <div role="alert" class="alert alert-error mb-3 type-body">That link expired. Request a new one below.</div>
+        {/if}
       {/if}
       <form method="POST" action="?/request" class="flex flex-col gap-3">
         <CsrfField token={data.csrf} />

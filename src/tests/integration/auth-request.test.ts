@@ -1,13 +1,14 @@
 import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { seedEditor, makeEvent, countRows } from './_auth-harness.js';
+import { seedEditor, makeEvent, makeRecordingCookies, countRows, expectRedirect } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
+import { hashToken } from '../../lib/auth/crypto.js';
 import type { MagicLinkMessage } from '../../lib/email.js';
 
 const db = env.AUTH_DB;
 
 beforeEach(async () => {
-  await db.batch([db.prepare('DELETE FROM magic_token'), db.prepare('DELETE FROM editor')]);
+  await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM magic_token'), db.prepare('DELETE FROM editor')]);
 });
 
 const branding = { siteName: 'Test', from: 'noreply@test.dev' };
@@ -114,6 +115,126 @@ describe('request hardening (Unit 4)', () => {
     const result = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
     expect(result).toEqual({ status: 'send_error', sent: false });
     expect(await countRows('magic_token')).toBe(1); // the token row was written before the send threw
+  });
+});
+
+describe('login nonce cookie (same-browser binding)', () => {
+  const url = 'https://test.dev/admin/auth/request';
+  // The public-observable name, spelled out rather than derived, so a rename cannot pass silently.
+  const pending = '__Host-cairn_login_pending';
+
+  /** The one pending-cookie Set-Cookie a request emitted, as a comparable shape. */
+  function pendingSet(cookies: ReturnType<typeof makeRecordingCookies>) {
+    const sets = cookies.sets.filter((s) => s.name === pending);
+    expect(sets).toHaveLength(1);
+    return sets[0];
+  }
+
+  /** The magic-link token out of a sent message's confirm URL. */
+  function tokenOf(message: MagicLinkMessage): string {
+    const match = /token=([A-Za-z0-9_-]+)/.exec(message.html);
+    expect(match).not.toBeNull();
+    return match![1];
+  }
+
+  it('mints one identical pending cookie on all four exits, before any branch on the editor', async () => {
+    // send-ok, the non-editor neutral exit, throttled, and send-failed. Anything less than one
+    // identical Set-Cookie on every exit is a one-request allowlist oracle in the headers.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes } = routesWithSink();
+    const failing = routesWithFailingSend();
+
+    const sendOk = makeRecordingCookies();
+    expect(await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: sendOk }))).toEqual({
+      status: 'sent',
+      sent: true,
+    });
+    const throttled = makeRecordingCookies();
+    expect(await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: throttled }))).toEqual({
+      status: 'throttled',
+      sent: false,
+    });
+    const neutral = makeRecordingCookies();
+    expect(await routes.requestAction(makeEvent({ url, form: { email: 'stranger@x.dev' }, cookies: neutral }))).toEqual({
+      status: 'sent',
+      sent: true,
+    });
+    await seedEditor('ed2@x.dev', 'Ed2', 'editor');
+    const sendFailed = makeRecordingCookies();
+    expect(await failing.requestAction(makeEvent({ url, form: { email: 'ed2@x.dev' }, cookies: sendFailed }))).toEqual({
+      status: 'send_error',
+      sent: false,
+    });
+
+    for (const jar of [sendOk, throttled, neutral, sendFailed]) {
+      const set = pendingSet(jar);
+      expect(set.opts).toEqual({ path: '/', httpOnly: true, secure: true, sameSite: 'lax', maxAge: 600 });
+      expect(set.value).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    }
+  });
+
+  it('emits headers identical to the send-ok path on the non-editor neutral exit, Set-Cookie included', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes } = routesWithSink();
+    const editorJar = makeRecordingCookies();
+    const strangerJar = makeRecordingCookies();
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: editorJar }));
+    await routes.requestAction(makeEvent({ url, form: { email: 'stranger@x.dev' }, cookies: strangerJar }));
+    // The nonce value is per-browser random, so identity is over everything a header carries
+    // besides the value itself, plus the value's own shape.
+    const shape = (jar: ReturnType<typeof makeRecordingCookies>) =>
+      JSON.stringify(jar.sets.map((s) => ({ name: s.name, opts: s.opts, length: s.value.length })));
+    expect(shape(strangerJar)).toBe(shape(editorJar));
+    expect(pendingSet(strangerJar).value).not.toBe(pendingSet(editorJar).value);
+  });
+
+  it('reuses an unexpired pending cookie, so a throttled resend leaves the first link confirmable', async () => {
+    // Unconditional rotation would point the cookie at a nonce no live token is bound to, which
+    // locks the editor out of the link already sitting in their inbox.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes, sent } = routesWithSink();
+    const cookies = makeRecordingCookies();
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies }));
+    const first = cookies.sets.filter((s) => s.name === pending);
+    const resend = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies }));
+    expect(resend).toEqual({ status: 'throttled', sent: false });
+    const both = cookies.sets.filter((s) => s.name === pending);
+    expect(both).toHaveLength(2);
+    expect(both[1].value).toBe(first[0].value);
+
+    const redirect = await expectRedirect(() =>
+      routes.confirmAction(
+        makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token: tokenOf(sent[0]) }, cookies }),
+      ),
+    );
+    expect(redirect.location).toBe('/admin');
+  });
+
+  it('leaves the surviving cookie confirming the surviving token across two cookie-less concurrent requests', async () => {
+    // The pending-cookie analogue of the CSRF double-mint WATCH: one browser, no cookie yet, two
+    // request POSTs in flight. Whichever token row survives must be bound to the nonce the jar
+    // ends up holding.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes, sent } = routesWithSink();
+    const cookies = makeRecordingCookies();
+    await Promise.all([
+      routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies })),
+      routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies })),
+    ]);
+    expect(await countRows('magic_token')).toBe(1);
+    const values = new Set(cookies.sets.filter((s) => s.name === pending).map((s) => s.value));
+    expect(values.size).toBe(1);
+
+    const surviving = await db.prepare('SELECT token_hash FROM magic_token').first<{ token_hash: string }>();
+    const hashes = await Promise.all(sent.map((message) => hashToken(tokenOf(message))));
+    const index = hashes.indexOf(surviving!.token_hash);
+    expect(index).toBeGreaterThanOrEqual(0);
+    const redirect = await expectRedirect(() =>
+      routes.confirmAction(
+        makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token: tokenOf(sent[index]) }, cookies }),
+      ),
+    );
+    expect(redirect.location).toBe('/admin');
   });
 });
 

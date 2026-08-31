@@ -624,6 +624,34 @@
   Consumers must: nothing for a typed TypeScript caller; a hand-rolled JavaScript caller omitting
   `event.cookies` on one of the five actions above now sees a 500 instead of a 403 response body.
 
+- A magic link now only signs in the browser that requested it, closing the login-CSRF
+  `login-csrf-no-same-browser-binding` filed (`requestAction`/`confirmAction`). `requestAction`
+  leaves a random nonce in a `cairn_login_pending` cookie (`HttpOnly`, `SameSite=Lax`, `__Host-`
+  prefixed and `Secure` through the same `csrfSecure` derivation every cairn cookie now uses, and
+  bounded by the token's own ten-minute TTL) and stores that nonce's SHA-256 hash on the token
+  row; `consumeToken` compares the two inside its one atomic `DELETE`
+  (`AND (nonce_hash IS NULL OR nonce_hash = ?)`), so the compare never runs against a secret in
+  TypeScript. The binding is value-bound, not presence-only: a browser with a pending login of its
+  own still cannot confirm another browser's token. The cookie is minted unconditionally and
+  identically on all four `requestAction` exits (send-ok, the non-editor neutral answer, throttled,
+  send-failed), before anything branches on allowlist membership, so the response headers carry no
+  membership oracle; it is reused while unexpired rather than rotated, so a throttled resend leaves
+  the link already in the inbox confirmable; and it is deleted on a successful confirm and at
+  logout only, never on a failed confirm, which would turn one stumble into a lockout. The cookie
+  check runs before the consume, so a click from the wrong browser refuses without burning the
+  token. A confirm with no pending cookie redirects to `/admin/login?error=no-pending-request`, its
+  own code distinct from `expired`, with page copy on `LoginPage`/`ConfirmPage` naming the
+  same-browser requirement, and logs the new `auth.link.refused` event
+  (`reason: 'no_pending_cookie'`). The deliberate cost: a link requested on one device and opened
+  on another (or in a mail app's own WebView cookie jar) is refused, with re-requesting from the
+  clicking browser as the escape hatch. Consumers must: apply migration 0004 before deploying
+  (`cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/` then
+  `npx wrangler d1 migrations apply <auth-db> --remote`). An un-migrated `AUTH_DB` is a total login
+  outage with no second channel, since every confirm names the `nonce_hash` column;
+  `npx cairn doctor`'s `auth.store` check now fails when the column is absent, so run it before the
+  deploy. The column is nullable and a row without a binding still confirms, so applying the
+  migration cannot strand a link already in an inbox.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

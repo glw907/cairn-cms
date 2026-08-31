@@ -353,7 +353,8 @@ wrangler resolves that database by binding name rather than by an id this check 
 an actual fail here almost always means a hand-wired site.
 
 **Ask a developer:** apply the auth schema with
-`wrangler d1 execute <db> --remote --file ./migrations/0000_auth.sql`, seed the owner row, and
+`wrangler d1 migrations apply <db> --remote` (`0000_auth.sql` creates the tables and
+`0004_login_nonce.sql` adds the column sign-in links bind to), seed the owner row, and
 confirm the `AUTH_DB` binding in `wrangler.jsonc` points at the right database. See
 [Add cairn to a SvelteKit app](../extend/add-cairn-to-a-sveltekit-app.md).
 

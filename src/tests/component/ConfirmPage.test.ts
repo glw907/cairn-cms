@@ -15,6 +15,14 @@ describe('ConfirmPage', () => {
     await expect.element(screen.getByText(/expired|invalid/i)).toBeInTheDocument();
   });
 
+  it('names the same-browser requirement instead of the expired copy for a link opened elsewhere', async () => {
+    const screen = await render(ConfirmPage, {
+      data: { token: 'tok123', siteName: 'Test Site', error: 'no-pending-request', csrf: 'csrf-tok' },
+    });
+    await expect.element(screen.getByText(/browser you.ll open it in/i)).toBeInTheDocument();
+    expect(screen.container.textContent ?? '').not.toMatch(/invalid or expired/i);
+  });
+
   it("shows the action's own error, not the generic expired-link copy, on an unexpected confirm failure", async () => {
     // viewAction's generic fail(500) carries only { error }, distinct from the load-time
     // ?error=expired boolean flag. A signed-in-adjacent D1 fault should read as its own message,

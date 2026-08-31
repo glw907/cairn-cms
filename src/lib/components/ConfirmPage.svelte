@@ -45,6 +45,15 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
       <h1 class="mb-2 type-heading font-bold font-[family-name:var(--font-display)]">This didn’t work</h1>
       <div role="alert" class="alert alert-error type-body">{form.error}</div>
       <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Back to sign in</a>
+    {:else if data.error === 'no-pending-request'}
+      <!-- The confirm refused because this browser carries no pending sign-in, so the fix is to
+           start over here rather than to request another link somewhere else. -->
+      <h1 class="mb-2 type-heading font-bold font-[family-name:var(--font-display)]">Wrong browser for this link</h1>
+      <div role="alert" class="alert alert-error type-body">
+        This sign-in link was requested in a different browser. Request the link from the browser you’ll open it in,
+        then use the new link there.
+      </div>
+      <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Back to sign in</a>
     {:else if data.error || !data.token}
       <h1 class="mb-2 type-heading font-bold font-[family-name:var(--font-display)]">This link didn’t work</h1>
       <div role="alert" class="alert alert-error type-body">This sign-in link is invalid or expired.</div>

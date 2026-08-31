@@ -278,10 +278,26 @@ open edits, not part of the shape itself.
   already carries the fix pattern: a `_pending` cookie holding a nonce, minted on request and
   read back on confirm, so a confirm without the matching cookie fails. Ruled (Geoff,
   2026-08-27): file, not fix, in this slice.
-- **Reopens on:** the conventions pass's auth-family reshapes, where `auth-routes.ts`'s
-  `requestAction`/`confirmAction` pair adopts the same `pendingCookie` nonce binding
-  `createAuthChannel` already proves.
-- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 4.
+- **Reopens on:** closed. Executed by Task 7 of the conventions pass, value-bound rather than
+  presence-only: `requestAction` mints or reuses a `cairn_login_pending` nonce cookie and stores
+  its hash on the token row (`migrations/0004_login_nonce.sql`), and `consumeToken` compares the
+  two inside its own atomic `DELETE`, so no `===` runs against a secret and a browser holding its
+  own pending login still cannot confirm another's token. Three properties the execution pins,
+  each with its own test: the mint is unconditional and byte-identical on all four `requestAction`
+  exits (an editor-only cookie would be an allowlist oracle in the response headers), the cookie
+  is reused while unexpired rather than rotated (rotation on a throttled resend would strand the
+  link already in the inbox), and the cookie check runs before the consume (a cross-browser click
+  must not burn the requester's own link). The deliberate trade recorded here: cross-device
+  sign-in (request on a desktop, click on a phone; a mail app's WebView with its own cookie jar)
+  now refuses, availability given up for integrity, with re-requesting from the clicking browser
+  as the escape hatch and its own `?error=no-pending-request` code and copy so the instruction
+  points there rather than at "request a new one". The alternative that would preserve
+  cross-device, a request-time verifier code shown on the login page, is filed to the roadmap, not
+  built. Rollout is hard and guided rather than a silent degrade, since an un-migrated `AUTH_DB` is
+  a total login outage with no second channel: the CHANGELOG carries an apply-0004-first
+  `Consumers must:` line and the `auth.store` doctor probe now asserts the column.
+- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 4;
+  executed by [2026-08-30-conventions-pass](../superpowers/plans/2026-08-30-conventions-pass.md), Task 7.
 
 ## session-cookie-derivation-out-of-csrf-slice: session cookie's secure/name derivation stays on `event.url.protocol`  (defer, 2026-08-29, csrf-hardening pass)
 

@@ -224,6 +224,15 @@ export const authStore: DoctorCheck = {
       if (missing.length) {
         return fail(`auth schema is missing: ${missing.join(', ')}`);
       }
+      // Per-column, not per-table: an AUTH_DB created before migration 0004 has every table and
+      // still cannot serve a login, because the engine's confirm binds each token to the
+      // requesting browser through magic_token.nonce_hash. The failure mode is a total login
+      // outage with no second channel, so this probe is the pre-deploy catch for it.
+      const columns = await d1Query(ctx, facts.authDbId, 'PRAGMA table_info(magic_token)');
+      if ('fail' in columns) return columns.fail;
+      if (!columns.value.some((row) => row.name === 'nonce_hash')) {
+        return fail('magic_token has no nonce_hash column; apply migrations/0004_login_nonce.sql');
+      }
       const ownerRoles = resolveOwnerLevelRoles(ctx.roles);
       const roles = ownerRoles.length > 0 ? ownerRoles : ['owner'];
       const placeholders = roles.map(() => '?').join(', ');

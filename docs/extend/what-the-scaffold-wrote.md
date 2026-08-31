@@ -22,7 +22,8 @@ your-site/
 ├── .gitignore
 ├── migrations/
 │   ├── 0000_auth.sql
-│   └── 0003_preview.sql
+│   ├── 0003_preview.sql
+│   └── 0004_login_nonce.sql
 ├── migrations-app/
 │   └── 0000_signups.sql
 ├── package.json

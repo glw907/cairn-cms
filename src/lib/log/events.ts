@@ -7,6 +7,7 @@
 // snake_case.
 export type CairnLogEvent =
   | 'auth.link.requested'
+  | 'auth.link.refused'
   | 'auth.link.send_failed'
   | 'auth.token.minted'
   | 'auth.token.confirmed'

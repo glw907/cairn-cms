@@ -179,7 +179,14 @@ describe('auth actions', () => {
   it('confirm delegates on the confirm view: consumes the token, sets the session cookie, redirects', async () => {
     const { db } = fakeD1({ 'DELETE FROM magic_token': { email: 'ed@t' } });
     const admin = createCairnAdmin(runtime(), deps);
-    const event = actionEvent('/admin/auth/confirm', { editor: null, form: { token: 'tok' }, env: { AUTH_DB: db } });
+    const event = actionEvent('/admin/auth/confirm', {
+      editor: null,
+      form: { token: 'tok' },
+      env: { AUTH_DB: db },
+      // The confirm refuses outright without the pending-login nonce the request action left in
+      // this browser (auth-confirm.test.ts owns that binding's own cases).
+      cookies: { '__Host-cairn_login_pending': 'a-pending-login-nonce' },
+    });
     await expectRedirect(admin.actions.confirm(event as never), '/admin');
     // The second set is the CSRF rotation a successful login performs; see auth-confirm.test.ts.
     expect(event._cookieSets).toEqual([
@@ -206,6 +213,7 @@ describe('auth actions', () => {
       'cairn_session',
       '__Host-cairn_csrf',
       'cairn_csrf',
+      '__Host-cairn_login_pending',
     ]);
   });
 });

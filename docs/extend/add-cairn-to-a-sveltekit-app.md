@@ -100,17 +100,20 @@ package's auth migration into your own `migrations/` directory:
 ```bash
 mkdir -p migrations
 cp node_modules/@glw907/cairn-cms/migrations/0000_auth.sql migrations/
+cp node_modules/@glw907/cairn-cms/migrations/0004_login_nonce.sql migrations/
 npx wrangler d1 migrations apply my-site-auth --local
 npx wrangler d1 migrations apply my-site-auth --remote
 ```
 
-`0000_auth.sql` is the one every site needs: it creates the `editor`, `magic_token`, and
-`session` tables. Three more migrations ship alongside it in the package, each opt-in. Two extend
-the auth store's own tables and apply the same way, copied into this same `migrations/` directory
+`0000_auth.sql` and `0004_login_nonce.sql` are the two every site needs: the first creates the
+`editor`, `magic_token`, and `session` tables, and the second adds the `nonce_hash` column that
+binds a sign-in link to the browser that requested it (see
+[the security model](./security-model.md)). Three more migrations ship alongside them, each
+opt-in. Two extend the auth store's own tables and apply the same way, copied into this same `migrations/` directory
 and applied to `my-site-auth`: `0001_roles.sql` if you declare a role vocabulary beyond the
 default owner/editor pair ([Restrict admin access by role](./restrict-admin-access.md)), and
-`0003_preview.sql` if you use [Share a draft preview](./share-a-draft-preview.md). `0002_audit.sql`
-is different: it's a standalone `audit_log` table, and [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink)
+`0003_preview.sql` if you use [Share a draft preview](./share-a-draft-preview.md).
+`0002_audit.sql` is different: it's a standalone `audit_log` table, and [`createD1AuditSink`](../reference/sveltekit.md#created1auditsink)
 recommends a dedicated D1 binding of its own, commonly named `AUDIT_DB`, with its own
 `migrations_dir` distinct from `migrations/`, so heavy audit writes never contend with session and
 token lookups on the auth database. See that reference page for the worked `wrangler.jsonc` entry

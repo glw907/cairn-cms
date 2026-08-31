@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { seedEditor, makeEvent, makeCookies, makeRecordingCookies, countRows, expectRedirect } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
-import { generateToken, hashToken, sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
+import { generateToken, hashToken, sessionCookieName, csrfCookieName, cookieName } from '../../lib/auth/crypto.js';
 import { issueToken, createSession } from '../../lib/auth/store.js';
 
 const db = env.AUTH_DB;
@@ -12,12 +12,26 @@ beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM magic_token'), db.prepare('DELETE FROM editor')]);
 });
 
-/** Seed an editor and a live token, returning the raw token for a confirm POST. */
-async function liveToken(email: string): Promise<string> {
+// The nonce a request action would have left in the requesting browser, and the value every
+// token below is bound to. A confirm carries it back in the pending cookie or it is refused.
+const PENDING_NONCE = 'a-pending-login-nonce';
+
+/** The pending-login cookie's name for a request whose cookies resolve `secure`. */
+function pendingCookieName(secure: boolean): string {
+  return cookieName('cairn_login_pending', secure);
+}
+
+/** The cookie seed a browser that requested the link would carry into a confirm. */
+function pendingSeed(secure = true): Record<string, string> {
+  return { [pendingCookieName(secure)]: PENDING_NONCE };
+}
+
+/** Seed an editor and a live token bound to `nonce`, returning the raw token for a confirm POST. */
+async function liveToken(email: string, nonce: string = PENDING_NONCE): Promise<string> {
   await seedEditor(email, 'Ed', 'editor');
   const token = generateToken();
   const now = Date.now();
-  await issueToken(db, email, await hashToken(token), now + 10_000, now);
+  await issueToken(db, email, await hashToken(token), now + 10_000, now, await hashToken(nonce));
   return token;
 }
 
@@ -34,7 +48,7 @@ describe('confirm GET (scenario 5: consumes nothing)', () => {
 describe('confirm POST (scenarios 1, 3, 4)', () => {
   it('verifies a valid token once: creates a session, sets the cookie, redirects to /admin', async () => {
     const token = await liveToken('ed@x.dev');
-    const cookies = makeCookies();
+    const cookies = makeCookies(pendingSeed());
     const redirect = await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies })),
     );
@@ -46,9 +60,14 @@ describe('confirm POST (scenarios 1, 3, 4)', () => {
 
   it('refuses a replayed token', async () => {
     const token = await liveToken('ed@x.dev');
-    await expectRedirect(() => routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token } })));
+    const cookies = makeCookies(pendingSeed());
+    await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies })),
+    );
     const replay = await expectRedirect(() =>
-      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token } })),
+      routes.confirmAction(
+        makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies: makeCookies(pendingSeed()) }),
+      ),
     );
     expect(replay.location).toBe('/admin/login?error=expired');
     expect(await countRows('session')).toBe(1);
@@ -58,9 +77,11 @@ describe('confirm POST (scenarios 1, 3, 4)', () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const token = generateToken();
     const now = Date.now();
-    await issueToken(db, 'ed@x.dev', await hashToken(token), now - 1, now);
+    await issueToken(db, 'ed@x.dev', await hashToken(token), now - 1, now, await hashToken(PENDING_NONCE));
     const redirect = await expectRedirect(() =>
-      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token } })),
+      routes.confirmAction(
+        makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies: makeCookies(pendingSeed()) }),
+      ),
     );
     expect(redirect.location).toBe('/admin/login?error=expired');
     expect(await countRows('session')).toBe(0);
@@ -70,7 +91,7 @@ describe('confirm POST (scenarios 1, 3, 4)', () => {
 describe('session cookie prefix and attributes (Unit 1)', () => {
   it('sets a __Host- prefixed Secure cookie on https', async () => {
     const token = await liveToken('ed@x.dev');
-    const cookies = makeRecordingCookies();
+    const cookies = makeRecordingCookies(pendingSeed());
     await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies })),
     );
@@ -81,7 +102,7 @@ describe('session cookie prefix and attributes (Unit 1)', () => {
 
   it('sets a plain unprefixed cookie on local http', async () => {
     const token = await liveToken('ed2@x.dev');
-    const cookies = makeRecordingCookies();
+    const cookies = makeRecordingCookies(pendingSeed(false));
     await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: 'http://localhost/admin/auth/confirm', form: { token }, cookies })),
     );
@@ -94,7 +115,7 @@ describe('session cookie prefix and attributes (Unit 1)', () => {
     // have minted a bare, non-Secure cookie here, diverging from the CSRF cookie the same
     // request's csrfSecure already resolves Secure through makeEvent's default PUBLIC_ORIGIN.
     const token = await liveToken('ed3@x.dev');
-    const cookies = makeRecordingCookies();
+    const cookies = makeRecordingCookies(pendingSeed());
     await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: 'http://admin.example/admin/auth/confirm', form: { token }, cookies })),
     );
@@ -106,7 +127,7 @@ describe('session cookie prefix and attributes (Unit 1)', () => {
 describe('CSRF token rotation at successful login', () => {
   it('mints a new CSRF value, so a pre-login token cannot carry into the session', async () => {
     const token = await liveToken('ed@x.dev');
-    const cookies = makeRecordingCookies({ [csrfCookieName(true)]: 'PRE-LOGIN-VALUE' });
+    const cookies = makeRecordingCookies({ ...pendingSeed(), [csrfCookieName(true)]: 'PRE-LOGIN-VALUE' });
     await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies })),
     );
@@ -119,7 +140,7 @@ describe('CSRF token rotation at successful login', () => {
   });
 
   it('leaves no CSRF cookie behind when the token is invalid, since no session was created', async () => {
-    const cookies = makeRecordingCookies({ [csrfCookieName(true)]: 'PRE-LOGIN-VALUE' });
+    const cookies = makeRecordingCookies({ ...pendingSeed(), [csrfCookieName(true)]: 'PRE-LOGIN-VALUE' });
     await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token: 'bogus' }, cookies })),
     );
@@ -129,12 +150,82 @@ describe('CSRF token rotation at successful login', () => {
   });
 });
 
+describe('same-browser binding (login-CSRF)', () => {
+  const confirmUrl = 'https://test.dev/admin/auth/confirm';
+
+  it('refuses a confirm from a browser with no pending cookie, under its own error code', async () => {
+    // The attacker's own emailed link, put in front of a victim's browser, lands the victim in
+    // the attacker's session unless the confirming browser proves it is the one that asked.
+    const token = await liveToken('ed@x.dev');
+    const redirect = await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies: makeCookies() })),
+    );
+    expect(redirect.location).toBe('/admin/login?error=no-pending-request');
+    expect(await countRows('session')).toBe(0);
+  });
+
+  it('checks the pending cookie before consuming, so a cross-browser click never burns the token', async () => {
+    const token = await liveToken('ed@x.dev');
+    await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies: makeCookies() })),
+    );
+    expect(await countRows('magic_token')).toBe(1);
+    // The same link still works from the browser that asked for it.
+    const redirect = await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies: makeCookies(pendingSeed()) })),
+    );
+    expect(redirect.location).toBe('/admin');
+  });
+
+  it('refuses a pending cookie holding some other browser’s nonce and leaves the token unburned', async () => {
+    // Presence alone is not the check: a browser with its own pending login must not be able to
+    // confirm a token minted for a different one.
+    const token = await liveToken('ed@x.dev');
+    const cookies = makeCookies({ [pendingCookieName(true)]: 'someone-elses-nonce' });
+    const redirect = await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    expect(redirect.location).toBe('/admin/login?error=expired');
+    expect(await countRows('session')).toBe(0);
+    expect(await countRows('magic_token')).toBe(1);
+  });
+
+  it('deletes the pending cookie on a successful confirm', async () => {
+    const token = await liveToken('ed@x.dev');
+    const cookies = makeRecordingCookies(pendingSeed());
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
+    expect(cookies.get(pendingCookieName(true))).toBeUndefined();
+    expect(cookies.deletes).toContainEqual({
+      name: pendingCookieName(true),
+      opts: { path: '/', secure: true },
+    });
+  });
+
+  it('leaves the pending cookie in place when the confirm fails, so a stumble is not a lockout', async () => {
+    await liveToken('ed@x.dev');
+    const cookies = makeRecordingCookies(pendingSeed());
+    await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token: 'bogus' }, cookies })));
+    expect(cookies.get(pendingCookieName(true))).toBe(PENDING_NONCE);
+    expect(cookies.deletes).toHaveLength(0);
+  });
+
+  it('deletes the pending cookie at logout, with the secure its setter used', async () => {
+    const cookies = makeRecordingCookies(pendingSeed());
+    await expectRedirect(() =>
+      routes.logoutAction(makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies })),
+    );
+    expect(cookies.get(pendingCookieName(true))).toBeUndefined();
+    expect(cookies.deletes).toContainEqual({
+      name: pendingCookieName(true),
+      opts: { path: '/', secure: true },
+    });
+  });
+});
+
 describe('confirm and logout logging', () => {
   const confirmUrl = 'https://test.dev/admin/auth/confirm';
 
   it('logs auth.token.confirmed and auth.session.created on a valid confirm', async () => {
     const token = await liveToken('ed@x.dev');
-    const cookies = makeCookies();
+    const cookies = makeCookies(pendingSeed());
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
     const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
@@ -146,7 +237,7 @@ describe('confirm and logout logging', () => {
   it('logs auth.session.destroyed on logout when a session cookie is present', async () => {
     // Establish a session through confirm, keeping the cookie jar that holds its id.
     const token = await liveToken('ed@x.dev');
-    const cookies = makeCookies();
+    const cookies = makeCookies(pendingSeed());
     await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
     const logoutEvent = makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies });
     const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -158,7 +249,7 @@ describe('confirm and logout logging', () => {
 
   it('deletes the CSRF cookie alongside the session cookie, so a persistent token cannot survive sign-out', async () => {
     const token = await liveToken('ed@x.dev');
-    const cookies = makeCookies({ [csrfCookieName(true)]: 'a-live-csrf-token' });
+    const cookies = makeCookies({ ...pendingSeed(), [csrfCookieName(true)]: 'a-live-csrf-token' });
     await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
     // Confirm rotated the seeded value; what matters here is that a live CSRF cookie exists to
     // survive sign-out, not which value it holds.
@@ -188,6 +279,8 @@ describe('confirm and logout logging', () => {
       { name: '__Host-cairn_session', opts: { path: '/', secure: true } },
       { name: 'cairn_csrf', opts: { path: '/', secure: false } },
       { name: '__Host-cairn_csrf', opts: { path: '/', secure: true } },
+      // The pending-login nonce goes too: a sign-out clears every cairn-owned credential.
+      { name: 'cairn_login_pending', opts: { path: '/', secure: false } },
     ]);
   });
 
@@ -223,7 +316,7 @@ describe('confirm and logout logging', () => {
     // fault here left both the row and the cookie intact and the editor silently still signed
     // in. The cookie must clear regardless of whether the row delete succeeds.
     const token = await liveToken('ed@x.dev');
-    const cookies = makeCookies();
+    const cookies = makeCookies(pendingSeed());
     await expectRedirect(() => routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies })));
     expect(await countRows('session')).toBe(1);
 

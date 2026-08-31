@@ -7,6 +7,46 @@ caught, and what would be wrong to rediscover. Read on demand, not at every sess
 Superseded `STATUS-archive-*.md` files under `docs/internal/history/` hold the pre-2026-08
 detail this file only summarizes.
 
+## 2026-08-30: retires pass merged (audit-remediation slice 3), PR #42, CI green
+
+Plan and post-mortem: `docs/superpowers/plans/2026-08-30-retires-pass.md` (worktree
+`retires`, ten commits, merged at `d2c434ea`). The 56 ratified retires executed: 38
+unsanctioned in three family batches plus 18 F-1 sanctioned leaks with the move record
+(`docs/internal/record/2026-08-30-retires-move-record.md`), a compile-only fixture proving
+every replacement expression, all 7 format-allowlist repairs (40 to 33), the four ledger
+annotations, and the `f1-return-position-leak-sanction` standing-rule entry. Surface diff
+against the branch point: 58 export rows removed, 0 added, 0 modified (53 names; 3 closes
+were process proposals with no symbol). Ledger partition verified 2 + 56 + 36 = 94;
+list (c)'s 36 (25/7/1/3 tiers) and `DEFAULT_ROLES` untouched. Budget: ~4.6M subagent spend
+against the 4.5M ceiling; zero questions to Geoff mid-pass.
+
+What the reviews caught: two shipped `skills/` pages still teaching deleted components
+(the plan's drift-hunt scope omitted `skills/`, which ships in the npm tarball; the scope
+now includes it); a repointed test gone tautological (fixed with an aggregate
+reverse-containment test); the plan's pre-written `AdvisoryAction` replacement did not
+compile (optional member; corrected with `NonNullable<...>`); the plan's "expected 20"
+leak count contradicted its own predicate (actual: 17 rendered strict, 18 type graph, 19
+and 20 including the un-verdicted `DictionaryAddFailure`/`TidyFailure`); and the
+CHANGELOG's `devDelivery` migration snippet shipped ungated, which would have logged
+production OTPs to Workers Logs for any site copying it (xcathletes will follow that
+line) — replaced with the in-body-refusal form and pinned executable by a new showcase
+spec.
+
+What a later pass would be wrong to rediscover: the move record is the internals pass's
+rider brief and now states its own limits — the predicate is subpath-blind
+(`NavIcon`/`EngineScreenId` carry their own `/sveltekit` export rows and need a
+per-subpath clause; only `SlotKind` is absent-everywhere), the
+`RemoveIndex`/`ValueOf`/`StandardResult` vs `DictionaryAddFailure`/`TidyFailure` split is
+inherited rather than derived, and "retire-verdicted" deliberately narrows F-1's
+"retire-or-absent" wording. `buildSurfaceModel()` expands shapes one hop only, so a
+rendered-text derivation misses `AdvisoryAction`; the rider must derive against the type
+checker. Local `check:vale` red (18 errors, three files untouched since the branch point)
+was Vale version drift, not a regression; CI's pinned Vale is the arbiter. Two small
+follow-ups: a reference-page convention for naming the indexed-access form beside shapes
+that print un-importable members (18 sites), and the per-story `has a matching manifest
+entry` assertion in `reproductions-stories.test.ts` is vacuous now that the aggregate
+test carries the guarantee.
+
 ## 2026-08-30: foundations B pass closed on its worktree (audit-remediation slice 2b), awaiting Geoff's ratification and merge
 
 Plan and post-mortem: `docs/superpowers/plans/2026-08-28-foundations-b-pass.md` (worktree

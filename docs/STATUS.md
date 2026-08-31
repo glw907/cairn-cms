@@ -10,26 +10,24 @@ only the present.
 ## Current state
 
 Published version: **`0.96.0`** (2026-08-22, the floors release), on npm `latest` for both
-`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries FIVE
+`@glw907/cairn-cms` and `@glw907/cairn-cms-dev`, with provenance attested. `main` carries SIX
 passes unpublished under `## Unreleased`: toolkit-seams, harvest-detection, csrf-hardening
-(remediation slice 1), foundations A (slice 2a), and foundations B (slice 2b, merged
-2026-08-30 at `34ba7de6`, PR #41, all CI green); the window holds until the chassis slice per
-the initiative design. CI on `main` is fully green (a 2026-08-30 e2e failure was runner apt
-flake, rerun green).
+(remediation slice 1), foundations A (slice 2a), foundations B (slice 2b), and retires
+(slice 3, merged 2026-08-30 at `d2c434ea`, PR #42, all CI green); the window holds until the
+chassis slice per the initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**Execute the retires pass** (remediation slice 3). The plan is
-`docs/superpowers/plans/2026-08-30-retires-pass.md`, adversarially reviewed pre-dispatch by
-two engine-triage lenses (2026-08-30) with all 23 findings and Geoff's rulings folded in: the
-F-1 hybrid (18 sanctioned return-position leaks; `AdminActionOptions` Tier 3) plus the
-addendum (list (a) is 2, already executed by toolkit-seams; `ReproFenceValidation` Tier 2,
-reshape-blocked; the render trio Tier 4, chassis-coupled; `ReproInstance` stays sanctioned).
-Both ruled subsections live in `docs/internal/record/2026-08-30-r4-rederivation.md` section
-7. As executed: 2 + 56 (38 unsanctioned + 18 sanctioned) + 36 blocked = 94; ceiling 4.5M,
-five chain dispatches. Resume prompt for a fresh session:
+**Author the conventions pass plan** (remediation slice 4) with Geoff, then execute it. The
+routed scope (from the initiative design and the retires close): the auth family (the
+session-cookie derivation ledger entry, `check-probe.ts:49`'s independent derivation, the
+cookie-jar posture split, the login-CSRF `_pending`-nonce binding, CSRF-helper uniformity),
+the `ContentFormFailure` reshape (unblocks list (c) Tier 2's six coupled retires), the
+`validateReproFence` reshape and with it `ReproFenceValidation`'s retire, and the
+`DEFAULT_ROLES`/`defineAccess` coupled pair. Open design decisions need Geoff at plan
+authoring; run `engine-consult` protocol checks as usual. Resume prompt for a fresh session:
 
-In ~/Projects/cairn-cms, execute the retires pass (docs/superpowers/plans/2026-08-30-retires-pass.md): create a fresh worktree retires off main, verify the R4 record's section 7 carries BOTH the RULED and ADDENDUM RULINGS subsections, run the worktree prep the plan header mandates, then run the five serial chain dispatches.
+In ~/Projects/cairn-cms, author the conventions pass plan (audit remediation slice 4) with Geoff: read docs/STATUS.md, ROADMAP.md's Now tier, and the routed items listed under "Immediate next action", brainstorm the open design decisions, then write the plan via superpowers:writing-plans.
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
@@ -38,18 +36,19 @@ behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b MERGED. Next: retires (immediate next
-  action, above), then conventions, internals, chassis; ONE release cut after chassis. Routed
-  to the conventions pass: the auth family (the session-cookie derivation ledger entry,
-  `check-probe.ts:49`'s independent derivation, the cookie-jar posture split, the login-CSRF
-  `_pending`-nonce binding, CSRF-helper uniformity), the `ContentFormFailure` reshape (unblocks
-  list (c) Tier 2), and the `DEFAULT_ROLES`/`defineAccess` coupled pair. Routed to internals:
-  the F-1 leak-class `check:surface` rider (per the hybrid ruling), the `staleNames` per-subpath
+- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3 MERGED. Next: conventions
+  (immediate next action, above), then internals, chassis; ONE release cut after chassis.
+  Routed to internals: the F-1 leak-class `check:surface` rider (its brief is the move
+  record, `docs/internal/record/2026-08-30-retires-move-record.md`, which states the
+  predicate's limits and the expansion-class questions), the `staleNames` per-subpath
   rescope, R-0's second direction, the six stale `content-routes-*` header wordings
-  (`content-routes-context.ts:272` foremost), the `list-role` descendant-selector re-grounding,
-  and the `panel-width` closed-select painted-width follow-up. Carried: a showcase hand-mounted
-  `+page.server.ts` against generated `./$types` (nothing compiles that path today; chassis
-  pass candidate). Foundations B budget overrun (~2.4M vs 1.8M) recorded in its post-mortem.
+  (`content-routes-context.ts:272` foremost), the `list-role` descendant-selector
+  re-grounding, the `panel-width` closed-select painted-width follow-up, the
+  reference-page convention for naming the indexed-access form beside shapes printing
+  un-importable members (18 sites), and the factory per-call `CAIRN_DEV_BACKEND` refusal
+  design question. Routed to chassis: the render trio re-homing
+  (`cardShell`/`headRow`/`iconSpan`), and the carried showcase hand-mounted
+  `+page.server.ts` against generated `./$types`.
 - **Go `cairn` tool, Pass A.** Ready to execute; plan at
   `docs/superpowers/plans/2026-08-20-cairn-tool-spine-and-hud.md`. Independent of the engine
   window.

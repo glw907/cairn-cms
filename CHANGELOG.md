@@ -600,6 +600,14 @@
   mount-under-`/admin` instruction is the guard against it. Consumers must: nothing for a site
   following the documented single mount under `/admin/**`.
 
+- `cairn-doctor`'s live probe (`--probe`) keeps deriving its expected CSRF cookie name from the
+  PROBED origin's own scheme, deliberately: it is a cross-check on what a deployed runtime
+  actually presents, immune to a `--url` override diverging from the wrangler config's own
+  `PUBLIC_ORIGIN`. The probe now calls `csrfSecure({ url: origin, platform: undefined })`
+  directly, `csrfSecure`'s own body, instead of a hand-duplicated `origin.protocol === 'https:'`
+  copy, provably the same answer on every branch since feeding no `platform` means the CSRF
+  side's own `PUBLIC_ORIGIN` consultation never fires. Consumers must: nothing.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

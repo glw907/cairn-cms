@@ -7,6 +7,7 @@
 import { fail, pass, skip } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { csrfCookieName } from '../auth/crypto.js';
+import { csrfSecure } from '../sveltekit/csrf.js';
 import { readWranglerConfig } from './wrangler-config.js';
 
 const NO_URL: CheckResult = skip(
@@ -46,7 +47,16 @@ async function probe(ctx: DoctorContext, origin: URL): Promise<CheckResult> {
   if (res.status !== 200) {
     return fail(`GET /admin/login returned ${res.status}, expected 200`);
   }
-  const cookieName = csrfCookieName(origin.protocol === 'https:');
+  // Deliberately NOT folded onto a config-aware derivation (Task 6, F8/N3): the expected cookie
+  // name derives from the PROBED origin's own scheme, an external CROSS-CHECK on what the
+  // deployed runtime actually presents, so it must never consult a separately-resolved
+  // PUBLIC_ORIGIN the probe itself found (which a `--url` override can legitimately diverge
+  // from). Reusing csrfSecure's own body, fed the probed origin with no platform, is provably the
+  // same answer as the previous hand-duplicated `origin.protocol === 'https:'` check on every
+  // branch: with no platform, csrfSecure's own PUBLIC_ORIGIN consultation never fires, so an
+  // https origin still resolves Secure outright and every non-https origin (local or not) still
+  // resolves not-Secure, exactly as the bare protocol check did.
+  const cookieName = csrfCookieName(csrfSecure({ url: origin, platform: undefined }));
   const cookieValue = setCookieValue(res.headers.getSetCookie(), cookieName);
   if (cookieValue === undefined) {
     return fail(`GET /admin/login set no ${cookieName} cookie`);

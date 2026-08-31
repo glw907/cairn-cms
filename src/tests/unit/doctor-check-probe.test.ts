@@ -105,7 +105,7 @@ describe('admin.login-probe', () => {
     expect(result.detail).toContain('__Host-cairn_csrf');
   });
 
-  it('fails when an https page sets only the bare http cookie name', async () => {
+  it('fails when an https page sets only the bare http cookie name (cross-check reddens on a mismatched derivation pair, Task 6)', async () => {
     const { fetch } = probeFetch(
       loginResponse({ cookie: 'cairn_csrf=cookie-token; Path=/' }),
       actionJson('sent')
@@ -113,6 +113,19 @@ describe('admin.login-probe', () => {
     const result = await liveProbeCheck(ORIGIN).run(ctx({ fetch }));
     expect(result.status).toBe('fail');
     expect(result.detail).toContain('__Host-cairn_csrf');
+  });
+
+  it('expects the bare cookie name on a non-local http origin, since csrfSecure never consults PUBLIC_ORIGIN when fed no platform', async () => {
+    // The probe's derivation deliberately never reads a separately-resolved PUBLIC_ORIGIN (the
+    // --url-overrides-wrangler-origin trap), so a non-local http origin still expects the bare
+    // name even though a real deployed site's own PUBLIC_ORIGIN might resolve Secure for it.
+    const { fetch, calls } = probeFetch(
+      loginResponse({ cookie: 'cairn_csrf=cookie-token; Path=/; HttpOnly; SameSite=Lax' }),
+      actionJson('sent')
+    );
+    const result = await liveProbeCheck('http://admin.example').run(ctx({ fetch }));
+    expect(result.status).toBe('pass');
+    expect(new Headers(calls[1].init?.headers).get('cookie')).toBe('cairn_csrf=cookie-token');
   });
 
   it('expects the bare cookie name on a local http origin', async () => {

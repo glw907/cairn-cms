@@ -174,19 +174,22 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/auth-store`
 
-- `deleteEditor`: (db: D1Database, email: string) => Promise<void>
-- `demoteOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[], newRole: string) => Promise<boolean>
+- `deleteEditor`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<DeleteEditorOutcome>
+- `DeleteEditorOutcome`: { outcome: "removed" } | { outcome: "last-owner" } | { outcome: "not-found" }
+- `demoteOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[], newRole: string) => Promise<OwnerGuardOutcome>
 - `EditorRow`: { email: string; displayName: string; role: string }
 - `insertEditor`: (db: D1Database, email: string, displayName: string, role: string, now: number) => Promise<void>
 - `listEditors`: (db: D1Database) => Promise<EditorRow[]>
-- `removeOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<boolean>
-- `setEditorRole`: (db: D1Database, email: string, role: string) => Promise<void>
+- `OwnerGuardOutcome`: { outcome: "ok" } | { outcome: "last-owner" } | { outcome: "not-eligible" }
+- `removeOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<OwnerGuardOutcome>
+- `setEditorRole`: (db: D1Database, email: string, role: string, ownerRoles: string[]) => Promise<SetEditorRoleOutcome>
+- `SetEditorRoleOutcome`: { outcome: "ok" } | { outcome: "last-owner" } | { outcome: "not-found" }
 
 ## `/cloudflare`
 
-- `checkRateLimit`: (binding: RateLimitLike | undefined, key: string) => Promise<boolean>
-- `checkRateLimitKeys`: (binding: RateLimitLike | undefined, keys: string[]) => Promise<boolean>
 - `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }
+- `RateLimitOutcome`: { outcome: "allowed" } | { outcome: "limited"; key: string } | { outcome: "no-binding" } | { outcome: "failed"; error: unknown }
+- `resolveRateLimit`: (binding: RateLimitLike | undefined, keys: string | string[]) => Promise<RateLimitOutcome>
 - `verifyTurnstile`: (token: string, secret: string, opts?: VerifyTurnstileOptions) => Promise<boolean>
 - `VerifyTurnstileOptions`: { ip?: string; hostname?: string; action?: string }
 

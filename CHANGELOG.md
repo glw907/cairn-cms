@@ -424,6 +424,41 @@
   drops it; the rendered `src` was already ignoring it in every real deployment (the ruled shape
   above), so this is a type-level tightening, not a behavior change for any working caller.
 
+- The conventions pass (Task 4) applies the 2026-08-30 sitting's ratified **outcome-idiom**
+  convention (discriminated `outcome` results replace conflating booleans) to the rate-limit
+  wrapper and the auth-store's owner-guard family; `verifyTurnstile`'s fail-closed `boolean` return
+  is recorded in its own doc comment as the ruling's stated exception. `/cloudflare`:
+  `checkRateLimit` and `checkRateLimitKeys` retire in favor of one export,
+  `resolveRateLimit(binding, keys: string | string[])`, returning a four-arm result —
+  `{ outcome: 'allowed' }`, `{ outcome: 'limited'; key }` (naming the first key over budget),
+  `{ outcome: 'no-binding' }`, or `{ outcome: 'failed'; error }` (a throwing `limit()` no longer
+  propagates; it is captured into this arm, with degrade-to-open on either `no-binding` or `failed`
+  staying each caller's own decision, exactly as the retired functions' contract already stated).
+  `createSectionAction`'s inline rate-limit reimplementation now calls `resolveRateLimit`, with its
+  own `key()` try/catch and `redirect()`/`error()` rethrow guard unchanged; the three log events
+  (`admin.action.rate_limited`, `admin.action.rate_limit_absent`, `admin.action.rate_limit_failed`)
+  are unchanged. `/auth-store`: `deleteEditor` and `setEditorRole` both gain an `ownerRoles`
+  parameter and fold the anti-lockout guard into their own atomic write, becoming the one call a
+  site needs for "remove this editor" / "change this editor's role" regardless of the target's
+  current role, with no more caller-side pre-fetch-and-dispatch between a guarded and an unguarded
+  function; each returns a three-arm outcome distinguishing `'not-found'` from `'last-owner'`.
+  `removeOwnerIfNotLast` and `demoteOwnerIfNotLast` survive as the narrower, owner-only guards,
+  their `boolean` return becoming a three-arm outcome (`'ok'` / `'last-owner'` / `'not-eligible'`,
+  never `'not-found'`, since their own `WHERE` matches only owner-capability rows and cannot tell
+  an absent row from a present, non-owner one apart). The refusal predicate stays inside the same
+  atomic statement as the write in every case; a concurrency test (two simultaneous demotes of a
+  two-owner roster) asserts exactly one succeeds. **Consumers must:** replace
+  `checkRateLimit(binding, key)` and `checkRateLimitKeys(binding, keys)` with
+  `resolveRateLimit(binding, keys)`, branching on `result.outcome` instead of a `boolean` (a
+  `true` reader becomes `result.outcome === 'allowed'`, degrade-to-open becomes
+  `result.outcome === 'allowed' || result.outcome === 'no-binding' || result.outcome === 'failed'`
+  read explicitly); pass `deleteEditor(db, email, ownerRoles)` and
+  `setEditorRole(db, email, role, ownerRoles)` their site's owner-capability role names (an
+  existing call site with no owner concern passes `[]` to keep today's unconditional-write
+  behavior) and read the returned `outcome` instead of relying on a resolved `Promise<void>`;
+  replace a `removeOwnerIfNotLast`/`demoteOwnerIfNotLast` boolean check with `result.outcome ===
+  'ok'`.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

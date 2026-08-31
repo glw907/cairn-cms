@@ -136,6 +136,30 @@ export async function insertEditor(
     .run();
 }
 
+/** What {@link deleteEditor} returns: removed, refused as the last owner-capability row, or no such editor. */
+export type DeleteEditorOutcome =
+  | { outcome: 'removed' }
+  | { outcome: 'last-owner' }
+  | { outcome: 'not-found' };
+
+/** What {@link setEditorRole} returns: changed, refused as a last-owner demotion, or no such editor. */
+export type SetEditorRoleOutcome =
+  | { outcome: 'ok' }
+  | { outcome: 'last-owner' }
+  | { outcome: 'not-found' };
+
+/**
+ * What {@link removeOwnerIfNotLast} and {@link demoteOwnerIfNotLast} return: the guarded write
+ * landed, it is refused because this is the last owner-capability row, or the row is not eligible
+ * for this guard at all. `not-eligible` (never `not-found`) because the atomic write's own `WHERE`
+ * only matches owner-capability rows, so a `changes === 0` result cannot tell an absent row apart
+ * from a present, non-owner one; the discriminant names only what the predicate knows.
+ */
+export type OwnerGuardOutcome =
+  | { outcome: 'ok' }
+  | { outcome: 'last-owner' }
+  | { outcome: 'not-eligible' };
+
 /**
  * The removal cascade's preview-token leg: every link one removed editor minted, keyed by their
  * already-normalized address. Both {@link deleteEditor} and {@link removeOwnerIfNotLast} call it
@@ -165,15 +189,47 @@ async function deleteEditorPreviewTokens(db: D1Database, normalizedEmail: string
  * by contrast, does not retro-revoke a link, and the owner's remedy there is the revoke-all
  * admin affordance. See {@link deleteEditorPreviewTokens} for why that last delete sits outside
  * the batch.
+ *
+ * `ownerRoles` (the vocabulary's owner-capability name set, see `resolveOwnerLevelRoles`) is
+ * folded into the same atomic `DELETE`: a non-owner row is removed unconditionally, and an
+ * owner-capability row is refused when it is the last one. This is the one call a caller needs
+ * for "remove this editor" regardless of role, so it no longer pre-fetches the target's role and
+ * dispatches between this function and {@link removeOwnerIfNotLast}. On a `changes === 0` result
+ * the only follow-up is a read that classifies the refusal (the row is present and is the last
+ * owner) from a plain miss (no such editor); that read cannot change the outcome, it only names
+ * which of the two happened. `removeOwnerIfNotLast` survives alongside this as the narrower
+ * owner-only guard.
  */
-export async function deleteEditor(db: D1Database, email: string): Promise<void> {
+export async function deleteEditor(
+  db: D1Database,
+  email: string,
+  ownerRoles: string[],
+): Promise<DeleteEditorOutcome> {
   const key = normalizeEmail(email);
+  const res =
+    ownerRoles.length === 0
+      ? await db.prepare('DELETE FROM editor WHERE email = ?').bind(key).run()
+      : await db
+          .prepare(
+            `DELETE FROM editor
+             WHERE email = ?
+               AND (
+                 role NOT IN (${ownerRoles.map(() => '?').join(', ')})
+                 OR (SELECT COUNT(*) FROM editor WHERE role IN (${ownerRoles.map(() => '?').join(', ')})) > 1
+               )`,
+          )
+          .bind(key, ...ownerRoles, ...ownerRoles)
+          .run();
+  if (res.meta.changes === 0) {
+    const stillThere = await db.prepare('SELECT 1 FROM editor WHERE email = ?').bind(key).first();
+    return stillThere ? { outcome: 'last-owner' } : { outcome: 'not-found' };
+  }
   await db.batch([
     db.prepare('DELETE FROM session WHERE email = ?').bind(key),
     db.prepare('DELETE FROM magic_token WHERE email = ?').bind(key),
-    db.prepare('DELETE FROM editor WHERE email = ?').bind(key),
   ]);
   await deleteEditorPreviewTokens(db, key);
+  return { outcome: 'removed' };
 }
 
 /**
@@ -181,12 +237,17 @@ export async function deleteEditor(db: D1Database, email: string): Promise<void>
  * part of the DELETE, so two concurrent removals cannot both pass a separate check and strand the
  * allowlist below one owner. `ownerRoles` is the vocabulary's owner-capability name set (see
  * `resolveOwnerLevelRoles`), not the literal `'owner'` string, so a site with more than one owner-level
- * role name stays safe. Returns false (and writes nothing) when this is the last owner-capability
- * row. On success the editor's sessions, pending token, and minted preview links all go too, the
- * same cascade {@link deleteEditor} runs.
+ * role name stays safe. The narrower, owner-only twin of {@link deleteEditor}: its own `WHERE`
+ * matches only an owner-capability row, so it refuses outright (`not-eligible`) on a row that is
+ * not owner-capability at all, rather than removing it. On success the editor's sessions, pending
+ * token, and minted preview links all go too, the same cascade {@link deleteEditor} runs.
  */
-export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerRoles: string[]): Promise<boolean> {
-  if (ownerRoles.length === 0) return false;
+export async function removeOwnerIfNotLast(
+  db: D1Database,
+  email: string,
+  ownerRoles: string[],
+): Promise<OwnerGuardOutcome> {
+  if (ownerRoles.length === 0) return { outcome: 'not-eligible' };
   const key = normalizeEmail(email);
   const placeholders = ownerRoles.map(() => '?').join(', ');
   const res = await db
@@ -197,13 +258,19 @@ export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerR
     )
     .bind(key, ...ownerRoles, ...ownerRoles)
     .run();
-  if (res.meta.changes !== 1) return false;
+  if (res.meta.changes === 0) {
+    const stillEligible = await db
+      .prepare(`SELECT 1 FROM editor WHERE email = ? AND role IN (${placeholders})`)
+      .bind(key, ...ownerRoles)
+      .first();
+    return stillEligible ? { outcome: 'last-owner' } : { outcome: 'not-eligible' };
+  }
   await db.batch([
     db.prepare('DELETE FROM session WHERE email = ?').bind(key),
     db.prepare('DELETE FROM magic_token WHERE email = ?').bind(key),
   ]);
   await deleteEditorPreviewTokens(db, key);
-  return true;
+  return { outcome: 'ok' };
 }
 
 /**
@@ -229,24 +296,64 @@ export async function insertOwnerIfEmpty(
   return res.meta.changes === 1;
 }
 
-/** Change an editor's role. The guard reads the new role on the next request. */
-export async function setEditorRole(db: D1Database, email: string, role: string): Promise<void> {
-  await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, normalizeEmail(email)).run();
+/**
+ * Change an editor's role. The guard reads the new role on the next request.
+ *
+ * `ownerRoles` (the vocabulary's owner-capability name set, see `resolveOwnerLevelRoles`) is
+ * folded into the same atomic `UPDATE`: the write is refused only when it would demote the last
+ * owner-capability row out of owner capability, never for any other role change. This is the one
+ * call a caller needs for "change this editor's role", so it no longer pre-fetches the target's
+ * current role and dispatches between this function and {@link demoteOwnerIfNotLast}. On a
+ * `changes === 0` result the only follow-up is a read that classifies the refusal (the row is
+ * present and this was a last-owner demotion) from a plain miss (no such editor); that read
+ * cannot change the outcome, it only names which of the two happened.
+ * `demoteOwnerIfNotLast` survives alongside this as the narrower owner-only guard.
+ */
+export async function setEditorRole(
+  db: D1Database,
+  email: string,
+  role: string,
+  ownerRoles: string[],
+): Promise<SetEditorRoleOutcome> {
+  const key = normalizeEmail(email);
+  const res =
+    ownerRoles.length === 0
+      ? await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, key).run()
+      : await db
+          .prepare(
+            `UPDATE editor SET role = ?
+             WHERE email = ?
+               AND (
+                 role NOT IN (${ownerRoles.map(() => '?').join(', ')})
+                 OR ? = 1
+                 OR (SELECT COUNT(*) FROM editor WHERE role IN (${ownerRoles.map(() => '?').join(', ')})) > 1
+               )`,
+          )
+          .bind(role, key, ...ownerRoles, ownerRoles.includes(role) ? 1 : 0, ...ownerRoles)
+          .run();
+  if (res.meta.changes === 0) {
+    const stillThere = await db.prepare('SELECT 1 FROM editor WHERE email = ?').bind(key).first();
+    return stillThere ? { outcome: 'last-owner' } : { outcome: 'not-found' };
+  }
+  return { outcome: 'ok' };
 }
 
 /**
  * Demote an owner-capability editor to `newRole` only if another owner-capability row remains,
  * in one atomic statement (see `removeOwnerIfNotLast`). `ownerRoles` is the vocabulary's
- * owner-capability name set, so a site with more than one owner-level role name stays safe.
- * Returns false (and writes nothing) when this is the last owner-capability row.
+ * owner-capability name set, so a site with more than one owner-level role name stays safe. The
+ * narrower, owner-only twin of {@link setEditorRole}: its own `WHERE` matches only an
+ * owner-capability row, so it refuses outright (`not-eligible`) on a row that is not
+ * owner-capability at all, rather than changing it.
  */
 export async function demoteOwnerIfNotLast(
   db: D1Database,
   email: string,
   ownerRoles: string[],
   newRole: string,
-): Promise<boolean> {
-  if (ownerRoles.length === 0) return false;
+): Promise<OwnerGuardOutcome> {
+  if (ownerRoles.length === 0) return { outcome: 'not-eligible' };
+  const key = normalizeEmail(email);
   const placeholders = ownerRoles.map(() => '?').join(', ');
   const res = await db
     .prepare(
@@ -254,7 +361,14 @@ export async function demoteOwnerIfNotLast(
        WHERE email = ? AND role IN (${placeholders})
          AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`,
     )
-    .bind(newRole, normalizeEmail(email), ...ownerRoles, ...ownerRoles)
+    .bind(newRole, key, ...ownerRoles, ...ownerRoles)
     .run();
-  return res.meta.changes === 1;
+  if (res.meta.changes === 0) {
+    const stillEligible = await db
+      .prepare(`SELECT 1 FROM editor WHERE email = ? AND role IN (${placeholders})`)
+      .bind(key, ...ownerRoles)
+      .first();
+    return stillEligible ? { outcome: 'last-owner' } : { outcome: 'not-eligible' };
+  }
+  return { outcome: 'ok' };
 }

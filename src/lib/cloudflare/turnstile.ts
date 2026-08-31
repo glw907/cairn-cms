@@ -77,6 +77,11 @@ function isSiteverifyBody(value: unknown): value is SiteverifyBody {
  * carries the secret, the token, or the response body. A rejection carries siteverify's own error
  * codes, a mismatch carries the expected and actual value, and the pre-flight refusal carries the
  * token's length. The log-events reference has the full table.
+ *
+ * The `boolean` return is `convention-outcome-idiom`'s stated exception to the discriminated-
+ * result rule: every failure mode collapses to the one fail-closed answer a caller needs
+ * (`false`), and a discriminated result naming each reason would tempt a caller into treating one
+ * refusal as more admissible than another, which this function's own contract forbids.
  */
 export async function verifyTurnstile(
   token: string,

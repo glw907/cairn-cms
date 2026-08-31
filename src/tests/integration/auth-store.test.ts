@@ -47,30 +47,84 @@ describe('editors', () => {
   it('inserts, sets role, and removes', async () => {
     await insertEditor(db, 'new@x.dev', 'New', 'editor', Date.now());
     expect((await findEditor(db, 'new@x.dev'))?.role).toBe('editor');
-    await setEditorRole(db, 'new@x.dev', 'owner');
+    expect(await setEditorRole(db, 'new@x.dev', 'owner', ['owner'])).toEqual({ outcome: 'ok' });
     expect((await findEditor(db, 'new@x.dev'))?.role).toBe('owner');
-    await deleteEditor(db, 'new@x.dev');
+    expect(await deleteEditor(db, 'new@x.dev', [])).toEqual({ outcome: 'removed' });
     expect(await findEditor(db, 'new@x.dev')).toBeNull();
+  });
+});
+
+describe('deleteEditor and setEditorRole: the generalized one-call operations', () => {
+  it('deleteEditor removes a non-owner row unconditionally, even with an owner vocabulary declared', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    expect(await deleteEditor(db, 'ed@x.dev', ['owner'])).toEqual({ outcome: 'removed' });
+    expect(await findEditor(db, 'ed@x.dev')).toBeNull();
+  });
+
+  it('deleteEditor reports not-found for an absent row', async () => {
+    expect(await deleteEditor(db, 'nope@x.dev', ['owner'])).toEqual({ outcome: 'not-found' });
+  });
+
+  it('deleteEditor refuses the last owner and writes nothing', async () => {
+    await seedEditor('own@x.dev', 'Own', 'owner');
+    expect(await deleteEditor(db, 'own@x.dev', ['owner'])).toEqual({ outcome: 'last-owner' });
+    expect(await findEditor(db, 'own@x.dev')).not.toBeNull();
+  });
+
+  it('deleteEditor removes an owner row when another owner remains', async () => {
+    await seedEditor('a@x.dev', 'A', 'owner');
+    await seedEditor('b@x.dev', 'B', 'owner');
+    expect(await deleteEditor(db, 'a@x.dev', ['owner'])).toEqual({ outcome: 'removed' });
+    expect(await findEditor(db, 'a@x.dev')).toBeNull();
+  });
+
+  it('setEditorRole changes a non-owner role unconditionally, even with an owner vocabulary declared', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    expect(await setEditorRole(db, 'ed@x.dev', 'contributor', ['owner'])).toEqual({ outcome: 'ok' });
+    expect((await findEditor(db, 'ed@x.dev'))?.role).toBe('contributor');
+  });
+
+  it('setEditorRole reports not-found for an absent row', async () => {
+    expect(await setEditorRole(db, 'nope@x.dev', 'editor', ['owner'])).toEqual({ outcome: 'not-found' });
+  });
+
+  it('setEditorRole refuses demoting the last owner and writes nothing', async () => {
+    await seedEditor('own@x.dev', 'Own', 'owner');
+    expect(await setEditorRole(db, 'own@x.dev', 'editor', ['owner'])).toEqual({ outcome: 'last-owner' });
+    expect((await findEditor(db, 'own@x.dev'))?.role).toBe('owner');
+  });
+
+  it('setEditorRole allows promoting to owner, and allows an owner-to-owner change', async () => {
+    await seedEditor('own@x.dev', 'Own', 'owner');
+    expect(await setEditorRole(db, 'own@x.dev', 'admin', ['owner', 'admin'])).toEqual({ outcome: 'ok' });
+    expect((await findEditor(db, 'own@x.dev'))?.role).toBe('admin');
+  });
+
+  it('setEditorRole demotes an owner when another owner remains', async () => {
+    await seedEditor('a@x.dev', 'A', 'owner');
+    await seedEditor('b@x.dev', 'B', 'owner');
+    expect(await setEditorRole(db, 'a@x.dev', 'editor', ['owner'])).toEqual({ outcome: 'ok' });
+    expect((await findEditor(db, 'a@x.dev'))?.role).toBe('editor');
   });
 });
 
 describe('last-owner guards (atomic)', () => {
   it('refuses to remove or demote the last owner and writes nothing', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
-    expect(await removeOwnerIfNotLast(db, 'own@x.dev', ['owner'])).toBe(false);
+    expect(await removeOwnerIfNotLast(db, 'own@x.dev', ['owner'])).toEqual({ outcome: 'last-owner' });
     expect(await findEditor(db, 'own@x.dev')).not.toBeNull();
-    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ['owner'], 'editor')).toBe(false);
+    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ['owner'], 'editor')).toEqual({ outcome: 'last-owner' });
     expect((await findEditor(db, 'own@x.dev'))?.role).toBe('owner');
   });
 
   it('removes or demotes an owner when another owner remains', async () => {
     await seedEditor('a@x.dev', 'A', 'owner');
     await seedEditor('b@x.dev', 'B', 'owner');
-    expect(await demoteOwnerIfNotLast(db, 'a@x.dev', ['owner'], 'editor')).toBe(true);
+    expect(await demoteOwnerIfNotLast(db, 'a@x.dev', ['owner'], 'editor')).toEqual({ outcome: 'ok' });
     expect((await findEditor(db, 'a@x.dev'))?.role).toBe('editor');
 
     await seedEditor('c@x.dev', 'C', 'owner'); // b and c are owners now
-    expect(await removeOwnerIfNotLast(db, 'b@x.dev', ['owner'])).toBe(true);
+    expect(await removeOwnerIfNotLast(db, 'b@x.dev', ['owner'])).toEqual({ outcome: 'ok' });
     expect(await findEditor(db, 'b@x.dev')).toBeNull();
   });
 
@@ -80,10 +134,10 @@ describe('last-owner guards (atomic)', () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
     await seedEditor('pres@x.dev', 'Pres', 'president');
     const ownerRoles = ['owner', 'president'];
-    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ownerRoles, 'club-admin')).toBe(true);
+    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ownerRoles, 'club-admin')).toEqual({ outcome: 'ok' });
     expect((await findEditor(db, 'own@x.dev'))?.role).toBe('club-admin');
     // Only 'pres@x.dev' carries an owner-level role now; refuse to strand the roster.
-    expect(await removeOwnerIfNotLast(db, 'pres@x.dev', ownerRoles)).toBe(false);
+    expect(await removeOwnerIfNotLast(db, 'pres@x.dev', ownerRoles)).toEqual({ outcome: 'last-owner' });
     expect(await findEditor(db, 'pres@x.dev')).not.toBeNull();
   });
 
@@ -91,8 +145,82 @@ describe('last-owner guards (atomic)', () => {
     // The vocabulary declares both 'owner' and 'president' as owner-capability, but only one row
     // exists. The declared name set must not be mistaken for actual headcount.
     await seedEditor('own@x.dev', 'Own', 'owner');
-    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ['owner', 'president'], 'editor')).toBe(false);
+    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ['owner', 'president'], 'editor')).toEqual({
+      outcome: 'last-owner',
+    });
     expect((await findEditor(db, 'own@x.dev'))?.role).toBe('owner');
+  });
+
+  it('removeOwnerIfNotLast reports not-eligible for a non-owner row, never removing it', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    expect(await removeOwnerIfNotLast(db, 'ed@x.dev', ['owner'])).toEqual({ outcome: 'not-eligible' });
+    expect(await findEditor(db, 'ed@x.dev')).not.toBeNull();
+  });
+
+  it('removeOwnerIfNotLast reports not-eligible for an absent row', async () => {
+    expect(await removeOwnerIfNotLast(db, 'nope@x.dev', ['owner'])).toEqual({ outcome: 'not-eligible' });
+  });
+
+  it('demoteOwnerIfNotLast reports not-eligible for a non-owner row, never changing it', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    expect(await demoteOwnerIfNotLast(db, 'ed@x.dev', ['owner'], 'contributor')).toEqual({
+      outcome: 'not-eligible',
+    });
+    expect((await findEditor(db, 'ed@x.dev'))?.role).toBe('editor');
+  });
+});
+
+describe('concurrency: two simultaneous demotes of a two-owner roster', () => {
+  it('setEditorRole: exactly one of two simultaneous last-owner-shaped demotes succeeds', async () => {
+    await seedEditor('a@x.dev', 'A', 'owner');
+    await seedEditor('b@x.dev', 'B', 'owner');
+    // Both racing calls try to demote the OTHER owner, so if both succeeded the roster would
+    // strand at zero owners; the atomic in-statement count must let exactly one through.
+    const [first, second] = await Promise.all([
+      setEditorRole(db, 'a@x.dev', 'editor', ['owner']),
+      setEditorRole(db, 'b@x.dev', 'editor', ['owner']),
+    ]);
+    const outcomes = [first.outcome, second.outcome].sort();
+    expect(outcomes).toEqual(['last-owner', 'ok']);
+    const roles = (await listEditors(db)).map((e) => e.role).sort();
+    expect(roles).toEqual(['editor', 'owner']);
+  });
+
+  it('demoteOwnerIfNotLast: exactly one of two simultaneous demotes succeeds', async () => {
+    await seedEditor('a@x.dev', 'A', 'owner');
+    await seedEditor('b@x.dev', 'B', 'owner');
+    const [first, second] = await Promise.all([
+      demoteOwnerIfNotLast(db, 'a@x.dev', ['owner'], 'editor'),
+      demoteOwnerIfNotLast(db, 'b@x.dev', ['owner'], 'editor'),
+    ]);
+    const outcomes = [first.outcome, second.outcome].sort();
+    expect(outcomes).toEqual(['last-owner', 'ok']);
+    const roles = (await listEditors(db)).map((e) => e.role).sort();
+    expect(roles).toEqual(['editor', 'owner']);
+  });
+
+  it('removeOwnerIfNotLast: exactly one of two simultaneous removals succeeds', async () => {
+    await seedEditor('a@x.dev', 'A', 'owner');
+    await seedEditor('b@x.dev', 'B', 'owner');
+    const [first, second] = await Promise.all([
+      removeOwnerIfNotLast(db, 'a@x.dev', ['owner']),
+      removeOwnerIfNotLast(db, 'b@x.dev', ['owner']),
+    ]);
+    const outcomes = [first.outcome, second.outcome].sort();
+    expect(outcomes).toEqual(['last-owner', 'ok']);
+    expect(await countRows('editor')).toBe(1);
+  });
+
+  it('deleteEditor: exactly one of two simultaneous removals of a two-owner roster succeeds', async () => {
+    await seedEditor('a@x.dev', 'A', 'owner');
+    await seedEditor('b@x.dev', 'B', 'owner');
+    const [first, second] = await Promise.all([
+      deleteEditor(db, 'a@x.dev', ['owner']),
+      deleteEditor(db, 'b@x.dev', ['owner']),
+    ]);
+    const outcomes = [first.outcome, second.outcome].sort();
+    expect(outcomes).toEqual(['last-owner', 'removed']);
+    expect(await countRows('editor')).toBe(1);
   });
 });
 
@@ -159,7 +287,7 @@ describe('sessions (server-side, role read live)', () => {
       role: 'owner',
     });
     // A role change is reflected on the next resolve with no session change.
-    await setEditorRole(db, 'own@x.dev', 'editor');
+    await setEditorRole(db, 'own@x.dev', 'editor', []);
     expect((await resolveSession(db, 'sid-1', Date.now()))?.role).toBe('editor');
   });
 
@@ -169,7 +297,7 @@ describe('sessions (server-side, role read live)', () => {
     expect(await resolveSession(db, 'sid-exp', Date.now())).toBeNull();
 
     await createSession(db, 'sid-live', 'ed@x.dev', Date.now() + 10_000, Date.now());
-    await deleteEditor(db, 'ed@x.dev');
+    await deleteEditor(db, 'ed@x.dev', []);
     expect(await resolveSession(db, 'sid-live', Date.now())).toBeNull();
   });
 
@@ -191,7 +319,7 @@ describe('preview-token cascade (the third credential class)', () => {
       editor: 'ed@x.dev',
       expiresAt: Date.now() + 60_000,
     });
-    await deleteEditor(db, 'ed@x.dev');
+    await deleteEditor(db, 'ed@x.dev', []);
     expect(await findPreviewToken(db, 'hash-1')).toBeNull();
   });
 
@@ -205,7 +333,7 @@ describe('preview-token cascade (the third credential class)', () => {
       editor: 'a@x.dev',
       expiresAt: Date.now() + 60_000,
     });
-    expect(await removeOwnerIfNotLast(db, 'a@x.dev', ['owner'])).toBe(true);
+    expect(await removeOwnerIfNotLast(db, 'a@x.dev', ['owner'])).toEqual({ outcome: 'ok' });
     expect(await findPreviewToken(db, 'hash-2')).toBeNull();
   });
 });
@@ -219,7 +347,7 @@ describe('editor removal survives a site that has not applied migrations/0003_pr
     await createSession(db, 'sid-nomig', 'ed@x.dev', Date.now() + 10_000, Date.now());
     await db.exec('DROP TABLE preview_tokens');
     try {
-      await deleteEditor(db, 'ed@x.dev');
+      await deleteEditor(db, 'ed@x.dev', []);
       expect(await findEditor(db, 'ed@x.dev')).toBeNull();
       expect(await resolveSession(db, 'sid-nomig', Date.now())).toBeNull();
     } finally {
@@ -232,7 +360,7 @@ describe('editor removal survives a site that has not applied migrations/0003_pr
     await seedEditor('b@x.dev', 'B', 'owner');
     await db.exec('DROP TABLE preview_tokens');
     try {
-      expect(await removeOwnerIfNotLast(db, 'a@x.dev', ['owner'])).toBe(true);
+      expect(await removeOwnerIfNotLast(db, 'a@x.dev', ['owner'])).toEqual({ outcome: 'ok' });
       expect(await findEditor(db, 'a@x.dev')).toBeNull();
     } finally {
       await db.exec(RECREATE_PREVIEW_TOKENS);
@@ -270,7 +398,7 @@ describe('email normalization (the store owns it)', () => {
     await insertEditor(db, 'Backup@Site.com', 'Backup', 'owner', Date.now());
     expect(await findEditor(db, 'backup@site.com')).not.toBeNull();
 
-    expect(await removeOwnerIfNotLast(db, 'own@x.dev', ['owner'])).toBe(true);
+    expect(await removeOwnerIfNotLast(db, 'own@x.dev', ['owner'])).toEqual({ outcome: 'ok' });
     const remaining = await listEditors(db);
     expect(remaining.map((e) => e.email)).toEqual(['backup@site.com']);
     // Reachable means the login path's normalized lookup finds it.
@@ -279,19 +407,19 @@ describe('email normalization (the store owns it)', () => {
 
   it('matches a differently-cased row from every write path', async () => {
     await insertEditor(db, 'Mixed@X.dev', 'Mixed', 'editor', Date.now());
-    await setEditorRole(db, 'MIXED@x.DEV', 'owner');
+    await setEditorRole(db, 'MIXED@x.DEV', 'owner', ['owner']);
     expect((await findEditor(db, 'mixed@x.dev'))?.role).toBe('owner');
 
     await seedEditor('own@x.dev', 'Own', 'owner');
-    expect(await demoteOwnerIfNotLast(db, ' mixed@X.DEV ', ['owner'], 'editor')).toBe(true);
+    expect(await demoteOwnerIfNotLast(db, ' mixed@X.DEV ', ['owner'], 'editor')).toEqual({ outcome: 'ok' });
     expect((await findEditor(db, 'mixed@x.dev'))?.role).toBe('editor');
 
-    await setEditorRole(db, 'mixed@x.dev', 'owner');
-    expect(await removeOwnerIfNotLast(db, 'Mixed@X.Dev', ['owner'])).toBe(true);
+    await setEditorRole(db, 'mixed@x.dev', 'owner', ['owner']);
+    expect(await removeOwnerIfNotLast(db, 'Mixed@X.Dev', ['owner'])).toEqual({ outcome: 'ok' });
     expect(await findEditor(db, 'mixed@x.dev')).toBeNull();
 
     await insertEditor(db, 'other@x.dev', 'Other', 'editor', Date.now());
-    await deleteEditor(db, 'OTHER@X.DEV');
+    await deleteEditor(db, 'OTHER@X.DEV', []);
     expect(await findEditor(db, 'other@x.dev')).toBeNull();
   });
 

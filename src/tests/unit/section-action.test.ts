@@ -214,7 +214,7 @@ describe('createSectionAction: rate limit enforcement', () => {
     const sink = vi.fn();
     // RateLimitLike is structural: a site-supplied limiter can resolve anything shaped like
     // { success: boolean } without actually being one. A truthy non-boolean must read as blocked,
-    // the same as checkRateLimit's own `result?.success === true` test.
+    // the same as resolveRateLimit's own `result?.success === true` test.
     const limiter = { limit: async () => ({ success: 1 as unknown as boolean }) } as RateLimitLike;
     const { handler, action } = approveAction({
       ...boundDb,

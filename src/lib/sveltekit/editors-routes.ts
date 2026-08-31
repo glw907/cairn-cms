@@ -7,15 +7,7 @@ import type { D1Database } from '@cloudflare/workers-types';
 import { requireOwner } from './guard.js';
 import { requireDb } from '../env.js';
 import { log } from '../log/index.js';
-import {
-  listEditors,
-  findEditor,
-  insertEditor,
-  deleteEditor,
-  setEditorRole,
-  removeOwnerIfNotLast,
-  demoteOwnerIfNotLast,
-} from '../auth/store.js';
+import { listEditors, findEditor, insertEditor, deleteEditor, setEditorRole } from '../auth/store.js';
 import { resolveCapability, resolveOwnerLevelRoles, DEFAULT_ROLES } from '../auth/roles.js';
 import type { Capability, RolesDeclaration } from '../auth/roles.js';
 import type { Editor } from '../auth/types.js';
@@ -120,14 +112,12 @@ export function createEditorRoutes(config: EditorRoutesConfig = {}): EditorRoute
   /** POST remove an editor. Owner-only. Refuses the last owner-capability row, atomically. */
   async function editorRemoveAction(event: CairnEvent) {
     const { db, email, owner } = await ownerAction(event);
-    const target = await findEditor(db, email);
-    if (!target) return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
-    if (resolveCapability(vocabulary, target.role) === 'owner') {
-      if (!(await removeOwnerIfNotLast(db, email, ownerRoles))) {
-        return fail(400, { error: 'You cannot remove the last owner' } satisfies EditorActionFailure);
-      }
-    } else {
-      await deleteEditor(db, email);
+    const result = await deleteEditor(db, email, ownerRoles);
+    if (result.outcome === 'not-found') {
+      return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
+    }
+    if (result.outcome === 'last-owner') {
+      return fail(400, { error: 'You cannot remove the last owner' } satisfies EditorActionFailure);
     }
     log.info('editor.removed', { owner, target: email });
     return { ok: true as const };
@@ -141,17 +131,13 @@ export function createEditorRoutes(config: EditorRoutesConfig = {}): EditorRoute
     const { db, form, email, owner } = await ownerAction(event);
     const role = parseRole(form.get('role'));
     if (!role) return fail(400, { error: 'Choose a valid role' } satisfies EditorActionFailure);
-    const target = await findEditor(db, email);
-    if (!target) return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
-    const wasOwner = resolveCapability(vocabulary, target.role) === 'owner';
-    const willBeOwner = resolveCapability(vocabulary, role) === 'owner';
-    if (wasOwner && !willBeOwner) {
-      if (!(await demoteOwnerIfNotLast(db, email, ownerRoles, role))) {
-        return fail(400, { error: 'You cannot demote the last owner' } satisfies EditorActionFailure);
-      }
-    } else {
-      // Validated against the vocabulary above; see the same open-role note in editorAddAction.
-      await setEditorRole(db, email, role);
+    // Validated against the vocabulary above; see the same open-role note in editorAddAction.
+    const result = await setEditorRole(db, email, role, ownerRoles);
+    if (result.outcome === 'not-found') {
+      return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
+    }
+    if (result.outcome === 'last-owner') {
+      return fail(400, { error: 'You cannot demote the last owner' } satisfies EditorActionFailure);
     }
     log.info('editor.role_changed', { owner, target: email, role, capability: resolveCapability(vocabulary, role) });
     return { ok: true as const };

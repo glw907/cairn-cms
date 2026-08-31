@@ -24,6 +24,7 @@ import { fail, isHttpError, isRedirect } from '@sveltejs/kit';
 import { adminAction } from './admin-action.js';
 import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
 import { log } from '../log/index.js';
+import { resolveRateLimit } from '../cloudflare/rate-limit.js';
 import type { AdminActionContext } from './admin-action.js';
 import type { CairnEvent } from './types.js';
 import type { AccessMap } from '../auth/access.js';
@@ -226,22 +227,17 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
         if (!limiter) {
           log.warn('admin.action.rate_limit_absent', { path, action: opts.action, entity: opts.entity });
         } else {
-          let blocked = false;
+          // The site-supplied key() runs in its own try/catch, separate from resolveRateLimit's
+          // own limit() call: SvelteKit's own redirect()/error(), thrown from key(), are plain
+          // classes, not Error instances, and a site relying on either as control flow (a
+          // hand-rolled auth check inside key(), say) must not be swallowed into a degrade-to-open
+          // pass, mirroring adminAction's own audit-sink guard (./admin-action.js) exactly:
+          // rethrow both untouched before logging. resolveRateLimit captures a throwing limit()
+          // into its own 'failed' arm, so this catch only ever fires for a throwing key().
+          let key: string | undefined;
           try {
-            const result = await limiter.limit({ key: config.rateLimit.key(ctx) });
-            // Mirrors checkRateLimit's own `result?.success === true` test (rate-limit.ts):
-            // RateLimitLike is structural and publicly exported, so a site-supplied limiter
-            // returning a truthy non-boolean success must read as blocked, not as a pass.
-            blocked = result?.success !== true;
+            key = config.rateLimit.key(ctx);
           } catch (err) {
-            // Both a throwing key() and a throwing limit() land here (key() is evaluated as an
-            // argument to limit(), inside this same try); either way the limit was never
-            // actually checked, which is distinct from rate_limit_absent's "no binding at all".
-            // SvelteKit's own redirect()/error(), thrown from a site-supplied key() or limit()
-            // callback, are plain classes, not Error instances, and a site relying on either as
-            // control flow (a hand-rolled auth check inside key(), say) must not be swallowed
-            // into a degrade-to-open pass, mirroring adminAction's own audit-sink guard
-            // (./admin-action.js) exactly: rethrow both untouched before logging.
             if (isRedirect(err) || isHttpError(err)) throw err;
             log.warn('admin.action.rate_limit_failed', {
               path,
@@ -250,16 +246,27 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
               error: err instanceof Error ? err.message : String(err),
             });
           }
-          if (blocked) {
-            log.warn('admin.action.rate_limited', {
-              path,
-              action: opts.action,
-              entity: opts.entity,
-              editor: ctx.editor.email,
-            });
-            return fail(429, {
-              error: config.rateLimit.message ?? 'Too many requests. Wait a moment and try again.',
-            });
+          if (key !== undefined) {
+            const result = await resolveRateLimit(limiter, key);
+            if (result.outcome === 'failed') {
+              log.warn('admin.action.rate_limit_failed', {
+                path,
+                action: opts.action,
+                entity: opts.entity,
+                error: result.error instanceof Error ? result.error.message : String(result.error),
+              });
+            } else if (result.outcome === 'limited') {
+              log.warn('admin.action.rate_limited', {
+                path,
+                action: opts.action,
+                entity: opts.entity,
+                editor: ctx.editor.email,
+              });
+              return fail(429, {
+                error: config.rateLimit.message ?? 'Too many requests. Wait a moment and try again.',
+              });
+            }
+            // 'allowed' falls through to the authorization checks below.
           }
         }
       }

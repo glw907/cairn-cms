@@ -2952,8 +2952,15 @@ when the remediation pass lands.
 ## audit-auth-seteditorrole: `setEditorRole`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Unconditional UPDATE (store.ts:233). Demoting the last owner leaves a non-empty roster with zero owners; insertOwnerIfEmpty fires only on an empty table, so bootstrapOwner can never re-seed. Safe use needs findEditor, unexported. Right form: take ownerRoles, refuse.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 19.
+- **Reopens on:** closed. Executed by Task 4 of the conventions pass: `setEditorRole(db, email,
+  role, ownerRoles)` folds the owner-capability vocabulary into one conditional `UPDATE` whose
+  `WHERE` encodes "not a demotion out of owner-capability OR another owner-capability row
+  remains", per this entry's own ruled shape. Returns `{ outcome: 'ok' } | { outcome: 'last-owner'
+  } | { outcome: 'not-found' }`; `editors-routes.ts`'s `editorSetRoleAction` no longer pre-fetches
+  the target's role and dispatches between this function and `demoteOwnerIfNotLast`.
+- **Shape:** `setEditorRole(db, email, role, ownerRoles)` takes the owner-capability vocabulary and becomes the one general-purpose role change a caller needs: one conditional `UPDATE` whose `WHERE` encodes "not a demotion out of owner-capability OR another owner-capability row remains" (atomic statement first, never a preceding read). Returns `{ outcome: 'ok' } | { outcome: 'last-owner' } | { outcome: 'not-found' }`; on `changes === 0` a follow-up read purely classifies which of the two refusal cases applies. Replaces the caller-side `findEditor`-then-branch protocol `editorSetRoleAction` used to run against `demoteOwnerIfNotLast`.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 19;
+  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md) (verdict overturned there).
 
 ## audit-auth-listeditors: `listEditors`  (keep, 2026-08-26, any-site audit)
@@ -2975,22 +2982,42 @@ when the remediation pass lands.
 ## audit-auth-deleteeditor: `deleteEditor`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Cascade knowledge is real; the form is two exports for one operation, dispatched by a lookup the subpath withholds. The built consumer spent 20 comment lines plus a four-step protocol on 'remove this person's access' (roster-admin.ts:197-241).
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 22.
+- **Reopens on:** closed. Executed by Task 4 of the conventions pass: `deleteEditor(db, email,
+  ownerRoles)` folds the owner-capability vocabulary into one atomic `DELETE` whose `WHERE`
+  encodes "not owner-capability OR another owner-capability row remains", per this entry's own
+  ruled shape. Returns `{ outcome: 'removed' } | { outcome: 'last-owner' } | { outcome:
+  'not-found' }`; `editors-routes.ts`'s `editorRemoveAction` no longer pre-fetches the target's
+  role and dispatches between `deleteEditor` and `removeOwnerIfNotLast`.
+  `removeOwnerIfNotLast` survives as the narrower owner-only guard (see rank 24, closed below).
+- **Shape:** `deleteEditor(db, email, ownerRoles)` takes the owner-capability vocabulary and becomes the one general-purpose removal a caller needs: one atomic `DELETE` whose `WHERE` encodes "not owner-capability OR another owner-capability row remains" (no preceding read of the target's role). Returns `{ outcome: 'removed' } | { outcome: 'last-owner' } | { outcome: 'not-found' }`; on `changes === 0` a follow-up existence read purely classifies the refusal, since every non-refusal case would already have matched. Resolves the two-export dispatch: a caller no longer pre-fetches the target's role and branches between `deleteEditor` and `removeOwnerIfNotLast`. `removeOwnerIfNotLast` survives as the narrower owner-only guard (see rank 24).
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 22;
+  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md) (verdict overturned there).
 
 ## audit-auth-demoteownerifnotlast: `demoteOwnerIfNotLast`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. In-UPDATE count must survive, but it is the guarded half of the pair setEditorRole reshapes, and carries the same conflated boolean the doc works around ('to tell them apart, read the roster with listEditors first'). Evidence is symmetry, not measured misuse.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 23.
+- **Reopens on:** closed. Executed by Task 4 of the conventions pass: keeps its existing narrow,
+  owner-only atomic `UPDATE` (matching only `ownerRoles` rows), with the `boolean` return replaced
+  by `{ outcome: 'ok' } | { outcome: 'last-owner' } | { outcome: 'not-eligible' }`, per this
+  entry's own ruled shape. A concurrency test (two simultaneous demotes of a two-owner roster)
+  asserts exactly one succeeds.
+- **Shape:** Keeps its existing narrow, owner-only atomic `UPDATE` (matching only `ownerRoles` rows), but the `boolean` return becomes `{ outcome: 'ok' } | { outcome: 'last-owner' } | { outcome: 'not-eligible' }`. `not-eligible`, not `not-found`: the follow-up read on `changes === 0` can only establish "no row matched email AND owner-capability", which conflates absent-from-roster with present-but-not-owner, so the discriminant names only what the predicate knows.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 23;
+  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md) (verdict overturned there).
 
 ## audit-auth-removeownerifnotlast: `removeOwnerIfNotLast`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Measured failure: the only built consumer drops the boolean (roster-admin.ts:237) and its caller writes a roster.revoke audit record regardless, so a last-owner coach keeps editor row and sessions while the log records a revocation. Right form: discriminated result.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 24.
+- **Reopens on:** closed. Executed by Task 4 of the conventions pass: keeps its existing narrow,
+  owner-only atomic `DELETE` (matching only `ownerRoles` rows), with the `boolean` return replaced
+  by `{ outcome: 'ok' } | { outcome: 'last-owner' } | { outcome: 'not-eligible' }`, per this
+  entry's own ruled shape. A concurrency test (two simultaneous removals of a two-owner roster)
+  asserts exactly one succeeds.
+- **Shape:** Keeps its existing narrow, owner-only atomic `DELETE` (matching only `ownerRoles` rows), but the `boolean` return becomes `{ outcome: 'ok' } | { outcome: 'last-owner' } | { outcome: 'not-eligible' }`, the same three-arm grammar and `not-eligible` reasoning as `demoteOwnerIfNotLast` above. Survives alongside the generalized `deleteEditor` (rank 22) as the narrower guard a caller reaches for when it specifically wants an owner-only removal refused outright rather than silently no-opping.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 24;
+  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md) (verdict overturned there).
 
 ## audit-cloudflare-verifyturnstileoptions: `VerifyTurnstileOptions`  (keep, 2026-08-26, any-site audit)
@@ -3004,15 +3031,26 @@ when the remediation pass lands.
 ## audit-cloudflare-checkratelimitkeys: `checkRateLimitKeys`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site checking an IP budget and an email budget on one form; but the body is a five-line loop over checkRateLimit and the broadest-first ordering it teaches is prose, not enforced.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Fold into the single rate-limit export as `string | string[]`, keeping the short-circuit behavior, so the subpath carries one rate-limit name and the broadest-f).
-- **Record:** [rank-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/rank-cloudflare-audit-sink.md), rank 2.
+- **Reopens on:** closed. Executed by Task 4 of the conventions pass, folded with rank 3: one
+  export, `resolveRateLimit(binding, keys: string | string[])`, replaces the `checkRateLimit`/
+  `checkRateLimitKeys` pair, per this entry's own ruled shape.
+- **Shape:** Folds with rank 3 into one export, `resolveRateLimit(binding, keys: string | string[])`, replacing the `checkRateLimit`/`checkRateLimitKeys` boolean pair. Returns a four-arm discriminated result: `{ outcome: 'allowed' } | { outcome: 'limited'; key: string } | { outcome: 'no-binding' } | { outcome: 'failed'; error: unknown }`, keeping the documented short-circuit (the first failing key stops the loop) and the broadest-first ordering guidance in one place instead of two exports.
+- **Record:** [rank-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/rank-cloudflare-audit-sink.md), rank 2;
+  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/verify-cloudflare-audit-sink.md).
 
 ## audit-cloudflare-checkratelimit: `checkRateLimit`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A Workers site wants a limiter that never blocks local dev or vitest when the binding is unprovisioned, and wants to be told when a misspelled binding name silently disabled it.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: One export taking `string | string[]` and returning an outcome that names the absent-binding case instead of folding it into `true` — the shape createSectionAct).
-- **Record:** [rank-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/rank-cloudflare-audit-sink.md), rank 3.
+- **Reopens on:** closed. Executed by Task 4 of the conventions pass, folded with rank 2 into the
+  same `resolveRateLimit(binding, keys)` export, returning the four-arm `RateLimitOutcome` (
+  `allowed` / `limited` / `no-binding` / `failed`), per this entry's own ruled shape.
+  `createSectionAction`'s inline reimplementation now calls it; the three log events
+  (`admin.action.rate_limited`, `admin.action.rate_limit_absent`, `admin.action.rate_limit_failed`)
+  are unchanged.
+- **Shape:** One export taking `string | string[]` and returning an outcome that names the absent-binding case instead of folding it into `true` — the four-arm `resolveRateLimit` result rank 2 records. The helper captures a throwing `limit()` into the `failed` arm; degrade-to-open on that throw stays each caller's own decision, exactly as `createSectionAction` already had to hand-roll.
+- **Record:** [rank-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/rank-cloudflare-audit-sink.md), rank 3;
+  executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 4.
 - **Verified:** [verify-cloudflare-audit-sink.md](record/2026-08-26-any-site-audit/verify-cloudflare-audit-sink.md).
 
 ## audit-cloudflare-verifyturnstile: `verifyTurnstile`  (keep, 2026-08-26, any-site audit)

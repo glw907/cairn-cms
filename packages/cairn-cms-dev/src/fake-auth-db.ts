@@ -36,8 +36,17 @@ interface PreviewTokenRow {
   expires_at: number;
 }
 
-/** Either fake table's row shape; `execute` dispatches into both maps from one function. */
-type FakeRow = EditorRow | PreviewTokenRow;
+/**
+ * The store's `SELECT 1 …` classification reads (deleteEditor/setEditorRole and their owner-only
+ * guard twins, on a `changes === 0` write) never read a real column, only presence; this shape
+ * stands in for `1 AS one`.
+ */
+interface ProbeRow {
+  one: number;
+}
+
+/** Any row shape `execute` dispatches into from one function. */
+type FakeRow = EditorRow | PreviewTokenRow | ProbeRow;
 
 export interface FakeAuthDb {
   prepare(sql: string): FakeStatement;
@@ -105,6 +114,47 @@ export function createFakeAuthDb(): FakeAuthDb {
       return { ...none, changes: 1 };
     }
 
+    // deleteEditor / setEditorRole's changes===0 classification read, the owner-only-guard
+    // variant removeOwnerIfNotLast/demoteOwnerIfNotLast use ("is this row still eligible for the
+    // guard at all"): `SELECT 1 FROM editor WHERE email = ? AND role IN (...)`, bound
+    // (email, ...ownerRoles). Checked before the plain classification read below, since this
+    // statement's SQL is a superset of that one's (same ordering concern as the guarded
+    // delete/update pair).
+    if (sql.includes('SELECT 1 FROM editor WHERE email = ?') && sql.includes('role IN (')) {
+      const email = String(args[0]);
+      const ownerRoles = args.slice(1).map(String);
+      const target = editors.get(email);
+      return { ...none, row: target && ownerRoles.includes(target.role) ? { one: 1 } : null };
+    }
+
+    // deleteEditor / setEditorRole's changes===0 classification read, the generalized-dispatch
+    // variant ("is this row still there at all"): `SELECT 1 FROM editor WHERE email = ?`.
+    if (sql.includes('SELECT 1 FROM editor WHERE email = ?')) {
+      return { ...none, row: editors.has(String(args[0])) ? { one: 1 } : null };
+    }
+
+    // deleteEditor's generalized guarded delete (ownerRoles.length > 0): a non-owner row is
+    // removed unconditionally (`role NOT IN (...)`), an owner-capability row only when another
+    // owner-capability row remains (the COUNT(*) subquery), bound
+    // (email, ...ownerRoles, ...ownerRoles). The `role NOT IN (` marker is unique to this shape
+    // and to setEditorRole's UPDATE twin below; it distinguishes both from the narrower
+    // owner-only guards (removeOwnerIfNotLast/demoteOwnerIfNotLast), which have no NOT-IN branch
+    // and refuse a non-owner row outright. Checked before the owner-only guard below because that
+    // check's `role IN (` / `COUNT(*)` markers both also appear here (the subquery text).
+    if (sql.startsWith('DELETE FROM editor') && sql.includes('role NOT IN (')) {
+      const email = String(args[0]);
+      const rest = args.slice(1).map(String);
+      const ownerRoles = rest.slice(0, rest.length / 2);
+      const target = editors.get(email);
+      if (!target) return none;
+      const isOwner = ownerRoles.includes(target.role);
+      if (!isOwner || ownerCount(ownerRoles) > 1) {
+        editors.delete(email);
+        return { ...none, changes: 1 };
+      }
+      return none;
+    }
+
     // removeOwnerIfNotLast's guarded delete: a set-based `role IN (...)` membership test plus a
     // COUNT(*) subquery over that same set, bound (email, ...ownerRoles, ...ownerRoles). Checked
     // before the plain editor delete below because its SQL contains that statement's substring
@@ -118,9 +168,29 @@ export function createFakeAuthDb(): FakeAuthDb {
       return { ...none, changes: 1 };
     }
 
-    // deleteEditor's editor row
+    // deleteEditor's ownerRoles-empty path: the unguarded editor row delete.
     if (sql.includes('DELETE FROM editor WHERE email = ?')) {
       return { ...none, changes: editors.delete(String(args[0])) ? 1 : 0 };
+    }
+
+    // setEditorRole's generalized guarded update (ownerRoles.length > 0): the same non-owner /
+    // last-owner split as the guarded delete above, plus a third escape (`? = 1`, the
+    // caller-computed flag for "the new role is itself owner-capability") since a same-capability
+    // role change is never a demotion. Bound (role, email, ...ownerRoles, flag, ...ownerRoles).
+    if (sql.startsWith('UPDATE editor SET role = ?') && sql.includes('role NOT IN (')) {
+      const role = String(args[0]);
+      const email = String(args[1]);
+      const n = (args.length - 3) / 2;
+      const ownerRoles = args.slice(2, 2 + n).map(String);
+      const flag = args[2 + n];
+      const target = editors.get(email);
+      if (!target) return none;
+      const isOwner = ownerRoles.includes(target.role);
+      if (!isOwner || flag === 1 || ownerCount(ownerRoles) > 1) {
+        target.role = role;
+        return { ...none, changes: 1 };
+      }
+      return none;
     }
 
     // demoteOwnerIfNotLast's guarded update: the same set-based membership plus COUNT(*) shape,
@@ -136,7 +206,7 @@ export function createFakeAuthDb(): FakeAuthDb {
       return { ...none, changes: 1 };
     }
 
-    // setEditorRole (args: role, email)
+    // setEditorRole's ownerRoles-empty path: the unguarded role update (args: role, email).
     if (sql.includes('UPDATE editor SET role = ? WHERE email = ?')) {
       const target = editors.get(String(args[1]));
       if (!target) return none;

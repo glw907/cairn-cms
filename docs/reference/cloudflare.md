@@ -148,7 +148,7 @@ key cleared, `{ outcome: 'limited'; key }` naming the first key over budget, `{ 
 'no-binding' }` when `binding` is `undefined` (no call is made), and `{ outcome: 'failed'; error
 }` when the underlying `limit()` call itself threw (the thrown value is carried, never rethrown).
 Degrading to open on `no-binding` or `failed` is each caller's own decision to read off the
-result, the same policy `checkRateLimit`'s predecessor exported as an unconditional `true`; a
+result, the same policy its predecessor `checkRateLimit` exported as an unconditional `true`; a
 caller that must fail closed instead branches on the outcome explicitly.
 
 A single string `key` behaves exactly as a one-element array. `key` is the caller's to build, and

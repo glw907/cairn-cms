@@ -20,6 +20,26 @@ function guardedUpdateSql(ownerRoles: string[]): string {
   return `UPDATE editor SET role = ? WHERE email = ? AND role IN (${placeholders}) AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`;
 }
 
+// Mirrors the exact SQL src/lib/auth/store.ts's deleteEditor/setEditorRole build when
+// ownerRoles.length > 0: the generalized dispatch that removes/changes a non-owner row
+// unconditionally and refuses only a last-owner-capability row, folded into one atomic
+// statement per the outcome idiom's atomicity mandate.
+function generalizedDeleteSql(ownerRoles: string[]): string {
+  const placeholders = ownerRoles.map(() => '?').join(', ');
+  return `DELETE FROM editor WHERE email = ? AND ( role NOT IN (${placeholders}) OR (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1 )`;
+}
+
+function generalizedUpdateSql(ownerRoles: string[]): string {
+  const placeholders = ownerRoles.map(() => '?').join(', ');
+  return `UPDATE editor SET role = ? WHERE email = ? AND ( role NOT IN (${placeholders}) OR ? = 1 OR (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1 )`;
+}
+
+const CLASSIFY_STILL_THERE = 'SELECT 1 FROM editor WHERE email = ?';
+function classifyStillEligibleSql(ownerRoles: string[]): string {
+  const placeholders = ownerRoles.map(() => '?').join(', ');
+  return `SELECT 1 FROM editor WHERE email = ? AND role IN (${placeholders})`;
+}
+
 async function insertEditor(db: FakeAuthDb, email: string, displayName: string, role: string): Promise<void> {
   await db.prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)').bind(
     email,
@@ -111,6 +131,95 @@ test("demoteOwnerIfNotLast's guarded update behaves per the store contract with 
     .bind('pres@showcase.test')
     .first<{ role: string }>();
   expect(stillCommodore?.role).toBe('commodore');
+});
+
+test("deleteEditor's generalized delete removes a non-owner row unconditionally", async () => {
+  const db = createFakeAuthDb();
+  const ownerRoles = ['owner'];
+
+  const res = await db
+    .prepare(generalizedDeleteSql(ownerRoles))
+    .bind('writer@showcase.test', ...ownerRoles, ...ownerRoles)
+    .run();
+
+  expect(res.meta.changes).toBe(1);
+  const row = await db.prepare(FIND_EDITOR).bind('writer@showcase.test').first();
+  expect(row).toBeNull();
+});
+
+test("deleteEditor's generalized delete refuses the sole owner-level row, then classifies it last-owner", async () => {
+  const db = createFakeAuthDb();
+  const ownerRoles = ['owner'];
+
+  const res = await db
+    .prepare(generalizedDeleteSql(ownerRoles))
+    .bind('editor@showcase.test', ...ownerRoles, ...ownerRoles)
+    .run();
+
+  expect(res.meta.changes).toBe(0);
+  const stillThere = await db.prepare(CLASSIFY_STILL_THERE).bind('editor@showcase.test').first();
+  expect(stillThere).not.toBeNull();
+});
+
+test("deleteEditor's generalized delete on an absent email classifies not-found", async () => {
+  const db = createFakeAuthDb();
+  const ownerRoles = ['owner'];
+
+  const res = await db
+    .prepare(generalizedDeleteSql(ownerRoles))
+    .bind('nobody@showcase.test', ...ownerRoles, ...ownerRoles)
+    .run();
+
+  expect(res.meta.changes).toBe(0);
+  const stillThere = await db.prepare(CLASSIFY_STILL_THERE).bind('nobody@showcase.test').first();
+  expect(stillThere).toBeNull();
+});
+
+test("setEditorRole's generalized update changes a non-owner row unconditionally", async () => {
+  const db = createFakeAuthDb();
+  const ownerRoles = ['owner'];
+
+  const res = await db
+    .prepare(generalizedUpdateSql(ownerRoles))
+    .bind('owner', 'writer@showcase.test', ...ownerRoles, 1, ...ownerRoles)
+    .run();
+
+  expect(res.meta.changes).toBe(1);
+  const row = await db.prepare(FIND_EDITOR).bind('writer@showcase.test').first<{ role: string }>();
+  expect(row?.role).toBe('owner');
+});
+
+test("setEditorRole's generalized update refuses a last-owner demotion, then classifies it still owner-eligible", async () => {
+  const db = createFakeAuthDb();
+  const ownerRoles = ['owner'];
+
+  const res = await db
+    .prepare(generalizedUpdateSql(ownerRoles))
+    .bind('editor', 'editor@showcase.test', ...ownerRoles, 0, ...ownerRoles)
+    .run();
+
+  expect(res.meta.changes).toBe(0);
+  const stillEligible = await db
+    .prepare(classifyStillEligibleSql(ownerRoles))
+    .bind('editor@showcase.test', ...ownerRoles)
+    .first();
+  expect(stillEligible).not.toBeNull();
+});
+
+test("setEditorRole's generalized update allows a same-capability role change even as sole owner (the flag escape)", async () => {
+  const db = createFakeAuthDb();
+  const ownerRoles = ['owner', 'commodore'];
+
+  // editor@showcase.test is the sole owner-level row; 'commodore' is itself owner-capability, so
+  // the flag (bound 1) must let the write through despite the count being 1.
+  const res = await db
+    .prepare(generalizedUpdateSql(ownerRoles))
+    .bind('commodore', 'editor@showcase.test', ...ownerRoles, 1, ...ownerRoles)
+    .run();
+
+  expect(res.meta.changes).toBe(1);
+  const row = await db.prepare(FIND_EDITOR).bind('editor@showcase.test').first<{ role: string }>();
+  expect(row?.role).toBe('commodore');
 });
 
 test('the plain setEditorRole and deleteEditor matchers still work alongside the guarded shapes', async () => {

@@ -90,7 +90,7 @@ Reach for [`@glw907/cairn-cms/admin-toolkit`](../reference/admin-toolkit.md) bef
 list, a table, or a form field. It's general-purpose scaffolding, not a bespoke page: `PageHeader`
 for the title band, `OfficeList` or `AdminTable` for the triage table, `ListToolbar` for search and
 filters, `Pagination`, `StatusChip` for a status pill, `EmptyState` for the zero-rows case, and
-`FieldLabel`/`FieldRow` for form controls. Every one of these primitives
+`FieldLabel` for a form control's label. Every one of these primitives
 ships pre-compiled inside cairn's own admin stylesheet, so it renders correctly with no Tailwind
 setup of your own; your route's own markup outside these components compiles through your site's
 usual build and can use anything your stack supports.

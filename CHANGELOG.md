@@ -211,6 +211,30 @@
   the component the full action vocabulary it posts to. A site that hand-mounts any other admin
   view is unaffected, `uploadAction` and `mediaLibraryLoad` included.
 
+- The retires pass (batch 1a) closes nineteen ratified any-site-audit retire verdicts across the
+  `audit-adapter` and `audit-admin` families (`docs/internal/engine-rulings.md`), each an export
+  the audit found zero consumers for anywhere in the engine, showcase, or docs. `TextInput`,
+  `SelectInput`, and `FieldRow` are deleted outright from `/admin-toolkit`: all three composed
+  `FieldLabel` plus a bare control, and that composition is now the documented hand-roll (the
+  bottom-aligned field row recipe `FieldRow` shipped, `display: flex; align-items: flex-end;
+  gap: var(--cairn-gap-control, 0.5rem)`, is unchanged, just no longer a component).
+  `ageFromBirthdate`, `formatMoney`/`FormatMoneyOptions`, and `formatPhone`/`FormatPhoneOptions`
+  are deleted outright from `admin-toolkit/format.ts`: none had a call site anywhere. `roleHome`
+  and `StandardSchemaV1` unexport from the root barrel but stay reachable at their own module
+  (`auth/roles.ts`, `content/standard-schema.ts`) for the engine's own internal use.
+  `AppliedFilterPill`, `computeAppliedFilters`, `computeCountLine`, `ItemRange`, `computeItemRange`,
+  `PageWindowItem`, `computePageWindow`, and `itemNoun` all unexport from the `/admin-toolkit`
+  barrel and their owning component's own module context, but stay exported from their source
+  module (`list-toolbar.ts`, `pagination-window.ts`, `format.ts`), since `ListToolbar` and
+  `Pagination` still compute and render this arithmetic internally. **Consumers must:** stop
+  importing `roleHome`, `StandardSchemaV1`, `TextInput`, `SelectInput`, `FieldRow`,
+  `ageFromBirthdate`, `formatMoney`, `FormatMoneyOptions`, `formatPhone`, `FormatPhoneOptions`,
+  `itemNoun`, `AppliedFilterPill`, `computeAppliedFilters`, `computeCountLine`, `ItemRange`,
+  `computeItemRange`, `PageWindowItem`, or `computePageWindow` from `@glw907/cairn-cms` or
+  `@glw907/cairn-cms/admin-toolkit`; none has a replacement export, and a site that needs the
+  `TextInput`/`SelectInput`/`FieldRow` composition or the pagination/toolbar arithmetic hand-rolls
+  it directly against `FieldLabel` and the two components' own documented behavior.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass
@@ -1015,7 +1039,7 @@
 
 - Vertical alignment is now an engine-owned mechanic on the admin surface, off a measured
   inventory of every admin screen at three widths in both themes. Three recipes land: a new
-  [`FieldRow`](docs/reference/admin-toolkit.md#fieldrow) export on `/admin-toolkit` that levels a
+  `FieldRow` export on `/admin-toolkit` (retired in the retires pass, batch 1a) that levels a
   row mixing a stacked field with a bare control on their bottom edges, and two new classes in the
   shipped admin sheet, `cairn-icon-label` (a glyph-plus-word label that reports its own text
   baseline, so a row declaring `items-baseline` levels the word rather than the icon) and

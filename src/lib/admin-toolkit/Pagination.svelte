@@ -15,17 +15,12 @@ routes load only the precompiled bundle and an unverified Tailwind utility strin
 it there.
 
 A page count beyond a handful windows down to first, last, and a run around the current page
-(`computePageWindow`, exported from this file's module context, re-exporting the pure
-`pagination-window.ts` module so the windowing logic is unit tested without mounting the
-component); a single page renders no nav at all, only the range line (and the page-size select,
-if given) if one applies.
+(`computePageWindow`, imported from the pure `pagination-window.ts` module so the windowing logic
+is unit tested without mounting the component); a single page renders no nav at all, only the range
+line (and the page-size select, if given) if one applies.
 -->
 <script module lang="ts">
   import { computeItemRange, computePageWindow } from './pagination-window.js';
-  import type { ItemRange, PageWindowItem } from './pagination-window.js';
-
-  export { computeItemRange, computePageWindow };
-  export type { ItemRange, PageWindowItem };
 </script>
 
 <script lang="ts">

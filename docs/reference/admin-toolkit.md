@@ -2,18 +2,18 @@
 
 General-purpose primitives a site building its own `/admin/` screen, and cairn's own admin
 screens, reach for instead of a bespoke parallel. Two tiers share this one charter. The **field**
-primitives (`FieldLabel`, `FieldRow`, `TextInput`, `SelectInput`) render one labeled control in
-the admin's label and control rhythm; they merged here from the retired `admin-fields` subpath
-(CHANGELOG `0.94.0`), since two subpaths stating the same charter is one subpath. The
-**screen-scaffold** primitives (`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`,
-`ToolbarDisclosure`, `Pagination`, `StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus
-the formatters compose a whole screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
+primitive (`FieldLabel`) renders one labeled control's wrapping label in the admin's label
+rhythm; it merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`), since two
+subpaths stating the same charter is one subpath. The **screen-scaffold** primitives
+(`PageHeader`, `OfficeList`, `AdminTable`, `ListToolbar`, `ToolbarDisclosure`, `Pagination`,
+`StatusChip`, `EmptyState`, `ExpandableRow`, `MediaPicker`) plus the formatters compose a whole
+screen's chrome. Both tiers carry no domain knowledge from the sites they were first built for:
 every contract here is general-purpose across sites. A component that renders one of cairn's own
 content concepts (a `ConceptList` row, an `EditPage` field) lives on `/components` instead, even
 though it also renders inside the admin theme.
 
 ```ts
-import { formatMoney, formatCivilDate, formatTimestamp, ageFromBirthdate } from '@glw907/cairn-cms/admin-toolkit';
+import { formatCivilDate, formatTimestamp } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 The TypeScript types in `src/lib/admin-toolkit` are the source of truth, and the
@@ -34,31 +34,14 @@ Pure formatter functions: no daisyUI assembly, no markup, no CSS. Every formatte
 locale (and, for `formatTimestamp`, its time zone) as an option with a neutral default, so a
 second consumer in another locale or zone is a parameter, not a fork.
 
-Every display formatter in this file, `formatMoney`, `formatCivilDate`, `formatTimestamp`, and
-`formatPhone`, accepts a nullish input and takes a `fallback?: string` option that defaults to
-`''`. This is a standing rule, not a per-formatter choice. A screen often renders a field that
-isn't set yet, a member's phone, a ledger row before it posts, a date the editor hasn't
-published, and the caller shouldn't have to remember which formatter tolerates nullish input and
-which one throws, or carry a per-formatter opinion about what absence looks like. A site that
-wants its own text for absence, such as Not yet or TBD, passes `fallback` explicitly, and a
-future display formatter added to this file follows the same shape. `ageFromBirthdate` isn't a
-display formatter, since it returns a number rather than a string, so it sits outside this rule;
-see its own entry below.
-
-### `formatMoney`
-
-Stability tier: Extension API.
-
-```ts
-declare function formatMoney(cents: number | null | undefined, options?: FormatMoneyOptions): string;
-```
-
-Format signed integer cents (a ledger's `amount_total_cents`/`amount_cents` shape) as a
-currency string with thousands separators. For example, `formatMoney(30044)` reads
-`"$300.44"` rather than the raw-cents artifact `"$30044"`. Negative cents (a refund or a
-credit) render with a leading minus sign. A nullish `cents` reads `options.fallback`.
-`options.currency` defaults `'USD'`; `options.locale` defaults `'en-US'`; `options.fallback`
-defaults `''`.
+Both display formatters in this file, `formatCivilDate` and `formatTimestamp`, accept a nullish
+input and take a `fallback?: string` option that defaults to `''`. This is a standing rule, not a
+per-formatter choice. A screen often renders a field that isn't set yet, a ledger row before it
+posts, a date the editor hasn't published, and the caller shouldn't have to remember which
+formatter tolerates nullish input and which one throws, or carry a per-formatter opinion about
+what absence looks like. A site that wants its own text for absence, such as Not yet or TBD,
+passes `fallback` explicitly, and a future display formatter added to this file follows the same
+shape.
 
 ### `formatCivilDate`
 
@@ -94,69 +77,31 @@ own runtime already reads in, never a site's own zone; a site that wants its own
 club's Anchorage, say) passes `timeZone` explicitly. `options.locale` defaults `'en-US'`;
 `options.fallback` defaults `''`.
 
-### `ageFromBirthdate`
-
-Stability tier: Extension API.
-
-```ts
-declare function ageFromBirthdate(birthdateIso: string | null | undefined, asOf?: Date): number | null;
-```
-
-Derive a whole-years age from an ISO birthdate, as of `asOf` (defaults to now; pass a fixed
-date for deterministic call sites). Turns over on the birthday itself rather than the day
-after, and reads `null` for a missing or unparseable birthdate so a caller renders its own "age
-unknown" copy instead of a formatter guessing at it. This is not a display formatter (it
-returns a number, not a string), so it carries no `fallback` string option; the nullish rule
-above does not apply to it.
-
-### `formatPhone`
-
-Stability tier: Extension API.
-
-```ts
-declare function formatPhone(phone: string | null | undefined, options?: FormatPhoneOptions): string;
-```
-
-Format a stored E.164 NANP phone number for a table cell: `+19075550100` becomes the
-hyphenated `907-555-0100`, no leading `+1`. A value outside the NANP `+1` shape (a non-US
-country code, or anything that fails to parse) passes through unchanged; a table cell has no
-reason to reformat what it cannot parse. A nullish `phone` reads `options.fallback`, which
-defaults `''`.
-
-### `itemNoun`
-
-Stability tier: Extension API.
-
-```ts
-declare function itemNoun(count: number, label: string | ItemLabel): string;
-```
-
-Pick the grammatical number for a count surface: `label.one` at exactly 1, `label.many`
-otherwise, zero included (for example `"0 households"`). `label` also accepts a plain string,
-which is invariant across every count, the original `Pagination`/`ListToolbar` contract's
-behavior unchanged for a caller that hasn't opted into grammatical number. `Pagination`'s range
-line and `ListToolbar`'s count line both route their own `itemLabel` prop through this, so the
-"1 households" defect class has a single fix point.
+`Pagination`'s range line and `ListToolbar`'s count line both pick the grammatical number for
+their own `itemLabel` prop internally (`label.one` at exactly 1, `label.many` otherwise, zero
+included, for example `"0 households"`; a plain string reads back invariant across every count),
+so the "1 households" defect class has a single fix point (`itemNoun`, retired from this
+subpath's barrel in the retires pass, batch 1a: zero consumers independent of `Pagination` or
+`ListToolbar`).
 
 ---
 
 ## Fields
 
-The field primitives a site's own custom `/admin/` screen composes, such as an events or members
-editor. They render with the admin's own label and control rhythm, matching the built-in content
-editor's fields. Merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`): the set
-is small today, `TextInput`, `SelectInput`, `FieldLabel`, and `FieldRow`; new field types
-land as new consumers need them.
+The field primitive a site's own custom `/admin/` screen composes, such as an events or members
+editor. It renders with the admin's own label rhythm, matching the built-in content editor's
+fields. Merged here from the retired `admin-fields` subpath (CHANGELOG `0.94.0`). `TextInput`,
+`SelectInput`, and `FieldRow` shipped alongside it as of `0.94.0` and retired from this subpath
+(the retires pass, batch 1a: zero consumers anywhere in the engine, showcase, or docs); their
+worked examples below now hand-roll the same markup directly.
 
 ```ts
-import { TextInput, SelectInput, FieldLabel, FieldRow } from '@glw907/cairn-cms/admin-toolkit';
-import type { SelectInputOption } from '@glw907/cairn-cms/admin-toolkit';
+import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
-`FieldLabel`, and the `TextInput`/`SelectInput` primitives that wrap it, render one of two label
-registers, chosen with the `register` prop: `'inline'` or `'stacked'`. These are two of the three
-label registers the admin design system distinguishes. The third, the group legend, is a
-`<legend>` rather than this component.
+`FieldLabel` renders one of two label registers, chosen with the `register` prop: `'inline'` or
+`'stacked'`. These are two of the three label registers the admin design system distinguishes.
+The third, the group legend, is a `<legend>` rather than this component.
 
 **`register="stacked"`** is the default. It puts the label on its own line preceding the control.
 Use it for any field inside a multi-column form grid: a stacked label never competes with its own
@@ -164,72 +109,6 @@ control for a shared row's width, so it never wraps at a width an inline label w
 **`register="inline"`** puts the label beside its control on one line, muted, for a genuinely
 control-adjacent composition, such as a toolbar filter or a compact panel where a group legend
 already scopes the control enough that a full stacked label would be excess.
-
-### `TextInput`
-
-Stability tier: Extension API.
-
-```ts
-let { label, name, value = $bindable(), type = 'text', placeholder, register }: {
-  label: string;
-  name: string;
-  value: string;
-  type?: 'text' | 'search' | 'email' | 'url';
-  placeholder?: string;
-  register?: 'inline' | 'stacked';
-};
-```
-
-One labeled single-line text input in the admin idiom. It's DaisyUI v5's default-bordered
-`input`, with no `-bordered` modifier. `type` narrows the native input type to `search`, `email`,
-or `url`; it defaults to a plain text input. `register` picks the label register described above,
-defaulting to `'stacked'`. Named `TextInput`, not `TextField`, because the root barrel's field
-*descriptor* arm already owns that name (`fields.text`'s return shape); this component wraps a
-real `<input>` element, so `Input` is the honest noun for the rendered control.
-
-```svelte
-<script lang="ts">
-  import { TextInput } from '@glw907/cairn-cms/admin-toolkit';
-
-  let query = $state('');
-</script>
-
-<TextInput label="Search" name="q" type="search" bind:value={query} />
-```
-
-### `SelectInput`
-
-Stability tier: Extension API.
-
-```ts
-let { label, name, value = $bindable(), options, register }: {
-  label: string;
-  name: string;
-  value: string;
-  options: SelectInputOption[];
-  register?: 'inline' | 'stacked';
-};
-```
-
-One labeled select in the same admin idiom as `TextInput`. It's DaisyUI v5's default-bordered
-`select`, with no `-bordered` modifier. `label` renders to the side of the control (inline) or
-preceding it (stacked). `name` is the native form-field name, so the select posts inside an
-ordinary form submit. `value` is bindable. `options` is the option list in display order.
-`register` picks the label register described above, defaulting to `'stacked'`. Named
-`SelectInput`, not `SelectField`, for the same reason `TextInput` isn't `TextField`.
-
-```svelte
-<script lang="ts">
-  import { SelectInput } from '@glw907/cairn-cms/admin-toolkit';
-
-  let status = $state('open');
-</script>
-
-<SelectInput label="Status" name="status" bind:value={status} options={[
-  { value: 'open', label: 'Open' },
-  { value: 'closed', label: 'Closed' },
-]} />
-```
 
 ### `FieldLabel`
 
@@ -243,9 +122,8 @@ let { label, children, register }: {
 };
 ```
 
-The label wrapper `TextInput` and `SelectInput` both compose internally. Compose it directly
-around a bare custom control (an admin field this subpath does not yet cover) to keep the same
-label rhythm. `register` picks the label register. `'stacked'` is the default:
+The label wrapper for a bare custom control (an admin field this subpath does not carry a named
+primitive for). `register` picks the label register. `'stacked'` is the default:
 the label sits on its own line preceding the control, which fills to its container. `'inline'`
 puts the label beside the control on one line instead, muted, for a genuinely control-adjacent
 composition. A control that's a direct child of a stacked `FieldLabel` fills the label's own
@@ -269,37 +147,30 @@ own `<label>` (visually hidden if the row's own layout already reads clearly) or
 </FieldLabel>
 ```
 
-### `FieldRow`
-
-Stability tier: Extension API.
-
-```ts
-let { children }: {
-  children: Snippet;
-};
-```
-
-One flex row that levels its children on their bottom edges. Use it for a row that mixes a
-stacked field with a bare control, such as a button or a checkbox that carries no label of its
-own: the labelled child stands a whole label taller than the bare one, and only their controls
-belong on one line. `FieldRow` lines those controls up. For children of equal height it changes
-nothing, so a row doesn't have to know which case it has.
-
-One composition it gets wrong: a field that renders an error line or a hint *below* its control
-no longer ends at that control, so the row levels the trailing line against the bare control
-instead. No field in this subpath renders one, so compose such a row yourself.
+**The bottom-aligned field row recipe.** A row mixing a stacked field with a bare control, such
+as a button or a checkbox that carries no label of its own, wants its children levelled on their
+bottom edges: the labelled child stands a whole label taller than the bare one, and only their
+controls belong on one line. Hand-roll it directly (`display: flex; align-items: flex-end;
+gap: var(--cairn-gap-control, 0.5rem)`, the same three declarations the retired `FieldRow`
+component shipped in its own scoped `<style>`); the literal `0.5rem` fallback keeps the row a row
+even outside the admin theme root, where `--cairn-gap-control` is undefined. For children of
+equal height it changes nothing, so a row doesn't have to know which case it has. One composition
+it gets wrong: a field that renders an error line or a hint *below* its control no longer ends at
+that control, so the row levels the trailing line against the bare control instead.
 
 ```svelte
 <script lang="ts">
-  import { FieldRow, TextInput } from '@glw907/cairn-cms/admin-toolkit';
+  import { FieldLabel } from '@glw907/cairn-cms/admin-toolkit';
 
   let instructor = $state('');
 </script>
 
-<FieldRow>
-  <TextInput label="Instructor" name="instructor" bind:value={instructor} />
+<div style="display: flex; align-items: flex-end; gap: var(--cairn-gap-control, 0.5rem);">
+  <FieldLabel label="Instructor">
+    <input class="input input-sm" name="instructor" bind:value={instructor} />
+  </FieldLabel>
   <button type="button" class="btn btn-sm">Add</button>
-</FieldRow>
+</div>
 ```
 
 ---
@@ -414,9 +285,9 @@ gets a working pager. `itemLabel` defaults `'items'` and accepts a plain string 
 every total, the original contract unchanged) or an `{ one, many }` pair, picked by grammatical
 number through `itemNoun` -- so `totalItems={1}` with `itemLabel={{ one: 'household', many:
 'households' }}` reads `"1 household"`, never `"1 households"`. A page count of 7 or fewer renders every
-page button; beyond that, `computePageWindow` (below) reduces the control to first, last, and a
-run around the current page with `'ellipsis'` gap markers. A single page renders no nav at all,
-only the range line (and the page-size select, if given) if one applies.
+page button; beyond that, the component's own internal windowing math reduces the control to
+first, last, and a run around the current page with `'ellipsis'` gap markers. A single page
+renders no nav at all, only the range line (and the page-size select, if given) if one applies.
 
 The range line carries `role="status"` (`aria-live="polite"`, `aria-atomic="true"`), so a page or
 page-size change announces the new range to assistive technology even though nothing moves focus.
@@ -564,8 +435,8 @@ together, the native radio-button keyboard model. The checked option also carrie
 `aria-hidden` check glyph beside its label, the non-color selected cue WCAG 1.4.1 calls for. The
 search box wraps in a `label.input` with a leading search icon.
 
-The module context exports two functions, independently unit tested the same way `Pagination`'s
-`computePageWindow`/`computeItemRange` are:
+The component's own internal filter arithmetic, unit tested the same way `Pagination`'s internal
+windowing math is:
 
 - `computeAppliedFilters(filters)` returns every filter away from its own `defaultValue`, as a
   pill `{ id, label }` where `label` reads from the matching option's own label, falling back to
@@ -577,9 +448,10 @@ The module context exports two functions, independently unit tested the same way
   accepts a plain string or an `{ one, many }` pair, routed through `itemNoun`, so
   `computeCountLine(1, { one: 'household', many: 'households' }, [])` reads `"1 household"`.
 
-`computeAppliedFilters` feeds the count line's own scope labels only; there is no separate
-applied-pills row. An applied filter shows its own value in-control instead, on the
-`'menu'`-display facet documented earlier in this entry.
+Neither publishes from this subpath's barrel (the retires pass, batch 1a: zero consumers reached
+either independently of `ListToolbar` itself). `computeAppliedFilters` feeds the count line's own
+scope labels only; there is no separate applied-pills row. An applied filter shows its own value
+in-control instead, on the `'menu'`-display facet documented earlier in this entry.
 
 The count line carries `role="status"` (`aria-live="polite"`, `aria-atomic="true"`), so a search
 or filter change announces the new scope to assistive technology even though nothing moves focus.
@@ -994,27 +866,16 @@ which render only once the library holds more than one top-level content type.
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| `FormatMoneyOptions` | Extension API | `interface FormatMoneyOptions { currency?: string; locale?: string; fallback?: string }` | `formatMoney`'s options: the ISO 4217 currency code, BCP 47 locale tag, and the nullish-input fallback string (defaults `''`). |
 | `FormatCivilDateOptions` | Extension API | `interface FormatCivilDateOptions { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }` | `formatCivilDate`'s options: the nullish-or-empty-input fallback string (defaults `''`), locale, and the `Intl.DateTimeFormat` options passthrough. |
 | `FormatTimestampOptions` | Extension API | `interface FormatTimestampOptions { timeZone?: string; locale?: string; fallback?: string }` | `formatTimestamp`'s options: the IANA time zone, BCP 47 locale tag, and the nullish-input fallback string (defaults `''`). |
-| `FormatPhoneOptions` | Extension API | `interface FormatPhoneOptions { fallback?: string }` | `formatPhone`'s options: the nullish-input fallback string (defaults `''`). |
 | `StatusChipSize` | Extension API | `type StatusChipSize = 'xs' \| 'sm'` | `StatusChip`'s two named sizes, matching AdminTable's own density tier names. |
 | `StatusChipRegister` | Extension API | `type StatusChipRegister = 'quiet' \| 'warning' \| 'outline'` | `StatusChip`'s three ratified visual registers (second generation): `'quiet'`, a token-tinted ground with no border for a settled state that should recede; `'warning'`, the same tinted-ground shape for a state needing attention; and `'outline'`, a demoted-hairline border for a transient or reversible absence. |
-| `PageWindowItem` | Extension API | `type PageWindowItem = number \| 'ellipsis'` | One entry in `Pagination`'s windowed page list: a real page number, or a gap marker between two runs. |
-| `ItemRange` | Extension API | `interface ItemRange { first: number; last: number; total: number }` | The inclusive item range a page covers (`computeItemRange`'s return shape), plus the total it is drawn from. |
-| `computePageWindow` | Extension API | `declare function computePageWindow(page: number, pageCount: number): PageWindowItem[]` | Reduces `1..pageCount` to a bounded set of page buttons, windowing to first, last, and a run around `page` once `pageCount` exceeds 7. Returns `[]` for `pageCount <= 0`. |
-| `computeItemRange` | Extension API | `declare function computeItemRange(page: number, pageSize: number, totalItems: number): ItemRange \| null` | The inclusive 1-based item range `page` covers at `pageSize`, clamped to `totalItems`. Returns `null` for a non-positive `pageSize`/`totalItems`, or a `page` past the last item. |
 | `AdminTableDensity` | Extension API | `type AdminTableDensity = 'xs' \| 'sm'` | `AdminTable`'s two named density tiers, matching `StatusChip`'s own size vocabulary. |
 | `ListToolbarFilterOption` | Extension API | `interface ListToolbarFilterOption { value: string; label: string; count?: number }` | One option in a `ListToolbarFilter`'s own vocabulary. `count` is an optional per-option match count for the segmented display. |
 | `ListToolbarFilter` | Extension API | `interface ListToolbarFilter { id: string; label: string; options: ListToolbarFilterOption[]; value: string; onChange: (value: string) => void; defaultValue?: string; promoted?: boolean; display?: 'select' \| 'segmented' }` | One filter control, fully controlled by the caller. |
 | `ListToolbarAction` | Extension API | `interface ListToolbarAction { label: string; onClick: () => void }` | The toolbar's one right-aligned primary action. |
-| `AppliedFilterPill` | Extension API | `interface AppliedFilterPill { id: string; label: string }` | One rendered applied-filter pill, `computeAppliedFilters`'s return shape. |
-| `computeAppliedFilters` | Extension API | `declare function computeAppliedFilters(filters: ListToolbarFilter[]): AppliedFilterPill[]` | Every filter away from its own default value, as a pill. |
-| `computeCountLine` | Extension API | `declare function computeCountLine(count: number, itemLabel: string \| ItemLabel, appliedLabels: string[]): string` | The count line's own copy pattern: `"<count> <itemLabel>"`, followed by every applied-filter label joined with a middle dot. |
 | `EmptyStateHeadingLevel` | Extension API | `type EmptyStateHeadingLevel = 'p' \| 'h1' \| 'h2' \| 'h3'` | `EmptyState`'s `headingLevel` prop vocabulary: the heading's own element, defaulting to `'p'`. |
-| `ItemLabel` | Extension API | `interface ItemLabel { one: string; many: string }` | A count-line noun in both grammatical numbers, for `Pagination`'s and `ListToolbar`'s `itemLabel` prop and `computeCountLine`'s own parameter. |
-| `itemNoun` | Extension API | `declare function itemNoun(count: number, label: string \| ItemLabel): string` | Picks the grammatical number for a count surface: `label.one` at exactly 1, `label.many` otherwise. A plain string `label` is invariant across every count. |
-| `SelectInputOption` | Extension API | `interface SelectInputOption { value: string; label: string }` | One `SelectInput` option: the submitted value and its visible text. |
+| `ItemLabel` | Extension API | `interface ItemLabel { one: string; many: string }` | A count-line noun in both grammatical numbers, for `Pagination`'s and `ListToolbar`'s `itemLabel` prop. |
 | <a id="medialibraryentry"></a>`MediaLibraryEntry` | Extension API | `interface MediaLibraryEntry { hash: string; slug: string; ext: string; contentType: string; displayName: string; alt: string; width: number \| null; height: number \| null; bytes: number; createdAt: string }` | One committed asset's display facts, the row shape `MediaLibraryData.assets` carries and `MediaPicker`'s `entries` prop takes. This subpath is its canonical home, beside the component whose prop signature names it; `/sveltekit` re-exports the same type so a route-factory importer can name a member of the data it already holds. |
 | `MediaSelection` | Extension API | `interface MediaSelection { entry: MediaLibraryEntry; ref: string; alt: string }` | What `MediaPicker` hands its `onselect` prop: the chosen entry, its `media:<slug>.<hash>` reference token, and the asset's manifest alt (empty when the asset has none). |
 | `ToolbarDisclosureAriaHaspopup` | Extension API | `type ToolbarDisclosureAriaHaspopup = 'menu' \| 'listbox' \| 'dialog' \| 'grid' \| 'tree' \| 'true'` | `ToolbarDisclosure`'s `ariaHaspopup` prop vocabulary, forwarded onto the trigger's own `aria-haspopup` unchanged. |

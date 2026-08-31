@@ -8,7 +8,6 @@ import type {
   NamedField,
   ImageValue,
   StandardInput,
-  StandardSchemaV1,
 } from '../../lib/index.js';
 import type { BehaviorTable, FieldBehavior } from '../../lib/content/fieldset.js';
 import type {
@@ -70,7 +69,6 @@ describe('v2 field vocabulary package exports', () => {
     expectTypeOf<NamedField>().toMatchTypeOf<{ name: string }>();
     expectTypeOf<ImageValue>().toMatchTypeOf<{ src: string }>();
     expectTypeOf<StandardInput>().toMatchTypeOf<{ body: string }>();
-    expectTypeOf<StandardSchemaV1>().toMatchTypeOf<{ '~standard': unknown }>();
   });
 
   it('no longer exports the retired v1 surface', () => {

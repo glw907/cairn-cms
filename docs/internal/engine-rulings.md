@@ -268,9 +268,9 @@ when the remediation pass lands.
 ## audit-adapter-standardschemav1: `StandardSchemaV1`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Conformance is structural, so a Fieldset already satisfies Standard-Schema-aware libraries; a consumer needing the interface takes it from @standard-schema/spec, not from cairn's vendored copy.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the root barrel; stays exported from `content/standard-schema.ts`, since `content/fieldset.ts` still names it internally.
 - **Shape:** Unexport from '.'; keep internal. Its own StandardResult member is already unexported, so the rule never closed over it anyway.
-- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 1.
+- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
 
 ## audit-adapter-default-roles: `DEFAULT_ROLES`  (keep, 2026-08-26, any-site audit)
@@ -415,8 +415,8 @@ when the remediation pass lands.
 ## audit-adapter-rolehome: `roleHome`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Decisive reason is false: ('owner').home is undefined in JS, not a crash. roles.ts:94-102 is one ternary, and content-routes-core.ts:721-735 shows roleHome is only the first of three branches in the landing policy, so a site copying it gets no policy. Zero importers; same class as DEFAULT_ROLES.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 21.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the root barrel (`src/lib/index.ts`); `roleHome` stays exported from `auth/roles.ts`, since `content-routes-core.ts` still calls it internally for the `/admin` landing policy.
+- **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 21; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md) (verdict overturned there).
 
 ## audit-adapter-backendcommit: `BackendCommit`  (keep, 2026-08-26, any-site audit)
@@ -2062,36 +2062,36 @@ when the remediation pass lands.
 ## audit-admin-formatphone: `formatPhone`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. A markdown CMS stores no phone numbers; the body is one NANP regex plus a template string, with zero consumers anywhere in engine, showcase, or docs.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 1.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted from `admin-toolkit/format.ts` and the `/admin-toolkit` barrel; zero remaining callers anywhere in `src/lib`.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 1; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formatphoneoptions: `FormatPhoneOptions`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of formatPhone. A one-optional-string interface on the public surface.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 2.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted alongside `formatPhone`, its only reference.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 2; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-agefrombirthdate: `ageFromBirthdate`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. cairn has no birthdates; rosters and waivers are site domain. Eight lines, zero consumers, and the reference page must except it from its own file's charter.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 3.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted from `admin-toolkit/format.ts` and the `/admin-toolkit` barrel; zero remaining callers anywhere in `src/lib`.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 3; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formatmoney: `formatMoney`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. cairn takes no payments; the body is one Intl.NumberFormat over cents/100. Zero consumers.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 4.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted from `admin-toolkit/format.ts` and the `/admin-toolkit` barrel; zero remaining callers anywhere in `src/lib`.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 4; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-formatmoneyoptions: `FormatMoneyOptions`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of formatMoney.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 5.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted alongside `formatMoney`, its only reference.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 5; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-status-chip-dot-class: `STATUS_CHIP_DOT_CLASS`  (retire, 2026-08-26, any-site audit)
@@ -2104,57 +2104,57 @@ when the remediation pass lands.
 ## audit-admin-fieldrow: `FieldRow`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Three CSS declarations, and the component's own header states 'No measured defect drove this component' after the 2026-08 alignment inventory found nothing to fix.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 7.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: `FieldRow.svelte` deleted (zero consumers anywhere in the engine); its bottom-aligned-row recipe (`display: flex; align-items: flex-end; gap: var(--cairn-gap-control, 0.5rem)`) is now documented as a hand-roll rather than a shipped component.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 7; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-computecountline: `computeCountLine`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. ListToolbar already renders the line; a site designing its own toolbar designs its own copy. Sibling computeFacetLabel in the same module is deliberately unexported.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 8.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `ListToolbar.svelte`'s own module context; stays exported from `list-toolbar.ts`, since `ListToolbar.svelte` still calls it internally to render the count line.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 8; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-computeappliedfilters: `computeAppliedFilters`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Its input type ListToolbarFilter[] exists only to feed ListToolbar, so a site not mounting the toolbar has nothing to pass it.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 9.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `ListToolbar.svelte`'s own module context; stays exported from `list-toolbar.ts`, since `ListToolbar.svelte` still calls it internally for the count line's scope labels.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 9; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-appliedfilterpill: `AppliedFilterPill`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of computeAppliedFilters. Appears in no component's prop signature.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 10.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `ListToolbar.svelte`'s own module context; stays exported from `list-toolbar.ts`, since it is `computeAppliedFilters`'s own return type.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 10; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-computeitemrange: `computeItemRange`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. Arithmetic Pagination already renders for anyone mounting it.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 11.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `Pagination.svelte`'s own module context; stays exported from `pagination-window.ts`, since `Pagination.svelte` still calls it internally for the range line.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 11; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-itemrange: `ItemRange`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of computeItemRange; absent from every component's props.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 12.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `Pagination.svelte`'s own module context; stays exported from `pagination-window.ts`, since it is `computeItemRange`'s own return type.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 12; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-computepagewindow: `computePageWindow`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Plausible but unmeasured: a site rendering its own pager chrome wanting cairn's exact elision. No site has asked or hand-rolled it, and cairn ships the component.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 13.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `Pagination.svelte`'s own module context; stays exported from `pagination-window.ts`, since `Pagination.svelte` still calls it internally for the page-button window.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 13; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-pagewindowitem: `PageWindowItem`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None independent of computePageWindow; absent from every component's props.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 14.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel and `Pagination.svelte`'s own module context; stays exported from `pagination-window.ts`, since it is `computePageWindow`'s own return type.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 14; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-welcomeview: `WelcomeView`  (keep, 2026-08-26, any-site audit)
@@ -2219,22 +2219,22 @@ when the remediation pass lands.
 ## audit-admin-selectinputoption: `SelectInputOption`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. retires with SelectInput; names only its options prop
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 23; conductor adjudication over recorded dissent, see the audit record.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: deleted alongside `SelectInput.svelte`, the module that declared it.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 23; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-selectinput: `SelectInput`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. restored pass-1 overturn: .select-sm ships in the packaged sheet whose class inventory is a de facto public API (admin-css-safelist.ts:104); pass-2 keep rested on family adoption, insufficient under constraint 2
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 24; conductor adjudication over recorded dissent, see the audit record.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: `SelectInput.svelte` deleted (zero consumers anywhere in the engine); its `FieldLabel`-plus-`<select>` composition is now hand-rolled by any test or doc example that needs it.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 24; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md).
 
 ## audit-admin-textinput: `TextInput`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. conflict adjudicated retire over reshape: same shipped-sheet ground as SelectInput; the xcathletes type-union defect (2026-08-21 harvest:21) is recorded and dies with the export
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 25; conductor adjudication over recorded dissent, see the audit record.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: `TextInput.svelte` deleted (zero consumers anywhere in the engine); its `FieldLabel`-plus-`<input>` composition is now hand-rolled by any test or doc example that needs it.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 25; conductor adjudication over recorded dissent, see the audit record; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md) (verdict overturned there).
 
 ## audit-admin-fieldlabel: `FieldLabel`  (keep, 2026-08-26, any-site audit)
@@ -2362,8 +2362,8 @@ when the remediation pass lands.
 ## audit-admin-itemnoun: `itemNoun`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Contradicts the ranking's own item 8: the same scenario answers computeCountLine retire and itemNoun keep. It is a function, so in no prop signature, the exact line retiring ItemRange and AppliedFilterPill. Body is one ternary, the gate's fail condition.
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 42.
+- **Reopens on:** closed. Executed by the retires pass, batch 1a: unexported from the `/admin-toolkit` barrel; stays exported from `format.ts`, since `Pagination.svelte`, `list-toolbar.ts`, and `ConceptList.svelte` all still call it internally.
+- **Record:** [rank-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/rank-admin-shell-toolkit.md), rank 42; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1a.
 - **Verified:** [verify-admin-shell-toolkit.md](record/2026-08-26-any-site-audit/verify-admin-shell-toolkit.md) (verdict overturned there).
 
 ## audit-admin-formatcivildate: `formatCivilDate`  (keep, 2026-08-26, any-site audit)

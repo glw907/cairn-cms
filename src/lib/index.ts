@@ -17,7 +17,7 @@ export type { Editor, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { CairnEnv } from './env.js';
 // Site-declared role vocabulary (extensible-roles): sites map their own role names onto the three
 // engine capability levels. A zero-config site declares nothing and keeps the owner/editor default.
-export { defineRoles, resolveCapability, roleHome, ownerLevelRoles, DEFAULT_ROLES } from './auth/roles.js';
+export { defineRoles, resolveCapability, ownerLevelRoles, DEFAULT_ROLES } from './auth/roles.js';
 export type { Capability, RoleDeclaration, RolesDeclaration } from './auth/roles.js';
 // The access map (admin access map and attention seams pass): one declaration a site reads twice
 // (the guard and the adapter), and one authority function every enforcement and visibility point
@@ -54,15 +54,13 @@ export { composeRuntime } from './content/compose.js';
 export type { ComposeInput } from './content/compose.js';
 export { parseMarkdown } from './content/frontmatter.js';
 export { defineAdapter } from './content/adapter.js';
-export type { StandardInput, StandardSchemaV1 } from './content/standard-schema.js';
+export type { StandardInput } from './content/standard-schema.js';
 // The Contract v2 field vocabulary: the one live field system.
 export { fields } from './content/fields.js';
 export type { FieldDescriptor } from './content/fields.js';
 // The field-descriptor union's fifteen arms, each named in `FieldDescriptor` and in `fields`'s own
 // per-type builder signature; the export-rule sweep makes every one importable by its own name
-// (C2 breaking-window pass, R4 ruling). `/admin-toolkit`'s form components carry the parallel
-// `TextInput`/`SelectInput`/`SelectInputOption` names, so no subpath exports two different things
-// under one name.
+// (C2 breaking-window pass, R4 ruling).
 export type {
   TextField,
   TextareaField,

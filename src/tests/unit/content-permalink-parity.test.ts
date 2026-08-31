@@ -3,7 +3,7 @@ import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { manifestEntryFromFile } from '../../lib/content/manifest.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 
 describe('permalink parity: content index and manifest agree', () => {
   const [descriptor] = normalizeConcepts({
@@ -12,7 +12,7 @@ describe('permalink parity: content index and manifest agree', () => {
       routing: 'feed',
       permalink: '/posts/:slug',
       datePrefix: 'day',
-      fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+      fields: defineFieldset({ title: fields.text({ label: 'Title' }) }),
     },
   });
   const file = { path: 'p/2026-05-01-hello.md', raw: '---\ntitle: Hello\n---\nbody\n' };

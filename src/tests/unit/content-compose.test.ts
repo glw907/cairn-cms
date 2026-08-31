@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { composeRuntime } from '../../lib/content/compose.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 import { testAdapter, testSiteConfig } from './_content-fixture.js';
-import { siteDescriptors } from '../../lib/delivery/site-descriptors.js';
+import { buildSiteDescriptors } from '../../lib/delivery/site-descriptors.js';
 
 describe('composeRuntime', () => {
   it('folds the adapter into a runtime carrying the normalized concepts and backend', async () => {
@@ -63,7 +63,7 @@ describe('composeRuntime URL policy', () => {
           routing: 'feed',
           permalink: '/:year/:slug',
           datePrefix: 'year',
-          fields: fieldset({ date: fields.date({ label: 'Date' }) }),
+          fields: defineFieldset({ date: fields.date({ label: 'Date' }) }),
         },
       },
     };
@@ -85,6 +85,6 @@ describe('composeRuntime URL policy', () => {
 
   it('derives the same concepts as the delivery path', () => {
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
-    expect(runtime.concepts).toEqual(siteDescriptors(testAdapter, testSiteConfig));
+    expect(runtime.concepts).toEqual(buildSiteDescriptors(testAdapter, testSiteConfig));
   });
 });

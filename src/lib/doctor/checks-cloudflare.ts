@@ -19,7 +19,7 @@ import { fail, pass, skip } from './types.js';
 import type { CheckOutcome, CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { cfGet, cfPost, NO_ACCOUNT, NO_FROM, NO_TOKEN } from './cloudflare-api.js';
 import { readWranglerConfig } from './wrangler-config.js';
-import { DEFAULT_ROLES, ownerLevelRoles } from '../auth/roles.js';
+import { DEFAULT_ROLES, resolveOwnerLevelRoles } from '../auth/roles.js';
 
 // 30 days. The production zones run two years; anything under a month is a trivial pin.
 const MIN_HSTS_MAX_AGE = 2592000;
@@ -224,7 +224,7 @@ export const authStore: DoctorCheck = {
       if (missing.length) {
         return fail(`auth schema is missing: ${missing.join(', ')}`);
       }
-      const ownerRoles = ownerLevelRoles(ctx.roles);
+      const ownerRoles = resolveOwnerLevelRoles(ctx.roles);
       const roles = ownerRoles.length > 0 ? ownerRoles : ['owner'];
       const placeholders = roles.map(() => '?').join(', ');
       const owners = await d1Query(

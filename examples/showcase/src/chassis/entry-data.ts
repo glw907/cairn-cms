@@ -1,14 +1,14 @@
 // The showcase's one entry-data augmentation: the reference-edge resolution `(site)/[...path]`'s
 // entryLoad and `(site)/preview/[token]`'s previewLoad both apply on top of the engine's own
 // `EntryData`/`PreviewData` shape, factored here so the two routes cannot drift apart on it.
-import { resolveReferences, siteDescriptors, type ResolvedReference } from '@glw907/cairn-cms/delivery';
+import { resolveReferences, buildSiteDescriptors, type ResolvedReference } from '@glw907/cairn-cms/delivery';
 import { site } from './content.js';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 // The concept descriptors, by id, so withReferences can hand resolveReferences the right field
-// schema for the entry it resolved. siteDescriptors derives them from the same adapter the indexes
+// schema for the entry it resolved. buildSiteDescriptors derives them from the same adapter the indexes
 // are built from, so the descriptor's reference fields match the manifest's edges.
-const descriptorById = new Map(siteDescriptors(cairn, siteConfig).map((d) => [d.id, d]));
+const descriptorById = new Map(buildSiteDescriptors(cairn, siteConfig).map((d) => [d.id, d]));
 
 /** Any engine data shape carrying the fields withReferences reads: a concept id and an entry. */
 interface WithConceptAndEntry {

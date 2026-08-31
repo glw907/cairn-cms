@@ -180,7 +180,7 @@ export async function deleteEditor(db: D1Database, email: string): Promise<void>
  * Remove an owner-capability editor only if another owner-capability row remains. The count is
  * part of the DELETE, so two concurrent removals cannot both pass a separate check and strand the
  * allowlist below one owner. `ownerRoles` is the vocabulary's owner-capability name set (see
- * `ownerLevelRoles`), not the literal `'owner'` string, so a site with more than one owner-level
+ * `resolveOwnerLevelRoles`), not the literal `'owner'` string, so a site with more than one owner-level
  * role name stays safe. Returns false (and writes nothing) when this is the last owner-capability
  * row. On success the editor's sessions, pending token, and minted preview links all go too, the
  * same cascade {@link deleteEditor} runs.

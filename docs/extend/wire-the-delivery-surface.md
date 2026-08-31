@@ -150,14 +150,14 @@ Each has a pure builder plus a responder that wraps it in a `Response`:
 
 ```ts
 // src/routes/feed.xml/+server.ts
-import { rssResponse, buildLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
+import { rssResponse, createLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, posts, ORIGIN } from '$lib/content.js';
 import { cairn, siteConfig } from '$lib/cairn.config.js';
 
 export const prerender = true;
 
 export const GET = async () => {
-  const toPermalink = buildLinkResolver(site);
+  const toPermalink = createLinkResolver(site);
   const resolve = (ref: Parameters<typeof toPermalink>[0]) => ORIGIN + toPermalink(ref);
   const items: FeedItem[] = await Promise.all(
     posts.all().map(async (p) => ({

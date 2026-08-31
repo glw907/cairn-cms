@@ -1,6 +1,6 @@
 // cairn-cms: the engine sitemap projection (taxonomy + tag-delivery design). A pure function over
 // the site resolver and the concept descriptors, so a site reads its sitemap membership from the
-// routing flags instead of re-deriving it. sitemapView projects the `routable` concepts into
+// routing flags instead of re-deriving it. buildSitemapView projects the `routable` concepts into
 // SitemapUrls. It takes `origin` because SitemapUrl.loc is absolute and the engine carries no
 // ambient origin.
 import type { ConceptDescriptor } from '../content/types.js';
@@ -16,7 +16,7 @@ import type { SitemapUrl } from './sitemap.js';
  *  root-relative paths; each becomes an origin-anchored `SitemapUrl` with no `lastmod`, ahead of
  *  every concept URL.
  */
-export function sitemapView(
+export function buildSitemapView(
   site: SiteResolver,
   descriptors: ConceptDescriptor[],
   origin: string,

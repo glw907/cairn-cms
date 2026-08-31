@@ -82,7 +82,7 @@ export interface SiteConfig {
   description?: string;
   author?: string;
   locale?: string;
-  /** Named navigation menus, each a NavNode[] (normalized by extractMenu). */
+  /** Named navigation menus, each a NavNode[] (normalized by readMenu). */
   menus?: Record<string, unknown>;
   /**
    * The editor spellcheck settings. The dialect is declared once per site (spec 1.2), so a British
@@ -342,7 +342,7 @@ export function parseSiteConfig(raw: string): SiteConfig {
 }
 
 /** Extract one named menu from a parsed config and validate it. Returns [] when the menu is absent. */
-export function extractMenu(config: SiteConfig, name: string, maxDepth: number): NavNode[] {
+export function readMenu(config: SiteConfig, name: string, maxDepth: number): NavNode[] {
   const menu = config.menus?.[name];
   if (menu === undefined) return [];
   return validateNavTree(menu, maxDepth);
@@ -412,7 +412,7 @@ export function validateVocabulary(value: unknown): VocabularyEntry[] {
 }
 
 /** Extract the tag vocabulary from a parsed config and validate it. Returns [] when the key is absent. */
-export function extractVocabulary(config: SiteConfig): VocabularyEntry[] {
+export function readVocabulary(config: SiteConfig): VocabularyEntry[] {
   return config.vocabulary === undefined ? [] : validateVocabulary(config.vocabulary);
 }
 

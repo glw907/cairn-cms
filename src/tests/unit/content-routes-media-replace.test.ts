@@ -15,7 +15,7 @@ import type {
 } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, parseMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
-import { mediaToken } from '../../lib/media/reference.js';
+import { formatMediaToken } from '../../lib/media/reference.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
@@ -146,7 +146,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('mediaReplacePreview', () => {
   it('returns the plan with the affected entries, titles, placements, and the branch delta', async () => {
-    const newToken = mediaToken({ slug: 'old-photo', hash: NEW_HASH });
+    const newToken = formatMediaToken({ slug: 'old-photo', hash: NEW_HASH });
     const gh = new GithubDouble({
       main: {
         [MEDIA_PATH]: mediaManifest(mediaEntry(OLD_HASH, 'old-photo')),
@@ -287,7 +287,7 @@ describe('mediaReplaceApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = freshRepo();
     gh.install();
-    const newToken = mediaToken({ slug: 'old-photo', hash: NEW_HASH });
+    const newToken = formatMediaToken({ slug: 'old-photo', hash: NEW_HASH });
     const record = mediaEntry(NEW_HASH, 'new-photo');
     const routes = createContentRoutesInternal(runtime());
     await expect(
@@ -453,7 +453,7 @@ describe('mediaReplaceApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = freshRepo();
     gh.install();
-    const newToken = mediaToken({ slug: 'old-photo', hash: NEW_HASH });
+    const newToken = formatMediaToken({ slug: 'old-photo', hash: NEW_HASH });
     const record = mediaEntry(NEW_HASH, 'new-photo');
     const routes = createContentRoutesInternal(runtime());
 

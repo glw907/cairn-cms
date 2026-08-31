@@ -6,9 +6,9 @@ import { githubApp } from '../../lib/index.js';
 import type { Fieldset } from '../../lib/content/fieldset.js';
 import type { SiteConfig } from '../../lib/nav/site-config.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 
-const postFieldset = fieldset({
+const postFieldset = defineFieldset({
   title: fields.text({ label: 'Title', required: true }),
   date: fields.date({ label: 'Date', required: true }),
   description: fields.textarea({ label: 'Description', required: true }),
@@ -16,7 +16,7 @@ const postFieldset = fieldset({
   draft: fields.boolean({ label: 'Draft' }),
 });
 
-const pageFieldset = fieldset({
+const pageFieldset = defineFieldset({
   title: fields.text({ label: 'Title', required: true }),
 });
 

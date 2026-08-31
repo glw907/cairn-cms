@@ -11,7 +11,7 @@ CSS, so it pulls in no admin styles.
 -->
 <script lang="ts">
   import type { SeoMeta } from './seo.js';
-  import { jsonLdScript } from './json-ld.js';
+  import { renderJsonLdScript } from './json-ld.js';
 
   let {
     /** The plain-data head to render. */
@@ -53,5 +53,5 @@ CSS, so it pulls in no admin styles.
   {#if markdownUrl}
     <link rel="alternate" type="text/markdown" href={markdownUrl} />
   {/if}
-  {@html jsonLdScript(seo.jsonLd)}
+  {@html renderJsonLdScript(seo.jsonLd)}
 </svelte:head>

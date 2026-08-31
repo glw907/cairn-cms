@@ -8,7 +8,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { GithubDouble } from '../unit/_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 import { runtime as baseRuntime, postsConcept, contentEvent } from '../unit/_content-harness.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
@@ -17,7 +17,7 @@ const MANIFEST_PATH = 'src/content/.cairn/index.json';
 
 /** A minimal fragments concept: embedded routing, one required title field. */
 function fragmentsConcept(): ConceptDescriptor {
-  const schema = fieldset({ title: fields.text({ label: 'Title', required: true }) });
+  const schema = defineFieldset({ title: fields.text({ label: 'Title', required: true }) });
   return {
     id: 'fragments',
     label: 'Fragments',

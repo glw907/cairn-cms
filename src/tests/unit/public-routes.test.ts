@@ -5,7 +5,7 @@ import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 
@@ -15,10 +15,10 @@ const [posts] = normalizeConcepts({
     routing: 'feed',
     permalink: '/:year/:month/:day/:slug',
     datePrefix: 'day',
-    fields: fieldset({ date: fields.date({ label: 'Date' }), tags: fields.multiselect({ label: 'Tags', taxonomy: true }) }),
+    fields: defineFieldset({ date: fields.date({ label: 'Date' }), tags: fields.multiselect({ label: 'Tags', taxonomy: true }) }),
   },
 });
-const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: fieldset({}) } });
+const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: defineFieldset({}) } });
 
 const site = createSiteResolver([
   { descriptor: posts, index: createContentIndex([
@@ -74,7 +74,7 @@ describe('createPublicRoutes entryLoad', () => {
 
   it('derives a heroImage projection from a frontmatter media: reference on the entry kind', async () => {
     const [heroPages] = normalizeConcepts({
-      pages: { dir: 'g', fields: fieldset({ image: fields.image({ label: 'Hero' }) }) },
+      pages: { dir: 'g', fields: defineFieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
     const heroSite = createSiteResolver([
       { descriptor: heroPages, index: createContentIndex([
@@ -105,7 +105,7 @@ describe('createPublicRoutes entryLoad', () => {
 
   it('leaves heroImage undefined for an unresolved hash, and when media is off', async () => {
     const [heroPages] = normalizeConcepts({
-      pages: { dir: 'g', fields: fieldset({ image: fields.image({ label: 'Hero' }) }) },
+      pages: { dir: 'g', fields: defineFieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
     const heroIndex = () => createContentIndex([
       { path: '/g/hero.md', raw: '---\ntitle: Hero\nimage:\n  src: "media:a.0123456789abcdef"\n  alt: x\n---\n\nHero body.' },
@@ -137,7 +137,7 @@ describe('createPublicRoutes entryLoad', () => {
 
   it('emits og:image from a resolved structured hero plus twitter:image:alt', async () => {
     const [heroPages] = normalizeConcepts({
-      pages: { dir: 'g', fields: fieldset({ image: fields.image({ label: 'Hero' }) }) },
+      pages: { dir: 'g', fields: defineFieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
     const heroSite = createSiteResolver([
       { descriptor: heroPages, index: createContentIndex([
@@ -162,7 +162,7 @@ describe('createPublicRoutes entryLoad', () => {
 
   it('keeps the back-compat string image (origin-anchored, no twitter:image:alt)', async () => {
     const [stringPages] = normalizeConcepts({
-      pages: { dir: 'g', fields: fieldset({ image: fields.text({ label: 'Social image' }) }) },
+      pages: { dir: 'g', fields: defineFieldset({ image: fields.text({ label: 'Social image' }) }) },
     });
     const stringSite = createSiteResolver([
       { descriptor: stringPages, index: createContentIndex([
@@ -184,7 +184,7 @@ describe('createPublicRoutes entryLoad', () => {
 
   it('emits no og:image when the only image-shaped field is under another key and no default', async () => {
     const [coverPages] = normalizeConcepts({
-      pages: { dir: 'g', fields: fieldset({ cover: fields.image({ label: 'Cover' }) }) },
+      pages: { dir: 'g', fields: defineFieldset({ cover: fields.image({ label: 'Cover' }) }) },
     });
     const coverSite = createSiteResolver([
       { descriptor: coverPages, index: createContentIndex([
@@ -207,7 +207,7 @@ describe('createPublicRoutes entryLoad', () => {
 
   it('emits no og:image when a structured hero does not resolve', async () => {
     const [heroPages] = normalizeConcepts({
-      pages: { dir: 'g', fields: fieldset({ image: fields.image({ label: 'Hero' }) }) },
+      pages: { dir: 'g', fields: defineFieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
     const heroSite = createSiteResolver([
       { descriptor: heroPages, index: createContentIndex([
@@ -247,7 +247,7 @@ describe('createPublicRoutes entryLoad', () => {
 
   it('passes a build-backed resolveFragment through to the render call', async () => {
     const [fragments] = normalizeConcepts({
-      fragments: { dir: 'f', routing: 'embedded', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+      fragments: { dir: 'f', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
     });
     const fragmentSite = createSiteResolver([
       { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
@@ -270,12 +270,12 @@ describe('createPublicRoutes entryLoad', () => {
   });
 
   it('renders a spliced ::include with no trace of the preview-only boundary cue (ratified 4B)', async () => {
-    // buildFragmentResolver never sets previewTitle (only EditPage's client-side resolver does), so
+    // createFragmentResolver never sets previewTitle (only EditPage's client-side resolver does), so
     // the same entry through the real render pipeline must come back byte-identical to a splice
     // with no boundary wrapper: this is the provable public-path half of the preview-only cue.
     const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     const [fragments] = normalizeConcepts({
-      fragments: { dir: 'f', routing: 'embedded', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+      fragments: { dir: 'f', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
     });
     const fragmentSite = createSiteResolver([
       { descriptor: pages, index: createContentIndex([
@@ -342,7 +342,7 @@ describe('composeEntryData', () => {
   it('substitutes the fragment resolver override in place of the build-backed resolver', async () => {
     const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     const [fragments] = normalizeConcepts({
-      fragments: { dir: 'f', routing: 'embedded', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+      fragments: { dir: 'f', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
     });
     const fragmentSite = createSiteResolver([
       { descriptor: pages, index: createContentIndex([
@@ -368,7 +368,7 @@ describe('composeEntryData', () => {
 
   it('has the hero derivation consume the resolveMedia override, not config.resolveMedia', async () => {
     const [heroPages] = normalizeConcepts({
-      pages: { dir: 'g', fields: fieldset({ image: fields.image({ label: 'Hero' }) }) },
+      pages: { dir: 'g', fields: defineFieldset({ image: fields.image({ label: 'Hero' }) }) },
     });
     const heroSite = createSiteResolver([
       { descriptor: heroPages, index: createContentIndex([

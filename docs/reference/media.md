@@ -13,7 +13,7 @@ pipeline; every real caller reaches them by relative import, so they stay unexpo
 rather than public surface.
 
 ```ts
-import { buildMediaResolver, normalizeAssets } from '@glw907/cairn-cms/media';
+import { createMediaResolver, normalizeAssets } from '@glw907/cairn-cms/media';
 ```
 
 A site reaches into this subpath to back its public render path with a media resolver: it reads the
@@ -23,10 +23,10 @@ types in `src/lib/media` and `src/lib/render/resolve-media.ts` are the source of
 export-coverage gate checks every name here against them.
 
 ```ts
-import { normalizeAssets, buildMediaResolver } from '@glw907/cairn-cms/media';
+import { normalizeAssets, createMediaResolver } from '@glw907/cairn-cms/media';
 import mediaManifest from '../content/.cairn/media.json';
 
-const resolveMedia = buildMediaResolver(mediaManifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
+const resolveMedia = createMediaResolver(mediaManifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
 ```
 
 ---
@@ -88,12 +88,12 @@ declare function parseMediaToken(href: string): MediaRef | null;
 Parse a `media:<slug>.<hash>` href (or the bare `media:<hash>` form), or `null` for any other href or
 a malformed token.
 
-### `mediaToken`
+### `formatMediaToken`
 
 Stability tier: Extension API.
 
 ```ts
-declare function mediaToken(ref: MediaRef): string;
+declare function formatMediaToken(ref: MediaRef): string;
 ```
 
 Write the canonical `media:` token for a ref, the inverse of `parseMediaToken`, so a parse then write
@@ -103,32 +103,31 @@ round trip is stable.
 
 ## The render resolver
 
-### `buildMediaResolver`
+### `createMediaResolver`
 
 Stability tier: Extension API.
 
 ```ts
-declare function buildMediaResolver(
+declare function createMediaResolver(
   manifest: MediaManifest,
   resolved: ResolvedAssetConfig,
-  opts?: { preset?: string },
 ): MediaResolve;
 ```
 
 Build the per-call media resolver, closing over the committed manifest and the resolved config. The
 resolver looks a ref's content hash up in the manifest and builds the canonical delivery path from
-the manifest entry's slug and ext, not the token's, so a rename never breaks the reference. With a
-preset and zone transformations on it returns the variant URL; otherwise it returns the bare
-full-size path. It returns `undefined` when media is off or no entry carries the hash. The
-`undefined` return is the preview-miss backstop. A site threads the resolver through `render` via
-the `resolveMedia` option.
+the manifest entry's slug and ext, not the token's, so a rename never breaks the reference. It
+returns the bare full-size path; the transformed variant srcset is the imageDetail side channel's
+job, keyed off the asset's known width and the site's `assets.transformations` setting. It returns
+`undefined` when media is off or no entry carries the hash. The `undefined` return is the
+preview-miss backstop. A site threads the resolver through `render` via the `resolveMedia` option.
 
 The resolved image also carries whatever layout and responsive-delivery detail the manifest and
 config can honestly derive, with no new option to wire: a manifest entry's recorded `width`/`height`
 land as intrinsic `width`/`height` attributes on the rendered `<img>` (reserving its aspect ratio and
 avoiding a layout shift on load), and with the site's `assets.transformations` on and the width known,
-the image also gets a `srcset` built from a small fixed width ladder through the same variant-URL
-mechanism a preset uses, plus a `sizes` hint derived from the image's enclosing `:::figure` placement
+the image also gets a `srcset` built from a small fixed width ladder through the variant-URL
+mechanism, plus a `sizes` hint derived from the image's enclosing `:::figure` placement
 role (`center`, `wide`, `full`; a bare image or an unplaced figure falls back to `100vw`). An asset
 whose dimensions are unknown (the upload's client did not report them) or whose width is too small to
 offer more than one honest srcset candidate gets none of that. The engine never substitutes a

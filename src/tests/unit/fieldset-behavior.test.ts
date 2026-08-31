@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 import { log } from '../../lib/log/index.js';
 
@@ -8,7 +8,7 @@ afterEach(() => {
 });
 
 describe('fieldset behavior.validate', () => {
-  const fs = fieldset(
+  const fs = defineFieldset(
     { min: fields.number({ label: 'Min' }), max: fields.number({ label: 'Max' }) },
     { behavior: { max: { validate: (value, siblings) => (Number(value) < Number(siblings.min) ? 'Max below min.' : null) } } },
   );
@@ -21,11 +21,11 @@ describe('fieldset behavior.validate', () => {
     expect(fs.validate({ min: 1, max: 9 }, '').ok).toBe(true);
   });
   it('rejects a behavior key that names no field', () => {
-    expect(() => fieldset({ a: fields.text({ label: 'A' }) }, { behavior: { b: { validate: () => null } } })).toThrow(/not a declared field/);
+    expect(() => defineFieldset({ a: fields.text({ label: 'A' }) }, { behavior: { b: { validate: () => null } } })).toThrow(/not a declared field/);
   });
 
   it('treats a field as valid and logs, rather than throwing, when its behavior.validate throws', () => {
-    const throwing = fieldset(
+    const throwing = defineFieldset(
       { a: fields.text({ label: 'A' }) },
       {
         behavior: {

@@ -37,6 +37,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `defineAdapter`: <const A extends CairnAdapter>(adapter: A) => A
 - `defineComponent`: <const D extends ComponentDef>(def: D) => D & { attributeSchema: Fieldset<Record<string, FieldDescriptor>> }
 - `defineConcept`: <const C extends ConceptConfig>(concept: C) => C
+- `defineFieldset`: <const R extends Record<string, FieldDescriptor>>(record: R, options?: FieldsetOptions) => Fieldset<R>
 - `defineRegistry`: ({ components }: { components: ComponentDef[] }) => ComponentRegistry
 - `defineRoles`: <const R extends RolesDeclaration>(roles: R) => R
 - `DocHeading`: { id: string; text: string; depth: number }
@@ -45,19 +46,15 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EmailField`: { type: "email"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `EmailRecipient`: string | { email: string; name?: string }
 - `EmailSender`: { send: (message: MagicLinkMessage) => Promise<unknown> }
-- `extractMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
-- `extractVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `FieldBehavior`: { validate?: ((value: unknown, siblings: Record<string, unknown>) => string | null); itemLabel?: ((item: Record<string, unknown>, index: number) => string | undefined) }
 - `FieldDescriptor`: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField
 - `fields`: { text: <const O extends Omit<TextField, "type">>(o: O) => TextField & O; textarea: <const O extends Omit<TextareaField, "type">>(o: O) => TextareaField & O; number: <const O extends Omit<NumberField, "type">>(o: O) => NumberField & O; select: <const O extends Omit<SelectField, "type">>(o: O) => SelectField & O; multiselect: <const O extends Omit<MultiselectField, "type">>(o: O) => MultiselectField & O; url: <const O extends Omit<UrlField, "type">>(o: O) => UrlField & O; email: <const O extends Omit<EmailField, "type">>(o: O) => EmailField & O; date: <const O extends Omit<DateField, "type">>(o: O) => DateField & O; datetime: <const O extends Omit<DatetimeField, "type">>(o: O) => DatetimeField & O; boolean: <const O extends Omit<BooleanField, "type">>(o: O) => BooleanField & O; icon: <const O extends Omit<IconField, "type">>(o: O) => IconField & O; image: <const O extends Omit<ImageField, "type">>(o: O) => ImageField & O; object: <const F extends Record<string, FieldDescriptor>, const O extends Omit<ObjectField, "type" | "fields">>(o: { fields: F } & O) => ObjectField & { fields: F } & O; reference: <const O extends Omit<ReferenceField, "type">>(o: O) => ReferenceField & O; array: <const I extends FieldDescriptor, const O extends Omit<ArrayField, "type" | "item">>(item: I, o?: O) => ArrayField & { item: I } & O }
-- `fieldset`: <const R extends Record<string, FieldDescriptor>>(record: R, options?: FieldsetOptions) => Fieldset<R>
 - `Fieldset`: { fields: R; behavior: { [x: string]: FieldBehavior }; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult; ~standard: { readonly version: 1; readonly vendor: string; readonly validate: (value: unknown) => StandardResult<Record<string, unknown>>; readonly types?: { readonly input: StandardInput; readonly output: Record<string, unknown> } } }
 - `FieldsetOptions`: { refine?: ((data: Record<string, unknown>, body: string) => Record<string, string> | undefined); behavior?: BehaviorTable }
 - `FileChange`: { path: string; content: string | null }
 - `FragmentResolve`: (id: string) => string | undefined
 - `githubApp`: (config: { owner: string; repo: string; branch: string; appId: string; installationId: string }) => GithubAppProvider
 - `GithubAppProvider`: { kind: "github-app"; owner: string; repo: string; appId: string; installationId: string; branch: string; connect: (env: CairnEnv) => Backend }
-- `glyph`: (name: string, icons: IconSet) => Element
 - `hasAccessRule`: (access: AccessMap | undefined, target: string) => boolean
 - `IconField`: { type: "icon"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `IconSet`: { [x: string]: string }
@@ -81,19 +78,22 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavNode`: { label: string; url?: string; children?: NavNode[] }
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
-- `ownerLevelRoles`: (roles: RolesDeclaration | undefined) => string[]
 - `parseMarkdown`: (source: string) => { frontmatter: Record<string, unknown>; body: string }
 - `parseSiteConfig`: (raw: string) => SiteConfig
 - `PreviewConfig`: { stylesheets: string[]; bodyClass?: string; containerClass?: string; byConcept?: Record<string, { bodyClass?: string; containerClass?: string }> }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `PublishActionsConfig`: PublishActionEntry[]
+- `readMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
+- `readVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `Renderer`: { remarkPlugins: PluggableList; rehypePlugins: PluggableList; renderMarkdown: (content: string, opts?: ResolveOptions) => Promise<string>; renderDocument: (content: string, opts?: ResolveOptions) => Promise<{ html: string; headings: DocHeading[] }> }
 - `RendererOptions`: { sanitizeSchema?: ((defaults: Schema) => Schema); unsafeDisableSanitize?: boolean; anchorRel?: string | false; tableScroll?: boolean; remarkPlugins?: PluggableList; rehypePlugins?: PluggableList }
+- `renderGlyph`: (name: string, icons: IconSet) => Element
 - `RepoFile`: { id: string; name: string; path: string }
 - `resolveCapability`: (roles: RolesDeclaration | undefined, role: string) => Capability
 - `ResolveOptions`: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }
+- `resolveOwnerLevelRoles`: (roles: RolesDeclaration | undefined) => string[]
 - `RoleDeclaration`: Capability | { capability: Capability; home?: string }
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
 - `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }
@@ -218,14 +218,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
 - `BooleanField`: { type: "boolean"; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `buildFragmentResolver`: (site: SiteResolver) => FragmentResolve
 - `buildJsonFeed`: (channel: FeedChannel, items: FeedItem[]) => string
-- `buildLinkResolver`: (site: SiteResolver) => LinkResolve
 - `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => string
 - `buildRssFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
+- `buildSiteDescriptors`: (adapter: CairnAdapter, siteConfig: SiteConfig) => ConceptDescriptor[]
 - `buildSiteManifest`: <A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>) => Manifest
 - `buildSitemap`: (urls: SitemapUrl[]) => string
+- `buildSitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `CairnRef`: { concept: string; id: string }
 - `composeEntryData`: (config: PublicRoutesConfig, entry: ContentEntry<Record<string, unknown>>, overrides?: EntryDataOverrides) => Promise<EntryData>
 - `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded"; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
@@ -234,12 +234,15 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ContentIndex`: { all: (opts?: { includeDrafts?: boolean }) => ContentSummary[]; byId: (id: string) => ContentEntry<F> | undefined; byTag: (tag: string, opts?: { includeDrafts?: boolean }) => ContentSummary[]; allTags: () => { tag: string; count: number }[]; adjacent: (id: string) => { newer?: ContentSummary; older?: ContentSummary }; problems: () => ContentProblem[] }
 - `ContentProblem`: { id: string; draft: boolean; errors: { [x: string]: string } }
 - `ContentSummary`: { concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
+- `createFragmentResolver`: (site: SiteResolver) => FragmentResolve
+- `createLinkResolver`: (site: SiteResolver) => LinkResolve
 - `createPublicRoutes`: (config: PublicRoutesConfig) => PublicRoutes
 - `createSiteIndexes`: <const A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>, opts?: { validate?: boolean }) => SiteIndexes<A>
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `DatePrefix`: "year" | "month" | "day"
 - `DatetimeField`: { type: "datetime"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `deriveExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
+- `diffNewlyPublished`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `EmailField`: { type: "email"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `EntryData`: { concept: string; entry: ContentEntry<Record<string, unknown>>; html: string; canonicalUrl: string; seo: SeoMeta; newer?: ContentSummary; older?: ContentSummary; heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string } }
 - `EntryDataOverrides`: { resolveLink?: LinkResolve; resolveFragment?: FragmentResolve; resolveMedia?: MediaResolve }
@@ -253,7 +256,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ImageField`: { type: "image"; seo?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `InferFieldset`: S extends Fieldset<infer R extends Record<string, FieldDescriptor>> ? { [K in keyof ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })]: ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })[K] } : never
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
-- `jsonLdScript`: (data: Record<string, unknown>) => string
 - `LinkResolve`: (ref: CairnRef) => string | undefined
 - `Manifest`: { version: 1; entries: ManifestEntry[] }
 - `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; summary?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
@@ -262,7 +264,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `MediaResolve`: (ref: MediaRef) => string | undefined
 - `MultiselectField`: { type: "multiselect"; options?: readonly string[]; creatable?: boolean; placeholder?: string; taxonomy?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `NamedField`: FieldDescriptor & { name: string }
-- `newlyPublishedEntries`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
 - `parseManifest`: (raw: string) => Manifest
@@ -273,6 +274,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
+- `renderJsonLdScript`: (data: Record<string, unknown>) => string
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string | undefined
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
@@ -284,12 +286,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SeoInput`: { title: string; description: string; canonicalUrl: string; siteName: string; type?: "website" | "article"; published?: string; modified?: string; feeds?: { rss?: string; json?: string }; image?: string; imageAlt?: string; robots?: string; author?: string }
 - `SeoMeta`: { title: string; meta: { name?: string; property?: string; content: string }[]; links: { rel: string; type?: string; href: string; title?: string }[]; jsonLd: { [x: string]: unknown } }
 - `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
-- `siteDescriptors`: (adapter: CairnAdapter, siteConfig: SiteConfig) => ConceptDescriptor[]
 - `SiteGlobs`: { [K in keyof A["content"]]?: Record<string, string> }
 - `SiteIndexes`: { [K in keyof A["content"]]: ContentIndex<NonNullable<A["content"][K]> extends ConceptConfig<infer S extends Fieldset<Record<string, FieldDescriptor>>> ? InferFieldset<S> : Record<string, unknown>> } & { readonly site: SiteResolver }
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
-- `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `SiteRender`: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>> | undefined; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>> | undefined; all: () => ContentSummary[]; routable: (id: string) => boolean }
 - `TextareaField`: { type: "textarea"; rows?: number; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -307,14 +307,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ArrayField`: { type: "array"; item: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField; itemLabel?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `BehaviorTable`: { [x: string]: FieldBehavior }
 - `BooleanField`: { type: "boolean"; label: string; help?: string; required?: boolean; default?: string | boolean }
-- `buildFragmentResolver`: (site: SiteResolver) => FragmentResolve
 - `buildJsonFeed`: (channel: FeedChannel, items: FeedItem[]) => string
-- `buildLinkResolver`: (site: SiteResolver) => LinkResolve
 - `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[]; posture?: AiPosture }) => string
 - `buildRssFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
+- `buildSiteDescriptors`: (adapter: CairnAdapter, siteConfig: SiteConfig) => ConceptDescriptor[]
 - `buildSiteManifest`: <A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>) => Manifest
 - `buildSitemap`: (urls: SitemapUrl[]) => string
+- `buildSitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `CairnRef`: { concept: string; id: string }
 - `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded"; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
 - `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
@@ -322,11 +322,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ContentIndex`: { all: (opts?: { includeDrafts?: boolean }) => ContentSummary[]; byId: (id: string) => ContentEntry<F> | undefined; byTag: (tag: string, opts?: { includeDrafts?: boolean }) => ContentSummary[]; allTags: () => { tag: string; count: number }[]; adjacent: (id: string) => { newer?: ContentSummary; older?: ContentSummary }; problems: () => ContentProblem[] }
 - `ContentProblem`: { id: string; draft: boolean; errors: { [x: string]: string } }
 - `ContentSummary`: { concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
+- `createFragmentResolver`: (site: SiteResolver) => FragmentResolve
+- `createLinkResolver`: (site: SiteResolver) => LinkResolve
 - `createSiteIndexes`: <const A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>, opts?: { validate?: boolean }) => SiteIndexes<A>
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `DatePrefix`: "year" | "month" | "day"
 - `DatetimeField`: { type: "datetime"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `deriveExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
+- `diffNewlyPublished`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `EmailField`: { type: "email"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
@@ -338,14 +341,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ImageField`: { type: "image"; seo?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `InferFieldset`: S extends Fieldset<infer R extends Record<string, FieldDescriptor>> ? { [K in keyof ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })]: ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })[K] } : never
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
-- `jsonLdScript`: (data: Record<string, unknown>) => string
 - `LinkResolve`: (ref: CairnRef) => string | undefined
 - `Manifest`: { version: 1; entries: ManifestEntry[] }
 - `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; summary?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
 - `markdownResponse`: (opts: { body: string }) => Response
 - `MultiselectField`: { type: "multiselect"; options?: readonly string[]; creatable?: boolean; placeholder?: string; taxonomy?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `NamedField`: FieldDescriptor & { name: string }
-- `newlyPublishedEntries`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `NumberField`: { type: "number"; min?: number; max?: number; integer?: boolean; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `ObjectField`: { type: "object"; label?: string; fields: { [x: string]: FieldDescriptor }; help?: string; required?: boolean; default?: string | boolean }
 - `parseManifest`: (raw: string) => Manifest
@@ -354,6 +355,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ReferenceEdge`: { field: string; concept: string; id: string }
 - `ReferenceField`: { type: "reference"; concept: string; label: string; help?: string; required?: boolean; default?: string | boolean }
+- `renderJsonLdScript`: (data: Record<string, unknown>) => string
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string | undefined
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
@@ -365,12 +367,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SeoInput`: { title: string; description: string; canonicalUrl: string; siteName: string; type?: "website" | "article"; published?: string; modified?: string; feeds?: { rss?: string; json?: string }; image?: string; imageAlt?: string; robots?: string; author?: string }
 - `SeoMeta`: { title: string; meta: { name?: string; property?: string; content: string }[]; links: { rel: string; type?: string; href: string; title?: string }[]; jsonLd: { [x: string]: unknown } }
 - `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
-- `siteDescriptors`: (adapter: CairnAdapter, siteConfig: SiteConfig) => ConceptDescriptor[]
 - `SiteGlobs`: { [K in keyof A["content"]]?: Record<string, string> }
 - `SiteIndexes`: { [K in keyof A["content"]]: ContentIndex<NonNullable<A["content"][K]> extends ConceptConfig<infer S extends Fieldset<Record<string, FieldDescriptor>>> ? InferFieldset<S> : Record<string, unknown>> } & { readonly site: SiteResolver }
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
-- `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>> | undefined; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>> | undefined; all: () => ContentSummary[]; routable: (id: string) => boolean }
 - `TextareaField`: { type: "textarea"; rows?: number; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `TextField`: { type: "text"; min?: number; max?: number; length?: number; pattern?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
@@ -393,12 +393,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/media`
 
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
-- `buildMediaResolver`: (manifest: MediaManifest, resolved: ResolvedAssetConfig, opts?: { preset?: string }) => MediaResolve
+- `createMediaResolver`: (manifest: MediaManifest, resolved: ResolvedAssetConfig) => MediaResolve
+- `formatMediaToken`: (ref: MediaRef) => string
 - `MediaEntry`: { hash: string; sha256: string; slug: string; displayName: string; originalFilename: string; alt: string; ext: string; contentType: string; bytes: number; width: number | null; height: number | null; createdAt: string }
 - `MediaManifest`: { [x: string]: MediaEntry }
 - `MediaRef`: { slug: string | null; hash: string }
 - `MediaResolve`: (ref: MediaRef) => string | undefined
-- `mediaToken`: (ref: MediaRef) => string
 - `normalizeAssets`: (assets: AssetConfig | undefined) => ResolvedAssetConfig
 - `parseMediaToken`: (href: string) => MediaRef | null
 - `readCommittedManifest`: (globResult: Record<string, unknown>) => MediaManifest

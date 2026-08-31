@@ -4,7 +4,7 @@ import type { Element, ElementContent } from 'hast';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry, type ComponentContext } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
-import { glyph } from '../../lib/render/glyph.js';
+import { renderGlyph } from '../../lib/render/glyph.js';
 import {
   cardShell,
   headRow,
@@ -18,7 +18,7 @@ import {
 // A representative fixture registry. Stands in for a site's registry so the
 // byte-identical lock lives in the engine suite with no consumer dependency.
 const ICONS = { flag: 'M16 16 240 16 240 240 16 240Z' };
-const makeIcon: MakeIcon = (name, role) => iconSpan(glyph(name, ICONS), role);
+const makeIcon: MakeIcon = (name, role) => iconSpan(renderGlyph(name, ICONS), role);
 
 // Local fixture helper: pull the <h2> out as the head's title and build the .ec-head row with
 // an optional icon read from the declared attribute path. Mirrors what a real site build does

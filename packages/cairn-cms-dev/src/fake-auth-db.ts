@@ -54,7 +54,7 @@ export function createFakeAuthDb(): FakeAuthDb {
   ]);
 
   // The guard's live count: how many rows carry a role in the bound owner-role set, not the
-  // literal 'owner' (a site can name more than one owner-capability role, see ownerLevelRoles).
+  // literal 'owner' (a site can name more than one owner-capability role, see resolveOwnerLevelRoles).
   const ownerCount = (ownerRoles: string[]) =>
     [...editors.values()].filter((e) => ownerRoles.includes(e.role)).length;
 

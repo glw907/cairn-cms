@@ -1,6 +1,6 @@
 // cairn-cms: the Standard Schema conformance types, shared by both the v1 schema and the v2
-// fieldset validators. They live here, apart from either validator, so the v2 `fieldset` keeps
-// importing them once the v1 `schema.ts` is removed at the Contract v2 cutover.
+// fieldset validators. They live here, apart from either validator, so the v2 `defineFieldset`
+// keeps importing them once the v1 `schema.ts` is removed at the Contract v2 cutover.
 
 /** The validate input the cairn adapter takes: the raw frontmatter and the body. */
 export interface StandardInput {

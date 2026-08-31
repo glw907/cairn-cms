@@ -6,7 +6,7 @@ import { serializeManifest } from '../../lib/content/manifest.js';
 import { serializeMarkdown, frontmatterFromForm } from '../../lib/content/frontmatter.js';
 import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -15,7 +15,7 @@ const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
 
 function runtime(): CairnRuntime {
-  const postsSchema = fieldset({
+  const postsSchema = defineFieldset({
     title: fields.text({ label: 'Title', required: true }),
     date: fields.date({ label: 'Date' }),
   });
@@ -439,7 +439,7 @@ describe('editLoad with a pending branch', () => {
 
   it('prefills a fresh entry from a date field default of "today"', async () => {
     const withDefault = runtime();
-    withDefault.concepts[0].schema = fieldset({
+    withDefault.concepts[0].schema = defineFieldset({
       title: fields.text({ label: 'Title', required: true }),
       date: fields.date({ label: 'Date', default: 'today' }),
     });
@@ -467,7 +467,7 @@ describe('editLoad address-collision advisory', () => {
           permalink: '/:slug',
           datePrefix: 'day',
           fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-          schema: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+          schema: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
           summaryFields: [],
           validate: () => ({ ok: true as const, data: {} }),
         },

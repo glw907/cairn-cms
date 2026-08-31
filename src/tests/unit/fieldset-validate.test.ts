@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 
-const fs = fieldset({
+const fs = defineFieldset({
   title:  fields.text({ label: 'Title', required: true, max: 5 }),
   count:  fields.number({ label: 'Count', min: 1, max: 3 }),
   status: fields.select({ label: 'Status', options: ['draft', 'published'] }),
@@ -31,7 +31,7 @@ describe('fieldset.validate', () => {
 });
 
 describe('fieldset.validate edge cases', () => {
-  const edge = fieldset({
+  const edge = defineFieldset({
     n: fields.number({ label: 'N' }), // unbounded, so no max masks a non-finite value
     contact: fields.email({ label: 'Contact' }),
   });
@@ -51,7 +51,7 @@ describe('fieldset.validate edge cases', () => {
 });
 
 describe('fieldset text constraints (v1 parity)', () => {
-  const fs = fieldset({
+  const fs = defineFieldset({
     title: fields.text({ label: 'Title', max: 5 }),
     code:  fields.text({ label: 'Code', pattern: '^[A-Z]{3}$' }),
   });
@@ -63,13 +63,13 @@ describe('fieldset text constraints (v1 parity)', () => {
     expect(fs.validate({ code: 'abc' }, '').ok).toBe(false);
     expect(fs.validate({ code: 'ABC' }, '')).toEqual({ ok: true, data: { code: 'ABC' } });
   });
-  it('throws on a bad pattern at fieldset() construction', () => {
-    expect(() => fieldset({ x: fields.text({ label: 'X', pattern: '(' }) })).toThrow(/X/);
+  it('throws on a bad pattern at defineFieldset() construction', () => {
+    expect(() => defineFieldset({ x: fields.text({ label: 'X', pattern: '(' }) })).toThrow(/X/);
   });
 });
 
 describe('fieldset date bounds (v1 parity)', () => {
-  const fs = fieldset({ d: fields.date({ label: 'D', min: '2020-01-01', max: '2020-12-31' }) });
+  const fs = defineFieldset({ d: fields.date({ label: 'D', min: '2020-01-01', max: '2020-12-31' }) });
   it('rejects a date outside the bounds', () => {
     expect(fs.validate({ d: '2019-06-01' }, '').ok).toBe(false);
     expect(fs.validate({ d: '2021-06-01' }, '').ok).toBe(false);
@@ -78,7 +78,7 @@ describe('fieldset date bounds (v1 parity)', () => {
 });
 
 describe('fieldset parsed-YAML input symmetry', () => {
-  const fs = fieldset({ n: fields.number({ label: 'N', min: 0 }), t: fields.datetime({ label: 'T' }) });
+  const fs = defineFieldset({ n: fields.number({ label: 'N', min: 0 }), t: fields.datetime({ label: 'T' }) });
   it('accepts a parsed numeric value, not only a form string', () => {
     expect(fs.validate({ n: 5 }, '')).toEqual({ ok: true, data: { n: 5 } });  // a number, not '5'
     expect(fs.validate({ n: 0 }, '')).toEqual({ ok: true, data: { n: 0 } });  // 0 is a real value, not empty
@@ -86,8 +86,8 @@ describe('fieldset parsed-YAML input symmetry', () => {
 });
 
 describe('fieldset multiselect lone scalar', () => {
-  const fs = fieldset({ tags: fields.multiselect({ label: 'Tags' }) });
-  const req = fieldset({ tags: fields.multiselect({ label: 'Tags', required: true }) });
+  const fs = defineFieldset({ tags: fields.multiselect({ label: 'Tags' }) });
+  const req = defineFieldset({ tags: fields.multiselect({ label: 'Tags', required: true }) });
   it('coerces a lone scalar to a single-element list', () => {
     expect(fs.validate({ tags: 'news' }, '')).toEqual({ ok: true, data: { tags: ['news'] } });
   });
@@ -101,7 +101,7 @@ describe('fieldset multiselect lone scalar', () => {
 // the same logic): a well-formed object normalizes, a missing alt defaults to empty, a blank caption
 // drops, the decorative flag carries only when an explicit true, and a malformed value drops the key.
 describe('fieldset image field (v1 parity)', () => {
-  const fs = fieldset({ image: fields.image({ label: 'Hero' }) });
+  const fs = defineFieldset({ image: fields.image({ label: 'Hero' }) });
 
   it('normalizes a valid object and carries a non-empty caption', () => {
     expect(fs.validate({ image: { src: 'media:a.0123456789abcdef', alt: 'x', caption: 'A line.' } }, '')).toEqual({
@@ -148,7 +148,7 @@ describe('fieldset image field (v1 parity)', () => {
   });
 
   it('enforces required on a missing src, never on a missing alt', () => {
-    const req = fieldset({ image: fields.image({ label: 'Hero', required: true }) });
+    const req = defineFieldset({ image: fields.image({ label: 'Hero', required: true }) });
     expect(req.validate({}, '').ok).toBe(false);
     expect(req.validate({ image: { src: '', alt: 'x' } }, '').ok).toBe(false);
     expect(req.validate({ image: 'a string' }, '').ok).toBe(false);
@@ -160,7 +160,7 @@ describe('fieldset image field (v1 parity)', () => {
 });
 
 describe('fieldset reference and array(reference)', () => {
-  const fs = fieldset({
+  const fs = defineFieldset({
     author: fields.reference({ concept: 'pages', label: 'Author', required: true }),
     related: fields.array(fields.reference({ concept: 'posts', label: 'Post' }), { label: 'Related' }),
   });
@@ -195,7 +195,7 @@ describe('fieldset reference and array(reference)', () => {
 
 describe('fieldset.validate nested containers', () => {
   it('reports a nested required error with a multi-segment path', () => {
-    const fs = fieldset({
+    const fs = defineFieldset({
       faq: fields.array(fields.object({ fields: { q: fields.text({ label: 'Question', required: true }), a: fields.textarea({ label: 'Answer' }) } }), { label: 'FAQ' }),
     });
     const r = fs.validate({ faq: [{ q: '', a: 'an answer' }] }, '');
@@ -207,21 +207,21 @@ describe('fieldset.validate nested containers', () => {
   });
 
   it('validates and stores a clean array of objects', () => {
-    const fs = fieldset({ faq: fields.array(fields.object({ fields: { q: fields.text({ label: 'Q', required: true }), a: fields.textarea({ label: 'A' }) } })) });
+    const fs = defineFieldset({ faq: fields.array(fields.object({ fields: { q: fields.text({ label: 'Q', required: true }), a: fields.textarea({ label: 'A' }) } })) });
     const r = fs.validate({ faq: [{ q: 'one', a: 'two' }, { q: 'three' }] }, '');
     expect(r.ok).toBe(true);
     if (r.ok) expect(r.data.faq).toEqual([{ q: 'one', a: 'two' }, { q: 'three' }]);
   });
 
   it('reports an object leaf error with a two-segment path', () => {
-    const fs = fieldset({ meta: fields.object({ fields: { count: fields.number({ label: 'Count', integer: true }) } }) });
+    const fs = defineFieldset({ meta: fields.object({ fields: { count: fields.number({ label: 'Count', integer: true }) } }) });
     const r = fs.validate({ meta: { count: '1.5' } }, '');
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.issues).toEqual([{ path: ['meta', 'count'], message: 'Count must be a whole number' }]);
   });
 
   it('reports an array-of-leaf element error with an index path', () => {
-    const fs = fieldset({ links: fields.array(fields.url({ label: 'Link' })) });
+    const fs = defineFieldset({ links: fields.array(fields.url({ label: 'Link' })) });
     const r = fs.validate({ links: ['https://ok.example', 'not-a-url'] }, '');
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.issues).toEqual([{ path: ['links', 1], message: 'Link is not a valid URL' }]);
@@ -230,7 +230,7 @@ describe('fieldset.validate nested containers', () => {
 
 // The refine cross-field path, ported from the v1 defineFields suite.
 describe('fieldset refine', () => {
-  const fs = fieldset(
+  const fs = defineFieldset(
     {
       title: fields.text({ label: 'Title', required: true }),
       date: fields.date({ label: 'Date', required: true }),

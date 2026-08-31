@@ -49,7 +49,7 @@ every removal and role change. A caller that might act on an owner row should ca
 rather than `deleteEditor`/`setEditorRole` directly, to avoid stranding a site with no owner.
 
 Both guards take an `ownerRoles` argument, the site's owner-capability role names. Derive it from
-the site's declared vocabulary with [`ownerLevelRoles`](./core.md#resolvecapability-ownerlevelroles)
+the site's declared vocabulary with [`resolveOwnerLevelRoles`](./core.md#resolvecapability-resolveownerlevelroles)
 rather than writing the names out. A hand-written list that omits a name the vocabulary maps to owner
 capability undercounts the roster's owners. The guard then refuses a safe removal, or allows an
 unsafe one when the omitted name sits on the row the caller removes.
@@ -121,7 +121,7 @@ declare function removeOwnerIfNotLast(
 
 Remove an owner-capability editor only when another owner-capability row remains. `ownerRoles` is
 the site's owner-capability role name set (not the literal `'owner'` string), derived with
-[`ownerLevelRoles`](./core.md#resolvecapability-ownerlevelroles), so a site with more than
+[`resolveOwnerLevelRoles`](./core.md#resolvecapability-resolveownerlevelroles), so a site with more than
 one owner-level role name stays safe. The count check runs inside the same statement as the delete,
 so two concurrent removals cannot both pass a separate check and strand the allowlist below one
 owner. Returns `false` and writes nothing when this is the last owner-capability row or when no
@@ -158,7 +158,7 @@ declare function demoteOwnerIfNotLast(
 
 Demote an owner-capability editor to `newRole` only when another owner-capability row remains, the
 same atomic guard `removeOwnerIfNotLast` uses, over the same `ownerRoles` set from
-[`ownerLevelRoles`](./core.md#resolvecapability-ownerlevelroles). Returns `false` and writes
+[`resolveOwnerLevelRoles`](./core.md#resolvecapability-resolveownerlevelroles). Returns `false` and writes
 nothing when this is the last owner-capability row or when no owner-capability row matched the
 email.
 

@@ -1,5 +1,5 @@
 // cairn-cms: the field descriptor union (Contract v2's fieldset primitive). Each interface below is a
-// leaf or container's plain-data shape (label, constraints, a type discriminant); `fieldset()` reads
+// leaf or container's plain-data shape (label, constraints, a type discriminant); `defineFieldset()` reads
 // this record to derive the validator, and the editor form reads it to render inputs. The `fields`
 // constructor namespace captures each call site's literal options with a `const` type parameter, so a
 // concept's own literals (a `select`'s option union, `required: true`) survive into the descriptor
@@ -175,7 +175,7 @@ export const fields = {
   reference: <const O extends Omit<ReferenceField, 'type'>>(o: O): ReferenceField & O => ({ type: 'reference', ...o }),
   /**
    * A repeatable field over one item descriptor, preserving the item type for inference. The item is
-   *  a leaf, or a flat object of leaves; `fieldset` rejects deeper nesting at declaration.
+   *  a leaf, or a flat object of leaves; `defineFieldset` rejects deeper nesting at declaration.
    */
   array: <const I extends FieldDescriptor, const O extends Omit<ArrayField, 'type' | 'item'>>(
     item: I,

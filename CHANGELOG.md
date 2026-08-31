@@ -363,6 +363,9 @@
   return imports the declared `PublicRoutes` type from `@glw907/cairn-cms/delivery` instead of
   writing `ReturnType<typeof createPublicRoutes>` itself, the exact idiom the contract-first-returns
   ruling now bans on the public surface; see the conventions-pass entry above.)
+  (**Amended by the conventions pass, Task 3:** `siteDescriptors` renames to `buildSiteDescriptors`
+  (the verb-rule and bare-noun conventions; see the conventions-pass entry below); a site hand-writing
+  a full-content feed off it names the new function, `buildSiteDescriptors`, not `siteDescriptors`.)
   Stop importing `isElement` from `@glw907/cairn-cms/render` (`audit-render`; reach for
   `hast-util-is-element`, or the inline `!!node && node.type === 'element'` check, over hast types
   the site already imports). Stop importing `stories` from `@glw907/cairn-cms/reproductions`
@@ -392,6 +395,34 @@
   `NavConcept`, `NavLoadData['pages'][number]` for `NavPageOption`,
   `Exclude<SettingsData['keyStatus'], 'missing'>` for `TidyKeyProbeResult`, and
   `Parameters<NonNullable<ReproStory['pose']>>[1]` for `ReproInstance`.
+
+- The conventions pass (Task 3) applies the 2026-08-30 sitting's ratified **verb-rule** and
+  **bare-noun** conventions to the factory population: `verify*` stays reserved for an engine-owned
+  integrity check that throws, `validate*` for a check returning issues, `build*` for pure-data
+  derivation, and `create*` for a function factory; `read*` reads a committed artifact or
+  declaration into typed shape, retiring `extract*`; every exported function's name now begins with
+  a verb. Renamed, names only, no deprecated alias: the resolver trio `createMediaResolver`
+  (`/render`, `/media`), `createLinkResolver`, `createFragmentResolver` (`/delivery`,
+  `/delivery/data`) — function factories, so `build*` moves to `create*`; `readMenu`, `readVocabulary`
+  (`.`) — `extract*` retires; `buildSiteDescriptors`, `diffNewlyPublished`, `buildSitemapView`,
+  `renderJsonLdScript` (`/delivery`, `/delivery/data`); `formatMediaToken` (`/media`), paired with
+  the unchanged `parseMediaToken` as the codec; `defineFieldset` (`.`), joining
+  `defineAdapter`/`defineConcept`/`defineComponent`/`defineRegistry`'s established prefix for a
+  declaration-time constructor; `resolveOwnerLevelRoles` (`.`), beside `resolveCapability`. One
+  deliberate signature change rides the rename so the signature moves once: `createMediaResolver`
+  drops its dead `opts?: { preset?: string }` parameter (`(manifest, resolved)` only), closing
+  `audit-media-buildmediaresolver` — `opts.preset` had zero non-test callers anywhere and silently
+  contradicted the `imageDetail` side channel's own srcset/dimensions. Everything else in this
+  entry is a name-only rename; behavior, parameter order, and every other signature are unchanged.
+  **Consumers must**, one rename table: `buildMediaResolver` → `createMediaResolver`;
+  `buildLinkResolver` → `createLinkResolver`; `buildFragmentResolver` → `createFragmentResolver`;
+  `extractMenu` → `readMenu`; `extractVocabulary` → `readVocabulary`; `siteDescriptors` →
+  `buildSiteDescriptors`; `newlyPublishedEntries` → `diffNewlyPublished`; `sitemapView` →
+  `buildSitemapView`; `jsonLdScript` → `renderJsonLdScript`; `mediaToken` → `formatMediaToken`;
+  `glyph` → `renderGlyph`; `fieldset` → `defineFieldset`; `ownerLevelRoles` →
+  `resolveOwnerLevelRoles`. A site calling `buildMediaResolver` with a third `{ preset }` argument
+  drops it; the rendered `src` was already ignoring it in every real deployment (the ruled shape
+  above), so this is a type-level tightening, not a behavior change for any working caller.
 
 ### Documentation
 
@@ -2102,7 +2133,8 @@ removal, nothing this list needs to carry.
   `parseManifest`, so a consumer can name and validate the manifest it fetches to build
   `newlyPublishedEntries`'s `before`/`after` pair without hand-casting JSON. See [Announce on
   publish](docs/guides/announce-on-publish.md) and [Delivery
-  data](docs/reference/delivery-data.md#newlypublishedentries). Consumers must: nothing; the
+  data](docs/reference/delivery-data.md#diffnewlypublished) (renamed `diffNewlyPublished` by the
+  conventions pass, Task 3). Consumers must: nothing; the
   field is additive and optional, and the stamp only ever appears on a publish that happens
   after the upgrade.
 

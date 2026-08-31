@@ -4,11 +4,11 @@ import {
   NavValidationError,
   parseSiteConfig,
   SiteConfigError,
-  extractMenu,
+  readMenu,
   setMenu,
   setTidy,
   validateVocabulary,
-  extractVocabulary,
+  readVocabulary,
   setVocabulary,
   dictionaryFileForDialect,
   DEFAULT_DIALECT,
@@ -190,14 +190,14 @@ describe('SiteConfigError', () => {
   });
 });
 
-describe('extractMenu', () => {
+describe('readMenu', () => {
   it('returns the named menu validated', () => {
     const config = parseSiteConfig('siteName: S\nmenus:\n  primary:\n    - label: Home\n      url: /\n');
-    expect(extractMenu(config, 'primary', 2)).toEqual([{ label: 'Home', url: '/' }]);
+    expect(readMenu(config, 'primary', 2)).toEqual([{ label: 'Home', url: '/' }]);
   });
 
   it('returns an empty array when the menu is absent', () => {
-    expect(extractMenu(parseSiteConfig('siteName: S\n'), 'primary', 2)).toEqual([]);
+    expect(readMenu(parseSiteConfig('siteName: S\n'), 'primary', 2)).toEqual([]);
   });
 });
 
@@ -207,13 +207,13 @@ describe('setMenu', () => {
     const out = setMenu(raw, 'primary', [{ label: 'Home', url: '/' }]);
     const reparsed = parseSiteConfig(out);
     expect(reparsed.description).toBe('keep me');
-    expect(extractMenu(reparsed, 'primary', 2)).toEqual([{ label: 'Home', url: '/' }]);
-    expect(extractMenu(reparsed, 'footer', 2)).toEqual([{ label: 'Privacy', url: '/privacy' }]);
+    expect(readMenu(reparsed, 'primary', 2)).toEqual([{ label: 'Home', url: '/' }]);
+    expect(readMenu(reparsed, 'footer', 2)).toEqual([{ label: 'Privacy', url: '/privacy' }]);
   });
 
   it('creates the menus map when the file has none yet', () => {
     const out = setMenu('siteName: S\n', 'primary', [{ label: 'Home', url: '/' }]);
-    expect(extractMenu(parseSiteConfig(out), 'primary', 2)).toEqual([{ label: 'Home', url: '/' }]);
+    expect(readMenu(parseSiteConfig(out), 'primary', 2)).toEqual([{ label: 'Home', url: '/' }]);
   });
 
   it('throws when the root has no siteName', () => {
@@ -313,14 +313,14 @@ describe('validateVocabulary', () => {
   });
 });
 
-describe('extractVocabulary', () => {
+describe('readVocabulary', () => {
   it('parses and returns a well-formed vocabulary from a config', () => {
     const config = parseSiteConfig('siteName: S\nvocabulary:\n  - value: web-design\n    label: Web Design\n');
-    expect(extractVocabulary(config)).toEqual([{ value: 'web-design', label: 'Web Design' }]);
+    expect(readVocabulary(config)).toEqual([{ value: 'web-design', label: 'Web Design' }]);
   });
 
   it('returns [] when the key is absent', () => {
-    expect(extractVocabulary(parseSiteConfig('siteName: S\n'))).toEqual([]);
+    expect(readVocabulary(parseSiteConfig('siteName: S\n'))).toEqual([]);
   });
 });
 
@@ -332,7 +332,7 @@ describe('setVocabulary', () => {
     expect(reparsed.siteName).toBe('S');
     expect(reparsed.description).toBe('keep me');
     expect(reparsed.menus?.primary).toEqual([{ label: 'Home', url: '/' }]);
-    expect(extractVocabulary(reparsed)).toEqual([{ value: 'a', label: 'A' }]);
+    expect(readVocabulary(reparsed)).toEqual([{ value: 'a', label: 'A' }]);
   });
 
   it('throws when the root has no siteName', () => {

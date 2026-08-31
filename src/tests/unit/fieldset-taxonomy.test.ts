@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { fieldset, fields } from '../../lib/index.js';
+import { defineFieldset, fields } from '../../lib/index.js';
 
 describe('fieldset taxonomy-marker guard', () => {
   it('throws when two multiselect fields both set taxonomy: true', () => {
     expect(() =>
-      fieldset({
+      defineFieldset({
         a: fields.multiselect({ label: 'A', taxonomy: true }),
         b: fields.multiselect({ label: 'B', taxonomy: true }),
       }),
@@ -13,7 +13,7 @@ describe('fieldset taxonomy-marker guard', () => {
 
   it('names both offending keys in the error', () => {
     expect(() =>
-      fieldset({
+      defineFieldset({
         a: fields.multiselect({ label: 'A', taxonomy: true }),
         b: fields.multiselect({ label: 'B', taxonomy: true }),
       }),
@@ -22,7 +22,7 @@ describe('fieldset taxonomy-marker guard', () => {
 
   it('allows one marked multiselect plus other un-marked multiselects', () => {
     expect(() =>
-      fieldset({
+      defineFieldset({
         topics: fields.multiselect({ label: 'Topics', taxonomy: true }),
         moods: fields.multiselect({ label: 'Moods' }),
       }),
@@ -31,25 +31,25 @@ describe('fieldset taxonomy-marker guard', () => {
 
   it('allows zero marked fields', () => {
     expect(() =>
-      fieldset({
+      defineFieldset({
         tags: fields.multiselect({ label: 'Tags' }),
       }),
     ).not.toThrow();
   });
 
   it('still allows one top-level marked multiselect', () => {
-    expect(() => fieldset({ topics: fields.multiselect({ label: 'Topics', taxonomy: true }) })).not.toThrow();
+    expect(() => defineFieldset({ topics: fields.multiselect({ label: 'Topics', taxonomy: true }) })).not.toThrow();
   });
 
   it('forbids a taxonomy marker inside an object (top-level only)', () => {
     expect(() =>
-      fieldset({ box: fields.object({ fields: { topics: fields.multiselect({ label: 'Topics', taxonomy: true }) } }) }),
+      defineFieldset({ box: fields.object({ fields: { topics: fields.multiselect({ label: 'Topics', taxonomy: true }) } }) }),
     ).toThrow(/taxonomy/i);
   });
 
   it('forbids a taxonomy marker inside an array', () => {
     expect(() =>
-      fieldset({ rows: fields.array(fields.multiselect({ label: 'Topics', taxonomy: true })) }),
+      defineFieldset({ rows: fields.array(fields.multiselect({ label: 'Topics', taxonomy: true })) }),
     ).toThrow(/taxonomy/i);
   });
 });

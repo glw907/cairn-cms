@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { runtime, REPO, contentEvent, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
@@ -455,7 +455,7 @@ describe('createAction', () => {
       permalink: '/:slug',
       datePrefix: 'day',
       fields: [],
-      schema: fieldset({}),
+      schema: defineFieldset({}),
       summaryFields: [],
       validate: () => ({ ok: true as const, data: {} }),
     });

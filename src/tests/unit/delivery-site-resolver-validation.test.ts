@@ -3,13 +3,13 @@ import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.j
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const descriptor = normalizeConcepts({
   posts: {
     dir: 'src/content/posts',
     routing: 'feed',
-    fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+    fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
   },
 })[0];
 

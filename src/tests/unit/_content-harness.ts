@@ -6,7 +6,7 @@
 // whole skeleton. Modeled on src/tests/integration/_auth-harness.ts.
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { Backend } from '../../lib/github/backend.js';
 import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
@@ -30,7 +30,7 @@ export function postsConcept(overrides: Partial<ConceptDescriptor> = {}): Concep
     permalink: '/posts/:slug',
     datePrefix: 'day',
     fields: [],
-    schema: fieldset({}),
+    schema: defineFieldset({}),
     summaryFields: [],
     validate: () => ({ ok: true, data: {} }),
     ...overrides,

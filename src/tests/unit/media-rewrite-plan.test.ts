@@ -13,7 +13,7 @@ import { repointMediaRef, type RepointResult } from '../../lib/content/media-rew
 import { serializeMarkdown } from '../../lib/content/frontmatter.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import type { Manifest, ManifestEntry } from '../../lib/content/manifest.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 
 const repo = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 const token = 'test-token';
@@ -33,7 +33,7 @@ function postsConcept(): ConceptDescriptor {
       { type: 'text', name: 'title', label: 'Title', required: true },
       { type: 'image', name: 'image', label: 'Hero', seo: true },
     ],
-    schema: fieldset({}),
+    schema: defineFieldset({}),
     summaryFields: [],
     validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
   };

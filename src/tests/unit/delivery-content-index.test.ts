@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { log } from '../../lib/log/index.js';
 import type { ContentIndex, RawFile } from '../../lib/delivery/content-index.js';
 
@@ -10,7 +10,7 @@ const [posts] = normalizeConcepts({
   posts: {
     dir: 'd',
     routing: 'feed',
-    fields: fieldset({
+    fields: defineFieldset({
       title: fields.text({ label: 'Title' }),
       date: fields.date({ label: 'Date' }),
       tags: fields.multiselect({ label: 'Tags', options: ['a'], taxonomy: true }),
@@ -85,7 +85,7 @@ describe('content index slug', () => {
         routing: 'feed',
         permalink: '/:year/:month/:day/:slug',
         datePrefix: 'day',
-        fields: fieldset({
+        fields: defineFieldset({
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
         }),
@@ -105,7 +105,7 @@ describe('summary fields', () => {
   const [withSummary] = normalizeConcepts({
     posts: {
       dir: 'p',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title' }),
         date: fields.date({ label: 'Date' }),
         description: fields.textarea({ label: 'Description' }),
@@ -134,7 +134,7 @@ describe('summary fields', () => {
   });
 
   it('yields an empty fields object when summaryFields is unset', () => {
-    const [plain] = normalizeConcepts({ pages: { dir: 'g', fields: fieldset({ title: fields.text({ label: 'Title' }) }) } });
+    const [plain] = normalizeConcepts({ pages: { dir: 'g', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) } });
     const plainIndex = createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout.' }], plain);
     expect(plainIndex.all()[0].fields).toEqual({});
   });
@@ -151,7 +151,7 @@ describe('content index reads the taxonomy-marked field', () => {
     posts: {
       dir: 'd',
       routing: 'feed',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title' }),
         date: fields.date({ label: 'Date' }),
         // An open multiselect (no options) so the validator accepts arbitrary values and coerces a
@@ -190,7 +190,7 @@ describe('content index reads the taxonomy-marked field', () => {
       posts: {
         dir: 'd',
         routing: 'feed',
-        fields: fieldset({
+        fields: defineFieldset({
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
         }),
@@ -212,7 +212,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
       posts: {
         dir: 'd',
         routing: 'feed',
-        fields: fieldset({
+        fields: defineFieldset({
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
           tags: fields.multiselect({ label: 'Tags' }),
@@ -236,7 +236,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
       posts: {
         dir: 'd',
         routing: 'feed',
-        fields: fieldset({
+        fields: defineFieldset({
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
           categories: fields.multiselect({ label: 'Categories' }),
@@ -254,7 +254,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
       posts: {
         dir: 'd',
         routing: 'feed',
-        fields: fieldset({
+        fields: defineFieldset({
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
           tags: fields.multiselect({ label: 'Tags', taxonomy: true }),
@@ -271,7 +271,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
       posts: {
         dir: 'd',
         routing: 'feed',
-        fields: fieldset({
+        fields: defineFieldset({
           title: fields.text({ label: 'Title' }),
           date: fields.date({ label: 'Date' }),
         }),
@@ -285,7 +285,7 @@ describe('content index advisory for an unmarked tags-named field', () => {
 
 describe('createContentIndex validate-once reads', () => {
   const [trimmed] = normalizeConcepts({
-    posts: { dir: 'd', fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }) },
+    posts: { dir: 'd', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }) },
   });
 
   it('stores the normalized data on the detail frontmatter', () => {
@@ -314,7 +314,7 @@ describe('createContentIndex degrades a date-token permalink miss to a problem',
       routing: 'feed',
       permalink: '/:year/:month/:day/:slug',
       datePrefix: 'day',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date', required: true }),
       }),
@@ -341,7 +341,7 @@ describe('createContentIndex degrades a date-token permalink miss to a problem',
 
 describe('createContentIndex excludes invalid entries from the typed read', () => {
   const [posts] = normalizeConcepts({
-    posts: { dir: 'd', fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }) },
+    posts: { dir: 'd', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }) },
   });
 
   it('keeps an invalid non-draft entry out of every read but records it', () => {

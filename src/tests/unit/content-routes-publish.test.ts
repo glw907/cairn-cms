@@ -6,7 +6,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest, serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
@@ -34,7 +34,7 @@ function multiRuntime(): CairnRuntime {
     permalink: '/:slug',
     datePrefix: 'day',
     fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-    schema: fieldset({}),
+    schema: defineFieldset({}),
     summaryFields: [],
     validate: () => ({ ok: true as const, data: { title: 'About' } }),
   });
@@ -76,7 +76,7 @@ function pagesRuntime(): CairnRuntime {
         permalink: '/:slug',
         datePrefix: 'day',
         fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-        schema: fieldset({}),
+        schema: defineFieldset({}),
         summaryFields: [],
         validate: () => ({ ok: true as const, data: {} }),
       },

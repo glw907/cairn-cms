@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest } from '../../lib/content/manifest.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import { runtime as baseRuntime, postsConcept, contentEvent, json, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 
@@ -20,7 +20,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
         permalink: '/:slug',
         datePrefix: 'day',
         fields,
-        schema: fieldset({}),
+        schema: defineFieldset({}),
         summaryFields: [],
         validate,
       },

@@ -2,7 +2,7 @@ import { describe, it, expect, expectTypeOf } from 'vitest';
 import { githubApp } from '../../lib/index.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset, type InferFieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset, type InferFieldset } from '../../lib/content/fieldset.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 
 const adapter = defineAdapter({
@@ -10,7 +10,7 @@ const adapter = defineAdapter({
     posts: {
       dir: 'src/content/posts',
       routing: 'feed',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
       }),

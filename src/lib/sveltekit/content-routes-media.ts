@@ -7,7 +7,7 @@ import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.js';
 import { hashBytes, shortHash, slugifyFilename, r2Key } from '../media/naming.js';
-import { mediaToken } from '../media/reference.js';
+import { formatMediaToken } from '../media/reference.js';
 import { r2Store } from '../media/store.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, removeMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import type { MediaEntry } from '../media/manifest.js';
@@ -336,7 +336,7 @@ function clampDimension(value: string | null): number | null {
  *  the hash, so a missing slug still resolves. Shared by the preview and apply token construction.
  */
 function replacementToken(slug: string, hash: string): string {
-  return mediaToken({ slug: MEDIA_SLUG_RE.test(slug) ? slug : null, hash });
+  return formatMediaToken({ slug: MEDIA_SLUG_RE.test(slug) ? slug : null, hash });
 }
 
 /** The fail(503) message every media action returns when the site declares no assets block. */
@@ -584,7 +584,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       height,
       createdAt: new Date().toISOString(),
     };
-    const reference = mediaToken({ slug, hash });
+    const reference = formatMediaToken({ slug, hash });
 
     log.info('media.uploaded', { editor: editor.email, hash, bytes: bytes.length, contentType: sniffed, reused });
     return { reference, record, reused, mismatch };

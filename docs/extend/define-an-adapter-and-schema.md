@@ -21,14 +21,14 @@ other.
 A concept is one content type: a directory of markdown files sharing a fieldset.
 
 ```ts
-import { defineAdapter, defineConcept, fieldset, fields } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
 
 const posts = defineConcept({
   dir: 'src/content/posts',
   label: 'Posts',
   singular: 'post',
   routing: 'feed',
-  fields: fieldset({
+  fields: defineFieldset({
     title: fields.text({ label: 'Title', required: true }),
     date: fields.date({ label: 'Date' }),
     description: fields.textarea({ label: 'Description' }),
@@ -62,14 +62,14 @@ confused editor's save attempt.
 `routing: 'feed'` alone gives you a sane default permalink. To choose your own shape:
 
 ```ts
-import { defineConcept, fieldset, fields } from '@glw907/cairn-cms';
+import { defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
 
 const posts = defineConcept({
   dir: 'src/content/posts',
   routing: 'feed',
   permalink: '/:year/:month/:slug',
   datePrefix: 'month',
-  fields: fieldset({
+  fields: defineFieldset({
     title: fields.text({ label: 'Title', required: true }),
     date: fields.date({ label: 'Date' }),
   }),
@@ -116,7 +116,7 @@ covers that cost if you haven't set it up yet.
 
 ```ts
 // src/lib/cairn.config.ts
-import { defineAdapter, defineConcept, defineRegistry, fieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
+import { defineAdapter, defineConcept, defineRegistry, defineFieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
 
 const registry = defineRegistry({ components: [] });
 const { renderMarkdown } = createRenderer(registry);
@@ -128,7 +128,7 @@ export const cairn = defineAdapter({
       label: 'Posts',
       singular: 'post',
       routing: 'feed',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
         description: fields.textarea({ label: 'Description' }),

@@ -1,10 +1,10 @@
 // The chassis's component-grammar wiring: a theme supplies its own icon set (the concrete glyph
 // data) and its own defineComponent() list; this module wires either into the engine's render
 // helpers with no theme-specific knowledge of its own. A theme reads makeIconRenderer, never
-// iconSpan/glyph directly, so re-skinning the icon SET (swapping the glyph data passed in) never
+// iconSpan/renderGlyph directly, so re-skinning the icon SET (swapping the glyph data passed in) never
 // touches a component's build() function. It also holds the prose-typography seam: a
 // createRenderer remarkPlugins entry a theme composes in once, so every render call inherits it.
-import { glyph, type IconSet } from '@glw907/cairn-cms';
+import { renderGlyph, type IconSet } from '@glw907/cairn-cms';
 import { iconSpan } from '@glw907/cairn-cms/render';
 import type { Element } from 'hast';
 import remarkSmartypants from 'remark-smartypants';
@@ -17,7 +17,7 @@ import type { PluggableList } from 'unified';
  * module never sees which names a theme declares.
  */
 export function makeIconRenderer(icons: IconSet): (name: string, role?: string) => Element {
-  return (name, role) => iconSpan(glyph(name, icons), role);
+  return (name, role) => iconSpan(renderGlyph(name, icons), role);
 }
 
 /**

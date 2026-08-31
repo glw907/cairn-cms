@@ -10,7 +10,7 @@ import type { SiteConfig } from '../nav/site-config.js';
  *  for API stability and the menus and site name it still carries; the URL policy now lives on each
  *  concept, so it is not read here.
  */
-export function siteDescriptors(adapter: CairnAdapter, siteConfig: SiteConfig): ConceptDescriptor[] {
+export function buildSiteDescriptors(adapter: CairnAdapter, siteConfig: SiteConfig): ConceptDescriptor[] {
   void siteConfig;
   return normalizeConcepts(adapter.content);
 }

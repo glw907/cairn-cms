@@ -211,7 +211,7 @@ import {
   defineAdapter,
   defineConcept,
   defineRegistry,
-  fieldset,
+  defineFieldset,
   fields,
   githubApp,
   createRenderer,
@@ -232,7 +232,7 @@ export const cairn = defineAdapter({
       label: 'Posts',
       singular: 'post',
       routing: 'feed',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
         date: fields.date({ label: 'Date' }),
         description: fields.textarea({ label: 'Description' }),

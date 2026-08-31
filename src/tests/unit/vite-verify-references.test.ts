@@ -31,7 +31,7 @@ export default {
 };
 `;
 
-const ADAPTER = `import { defineAdapter, fieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
+const ADAPTER = `import { defineAdapter, defineFieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
 export const cairn = defineAdapter({
   rendering: { render: ({ body }) => Promise.resolve(body) },
   email: { from: 'cms@test.example' },
@@ -39,14 +39,14 @@ export const cairn = defineAdapter({
   content: {
     posts: {
       dir: 'src/content/posts',
-      fields: fieldset({
+      fields: defineFieldset({
         title: fields.text({ label: 'Title', required: true }),
         author: fields.reference({ concept: 'pages', label: 'Author' }),
       }),
     },
     pages: {
       dir: 'src/content/pages',
-      fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+      fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }) }),
     },
   },
 });

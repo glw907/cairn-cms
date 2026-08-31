@@ -14,7 +14,7 @@ export { normalizeAssets, type ResolvedAssetConfig } from './config.js';
 export type { AssetConfig } from '../content/types.js';
 export { readCommittedManifest, type MediaEntry, type MediaManifest } from './manifest.js';
 export type { VariantSpec } from './transform-url.js';
-export { parseMediaToken, mediaToken, type MediaRef } from './reference.js';
+export { parseMediaToken, formatMediaToken, type MediaRef } from './reference.js';
 // `MediaResolve`'s canonical home is `.`; a recorded R4 re-export here because
-// `buildMediaResolver`'s return type names it.
-export { buildMediaResolver, type MediaResolve } from '../render/resolve-media.js';
+// `createMediaResolver`'s return type names it.
+export { createMediaResolver, type MediaResolve } from '../render/resolve-media.js';

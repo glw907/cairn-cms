@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { githubApp } from '../../lib/index.js';
 import { buildSiteManifest } from '../../lib/delivery/manifest.js';
-import { buildLinkResolver } from '../../lib/delivery/site-resolver.js';
+import { createLinkResolver } from '../../lib/delivery/site-resolver.js';
 import { createSiteIndexes } from '../../lib/delivery/site-indexes.js';
 import { defineAdapter } from '../../lib/content/adapter.js';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { SiteConfig } from '../../lib/nav/site-config.js';
 
 const adapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }) },
-    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: defineFieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }) },
+    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
   },
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
@@ -28,8 +28,8 @@ const globs = {
 // A posts concept whose validate requires a non-empty title, so an empty-title file fails.
 const requiredTitleAdapter = defineAdapter({
   content: {
-    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: fieldset({ title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) }) },
-    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+    posts: { dir: 'src/content/posts', label: 'Posts', routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'day', fields: defineFieldset({ title: fields.text({ label: 'Title', required: true }), date: fields.date({ label: 'Date' }) }) },
+    pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
   },
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
@@ -67,10 +67,10 @@ describe('buildSiteManifest', () => {
   });
 });
 
-describe('buildLinkResolver', () => {
+describe('createLinkResolver', () => {
   it('resolves a known target and throws on a miss', () => {
     const { site } = createSiteIndexes(adapter, config, globs);
-    const resolve = buildLinkResolver(site);
+    const resolve = createLinkResolver(site);
     expect(resolve({ concept: 'pages', id: 'about' })).toBe('/about');
     expect(() => resolve({ concept: 'posts', id: 'missing' })).toThrow(/cairn:posts\/missing/);
   });
@@ -81,8 +81,8 @@ describe('buildLinkResolver', () => {
   it('treats a cairn: ref to a non-routable concept as a miss (the dangling-link backstop)', () => {
     const fragmentsAdapter = defineAdapter({
       content: {
-        pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
-        fragments: { dir: 'src/content/fragments', label: 'Fragments', routing: 'embedded', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+        pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
+        fragments: { dir: 'src/content/fragments', label: 'Fragments', routing: 'embedded', fields: defineFieldset({ title: fields.text({ label: 'Title' }) }) },
       },
       backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
       email: { from: 'a@b.c' },
@@ -92,7 +92,7 @@ describe('buildLinkResolver', () => {
       pages: globs.pages,
       fragments: { 'src/content/fragments/address.md': '---\ntitle: Address\n---\n\nBody.' },
     });
-    const resolve = buildLinkResolver(site);
+    const resolve = createLinkResolver(site);
     expect(() => resolve({ concept: 'fragments', id: 'address' })).toThrow(/cairn:fragments\/address/);
   });
 });

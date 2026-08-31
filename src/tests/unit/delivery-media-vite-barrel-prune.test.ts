@@ -7,7 +7,7 @@ import { enumerateExports } from '../../../scripts/checks/reference-coverage.mjs
 // The seven names the surface-pruning pass demotes from the /delivery and /delivery/data barrels
 // (Task 4), verbatim from `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, plus
 // `feedView`, retired outright by the retires pass (batch 1c, `audit-delivery-feedview`) rather
-// than demoted; `sitemapView` is frozen and unaffected.
+// than demoted; `buildSitemapView` is frozen and unaffected.
 const DELIVERY_DEMOTED = [
   'createSiteResolver',
   'ConceptIndex',
@@ -36,7 +36,7 @@ const DATA_KEPT = [
   'FeedItem',
   'buildSitemap',
   'SitemapUrl',
-  'sitemapView',
+  'buildSitemapView',
   'buildRobots',
   'rssResponse',
   'jsonFeedResponse',
@@ -48,10 +48,10 @@ const DATA_KEPT = [
   'resolveImageUrl',
   'readSeoFields',
   'SeoFields',
-  'jsonLdScript',
-  'siteDescriptors',
+  'renderJsonLdScript',
+  'buildSiteDescriptors',
   'buildSiteManifest',
-  'buildLinkResolver',
+  'createLinkResolver',
   'resolveReferences',
   'ResolvedReference',
 ];
@@ -88,9 +88,9 @@ const MEDIA_KEPT = [
   'MediaManifest',
   'VariantSpec',
   'parseMediaToken',
-  'mediaToken',
+  'formatMediaToken',
   'MediaRef',
-  'buildMediaResolver',
+  'createMediaResolver',
   'MediaResolve',
 ];
 

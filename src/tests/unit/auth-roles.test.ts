@@ -3,7 +3,7 @@ import {
   defineRoles,
   resolveCapability,
   roleHome,
-  ownerLevelRoles,
+  resolveOwnerLevelRoles,
   DEFAULT_ROLES,
 } from '../../lib/auth/roles.js';
 import type { Editor } from '../../lib/auth/types.js';
@@ -102,18 +102,18 @@ describe('roleHome', () => {
   });
 });
 
-describe('ownerLevelRoles', () => {
+describe('resolveOwnerLevelRoles', () => {
   it('lists every owner-capability name over a two-owner vocabulary', () => {
     const roles = defineRoles({
       owner: 'owner',
       commodore: { capability: 'owner', home: '/admin/roster' },
       'club-admin': 'editor',
     });
-    expect(ownerLevelRoles(roles).sort()).toEqual(['commodore', 'owner']);
+    expect(resolveOwnerLevelRoles(roles).sort()).toEqual(['commodore', 'owner']);
   });
 
   it('lists only owner over the default vocabulary', () => {
-    expect(ownerLevelRoles(undefined)).toEqual(['owner']);
+    expect(resolveOwnerLevelRoles(undefined)).toEqual(['owner']);
     expect(DEFAULT_ROLES).toEqual({ owner: 'owner', editor: 'editor' });
   });
 });

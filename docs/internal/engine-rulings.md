@@ -824,6 +824,10 @@ when the remediation pass lands.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 53.
 - **Any-site case:** A site provisioning admins from its own screen must know which of its role names carry owner capability, since the last-owner guard counts across that set, not the literal 'owner'. Getting it wrong locks the site out.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
+- **Annotation (conventions pass, Task 3):** renamed `ownerLevelRoles` → `resolveOwnerLevelRoles`
+  (`convention-bare-noun-functions`: an exported function's name begins with a verb, and
+  `ownerLevelRoles` named only its return, not the operation). Names only; the signature and
+  behavior are unchanged.
 
 ## audit-adapter-siteconfigerror: `SiteConfigError`  (keep, 2026-08-26, any-site audit)
 
@@ -953,6 +957,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 71.
 - **Any-site case:** The bridge from a site's own IconSet to the hast Element a component's build must return. Hand-rolling h('svg') lets the fields.icon picker's values and the rendered glyphs drift apart.
+- **Annotation (conventions pass, Task 3):** renamed `glyph` → `renderGlyph`
+  (`convention-bare-noun-functions`: an exported function's name begins with a verb, and `glyph`
+  named only its return). Names only; the signature and behavior are unchanged.
 
 ## audit-adapter-iconset: `IconSet`  (keep, 2026-08-26, any-site audit)
 
@@ -1157,6 +1164,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 99.
 - **Any-site case:** The site's public nav comes from the same YAML the engine's nav editor writes; reading it by hand means reimplementing the depth bound and validation, so editor and render can disagree.
+- **Annotation (conventions pass, Task 3):** renamed `extractMenu` → `readMenu` (`convention-verb-rules`:
+  `read*` reads a committed artifact or declaration into typed shape, retiring `extract*`). Names
+  only; the signature and behavior are unchanged.
 
 ## audit-adapter-extractvocabulary: `extractVocabulary`  (keep, 2026-08-26, any-site audit)
 
@@ -1165,6 +1175,9 @@ when the remediation pass lands.
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 100.
 - **Any-site case:** The read half of the tag vocabulary the admin writes. The harvest records two themes hand-rolling capitalization around it, unaware 'a theme can commit a static vocabulary list ... purely for display labels'.
 - **Verified:** [verify-adapter-concept-model.md](record/2026-08-26-any-site-audit/verify-adapter-concept-model.md).
+- **Annotation (conventions pass, Task 3):** renamed `extractVocabulary` → `readVocabulary`
+  (`convention-verb-rules`: `read*` reads a committed artifact or declaration into typed shape,
+  retiring `extract*`). Names only; the signature and behavior are unchanged.
 
 ## audit-adapter-parsesiteconfig: `parseSiteConfig`  (keep, 2026-08-26, any-site audit)
 
@@ -1278,6 +1291,12 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-adapter-concept-model.md](record/2026-08-26-any-site-audit/rank-adapter-concept-model.md), rank 116.
 - **Any-site case:** One source of truth for editor form, server validator, and inferred type, with declaration-time enforcement a hand-roll cannot buy: 'A malformed pattern throws at the fieldset() call, not on a later save'.
+- **Annotation (conventions pass, Task 3):** renamed the FUNCTION `fieldset` → `defineFieldset`
+  (`convention-bare-noun-functions`: an exported function's name begins with a verb; `define*` is the
+  established prefix `defineAdapter`/`defineConcept`/`defineComponent`/`defineRegistry` already use
+  for a declaration-time constructor). Names only; the signature and behavior are unchanged. This
+  entry is the FUNCTION, disambiguated from the `Fieldset` TYPE entry immediately above (same slug,
+  different subject); the type is untouched by this rename.
 
 ## audit-adapter-cairnadapter: `CairnAdapter`  (keep, 2026-08-26, any-site audit)
 
@@ -3019,6 +3038,10 @@ when the remediation pass lands.
 - **Record:** [rank-media.md](record/2026-08-26-any-site-audit/rank-media.md), rank 2.
 - **Any-site case:** A site with its own admin over its own data (an events table, a staff directory) picks an asset from cairn's media library and must write a media: reference the engine will later resolve.
 - **Verified:** [verify-media.md](record/2026-08-26-any-site-audit/verify-media.md).
+- **Annotation (conventions pass, Task 3):** renamed `mediaToken` → `formatMediaToken`
+  (`convention-verb-rules`: `parse*` is reserved for string-to-structure codecs, paired with
+  `format*` for the reverse; `formatMediaToken` pairs with `parseMediaToken`). Names only; the
+  signature and behavior are unchanged.
 
 ## audit-media-mediamanifest: `MediaManifest`  (keep, 2026-08-26, any-site audit)
 
@@ -3054,8 +3077,14 @@ when the remediation pass lands.
 ## audit-media-buildmediaresolver: `buildMediaResolver`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. Membership passes; shape does not. opts.preset has zero non-test callers anywhere (engine, six sites, docs) and silently contradicts imageDetail: resolve() returns presetUrl while imageDetail builds srcSet from the bare path and reports the asset's original width/height. srcset beats src, so the preset is discarded and the intrinsic dimensions are wrong — the layout shift imageDetail exists to prevent. "Costs nothing to leave" is migration cost, which never sustains a verdict. Drop opts; keep (manifest, resolved).
-- **Reopens on:** open until executed; the remediation pass closes it.
-- **Record:** [rank-media.md](record/2026-08-26-any-site-audit/rank-media.md), rank 7.
+- **Reopens on:** closed. Executed by Task 3 of the conventions pass: renamed `createMediaResolver`
+  per `convention-verb-rules` (the resolver trio's `build*` names move to `create*`, since they are
+  function factories, not pure data derivation) and dropped the dead `opts?: { preset?: string }`
+  parameter in the same edit, per this entry's own ruled shape; the signature is now
+  `createMediaResolver(manifest, resolved): MediaResolve`. The `{ preset: 'inline' }` assertion and
+  the "applies a named preset" test case in `resolve-media.test.ts` are removed with it.
+- **Record:** [rank-media.md](record/2026-08-26-any-site-audit/rank-media.md), rank 7; executed by
+  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 3.
 - **Verified:** [verify-media.md](record/2026-08-26-any-site-audit/verify-media.md) (verdict overturned there).
 
 ## audit-delivery-ai-crawlers-reviewed: `AI_CRAWLERS_REVIEWED`  (retire, 2026-08-26, any-site audit)
@@ -3150,6 +3179,10 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 9.
 - **Any-site case:** A site owning its own svelte:head must serialize SeoMeta.jsonLd without a script breakout. The naive form is wrong: the engine itself shipped the bug (6b004007, U+2028/U+2029).
+- **Annotation (conventions pass, Task 3):** renamed `jsonLdScript` → `renderJsonLdScript`
+  (`convention-bare-noun-functions`: an exported function's name begins with a verb; `render*`
+  states it produces markup, not a data structure). Names only; the signature and behavior are
+  unchanged.
 
 ## audit-delivery-markdownresponse: `markdownResponse`  (keep, 2026-08-26, any-site audit)
 
@@ -3276,6 +3309,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 27.
 - **Any-site case:** A sitemap must list exactly the routable concepts; getting it wrong 'hands a crawler a 404' (site-resolver.ts:30). That membership comes from engine-owned routing flags.
+- **Annotation (conventions pass, Task 3):** renamed `sitemapView` → `buildSitemapView`
+  (`convention-verb-rules`: `build*` derives pure data; the exported function's name begins with a
+  verb per `convention-bare-noun-functions`). Names only; the signature and behavior are unchanged.
 
 ## audit-delivery-newlypublishedentries: `newlyPublishedEntries`  (keep, 2026-08-26, any-site audit)
 
@@ -3284,6 +3320,9 @@ when the remediation pass lands.
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 28.
 - **Any-site case:** Announcing a post on first publish. Not derivable: it depends on the publishedAt stamp, upsertEntry's carry-forward rules, and the concept+id key — 'a drafted entry CAN carry a stamp forward' (manifest.ts:44).
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md).
+- **Annotation (conventions pass, Task 3):** renamed `newlyPublishedEntries` → `diffNewlyPublished`
+  (`convention-bare-noun-functions`: an exported function's name begins with a verb; `diff*` states
+  it compares a before/after manifest pair). Names only; the signature and behavior are unchanged.
 
 ## audit-delivery-buildfragmentresolver: `buildFragmentResolver`  (keep, 2026-08-26, any-site audit)
 
@@ -3291,6 +3330,10 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 29.
 - **Any-site case:** Any site using ::include must resolve a fragment id to raw markdown at build. Depends on the reserved fragments concept id and the throw-at-build, mark-at-preview split (site-resolver.ts:200).
+- **Annotation (conventions pass, Task 3):** renamed `buildFragmentResolver` → `createFragmentResolver`
+  (`convention-verb-rules`: the resolver trio's `build*` names move to `create*`, since they are
+  function factories, not pure data derivation). Names only; the signature and behavior are
+  unchanged.
 
 ## audit-delivery-resolvedreference: `ResolvedReference`  (keep, 2026-08-26, any-site audit)
 
@@ -3354,6 +3397,11 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 38.
 - **Any-site case:** The only legal way to obtain the ConceptDescriptor[] that sitemapView, feedView, and resolveReferences require; it delegates to normalizeConcepts 'so the pairing is one path, not tribal knowledge'.
+- **Annotation (conventions pass, Task 3):** renamed `siteDescriptors` → `buildSiteDescriptors`
+  (`convention-bare-noun-functions`: an exported function's name begins with a verb; `build*` derives
+  pure data). Names only; the signature and behavior are unchanged. The live `## Unreleased`
+  CHANGELOG line instructing hand-writing off `siteDescriptors` (retires pass) is amended to the new
+  name in this same task, per the window-consistency constraint.
 
 ## audit-delivery-cairnhead: `CairnHead`  (keep, 2026-08-26, any-site audit)
 
@@ -3389,6 +3437,10 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 43.
 - **Any-site case:** cairn:<concept>/<id> is a grammar cairn invented; resolving it needs the cross-concept union plus the routability rule, and the throw-on-miss is the build backstop against dead links.
+- **Annotation (conventions pass, Task 3):** renamed `buildLinkResolver` → `createLinkResolver`
+  (`convention-verb-rules`: the resolver trio's `build*` names move to `create*`, since they are
+  function factories, not pure data derivation). Names only; the signature and behavior are
+  unchanged.
 
 ## audit-delivery-contentindex: `ContentIndex`  (keep, 2026-08-26, any-site audit)
 

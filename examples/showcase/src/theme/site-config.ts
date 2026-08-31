@@ -3,7 +3,7 @@
 // config or the primary menu) never pulls in the full adapter (the renderer, the icon set, the
 // registered components), which cairn.config.ts also builds. cairn.config.ts re-exports
 // `siteConfig` from here rather than parsing it again, so exactly one parseSiteConfig call runs.
-import { parseSiteConfig, extractMenu } from '@glw907/cairn-cms';
+import { parseSiteConfig, readMenu } from '@glw907/cairn-cms';
 import siteYaml from './site.config.yaml?raw';
 
 /** The parsed site.config.yaml, the single source every reader (feeds, routes, nav) shares. */
@@ -13,4 +13,4 @@ export const siteConfig = parseSiteConfig(siteYaml);
  * The public header's primary menu, resolved from `menus.primary` at the same depth the admin
  * nav editor declares (`cairn.config.ts`'s `editor.nav.maxDepth`).
  */
-export const primaryNav = extractMenu(siteConfig, 'primary', 2);
+export const primaryNav = readMenu(siteConfig, 'primary', 2);

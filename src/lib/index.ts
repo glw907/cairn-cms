@@ -17,7 +17,7 @@ export type { Editor, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { CairnEnv } from './env.js';
 // Site-declared role vocabulary (extensible-roles): sites map their own role names onto the three
 // engine capability levels. A zero-config site declares nothing and keeps the owner/editor default.
-export { defineRoles, resolveCapability, ownerLevelRoles, DEFAULT_ROLES } from './auth/roles.js';
+export { defineRoles, resolveCapability, resolveOwnerLevelRoles, DEFAULT_ROLES } from './auth/roles.js';
 export type { Capability, RoleDeclaration, RolesDeclaration } from './auth/roles.js';
 // The access map (admin access map and attention seams pass): one declaration a site reads twice
 // (the guard and the adapter), and one authority function every enforcement and visibility point
@@ -78,7 +78,7 @@ export type {
   ReferenceField,
   ArrayField,
 } from './content/fields.js';
-export { fieldset } from './content/fieldset.js';
+export { defineFieldset } from './content/fieldset.js';
 export type {
   Fieldset,
   InferFieldset,
@@ -101,7 +101,7 @@ export type { Manifest, ManifestEntry } from './content/manifest.js';
 export { defineRegistry, defineComponent } from './render/registry.js';
 // `ComponentDef.build`'s parameter and `.slots` name these.
 export type { ComponentDef, ComponentRegistry, ComponentContext, SlotDef } from './render/registry.js';
-export { glyph } from './render/glyph.js';
+export { renderGlyph } from './render/glyph.js';
 export type { IconSet } from './render/glyph.js';
 // The component-authoring helpers (iconSpan, cardShell, headRow, strAttr) live on the
 // @glw907/cairn-cms/render subpath, not the root barrel. rehypeDispatch is deliberately not public:
@@ -132,7 +132,7 @@ export type { Backend, BackendProvider, GithubAppProvider, BackendCommit } from 
 export type { FileChange } from './github/repo.js';
 
 // Nav tree and site-config helpers (Plan 06).
-export { parseSiteConfig, extractMenu, extractVocabulary, SiteConfigError } from './nav/site-config.js';
+export { parseSiteConfig, readMenu, readVocabulary, SiteConfigError } from './nav/site-config.js';
 // `CairnRuntime.tidy` names `TidyConfig`, whose own `conventions` field names `TidyConventions`.
 export type { NavNode, SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from './nav/site-config.js';
 // Canonical home `/sveltekit`; a recorded R4 re-export here because `CairnAdapter.editor.navLayout`

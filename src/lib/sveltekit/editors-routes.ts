@@ -16,7 +16,7 @@ import {
   removeOwnerIfNotLast,
   demoteOwnerIfNotLast,
 } from '../auth/store.js';
-import { resolveCapability, ownerLevelRoles, DEFAULT_ROLES } from '../auth/roles.js';
+import { resolveCapability, resolveOwnerLevelRoles, DEFAULT_ROLES } from '../auth/roles.js';
 import type { Capability, RolesDeclaration } from '../auth/roles.js';
 import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
@@ -57,7 +57,7 @@ export interface EditorRoutesConfig {
 /** Build the owner-gated editor-management routes: list, add, remove, and role-change. */
 export function createEditorRoutes(config: EditorRoutesConfig = {}): EditorRoutes {
   const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;
-  const ownerRoles = ownerLevelRoles(vocabulary);
+  const ownerRoles = resolveOwnerLevelRoles(vocabulary);
 
   /** A posted role, trimmed and checked against the vocabulary; null when blank or unknown. */
   function parseRole(value: FormDataEntryValue | null): string | null {

@@ -11,11 +11,11 @@ A `reference` field stores another entry's permanent id in frontmatter, typed to
 
 <!-- snippet-check-skip: elides the concept's other required fields (dir, label, singular, shown in full in core.md's worked example) to focus on the reference field -->
 ```ts
-import { defineConcept, fieldset, fields } from '@glw907/cairn-cms';
+import { defineConcept, defineFieldset, fields } from '@glw907/cairn-cms';
 
 const posts = defineConcept({
   // ...
-  fields: fieldset({
+  fields: defineFieldset({
     // ...
     author: fields.reference({ label: 'Author', concept: 'authors', required: true }),
   }),

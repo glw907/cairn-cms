@@ -54,24 +54,24 @@ export type { SiteConfig, VocabularyEntry, TidyConfig, TidyConventions } from '.
 // its home stays unsettled and it is left where it is until that reshape lands; `PublishActionEntry`
 // rides its declaration. Canonical home for both is `/sveltekit`.
 export type { PublishActionsConfig, PublishActionEntry } from '../sveltekit/publish-actions.js';
-export { buildLinkResolver, buildFragmentResolver, resolveReferences } from './site-resolver.js';
+export { createLinkResolver, createFragmentResolver, resolveReferences } from './site-resolver.js';
 export type { SiteResolver, ResolvedReference } from './site-resolver.js';
 export { createSiteIndexes } from './site-indexes.js';
 export type { SiteIndexes, SiteGlobs } from './site-indexes.js';
-export { siteDescriptors } from './site-descriptors.js';
+export { buildSiteDescriptors } from './site-descriptors.js';
 export { deriveExcerpt } from '../content/excerpt.js';
 export { buildRssFeed, buildJsonFeed } from './feeds.js';
 export type { FeedChannel, FeedItem } from './feeds.js';
 export { buildSitemap } from './sitemap.js';
 export type { SitemapUrl } from './sitemap.js';
-export { sitemapView } from './views.js';
+export { buildSitemapView } from './views.js';
 export { buildRobots } from './robots.js';
 export { buildSeoMeta } from './seo.js';
 export type { SeoInput, SeoMeta } from './seo.js';
 export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse, markdownResponse } from './responses.js';
-export { jsonLdScript } from './json-ld.js';
-export { buildSiteManifest, newlyPublishedEntries } from './manifest.js';
+export { renderJsonLdScript } from './json-ld.js';
+export { buildSiteManifest, diffNewlyPublished } from './manifest.js';
 export { parseManifest } from '../content/manifest.js';
 export type { Manifest, ManifestEntry } from '../content/manifest.js';

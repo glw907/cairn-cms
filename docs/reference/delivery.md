@@ -194,8 +194,8 @@ interface EntryDataOverrides {
 
 Substitutes for `composeEntryData`'s three resolvers, each defaulting to the build's own (throwing)
 pair drawn from `config.site`, or `config.resolveMedia` for the hero, when left unset.
-`resolveLink` substitutes `buildLinkResolver(config.site)`, `resolveFragment` substitutes
-`buildFragmentResolver(config.site)`, and `resolveMedia` substitutes `config.resolveMedia`,
+`resolveLink` substitutes `createLinkResolver(config.site)`, `resolveFragment` substitutes
+`createFragmentResolver(config.site)`, and `resolveMedia` substitutes `config.resolveMedia`,
 consumed by both the hero derivation and the body render.
 
 ---

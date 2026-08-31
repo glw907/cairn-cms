@@ -30,8 +30,8 @@ describe('v2 field vocabulary package exports', () => {
     expect(typeof cairn.fields.select).toBe('function');
   });
 
-  it('exports fieldset from the main entry', () => {
-    expect(typeof cairn.fieldset).toBe('function');
+  it('exports defineFieldset from the main entry', () => {
+    expect(typeof cairn.defineFieldset).toBe('function');
   });
 
   it('omits initialValues from the root barrel but keeps it reachable from its module', async () => {
@@ -41,7 +41,7 @@ describe('v2 field vocabulary package exports', () => {
   });
 
   it('exports the v2 field types', () => {
-    const set = cairn.fieldset({
+    const set = cairn.defineFieldset({
       title: cairn.fields.text({ label: 'Title', required: true }),
     });
     expectTypeOf(set).toMatchTypeOf<Fieldset>();

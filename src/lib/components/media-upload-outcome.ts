@@ -9,7 +9,7 @@
 import type { MediaEntry } from '../media/manifest.js';
 import type { UploadResult } from '../sveltekit/content-routes.js';
 import type { IngestFailureKind } from './client-ingest.js';
-import { mediaToken } from '../media/reference.js';
+import { formatMediaToken } from '../media/reference.js';
 
 /**
  * A failure the card surfaces. The ingest taxonomy plus a `generic` catch-all for a refuse reason
@@ -71,7 +71,7 @@ export function uploadOutcome(envelope: UploadEnvelope): UploadOutcome {
         // the insert depends only on grammar-constrained fields (a 16-hex hash, a slugified slug)
         // instead of an arbitrary server string. Defense in depth, in case a future server path
         // returns a reference that does not match the record.
-        reference: mediaToken({ slug: envelope.data.record.slug, hash: envelope.data.record.hash }),
+        reference: formatMediaToken({ slug: envelope.data.record.slug, hash: envelope.data.record.hash }),
         record: envelope.data.record,
         reused: envelope.data.reused,
       };

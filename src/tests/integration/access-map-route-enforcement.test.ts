@@ -11,7 +11,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
 import { githubApp } from '../../lib/index.js';
-import { fieldset } from '../../lib/content/fieldset.js';
+import { defineFieldset } from '../../lib/content/fieldset.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
@@ -48,7 +48,7 @@ function concept(id: string) {
     permalink: `/${id}/:slug`,
     datePrefix: 'day' as const,
     fields: [],
-    schema: fieldset({}),
+    schema: defineFieldset({}),
     summaryFields: [],
     validate: () => ({ ok: true as const, data: {} }),
   };

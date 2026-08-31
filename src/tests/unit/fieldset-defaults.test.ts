@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { fields } from '../../lib/content/fields.js';
-import { fieldset, initialValues } from '../../lib/content/fieldset.js';
+import { defineFieldset, initialValues } from '../../lib/content/fieldset.js';
 
 describe('initialValues and composition', () => {
   it('resolves literal and today defaults at render time', () => {
-    const fs = fieldset({
+    const fs = defineFieldset({
       status: fields.select({ label: 'S', options: ['draft', 'published'], default: 'draft' }),
       date:   fields.date({ label: 'D', default: 'today' }),
     });
@@ -14,7 +14,7 @@ describe('initialValues and composition', () => {
 
   it('composes a shared base field set by spreading', () => {
     const base = { title: fields.text({ label: 'Title', required: true }) };
-    const fs = fieldset({ ...base, body: fields.textarea({ label: 'Body' }) });
+    const fs = defineFieldset({ ...base, body: fields.textarea({ label: 'Body' }) });
     expect(Object.keys(fs.fields)).toEqual(['title', 'body']);
   });
 });

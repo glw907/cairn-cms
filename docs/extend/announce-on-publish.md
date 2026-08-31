@@ -10,11 +10,11 @@ entirely yours to build.
 
 ## The seam
 
-[`newlyPublishedEntries`](../reference/delivery-data.md#newlypublishedentries) diffs two
+[`diffNewlyPublished`](../reference/delivery-data.md#diffnewlypublished) diffs two
 manifests down to the entries that crossed the first-publish transition between them:
 
 ```ts
-import { newlyPublishedEntries, parseManifest, type Manifest } from '@glw907/cairn-cms/delivery/data';
+import { diffNewlyPublished, parseManifest, type Manifest } from '@glw907/cairn-cms/delivery/data';
 
 declare function fetchDeployedManifest(): Promise<string>;
 declare function fetchPriorManifest(): Promise<string | null>;
@@ -24,7 +24,7 @@ async function announceNewPublishes() {
   const prior: Manifest | null = priorRaw ? parseManifest(priorRaw) : null;
   const deployed = parseManifest(await fetchDeployedManifest());
 
-  for (const entry of newlyPublishedEntries(prior, deployed)) {
+  for (const entry of diffNewlyPublished(prior, deployed)) {
     // Fan out however you want: post, email, webhook. The engine has already done the
     // detection work; everything past this point is your own code.
   }
@@ -55,7 +55,7 @@ already gives you) and pass it back in as `before` on the next run.
 ## Renames read as new publishes
 
 Renaming a published entry changes its identity, `concept` and `id` together, cairn's own
-identity model for content. `newlyPublishedEntries` reads that as a new publish: the old key's
+identity model for content. `diffNewlyPublished` reads that as a new publish: the old key's
 stamped row disappears from `after`, and the new key's row has no stamped counterpart in
 `before`. A site that renames published entries and doesn't want a rename to re-announce needs to
 filter that case out itself; the helper has no way to distinguish "genuinely new" from "renamed"

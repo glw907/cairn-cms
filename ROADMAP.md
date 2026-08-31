@@ -1976,9 +1976,9 @@ the named human gates only):**
 
 - **`CairnAdmin`'s `form` prop is typed as a failure envelope, but SvelteKit hands it whatever
   the last action returned, successes included (docs friction log, triaged 2026-08-14).**
-  `ContentFormFailure` (`content-routes.ts:93-95`, still `Partial<SaveFailure & DeleteRefusal &
-  ... & TidyFailure>`) is an intersection of only the content actions' `fail()` payloads;
-  SvelteKit's generated `ActionData` unions every action's awaited return regardless of arm,
+  `ContentFormFailure` (`content-routes-core.ts:393-412`, a flat interface with every field
+  optional) models only the content actions' `fail()` payloads; SvelteKit's generated
+  `ActionData` unions every action's awaited return regardless of arm,
   and the assignment type-checks today only because every failure-payload field name happens to
   differ from every success-payload field name. C2b's refusal-channel pass hit this directly:
   sharpening every `fail()` from `ActionFailure<unknown>` to a precise `ActionFailure<T>` turned
@@ -2230,19 +2230,19 @@ the named human gates only):**
   finding, 2026-07-14 nav-layout pass.
 - **A refused save preserves the body but discards frontmatter field edits (updated with a
   code-verified finding, docs friction log, triaged 2026-08-14; supersedes the 2026-07-03
-  framing below).** `SaveFailure` (`content-routes-core.ts:299-306`) carries only `error`,
-  `brokenLinks`, and `body`, no frontmatter; `EditPage` reseeds the body through `form?.body ??
-  data.body` (`EditPage.svelte:147`), but every frontmatter field reloads from the stored
-  record. Converting the save refusal from a `?error=` redirect to `fail(400, SaveFailure)` was
-  meant to stop discarding an editor's work, and it half succeeds: the prose survives, the
-  frontmatter does not. Observed directly: clearing Title and saving re-renders with the alert
-  and the body intact, and the Title reverted to its committed value. The realistic cost is
-  larger than that single case: an editor who retitles an entry, adds a tag that fails taxonomy
-  validation, and saves loses the retitle while keeping the prose. This is strictly better than
-  the pre-C2b behavior, where the redirect discarded everything, so it is an incomplete
-  improvement rather than a regression. Candidate fix: carry the submitted frontmatter on
-  `SaveFailure` alongside `body` and reseed the fields from it, which also makes the failure
-  shape honest about what it holds. The refused-action editor cluster above (Next tier) shares
+  framing below).** `ContentFormFailure` (`content-routes-core.ts:393-412`) carries only
+  `error`, `brokenLinks`, and `body` on a refused save, no frontmatter; `EditPage` reseeds the
+  body through `form?.body ?? data.body` (`EditPage.svelte:147`), but every frontmatter field
+  reloads from the stored record. Converting the save refusal from a `?error=` redirect to
+  `fail(400, ...)` was meant to stop discarding an editor's work, and it half succeeds: the
+  prose survives, the frontmatter does not. Observed directly: clearing Title and saving
+  re-renders with the alert and the body intact, and the Title reverted to its committed value.
+  The realistic cost is larger than that single case: an editor who retitles an entry, adds a
+  tag that fails taxonomy validation, and saves loses the retitle while keeping the prose. This
+  is strictly better than the pre-C2b behavior, where the redirect discarded everything, so it
+  is an incomplete improvement rather than a regression. Candidate fix: add a frontmatter field
+  to `ContentFormFailure` and reseed the fields from it, which also makes the failure shape
+  honest about what it holds. The refused-action editor cluster above (Next tier) shares
   this same "no `use:enhance`, so a refusal loses state" shape one screen further along;
   consider folding the two into one pass. Original framing, 2026-07-03 friction log, triaged at
   the 2026-07-16 clearing: the conflict refusal itself is right (never merge by guesswork), but

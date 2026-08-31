@@ -6,7 +6,13 @@ import { describe, it, expect, vi } from 'vitest';
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
 
-const handle = createAuthGuard();
+// createAuthGuard is annotated `: Handle`, kit's own ambient type (the interop carve-out); the
+// cast below bridges it to the lighter CairnEvent shape this file's fakes build, mirroring
+// auth-guard.test.ts's own note.
+const handle = createAuthGuard() as unknown as (input: {
+  event: CairnEvent;
+  resolve: (event: CairnEvent) => Promise<Response>;
+}) => Promise<Response>;
 const OK = new Response('ok');
 
 // The adapter-node shape: no Cloudflare platform binding at all, so the flag can only be read from

@@ -21,7 +21,7 @@ import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/svelte
 import type { AdminShellData } from '../../lib/sveltekit/content-routes-core.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { D1Database, SendEmail } from '@cloudflare/workers-types';
-import type { RequestEvent, ServerLoadEvent, ResolveOptions } from '@sveltejs/kit';
+import type { RequestEvent, ServerLoadEvent } from '@sveltejs/kit';
 
 // The one runtime test in this compile-only file. Vitest fails a `.test.ts` that declares no
 // suite ("No test suite found in file"), so this block is what lets the fixtures below live in a
@@ -119,17 +119,21 @@ function typeOnlyAdminActionAssignability(): void {
 }
 void typeOnlyAdminActionAssignability;
 
-// createAuthGuard: prove the returned Handle assigns into sequence()'s own site-declared slot.
-// Kit's own `Handle` type is not parameterizable over Env, so SiteHandle mirrors its shape with
-// SiteRequestEvent standing in for RequestEvent.
-type SiteHandle = (input: {
-  event: SiteRequestEvent;
-  resolve: (event: SiteRequestEvent, opts?: ResolveOptions) => Promise<Response> | Response;
-}) => Promise<Response> | Response;
-
-function typeOnlyAuthGuardAssignability(): void {
+// createAuthGuard: annotated `: Handle`, kit's own ambient type (the conventions pass's
+// interop carve-out, `convention-interop-carve-out`), not a cairn-declared Env-parameterized
+// type the way every other factory in this sweep is. Its `resolve` parameter's own nested
+// contravariance means proving the FULL assignment into a site's own generated `Handle` needs
+// `RequestEvent`'s ambient `App.Platform` to resolve through a real ambient merge; this file
+// deliberately never declares one (a local `declare global App.Platform` would leak the
+// simulated platform typing across the whole suite's compile, per the header comment), so the
+// double-flip cannot be proven from inside this package's own bare compile unit the way a real
+// site's own ambient-merged ./$types can. This proves the half that IS provable without one: a
+// site's own generated event assigns cleanly into the `event` member `Handle` declares, the same
+// exclusion `createMediaRoute` already carries below.
+function typeOnlyAuthGuardAssignability(siteEvent: SiteRequestEvent): void {
   const handle = createAuthGuard();
-  handle satisfies SiteHandle;
+  void handle;
+  siteEvent satisfies Parameters<typeof handle>[0]['event'];
 }
 void typeOnlyAuthGuardAssignability;
 
@@ -150,9 +154,15 @@ function typeOnlyContentRoutesAssignability(): void {
 void typeOnlyContentRoutesAssignability;
 
 // createNavRoutes: navLoad/navSaveAction both read the same CairnEvent slot as content-routes.
+// Checked per member, not as a whole against Record<string, X>, since NavRoutes is now a
+// hand-declared interface (the conventions pass, contract-first returns) rather than a `Pick`-
+// derived mapped type; a plain interface carries no index signature, so the same
+// Record<string, X> cast the Pick-derived ContentRoutes tolerates above does not apply here,
+// mirroring AuthRoutes' and EditorRoutes' own per-member checks below.
 function typeOnlyNavRoutesAssignability(): void {
   const nav = createNavRoutes({} as CairnRuntime);
-  nav satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
+  nav.navLoad satisfies (event: SiteRequestEvent) => unknown;
+  nav.navSaveAction satisfies (event: SiteRequestEvent) => unknown;
 }
 void typeOnlyNavRoutesAssignability;
 

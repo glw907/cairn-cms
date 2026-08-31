@@ -2,7 +2,7 @@
 // insert and delete. The anti-lockout rule is the last remaining owner: the system refuses to
 // drop below one owner (spec 7.1), enforced in the store by an atomic guarded write rather
 // than a separate count, so concurrent removals cannot strand the allowlist at zero owners.
-import { fail } from '@sveltejs/kit';
+import { fail, type ActionFailure } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
 import { requireOwner } from './guard.js';
 import { requireDb } from '../env.js';
@@ -25,10 +25,12 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /**
  * A refused editor-management action: a bad input, a duplicate, or the anti-lockout rule.
- *  Module-internal: ManageEditors.svelte reads the envelope's `error` string loosely, so no
- *  other module names this type.
+ *  Module-exported (never barrel-published; see the internal-sibling comment on `EditorRoutes`
+ *  below) only because the declared `EditorRoutes` contract names it in three return positions
+ *  and TypeScript's declaration emit needs an exported name to reference: ManageEditors.svelte
+ *  itself still reads the envelope's `error` string loosely, so no other module names this type.
  */
-interface EditorActionFailure {
+export interface EditorActionFailure {
   error: string;
 }
 
@@ -44,7 +46,7 @@ export interface EditorsData {
 }
 
 /** Configuration for `createEditorRoutes`: the site's declared role vocabulary. */
-export interface EditorRoutesOptions {
+export interface EditorRoutesConfig {
   /**
    * The site's declared role vocabulary (see `defineRoles`); omitted, the routes validate and
    *  resolve against the implicit owner/editor pair, so a zero-config site sees no behavior change.
@@ -53,8 +55,8 @@ export interface EditorRoutesOptions {
 }
 
 /** Build the owner-gated editor-management routes: list, add, remove, and role-change. */
-export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
-  const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
+export function createEditorRoutes(config: EditorRoutesConfig = {}): EditorRoutes {
+  const vocabulary: RolesDeclaration = config.roles ?? DEFAULT_ROLES;
   const ownerRoles = ownerLevelRoles(vocabulary);
 
   /** A posted role, trimmed and checked against the vocabulary; null when blank or unknown. */
@@ -158,5 +160,16 @@ export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
   return { editorsLoad, editorAddAction, editorRemoveAction, editorSetRoleAction };
 }
 
-/** What `createEditorRoutes` returns: the owner-gated editor-management load and actions. */
-export type EditorRoutes = ReturnType<typeof createEditorRoutes>;
+/**
+ * What `createEditorRoutes` returns: the owner-gated editor-management load and actions. Names
+ *  `EditorActionFailure` in three return positions; that type is exported from this module (for
+ *  the declaration emit this contract requires) but never re-exported from the `/sveltekit`
+ *  barrel, since `ManageEditors.svelte` reads its `error` field loosely and no other module has a
+ *  reason to import the name directly (`convention-internal-sibling-comment`).
+ */
+export interface EditorRoutes {
+  editorsLoad: (event: CairnEvent) => Promise<EditorsData>;
+  editorAddAction: (event: CairnEvent) => Promise<{ ok: true } | ActionFailure<EditorActionFailure>>;
+  editorRemoveAction: (event: CairnEvent) => Promise<{ ok: true } | ActionFailure<EditorActionFailure>>;
+  editorSetRoleAction: (event: CairnEvent) => Promise<{ ok: true } | ActionFailure<EditorActionFailure>>;
+}

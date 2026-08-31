@@ -16,7 +16,7 @@
 // `ContentRoutes` itself; `check:surface` pins the narrow shape as the public contract.
 import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
-import type { ContentRoutesOptions } from './content-routes-context.js';
+import type { ContentRoutesConfig } from './content-routes-context.js';
 import { createCoreActions } from './content-routes-core.js';
 import type { SaveFailure, DeleteRefusal, RenameFailure, CreateFailure, PreviewMintFailure } from './content-routes-core.js';
 import { createMediaActions } from './content-routes-media.js';
@@ -32,7 +32,7 @@ import type { TidyFailure } from './content-routes-tidy.js';
 import { createSettingsActions } from './content-routes-settings.js';
 import { createDictionaryActions } from './content-routes-dictionary.js';
 
-export type { ContentRoutesOptions, TidyClient, AttentionItem } from './content-routes-context.js';
+export type { ContentRoutesConfig, TidyClient, AttentionItem } from './content-routes-context.js';
 
 export type {
   AdminShellData,
@@ -98,8 +98,8 @@ export type ContentFormFailure = Partial<
  *  Media Library screen. The public `createContentRoutes` below presents the narrow view of the same
  *  object. Reachable from no package subpath, so its shape is free to grow with the admin.
  */
-export function createContentRoutesInternal(runtime: CairnRuntime, deps: ContentRoutesOptions = {}) {
-  const ctx = createContentRoutesContext(runtime, deps);
+export function createContentRoutesInternal(runtime: CairnRuntime, config: ContentRoutesConfig = {}) {
+  const ctx = createContentRoutesContext(runtime, config);
   const core = createCoreActions(ctx);
   const media = createMediaActions(ctx);
   const tidy = createTidyActions(ctx);
@@ -202,6 +202,6 @@ export type ContentRoutes = Pick<
  * Build the admin content routes a site mounts by hand, closed over the composed runtime. The
  *  returned object is the internal one, presented through the narrow `ContentRoutes` view.
  */
-export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOptions = {}): ContentRoutes {
-  return createContentRoutesInternal(runtime, deps);
+export function createContentRoutes(runtime: CairnRuntime, config: ContentRoutesConfig = {}): ContentRoutes {
+  return createContentRoutesInternal(runtime, config);
 }

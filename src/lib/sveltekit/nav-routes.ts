@@ -37,7 +37,7 @@ export interface NavSaveFailure {
 }
 
 /** Build the nav editor's load and save functions, closed over the composed runtime. */
-export function createNavRoutes(runtime: CairnRuntime) {
+export function createNavRoutes(runtime: CairnRuntime): NavRoutes {
   /**
    * Resolve the live content backend for one request: the dev double's `event.locals.cairnBackend`,
    *  else the production `runtime.backend.connect(env)`. A test rides the same `locals.cairnBackend`
@@ -161,4 +161,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
 }
 
 /** What `createNavRoutes` returns: the nav editor's load and save functions. */
-export type NavRoutes = ReturnType<typeof createNavRoutes>;
+export interface NavRoutes {
+  navLoad: (event: CairnEvent) => Promise<NavLoadData>;
+  navSaveAction: (event: CairnEvent) => Promise<ActionFailure<NavSaveFailure>>;
+}

@@ -95,6 +95,20 @@ const DENIED_MESSAGE = 'You do not have access to this action.';
 const UNAVAILABLE_MESSAGE = 'This section is not available.';
 
 /**
+ * What `createSectionAction` returns: the per-call-site wrapper, curried over the handler's own
+ *  success type `T` (declared as a generic function type rather than named per call site, since
+ *  each `wrap(handler, opts)` call fixes a different `T`).
+ */
+export type SectionAction<Env, Db> = <T>(
+  handler: (args: {
+    event: CairnEvent<Env>;
+    form: FormData;
+    ctx: SectionActionContext<Db>;
+  }) => Promise<T>,
+  opts: SectionActionOptions,
+) => (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
+
+/**
  * Build a section's form-action wrapper. The returned function takes `(handler, opts)` per call
  * site and produces a SvelteKit action, checked in order, fail-closed throughout:
  *
@@ -148,7 +162,7 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  * };
  * ```
  */
-export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>) {
+export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>): SectionAction<Env, Db> {
   return function wrap<T>(
     handler: (args: {
       event: CairnEvent<Env>;

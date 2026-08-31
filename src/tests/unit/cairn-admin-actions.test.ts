@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
-import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
+import { createCairnAdmin, createCairnAdminInternal } from '../../lib/sveltekit/cairn-admin.js';
 import type { TidyClient } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
@@ -398,39 +398,44 @@ describe('media view load', () => {
   });
 });
 
+// CairnAdminRoutes (Task 2, contract-first returns) narrows admin.actions to drop the ten
+// media-janitorial actions, mirroring ContentRoutes' own narrowing; these five reach the media
+// view only, so the block reaches them through createCairnAdminInternal, the wide internal shape
+// the single-mount composer itself drives (the same repoint the foundations-B ContentRoutes
+// narrowing used for its own media-only suites, e.g. content-routes-media-bulk.test.ts).
 describe('media replace and alt actions (composer wiring)', () => {
   const mediaActions = ['mediaUpload', 'mediaReplacePreview', 'mediaReplace', 'mediaAltPreview', 'mediaAltPropagate'] as const;
 
   for (const name of mediaActions) {
     it(`404s ${name} posted outside the media view`, async () => {
-      const admin = createCairnAdmin(runtime(), deps);
+      const admin = createCairnAdminInternal(runtime(), deps);
       await expect(admin.actions[name](actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
     });
   }
 
   it('mediaUpload on the media view reaches uploadAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaUpload(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 503 });
   });
 
   it('mediaReplace on the media view reaches the apply (400 on a missing hash)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     await expect(admin.actions.mediaReplace(actionEvent('/admin/media') as never)).rejects.toMatchObject({ status: 400 });
   });
 
   it('mediaReplacePreview on the media view reaches the preview (403 without the CSRF header)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaReplacePreview(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 403 });
   });
 
   it('mediaAltPropagate on the media view reaches the apply (400 on a missing hash)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     await expect(admin.actions.mediaAltPropagate(actionEvent('/admin/media') as never)).rejects.toMatchObject({ status: 400 });
   });
 });
@@ -456,28 +461,28 @@ describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', 
 
   for (const name of newMediaActions) {
     it(`404s ${name} posted outside the media view`, async () => {
-      const admin = createCairnAdmin(runtime(), deps);
+      const admin = createCairnAdminInternal(runtime(), deps);
       await expect(admin.actions[name](actionEvent('/admin/posts') as never)).rejects.toMatchObject({ status: 404 });
     });
   }
 
   it('mediaBulkDelete on the media view reaches the content action (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaBulkDelete(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 503 });
   });
 
   it('mediaOrphanScan on the media view reaches the content action (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaOrphanScan(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 503 });
   });
 
   it('mediaOrphanPurge on the media view reaches mediaOrphanPurgeAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(runtime(), deps);
+    const admin = createCairnAdminInternal(runtime(), deps);
     const result = await admin.actions.mediaOrphanPurge(actionEvent('/admin/media') as never);
     expect(result).toMatchObject({ status: 503 });
   });

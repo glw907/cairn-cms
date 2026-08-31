@@ -3,7 +3,7 @@
 // composeRuntime per route.
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
-import type { ContentRoutesOptions } from '@glw907/cairn-cms/sveltekit';
+import type { ContentRoutesConfig } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from '$theme/cairn.config.js';
 import { devBackendOptIn } from './dev-gate.js';
 
@@ -19,7 +19,7 @@ export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 // backend via its provider.
 // /admin/editors runs against the in-memory AUTH_DB double in fake-auth-db.ts, which
 // hooks.server.ts injects as platform.env.
-let client: NonNullable<ContentRoutesOptions['tidy']>['client'] | undefined;
+let client: NonNullable<ContentRoutesConfig['tidy']>['client'] | undefined;
 if (__CAIRN_DEV_BUILD__ && devBackendOptIn()) {
   const { createFakeAnthropic } = await import('@glw907/cairn-cms-dev');
   client = createFakeAnthropic();

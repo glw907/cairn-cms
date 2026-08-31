@@ -123,6 +123,54 @@
 
 ### Changed
 
+- The conventions pass (Task 2) applies two of the 2026-08-30 sitting's ratified rulings across the
+  factory population: **parameter bags** (`*Config` is the primary bag, `config` its primary
+  parameter identifier) and **contract-first factory returns** (every public factory's signature
+  declares a named, deliberately authored return type; `ReturnType<typeof f>` leaves the public
+  surface). Renamed bags, with no deprecated alias (churn is free; the window batches):
+  `CairnAdminOptions` → `CairnAdminConfig`, `ContentRoutesOptions` → `ContentRoutesConfig`,
+  `EditorRoutesOptions` → `EditorRoutesConfig`; the `deps` parameter renames to `config` on every
+  touched factory (`createCairnAdmin`, `createContentRoutesInternal`, `createContentRoutes`,
+  `createContentRoutesContext`, `createPublicRoutes`), and `opts` renames to `config` on
+  `createEditorRoutes` only. `createAuthGuard`'s `AuthGuardOptions`/`opts` are UNCHANGED
+  deliberately: the audit's own C2 table ruled it a correct secondary bag, and this pass honors
+  that annotation. Declared return contracts replace every `ReturnType`-derived or unnamed return
+  in the touched population: `AuthRoutes`, `EditorRoutes`, and `NavRoutes` convert from
+  `ReturnType<typeof f>` aliases to hand-declared interfaces the factory signatures now return;
+  `PublicRoutes` (the Task 1 reopen of `audit-delivery-publicroutes`) is a newly AUTHORED interface
+  under the name the retires pass previously removed, and `createPublicRoutes(config:
+  PublicRoutesConfig): PublicRoutes` names it in its own signature; `SectionAction<Env, Db>` names
+  `createSectionAction`'s curried wrapper return, previously unnamed; `createAuthGuard` is
+  annotated `: Handle`, kit's own ambient type, under the interop carve-out
+  (`convention-interop-carve-out`: a host ecosystem's convention wins over cairn's grammar on an
+  interop surface), and `createMediaRoute`'s existing `: RequestHandler` is recorded as conforming
+  to the same clause. `cairnManifest`'s `CairnManifestOptions` (`/vite`) keeps its `*Options` name
+  for the same interop reason: Vite's own plugin-factory convention names every options bag
+  `*Options`, and the barrel now carries a comment saying so. **Consumers must:** replace
+  `CairnAdminOptions` with `CairnAdminConfig`, `ContentRoutesOptions` with `ContentRoutesConfig`,
+  and `EditorRoutesOptions` with `EditorRoutesConfig` in any import from `@glw907/cairn-cms/sveltekit`;
+  a site annotating `createPublicRoutes`'s return imports the newly declared `PublicRoutes` type
+  from `@glw907/cairn-cms/delivery` instead of deriving it with
+  `ReturnType<typeof createPublicRoutes>` (see the amended retires-pass line below); `AuthRoutes`,
+  `EditorRoutes`, `NavRoutes`, and `SectionAction` keep their existing names and shapes, so no
+  action is needed for those beyond the type now being hand-declared rather than derived.
+
+- `createCairnAdmin` now returns a narrowed `CairnAdminRoutes`, the same Pick-composed pattern
+  `ContentRoutes` (foundations-B) already established: `Pick`-composed over a new internal wide
+  factory, `createCairnAdminInternal` (reachable through no package subpath), which the single-mount
+  composer keeps driving in full. Ten of the `actions` record's media-janitorial actions withdraw
+  from the declared contract, mirroring `ContentRoutes`'s own ten exactly: `mediaDelete`,
+  `mediaUpdate`, `mediaLibraryUpload`, `mediaReplacePreview`, `mediaReplace`, `mediaAltPreview`,
+  `mediaAltPropagate`, `mediaBulkDelete`, `mediaOrphanScan`, `mediaOrphanPurge`. `mediaUpload`
+  stays on the contract: it wraps the same `uploadAction` the kept `upload` action wraps, gated to
+  the media view instead of the edit view. **Consumers must:** nothing at runtime. This is a
+  type-level capability withdrawal, not a runtime boundary: `createCairnAdmin` returns the same
+  object `createCairnAdminInternal` builds, so every action is still present and still runs the
+  session, CSRF, and view gates it always ran; a site that annotated a hand-held reference to one of
+  the ten (uncommon, since the documented mount is `export const actions = admin.actions;`) recovers
+  them with a spread (`{ ...admin.actions }`) or a cast, the same recovery `ContentRoutes`'s own
+  narrowing documented.
+
 - The engine ratifies a **canonical-home rule**: every exported name has exactly one declaring
   subpath, and any other barrel that publishes it does so as a recorded re-export naming that home
   and the signature requiring it. The rule answers a whole-surface finding no per-export review
@@ -303,13 +351,18 @@
   the deleted `devDelivery`'s own design was built to make unnecessary); stop importing
   `insertOwnerIfEmpty` from `@glw907/cairn-cms/auth-store` (pass `bootstrapOwner` to
   `createCairnAdmin` instead). Stop
-  importing `AI_CRAWLERS`, `AI_CRAWLERS_REVIEWED`, `AiCrawler`, `feedView`, `PublicRoutes`, or
-  `unlistedRoutes` from `@glw907/cairn-cms/delivery` or `@glw907/cairn-cms/delivery/data`
-  (`audit-delivery`); none has a replacement export. A site wanting the AI-crawler posture keeps
-  using `buildRobots`'s `posture` option, which applies the table internally. A site wanting a
-  full-content feed hand-writes its own mapping off `siteDescriptors`, filtering `routing.inFeeds`
-  itself, the same one-line derivation all six family sites already wrote by hand. A site
-  annotating `createPublicRoutes`'s return writes `ReturnType<typeof createPublicRoutes>` itself.
+  importing `AI_CRAWLERS`, `AI_CRAWLERS_REVIEWED`, `AiCrawler`, or `feedView` from
+  `@glw907/cairn-cms/delivery` or `@glw907/cairn-cms/delivery/data`, and stop importing
+  `unlistedRoutes` from either subpath (`audit-delivery`); none has a replacement export. A site
+  wanting the AI-crawler posture keeps using `buildRobots`'s `posture` option, which applies the
+  table internally. A site wanting a full-content feed hand-writes its own mapping off
+  `siteDescriptors`, filtering `routing.inFeeds` itself, the same one-line derivation all six
+  family sites already wrote by hand.
+  (**Amended by the conventions pass, Task 2:** `PublicRoutes` is reopened as a declared contract,
+  not deleted; drop it from this stop-importing list. A site annotating `createPublicRoutes`'s
+  return imports the declared `PublicRoutes` type from `@glw907/cairn-cms/delivery` instead of
+  writing `ReturnType<typeof createPublicRoutes>` itself, the exact idiom the contract-first-returns
+  ruling now bans on the public surface; see the conventions-pass entry above.)
   Stop importing `isElement` from `@glw907/cairn-cms/render` (`audit-render`; reach for
   `hast-util-is-element`, or the inline `!!node && node.type === 'element'` check, over hast types
   the site already imports). Stop importing `stories` from `@glw907/cairn-cms/reproductions`

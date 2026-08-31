@@ -1,7 +1,7 @@
 // The /admin guard, plus the per-load owner/session gates. A site's hooks.server.ts sets
 // `export const handle = createAuthGuard()`. Events are typed structurally, so the engine
 // stays free of a site's App.* ambient types.
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error, type Handle } from '@sveltejs/kit';
 import { resolveSession } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
 import { isUnsafeFormRequest, originMatches, csrfHeaderVerdict, csrfTokenVerdict } from './csrf.js';
@@ -74,8 +74,13 @@ export interface AuthGuardOptions {
 
 /**
  * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses.
+ *
+ * Annotated `: Handle`, kit's own type, under the interop carve-out
+ * (`convention-interop-carve-out`): a host-ecosystem return type satisfies the engine's
+ * contract-first-returns rule on its own, since the host ecosystem's convention wins over
+ * cairn's `*Routes` grammar on a `Handle`-shaped return.
  */
-export function createAuthGuard(opts: AuthGuardOptions = {}) {
+export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
   const access = opts.access;
   const includeSubDomains = opts.includeSubDomains;

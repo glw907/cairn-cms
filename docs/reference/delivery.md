@@ -36,7 +36,9 @@ A SvelteKit site usually imports the shared symbols through this barrel. The `fe
 Stability tier: Scaffold API.
 
 ```ts
-function createPublicRoutes(deps: PublicRoutesConfig): {
+function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes;
+
+type PublicRoutes = {
   entryLoad: (event: { url: URL }) => Promise<EntryData>;
   entries: () => { path: string }[];
   markdownEntries: () => { path: string }[];
@@ -44,7 +46,9 @@ function createPublicRoutes(deps: PublicRoutesConfig): {
 };
 ```
 
-Build the public route loader for a site's unified index. Pass the
+`createPublicRoutes` exports its return type by name as `PublicRoutes`, a hand-declared contract
+(never `ReturnType<typeof createPublicRoutes>`). Build the public route loader for a site's
+unified index. Pass the
 [`PublicRoutesConfig`](#publicroutesconfig): the built site resolver, the render function, the origin, and
 the SEO defaults. The returned object carries `entryLoad`, the one loader the catch-all route calls,
 and `entries`, the prerender enumerator. `entryLoad` resolves one entry by request path and folds in
@@ -100,7 +104,7 @@ export const load: PageServerLoad = async ({ url }) => {
 ## Route-data types
 
 The shapes the public loaders return and consume. A template reads the loaded data; a server passes
-the deps.
+the config.
 
 Three of them belong to another barrel and re-export here because `PublicRoutesConfig` names all
 three. Their prose lives at the canonical home. This page carries only the import.

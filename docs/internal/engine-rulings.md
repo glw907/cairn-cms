@@ -1761,6 +1761,10 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 66.
 - **Any-site case:** Thin: a site hand-mounting auth holds the object, which TypeScript infers. The name serves annotation, not construction.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
+- **Annotation (conventions pass, Task 2):** the idiom this keep names is superseded, not the
+  verdict: `ReturnType<typeof createAuthRoutes>` retires under `convention-contract-first-returns`,
+  and `AuthRoutes` is now a hand-declared interface `createAuthRoutes` names in its own signature.
+  The name and its members are unchanged.
 
 ## audit-sveltekit-authroutesconfig: `AuthRoutesConfig`  (keep, 2026-08-26, any-site audit)
 
@@ -1768,6 +1772,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 67.
 - **Any-site case:** A site on a non-Cloudflare mailer supplies its own send, and any site annotating its config object in cairn.server.ts names this. CairnAdminOptions.auth is Partial of it.
+- **Annotation (conventions pass, Task 2):** the referring name in this entry's own prose,
+  `CairnAdminOptions`, renamed to `CairnAdminConfig` (`convention-parameter-bags`);
+  `AuthRoutesConfig` itself is untouched.
 
 ## audit-sveltekit-createauthroutes: `createAuthRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -1783,6 +1790,10 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 69.
 - **Any-site case:** Thin, same as AuthRoutes: an annotation aid for a hand-mounting site, not a name the site must write.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
+- **Annotation (conventions pass, Task 2):** the idiom this keep names is superseded, not the
+  verdict: `ReturnType<typeof createEditorRoutes>` retires under
+  `convention-contract-first-returns`, and `EditorRoutes` is now a hand-declared interface
+  `createEditorRoutes` names in its own signature. The name and its members are unchanged.
 
 ## audit-sveltekit-editorroutesoptions: `EditorRoutesOptions`  (keep, 2026-08-26, any-site audit)
 
@@ -1790,6 +1801,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 70.
 - **Any-site case:** A site with a declared role vocabulary that hand-mounts the roster screen passes its defineRoles output here; nothing else tells that screen the vocabulary.
+- **Annotation (conventions pass, Task 2):** renamed `EditorRoutesOptions` → `EditorRoutesConfig`
+  (`convention-parameter-bags`); the `opts` parameter renames to `config` on `createEditorRoutes`
+  the same way. The shape and behavior are unchanged.
 
 ## audit-sveltekit-createeditorroutes: `createEditorRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -1805,6 +1819,10 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 72.
 - **Any-site case:** Thin, same as the other factory-return aliases.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
+- **Annotation (conventions pass, Task 2):** the idiom this keep names is superseded, not the
+  verdict: `ReturnType<typeof createNavRoutes>` retires under `convention-contract-first-returns`,
+  and `NavRoutes` is now a hand-declared interface `createNavRoutes` names in its own signature.
+  The name and its members are unchanged.
 
 ## audit-sveltekit-createnavroutes: `createNavRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -1827,6 +1845,10 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 75.
 - **Any-site case:** A site whose authorization lives in its own database uses navFilter to stop teasing links its routes then refuse; a site with a work queue uses attention to badge it.
+- **Annotation (conventions pass, Task 2):** renamed `ContentRoutesOptions` → `ContentRoutesConfig`
+  (`convention-parameter-bags`); the `deps` parameter renames to `config` on every factory that
+  takes this bag (`createContentRoutesInternal`, `createContentRoutes`,
+  `createContentRoutesContext`). The shape and behavior are unchanged.
 
 ## audit-sveltekit-createcontentroutes: `createContentRoutes`  (keep, 2026-08-26, any-site audit)
 
@@ -1849,6 +1871,21 @@ when the remediation pass lands.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 78.
 - **Any-site case:** A site annotating the admin export in cairn.server.ts names it; real, but served equally by any of the five idioms.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md) (verdict overturned there).
+- **Annotation (conventions pass, Task 2, 2026-08-30):** the idiom this keep names is superseded,
+  not merely re-verified: `ReturnType<typeof createCairnAdmin>` retires under
+  `convention-contract-first-returns`, and `CairnAdminRoutes` is now a hand-declared, `Pick`-composed
+  contract over a new internal wide factory (`createCairnAdminInternal`), mirroring the
+  foundations-B `ContentRoutes` precedent. The membership decision this reshape makes explicit: the
+  declared contract carries the members `ContentRoutes` exposes plus the shell/help/auth members the
+  admin mount needs, and withdraws the same ten media-janitorial actions `ContentRoutes` withdraws
+  (`mediaDelete`, `mediaUpdate`, `mediaLibraryUpload`, `mediaReplacePreview`, `mediaReplace`,
+  `mediaAltPreview`, `mediaAltPropagate`, `mediaBulkDelete`, `mediaOrphanScan`, `mediaOrphanPurge`);
+  `mediaUpload` stays, since it wraps the same `uploadAction` the kept `upload` action wraps. This
+  IS the `createCairnAdmin` narrowing question [r4-rederivation](record/2026-08-30-r4-rederivation.md)
+  "List (c)" Tier 1 is blocked on: with both `ContentRoutes` and `CairnAdminRoutes` now narrowed, the
+  25 Tier 1 retires route to slice 4b, unblocked. The keep verdict on the NAME `CairnAdminRoutes`
+  itself is undisturbed; only the mechanism generating it and the composer's own `actions` shape
+  changed.
 
 ## audit-sveltekit-cairnadminoptions: `CairnAdminOptions`  (keep, 2026-08-26, any-site audit)
 
@@ -1856,6 +1893,9 @@ when the remediation pass lands.
 - **Reopens on:** evidence against the recorded any-site case (a consultation or a later audit round).
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 79.
 - **Any-site case:** Any site overriding a seam on the recommended mount: a custom mailer, a role filter over the sidebar, attention badges, a preview lifetime.
+- **Annotation (conventions pass, Task 2):** renamed `CairnAdminOptions` → `CairnAdminConfig`
+  (`convention-parameter-bags`); the `deps` parameter renames to `config` on `createCairnAdmin`
+  the same way. The shape and behavior are unchanged.
 
 ## audit-sveltekit-attentionitem: `AttentionItem`  (keep, 2026-08-26, any-site audit)
 
@@ -3077,8 +3117,11 @@ when the remediation pass lands.
 - **Shape:** A declared `PublicRoutes` interface, composed the way `ContentRoutes` (the
   foundations-B precedent) is: hand-written members or `Pick` over the internal wide return, at the
   task's discretion. `createPublicRoutes` annotates its return with it.
-- **Reopens on:** closed against this reopen; execution (the declared contract) is open until
-  Task 2 lands it.
+- **Reopens on:** closed. Executed by Task 2 of the conventions pass: `public-routes.ts` declares
+  `export interface PublicRoutes { entryLoad; entries; markdownEntries; markdownLoad }` and
+  `createPublicRoutes(config: PublicRoutesConfig): PublicRoutes` names it in its own signature,
+  re-exported from `/delivery`. Verified by `check:reference`/`check:reference:signatures` and the
+  compile-only fixture `src/tests/unit/factory-contracts.test.ts`.
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 6;
   executed (retire) in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md),
   Task 1 batch 1c; reopened by

@@ -89,7 +89,7 @@ function scrubSendError(err: unknown): string {
  * Cloudflare Email sender for tests or a custom transport; `config.bootstrapOwner` seeds the
  * very first owner row through the request action, in place of a hand-run D1 insert.
  */
-export function createAuthRoutes(config: AuthRoutesConfig) {
+export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
   const send = config.send ?? cloudflareSend;
 
   /**
@@ -266,4 +266,10 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
 }
 
 /** What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers. */
-export type AuthRoutes = ReturnType<typeof createAuthRoutes>;
+export interface AuthRoutes {
+  loginLoad: (event: CairnEvent) => LoginData;
+  requestAction: (event: CairnEvent) => Promise<RequestResult>;
+  confirmLoad: (event: CairnEvent) => ConfirmData;
+  confirmAction: (event: CairnEvent) => Promise<never>;
+  logoutAction: (event: CairnEvent) => Promise<never>;
+}

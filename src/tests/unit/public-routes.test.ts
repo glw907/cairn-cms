@@ -57,7 +57,7 @@ describe('createPublicRoutes entryLoad', () => {
   });
 
   it('exposes the entry loader, the prerender enumeration, and the markdown twin surface only', () => {
-    const surface = routes as Record<string, unknown>;
+    const surface = routes as unknown as Record<string, unknown>;
     expect(surface.archiveLoad).toBeUndefined();
     expect(surface.tagIndexLoad).toBeUndefined();
     expect(surface.tagLoad).toBeUndefined();

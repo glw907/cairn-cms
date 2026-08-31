@@ -181,8 +181,8 @@ export async function composeEntryData(
 }
 
 /** Build the public route resolver for a site's unified index. */
-export function createPublicRoutes(deps: PublicRoutesConfig) {
-  const { site, resolveMedia, assetsEnabled } = deps;
+export function createPublicRoutes(config: PublicRoutesConfig): PublicRoutes {
+  const { site, resolveMedia, assetsEnabled } = config;
 
   // Diagnose a forgotten wire-point: media is configured on but no resolver reached this factory, so
   // every public hero and body `media:` token renders bare (the ecxc 0.57.0 finding). The condition
@@ -197,7 +197,7 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
   async function entryLoad(event: { url: URL }): Promise<EntryData> {
     const entry = site.byPermalink(event.url.pathname);
     if (!entry) throw error(404, `Not found: ${event.url.pathname}`);
-    return composeEntryData(deps, entry);
+    return composeEntryData(config, entry);
   }
 
   /** Prerender enumeration: one `{ path }` per entry across every concept. */
@@ -244,4 +244,15 @@ export function createPublicRoutes(deps: PublicRoutesConfig) {
   }
 
   return { entryLoad, entries, markdownEntries, markdownLoad };
+}
+
+/**
+ * What `createPublicRoutes` returns: one entry's public data by request path, the prerender
+ *  enumerations, and the raw-markdown twin's own load.
+ */
+export interface PublicRoutes {
+  entryLoad: (event: { url: URL }) => Promise<EntryData>;
+  entries: () => { path: string }[];
+  markdownEntries: () => { path: string }[];
+  markdownLoad: (event: { url: URL }) => Promise<{ body: string }>;
 }

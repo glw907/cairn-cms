@@ -9,7 +9,25 @@ import type { CairnEvent } from '../../lib/sveltekit/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 
 const db = env.AUTH_DB;
-const handle = createAuthGuard();
+
+/**
+ * createAuthGuard is annotated `: Handle`, kit's own ambient type (the interop carve-out); its
+ *  real runtime parameter is the lighter, generic CairnEvent shape every fixture in this file
+ *  builds, and this package's own compile unit declares no ambient App.Platform.env for kit's
+ *  RequestEvent to resolve through (see env-genericity.test.ts's own note on this same gap), so
+ *  every construction in this file bridges it through this one shim rather than casting per call.
+ */
+function asHandle(guard: ReturnType<typeof createAuthGuard>): (input: {
+  event: CairnEvent;
+  resolve: (event: CairnEvent) => Promise<Response>;
+}) => Promise<Response> {
+  return guard as unknown as (input: {
+    event: CairnEvent;
+    resolve: (event: CairnEvent) => Promise<Response>;
+  }) => Promise<Response>;
+}
+
+const handle = asHandle(createAuthGuard());
 const OK = new Response('ok');
 
 beforeEach(async () => {
@@ -107,7 +125,7 @@ describe('capability resolution (a site-declared vocabulary)', () => {
     'club-admin': 'editor',
     instructor: { capability: 'none', home: '/admin/classes' },
   });
-  const guard = createAuthGuard({ roles: ROLES });
+  const guard = asHandle(createAuthGuard({ roles: ROLES }));
 
   it('resolves a declared non-canonical role to its mapped capability', async () => {
     await db
@@ -162,7 +180,7 @@ describe('double-wiring: a custom role against a guard that was never handed the
   // role name absent from that pair resolves to `none`, not owner. The editor authenticates but the
   // engine refuses every content and admin-mutation route. This test pins the real semantics so the
   // doctor check and its report rest on verified behavior.
-  const unwiredGuard = createAuthGuard(); // the double-wiring bug: defineRoles declared, guard not told
+  const unwiredGuard = asHandle(createAuthGuard()); // the double-wiring bug: defineRoles declared, guard not told
 
   it('resolves a custom role to none (never owner) and warns auth.role.unknown', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -185,7 +203,7 @@ describe('double-wiring: a custom role against a guard that was never handed the
 describe('the access map (Task 2)', () => {
   it('attaches the declared map to locals.cairnAccess alongside locals.cairnEditor', async () => {
     const access: AccessMap = { '/admin/money': ['club-admin'] };
-    const guard = createAuthGuard({ access });
+    const guard = asHandle(createAuthGuard({ access }));
     const cookies = await seedSession('own@x.dev');
     const ev = event('/admin', cookies);
     const res = await guard({ event: ev, resolve: async () => OK });
@@ -268,7 +286,7 @@ describe('admin security headers (Unit 2)', () => {
   });
 
   it('restores includeSubDomains when the site opts in on createAuthGuard', async () => {
-    const guard = createAuthGuard({ includeSubDomains: true });
+    const guard = asHandle(createAuthGuard({ includeSubDomains: true }));
     const cookies = await seedSession('own2@x.dev');
     const res = await guard({ event: event('/admin', cookies), resolve: async () => new Response('ok') });
     expect(res.headers.get('Strict-Transport-Security')).toBe('max-age=63072000; includeSubDomains');

@@ -53,12 +53,12 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
     expect(paramType).toBe('CairnRuntime');
   });
 
-  it('CairnAdminOptions regroups into auth and tidy bags, with no flat branding/send/anthropic/tidyTimeoutMs', () => {
-    const { names } = memberNames(SVELTEKIT_DTS, 'CairnAdminOptions');
-    // navFilter forwards to ContentRoutesOptions['navFilter'] alongside tidy, added for the
-    // per-request custom-navLayout filter seam; attention forwards ContentRoutesOptions['attention']
+  it('CairnAdminConfig regroups into auth and tidy bags, with no flat branding/send/anthropic/tidyTimeoutMs', () => {
+    const { names } = memberNames(SVELTEKIT_DTS, 'CairnAdminConfig');
+    // navFilter forwards to ContentRoutesConfig['navFilter'] alongside tidy, added for the
+    // per-request custom-navLayout filter seam; attention forwards ContentRoutesConfig['attention']
     // the same way, added for the per-session pending-work seam (admin access-and-attention pass);
-    // preview forwards ContentRoutesOptions['preview'], the mint action's link-lifetime config
+    // preview forwards ContentRoutesConfig['preview'], the mint action's link-lifetime config
     // (spec part 3, "Public preview for a non-editor").
     expect(names).toEqual(['auth', 'tidy', 'navFilter', 'attention', 'preview']);
   });

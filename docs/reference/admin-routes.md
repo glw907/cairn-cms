@@ -94,11 +94,11 @@ export const admin = createCairnAdmin(runtime);
 
 `createCairnAdmin` defaults the magic-link branding from the runtime's `siteName` and `sender`,
 so most sites pass no deps at all. A site that does override something passes the grouped
-`CairnAdminOptions` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
+`CairnAdminConfig` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
 reads markdown through a fake GitHub backend in development, which rides `event.locals.cairnBackend`
 from a fenced dev handle rather than through a dep. A deployed site connects the real backend and
 mints installation tokens on demand, so it passes no backend dep. See
-[`CairnAdminOptions`](./sveltekit.md#cairnadminoptions) for the full shape.
+[`CairnAdminConfig`](./sveltekit.md#cairnadminconfig) for the full shape.
 
 Keep the `prerender = false` line. The admin is session-gated, and a site that prerenders by
 default would otherwise try to bake a build-time snapshot of it; the explicit opt-out keeps the

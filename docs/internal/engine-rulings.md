@@ -125,6 +125,147 @@ open edits, not part of the shape itself.
 - **Record:** [r4-rederivation](record/2026-08-30-r4-rederivation.md), section 7 (the RULED subsection
   and its ADDENDUM RULINGS); [retires-move-record](record/2026-08-30-retires-move-record.md).
 
+## convention-parameter-bags: the `*Config` primary parameter-bag convention  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting: *"Parameter bags. R1 applied as written to
+  the in-population rows: `*Config` is the primary bag, the primary parameter identifier is
+  `config`."*
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
+  Task 2 executes across the in-population factory rows (`CairnAdminConfig`, `ContentRoutesConfig`,
+  `EditorRoutesConfig`, `PublicRoutesConfig`).
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 1, and Task 1/Task 2.
+
+## convention-interop-carve-out: a host ecosystem's convention wins over cairn's grammar on an interop surface  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting: *"Plus the **interop carve-out clause**: on
+  an interop surface, the host ecosystem's convention wins over cairn's grammar, and the barrel
+  records why (`/vite` is the standing example; kit's `RequestHandler`/`Handle` returns are the
+  same clause)."*
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
+  Task 2 executes (`src/lib/vite/index.ts`'s interop barrel comment; `createAuthGuard`'s kit
+  `Handle` annotation; `createMediaRoute`'s kit `RequestHandler` return).
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 1, and Task 1/Task 2.
+
+## convention-contract-first-returns: every public factory declares a named, authored return type  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting: *"Factory returns, contract-first. Every
+  public factory's signature declares a named, deliberately authored return type; the compiler
+  enforces the implementation against it. `ReturnType<typeof f>` leaves the public surface. How a
+  declaration is composed is free (hand-written members, or `Pick` over an internal wide shape,
+  the foundations-B `ContentRoutes` precedent). A host-ecosystem return type (kit `Handle`, kit
+  `RequestHandler`) satisfies the rule under the interop clause."*
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
+  Task 2 executes (`CairnAdminRoutes`, `AuthRoutes`, `EditorRoutes`, `NavRoutes`, the reopened
+  `PublicRoutes` (`audit-delivery-publicroutes`), and `SectionAction<Env, Db>`).
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 2, and Task 1/Task 2.
+
+## convention-verb-rules: the engine's verb vocabulary (`verify`/`validate`/`read`/`parse`/`build`/`create`)  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting: *"Verb rules. `verify*` = engine-owned
+  integrity check that throws; `validate*` = check returning issues; `check*` retires as a verb
+  (its members fall to the outcome idiom). `read*` = read a committed artifact or declaration
+  into typed shape, retiring `extract*`; `parse*` reserved for string-to-structure codecs (paired
+  with `format*`). `build*` = derives pure data; function factories belong to `create*`, so the
+  resolver trio renames."*
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
+  Task 3 executes (the resolver trio, `readMenu`/`readVocabulary`, `buildSiteDescriptors`,
+  `diffNewlyPublished`, `buildSitemapView`, `formatMediaToken`/`parseMediaToken`).
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 3, and Task 1/Task 3.
+
+## convention-bare-noun-functions: an exported function's name begins with a verb, an exported value's does not  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting: *"Bare nouns. An exported function's name
+  begins with a verb; an exported value's does not; bin names and host-ecosystem plugin factories
+  are out of scope."*
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
+  Task 3 executes (`renderGlyph`, `defineFieldset`, `resolveOwnerLevelRoles`, `renderJsonLdScript`).
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 4, and Task 1/Task 3.
+
+## convention-outcome-idiom: a more-than-two-outcome operation returns a discriminated result on one `outcome` grammar  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting: *"Outcome idiom. An operation with more
+  than two distinguishable outcomes returns a discriminated result, never a boolean;
+  `verifyTurnstile`'s fail-closed boolean is the stated exception. **One grammar:** the
+  discriminant key is `outcome`, a string literal union; every discriminated result this pass
+  introduces uses it. **`Failure` is the family suffix; `Refusal` and `Skip` retire as TYPE-NAME
+  suffixes** (a discriminant VALUE like `'last-owner'` or a field name is not a suffix and is
+  unaffected)."* Carries both the one-grammar `outcome`-discriminant clause and the suffix-scope
+  clarification; the suffix clause itself is also filed as its own entry,
+  `convention-failure-suffix`, since later tasks cite it separately from the discriminant grammar.
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
+  Task 4 executes (`resolveRateLimit`'s four-arm result, the owner-guard discriminated results)
+  and Task 7 extends (`authorizeAdminTarget`'s `outcome`-grammar return).
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 5, and Task 1/Task 4/Task 7.
+
+## convention-failure-suffix: `Failure` is the family suffix; `Refusal` and `Skip` retire as TYPE-NAME suffixes  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting, the suffix-scope clause of the outcome-idiom
+  ruling: *"`Failure` is the family suffix; `Refusal` and `Skip` retire as TYPE-NAME suffixes (a
+  discriminant VALUE like `'last-owner'` or a field name is not a suffix and is unaffected)."*
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
+  Task 4 (`DeleteRefusal`) and Task 5 (`ContentFormFailure`'s flatten, `SaveFailure`,
+  `DeleteRefusal`, `RenameFailure`, `CreateFailure`, `PreviewMintFailure`) execute against.
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 5, and Task 1/Task 4/Task 5.
+
+## convention-auth-loud-postures: a missing cookie jar from an untyped caller fails loudly, never a soft `fail(403)`  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting: *"Auth postures. A missing cookie jar from
+  an untyped caller fails LOUDLY (throw), never a soft `fail(403)`. `adminAction` gains the
+  authorization sequence `createSectionAction` carries, with the zero-config default preserved
+  (see Task 7's Interfaces block). The `platform` required-but-nullable convention applies
+  uniformly across the CSRF/auth helpers."*
+- **Friction (moved from `docs-friction-log.md`, 2026-08-29, csrf-hardening close):** the engine
+  argued both postures on an untyped caller's missing cookie jar: `content-routes-core.ts` failed
+  loudly (its empty-token fallback removed), while five sibling call sites
+  (`content-routes-dictionary.ts:95`, `content-routes-media.ts:494`/`:1065`/`:1265`,
+  `content-routes-tidy.ts:111`) still guarded with `if (!event.cookies || ...)` and returned a
+  soft `fail(403)`. Not a defect, since typed callers cannot hit either branch; filed as a
+  candidate for the conventions pass's auth family alongside the platform-required carry-forward.
+  The ruling above resolves it in favor of the loud posture.
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
+  Task 6 executes (the `requireCookieJar` internal helper converting the five soft guards) and
+  Task 7 extends (`adminAction`'s opt-in authorization sequence).
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 6, and Task 1/Task 6/Task 7.
+
+## convention-internal-sibling-comment: an internal sibling of a public export gets one barrel sentence naming why  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting: *"Two preventive clauses (R-10). An internal
+  sibling of a public export gets one barrel sentence naming why it stays internal (gated where
+  reachability-shaped)."*
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1, as the premise
+  Task 8 executes (`revokeSessions`'s event-free signature, kept as a recorded, doc-commented
+  exception against its siblings, per `audit-auth-authchannel`'s annotation).
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 7, and Task 1/Task 8.
+
+## convention-identifier-grammar: a public-observable identifier is dot-namespaced by area, never prefix-substituted  (accept, 2026-08-30, conventions-pass plan-authoring sitting)
+
+- **Verdict:** accept. Ratified as a standing engine rule, in Geoff's own ruling at the
+  2026-08-30 conventions-pass plan-authoring sitting: *"A public-observable identifier is
+  dot-namespaced by area; a prefix is never a substitute for a namespace."*
+- **Reopens on:** closed. Ratified and filed by the conventions pass, Task 1; execution routes to
+  slice 4b (the four `rendered-*` harness failure ids conforming to this clause, per the plan's
+  "What this pass unblocks and hands to 4b" section).
+- **Record:** [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md),
+  "The ratified rulings (Geoff, 2026-08-30 sitting)" ruling 7, and Task 1.
+
 ## login-csrf-no-same-browser-binding: magic-link confirm has no same-browser binding  (defer, 2026-08-27, csrf-hardening pass)
 
 - **Verdict:** defer. `confirmLoad`/`confirmAction` (`auth-routes.ts:170,185`) accept any
@@ -2587,6 +2728,11 @@ when the remediation pass lands.
 - **Verdict:** reshape. A site typing its own deliver implementation. Two fields, wholly entailed by createAuthChannel; no independent case.
 - **Reopens on:** open until executed; the remediation pass closes it.
 - **Shape:** Shape is fine on its own. Membership is exactly as strong as createAuthChannel's, so it shrinks or disappears with the factory reshape (item 15).
+- **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
+  reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar rather than
+  shrinking, so this type's "shrinks or disappears with the factory reshape" line above resolves
+  as "stays with the factory": membership stays exactly as strong as `createAuthChannel`'s.
+  Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 7.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
@@ -2595,6 +2741,10 @@ when the remediation pass lands.
 - **Verdict:** reshape. A site's form action switching on the request result to pick a message. Entailed by createAuthChannel.
 - **Reopens on:** open until executed; the remediation pass closes it.
 - **Shape:** One of the better-shaped items here: it encodes the no-roster-leak ruling ('sent even for an unknown contact') in the type. Follows the factory's verdict.
+- **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
+  reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar, so this type
+  keeps with it and its no-roster-leak encoding survives verbatim per the factory's fold shape.
+  Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 8.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
@@ -2603,6 +2753,10 @@ when the remediation pass lands.
 - **Verdict:** reshape. A site rendering seven distinct confirm outcomes on its login form, each needing site copy. Entailed by createAuthChannel.
 - **Reopens on:** open until executed; the remediation pass closes it.
 - **Shape:** Follows the factory. The 'challenge-required is a retry invitation, never a hard failure' ruling should survive in whatever seam replaces it.
+- **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
+  reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar, not replaced by
+  a shrink-to-recipe seam, so the challenge-required-is-retry ruling survives verbatim in the
+  factory itself. Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 9.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
@@ -2610,6 +2764,10 @@ when the remediation pass lands.
 
 - **Verdict:** reshape. A site typing the parameter of its own challenge callback or rateLimit.key function.
 - **Reopens on:** open until executed; the remediation pass closes it (shape: Carries its own objection: a third published request-event shape beside RequestEvent and CairnEvent, and its own comment concedes SvelteKit's satisfies it struc).
+- **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
+  reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar: this type
+  retires in favor of `CairnEvent`, a rename recorded as a breaking change for xcathletes (review
+  finding F9, honestly stated rather than claimed structurally compatible). Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 10.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
@@ -2617,6 +2775,13 @@ when the remediation pass lands.
 
 - **Verdict:** reshape. A site holding the constructed channel in a module-scope const and typing it.
 - **Reopens on:** open until executed; the remediation pass closes it (shape: Internal asymmetry beyond the factory's: revokeSessions takes a raw D1Database while every sibling takes an event and resolves through resolveDb. Give it the sa).
+- **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
+  reopen (ruling 8). The factory is KEPT; the `revokeSessions` asymmetry this entry names does NOT
+  resolve by uniformity as originally proposed above ("give it the same" event-taking shape as its
+  siblings). It stays a deliberate, doc-commented exception, per `convention-internal-sibling-comment`:
+  `revokeSessions` is the one member callable outside a request (xcathletes calls it from a
+  roster-archive path with a `db` and no event), and the asymmetry gets a stated reason rather than
+  forced uniformity. Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 11.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
@@ -2624,6 +2789,12 @@ when the remediation pass lands.
 
 - **Verdict:** reshape. Unavoidable while the factory exists: a site must run this DDL once against its channel binding before any action works, from a migration in its own migrations_dir.
 - **Reopens on:** open until executed; the remediation pass closes it (shape: Wrong form, proved by the engine's own inconsistency: AUTH_DB gets packaged migrations/*.sql shipped in the tarball, the channel gets a template literal to past).
+- **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
+  reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar: the wrong-form
+  objection above resolves exactly as originally proposed, packaged, never a shrink-to-recipe. The
+  DDL ships as `migrations-channel/0000_channel.sql`, a sibling directory never under `migrations/`
+  (a shared `migrations_dir` cross-applies schemas into `AUTH_DB`), in idempotent form so an
+  already-provisioned consumer's `migrations_dir` pointer does not abort. Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 12.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
@@ -2631,6 +2802,12 @@ when the remediation pass lands.
 
 - **Verdict:** reshape. The surface a consumer actually reads and writes; nobody uses the factory without it.
 - **Reopens on:** open until executed; the remediation pass closes it (shape: Two objections of its own. The ttl bag groups nine knobs because 'the design's own Defaults table' did, transplanted not re-derived, and its in-tree WATCH comme).
+- **Annotation (2026-08-30, conventions-pass sitting):** follows the `audit-auth-createauthchannel`
+  reopen (ruling 8). The factory is KEPT and folds onto the engine's auth grammar: the `ttl` bag
+  re-derives by what a site actually tunes together (rank 13's re-authored shape, not the
+  shrink-to-recipe this entry's own truncated shape argued for), and `lookup`/`verify` gain a
+  narrow `{ env }` context, not the full event, mirroring the existing `DeliverContext` precedent.
+  Task 8 executes it.
 - **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 13.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
@@ -2642,12 +2819,52 @@ when the remediation pass lands.
 - **Any-site case:** A site with a members area mints a single-use link token to email a member. Hand-rolled, this is where Math.random, a 16-byte draw, or raw base64 +// in a URL ship and pass every test.
 - **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
 
-## audit-auth-createauthchannel: `createAuthChannel`  (reshape, 2026-08-26, any-site audit)
+## audit-auth-createauthchannel: `createAuthChannel`  (reshape, 2026-08-26, any-site audit; REOPENED 2026-08-30, conventions-pass sitting)
 
-- **Verdict:** reshape. A cairn site with a members area (club, school, paid newsletter) needs non-editor login, and hand-rolled OTP ships enumeration oracles and identity-keyed throttles that lock members out. Not a small hand-roll.
-- **Reopens on:** open until executed; the remediation pass closes it (shape: Not a seam but a second login subsystem with its own D1 schema, cookie namespace, and grammar beside the engine's magic-link login; and transplanted, not re-der).
-- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 15.
-- **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md).
+- **Verdict:** reshape, KEPT. The 2026-08-26 shrink-to-recipe shape is overturned, in Geoff's own
+  ruling at the 2026-08-30 conventions-pass sitting: *"`/auth-channel` is KEPT, reopened on
+  evidence (Geoff, 2026-08-30). The 2026-08-26 shrink-to-recipe shape is overturned:
+  xcathletes-org now runs its member login on `createAuthChannel`
+  (`xcathletes-org/src/lib/server/auth/channel.ts`, tests included, citing
+  `docs/extend/add-a-second-audience.md` Path B), so the 'no consumer anywhere has built against
+  it' premise no longer holds. Ground for keeping: adoption evidence plus the
+  high-consequence-hand-roll argument (enumeration oracle, unbounded guessing, identity-keyed
+  throttle), NOT any-site breadth; the leanness boundary is held by the opt-in subpath. The
+  factory folds onto the engine's one auth grammar (Task 8)."*
+- **Overturned premise, with evidence:** the original 2026-08-26 verdict's own provenance line
+  read *"no consumer anywhere has built against it"* and its right-form argument was to "shrink to
+  what both filed asks actually requested": drop the factory to `/auth-crypto`'s primitives plus a
+  documented recipe (`rank-auth-family.md`, item 15). The interim `verify-auth-family.md` pass
+  already refuted the narrower claim that "the requesting site cannot adopt it unchanged" (item
+  15: "stands; premise refuted"), citing xcathletes having built the factory with Turnstile plus
+  Twilio/Cloudflare Email, but that pass still left the shrink-vs-fold shape question open,
+  leaning toward parameterizing the engine's own magic-link login by audience. The 2026-08-30
+  sitting closes that remaining question on stronger evidence than "built": xcathletes now RUNS
+  its member login on `createAuthChannel` in production, with tests, following the documented
+  `add-a-second-audience.md` Path B seam. The overturning evidence is this adoption fact, not a
+  reargued premise.
+- **Shape:** Folds onto the engine's one auth grammar (Task 8 of the conventions pass, which
+  re-authors this shape and closes all eight open `/auth-channel` family entries against it):
+  `CHANNEL_SCHEMA_SQL` retires as an export in favor of a packaged `migrations-channel/0000_channel.sql`
+  (idempotent DDL, a sibling directory never under `migrations/`); the channel's three cookie
+  deletes gain their setter's `secure` flag; `AuthChannelEvent` retires in favor of `CairnEvent`
+  (a breaking rename for xcathletes, stated honestly rather than claimed structurally compatible);
+  `revokeSessions(db, subject)` keeps its event-free signature as a recorded, doc-commented
+  exception (the one member callable outside a request, per `convention-internal-sibling-comment`);
+  `AuthChannelConfig`'s nine-knob `ttl` bag re-derives by what a site actually tunes together, and
+  `lookup`/`verify` gain a narrow `{ env }` context rather than the full event (the no-roster-leak
+  and session-integrity properties depend on neither callback reading request-shaped data);
+  `DeliverContext`, `ChannelRequestResult`, `ChannelConfirmResult` keep with the factory, shapes
+  per their own entries.
+- **Reopens on:** closed against this reopen; the 2026-08-30 sitting's adoption-evidence ruling
+  stands unless a later round shows the xcathletes usage itself retired. Execution of the fold
+  shape above is open until Task 8 lands it.
+- **Record:** [rank-auth-family.md](record/2026-08-26-any-site-audit/rank-auth-family.md), rank 15;
+  [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md), item 15;
+  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), ratified
+  ruling 8, Task 1, and Task 8.
+- **Verified:** [verify-auth-family.md](record/2026-08-26-any-site-audit/verify-auth-family.md)
+  (premise refuted there, verdict stands; shape further reopened by the 2026-08-30 sitting above).
 
 ## audit-auth-cookiename: `cookieName`  (keep, 2026-08-26, any-site audit)
 
@@ -2839,12 +3056,36 @@ when the remediation pass lands.
 - **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 5; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
 - **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md) (verdict overturned there).
 
-## audit-delivery-publicroutes: `PublicRoutes`  (retire, 2026-08-26, any-site audit)
+## audit-delivery-publicroutes: `PublicRoutes`  (reshape, 2026-08-26, any-site audit; REOPENED 2026-08-30, conventions-pass sitting)
 
-- **Verdict:** retire. The export rule does not reach it: createPublicRoutes returns an inferred object literal (public-routes.ts:246) and the alias is appended at 253, named in no signature. The stated scenario is falsified by the site living it: ASC's chassis/public-routes.ts annotates PublicRoutesConfig but leaves the routes const un-annotated. One-line exact re-derivation available.
-- **Reopens on:** closed. Executed by the retires pass, batch 1c: `PublicRoutes` deleted outright from `public-routes.ts` (zero remaining consumers anywhere in `src/lib`); its barrel line in `delivery/index.ts` deleted with it.
-- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 6; executed in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md), Task 1 batch 1c.
-- **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md) (verdict overturned there).
+- **Verdict:** reshape. REOPENED from `retire`/CLOSED. The original retire (below) correctly
+  targeted a mechanically derived alias: `createPublicRoutes` returned an inferred object literal
+  (`public-routes.ts:246`) with `ReturnType<typeof createPublicRoutes>` appended at 253, named in
+  no signature, so the export rule never reached it. `convention-contract-first-returns` (ruling 2
+  of the 2026-08-30 sitting) bans exactly that `ReturnType<typeof f>` idiom for every public
+  factory and requires a deliberately AUTHORED return type instead. The name returns under the
+  SAME identifier, `PublicRoutes`, but now as a hand-declared contract that
+  `createPublicRoutes(config: PublicRoutesConfig): PublicRoutes` names in its own signature,
+  satisfying the export rule the original retire found the alias failing. Task 2 of the
+  conventions pass executes the reintroduction.
+- **Overturned premise, with evidence:** the retire's own "one-line exact re-derivation available"
+  reasoning holds for the ALIAS form and is not disturbed by this reopen; what is overturned is
+  the retires pass's implicit assumption that no public factory needs its return type declared at
+  all. The overturning evidence is the sitting's ruling itself (ruling 2, ratified 2026-08-30), not
+  new consumer data: no site's usage of `createPublicRoutes` changed between the retire and this
+  reopen.
+- **Shape:** A declared `PublicRoutes` interface, composed the way `ContentRoutes` (the
+  foundations-B precedent) is: hand-written members or `Pick` over the internal wide return, at the
+  task's discretion. `createPublicRoutes` annotates its return with it.
+- **Reopens on:** closed against this reopen; execution (the declared contract) is open until
+  Task 2 lands it.
+- **Record:** [rank-delivery.md](record/2026-08-26-any-site-audit/rank-delivery.md), rank 6;
+  executed (retire) in [2026-08-30 retires-pass](../superpowers/plans/2026-08-30-retires-pass.md),
+  Task 1 batch 1c; reopened by
+  [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), ratified
+  ruling 2, Task 1, and Task 2.
+- **Verified:** [verify-delivery.md](record/2026-08-26-any-site-audit/verify-delivery.md) (verdict
+  overturned there); shape further reopened by the 2026-08-30 sitting above.
 
 ## audit-delivery-entrydataoverrides: `EntryDataOverrides`  (keep, 2026-08-26, any-site audit)
 

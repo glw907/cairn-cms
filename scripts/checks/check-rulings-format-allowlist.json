@@ -5,7 +5,6 @@
   "audit-auth-authchannel",
   "audit-auth-channel-schema-sql",
   "audit-auth-authchannelconfig",
-  "audit-auth-createauthchannel",
   "audit-cloudflare-checkratelimitkeys",
   "audit-cloudflare-checkratelimit",
   "audit-media-normalizeassets",

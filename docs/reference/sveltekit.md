@@ -417,8 +417,8 @@ recognizes both as its native thrown shapes and renders the correct status throu
 no `handleError` mapping to write.
 
 `fail()` is the default for every refusal that answers the request that raised it, and it is
-carried by a precise `ActionFailure<T>` typed to the failing screen's own shape (`SaveFailure`,
-`DeleteRefusal`, `CreateFailure`, `NavSaveFailure`, and the rest documented against
+carried by a precise `ActionFailure<T>` typed to the failing screen's own shape
+(`ContentFormFailure`, `NavSaveFailure`, and the rest documented against
 [`createContentRoutes`](#createcontentroutes) below), never a bare `ActionFailure<unknown>`. Every
 built-in content, media, settings, vocabulary, and nav action's own validation and commit-conflict
 refusal answers this way, and so does
@@ -981,18 +981,18 @@ type ContentRoutes = {
   settingsSaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SettingsSaveFailure>>;
   vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyLoadData>;
   vocabularySaveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<VocabularySaveFailure>>;
-  createAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<CreateFailure>>;
+  createAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
   editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>;
   historyLoad: (event: CairnEvent<CairnEnv>) => Promise<HistoryData>;
-  saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure>>;
-  publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<SaveFailure>>;
+  saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
+  publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
   publishAllAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
   discardAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
-  deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>;
-  listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DeleteRefusal>>;
-  renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RenameFailure>>;
-  previewMintAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { url: string; expiresAt: number }>;
-  previewRevokeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<PreviewMintFailure> | { count: number }>;
+  deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
+  listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
+  renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure>>;
+  previewMintAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }>;
+  previewRevokeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<ContentFormFailure> | { count: number }>;
   revertAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<RevertFailure>>;
   uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<MediaUploadFailure> | UploadResult>;
   dictionaryAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<DictionaryAddFailure> | DictionaryAddResult>;
@@ -1077,7 +1077,7 @@ response (the one admin payload that carries a bearer credential), and logs
 ([`requireOrigin`](#createauthroutes)), never the request's own host. `previewRevokeAction` deletes
 every outstanding link for the entry in one call, returning `{ count }`; it is idempotent, since
 revoking with nothing minted still succeeds with a count of zero. Both actions answer the same
-`ActionFailure<PreviewMintFailure>` when `AUTH_DB` is missing the `preview_tokens` table
+`ActionFailure<ContentFormFailure>` when `AUTH_DB` is missing the `preview_tokens` table
 (`migrations/0003_preview.sql` not yet applied), naming the migration to apply rather than
 surfacing a raw D1 error, since the engine ships the share affordance to every upgraded site's edit
 screen regardless of adoption. `renameAction`, `deleteAction`/`listDeleteAction`, and
@@ -1140,17 +1140,17 @@ below. Their request shapes and `fail` payloads:
   `DictionaryAddFailure` shapes are admin-internal: the editor host reads them by `type`/`status` off the
   deserialized envelope, so they are not exported on the `sveltekit` subpath and carry no Types row.
 
-Every action failure carries `error: string` as its one-line summary, alongside the payload that
-names what refused: a blocked save or publish returns `SaveFailure` (the broken links and the
-edited body), a refused delete returns `DeleteRefusal` (the inbound linkers and the entry id),
-a refused rename returns `RenameFailure`, and a refused create returns `CreateFailure` (the same
-bare summary as `RenameFailure`, for a bad slug, a missing date, or an address collision). The
-media actions add two more: a refused media delete returns `MediaDeleteRefusal` (the asset hash,
-the where-used rows, and the count) and a refused media metadata edit returns
-`MediaUpdateFailure` (the asset hash, when known). A refused replace returns `MediaReplaceFailure`
-(the same shape as the delete refusal) and a refused alt-propagation returns
-`MediaAltPropagateFailure` (the asset hash, when known). A page component types its `form` prop
-with `ContentFormFailure`, the optional merge of all eight.
+Every action failure carries `error: string` as its one-line summary, alongside whichever richer
+fields name what refused, all folded into the single `ContentFormFailure` shape every content
+action's `fail()` returns: a blocked save or publish carries `brokenLinks` and `body` (the
+broken cairn tokens and the author's edited markdown, so the editor reseeds with the unsaved
+work); a refused delete carries `inboundLinks`, `inboundKind`, and `id` (the entries that still
+link to or include the refused one, which gate refused, and the refused entry's id); a refused
+rename or create carries only `error`. The media actions add `hash`, `usage`, and `foundIn`: a
+refused media delete or replace carries the asset's content hash, the where-used rows, and the
+distinct-entry count, and a refused media update or alt-propagation carries just `hash`, when
+known. A page component types its `form` prop with `ContentFormFailure`, every field optional
+since only the fields the last-refused action actually sets are present.
 
 ```ts
 // src/routes/admin/(app)/[concept]/+page.server.ts (per-route mounting)
@@ -1844,19 +1844,14 @@ imports the matching `*Data` type to type its `data` prop.
 | `ContentRoutes` | Unstable API | `type ContentRoutes` | What `createContentRoutes` returns: the load and action vocabulary a site can mount by hand, shown expanded in [`createContentRoutes`](#createcontentroutes). The engine's Media Library janitorial actions (bulk delete, orphan scan and purge, replace, alt propagation, per-asset delete and update, and the Library-direct upload) are not members: they reach the browser only through [`createCairnAdmin`](#createcairnadmin). |
 | <a id="previewtokenconfig"></a>`PreviewTokenConfig` | Unstable API | `interface PreviewTokenConfig { ttlMs?: number }` | A site's preview-token configuration for [`mintPreviewToken`](#mintpreviewtoken): how long a minted share link stays valid. `ttlMs` defaults to seven days (long enough to survive a weekend review) and must be finite, positive, and between one minute and thirty days inclusive; an out-of-range value throws a `PreviewTokenConfig:`-prefixed error at mint time. |
 | <a id="previewdata"></a>`PreviewData` | Extension API | `interface PreviewData extends EntryData { preview: { state: 'draft' \| 'published'; expiresAt: string; published: { permalink: string } \| null } }` | [`previewLoad`](#previewload)'s data: a public entry page's own [`EntryData`](./delivery.md#entrydata), the exact shape `entryLoad` returns, plus `preview`, the metadata [`PreviewBanner`](./components.md#previewbanner) (or a site's own banner) reads. `preview.state` is `'draft'` while the shared branch is still open and `'published'` once it's gone; `preview.published` names the live permalink only in the `'published'` state, when the entry's file exists on the default branch, and is `null` otherwise (a discarded, never-published entry's branch-gone case never reaches this shape at all, since it answers a 404 instead). A compile-time assertion in the engine's own test suite proves this type adds no key beyond `preview`, so a future `EntryData` field breaks the engine's own build rather than a consuming site's. |
-| `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
-| `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; inboundKind?: 'link' \| 'include'; id: string }` | A refused delete: the one-line summary, the entries that still link to (or include) the refused one, and its id so a list marks the right row. `inboundKind` names which gate refused, `'include'` for a blocked fragment delete and `'link'` (the default when absent) otherwise, so the refusal copy names the real blocker. |
-| `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
-| `CreateFailure` | Unstable API | `interface CreateFailure { error: string }` | A refused create (bad slug, missing date, or an address collision): just the one-line summary. |
 | `RevertFailure` | Unstable API | `type RevertFailure = { reason: 'draft_exists'; draftEditor: string; draftStartedAt: string } \| { reason: 'ref_unknown' } \| { reason: 'history_stale' }` | A refused revert (`ActionFailure<RevertFailure>`), fail-closed with no force path: `draft_exists` (`fail(409, ...)`, the blocking draft's own editor and start date) when a pending branch already exists for the entry, from `revertAction`'s own pre-check or `Backend.createBranch`'s typed `BranchExistsError` under a race; `ref_unknown` (`fail(404, ...)`) when the posted ref isn't a member of a fresh `listCommits` read, the 25-row window's own boundary; `history_stale` (`fail(409, ...)`) when the default branch moved since the history page rendered. There is no fourth reason for invalid old content: a retired field or vocabulary tag in the reverted version rides forward as an advisory on the edit screen instead, and never refuses the revert. |
-| `PreviewMintFailure` | Unstable API | `interface PreviewMintFailure { error: string }` | A refused `previewMintAction` or `previewRevokeAction`: `fail(400)` from a mint whose entry carries no pending draft to share, or `fail(500)` from either action when `AUTH_DB` is missing the `preview_tokens` table (`migrations/0003_preview.sql` not yet applied), an actionable message naming the fix. Both actions answer the missing-table case with this same shape, since the engine ships the share affordance to every upgraded site's edit screen regardless of adoption. |
 | `MediaDeleteRefusal` | Unstable API | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
 | `MediaUpdateFailure` | Unstable API | `interface MediaUpdateFailure { error: string; hash?: string }` | A refused media metadata edit (an asset not committed on the default branch, an invalid slug, or a manifest conflict): the one-line summary, and the edited asset's hash when known, so the Library re-opens the right slide-over. |
 | `MediaReplaceFailure` | Unstable API | `interface MediaReplaceFailure { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media replace: the one-line summary, the asset's content hash, the where-used rows, and the distinct-entry count. Mirrors `MediaDeleteRefusal`: a fresh usage read found the asset still in use without the typed-slug override (409), or usage could not be verified or the bucket is unbound (503). |
 | `MediaAltPropagateFailure` | Unstable API | `interface MediaAltPropagateFailure { error: string; hash?: string }` | A refused media alt-propagation: the one-line summary, and the asset's hash when known (absent from the alt-preview fetch action's own pre-hash failures), so the apply form's Library re-opens the right slide-over. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
 | `MediaBulkFailure` | Unstable API | `interface MediaBulkFailure { error: string }` | A refused media bulk delete or orphan purge: just the one-line summary. The whole batch failed closed because cross-branch usage could not be verified (503), or media is off / the bucket is unbound. Per-item outcomes ride the returned summary, not this fail. |
 | `MediaUploadFailure` | Unstable API | `interface MediaUploadFailure { error: string }` | A refused upload: one of the pre-store gates (session, media-off, missing bucket, oversized or disallowed content) or the Library-direct commit's own conflict bounce. Just the one-line summary; a refusal here never stores bytes or commits a row. |
-| `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & CreateFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
+| `ContentFormFailure` | Unstable API | `interface ContentFormFailure { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; inboundKind?: 'link' \| 'include'; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. `brokenLinks`/`body` come from a blocked save or publish; `inboundLinks`/`inboundKind`/`id` from a refused delete; `hash`/`usage`/`foundIn` from a refused media delete or replace, and `hash` alone from a refused media update or alt-propagation. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `EditorRoutesConfig` | Unstable API | `interface EditorRoutesConfig { roles?: RolesDeclaration }` | Configuration for `createEditorRoutes`: the site's declared role vocabulary; omitted, the routes validate and resolve against the implicit owner/editor pair. |
 | `EditorRoutes` | Unstable API | `type EditorRoutes` | What `createEditorRoutes` returns: the owner-gated editor-management load and actions, shown expanded in [`createEditorRoutes`](#createeditorroutes). |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |

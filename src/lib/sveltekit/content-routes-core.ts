@@ -34,6 +34,7 @@ import { resolveRefusalCode, refusalMessage, type RefusalCode } from './refusal-
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
+import type { UsageEntry } from '../media/usage.js';
 import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionary.js';
 import { issueCsrfToken } from './csrf.js';
 import { requireSession, requireEditor, requireEngineAccess, isPublicAdminPath } from './guard.js';
@@ -309,8 +310,14 @@ export interface WelcomeData {
   siteName: string;
 }
 
-/** A blocked save or publish: `fail(400)` when the body links to a target absent from main. */
-export interface SaveFailure {
+/**
+ * A blocked save or publish: `fail(400)` when the body links to a target absent from main.
+ *  Module-internal (`convention-internal-sibling-comment`): the conventions pass flattened its
+ *  fields into {@link ContentFormFailure}, the exported carrier every action's `form` prop reads,
+ *  so this narrower shape stays only as the `satisfies` clause each `fail()` call site below
+ *  validates its literal against.
+ */
+interface SaveFailure {
   /** The one-line human summary every content action failure carries. */
   error: string;
   /** The cairn tokens that resolve to no entry, for the editor's fix-it banner. */
@@ -319,7 +326,12 @@ export interface SaveFailure {
   body: string;
 }
 
-/** A refused delete: `fail(409)` while other entries still link to (or include) this one. */
+/**
+ * A refused delete: `fail(409)` while other entries still link to (or include) this one. Stays
+ *  module-exported (`convention-internal-sibling-comment`), unlike its four siblings here, because
+ *  `reproductions/stories/publish.ts` imports it directly for the `publish/refusal-banner` fixture;
+ *  every route action still reads the flattened, publicly exported {@link ContentFormFailure}.
+ */
 export interface DeleteRefusal {
   /** The one-line human summary every content action failure carries. */
   error: string;
@@ -335,14 +347,22 @@ export interface DeleteRefusal {
   id: string;
 }
 
-/** A refused rename: `fail(400)` on a bad slug, `fail(409)` on a collision or pending edits. */
-export interface RenameFailure {
+/**
+ * A refused rename: `fail(400)` on a bad slug, `fail(409)` on a collision or pending edits.
+ *  Module-internal (`convention-internal-sibling-comment`): flattened into
+ *  {@link ContentFormFailure}; stays only as a `satisfies` validation shape.
+ */
+interface RenameFailure {
   /** The one-line human summary every content action failure carries. */
   error: string;
 }
 
-/** A refused create: `fail(400)` on a bad slug or missing date, `fail(409)` on an address collision. */
-export interface CreateFailure {
+/**
+ * A refused create: `fail(400)` on a bad slug or missing date, `fail(409)` on an address
+ *  collision. Module-internal (`convention-internal-sibling-comment`): flattened into
+ *  {@link ContentFormFailure}; stays only as a `satisfies` validation shape.
+ */
+interface CreateFailure {
   /** The one-line human summary every content action failure carries. */
   error: string;
 }
@@ -353,11 +373,42 @@ export interface CreateFailure {
  *  (migrations/0003_preview.sql not yet applied), an actionable message naming the fix rather
  *  than a raw D1 error. Both `previewMintAction` and `previewRevokeAction` answer the missing-
  *  table case with this same shape, since an upgraded, non-adopting site still ships the share
- *  affordance to every editor.
+ *  affordance to every editor. Module-internal (`convention-internal-sibling-comment`): flattened
+ *  into {@link ContentFormFailure}; stays only as a `satisfies` validation shape.
  */
-export interface PreviewMintFailure {
+interface PreviewMintFailure {
   /** The one-line human summary the edit screen's share panel shows on a refused mint or revoke. */
   error: string;
+}
+
+/**
+ * What a route's single `form` export presents to a view component: whichever content action
+ *  last failed, merged with every field optional. `error` is always set on a failure; the richer
+ *  keys identify which guard refused. The media refusals ride here too, so the Media Library's one
+ *  `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate`
+ *  refusal without a second type. One flat interface (the conventions pass,
+ *  `audit-sveltekit-contentformfailure`): every field optional, replacing the earlier
+ *  `Partial<>` intersection over the eleven now-module-internal arm shapes.
+ */
+export interface ContentFormFailure {
+  /** The one-line human summary every content action failure carries. */
+  error?: string;
+  /** The cairn tokens that resolve to no entry, set by a blocked `saveAction`/`publishAction`. */
+  brokenLinks?: string[];
+  /** The author's edited markdown, set by a blocked `saveAction`/`publishAction` so the editor reseeds with the unsaved work. */
+  body?: string;
+  /** The entries whose bodies link to (or include) the refused one, set by a blocked `deleteAction`/`listDeleteAction`. */
+  inboundLinks?: InboundLink[];
+  /** Which gate refused a blocked delete, set by `deleteAction`/`listDeleteAction`. Absent reads as `'link'`. */
+  inboundKind?: 'link' | 'include';
+  /** The refused entry's id, set by a blocked `deleteAction`/`listDeleteAction` so a list view marks the right row. */
+  id?: string;
+  /** The refused asset's content hash, set by a blocked media delete, update, replace, or alt-propagate action. */
+  hash?: string;
+  /** The where-used rows, set by a blocked media delete or replace action. */
+  usage?: UsageEntry[];
+  /** The distinct-entry count behind a media refusal, set by a blocked media delete or replace action. */
+  foundIn?: number;
 }
 
 /**
@@ -514,7 +565,7 @@ async function clearPreviewTokens(event: CairnEvent, concept: ConceptDescriptor,
  *  `AUTH_DB` is missing the `preview_tokens` table (migrations/0003_preview.sql not yet applied),
  *  naming the fix rather than surfacing a raw D1 error.
  */
-function missingPreviewTableFailure(): ActionFailure<PreviewMintFailure> {
+function missingPreviewTableFailure(): ActionFailure<ContentFormFailure> {
   return fail(500, {
     error: 'The preview_tokens table is missing. Apply migrations/0003_preview.sql to AUTH_DB, then try again.',
   } satisfies PreviewMintFailure);
@@ -846,7 +897,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
-  async function createAction(event: CairnEvent): Promise<ActionFailure<CreateFailure>> {
+  async function createAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -1263,7 +1314,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     editor: Editor,
     concept: ConceptDescriptor,
     id: string,
-  ): Promise<ActionFailure<SaveFailure> | SaveHold> {
+  ): Promise<ActionFailure<ContentFormFailure> | SaveHold> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const form = await event.request.formData();
     const body = String(form.get('body') ?? '');
@@ -1439,7 +1490,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    * Save an edit: validate, then commit to the entry's pending branch with the session editor
    *  as author. Main and its manifest stay untouched until publish. Fails safe on 409.
    */
-  async function saveAction(event: CairnEvent): Promise<ActionFailure<SaveFailure>> {
+  async function saveAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
@@ -1459,7 +1510,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  The branch is deleted only when its head still matches the commit this action made; a
    *  concurrent save moved it, so the entry stays pending and the next publish picks it up.
    */
-  async function publishAction(event: CairnEvent): Promise<ActionFailure<SaveFailure>> {
+  async function publishAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
@@ -1682,7 +1733,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     concept: ConceptDescriptor,
     id: string,
     editor: Editor,
-  ): Promise<ActionFailure<DeleteRefusal>> {
+  ): Promise<ActionFailure<ContentFormFailure>> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const backend = ctx.resolveBackend(event);
 
@@ -1796,13 +1847,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Delete an entry from its editor. The id comes from the route param. */
-  async function deleteAction(event: CairnEvent): Promise<ActionFailure<DeleteRefusal>> {
+  async function deleteAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     return deleteEntry(event, concept, id, editor);
   }
 
   /** Delete an entry from the concept list. The id comes from the form body. */
-  async function listDeleteAction(event: CairnEvent): Promise<ActionFailure<DeleteRefusal>> {
+  async function listDeleteAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -1818,7 +1869,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  are the authoritative gate. The same last-writer-wins manifest race as save and delete applies,
    *  caught by the build's fail-closed backstop.
    */
-  async function renameAction(event: CairnEvent): Promise<ActionFailure<RenameFailure>> {
+  async function renameAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure>> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const backend = ctx.resolveBackend(event);
 
@@ -2011,7 +2062,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  pending draft (there is nothing to share) or when `AUTH_DB` is missing the `preview_tokens`
    *  table, naming the migration to apply rather than surfacing a raw D1 error.
    */
-  async function previewMintAction(event: CairnEvent): Promise<ActionFailure<PreviewMintFailure> | { url: string; expiresAt: number }> {
+  async function previewMintAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure> | { url: string; expiresAt: number }> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const backend = ctx.resolveBackend(event);
 
@@ -2057,7 +2108,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  adoption, so a missing `preview_tokens` table answers the same actionable refusal minting
    *  does, naming the migration, rather than a raw D1 error.
    */
-  async function previewRevokeAction(event: CairnEvent): Promise<ActionFailure<PreviewMintFailure> | { count: number }> {
+  async function previewRevokeAction(event: CairnEvent): Promise<ActionFailure<ContentFormFailure> | { count: number }> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const db = requireDb(event.platform?.env ?? {});
     let count: number;

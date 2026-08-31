@@ -112,6 +112,9 @@ describe('saveAction', () => {
     expect(result.data.body).toBe('b');
     expect(result.data.brokenLinks).toEqual([]);
     expect(fetchMock).not.toHaveBeenCalled();
+    // conventions pass, Task 5: saveAction now declares ActionFailure<ContentFormFailure> (the
+    // flattened, all-optional type); this holds the key set a SaveFailure carried.
+    expect(Object.keys(result.data).sort()).toEqual(['body', 'brokenLinks', 'error']);
   });
 
   it('rejects an invalid id before any commit', async () => {

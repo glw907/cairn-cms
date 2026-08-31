@@ -181,6 +181,9 @@ describe('renameAction', () => {
     expect(result.status).toBe(409);
     expect(result.data.error).toMatch(/already exists/i);
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+    // conventions pass, Task 5: renameAction now declares ActionFailure<ContentFormFailure> (the
+    // flattened, all-optional type); this holds the key set a RenameFailure carried.
+    expect(Object.keys(result.data)).toEqual(['error']);
   });
 
   it('rejects a no-op slug with no commit', async () => {

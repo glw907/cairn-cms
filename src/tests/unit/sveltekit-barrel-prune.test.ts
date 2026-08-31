@@ -14,6 +14,13 @@ const DEMOTED = ['isPublicAdminPath', 'parseAdminPath', 'AdminView', 'NavRoutesD
 // is `docs/internal/record/2026-08-30-retires-move-record.md`.
 const RETIRED_LEAKS = ['NavConcept', 'EntrySummary', 'AdvisoryNotice', 'AdvisoryAction', 'MediaUsageInfo', 'NavPageOption'];
 
+// The five core arm shapes ContentFormFailure's Partial<> intersection once carried, retired from
+// every barrel and subpath by the conventions pass, Task 5 (`audit-sveltekit-contentformfailure`'s
+// prescribed flatten): every field folded into the flat, all-optional ContentFormFailure, which
+// stays in KEPT below. DeleteRefusal survives structurally as ContentFormFailure's inboundLinks/
+// inboundKind/id fields, the same F-1-class leak the six names above already establish.
+const RETIRED_CORE_ARMS = ['SaveFailure', 'DeleteRefusal', 'RenameFailure', 'CreateFailure', 'PreviewMintFailure'];
+
 // The keep list for the /sveltekit subpath, from the audit verdicts doc's `## ./sveltekit`
 // section (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`), minus the
 // four demotions above and the six retired leaks above.
@@ -33,9 +40,6 @@ const KEPT = [
   'HelpData',
   'MediaLibraryData',
   'ContentRoutesConfig',
-  'SaveFailure',
-  'DeleteRefusal',
-  'RenameFailure',
   'MediaDeleteRefusal',
   'MediaUpdateFailure',
   'MediaReplaceFailure',
@@ -78,6 +82,12 @@ describe('sveltekit barrel prune', () => {
   it('no longer resolves the retired leak names from the /sveltekit subpath', () => {
     const names = new Set(enumerateExports(DTS));
     const stillPresent = RETIRED_LEAKS.filter((name) => names.has(name));
+    expect(stillPresent).toEqual([]);
+  });
+
+  it('no longer resolves the retired core-arm names from the /sveltekit subpath', () => {
+    const names = new Set(enumerateExports(DTS));
+    const stillPresent = RETIRED_CORE_ARMS.filter((name) => names.has(name));
     expect(stillPresent).toEqual([]);
   });
 

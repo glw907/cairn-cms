@@ -459,6 +459,27 @@
   replace a `removeOwnerIfNotLast`/`demoteOwnerIfNotLast` boolean check with `result.outcome ===
   'ok'`.
 
+- The conventions pass (Task 5) flattens `ContentFormFailure` and retires the five core arm
+  types it used to compose, per `audit-sveltekit-contentformfailure`'s ruled shape.
+  `ContentFormFailure` is now one flat interface with every field optional (`error`,
+  `brokenLinks`, `body`, `inboundLinks`, `inboundKind`, `id`, `hash`, `usage`, `foundIn`), each
+  documented against the action that sets it, replacing the earlier `Partial<>` intersection over
+  eleven arm types. `SaveFailure`, `DeleteRefusal`, `RenameFailure`, `CreateFailure`, and
+  `PreviewMintFailure` retire from `@glw907/cairn-cms/sveltekit`: every carrying action
+  (`createAction`, `saveAction`, `publishAction`, `deleteAction`, `listDeleteAction`,
+  `renameAction`, `previewMintAction`, `previewRevokeAction`) is re-typed to
+  `ActionFailure<ContentFormFailure>` before the retire, so `check:surface`'s regenerated
+  `api-surface.md` carries zero references to any of the five names (leak-free). The five media
+  arms (`MediaDeleteRefusal`, `MediaUpdateFailure`, `MediaReplaceFailure`,
+  `MediaAltPropagateFailure`, `MediaBulkFailure`) and `TidyFailure` are untouched. `UsageEntry`
+  does NOT retire in this pass: `ContentFormFailure` itself carries `usage?: UsageEntry[]`, so it
+  stays exported; the retire decision for the whole `UsageEntry` family routes to slice 4b.
+  **Consumers must:** a site importing `SaveFailure`, `DeleteRefusal`, `RenameFailure`,
+  `CreateFailure`, or `PreviewMintFailure` from `@glw907/cairn-cms/sveltekit` to annotate a
+  specific action's `form` prop replaces it with `ContentFormFailure`, which already carried
+  every one of those fields (optionally) before this change; no other consumer action is needed,
+  since every field a site could have read is still present under the same key.
+
 ### Documentation
 
 - `docs/internal/engine-rulings.md` gains a `check:rulings-format` gate: an earlier authoring pass

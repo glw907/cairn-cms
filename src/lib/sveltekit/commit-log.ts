@@ -27,10 +27,11 @@ export function logCommitFailed(
 
 /**
  * The shared commit catch for a read-modify-commit action: log the failure, then answer a conflict
- *  in place with `fail(409, payload)`, so the caller's own screen shape carries the message
- *  (`SaveFailure`'s `body`, `DeleteRefusal`'s `inboundLinks`, and so on) and the page never
- *  navigates away from unsaved work. Anything else is unexpected and rethrows unchanged, so a
- *  genuine backend fault still reaches the caller's own unexpected-failure handling.
+ *  in place with `fail(409, payload)`, so the caller's own screen shape carries the message (a
+ *  save's `body`, a delete's `inboundLinks`, and so on, whatever fields the caller's own
+ *  `ContentFormFailure` payload sets) and the page never navigates away from unsaved work.
+ *  Anything else is unexpected and rethrows unchanged, so a genuine backend fault still reaches
+ *  the caller's own unexpected-failure handling.
  */
 export function commitFailure<T>(
   fields: { concept: string; id: string; editor: string },

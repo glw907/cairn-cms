@@ -491,6 +491,9 @@ describe('createAction', () => {
     };
     expect(result.status).toBe(400);
     expect(result.data.error).toBeTruthy();
+    // conventions pass, Task 5: createAction now declares ActionFailure<ContentFormFailure> (the
+    // flattened, all-optional type); this holds the key set a CreateFailure carried.
+    expect(Object.keys(result.data)).toEqual(['error']);
   });
 
   it('bounces when a dated slug carries its own date-like prefix', async () => {
@@ -590,13 +593,16 @@ describe('listDeleteAction', () => {
     const routes = createContentRoutes(runtime());
     const event = deleteFormEvent({ id: '2026-05-01-hello' });
     const result = (await routes.listDeleteAction(event as never)) as unknown as {
-      status: number; data: { error: string; inboundLinks: unknown[] };
+      status: number; data: { error: string; inboundLinks: unknown[]; id: string };
     };
     expect(result.status).toBe(409);
     expect(result.data.error).toContain('2026-05-01-hello');
     expect(result.data.inboundLinks.length).toBeGreaterThan(0);
     // Block-until-clean: no commit when links exist.
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+    // conventions pass, Task 5: listDeleteAction now declares ActionFailure<ContentFormFailure>
+    // (the flattened, all-optional type); this holds the key set a DeleteRefusal carried.
+    expect(Object.keys(result.data).sort()).toEqual(['error', 'id', 'inboundLinks']);
   });
 
   it('rejects an invalid id from the form with a 400', async () => {

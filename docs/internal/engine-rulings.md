@@ -1490,42 +1490,71 @@ when the remediation pass lands.
 ## audit-sveltekit-renamefailure: `RenameFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. { error: string }, delivered to the engine's own dialog through ContentFormFailure.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the conventions pass, Task 5: `renameAction` re-typed to
+  `ActionFailure<ContentFormFailure>`; the interface lost its `export` (no cross-module consumer)
+  and stays module-internal in `content-routes-core.ts`, used only by its own `satisfies`
+  validation clauses. Its one field folds into `ContentFormFailure.error`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 26.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-createfailure: `CreateFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. { error: string }; identical in shape to four siblings.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the conventions pass, Task 5: `createAction` re-typed to
+  `ActionFailure<ContentFormFailure>`; the interface lost its `export` (no cross-module consumer)
+  and stays module-internal in `content-routes-core.ts`, used only by its own `satisfies`
+  validation clauses. Its one field folds into `ContentFormFailure.error`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 27.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-previewmintfailure: `PreviewMintFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None. { error: string } from the Share-link action, surfaced through the union.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the conventions pass, Task 5: `previewMintAction`,
+  `previewRevokeAction`, and the `missingPreviewTableFailure` internal helper all re-typed to
+  `ActionFailure<ContentFormFailure>`; the interface lost its `export` (no cross-module consumer)
+  and stays module-internal in `content-routes-core.ts`, used only by its own `satisfies`
+  validation clauses. Its one field folds into `ContentFormFailure.error`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 28.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-deleterefusal: `DeleteRefusal`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. None by name. Richer than its siblings, but still delivered to the engine's delete dialog as ContentFormFailure.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the conventions pass, Task 5: `deleteAction`,
+  `listDeleteAction`, and the `deleteEntry` internal helper all re-typed to
+  `ActionFailure<ContentFormFailure>`; the barrel and subpath re-exports drop
+  (`content-routes.ts`, `sveltekit/index.ts`), but the interface KEEPS its module-level `export`
+  in `content-routes-core.ts` (`convention-internal-sibling-comment`), the retires pass's
+  three-case rule: `reproductions/stories/publish.ts` imports it directly for the
+  `publish/refusal-banner` fixture. Its fields fold into `ContentFormFailure.inboundLinks`,
+  `.inboundKind`, and `.id`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 29.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-savefailure: `SaveFailure`  (retire, 2026-08-26, any-site audit)
 
 - **Verdict:** retire. Weakest-plausible: a site might care that body round-trips on a broken-link refusal. It still reads that through the union.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the conventions pass, Task 5: `saveAction`, `publishAction`,
+  and the `saveToBranch` internal helper all re-typed to `ActionFailure<ContentFormFailure>`; the
+  interface lost its `export` (no cross-module consumer) and stays module-internal in
+  `content-routes-core.ts`, used only by its own `satisfies` validation clauses. Its fields fold
+  into `ContentFormFailure.brokenLinks` and `.body`.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 30.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 
 ## audit-sveltekit-contentformfailure: `ContentFormFailure`  (reshape, 2026-08-26, any-site audit)
 
 - **Verdict:** reshape. A site mounting CairnMediaLibrary or the entry editor on its own /admin route must annotate the form prop; components.md line 204 writes this name.
-- **Reopens on:** open until executed; the remediation pass closes it.
+- **Reopens on:** closed. Executed by the conventions pass, Task 5, exactly per the shape below:
+  `ContentFormFailure` is now one flat, all-optional interface in `content-routes-core.ts`
+  (re-exported from `content-routes.ts` at its same public name), replacing the `Partial<>`
+  eleven-way intersection. The five core carriers (`SaveFailure`, `DeleteRefusal`,
+  `RenameFailure`, `CreateFailure`, `PreviewMintFailure`) retired leak-free: every carrying
+  action (eight members plus three internal helpers) re-typed to
+  `ActionFailure<ContentFormFailure>` before the retire, verified with `check:surface`'s
+  regenerated `api-surface.md` carrying zero hits for any of the five names. The six media/tidy
+  arms are untouched, per the audit's own record of what carries which fields.
 - **Shape:** Declare it as one flat interface with every field optional, each documented against the action that sets it, and keep the eleven arms module-internal. Today it is a `Partial<>` over an eleven-way intersection of the retiring arm types, which cannot survive their retirement as written and whose meaning, whichever action last failed, is not readable from the intersection.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 31.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
@@ -1565,6 +1594,13 @@ when the remediation pass lands.
 
 - **Verdict:** retire. None by name; reached through usage[hash].entries. Its origin member also publishes the pending-branch model.
 - **Reopens on:** open until executed; the remediation pass closes it.
+- **Progress note (conventions pass, Task 5, 2026-08-31):** does NOT retire in this task. The
+  flattened `ContentFormFailure` itself carries `usage?: UsageEntry[]` (set by a blocked media
+  delete or replace), so the flat keep is its own surviving carrier; retiring the name here would
+  leave `ContentFormFailure.usage`'s element type unnameable. `UsageEntry` stays exported. The
+  retire decision routes to 4b, beside Tier 1 (where `UsageEntry`'s other carriers,
+  `MediaDeleteRefusal`/`MediaReplaceFailure`, retire), which must decide inline-vs-keep for the
+  whole family together rather than splitting `ContentFormFailure`'s carrier from its siblings'.
 - **Record:** [rank-route-factories.md](record/2026-08-26-any-site-audit/rank-route-factories.md), rank 36.
 - **Verified:** [verify-route-factories.md](record/2026-08-26-any-site-audit/verify-route-factories.md).
 

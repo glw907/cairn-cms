@@ -1,9 +1,10 @@
 // cairn-cms: Pagination's pure windowing and range arithmetic, graduated from
 // aksailingclub-org's `src/admin-club/toolkit/Pagination.svelte` module context. Kept in a plain
-// module (rather than only inside Pagination.svelte's `<script module>`) so the unit test project,
-// which runs in Node with no Svelte plugin, can exercise the arithmetic directly; Pagination.svelte
-// re-exports both from its own module context, preserving the "exported from module context"
-// contract a consumer imports against.
+// module (rather than only inside Pagination.svelte) so the unit test project, which runs in Node
+// with no Svelte plugin, can exercise the arithmetic directly; Pagination.svelte imports both for
+// its own internal use, the same split `list-toolbar.ts` establishes for `ListToolbar`. Neither
+// publishes from the `/admin-toolkit` barrel any longer (the retires pass, batch 1a: zero consumers
+// reached them independently of the component).
 
 /** One entry in a windowed page list: a real page number, or a gap marker between two runs. */
 export type PageWindowItem = number | 'ellipsis';

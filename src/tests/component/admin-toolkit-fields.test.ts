@@ -51,6 +51,9 @@ describe('FieldLabel', () => {
 // it is re-expressed here on FieldLabel plus a hand-rolled control, the composition both
 // components wrapped, so the recipe stays proven independent of either component's lifetime.
 describe('the stacked register', () => {
+  // Both register assertions below mount the same composed control. `children` accepts a snippet
+  // and nothing else, so the raw snippet is built once here rather than once per test.
+  const control = createRawSnippet(() => ({ render: () => '<input class="input input-sm" name="q" />' }));
   let sheet: HTMLStyleElement;
 
   beforeAll(() => {
@@ -66,14 +69,12 @@ describe('the stacked register', () => {
   });
 
   it('is the default: a bare FieldLabel renders the label above its control', async () => {
-    const control = createRawSnippet(() => ({ render: () => '<input class="input input-sm" name="q" />' }));
     const screen = await render(FieldLabel, { label: 'Search', children: control });
     const label = screen.container.querySelector('label')!;
     expect(label.className).toContain('flex-col');
   });
 
   it('opts into the inline register explicitly', async () => {
-    const control = createRawSnippet(() => ({ render: () => '<input class="input input-sm" name="q" />' }));
     const screen = await render(FieldLabel, { label: 'Search', children: control, register: 'inline' });
     const label = screen.container.querySelector('label')!;
     expect(label.className).toContain('items-center');

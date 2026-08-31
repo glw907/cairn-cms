@@ -25,9 +25,10 @@ chassis slice per the initiative design. CI on `main` is fully green.
 (`0bb03e51`+`523fa8ef`, one fix round) ACCEPTED; Task 3 (`51f02f3f`+`c8c6f5ac`) landed but
 escalated on two residual doc defects (CHANGELOG's `createMediaResolver` subpath claim;
 stale preset prose in `core.md`/`data-tiers.md`), which the conductor routed to a cleanup
-task at the head of chunk 2 (Tasks 5-8). Spend: ~2.6M of the 5.5M ceiling after four of
-eleven tasks; projection crosses the 80% checkpoint during chunk 2 and lands near 7M for
-the full pass — the combined ceiling question is with Geoff. Decisions taken: the overnight
+task at the head of chunk 2 (Tasks 5-8). Spend: ~2.6M after four of eleven tasks;
+the ceiling is RAISED to 7M (Geoff, 2026-08-31, on the chunk-1 numbers: the overrun is
+review rigor, not waste), so the pass runs to completion without a budget stop. Tasks 7
+and 8 upshifted to Opus implementers (security-critical interactions). Decisions taken: the overnight
 suspend stall was recovered by verify-not-redo (Task 1's pre-stall commit accepted as-is);
 Task 4's `Outcome`-suffixed result-union type names accepted (they are results, not
 failure shapes, so the `Failure`-suffix ruling is not implicated). Resume prompt for a

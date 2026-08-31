@@ -58,20 +58,6 @@ graph to that rule, and `src/tests/unit/reproductions-manifest-dist-spawn.test.t
 
 ## The story registry (`/reproductions`)
 
-### `ReproInstance`
-
-Stability tier: Unstable API.
-
-```ts
-type ReproInstance = Record<string, unknown>;
-```
-
-A mounted story component's own exports, the handle a [`pose`](#reprostory) reaches a component
-method through. [`ReproContext`](#reprocontext) hands it to its host through `oninstance`, and the
-host passes it back as `pose`'s second argument. The type stays open because each story knows which
-component it mounts and casts to that component's exported signature at the one call site that uses
-it.
-
 ### `ReproStory`
 
 Stability tier: Unstable API.
@@ -90,7 +76,7 @@ interface ReproStory {
 }
 ```
 
-One registered story's full mount description, the element type of [`stories`](#stories). `id`
+One registered story's full mount description, the type [`getStory`](#getstory) returns. `id`
 matches exactly one [`ReproManifestEntry.id`](#repromanifestentry). `component`
 is the smallest package component that contains what the story shows. `host` is `'shell'` for a
 story mounted inside `CairnAdminShell` with the fixture nav layout, or `'bare'` for one mounted on
@@ -105,24 +91,14 @@ does not appear in the server render. `pose` drives a state that lives in the co
 internal state rather than a prop. Both take `root`, the element `ReproContext` mounted the story
 into, never `document`: a posed dialog and the editor's fixed-position insert panel render inside
 that element rather than appended to `document.body`, so a `settle` or `pose` that queries
-`document` instead of `root` misses them. `pose` also takes the mounted component's own
-[`ReproInstance`](#reproinstance), for a story the real admin reaches by calling an exported method
-rather than by clicking, such as the insert panel the editor mounts headless and opens from its
-toolbar. The parameter is required, so a host that cannot supply an instance fails to compile
-rather than posing half a story. `markers` are the numbered callout anchors a story
-exposes, mirroring its manifest entry's `markerKeys`.
-
-### `stories`
-
-Stability tier: Unstable API.
-
-```ts
-declare const stories: ReproStory[];
-```
-
-The full registry, in the manifest's own id order. `src/tests/component/reproductions-stories.test.ts`
-binds this array against [`manifest`](#manifest), so the two can never drift out of registration
-with each other.
+`document` instead of `root` misses them. `pose` also takes the mounted component's own exports
+(`ReproInstance`, module-internal since the retires pass unexported it, a sanctioned
+`NavIcon`-class leak: a consumer reads the type as `Parameters<NonNullable<ReproStory['pose']>>[1]`),
+for a story the real admin reaches by calling an exported method rather than by clicking, such as
+the insert panel the editor mounts headless and opens from its toolbar. The parameter is required,
+so a host that cannot supply an instance fails to compile rather than posing half a story.
+`markers` are the numbered callout anchors a story exposes, mirroring its manifest entry's
+`markerKeys`.
 
 ### `getStory`
 
@@ -158,11 +134,11 @@ row except the two auth pages) gets one from `ReproContext` itself, painted with
 colors, so it renders correctly wherever it mounts rather than only inside a host that happens to
 supply a theme root.
 
-`oninstance` fires once as the mount happens, with the mounted component's own
-[`ReproInstance`](#reproinstance). A host that runs poses passes it and hands the value back to
-`story.pose`; a host that only renders a resting story needs none of it. The callback runs inside
-the mount rather than from an effect, so a host that mounts and immediately poses reads a real
-instance rather than `undefined`.
+`oninstance` fires once as the mount happens, with the mounted component's own exports, the same
+`ReproInstance` shape [`ReproStory`](#reprostory) describes. A host that runs poses passes it and
+hands the value back to `story.pose`. A host that only renders a resting story needs none of it.
+The callback runs inside the mount rather than from an effect, so a host that mounts and
+immediately poses reads a real instance rather than `undefined`.
 
 Mount `ReproContext` in a document dedicated to one reproduction, its own route inside an `iframe`,
 never on a page that carries anything else. Its containment is not scoped to what it renders: it

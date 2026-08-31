@@ -17,10 +17,10 @@ shrinks (`flex: 1 1 240px`, `min-width: 140px`) while every filter control keeps
 intrinsic width, and every control across the row (search, select, segmented, menu) shares one
 forced 30px height rather than trusting `input-sm`/`btn-sm` to already agree (they render
 slightly different heights in practice). `computeAppliedFilters` and `computeCountLine`
-(re-exported below from the sibling `list-toolbar.ts` module, the same split `Pagination` uses
-for its own windowing math) are the count line's scope-label source; there is no longer a
-separate applied-pills row (Members-refinement-round-1 retired it: an applied filter now renders
-its value in-control instead, on the `'menu'` display below).
+(imported from the sibling `list-toolbar.ts` module, the same split `Pagination` uses for its own
+windowing math) are the count line's scope-label source; there is no longer a separate
+applied-pills row (Members-refinement-round-1 retired it: an applied filter now renders its value
+in-control instead, on the `'menu'` display below).
 
 Graduation extensions over the ASC-born contract (both additive, ASC's own existing usage stays
 valid): a filter's `display` chooses `'select'` (the original contract, unchanged, restyled to
@@ -105,15 +105,14 @@ reflows its neighboring characters.
     computeAppliedFilters,
     computeCountLine,
     computeFacetLabel,
-    type AppliedFilterPill,
     type ListToolbarAction,
     type ListToolbarFilter,
     type ListToolbarFilterOption,
   } from './list-toolbar.js';
   import type { ItemLabel } from './format.js';
 
-  export { computeAppliedFilters, computeCountLine, computeFacetLabel };
-  export type { AppliedFilterPill, ListToolbarAction, ListToolbarFilter, ListToolbarFilterOption };
+  export { computeFacetLabel };
+  export type { ListToolbarAction, ListToolbarFilter, ListToolbarFilterOption };
 </script>
 
 <script lang="ts">

@@ -21,7 +21,7 @@
  * `note`, when present, qualifies a claim the operator's own page does not make (see `CCBot`'s
  * record), so the shipped table never puts words in an operator's mouth.
  */
-export interface AiCrawler {
+interface AiCrawler {
   /** The exact `User-agent` token, e.g. `GPTBot`. */
   token: string;
   /** The organization that operates the crawler. */
@@ -84,6 +84,3 @@ export const AI_CRAWLERS: readonly AiCrawler[] = [
     citation: 'https://developers.facebook.com/docs/sharing/webmasters/crawler',
   },
 ];
-
-/** The date this table was last verified against every operator's first-party documentation. */
-export const AI_CRAWLERS_REVIEWED = '2026-08-05';

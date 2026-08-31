@@ -9,26 +9,19 @@ export {
   type AuthRoutesConfig,
   type RequestResult,
   type AuthRoutes,
-  type LoginData,
-  type ConfirmData,
 } from './auth-routes.js';
-export { createEditorRoutes, type EditorRoutesOptions, type EditorRoutes, type EditorsData } from './editors-routes.js';
+export { createEditorRoutes, type EditorRoutesOptions, type EditorRoutes } from './editors-routes.js';
 export { createContentRoutes, type ContentRoutes } from './content-routes.js';
 export { mintPreviewToken, previewLoad, type PreviewTokenConfig, type PreviewData } from './preview.js';
 export { createMediaRoute } from './media-route.js';
 export type {
-  NavConcept,
   AdminShellData,
-  EntrySummary,
   ListData,
   EditData,
-  AdvisoryNotice,
-  AdvisoryAction,
   HelpData,
   WelcomeData,
   SettingsData,
   VocabularyLoadData,
-  MediaUsageInfo,
   MediaLibraryData,
   ContentRoutesOptions,
   AttentionItem,
@@ -49,7 +42,6 @@ export type {
   VocabularySaveFailure,
   // The export-rule sweep (C2 breaking-window pass, R4 ruling): every type a route factory's
   // return type names, down to its own nested shapes, becomes importable from this subpath.
-  FragmentTarget,
   TidyClient,
   TidyResult,
   DictionaryAddResult,
@@ -70,7 +62,7 @@ export type {
   BulkDeleteSkip,
 } from './content-routes.js';
 export { createNavRoutes, type NavRoutes } from './nav-routes.js';
-export type { NavLoadData, NavPageOption, NavSaveFailure } from './nav-routes.js';
+export type { NavLoadData, NavSaveFailure } from './nav-routes.js';
 export type {
   NavIcon,
   ResolvedNavEntry,
@@ -84,10 +76,8 @@ export type {
   ResolvedLayoutSection,
   ResolvedLayoutNode,
   ResolvedNavLayout,
-  ResolveNavLayoutOptions,
 } from './admin-nav.js';
-export { validateNavLayout, resolveNavLayout } from './admin-nav.js';
-export type { PublishActionEntry, PublishActionsConfig, PublishActionLink } from './publish-actions.js';
+export type { PublishActionEntry, PublishActionsConfig } from './publish-actions.js';
 export {
   adminAction,
   UnauditedActionError,
@@ -117,7 +107,6 @@ export type {
   PlatformContext,
   CookieSetOptions,
   HistoryData,
-  HistoryEntry,
   RevertFailure,
 } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
@@ -148,7 +137,6 @@ export type { Backend, BackendProvider } from '../github/backend.js';
 export type {
   CairnRuntime,
   NamedField,
-  ResolvedPreview,
   ConceptDescriptor,
   SenderConfig,
   NavMenuConfig,
@@ -185,11 +173,8 @@ export type { Editor } from '../auth/types.js';
 // Canonical home `/media`; the reshape verdict on `audit-sveltekit-mediaentry` is still open, so
 // this re-export stays where the audit found it until that reshape settles the shape.
 export type { MediaEntry } from '../media/manifest.js';
-export type { GettingStarted } from '../content/getting-started.js';
-export type { MarkdownReferenceRow } from '../components/markdown-reference.js';
-export type { InboundLink, LinkTarget } from '../content/manifest.js';
+export type { InboundLink } from '../content/manifest.js';
 export type { NavNode, VocabularyEntry, TidyConventions, TidyConfig } from '../nav/site-config.js';
-export type { TidyKeyProbeResult } from './tidy-key-health.js';
 export type { RepoFile, CommitAuthor } from '../github/types.js';
 export type { FileChange } from '../github/repo.js';
 export type { ComponentRegistry, ComponentDef, ComponentContext, SlotDef } from '../render/registry.js';

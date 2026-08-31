@@ -696,8 +696,8 @@ declare function glyph(name: string, icons: IconSet): Element;
 ```
 
 The rest of the hast-building toolkit a component's `build` function reaches for, `iconSpan`,
-`cardShell`, `headRow`, `strAttr`, and `isElement`, lives on the [`/render`](./render.md) subpath,
-not here. The showcase `alert` component composes `glyph` with those helpers:
+`cardShell`, `headRow`, and `strAttr`, lives on the [`/render`](./render.md) subpath, not here. The
+showcase `alert` component composes `glyph` with those helpers:
 
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
@@ -925,24 +925,25 @@ export const cairn = defineAdapter({
 });
 ```
 
-#### `resolveCapability`, `roleHome`, `ownerLevelRoles`
+#### `resolveCapability`, `ownerLevelRoles`
 
 Stability tier: Extension API.
 
 ```ts
 declare function resolveCapability(roles: RolesDeclaration | undefined, role: string): Capability;
-declare function roleHome(roles: RolesDeclaration | undefined, role: string): string | undefined;
 declare function ownerLevelRoles(roles: RolesDeclaration | undefined): string[];
 ```
 
-The engine calls these to resolve `locals.cairnEditor.capability` and the `/admin` landing at the guard
-and the routes; a custom admin route reads the same helpers to gate itself against a vocabulary
-without re-deriving the mapping. `resolveCapability` returns the mapped capability, treating an
-`undefined` vocabulary as `DEFAULT_ROLES`, and returns `'none'` for a role name absent from the
-vocabulary, so a pruned config or a hand-edited row fails closed rather than locking the person out
-of sign-in. `roleHome` returns the declared `home`, or `undefined` when the role declares none or
-is unknown. `ownerLevelRoles` lists every name mapped to owner capability, the set the last-owner
-guard counts across instead of the literal `'owner'` string.
+The engine calls these to resolve `locals.cairnEditor.capability` at the guard and the routes; a
+custom admin route reads `resolveCapability` to gate itself against a vocabulary without
+re-deriving the mapping. It returns the mapped capability, treating an `undefined` vocabulary as
+`DEFAULT_ROLES`, and returns `'none'` for a role name absent from the vocabulary, so a pruned
+config or a hand-edited row fails closed rather than locking the person out of sign-in.
+`ownerLevelRoles` lists every name mapped to owner capability, the set the last-owner guard counts
+across instead of the literal `'owner'` string. (`roleHome`, which used to resolve a role's
+declared `/admin` landing `home`, retired from this subpath in the retires pass, batch 1a: zero
+consumers, and its own logic was only the first of three branches in the engine's landing policy,
+so a site copying it got no policy from it alone.)
 
 ### Access map
 
@@ -1051,7 +1052,6 @@ function signatures above reference these.
 | `ValidationResult` | Extension API | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed `errors` plus the additive located `issues`. |
 | `ValidationIssue` | Extension API | `interface ValidationIssue` | One validation failure located by a `path` (a top-level key, then a row index and/or a leaf sub-key) and its message. |
 | `StandardInput` | Extension API | `interface StandardInput` | The validate input the adapter takes: raw frontmatter and the body. |
-| `StandardSchemaV1` | Extension API | `interface StandardSchemaV1<I, O>` | A local copy of the Standard Schema v1 interface, for ecosystem interop. |
 | `CairnRef` | Extension API | `interface CairnRef` | A resolved reference to a content entry by its concept and permanent id. |
 | `LinkResolve` | Extension API | `type LinkResolve = (ref: CairnRef) => string \| undefined` | Resolve a `CairnRef` to its live permalink. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `FragmentResolve` | Extension API | `type FragmentResolve = (id: string) => string \| undefined` | Resolve a fragment id to its raw markdown body, for the `::include` directive. `undefined` is a preview miss; a resolver that throws is the build backstop. |

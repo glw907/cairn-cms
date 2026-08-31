@@ -1,9 +1,11 @@
 // cairn-cms: ListToolbar's pure filter arithmetic, graduated from aksailingclub-org's
 // `src/admin-club/toolkit/ListToolbar.svelte` module context. Kept in a plain module (rather than
 // only inside ListToolbar.svelte's `<script module>`) so the unit test project, which runs in Node
-// with no Svelte plugin, can exercise the arithmetic directly; ListToolbar.svelte re-exports both
-// from its own module context, preserving the "exported from module context" contract a consumer
-// imports against, the same split `pagination-window.ts` already establishes for `Pagination`.
+// with no Svelte plugin, can exercise the arithmetic directly; ListToolbar.svelte imports
+// `computeAppliedFilters` and `computeCountLine` for its own internal use, the same split
+// `pagination-window.ts` establishes for `Pagination`. Neither publishes from the `/admin-toolkit`
+// barrel any longer (the retires pass, batch 1a: zero consumers reached them independently of the
+// component).
 
 import { itemNoun, type ItemLabel } from './format.js';
 

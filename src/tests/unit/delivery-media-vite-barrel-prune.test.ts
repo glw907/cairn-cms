@@ -5,9 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { enumerateExports } from '../../../scripts/checks/reference-coverage.mjs';
 
 // The seven names the surface-pruning pass demotes from the /delivery and /delivery/data barrels
-// (Task 4), verbatim from `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`. `feedView`
-// stays exported (it gets an `Unstable API` tier in Task 8, not a demotion); `sitemapView` is
-// frozen and unaffected.
+// (Task 4), verbatim from `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, plus
+// `feedView`, retired outright by the retires pass (batch 1c, `audit-delivery-feedview`) rather
+// than demoted; `sitemapView` is frozen and unaffected.
 const DELIVERY_DEMOTED = [
   'createSiteResolver',
   'ConceptIndex',
@@ -16,6 +16,7 @@ const DELIVERY_DEMOTED = [
   'fromGlob',
   'wordCount',
   'permalink',
+  'feedView',
 ];
 
 // The /delivery/data keep list, from the audit verdicts doc's
@@ -35,7 +36,6 @@ const DATA_KEPT = [
   'FeedItem',
   'buildSitemap',
   'SitemapUrl',
-  'feedView',
   'sitemapView',
   'buildRobots',
   'rssResponse',

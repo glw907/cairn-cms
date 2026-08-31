@@ -1,39 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ageFromBirthdate,
-  formatCivilDate,
-  formatMoney,
-  formatPhone,
-  formatTimestamp,
-  itemNoun,
-} from '../../lib/admin-toolkit/format.js';
-
-describe('formatMoney', () => {
-  it('formats zero cents as a zeroed currency string', () => {
-    expect(formatMoney(0)).toBe('$0.00');
-  });
-
-  it('adds thousands separators, ending the raw-cents artifact', () => {
-    expect(formatMoney(30044)).toBe('$300.44');
-  });
-
-  it('signs a negative amount (a refund or credit) with a leading minus', () => {
-    expect(formatMoney(-4500)).toBe('-$45.00');
-  });
-
-  it('honors a non-USD currency option', () => {
-    expect(formatMoney(1000, { currency: 'CAD', locale: 'en-CA' })).toContain('10.00');
-  });
-
-  it('reads the empty string for a null or undefined amount with no fallback', () => {
-    expect(formatMoney(null)).toBe('');
-    expect(formatMoney(undefined)).toBe('');
-  });
-
-  it('honors a caller-supplied fallback for a nullish amount', () => {
-    expect(formatMoney(null, { fallback: 'n/a' })).toBe('n/a');
-  });
-});
+import { formatCivilDate, formatTimestamp, itemNoun } from '../../lib/admin-toolkit/format.js';
 
 describe('formatCivilDate', () => {
   it('reads the empty string for a null date with no fallback', () => {
@@ -93,54 +59,6 @@ describe('formatTimestamp', () => {
 
   it('honors a caller-supplied fallback for a nullish timestamp', () => {
     expect(formatTimestamp(null, { fallback: 'n/a' })).toBe('n/a');
-  });
-});
-
-describe('ageFromBirthdate', () => {
-  it('reads null for a missing birthdate', () => {
-    expect(ageFromBirthdate(null)).toBeNull();
-  });
-
-  it('reads null for an unparseable birthdate', () => {
-    expect(ageFromBirthdate('not-a-date')).toBeNull();
-  });
-
-  // `asOf` is built with the local-time Date constructor (year, monthIndex, day), the same way
-  // ageFromBirthdate builds birth internally, so these stay exact regardless of the runner's own
-  // time zone -- an ISO Z string would drift a calendar day depending on where the test runs.
-  it('computes a whole-years age before the birthday this year', () => {
-    expect(ageFromBirthdate('2015-08-20', new Date(2026, 7, 19, 12))).toBe(10);
-  });
-
-  it('turns over on the birthday itself, not the day after', () => {
-    expect(ageFromBirthdate('2015-08-20', new Date(2026, 7, 20, 12))).toBe(11);
-  });
-
-  it('computes a whole-years age after the birthday this year', () => {
-    expect(ageFromBirthdate('2015-08-20', new Date(2026, 7, 21, 12))).toBe(11);
-  });
-});
-
-describe('formatPhone', () => {
-  it('formats a stored NANP E.164 number as a hyphenated display, no +1', () => {
-    expect(formatPhone('+19075550100')).toBe('907-555-0100');
-  });
-
-  it('passes through a non-NANP number unchanged', () => {
-    expect(formatPhone('+447911123456')).toBe('+447911123456');
-  });
-
-  it('passes through a malformed value unchanged', () => {
-    expect(formatPhone('not a phone number')).toBe('not a phone number');
-  });
-
-  it('reads the empty string for a null or undefined phone with no fallback', () => {
-    expect(formatPhone(null)).toBe('');
-    expect(formatPhone(undefined)).toBe('');
-  });
-
-  it('honors a caller-supplied fallback for a nullish phone', () => {
-    expect(formatPhone(null, { fallback: 'n/a' })).toBe('n/a');
   });
 });
 

@@ -50,12 +50,13 @@ import { deletePreviewTokens } from '../auth/preview-store.js';
 import { mintPreviewToken } from './preview.js';
 import { CairnError } from '../diagnostics/index.js';
 
-// The advisory notice types are defined alongside the cross-branch address index in the content
-// layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
-export type { AdvisoryNotice, AdvisoryAction } from '../content/advisories.js';
-
-/** A sidebar concept entry: just enough to render the nav without shipping validators to the client. */
-export interface NavConcept {
+/**
+ * A sidebar concept entry: just enough to render the nav without shipping validators to the
+ * client. Module-internal (the retires pass, Task 2 retired its export, a sanctioned
+ * NavIcon-class leak); a consumer reads it structurally as
+ * `Extract<AdminShellData, { public: false }>['concepts'][number]`.
+ */
+interface NavConcept {
   id: string;
   label: string;
 }

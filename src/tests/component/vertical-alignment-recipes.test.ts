@@ -291,7 +291,7 @@ describe('an icon sharing a row with text centres on the line, not on its baseli
   });
 });
 
-describe('FieldRow', () => {
+describe('the bottom-aligned field row recipe', () => {
   it('levels a stacked field and a bare control on their bottom edges', async () => {
     await page.viewport(1280, 720);
     const screen = await render(FieldRowHarness, {});
@@ -309,10 +309,10 @@ describe('FieldRow', () => {
   });
 
   it('is still a row outside the admin theme root', async () => {
-    // FieldRow ships on /admin-toolkit, so a consumer can mount it anywhere. Every rule in the
-    // compiled sheet is scoped under a theme root, and `gap-control` is a cairn-only @utility a
-    // consumer's own Tailwind build never even defines, so class names alone leave the component
-    // computing as a stacked block: the whole contract, gone silently.
+    // The recipe's own `var(--cairn-gap-control, 0.5rem)` fallback is what makes this true: every
+    // rule in the compiled sheet is scoped under a theme root, and `--cairn-gap-control` is
+    // undefined outside it, so the literal fallback is what keeps the row a row rather than
+    // collapsing to a stacked block once the theme root is gone.
     await page.viewport(1280, 720);
     document.documentElement.removeAttribute('data-theme');
     try {

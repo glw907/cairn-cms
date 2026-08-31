@@ -49,7 +49,7 @@ every removal and role change. A caller that might act on an owner row should ca
 rather than `deleteEditor`/`setEditorRole` directly, to avoid stranding a site with no owner.
 
 Both guards take an `ownerRoles` argument, the site's owner-capability role names. Derive it from
-the site's declared vocabulary with [`ownerLevelRoles`](./core.md#resolvecapability-rolehome-ownerlevelroles)
+the site's declared vocabulary with [`ownerLevelRoles`](./core.md#resolvecapability-ownerlevelroles)
 rather than writing the names out. A hand-written list that omits a name the vocabulary maps to owner
 capability undercounts the roster's owners. The guard then refuses a safe removal, or allows an
 unsafe one when the omitted name sits on the row the caller removes.
@@ -121,35 +121,12 @@ declare function removeOwnerIfNotLast(
 
 Remove an owner-capability editor only when another owner-capability row remains. `ownerRoles` is
 the site's owner-capability role name set (not the literal `'owner'` string), derived with
-[`ownerLevelRoles`](./core.md#resolvecapability-rolehome-ownerlevelroles), so a site with more than
+[`ownerLevelRoles`](./core.md#resolvecapability-ownerlevelroles), so a site with more than
 one owner-level role name stays safe. The count check runs inside the same statement as the delete,
 so two concurrent removals cannot both pass a separate check and strand the allowlist below one
 owner. Returns `false` and writes nothing when this is the last owner-capability row or when no
 owner-capability row matched the email; on success the editor's session and pending token go too,
 the same as `deleteEditor`.
-
-### `insertOwnerIfEmpty`
-
-Stability tier: Extension API.
-
-```ts
-declare function insertOwnerIfEmpty(
-  db: D1Database,
-  email: string,
-  displayName: string,
-  now: number,
-): Promise<boolean>;
-```
-
-Insert the bootstrap owner row when the allowlist is empty, in one atomic statement, so two
-concurrent bootstrap requests race safely to exactly one inserted row. Returns whether this call
-performed the insert; a non-empty table writes nothing and returns `false`.
-
-The inserted row's role is the literal `'owner'`, hardcoded, and the function does not check it
-against the site's vocabulary. A site whose vocabulary renames or drops `'owner'` should insert its
-own bootstrap row with `insertEditor` instead. The function also grants owner capability to whatever
-address the caller passes, so the caller owns the decision that this address is the site's first
-owner.
 
 ---
 
@@ -181,7 +158,7 @@ declare function demoteOwnerIfNotLast(
 
 Demote an owner-capability editor to `newRole` only when another owner-capability row remains, the
 same atomic guard `removeOwnerIfNotLast` uses, over the same `ownerRoles` set from
-[`ownerLevelRoles`](./core.md#resolvecapability-rolehome-ownerlevelroles). Returns `false` and writes
+[`ownerLevelRoles`](./core.md#resolvecapability-ownerlevelroles). Returns `false` and writes
 nothing when this is the last owner-capability row or when no owner-capability row matched the
 email.
 

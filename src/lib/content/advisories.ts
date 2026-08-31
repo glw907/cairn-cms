@@ -17,8 +17,12 @@ import type { Manifest } from './manifest.js';
 import { buildCrossBranchIndex, type CrossBranchRow } from './cross-branch-index.js';
 import { asString, entryIdentity } from './identity.js';
 
-/** One action an advisory offers, as a label and an optional link target. */
-export interface AdvisoryAction {
+/**
+ * One action an advisory offers, as a label and an optional link target. Module-internal (the
+ * retires pass, Task 2 retired its export, a sanctioned NavIcon-class leak); a consumer reads it
+ * structurally as `NonNullable<EditData['advisories'][number]['actions']>[number]`.
+ */
+interface AdvisoryAction {
   /** The action's button or link label. */
   label: string;
   /** The link target, when the action navigates. */

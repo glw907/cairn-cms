@@ -23,9 +23,12 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     StatusChip,
     EmptyState,
     formatCivilDate,
-    itemNoun,
     type ListToolbarFilter,
   } from '../admin-toolkit/index.js';
+  // itemNoun retired from the `/admin-toolkit` barrel (the retires pass, batch 1a: zero external
+  // consumers), so this internal caller reaches it at its own module instead of through the
+  // subpath a site importer would use.
+  import { itemNoun } from '../admin-toolkit/format.js';
 
   interface Props {
     /** The list load's data: the concept, its entries, and any inline or form errors. */

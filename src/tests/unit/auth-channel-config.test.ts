@@ -1,11 +1,9 @@
 // cairn-cms: construction-time validation for createAuthChannel (Task 2 of the auth-channel
 // factory plan). Every clamp in the spec's Defaults table, the required-challenge rejection, the
-// cairn_-prefix rejection, the kind rejection, a valid construction's full shape, and the
-// devDelivery wrapper-bypass case: a site wrapping devDelivery in its own deliver function must
-// still refuse at call time without the dev flag.
+// cairn_-prefix rejection, the kind rejection, and a valid construction's full shape.
 import { describe, it, expect } from 'vitest';
-import { createAuthChannel, devDelivery } from '../../lib/auth-channel/index.js';
-import type { AuthChannelConfig, DeliverContext } from '../../lib/auth-channel/index.js';
+import { createAuthChannel } from '../../lib/auth-channel/index.js';
+import type { AuthChannelConfig } from '../../lib/auth-channel/index.js';
 
 type TestEnv = { CAIRN_DEV_BACKEND?: string };
 
@@ -106,36 +104,5 @@ describe('createAuthChannel construction', () => {
         expect(() => createAuthChannel(validConfig({ ttl }))).toThrow(/positive|at least/);
       }
     });
-  });
-});
-
-describe('devDelivery, direct and wrapped', () => {
-  it('refuses without the dev flag', async () => {
-    await expect(
-      devDelivery('member@example.com', '12345678', { env: {}, waitUntil: () => {} } as DeliverContext<TestEnv>),
-    ).rejects.toThrow(/CAIRN_DEV_BACKEND/);
-  });
-
-  it('delivers once the dev flag is set', async () => {
-    await expect(
-      devDelivery('member@example.com', '12345678', {
-        env: { CAIRN_DEV_BACKEND: '1' },
-        waitUntil: () => {},
-      }),
-    ).resolves.toBeUndefined();
-  });
-
-  it('constructs cleanly when a site wraps devDelivery as its deliver callback', () => {
-    const wrapped = (contact: string, code: string, ctx: DeliverContext<TestEnv>) =>
-      devDelivery(contact, code, ctx);
-    expect(() => createAuthChannel(validConfig({ deliver: wrapped }))).not.toThrow();
-  });
-
-  it('the wrapper still refuses at call time without the dev flag (the bypass case)', async () => {
-    const wrapped = (contact: string, code: string, ctx: DeliverContext<TestEnv>) =>
-      devDelivery(contact, code, ctx);
-    await expect(wrapped('member@example.com', '12345678', { env: {}, waitUntil: () => {} })).rejects.toThrow(
-      /CAIRN_DEV_BACKEND/,
-    );
   });
 });

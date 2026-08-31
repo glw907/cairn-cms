@@ -8,8 +8,11 @@ import { enumerateExports } from '../../../scripts/checks/reference-coverage.mjs
 // `ResolvedReference` reshape (its home becomes `/delivery` only) and `RoutingRule` (Task 5,
 // demoted alongside the routing-union change: `RoutingRule` is the internal normalization target
 // only, no longer an accepted `ConceptConfig.routing` value). Verbatim from
-// `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`.
+// `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, plus `StandardSchemaV1` (the
+// retires pass, batch 1a: unexported from this barrel; stays exported from
+// `content/standard-schema.ts`).
 const DEMOTED = [
+  'StandardSchemaV1',
   'initialValues',
   'normalizeConcepts',
   'findConcept',
@@ -154,7 +157,6 @@ const KEPT = [
   'SiteRender',
   'ComposeInput',
   'StandardInput',
-  'StandardSchemaV1',
   'FieldDescriptor',
   'Fieldset',
   'InferFieldset',

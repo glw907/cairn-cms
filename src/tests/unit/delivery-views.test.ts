@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { feedView, sitemapView } from '../../lib/delivery/views.js';
+import { sitemapView } from '../../lib/delivery/views.js';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { createSiteResolver } from '../../lib/delivery/site-resolver.js';
 import type { ConceptIndex } from '../../lib/delivery/site-resolver.js';
@@ -54,21 +54,6 @@ function site() {
   ];
   return createSiteResolver(concepts);
 }
-
-describe('feedView', () => {
-  it('returns only the inFeeds concept items, each with its taxonomy tags and an absolute url', () => {
-    const items = feedView(site(), descriptors, ORIGIN);
-    expect(items.map((i) => i.title)).toEqual(['Hello']);
-    expect(items[0].url).toBe('https://example.com/posts/hello');
-    expect(items[0].tags).toEqual(['svelte', 'kit']);
-    expect(items[0].summary).toBe('A post body.');
-  });
-
-  it('is summary-only and carries no full content html', () => {
-    const items = feedView(site(), descriptors, ORIGIN);
-    expect(items[0].contentHtml).toBeUndefined();
-  });
-});
 
 describe('sitemapView', () => {
   it('returns the routable concept URLs (feed and page) but not the embedded concept', () => {

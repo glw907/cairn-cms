@@ -156,10 +156,10 @@ export interface AuthChannelEvent<Env> {
 }
 
 /**
- * The context `deliver` and `devDelivery` receive alongside the contact and code: the resolved
- * platform env (provider credentials, or in `devDelivery`'s case the dev-backend flag) and
- * Cloudflare's background-task hook. A `deliver` implementation attaches `.catch()` before
- * anything reaches `waitUntil`, matching the factory's own delivery call (spec, Delivery).
+ * The context `deliver` receives alongside the contact and code: the resolved platform env
+ * (provider credentials, or a dev-only transport's own opt-in flag) and Cloudflare's
+ * background-task hook. A `deliver` implementation attaches `.catch()` before anything reaches
+ * `waitUntil`, matching the factory's own delivery call (spec, Delivery).
  */
 export interface DeliverContext<Env> {
   /** The resolved platform env, or undefined on a runtime with no platform (the unit-test case). */

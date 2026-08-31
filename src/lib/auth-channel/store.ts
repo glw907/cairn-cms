@@ -12,8 +12,11 @@
 // concurrency, which is exactly the shape the design's threat model rules out.
 import type { D1Database, D1DatabaseSession } from '@cloudflare/workers-types';
 
-/** The schema version `CHANNEL_SCHEMA_SQL` installs; `verifySchema` compares against this. */
-export const CHANNEL_SCHEMA_VERSION = '1';
+// The schema version `CHANNEL_SCHEMA_SQL` installs; `verifySchema` compares against this.
+// Internal only (retires pass, batch 1b): publishing an internal version marker as semver
+// surface named no consumer action, since the value is already embedded in the seeding INSERT
+// below that a site running `CHANNEL_SCHEMA_SQL` already executes.
+const CHANNEL_SCHEMA_VERSION = '1';
 
 /**
  * The auth-channel factory's own D1 schema, run once against a site's channel binding as a

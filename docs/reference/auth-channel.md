@@ -17,7 +17,7 @@ design is built from: no control keyed on the victim's identity may deny, delay,
 anything.
 
 ```ts
-import { createAuthChannel, devDelivery } from '@glw907/cairn-cms/auth-channel';
+import { createAuthChannel } from '@glw907/cairn-cms/auth-channel';
 ```
 
 ## Building a channel
@@ -73,8 +73,8 @@ const channel = createAuthChannel<Env>({
 - **`resolveDb(env)`**: the channel's own D1 binding, read off the platform env. Never `AUTH_DB`: a
   second audience's roster and sessions live in their own database, physically separate from the
   engine's own editor store. An action whose binding resolves to `undefined`, or whose schema
-  version does not match [`CHANNEL_SCHEMA_VERSION`](#channel_schema_version), answers
-  `{error: 'unavailable'}` without touching a row.
+  version does not match the schema `CHANNEL_SCHEMA_SQL` installs (see [Storage](#storage)),
+  answers `{error: 'unavailable'}` without touching a row.
 - **`deliver(contact, code, ctx)`**: sends the code to `contact`. `ctx` carries `{ env, waitUntil }`;
   `waitUntil` is Cloudflare's background-task hook (`platform.ctx.waitUntil`, with the deprecated
   `platform.context.waitUntil` as a fallback), or a no-op when neither is present, in which case
@@ -194,39 +194,6 @@ Expired rows never need a site-side cleanup job. Each successful code mint also 
 code rows, expired sessions, and budget rows more than two windows stale, through `waitUntil` so
 the cleanup never delays a response.
 
-### `CHANNEL_SCHEMA_VERSION`
-
-Stability tier: Extension API.
-
-```ts
-declare const CHANNEL_SCHEMA_VERSION: string;
-```
-
-The schema version `CHANNEL_SCHEMA_SQL` installs (currently `"1"`). Every `createAuthChannel`
-action compares a channel's `cairn_channel_meta` row against this value before serving; a mismatch
-(an unmigrated or stale database) fails the action closed with `{error: 'unavailable'}`.
-
-## Delivering codes
-
-### `devDelivery`
-
-Stability tier: Extension API.
-
-```ts
-declare function devDelivery<Env extends { CAIRN_DEV_BACKEND?: string | boolean }>(
-  contact: string,
-  code: string,
-  ctx: DeliverContext<Env>,
-): Promise<void>;
-```
-
-A dev-only `deliver` implementation: prints the code to the console instead of sending it, and
-refuses unless `ctx.env.CAIRN_DEV_BACKEND === '1'`, the same positive signal the engine's own admin
-guard reads. The refusal lives inside this function's own body, so wrapping it (`deliver: (c, code,
-ctx) => devDelivery(c, code, ctx)`) does not bypass it. A correctly built production deployment
-never sets the flag, so the refusal runs on every call, not only when a site forgets to swap the
-transport. Nothing in this function imports `$app/*`.
-
 ## Types
 
 | Export | Stability | Signature | Meaning |
@@ -234,7 +201,7 @@ transport. Nothing in this function imports `$app/*`.
 | <a id="authchannel"></a>`AuthChannel` | Extension API | `interface AuthChannel<Env> { actions: { request: (event) => Promise<ChannelRequestResult>; confirm: (event) => Promise<ChannelConfirmResult>; logout: (event) => Promise<{ ok: true }> }; resolveSubject: (event) => Promise<string \| null>; revokeSessions: (db: D1Database, subject: string) => Promise<void> }` | What [`createAuthChannel`](#createauthchannel) returns. `event` is an [`AuthChannelEvent`](#authchannelevent). |
 | <a id="authchannelevent"></a>`AuthChannelEvent` | Extension API | `interface AuthChannelEvent<Env> { url: URL; request: Request; cookies: CookieJar; platform?: { env?: Env; ctx?: { waitUntil?: (promise: Promise<unknown>) => void }; context?: { waitUntil?: (promise: Promise<unknown>) => void } }; getClientAddress(): string }` | The event shape every `createAuthChannel` action, `challenge`, and `rateLimit.key` reads: a SvelteKit `RequestEvent`'s cookie jar, URL, request, platform env, and client address. Every real SvelteKit `RequestEvent` satisfies it structurally. |
 | <a id="authchannelconfig"></a>`AuthChannelConfig` | Extension API | `interface AuthChannelConfig<Env> { resolveDb: (env: Env \| undefined) => D1Database \| undefined; deliver: (contact: string, code: string, ctx: DeliverContext<Env>) => Promise<void>; lookup: (contact: string) => Promise<string \| null>; normalize: (raw: string) => string; challenge: (event, form: FormData) => Promise<boolean>; cookie: { name: string }; verify?: (subject: string) => Promise<boolean>; kind?: 'code'; ttl?: { codeLength?: number; codeTtlMs?: number; attemptCap?: number; cooldownMs?: number; requesterCap?: number; identityCeiling?: number; escalationThreshold?: number; liveRowCap?: number; sessionTtlMs?: number }; rateLimit?: { resolve: (env: Env \| undefined) => RateLimitLike \| undefined; key?: (event) => string } }` | Construction-time configuration for [`createAuthChannel`](#createauthchannel); see [Building a channel](#building-a-channel) for every field, and [Defaults and clamps](#defaults-and-clamps) for every `ttl` field. |
-| <a id="delivercontext"></a>`DeliverContext` | Extension API | `interface DeliverContext<Env> { env: Env \| undefined; waitUntil: (promise: Promise<unknown>) => void }` | The context [`deliver`](#createauthchannel) and [`devDelivery`](#devdelivery) receive alongside the contact and code: the resolved platform env and Cloudflare's background-task hook. |
+| <a id="delivercontext"></a>`DeliverContext` | Extension API | `interface DeliverContext<Env> { env: Env \| undefined; waitUntil: (promise: Promise<unknown>) => void }` | The context [`deliver`](#createauthchannel) receives alongside the contact and code: the resolved platform env and Cloudflare's background-task hook. |
 | <a id="channelrequestresult"></a>`ChannelRequestResult` | Extension API | `type ChannelRequestResult = { sent: true } \| { error: 'invalid' \| 'throttled' \| 'challenge-required' \| 'unavailable' }` | The `request` action's result. `sent` is `true` even for an unknown contact, so the response never leaks roster membership. |
 | <a id="channelconfirmresult"></a>`ChannelConfirmResult` | Extension API | `type ChannelConfirmResult = { ok: true } \| { error: 'bad-code' \| 'expired' \| 'locked' \| 'throttled' \| 'challenge-required' \| 'no-pending-request' \| 'unavailable' }` | The `confirm` action's result. `challenge-required` is a retry invitation, never a hard failure: the site's confirm form renders its challenge widget and the member submits again. |
 | <a id="ratelimitlike"></a>`RateLimitLike` | Extension API | `interface RateLimitLike { limit(options: { key: string }): Promise<{ success: boolean }> }` | The structural slice of a Workers `RateLimit` binding [`config.rateLimit.resolve`](#rate-limiting) returns; the same declaration [`/cloudflare`](./cloudflare.md#types) and [`/sveltekit`](./sveltekit.md#types) export. |

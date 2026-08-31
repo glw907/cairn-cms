@@ -100,8 +100,9 @@ const ENGINE_SCREEN_IDS = ['media', 'vocabulary', 'nav', 'settings', 'editors', 
 
 /**
  * One of the engine's own admin screens, or a site's own concept id. The six literals autocomplete
- *  in an editor while a dynamic concept id, not knowable at the type level, stays assignable;
- *  {@link validateNavLayout} is the real gate against a site's declared concepts and screens.
+ *  in an editor while a dynamic concept id, not knowable at the type level, stays assignable; the
+ *  engine validates a declared layout against a site's declared concepts and screens at
+ *  construction.
  */
 export type EngineScreenId = (typeof ENGINE_SCREEN_IDS)[number] | (string & {});
 
@@ -367,7 +368,7 @@ export interface ResolvedNavLayout {
 }
 
 /** The context resolveNavLayout needs to arrange and filter one request's sidebar. */
-export interface ResolveNavLayoutOptions {
+interface ResolveNavLayoutOptions {
   /** The site's raw navLayout, or undefined for the default synthesized arrangement. */
   layout: NavLayout | undefined;
   /**

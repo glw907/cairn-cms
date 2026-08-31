@@ -25,8 +25,12 @@ import { siteStories } from './stories/site.js';
  * Untyped by design: each story knows which component it mounts and casts to that component's own
  * exported signature at the one call site that uses it, which is cheaper than teaching this
  * interface every mountable component's exports.
+ *
+ * Module-internal (the retires pass, Task 2 retired its export, a sanctioned NavIcon-class leak,
+ * per the F-1 hybrid ruling, r4-rederivation section 7); `ReproStory.pose` below still names it,
+ * and a consumer reads it structurally as `Parameters<NonNullable<ReproStory['pose']>>[1]`.
  */
-export type ReproInstance = Record<string, unknown>;
+type ReproInstance = Record<string, unknown>;
 
 /**
  * One story's full mount description: a manifest entry plus everything a mounting context needs
@@ -96,10 +100,11 @@ export interface ReproStory {
 }
 
 /**
- * The registered stories, in manifest order: the full 25.
- * `src/tests/component/reproductions-stories.test.ts` binds this array against `manifest.ts`.
+ * The registered stories, in manifest order: the full 25. Module-internal (the retires pass,
+ *  batch 1c retired its export); `getStory` is the seam a consumer, including
+ *  `src/tests/component/reproductions-stories.test.ts`, reaches one through.
  */
-export const stories: ReproStory[] = [
+const stories: ReproStory[] = [
   ...authStories,
   ...editorStories,
   ...publishStories,

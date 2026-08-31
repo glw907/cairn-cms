@@ -209,9 +209,7 @@ that skips this line lets a crawler index its own sign-in page. `robotsResponse`
 posture](./choose-an-ai-posture.md) covers that decision on its own.
 
 [`/delivery/data`](../reference/delivery-data.md) documents every builder's full signature,
-including `buildJsonFeed`/`jsonFeedResponse` for a JSON Feed alongside RSS, and
-`unlistedRoutes`, a test helper that fails your suite when a new page directory never joined the
-sitemap's hand-written list.
+including `buildJsonFeed`/`jsonFeedResponse` for a JSON Feed alongside RSS.
 
 **You know it worked when:** `npm run build` prerenders every route with no throw, and
 `/sitemap.xml`, `/feed.xml`, and `/robots.txt` all resolve locally with `npm run preview`.

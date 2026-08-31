@@ -106,29 +106,6 @@ function buildSitemap(urls: SitemapUrl[]): string;
 Build a sitemap XML document from a list of `SitemapUrl` entries, each a `loc` and an optional
 `lastmod` date.
 
-### `feedView`
-
-Stability tier: Unstable API.
-
-```ts
-function feedView(
-  site: SiteResolver,
-  descriptors: ConceptDescriptor[],
-  origin: string,
-): FeedItem[];
-```
-
-Project a site's feed-eligible concepts into feed items. It iterates the concepts whose
-`routing.inFeeds` flag is set and maps each entry to a `FeedItem` in the concept's own date order.
-Each item carries the entry's taxonomy values as `tags`, which become the RSS `<category>` and the
-JSON Feed `tags`. Pass `origin` because each `FeedItem.url` is absolute and the engine carries no
-ambient origin.
-
-The view is summary-only. It sets `summary` from the entry excerpt and omits `contentHtml`, the
-full-content body. A full-content feed needs a per-item render and a link-resolver pass, which the
-pure view does not carry. A site that wants full content maps `render` itself, as the `feed.xml`
-showcase route does.
-
 ### `sitemapView`
 
 Stability tier: Extension API.
@@ -152,42 +129,6 @@ index, as root-relative paths like `['/about', '/tags']`. Each becomes an origin
 `SitemapUrl` with no `lastmod`, ahead of every concept URL, in the order given. Omit it and only
 the concept URLs appear.
 
-### `unlistedRoutes`
-
-Stability tier: Extension API.
-
-```ts
-function unlistedRoutes(routeIds: string[], listedPaths: string[]): string[];
-```
-
-Flag the site's own static route ids missing from `listedPaths`, typically the same `extraRoutes`
-array passed to `sitemapView`. Pass it the route ids under the site's public route tree, one per page
-directory, using SvelteKit's own route id form, such as `/(site)/about`. The check strips a
-route-group segment like `(site)` before comparing, since a group contributes no URL segment of
-its own. It also skips a dynamic route id, one carrying a `[param]` or `[...rest]` segment: a tag
-loop or a content index enumerates those per entry, never once by the route id itself. A site
-wires this helper into its own test suite, so a new page directory that never joined the
-sitemap's hand-list fails the build instead of shipping a silent gap:
-
-```ts
-import { unlistedRoutes } from '@glw907/cairn-cms/delivery';
-
-const EXTRA_ROUTES = ['/', '/about', '/archives', '/tags'];
-
-// Parentheses are a glob metacharacter, so a pattern naming a route group literally (for example
-// /src/routes/(site)/**) matches nothing; glob every +page.svelte in the project instead. A
-// dynamic route elsewhere (an admin catch-all) never trips the check, since unlistedRoutes skips
-// any route id carrying a `[param]` or `[...rest]` segment.
-const pageModules = import.meta.glob('/src/routes/**/+page.svelte');
-const routeIds = Object.keys(pageModules).map((path) =>
-  path.replace(/^\/src\/routes/, '').replace(/\/\+page\.svelte$/, ''),
-);
-
-if (unlistedRoutes(routeIds, EXTRA_ROUTES).length) {
-  throw new Error(`route missing from the sitemap: ${unlistedRoutes(routeIds, EXTRA_ROUTES).join(', ')}`);
-}
-```
-
 ### `buildRobots`
 
 Stability tier: Extension API.
@@ -199,7 +140,7 @@ function buildRobots(opts: { sitemapUrl: string; disallow?: string[]; posture?: 
 Build a robots.txt body that points at the sitemap and disallows the given paths. `posture` is
 optional and, left unset, changes nothing: the output is byte-identical to a site that states no
 posture, which is every site on the engine today. `'decline'` adds `Content-Signal: ai-train=no`
-and one `User-agent`/`Disallow: /` group per training-crawler token in [`AI_CRAWLERS`](#ai_crawlers).
+and one `User-agent`/`Disallow: /` group per training-crawler token in its internal table.
 `'invite'` adds `Content-Signal: search=yes, ai-train=yes` and no `Disallow`, since no robots
 directive invites a crawler.
 
@@ -214,32 +155,6 @@ below for the full honesty constraint, carried on `CairnAdapter.aiPosture`.
 `search`/`ai-input`/`ai-train`, values `yes`/`no`. An absent key states no preference. That is why
 a declining site emits `ai-train=no` alone. cairn has no standing to assert a search preference on
 a site's behalf.
-
-### `AI_CRAWLERS`
-
-Stability tier: Extension API.
-
-```ts
-declare const AI_CRAWLERS: readonly AiCrawler[];
-```
-
-The training-crawler table `buildRobots` disallows under `posture: 'decline'`. Every record's
-`citation` is a first-party page from the operator itself, verified 2026-08-05 (the evidence is in
-`docs/internal/record/2026-08-05-ai-crawler-token-verification.md` in the source repository). The table
-carries training tokens only. `Googlebot`, `OAI-SearchBot`, and `Claude-SearchBot` are search
-crawlers and are deliberately absent, since disallowing a search crawler costs a site its search
-presence for no training benefit. A token no first-party page documents doesn't ship here.
-
-### `AI_CRAWLERS_REVIEWED`
-
-Stability tier: Extension API.
-
-```ts
-declare const AI_CRAWLERS_REVIEWED: string;
-```
-
-The date `AI_CRAWLERS` was last verified against every operator's first-party documentation, as a
-`YYYY-MM-DD` string.
 
 ### `rssResponse`
 
@@ -629,7 +544,6 @@ for (const entry of newlyPublishedEntries(priorManifest, deployedManifest)) {
 | `FeedItem` | Extension API | `interface FeedItem { title; url; date?; updated?; summary; contentHtml?; tags? }` | One feed entry; `contentHtml` carries the rendered body for a full-content feed. |
 | `SitemapUrl` | Extension API | `interface SitemapUrl { loc: string; lastmod?: string }` | One sitemap URL; `lastmod` is a YYYY-MM-DD date. |
 | `AiPosture` | Extension API | `type AiPosture = 'invite' \| 'decline'` | A site's stated stance toward AI training crawlers, set on `CairnAdapter.aiPosture` and read by [`buildRobots`](#buildrobots)/[`robotsResponse`](#robotsresponse). Declining is a request named crawlers say they honor, not enforcement. |
-| `AiCrawler` | Extension API | `interface AiCrawler { token: string; operator: string; category: 'training'; citation: string; note?: string }` | One [`AI_CRAWLERS`](#ai_crawlers) record: the robots.txt token, its operator, and the first-party page documenting it. |
 | `SeoInput` | Extension API | `interface SeoInput { title; description; canonicalUrl; siteName; type?; published?; modified?; feeds?; image?; imageAlt?; robots?; author? }` | The inputs for the head builder, all URLs absolute. `imageAlt` becomes `twitter:image:alt` when `image` is set. |
 | `SeoMeta` | Extension API | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
 | `SeoFields` | Extension API | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |

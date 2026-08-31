@@ -126,7 +126,7 @@
       "name": "ConceptDescriptor",
       "subpath": "/delivery/data",
       "home": ".",
-      "reason": "R4 closure: `resolveReferences`, `siteDescriptors`, `feedView` name it on this subpath."
+      "reason": "R4 closure: `resolveReferences`, `siteDescriptors` name it on this subpath."
     },
     {
       "name": "DateField",
@@ -348,7 +348,7 @@
       "name": "AccessMap",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `AuthGuardOptions`, `ResolveNavLayoutOptions`, `CairnEvent` name it on this subpath."
+      "reason": "R4 closure: `AuthGuardOptions`, `CairnEvent` name it on this subpath."
     },
     {
       "name": "ArrayField",
@@ -414,7 +414,7 @@
       "name": "Capability",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `EditorsData`, `AdminShellData`, `RoleDeclaration` name it on this subpath."
+      "reason": "R4 closure: `AdminShellData`, `RoleDeclaration` name it on this subpath."
     },
     {
       "name": "CommitAuthor",
@@ -612,7 +612,7 @@
       "name": "PreviewConfig",
       "subpath": "/sveltekit",
       "home": ".",
-      "reason": "R4 closure: `CairnRuntime`, `ResolvedPreview` name it on this subpath."
+      "reason": "R4 closure: `CairnRuntime` names it on this subpath."
     },
     {
       "name": "RateLimitLike",

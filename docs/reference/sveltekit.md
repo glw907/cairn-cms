@@ -864,7 +864,12 @@ declare function createAuthRoutes(config: AuthRoutesConfig): {
 };
 ```
 
-`createAuthRoutes` exports its return type by name as [`AuthRoutes`](#types).
+`createAuthRoutes` exports its return type by name as [`AuthRoutes`](#types). `LoginData` and
+`ConfirmData`, shown in the preceding signature for their shape, are module-internal since the
+retires pass unexported them, a sanctioned `NavIcon`-class leak: a consumer reads the type as
+`Extract<AdminData, { view: 'login' }>['page']` and `Extract<AdminData, { view: 'confirm' }>['page']`
+respectively, or equivalently `Awaited<ReturnType<AuthRoutes['loginLoad']>>` and
+`Awaited<ReturnType<AuthRoutes['confirmLoad']>>` off an actual `createAuthRoutes` return value.
 
 Build the magic-link login flow. `loginLoad` and `requestAction` back the sign-in view at
 `/admin/login`, `confirmLoad` and `confirmAction` back the magic-link landing at
@@ -910,7 +915,11 @@ declare function createEditorRoutes(opts?: EditorRoutesOptions): {
 };
 ```
 
-`createEditorRoutes` exports its return type by name as [`EditorRoutes`](#types).
+`createEditorRoutes` exports its return type by name as [`EditorRoutes`](#types). `EditorsData`,
+shown in the preceding signature for its shape, is module-internal since the retires pass
+unexported it, a sanctioned `NavIcon`-class leak: a consumer reads the type as
+`Extract<AdminData, { view: 'editors' }>['page']`, or equivalently
+`Awaited<ReturnType<EditorRoutes['editorsLoad']>>` off an actual `createEditorRoutes` return value.
 
 Build the loads and actions for the editor-management view at `/admin/editors`. `editorsLoad` lists
 the editors, names the current user, and returns `vocabulary`, the declared roles with their
@@ -977,9 +986,9 @@ the authed admin shell, the concept list, and the entry editor, exported by name
 [`ContentRoutes`](#types). `shellLoad` backs the shared admin
 shell (the `/admin/+layout` load wires it through `createCairnAdmin`'s `shellLoad`): it returns the
 lean `{ shell: AdminShellData }` chrome payload, bare for a public path and the streamed authed nav
-otherwise. Its caller awaits it: `shellLoad` calls [`resolveNavLayout`](#resolvenavlayout) up
-front to arrange and gate the whole sidebar, a declared `navLayout` or, absent one, today's
-default arrangement synthesized through the same resolver, then applies the site's
+otherwise. Its caller awaits it: `shellLoad` arranges and gates the whole sidebar up front, a
+declared `navLayout` or, absent one, today's default arrangement synthesized through the same
+resolver, then applies the site's
 `deps.navFilter`, if configured, to the arranged `items` alone (see [the navLayout
 seam](#the-navlayout-seam) and `ContentRoutesOptions` below). `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
 actions back a concept's list view, and `editLoad` with the `save`, `publish`, `discard`,
@@ -1374,8 +1383,7 @@ screens); a site entry is a labeled, iconed link to one of the site's own `/admi
 added `roles` gate; a section groups a mix of both under one label, one level deep. A bad icon, a
 colliding href, an unknown screen, or an unresolvable role fails the build rather than rendering a
 broken or silently wrong sidebar. Absent `navLayout`, the sidebar renders today's default
-arrangement, resolved through the same [`resolveNavLayout`](#resolvenavlayout) function, so the two
-paths can never drift.
+arrangement, resolved through the same internal resolver, so the two paths can never drift.
 Stability tier: Extension API.
 
 An engine screen the tree never references still renders, in a trailing group after a divider (the
@@ -1489,7 +1497,8 @@ type EngineScreenId =
 
 One of the engine's own fixed admin screens, or a site's own declared concept id. The six literals
 autocomplete in an editor while a dynamic concept id, not knowable at the type level, stays
-assignable; `validateNavLayout` is the real gate against a site's declared concepts and screens.
+assignable; the engine validates a declared layout against a site's declared concepts and screens
+at construction.
 
 ### `NavLayoutEngineRef`
 
@@ -1548,26 +1557,6 @@ type NavLayout = (NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection)[];
 
 A site's whole declared sidebar: engine references, its own entries, and sections, in declaration
 order. The adapter's `editor.navLayout` field takes this shape.
-
-### `validateNavLayout`
-
-Stability tier: Extension API.
-
-```ts
-declare function validateNavLayout(layout: NavLayout, ctx: {
-  conceptIds: string[];
-  navMenuConfigured: boolean;
-  roleNames: string[];
-}): void;
-```
-
-Validate a raw `navLayout` tree once at construction, throwing an actionable, `navLayout`-prefixed
-error naming the bad node: an unknown screen id, a screen referenced more than once (`hidden`
-counts), `'nav'` referenced with no nav menu configured, a nested section, an empty section, an
-empty relabel, or a `roles` name outside the declared vocabulary. A site entry embedded in the tree
-is validated the same way a top-level entry is (the bundled icon allowlist, the built-in href
-collision). The engine calls this automatically when the runtime composes; a site does not normally
-call it directly.
 
 ### `ResolvedEngineNavEntry`
 
@@ -1645,45 +1634,6 @@ The whole resolved sidebar for one request: the arranged, filtered scroll-area t
 order (`items`), plus the trailing group of engine screens the tree never referenced (`fallback`,
 rendered in the shell's foot slot, engine order, empty once every screen was referenced).
 `AdminShellData`'s authed arm carries this as `nav`.
-
-### `ResolveNavLayoutOptions`
-
-Stability tier: Extension API.
-
-```ts
-interface ResolveNavLayoutOptions {
-  layout: NavLayout | undefined;
-  concepts: { id: string; label: string; routing?: { dated: boolean } }[];
-  navMenuLabel: string | null;
-  access?: AccessMap;
-  editor: Editor;
-}
-```
-
-The context [`resolveNavLayout`](#resolvenavlayout) needs to arrange and filter one request's
-sidebar: the site's raw `navLayout` (or `undefined` for the default arrangement), its concepts
-(`routing.dated` feeds the concept's kind icon), its nav-menu label (`null` when unconfigured, which
-gates the `nav` screen), the site's declared [access map](./core.md#access-map) (or `undefined` for
-zero-config), and the signed-in `editor`, whose capability gates every engine screen and whose role
-is matched against a node's declarative `roles` and against the access map.
-
-### `resolveNavLayout`
-
-Stability tier: Extension API.
-
-```ts
-declare function resolveNavLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout;
-```
-
-Resolve one request's whole sidebar: a declared `navLayout` arranges and filters as written; an
-undeclared one synthesizes today's default arrangement through the same primitives, so the two
-paths can never drift. Every engine screen defers to [`canReach`](./core.md#canreach-hasaccessrule),
-which folds in the capability floor (`none` reaches nothing, `editors` additionally requires owner
-capability), a configured nav menu for `nav`, and the site's own access-map narrowing; a site
-entry additionally gates on `ownerOnly`, its declarative `roles`, and, when its href carries a
-matching map rule, `canReach` too; a section gates all its children at once by its own `roles` and
-disappears once its children resolve empty. `shellLoad` calls this on every request; a site does
-not normally call it directly unless it renders its own nav outside `CairnAdminShell`.
 
 ---
 
@@ -1834,21 +1784,6 @@ type PublishActionsConfig = PublishActionEntry[];
 A site's raw `publishActions` config, in declaration order. The adapter's `editor.publishActions`
 field takes this shape.
 
-### `PublishActionLink`
-
-Stability tier: Extension API.
-
-```ts
-interface PublishActionLink {
-  label: string;
-  href: string;
-}
-```
-
-One resolved publish-success link, its href already templated for the published entry.
-`EditData.publishActions` carries an array of these, filtered to the entry's concept. The edit
-page renders them only alongside `EditData.publishedFlash`.
-
 ---
 
 ## Types
@@ -1874,15 +1809,9 @@ imports the matching `*Data` type to type its `data` prop.
 | `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `adminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `adminAction`'s own authentication refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
 | `UploadResult` | Unstable API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
 | `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }>; mediaBase: string }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. `mediaBase` is the resolved delivery base (the site's own `assets.publicBase`, or `/media`) that `CairnAdminShell` hands every descendant media surface through context, so a non-default base reaches admin thumbnails too. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. |
-| `NavConcept` | Extension API | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |
-| `EntrySummary` | Extension API | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean; status: 'published' \| 'edited' \| 'new'; summary: string \| null }` | One row in a concept's list view. `status` derives from the ref set: live as-is, live with held edits, or pending-branch only. `summary` is the row's one-line excerpt (the manifest's indexed summary for a published row, the branch frontmatter or body excerpt for a pending one, null when neither yields text). |
 | `ListData` | Extension API | `interface ListData { conceptId; label; singular; dated; routable: boolean; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. `singular` is the create-affordance noun ("New post"), from the descriptor (defaulted to `label`). `routable` mirrors the concept's `routing.routable`, so the create form asks a non-routable concept (Fragments) for a name rather than an address. |
 | `EditData` | Extension API | `interface EditData { conceptId; id; label; singular; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; fragmentTargets: { id; title; body }[] \| null; routable: boolean; mediaTargets: Record<string, { slug; ext; contentType }>; mediaLibrary: Record<string, { hash; slug; ext; contentType; displayName; alt; width; height; bytes }>; inboundLinks; pending; published; publishedFlash; publishActions: PublishActionLink[]; discardedFlash; preview: ResolvedPreview \| null; advisories: AdvisoryNotice[]; orphanTags: string[] }` | The entry editor's data: form-ready frontmatter, the body, the link targets, the media targets (the minimal resolver input keyed by content hash, empty when media is off or the read fails), the media library (the picker's full human layer keyed by the same content hash, projected from the same committed-manifest read, with the `hash` duplicated into each value for `Object.values` iteration, and degrading to empty on the same path as `mediaTargets`), the inbound links for the delete guard, the publish state (`pending` means the body came from the entry's branch; `published` means the file exists on the default branch), the site's [publish-actions](#the-publish-actions-seam) resolved for this entry (`publishActions`, rendered only alongside `publishedFlash`), the adapter's `preview` knob resolved for this entry's concept (its `byConcept` override applied; null when the site sets none, which leaves the frame unstyled behind a hint), and the non-blocking server-built `advisories` (today the cross-branch address collision, empty when there is none). `singular` is the delete refusal's noun ("This post could not be deleted."), from the descriptor (defaulted to `label`), mirroring `ListData.singular`. `fragmentTargets` carries the published fragments this entry can include, for the fragment picker and the preview's include resolution, each a minimal `{ id; title; body }` projection; null when nothing here can include one, which covers both a site that declares no `fragments` concept and an entry that is itself a fragment (a fragment can't include a fragment), and empty when fragments are includable but none are published yet. `routable` mirrors the entry's concept `routing.routable`, so the Address fieldset shows a bare name instead of a URL for a non-routable concept (Fragments). `orphanTags` carries the entry's prior tags absent from the configured vocabulary, for the closed taxonomy picker's own-tag flag, and stays empty when the site configures no vocabulary, the concept has no taxonomy field, or every prior tag is already in the vocabulary. |
 | `HistoryData` | Extension API | `interface HistoryData { entries: HistoryEntry[]; draft: { editor: string; startedAt: string } \| null; truncated: boolean; head: string \| null }` | `historyLoad`'s data for the `history` view: the most recent 25 publishes newest first (`entries`), a synthetic top row for an open draft (`draft`, null when there is none), `truncated` when the backend's `limit + 1` probe found more publishes than the 25-row bound holds (an entry with exactly 25 stays `false`), and `head`, the default branch's head sha at load time, carried by the revert form as its staleness comparand. |
-| `HistoryEntry` | Extension API | `interface HistoryEntry { ref: string; editor: string; date: string }` | One row in `HistoryData.entries`: the commit's full sha (`ref`, the exact value `revertAction` validates a posted target against), the author name git recorded (`editor`, degraded to email, then to "unknown," since a file's log can hold commits made outside cairn), and `date` (ISO 8601, when the version landed on the default branch). |
-| `AdvisoryNotice` | Extension API | `interface AdvisoryNotice { kind: string; severity: 'warn'; message: string; count?: number; actions?: AdvisoryAction[] }` | A non-blocking editor advisory carried on `EditData.advisories`, serializable so it rides the SSR boundary (data only, no callback). `kind` names the notice (`'address-collision'` today), `severity` is always `'warn'` (warn-and-allow, never a gate), `count` is an aggregating notice's running total, and `actions` are the offered links. |
-| `AdvisoryAction` | Extension API | `interface AdvisoryAction { label: string; href?: string }` | One action an advisory offers: a button or link label and an optional `href` link target. |
-| `MediaUsageInfo` | Extension API | `interface MediaUsageInfo { count: number; entries: UsageEntry[] }` | One asset's where-used overlay: the distinct-entry count (by concept and id) and every row (published and edit-branch origins), kept separate from `MediaLibraryEntry` so the picker projection stays decoupled. |
 | `MediaLibraryData` | Extension API | `interface MediaLibraryData { assets: MediaLibraryEntry[]; usage: Record<string, MediaUsageInfo>; error: string \| null }` | The Media Library view's data: the assets unioned across the default branch and open `cairn/*` branches, the per-hash usage overlay (an asset with no key renders as "no references found"), and the degraded-load error. |
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's support contact, composed to cairn's hosted help when the adapter sets none, and left empty when the adapter sets it to an explicit empty string. |
 | `SettingsData` | Extension API | `interface SettingsData { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: TidyKeyProbeResult \| 'missing'; model: string; modelLabel: string; conventions: TidyConventions; saved: boolean; error: string \| null }` | The tidy settings view's data: the truthful two-tier gate (`enabled` is true only when tidy is on, the key is present, and the active probe has not confirmed it invalid), the developer-tier facts (`tidyEnabled`, `keyConfigured`, `keyStatus`, `model`, `modelLabel`), the editor-tier `conventions` the save writes back, and the status flags. |
@@ -1908,7 +1837,6 @@ imports the matching `*Data` type to type its `data` prop.
 | `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & CreateFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `EditorRoutesOptions` | Unstable API | `interface EditorRoutesOptions { roles?: RolesDeclaration }` | Configuration for `createEditorRoutes`: the site's declared role vocabulary; omitted, the routes validate and resolve against the implicit owner/editor pair. |
 | `EditorRoutes` | Unstable API | `type EditorRoutes` | What `createEditorRoutes` returns: the owner-gated editor-management load and actions, shown expanded in [`createEditorRoutes`](#createeditorroutes). |
-| `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
 | `NavSaveFailure` | Unstable API | `interface NavSaveFailure { error: string }` | A refused nav save (an invalid posted tree, or the config's head moved since the editor opened the page): just the one-line summary. |
 | `NavRoutes` | Unstable API | `type NavRoutes` | What `createNavRoutes` returns: the nav editor's load and save functions, shown expanded in [`createNavRoutes`](#createnavroutes). |
@@ -1925,10 +1853,6 @@ imports the matching `*Data` type to type its `data` prop.
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it structurally with no cast. |
 | <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }` | The Cloudflare bindings and vars every cairn site's Worker needs. Every member but `ANTHROPIC_API_KEY` is required (not optional), so a binding a site forgets to wire fails `app.d.ts` at compile time rather than surfacing as a runtime `config.bindings-missing` error. **A recommended convenience preset, not a requirement:** every route factory's env parameter is `CairnEnv`, structurally satisfied by a bare `wrangler types`-generated env too (`EmailSender.send` returns `Promise<unknown>`, which structurally accepts `@cloudflare/workers-types`' wider `Promise<EmailSendResult>`), so intersecting this type exists to catch a forgotten binding at compile time, not to unblock a route factory assignment. `ANTHROPIC_API_KEY` stays optional since only the opt-in tidy action reads it. The GitHub App's id and installation id aren't runtime bindings: the adapter passes them as compile-time config to `githubApp({ appId, installationId })`, and only the private key names a Worker secret this type carries. `/sveltekit` is the canonical home for this and the other binding-shaped types; intersect it into `App.Platform.env` (`/ambient` augments only `App.Locals`, never `App.Platform`, since a second `Platform` declaration would collide with a site's own through interface merging): `env: CairnPlatformBindings & { /* the site's own bindings */ }`. A media-enabled site also intersects `CairnMediaBindings`. |
 | <a id="cairnmediabindings"></a>`CairnMediaBindings` | Extension API | `interface CairnMediaBindings { MEDIA_BUCKET: R2Bucket }` | The R2 binding a media-enabled site adds to its `Platform.env` intersection, split from `CairnPlatformBindings` since it exists only when the adapter's [`media` member](./core.md#media-adapter-member) turns media on: `env: CairnPlatformBindings & CairnMediaBindings & { /* the site's own bindings */ }`. `MEDIA_BUCKET` is the conventional binding name this preset assumes; a site whose adapter names a different `bucketBinding` declares that name in its own env intersection instead of this preset. |
-| `LoginData` | Unstable API | `interface LoginData { siteName: string; error: string \| null; csrf: string }` | `loginLoad`'s named payload: the site name, a resolved `?error` code, and the CSRF token the login form's hidden field carries. |
-| `ConfirmData` | Unstable API | `interface ConfirmData { token: string; siteName: string; error: string \| null; csrf: string }` | `confirmLoad`'s named payload: the token to re-submit, the site name, a resolved `?error` code, and the CSRF token. |
-| `EditorsData` | Unstable API | `interface EditorsData { editors: Editor[]; self: string; error: string \| null; vocabulary: { role: string; capability: Capability }[] }` | `editorsLoad`'s named payload: the allowlist with each row's resolved capability, the acting owner's email, a resolved `?error` code, and the role vocabulary. |
-| `FragmentTarget` | Unstable API | `interface FragmentTarget { id: string; title: string; body: string }` | One published fragment `EditData.fragmentTargets` offers the include picker: its id, title, and raw markdown body, read from the default branch only. |
 | `TidyClient` | Unstable API | `interface TidyClient` | The Anthropic Messages API surface the tidy action calls; a test injects a stub through `ContentRoutesOptions.tidy.client`. |
 | `TidyResult` | Unstable API | `interface TidyResult { corrected: string; model: string; tokens: { input_tokens: number; output_tokens: number } }` | The successful tidy outcome: the corrected markdown, the model that produced it, and the token usage. The diff is computed client-side; the server commits nothing. |
 | `DictionaryAddResult` | Unstable API | `interface DictionaryAddResult { words: string[] }` | The personal-dictionary add outcome: the merged, canonical sorted word list after the add landed. |
@@ -1952,19 +1876,14 @@ imports the matching `*Data` type to type its `data` prop.
 | `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
 | `CairnRuntime` | Extension API | `interface CairnRuntime` | The composed runtime the engine serves from; every factory here takes one as its first argument. |
 | `NamedField` | Extension API | `type NamedField = FieldDescriptor & { name: string }` | A field descriptor with its frontmatter key re-attached as `name`, the normalized shape `ConceptDescriptor.fields` and `EditData.fields` carry. |
-| `ResolvedPreview` | Extension API | `type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>` | The flat preview shape `editLoad` ships to the edit page: the top-level `PreviewConfig` values with the entry's concept override already applied. |
 | `Capability` | Extension API | `type Capability = 'owner' \| 'editor' \| 'none'` | The three levels the engine understands. See [`Capability`](./core.md#capability). |
 | `RolesDeclaration` | Extension API | `type RolesDeclaration = Record<string, RoleDeclaration>` | A site's whole role vocabulary. See [`RolesDeclaration`](./core.md#roles). |
 | `RoleDeclaration` | Extension API | `type RoleDeclaration = Capability \| { capability: Capability; home?: string }` | One role's mapping in a `defineRoles` vocabulary. See [`RoleDeclaration`](./core.md#roles). |
 | `MediaEntry` | Extension API | `interface MediaEntry` | One stored asset's row: its content hash, its human layer, and its byte and pixel facts. See [`MediaEntry`](./media.md#types). |
-| `GettingStarted` | Extension API | `interface GettingStarted` | The three getting-started steps, their completion count, and the fixed step total, behind `HelpData.gettingStarted`. |
-| `MarkdownReferenceRow` | Extension API | `interface MarkdownReferenceRow { syntax: string; makes: string; group: 'text' \| 'links' \| 'blocks' }` | One cheat-sheet row the Help home and the Markdown help dialog both render: the literal syntax, a plain gloss, and its group. |
 | `InboundLink` | Unstable API | `interface InboundLink` | One inbound linker: enough to name it and link to its edit page in the delete guard. |
-| `LinkTarget` | Unstable API | `interface LinkTarget` | The minimal entry view the preview resolver and the picker read. |
 | `NavNode` | Extension API | `interface NavNode { label: string; url?: string; children?: NavNode[] }` | One navigation node: label, optional url, optional children. See [`NavNode`](./core.md#stable-api). |
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry { value: string; label: string }` | One editor-owned tag: a frozen slug `value` and an editable display `label`. See [`VocabularyEntry`](./core.md#stable-api). |
 | `TidyConventions` | Extension API | `interface TidyConventions` | The corrected convention set the tidy prompt builder consumes. See [`TidyConventions`](./core.md#types). |
-| `TidyKeyProbeResult` | Unstable API | `type TidyKeyProbeResult = 'valid' \| 'invalid' \| 'unknown'` | The settings screen's three reportable key states, distinct from bare presence, cached from the last live tidy-action probe. |
 | `RepoFile` | Extension API | `interface RepoFile { id: string; name: string; path: string }` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | Extension API | `interface CommitAuthor { name: string; email: string }` | A commit author: the signed-in editor's name and email. |
 | `FileChange` | Extension API | `interface FileChange { path: string; content: string \| null }` | One path change in a commit: write `content`, or delete the path when `content` is null. |

@@ -151,9 +151,15 @@ than once:
     <h2 id="household-dialog-title" class="text-lg font-bold">Edit household</h2>
     <form method="post" action="?/updateHousehold" class="flex flex-col gap-3" use:enhance={...}>
       <CsrfField />
-      <TextInput label="Household name" name="name" bind:value={householdName} />
-      <TextInput label="City" name="city" bind:value={householdCity} />
-      <SelectInput label="Primary member" name="primaryMemberId" bind:value={householdPrimaryId} options={...} />
+      <FieldLabel label="Household name">
+        <input class="input input-sm" name="name" bind:value={householdName} />
+      </FieldLabel>
+      <FieldLabel label="City">
+        <input class="input input-sm" name="city" bind:value={householdCity} />
+      </FieldLabel>
+      <FieldLabel label="Primary member">
+        <select class="select select-sm" name="primaryMemberId" bind:value={householdPrimaryId}>...</select>
+      </FieldLabel>
       <div class="modal-action">
         <button type="button" class="btn btn-sm" onclick={() => householdDialog?.close()}>Cancel</button>
         <button type="submit" class="btn btn-primary btn-sm">Save</button>
@@ -163,10 +169,11 @@ than once:
 </dialog>
 ```
 
-- `TextInput`/`SelectInput` both wrap `FieldLabel`, rendering its default `register="stacked"`
-  register here with no extra prop (`form-anatomy.md` states the full three-level contract this
-  is one of); a single-column dialog form has no shared-row width to compete for, so the
-  default is the right choice, not a call for the inline exception.
+- Each row composes `FieldLabel` directly around a bare control (an `<input>`, or a `<select>`
+  for the primary-member row), rendering its default `register="stacked"` register here with no
+  extra prop (`form-anatomy.md` states the full three-level contract this is one of); a
+  single-column dialog form has no shared-row width to compete for, so the default is the right
+  choice, not a call for the inline exception.
 - `modal-action`'s two-button pattern, plain `Cancel` beside filled `Save`, is this dialog's
   own `one-filled-action` surface satisfied: exactly one accent fill, and it's the
   submitting action. Every dialog in this file repeats the identical pair.

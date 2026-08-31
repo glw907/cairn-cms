@@ -10,8 +10,12 @@ import type { CairnRuntime } from '../content/types.js';
 import type { Backend } from '../github/backend.js';
 import type { CairnEvent } from './types.js';
 
-/** One page option for the URL picker datalist. */
-export interface NavPageOption {
+/**
+ * One page option for the URL picker datalist. Module-internal (the retires pass, Task 2 retired
+ * its export, a sanctioned NavIcon-class leak); a consumer reads it structurally as
+ * `NavLoadData['pages'][number]`.
+ */
+interface NavPageOption {
   label: string;
   url: string;
 }

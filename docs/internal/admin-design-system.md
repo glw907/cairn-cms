@@ -279,8 +279,9 @@ Recipes:
     `flex items-center gap-1.5 type-body`, muted ink on the label span, plain weight. The
     `admin-toolkit` subpath's `FieldLabel` renders both this register and the individual-field-label
     register above through its `register` prop (`'inline' | 'stacked'`, design ratchet Task 3);
-    `'stacked'` is the default (the robust shape for any multi-column form grid, finding 3), and
-    `SelectInput`/`TextInput` both pass the prop straight through.
+    `'stacked'` is the default (the robust shape for any multi-column form grid, finding 3). A
+    field composing `FieldLabel` directly passes the prop straight through, the same way the
+    retired `SelectInput`/`TextInput` components (the retires pass, batch 1a) used to.
 - Nav item: `type-subtitle` (the lists use `menu-sm` for layout), `font-medium` inactive,
   `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
   table cells share it via `table type-subtitle`.
@@ -1055,11 +1056,13 @@ restates these rules rather than inventing its own.
   `<span>` around the glyph makes it an inline box that sits on the wrapper's text baseline, which
   rides it about half an icon height above the label's cap centre. That is the whole of the Write
   tab defect: 2.33px high, against thirteen sibling icon-in-button rows at 0.5 to 0.75px.
-- **`FieldRow`** (`/admin-toolkit`): a flex row that levels its children on their bottom edges, for
-  a row mixing a stacked field with a bare control. **No measured defect drove this.** The
-  inventory found no misaligned field row anywhere in the admin. It ships as the named composition
-  for a shape the toolkit could otherwise only hand-roll, and its one caveat is documented on the
-  component: a field rendering an error line below its control breaks bottom alignment.
+- **The bottom-aligned field row** (`display: flex; align-items: flex-end;
+  gap: var(--cairn-gap-control, 0.5rem)`): levels a row's children on their bottom edges, for a
+  row mixing a stacked field with a bare control. **No measured defect drove this.** The inventory
+  found no misaligned field row anywhere in the admin. It shipped as the named `FieldRow`
+  component through `0.94.0`; retired from `/admin-toolkit` in the retires pass (batch 1a, zero
+  consumers), it is now a hand-rolled recipe rather than a component. Its one caveat still applies:
+  a field rendering an error line below its control breaks bottom alignment.
 ### `text-box: trim-both cap alphabetic`, measured and NOT landed
 
 The 2026-08 spec declared this trim as a silent default on the label-like recipes (`type-label`,

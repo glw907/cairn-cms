@@ -12,9 +12,9 @@ A Cloudflare Workers build activates `worker` and `browser` together, and the ex
 lives. A Workers deploy resolves the real module.
 
 This subpath carries the stateless Web Crypto primitives, token, hash, compare, and cookie-name
-functions, a second-audience login flow would otherwise copy by hand. It re-exports the token and
-session-id generators, the token hash, the constant-time compare, and
-the `__Host-` cookie-name primitive the engine's own magic-link guard uses, for a site that
+functions, a second-audience login flow would otherwise copy by hand. It re-exports the token
+generator, the token hash, the constant-time compare, and the `__Host-` cookie-name primitive the
+engine's own magic-link guard uses, for a site that
 authenticates a second audience: member magic-link sessions, offer tokens, an OTP flow. A site
 building that flow stops copying the engine's cryptography by hand and reuses the same primitives
 the engine's own login proves in production. A stateful provisioning read or write belongs on
@@ -42,29 +42,10 @@ declare function generateToken(): string;
 ```
 
 A fresh 256-bit, URL-safe token, drawn from `crypto.getRandomValues`. Use it for a magic-link
-token, an offer token, or any single-use credential sent to a user out of band.
-
-### `generateSessionId`
-
-Stability tier: Extension API.
-
-```ts
-declare function generateSessionId(): string;
-```
-
-A fresh 256-bit, URL-safe session identifier, the same generator `generateToken` uses under a
-name that reads at the session-id call site.
-
-### `generateCsrfToken`
-
-Stability tier: Extension API.
-
-```ts
-declare function generateCsrfToken(): string;
-```
-
-A fresh 256-bit, URL-safe double-submit CSRF token, the same generator again, for pairing with
-`tokensMatch` on a second audience's own form routes.
+token, an offer token, a session identifier, or a double-submit CSRF token: the same generator
+serves all four, since a longer or shorter identifier is a parameter on one function, never a
+second public name. Pair it with `tokensMatch` for double-submit CSRF protection on a second
+audience's own form routes.
 
 ## Hashing and comparing tokens
 
@@ -174,7 +155,7 @@ login flow needs the surrounding discipline the engine's own magic-link guard fo
   survive a same-origin POST, and `same-origin` still keeps it out of a cross-origin `Referer`.
   The engine's own admin guard applies a fuller security-header set, but only under `/admin`; a
   second audience's own routes are the site's responsibility to head the same way.
-- Pair `generateCsrfToken` with `tokensMatch` for double-submit CSRF protection on the second
+- Pair `generateToken` with `tokensMatch` for double-submit CSRF protection on the second
   audience's own form routes, the same double-submit pattern the engine's own admin actions use.
 - Rate limit both by email and by IP, so a token-request endpoint cannot be used to flood one
   inbox or to brute-force a short-lived code.

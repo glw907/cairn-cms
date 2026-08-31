@@ -18,16 +18,19 @@ chassis slice per the initiative design. CI on `main` is fully green.
 
 ## Immediate next action
 
-**Author the conventions pass plan** (remediation slice 4) with Geoff, then execute it. The
-routed scope (from the initiative design and the retires close): the auth family (the
-session-cookie derivation ledger entry, `check-probe.ts:49`'s independent derivation, the
-cookie-jar posture split, the login-CSRF `_pending`-nonce binding, CSRF-helper uniformity),
-the `ContentFormFailure` reshape (unblocks list (c) Tier 2's six coupled retires), the
-`validateReproFence` reshape and with it `ReproFenceValidation`'s retire, and the
-`DEFAULT_ROLES`/`defineAccess` coupled pair. Open design decisions need Geoff at plan
-authoring; run `engine-consult` protocol checks as usual. Resume prompt for a fresh session:
+**Execute the conventions pass (slice 4a)** from its committed, twice-reviewed plan:
+`docs/superpowers/plans/2026-08-30-conventions-pass.md` (authored in the 2026-08-30/31
+sitting; both round-1 adversarial reviews folded at `a24cd4b9`, round-2 residuals folded
+after). Eleven tasks, sequential (`parallel: false`), worktree `conventions`, ceiling 5.5M,
+checkpoint every four tasks. The plan's header carries the sitting's ratified rulings —
+including the **`/auth-channel` keep-and-fold reopen on xcathletes adoption evidence**
+(overturning the audit's shrink-to-recipe shape) and the **`PublicRoutes` reopen** under the
+contract-first returns ruling; Task 1 writes both into the ledger before any code. Slice 4b
+(the conformance sweep, plan authored fresh after 4a merges) inherits list (c) Tier 1's 25
+retires, unblocked by Task 2's `CairnAdminRoutes` narrowing. Resume prompt for a fresh
+session:
 
-In ~/Projects/cairn-cms, author the conventions pass plan (audit remediation slice 4) with Geoff: read docs/STATUS.md, ROADMAP.md's Now tier, and the routed items listed under "Immediate next action", brainstorm the open design decisions, then write the plan via superpowers:writing-plans.
+In ~/Projects/cairn-cms, execute the conventions pass (audit remediation slice 4a): invoke cairn-pass, read docs/STATUS.md and docs/superpowers/plans/2026-08-30-conventions-pass.md, create the worktree, and run the plan task-by-task through the implementer chain in workflow mode (parallel: false).
 
 **Geoff's parallel action: update the four consumer sites onto `0.96.0`.** Each site's sheet is
 committed at `docs/2026-08-22-cairn-0.96-update-instructions.md`; a 2026-08-29 survey confirmed
@@ -36,8 +39,10 @@ behind and its sheet says to run it as a numbered site pass.
 
 ## Parallel tracks
 
-- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3 MERGED. Next: conventions
-  (immediate next action, above), then internals, chassis; ONE release cut after chassis.
+- **Audit remediation (ROADMAP Now).** Slices 1, 2a, 2b, 3 MERGED. Next: conventions 4a
+  (immediate next action, above), then 4b, internals, chassis; ONE release cut after
+  chassis. The 4a plan's ratified-rulings header is the carrier of the sitting's rulings
+  until Task 1 lands them in the ledger.
   Routed to internals: the F-1 leak-class `check:surface` rider (its brief is the move
   record, `docs/internal/record/2026-08-30-retires-move-record.md`, which states the
   predicate's limits and the expansion-class questions), the `staleNames` per-subpath

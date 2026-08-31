@@ -60,20 +60,33 @@ The session cookie carries the `__Host-` prefix on every https deploy, which req
 and `Path=/` and forbids `Domain`. The browser then ties the cookie to the exact origin that set
 it, rather than to a `Domain` attribute a sibling host could also set. Local `http` development
 drops the prefix, since `__Host-` requires `Secure` unconditionally and a dev cookie has no TLS to
-set it with. The session cookie derives `Secure` from the request's own protocol.
+set it with. The session cookie derives `Secure` through the same rule the CSRF cookie does
+(below), so the two cookies can never disagree on one request.
 
-The CSRF double-submit cookie uses the same `__Host-` discipline, but derives `Secure` by a
-stricter rule of its own, so the two names can diverge on one request. The CSRF rule is monotonic:
-an `https` request always resolves `Secure`, whatever the configuration says, so a stale `http`
-value left in a deployed site's `PUBLIC_ORIGIN` can't downgrade a live TLS request to a bare
-cookie that a sibling subdomain is then free to overwrite. Only a non-`https` request consults
-anything further. A request to a local host (`localhost`, `127.0.0.1`, and their siblings) keeps
-the bare name, so local development never tries to mint a `__Host-` cookie it can't set.
-Otherwise the site's configured `PUBLIC_ORIGIN` decides. Under the monotonic rule this branch is a
-conservative fallback that a guarded `/admin` path never reaches: an `https` request already
-resolved `Secure` above, and the guard refuses an `http` non-local request on every admin path
-before any token issues. It exists so a non-admin surface that mints the cookie resolves the same
-name the admin will expect.
+The CSRF double-submit cookie uses the same `__Host-` discipline and the same `Secure` rule. The
+rule is monotonic: an `https` request always resolves `Secure`, whatever the configuration says,
+so a stale `http` value left in a deployed site's `PUBLIC_ORIGIN` can't downgrade a live TLS
+request to a bare cookie that a sibling subdomain is then free to overwrite. Only a non-`https`
+request consults anything further. A request to a local host (`localhost`, `127.0.0.1`, and their
+siblings) keeps the bare name, so local development never tries to mint a `__Host-` cookie it
+can't set. Otherwise the site's configured `PUBLIC_ORIGIN` decides. Under the monotonic rule this
+branch is a conservative fallback that a guarded `/admin` path never reaches: an `https` request
+already resolved `Secure` in the preceding sentence, and the guard refuses an `http` non-local
+request on every admin path before any token issues. It exists so a non-admin surface that mints
+the cookie resolves the same name the admin expects, and so an auth route a site mounts OUTSIDE
+`/admin` still derives a name consistent with the rest of the site. That last case carries one
+residual: a site that
+mounts an auth route outside `/admin` and serves it over `http` on a non-local host still mints a
+`__Host-` cookie the browser discards, since only an `/admin` path gets the guard's own https help
+page. [Mount every load that issues a CSRF token under `/admin/**`](#response-hardening) is the
+documented guard against it; there is no equivalent guard for a route a site chooses to mount
+elsewhere.
+
+On logout, both cookie-name forms delete for both cookies (bare and `__Host-`, session and CSRF),
+each with its own matching `Secure` flag, not just the one the current request's own derivation
+produces: a `PUBLIC_ORIGIN` change between login and logout changes which name that derivation
+returns, and a single-form delete would strand whichever name the browser actually holds from the
+earlier login.
 
 The CSRF cookie's full attribute set: `HttpOnly`, `Path=/`, `SameSite=Lax` set explicitly (never
 by attribute omission, since an omitted `SameSite` gets a browser's own default treatment for a

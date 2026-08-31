@@ -4,7 +4,7 @@
 import { redirect, error, type Handle } from '@sveltejs/kit';
 import { resolveSession } from '../auth/store.js';
 import { sessionCookieName } from '../auth/crypto.js';
-import { isUnsafeFormRequest, originMatches, csrfHeaderVerdict, csrfTokenVerdict } from './csrf.js';
+import { isUnsafeFormRequest, originMatches, csrfHeaderVerdict, csrfTokenVerdict, csrfSecure } from './csrf.js';
 import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
@@ -158,8 +158,12 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
       if (!verdict.ok) {
         // Presence-only: whether the session cookie was sent, never its value or a resolved
         // identity. This check runs before session resolution (below), so no editor is known yet.
+        // The name derives through csrfSecure, the same call the CSRF pair uses (Task 6): a
+        // coherence change here, since an http, non-local admin request never reaches this
+        // point at all (the https-help-page check above already refused it).
         const hasSession =
-          event.cookies.get(sessionCookieName(event.url.protocol === 'https:')) !== undefined;
+          event.cookies.get(sessionCookieName(csrfSecure({ url: event.url, platform: event.platform }))) !==
+          undefined;
         log.warn('guard.rejected', {
           reason: 'csrf',
           path: pathname,
@@ -172,7 +176,10 @@ export function createAuthGuard(opts: AuthGuardOptions = {}): Handle {
     }
 
     if (!isPublicAdminPath(pathname)) {
-      const id = event.cookies.get(sessionCookieName(event.url.protocol === 'https:'));
+      // Same csrfSecure derivation as the hasSession read above (Task 6): unreachable to differ
+      // from the bare protocol check on a guarded admin path, since the https-help-page check
+      // above already refused every http, non-local request before this line runs.
+      const id = event.cookies.get(sessionCookieName(csrfSecure({ url: event.url, platform: event.platform })));
       const editor = id ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
       if (!editor) throw redirect(303, '/admin/login');
       // Resolve capability once per request, here, so every downstream load/action reads it off

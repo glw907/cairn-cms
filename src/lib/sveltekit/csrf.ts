@@ -43,10 +43,14 @@ function isLocalHost(hostname: string): boolean {
 type CsrfPlatform = { env?: { PUBLIC_ORIGIN?: string } } | undefined;
 
 /**
- * Decide the CSRF cookie pair's Secure bit for one request, the single source every writer and
- * reader is meant to route through: {@link issueCsrfToken}, {@link validateCsrfHeader},
- * {@link validateCsrfToken}, and `admin-action.ts`'s inline defense-in-depth check. Feed the
- * result to `csrfCookieName` for the matching cookie name.
+ * Decide the Secure bit for one request's cairn-owned cookies, the single source every writer and
+ * reader is meant to route through: the CSRF pair ({@link issueCsrfToken},
+ * {@link validateCsrfHeader}, {@link validateCsrfToken}, `admin-action.ts`'s inline
+ * defense-in-depth check) and the session cookie's own four call sites (`guard.ts`'s two reads,
+ * `auth-routes.ts`'s `confirmAction` and `logoutAction`), which used to derive `secure` from the
+ * bare `event.url.protocol` and now route through this same function, so the two cookies can no
+ * longer disagree on one request. Feed the result to `csrfCookieName`/`sessionCookieName` for the
+ * matching cookie name.
  *
  * The rule is monotonic: no configuration can downgrade a request the browser already made over
  * https. An https request resolves Secure outright, so a leftover `http://localhost:8788` in a
@@ -60,6 +64,10 @@ type CsrfPlatform = { env?: { PUBLIC_ORIGIN?: string } } | undefined;
  * which is what lets a deployment behind upstream TLS termination mint the cookie the browser
  * actually expects. With no usable `PUBLIC_ORIGIN` (absent, as in a bare unit-test event, or
  * unparseable) the request is http and non-local, so the answer is false.
+ *
+ * `src/lib/doctor/check-probe.ts` also calls this directly, feeding the PROBED origin as `url`
+ * and no `platform`, deliberately: an external cross-check on what a deployed runtime actually
+ * presents, not a fold onto the runtime's own derivation (see that file's own comment).
  */
 export function csrfSecure(event: { url: URL; platform: CsrfPlatform }): boolean {
   if (event.url.protocol === 'https:') return true;

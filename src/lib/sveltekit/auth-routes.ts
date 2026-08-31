@@ -196,7 +196,13 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     const id = generateSessionId();
     await createSession(db, id, email, now + SESSION_TTL_MS, now);
     log.info('auth.session.created', { email });
-    const secure = event.url.protocol === 'https:';
+    // One variable, one csrfSecure call, feeding both the session cookie's name/set below and the
+    // CSRF cookie's delete-then-remint further down (Task 6, N-4): the session cookie used to
+    // derive `secure` from the bare `event.url.protocol`, independently of the CSRF pair's own
+    // PUBLIC_ORIGIN-aware derivation, which could resolve the two cookies to different `secure`
+    // values on one request. An https request always resolves Secure either way; PUBLIC_ORIGIN
+    // can only raise a non-https request's answer, never lower it.
+    const secure = csrfSecure({ url: event.url, platform: event.platform });
     event.cookies.set(sessionCookieName(secure), id, {
       path: '/',
       httpOnly: true,
@@ -220,8 +226,7 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // break a real authenticated form outside that narrow case, and binding the token to
     // authentication epochs outweighs the self-healing edge, which is why this is the only place
     // it happens.
-    const csrfIsSecure = csrfSecure({ url: event.url, platform: event.platform });
-    event.cookies.delete(csrfCookieName(csrfIsSecure), { path: '/', secure: csrfIsSecure });
+    event.cookies.delete(csrfCookieName(secure), { path: '/', secure });
     issueCsrfToken({ url: event.url, cookies: event.cookies, platform: event.platform });
     throw redirect(303, '/admin');
   }
@@ -236,21 +241,35 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
    *  Each delete carries the same `secure` flag its own setter used, since SvelteKit's delete
    *  defaults `secure` on for every host but `localhost` itself, and a browser discards a Secure
    *  `Set-Cookie` sent over http, which would leave both cookies alive on an http dev host such as
-   *  `127.0.0.1`. A `deleteSession` fault is caught and
-   *  logged here, never rethrown to `viewAction`'s generic `fail(500)`: this action posts to the
-   *  bare `/admin`, whose own load (`indexLoad`) always redirects away before ever rendering a
-   *  component that reads `form`, so a `fail()` here would be silently discarded. The editor is
-   *  already signed out either way, so the redirect to `/admin/login` stays unconditional; a
-   *  lingering D1 row with no valid cookie presenting it is not reachable.
+   *  `127.0.0.1`.
+   *
+   *  Belt-and-braces (Task 6, security round N1): BOTH cookie-name forms delete for BOTH cookies
+   *  (bare and `__Host-`, session and CSRF), each with its matching `secure`, not just the one
+   *  `csrfSecure` derives for this request. A `PUBLIC_ORIGIN` change between login and logout
+   *  changes which name this request's own derivation produces, and the bare-derived-name-only
+   *  delete would strand whichever form the browser actually holds from the earlier login. The
+   *  session id to invalidate is read the same way: from the derived name first, the other form
+   *  when that one is absent, so a stranded id is found too.
+   *
+   *  A `deleteSession` fault is caught and logged here, never rethrown to `viewAction`'s generic
+   *  `fail(500)`: this action posts to the bare `/admin`, whose own load (`indexLoad`) always
+   *  redirects away before ever rendering a component that reads `form`, so a `fail()` here would
+   *  be silently discarded. The editor is already signed out either way, so the redirect to
+   *  `/admin/login` stays unconditional; a lingering D1 row with no valid cookie presenting it is
+   *  not reachable.
    */
   async function logoutAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
-    const sessionIsSecure = event.url.protocol === 'https:';
-    const name = sessionCookieName(sessionIsSecure);
-    const id = event.cookies.get(name);
-    event.cookies.delete(name, { path: '/', secure: sessionIsSecure });
-    const csrfIsSecure = csrfSecure({ url: event.url, platform: event.platform });
-    event.cookies.delete(csrfCookieName(csrfIsSecure), { path: '/', secure: csrfIsSecure });
+    // One variable, one csrfSecure call (Task 6, N-4): the session cookie used to derive
+    // `secure` independently from the CSRF pair's own derivation. `!secure` is this same value's
+    // complement, not a second independent derivation.
+    const secure = csrfSecure({ url: event.url, platform: event.platform });
+    const id =
+      event.cookies.get(sessionCookieName(secure)) ?? event.cookies.get(sessionCookieName(!secure));
+    event.cookies.delete(sessionCookieName(secure), { path: '/', secure });
+    event.cookies.delete(sessionCookieName(!secure), { path: '/', secure: !secure });
+    event.cookies.delete(csrfCookieName(secure), { path: '/', secure });
+    event.cookies.delete(csrfCookieName(!secure), { path: '/', secure: !secure });
     if (id) {
       try {
         await deleteSession(db, id);

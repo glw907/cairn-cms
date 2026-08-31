@@ -198,8 +198,15 @@ describe('auth actions', () => {
     await expectRedirect(admin.actions.logout(event as never), '/admin/login');
     expect(calls.some((c) => c.sql.includes('DELETE FROM session') && c.args[0] === 'sid')).toBe(true);
     // The CSRF cookie is deleted alongside the session cookie, so a persistent double-submit
-    // token cannot survive sign-out.
-    expect(event._cookieDeletes).toEqual(['__Host-cairn_session', '__Host-cairn_csrf']);
+    // token cannot survive sign-out. Both cookie-name forms delete for both cookies (Task 6,
+    // belt-and-braces N1), so a PUBLIC_ORIGIN change between login and logout cannot strand a
+    // browser cookie under the name the current derivation no longer produces.
+    expect(event._cookieDeletes).toEqual([
+      '__Host-cairn_session',
+      'cairn_session',
+      '__Host-cairn_csrf',
+      'cairn_csrf',
+    ]);
   });
 });
 

@@ -583,6 +583,23 @@
   one-element list; a listed source that does not exist is a config error, never a silent skip.
   Consumers must: nothing.
 
+- The conventions pass (Task 6) closes the session cookie's own deferred `secure` derivation
+  (`session-cookie-derivation-out-of-csrf-slice`): `guard.ts`'s two session-cookie reads and
+  `auth-routes.ts`'s `confirmAction`/`logoutAction` now derive `secure` through `csrfSecure({ url,
+  platform })`, the exact call the CSRF cookie pair already used, instead of the bare
+  `event.url.protocol` check. An `https` request always resolves Secure either way; a configured
+  `PUBLIC_ORIGIN` can only raise a non-`https` request's answer, never lower it. On a guarded
+  `/admin` path this is a coherence change, not a security fix: the guard already refuses an
+  `http`, non-local admin request before any route runs, so the one row the two derivations used
+  to disagree on was unreachable there. Belt-and-braces (security round N1): `logoutAction` now
+  deletes BOTH cookie-name forms for both cookies (`cairn_session`/`__Host-cairn_session`,
+  `cairn_csrf`/`__Host-cairn_csrf`), each with its own matching `secure`, so a `PUBLIC_ORIGIN`
+  change between login and logout cannot strand a browser cookie under the name the current
+  derivation no longer produces. One residual: an auth route a site mounts OUTSIDE `/admin` over
+  `http` on a non-local host still mints a discarded `__Host-` cookie; `security-model.md`'s
+  mount-under-`/admin` instruction is the guard against it. Consumers must: nothing for a site
+  following the documented single mount under `/admin/**`.
+
 ## 0.96.0
 
 <!-- release-size: minor -->

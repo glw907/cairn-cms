@@ -293,17 +293,33 @@ open edits, not part of the shape itself.
   only for the shape of the derivation, not for the `PUBLIC_ORIGIN` source now feeding the CSRF
   half; this entry is that docstring's listener. Deliberately out of scope here: the session
   cookie belongs to the conventions pass's auth family, not this CSRF-hardening slice.
-- **Reopens on:** the conventions pass that threads `PUBLIC_ORIGIN` (or an equivalent
-  `csrfSecure`-shaped helper) through the session cookie's own three call sites, or, sooner, the
-  CSRF half resolving WEAKER than the session half on one response. That second trigger, not a
-  cross-protocol mismatch alone, is what the divergence actually risks, and the fix round's
-  finding 1 is its shape: a `PUBLIC_ORIGIN` carrying a leftover `http` dev value minted a bare,
-  non-Secure, thirty-day `cairn_csrf` on a live https deploy while the session cookie, deriving
-  from `url.protocol`, stayed `__Host-` Secure. The monotonic rule (an https request always
-  resolves Secure) closes that instance; any new configuration input to the CSRF derivation can
-  reopen the class, and the reverse asymmetry, where TLS termination leaves the session half the
-  weaker one, stays covered by the cross-protocol trigger above.
-- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 1.
+- **Reopens on:** closed. Executed by Task 6 of the conventions pass: the FOUR call sites
+  (`guard.ts`'s two session-cookie reads, `auth-routes.ts`'s `confirmAction` and `logoutAction`)
+  now derive `secure` through `csrfSecure({ url, platform })`, the same call the CSRF pair already
+  used (no new wrapper; `csrfSecure` already took that shape), so the session and CSRF cookies can
+  no longer diverge on one request. On a guarded `/admin` path this is a COHERENCE change, not a
+  security fix: the guard already refuses an `http`, non-local admin request before any route
+  runs, so the one row the two derivations used to disagree on was unreachable there.
+  Belt-and-braces (security round N1): `logoutAction` now deletes BOTH cookie-name forms for both
+  cookies (`cairn_session`/`__Host-cairn_session`, `cairn_csrf`/`__Host-cairn_csrf`), each with
+  its matching `secure`, so a `PUBLIC_ORIGIN` change between login and logout cannot strand a
+  browser cookie under the name the current derivation no longer produces. `crypto.ts`'s
+  `csrfCookieName` docstring is corrected in the same task. One residual, NOT closed by this task:
+  an auth route a site mounts OUTSIDE `/admin` over `http` on a non-local host still mints a
+  discarded `__Host-` cookie; `security-model.md`'s mount-under-`/admin` instruction ("Mount every
+  load that issues a CSRF token under `/admin/**`") is the guard against it.
+
+  `check-probe.ts:49`, this entry's carried sibling, closes here too, deliberately NOT folded: the
+  doctor probe keeps deriving its expected cookie name from the PROBED origin, now by calling
+  `csrfSecure({ url: origin, platform: undefined })` directly (`csrfSecure`'s own body,
+  origin-parameterized through its `url` argument) rather than a hand-duplicated
+  `origin.protocol === 'https:'` copy, provably the same answer on every branch since feeding no
+  `platform` means the CSRF-side `PUBLIC_ORIGIN` consultation never fires. This is a cross-check
+  on the deployed runtime, not configuration the probe should trust: it must never read a
+  separately-resolved `PUBLIC_ORIGIN` for its own expectation, or a `--url` override diverging
+  from the wrangler config's own value would go undetected. One body, two deliberate inputs, not a
+  silenced disagreement.
+- **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 1; executed by [2026-08-30-conventions-pass.md](../superpowers/plans/2026-08-30-conventions-pass.md), Task 6.
 
 ## copy-to-clipboard-control: public-side copy-to-clipboard widget  (decline, 2026-08-26, ASC harvest triage)
 

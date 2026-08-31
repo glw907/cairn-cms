@@ -238,3 +238,74 @@ retire, the `ContentFormFailure` reshape (Tier 2's other six), and the
 (local hast builders in the showcase chassis, `emit:template` re-bake, the
 `configure-rendering.md` worked-example rewrite, then the three deletions); the **internals
 pass** owns the leak-class `check:surface` rider and the expansion-class trio.
+
+---
+
+## Post-mortem (2026-08-30, appended at pass close)
+
+**What landed.** Nine commits on the `retires` worktree off `main` at `6f643a31`. The 56
+ratified retires executed: 38 unsanctioned across three family batches (1a: 19, 1b: 8 of
+which 3 were ledger-only process proposals, 1c: 11) and the 18 F-1 sanctioned leaks with
+the move record (`docs/internal/record/2026-08-30-retires-move-record.md`), the
+compile-only replacement fixture, and the consolidated CHANGELOG block. The format
+allowlist shrank 40 to 33 (all 7 executed slugs repaired and delisted). Task 3 landed the
+four reason-prose repairs, the four ledger annotations, and the `f1-return-position-leak-sanction`
+standing-rule entry. The api-surface diff against `main` is 58 removed export rows, 0
+added, 0 modified (53 removed names; 5 published from two subpaths; 3 closes carried no
+symbol).
+
+**Verification.** Every batch ran the re-derived gate from `test.yml` locally, green,
+including the CI-only riders (`check:arm-indexes`, `check:custom-surface`,
+`check:snippets`, `check:comments`, `check:transcripts`, `check:symbols`). Each dispatch
+was reviewed by `diff-reviewer` (Opus) against independently re-derived enumerations: two
+first-pass accepts, three fix-then-accept cycles. The pass-end `engine-triage` audit
+re-derived all seven acceptance items from the artifacts and returned PASS on each,
+including the 2 + 56 + 36 = 94 partition and the 25/7/1/3 tier split of the untouched
+list (c). The auth security review found the mechanical claim clean (zero-byte diff on
+`src/lib/auth/**`; the factory still fails closed) and its findings were prose defects,
+fixed in `a7f92e43`.
+
+**Decisions the plan did not settle, taken during execution.**
+- The drift-hunt scope now includes `skills/` (ships in the npm tarball; the plan's
+  directory list omitted it, and batch 1a's review caught two shipped skill pages
+  teaching deleted components).
+- The plan's "6 of the 7 allowlist repairs" in batch 1b was a miscount: the split is 5
+  (auth + cli) and 2 (delivery, batch 1c).
+- The plan's pre-written `AdvisoryAction` replacement does not compile (`actions` is
+  optional); the corrected form `NonNullable<EditData['advisories'][number]['actions']>[number]`
+  is used everywhere. The plan body at :166 still carries the broken literal; the move
+  record supersedes it.
+- The leak check's literal predicate yields **17**, not the plan's expected 20:
+  `AdvisoryAction` is invisible to one-hop rendering, and `DictionaryAddFailure` /
+  `TidyFailure` carry no retire verdict, so the plan's own number contradicted its
+  predicate. The move record states the full arithmetic (17 rendered strict / 18 type
+  graph / 19 rendered and 20 type-graph including the two un-verdicted standing leaks).
+- The pass-end security review found the CHANGELOG's `devDelivery` migration snippet
+  ungated (production OTPs to Workers Logs; xcathletes will follow that line) and a
+  factory-side control cited as fact that was never built. Both fixed: the gated in-body
+  refusal form from the showcase's capture transport is the taught replacement, and a new
+  showcase Playwright spec pins the refusal executable again.
+
+**Carried forward.**
+- *Internals pass (rider owner):* the move record's predicate is subpath-blind —
+  `NavIcon`/`EngineScreenId` carry their own `/sveltekit` export rows and need a
+  per-subpath clause, only `SlotKind` is absent-everywhere; `RemoveIndex`/`ValueOf`/
+  `StandardResult` are structurally identical to `DictionaryAddFailure`/`TidyFailure`
+  under the predicate, so the split needs a stated rule; the record's "retire-verdicted"
+  clause deliberately narrows F-1's "retire-or-absent" wording. All three are now stated
+  in the move record itself. Also: a reference-page convention for teaching the
+  indexed-access form beside a shape that names an un-importable member (18 sites), and
+  whether the factory grows a per-call `CAIRN_DEV_BACKEND` refusal.
+- *Conventions pass:* `ReproFenceValidation` retires with the `validateReproFence`
+  reshape. *Chassis pass:* the render trio re-homing then deletion.
+- Cosmetic: `reproductions-stories.test.ts`'s per-story `has a matching manifest entry`
+  assertion is now vacuous (the aggregate reverse-containment test carries the
+  guarantee); tidy when next in that file.
+- Local `check:vale` shows 18 errors on three files untouched since `main` (local Vale
+  3.19.0 vs the CI pin); CI is the arbiter and `main` is green there.
+
+**Budgets.** Ceiling 4.5M for chains plus ritual; subagent meters sum to ~4.6M (nine
+implementer/fix dispatches ~3.0M, nine review dispatches ~1.1M, simplifier + triage +
+auth review + pass-end fixes ~0.6M), landing at the ceiling, driven by three
+fix-and-verify cycles the per-batch reviews caught. Human interaction points: zero
+questions mid-pass.

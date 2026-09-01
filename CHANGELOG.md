@@ -838,7 +838,12 @@
   row (that is the hand-seeded recovery escape hatch, and binding it to whoever posts the form
   would hand that hatch to an attacker), and skips an equal hash, so a genuine double-submit is a
   no-op. One statement, so a rebind racing the consuming `DELETE` loses cleanly under D1's
-  serialization.
+  serialization, and its `RebindTokenOutcome` names only what that statement knows (`'rebound'` or
+  `'not-eligible'`, the same reasoning `OwnerGuardOutcome` already carries, since a no-op could be
+  any of those four cases and the write cannot tell them apart). A rebind emits the new
+  `auth.token.rebound` event (`info`, `email`, never the nonce or its hash), which is what makes a
+  lockout attempt visible: one record is the ordinary second-browser recovery, a run of them for
+  one address is someone else requesting that address's links.
 
   The binding check IS the consuming `DELETE`'s own predicate, never a short-circuit ahead of it,
   so a click from the wrong browser refuses without burning the token: the row is not deleted

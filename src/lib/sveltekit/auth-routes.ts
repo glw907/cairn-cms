@@ -200,9 +200,16 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
       //
       // No new token, no send, and the cooldown window is untouched, so the response is
       // byte-identical to a throttled answer that rebound nothing. This is a server-side write
-      // only; anything observable here would reintroduce an oracle the neutral exits close.
-      // rebindToken's own WHERE holds the expiry, unbound-row, and same-nonce guards.
-      await rebindToken(db, email, await hashToken(nonce), now);
+      // and a log record only; anything observable in the response would reintroduce an oracle
+      // the neutral exits close. rebindToken's own WHERE holds the expiry, unbound-row, and
+      // same-nonce guards, and its outcome names only what that one statement knows.
+      //
+      // The record is what makes the lockout attempt visible: one is the ordinary recovery after
+      // a request from a second browser, and a run of them for one address is someone else
+      // requesting that address's links. It carries the email, like its sibling token events, and
+      // never the nonce or its hash, which are the credential this whole binding turns on.
+      const rebind = await rebindToken(db, email, await hashToken(nonce), now);
+      if (rebind.outcome === 'rebound') log.info('auth.token.rebound', { email });
       return { status: 'throttled', sent: false };
     }
 

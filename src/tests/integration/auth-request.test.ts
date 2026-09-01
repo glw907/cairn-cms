@@ -243,11 +243,24 @@ describe('login nonce cookie (same-browser binding)', () => {
     expect(sent).toHaveLength(1);
 
     const editor = makeRecordingCookies();
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const throttled = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: editor }));
     // No new token, no second email, and the cooldown window is untouched.
     expect(throttled).toEqual({ status: 'throttled', sent: false });
     expect(sent).toHaveLength(1);
     expect(await countRows('magic_token')).toBe(1);
+
+    // The rebind is the one thing that makes a lockout attempt visible, so it emits a record.
+    const records = infoSpy.mock.calls.map((c) => c[0] as Record<string, unknown>);
+    const rebound = records.filter((r) => r.event === 'auth.token.rebound');
+    expect(rebound).toHaveLength(1);
+    expect(rebound[0]).toMatchObject({ level: 'info', email: 'ed@x.dev' });
+    // The record carries the envelope and the email, never the nonce or its hash.
+    expect(Object.keys(rebound[0]).sort()).toEqual(['email', 'event', 'level', 'timestamp']);
+    const editorNonce = pendingSet(editor).value;
+    expect(JSON.stringify(rebound[0])).not.toContain(editorNonce);
+    expect(JSON.stringify(rebound[0])).not.toContain(await hashToken(editorNonce));
+    vi.restoreAllMocks();
 
     // Last-requester-wins: the emailed token now confirms only in the browser that asked most
     // recently, and the earlier binding stops working without the token ever being burned.
@@ -274,9 +287,35 @@ describe('login nonce cookie (same-browser binding)', () => {
     await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies }));
     const before = await tokenRow();
 
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     const resend = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies }));
     expect(resend).toEqual({ status: 'throttled', sent: false });
     expect(await tokenRow()).toEqual(before);
+    // Silent on the not-eligible arm: a record here would report a write that never happened.
+    const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).not.toContain('auth.token.rebound');
+    vi.restoreAllMocks();
+  });
+
+  it('stays silent on the not-eligible arm when the live row is unbound', async () => {
+    // The hand-seeded recovery row. rebindToken leaves it alone, so nothing is reported either.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { issueToken } = await import('../../lib/auth/store.js');
+    const now = Date.now();
+    await issueToken(db, 'ed@x.dev', 'a-recovery-token-hash', now + 600_000, now);
+    const { routes } = routesWithSink();
+
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const throttled = await routes.requestAction(
+      makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: makeRecordingCookies() }),
+    );
+    expect(throttled).toEqual({ status: 'throttled', sent: false });
+    const events = infoSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).not.toContain('auth.token.rebound');
+    vi.restoreAllMocks();
+    expect(
+      await db.prepare('SELECT nonce_hash FROM magic_token').first<{ nonce_hash: string | null }>(),
+    ).toEqual({ nonce_hash: null });
   });
 
   it('emits identical headers on a throttled answer whether or not it rebound the row', async () => {

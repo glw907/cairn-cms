@@ -90,6 +90,19 @@ export async function issueToken(
 }
 
 /**
+ * What {@link rebindToken} returns: the live token now answers to the requesting browser, or no
+ * row was eligible for the move.
+ *
+ * `not-eligible` (never a set of finer reasons) for the same reason {@link OwnerGuardOutcome}
+ * carries that arm: four situations produce `changes === 0` on the one conditional statement, and
+ * the statement cannot tell them apart. No token row at all, an expired row, an unbound row, and a
+ * row already carrying this exact nonce all land here. Naming any of them would mean a second read
+ * that could disagree with the write it claims to explain, so the discriminant names only what the
+ * predicate knows.
+ */
+export type RebindTokenOutcome = { outcome: 'rebound' } | { outcome: 'not-eligible' };
+
+/**
  * Point this email's live token at a different browser's nonce, minting nothing and sending
  * nothing. The throttled branch of the request action calls it, and it is the anti-lockout half
  * of the same-browser binding.
@@ -122,14 +135,15 @@ export async function rebindToken(
   email: string,
   nonceHash: string,
   now: number,
-): Promise<void> {
-  await db
+): Promise<RebindTokenOutcome> {
+  const res = await db
     .prepare(
       `UPDATE magic_token SET nonce_hash = ?
        WHERE email = ? AND expires_at > ? AND nonce_hash IS NOT NULL AND nonce_hash <> ?`,
     )
     .bind(nonceHash, normalizeEmail(email), now, nonceHash)
     .run();
+  return res.meta.changes > 0 ? { outcome: 'rebound' } : { outcome: 'not-eligible' };
 }
 
 /** True when a magic-link token for this email was issued at or after `since`, for the send cooldown. */

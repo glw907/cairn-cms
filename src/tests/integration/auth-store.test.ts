@@ -496,19 +496,19 @@ describe('rebindToken', () => {
 
   it('points a live bound row at the new nonce', async () => {
     await seedToken(nonceHash, Date.now() + 10_000);
-    await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now());
+    expect(await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now())).toEqual({ outcome: 'rebound' });
     expect(await storedNonce()).toBe('a-different-hash');
   });
 
   it('normalizes the email, so a mixed-case request still finds the row', async () => {
     await seedToken(nonceHash, Date.now() + 10_000);
-    await rebindToken(db, 'ED@X.dev', 'a-different-hash', Date.now());
+    expect(await rebindToken(db, 'ED@X.dev', 'a-different-hash', Date.now())).toEqual({ outcome: 'rebound' });
     expect(await storedNonce()).toBe('a-different-hash');
   });
 
   it('leaves an EXPIRED row alone, so a rebind cannot resurrect one', async () => {
     await seedToken(nonceHash, Date.now() - 1);
-    await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now());
+    expect(await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now())).toEqual({ outcome: 'not-eligible' });
     expect(await storedNonce()).toBe(nonceHash);
   });
 
@@ -516,13 +516,18 @@ describe('rebindToken', () => {
     // An unbound row confirms from any browser on purpose (consumeToken). Binding it to whoever
     // POSTs the request form would hand the lockout-recovery path to an attacker.
     await seedToken(null, Date.now() + 10_000);
-    await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now());
+    expect(await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now())).toEqual({ outcome: 'not-eligible' });
     expect(await storedNonce()).toBeNull();
+  });
+
+  it('reports not-eligible with no live row at all', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    expect(await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now())).toEqual({ outcome: 'not-eligible' });
   });
 
   it('writes nothing when the nonce already matches', async () => {
     await seedToken(nonceHash, Date.now() + 10_000);
-    await rebindToken(db, 'ed@x.dev', nonceHash, Date.now());
+    expect(await rebindToken(db, 'ed@x.dev', nonceHash, Date.now())).toEqual({ outcome: 'not-eligible' });
     expect(await storedNonce()).toBe(nonceHash);
   });
 });

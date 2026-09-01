@@ -16,6 +16,7 @@ in production, see the [read cairn's logs guide](../admin/troubleshooting.md).
 |---|---|---|---|
 | `auth.link.requested` | info | The login view's `?/request` action runs (`POST /admin/login?/request`). | `email` |
 | `auth.token.minted` | info | A token is issued for an allow-listed editor. | `email`, `expiresAt` |
+| `auth.token.rebound` | info | A request that the send cooldown throttled carried a different pending-login nonce than the live token row, so the row now answers to the requesting browser instead. The binding is last-requester-wins. One record is the ordinary recovery after a request from a second browser. A run of them for one address means something keeps requesting links for it. | `email` |
 | `auth.link.refused` | warn | A confirm arrives from a browser carrying no pending-login cookie and the token is bound to another browser's nonce, so it can't be the browser that requested the link. The binding is the consuming `DELETE`'s own predicate, so the token survives, and the confirm redirects to `/admin/login?error=no-pending-request`. An unbound token row (`nonce_hash IS NULL`) confirms instead and logs nothing here. | `reason` (`no_pending_cookie`) |
 | `auth.link.send_failed` | error | The confirmation email send rejects. | `email`, `error`, `code`, `conditionId` |
 | `auth.token.confirmed` | info | A valid token is consumed at `POST /admin/auth/confirm`. | `email` |

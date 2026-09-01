@@ -10,6 +10,7 @@ export type CairnLogEvent =
   | 'auth.link.refused'
   | 'auth.link.send_failed'
   | 'auth.token.minted'
+  | 'auth.token.rebound'
   | 'auth.token.confirmed'
   | 'auth.session.created'
   | 'auth.session.destroyed'

@@ -294,8 +294,20 @@ open edits, not part of the shape itself.
   each with its own test: the mint is unconditional and byte-identical on all four `requestAction`
   exits (an editor-only cookie would be an allowlist oracle in the response headers), the cookie
   is reused while unexpired rather than rotated (rotation on a throttled resend would strand the
-  link already in the inbox), and the cookie check runs before the consume (a cross-browser click
-  must not burn the requester's own link). The deliberate trade recorded here: cross-device
+  link already in the inbox), and the binding lives inside the consume's own predicate rather than
+  short-circuiting ahead of it (a cross-browser click must not burn the requester's own link, and a
+  cookie-less confirm must still pass `null` so an unbound row keeps its pre-migration semantics).
+  Two semantics the review fold ratified on top of the execution (Geoff, 2026-08-31). **The binding
+  is last-requester-wins:** a throttled re-request whose nonce differs from the live row's rebinds
+  that row (`rebindToken`, one conditional `UPDATE`, no new token, no email, cooldown untouched,
+  response byte-identical), which closes the lockout the binding otherwise creates, where an
+  attacker posting the request form once a minute holds the row against its own nonce while the
+  cooldown throttles the editor's recovery. It costs nothing an attacker did not have, since the
+  link only ever reaches the editor's inbox, and the rebind skips an expired row and an unbound
+  one. **An unbound row stays confirmable from any browser:** a pre-migration row,
+  `create-cairn-site`'s bootstrap INSERT, and a hand-seeded recovery row all carry
+  `nonce_hash IS NULL`, and that is the single-owner lockout escape hatch, documented as
+  scanner-confirmable rather than quietly relied on. The deliberate trade recorded here: cross-device
   sign-in (request on a desktop, click on a phone; a mail app's WebView with its own cookie jar)
   now refuses, availability given up for integrity, with re-requesting from the clicking browser
   as the escape hatch and its own `?error=no-pending-request` code and copy so the instruction
@@ -305,7 +317,9 @@ open edits, not part of the shape itself.
   a total login outage with no second channel: the CHANGELOG carries an apply-0004-first
   `Consumers must:` line and the `auth.store` doctor probe now asserts the column.
 - **Record:** [2026-08-27 csrf-hardening-pass](../superpowers/plans/2026-08-27-csrf-hardening-pass.md), Task 4;
-  executed by [2026-08-30-conventions-pass](../superpowers/plans/2026-08-30-conventions-pass.md), Task 7.
+  executed by [2026-08-30-conventions-pass](../superpowers/plans/2026-08-30-conventions-pass.md), Task 7,
+  with the last-requester-wins rebind and the unbound-row semantics ratified in that pass's
+  review fold.
 
 ## session-cookie-derivation-out-of-csrf-slice: session cookie's secure/name derivation stays on `event.url.protocol`  (defer, 2026-08-29, csrf-hardening pass)
 

@@ -89,6 +89,49 @@ export async function issueToken(
   }
 }
 
+/**
+ * Point this email's live token at a different browser's nonce, minting nothing and sending
+ * nothing. The throttled branch of the request action calls it, and it is the anti-lockout half
+ * of the same-browser binding.
+ *
+ * The lockout it closes: an attacker POSTing the request form once a minute keeps the live token
+ * bound to the attacker's own nonce, and the per-email send cooldown then throttles the editor's
+ * recovery re-request, so the editor can neither confirm the link in their inbox nor get a new
+ * one. Rebinding on the throttled path makes the semantics last-requester-wins, which is
+ * symmetric: whoever asked most recently is who the link works for, and the editor recovers by
+ * asking again. Nothing is granted by asking, since the token itself only ever reaches the
+ * editor's own inbox.
+ *
+ * Three things the one statement's `WHERE` decides, in order:
+ *
+ * - `expires_at > ?` keeps a rebind from resurrecting an expired row that the next `issueToken`
+ *   sweep would drop anyway; an expired row must stay dead however it is touched.
+ * - `nonce_hash IS NOT NULL` leaves an UNBOUND row alone deliberately. An unbound row is the
+ *   hand-seeded lockout-recovery escape hatch ({@link consumeToken}), and binding it to whoever
+ *   POSTs the request form would hand that escape hatch to an attacker.
+ * - `nonce_hash <> ?` makes a genuine double-submit from the same browser a pure no-op rather
+ *   than a write.
+ *
+ * It is one statement, so a rebind racing the confirm that consumes the row loses cleanly under
+ * D1's serialization: either the `UPDATE` lands first and the consume then compares against the
+ * new hash, or the `DELETE` lands first and the `UPDATE` matches no row. Neither order can leave
+ * a half-rebound row or resurrect a consumed one.
+ */
+export async function rebindToken(
+  db: D1Database,
+  email: string,
+  nonceHash: string,
+  now: number,
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE magic_token SET nonce_hash = ?
+       WHERE email = ? AND expires_at > ? AND nonce_hash IS NOT NULL AND nonce_hash <> ?`,
+    )
+    .bind(nonceHash, normalizeEmail(email), now, nonceHash)
+    .run();
+}
+
 /** True when a magic-link token for this email was issued at or after `since`, for the send cooldown. */
 export async function recentlyIssued(db: D1Database, email: string, since: number): Promise<boolean> {
   const row = await db

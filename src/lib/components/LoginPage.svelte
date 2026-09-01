@@ -13,7 +13,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
   import CsrfField from './CsrfField.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
   import { warnIfChromeWrapped } from './chrome-guard.js';
-  import { NO_PENDING_REQUEST_ERROR } from '../sveltekit/auth-routes.js';
+  import { NO_PENDING_REQUEST_ERROR } from '../sveltekit/auth-error-codes.js';
 
   interface Props {
     /** The login load's data: the site name, an optional error, the CSRF token, and the SSR-resolved

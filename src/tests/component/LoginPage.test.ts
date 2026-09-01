@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import LoginPage from '../../lib/components/LoginPage.svelte';
-import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-routes.js';
+import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-error-codes.js';
 
 describe('LoginPage', () => {
   it('renders an email form posting to the request action with a CSRF field', async () => {

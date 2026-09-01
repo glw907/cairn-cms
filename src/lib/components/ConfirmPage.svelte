@@ -8,7 +8,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
   import CairnLogo from './CairnLogo.svelte';
   import CsrfField from './CsrfField.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
-  import { NO_PENDING_REQUEST_ERROR } from '../sveltekit/auth-routes.js';
+  import { NO_PENDING_REQUEST_ERROR } from '../sveltekit/auth-error-codes.js';
 
   interface Props {
     /** The confirm load's data: the token to submit, the site name, an optional error, the CSRF

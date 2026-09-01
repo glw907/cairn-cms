@@ -137,6 +137,23 @@ describe('login nonce cookie (same-browser binding)', () => {
     return match![1];
   }
 
+  const confirmUrl = 'https://test.dev/admin/auth/confirm';
+
+  /** The one live magic_token row, whole, for an assertion that a write did or did not land. */
+  async function tokenRow(): Promise<Record<string, unknown> | null> {
+    return await db
+      .prepare('SELECT token_hash, email, expires_at, created_at, nonce_hash FROM magic_token')
+      .first<Record<string, unknown>>();
+  }
+
+  /**
+   * Everything a jar's Set-Cookie headers carry except the per-browser random values themselves,
+   * plus each value's own shape, so two requests can be compared for header identity.
+   */
+  function headerShape(jar: ReturnType<typeof makeRecordingCookies>): string {
+    return JSON.stringify(jar.sets.map((s) => ({ name: s.name, opts: s.opts, length: s.value.length })));
+  }
+
   it('mints one identical pending cookie on all four exits, before any branch on the editor', async () => {
     // send-ok, the non-editor neutral exit, throttled, and send-failed. Anything less than one
     // identical Set-Cookie on every exit is a one-request allowlist oracle in the headers.
@@ -186,9 +203,7 @@ describe('login nonce cookie (same-browser binding)', () => {
     await routes.requestAction(makeEvent({ url, form: { email: 'stranger@x.dev' }, cookies: strangerJar }));
     // The nonce value is per-browser random, so identity is over everything a header carries
     // besides the value itself, plus the value's own shape.
-    const shape = (jar: ReturnType<typeof makeRecordingCookies>) =>
-      JSON.stringify(jar.sets.map((s) => ({ name: s.name, opts: s.opts, length: s.value.length })));
-    expect(shape(strangerJar)).toBe(shape(editorJar));
+    expect(headerShape(strangerJar)).toBe(headerShape(editorJar));
     expect(pendingSet(strangerJar).value).not.toBe(pendingSet(editorJar).value);
   });
 
@@ -212,6 +227,74 @@ describe('login nonce cookie (same-browser binding)', () => {
       ),
     );
     expect(redirect.location).toBe('/admin');
+  });
+
+  it('rebinds the live token to a throttled re-requester, so an attacker cannot lock an editor out', async () => {
+    // The lockout the rebind closes (Geoff, 2026-08-31, "rebind, no email"): an attacker POSTs
+    // this form for the editor's address once a minute. The link is emailed to the EDITOR, so the
+    // attacker gains no token, but the row is bound to the attacker's browser and the cooldown the
+    // attacker just started throttles the editor's own recovery request. Before the rebind the
+    // editor could neither confirm the link in their inbox nor earn a new one.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes, sent } = routesWithSink();
+
+    const attacker = makeRecordingCookies();
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: attacker }));
+    expect(sent).toHaveLength(1);
+
+    const editor = makeRecordingCookies();
+    const throttled = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: editor }));
+    // No new token, no second email, and the cooldown window is untouched.
+    expect(throttled).toEqual({ status: 'throttled', sent: false });
+    expect(sent).toHaveLength(1);
+    expect(await countRows('magic_token')).toBe(1);
+
+    // Last-requester-wins: the emailed token now confirms only in the browser that asked most
+    // recently, and the earlier binding stops working without the token ever being burned.
+    const token = tokenOf(sent[0]);
+    const refused = await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies: attacker })),
+    );
+    expect(refused.location).toBe('/admin/login?error=expired');
+    expect(await countRows('magic_token')).toBe(1);
+
+    const recovered = await expectRedirect(() =>
+      routes.confirmAction(makeEvent({ url: confirmUrl, form: { token }, cookies: editor })),
+    );
+    expect(recovered.location).toBe('/admin');
+    expect(await countRows('session')).toBe(1);
+  });
+
+  it('leaves the row untouched when a throttled re-submit carries the same nonce', async () => {
+    // A genuine double-submit from one browser. The rebind's own WHERE excludes an equal hash, so
+    // this is a pure no-op rather than a write that happens to land on the same value.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes } = routesWithSink();
+    const cookies = makeRecordingCookies();
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies }));
+    const before = await tokenRow();
+
+    const resend = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies }));
+    expect(resend).toEqual({ status: 'throttled', sent: false });
+    expect(await tokenRow()).toEqual(before);
+  });
+
+  it('emits identical headers on a throttled answer whether or not it rebound the row', async () => {
+    // The rebind is a server-side write only. Anything observable about it in the response would
+    // reintroduce exactly the oracle the byte-identical exits exist to close.
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes } = routesWithSink();
+    const first = makeRecordingCookies();
+    await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: first }));
+
+    const sameNonce = makeRecordingCookies({ [pending]: pendingSet(first).value });
+    const otherNonce = makeRecordingCookies();
+    const withoutRebind = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: sameNonce }));
+    const withRebind = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' }, cookies: otherNonce }));
+
+    expect(withoutRebind).toEqual({ status: 'throttled', sent: false });
+    expect(withRebind).toEqual(withoutRebind);
+    expect(headerShape(otherNonce)).toBe(headerShape(sameNonce));
   });
 
   it('mints the pending cookie in loginLoad, so a browser holds a nonce before it POSTs anything', async () => {

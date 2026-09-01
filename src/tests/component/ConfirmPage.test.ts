@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ConfirmPage from '../../lib/components/ConfirmPage.svelte';
-import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-routes.js';
+import { NO_PENDING_REQUEST_ERROR } from '../../lib/sveltekit/auth-error-codes.js';
 
 describe('ConfirmPage', () => {
   it('renders a POST confirm form carrying the token and a CSRF field', async () => {

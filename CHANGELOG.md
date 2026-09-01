@@ -825,6 +825,21 @@
   a live row, and it buys the ordinary case where a late click arrives carrying the cookie and
   reads "that link expired" rather than a false different-browser message.
 
+  The binding is **last-requester-wins**, through a rebind on the throttled branch (Geoff,
+  2026-08-31): when a throttled request's own nonce differs from the live row's `nonce_hash`, one
+  conditional `UPDATE` (`rebindToken`) points the row at the requester's nonce. No new token, no
+  second email, and the cooldown window is untouched, so every response stays byte-identical and
+  the rebind is a server-side write only. Without it the binding is a lockout: an attacker posting
+  the request form once a minute keeps the live token bound to their own browser while the
+  per-address cooldown they started throttles the editor's recovery request. Asking grants
+  nothing, since the link only ever reaches the editor's own inbox, so the worst an attacker
+  achieves is making a link stop working, which a plain re-request could already do. The
+  `UPDATE`'s own `WHERE` skips an expired row (a rebind must not resurrect one), skips an UNBOUND
+  row (that is the hand-seeded recovery escape hatch, and binding it to whoever posts the form
+  would hand that hatch to an attacker), and skips an equal hash, so a genuine double-submit is a
+  no-op. One statement, so a rebind racing the consuming `DELETE` loses cleanly under D1's
+  serialization.
+
   The binding check IS the consuming `DELETE`'s own predicate, never a short-circuit ahead of it,
   so a click from the wrong browser refuses without burning the token: the row is not deleted
   unless its `nonce_hash` matches. A confirm carrying no pending cookie passes `null` rather than

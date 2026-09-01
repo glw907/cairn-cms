@@ -5,6 +5,7 @@ import {
   findEditor,
   issueToken,
   recentlyIssued,
+  rebindToken,
   consumeToken,
   createSession,
   resolveSession,
@@ -474,6 +475,55 @@ describe('email normalization (the store owns it)', () => {
 
     await createSession(db, 'sid-mixed', 'Ed@X.dev', now + 10_000, now);
     expect((await resolveSession(db, 'sid-mixed', now))?.email).toBe('ed@x.dev');
+  });
+});
+
+describe('rebindToken', () => {
+  // The anti-lockout write on the throttled request path. Its whole contract is the one WHERE
+  // clause, so each guard gets its own case.
+  const nonceHash = 'the-original-nonce-hash';
+
+  /** Seed one token row for ed@x.dev, returning the row's own expiry for a later assertion. */
+  async function seedToken(binding: string | null, expiresAt: number): Promise<void> {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    await issueToken(db, 'ed@x.dev', 'the-token-hash', expiresAt, Date.now(), binding);
+  }
+
+  async function storedNonce(): Promise<string | null> {
+    const row = await db.prepare('SELECT nonce_hash FROM magic_token').first<{ nonce_hash: string | null }>();
+    return row?.nonce_hash ?? null;
+  }
+
+  it('points a live bound row at the new nonce', async () => {
+    await seedToken(nonceHash, Date.now() + 10_000);
+    await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now());
+    expect(await storedNonce()).toBe('a-different-hash');
+  });
+
+  it('normalizes the email, so a mixed-case request still finds the row', async () => {
+    await seedToken(nonceHash, Date.now() + 10_000);
+    await rebindToken(db, 'ED@X.dev', 'a-different-hash', Date.now());
+    expect(await storedNonce()).toBe('a-different-hash');
+  });
+
+  it('leaves an EXPIRED row alone, so a rebind cannot resurrect one', async () => {
+    await seedToken(nonceHash, Date.now() - 1);
+    await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now());
+    expect(await storedNonce()).toBe(nonceHash);
+  });
+
+  it('leaves an UNBOUND row alone, so the hand-seeded recovery escape hatch stays open', async () => {
+    // An unbound row confirms from any browser on purpose (consumeToken). Binding it to whoever
+    // POSTs the request form would hand the lockout-recovery path to an attacker.
+    await seedToken(null, Date.now() + 10_000);
+    await rebindToken(db, 'ed@x.dev', 'a-different-hash', Date.now());
+    expect(await storedNonce()).toBeNull();
+  });
+
+  it('writes nothing when the nonce already matches', async () => {
+    await seedToken(nonceHash, Date.now() + 10_000);
+    await rebindToken(db, 'ed@x.dev', nonceHash, Date.now());
+    expect(await storedNonce()).toBe(nonceHash);
   });
 });
 

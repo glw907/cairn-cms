@@ -87,6 +87,27 @@ Three properties of the refusal matter to an operator:
   `NO_PENDING_REQUEST_ERROR` from `@glw907/cairn-cms/sveltekit`, so a site rendering its own login
   page branches on the constant.
 
+### The binding is last-requester-wins
+
+A throttled re-request rebinds the live token to the browser that just asked. Nothing else about
+that answer changes: no new token, no second email, and the cooldown window stays where it was.
+
+The rebind exists because the binding alone is a lockout. An attacker who posts the sign-in form
+for an editor's address once a minute keeps the live token bound to their own browser, and the
+per-address cooldown they just started throttles the editor's own recovery request, so the editor
+can neither confirm the link in their inbox nor earn a new one.
+
+Last-requester-wins is safe because asking grants nothing. The link only ever reaches the editor's
+own inbox, so an attacker who posts the form learns no token. The worst they achieve is making the
+editor's current link stop working, which they could already do before the binding existed, since a
+fresh request replaces the previous token. The editor recovers by asking again, and the rebind is
+symmetric, so the last person to ask is the one it works for.
+
+Two rows the rebind deliberately skips: an expired one, which stays dead however it's touched, and
+an unbound one, for the reason in the next section. It's a single `UPDATE`, so a rebind racing the
+confirm that consumes the row loses cleanly: either the update lands first and the confirm compares
+against the new hash, or the delete lands first and the update matches nothing.
+
 ### An unbound token row is scanner-confirmable, by design
 
 A `magic_token` row whose `nonce_hash` is `NULL` confirms from any browser, exactly as every row

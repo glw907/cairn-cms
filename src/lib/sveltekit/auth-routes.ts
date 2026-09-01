@@ -21,10 +21,12 @@ import {
   createSession,
   deleteSession,
   recentlyIssued,
+  rebindToken,
   insertOwnerIfEmpty,
 } from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
 import { issueCsrfToken, csrfSecure } from './csrf.js';
+import { NO_PENDING_REQUEST_ERROR } from './auth-error-codes.js';
 import { log } from '../log/index.js';
 import type { CairnEvent } from './types.js';
 
@@ -79,17 +81,11 @@ export interface ConfirmData {
  */
 const LOGIN_PENDING_COOKIE_BASE = 'cairn_login_pending';
 
-/**
- * The `?error=` code a confirm redirects with when this browser carries no pending-login cookie
- * and the token row it submitted is bound to some other browser's nonce, deliberately distinct
- * from `expired`. The two need different instructions: "request a new one" is the exact advice
- * that reproduces the failure for someone clicking on a second device.
- *
- * Exported so `LoginPage` and `ConfirmPage` branch on this value rather than on a duplicated
- * string literal. The wire format is the literal below, so a site rendering its own login page
- * may compare `data.error` against it too.
- */
-export const NO_PENDING_REQUEST_ERROR = 'no-pending-request';
+// The `?error=` codes live in their own import-free leaf (./auth-error-codes.js), so a component
+// branching on one never reaches through this server module to get it. Re-exported here because
+// `/sveltekit` publishes them alongside the handlers that redirect with them, and imported above
+// because `confirmAction` builds its own redirect from the same value.
+export { NO_PENDING_REQUEST_ERROR };
 
 /**
  * How long the pending-login cookie outlives the token it was minted alongside, as a multiple of
@@ -193,6 +189,20 @@ export function createAuthRoutes(config: AuthRoutesConfig): AuthRoutes {
     // Per-email cooldown: an editor who requested within the window gets the throttled signal rather
     // than a second email. This reveals editor membership, the deliberate relaxed-non-leak posture.
     if (await recentlyIssued(db, email, now - SEND_COOLDOWN_MS)) {
+      // Rebind the live token to THIS browser before answering (Geoff, 2026-08-31: "rebind, no
+      // email"). Without it the same-browser binding is a lockout: an attacker POSTing this form
+      // once a minute keeps the live row bound to their own nonce, and this very cooldown then
+      // throttles the editor's recovery re-request, so the editor can neither confirm the link
+      // sitting in their inbox nor earn a new one. The ratified semantics are
+      // last-requester-wins, and they cost nothing an attacker did not already have: the email
+      // only ever goes to the editor's own address, so asking grants no token, and the editor
+      // recovers by simply asking again.
+      //
+      // No new token, no send, and the cooldown window is untouched, so the response is
+      // byte-identical to a throttled answer that rebound nothing. This is a server-side write
+      // only; anything observable here would reintroduce an oracle the neutral exits close.
+      // rebindToken's own WHERE holds the expiry, unbound-row, and same-nonce guards.
+      await rebindToken(db, email, await hashToken(nonce), now);
       return { status: 'throttled', sent: false };
     }
 

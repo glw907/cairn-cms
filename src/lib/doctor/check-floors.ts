@@ -128,9 +128,14 @@ export function dependencyFloorsResult(
 type PnpmDepEntry = string | { version?: unknown } | undefined;
 
 function pnpmDepVersion(entry: PnpmDepEntry): string | undefined {
+  let raw: string | undefined;
+  if (typeof entry === 'string') {
+    raw = entry;
+  } else if (typeof entry?.version === 'string') {
+    raw = entry.version;
+  }
   // Both shapes can carry a peer-dependency suffix in parentheses, e.g. "5.56.10(vite@6.0.0)";
   // the plain semver is everything before it.
-  const raw = typeof entry === 'string' ? entry : typeof entry?.version === 'string' ? entry.version : undefined;
   return raw?.split('(')[0];
 }
 

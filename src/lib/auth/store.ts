@@ -212,6 +212,32 @@ async function deleteEditorPreviewTokens(db: D1Database, normalizedEmail: string
 }
 
 /**
+ * Whether the row a guarded write left untouched is still there, the read every `changes === 0`
+ * branch below runs to tell a refusal apart from a plain miss. `ownerRoles`, when given, narrows
+ * the read to owner-capability rows, matching the two owner-only guards whose own `WHERE` never
+ * admitted a non-owner row in the first place.
+ *
+ * It runs after the atomic write and cannot change that write's outcome; it only names which of
+ * the two things happened, so it stays outside the conditional statement the guard depends on.
+ */
+async function editorRowStillPresent(
+  db: D1Database,
+  normalizedEmail: string,
+  ownerRoles?: string[],
+): Promise<boolean> {
+  if (ownerRoles === undefined) {
+    const row = await db.prepare('SELECT 1 FROM editor WHERE email = ?').bind(normalizedEmail).first();
+    return Boolean(row);
+  }
+  const placeholders = ownerRoles.map(() => '?').join(', ');
+  const row = await db
+    .prepare(`SELECT 1 FROM editor WHERE email = ? AND role IN (${placeholders})`)
+    .bind(normalizedEmail, ...ownerRoles)
+    .first();
+  return Boolean(row);
+}
+
+/**
  * Remove an editor and cut their live access: sessions, any pending token, and every preview
  * link they minted go too. A removed editor's outstanding preview links die with their access,
  * the same posture as the session and magic-token cascade; a mere role or access-map change,
@@ -235,6 +261,7 @@ export async function deleteEditor(
   ownerRoles: string[],
 ): Promise<DeleteEditorOutcome> {
   const key = normalizeEmail(email);
+  const placeholders = ownerRoles.map(() => '?').join(', ');
   const res =
     ownerRoles.length === 0
       ? await db.prepare('DELETE FROM editor WHERE email = ?').bind(key).run()
@@ -243,15 +270,14 @@ export async function deleteEditor(
             `DELETE FROM editor
              WHERE email = ?
                AND (
-                 role NOT IN (${ownerRoles.map(() => '?').join(', ')})
-                 OR (SELECT COUNT(*) FROM editor WHERE role IN (${ownerRoles.map(() => '?').join(', ')})) > 1
+                 role NOT IN (${placeholders})
+                 OR (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1
                )`,
           )
           .bind(key, ...ownerRoles, ...ownerRoles)
           .run();
   if (res.meta.changes === 0) {
-    const stillThere = await db.prepare('SELECT 1 FROM editor WHERE email = ?').bind(key).first();
-    return stillThere ? { outcome: 'last-owner' } : { outcome: 'not-found' };
+    return (await editorRowStillPresent(db, key)) ? { outcome: 'last-owner' } : { outcome: 'not-found' };
   }
   await db.batch([
     db.prepare('DELETE FROM session WHERE email = ?').bind(key),
@@ -288,11 +314,9 @@ export async function removeOwnerIfNotLast(
     .bind(key, ...ownerRoles, ...ownerRoles)
     .run();
   if (res.meta.changes === 0) {
-    const stillEligible = await db
-      .prepare(`SELECT 1 FROM editor WHERE email = ? AND role IN (${placeholders})`)
-      .bind(key, ...ownerRoles)
-      .first();
-    return stillEligible ? { outcome: 'last-owner' } : { outcome: 'not-eligible' };
+    return (await editorRowStillPresent(db, key, ownerRoles))
+      ? { outcome: 'last-owner' }
+      : { outcome: 'not-eligible' };
   }
   await db.batch([
     db.prepare('DELETE FROM session WHERE email = ?').bind(key),
@@ -345,6 +369,7 @@ export async function setEditorRole(
   ownerRoles: string[],
 ): Promise<SetEditorRoleOutcome> {
   const key = normalizeEmail(email);
+  const placeholders = ownerRoles.map(() => '?').join(', ');
   const res =
     ownerRoles.length === 0
       ? await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, key).run()
@@ -353,16 +378,15 @@ export async function setEditorRole(
             `UPDATE editor SET role = ?
              WHERE email = ?
                AND (
-                 role NOT IN (${ownerRoles.map(() => '?').join(', ')})
+                 role NOT IN (${placeholders})
                  OR ? = 1
-                 OR (SELECT COUNT(*) FROM editor WHERE role IN (${ownerRoles.map(() => '?').join(', ')})) > 1
+                 OR (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1
                )`,
           )
           .bind(role, key, ...ownerRoles, ownerRoles.includes(role) ? 1 : 0, ...ownerRoles)
           .run();
   if (res.meta.changes === 0) {
-    const stillThere = await db.prepare('SELECT 1 FROM editor WHERE email = ?').bind(key).first();
-    return stillThere ? { outcome: 'last-owner' } : { outcome: 'not-found' };
+    return (await editorRowStillPresent(db, key)) ? { outcome: 'last-owner' } : { outcome: 'not-found' };
   }
   return { outcome: 'ok' };
 }
@@ -393,11 +417,9 @@ export async function demoteOwnerIfNotLast(
     .bind(newRole, key, ...ownerRoles, ...ownerRoles)
     .run();
   if (res.meta.changes === 0) {
-    const stillEligible = await db
-      .prepare(`SELECT 1 FROM editor WHERE email = ? AND role IN (${placeholders})`)
-      .bind(key, ...ownerRoles)
-      .first();
-    return stillEligible ? { outcome: 'last-owner' } : { outcome: 'not-eligible' };
+    return (await editorRowStillPresent(db, key, ownerRoles))
+      ? { outcome: 'last-owner' }
+      : { outcome: 'not-eligible' };
   }
   return { outcome: 'ok' };
 }

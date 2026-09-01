@@ -41,5 +41,7 @@ export async function runDoctor(
  * results earns.
  */
 export function exitCodeFor({ failed, unchecked }: { failed: number; unchecked: number }): 0 | 1 | 3 {
-  return failed > 0 ? 1 : unchecked > 0 ? 3 : 0;
+  if (failed > 0) return 1;
+  if (unchecked > 0) return 3;
+  return 0;
 }

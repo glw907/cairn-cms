@@ -20,12 +20,14 @@ chassis slice per the initiative design. CI on `main` is fully green.
 
 **The conventions pass (slice 4a) is EXECUTING** on worktree `.claude/worktrees/conventions`
 (branch `conventions`, workflow mode, sequential), from the committed plan
-`docs/superpowers/plans/2026-08-30-conventions-pass.md`. Checkpoint after Task 4
-(2026-08-31): Tasks 1 (`5728b882`), 2 (`52fd9cba`+`e36089f9`, one fix round), and 4
-(`0bb03e51`+`523fa8ef`, one fix round) ACCEPTED; Task 3 (`51f02f3f`+`c8c6f5ac`) landed but
-escalated on two residual doc defects (CHANGELOG's `createMediaResolver` subpath claim;
-stale preset prose in `core.md`/`data-tiers.md`), which the conductor routed to a cleanup
-task at the head of chunk 2 (Tasks 5-8). Spend: ~2.6M after four of eleven tasks;
+`docs/superpowers/plans/2026-08-30-conventions-pass.md`. Checkpoint after Task 8
+(2026-08-31 evening): Tasks 1-8 ALL ACCEPTED (worktree head `c7db6e4f`, the auth-channel
+fold; the auth trio 6/7/8 each accepted first-review). One open conductor item rides chunk
+3's head: the 3F doc-cleanup escalation found the media config's `variants` field has zero
+reachable runtime consumers post-preset-drop (`presetUrl` is demoted off every subpath), so
+chunk 3 deletes the one false sentence in `data-tiers.md`, fixes the adjacent narrow-asset
+srcset imprecision in `core.md`, and files the dead-`variants` scope question into the
+friction log for triage to 4b/internals — the field's fate is NOT this pass's to decide. Spend: ~4.2M (transcript-measured) after eight of eleven tasks;
 the ceiling is RAISED to 7M (Geoff, 2026-08-31, on the chunk-1 numbers: the overrun is
 review rigor, not waste), so the pass runs to completion without a budget stop. Tasks 7
 and 8 upshifted to Opus implementers (security-critical interactions). Decisions taken: the overnight

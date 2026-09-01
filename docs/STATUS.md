@@ -26,7 +26,11 @@ lens Geoff added mid-review, now a standing pass dimension; round 2: engine-tria
 verification; all findings folded, dispositions in the plan's review-folds section). Geoff
 authorized the full arc: execute, pass-end ritual, merge to `main`, push. 14 tasks,
 sequential, `pass-execute.js` chain; Tasks 5 and 11 upshifted to Opus implementers
-(security-critical). Ceiling 6M, checkpoint every four tasks. Resume prompt for a fresh
+(security-critical). Ceiling 6M, checkpoint every four tasks. Checkpoint (11:19): Tasks
+1-4 accepted through the chain (Task 2 took one fix round); Task 5 (previewMint, Opus)
+in flight; guard healthy throughout. The internals pass plan is DRAFTED at
+`docs/superpowers/plans/2026-09-01-internals-pass.md` (docket banked beside it; six open
+decisions await Geoff; its adversarial review runs after 4b merges). Resume prompt for a fresh
 session: "In ~/Projects/cairn-cms, resume the conformance pass (4b) mid-execution: invoke
 cairn-pass, read docs/STATUS.md and the plan, verify worktree `conformance` state, then
 continue the pass-execute workflow chain from the last completed task."
